@@ -1,0 +1,612 @@
+{
+  "rulesDir": "src/rules",
+  "facetsFile": "src/coverage/wcag-facets.js",
+  "generatedAt": "2026-01-11T06:50:27.754Z",
+  "summary": {
+    "totalRules": 12,
+    "wcagTagCoverage": {
+      "byVersion": {
+        "2.0": {
+          "A": 10,
+          "AA": 0,
+          "AAA": 0
+        },
+        "2.1": {
+          "A": 0,
+          "AA": 0,
+          "AAA": 0
+        },
+        "2.2": {
+          "A": 0,
+          "AA": 0,
+          "AAA": 0
+        }
+      },
+      "anyVersion": {
+        "A": 10,
+        "AA": 0,
+        "AAA": 0
+      },
+      "rawTagCounts": {
+        "wcag2a": 10
+      }
+    }
+  },
+  "rows": [
+    {
+      "file": "src/rules/area-alt-present.js",
+      "ruleId": "area-alt-present",
+      "wcagSc": [
+        "1.1.1"
+      ],
+      "type": "automatic",
+      "title": "Image map areas must have alt text",
+      "tags": [
+        "wcag2a",
+        "wcag111",
+        "images",
+        "links",
+        "imagemap"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2a",
+            "version": "2.0",
+            "level": "A"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "1.1.1": [
+            "text-alternative-mechanism"
+          ]
+        }
+      }
+    },
+    {
+      "file": "src/rules/canvas-text-alternative.js",
+      "ruleId": "canvas-text-alternative",
+      "wcagSc": [
+        "1.1.1"
+      ],
+      "type": "automatic",
+      "title": "Canvas must have a text alternative",
+      "tags": [
+        "wcag2a",
+        "wcag111",
+        "canvas"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2a",
+            "version": "2.0",
+            "level": "A"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "1.1.1": [
+            "text-alternative-mechanism"
+          ]
+        }
+      }
+    },
+    {
+      "file": "src/rules/form-control-accessible-name.js",
+      "ruleId": "form-control-accessible-name",
+      "wcagSc": [
+        "1.3.1",
+        "4.1.2"
+      ],
+      "type": "automatic",
+      "title": "Form controls must have an accessible name",
+      "tags": [
+        "wcag2a",
+        "wcag131",
+        "wcag412",
+        "forms",
+        "atomic"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2a",
+            "version": "2.0",
+            "level": "A"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "1.3.1": [
+            "programmatic-relationships"
+          ],
+          "4.1.2": [
+            "accessible-name"
+          ]
+        }
+      }
+    },
+    {
+      "file": "src/rules/form-control-explicit-label.js",
+      "ruleId": "form-control-explicit-label",
+      "wcagSc": [
+        "1.3.1"
+      ],
+      "type": "automatic",
+      "title": "Form controls should have an explicit <label> element",
+      "tags": [
+        "wcag2a",
+        "wcag131",
+        "forms",
+        "atomic"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2a",
+            "version": "2.0",
+            "level": "A"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "1.3.1": [
+            "programmatic-relationships"
+          ]
+        }
+      }
+    },
+    {
+      "file": "src/rules/img-alt-attr-present.js",
+      "ruleId": "img-alt-attr-present",
+      "wcagSc": [
+        "1.1.1"
+      ],
+      "type": "automatic",
+      "title": "Images must have an alt attribute",
+      "tags": [
+        "wcag2a",
+        "wcag111",
+        "images"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2a",
+            "version": "2.0",
+            "level": "A"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "1.1.1": [
+            "text-alternative-mechanism"
+          ]
+        }
+      }
+    },
+    {
+      "file": "src/rules/img-alt-empty.js",
+      "ruleId": "img-alt-empty",
+      "wcagSc": [
+        "1.1.1"
+      ],
+      "type": "manual",
+      "title": "Empty alt text requires verification",
+      "tags": [
+        "wcag2a",
+        "wcag111",
+        "images",
+        "atomic",
+        "manual"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2a",
+            "version": "2.0",
+            "level": "A"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "1.1.1": [
+            "decorative-null"
+          ]
+        }
+      }
+    },
+    {
+      "file": "src/rules/img-alt-functional-name.js",
+      "ruleId": "img-alt-functional-name",
+      "wcagSc": [
+        "1.1.1"
+      ],
+      "type": "automatic",
+      "title": "Image-only controls must have an accessible name",
+      "tags": [
+        "wcag2a",
+        "wcag111",
+        "images",
+        "links",
+        "forms"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2a",
+            "version": "2.0",
+            "level": "A"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "1.1.1": [
+            "functional-nontext-name"
+          ]
+        }
+      }
+    },
+    {
+      "file": "src/rules/input-image-accessible-name.js",
+      "ruleId": "input-image-accessible-name",
+      "wcagSc": [
+        "1.1.1"
+      ],
+      "type": "automatic",
+      "title": "Image inputs must have an accessible name",
+      "tags": [
+        "wcag2a",
+        "wcag111",
+        "forms",
+        "images"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2a",
+            "version": "2.0",
+            "level": "A"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "1.1.1": [
+            "functional-nontext-name"
+          ]
+        }
+      }
+    },
+    {
+      "file": "src/rules/links-target-blank-noopener.js",
+      "ruleId": "links-target-blank-noopener",
+      "wcagSc": [],
+      "type": "automatic",
+      "title": "Links that open in a new tab should use rel=\"noopener\"",
+      "tags": [
+        "best-practice",
+        "links"
+      ],
+      "wcagTagSignals": {
+        "parsed": [],
+        "versions": [],
+        "cumulativeLevelsByVersion": {},
+        "cumulativeLevelsAny": []
+      },
+      "error": null,
+      "coverage": null
+    },
+    {
+      "file": "src/rules/manual-review.js",
+      "ruleId": "manual-review",
+      "wcagSc": [],
+      "type": "manual",
+      "title": "Manual review: keyboard navigation and focus order",
+      "tags": [
+        "manual"
+      ],
+      "wcagTagSignals": {
+        "parsed": [],
+        "versions": [],
+        "cumulativeLevelsByVersion": {},
+        "cumulativeLevelsAny": []
+      },
+      "error": null,
+      "coverage": null
+    },
+    {
+      "file": "src/rules/nontext-equivalent-alternative-manual.js",
+      "ruleId": "nontext-equivalent-alternative-manual",
+      "wcagSc": [
+        "1.1.1"
+      ],
+      "type": "manual",
+      "title": "Non-text alternatives must be equivalent (manual)",
+      "tags": [
+        "wcag2a",
+        "wcag111",
+        "manual"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2a",
+            "version": "2.0",
+            "level": "A"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "1.1.1": [
+            "equivalent-purpose"
+          ]
+        }
+      }
+    },
+    {
+      "file": "src/rules/svg-role-img-name.js",
+      "ruleId": "svg-role-img-name",
+      "wcagSc": [
+        "1.1.1"
+      ],
+      "type": "automatic",
+      "title": "SVG images must have an accessible name",
+      "tags": [
+        "wcag2a",
+        "wcag111",
+        "svg",
+        "images"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2a",
+            "version": "2.0",
+            "level": "A"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "1.1.1": [
+            "technology-specific-nontext"
+          ]
+        }
+      }
+    }
+  ],
+  "facetSummaries": [
+    {
+      "sc": "1.1.1",
+      "title": "Non-text Content",
+      "totalFacets": 5,
+      "coveredFacets": 5,
+      "uncoveredFacets": [],
+      "automationCounts": {
+        "full": 1,
+        "partial": 3,
+        "manual": 1
+      },
+      "missingFacetRules": [],
+      "facets": [
+        {
+          "id": "text-alternative-mechanism",
+          "label": "Non-text content provides a text alternative mechanism (e.g., alt/name/fallback present)",
+          "automation": "full",
+          "coveredBy": [
+            "area-alt-present",
+            "canvas-text-alternative",
+            "img-alt-attr-present"
+          ]
+        },
+        {
+          "id": "functional-nontext-name",
+          "label": "Functional non-text content conveys purpose via accessible name",
+          "automation": "partial",
+          "coveredBy": [
+            "img-alt-functional-name",
+            "input-image-accessible-name"
+          ]
+        },
+        {
+          "id": "decorative-null",
+          "label": "Decorative non-text content is correctly null (ignored by AT)",
+          "automation": "partial",
+          "coveredBy": [
+            "img-alt-empty"
+          ]
+        },
+        {
+          "id": "technology-specific-nontext",
+          "label": "Technology-specific non-text (svg/canvas/imagemap) has appropriate alternatives",
+          "automation": "partial",
+          "coveredBy": [
+            "svg-role-img-name"
+          ]
+        },
+        {
+          "id": "equivalent-purpose",
+          "label": "Text alternative is equivalent for the intended purpose",
+          "automation": "manual",
+          "coveredBy": [
+            "nontext-equivalent-alternative-manual"
+          ]
+        }
+      ]
+    },
+    {
+      "sc": "1.3.1",
+      "title": "Info and Relationships",
+      "totalFacets": 1,
+      "coveredFacets": 1,
+      "uncoveredFacets": [],
+      "automationCounts": {
+        "partial": 1
+      },
+      "missingFacetRules": [],
+      "facets": [
+        {
+          "id": "programmatic-relationships",
+          "label": "Information/relationships are programmatically determinable (e.g., label association)",
+          "automation": "partial",
+          "coveredBy": [
+            "form-control-accessible-name",
+            "form-control-explicit-label"
+          ]
+        }
+      ]
+    },
+    {
+      "sc": "4.1.2",
+      "title": "Name, Role, Value",
+      "totalFacets": 1,
+      "coveredFacets": 1,
+      "uncoveredFacets": [],
+      "automationCounts": {
+        "partial": 1
+      },
+      "missingFacetRules": [],
+      "facets": [
+        {
+          "id": "accessible-name",
+          "label": "UI components have an accessible name",
+          "automation": "partial",
+          "coveredBy": [
+            "form-control-accessible-name"
+          ]
+        }
+      ]
+    }
+  ]
+}

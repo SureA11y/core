@@ -1,0 +1,17 @@
+{
+  "name": "a11y-core",
+  "version": "1.1.0",
+  "description": "Lightweight DOM rules accessibility core with modular rules.",
+  "main": "src/index.js",
+  "license": "MIT",
+  "scripts": {
+    "build": "node scripts/build-core.js",
+    "pretest": "npm run build",
+    "test": "node --test ./tests/*.test.js",
+    "coverage": "node scripts/generate-wcag-coverage.js --rulesDir src/rules --out coverage/coverage-report.md --json coverage/coverage-report.json",
+    "coverage:default": "node scripts/generate-wcag-coverage.js"
+  },
+  "devDependencies": {
+    "jsdom": "^27.4.0"
+  }
+}

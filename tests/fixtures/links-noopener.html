@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Test page: noopener</title>
+</head>
+<body>
+
+<!-- PASS -->
+<a href="/next" target="_blank" rel="noopener">Good link</a>
+
+<!-- FAIL -->
+<a href="/bad" target="_blank">Missing rel</a>
+
+<!-- FAIL -->
+<a href="/bad2" target="_blank" rel="external">Wrong rel</a>
+
+<!-- NOT_APPLICABLE fallback for form-label -->
+<div>No form controls here</div>
+
+<!-- img-alt FAIL -->
+<img src="cat.png">
+
+<!-- img-alt cantTell candidate -->
+<img src="decorative.png" alt="">
+</body>
+</html>
