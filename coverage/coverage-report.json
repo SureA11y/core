@@ -1,14 +1,14 @@
 {
-  "rulesDir": "src/rules",
-  "facetsFile": "src/coverage/wcag-facets.js",
-  "generatedAt": "2026-01-11T06:50:27.754Z",
+  "rulesDir": "src\\rules",
+  "facetsFile": "src\\coverage\\wcag-facets.js",
+  "generatedAt": "2026-01-20T10:01:59.657Z",
   "summary": {
-    "totalRules": 12,
+    "totalRules": 24,
     "wcagTagCoverage": {
       "byVersion": {
         "2.0": {
-          "A": 10,
-          "AA": 0,
+          "A": 24,
+          "AA": 1,
           "AAA": 0
         },
         "2.1": {
@@ -23,30 +23,76 @@
         }
       },
       "anyVersion": {
-        "A": 10,
-        "AA": 0,
+        "A": 24,
+        "AA": 1,
         "AAA": 0
       },
       "rawTagCounts": {
-        "wcag2a": 10
+        "wcag2a": 24,
+        "wcag2aa": 1
       }
     }
   },
   "rows": [
     {
-      "file": "src/rules/area-alt-present.js",
-      "ruleId": "area-alt-present",
-      "wcagSc": [
+      "file": "src\\rules\\aria-hidden-programmatic-focus-review.js",
+      "ruleId": "a11ycore-aria-hidden-programmatic-focus-review",
+      "wcagScNormative": [],
+      "wcagScAll": [],
+      "wcagScInformative": [],
+      "type": "manual",
+      "title": "Review aria-hidden programmatic focus",
+      "tags": [
+        "wcag2a",
+        "wcag412",
+        "focus",
+        "aria",
+        "atomic",
+        "manual"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2a",
+            "version": "2.0",
+            "level": "A"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A"
+        ]
+      },
+      "error": null,
+      "coverage": null
+    },
+    {
+      "file": "src\\rules\\automatic\\area-alt-present.js",
+      "ruleId": "a11ycore-area-alt-present",
+      "wcagScNormative": [
         "1.1.1"
       ],
+      "wcagScAll": [
+        "1.1.1"
+      ],
+      "wcagScInformative": [],
       "type": "automatic",
-      "title": "Image map areas must have alt text",
+      "title": "&lt;area&gt; must have an alt attribute",
       "tags": [
         "wcag2a",
         "wcag111",
+        "nontext",
         "images",
-        "links",
-        "imagemap"
+        "imagemap",
+        "atomic",
+        "automatic"
       ],
       "wcagTagSignals": {
         "parsed": [
@@ -72,23 +118,30 @@
       "coverage": {
         "facetsBySc": {
           "1.1.1": [
-            "text-alternative-mechanism"
+            "area-alt-attr-present"
           ]
         }
       }
     },
     {
-      "file": "src/rules/canvas-text-alternative.js",
-      "ruleId": "canvas-text-alternative",
-      "wcagSc": [
+      "file": "src\\rules\\automatic\\canvas-text-alternative-present.js",
+      "ruleId": "a11ycore-canvas-text-alternative-present",
+      "wcagScNormative": [
         "1.1.1"
       ],
+      "wcagScAll": [
+        "1.1.1"
+      ],
+      "wcagScInformative": [],
       "type": "automatic",
-      "title": "Canvas must have a text alternative",
+      "title": "<canvas> must provide a text alternative",
       "tags": [
         "wcag2a",
         "wcag111",
-        "canvas"
+        "nontext",
+        "canvas",
+        "atomic",
+        "automatic"
       ],
       "wcagTagSignals": {
         "parsed": [
@@ -114,26 +167,81 @@
       "coverage": {
         "facetsBySc": {
           "1.1.1": [
-            "text-alternative-mechanism"
+            "canvas-text-alternative-present"
           ]
         }
       }
     },
     {
-      "file": "src/rules/form-control-accessible-name.js",
-      "ruleId": "form-control-accessible-name",
-      "wcagSc": [
-        "1.3.1",
+      "file": "src\\rules\\automatic\\embed-text-alternative-present.js",
+      "ruleId": "a11ycore-embed-text-alternative-present",
+      "wcagScNormative": [
+        "1.1.1"
+      ],
+      "wcagScAll": [
+        "1.1.1"
+      ],
+      "wcagScInformative": [],
+      "type": "automatic",
+      "title": "<embed> must provide a text alternative",
+      "tags": [
+        "wcag2a",
+        "wcag111",
+        "nontext",
+        "embed",
+        "atomic",
+        "automatic"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2a",
+            "version": "2.0",
+            "level": "A"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "1.1.1": [
+            "embed-text-alternative-present"
+          ]
+        }
+      }
+    },
+    {
+      "file": "src\\rules\\automatic\\form-control-programmatic-label-present.js",
+      "ruleId": "a11ycore-form-control-programmatic-label-present",
+      "wcagScNormative": [
         "4.1.2"
       ],
+      "wcagScAll": [
+        "4.1.2"
+      ],
+      "wcagScInformative": [],
       "type": "automatic",
-      "title": "Form controls must have an accessible name",
+      "title": "Form controls must have a programmatic label",
       "tags": [
         "wcag2a",
         "wcag131",
+        "wcag332",
         "wcag412",
         "forms",
-        "atomic"
+        "labels",
+        "atomic",
+        "automatic"
       ],
       "wcagTagSignals": {
         "parsed": [
@@ -158,70 +266,31 @@
       "error": null,
       "coverage": {
         "facetsBySc": {
-          "1.3.1": [
-            "programmatic-relationships"
-          ],
           "4.1.2": [
-            "accessible-name"
+            "form-control-name-present"
           ]
         }
       }
     },
     {
-      "file": "src/rules/form-control-explicit-label.js",
-      "ruleId": "form-control-explicit-label",
-      "wcagSc": [
-        "1.3.1"
-      ],
-      "type": "automatic",
-      "title": "Form controls should have an explicit <label> element",
-      "tags": [
-        "wcag2a",
-        "wcag131",
-        "forms",
-        "atomic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [
-          {
-            "tag": "wcag2a",
-            "version": "2.0",
-            "level": "A"
-          }
-        ],
-        "versions": [
-          "2.0"
-        ],
-        "cumulativeLevelsByVersion": {
-          "2.0": [
-            "A"
-          ]
-        },
-        "cumulativeLevelsAny": [
-          "A"
-        ]
-      },
-      "error": null,
-      "coverage": {
-        "facetsBySc": {
-          "1.3.1": [
-            "programmatic-relationships"
-          ]
-        }
-      }
-    },
-    {
-      "file": "src/rules/img-alt-attr-present.js",
-      "ruleId": "img-alt-attr-present",
-      "wcagSc": [
+      "file": "src\\rules\\automatic\\img-alt-present.js",
+      "ruleId": "a11ycore-img-alt-present",
+      "wcagScNormative": [
         "1.1.1"
       ],
+      "wcagScAll": [
+        "1.1.1"
+      ],
+      "wcagScInformative": [],
       "type": "automatic",
-      "title": "Images must have an alt attribute",
+      "title": "<img> must have an alt attribute",
       "tags": [
         "wcag2a",
         "wcag111",
-        "images"
+        "nontext",
+        "images",
+        "atomic",
+        "automatic"
       ],
       "wcagTagSignals": {
         "parsed": [
@@ -247,23 +316,503 @@
       "coverage": {
         "facetsBySc": {
           "1.1.1": [
-            "text-alternative-mechanism"
+            "img-alt-attr-present"
           ]
         }
       }
     },
     {
-      "file": "src/rules/img-alt-empty.js",
-      "ruleId": "img-alt-empty",
-      "wcagSc": [
+      "file": "src\\rules\\automatic\\input-image-alt-present.js",
+      "ruleId": "a11ycore-input-image-alt-present",
+      "wcagScNormative": [
         "1.1.1"
       ],
-      "type": "manual",
-      "title": "Empty alt text requires verification",
+      "wcagScAll": [
+        "1.1.1"
+      ],
+      "wcagScInformative": [],
+      "type": "automatic",
+      "title": "<input type=\"image\"> must have an alt attribute",
       "tags": [
         "wcag2a",
         "wcag111",
+        "nontext",
         "images",
+        "atomic",
+        "automatic"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2a",
+            "version": "2.0",
+            "level": "A"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "1.1.1": [
+            "input-image-alt-attr-present"
+          ]
+        }
+      }
+    },
+    {
+      "file": "src\\rules\\automatic\\language-page-present.js",
+      "ruleId": "a11ycore-html-lang-attr-present",
+      "wcagScNormative": [
+        "3.1.1"
+      ],
+      "wcagScAll": [
+        "3.1.1"
+      ],
+      "wcagScInformative": [],
+      "type": "automatic",
+      "title": "Page language is declared",
+      "tags": [
+        "wcag2a",
+        "wcag311",
+        "structure",
+        "language",
+        "automatic",
+        "atomic"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2a",
+            "version": "2.0",
+            "level": "A"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "3.1.1": [
+            "html-lang-attr-present"
+          ]
+        }
+      }
+    },
+    {
+      "file": "src\\rules\\automatic\\object-text-alternative-present.js",
+      "ruleId": "a11ycore-object-text-alternative-present",
+      "wcagScNormative": [
+        "1.1.1"
+      ],
+      "wcagScAll": [
+        "1.1.1"
+      ],
+      "wcagScInformative": [],
+      "type": "automatic",
+      "title": "<object> must provide a text alternative",
+      "tags": [
+        "wcag2a",
+        "wcag111",
+        "nontext",
+        "object",
+        "atomic",
+        "automatic"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2a",
+            "version": "2.0",
+            "level": "A"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "1.1.1": [
+            "object-text-alternative-present"
+          ]
+        }
+      }
+    },
+    {
+      "file": "src\\rules\\automatic\\svg-image-text-alternative-present.js",
+      "ruleId": "a11ycore-svg-image-text-alternative-present",
+      "wcagScNormative": [
+        "1.1.1"
+      ],
+      "wcagScAll": [
+        "1.1.1"
+      ],
+      "wcagScInformative": [],
+      "type": "automatic",
+      "title": "SVG <image> must have a text alternative",
+      "tags": [
+        "wcag2a",
+        "wcag111",
+        "nontext",
+        "svg",
+        "image",
+        "atomic",
+        "automatic"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2a",
+            "version": "2.0",
+            "level": "A"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "1.1.1": [
+            "svg-image-text-alt-present"
+          ]
+        }
+      }
+    },
+    {
+      "file": "src\\rules\\automatic\\svg-text-alternative-present.js",
+      "ruleId": "a11ycore-svg-text-alternative-present",
+      "wcagScNormative": [
+        "1.1.1"
+      ],
+      "wcagScAll": [
+        "1.1.1"
+      ],
+      "wcagScInformative": [],
+      "type": "automatic",
+      "title": "<svg> must provide a text alternative",
+      "tags": [
+        "wcag2a",
+        "wcag111",
+        "svg",
+        "nontext",
+        "images",
+        "atomic",
+        "automatic"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2a",
+            "version": "2.0",
+            "level": "A"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "1.1.1": [
+            "svg-text-alternative-present"
+          ]
+        }
+      }
+    },
+    {
+      "file": "src\\rules\\automatic\\video-poster-text-alternative-present.js",
+      "ruleId": "a11ycore-video-poster-text-alternative-present",
+      "wcagScNormative": [
+        "1.1.1"
+      ],
+      "wcagScAll": [
+        "1.1.1"
+      ],
+      "wcagScInformative": [],
+      "type": "automatic",
+      "title": "<video> poster must have a text alternative",
+      "tags": [
+        "wcag2a",
+        "wcag111",
+        "media",
+        "video",
+        "atomic",
+        "automatic"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2a",
+            "version": "2.0",
+            "level": "A"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "1.1.1": [
+            "video-poster-text-alt-present"
+          ]
+        }
+      }
+    },
+    {
+      "file": "src\\rules\\manual\\area-alt-decorative-manual.js",
+      "ruleId": "a11ycore-area-alt-decorative",
+      "wcagScNormative": [],
+      "wcagScAll": [],
+      "wcagScInformative": [],
+      "type": "manual",
+      "title": "<area> with alt=\"\" must be decorative (manual review)",
+      "tags": [
+        "wcag2a",
+        "wcag111",
+        "nontext",
+        "images",
+        "imagemap",
+        "manual",
+        "atomic"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2a",
+            "version": "2.0",
+            "level": "A"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "1.1.1": [
+            "text-alternative-quality"
+          ]
+        }
+      }
+    },
+    {
+      "file": "src\\rules\\manual\\area-alt-quality-manual.js",
+      "ruleId": "a11ycore-area-alt-quality",
+      "wcagScNormative": [],
+      "wcagScAll": [],
+      "wcagScInformative": [],
+      "type": "manual",
+      "title": "<area> alt text must be appropriate (manual review)",
+      "tags": [
+        "wcag2a",
+        "wcag111",
+        "nontext",
+        "images",
+        "imagemap",
+        "manual",
+        "atomic"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2a",
+            "version": "2.0",
+            "level": "A"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "1.1.1": [
+            "text-alternative-quality"
+          ]
+        }
+      }
+    },
+    {
+      "file": "src\\rules\\manual\\canvas-text-alternative-quality-manual.js",
+      "ruleId": "a11ycore-canvas-text-alternative-quality",
+      "wcagScNormative": [],
+      "wcagScAll": [],
+      "wcagScInformative": [],
+      "type": "manual",
+      "title": "<canvas> text alternative must be appropriate (manual review)",
+      "tags": [
+        "wcag2a",
+        "wcag111",
+        "nontext",
+        "canvas",
+        "manual",
+        "atomic"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2a",
+            "version": "2.0",
+            "level": "A"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "1.1.1": [
+            "text-alternative-quality"
+          ]
+        }
+      }
+    },
+    {
+      "file": "src\\rules\\manual\\embed-text-alternative-quality-manual.js",
+      "ruleId": "a11ycore-embed-text-alternative-quality",
+      "wcagScNormative": [],
+      "wcagScAll": [],
+      "wcagScInformative": [],
+      "type": "manual",
+      "title": "<embed> text alternative must be appropriate (manual review)",
+      "tags": [
+        "wcag2a",
+        "wcag111",
+        "nontext",
+        "embed",
+        "manual",
+        "atomic"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2a",
+            "version": "2.0",
+            "level": "A"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "1.1.1": [
+            "text-alternative-quality"
+          ]
+        }
+      }
+    },
+    {
+      "file": "src\\rules\\manual\\form-control-programmatic-label-quality-manual.js",
+      "ruleId": "a11ycore-form-control-programmatic-label-quality",
+      "wcagScNormative": [],
+      "wcagScAll": [],
+      "wcagScInformative": [],
+      "type": "manual",
+      "title": "Form controls should not rely on placeholder or title as the primary label",
+      "tags": [
+        "wcag2a",
+        "wcag412",
+        "forms",
+        "labels",
+        "quality",
         "atomic",
         "manual"
       ],
@@ -290,26 +839,27 @@
       "error": null,
       "coverage": {
         "facetsBySc": {
-          "1.1.1": [
-            "decorative-null"
+          "4.1.2": [
+            "form-control-name-quality"
           ]
         }
       }
     },
     {
-      "file": "src/rules/img-alt-functional-name.js",
-      "ruleId": "img-alt-functional-name",
-      "wcagSc": [
-        "1.1.1"
-      ],
-      "type": "automatic",
-      "title": "Image-only controls must have an accessible name",
+      "file": "src\\rules\\manual\\img-alt-decorative-manual.js",
+      "ruleId": "a11ycore-img-alt-decorative",
+      "wcagScNormative": [],
+      "wcagScAll": [],
+      "wcagScInformative": [],
+      "type": "manual",
+      "title": "<img> with alt=\"\" must be decorative (manual review)",
       "tags": [
         "wcag2a",
         "wcag111",
+        "nontext",
         "images",
-        "links",
-        "forms"
+        "manual",
+        "atomic"
       ],
       "wcagTagSignals": {
         "parsed": [
@@ -335,24 +885,71 @@
       "coverage": {
         "facetsBySc": {
           "1.1.1": [
-            "functional-nontext-name"
+            "text-alternative-quality"
           ]
         }
       }
     },
     {
-      "file": "src/rules/input-image-accessible-name.js",
-      "ruleId": "input-image-accessible-name",
-      "wcagSc": [
-        "1.1.1"
+      "file": "src\\rules\\manual\\img-alt-quality-manual.js",
+      "ruleId": "a11ycore-img-alt-quality",
+      "wcagScNormative": [],
+      "wcagScAll": [],
+      "wcagScInformative": [],
+      "type": "manual",
+      "title": "<img> alt text must be appropriate (manual review)",
+      "tags": [
+        "wcag2a",
+        "wcag111",
+        "nontext",
+        "images",
+        "manual",
+        "atomic"
       ],
-      "type": "automatic",
-      "title": "Image inputs must have an accessible name",
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2a",
+            "version": "2.0",
+            "level": "A"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "1.1.1": [
+            "text-alternative-quality"
+          ]
+        }
+      }
+    },
+    {
+      "file": "src\\rules\\manual\\input-image-alt-decorative-manual.js",
+      "ruleId": "a11ycore-input-image-alt-decorative",
+      "wcagScNormative": [],
+      "wcagScAll": [],
+      "wcagScInformative": [],
+      "type": "manual",
+      "title": "<input type=\"image\"> with alt=\"\" must be appropriate (manual review)",
       "tags": [
         "wcag2a",
         "wcag111",
         "forms",
-        "images"
+        "images",
+        "manual",
+        "atomic"
       ],
       "wcagTagSignals": {
         "parsed": [
@@ -378,235 +975,604 @@
       "coverage": {
         "facetsBySc": {
           "1.1.1": [
-            "functional-nontext-name"
+            "text-alternative-quality"
           ]
         }
       }
     },
     {
-      "file": "src/rules/links-target-blank-noopener.js",
-      "ruleId": "links-target-blank-noopener",
-      "wcagSc": [],
-      "type": "automatic",
-      "title": "Links that open in a new tab should use rel=\"noopener\"",
+      "file": "src\\rules\\manual\\input-image-alt-quality-manual.js",
+      "ruleId": "a11ycore-input-image-alt-quality",
+      "wcagScNormative": [],
+      "wcagScAll": [],
+      "wcagScInformative": [],
+      "type": "manual",
+      "title": "<input type=\"image\"> alt text must be appropriate (manual review)",
       "tags": [
-        "best-practice",
-        "links"
+        "wcag2a",
+        "wcag111",
+        "forms",
+        "images",
+        "manual",
+        "atomic"
       ],
       "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
+        "parsed": [
+          {
+            "tag": "wcag2a",
+            "version": "2.0",
+            "level": "A"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A"
+        ]
       },
       "error": null,
-      "coverage": null
+      "coverage": {
+        "facetsBySc": {
+          "1.1.1": [
+            "text-alternative-quality"
+          ]
+        }
+      }
     },
     {
-      "file": "src/rules/manual-review.js",
+      "file": "src\\rules\\manual\\object-text-alternative-quality-manual.js",
+      "ruleId": "a11ycore-object-text-alternative-quality",
+      "wcagScNormative": [],
+      "wcagScAll": [],
+      "wcagScInformative": [],
+      "type": "manual",
+      "title": "<object> text alternative must be appropriate (manual review)",
+      "tags": [
+        "wcag2a",
+        "wcag111",
+        "nontext",
+        "object",
+        "manual",
+        "atomic"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2a",
+            "version": "2.0",
+            "level": "A"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "1.1.1": [
+            "text-alternative-quality"
+          ]
+        }
+      }
+    },
+    {
+      "file": "src\\rules\\manual\\svg-text-alternative-quality-manual.js",
+      "ruleId": "a11ycore-svg-text-alternative-quality",
+      "wcagScNormative": [],
+      "wcagScAll": [],
+      "wcagScInformative": [],
+      "type": "manual",
+      "title": "<svg> text alternative must be appropriate (manual review)",
+      "tags": [
+        "wcag2a",
+        "wcag111",
+        "nontext",
+        "svg",
+        "manual",
+        "atomic"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2a",
+            "version": "2.0",
+            "level": "A"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "1.1.1": [
+            "text-alternative-quality"
+          ]
+        }
+      }
+    },
+    {
+      "file": "src\\rules\\manual-review.js",
       "ruleId": "manual-review",
-      "wcagSc": [],
+      "wcagScNormative": [],
+      "wcagScAll": [],
+      "wcagScInformative": [],
       "type": "manual",
       "title": "Manual review: keyboard navigation and focus order",
       "tags": [
-        "manual"
+        "manual",
+        "wcag2a",
+        "wcag2aa"
       ],
       "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
+        "parsed": [
+          {
+            "tag": "wcag2a",
+            "version": "2.0",
+            "level": "A"
+          },
+          {
+            "tag": "wcag2aa",
+            "version": "2.0",
+            "level": "AA"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A",
+            "AA"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A",
+          "AA"
+        ]
       },
       "error": null,
       "coverage": null
-    },
-    {
-      "file": "src/rules/nontext-equivalent-alternative-manual.js",
-      "ruleId": "nontext-equivalent-alternative-manual",
-      "wcagSc": [
-        "1.1.1"
-      ],
-      "type": "manual",
-      "title": "Non-text alternatives must be equivalent (manual)",
-      "tags": [
-        "wcag2a",
-        "wcag111",
-        "manual"
-      ],
-      "wcagTagSignals": {
-        "parsed": [
-          {
-            "tag": "wcag2a",
-            "version": "2.0",
-            "level": "A"
-          }
-        ],
-        "versions": [
-          "2.0"
-        ],
-        "cumulativeLevelsByVersion": {
-          "2.0": [
-            "A"
-          ]
-        },
-        "cumulativeLevelsAny": [
-          "A"
-        ]
-      },
-      "error": null,
-      "coverage": {
-        "facetsBySc": {
-          "1.1.1": [
-            "equivalent-purpose"
-          ]
-        }
-      }
-    },
-    {
-      "file": "src/rules/svg-role-img-name.js",
-      "ruleId": "svg-role-img-name",
-      "wcagSc": [
-        "1.1.1"
-      ],
-      "type": "automatic",
-      "title": "SVG images must have an accessible name",
-      "tags": [
-        "wcag2a",
-        "wcag111",
-        "svg",
-        "images"
-      ],
-      "wcagTagSignals": {
-        "parsed": [
-          {
-            "tag": "wcag2a",
-            "version": "2.0",
-            "level": "A"
-          }
-        ],
-        "versions": [
-          "2.0"
-        ],
-        "cumulativeLevelsByVersion": {
-          "2.0": [
-            "A"
-          ]
-        },
-        "cumulativeLevelsAny": [
-          "A"
-        ]
-      },
-      "error": null,
-      "coverage": {
-        "facetsBySc": {
-          "1.1.1": [
-            "technology-specific-nontext"
-          ]
-        }
-      }
     }
   ],
-  "facetSummaries": [
-    {
-      "sc": "1.1.1",
-      "title": "Non-text Content",
-      "totalFacets": 5,
-      "coveredFacets": 5,
-      "uncoveredFacets": [],
-      "automationCounts": {
-        "full": 1,
-        "partial": 3,
-        "manual": 1
+  "facetSummaries": {
+    "enforced": [
+      {
+        "sc": "1.1.1",
+        "title": "Non-text Content",
+        "totalFacets": 18,
+        "coveredFacets": 9,
+        "uncoveredFacets": [
+          "text-alternative-mechanism",
+          "functional-nontext-name",
+          "decorative-null",
+          "text-alt-quality-review",
+          "text-alternative-quality",
+          "svg-text-alt-present",
+          "embed-name-present",
+          "alt-suspicious-patterns",
+          "acc-eligibility-filtering"
+        ],
+        "automationCounts": {
+          "partial": 13,
+          "manual": 2,
+          "full": 3
+        },
+        "missingFacetRules": [],
+        "unknownFacetIds": [],
+        "facets": [
+          {
+            "id": "text-alternative-mechanism",
+            "label": "Text alternative mechanism present",
+            "automation": "partial",
+            "coveredBy": []
+          },
+          {
+            "id": "functional-nontext-name",
+            "label": "Functional non-text has accessible name",
+            "automation": "partial",
+            "coveredBy": []
+          },
+          {
+            "id": "decorative-null",
+            "label": "Decorative content correctly null",
+            "automation": "manual",
+            "coveredBy": []
+          },
+          {
+            "id": "text-alt-quality-review",
+            "label": "Text alternative is appropriate and equivalent",
+            "automation": "manual",
+            "coveredBy": []
+          },
+          {
+            "id": "text-alternative-quality",
+            "label": "Text alternatives are appropriate and equivalent",
+            "automation": "partial",
+            "coveredBy": []
+          },
+          {
+            "id": "img-alt-attr-present",
+            "label": "<img> has alt attribute",
+            "automation": "full",
+            "coveredBy": [
+              "a11ycore-img-alt-present"
+            ]
+          },
+          {
+            "id": "input-image-alt-attr-present",
+            "label": "<input type=\"image\"> has alt attribute",
+            "automation": "full",
+            "coveredBy": [
+              "a11ycore-input-image-alt-present"
+            ]
+          },
+          {
+            "id": "area-alt-attr-present",
+            "label": "<area> has alt attribute",
+            "automation": "full",
+            "coveredBy": [
+              "a11ycore-area-alt-present"
+            ]
+          },
+          {
+            "id": "canvas-text-alternative-present",
+            "label": "<canvas> has fallback text or accessible name",
+            "automation": "partial",
+            "coveredBy": [
+              "a11ycore-canvas-text-alternative-present"
+            ]
+          },
+          {
+            "id": "embed-text-alternative-present",
+            "label": "<embed> has fallback text or accessible name",
+            "automation": "partial",
+            "coveredBy": [
+              "a11ycore-embed-text-alternative-present"
+            ]
+          },
+          {
+            "id": "svg-text-alt-present",
+            "label": "<svg> has a text alternative mechanism when exposed",
+            "automation": "partial",
+            "coveredBy": []
+          },
+          {
+            "id": "svg-text-alternative-present",
+            "label": "SVG <image> has a text alternative mechanism",
+            "automation": "partial",
+            "coveredBy": [
+              "a11ycore-svg-text-alternative-present"
+            ]
+          },
+          {
+            "id": "svg-image-text-alt-present",
+            "label": "SVG <image> has a text alternative mechanism",
+            "automation": "partial",
+            "coveredBy": [
+              "a11ycore-svg-image-text-alternative-present"
+            ]
+          },
+          {
+            "id": "object-text-alternative-present",
+            "label": "<object> has fallback text or accessible name",
+            "automation": "partial",
+            "coveredBy": [
+              "a11ycore-object-text-alternative-present"
+            ]
+          },
+          {
+            "id": "embed-name-present",
+            "label": "<embed> has accessible name",
+            "automation": "partial",
+            "coveredBy": []
+          },
+          {
+            "id": "video-poster-text-alt-present",
+            "label": "<video poster> has a text alternative mechanism",
+            "automation": "partial",
+            "coveredBy": [
+              "a11ycore-video-poster-text-alternative-present"
+            ]
+          },
+          {
+            "id": "alt-suspicious-patterns",
+            "label": "Alt text suspicious patterns (e.g., filename/placeholder)",
+            "automation": "partial",
+            "coveredBy": []
+          },
+          {
+            "id": "acc-eligibility-filtering",
+            "label": "Excluded due to accessibility-tree eligibility",
+            "automation": "partial",
+            "coveredBy": []
+          }
+        ]
       },
-      "missingFacetRules": [],
-      "facets": [
-        {
-          "id": "text-alternative-mechanism",
-          "label": "Non-text content provides a text alternative mechanism (e.g., alt/name/fallback present)",
-          "automation": "full",
-          "coveredBy": [
-            "area-alt-present",
-            "canvas-text-alternative",
-            "img-alt-attr-present"
-          ]
+      {
+        "sc": "3.1.1",
+        "title": "Language of Page",
+        "totalFacets": 1,
+        "coveredFacets": 1,
+        "uncoveredFacets": [],
+        "automationCounts": {
+          "full": 1
         },
-        {
-          "id": "functional-nontext-name",
-          "label": "Functional non-text content conveys purpose via accessible name",
-          "automation": "partial",
-          "coveredBy": [
-            "img-alt-functional-name",
-            "input-image-accessible-name"
-          ]
-        },
-        {
-          "id": "decorative-null",
-          "label": "Decorative non-text content is correctly null (ignored by AT)",
-          "automation": "partial",
-          "coveredBy": [
-            "img-alt-empty"
-          ]
-        },
-        {
-          "id": "technology-specific-nontext",
-          "label": "Technology-specific non-text (svg/canvas/imagemap) has appropriate alternatives",
-          "automation": "partial",
-          "coveredBy": [
-            "svg-role-img-name"
-          ]
-        },
-        {
-          "id": "equivalent-purpose",
-          "label": "Text alternative is equivalent for the intended purpose",
-          "automation": "manual",
-          "coveredBy": [
-            "nontext-equivalent-alternative-manual"
-          ]
-        }
-      ]
-    },
-    {
-      "sc": "1.3.1",
-      "title": "Info and Relationships",
-      "totalFacets": 1,
-      "coveredFacets": 1,
-      "uncoveredFacets": [],
-      "automationCounts": {
-        "partial": 1
+        "missingFacetRules": [],
+        "unknownFacetIds": [],
+        "facets": [
+          {
+            "id": "html-lang-attr-present",
+            "label": "<html> has non-empty lang attribute",
+            "automation": "full",
+            "coveredBy": [
+              "a11ycore-html-lang-attr-present"
+            ]
+          }
+        ]
       },
-      "missingFacetRules": [],
-      "facets": [
-        {
-          "id": "programmatic-relationships",
-          "label": "Information/relationships are programmatically determinable (e.g., label association)",
-          "automation": "partial",
-          "coveredBy": [
-            "form-control-accessible-name",
-            "form-control-explicit-label"
-          ]
-        }
-      ]
-    },
-    {
-      "sc": "4.1.2",
-      "title": "Name, Role, Value",
-      "totalFacets": 1,
-      "coveredFacets": 1,
-      "uncoveredFacets": [],
-      "automationCounts": {
-        "partial": 1
+      {
+        "sc": "4.1.2",
+        "title": "Name, Role, Value",
+        "totalFacets": 2,
+        "coveredFacets": 1,
+        "uncoveredFacets": [
+          "form-control-name-quality"
+        ],
+        "automationCounts": {
+          "full": 1,
+          "manual": 1
+        },
+        "missingFacetRules": [],
+        "unknownFacetIds": [],
+        "facets": [
+          {
+            "id": "form-control-name-present",
+            "label": "Form controls expose an accessible name (label/aria-label/aria-labelledby/title/placeholder)",
+            "automation": "full",
+            "coveredBy": [
+              "a11ycore-form-control-programmatic-label-present"
+            ]
+          },
+          {
+            "id": "form-control-name-quality",
+            "label": "Form controls accessible name quality (avoid placeholder/title as primary)",
+            "automation": "manual",
+            "coveredBy": []
+          }
+        ]
+      }
+    ],
+    "all": [
+      {
+        "sc": "1.1.1",
+        "title": "Non-text Content",
+        "totalFacets": 18,
+        "coveredFacets": 9,
+        "uncoveredFacets": [
+          "text-alternative-mechanism",
+          "functional-nontext-name",
+          "decorative-null",
+          "text-alt-quality-review",
+          "text-alternative-quality",
+          "svg-text-alt-present",
+          "embed-name-present",
+          "alt-suspicious-patterns",
+          "acc-eligibility-filtering"
+        ],
+        "automationCounts": {
+          "partial": 13,
+          "manual": 2,
+          "full": 3
+        },
+        "missingFacetRules": [],
+        "unknownFacetIds": [],
+        "facets": [
+          {
+            "id": "text-alternative-mechanism",
+            "label": "Text alternative mechanism present",
+            "automation": "partial",
+            "coveredBy": []
+          },
+          {
+            "id": "functional-nontext-name",
+            "label": "Functional non-text has accessible name",
+            "automation": "partial",
+            "coveredBy": []
+          },
+          {
+            "id": "decorative-null",
+            "label": "Decorative content correctly null",
+            "automation": "manual",
+            "coveredBy": []
+          },
+          {
+            "id": "text-alt-quality-review",
+            "label": "Text alternative is appropriate and equivalent",
+            "automation": "manual",
+            "coveredBy": []
+          },
+          {
+            "id": "text-alternative-quality",
+            "label": "Text alternatives are appropriate and equivalent",
+            "automation": "partial",
+            "coveredBy": []
+          },
+          {
+            "id": "img-alt-attr-present",
+            "label": "<img> has alt attribute",
+            "automation": "full",
+            "coveredBy": [
+              "a11ycore-img-alt-present"
+            ]
+          },
+          {
+            "id": "input-image-alt-attr-present",
+            "label": "<input type=\"image\"> has alt attribute",
+            "automation": "full",
+            "coveredBy": [
+              "a11ycore-input-image-alt-present"
+            ]
+          },
+          {
+            "id": "area-alt-attr-present",
+            "label": "<area> has alt attribute",
+            "automation": "full",
+            "coveredBy": [
+              "a11ycore-area-alt-present"
+            ]
+          },
+          {
+            "id": "canvas-text-alternative-present",
+            "label": "<canvas> has fallback text or accessible name",
+            "automation": "partial",
+            "coveredBy": [
+              "a11ycore-canvas-text-alternative-present"
+            ]
+          },
+          {
+            "id": "embed-text-alternative-present",
+            "label": "<embed> has fallback text or accessible name",
+            "automation": "partial",
+            "coveredBy": [
+              "a11ycore-embed-text-alternative-present"
+            ]
+          },
+          {
+            "id": "svg-text-alt-present",
+            "label": "<svg> has a text alternative mechanism when exposed",
+            "automation": "partial",
+            "coveredBy": []
+          },
+          {
+            "id": "svg-text-alternative-present",
+            "label": "SVG <image> has a text alternative mechanism",
+            "automation": "partial",
+            "coveredBy": [
+              "a11ycore-svg-text-alternative-present"
+            ]
+          },
+          {
+            "id": "svg-image-text-alt-present",
+            "label": "SVG <image> has a text alternative mechanism",
+            "automation": "partial",
+            "coveredBy": [
+              "a11ycore-svg-image-text-alternative-present"
+            ]
+          },
+          {
+            "id": "object-text-alternative-present",
+            "label": "<object> has fallback text or accessible name",
+            "automation": "partial",
+            "coveredBy": [
+              "a11ycore-object-text-alternative-present"
+            ]
+          },
+          {
+            "id": "embed-name-present",
+            "label": "<embed> has accessible name",
+            "automation": "partial",
+            "coveredBy": []
+          },
+          {
+            "id": "video-poster-text-alt-present",
+            "label": "<video poster> has a text alternative mechanism",
+            "automation": "partial",
+            "coveredBy": [
+              "a11ycore-video-poster-text-alternative-present"
+            ]
+          },
+          {
+            "id": "alt-suspicious-patterns",
+            "label": "Alt text suspicious patterns (e.g., filename/placeholder)",
+            "automation": "partial",
+            "coveredBy": []
+          },
+          {
+            "id": "acc-eligibility-filtering",
+            "label": "Excluded due to accessibility-tree eligibility",
+            "automation": "partial",
+            "coveredBy": []
+          }
+        ]
       },
-      "missingFacetRules": [],
-      "facets": [
-        {
-          "id": "accessible-name",
-          "label": "UI components have an accessible name",
-          "automation": "partial",
-          "coveredBy": [
-            "form-control-accessible-name"
-          ]
-        }
-      ]
-    }
-  ]
+      {
+        "sc": "3.1.1",
+        "title": "Language of Page",
+        "totalFacets": 1,
+        "coveredFacets": 1,
+        "uncoveredFacets": [],
+        "automationCounts": {
+          "full": 1
+        },
+        "missingFacetRules": [],
+        "unknownFacetIds": [],
+        "facets": [
+          {
+            "id": "html-lang-attr-present",
+            "label": "<html> has non-empty lang attribute",
+            "automation": "full",
+            "coveredBy": [
+              "a11ycore-html-lang-attr-present"
+            ]
+          }
+        ]
+      },
+      {
+        "sc": "4.1.2",
+        "title": "Name, Role, Value",
+        "totalFacets": 2,
+        "coveredFacets": 1,
+        "uncoveredFacets": [
+          "form-control-name-quality"
+        ],
+        "automationCounts": {
+          "full": 1,
+          "manual": 1
+        },
+        "missingFacetRules": [],
+        "unknownFacetIds": [],
+        "facets": [
+          {
+            "id": "form-control-name-present",
+            "label": "Form controls expose an accessible name (label/aria-label/aria-labelledby/title/placeholder)",
+            "automation": "full",
+            "coveredBy": [
+              "a11ycore-form-control-programmatic-label-present"
+            ]
+          },
+          {
+            "id": "form-control-name-quality",
+            "label": "Form controls accessible name quality (avoid placeholder/title as primary)",
+            "automation": "manual",
+            "coveredBy": []
+          }
+        ]
+      }
+    ]
+  }
 }

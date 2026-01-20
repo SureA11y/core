@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-object-text-alternative-present — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+    .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .offscreen { position: absolute; left: -9999px; top: 0; }
+    .zerosize { width: 0; height: 0; overflow: hidden; display: inline-block; }
+    .hiddenvis { visibility: hidden; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-object-text-alternative-present</code> (“&lt;object&gt; must provide a text alternative”)</h1>
+
+  <p class="note">
+    This file intentionally includes edge cases to test eligibility, presentation-role exclusion, and whole-rule outcomes.
+    Each test object has a stable <code>id</code> of the form <code>object_case_XX</code>.
+  </p>
+
+  <h2>A. Baseline (eligible)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: visible &lt;object&gt; with no fallback and no accessible name</div>
+    <div class="row">
+      <object id="object_case_01" data="x.svg" type="image/svg+xml"></object>
+      <span>Missing fallback and name.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — PASS: fallback text present</div>
+    <div class="row">
+      <object id="object_case_02" data="x.svg" type="image/svg+xml">Sales chart for 2024</object>
+      <span>Fallback text counts as text alternative.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — PASS: fallback element content present</div>
+    <div class="row">
+      <object id="object_case_03" data="x.svg" type="image/svg+xml"><p>Company logo</p></object>
+      <span>TextContent extracted from element fallback counts.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — PASS: aria-label provides name</div>
+    <div class="row">
+      <object id="object_case_04" data="x.svg" type="image/svg+xml" aria-label="Company logo"></object>
+      <span>ARIA name counts.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — PASS: aria-labelledby provides name</div>
+    <div class="row">
+      <span id="object_case_05_label">Quarterly revenue chart</span>
+      <object id="object_case_05" data="x.svg" type="image/svg+xml" aria-labelledby="object_case_05_label"></object>
+      <span>ARIA idref name counts.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — PASS: title attribute (best-effort)</div>
+    <div class="row">
+      <object id="object_case_06" data="x.svg" type="image/svg+xml" title="Product diagram"></object>
+      <span>Title is accepted as a last resort.</span>
+    </div>
+  </div>
+
+  <h2>B. Eligibility suppression (ineligible)</h2>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — INELIGIBLE: aria-hidden and not tabbable (no occurrence)</div>
+    <div class="row">
+      <object id="object_case_07" data="x.svg" aria-hidden="true"></object>
+      <span>Ineligible per helper.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — INELIGIBLE: inert ancestor</div>
+    <div class="row" inert>
+      <object id="object_case_09" data="x.svg"></object>
+      <span>Ineligible per helper.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_13">
+    <div class="case-title">13 — INELIGIBLE: inside &lt;template&gt;</div>
+    <div class="row">
+      <template>
+        <object id="object_case_13" data="x.svg"></object>
+      </template>
+      <span>Non-composed template content is ineligible.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_14">
+    <div class="case-title">14 — INELIGIBLE: display:none</div>
+    <div class="row">
+      <object id="object_case_14" data="x.svg" style="display:none"></object>
+      <span>display:none makes it ineligible.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_15">
+    <div class="case-title">15 — INELIGIBLE: visibility:hidden</div>
+    <div class="row hiddenvis">
+      <object id="object_case_15" data="x.svg"></object>
+      <span>visibility:hidden makes it ineligible.</span>
+    </div>
+  </div>
+
+  <h2>C. Eligibility exceptions</h2>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — FAIL: aria-hidden but tabbable (tabindex=0) stays applicable and must have text alt</div>
+    <div class="row">
+      <object id="object_case_08" data="x.svg" aria-hidden="true" tabindex="0"></object>
+      <span>Tabbable override => eligible; missing text alternative => fail.</span>
+    </div>
+  </div>
+
+  <h2>D. Guardrails: not excluded (still eligible)</h2>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — FAIL: opacity:0 should remain eligible</div>
+    <div class="row">
+      <object id="object_case_10" data="x.svg" style="opacity:0"></object>
+      <span>Opacity does not exclude eligibility; missing text alternative => fail.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — FAIL: offscreen should remain eligible</div>
+    <div class="row">
+      <object id="object_case_11" data="x.svg" class="offscreen"></object>
+      <span>Offscreen does not exclude eligibility; missing text alternative => fail.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_12">
+    <div class="case-title">12 — FAIL: zero-size container should remain eligible</div>
+    <div class="row">
+      <span class="zerosize">
+        <object id="object_case_12" data="x.svg"></object>
+      </span>
+      <span>Zero-size does not exclude eligibility; missing text alternative => fail.</span>
+    </div>
+  </div>
+
+  <h2>E. Presentation role exclusion (like &lt;img&gt;)</h2>
+
+  <div class="case" id="case_16">
+    <div class="case-title">16 — EXCLUDED: role=presentation and not focusable (no occurrence)</div>
+    <div class="row">
+      <object id="object_case_16" data="x.svg" role="presentation"></object>
+      <span>Excluded by rule when not focusable.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_17">
+    <div class="case-title">17 — FAIL: role=presentation but focusable is applicable</div>
+    <div class="row">
+      <object id="object_case_17" data="x.svg" role="presentation" tabindex="0"></object>
+      <span>Focusable => not excluded; missing text alternative => fail.</span>
+    </div>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

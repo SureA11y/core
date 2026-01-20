@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-svg-text-alternative-present — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+    .meta { font-size: 12px; opacity: 0.8; margin: 6px 0 0; }
+    .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .offscreen { position: absolute; left: -9999px; top: 0; }
+    .zerosize { width: 0; height: 0; overflow: hidden; display: inline-block; }
+    .hiddenvis { visibility: hidden; }
+    .icon { width: 24px; height: 24px; border: 1px dashed #bbb; border-radius: 6px; display:inline-flex; align-items:center; justify-content:center; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-svg-text-alternative-present</code> (“&lt;svg&gt; must provide a text alternative”)</h1>
+
+  <p class="note">
+    This file includes edge cases to test eligibility, "intent" gating, and whole-rule outcomes.
+    Each test svg has a stable <code>id</code> of the form <code>svg_case_XX</code>.
+  </p>
+
+  <h2 id="baseline">A. Baseline (applicable when intent is present)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: role="img" with no title/desc and no ARIA name</div>
+    <div class="row">
+      <span class="icon">svg</span>
+      <svg id="svg_case_01" role="img" xmlns="http://www.w3.org/2000/svg"></svg>
+      <span>Missing all supported text alternative mechanisms.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — PASS: role="img" with non-empty &lt;title&gt;</div>
+    <div class="row">
+      <span class="icon">svg</span>
+      <svg id="svg_case_02" role="img" xmlns="http://www.w3.org/2000/svg"><title>Close</title></svg>
+      <span>&lt;title&gt; provides the alternative.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — PASS: role="img" with non-empty &lt;desc&gt;</div>
+    <div class="row">
+      <span class="icon">svg</span>
+      <svg id="svg_case_03" role="img" xmlns="http://www.w3.org/2000/svg"><desc>Settings icon</desc></svg>
+      <span>&lt;desc&gt; provides the alternative.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — PASS: role="img" with aria-label</div>
+    <div class="row">
+      <span class="icon">svg</span>
+      <svg id="svg_case_04" role="img" aria-label="Search" xmlns="http://www.w3.org/2000/svg"></svg>
+      <span>aria-label provides the alternative.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — PASS: role="img" with aria-labelledby</div>
+    <div class="row">
+      <span id="svg_case_05_lbl">Menu</span>
+      <span class="icon">svg</span>
+      <svg id="svg_case_05" role="img" aria-labelledby="svg_case_05_lbl" xmlns="http://www.w3.org/2000/svg"></svg>
+      <span>aria-labelledby provides the alternative.</span>
+    </div>
+  </div>
+
+  <h2 id="aria_hidden">B. aria-hidden eligibility</h2>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — FAIL: aria-hidden but tabbable (tabindex=0), still applicable; unnamed</div>
+    <div class="row">
+      <span class="icon">svg</span>
+      <svg id="svg_case_06" role="img" aria-hidden="true" tabindex="0" xmlns="http://www.w3.org/2000/svg"></svg>
+      <span>tabbable overrides aria-hidden eligibility; missing text alternative.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — FAIL: aria-hidden but IDREF-referenced by eligible element; unnamed</div>
+    <div class="row">
+      <div aria-labelledby="svg_case_07">Host references svg via aria-labelledby.</div>
+      <span class="icon">svg</span>
+      <svg id="svg_case_07" role="img" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"></svg>
+      <span>IDREF reference should keep svg eligible; missing alternative.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — NOT APPLICABLE: aria-hidden and not tabbable (ineligible)</div>
+    <div class="row">
+      <span class="icon">svg</span>
+      <svg id="svg_case_08" role="img" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"></svg>
+      <span>Ineligible per helper; should not produce an occurrence.</span>
+    </div>
+  </div>
+
+  <h2 id="presentation">C. role=presentation / none</h2>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — FAIL: role=presentation but focusable (tabindex=0), applicable; unnamed</div>
+    <div class="row">
+      <span class="icon">svg</span>
+      <svg id="svg_case_09" role="presentation" tabindex="0" xmlns="http://www.w3.org/2000/svg"></svg>
+      <span>Focusable presentation svg is evaluated and fails when unnamed.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — FAIL: role=none but focusable (tabindex=0), applicable; unnamed</div>
+    <div class="row">
+      <span class="icon">svg</span>
+      <svg id="svg_case_10" role="none" tabindex="0" xmlns="http://www.w3.org/2000/svg"></svg>
+      <span>Focusable role=none svg is evaluated and fails when unnamed.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — NOT APPLICABLE: role=presentation not focusable (excluded by rule)</div>
+    <div class="row">
+      <span class="icon">svg</span>
+      <svg id="svg_case_11" role="presentation" xmlns="http://www.w3.org/2000/svg"><title>Decorative</title></svg>
+      <span>Excluded by rule; should not contribute to pass/fail.</span>
+    </div>
+  </div>
+
+  <h2 id="guardrails">D. Guardrails: conditions that should NOT exclude eligibility</h2>
+
+  <div class="case" id="case_12">
+    <div class="case-title">12 — FAIL: opacity:0, still eligible; unnamed</div>
+    <div class="row">
+      <span class="icon">svg</span>
+      <svg id="svg_case_12" role="img" style="opacity:0" xmlns="http://www.w3.org/2000/svg"></svg>
+      <span>Opacity does not exclude; missing alternative fails.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_13">
+    <div class="case-title">13 — PASS: offscreen but has title</div>
+    <div class="row">
+      <span class="icon">svg</span>
+      <svg id="svg_case_13" role="img" class="offscreen" xmlns="http://www.w3.org/2000/svg"><title>Offscreen icon</title></svg>
+      <span>Offscreen does not exclude; title passes.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_14">
+    <div class="case-title">14 — PASS: zero-size container but has aria-label</div>
+    <div class="row">
+      <span class="icon">svg</span>
+      <span class="zerosize">
+        <svg id="svg_case_14" role="img" aria-label="Zero size icon" xmlns="http://www.w3.org/2000/svg"></svg>
+      </span>
+      <span>Zero-size does not exclude; aria-label passes.</span>
+    </div>
+  </div>
+
+  <h2 id="non_composed">E. Non-composed / inert / CSS-hidden (ineligible)</h2>
+
+  <div class="case" id="case_15">
+    <div class="case-title">15 — FAIL: offscreen + unnamed is still eligible and applicable</div>
+    <div class="row">
+      <span class="icon">svg</span>
+      <svg id="svg_case_15" role="img" class="offscreen" xmlns="http://www.w3.org/2000/svg"></svg>
+      <span>Offscreen is not a visibility exclusion; missing alternative fails.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_16">
+    <div class="case-title">16 — NOT APPLICABLE: inert subtree is ineligible</div>
+    <div class="row" inert>
+      <span class="icon">svg</span>
+      <svg id="svg_case_16" role="img" xmlns="http://www.w3.org/2000/svg"></svg>
+      <span>Ineligible per helper.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_17">
+    <div class="case-title">17 — NOT APPLICABLE: inside &lt;template&gt; is not composed</div>
+    <div class="row">
+      <span class="icon">tpl</span>
+      <template>
+        <svg id="svg_case_17" role="img" xmlns="http://www.w3.org/2000/svg"></svg>
+      </template>
+      <span>Template contents are non-composed.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_18">
+    <div class="case-title">18 — NOT APPLICABLE: display:none ineligible</div>
+    <div class="row">
+      <span class="icon">svg</span>
+      <svg id="svg_case_18" role="img" style="display:none" xmlns="http://www.w3.org/2000/svg"></svg>
+      <span>display:none makes it ineligible.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_19">
+    <div class="case-title">19 — NOT APPLICABLE: visibility:hidden ineligible</div>
+    <div class="row hiddenvis">
+      <span class="icon">svg</span>
+      <svg id="svg_case_19" role="img" xmlns="http://www.w3.org/2000/svg"></svg>
+      <span>visibility:hidden makes it ineligible.</span>
+    </div>
+  </div>
+
+  <h2 id="intent_gating">F. Intent gating (not evaluated without signals)</h2>
+
+  <div class="case" id="case_20">
+    <div class="case-title">20 — NOT APPLICABLE: decorative inline svg with no signals (no role/name/title/desc/focus)</div>
+    <div class="row">
+      <span class="icon">svg</span>
+      <svg id="svg_case_20" xmlns="http://www.w3.org/2000/svg"></svg>
+      <span>No intent signal; skipped by rule to avoid noisy false positives.</span>
+    </div>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>a11ycore-input-image-alt-present — scenario fixture</title>
+    <style>
+        body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+        h1 { font-size: 20px; margin: 0 0 16px; }
+        h2 { font-size: 16px; margin: 22px 0 10px; }
+        .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+        .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+        .case-title { font-weight: 700; margin: 0 0 8px; }
+        .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+        .offscreen { position: absolute; left: -9999px; top: 0; }
+        .zerosize { width: 0; height: 0; overflow: hidden; display: inline-block; }
+        .hiddenvis { visibility: hidden; }
+    </style>
+</head>
+<body>
+<h1>Scenario fixture: <code>a11ycore-input-image-alt-present</code> (“&lt;input type="image"&gt; must have an <code>alt</code> attribute”)</h1>
+
+<p class="note">
+    This file includes edge cases to test eligibility and whole-rule outcomes.
+    Each test input has a stable <code>id</code> of the form <code>input_image_case_XX</code>.
+</p>
+
+<h2 id="baseline">A. Baseline (eligible)</h2>
+
+<div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: visible input-image missing <code>alt</code></div>
+    <div class="row">
+        <input id="input_image_case_01" type="image" src="x.png">
+        <span>Missing alt.</span>
+    </div>
+</div>
+
+<div class="case" id="case_02">
+    <div class="case-title">02 — PASS: input-image with non-empty <code>alt</code></div>
+    <div class="row">
+        <input id="input_image_case_02" type="image" alt="Search" src="x.png">
+        <span>Has alt.</span>
+    </div>
+</div>
+
+<div class="case" id="case_03">
+    <div class="case-title">03 — PASS (for this atomic rule): input-image with empty <code>alt=""</code></div>
+    <div class="row">
+        <input id="input_image_case_03" type="image" alt="" src="x.png">
+        <span>Empty alt allowed here.</span>
+    </div>
+</div>
+
+<h2 id="aria_hidden">B. aria-hidden (eligible if focusable exception applies)</h2>
+
+<div class="case" id="case_04">
+    <div class="case-title">04 — FAIL: <code>aria-hidden="true"</code> (still focusable), missing <code>alt</code></div>
+    <div class="row">
+        <input id="input_image_case_04" type="image" aria-hidden="true" src="x.png">
+        <span>Focusable => eligibility override => applicable.</span>
+    </div>
+</div>
+
+<div class="case" id="case_05">
+    <div class="case-title">05 — INELIGIBLE: <code>aria-hidden="true"</code> and disabled, missing <code>alt</code></div>
+    <div class="row">
+        <input id="input_image_case_05" type="image" aria-hidden="true" disabled src="x.png">
+        <span>Not focusable; not IDREF-referenced; ineligible.</span>
+    </div>
+</div>
+
+<h2 id="hidden_css">C. Hidden by HTML/CSS (ineligible)</h2>
+
+<div class="case" id="case_06">
+    <div class="case-title">06 — INELIGIBLE: <code>hidden</code> attribute (missing alt)</div>
+    <div class="row">
+        <input id="input_image_case_06" type="image" hidden src="x.png">
+        <span>Ineligible per helper.</span>
+    </div>
+</div>
+
+<div class="case" id="case_07">
+    <div class="case-title">07 — INELIGIBLE: <code>display:none</code> (missing alt)</div>
+    <div class="row">
+        <input id="input_image_case_07" type="image" style="display:none" src="x.png">
+        <span>Ineligible per helper.</span>
+    </div>
+</div>
+
+<div class="case" id="case_08">
+    <div class="case-title">08 — INELIGIBLE: <code>visibility:hidden</code> (missing alt)</div>
+    <div class="row">
+        <input id="input_image_case_08" type="image" class="hiddenvis" src="x.png">
+        <span>Ineligible per helper.</span>
+    </div>
+</div>
+
+<h2 id="inert">D. Inertness (ineligible)</h2>
+
+<div class="case" id="case_09">
+    <div class="case-title">09 — INELIGIBLE: ancestor <code>inert</code> (missing alt)</div>
+    <div class="row" inert>
+        <input id="input_image_case_09" type="image" src="x.png">
+        <span>Ineligible per helper.</span>
+    </div>
+</div>
+
+<h2 id="not_excluded">E. Conditions that should NOT exclude eligibility (per engine guardrails)</h2>
+
+<div class="case" id="case_10">
+    <div class="case-title">10 — FAIL (eligible): <code>disabled</code>, missing alt</div>
+    <div class="row">
+        <input id="input_image_case_10" type="image" disabled src="x.png">
+        <span>Disabled does not exclude eligibility; missing alt should fail.</span>
+    </div>
+</div>
+
+<div class="case" id="case_11">
+    <div class="case-title">11 — FAIL (eligible): <code>opacity:0</code>, missing alt</div>
+    <div class="row">
+        <input id="input_image_case_11" type="image" style="opacity:0" src="x.png">
+        <span>Opacity does not exclude eligibility.</span>
+    </div>
+</div>
+
+<div class="case" id="case_12">
+    <div class="case-title">12 — FAIL (eligible): offscreen, missing alt</div>
+    <div class="row">
+        <input id="input_image_case_12" type="image" class="offscreen" src="x.png">
+        <span>Offscreen does not exclude eligibility.</span>
+    </div>
+</div>
+
+<div class="case" id="case_13">
+    <div class="case-title">13 — FAIL (eligible): zero-size container, missing alt</div>
+    <div class="row">
+      <span class="zerosize">
+        <input id="input_image_case_13" type="image" src="x.png">
+      </span>
+        <span>Zero-size does not exclude eligibility.</span>
+    </div>
+</div>
+
+<p class="note">End of fixture.</p>
+</body>
+</html>

@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://a11ycore.dev/schemas/engine-options.schema.json",
+  "title": "EngineOptions",
+  "description": "Top-level configuration object for the engine runtime (v1).",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "locale": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Requested locale for i18n resolution (fallback to 'en' if missing)."
+    },
+    "includeShadowDom": {
+      "type": "boolean",
+      "description": "When true, queries traverse open shadow roots via helpers.queryAllSmart."
+    },
+    "excludeSelectors": {
+      "description": "CSS selector(s) that define subtrees to exclude from scanning.",
+      "oneOf": [
+        { "type": "string", "minLength": 1 },
+        { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      ]
+    },
+    "rules": {
+      "type": "object",
+      "description": "Per-rule configuration. Keys are canonical ruleIds (e.g. 'a11ycore-img-alt-attr-present').",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    },
+    "policyContract": {
+      "oneOf": [
+        { "type": "string", "minLength": 1 },
+        { "$ref": "policy-contract.schema.json" }
+      ],
+      "description": "Policy contract identifier or inline policy contract object."
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "allowedOutcomes": {
+          "type": ["array", "null"],
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": ["fail", "pass", "cantTell", "notApplicable"]
+          }
+        },
+        "allowedConfidence": {
+          "type": ["array", "null"],
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": ["high", "medium", "low"]
+          }
+        },
+        "coerceManualFailToCantTell": {
+          "type": ["boolean", "null"]
+        }
+      },
+      "description": "Optional policy overrides applied on top of the resolved policy contract."
+    }
+  }
+}

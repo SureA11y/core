@@ -29,12 +29,12 @@ test('runOnly.includeRuleIds: runs ONLY the included rule IDs', () => {
 
     const result = runDomRulesOnHtml(html, {
         runOnly: {
-            includeRuleIds: ['a11yCore-img-alt-attr-present']
+            includeRuleIds: ['a11ycore-img-alt-present']
         }
     });
 
-    assert.deepEqual(listRuleIds(result), ['a11yCore-img-alt-attr-present']);
-    assert.equal(findRule(result, 'a11yCore-img-alt-attr-present')?.outcome, 'fail');
+    assert.deepEqual(listRuleIds(result), ['a11ycore-img-alt-present']);
+    assert.equal(findRule(result, 'a11ycore-img-alt-present')?.outcome, 'fail');
 });
 
 test('runOnly.excludeRuleIds: exclude removes rules (exclude wins even if included)', () => {
@@ -44,14 +44,14 @@ test('runOnly.excludeRuleIds: exclude removes rules (exclude wins even if includ
 
     const result = runDomRulesOnHtml(html, {
         runOnly: {
-            includeRuleIds: ['a11yCore-img-alt-attr-present', 'a11yCore-area-alt-present'],
-            excludeRuleIds: ['a11yCore-area-alt-present']
+            includeRuleIds: ['a11ycore-img-alt-present', 'a11ycore-area-alt-present'],
+            excludeRuleIds: ['a11ycore-area-alt-present']
         }
     });
 
     const ids = listRuleIds(result);
-    assert.ok(ids.includes('a11yCore-img-alt-attr-present'));
-    assert.ok(!ids.includes('a11yCore-area-alt-present'));
+    assert.ok(ids.includes('a11ycore-img-alt-present'));
+    assert.ok(!ids.includes('a11ycore-area-alt-present'));
 });
 
 test('runOnly.tags: only runs rules whose tags intersect the provided tags', () => {
@@ -107,13 +107,13 @@ test('runOnly include + tags: both must match (tags refine include list)', () =>
 
     const result = runDomRulesOnHtml(html, {
         runOnly: {
-            includeRuleIds: ['a11yCore-img-alt-attr-present', 'a11yCore-form-control-accessible-name'],
+            includeRuleIds: ['a11ycore-img-alt-present', 'a11ycore-form-control-accessible-name'],
             tags: ['images']
         }
     });
 
     // Only the image rule should remain after tags filtering.
-    assert.deepEqual(listRuleIds(result), ['a11yCore-img-alt-attr-present']);
+    assert.deepEqual(listRuleIds(result), ['a11ycore-img-alt-present']);
 });
 
 test('contextSelector limits scanning scope (image outside context => notApplicable)', () => {
@@ -124,11 +124,11 @@ test('contextSelector limits scanning scope (image outside context => notApplica
 
     const result = runDomRulesOnHtml(html, {
         contextSelector: '#ctx',
-        runOnly: { includeRuleIds: ['a11yCore-img-alt-attr-present'] }
+        runOnly: { includeRuleIds: ['a11ycore-img-alt-present'] }
     });
 
-    assert.deepEqual(listRuleIds(result), ['a11yCore-img-alt-attr-present']);
-    assert.equal(findRule(result, 'a11yCore-img-alt-attr-present')?.outcome, 'notApplicable');
+    assert.deepEqual(listRuleIds(result), ['a11ycore-img-alt-present']);
+    assert.equal(findRule(result, 'a11ycore-img-alt-present')?.outcome, 'notApplicable');
 });
 
 test('engineOptions.excludeSelectors excludes subtrees (image inside excluded => notApplicable)', () => {
@@ -140,11 +140,11 @@ test('engineOptions.excludeSelectors excludes subtrees (image inside excluded =>
 
     const result = runDomRulesOnHtml(html, {
         engineOptions: { excludeSelectors: ['.excluded'] },
-        runOnly: { includeRuleIds: ['a11yCore-img-alt-attr-present'] }
+        runOnly: { includeRuleIds: ['a11ycore-img-alt-present'] }
     });
 
-    assert.deepEqual(listRuleIds(result), ['a11yCore-img-alt-attr-present']);
-    assert.equal(findRule(result, 'a11yCore-img-alt-attr-present')?.outcome, 'notApplicable');
+    assert.deepEqual(listRuleIds(result), ['a11ycore-img-alt-present']);
+    assert.equal(findRule(result, 'a11ycore-img-alt-present')?.outcome, 'notApplicable');
 });
 
 test('contextSelector + excludeSelectors together: excluded inside context is ignored', () => {
@@ -160,9 +160,9 @@ test('contextSelector + excludeSelectors together: excluded inside context is ig
     const result = runDomRulesOnHtml(html, {
         contextSelector: '#ctx',
         engineOptions: { excludeSelectors: ['.excluded'] },
-        runOnly: { includeRuleIds: ['a11yCore-img-alt-attr-present'] }
+        runOnly: { includeRuleIds: ['a11ycore-img-alt-present'] }
     });
 
     // The image in excluded subtree is ignored, but the second image should trigger the rule.
-    assert.equal(findRule(result, 'a11yCore-img-alt-attr-present')?.outcome, 'fail');
+    assert.equal(findRule(result, 'a11ycore-img-alt-present')?.outcome, 'fail');
 });

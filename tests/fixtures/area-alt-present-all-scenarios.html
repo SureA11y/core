@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-area-alt-present — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+    .meta { font-size: 12px; opacity: 0.8; margin: 6px 0 0; }
+    .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .hiddenvis { visibility: hidden; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-area-alt-present</code> (“&lt;area&gt; must have an <code>alt</code> attribute”)</h1>
+
+  <p class="note">
+    This file intentionally includes many edge cases to test eligibility, focusability policy (used image maps),
+    and whole-rule outcomes. Each test area has a stable <code>id</code> of the form <code>area_case_XX</code>.
+  </p>
+
+  <!-- The "used" image map (img[usemap]) makes <area> focusable per engine policy -->
+  <h2 id="used_map">A. Used map (focusable => applicable if eligible)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: used map &lt;area&gt; missing <code>alt</code></div>
+    <div class="row">
+      <img alt="" usemap="#m_used" src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%2345c46a'/%3E%3C/svg%3E">
+      <map name="m_used">
+        <area id="area_case_01" shape="rect" coords="0,0,40,24">
+      </map>
+      <span>Missing alt.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — PASS: used map &lt;area&gt; with non-empty <code>alt</code></div>
+    <div class="row">
+      <img alt="" usemap="#m_used2" src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%2345c46a'/%3E%3C/svg%3E">
+      <map name="m_used2">
+        <area id="area_case_02" alt="Go to green" shape="rect" coords="0,0,40,24">
+      </map>
+      <span>Has alt.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — PASS (for this atomic rule): used map &lt;area&gt; with empty <code>alt=""</code></div>
+    <div class="row">
+      <img alt="" usemap="#m_used3" src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%2345c46a'/%3E%3C/svg%3E">
+      <map name="m_used3">
+        <area id="area_case_03" alt="" shape="rect" coords="0,0,40,24">
+      </map>
+      <span>Empty alt allowed here.</span>
+    </div>
+  </div>
+
+  <h2 id="aria_hidden">B. aria-hidden (eligible if focusable exception applies)</h2>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — FAIL: used map &lt;area aria-hidden="true"&gt; missing <code>alt</code></div>
+    <div class="row">
+      <img alt="" usemap="#m_ah" src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%23ff77aa'/%3E%3C/svg%3E">
+      <map name="m_ah">
+        <area id="area_case_04" aria-hidden="true" shape="rect" coords="0,0,40,24">
+      </map>
+      <span>aria-hidden but focusable (used map) => eligible &amp; applicable.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — PASS: used map &lt;area aria-hidden="true"&gt; with <code>alt</code></div>
+    <div class="row">
+      <img alt="" usemap="#m_ah2" src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%23ff77aa'/%3E%3C/svg%3E">
+      <map name="m_ah2">
+        <area id="area_case_05" aria-hidden="true" alt="Hidden but focusable" shape="rect" coords="0,0,40,24">
+      </map>
+      <span>aria-hidden but has alt.</span>
+    </div>
+  </div>
+
+  <h2 id="hidden_css">C. Hidden by HTML/CSS (ineligible)</h2>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — Pass: <code>hidden</code> attribute on &lt;area&gt; (missing alt)</div>
+    <div class="row">
+      <img alt="" usemap="#m_hidden" src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%23cc6666'/%3E%3C/svg%3E">
+      <map name="m_hidden">
+        <area id="area_case_06" hidden shape="rect" coords="0,0,40,24">
+      </map>
+      <span>Ineligible per helper.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — Pass: <code>display:none</code> on &lt;map&gt; (missing alt)</div>
+    <div class="row">
+      <img alt="" usemap="#m_dn" src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%23cc6666'/%3E%3C/svg%3E">
+      <map name="m_dn" style="display:none">
+        <area id="area_case_07" shape="rect" coords="0,0,40,24">
+      </map>
+      <span>Ineligible per helper.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — Pass: <code>visibility:hidden</code> on &lt;map&gt; (missing alt)</div>
+    <div class="row hiddenvis">
+      <img alt="" usemap="#m_vh" src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%23cc6666'/%3E%3C/svg%3E">
+      <map name="m_vh">
+        <area id="area_case_08" shape="rect" coords="0,0,40,24">
+      </map>
+      <span>Ineligible per helper.</span>
+    </div>
+  </div>
+
+  <h2 id="inertness">D. Inertness (special &lt;area&gt;/&lt;map&gt; behavior)</h2>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — FAIL: <code>inert</code> on &lt;map&gt; does not block &lt;area&gt; eligibility (missing alt)</div>
+    <div class="row">
+      <img alt="" usemap="#m_inert_map" src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%239999ff'/%3E%3C/svg%3E">
+      <map name="m_inert_map" inert>
+        <area id="area_case_09" shape="rect" coords="0,0,40,24">
+      </map>
+      <span>Per helper exception, inert on map is ignored for &lt;area&gt;.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — FAIL: <code>inert</code> on &lt;area&gt; itself does not block eligibility (missing alt)</div>
+    <div class="row">
+      <img alt="" usemap="#m_inert_area" src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%239999ff'/%3E%3C/svg%3E">
+      <map name="m_inert_area">
+        <area id="area_case_10" inert shape="rect" coords="0,0,40,24">
+      </map>
+      <span>Per helper exception, inert on area is ignored.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — INELIGIBLE: inert ancestor outside &lt;map&gt; blocks (missing alt)</div>
+    <div class="row" inert>
+      <img alt="" usemap="#m_inert_wrap" src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%239999ff'/%3E%3C/svg%3E">
+      <map name="m_inert_wrap">
+        <area id="area_case_11" shape="rect" coords="0,0,40,24">
+      </map>
+      <span>Ineligible per helper.</span>
+    </div>
+  </div>
+
+  <h2 id="unused_map">E. Unused maps (not focusable unless tabindex/href)</h2>
+
+  <div class="case" id="case_12">
+    <div class="case-title">12 — INELIGIBLE: unused map &lt;area aria-hidden="true"&gt; missing alt</div>
+    <div class="row">
+      <map name="m_unused_ah">
+        <area id="area_case_12" aria-hidden="true" shape="rect" coords="0,0,40,24">
+      </map>
+      <span>No img[usemap] references this map; aria-hidden stays ineligible.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_13">
+    <div class="case-title">13 — NOT APPLICABLE (per rule focusability): unused map visible area without href/tabindex</div>
+    <div class="row">
+      <map name="m_unused_visible">
+        <area id="area_case_13" shape="rect" coords="0,0,40,24">
+      </map>
+      <span>Eligible in principle, but not focusable => rule skips.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_14">
+    <div class="case-title">14 — FAIL: role=presentation does not change applicability (missing alt)</div>
+    <div class="row">
+      <img alt="" usemap="#m_role" src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%2366aaff'/%3E%3C/svg%3E">
+      <map name="m_role">
+        <area id="area_case_14" role="presentation" shape="rect" coords="0,0,40,24">
+      </map>
+      <span>Role does not exclude; focusability is key.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_15">
+    <div class="case-title">15 — FAIL: aria-disabled does not exclude eligibility (missing alt)</div>
+    <div class="row">
+      <img alt="" usemap="#m_ad" src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%2366aaff'/%3E%3C/svg%3E">
+      <map name="m_ad">
+        <area id="area_case_15" aria-disabled="true" shape="rect" coords="0,0,40,24">
+      </map>
+      <span>aria-disabled should not exclude.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_16">
+    <div class="case-title">16 — FAIL: href present (still requires alt mechanism), missing alt</div>
+    <div class="row">
+      <img alt="" usemap="#m_href" src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%2366aaff'/%3E%3C/svg%3E">
+      <map name="m_href">
+        <area id="area_case_16" href="/next" shape="rect" coords="0,0,40,24">
+      </map>
+      <span>Href does not replace alt attribute requirement.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_17">
+    <div class="case-title">17 — NOT APPLICABLE: unused map with tab index</div>
+    <div class="row">
+      <map name="m_unused_tab">
+        <area id="area_case_17" tabindex="0" shape="rect" coords="0,0,40,24">
+      </map>
+      <span>tabindex does not make it focusable => not applicable.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_18">
+    <div class="case-title">18 — NOT APPLICABLE: used map but referencing img is hidden</div>
+    <div class="row">
+      <img hidden alt="" usemap="#m_img_hidden" src="data:image/svg+xml,...">
+      <map name="m_img_hidden">
+        <area id="area_case_18" shape="rect" coords="0,0,40,24">
+      </map>
+      <span>Image is ineligible => area not applicable.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_19">
+    <div class="case-title">19 — NOT APPLICABLE: used map but referencing img is display:none</div>
+    <div class="row">
+      <img style="display:none" alt="" usemap="#m_img_dn" src="data:image/svg+xml,...">
+      <map name="m_img_dn">
+        <area id="area_case_19" shape="rect" coords="0,0,40,24">
+      </map>
+      <span>Image is ineligible => area not applicable.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_20">
+    <div class="case-title">20 — NOT APPLICABLE: used map but referencing img is aria-hidden</div>
+    <div class="row">
+      <img aria-hidden="true" alt="" usemap="#m_img_ah" src="data:image/svg+xml,...">
+      <map name="m_img_ah">
+        <area id="area_case_20" shape="rect" coords="0,0,40,24">
+      </map>
+      <span>Image is aria-hidden and not focusable => image ineligible => area not applicable.</span>
+    </div>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

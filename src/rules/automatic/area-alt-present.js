@@ -1,0 +1,194 @@
+'use strict';
+
+/**
+ * @rule a11ycore-area-alt-present
+ * @atomic true
+ * @summary Accessible <area> elements must have an alt attribute
+ * @standard WCAG 2.2
+ * @sc 1.1.1
+ * @applicability
+ *   Applies to <area> elements that:
+ *   1) are in a <map> that is referenced by an <img usemap>, AND
+ *   2) the referencing <img> is eligible in the accessibility tree (best-effort), AND
+ *   3) the <area> itself is eligible in the accessibility tree (with engine exceptions).
+ * @expectation
+ *   Each applicable <area> element has an alt attribute.
+ *   The alt attribute may be empty (alt="").
+ */
+
+const id = 'a11ycore-area-alt-present';
+
+const meta = {
+  title: '&lt;area&gt; must have an alt attribute',
+  description: 'Checks that &lt;area&gt; elements provide an alt attribute to support a text alternative mechanism.',
+  i18n: {
+    titleKey: 'a11ycore_area_altPresent_title',
+    descriptionKey: 'a11ycore_area_altPresent_description'
+  },
+  helpUrl: null,
+  tags: ['wcag2a', 'wcag111', 'nontext', 'images', 'imagemap', 'atomic', 'automatic'],
+  wcagSc: ['1.1.1'],
+  normativeMappings: [
+    { standard: 'WCAG', version: '2.2', requirement: '1.1.1', title: 'Non-text Content', conformanceLevel: 'A' }
+  ],
+  defaultSeverity: 'serious',
+  category: 'perceivable',
+  type: 'automatic',
+  defaultConfidence: 'high',
+  coverage: {
+    facetsBySc: {
+      '1.1.1': ['area-alt-attr-present']
+    }
+  }
+};
+
+function runInPage(ctx) {
+  const { document, root, helpers, rule } = ctx;
+  const safeRoot = root || document;
+
+  const queryAllSmart = helpers && typeof helpers.queryAllSmart === 'function' ? helpers.queryAllSmart : null;
+  const queryAll = helpers && typeof helpers.queryAll === 'function'
+      ? helpers.queryAll
+      : (sel) => {
+        try { return safeRoot && safeRoot.querySelectorAll ? Array.from(safeRoot.querySelectorAll(sel)) : []; }
+        catch { return []; }
+      };
+
+  const buildSelector = helpers && typeof helpers.buildSelector === 'function'
+      ? helpers.buildSelector
+      : (el) => {
+        try {
+          if (!el || !el.tagName) return 'html';
+          const tag = (el.tagName || 'html').toLowerCase();
+          return el.id ? `${tag}#${el.id}` : tag;
+        } catch { return 'html'; }
+      };
+
+  const getOuterHtmlSnippet = helpers && typeof helpers.getOuterHtmlSnippet === 'function'
+      ? helpers.getOuterHtmlSnippet
+      : (el) => { try { return (el && el.outerHTML) ? String(el.outerHTML).slice(0, 2000) : ''; } catch { return ''; } };
+
+  const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
+      ? helpers.getEligibilityInfo
+      : null;
+
+  const isAccTreeEligible = helpers && typeof helpers.isAccTreeEligible === 'function'
+      ? helpers.isAccTreeEligible
+      : null;
+
+  // --- image-map semantics (rule-local) ---
+
+  function normUsemap(val) {
+    try {
+      const s = String(val || '').trim();
+      if (!s) return '';
+      return (s[0] === '#') ? s.slice(1).trim().toLowerCase() : s.toLowerCase();
+    } catch {
+      return '';
+    }
+  }
+
+  function getMapName(mapEl) {
+    try {
+      if (!mapEl || !mapEl.getAttribute) return '';
+      const n = String(mapEl.getAttribute('name') || mapEl.getAttribute('id') || '').trim();
+      return n ? n.toLowerCase() : '';
+    } catch {
+      return '';
+    }
+  }
+
+  function getReferencingImgForArea(areaEl) {
+    try {
+      if (!areaEl || !areaEl.closest) return null;
+      const map = areaEl.closest('map');
+      if (!map) return null;
+
+      const mapName = getMapName(map);
+      if (!mapName) return null;
+
+      // Deterministic: first matching <img usemap> in document order
+      const imgs = Array.from(document.querySelectorAll('img[usemap]'));
+      for (const img of imgs) {
+        const u = normUsemap(img.getAttribute('usemap'));
+        if (u && u === mapName) return img;
+      }
+    } catch {}
+    return null;
+  }
+
+  const areas = (() => {
+    try { return Array.from((queryAllSmart ? queryAllSmart('area') : queryAll('area')) || []); }
+    catch { return queryAll('area'); }
+  })();
+
+  if (!areas.length) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+
+  const occurrences = [];
+  let applicableCount = 0;
+
+  for (const el of areas) {
+    if (!el || !el.getAttribute) continue;
+
+    // 0) Must belong to a *used* image map: an <img usemap> must reference its <map>.
+    // If not used, <area> is not applicable (matches your observed focus behavior).
+    const img = getReferencingImgForArea(el);
+    if (!img) continue;
+
+    // 1) The referencing <img> must itself be eligible in the acc tree.
+    // This is the "visibility of map/area doesn't matter; the image does" policy.
+    if (isAccTreeEligible) {
+      const imgElig = (() => {
+        try { return isAccTreeEligible(img, ctx); } catch { return { eligible: true, reasons: [] }; }
+      })();
+      if (imgElig && imgElig.eligible === false) continue;
+    }
+
+    // 2) The <area> itself must be eligible (aria-hidden/inert exceptions handled by helper).
+    if (isAccTreeEligible) {
+      const elig = (() => {
+        try { return isAccTreeEligible(el, ctx); } catch { return { eligible: true, reasons: [] }; }
+      })();
+      if (elig && elig.eligible === false) continue;
+    }
+
+    // From here: applicable
+    applicableCount += 1;
+
+    const hasAlt = el.getAttribute('alt') !== null;
+    if (hasAlt) continue;
+
+    const selector = (() => { try { return buildSelector(el); } catch { return 'html'; } })();
+    const html = getOuterHtmlSnippet(el);
+    const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
+
+    occurrences.push({
+      selector,
+      html,
+      summary: 'Missing alt attribute on &lt;area&gt;.',
+      hint: 'Add an alt attribute (use alt="" only for decorative areas).',
+      i18n: {
+        summaryKey: 'a11ycore_area_altPresent_summary_fail',
+        hintKey: 'a11ycore_area_altPresent_hint_fail',
+        params: { element: 'area' }
+      },
+      data: {
+        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+      }
+    });
+  }
+
+  if (applicableCount === 0) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+
+  if (!occurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  }
+
+  return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences };
+}
+
+module.exports = { id, meta, runInPage };

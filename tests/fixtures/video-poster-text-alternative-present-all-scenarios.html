@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-video-poster-text-alternative-present — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+    .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .hiddenvis { visibility: hidden; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-video-poster-text-alternative-present</code> (“<code>&lt;video poster&gt;</code> must have a text alternative”)</h1>
+
+  <p class="note">
+    Each test video has a stable <code>id</code> of the form <code>video_case_XX</code>.
+    These cases focus on poster images (non-text content) and text alternative mechanisms.
+  </p>
+
+  <h2>A. Baseline (eligible)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: poster present, no name and no fallback</div>
+    <div class="row">
+      <video id="video_case_01" poster="poster.png"></video>
+      <span>Poster present; missing accessible name and fallback text.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — PASS: poster present, aria-label provides name</div>
+    <div class="row">
+      <video id="video_case_02" poster="poster.png" aria-label="Product demo"></video>
+      <span>Accessible name via aria-label.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — PASS: poster present, fallback text provides alternative</div>
+    <div class="row">
+      <video id="video_case_03" poster="poster.png">A short demo video.</video>
+      <span>Fallback text inside &lt;video&gt;.</span>
+    </div>
+  </div>
+
+  <h2>B. aria-hidden eligibility behavior</h2>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — NOT APPLICABLE: aria-hidden and not tabbable</div>
+    <div class="row">
+      <video id="video_case_04" poster="poster.png" aria-hidden="true"></video>
+      <span>Ineligible (aria-hidden, not tabbable, not IDREF-referenced).</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — FAIL: aria-hidden but tabbable (tabindex=0), poster present, unnamed</div>
+    <div class="row">
+      <video id="video_case_05" poster="poster.png" aria-hidden="true" tabindex="0"></video>
+      <span>Eligibility override: tabbable focus makes it applicable.</span>
+    </div>
+  </div>
+
+  <h2>C. Role exclusions (presentation/none)</h2>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — NOT APPLICABLE: role=presentation and not focusable</div>
+    <div class="row">
+      <video id="video_case_06" poster="poster.png" role="presentation"></video>
+      <span>Excluded by role when not focusable.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — FAIL: role=presentation but focusable (tabindex=0), poster present, unnamed</div>
+    <div class="row">
+      <video id="video_case_07" poster="poster.png" role="presentation" tabindex="0"></video>
+      <span>Focusable overrides role exclusion; still requires a text alternative.</span>
+    </div>
+  </div>
+
+  <h2>D. Inertness / non-applicability</h2>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — NOT APPLICABLE: inert ancestor makes video ineligible</div>
+    <div class="row" inert>
+      <video id="video_case_08" poster="poster.png"></video>
+      <span>Ineligible due to inert ancestor.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — NOT APPLICABLE: empty poster attribute</div>
+    <div class="row">
+      <video id="video_case_09" poster="  " aria-label="Named"></video>
+      <span>Poster is empty/whitespace; rule does not apply.</span>
+    </div>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

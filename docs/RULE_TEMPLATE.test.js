@@ -1,10 +1,18 @@
 'use strict';
 
+/**
+ * TEST TEMPLATE NOTES
+ * - Filtering / engine-mechanics tests should use normative automatic rules, not advisory/manual rules.
+ * - If the rule under test is manual or advisory, it MUST NOT be expected to return `fail`.
+ * - Prefer asserting stable evidence fields only (selector/summary/hint), not full HTML formatting.
+ * - Optional: run twice and assert identical outcomes/occurrences for determinism.
+ */
+
 const test = require('node:test');
 const { runa11yCoreOnHtml } = require('../tests/helpers/runa11yCoreOnHtml');
 const { assertRule } = require('../tests/helpers/assertRule');
 
-test('<rule-id>: no applicable elements => notApplicable', () => {
+test('<kebab-id>: no applicable elements => notApplicable', () => {
   const html = `
 <!doctype html><html><body>
   <!-- TODO: page with no applicable targets -->
@@ -13,13 +21,17 @@ test('<rule-id>: no applicable elements => notApplicable', () => {
 
   const result = runa11yCoreOnHtml(html);
 
-  assertRule(result, 'a11yCore-<rule-id>', 'notApplicable', {
+  // Optional determinism check:
+  // const result2 = runa11yCoreOnHtml(html);
+  // assert.deepStrictEqual(result2, result);
+
+  assertRule(result, 'a11ycore-<kebab-id>', 'notApplicable', {
     minOccurrences: 0,
     maxOccurrences: 0
   });
 });
 
-test('<rule-id>: failing case => fail with 1+ occurrences', () => {
+test('<kebab-id>: failing case => fail with 1+ occurrences', () => {
   const html = `
 <!doctype html><html><body>
   <!-- TODO: minimal failing fixture -->
@@ -28,12 +40,12 @@ test('<rule-id>: failing case => fail with 1+ occurrences', () => {
 
   const result = runa11yCoreOnHtml(html);
 
-  assertRule(result, 'a11yCore-<rule-id>', 'fail', {
+  assertRule(result, 'a11ycore-<kebab-id>', 'fail', {
     minOccurrences: 1
   });
 });
 
-test('<rule-id>: passing case => pass', () => {
+test('<kebab-id>: passing case => pass', () => {
   const html = `
 <!doctype html><html><body>
   <!-- TODO: minimal passing fixture -->
@@ -42,7 +54,7 @@ test('<rule-id>: passing case => pass', () => {
 
   const result = runa11yCoreOnHtml(html);
 
-  assertRule(result, 'a11yCore-<rule-id>', 'pass', {
+  assertRule(result, 'a11ycore-<kebab-id>', 'pass', {
     minOccurrences: 0,
     maxOccurrences: 0
   });
@@ -50,7 +62,7 @@ test('<rule-id>: passing case => pass', () => {
 
 // Optional: only include if the rule can produce cantTell deterministically.
 /*
-test('<rule-id>: manual judgment required => cantTell with 1+ occurrences', () => {
+test('<kebab-id>: manual judgment required => cantTell with 1+ occurrences', () => {
   const html = `
 <!doctype html><html><body>
   <!-- TODO: fixture that requires human judgment per the standard -->
@@ -59,7 +71,7 @@ test('<rule-id>: manual judgment required => cantTell with 1+ occurrences', () =
 
   const result = runa11yCoreOnHtml(html);
 
-  assertRule(result, 'a11yCore-<rule-id>', 'cantTell', {
+  assertRule(result, 'a11ycore-<kebab-id>', 'cantTell', {
     minOccurrences: 1
   });
 });

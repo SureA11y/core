@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-img-alt-present — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+    .meta { font-size: 12px; opacity: 0.8; margin: 6px 0 0; }
+    .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .swatch { width: 40px; height: 24px; border-radius: 6px; border: 1px solid #bbb; display:inline-block; }
+    .offscreen { position: absolute; left: -9999px; top: 0; }
+    .zerosize { width: 0; height: 0; overflow: hidden; display: inline-block; }
+    .hiddenvis { visibility: hidden; }
+    .imgbox { display:inline-flex; align-items:center; justify-content:center; width: 40px; height: 24px; border: 1px dashed #bbb; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-img-alt-present</code> (“&lt;img&gt; must have an <code>alt</code> attribute”)</h1>
+
+  <p class="note">
+    This file intentionally includes many edge cases to test eligibility and rule outcomes.
+    Each test image has a stable <code>id</code> of the form <code>img_case_XX</code>.
+    Images are tiny inline SVG data URLs to keep the fixture self-contained.
+  </p>
+
+  <!-- A tiny, self-contained image source for all visible cases -->
+  <!-- Using a simple green rectangle SVG. -->
+  <!-- (We reuse the same data URL for all images; only attributes/visibility differ.) -->
+  <!-- data: URL is repeated for readability per test. -->
+
+  <h2 id="baseline">A. Baseline (eligible)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: visible &lt;img&gt; missing <code>alt</code></div>
+    <div class="row">
+      <span class="imgbox">img</span>
+      <img id="img_case_01" src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%2345c46a'/%3E%3C/svg%3E">
+      <span>Visible image, no <code>alt</code> attribute.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — PASS: visible &lt;img&gt; with non-empty <code>alt</code></div>
+    <div class="row">
+      <span class="imgbox">img</span>
+      <img id="img_case_02" alt="Green rectangle" src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%2345c46a'/%3E%3C/svg%3E">
+      <span>Visible image with alt text.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — PASS (for this atomic rule): visible &lt;img&gt; with empty <code>alt=""</code></div>
+    <div class="row">
+      <span class="imgbox">img</span>
+      <img id="img_case_03" alt="" src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%2345c46a'/%3E%3C/svg%3E">
+      <span>Empty alt is allowed here (decorative vs informative is handled by another rule/manual check).</span>
+    </div>
+  </div>
+
+  <h2 id="aria_hidden_visible">B. Visible but excluded from AT (ineligible in acc target set)</h2>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — NEUTRAL/INELIGIBLE: visible <code>aria-hidden="true"</code> &lt;img&gt; missing <code>alt</code></div>
+    <div class="row">
+      <span class="imgbox">img</span>
+      <img id="img_case_04" aria-hidden="true"
+           src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%23ffcc00'/%3E%3C/svg%3E">
+      <span>Visible but aria-hidden. Missing alt.</span>
+    </div>
+    <div class="meta">Useful for comparing engines: some still flag missing alt even when aria-hidden.</div>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — NEUTRAL/INELIGIBLE: visible <code>aria-hidden="true"</code> &lt;img&gt; with <code>alt</code></div>
+    <div class="row">
+      <span class="imgbox">img</span>
+      <img id="img_case_05" aria-hidden="true" alt="Hidden from AT"
+           src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%23ffcc00'/%3E%3C/svg%3E">
+      <span>Visible but aria-hidden. Has alt.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — NEUTRAL/INELIGIBLE: &lt;img&gt; inside ancestor <code>aria-hidden="true"</code></div>
+    <div class="row" aria-hidden="true">
+      <span class="imgbox">img</span>
+      <img id="img_case_06"
+           src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%23ffcc00'/%3E%3C/svg%3E">
+      <span>Ancestor is aria-hidden; image missing alt.</span>
+    </div>
+  </div>
+
+  <h2 id="css_hidden">C. Hidden by HTML/CSS (ineligible)</h2>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — NEUTRAL/INELIGIBLE: <code>hidden</code> attribute (missing alt)</div>
+    <div class="row">
+      <span class="imgbox">img</span>
+      <img id="img_case_07" hidden
+           src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%23cc6666'/%3E%3C/svg%3E">
+      <span>Hidden attribute; missing alt.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — NEUTRAL/INELIGIBLE: <code>display:none</code> (missing alt)</div>
+    <div class="row">
+      <span class="imgbox">img</span>
+      <img id="img_case_08" style="display:none"
+           src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%23cc6666'/%3E%3C/svg%3E">
+      <span>display:none; missing alt.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — NEUTRAL/INELIGIBLE: <code>visibility:hidden</code> (missing alt)</div>
+    <div class="row">
+      <span class="imgbox">img</span>
+      <img id="img_case_09" class="hiddenvis"
+           src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%23cc6666'/%3E%3C/svg%3E">
+      <span>visibility:hidden; missing alt (space reserved).</span>
+    </div>
+  </div>
+
+  <h2 id="inert">D. Inertness (ineligible)</h2>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — NEUTRAL/INELIGIBLE: <code>inert</code> on &lt;img&gt; itself (missing alt)</div>
+    <div class="row">
+      <span class="imgbox">img</span>
+      <img id="img_case_10" inert
+           src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%239999ff'/%3E%3C/svg%3E">
+      <span>Image has inert attribute; missing alt.</span>
+    </div>
+    <div class="meta">Note: inert support varies; useful for engine comparison.</div>
+  </div>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — NEUTRAL/INELIGIBLE: ancestor <code>inert</code> (missing alt)</div>
+    <div class="row" inert>
+      <span class="imgbox">img</span>
+      <img id="img_case_11"
+           src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%239999ff'/%3E%3C/svg%3E">
+      <span>Ancestor is inert; image missing alt.</span>
+    </div>
+  </div>
+
+  <h2 id="exceptions">E. Exceptions that may remain eligible (focusable / IDREF-referenced)</h2>
+
+  <div class="case" id="case_12">
+    <div class="case-title">12 — EXCEPTION CANDIDATE: <code>aria-hidden="true"</code> but focusable (<code>tabindex="0"</code>), missing alt</div>
+    <div class="row">
+      <span class="imgbox">img</span>
+      <img id="img_case_12" aria-hidden="true" tabindex="0"
+           src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%23ff77aa'/%3E%3C/svg%3E">
+      <span>Focusable image (tabindex=0) but aria-hidden; missing alt.</span>
+    </div>
+    <div class="meta">Per your engine exception, this may remain eligible for acc rules.</div>
+  </div>
+
+  <div class="case" id="case_13">
+    <div class="case-title">13 — EXCEPTION CANDIDATE: IDREF-referenced image, missing alt</div>
+    <div class="row">
+      <span class="imgbox">ref</span>
+      <div aria-labelledby="img_case_13_label">This element references the image id via aria-labelledby.</div>
+      <img id="img_case_13_label" aria-hidden="true"
+           src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%23ff77aa'/%3E%3C/svg%3E">
+      <span>Referenced by IDREF; missing alt. (aria-hidden=true to force “exception” behavior if implemented.)</span>
+    </div>
+    <div class="meta">If your eligibility helper treats IDREF-referenced nodes as eligible, this should be evaluated.</div>
+  </div>
+
+  
+  <div class="case" id="case_14">
+    <div class="case-title">14 — EXCEPTION CANDIDATE: <code>aria-hidden="true"</code> but focusable (<code>tabindex="0"</code>), alt present</div>
+    <div class="row">
+      <span class="imgbox">img</span>
+      <img id="img_case_14" aria-hidden="true" tabindex="0" alt="Focusable but aria-hidden"
+           src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%2345c46a'/%3E%3C/svg%3E">
+      <span>Focusable image (tabindex=0) but aria-hidden; alt present.</span>
+    </div>
+    <div class="meta">If your eligibility helper treats focusable nodes as eligible, this should be evaluated and pass (for this atomic rule).</div>
+  </div>
+
+  <div class="case" id="case_15">
+    <div class="case-title">15 — EXCEPTION CANDIDATE: <code>hidden</code> attribute but focusable (<code>tabindex="0"</code>), missing alt</div>
+    <div class="row">
+      <span class="imgbox">img</span>
+      <img id="img_case_15" hidden tabindex="0"
+           src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%2345c46a'/%3E%3C/svg%3E">
+      <span>Hidden via HTML <code>hidden</code> but focusable; missing alt.</span>
+    </div>
+    <div class="meta">Tests the “hidden but focusable stays eligible” exception.</div>
+  </div>
+
+  <div class="case" id="case_16">
+    <div class="case-title">16 — EXCEPTION CANDIDATE: <code>visibility:hidden</code> but focusable (<code>tabindex="0"</code>), missing alt</div>
+    <div class="row" style="visibility:hidden">
+      <span class="imgbox">img</span>
+      <img id="img_case_16" tabindex="0"
+           src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%2345c46a'/%3E%3C/svg%3E">
+      <span>Hidden via CSS visibility, but focusable; missing alt.</span>
+    </div>
+    <div class="meta">Useful for comparing how engines treat focusability vs visibility-hidden.</div>
+  </div>
+
+  <div class="case" id="case_17">
+    <div class="case-title">17 — EXCEPTION CANDIDATE: <code>inert</code> but focusable (<code>tabindex="0"</code>), missing alt</div>
+    <div class="row">
+      <span class="imgbox">img</span>
+      <img id="img_case_17" inert tabindex="0"
+           src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%2345c46a'/%3E%3C/svg%3E">
+      <span>Image is inert but has tabindex; missing alt.</span>
+    </div>
+    <div class="meta">In browsers, inert usually prevents focus. Included to exercise your eligibility exception model and cross-engine behavior.</div>
+  </div>
+
+  <div class="case" id="case_18">
+    <div class="case-title">18 —  FAIL (eligible): <code>role="presentation"</code> (also focusable), missing alt</div>
+    <div class="row">
+      <span class="imgbox">img</span>
+      <img id="img_case_18" role="presentation" tabindex="0"
+           src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%2345c46a'/%3E%3C/svg%3E">
+      <span>Presentational role; focusable; missing alt. Rule should ignore due to role exclusion.</span>
+    </div>
+    <div class="meta">This case verifies that the rule’s explicit role exclusion overrides other considerations.</div>
+  </div>
+<h2 id="not_excluded">F. Conditions that should NOT exclude eligibility (per engine guardrails)</h2>
+
+  <div class="case" id="case_19">
+    <div class="case-title">19 — FAIL (eligible): <code>opacity:0</code>, missing alt</div>
+    <div class="row">
+      <span class="imgbox">img</span>
+      <img id="img_case_24" style="opacity:0"
+           src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%2366aaff'/%3E%3C/svg%3E">
+      <span>Invisible via opacity, but should remain eligible; missing alt.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_20">
+    <div class="case-title">20 — FAIL (eligible): offscreen, missing alt</div>
+    <div class="row">
+      <span class="imgbox">img</span>
+      <img id="img_case_25" class="offscreen"
+           src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%2366aaff'/%3E%3C/svg%3E">
+      <span>Image is positioned far left (offscreen). It should remain eligible; missing alt.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_21">
+    <div class="case-title">21 — FAIL (eligible): zero-size box, missing alt</div>
+    <div class="row">
+      <span class="imgbox">img</span>
+      <span class="zerosize">
+        <img id="img_case_26"
+             src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%2366aaff'/%3E%3C/svg%3E">
+      </span>
+      <span>Zero-size container; should remain eligible; missing alt.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_22">
+    <div class="case-title">22 — FAIL (eligible): <code>role="presentation"</code>, missing alt</div>
+    <div class="row">
+      <span class="imgbox">img</span>
+      <img id="img_case_27" role="presentation"
+           src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%2366aaff'/%3E%3C/svg%3E">
+      <span>Role presentation should not exclude eligibility; missing alt.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_23">
+    <div class="case-title">23 — FAIL (eligible): <code>aria-disabled="true"</code>, missing alt</div>
+    <div class="row">
+      <span class="imgbox">img</span>
+      <img id="img_case_23" aria-disabled="true"
+           src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%2366aaff'/%3E%3C/svg%3E">
+      <span>aria-disabled should not exclude eligibility; missing alt.</span>
+    </div>
+  </div>
+
+  <h2 id="non_composed">G. Non-composed content (ineligible)</h2>
+
+  <div class="case" id="case_24">
+    <div class="case-title">24 — NEUTRAL/INELIGIBLE: inside &lt;template&gt; (missing alt)</div>
+    <div class="row">
+      <span class="imgbox">tpl</span>
+      <span>Template contents are not composed into the DOM:</span>
+    </div>
+    <template>
+      <img id="img_case_24" src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%23888888'/%3E%3C/svg%3E">
+    </template>
+  </div>
+
+  <h2 id="aggregation">H. Aggregation / whole-rule behavior</h2>
+
+  <div class="case" id="case_25">
+    <div class="case-title">25 — notApplicable candidate: only ineligible images</div>
+    <div class="row">
+      <span class="imgbox">img</span>
+      <img id="img_case_25a" aria-hidden="true"
+           src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%23dddddd'/%3E%3C/svg%3E">
+      <img id="img_case_25b" hidden
+           src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%23dddddd'/%3E%3C/svg%3E">
+      <span>Both images are ineligible (aria-hidden + hidden). If your rule requires at least one eligible image to pass, the outcome should be notApplicable.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_26">
+    <div class="case-title">26 — PASS candidate: eligible image passes; ineligible image missing alt should not fail</div>
+    <div class="row">
+      <span class="imgbox">mix</span>
+      <img id="img_case_26a" alt="Eligible image with alt"
+           src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%2345c46a'/%3E%3C/svg%3E">
+      <img id="img_case_26b" aria-hidden="true"
+           src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%23ffcc00'/%3E%3C/svg%3E">
+      <span>One eligible image has alt; the other is aria-hidden and missing alt.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_27">
+    <div class="case-title">27 — FAIL candidate: eligible image missing alt should fail even if other images are ineligible</div>
+    <div class="row">
+      <span class="imgbox">mix</span>
+      <img id="img_case_27a"
+           src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%2345c46a'/%3E%3C/svg%3E">
+      <img id="img_case_27b" aria-hidden="true" alt="Hidden from AT"
+           src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%23ffcc00'/%3E%3C/svg%3E">
+      <span>Eligible image (left) is missing alt; other image is aria-hidden but has alt.</span>
+    </div>
+  </div>
+
+  <p class="note">
+    End of fixture.
+  </p>
+</body>
+</html>

@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-embed-text-alternative-present — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+    .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .offscreen { position: absolute; left: -9999px; top: 0; }
+    .zerosize { width: 0; height: 0; overflow: hidden; display: inline-block; }
+    .hiddenvis { visibility: hidden; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-embed-text-alternative-present</code> (“&lt;embed&gt; must provide a text alternative”)</h1>
+
+  <p class="note">
+    This file intentionally includes edge cases to test eligibility, presentation-role exclusion, and whole-rule outcomes.
+    Each test embed has a stable <code>id</code> of the form <code>embed_case_XX</code>.
+  </p>
+
+  <h2>A. Baseline (eligible)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: visible &lt;embed&gt; with no accessible name</div>
+    <div class="row">
+      <embed id="embed_case_01" src="x.pdf" type="application/pdf">
+      <span>Missing name.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — PASS: aria-label provides name</div>
+    <div class="row">
+      <embed id="embed_case_02" src="x.pdf" type="application/pdf" aria-label="Quarterly report PDF">
+      <span>ARIA name counts.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — PASS: aria-labelledby provides name</div>
+    <div class="row">
+      <span id="embed_case_03_label">Company brochure</span>
+      <embed id="embed_case_03" src="x.pdf" type="application/pdf" aria-labelledby="embed_case_03_label">
+      <span>ARIA idref name counts.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — PASS: title attribute (best-effort)</div>
+    <div class="row">
+      <embed id="embed_case_04" src="x.pdf" type="application/pdf" title="Embedded report">
+      <span>Title is accepted as a last resort.</span>
+    </div>
+  </div>
+
+  <h2>B. Eligibility suppression (ineligible)</h2>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — INELIGIBLE: aria-hidden and not tabbable</div>
+    <div class="row">
+      <embed id="embed_case_05" src="x.pdf" aria-hidden="true">
+      <span>Ineligible per helper.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — INELIGIBLE: inert ancestor</div>
+    <div class="row" inert>
+      <embed id="embed_case_07" src="x.pdf">
+      <span>Ineligible per helper.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — INELIGIBLE: inside &lt;template&gt;</div>
+    <div class="row">
+      <template>
+        <embed id="embed_case_11" src="x.pdf">
+      </template>
+      <span>Non-composed template content is ineligible.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_12">
+    <div class="case-title">12 — INELIGIBLE: display:none</div>
+    <div class="row">
+      <embed id="embed_case_12" src="x.pdf" style="display:none">
+      <span>display:none makes it ineligible.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_13">
+    <div class="case-title">13 — INELIGIBLE: visibility:hidden</div>
+    <div class="row hiddenvis">
+      <embed id="embed_case_13" src="x.pdf">
+      <span>visibility:hidden makes it ineligible.</span>
+    </div>
+  </div>
+
+  <h2>C. Eligibility exceptions</h2>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — FAIL: aria-hidden but tabbable (tabindex=0) stays applicable and must have name</div>
+    <div class="row">
+      <embed id="embed_case_06" src="x.pdf" aria-hidden="true" tabindex="0">
+      <span>Tabbable override => eligible; missing name => fail.</span>
+    </div>
+  </div>
+
+  <h2>D. Guardrails: not excluded (still eligible)</h2>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — FAIL: opacity:0 should remain eligible</div>
+    <div class="row">
+      <embed id="embed_case_08" src="x.pdf" style="opacity:0">
+      <span>Opacity does not exclude; missing name => fail.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — FAIL: offscreen should remain eligible</div>
+    <div class="row">
+      <embed id="embed_case_09" src="x.pdf" class="offscreen">
+      <span>Offscreen does not exclude; missing name => fail.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — FAIL: zero-size container should remain eligible</div>
+    <div class="row">
+      <span class="zerosize">
+        <embed id="embed_case_10" src="x.pdf">
+      </span>
+      <span>Zero-size does not exclude; missing name => fail.</span>
+    </div>
+  </div>
+
+  <h2>E. Presentation role exclusion (like &lt;img&gt;)</h2>
+
+  <div class="case" id="case_14">
+    <div class="case-title">14 — EXCLUDED: role=presentation and not focusable</div>
+    <div class="row">
+      <embed id="embed_case_14" src="x.pdf" role="presentation">
+      <span>Excluded by rule when not focusable.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_15">
+    <div class="case-title">15 — FAIL: role=none but focusable is applicable</div>
+    <div class="row">
+      <embed id="embed_case_15" src="x.pdf" role="none" tabindex="0">
+      <span>Focusable => not excluded; missing name => fail.</span>
+    </div>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

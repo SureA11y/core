@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-form-control-programmatic-label-present — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+    .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .offscreen { position: absolute; left: -9999px; top: 0; }
+    .zerosize { width: 0; height: 0; overflow: hidden; display: inline-block; }
+    .hiddenvis { visibility: hidden; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    label { display: inline-flex; gap: 8px; align-items: center; }
+    .stack { display: grid; gap: 10px; }
+  </style>
+</head>
+<body>
+<h1>Scenario fixture: <code>a11ycore-form-control-programmatic-label-present</code></h1>
+
+<p class="note">
+  This file includes many edge cases to exercise applicability, eligibility (acc-tree), and label mechanisms.
+  Each form control has a stable <code>id</code> of the form <code>fc_case_XX</code>.
+  Expected behavior notes are written per the rule: valid label mechanisms are
+  <code>&lt;label&gt;</code>, <code>aria-label</code> (non-empty), and <code>aria-labelledby</code> (resolves to non-empty text).
+  <code>placeholder</code> and <code>title</code> do not count as labels.
+</p>
+
+<h2>A. Baseline (eligible, should be checked)</h2>
+
+<div class="case" id="case_01">
+  <div class="case-title">01 — FAIL: visible input missing any label mechanism</div>
+  <div class="row">
+    <input id="fc_case_01" type="text" />
+    <span>No label / aria-label / aria-labelledby.</span>
+  </div>
+</div>
+
+<div class="case" id="case_02">
+  <div class="case-title">02 — PASS: &lt;label for&gt; association</div>
+  <div class="row">
+    <label for="fc_case_02">Full name</label>
+    <input id="fc_case_02" type="text" />
+  </div>
+</div>
+
+<div class="case" id="case_03">
+  <div class="case-title">03 — PASS: wrapping &lt;label&gt; association</div>
+  <div class="row">
+    <label> Email <input id="fc_case_03" type="email" /></label>
+  </div>
+</div>
+
+<div class="case" id="case_04">
+  <div class="case-title">04 — PASS: aria-label (non-empty)</div>
+  <div class="row">
+    <input id="fc_case_04" type="search" aria-label="Search" />
+  </div>
+</div>
+
+<div class="case" id="case_05">
+  <div class="case-title">05 — PASS: aria-labelledby resolves to non-empty text</div>
+  <div class="row">
+    <span id="fc_lbl_05">Username</span>
+    <input id="fc_case_05" type="text" aria-labelledby="fc_lbl_05" />
+  </div>
+</div>
+
+<div class="case" id="case_06">
+  <div class="case-title">06 — PASS: select with label</div>
+  <div class="row">
+    <label for="fc_case_06">Country</label>
+    <select id="fc_case_06">
+      <option>FR</option>
+      <option>CA</option>
+    </select>
+  </div>
+</div>
+
+<div class="case" id="case_07">
+  <div class="case-title">07 — PASS: textarea with wrapping label</div>
+  <div class="row">
+    <label>Message <textarea id="fc_case_07"></textarea></label>
+  </div>
+</div>
+
+<h2>B. aria-label and aria-labelledby edge cases</h2>
+
+<div class="case" id="case_08">
+  <div class="case-title">08 — FAIL: aria-label present but empty</div>
+  <div class="row">
+    <input id="fc_case_08" type="text" aria-label="   " />
+    <span>Empty aria-label should fail.</span>
+  </div>
+</div>
+
+<div class="case" id="case_09">
+  <div class="case-title">09 — FAIL: aria-labelledby points to missing id</div>
+  <div class="row">
+    <input id="fc_case_09" type="text" aria-labelledby="does_not_exist" />
+  </div>
+</div>
+
+<div class="case" id="case_10">
+  <div class="case-title">10 — FAIL: aria-labelledby resolves but text is empty</div>
+  <div class="row">
+    <span id="fc_lbl_10"></span>
+    <input id="fc_case_10" type="text" aria-labelledby="fc_lbl_10" />
+  </div>
+</div>
+
+<div class="case" id="case_11">
+  <div class="case-title">11 — PASS: aria-labelledby with multiple ids (one has text)</div>
+  <div class="row">
+    <span id="fc_lbl_11a"></span>
+    <span id="fc_lbl_11b">Postal code</span>
+    <input id="fc_case_11" type="text" aria-labelledby="fc_lbl_11a fc_lbl_11b" />
+  </div>
+</div>
+
+<div class="case" id="case_12">
+  <div class="case-title">12 — FAIL: aria-labelledby with multiple ids (all empty)</div>
+  <div class="row">
+    <span id="fc_lbl_12a"></span>
+    <span id="fc_lbl_12b">   </span>
+    <input id="fc_case_12" type="text" aria-labelledby="fc_lbl_12a fc_lbl_12b" />
+  </div>
+</div>
+
+<div class="case" id="case_13">
+  <div class="case-title">13 — PASS: aria-labelledby with duplicate id tokens (dedupe)</div>
+  <div class="row">
+    <span id="fc_lbl_13">Phone</span>
+    <input id="fc_case_13" type="tel" aria-labelledby="fc_lbl_13 fc_lbl_13" />
+  </div>
+</div>
+
+<div class="case" id="case_14">
+  <div class="case-title">14 — PASS: aria-labelledby present + aria-label present (labelledby wins, still OK)</div>
+  <div class="row">
+    <span id="fc_lbl_14">City</span>
+    <input id="fc_case_14" type="text" aria-labelledby="fc_lbl_14" aria-label="City (fallback)" />
+  </div>
+</div>
+
+<h2>C. Placeholder and title (must NOT count)</h2>
+
+<div class="case" id="case_15">
+  <div class="case-title">15 — Pass: placeholder-only</div>
+  <div class="row">
+    <input id="fc_case_15" type="text" placeholder="Your name" />
+  </div>
+</div>
+
+<div class="case" id="case_16">
+  <div class="case-title">16 — Pass: title-only</div>
+  <div class="row">
+    <input id="fc_case_16" type="text" title="Your name" />
+  </div>
+</div>
+
+<div class="case" id="case_17">
+  <div class="case-title">17 — Pass: title only</div>
+  <div class="row">
+    <input id="fc_case_17" type="text" placeholder="Email" title="Email address" />
+  </div>
+</div>
+
+<h2>D. Role presentation/none behavior</h2>
+
+<div class="case" id="case_18">
+  <div class="case-title">18 — it is eligible (focusable) so it should fail, not “neutral/ineligible”</div>
+  <div class="row">
+    <input id="fc_case_18" type="text" role="presentation" />
+    <span>Should be excluded (not focusable).</span>
+  </div>
+</div>
+
+<div class="case" id="case_19">
+  <div class="case-title">19 — FAIL (eligible): role=presentation but focusable (tabindex=0) and unlabeled</div>
+  <div class="row">
+    <input id="fc_case_19" type="text" role="presentation" tabindex="0" />
+    <span>Focusable overrides exclusion; still must have label mechanism.</span>
+  </div>
+</div>
+
+<div class="case" id="case_20">
+  <div class="case-title">20 — PASS (eligible): role=none but focusable + aria-label</div>
+  <div class="row">
+    <input id="fc_case_20" type="text" role="none" tabindex="0" aria-label="Focusable control" />
+  </div>
+</div>
+
+<h2>E. Hidden from the accessibility tree (acc ineligible) + focus/IDREF exceptions</h2>
+
+<div class="case" id="case_21">
+  <div class="case-title">21 — it is eligible (tabbable by default) so it should fail</div>
+  <div class="row">
+    <input id="fc_case_21" type="text" aria-hidden="true" />
+  </div>
+</div>
+
+<div class="case" id="case_22">
+  <div class="case-title">22 — FAIL (eligible exception): aria-hidden=true but tabbable (tabindex=0), unlabeled</div>
+  <div class="row">
+    <input id="fc_case_22" type="text" aria-hidden="true" tabindex="0" />
+    <span>Per helper: tabbable overrides aria-hidden eligibility.</span>
+  </div>
+</div>
+
+<div class="case" id="case_23">
+  <div class="case-title">23 — PASS (eligible exception): aria-hidden=true but tabbable, aria-label present</div>
+  <div class="row">
+    <input id="fc_case_23" type="text" aria-hidden="true" tabindex="0" aria-label="Hidden but tabbable" />
+  </div>
+</div>
+
+<div class="case" id="case_24">
+  <div class="case-title">24 — NEUTRAL/INELIGIBLE: aria-hidden=true but programmatic focus only (tabindex=-1)</div>
+  <div class="row">
+    <input id="fc_case_24" type="text" aria-hidden="true" tabindex="-1" />
+    <span>Per helper: tabindex&lt;0 does NOT override aria-hidden eligibility.</span>
+  </div>
+</div>
+
+<div class="case" id="case_25">
+  <div class="case-title">25 — FAIL (eligible exception): aria-hidden=true and referenced by IDREF (aria-labelledby)</div>
+  <div class="row">
+    <div aria-labelledby="fc_case_25">References the control via IDREF.</div>
+    <input id="fc_case_25" type="text" aria-hidden="true" />
+    <span>Helper may keep referenced nodes eligible.</span>
+  </div>
+</div>
+
+<div class="case" id="case_26">
+  <div class="case-title">26 — PASS (eligible exception): aria-hidden=true and referenced by IDREF, aria-label present</div>
+  <div class="row">
+    <div aria-labelledby="fc_case_26">References the control via IDREF.</div>
+    <input id="fc_case_26" type="text" aria-hidden="true" aria-label="Referenced control" />
+  </div>
+</div>
+
+<h2>F. Hidden by HTML/CSS (ineligible in acc)</h2>
+
+<div class="case" id="case_27">
+  <div class="case-title">27 — NEUTRAL/INELIGIBLE: hidden attribute</div>
+  <div class="row">
+    <input id="fc_case_27" type="text" hidden />
+  </div>
+</div>
+
+<div class="case" id="case_28">
+  <div class="case-title">28 — NEUTRAL/INELIGIBLE: display:none</div>
+  <div class="row">
+    <input id="fc_case_28" type="text" style="display:none" />
+  </div>
+</div>
+
+<div class="case" id="case_29">
+  <div class="case-title">29 — NEUTRAL/INELIGIBLE: visibility:hidden (on ancestor)</div>
+  <div class="row hiddenvis">
+    <label for="fc_case_29">Should not matter</label>
+    <input id="fc_case_29" type="text" />
+  </div>
+</div>
+
+<h2>G. inert (ineligible)</h2>
+
+<div class="case" id="case_30">
+  <div class="case-title">30 — NEUTRAL/INELIGIBLE: inert subtree</div>
+  <div class="row" inert>
+    <input id="fc_case_30" type="text" />
+  </div>
+</div>
+
+<h2>H. details closed (ineligible)</h2>
+
+<div class="case" id="case_31">
+  <div class="case-title">31 — NEUTRAL/INELIGIBLE: inside closed details (not in summary)</div>
+  <details>
+    <summary>Closed details</summary>
+    <div class="row">
+      <input id="fc_case_31" type="text" />
+    </div>
+  </details>
+</div>
+
+<h2>I. Non-composed (template) — ineligible</h2>
+
+<div class="case" id="case_32">
+  <div class="case-title">32 — NEUTRAL/INELIGIBLE: inside template</div>
+  <template>
+    <input id="fc_case_32" type="text" />
+  </template>
+</div>
+
+<h2>J. Excluded input types (should NOT be targeted by selector)</h2>
+
+<div class="case" id="case_33">
+  <div class="case-title">33 — NOT TARGETED: input type=hidden</div>
+  <div class="row">
+    <input id="fc_case_33" type="hidden" />
+  </div>
+</div>
+
+<div class="case" id="case_34">
+  <div class="case-title">34 — NOT TARGETED: input type=submit</div>
+  <div class="row">
+    <input id="fc_case_34" type="submit" value="Submit" />
+  </div>
+</div>
+
+<div class="case" id="case_35">
+  <div class="case-title">35 — NOT TARGETED: input type=button</div>
+  <div class="row">
+    <input id="fc_case_35" type="button" value="Click" />
+  </div>
+</div>
+
+<div class="case" id="case_36">
+  <div class="case-title">36 — NOT TARGETED: input type=image</div>
+  <div class="row">
+    <input id="fc_case_36" type="image" alt="Search" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" />
+  </div>
+</div>
+
+<h2>K. Disabled controls (still eligible; still must be labeled)</h2>
+
+<div class="case" id="case_37">
+  <div class="case-title">37 — FAIL: disabled input with no label mechanism</div>
+  <div class="row">
+    <input id="fc_case_37" type="text" disabled />
+  </div>
+</div>
+
+<div class="case" id="case_38">
+  <div class="case-title">38 — PASS: disabled input with label</div>
+  <div class="row">
+    <label for="fc_case_38">Disabled field</label>
+    <input id="fc_case_38" type="text" disabled />
+  </div>
+</div>
+
+<h2>L. Aggregation / whole-rule behavior</h2>
+
+<div class="case" id="case_39">
+  <div class="case-title">39 — it is eligible (tabbable by default) so it should fail</div>
+  <div class="row">
+    <input id="fc_case_39a" type="text" aria-hidden="true" />
+    <input id="fc_case_39b" type="text" hidden />
+    <input id="fc_case_39c" type="submit" value="Go" />
+    <span>If your run uses only these, rule should be notApplicable (in a reduced fixture).</span>
+  </div>
+</div>
+
+<div class="case" id="case_40">
+  <div class="case-title">40 — FAIL candidate: one unlabeled eligible control causes rule fail even if others pass</div>
+  <div class="stack">
+    <div class="row">
+      <label for="fc_case_40a">Labeled</label>
+      <input id="fc_case_40a" type="text" />
+    </div>
+    <div class="row">
+      <input id="fc_case_40b" type="text" />
+      <span>This one is unlabeled → should produce an occurrence.</span>
+    </div>
+  </div>
+</div>
+
+<p class="note">End of fixture.</p>
+</body>
+</html>

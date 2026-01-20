@@ -23,7 +23,7 @@ test('contextSelector scopes evaluation to a subtree', () => {
   // because the only img in scope has alt (even empty counts as present).
   const result = runa11yCoreOnHtml(html, { contextSelector: '#inside' });
 
-  assertRule(result, 'a11yCore-img-alt-attr-present', 'pass', { maxOccurrences: 0 });
+  assertRule(result, 'a11ycore-img-alt-present', 'pass', { maxOccurrences: 0 });
 });
 
 test('excludeSelectors skips elements inside excluded subtrees', () => {
@@ -42,7 +42,7 @@ test('excludeSelectors skips elements inside excluded subtrees', () => {
   // Excluding #excluded should remove the failing <img> from consideration.
   const result = runa11yCoreOnHtml(html, { excludeSelectors: ['#excluded'] });
 
-  assertRule(result, 'a11yCore-img-alt-attr-present', 'pass', { maxOccurrences: 0 });
+  assertRule(result, 'a11ycore-img-alt-present', 'pass', { maxOccurrences: 0 });
 });
 
 test('excludeSelectors + contextSelector: exclusions still apply within context', () => {
@@ -65,7 +65,7 @@ test('excludeSelectors + contextSelector: exclusions still apply within context'
     excludeSelectors: ['.modal']
   });
 
-  assertRule(result, 'a11yCore-img-alt-attr-present', 'pass', { maxOccurrences: 0 });
+  assertRule(result, 'a11ycore-img-alt-present', 'pass', { maxOccurrences: 0 });
 });
 
 test('excludeSelectors accepts comma-separated string selectors', () => {
@@ -89,5 +89,5 @@ test('excludeSelectors accepts comma-separated string selectors', () => {
     excludeSelectors: '#excluded, .also-excluded'
   });
 
-  assertRule(result, 'a11yCore-img-alt-attr-present', 'pass', { maxOccurrences: 0 });
+  assertRule(result, 'a11ycore-img-alt-present', 'pass', { maxOccurrences: 0 });
 });

@@ -6,10 +6,11 @@
   "license": "MIT",
   "scripts": {
     "build": "node scripts/build-core.js",
-    "pretest": "npm run build",
-    "test": "node --test ./tests/*.test.js",
-    "coverage": "node scripts/generate-wcag-coverage.js --rulesDir src/rules --out coverage/coverage-report.md --json coverage/coverage-report.json",
-    "coverage:default": "node scripts/generate-wcag-coverage.js"
+    "test": "npm run build && node --test \"tests/**/*.test.js\"",
+    "coverage": "node scripts/generate-wcag-coverage.js",
+    "coverage:strict": "node scripts/generate-wcag-coverage.js --strictFacets",
+    "validate:automatic-rules": "node scripts/validate-all-rules.js src/rules/automatic",
+    "validate:manual-rules": "node scripts/validate-all-rules.js src/rules/manual"
   },
   "devDependencies": {
     "jsdom": "^27.4.0"

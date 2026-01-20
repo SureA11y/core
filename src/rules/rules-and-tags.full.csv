@@ -1,0 +1,19 @@
+ruleId,type,title,tags,file
+a11ycore-area-alt-decorative,manual,<area> with alt=\,wcag2a wcag111 nontext images imagemap manual atomic,area-alt-decorative-manual.js
+a11ycore-area-alt-present,automatic,&lt;area&gt; must have an alt attribute,wcag2a wcag111 nontext images imagemap atomic automatic,area-alt-present.js
+a11ycore-area-alt-quality,manual,<area> alt text must be appropriate (manual review),wcag2a wcag111 nontext images imagemap manual atomic,area-alt-quality-manual.js
+a11ycore-canvas-text-alternative-present,automatic,<canvas> must provide a text alternative,wcag2a wcag111 nontext canvas atomic automatic,canvas-text-alternative-present.js
+a11ycore-canvas-text-alternative-quality,manual,<canvas> text alternative must be appropriate (manual review),wcag2a wcag111 nontext canvas manual atomic,canvas-text-alternative-quality-manual.js
+a11ycore-embed-text-alternative-present,automatic,<embed> must provide a text alternative,wcag2a wcag111 nontext embed atomic automatic,embed-text-alternative-present.js
+a11ycore-embed-text-alternative-quality,manual,<embed> text alternative must be appropriate (manual review),wcag2a wcag111 nontext embed manual atomic,embed-text-alternative-quality-manual.js
+a11ycore-img-alt-decorative,manual,<img> with alt=\,wcag2a wcag111 nontext images manual atomic,img-alt-decorative-manual.js
+a11ycore-img-alt-present,automatic,<img> must have an alt attribute,wcag2a wcag111 nontext images atomic automatic,img-alt-present.js
+a11ycore-img-alt-quality,manual,<img> alt text must be appropriate (manual review),wcag2a wcag111 nontext images manual atomic,img-alt-quality-manual.js
+a11ycore-input-image-alt-decorative,manual,<input type=\,wcag2a wcag111 forms images manual atomic,input-image-alt-decorative-manual.js
+a11ycore-input-image-alt-present,automatic,<input type=,wcag2a wcag111 nontext images atomic automatic,input-image-alt-present.js
+a11ycore-input-image-alt-quality,manual,<input type=\,wcag2a wcag111 forms images manual atomic,input-image-alt-quality-manual.js
+a11ycore-object-text-alternative-present,automatic,<object> must provide a text alternative,wcag2a wcag111 nontext object atomic automatic,object-text-alternative-present.js
+a11ycore-object-text-alternative-quality,manual,<object> text alternative must be appropriate (manual review),wcag2a wcag111 nontext object manual atomic,object-text-alternative-quality-manual.js
+a11ycore-svg-image-text-alternative-present,automatic,SVG <image> must have a text alternative,wcag2a wcag111 nontext svg image atomic automatic,svg-image-text-alternative-present.js
+a11ycore-svg-text-alternative-present,automatic,<svg> must provide a text alternative,wcag2a wcag111 svg nontext images atomic automatic,svg-text-alternative-present.js
+a11ycore-video-poster-text-alternative-present,automatic,<video> poster must have a text alternative,wcag2a wcag111 media video atomic automatic,video-poster-text-alternative-present.js

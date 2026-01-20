@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-svg-image-text-alternative-present — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+    .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-svg-image-text-alternative-present</code> (“SVG <code>&lt;image&gt;</code> must have a text alternative”)</h1>
+
+  <p class="note">
+    Each test SVG image has a stable <code>id</code> of the form <code>svgimg_case_XX</code>.
+    These cases focus on SVG <code>&lt;image&gt;</code> elements and text alternative mechanisms.
+  </p>
+
+  <h2>A. Baseline (eligible)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: SVG &lt;image&gt; missing title/desc and ARIA name</div>
+    <div class="row">
+      <svg width="40" height="24" aria-label="container">
+        <image id="svgimg_case_01" href="x.png"></image>
+      </svg>
+      <span>No <code>&lt;title&gt;</code>, no <code>&lt;desc&gt;</code>, no ARIA name.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — PASS: SVG &lt;image&gt; with direct &lt;title&gt;</div>
+    <div class="row">
+      <svg width="40" height="24">
+        <image id="svgimg_case_02" href="x.png"><title>Logo</title></image>
+      </svg>
+      <span>Title provides alternative.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — PASS: SVG &lt;image&gt; with aria-label</div>
+    <div class="row">
+      <svg width="40" height="24">
+        <image id="svgimg_case_03" href="x.png" aria-label="Logo"></image>
+      </svg>
+      <span>ARIA name provides alternative.</span>
+    </div>
+  </div>
+
+  <h2>B. aria-hidden eligibility behavior</h2>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — NOT APPLICABLE: aria-hidden and not tabbable</div>
+    <div class="row">
+      <svg width="40" height="24">
+        <image id="svgimg_case_04" href="x.png" aria-hidden="true"></image>
+      </svg>
+      <span>Ineligible (aria-hidden, not tabbable, not IDREF-referenced).</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — FAIL: aria-hidden but tabbable (tabindex=0), unnamed</div>
+    <div class="row">
+      <svg width="40" height="24">
+        <image id="svgimg_case_05" href="x.png" aria-hidden="true" tabindex="0"></image>
+      </svg>
+      <span>Eligibility override: tabbable focus makes it applicable.</span>
+    </div>
+  </div>
+
+  <h2>C. Role exclusions (presentation/none)</h2>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — NOT APPLICABLE: role=presentation and not focusable</div>
+    <div class="row">
+      <svg width="40" height="24">
+        <image id="svgimg_case_06" href="x.png" role="presentation"></image>
+      </svg>
+      <span>Excluded by role when not focusable.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — FAIL: role=presentation but focusable (tabindex=0), unnamed</div>
+    <div class="row">
+      <svg width="40" height="24">
+        <image id="svgimg_case_07" href="x.png" role="presentation" tabindex="0"></image>
+      </svg>
+      <span>Focusable overrides role exclusion; still requires a text alternative.</span>
+    </div>
+  </div>
+
+  <h2>D. Inertness</h2>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — NOT APPLICABLE: inert ancestor makes image ineligible</div>
+    <div class="row" inert>
+      <svg width="40" height="24">
+        <image id="svgimg_case_08" href="x.png"></image>
+      </svg>
+      <span>Ineligible due to inert ancestor.</span>
+    </div>
+  </div>
+
+  <h2>E. IDREF reference exception</h2>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — FAIL: aria-hidden but IDREF-referenced, unnamed</div>
+    <div class="row">
+      <div aria-labelledby="svgimg_case_09">This element references the image by IDREF.</div>
+      <svg width="40" height="24">
+        <image id="svgimg_case_09" href="x.png" aria-hidden="true"></image>
+      </svg>
+      <span>Eligibility override: referenced by IDREF, so it remains applicable.</span>
+    </div>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

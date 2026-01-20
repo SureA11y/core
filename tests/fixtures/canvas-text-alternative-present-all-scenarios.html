@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-canvas-text-alternative-present — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+    .meta { font-size: 12px; opacity: 0.8; margin: 6px 0 0; }
+    .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .offscreen { position: absolute; left: -9999px; top: 0; }
+    .zerosize { width: 0; height: 0; overflow: hidden; display: inline-block; }
+    .hiddenvis { visibility: hidden; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-canvas-text-alternative-present</code></h1>
+
+  <p class="note">
+    This file intentionally includes edge cases to test eligibility and rule outcomes.
+    Each test canvas has a stable <code>id</code> of the form <code>canvas_case_XX</code>.
+  </p>
+
+  <h2 id="baseline">A. Baseline (eligible)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: visible &lt;canvas&gt; with no fallback and no name</div>
+    <div class="row">
+      <canvas id="canvas_case_01"></canvas>
+      <span>Missing fallback and accessible name.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — PASS: fallback text present</div>
+    <div class="row">
+      <canvas id="canvas_case_02">Chart summary</canvas>
+      <span>Fallback text provides a text alternative.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — PASS: aria-label provides accessible name</div>
+    <div class="row">
+      <canvas id="canvas_case_03" aria-label="Sales chart"></canvas>
+      <span>Accessible name via aria-label.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — PASS: aria-labelledby provides accessible name</div>
+    <div class="row">
+      <div id="c_lbl_04">Revenue chart</div>
+      <canvas id="canvas_case_04" aria-labelledby="c_lbl_04"></canvas>
+      <span>Accessible name via aria-labelledby.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — PASS: title attribute used as name (helper subset)</div>
+    <div class="row">
+      <canvas id="canvas_case_05" title="Chart of profits"></canvas>
+      <span>Accessible name via title attribute (helper supports title fallback).</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — PASS: label[for] provides name (helper subset)</div>
+    <div class="row">
+      <label for="canvas_case_06">Canvas label</label>
+      <canvas id="canvas_case_06"></canvas>
+      <span>Accessible name via label association.</span>
+    </div>
+    <div class="meta">This reflects helper behavior (pragmatic subset), not a normative requirement for &lt;canvas&gt; specifically.</div>
+  </div>
+
+  <h2 id="aria_hidden">B. aria-hidden / eligibility exceptions</h2>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — INELIGIBLE: aria-hidden true and not tabbable</div>
+    <div class="row">
+      <canvas id="canvas_case_07" aria-hidden="true"></canvas>
+      <span>Ineligible; should not contribute to pass/fail.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — INELIGIBLE: display:none</div>
+    <div class="row">
+      <canvas id="canvas_case_08" style="display:none"></canvas>
+      <span>Ineligible per helper.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — INELIGIBLE: inert ancestor</div>
+    <div class="row" inert>
+      <canvas id="canvas_case_09"></canvas>
+      <span>Ineligible due to inertness.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — FAIL: aria-hidden but tabbable (tabindex=0), no text alternative</div>
+    <div class="row">
+      <canvas id="canvas_case_10" aria-hidden="true" tabindex="0"></canvas>
+      <span>Eligibility override due to tabbable focus; rule applies and fails.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_16">
+    <div class="case-title">16 — INELIGIBLE: aria-hidden but tabindex=-1 (programmatic focus only)</div>
+    <div class="row">
+      <canvas id="canvas_case_16" aria-hidden="true" tabindex="-1"></canvas>
+      <span>Programmatic focus does not override aria-hidden eligibility in helper.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_17">
+    <div class="case-title">17 — PASS: IDREF-referenced aria-hidden canvas is eligible and has name</div>
+    <div class="row">
+      <div id="host_17" aria-labelledby="canvas_case_17">Host</div>
+      <canvas id="canvas_case_17" aria-hidden="true" aria-label="Referenced canvas name"></canvas>
+      <span>IDREF override makes canvas eligible; it passes due to aria-label.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_20">
+    <div class="case-title">20 — FAIL: IDREF-referenced aria-hidden canvas is eligible but unnamed</div>
+    <div class="row">
+      <div id="host_20" aria-labelledby="canvas_case_20">Host</div>
+      <canvas id="canvas_case_20" aria-hidden="true"></canvas>
+      <span>IDREF override makes canvas eligible; it fails due to missing text alternative.</span>
+    </div>
+  </div>
+
+  <h2 id="guardrails">C. Conditions that should NOT exclude eligibility</h2>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — FAIL: opacity:0, no text alternative</div>
+    <div class="row">
+      <canvas id="canvas_case_11" style="opacity:0"></canvas>
+      <span>Opacity does not exclude eligibility per engine guardrails.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_12">
+    <div class="case-title">12 — FAIL: offscreen, no text alternative</div>
+    <div class="row">
+      <canvas id="canvas_case_12" class="offscreen"></canvas>
+      <span>Offscreen does not exclude eligibility per engine guardrails.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_13">
+    <div class="case-title">13 — FAIL: zero-size container, no text alternative</div>
+    <div class="row">
+      <span class="zerosize">
+        <canvas id="canvas_case_13"></canvas>
+      </span>
+      <span>Zero-size does not exclude eligibility per engine guardrails.</span>
+    </div>
+  </div>
+
+  <h2 id="non_composed">D. Non-composed content</h2>
+
+  <div class="case" id="case_14">
+    <div class="case-title">14 — INELIGIBLE: inside &lt;template&gt;</div>
+    <div class="row">
+      <template>
+        <canvas id="canvas_case_14"></canvas>
+      </template>
+      <span>Template content is not composed; should be ineligible.</span>
+    </div>
+  </div>
+
+  <h2 id="details">E. Closed details</h2>
+
+  <div class="case" id="case_18">
+    <div class="case-title">18 — INELIGIBLE: in closed &lt;details&gt;</div>
+    <details>
+      <summary>Summary</summary>
+      <canvas id="canvas_case_18"></canvas>
+    </details>
+    <div class="meta">Helper treats content in closed details as ineligible.</div>
+  </div>
+
+  <h2 id="visibility_hidden">F. visibility:hidden</h2>
+
+  <div class="case" id="case_19">
+    <div class="case-title">19 — INELIGIBLE: visibility:hidden ancestor</div>
+    <div class="row hiddenvis">
+      <canvas id="canvas_case_19"></canvas>
+      <span>Ineligible per helper (visibility hidden).</span>
+    </div>
+  </div>
+
+  <h2 id="aggregation">G. Aggregation / whole-rule behavior</h2>
+
+  <div class="case" id="case_15">
+    <div class="case-title">15 — PASS candidate: eligible canvas passes; ineligible canvas should not fail</div>
+    <div class="row">
+      <canvas id="canvas_case_15" aria-label="Named canvas"></canvas>
+      <canvas id="canvas_case_15_ineligible" aria-hidden="true"></canvas>
+      <span>Eligible passes, ineligible is ignored.</span>
+    </div>
+  </div>
+
+  
+  <div class="case" id="case_21">
+    <div class="case-title">21 — FAIL: tabbable canvas (tabindex=0) without fallback/name</div>
+    <div class="row">
+      <canvas id="canvas_case_21" tabindex="0"></canvas>
+      <span>Tabbable canvas is eligible and must provide a text alternative.</span>
+    </div>
+  </div>
+
+<p class="note">End of fixture.</p>
+</body>
+</html>
