@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Contrast fixtures — many combinations</title>
+  <style>
+    html, body { margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background: #ffffff; color: #111111; }
+
+    .case { padding: 14px 16px; border-bottom: 1px solid #ddd; }
+    .label { font-size: 12px; color: #444; margin: 0 0 8px 0; }
+    .text { margin: 0; }
+
+    .normalText { font-size: 16px; font-weight: 400; }
+    .largeText { font-size: 24px; font-weight: 400; } /* large by size */
+    .boldLargeText { font-size: 18.6667px; font-weight: 700; } /* large by bold threshold */
+
+    .bgWhite { background: #ffffff; }
+    .bgGray { background: #f0f0f0; }
+
+    /* "Not visible" patterns that your eligibility helper already excludes */
+    .displayNone { display: none; }
+    .visibilityHidden { visibility: hidden; }
+    .visibilityCollapse { visibility: collapse; }
+
+    /* "Not visually visible" but SHOULD STILL BE ELIGIBLE under your deterministic policy */
+    .opacityZero { opacity: 0; }
+    .offscreen { position: absolute; left: -9999px; top: 0; }
+    .srOnly {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    /* Potential future policy decision: zero-size (currently still eligible) */
+    .zeroSize { font-size: 0; line-height: 0; }
+
+    /* Computability blockers */
+    .bgGradient {
+      background-color: #ffffff;
+      background-image: linear-gradient(90deg, #ffffff, #000000);
+    }
+    .bgImage {
+      background-color: #ffffff;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='2' height='2'%3E%3Crect width='2' height='2' fill='black'/%3E%3C/svg%3E");
+    }
+    .blendMode { mix-blend-mode: multiply; }
+    .hasFilter { filter: blur(0.5px); }
+    .hasBackdropFilter { backdrop-filter: blur(2px); }
+
+    /* Alpha backgrounds */
+    .bgAlpha50 { background-color: rgba(255, 255, 255, 0.5); }
+    .bgAlpha80OnGray { background-color: rgba(255, 255, 255, 0.8); }
+
+    /* Simple layout helper */
+    .pad { padding: 10px; }
+  </style>
+</head>
+
+<body>
+
+<!-- ========================================================= -->
+<!-- 1) Baseline: PASS AA+AAA -->
+<!-- ========================================================= -->
+<section class="case bgWhite" id="case-pass-aa-aaa">
+  <p class="label">PASS AA+AAA: black on white</p>
+  <p class="text normalText" id="pass_black_on_white" style="color:#000000;">
+    PASS: black on white (normal text).
+  </p>
+</section>
+
+<!-- ========================================================= -->
+<!-- 2) AA pass but AAA fail (ratio between 4.5 and 7) -->
+<!-- ========================================================= -->
+<section class="case bgWhite" id="case-pass-aa-fail-aaa">
+  <p class="label">PASS AA but FAIL AAA: gray on white</p>
+  <p class="text normalText" id="aa_pass_aaa_fail_gray_on_white" style="color:#767676;">
+    AA pass / AAA fail candidate (normal text).
+  </p>
+</section>
+
+<!-- ========================================================= -->
+<!-- 3) FAIL AA (ratio below 4.5 for normal text) -->
+<!-- ========================================================= -->
+<section class="case bgWhite" id="case-fail-aa">
+  <p class="label">FAIL AA: light gray on white</p>
+  <p class="text normalText" id="aa_fail_light_gray_on_white" style="color:#999999;">
+    FAIL: should fail AA (normal text).
+  </p>
+</section>
+
+<!-- ========================================================= -->
+<!-- 4) Large text threshold (AA large = 3.0; AAA large = 4.5) -->
+<!-- Same foreground as (3) but large by size -->
+<!-- ========================================================= -->
+<section class="case bgWhite" id="case-large-text-threshold">
+  <p class="label">Large text by size (24px): uses large-text threshold</p>
+  <p class="text largeText" id="large_text_light_gray_on_white" style="color:#999999;">
+    Large text: same color as AA-fail normal text.
+  </p>
+</section>
+
+<!-- ========================================================= -->
+<!-- 5) Large text by bold threshold (18.6667px + weight>=700) -->
+<!-- ========================================================= -->
+<section class="case bgWhite" id="case-bold-large-threshold">
+  <p class="label">Large text by bold threshold (18.6667px + 700)</p>
+  <p class="text boldLargeText" id="bold_large_text_light_gray_on_white" style="color:#999999;">
+    Bold large text: large-text thresholds should apply.
+  </p>
+</section>
+
+<!-- ========================================================= -->
+<!-- 6) Foreground alpha compositing (text color rgba) -->
+<!-- fg rgba black@0.5 over white should become mid-gray -->
+<!-- ========================================================= -->
+<section class="case bgWhite" id="case-foreground-alpha">
+  <p class="label">Foreground alpha: rgba(0,0,0,0.5) on white</p>
+  <p class="text normalText" id="fg_alpha_black_50_on_white" style="color: rgba(0,0,0,0.5);">
+    Foreground alpha compositing should be applied.
+  </p>
+</section>
+
+<!-- ========================================================= -->
+<!-- 7) Background alpha layering -->
+<!-- Background is semi-transparent white over body white (still white-ish) -->
+<!-- Useful to confirm computeEffectiveBackground + alpha reporting -->
+<!-- ========================================================= -->
+<section class="case bgAlpha50" id="case-background-alpha">
+  <p class="label">Background alpha: rgba(255,255,255,0.5)</p>
+  <p class="text normalText" id="bg_alpha_white_50_black_text" style="color:#000000;">
+    Background alpha layering case.
+  </p>
+</section>
+
+<!-- ========================================================= -->
+<!-- 8) Background alpha over a non-white parent -->
+<!-- ========================================================= -->
+<section class="case bgGray" id="case-background-alpha-over-gray">
+  <div class="pad bgAlpha80OnGray">
+    <p class="label">Background alpha 0.8 over gray parent</p>
+    <p class="text normalText" id="bg_alpha_80_over_gray_black_text" style="color:#000000;">
+      Background compositing up the chain.
+    </p>
+  </div>
+</section>
+
+<!-- ========================================================= -->
+<!-- 9) Computability blocker: background gradient -->
+<!-- Should trigger Rule 1 cantTell -->
+<!-- ========================================================= -->
+<section class="case bgGradient" id="case-blocker-gradient">
+  <p class="label">Blocker: background-image gradient</p>
+  <p class="text normalText" id="blocker_gradient_bg" style="color:#000000;">
+    NOT COMPUTABLE: background gradient.
+  </p>
+</section>
+
+<!-- ========================================================= -->
+<!-- 10) Computability blocker: background image -->
+<!-- ========================================================= -->
+<section class="case bgImage" id="case-blocker-image">
+  <p class="label">Blocker: background-image url(...)</p>
+  <p class="text normalText" id="blocker_image_bg" style="color:#000000;">
+    NOT COMPUTABLE: background image.
+  </p>
+</section>
+
+<!-- ========================================================= -->
+<!-- 11) Computability blocker: mix-blend-mode -->
+<!-- ========================================================= -->
+<section class="case bgWhite" id="case-blocker-mix-blend">
+  <p class="label">Blocker: mix-blend-mode</p>
+  <p class="text normalText blendMode" id="blocker_mix_blend_mode" style="color:#000000;">
+    NOT COMPUTABLE: mix-blend-mode.
+  </p>
+</section>
+
+<!-- ========================================================= -->
+<!-- 12) Computability blocker: filter -->
+<!-- ========================================================= -->
+<section class="case bgWhite" id="case-blocker-filter">
+  <p class="label">Blocker: filter</p>
+  <p class="text normalText hasFilter" id="blocker_filter" style="color:#000000;">
+    NOT COMPUTABLE: filter.
+  </p>
+</section>
+
+<!-- ========================================================= -->
+<!-- 13) Computability blocker: backdrop-filter -->
+<!-- ========================================================= -->
+<section class="case bgWhite" id="case-blocker-backdrop-filter">
+  <p class="label">Blocker: backdrop-filter</p>
+  <p class="text normalText hasBackdropFilter" id="blocker_backdrop_filter" style="color:#000000;">
+    NOT COMPUTABLE: backdrop-filter.
+  </p>
+</section>
+
+<!-- ========================================================= -->
+<!-- 14) Not visible: hidden attribute (excluded by eligibility) -->
+<!-- ========================================================= -->
+<section class="case bgWhite" id="case-hidden-attr" hidden>
+  <p class="label">hidden attribute (should be excluded)</p>
+  <p class="text normalText" id="excluded_hidden_attr_fail" style="color:#999999;">
+    Should be excluded (hidden attribute).
+  </p>
+</section>
+
+<!-- ========================================================= -->
+<!-- 15) Not visible: display:none (excluded) -->
+<!-- ========================================================= -->
+<section class="case bgWhite displayNone" id="case-display-none">
+  <p class="label">display:none subtree (should be excluded)</p>
+  <p class="text normalText" id="excluded_display_none_fail" style="color:#999999;">
+    Should be excluded (display:none).
+  </p>
+</section>
+
+<!-- ========================================================= -->
+<!-- 16) Not visible: visibility:hidden (excluded) -->
+<!-- ========================================================= -->
+<section class="case bgWhite visibilityHidden" id="case-visibility-hidden">
+  <p class="label">visibility:hidden subtree (should be excluded)</p>
+  <p class="text normalText" id="excluded_visibility_hidden_fail" style="color:#999999;">
+    Should be excluded (visibility:hidden).
+  </p>
+</section>
+
+<!-- ========================================================= -->
+<!-- 17) Not visible: visibility:collapse (excluded) -->
+<!-- ========================================================= -->
+<section class="case bgWhite visibilityCollapse" id="case-visibility-collapse">
+  <p class="label">visibility:collapse subtree (should be excluded)</p>
+  <p class="text normalText" id="excluded_visibility_collapse_fail" style="color:#999999;">
+    Should be excluded (visibility:collapse).
+  </p>
+</section>
+
+<!-- ========================================================= -->
+<!-- 18) Closed <details>: excluded by your helper -->
+<!-- ========================================================= -->
+<section class="case bgWhite" id="case-details-closed">
+  <p class="label">&lt;details&gt; closed content (should be excluded)</p>
+  <details id="details_closed">
+    <summary>Closed details summary</summary>
+    <p class="text normalText" id="excluded_details_closed_fail" style="color:#999999;">
+      Should be excluded (inside closed details).
+    </p>
+  </details>
+</section>
+
+<!-- ========================================================= -->
+<!-- 19) <template> content: excluded by your helper -->
+<!-- ========================================================= -->
+<section class="case bgWhite" id="case-template">
+  <p class="label">&lt;template&gt; content (should be excluded)</p>
+  <template id="tpl">
+    <p class="text normalText" id="excluded_template_fail" style="color:#999999;">
+      Should be excluded (template content).
+    </p>
+  </template>
+</section>
+
+<!-- ========================================================= -->
+<!-- 20) inert subtree: excluded -->
+<!-- ========================================================= -->
+<section class="case bgWhite" id="case-inert">
+  <p class="label">inert subtree (should be excluded)</p>
+  <div inert>
+    <p class="text normalText" id="excluded_inert_fail" style="color:#999999;">
+      Should be excluded (inert).
+    </p>
+  </div>
+</section>
+
+<!-- ========================================================= -->
+<!-- 21) aria-hidden subtree: excluded UNLESS tabbable override -->
+<!-- ========================================================= -->
+<section class="case bgWhite" id="case-aria-hidden">
+  <p class="label">aria-hidden cases</p>
+
+  <!-- excluded: aria-hidden true, not tabbable -->
+  <p class="text normalText" id="excluded_aria_hidden_fail" style="color:#999999;" aria-hidden="true">
+    Should be excluded (aria-hidden, not tabbable).
+  </p>
+
+  <!-- eligible override: aria-hidden true, tabbable -->
+  <p class="text normalText" id="eligible_aria_hidden_tabbable_fail" style="color:#999999;" aria-hidden="true" tabindex="0">
+    Eligible override: aria-hidden but tabbable (should be evaluated).
+  </p>
+
+  <!-- NOT eligible override: aria-hidden true, programmatic focus only -->
+  <p class="text normalText" id="excluded_aria_hidden_prog_focus" style="color:#999999;" aria-hidden="true" tabindex="-1">
+    Should be excluded (aria-hidden + tabindex=-1 programmatic focus only).
+  </p>
+</section>
+
+<!-- ========================================================= -->
+<!-- 22) Not visually visible but eligible: opacity:0 -->
+<!-- ========================================================= -->
+<section class="case bgWhite" id="case-opacity-zero">
+  <p class="label">opacity:0 (still eligible in your policy)</p>
+  <p class="text normalText opacityZero" id="eligible_opacity_zero_fail" style="color:#999999;">
+    Eligible even if invisible (opacity:0). Should be evaluated.
+  </p>
+</section>
+
+<!-- ========================================================= -->
+<!-- 23) Not visually visible but eligible: offscreen -->
+<!-- ========================================================= -->
+<section class="case bgWhite" id="case-offscreen">
+  <p class="label">Offscreen positioned (still eligible)</p>
+  <p class="text normalText offscreen" id="eligible_offscreen_fail" style="color:#999999;">
+    Eligible offscreen. Should be evaluated.
+  </p>
+</section>
+
+<!-- ========================================================= -->
+<!-- 24) SR-only clipping (still eligible) -->
+<!-- ========================================================= -->
+<section class="case bgWhite" id="case-sr-only">
+  <p class="label">SR-only clipped (still eligible)</p>
+  <p class="text normalText srOnly" id="eligible_sr_only_fail" style="color:#999999;">
+    Eligible SR-only. Should be evaluated.
+  </p>
+</section>
+
+<!-- ========================================================= -->
+<!-- 25) Zero-size text (policy decision; currently eligible) -->
+<!-- ========================================================= -->
+<section class="case bgWhite" id="case-zero-size">
+  <p class="label">Zero-size text (currently still eligible)</p>
+  <p class="text normalText zeroSize" id="eligible_zero_size_text" style="color:#999999;">
+    Zero-size text.
+  </p>
+</section>
+
+<!-- ========================================================= -->
+<!-- 26) Whitespace-only text node (ignored by rule traversal) -->
+<!-- ========================================================= -->
+<section class="case bgWhite" id="case-whitespace-only">
+  <p class="label">Whitespace-only text node (should be ignored)</p>
+  <p class="text normalText" id="whitespace_only">
+
+  </p>
+</section>
+
+</body>
+</html>

@@ -52,20 +52,6 @@ function runInPage(ctx) {
       catch { return []; }
     };
 
-  const buildSelector = helpers && typeof helpers.buildSelector === 'function'
-    ? helpers.buildSelector
-    : (el) => {
-      try {
-        if (!el || !el.tagName) return 'html';
-        const tag = (el.tagName || 'html').toLowerCase();
-        return el.id ? `${tag}#${el.id}` : tag;
-      } catch { return 'html'; }
-    };
-
-  const getOuterHtmlSnippet = helpers && typeof helpers.getOuterHtmlSnippet === 'function'
-    ? helpers.getOuterHtmlSnippet
-    : (el) => { try { return (el && el.outerHTML) ? String(el.outerHTML).slice(0, 2000) : ''; } catch { return ''; } };
-
   const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
     ? helpers.getEligibilityInfo
     : null;
@@ -112,13 +98,11 @@ function runInPage(ctx) {
 
     if (hasTextAlt) continue;
 
-    const selector = (() => { try { return buildSelector(el); } catch { return 'html'; } })();
-    const html = getOuterHtmlSnippet(el);
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
-    occurrences.push({
-      selector,
-      html,
+    const baseOccurrence = {
+      selector: '',
+      html: '',
       summary: 'Missing text alternative for <canvas>.',
       hint: 'Provide fallback text inside <canvas> or an accessible name (e.g., aria-label/aria-labelledby).',
       i18n: {
@@ -132,7 +116,14 @@ function runInPage(ctx) {
         // Debuggable, deterministic helper facts (non-verdict)
         textAlternative: ti || null
       }
-    });
+    };
+
+    if (helpers && typeof helpers.reportOccurrence === 'function') {
+      occurrences.push(helpers.reportOccurrence(el, baseOccurrence));
+    } else {
+      // Never compute selector/snippet in the rule.
+      occurrences.push({ ...baseOccurrence });
+    }
   }
 
   if (applicableCount === 0) {

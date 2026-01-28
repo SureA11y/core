@@ -50,27 +50,14 @@ function runInPage(ctx) {
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
+  const reportOccurrence = helpers && typeof helpers.reportOccurrence === 'function'
+      ? helpers.reportOccurrence
+      : null;
+
   const queryAllSmart = helpers && typeof helpers.queryAllSmart === 'function' ? helpers.queryAllSmart : null;
   const queryAll = helpers && typeof helpers.queryAll === 'function'
-    ? helpers.queryAll
-    : (sel) => {
-        try { return safeRoot && safeRoot.querySelectorAll ? Array.from(safeRoot.querySelectorAll(sel)) : []; }
-        catch { return []; }
-      };
-
-  const buildSelector = helpers && typeof helpers.buildSelector === 'function'
-    ? helpers.buildSelector
-    : (el) => {
-        try {
-          if (!el || !el.tagName) return 'html';
-          const tag = (el.tagName || 'html').toLowerCase();
-          return el.id ? `${tag}#${el.id}` : tag;
-        } catch { return 'html'; }
-      };
-
-  const getOuterHtmlSnippet = helpers && typeof helpers.getOuterHtmlSnippet === 'function'
-    ? helpers.getOuterHtmlSnippet
-    : (el) => { try { return (el && el.outerHTML) ? String(el.outerHTML).slice(0, 2000) : ''; } catch { return ''; } };
+      ? helpers.queryAll
+      : null;
 
   const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
     ? helpers.getEligibilityInfo
@@ -92,17 +79,22 @@ function runInPage(ctx) {
 
   function hasMeaningfulFallbackText(el) {
     try {
-      // Best-effort: textContent is deterministic and usually excludes <source>/<track> anyway.
-      const t = trim(el && el.textContent);
-      return !!t;
+      const t = trim((el && el.textContent) || '');
+      return t.length > 0;
     } catch {
       return false;
     }
   }
 
   const videos = (() => {
-    try { return Array.from((queryAllSmart ? queryAllSmart('video') : queryAll('video')) || []); }
-    catch { return queryAll('video'); }
+    try {
+      if (queryAllSmart) return Array.from(queryAllSmart('video') || []);
+      if (queryAll) return Array.from(queryAll('video') || []);
+      return safeRoot && safeRoot.querySelectorAll ? Array.from(safeRoot.querySelectorAll('video')) : [];
+    } catch {
+      try { return safeRoot && safeRoot.querySelectorAll ? Array.from(safeRoot.querySelectorAll('video')) : []; }
+      catch { return []; }
+    }
   })();
 
   if (!videos.length) return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
@@ -141,18 +133,21 @@ function runInPage(ctx) {
     applicableCount += 1;
 
     const hasFallback = hasMeaningfulFallbackText(el);
-    const nameInfo = getAccessibleNameInfo ? (() => { try { return getAccessibleNameInfo(el, ctx); } catch { return null; } })() : null;
+    if (hasFallback) continue;
+
+    const nameInfo = getAccessibleNameInfo
+        ? (() => { try { return getAccessibleNameInfo(el, ctx); } catch { return null; } })()
+        : null;
+
     const hasName = !!(nameInfo && nameInfo.present && trim(nameInfo.value));
+    if (hasName) continue;
 
-    if (hasFallback || hasName) continue;
+    let eligInfo = null;
+    if (getEligibilityInfo) {
+      try { eligInfo = getEligibilityInfo(el, ctx, { targetSet: 'acc' }); } catch { eligInfo = null; }
+    }
 
-    const selector = (() => { try { return buildSelector(el); } catch { return 'html'; } })();
-    const html = getOuterHtmlSnippet(el);
-    const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
-
-    occurrences.push({
-      selector,
-      html,
+    const baseOccurrence = {
       summary: 'Missing text alternative for <video> poster.',
       hint: 'Provide an accessible name (e.g., aria-label/aria-labelledby) or meaningful fallback text inside <video>.',
       i18n: {
@@ -162,9 +157,16 @@ function runInPage(ctx) {
       },
       data: {
         poster,
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
+        nameInfo: nameInfo || null
       }
-    });
+    };
+
+    if (reportOccurrence) {
+      occurrences.push(reportOccurrence(el, baseOccurrence));
+    } else {
+      occurrences.push({ selector: '', html: '', ...baseOccurrence });
+    }
   }
 
   if (applicableCount === 0) return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };

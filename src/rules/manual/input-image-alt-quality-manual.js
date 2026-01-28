@@ -51,20 +51,6 @@ function runInPage(ctx) {
             catch { return []; }
         };
 
-    const buildSelector = helpers && typeof helpers.buildSelector === 'function'
-        ? helpers.buildSelector
-        : (el) => {
-            try {
-                if (!el || !el.tagName) return 'html';
-                const tag = (el.tagName || 'html').toLowerCase();
-                return el.id ? `${tag}#${el.id}` : tag;
-            } catch { return 'html'; }
-        };
-
-    const getOuterHtmlSnippet = helpers && typeof helpers.getOuterHtmlSnippet === 'function'
-        ? helpers.getOuterHtmlSnippet
-        : (el) => { try { return (el && el.outerHTML) ? String(el.outerHTML).slice(0, 2000) : ''; } catch { return ''; } };
-
     const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
         ? helpers.getEligibilityInfo
         : null;
@@ -98,8 +84,8 @@ function runInPage(ctx) {
 
 
     const els = (() => {
-        try { return Array.from((queryAllSmart ? queryAllSmart("input[type=\"image\"]") : queryAll("input[type=\"image\"]")) || []); }
-        catch { return queryAll("input[type=\"image\"]"); }
+        try { return Array.from((queryAllSmart ? queryAllSmart('input[type="image"]') : queryAll('input[type="image"]')) || []); }
+        catch { return queryAll('input[type="image"]'); }
     })();
 
     if (!els.length) {
@@ -126,25 +112,27 @@ function runInPage(ctx) {
 
         applicableCount += 1;
 
-        const selectorStr = (() => { try { return buildSelector(el); } catch { return 'html'; } })();
-        const html = getOuterHtmlSnippet(el);
         const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
-        occurrences.push({
-            selector: selectorStr,
-            html,
-            summary: "Review alt text on <input type=\"image\"> for accuracy and appropriateness.",
-            hint: "Ensure the alt text describes the control\u2019s action (e.g., \u201cSearch\u201d, \u201cSubmit order\u201d) in context.",
+        const baseOccurrence = {
+            summary: 'Review alt text on <input type="image"> for accuracy and appropriateness.',
+            hint: 'Ensure the alt text describes the control’s action (e.g., “Search”, “Submit order”) in context.',
             i18n: {
-                summaryKey: "a11ycore_inputImage_altQuality_summary_cantTell",
-                hintKey: "a11ycore_inputImage_altQuality_hint_cantTell",
-                params: { element: (el.tagName || '').toLowerCase() }
+                summaryKey: 'a11ycore_inputImage_altQuality_summary_cantTell',
+                hintKey: 'a11ycore_inputImage_altQuality_hint_cantTell',
+                params: { element: 'input[type=image]' }
             },
             data: {
                 visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
-                details: null
+                details: { alt: String(el.getAttribute('alt') || '') } // optional but useful
             }
-        });
+        };
+
+        if (helpers && typeof helpers.reportOccurrence === 'function') {
+            occurrences.push(helpers.reportOccurrence(el, baseOccurrence));
+        } else {
+            occurrences.push({ selector: '', html: '', ...baseOccurrence });
+        }
     }
 
     if (applicableCount === 0) {

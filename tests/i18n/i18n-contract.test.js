@@ -69,7 +69,7 @@ test('result schema is stable', () => {
     const result = runa11yCoreOnHtml('<img src="x">');
     assert.deepStrictEqual(
         Object.keys(result).sort(),
-        ['contextSelector','engine','rules','timestamp','title','url']
+        ['contextSelector','engine','perfStats', 'rules','timestamp','title','url']
     );
 });
 

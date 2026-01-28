@@ -27,7 +27,8 @@ module.exports = {
   "a11ycore_svg_textAltPresent_title": "<svg> doit fournir une alternative textuelle",
   "a11ycore_svg_textAltPresent_description": "Vérifie que les éléments <svg> en ligne fournissent une alternative textuelle via <title>/<desc> ou un nom ARIA.",
   "a11ycore_svg_textAltPresent_summary_fail": "Alternative textuelle manquante pour <svg>.",
-  "a11ycore_svg_textAltPresent_hint_fail": "Fournissez un élément <title> ou <desc> avec du texte, ou un nom ARIA (aria-label/aria-labelledby).", "a11ycore_object_textAltPresent_title": "<object> doit fournir une alternative textuelle",
+  "a11ycore_svg_textAltPresent_hint_fail": "Fournissez un élément <title> ou <desc> avec du texte, ou un nom ARIA (aria-label/aria-labelledby).",
+  "a11ycore_object_textAltPresent_title": "<object> doit fournir une alternative textuelle",
   "a11ycore_object_textAltPresent_description": "Vérifie que les éléments <object> fournissent une alternative textuelle via un contenu de repli ou un nom accessible.",
   "a11ycore_object_textAltPresent_summary_fail": "Alternative textuelle manquante pour <object>.",
   "a11ycore_object_textAltPresent_hint_fail": "Fournissez un contenu de repli pertinent dans <object>, ou ajoutez un nom accessible (aria-label/aria-labelledby).",
@@ -96,12 +97,7 @@ module.exports = {
       "Associez un <label>, ou utilisez aria-label / aria-labelledby (placeholder/title ne sont pas des libellés).",
 
 
-
-
-
-
-
-'a11ycore_formControlAccessibleName_description': 'Échec lorsqu’un contrôle de formulaire applicable n’a pas de nom accessible (ex. label, aria-label, aria-labelledby).',
+  'a11ycore_formControlAccessibleName_description': 'Échec lorsqu’un contrôle de formulaire applicable n’a pas de nom accessible (ex. label, aria-label, aria-labelledby).',
   'a11ycore_formControlAccessibleName_hint_fail': 'Fournissez un nom accessible via un <label>, aria-label ou aria-labelledby.',
   'a11ycore_formControlAccessibleName_summary_fail': 'Le contrôle de formulaire n’a pas de nom accessible.',
   'a11ycore_formControlAccessibleName_title': 'Les champs de formulaire doivent avoir un nom accessible.',
@@ -142,11 +138,197 @@ module.exports = {
 
   "a11ycore_html_lang_attr_missing_empty":
       'La langue par défaut de la page est déclarée mais vide.',
+
   "a11ycore_html_lang_attr_hint_missing_empty":
       'Renseignez une valeur de langue valide dans l’attribut lang de l’élément <html> (par exemple : <html lang="fr">).',
 
   "a11ycore_html_lang_attr_invalid":
       'La langue par défaut de la page est déclarée, mais la valeur « {{lang}} » n’est pas une balise de langue valide.',
   "a11ycore_html_lang_attr_hint_invalid":
-      'Utilisez une balise de langue BCP 47 valide dans <html lang="…"> (par exemple : « fr », « en », « fr-FR »).'
-};
+      'Utilisez une balise de langue BCP 47 valide dans <html lang="…"> (par exemple : « fr », « en », « fr-FR »).',
+
+  "a11ycore_mediaTranscriptPresent_title":
+      "Média temporel : preuve de transcription ou d’alternative textuelle",
+
+  "a11ycore_mediaTranscriptPresent_description":
+      "Détecte les éléments audio et vidéo pour lesquels la présence d’une transcription ou d’une autre alternative textuelle n’est pas clairement établie dans le contenu de la page. Cette règle est volontairement conservatrice et retourne cantTell lorsque la preuve est absente ou invérifiable.",
+
+  "a11ycore_mediaTranscriptPresent_summary_cantTell_missing":
+      "Aucune transcription ou autre alternative textuelle pour ce média temporel n’est clairement établie sur la page.",
+
+  "a11ycore_mediaTranscriptPresent_hint_cantTell_missing":
+      "Fournir une transcription ou une autre alternative textuelle clairement identifiée pour les médias préenregistrés audio seuls ou vidéo seuls, par exemple une section ou un lien « Transcription » visible.",
+
+  "a11ycore_mediaTranscriptPresent_summary_cantTell_unverified":
+      "Une transcription ou une autre alternative textuelle peut être disponible pour ce média temporel, mais elle n’a pas pu être vérifiée à partir du contenu de la page.",
+
+  "a11ycore_mediaTranscriptPresent_hint_cantTell_unverified":
+      "Aucune transcription ou autre alternative textuelle pour cet élément {element} n’est clairement établie sur la page.",
+
+  "a11ycore_pageTitlePresent_title": "La page possède un titre non vide",
+  "a11ycore_pageTitlePresent_description":
+      "Vérifie que la page contient un élément <title> non vide permettant d’identifier la page.",
+
+  "a11ycore_pageTitlePresent_summary_fail":
+      "La page ne possède pas de titre non vide.",
+  "a11ycore_pageTitlePresent_hint_fail":
+      "Ajouter un élément <title> contenant un texte décrivant le sujet ou l’objectif de la page.",
+  "a11ycore_pageTitlePatterns_title":
+      "Motifs de titres de page pouvant indiquer un manque de descriptivité",
+  "a11ycore_pageTitlePatterns_description":
+      "Identifie des motifs de titres de page pouvant indiquer un manque de descriptivité, tels que des titres génériques, dupliqués ou excessivement modélisés. Cette règle fournit des signaux de revue et n’entraîne pas d’échec automatique.",
+
+  "a11ycore_pageTitlePatterns_summary_cantTell":
+      "Le titre de la page peut ne pas être suffisamment descriptif pour identifier le sujet ou l’objectif de la page.",
+
+  "a11ycore_pageTitlePresent_summary_fail_missing":
+      "La page ne contient pas d’élément <title>.",
+  "a11ycore_pageTitlePresent_summary_fail_empty":
+      "La page contient un élément <title> vide.",
+  "a11ycore_pageTitlePatterns_summary_cantTell_duplicateAcrossPages":
+      "Plusieurs pages partagent le même titre, ce qui peut rendre plus difficile la distinction entre les pages ({{duplicateGroups}} groupes dupliqués sur {{pagesAnalyzed}} pages). Exemple : « {{exampleTitle}} ».",
+
+  "a11ycore_pageTitlePatterns_summary_cantTell_templatedAcrossPages":
+      "De nombreux titres de page semblent fortement modélisés, ce qui peut réduire la capacité des titres à distinguer les pages ({{pagesAnalyzed}} pages).",
+
+  "a11ycore_pageTitlePatterns_summary_cantTell_generic":
+      "Le titre de la page est générique et peut ne pas identifier le sujet ou l’objectif de la page.",
+
+  "a11ycore_pageTitlePatterns_summary_cantTell_veryShort":
+      "Le titre de la page est très court et peut ne pas identifier le sujet ou l’objectif de la page.",
+
+  "a11ycore_pageTitlePatterns_summary_cantTell_templateLike":
+      "Le titre de la page semble modélisé et peut ne pas identifier le sujet ou l’objectif de la page.",
+
+// Un seul conseil pour tous les cas
+  "a11ycore_pageTitlePatterns_hint_cantTell":
+      "Vérifier que le titre de la page identifie clairement le sujet ou l’objectif de la page et permet de la distinguer des autres pages.",
+
+  // --- Contraste DOM : calculabilité (porte d’entrée)
+  "a11ycore_contrastComputable_title": 'Le contraste des couleurs est calculable pour le texte rendu',
+  "a11ycore_contrastComputable_description":
+      'Détermine si suffisamment d’informations sont disponibles pour calculer le contraste WCAG du texte visible (ex. pas de dégradés/images/modes de fusion rendant l’arrière-plan indéterminé).',
+  "a11ycore_contrastComputable_pass_allComputable":
+      'Le contraste est calculable pour tout le texte éligible ({{eligibleTextCount}} nœud(s) de texte).',
+
+  "a11ycore_contrastComputable_cantTell_generic":
+      'Le contraste peut ne pas être calculable ({{reasonCode}}).',
+
+  "a11ycore_contrastComputable_cantTell_bgImageOrGradient":
+      'Le contraste n’est pas calculable car l’arrière-plan utilise une image ou un dégradé ({{blockerProperty}}={{blockerValue}}).',
+
+  "a11ycore_contrastComputable_cantTell_mixBlendMode":
+      'Le contraste n’est pas calculable car mix-blend-mode est utilisé ({{blockerProperty}}={{blockerValue}}).',
+
+  "a11ycore_contrastComputable_cantTell_filter":
+      'Le contraste n’est pas calculable car filter/backdrop-filter est utilisé ({{blockerProperty}}={{blockerValue}}).',
+
+  "a11ycore_contrastComputable_cantTell_rootNotOpaque":
+      'Le contraste n’est pas calculable car l’arrière-plan effectif n’est pas totalement opaque à la racine (alpha={{backgroundAlpha}}).',
+
+  "a11ycore_contrastComputable_cantTell_foregroundUnparsable":
+      'Le contraste n’est pas calculable car la couleur de premier plan calculée n’a pas pu être analysée.',
+
+  "a11ycore_contrastComputable_cantTell_engineFailure":
+      'La calculabilité du contraste n’a pas pu être déterminée en raison d’une erreur interne du moteur ({{reasonCode}}).',
+
+// --- Contraste DOM : minimum AA (1.4.3)
+  "a11ycore_contrastMinimum_title": 'Le texte respecte le contraste minimum (AA)',
+  "a11ycore_contrastMinimum_description":
+      'Vérifie que le texte visible atteint un ratio de contraste d’au moins 4,5:1 (texte normal) ou 3,0:1 (grand texte), lorsque le contraste est calculable à partir du CSS.',
+
+  "a11ycore_contrastMinimum_fail_belowThreshold":
+      "L’élément présente un contraste de couleur insuffisant de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
+
+  "a11ycore_contrastMinimum_pass_allAboveThreshold":
+      'Tout le texte calculable respecte le contraste minimum (AA). Nœuds de texte éligibles : {{eligibleTextCount}}. Calculables : {{computableTextCount}}.',
+
+  "a11ycore_contrastMinimum_notApplicable_noComputableText":
+      'Aucun texte éligible n’avait un contraste calculable (nœuds de texte éligibles : {{eligibleTextCount}}). Voir la règle de calculabilité du contraste pour les détails.',
+
+  "a11ycore_contrastMinimum_cantTell_engineFailure":
+      'Le contraste minimum (AA) n’a pas pu être déterminé en raison d’une erreur interne du moteur ({{reasonCode}}).',
+
+// --- Contraste DOM : renforcé AAA (1.4.6)
+  "a11ycore_contrastEnhanced_title": 'Le texte respecte le contraste renforcé (AAA)',
+  "a11ycore_contrastEnhanced_description":
+      'Vérifie que le texte visible atteint un ratio de contraste d’au moins 7,0:1 (texte normal) ou 4,5:1 (grand texte), lorsque le contraste est calculable à partir du CSS.',
+
+// --- 1) Contraste du texte (Minimum) — WCAG 1.4.3 (AA)
+  "a11ycore_dom_textContrastMinimum_title": "Le texte doit avoir un contraste suffisant (minimum)",
+  "a11ycore_dom_textContrastMinimum_description": "Vérifie le contraste du texte visible par rapport à son arrière-plan calculé selon WCAG 2.2 SC 1.4.3 (AA), en utilisant les styles rendus (taille/épaisseur) pour déterminer le ratio requis.",
+
+  "a11ycore_dom_textContrastMinimum_summary_fail":
+      "Contraste de texte insuffisant : {{contrastRatio}}:1 (minimum requis {{requiredRatio}}:1). Premier plan {{fgColor}} sur arrière-plan {{bgColor}}. Police {{fontSizePx}}px, graisse {{fontWeight}}{{#isBold}}, en gras{{/isBold}}{{#isLargeText}} (grand texte){{/isLargeText}}.",
+  "a11ycore_dom_textContrastMinimum_hint_fail":
+      "Ajustez la couleur du texte ou l’arrière-plan afin d’atteindre au moins {{requiredRatio}}:1 pour cette taille/épaisseur de texte.",
+
+  "a11ycore_dom_textContrastMinimum_summary_pass":
+      "Contraste de texte conforme : {{contrastRatio}}:1 (minimum requis {{requiredRatio}}:1). Premier plan {{fgColor}} sur arrière-plan {{bgColor}}. Police {{fontSizePx}}px, graisse {{fontWeight}}{{#isBold}}, en gras{{/isBold}}{{#isLargeText}} (grand texte){{/isLargeText}}.",
+
+  "a11ycore_dom_textContrastMinimum_summary_cantTell":
+      "Impossible de calculer fiablement le contraste du texte car l’arrière-plan effectif n’est pas déterminable de manière fiable (ex. image, dégradé, vidéo, canvas, transparence ou fusion complexes).",
+  "a11ycore_dom_textContrastMinimum_hint_cantTell":
+      "Vérifiez manuellement le contraste lorsque le texte est superposé à des images/dégradés/transparences ; assurez-vous qu’il respecte {{requiredRatio}}:1 selon la taille/épaisseur calculée.",
+
+  "a11ycore_contrastEnhanced_fail_belowThreshold":
+      "L’élément présente un contraste de couleur insuffisant renforcé (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
+
+  "a11ycore_contrastEnhanced_pass_allAboveThreshold":
+      'Tout le texte calculable respecte le contraste renforcé (AAA). Nœuds de texte éligibles : {{eligibleTextCount}}. Calculables : {{computableTextCount}}.',
+
+  "a11ycore_contrastEnhanced_notApplicable_noComputableText":
+      'Aucun texte éligible n’avait un contraste calculable (nœuds de texte éligibles : {{eligibleTextCount}}). Voir la règle de calculabilité du contraste pour les détails.',
+
+  "a11ycore_contrastEnhanced_cantTell_engineFailure":
+      'Le contraste renforcé (AAA) n’a pas pu être déterminé en raison d’une erreur interne du moteur ({{reasonCode}}).',
+
+  // --- 2) Contraste du texte (Renforcé) — WCAG 1.4.6 (AAA)
+  "a11ycore_dom_textContrastEnhanced_title": "Le texte doit avoir un contraste suffisant (renforcé)",
+  "a11ycore_dom_textContrastEnhanced_description": "Vérifie le contraste du texte visible par rapport à son arrière-plan calculé selon WCAG 2.2 SC 1.4.6 (AAA), en utilisant les styles rendus (taille/épaisseur) pour déterminer le ratio requis.",
+
+  "a11ycore_dom_textContrastEnhanced_summary_fail":
+      "Contraste de texte renforcé insuffisant : {{contrastRatio}}:1 (requis {{requiredRatio}}:1). Premier plan {{fgColor}} sur arrière-plan {{bgColor}}. Police {{fontSizePx}}px, graisse {{fontWeight}}{{#isBold}}, en gras{{/isBold}}{{#isLargeText}} (grand texte){{/isLargeText}}.",
+  "a11ycore_dom_textContrastEnhanced_hint_fail":
+      "Ajustez la couleur du texte ou l’arrière-plan afin d’atteindre au moins {{requiredRatio}}:1 pour le niveau renforcé (AAA).",
+
+  "a11ycore_dom_textContrastEnhanced_summary_pass":
+      "Contraste de texte renforcé conforme : {{contrastRatio}}:1 (requis {{requiredRatio}}:1). Premier plan {{fgColor}} sur arrière-plan {{bgColor}}. Police {{fontSizePx}}px, graisse {{fontWeight}}{{#isBold}}, en gras{{/isBold}}{{#isLargeText}} (grand texte){{/isLargeText}}.",
+
+  "a11ycore_dom_textContrastEnhanced_summary_cantTell":
+      "Impossible de calculer fiablement le contraste renforcé car l’arrière-plan effectif n’est pas déterminable de manière fiable (ex. image, dégradé, vidéo, canvas, transparence ou fusion complexes).",
+  "a11ycore_dom_textContrastEnhanced_hint_cantTell":
+      "Vérifiez manuellement le contraste renforcé (AAA) lorsque le texte est superposé à des images/dégradés/transparences ; assurez-vous qu’il respecte {{requiredRatio}}:1 selon la taille/épaisseur calculée.",
+
+  // --- 3) Contraste non-textuel — WCAG 1.4.11 (AA)
+  "a11ycore_dom_nonTextContrast_title": "Les composants d’interface et les graphiques doivent avoir un contraste suffisant",
+  "a11ycore_dom_nonTextContrast_description": "Vérifie le contraste des informations visuelles non textuelles (contours de composants, états, et objets graphiques porteurs d’information) selon WCAG 2.2 SC 1.4.11 (AA).",
+
+  "a11ycore_dom_nonTextContrast_summary_fail":
+      "Contraste non-textuel insuffisant : {{contrastRatio}}:1 (requis {{requiredRatio}}:1). Premier plan {{fgColor}} par rapport à {{bgColor}}. Composant : {{componentKind}}{{#componentState}} (état : {{componentState}}){{/componentState}}.",
+  "a11ycore_dom_nonTextContrast_hint_fail":
+      "Ajustez les couleurs du composant/graphique afin d’atteindre au moins {{requiredRatio}}:1 pour le contour perceptible ou l’information visuelle essentielle.",
+
+  "a11ycore_dom_nonTextContrast_summary_pass":
+      "Contraste non-textuel conforme : {{contrastRatio}}:1 (requis {{requiredRatio}}:1). Premier plan {{fgColor}} par rapport à {{bgColor}}. Composant : {{componentKind}}{{#componentState}} (état : {{componentState}}){{/componentState}}.",
+
+  "a11ycore_dom_nonTextContrast_summary_cantTell":
+      "Impossible de calculer fiablement le contraste non-textuel car l’arrière-plan effectif ou les pixels peints ne sont pas déterminables (ex. image/dégradé/vidéo/canvas, transparence ou fusion complexes).",
+  "a11ycore_dom_nonTextContrast_hint_cantTell":
+      "Vérifiez manuellement le contraste du composant/graphique par rapport aux couleurs adjacentes ; assurez-vous qu’il respecte {{requiredRatio}}:1 pour l’information visuelle non textuelle essentielle.",
+  "a11ycore_contrastEnhanced_pass_allTextMeetsThreshold": "Tout le texte calculable respecte le contraste renforcé (AAA).",
+  "a11ycore_contrastMinimum_pass_allTextMeetsThreshold": "Tout le texte calculable respecte le contraste minimum (AA).",
+  a11ycore_roleImg_textAlternativePresent_title:
+      'Les éléments avec role="img" doivent avoir une alternative textuelle accessible',
+
+  a11ycore_roleImg_textAlternativePresent_description:
+      'Vérifie que les éléments ayant le rôle "img" fournissent une alternative textuelle accessible via aria-label ou aria-labelledby.',
+
+  // Résumé d’échec & aide
+  a11ycore_roleImg_textAlternativePresent_summary_fail:
+      'L’élément avec le rôle "img" ne possède pas d’alternative textuelle accessible.',
+
+  a11ycore_roleImg_textAlternativePresent_hint_fail:
+      'Fournissez une alternative textuelle à l’aide de aria-label ou de aria-labelledby pointant vers un texte non vide.'
+
+}

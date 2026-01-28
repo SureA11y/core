@@ -7,6 +7,12 @@
   "scripts": {
     "build": "node scripts/build-core.js",
     "test": "npm run build && node --test \"tests/**/*.test.js\"",
+    "test:contrast-helpers": "node tests/contrast-helpers.test.js",
+    "helpers-perf-bench": "node --expose-gc scripts/dom-helpers-perf-bench.js",
+    "engine-perf-bench": "node --expose-gc scripts/engine-perf-bench.js  --profileRules=true --iters=25 --top=15",
+    "engine-perf-bench-transparent": "node --expose-gc scripts/engine-perf-bench.js --profileRules=true --top=15 --iters=25 --generated=contrastTransparent",
+    "engine-perf-bench-opaque": "node --expose-gc scripts/engine-perf-bench.js --profileRules=true --top=15 --iters=25 --generated=contrastOpaque",
+    "test:typography-helpers": "node tests/contrast-typography.test.js",
     "coverage": "node scripts/generate-wcag-coverage.js",
     "coverage:strict": "node scripts/generate-wcag-coverage.js --strictFacets",
     "validate:automatic-rules": "node scripts/validate-all-rules.js src/rules/automatic",

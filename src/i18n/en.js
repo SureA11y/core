@@ -139,5 +139,192 @@ module.exports = {
     "a11ycore_html_lang_attr_invalid":
         'The default language of the page is declared, but the value "{{lang}}" is not a valid language tag.',
     "a11ycore_html_lang_attr_hint_invalid":
-        'Use a valid BCP 47 language tag in <html lang="…"> (for example: "en", "fr", "en-US").'
+        'Use a valid BCP 47 language tag in <html lang="…"> (for example: "en", "fr", "en-US").',
+    "a11ycore_mediaTranscriptPresent_title":
+        "Time-based media: transcript or text alternative evidence",
+
+    "a11ycore_mediaTranscriptPresent_description":
+        "Finds audio and video elements where a transcript or other text alternative is not strongly evidenced in the page content. This rule is conservative and reports cantTell when evidence is missing or cannot be verified.",
+
+    "a11ycore_mediaTranscriptPresent_summary_cantTell_missing":
+        "La présence d’une transcription ou d’une autre alternative textuelle pour cet élément {{element}} n’est pas clairement démontrée sur la page.",
+
+    "a11ycore_mediaTranscriptPresent_hint_cantTell_missing":
+        "Provide a clearly identified transcript or other text alternative for prerecorded audio-only or video-only media, for example a visible “Transcript” section or link.",
+
+    "a11ycore_mediaTranscriptPresent_summary_cantTell_unverified":
+        "A transcript or other text alternative may be available for this time-based media, but it could not be verified from the page content.",
+
+    "a11ycore_mediaTranscriptPresent_hint_cantTell_unverified":
+        "Ensure a clearly identified transcript or other text alternative is available and visibly or programmatically associated with the media on the page.",
+    "a11ycore_pageTitlePresent_title": "Page has a non-empty title",
+    "a11ycore_pageTitlePresent_description":
+        "Checks that the page includes a non-empty <title> element that identifies the page.",
+
+    "a11ycore_pageTitlePresent_summary_fail":
+        "The page does not have a non-empty title.",
+    "a11ycore_pageTitlePresent_hint_fail":
+        "Add a <title> element with text that describes the page topic or purpose.",
+    "a11ycore_pageTitlePatterns_title":
+        "Page title patterns that may be insufficiently descriptive",
+    "a11ycore_pageTitlePatterns_description":
+        "Identifies page title patterns that may indicate low descriptiveness, such as generic, duplicated, or overly templated titles. This rule provides review signals and does not fail automatically.",
+
+    "a11ycore_pageTitlePatterns_summary_cantTell":
+        "The page title may not be descriptive enough to identify the page topic or purpose.",
+
+    "a11ycore_pageTitlePresent_summary_fail_missing":
+        "The page is missing a <title> element.",
+    "a11ycore_pageTitlePresent_summary_fail_empty":
+        "The page has an empty <title>.",
+
+    "a11ycore_pageTitlePatterns_summary_cantTell_duplicateAcrossPages":
+        "Several pages share the same title, which may make it harder to distinguish pages ({{duplicateGroups}} duplicate groups across {{pagesAnalyzed}} pages). Example: “{{exampleTitle}}”.",
+
+    "a11ycore_pageTitlePatterns_summary_cantTell_templatedAcrossPages":
+        "Many page titles appear highly templated, which may reduce how well titles distinguish pages ({{pagesAnalyzed}} pages).",
+
+    "a11ycore_pageTitlePatterns_summary_cantTell_generic":
+        "The page title is generic and may not identify the page topic or purpose.",
+
+    "a11ycore_pageTitlePatterns_summary_cantTell_veryShort":
+        "The page title is very short and may not identify the page topic or purpose.",
+
+    "a11ycore_pageTitlePatterns_summary_cantTell_templateLike":
+        "The page title appears templated and may not identify the page topic or purpose.",
+
+    "a11ycore_pageTitlePatterns_hint_cantTell":
+        "Review the page title and ensure it clearly identifies the page topic or purpose and helps distinguish the page from others.",
+
+    // --- DOM Contrast: computability gatekeeper
+    "a11ycore_contrastComputable_title": 'Color contrast is computable for rendered text',
+    "a11ycore_contrastComputable_description":
+        'Determines whether sufficient information is available to compute WCAG color contrast for visible text (e.g., no gradients/images/blend modes that make background indeterminate).',
+
+    "a11ycore_contrastComputable_pass_allComputable":
+        'Contrast is computable for all eligible text ({{eligibleTextCount}} text node(s)).',
+
+    "a11ycore_contrastComputable_cantTell_generic":
+        'Contrast may not be computable ({{reasonCode}}).',
+
+    "a11ycore_contrastComputable_cantTell_bgImageOrGradient":
+        'Contrast is not computable because the background uses an image or gradient ({{blockerProperty}}={{blockerValue}}).',
+
+    "a11ycore_contrastComputable_cantTell_mixBlendMode":
+        'Contrast is not computable because mix-blend-mode is used ({{blockerProperty}}={{blockerValue}}).',
+
+    "a11ycore_contrastComputable_cantTell_filter":
+        'Contrast is not computable because filter/backdrop-filter is used ({{blockerProperty}}={{blockerValue}}).',
+
+    "a11ycore_contrastComputable_cantTell_rootNotOpaque":
+        'Contrast is not computable because the effective background is not fully opaque at the root (alpha={{backgroundAlpha}}).',
+
+    "a11ycore_contrastComputable_cantTell_foregroundUnparsable":
+        'Contrast is not computable because the computed foreground color could not be parsed.',
+
+    "a11ycore_contrastComputable_cantTell_engineFailure":
+        'Contrast computability could not be determined due to an internal engine error ({{reasonCode}}).',
+
+// --- DOM Contrast: AA minimum (1.4.3)
+    "a11ycore_contrastMinimum_title": 'Text meets minimum color contrast (AA)',
+    "a11ycore_contrastMinimum_description":
+        'Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3.0:1 (large), when contrast is computable from CSS.',
+
+    "a11ycore_contrastMinimum_fail_belowThreshold":
+        'Element has insufficient color contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).',
+
+    "a11ycore_contrastMinimum_pass_allAboveThreshold":
+        'All computable text meets minimum contrast (AA). Eligible text nodes: {{eligibleTextCount}}. Computable: {{computableTextCount}}.',
+
+    "a11ycore_contrastMinimum_notApplicable_noComputableText":
+        'No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.',
+
+    "a11ycore_contrastMinimum_cantTell_engineFailure":
+        'Minimum contrast (AA) could not be determined due to an internal engine error ({{reasonCode}}).',
+
+// --- DOM Contrast: AAA enhanced (1.4.6)
+    "a11ycore_contrastEnhanced_title": 'Text meets enhanced color contrast (AAA)',
+    "a11ycore_contrastEnhanced_description":
+        'Checks that visible text has a contrast ratio of at least 7.0:1 (normal) or 4.5:1 (large), when contrast is computable from CSS.',
+
+    "a11ycore_contrastEnhanced_fail_belowThreshold":
+        'Element has insufficient color contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).',
+
+    "a11ycore_contrastEnhanced_pass_allAboveThreshold":
+        'All computable text meets enhanced contrast (AAA). Eligible text nodes: {{eligibleTextCount}}. Computable: {{computableTextCount}}.',
+
+    "a11ycore_contrastEnhanced_notApplicable_noComputableText":
+        'No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.',
+
+    "a11ycore_contrastEnhanced_cantTell_engineFailure":
+        'Enhanced contrast (AAA) could not be determined due to an internal engine error ({{reasonCode}}).',
+
+// --- 1) Text contrast (Minimum) — WCAG 1.4.3 (AA)
+    "a11ycore_dom_textContrastMinimum_title": "Text must have sufficient contrast (minimum)",
+    "a11ycore_dom_textContrastMinimum_description": "Checks visible text contrast against its computed background per WCAG 2.2 SC 1.4.3 (AA), using rendered styles (font size/weight) to determine the required ratio.",
+
+    "a11ycore_dom_textContrastMinimum_summary_fail":
+        "Insufficient text contrast: {{contrastRatio}}:1 (required {{requiredRatio}}:1). Foreground {{fgColor}} on background {{bgColor}}. Font {{fontSizePx}}px, weight {{fontWeight}}{{#isBold}}, bold{{/isBold}}{{#isLargeText}} (large text){{/isLargeText}}.",
+    "a11ycore_dom_textContrastMinimum_hint_fail":
+        "Adjust the foreground or background color so the contrast ratio is at least {{requiredRatio}}:1 for this text size/weight.",
+
+    "a11ycore_dom_textContrastMinimum_summary_pass":
+        "Text contrast OK: {{contrastRatio}}:1 (required {{requiredRatio}}:1). Foreground {{fgColor}} on background {{bgColor}}. Font {{fontSizePx}}px, weight {{fontWeight}}{{#isBold}}, bold{{/isBold}}{{#isLargeText}} (large text){{/isLargeText}}.",
+
+    "a11ycore_dom_textContrastMinimum_summary_cantTell":
+        "Could not reliably compute text contrast because the effective background is not deterministically resolvable (e.g. image, gradient, video, canvas, complex transparency, or blending).",
+    "a11ycore_dom_textContrastMinimum_hint_cantTell":
+        "Manually verify contrast where text overlays imagery/gradients/transparency; ensure it meets {{requiredRatio}}:1 for the computed text size/weight.",
+
+
+    // --- 2) Text contrast (Enhanced) — WCAG 1.4.6 (AAA)
+    "a11ycore_dom_textContrastEnhanced_title": "Text must have sufficient contrast (enhanced)",
+    "a11ycore_dom_textContrastEnhanced_description": "Checks visible text contrast against its computed background per WCAG 2.2 SC 1.4.6 (AAA), using rendered styles (font size/weight) to determine the required ratio.",
+
+    "a11ycore_dom_textContrastEnhanced_summary_fail":
+        "Insufficient enhanced text contrast: {{contrastRatio}}:1 (required {{requiredRatio}}:1). Foreground {{fgColor}} on background {{bgColor}}. Font {{fontSizePx}}px, weight {{fontWeight}}{{#isBold}}, bold{{/isBold}}{{#isLargeText}} (large text){{/isLargeText}}.",
+    "a11ycore_dom_textContrastEnhanced_hint_fail":
+        "Adjust the foreground or background color so the contrast ratio is at least {{requiredRatio}}:1 for enhanced (AAA) contrast.",
+
+    "a11ycore_dom_textContrastEnhanced_summary_pass":
+        "Enhanced text contrast OK: {{contrastRatio}}:1 (required {{requiredRatio}}:1). Foreground {{fgColor}} on background {{bgColor}}. Font {{fontSizePx}}px, weight {{fontWeight}}{{#isBold}}, bold{{/isBold}}{{#isLargeText}} (large text){{/isLargeText}}.",
+
+    "a11ycore_dom_textContrastEnhanced_summary_cantTell":
+        "Could not reliably compute enhanced text contrast because the effective background is not deterministically resolvable (e.g. image, gradient, video, canvas, complex transparency, or blending).",
+    "a11ycore_dom_textContrastEnhanced_hint_cantTell":
+        "Manually verify enhanced (AAA) contrast where text overlays imagery/gradients/transparency; ensure it meets {{requiredRatio}}:1 for the computed text size/weight.",
+
+
+    // --- 3) Non-text contrast — WCAG 1.4.11 (AA)
+    "a11ycore_dom_nonTextContrast_title": "UI components and graphics must have sufficient contrast",
+    "a11ycore_dom_nonTextContrast_description": "Checks contrast for non-text visual information (UI component boundaries, states, and meaningful graphical objects) per WCAG 2.2 SC 1.4.11 (AA).",
+
+    "a11ycore_dom_nonTextContrast_summary_fail":
+        "Insufficient non-text contrast: {{contrastRatio}}:1 (required {{requiredRatio}}:1). Foreground {{fgColor}} against background {{bgColor}}. Component: {{componentKind}}{{#componentState}} (state: {{componentState}}){{/componentState}}.",
+    "a11ycore_dom_nonTextContrast_hint_fail":
+        "Adjust the component/graphic colors so the contrast ratio is at least {{requiredRatio}}:1 for the perceivable boundary or essential visual information.",
+
+    "a11ycore_dom_nonTextContrast_summary_pass":
+        "Non-text contrast OK: {{contrastRatio}}:1 (required {{requiredRatio}}:1). Foreground {{fgColor}} against background {{bgColor}}. Component: {{componentKind}}{{#componentState}} (state: {{componentState}}){{/componentState}}.",
+
+    "a11ycore_dom_nonTextContrast_summary_cantTell":
+        "Could not reliably compute non-text contrast because the effective background or painted pixels are not deterministically resolvable (e.g. image/gradient/video/canvas, complex transparency, or blending).",
+    "a11ycore_dom_nonTextContrast_hint_cantTell":
+        "Manually verify the component/graphic contrast against adjacent colors; ensure it meets {{requiredRatio}}:1 for essential non-text visual information.",
+    "a11ycore_contrastEnhanced_pass_allTextMeetsThreshold": "All computable text meets enhanced contrast (AAA).",
+    "a11ycore_contrastMinimum_pass_allTextMeetsThreshold": "All computable text meets minimum contrast (AA).",
+
+    // Title & description
+    a11ycore_roleImg_textAlternativePresent_title:
+        '[role="img"] must have an accessible text alternative',
+
+    a11ycore_roleImg_textAlternativePresent_description:
+        'Checks that elements with role="img" provide an accessible text alternative using aria-label or aria-labelledby.',
+
+    // Failure summary & hint
+    a11ycore_roleImg_textAlternativePresent_summary_fail:
+        'The element with role="img" does not have an accessible text alternative.',
+
+    a11ycore_roleImg_textAlternativePresent_hint_fail:
+        'Provide a text alternative using aria-label, or aria-labelledby that references non-empty text.'
 };

@@ -67,7 +67,8 @@ function runInPage(ctx) {
     const { document, rule, helpers } = ctx;
     const html = document && document.documentElement;
 
-    if (!html || html.tagName.toLowerCase() !== 'html') {
+    const tag = (html && html.tagName) ? String(html.tagName).toLowerCase() : '';
+    if (!html || tag !== 'html') {
         return {
             ruleId: rule.ruleId,
             outcome: 'notApplicable',
@@ -76,19 +77,30 @@ function runInPage(ctx) {
         };
     }
 
-    let visibilityFilterFromHelper = null;
-    if (helpers && typeof helpers.getEligibilityInfo === 'function') {
-        try {
-            visibilityFilterFromHelper = helpers.getEligibilityInfo(html, ctx, { targetSet: 'acc' });
-        } catch {
-            visibilityFilterFromHelper = null;
-        }
-    }
+    const visibilityFilter = { targetSet: 'acc', accEligible: true, reasons: [] };
 
-    const visibilityFilter =
-        (visibilityFilterFromHelper && typeof visibilityFilterFromHelper === 'object')
-            ? visibilityFilterFromHelper
-            : { targetSet: 'acc', accEligible: true, reasons: [] };
+    function pushFail(summaryKey, hintKey, params, details) {
+        const baseOccurrence = {
+            summary: '',
+            hint: '',
+            i18n: {
+                summaryKey,
+                hintKey,
+                params: params && typeof params === 'object' ? params : {}
+            },
+            data: {
+                visibilityFilter,
+                details: details && typeof details === 'object' ? details : {}
+            }
+        };
+
+        if (helpers && typeof helpers.reportOccurrence === 'function') {
+            return [helpers.reportOccurrence(html, baseOccurrence)];
+        }
+
+        // Never compute selector/snippet in the rule.
+        return [{ selector: '', html: '', ...baseOccurrence }];
+    }
 
     const rawLang = html.getAttribute('lang'); // null if missing
     const lang = (rawLang || '').trim();
@@ -98,22 +110,12 @@ function runInPage(ctx) {
             ruleId: rule.ruleId,
             outcome: 'fail',
             severity: rule.defaultSeverity,
-            occurrences: [{
-                selector: 'html',
-                html: html.outerHTML,
-                i18n: {
-                    summaryKey: 'a11ycore_html_lang_attr_missing_absent',
-                    hintKey: 'a11ycore_html_lang_attr_hint_missing_absent',
-                    params: {}
-                },
-                data: {
-                    visibilityFilter,
-                    details: {
-                        reasonCode: 'lang-missing',
-                        location: 'html'
-                    }
-                }
-            }]
+            occurrences: pushFail(
+                'a11ycore_html_lang_attr_missing_absent',
+                'a11ycore_html_lang_attr_hint_missing_absent',
+                {},
+                { reasonCode: 'lang-missing', location: 'html' }
+            )
         };
     }
 
@@ -122,22 +124,12 @@ function runInPage(ctx) {
             ruleId: rule.ruleId,
             outcome: 'fail',
             severity: rule.defaultSeverity,
-            occurrences: [{
-                selector: 'html',
-                html: html.outerHTML,
-                i18n: {
-                    summaryKey: 'a11ycore_html_lang_attr_missing_empty',
-                    hintKey: 'a11ycore_html_lang_attr_hint_missing_empty',
-                    params: {}
-                },
-                data: {
-                    visibilityFilter,
-                    details: {
-                        reasonCode: 'lang-empty',
-                        location: 'html'
-                    }
-                }
-            }]
+            occurrences: pushFail(
+                'a11ycore_html_lang_attr_missing_empty',
+                'a11ycore_html_lang_attr_hint_missing_empty',
+                {},
+                { reasonCode: 'lang-empty', location: 'html' }
+            )
         };
     }
 
@@ -147,22 +139,12 @@ function runInPage(ctx) {
             ruleId: rule.ruleId,
             outcome: 'fail',
             severity: rule.defaultSeverity,
-            occurrences: [{
-                selector: 'html',
-                html: html.outerHTML,
-                i18n: {
-                    summaryKey: 'a11ycore_html_lang_attr_invalid',
-                    hintKey: 'a11ycore_html_lang_attr_hint_invalid',
-                    params: { lang }
-                },
-                data: {
-                    visibilityFilter,
-                    details: {
-                        reasonCode: 'lang-invalid-bcp47',
-                        lang
-                    }
-                }
-            }]
+            occurrences: pushFail(
+                'a11ycore_html_lang_attr_invalid',
+                'a11ycore_html_lang_attr_hint_invalid',
+                { lang },
+                { reasonCode: 'lang-invalid-bcp47', lang }
+            )
         };
     }
 

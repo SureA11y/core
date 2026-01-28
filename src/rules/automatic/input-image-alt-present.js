@@ -54,20 +54,6 @@ function runInPage(ctx) {
             catch { return []; }
         };
 
-    const buildSelector = helpers && typeof helpers.buildSelector === 'function'
-        ? helpers.buildSelector
-        : (el) => {
-            try {
-                if (!el || !el.tagName) return 'html';
-                const tag = (el.tagName || 'html').toLowerCase();
-                return el.id ? `${tag}#${el.id}` : tag;
-            } catch { return 'html'; }
-        };
-
-    const getOuterHtmlSnippet = helpers && typeof helpers.getOuterHtmlSnippet === 'function'
-        ? helpers.getOuterHtmlSnippet
-        : (el) => { try { return (el && el.outerHTML) ? String(el.outerHTML).slice(0, 2000) : ''; } catch { return ''; } };
-
     const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
         ? helpers.getEligibilityInfo
         : null;
@@ -104,13 +90,9 @@ function runInPage(ctx) {
         const hasAlt = el.getAttribute('alt') !== null;
         if (hasAlt) continue;
 
-        const selector = (() => { try { return buildSelector(el); } catch { return 'html'; } })();
-        const html = getOuterHtmlSnippet(el);
         const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
-        occurrences.push({
-            selector,
-            html,
+        const baseOccurrence = {
             summary: 'Missing alt attribute on <input type="image">.',
             hint: 'Add an alt attribute (use alt="" only when a separate accessible name is provided).',
             i18n: {
@@ -121,7 +103,14 @@ function runInPage(ctx) {
             data: {
                 visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
             }
-        });
+        };
+
+        if (helpers && typeof helpers.reportOccurrence === 'function') {
+            occurrences.push(helpers.reportOccurrence(el, baseOccurrence));
+        } else {
+            // Never compute selector/snippet in the rule.
+            occurrences.push({ selector: '', html: '', ...baseOccurrence });
+        }
     }
 
     if (applicableCount === 0) {

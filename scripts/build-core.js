@@ -30,6 +30,7 @@ const { POLICY_CONTRACTS } = require('../src/policy/contracts');
 const { resolvePolicy } = require('../src/policy/resolvePolicy');
 const { normalizeSelectorList, createDomHelpers } = require('../src/core/dom-helpers');
 const { runCore } = require('../src/core/dom-runner');
+const { createContrastHelpers } = require('../src/core/contrast-helpers');
 
 const ENGINE_TAG = 'a11ycore';
 const SCHEMA_VERSION = '1.0.0';
@@ -405,19 +406,99 @@ function getLocaleDict(engineOptions) {
   return (I18N && I18N[loc]) ? I18N[loc] : (I18N && I18N.en ? I18N.en : {});
 }
 
-  function applyI18nParams(str, params) {
-    if (typeof str !== 'string' || !str) return '';
-    if (!params || typeof params !== 'object') return str;
+  function isTruthyMustache(val) {
+    if (val === false || val === null || val === undefined) return false;
+    if (typeof val === 'number') return val !== 0 && !Number.isNaN(val);
+    if (typeof val === 'string') return val.length > 0;
+    if (Array.isArray(val)) return val.length > 0;
+    return true;
+  }
 
-    // Robust {{param}} interpolation:
-    // - allows whitespace: {{ param }}
-    // - allows dashes, dots, colons, etc in keys: {{pattern-code}}
-  return str.replace(/\\{\\{\\s*([^}\\s]+)\\s*\\}\\}/g, (_, rawKey) => {
-    const k = String(rawKey || '').trim();
-    const v = Object.prototype.hasOwnProperty.call(params, k) ? params[k] : '';
-    return v === null || v === undefined ? '' : String(v);
-  });
-}
+  function renderMustacheLite(template, params) {
+    const str = (typeof template === 'string') ? template : '';
+    const ctx = (params && typeof params === 'object') ? params : null;
+    if (!str || !ctx) return str;
+
+    // Tokenize: {{...}}
+    const tagRe = /\\{\\{\\s*([#^\/]?)([^}\\s]+)\\s*\\}\\}/g;
+
+    // We render by building an AST-like stack of frames (small + deterministic).
+    const root = { type: 'root', key: null, inverted: false, parts: [] };
+    const stack = [root];
+
+    let lastIndex = 0;
+    let m;
+
+    while ((m = tagRe.exec(str)) !== null) {
+      const before = str.slice(lastIndex, m.index);
+      if (before) stack[stack.length - 1].parts.push({ type: 'text', value: before });
+
+      const sigil = m[1];           // '', '#', '^', '/'
+      const rawKey = m[2] || '';
+      const key = String(rawKey).trim();
+
+      if (!key) {
+        // Treat empty tags as literal text (no-throw).
+        stack[stack.length - 1].parts.push({ type: 'text', value: m[0] });
+        lastIndex = tagRe.lastIndex;
+        continue;
+      }
+
+      if (sigil === '#') {
+        const frame = { type: 'section', key, inverted: false, parts: [] };
+        stack[stack.length - 1].parts.push(frame);
+        stack.push(frame);
+      } else if (sigil === '^') {
+        const frame = { type: 'section', key, inverted: true, parts: [] };
+        stack[stack.length - 1].parts.push(frame);
+        stack.push(frame);
+      } else if (sigil === '/') {
+        // Close section if it matches; otherwise treat as literal.
+        const top = stack[stack.length - 1];
+        if (top && top.type === 'section' && top.key === key) {
+          stack.pop();
+        } else {
+          stack[stack.length - 1].parts.push({ type: 'text', value: m[0] });
+        }
+      } else {
+        // Variable
+        stack[stack.length - 1].parts.push({ type: 'var', key });
+      }
+
+      lastIndex = tagRe.lastIndex;
+    }
+
+    // Tail text
+    const tail = str.slice(lastIndex);
+    if (tail) stack[stack.length - 1].parts.push({ type: 'text', value: tail });
+
+    // If we have unclosed sections, we *don’t throw*; we just render them as literal
+    // by flattening them with their original markers removed. (Deterministic.)
+    function evalParts(parts) {
+      let out = '';
+      for (const p of parts) {
+        if (!p || typeof p !== 'object') continue;
+        if (p.type === 'text') out += p.value || '';
+        else if (p.type === 'var') {
+          const v = Object.prototype.hasOwnProperty.call(ctx, p.key) ? ctx[p.key] : '';
+          out += (v === null || v === undefined) ? '' : String(v);
+        } else if (p.type === 'section') {
+          const v = Object.prototype.hasOwnProperty.call(ctx, p.key) ? ctx[p.key] : undefined;
+          const ok = isTruthyMustache(v);
+          const shouldRender = p.inverted ? !ok : ok;
+          if (shouldRender) out += evalParts(p.parts || []);
+        }
+      }
+      return out;
+    }
+
+    return evalParts(root.parts);
+  }
+
+  function applyI18nParams(str, params) {
+    return renderMustacheLite(str, params);
+  }
+
 
 function t(key, fallback, params, engineOptions) {
   if (typeof key !== 'string' || !key.trim()) return typeof fallback === 'string' ? fallback : '';
@@ -611,7 +692,7 @@ function ruleMatchesRunOnly(def, runOnly, engineTag) {
   return true;
 }
 
-function normalizeRuleResult(def, raw, schemaVersion, policy) {
+function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
   if (!policy || typeof policy !== 'object') {
     throw new Error('normalizeRuleResult requires a resolved policy');
   }
@@ -629,6 +710,15 @@ function normalizeRuleResult(def, raw, schemaVersion, policy) {
 
   out.outcomeNormalized =
     out.outcome === 'notApplicable' ? 'inapplicable' : out.outcome;
+    
+    const output = (out.engineOptions && out.engineOptions.output && typeof out.engineOptions.output === 'object')
+    ? out.engineOptions.output
+    : null;
+
+  const includeSelector = !(output && output.includeSelector === false);
+  const includeHtml = !(output && output.includeHtml === false);
+
+  const needsDetails = (out.outcome === 'fail' || out.outcome === 'cantTell');
 
   // Manual rules must never "fail" automatically
   if (pol.coerceManualFailToCantTell && (def.type === 'manual' || out.type === 'manual') && out.outcome === 'fail') {
@@ -668,10 +758,35 @@ function normalizeRuleResult(def, raw, schemaVersion, policy) {
   const occ = Array.isArray(out.occurrences) ? out.occurrences : [];
   out.occurrences = occ.map((item) => {
     const o = item && typeof item === 'object' ? { ...item } : {};
+
+    // Engine-side finalization (only if rule reported a node)
+    const node = o.__node || null;
+    if (node) delete o.__node;
+
+    if (needsDetails && node && helpers && typeof helpers === 'object') {
+      if (includeSelector && (!o.selector || typeof o.selector !== 'string')) {
+        try {
+          o.selector = (typeof helpers.buildSelector === 'function') ? String(helpers.buildSelector(node) || '') : '';
+        } catch {
+          o.selector = '';
+        }
+      }
+      if (includeHtml && (!o.html || typeof o.html !== 'string')) {
+        try {
+          o.html = (typeof helpers.getOuterHtmlSnippet === 'function') ? String(helpers.getOuterHtmlSnippet(node) || '') : '';
+        } catch {
+          o.html = '';
+        }
+      }
+    }
+
+    // Enforce string types (deterministic / no-throw)
     if (typeof o.selector !== 'string') o.selector = '';
     if (typeof o.summary !== 'string') o.summary = '';
     if (typeof o.hint !== 'string') o.hint = '';
     if (typeof o.html !== 'string') o.html = '';
+
+    // Existing i18n normalization/resolution (leave as-is, shown shortened here)
     if (o.i18n && typeof o.i18n === 'object' && !Array.isArray(o.i18n)) {
       const ii = { ...o.i18n };
       if (typeof ii.summaryKey !== 'string') ii.summaryKey = '';
@@ -682,12 +797,13 @@ function normalizeRuleResult(def, raw, schemaVersion, policy) {
         ii.params = {};
       }
       o.i18n = ii;
-      
+
       if (ii.summaryKey) o.summary = t(ii.summaryKey, o.summary, ii.params, out.engineOptions || null);
       if (ii.hintKey) o.hint = t(ii.hintKey, o.hint, ii.params, out.engineOptions || null);
     } else {
       o.i18n = null;
     }
+
     return o;
   });
 
@@ -726,6 +842,9 @@ function toCatalogEntry(r, engineOptions) {
     mappings: r.mappings || null
   };
 }
+
+// Inlined from src/core/contrast-helpers.js
+${inlineConstFunction('createContrastHelpers', createContrastHelpers)}
 
 // Inlined from src/core/dom-helpers.js
 ${inlineConstFunction('normalizeSelectorList', normalizeSelectorList)}

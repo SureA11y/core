@@ -39,9 +39,12 @@ const meta = {
 };
 
 function runInPage(ctx) {
-
     const { document, root, helpers, rule } = ctx;
     const safeRoot = root || document;
+
+    // Cap occurrences to keep manual “quality” rules fast on large pages.
+    // Deterministic: we keep DOM order, just stop collecting after N.
+    const MAX_OCCURRENCES = 50;
 
     const queryAllSmart = helpers && typeof helpers.queryAllSmart === 'function' ? helpers.queryAllSmart : null;
     const queryAll = helpers && typeof helpers.queryAll === 'function'
@@ -50,20 +53,6 @@ function runInPage(ctx) {
             try { return safeRoot && safeRoot.querySelectorAll ? Array.from(safeRoot.querySelectorAll(sel)) : []; }
             catch { return []; }
         };
-
-    const buildSelector = helpers && typeof helpers.buildSelector === 'function'
-        ? helpers.buildSelector
-        : (el) => {
-            try {
-                if (!el || !el.tagName) return 'html';
-                const tag = (el.tagName || 'html').toLowerCase();
-                return el.id ? `${tag}#${el.id}` : tag;
-            } catch { return 'html'; }
-        };
-
-    const getOuterHtmlSnippet = helpers && typeof helpers.getOuterHtmlSnippet === 'function'
-        ? helpers.getOuterHtmlSnippet
-        : (el) => { try { return (el && el.outerHTML) ? String(el.outerHTML).slice(0, 2000) : ''; } catch { return ''; } };
 
     const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
         ? helpers.getEligibilityInfo
@@ -96,18 +85,25 @@ function runInPage(ctx) {
         return !focusable;
     }
 
-
+    const selector = 'img[alt]:not([alt=""])';
     const els = (() => {
-        try { return Array.from((queryAllSmart ? queryAllSmart("img") : queryAll("img")) || []); }
-        catch { return queryAll("img"); }
+        try { return Array.from((queryAllSmart ? queryAllSmart(selector) : queryAll(selector)) || []); }
+        catch { return queryAll(selector); }
     })();
 
     if (!els.length) {
-        return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+        return {
+            ruleId: rule.ruleId,
+            outcome: 'notApplicable',
+            severity: 'minor',
+            occurrences: [],
+            data: { details: { applicableCount: 0, reportedCount: 0, maxOccurrences: MAX_OCCURRENCES, truncated: false } }
+        };
     }
 
     const occurrences = [];
-    let applicableCount = 0;
+    let applicableCount = 0;  // total applicable elements
+    let collectedCount = 0;   // how many occurrences we actually reported
 
     for (const el of els) {
         if (!el || !el.getAttribute) continue;
@@ -121,37 +117,67 @@ function runInPage(ctx) {
 
         if (isRolePresentationExcluded(el)) continue;
 
-        // Rule-specific applicability (only elements that already have a text alternative mechanism)
-        if (!((el.getAttribute('alt') != null && String(el.getAttribute('alt')).trim() !== ''))) continue;
+        // Rule-specific applicability: non-empty alt
+        const alt = (() => {
+            try { return String(el.getAttribute('alt') || '').trim(); } catch { return ''; }
+        })();
+        if (!alt) continue;
 
         applicableCount += 1;
 
-        const selectorStr = (() => { try { return buildSelector(el); } catch { return 'html'; } })();
-        const html = getOuterHtmlSnippet(el);
-        const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
+        // IMPORTANT: stop doing expensive occurrence building after we hit the cap
+        if (collectedCount >= MAX_OCCURRENCES) continue;
 
-        occurrences.push({
-            selector: selectorStr,
-            html,
-            summary: "Review alt text on <img> for accuracy and appropriateness.",
-            hint: "Ensure the alt text conveys the image\u2019s purpose/information in context (not redundant, not filename-like).",
+        const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
+        const baseOccurrence = {
+            summary: 'Review alt text on <img> for accuracy and appropriateness.',
+            hint: 'Ensure the alt text conveys the image’s purpose/information in context (not redundant, not filename-like).',
             i18n: {
-                summaryKey: "a11ycore_img_altQuality_summary_cantTell",
-                hintKey: "a11ycore_img_altQuality_hint_cantTell",
-                params: { element: (el.tagName || '').toLowerCase() }
+                summaryKey: 'a11ycore_img_altQuality_summary_cantTell',
+                hintKey: 'a11ycore_img_altQuality_hint_cantTell',
+                params: { element: 'img' }
             },
             data: {
                 visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
                 details: null
             }
-        });
+        };
+
+        if (helpers && typeof helpers.reportOccurrence === 'function') {
+            occurrences.push(helpers.reportOccurrence(el, baseOccurrence));
+        } else {
+            occurrences.push({ selector: '', html: '', ...baseOccurrence });
+        }
+
+        collectedCount += 1;
     }
 
     if (applicableCount === 0) {
-        return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+        return {
+            ruleId: rule.ruleId,
+            outcome: 'notApplicable',
+            severity: 'minor',
+            occurrences: [],
+            data: { details: { applicableCount: 0, reportedCount: 0, maxOccurrences: MAX_OCCURRENCES, truncated: false } }
+        };
     }
 
-    return { ruleId: rule.ruleId, outcome: 'cantTell', severity: 'minor', occurrences };
+    const truncated = applicableCount > collectedCount;
+
+    return {
+        ruleId: rule.ruleId,
+        outcome: 'cantTell',
+        severity: 'minor',
+        occurrences,
+        data: {
+            details: {
+                applicableCount,
+                reportedCount: collectedCount,
+                maxOccurrences: MAX_OCCURRENCES,
+                truncated
+            }
+        }
+    };
 }
 
 module.exports = { id, meta, runInPage };

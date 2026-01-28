@@ -184,7 +184,6 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/form-control-programmatic-lab
 
     const rule = assertRule(result, RULE_ID, 'fail', {
         minOccurrences: expectedFailIds.length,
-        // (temporarily remove max while debugging)
     });
 
     for (const id of expectedFailIds) {
@@ -193,4 +192,26 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/form-control-programmatic-lab
     for (const id of expectedNoOccIds) {
         assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
     }
+});
+
+test('fail: unlabeled native control is still evaluated even when aria-hidden="true"', () => {
+    const html = `
+    <!doctype html><html><body>
+      <input id="ah1" type="text" aria-hidden="true">
+    </body></html>
+  `;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
+});
+
+test('fail: unlabeled native control is still evaluated when an ancestor is aria-hidden="true"', () => {
+    const html = `
+    <!doctype html><html><body>
+      <div aria-hidden="true">
+        <input id="ah2" type="text">
+      </div>
+    </body></html>
+  `;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
 });

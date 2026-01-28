@@ -1,15 +1,15 @@
 {
   "rulesDir": "src\\rules",
   "facetsFile": "src\\coverage\\wcag-facets.js",
-  "generatedAt": "2026-01-20T10:01:59.657Z",
+  "generatedAt": "2026-01-28T06:58:52.716Z",
   "summary": {
-    "totalRules": 24,
+    "totalRules": 31,
     "wcagTagCoverage": {
       "byVersion": {
         "2.0": {
-          "A": 24,
-          "AA": 1,
-          "AAA": 0
+          "A": 31,
+          "AA": 4,
+          "AAA": 2
         },
         "2.1": {
           "A": 0,
@@ -23,13 +23,14 @@
         }
       },
       "anyVersion": {
-        "A": 24,
-        "AA": 1,
-        "AAA": 0
+        "A": 31,
+        "AA": 4,
+        "AAA": 2
       },
       "rawTagCounts": {
-        "wcag2a": 24,
-        "wcag2aa": 1
+        "wcag2a": 29,
+        "wcag2aa": 3,
+        "wcag2aaa": 2
       }
     }
   },
@@ -72,6 +73,104 @@
       },
       "error": null,
       "coverage": null
+    },
+    {
+      "file": "src\\rules\\automatic\\a11ycore-page-title-patterns.js",
+      "ruleId": "a11ycore-page-title-patterns",
+      "wcagScNormative": [
+        "2.4.2"
+      ],
+      "wcagScAll": [
+        "2.4.2"
+      ],
+      "wcagScInformative": [],
+      "type": "automatic",
+      "title": "Page title patterns that may indicate low descriptiveness",
+      "tags": [
+        "wcag2a",
+        "wcag242",
+        "titles",
+        "atomic",
+        "navigation",
+        "automatic"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2a",
+            "version": "2.0",
+            "level": "A"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "2.4.2": [
+            "page-title-patterns"
+          ]
+        }
+      }
+    },
+    {
+      "file": "src\\rules\\automatic\\a11ycore-page-title-present.js",
+      "ruleId": "a11ycore-page-title-present",
+      "wcagScNormative": [
+        "2.4.2"
+      ],
+      "wcagScAll": [
+        "2.4.2"
+      ],
+      "wcagScInformative": [],
+      "type": "automatic",
+      "title": "Page title is present and non-empty",
+      "tags": [
+        "wcag2a",
+        "wcag242",
+        "titles",
+        "atomic",
+        "navigation",
+        "automatic"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2a",
+            "version": "2.0",
+            "level": "A"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "2.4.2": [
+            "page-title-present"
+          ]
+        }
+      }
     },
     {
       "file": "src\\rules\\automatic\\area-alt-present.js",
@@ -168,6 +267,187 @@
         "facetsBySc": {
           "1.1.1": [
             "canvas-text-alternative-present"
+          ]
+        }
+      }
+    },
+    {
+      "file": "src\\rules\\automatic\\contrast-computable.js",
+      "ruleId": "a11ycore-contrast-computable",
+      "wcagScNormative": [
+        "1.4.3",
+        "1.4.6"
+      ],
+      "wcagScAll": [
+        "1.4.3",
+        "1.4.6"
+      ],
+      "wcagScInformative": [],
+      "type": "automatic",
+      "title": "Color contrast is computable for rendered text",
+      "tags": [
+        "wcag2a",
+        "wcag2aa",
+        "wcag2aaa",
+        "wcag143",
+        "wcag146",
+        "contrast",
+        "color",
+        "structure",
+        "atomic",
+        "automatic",
+        "dom"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2a",
+            "version": "2.0",
+            "level": "A"
+          },
+          {
+            "tag": "wcag2aa",
+            "version": "2.0",
+            "level": "AA"
+          },
+          {
+            "tag": "wcag2aaa",
+            "version": "2.0",
+            "level": "AAA"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A",
+            "AA",
+            "AAA"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A",
+          "AA",
+          "AAA"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "1.4.3": [
+            "contrast-computability-143"
+          ],
+          "1.4.6": [
+            "contrast-computability-146"
+          ]
+        }
+      }
+    },
+    {
+      "file": "src\\rules\\automatic\\contrast-enhanced.js",
+      "ruleId": "a11ycore-contrast-enhanced",
+      "wcagScNormative": [
+        "1.4.6"
+      ],
+      "wcagScAll": [
+        "1.4.6"
+      ],
+      "wcagScInformative": [],
+      "type": "automatic",
+      "title": "Text meets enhanced color contrast (AAA)",
+      "tags": [
+        "wcag2aaa",
+        "wcag146",
+        "contrast",
+        "color",
+        "structure",
+        "atomic",
+        "automatic",
+        "dom"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2aaa",
+            "version": "2.0",
+            "level": "AAA"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A",
+            "AA",
+            "AAA"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A",
+          "AA",
+          "AAA"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "1.4.6": [
+            "contrast-enhanced-text"
+          ]
+        }
+      }
+    },
+    {
+      "file": "src\\rules\\automatic\\contrast-minimum.js",
+      "ruleId": "a11ycore-contrast-minimum",
+      "wcagScNormative": [
+        "1.4.3"
+      ],
+      "wcagScAll": [
+        "1.4.3"
+      ],
+      "wcagScInformative": [],
+      "type": "automatic",
+      "title": "Text meets minimum color contrast (AA)",
+      "tags": [
+        "wcag2aa",
+        "wcag143",
+        "contrast",
+        "color",
+        "structure",
+        "atomic",
+        "automatic",
+        "dom"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2aa",
+            "version": "2.0",
+            "level": "AA"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A",
+            "AA"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A",
+          "AA"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "1.4.3": [
+            "contrast-minimum-text"
           ]
         }
       }
@@ -469,6 +749,56 @@
       }
     },
     {
+      "file": "src\\rules\\automatic\\role-img-alt-present.js",
+      "ruleId": "a11ycore-role-img-text-alternative-present",
+      "wcagScNormative": [
+        "1.1.1"
+      ],
+      "wcagScAll": [
+        "1.1.1"
+      ],
+      "wcagScInformative": [],
+      "type": "automatic",
+      "title": "[role=\"img\"] must have an accessible text alternative",
+      "tags": [
+        "wcag2a",
+        "wcag111",
+        "nontext",
+        "images",
+        "aria",
+        "atomic",
+        "automatic"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2a",
+            "version": "2.0",
+            "level": "A"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "1.1.1": [
+            "role-img-text-alternative-present"
+          ]
+        }
+      }
+    },
+    {
       "file": "src\\rules\\automatic\\svg-image-text-alternative-present.js",
       "ruleId": "a11ycore-svg-image-text-alternative-present",
       "wcagScNormative": [
@@ -613,6 +943,50 @@
         "facetsBySc": {
           "1.1.1": [
             "video-poster-text-alt-present"
+          ]
+        }
+      }
+    },
+    {
+      "file": "src\\rules\\manual\\a11ycore-media-transcript-present-manual.js",
+      "ruleId": "a11ycore-media-alternative-transcript-evidence",
+      "wcagScNormative": [],
+      "wcagScAll": [],
+      "wcagScInformative": [],
+      "type": "manual",
+      "title": "Time-based media: transcript / media alternative evidence",
+      "tags": [
+        "wcag2a",
+        "wcag121",
+        "timebasedmedia",
+        "atomic",
+        "manual"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2a",
+            "version": "2.0",
+            "level": "A"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "1.2.1": [
+            "transcript-evidence"
           ]
         }
       }
@@ -1164,8 +1538,8 @@
       {
         "sc": "1.1.1",
         "title": "Non-text Content",
-        "totalFacets": 18,
-        "coveredFacets": 9,
+        "totalFacets": 19,
+        "coveredFacets": 10,
         "uncoveredFacets": [
           "text-alternative-mechanism",
           "functional-nontext-name",
@@ -1180,7 +1554,7 @@
         "automationCounts": {
           "partial": 13,
           "manual": 2,
-          "full": 3
+          "full": 4
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -1221,6 +1595,14 @@
             "automation": "full",
             "coveredBy": [
               "a11ycore-img-alt-present"
+            ]
+          },
+          {
+            "id": "role-img-text-alternative-present",
+            "label": "role=\"img\" has text alternative",
+            "automation": "full",
+            "coveredBy": [
+              "a11ycore-role-img-text-alternative-present"
             ]
           },
           {
@@ -1310,6 +1692,97 @@
             "label": "Excluded due to accessibility-tree eligibility",
             "automation": "partial",
             "coveredBy": []
+          }
+        ]
+      },
+      {
+        "sc": "1.4.3",
+        "title": "Contrast (Minimum)",
+        "totalFacets": 2,
+        "coveredFacets": 2,
+        "uncoveredFacets": [],
+        "automationCounts": {
+          "partial": 2
+        },
+        "missingFacetRules": [],
+        "unknownFacetIds": [],
+        "facets": [
+          {
+            "id": "contrast-computability-143",
+            "label": "Text contrast is computable from CSS for 1.4.3 (no images/gradients/blending ambiguity)",
+            "automation": "partial",
+            "coveredBy": [
+              "a11ycore-contrast-computable"
+            ]
+          },
+          {
+            "id": "contrast-minimum-text",
+            "label": "Visible text meets minimum contrast ratio (AA) when computable",
+            "automation": "partial",
+            "coveredBy": [
+              "a11ycore-contrast-minimum"
+            ]
+          }
+        ]
+      },
+      {
+        "sc": "1.4.6",
+        "title": "Contrast (Enhanced)",
+        "totalFacets": 2,
+        "coveredFacets": 2,
+        "uncoveredFacets": [],
+        "automationCounts": {
+          "partial": 2
+        },
+        "missingFacetRules": [],
+        "unknownFacetIds": [],
+        "facets": [
+          {
+            "id": "contrast-computability-146",
+            "label": "Text contrast is computable from CSS for 1.4.6 (no images/gradients/blending ambiguity)",
+            "automation": "partial",
+            "coveredBy": [
+              "a11ycore-contrast-computable"
+            ]
+          },
+          {
+            "id": "contrast-enhanced-text",
+            "label": "Visible text meets enhanced contrast ratio (AAA) when computable",
+            "automation": "partial",
+            "coveredBy": [
+              "a11ycore-contrast-enhanced"
+            ]
+          }
+        ]
+      },
+      {
+        "sc": "2.4.2",
+        "title": "Page Titled",
+        "totalFacets": 2,
+        "coveredFacets": 2,
+        "uncoveredFacets": [],
+        "automationCounts": {
+          "full": 1,
+          "partial": 1
+        },
+        "missingFacetRules": [],
+        "unknownFacetIds": [],
+        "facets": [
+          {
+            "id": "page-title-present",
+            "label": "<title> element is present and non-empty",
+            "automation": "full",
+            "coveredBy": [
+              "a11ycore-page-title-present"
+            ]
+          },
+          {
+            "id": "page-title-patterns",
+            "label": "Page title patterns review (generic / duplicated / overly templated across pages)",
+            "automation": "partial",
+            "coveredBy": [
+              "a11ycore-page-title-patterns"
+            ]
           }
         ]
       },
@@ -1371,8 +1844,8 @@
       {
         "sc": "1.1.1",
         "title": "Non-text Content",
-        "totalFacets": 18,
-        "coveredFacets": 9,
+        "totalFacets": 19,
+        "coveredFacets": 10,
         "uncoveredFacets": [
           "text-alternative-mechanism",
           "functional-nontext-name",
@@ -1387,7 +1860,7 @@
         "automationCounts": {
           "partial": 13,
           "manual": 2,
-          "full": 3
+          "full": 4
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -1428,6 +1901,14 @@
             "automation": "full",
             "coveredBy": [
               "a11ycore-img-alt-present"
+            ]
+          },
+          {
+            "id": "role-img-text-alternative-present",
+            "label": "role=\"img\" has text alternative",
+            "automation": "full",
+            "coveredBy": [
+              "a11ycore-role-img-text-alternative-present"
             ]
           },
           {
@@ -1517,6 +1998,97 @@
             "label": "Excluded due to accessibility-tree eligibility",
             "automation": "partial",
             "coveredBy": []
+          }
+        ]
+      },
+      {
+        "sc": "1.4.3",
+        "title": "Contrast (Minimum)",
+        "totalFacets": 2,
+        "coveredFacets": 2,
+        "uncoveredFacets": [],
+        "automationCounts": {
+          "partial": 2
+        },
+        "missingFacetRules": [],
+        "unknownFacetIds": [],
+        "facets": [
+          {
+            "id": "contrast-computability-143",
+            "label": "Text contrast is computable from CSS for 1.4.3 (no images/gradients/blending ambiguity)",
+            "automation": "partial",
+            "coveredBy": [
+              "a11ycore-contrast-computable"
+            ]
+          },
+          {
+            "id": "contrast-minimum-text",
+            "label": "Visible text meets minimum contrast ratio (AA) when computable",
+            "automation": "partial",
+            "coveredBy": [
+              "a11ycore-contrast-minimum"
+            ]
+          }
+        ]
+      },
+      {
+        "sc": "1.4.6",
+        "title": "Contrast (Enhanced)",
+        "totalFacets": 2,
+        "coveredFacets": 2,
+        "uncoveredFacets": [],
+        "automationCounts": {
+          "partial": 2
+        },
+        "missingFacetRules": [],
+        "unknownFacetIds": [],
+        "facets": [
+          {
+            "id": "contrast-computability-146",
+            "label": "Text contrast is computable from CSS for 1.4.6 (no images/gradients/blending ambiguity)",
+            "automation": "partial",
+            "coveredBy": [
+              "a11ycore-contrast-computable"
+            ]
+          },
+          {
+            "id": "contrast-enhanced-text",
+            "label": "Visible text meets enhanced contrast ratio (AAA) when computable",
+            "automation": "partial",
+            "coveredBy": [
+              "a11ycore-contrast-enhanced"
+            ]
+          }
+        ]
+      },
+      {
+        "sc": "2.4.2",
+        "title": "Page Titled",
+        "totalFacets": 2,
+        "coveredFacets": 2,
+        "uncoveredFacets": [],
+        "automationCounts": {
+          "full": 1,
+          "partial": 1
+        },
+        "missingFacetRules": [],
+        "unknownFacetIds": [],
+        "facets": [
+          {
+            "id": "page-title-present",
+            "label": "<title> element is present and non-empty",
+            "automation": "full",
+            "coveredBy": [
+              "a11ycore-page-title-present"
+            ]
+          },
+          {
+            "id": "page-title-patterns",
+            "label": "Page title patterns review (generic / duplicated / overly templated across pages)",
+            "automation": "partial",
+            "coveredBy": [
+              "a11ycore-page-title-patterns"
+            ]
           }
         ]
       },

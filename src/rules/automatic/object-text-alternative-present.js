@@ -52,20 +52,6 @@ function runInPage(ctx) {
       catch { return []; }
     };
 
-  const buildSelector = helpers && typeof helpers.buildSelector === 'function'
-    ? helpers.buildSelector
-    : (el) => {
-      try {
-        if (!el || !el.tagName) return 'html';
-        const tag = (el.tagName || 'html').toLowerCase();
-        return el.id ? `${tag}#${el.id}` : tag;
-      } catch { return 'html'; }
-    };
-
-  const getOuterHtmlSnippet = helpers && typeof helpers.getOuterHtmlSnippet === 'function'
-    ? helpers.getOuterHtmlSnippet
-    : (el) => { try { return (el && el.outerHTML) ? String(el.outerHTML).slice(0, 2000) : ''; } catch { return ''; } };
-
   const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
     ? helpers.getEligibilityInfo
     : null;
@@ -124,8 +110,9 @@ function runInPage(ctx) {
 
   function computeFallbackText(el) {
     try {
-      // Deterministic: use textContent only (ignore markup). This matches your canvas fallback logic.
-      const t = trim(el.textContent || '');
+      // Deterministic + bounded: textContent can be large
+      const raw = trim(el.textContent || '');
+      const t = raw.length > 1000 ? raw.slice(0, 1000) : raw;
       return { present: !!t, value: t, mechanism: 'fallback', flags: t ? [] : ['empty'] };
     } catch {
       return { present: false, value: '', mechanism: 'fallback', flags: ['error'] };
@@ -156,19 +143,20 @@ function runInPage(ctx) {
 
     applicableCount += 1;
 
-    const fb = computeFallbackText(el);
     const name = computeNameInfo(el);
 
-    const hasTextAlt = !!(fb.present || name.present);
+    // Only compute fallback text if there is no name.
+    // (textContent can be expensive; avoid when not needed)
+    const fb = name.present ? { present: false, value: '', mechanism: 'fallback', flags: ['skipped-name-present'] }
+        : computeFallbackText(el);
+
+    const hasTextAlt = !!(name.present || fb.present);
     if (hasTextAlt) continue;
 
-    const selector = (() => { try { return buildSelector(el); } catch { return 'html'; } })();
-    const html = getOuterHtmlSnippet(el);
+
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
-    occurrences.push({
-      selector,
-      html,
+    const baseOccurrence = {
       summary: 'Missing text alternative for <object>.',
       hint: 'Provide meaningful fallback content inside <object>, or add an accessible name (aria-label/aria-labelledby).',
       i18n: {
@@ -181,7 +169,14 @@ function runInPage(ctx) {
         fallback: fb,
         name
       }
-    });
+    };
+
+    if (helpers && typeof helpers.reportOccurrence === 'function') {
+      occurrences.push(helpers.reportOccurrence(el, baseOccurrence));
+    } else {
+      // Never compute selector/snippet in the rule.
+      occurrences.push({ selector: '', html: '', ...baseOccurrence });
+    }
   }
 
   if (applicableCount === 0) {

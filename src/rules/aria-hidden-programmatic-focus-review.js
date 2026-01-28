@@ -98,7 +98,7 @@ function runInPage(ctx) {
     }
 
     if (!occurrences.length) {
-        return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+        return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'moderate', occurrences: [] };
     }
 
     // Manual rule: never fail.

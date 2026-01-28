@@ -51,20 +51,6 @@ function runInPage(ctx) {
             catch { return []; }
         };
 
-    const buildSelector = helpers && typeof helpers.buildSelector === 'function'
-        ? helpers.buildSelector
-        : (el) => {
-            try {
-                if (!el || !el.tagName) return 'html';
-                const tag = (el.tagName || 'html').toLowerCase();
-                return el.id ? `${tag}#${el.id}` : tag;
-            } catch { return 'html'; }
-        };
-
-    const getOuterHtmlSnippet = helpers && typeof helpers.getOuterHtmlSnippet === 'function'
-        ? helpers.getOuterHtmlSnippet
-        : (el) => { try { return (el && el.outerHTML) ? String(el.outerHTML).slice(0, 2000) : ''; } catch { return ''; } };
-
     const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
         ? helpers.getEligibilityInfo
         : null;
@@ -73,6 +59,18 @@ function runInPage(ctx) {
         ? helpers.isAccTreeEligible
         : null;
 
+    const __accEligCache = new WeakMap();
+    function accEligibleCached(node) {
+        if (!isAccTreeEligible) return { eligible: true, reasons: [] };
+        if (!node || typeof node !== 'object') return { eligible: true, reasons: [] };
+        const c = __accEligCache.get(node);
+        if (c) return c;
+        let r;
+        try { r = isAccTreeEligible(node, ctx); } catch { r = { eligible: true, reasons: [] }; }
+        r = r && typeof r === 'object' ? r : { eligible: !!r, reasons: [] };
+        __accEligCache.set(node, r);
+        return r;
+    }
 
 // --- image-map semantics (rule-local; match automatic <area> applicability) ---
 function normUsemap(val) {
@@ -88,22 +86,6 @@ function getMapName(mapEl) {
         const n = String(mapEl.getAttribute('name') || mapEl.getAttribute('id') || '').trim();
         return n ? n.toLowerCase() : '';
     } catch { return ''; }
-}
-function getReferencingImgForArea(areaEl) {
-    try {
-        if (!areaEl || !areaEl.closest) return null;
-        const map = areaEl.closest('map');
-        if (!map) return null;
-        const mapName = getMapName(map);
-        if (!mapName) return null;
-
-        const imgs = Array.from(document.querySelectorAll('img[usemap]'));
-        for (const img of imgs) {
-            const u = normUsemap(img.getAttribute('usemap'));
-            if (u && u === mapName) return img; // deterministic: first match in doc order
-        }
-    } catch {}
-    return null;
 }
 
     const getFocusableInfo = helpers && typeof helpers.getFocusableInfo === 'function'
@@ -131,8 +113,8 @@ function getReferencingImgForArea(areaEl) {
 
 
     const els = (() => {
-        try { return Array.from((queryAllSmart ? queryAllSmart("area") : queryAll("area")) || []); }
-        catch { return queryAll("area"); }
+        try { return Array.from((queryAllSmart ? queryAllSmart('area') : queryAll('area')) || []); }
+        catch { return queryAll('area'); }
     })();
 
     if (!els.length) {
@@ -142,52 +124,75 @@ function getReferencingImgForArea(areaEl) {
     const occurrences = [];
     let applicableCount = 0;
 
+    const __usemapIndex = new Map(); // mapName -> img (first in document order)
+    try {
+        const imgs = Array.from(document.querySelectorAll('img[usemap]'));
+        for (const img of imgs) {
+            const u = normUsemap(img.getAttribute('usemap'));
+            if (!u) continue;
+            if (!__usemapIndex.has(u)) __usemapIndex.set(u, img);
+        }
+    } catch {}
+
     for (const el of els) {
         if (!el || !el.getAttribute) continue;
 
 // Must belong to a *used* image map (referenced by an <img usemap>). If unused, not applicable.
-const img = getReferencingImgForArea(el);
-if (!img) continue;
+        let img = null;
+        try {
+            const map = el.closest && el.closest('map');
+            const mapName = map ? getMapName(map) : '';
+            img = mapName ? (__usemapIndex.get(mapName) || null) : null;
+        } catch {
+            img = null;
+        }
+        if (!img) continue;
 
 // The referencing <img> must be eligible in the accessibility tree.
 if (isAccTreeEligible) {
-    const imgElig = (() => { try { return isAccTreeEligible(img, ctx); } catch { return { eligible: true, reasons: [] }; } })();
+    const imgElig = accEligibleCached(img);
     if (imgElig && imgElig.eligible === false) continue;
 }
 
         if (isAccTreeEligible) {
-            const elig = (() => {
-                try { return isAccTreeEligible(el, ctx); } catch { return { eligible: true, reasons: [] }; }
-            })();
+            const elig = accEligibleCached(el);
             if (elig && elig.eligible === false) continue;
         }
 
         if (isRolePresentationExcluded(el)) continue;
 
         // Rule-specific applicability (only elements that already have a text alternative mechanism)
-        if (!((el.getAttribute('alt') != null && String(el.getAttribute('alt')).trim() !== ''))) continue;
+        let alt = null;
+        try { alt = el.getAttribute('alt'); } catch { alt = null; }
+        if (alt === null) continue;
+        if (String(alt).trim() === '') continue; // only non-empty alt is applicable here
 
         applicableCount += 1;
 
-        const selectorStr = (() => { try { return buildSelector(el); } catch { return 'html'; } })();
-        const html = getOuterHtmlSnippet(el);
         const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
-        occurrences.push({
-            selector: selectorStr,
-            html,
-            summary: "Review alt text on <area> for accuracy and appropriateness.",
-            hint: "Ensure the alt text identifies the destination/action of the image map area in context.",
+        let altVal = '';
+        try { altVal = String(el.getAttribute('alt') || ''); } catch { altVal = ''; }
+
+        const baseOccurrence = {
+            summary: 'Review alt text on <area> for accuracy and appropriateness.',
+            hint: 'Ensure the alt text identifies the destination/action of the image map area in context.',
             i18n: {
-                summaryKey: "a11ycore_area_altQuality_summary_cantTell",
-                hintKey: "a11ycore_area_altQuality_hint_cantTell",
+                summaryKey: 'a11ycore_area_altQuality_summary_cantTell',
+                hintKey: 'a11ycore_area_altQuality_hint_cantTell',
                 params: { element: (el.tagName || '').toLowerCase() }
             },
             data: {
                 visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
-                details: null
+                details: { alt: altVal.trim() } // optional but useful for manual review
             }
-        });
+        };
+
+        if (helpers && typeof helpers.reportOccurrence === 'function') {
+            occurrences.push(helpers.reportOccurrence(el, baseOccurrence));
+        } else {
+            occurrences.push({ selector: '', html: '', ...baseOccurrence });
+        }
     }
 
     if (applicableCount === 0) {

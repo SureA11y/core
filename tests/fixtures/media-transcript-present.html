@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>WCAG 2.2 – 1.2.x Time-based Media Scenarios (Test Fixture)</title>
+    <style>
+        :root { color-scheme: light ; }
+        body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.45; margin: 0; }
+        header { position: sticky; top: 0; background: Canvas; border-bottom: 1px solid color-mix(in srgb, CanvasText 20%, transparent); padding: 12px 16px; }
+        main { padding: 16px; max-width: 1100px; margin: 0 auto; }
+        nav ul { display: flex; flex-wrap: wrap; gap: 8px 14px; padding: 0; margin: 8px 0 0; list-style: none; }
+        nav a { text-decoration: none; border: 1px solid color-mix(in srgb, CanvasText 20%, transparent); padding: 4px 8px; border-radius: 999px; }
+        section { border: 1px solid color-mix(in srgb, CanvasText 15%, transparent); border-radius: 14px; padding: 14px; margin: 14px 0; }
+        section > h2 { margin: 0 0 6px; font-size: 1.15rem; }
+        .meta { margin: 0 0 10px; font-size: 0.95rem; color: color-mix(in srgb, CanvasText 65%, transparent); }
+        .expected { margin: 10px 0 0; padding: 10px; border-left: 4px solid color-mix(in srgb, CanvasText 35%, transparent); background: color-mix(in srgb, CanvasText 6%, transparent); border-radius: 10px; }
+        code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+        .grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+        @media (min-width: 860px) { .grid { grid-template-columns: 1fr 1fr; } }
+        .pill { display: inline-block; font-size: 0.85rem; padding: 2px 8px; border-radius: 999px; border: 1px solid color-mix(in srgb, CanvasText 20%, transparent); margin-right: 8px; }
+        .note { font-size: 0.95rem; color: color-mix(in srgb, CanvasText 70%, transparent); }
+        details summary { cursor: pointer; }
+    </style>
+</head>
+<body>
+<header>
+    <div><strong>Time-based Media Scenarios</strong> (WCAG 2.2: 1.2.1–1.2.5 focused fixture)</div>
+    <div class="note">
+        Purpose: provide a single HTML page containing many markup patterns a scanner might encounter for transcripts/captions
+        and media alternatives. Some cases are intentionally ambiguous to force <em>cantTell</em>.
+    </div>
+    <nav aria-label="Scenario navigation">
+        <ul>
+            <li><a href="#s00">S00</a></li><li><a href="#s01">S01</a></li><li><a href="#s02">S02</a></li><li><a href="#s03">S03</a></li>
+            <li><a href="#s04">S04</a></li><li><a href="#s05">S05</a></li><li><a href="#s06">S06</a></li><li><a href="#s07">S07</a></li>
+            <li><a href="#s08">S08</a></li><li><a href="#s09">S09</a></li><li><a href="#s10">S10</a></li><li><a href="#s11">S11</a></li>
+            <li><a href="#s12">S12</a></li><li><a href="#s13">S13</a></li><li><a href="#s14">S14</a></li><li><a href="#s15">S15</a></li>
+            <li><a href="#s16">S16</a></li><li><a href="#s17">S17</a></li><li><a href="#s18">S18</a></li><li><a href="#s19">S19</a></li>
+            <li><a href="#s20">S20</a></li><li><a href="#s21">S21</a></li><li><a href="#s22">S22</a></li>
+        </ul>
+    </nav>
+</header>
+
+<main>
+    <section id="about">
+        <h2>How to use this fixture</h2>
+        <p class="meta">
+            Each scenario is designed to exercise a specific detection/evaluation branch for time-based media rules.
+            The <strong>Expected</strong> box is a human note suggesting what a strict deterministic engine might return
+            (e.g., <code>pass</code>, <code>informative</code>, <code>cantTell</code>, or <code>fail</code>) for SC 1.2.1/1.2.2
+            depending on the evidence available.
+        </p>
+        <div class="grid">
+            <div>
+                <h3>Evidence types represented</h3>
+                <ul>
+                    <li>Native <code>&lt;audio&gt;</code> and <code>&lt;video&gt;</code></li>
+                    <li><code>&lt;track kind="captions"&gt;</code> (and related patterns)</li>
+                    <li>Transcript as adjacent text section</li>
+                    <li>Transcript link with explicit label (“Transcript”)</li>
+                    <li>Transcript bound with <code>aria-describedby</code></li>
+                    <li>Transcript hidden/collapsed (<code>details</code>, CSS)</li>
+                    <li>Transcript “elsewhere” (same-document anchor and cross-document href)</li>
+                    <li>Multiple media items sharing one transcript</li>
+                    <li>Ambiguous/misleading labels (forces <code>cantTell</code>)</li>
+                    <li>Embedded players via <code>&lt;iframe&gt;</code></li>
+                </ul>
+            </div>
+            <div>
+                <h3>Non-goals</h3>
+                <ul>
+                    <li>Real playback (sources are placeholders and may not load)</li>
+                    <li>Visual verification of captions rendering/quality</li>
+                    <li>Provider-specific player APIs (YouTube/Vimeo caption state, etc.)</li>
+                </ul>
+                <p class="note">
+                    Tip: where you cannot prove compliance from the evidence, return <code>cantTell</code> rather than guessing.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- S00 -->
+    <section id="s00">
+        <h2><span class="pill">S00</span>No time-based media on page</h2>
+        <p class="meta">Baseline: nothing to detect.</p>
+        <div class="expected"><strong>Expected:</strong> Inventory rule: <code>pass</code>. 1.2.1/1.2.2: <code>notApplicable</code>.</div>
+    </section>
+
+    <!-- S01 -->
+    <section id="s01">
+        <h2><span class="pill">S01</span>Audio-only with adjacent transcript section (explicit heading)</h2>
+        <p class="meta">Native audio followed by visible transcript with “Transcript” heading.</p>
+
+        <audio controls aria-describedby="s01-transcript">
+            <source src="media/sample-audio.mp3" type="audio/mpeg" />
+            Your browser does not support audio.
+        </audio>
+
+        <h3 id="s01-transcript">Transcript</h3>
+        <p>[Transcript text] Speaker: Welcome to the audio-only clip. This is a placeholder transcript.</p>
+
+        <div class="expected"><strong>Expected:</strong> 1.2.1: likely <code>pass</code> (strong transcript evidence).</div>
+    </section>
+
+    <!-- S02 -->
+    <section id="s02">
+        <h2><span class="pill">S02</span>Audio-only with transcript link (explicit label)</h2>
+        <p class="meta">Transcript is elsewhere but clearly labeled.</p>
+
+        <audio controls>
+            <source src="media/sample-audio.mp3" type="audio/mpeg" />
+        </audio>
+        <p><a href="#transcripts" aria-label="Transcript for the audio clip in S02">Transcript</a></p>
+
+        <div class="expected"><strong>Expected:</strong> 1.2.1: likely <code>pass</code> if same-document anchors are accepted as transcript locations.</div>
+    </section>
+
+    <!-- S03 -->
+    <section id="s03">
+        <h2><span class="pill">S03</span>Audio-only with nearby text but no transcript labeling</h2>
+        <p class="meta">Text could be a summary, not clearly a transcript.</p>
+
+        <audio controls>
+            <source src="media/sample-audio.mp3" type="audio/mpeg" />
+        </audio>
+        <p>This audio discusses product updates and includes several interview excerpts.</p>
+
+        <div class="expected"><strong>Expected:</strong> 1.2.1: <code>cantTell</code> (not clearly a transcript).</div>
+    </section>
+
+    <!-- S04 -->
+    <section id="s04">
+        <h2><span class="pill">S04</span>Audio-only with transcript hidden via <code>details</code></h2>
+        <p class="meta">Transcript is present but collapsed by default.</p>
+
+        <audio controls>
+            <source src="media/sample-audio.mp3" type="audio/mpeg" />
+        </audio>
+
+        <details>
+            <summary>Transcript</summary>
+            <p>[Transcript text] This transcript is inside a collapsed disclosure.</p>
+        </details>
+
+        <div class="expected"><strong>Expected:</strong> 1.2.1: <code>pass</code> or <code>cantTell</code> depending on your policy about collapsed content discoverability.</div>
+    </section>
+
+    <!-- S05 -->
+    <section id="s05">
+        <h2><span class="pill">S05</span>Video-only signal (muted) with transcript</h2>
+        <p class="meta">Video is muted (attempting “video-only”). Transcript is clearly provided.</p>
+
+        <video controls muted width="320" aria-describedby="s05-transcript">
+            <source src="media/sample-video.mp4" type="video/mp4" />
+        </video>
+
+        <h3 id="s05-transcript">Transcript</h3>
+        <p>[Transcript text] A silent animation shows a workflow diagram progressing through stages.</p>
+
+        <div class="expected"><strong>Expected:</strong> 1.2.1: likely <code>pass</code> for video-only media alternative (if muted is accepted as strong signal).</div>
+    </section>
+
+    <!-- S06 -->
+    <section id="s06">
+        <h2><span class="pill">S06</span>Video with captions track present</h2>
+        <p class="meta">Native video includes a captions track.</p>
+
+        <video controls width="320">
+            <source src="media/sample-video.mp4" type="video/mp4" />
+            <track kind="captions" srclang="en" src="media/captions-en.vtt" label="English captions" default />
+        </video>
+
+        <div class="expected"><strong>Expected:</strong> 1.2.2: could be <code>informative pass</code> (captions track present). Audio presence may still be <code>cantTell</code> if you require proof.</div>
+    </section>
+
+    <!-- S07 -->
+    <section id="s07">
+        <h2><span class="pill">S07</span>Video without captions track</h2>
+        <p class="meta">Native video has no <code>&lt;track kind="captions"&gt;</code>.</p>
+
+        <video controls width="320">
+            <source src="media/sample-video.mp4" type="video/mp4" />
+        </video>
+
+        <div class="expected"><strong>Expected:</strong> 1.2.2: usually <code>cantTell</code> (cannot prove audio exists). Some tools emit an <code>informative</code> warning.</div>
+    </section>
+
+    <!-- S08 -->
+    <section id="s08">
+        <h2><span class="pill">S08</span>Video with “subtitles” track (not captions)</h2>
+        <p class="meta">Track kind is subtitles, not captions.</p>
+
+        <video controls width="320">
+            <source src="media/sample-video.mp4" type="video/mp4" />
+            <track kind="subtitles" srclang="en" src="media/subtitles-en.vtt" label="English subtitles" default />
+        </video>
+
+        <div class="expected"><strong>Expected:</strong> 1.2.2: <code>cantTell</code> or <code>informative</code> (subtitles may not capture non-dialog audio cues).</div>
+    </section>
+
+    <!-- S09 -->
+    <section id="s09">
+        <h2><span class="pill">S09</span>Video with multiple caption tracks (no default)</h2>
+        <p class="meta">Multiple caption tracks; default not set.</p>
+
+        <video controls width="320">
+            <source src="media/sample-video.mp4" type="video/mp4" />
+            <track kind="captions" srclang="en" src="media/captions-en.vtt" label="English captions" />
+            <track kind="captions" srclang="fr" src="media/captions-fr.vtt" label="Sous-titres (FR)" />
+        </video>
+
+        <div class="expected"><strong>Expected:</strong> 1.2.2: likely <code>informative pass</code> (captions available), depending on your policy.</div>
+    </section>
+
+    <!-- S10 -->
+    <section id="s10">
+        <h2><span class="pill">S10</span>Transcript referenced via <code>aria-describedby</code></h2>
+        <p class="meta">Transcript is a plain div; media references it via describedby.</p>
+
+        <audio controls aria-describedby="s10-desc">
+            <source src="media/sample-audio.mp3" type="audio/mpeg" />
+        </audio>
+        <div id="s10-desc">
+            <p><strong>Transcript:</strong> [Transcript text] This audio introduces the quarterly report.</p>
+        </div>
+
+        <div class="expected"><strong>Expected:</strong> 1.2.1: likely <code>pass</code> (strong binding).</div>
+    </section>
+
+    <!-- S11 -->
+    <section id="s11">
+        <h2><span class="pill">S11</span>Transcript exists but is <code>display:none</code></h2>
+        <p class="meta">Transcript is in markup but hidden from all users.</p>
+
+        <audio controls>
+            <source src="media/sample-audio.mp3" type="audio/mpeg" />
+        </audio>
+
+        <div id="s11-transcript" style="display:none;">
+            <h3>Transcript</h3>
+            <p>[Transcript text] Hidden transcript that users cannot access.</p>
+        </div>
+
+        <div class="expected"><strong>Expected:</strong> Policy-sensitive: <code>cantTell</code> or <code>fail</code> depending on whether hidden alternatives count as “provided”.</div>
+    </section>
+
+    <!-- S12 -->
+    <section id="s12">
+        <h2><span class="pill">S12</span>Transcript link present but label is ambiguous (“Read more”)</h2>
+        <p class="meta">Transcript exists but link text doesn’t indicate transcript.</p>
+
+        <audio controls>
+            <source src="media/sample-audio.mp3" type="audio/mpeg" />
+        </audio>
+        <p><a href="#transcripts">Read more</a></p>
+
+        <div class="expected"><strong>Expected:</strong> 1.2.1: <code>cantTell</code> (cannot confirm link is transcript).</div>
+    </section>
+
+    <!-- S13 -->
+    <section id="s13">
+        <h2><span class="pill">S13</span>Multiple audio clips sharing one transcript section</h2>
+        <p class="meta">One transcript covers multiple clips.</p>
+
+        <div class="grid">
+            <div>
+                <audio controls aria-describedby="s13-transcript">
+                    <source src="media/sample-audio-1.mp3" type="audio/mpeg" />
+                </audio>
+            </div>
+            <div>
+                <audio controls aria-describedby="s13-transcript">
+                    <source src="media/sample-audio-2.mp3" type="audio/mpeg" />
+                </audio>
+            </div>
+        </div>
+
+        <h3 id="s13-transcript">Transcript</h3>
+        <p>[Transcript text] This transcript covers both clips: part 1 and part 2.</p>
+
+        <div class="expected"><strong>Expected:</strong> 1.2.1: likely <code>pass</code> for both if describedby association is accepted.</div>
+    </section>
+
+    <!-- S14 -->
+    <section id="s14">
+        <h2><span class="pill">S14</span>Transcript present but extremely short (likely summary)</h2>
+        <p class="meta">Tests any “minimum transcript length” guardrail you might use.</p>
+
+        <audio controls aria-describedby="s14-tx">
+            <source src="media/sample-audio.mp3" type="audio/mpeg" />
+        </audio>
+
+        <p id="s14-tx"><strong>Transcript:</strong> Hello.</p>
+
+        <div class="expected"><strong>Expected:</strong> Conservative engines often choose <code>cantTell</code> (insufficient evidence) to avoid false passes.</div>
+    </section>
+
+    <!-- S15 -->
+    <section id="s15">
+        <h2><span class="pill">S15</span>Embedded player iframe (unknown captions/transcript)</h2>
+        <p class="meta">Common in the wild; markup alone rarely proves captions/transcript presence.</p>
+
+        <iframe
+                title="Embedded video player"
+                width="420" height="236"
+                src="https://example.invalid/player?id=123"
+                allow="autoplay; fullscreen"
+        ></iframe>
+
+        <div class="expected"><strong>Expected:</strong> Inventory: <code>informative</code>. 1.2.1/1.2.2: <code>cantTell</code>.</div>
+    </section>
+
+    <!-- S16 -->
+    <section id="s16">
+        <h2><span class="pill">S16</span>Embedded player + transcript link (explicit)</h2>
+        <p class="meta">Iframe plus clearly labeled transcript link nearby.</p>
+
+        <iframe
+                title="Embedded audio player"
+                width="420" height="120"
+                src="https://example.invalid/audio?id=999"
+        ></iframe>
+        <p><a href="#transcripts">Transcript</a></p>
+
+        <div class="expected"><strong>Expected:</strong> 1.2.1: possibly <code>pass</code> (strong transcript label evidence), even though player internals are unknown.</div>
+    </section>
+
+    <!-- S17 -->
+    <section id="s17">
+        <h2><span class="pill">S17</span>Video with audio hinted by nearby prose (“Audio included”)</h2>
+        <p class="meta">Tests that you don’t treat prose as definitive proof.</p>
+
+        <p class="note">Audio included.</p>
+        <video controls width="320">
+            <source src="media/sample-video.mp4" type="video/mp4" />
+        </video>
+
+        <div class="expected"><strong>Expected:</strong> 1.2.2: conservative result remains <code>cantTell</code>.</div>
+    </section>
+
+    <!-- S18 -->
+    <section id="s18">
+        <h2><span class="pill">S18</span>Video-only “alternative” via Description (not labeled transcript)</h2>
+        <p class="meta">Alternative is arguably present but labeling is not explicit.</p>
+
+        <video controls muted width="320">
+            <source src="media/sample-video.mp4" type="video/mp4" />
+        </video>
+        <h3>Description</h3>
+        <p>A short description of what happens in the silent video.</p>
+
+        <div class="expected"><strong>Expected:</strong> 1.2.1: likely <code>cantTell</code> (not clearly an equivalent text alternative).</div>
+    </section>
+
+    <!-- S19 -->
+    <section id="s19">
+        <h2><span class="pill">S19</span>Transcript on separate URL (scanner does not crawl)</h2>
+        <p class="meta">Simulates an external transcript page. Link is explicit.</p>
+
+        <audio controls>
+            <source src="media/sample-audio.mp3" type="audio/mpeg" />
+        </audio>
+        <p><a href="/transcripts/audio-clip-19.html">Transcript</a></p>
+
+        <div class="expected"><strong>Expected:</strong> If the engine does not follow links: <code>cantTell</code> (cannot verify transcript content exists).</div>
+    </section>
+
+    <!-- S20 -->
+    <section id="s20">
+        <h2><span class="pill">S20</span>“Live” indicator (prerecorded applicability uncertain)</h2>
+        <p class="meta">1.2.1/1.2.2 apply to prerecorded; “LIVE” here is not authoritative.</p>
+
+        <p><span class="pill" aria-label="Live">LIVE</span> Stream</p>
+        <video controls width="320">
+            <source src="media/live-stream.m3u8" type="application/x-mpegURL" />
+        </video>
+
+        <div class="expected"><strong>Expected:</strong> Typically <code>cantTell</code> on prerecorded vs live unless you have strong proof.</div>
+    </section>
+
+    <!-- S21 -->
+    <section id="s21">
+        <h2><span class="pill">S21</span>Audio-only with aria-controls pointing to transcript (IDREF association)</h2>
+        <p class="meta">Not standard for transcript, but tests association signals beyond describedby.</p>
+
+        <button id="s21-show" aria-controls="s21-transcript" aria-expanded="false">Show transcript</button>
+        <audio controls aria-describedby="s21-hint">
+            <source src="media/sample-audio.mp3" type="audio/mpeg" />
+        </audio>
+        <p id="s21-hint" class="note">A transcript is available below.</p>
+
+        <div id="s21-transcript">
+            <h3>Transcript</h3>
+            <p>[Transcript text] This transcript is associated via a UI control, not via describedby.</p>
+        </div>
+
+        <div class="expected"><strong>Expected:</strong> Conservative engines: <code>cantTell</code> unless you explicitly support this association pattern.</div>
+    </section>
+
+    <!-- S22 -->
+    <section id="s22">
+        <h2><span class="pill">S22</span>Video with captions track but mislabeled (caption kind wrong)</h2>
+        <p class="meta">Track exists but uses a non-standard kind value.</p>
+
+        <video controls width="320">
+            <source src="media/sample-video.mp4" type="video/mp4" />
+            <track kind="caption" srclang="en" src="media/captions-en.vtt" label="English captions" />
+        </video>
+
+        <div class="expected"><strong>Expected:</strong> 1.2.2: likely <code>cantTell</code>/<code>informative</code> (track present but kind invalid → not provably captions).</div>
+    </section>
+
+    <hr />
+
+    <section id="transcripts">
+        <h2>Transcript repository (for anchor-link cases)</h2>
+        <p class="meta">This section exists to support scenarios that link to “Transcript” within the same document.</p>
+
+        <article id="tx-s02">
+            <h3>Transcript for S02</h3>
+            <p>[Transcript text] This is the transcript for S02.</p>
+        </article>
+
+        <article id="tx-s12">
+            <h3>Transcript for S12</h3>
+            <p>[Transcript text] This is the transcript that S12 links to with an ambiguous label.</p>
+        </article>
+
+        <article id="tx-embed">
+            <h3>Transcript for embedded media</h3>
+            <p>[Transcript text] Transcript covering the embedded player examples.</p>
+        </article>
+    </section>
+
+    <section id="notes">
+        <h2>Notes for competitive analysis</h2>
+        <ul>
+            <li>Some tools treat any nearby long text as a transcript; this fixture includes counterexamples (S03, S14, S18).</li>
+            <li>Some tools only recognize the literal word “Transcript”; this fixture includes other patterns (<code>aria-describedby</code>, <code>details</code>, anchors).</li>
+            <li>Native <code>&lt;track kind="captions"&gt;</code> is widely detected; embedded players are often <code>cantTell</code> without provider logic.</li>
+            <li>Hidden transcript handling varies (S11). Decide a strict deterministic policy and standardize it.</li>
+            <li>If your engine does not crawl links, treat external transcript links (S19) as evidence but not proof.</li>
+        </ul>
+    </section>
+
+</main>
+</body>
+</html>

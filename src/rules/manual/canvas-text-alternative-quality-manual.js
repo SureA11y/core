@@ -51,20 +51,6 @@ function runInPage(ctx) {
             catch { return []; }
         };
 
-    const buildSelector = helpers && typeof helpers.buildSelector === 'function'
-        ? helpers.buildSelector
-        : (el) => {
-            try {
-                if (!el || !el.tagName) return 'html';
-                const tag = (el.tagName || 'html').toLowerCase();
-                return el.id ? `${tag}#${el.id}` : tag;
-            } catch { return 'html'; }
-        };
-
-    const getOuterHtmlSnippet = helpers && typeof helpers.getOuterHtmlSnippet === 'function'
-        ? helpers.getOuterHtmlSnippet
-        : (el) => { try { return (el && el.outerHTML) ? String(el.outerHTML).slice(0, 2000) : ''; } catch { return ''; } };
-
     const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
         ? helpers.getEligibilityInfo
         : null;
@@ -72,6 +58,19 @@ function runInPage(ctx) {
     const isAccTreeEligible = helpers && typeof helpers.isAccTreeEligible === 'function'
         ? helpers.isAccTreeEligible
         : null;
+
+    const __accEligCache = new WeakMap();
+    function accEligibleCached(node) {
+        if (!isAccTreeEligible) return { eligible: true, reasons: [] };
+        if (!node || typeof node !== 'object') return { eligible: true, reasons: [] };
+        const c = __accEligCache.get(node);
+        if (c) return c;
+        let r;
+        try { r = isAccTreeEligible(node, ctx); } catch { r = { eligible: true, reasons: [] }; }
+        r = r && typeof r === 'object' ? r : { eligible: !!r, reasons: [] };
+        __accEligCache.set(node, r);
+        return r;
+    }
 
     const getFocusableInfo = helpers && typeof helpers.getFocusableInfo === 'function'
         ? helpers.getFocusableInfo
@@ -90,16 +89,18 @@ function runInPage(ctx) {
             const fi = (() => { try { return getFocusableInfo(el, ctx); } catch { return null; } })();
             focusable = !!(fi && fi.focusable);
         } else {
-            const tabindex = el.getAttribute('tabindex');
-            focusable = tabindex != null && String(tabindex).trim() !== '' && !Number.isNaN(Number(String(tabindex).trim()));
+            let tabindex = null;
+            try { tabindex = el.getAttribute('tabindex'); } catch { tabindex = null; }
+            const t = tabindex == null ? '' : String(tabindex).trim();
+            focusable = t !== '' && !Number.isNaN(Number(t));
         }
         return !focusable;
     }
 
 
     const els = (() => {
-        try { return Array.from((queryAllSmart ? queryAllSmart("canvas") : queryAll("canvas")) || []); }
-        catch { return queryAll("canvas"); }
+        try { return Array.from((queryAllSmart ? queryAllSmart('canvas') : queryAll('canvas')) || []); }
+        catch { return queryAll('canvas'); }
     })();
 
     if (!els.length) {
@@ -113,38 +114,51 @@ function runInPage(ctx) {
         if (!el || !el.getAttribute) continue;
 
         if (isAccTreeEligible) {
-            const elig = (() => {
-                try { return isAccTreeEligible(el, ctx); } catch { return { eligible: true, reasons: [] }; }
-            })();
+            const elig = accEligibleCached(el);
             if (elig && elig.eligible === false) continue;
         }
 
         if (isRolePresentationExcluded(el)) continue;
 
+        const getTextAlternativeInfo =
+            helpers && typeof helpers.getTextAlternativeInfo === 'function'
+                ? helpers.getTextAlternativeInfo
+                : null;
+
+        const trim = (v) => (v == null ? '' : String(v)).trim();
+
         // Rule-specific applicability (only elements that already have a text alternative mechanism)
-        if (!((helpers && typeof helpers.getTextAlternativeInfo === 'function' && (function(){ try { const ti = helpers.getTextAlternativeInfo(el, ctx); return !!(ti && ti.present); } catch { return false; } })()))) continue;
+        let textAltInfo = null;
+        if (getTextAlternativeInfo) {
+            try { textAltInfo = getTextAlternativeInfo(el, ctx); } catch { textAltInfo = null; }
+        }
+
+        const hasTextAlt = !!(textAltInfo && textAltInfo.present);
+        if (!hasTextAlt) continue;
 
         applicableCount += 1;
 
-        const selectorStr = (() => { try { return buildSelector(el); } catch { return 'html'; } })();
-        const html = getOuterHtmlSnippet(el);
         const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
-        occurrences.push({
-            selector: selectorStr,
-            html,
-            summary: "Review text alternative for <canvas> for equivalence and appropriateness.",
-            hint: "Confirm the fallback text or accessible name conveys the same information/function as the canvas content.",
+        const baseOccurrence = {
+            summary: 'Review text alternative for <canvas> for equivalence and appropriateness.',
+            hint: 'Confirm the fallback text or accessible name conveys the same information/function as the canvas content.',
             i18n: {
-                summaryKey: "a11ycore_canvas_textAltQuality_summary_cantTell",
-                hintKey: "a11ycore_canvas_textAltQuality_hint_cantTell",
+                summaryKey: 'a11ycore_canvas_textAltQuality_summary_cantTell',
+                hintKey: 'a11ycore_canvas_textAltQuality_hint_cantTell',
                 params: { element: (el.tagName || '').toLowerCase() }
             },
             data: {
                 visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
-                details: (function(){ try { return helpers.getTextAlternativeInfo(el, ctx); } catch { return null; } })()
+                details: textAltInfo || null
             }
-        });
+        };
+
+        if (helpers && typeof helpers.reportOccurrence === 'function') {
+            occurrences.push(helpers.reportOccurrence(el, baseOccurrence));
+        } else {
+            occurrences.push({ selector: '', html: '', ...baseOccurrence });
+        }
     }
 
     if (applicableCount === 0) {

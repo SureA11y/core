@@ -14,33 +14,32 @@
 const id = "a11ycore-svg-text-alternative-quality";
 
 const meta = {
-  title: "<svg> text alternative must be appropriate (manual review)",
-  description: "Flags applicable <svg> graphics with a detected text alternative for human review of appropriateness.",
-  i18n: {
-    titleKey: "a11ycore_svg_textAltQuality_title",
-    descriptionKey: "a11ycore_svg_textAltQuality_description"
-  },
-  helpUrl: null,
-  tags: ["wcag2a", "wcag111", "nontext", "svg", "manual", "atomic"],
-  wcagSc: ['1.1.1'],
-  normativeMappings: [],
-  informativeReferences: [
-    { standard: 'WCAG', version: '2.2', requirement: '1.1.1', title: 'Non-text Content', conformanceLevel: 'A' }
-  ],
-  defaultSeverity: 'minor',
-  category: 'perceivable',
-  type: 'manual',
-  defaultConfidence: 'medium',
-  coverage: {
-    facetsBySc: {
-      '1.1.1': ['text-alternative-quality']
+    title: "<svg> text alternative must be appropriate (manual review)",
+    description: "Flags applicable <svg> graphics with a detected text alternative for human review of appropriateness.",
+    i18n: {
+        titleKey: "a11ycore_svg_textAltQuality_title",
+        descriptionKey: "a11ycore_svg_textAltQuality_description"
+    },
+    helpUrl: null,
+    tags: ["wcag2a", "wcag111", "nontext", "svg", "manual", "atomic"],
+    wcagSc: ['1.1.1'],
+    normativeMappings: [],
+    informativeReferences: [
+        {standard: 'WCAG', version: '2.2', requirement: '1.1.1', title: 'Non-text Content', conformanceLevel: 'A'}
+    ],
+    defaultSeverity: 'minor',
+    category: 'perceivable',
+    type: 'manual',
+    defaultConfidence: 'medium',
+    coverage: {
+        facetsBySc: {
+            '1.1.1': ['text-alternative-quality']
+        }
     }
-  }
 };
 
 function runInPage(ctx) {
-
-    const { document, root, helpers, rule } = ctx;
+    const {document, root, helpers, rule} = ctx;
     const safeRoot = root || document;
 
     const queryAllSmart = helpers && typeof helpers.queryAllSmart === 'function' ? helpers.queryAllSmart : null;
@@ -58,7 +57,9 @@ function runInPage(ctx) {
                 if (!el || !el.tagName) return 'html';
                 const tag = (el.tagName || 'html').toLowerCase();
                 return el.id ? `${tag}#${el.id}` : tag;
-            } catch { return 'html'; }
+            } catch {
+                return 'html';
+            }
         };
 
     const getOuterHtmlSnippet = helpers && typeof helpers.getOuterHtmlSnippet === 'function'
@@ -79,15 +80,24 @@ function runInPage(ctx) {
 
     function isRolePresentationExcluded(el) {
         const role = (() => {
-            try { return String(el.getAttribute('role') || '').trim().toLowerCase(); }
-            catch { return ''; }
+            try {
+                return String(el.getAttribute('role') || '').trim().toLowerCase();
+            } catch {
+                return '';
+            }
         })();
         if (role !== 'presentation' && role !== 'none') return false;
 
         // Exclude only when NOT focusable (mirrors img-alt-present policy)
         let focusable = false;
         if (getFocusableInfo) {
-            const fi = (() => { try { return getFocusableInfo(el, ctx); } catch { return null; } })();
+            const fi = (() => {
+                try {
+                    return getFocusableInfo(el, ctx);
+                } catch {
+                    return null;
+                }
+            })();
             focusable = !!(fi && fi.focusable);
         } else {
             const tabindex = el.getAttribute('tabindex');
@@ -98,74 +108,103 @@ function runInPage(ctx) {
 
 
     const els = (() => {
-        try { return Array.from((queryAllSmart ? queryAllSmart("svg") : queryAll("svg")) || []); }
-        catch { return queryAll("svg"); }
+        try {
+            return Array.from((queryAllSmart ? queryAllSmart('svg') : queryAll('svg')) || []);
+        } catch {
+            return queryAll('svg');
+        }
     })();
 
     if (!els.length) {
-        return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+        return {ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: []};
     }
 
     const occurrences = [];
     let applicableCount = 0;
 
+    const trim = (v) => (v == null ? '' : String(v)).trim();
+
     for (const el of els) {
         if (!el || !el.getAttribute) continue;
 
+        // acc eligibility
         if (isAccTreeEligible) {
-            const elig = (() => {
-                try { return isAccTreeEligible(el, ctx); } catch { return { eligible: true, reasons: [] }; }
-            })();
+            const elig = (() => { try { return isAccTreeEligible(el, ctx); } catch { return { eligible: true, reasons: [] }; } })();
             if (elig && elig.eligible === false) continue;
         }
 
         if (isRolePresentationExcluded(el)) continue;
 
-        // Rule-specific applicability (only elements that already have a text alternative mechanism)
-        if (!((function(){
-  try {
-    const hasTitle = !!el.querySelector && !!el.querySelector('title') && String(el.querySelector('title').textContent || '').trim() !== '';
-    const hasDesc = !!el.querySelector && !!el.querySelector('desc') && String(el.querySelector('desc').textContent || '').trim() !== '';
-    const ariaLabel = String(el.getAttribute('aria-label') || '').trim();
-    const ariaLb = String(el.getAttribute('aria-labelledby') || '').trim();
-    if (hasTitle || hasDesc) return true;
-    if (ariaLabel) return true;
-    if (ariaLb && helpers && typeof helpers.getTextFromIdRefs === 'function') {
-      const t = helpers.getTextFromIdRefs(ariaLb, ctx);
-      return !!(t && t.text && String(t.text).trim());
-    }
-    return false;
-  } catch { return false; }
-})())) continue;
+        // Detect mechanisms once
+        let titleText = '';
+        let descText = '';
+        let ariaLabel = '';
+        let ariaLabelledBy = '';
+        let labelledByText = '';
+
+        try {
+            const titleEl = el.querySelector ? el.querySelector('title') : null;
+            const descEl = el.querySelector ? el.querySelector('desc') : null;
+            titleText = trim(titleEl && titleEl.textContent);
+            descText = trim(descEl && descEl.textContent);
+
+            ariaLabel = trim(el.getAttribute('aria-label'));
+            ariaLabelledBy = trim(el.getAttribute('aria-labelledby'));
+        } catch {}
+
+        if (!ariaLabel && ariaLabelledBy && helpers && typeof helpers.getTextFromIdRefs === 'function') {
+            try {
+                const t = helpers.getTextFromIdRefs(ariaLabelledBy, ctx);
+                labelledByText = trim(t && t.text);
+            } catch {}
+        }
+
+        const hasNonEmptyTitle = !!titleText;
+        const hasNonEmptyDesc = !!descText;
+        const hasAriaLabel = !!ariaLabel;
+        const hasResolvedLabelledBy = !!labelledByText;
+
+        const hasMechanism = hasNonEmptyTitle || hasNonEmptyDesc || hasAriaLabel || hasResolvedLabelledBy;
+        if (!hasMechanism) continue;
 
         applicableCount += 1;
 
-        const selectorStr = (() => { try { return buildSelector(el); } catch { return 'html'; } })();
-        const html = getOuterHtmlSnippet(el);
         const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
-        occurrences.push({
-            selector: selectorStr,
-            html,
-            summary: "Review text alternative for <svg> for accuracy and appropriateness.",
-            hint: "Confirm the <title>/<desc> or ARIA name conveys the meaning/purpose of the graphic in context.",
+        const baseOccurrence = {
+            summary: 'Review text alternative for <svg> for accuracy and appropriateness.',
+            hint: 'Confirm the <title>/<desc> or ARIA name conveys the meaning/purpose of the graphic in context.',
             i18n: {
-                summaryKey: "a11ycore_svg_textAltQuality_summary_cantTell",
-                hintKey: "a11ycore_svg_textAltQuality_hint_cantTell",
-                params: { element: (el.tagName || '').toLowerCase() }
+                summaryKey: 'a11ycore_svg_textAltQuality_summary_cantTell',
+                hintKey: 'a11ycore_svg_textAltQuality_hint_cantTell',
+                params: { element: 'svg' }
             },
             data: {
                 visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
-                details: (function(){ try { return { hasTitle: !!el.querySelector('title'), hasDesc: !!el.querySelector('desc'), ariaLabel: el.getAttribute('aria-label') || null, ariaLabelledBy: el.getAttribute('aria-labelledby') || null }; } catch { return null; } })()
+                details: {
+                    hasNonEmptyTitle,
+                    hasNonEmptyDesc,
+                    ariaLabel: ariaLabel || null,
+                    ariaLabelledBy: ariaLabelledBy || null,
+                    ariaLabelledByText: labelledByText ? labelledByText.slice(0, 120) : null // deterministic truncation
+                }
             }
-        });
+        };
+
+        if (helpers && typeof helpers.reportOccurrence === 'function') {
+            occurrences.push(helpers.reportOccurrence(el, baseOccurrence));
+        } else {
+            const selectorStr = (() => { try { return buildSelector(el); } catch { return 'html'; } })();
+            const html = getOuterHtmlSnippet(el);
+            occurrences.push({ selector: selectorStr, html, ...baseOccurrence });
+        }
     }
 
     if (applicableCount === 0) {
-        return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+        return {ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: []};
     }
 
-    return { ruleId: rule.ruleId, outcome: 'cantTell', severity: 'minor', occurrences };
+    return {ruleId: rule.ruleId, outcome: 'cantTell', severity: 'minor', occurrences};
 }
 
-module.exports = { id, meta, runInPage };
+module.exports = {id, meta, runInPage};

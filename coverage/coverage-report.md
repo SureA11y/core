@@ -1,25 +1,25 @@
 # WCAG Coverage Report
 
-Generated: 2026-01-20T10:01:59.657Z
+Generated: 2026-01-28T06:58:52.716Z
 
 Rules directory: `src\rules`
 Facets: `src\coverage\wcag-facets.js`
 
 ## Summary
 
-Total rules (loaded without error): **24**
+Total rules (loaded without error): **31**
 
 ### Coverage by WCAG Level (Version-agnostic, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| Any WCAG version | 24 | 1 | 0 |
+| Any WCAG version | 31 | 4 | 2 |
 
 ### Coverage by WCAG Level (Per version, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| WCAG 2.0 | 24 | 1 | 0 |
+| WCAG 2.0 | 31 | 4 | 2 |
 | WCAG 2.1 | 0 | 0 | 0 |
 | WCAG 2.2 | 0 | 0 | 0 |
 
@@ -27,15 +27,16 @@ Total rules (loaded without error): **24**
 
 | Tag | Rules |
 |---|---:|
-| wcag2a | 24 |
-| wcag2aa | 1 |
+| wcag2a | 29 |
+| wcag2aa | 3 |
+| wcag2aaa | 2 |
 
 ## SC Coverage (A) — Enforced requirements only (normativeMappings)
 
 ### 1.1.1
 
-Facet coverage: **9/18** facets covered.
-Automation mix: **full 3, partial 13, manual 2**.
+Facet coverage: **10/19** facets covered.
+Automation mix: **full 4, partial 13, manual 2**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
@@ -45,6 +46,7 @@ Automation mix: **full 3, partial 13, manual 2**.
 | text-alt-quality-review | manual | — |
 | text-alternative-quality | partial | — |
 | img-alt-attr-present | full | a11ycore-img-alt-present |
+| role-img-text-alternative-present | full | a11ycore-role-img-text-alternative-present |
 | input-image-alt-attr-present | full | a11ycore-input-image-alt-present |
 | area-alt-attr-present | full | a11ycore-area-alt-present |
 | canvas-text-alternative-present | partial | a11ycore-canvas-text-alternative-present |
@@ -68,9 +70,55 @@ Uncovered facets: text-alternative-mechanism, functional-nontext-name, decorativ
 | a11ycore-img-alt-present | automatic | &lt;img&gt; must have an alt attribute | src\rules\automatic\img-alt-present.js | img-alt-attr-present |  |
 | a11ycore-input-image-alt-present | automatic | &lt;input type="image"&gt; must have an alt attribute | src\rules\automatic\input-image-alt-present.js | input-image-alt-attr-present |  |
 | a11ycore-object-text-alternative-present | automatic | &lt;object&gt; must provide a text alternative | src\rules\automatic\object-text-alternative-present.js | object-text-alternative-present |  |
+| a11ycore-role-img-text-alternative-present | automatic | [role="img"] must have an accessible text alternative | src\rules\automatic\role-img-alt-present.js | role-img-text-alternative-present |  |
 | a11ycore-svg-image-text-alternative-present | automatic | SVG &lt;image&gt; must have a text alternative | src\rules\automatic\svg-image-text-alternative-present.js | svg-image-text-alt-present |  |
 | a11ycore-svg-text-alternative-present | automatic | &lt;svg&gt; must provide a text alternative | src\rules\automatic\svg-text-alternative-present.js | svg-text-alternative-present |  |
 | a11ycore-video-poster-text-alternative-present | automatic | &lt;video&gt; poster must have a text alternative | src\rules\automatic\video-poster-text-alternative-present.js | video-poster-text-alt-present |  |
+
+### 1.4.3
+
+Facet coverage: **2/2** facets covered.
+Automation mix: **full 0, partial 2, manual 0**.
+
+| Facet | Automation | Covered by |
+|---|---|---|
+| contrast-computability-143 | partial | a11ycore-contrast-computable |
+| contrast-minimum-text | partial | a11ycore-contrast-minimum |
+
+| Rule ID | Type | Title | File | Facet | Notes |
+|---|---|---|---|---|---|
+| a11ycore-contrast-computable | automatic | Color contrast is computable for rendered text | src\rules\automatic\contrast-computable.js | contrast-computability-143 |  |
+| a11ycore-contrast-minimum | automatic | Text meets minimum color contrast (AA) | src\rules\automatic\contrast-minimum.js | contrast-minimum-text |  |
+
+### 1.4.6
+
+Facet coverage: **2/2** facets covered.
+Automation mix: **full 0, partial 2, manual 0**.
+
+| Facet | Automation | Covered by |
+|---|---|---|
+| contrast-computability-146 | partial | a11ycore-contrast-computable |
+| contrast-enhanced-text | partial | a11ycore-contrast-enhanced |
+
+| Rule ID | Type | Title | File | Facet | Notes |
+|---|---|---|---|---|---|
+| a11ycore-contrast-computable | automatic | Color contrast is computable for rendered text | src\rules\automatic\contrast-computable.js | contrast-computability-146 |  |
+| a11ycore-contrast-enhanced | automatic | Text meets enhanced color contrast (AAA) | src\rules\automatic\contrast-enhanced.js | contrast-enhanced-text |  |
+
+### 2.4.2
+
+Facet coverage: **2/2** facets covered.
+Automation mix: **full 1, partial 1, manual 0**.
+
+| Facet | Automation | Covered by |
+|---|---|---|
+| page-title-present | full | a11ycore-page-title-present |
+| page-title-patterns | partial | a11ycore-page-title-patterns |
+
+| Rule ID | Type | Title | File | Facet | Notes |
+|---|---|---|---|---|---|
+| a11ycore-page-title-patterns | automatic | Page title patterns that may indicate low descriptiveness | src\rules\automatic\a11ycore-page-title-patterns.js | page-title-patterns |  |
+| a11ycore-page-title-present | automatic | Page title is present and non-empty | src\rules\automatic\a11ycore-page-title-present.js | page-title-present |  |
 
 ### 3.1.1
 
@@ -106,6 +154,7 @@ Uncovered facets: form-control-name-quality
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | a11ycore-aria-hidden-programmatic-focus-review | manual | Review aria-hidden programmatic focus | src\rules\aria-hidden-programmatic-focus-review.js |  |  |
+| a11ycore-media-alternative-transcript-evidence | manual | Time-based media: transcript / media alternative evidence | src\rules\manual\a11ycore-media-transcript-present-manual.js |  |  |
 | a11ycore-area-alt-decorative | manual | &lt;area&gt; with alt="" must be decorative (manual review) | src\rules\manual\area-alt-decorative-manual.js |  |  |
 | a11ycore-area-alt-quality | manual | &lt;area&gt; alt text must be appropriate (manual review) | src\rules\manual\area-alt-quality-manual.js |  |  |
 | a11ycore-canvas-text-alternative-quality | manual | &lt;canvas&gt; text alternative must be appropriate (manual review) | src\rules\manual\canvas-text-alternative-quality-manual.js |  |  |
@@ -123,8 +172,8 @@ Uncovered facets: form-control-name-quality
 
 ### 1.1.1
 
-Facet coverage: **9/18** facets covered.
-Automation mix: **full 3, partial 13, manual 2**.
+Facet coverage: **10/19** facets covered.
+Automation mix: **full 4, partial 13, manual 2**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
@@ -134,6 +183,7 @@ Automation mix: **full 3, partial 13, manual 2**.
 | text-alt-quality-review | manual | — |
 | text-alternative-quality | partial | — |
 | img-alt-attr-present | full | a11ycore-img-alt-present |
+| role-img-text-alternative-present | full | a11ycore-role-img-text-alternative-present |
 | input-image-alt-attr-present | full | a11ycore-input-image-alt-present |
 | area-alt-attr-present | full | a11ycore-area-alt-present |
 | canvas-text-alternative-present | partial | a11ycore-canvas-text-alternative-present |
@@ -157,9 +207,55 @@ Uncovered facets: text-alternative-mechanism, functional-nontext-name, decorativ
 | a11ycore-img-alt-present | automatic | &lt;img&gt; must have an alt attribute | src\rules\automatic\img-alt-present.js | img-alt-attr-present |  |
 | a11ycore-input-image-alt-present | automatic | &lt;input type="image"&gt; must have an alt attribute | src\rules\automatic\input-image-alt-present.js | input-image-alt-attr-present |  |
 | a11ycore-object-text-alternative-present | automatic | &lt;object&gt; must provide a text alternative | src\rules\automatic\object-text-alternative-present.js | object-text-alternative-present |  |
+| a11ycore-role-img-text-alternative-present | automatic | [role="img"] must have an accessible text alternative | src\rules\automatic\role-img-alt-present.js | role-img-text-alternative-present |  |
 | a11ycore-svg-image-text-alternative-present | automatic | SVG &lt;image&gt; must have a text alternative | src\rules\automatic\svg-image-text-alternative-present.js | svg-image-text-alt-present |  |
 | a11ycore-svg-text-alternative-present | automatic | &lt;svg&gt; must provide a text alternative | src\rules\automatic\svg-text-alternative-present.js | svg-text-alternative-present |  |
 | a11ycore-video-poster-text-alternative-present | automatic | &lt;video&gt; poster must have a text alternative | src\rules\automatic\video-poster-text-alternative-present.js | video-poster-text-alt-present |  |
+
+### 1.4.3
+
+Facet coverage: **2/2** facets covered.
+Automation mix: **full 0, partial 2, manual 0**.
+
+| Facet | Automation | Covered by |
+|---|---|---|
+| contrast-computability-143 | partial | a11ycore-contrast-computable |
+| contrast-minimum-text | partial | a11ycore-contrast-minimum |
+
+| Rule ID | Type | Title | File | Facet | Notes |
+|---|---|---|---|---|---|
+| a11ycore-contrast-computable | automatic | Color contrast is computable for rendered text | src\rules\automatic\contrast-computable.js | contrast-computability-143 |  |
+| a11ycore-contrast-minimum | automatic | Text meets minimum color contrast (AA) | src\rules\automatic\contrast-minimum.js | contrast-minimum-text |  |
+
+### 1.4.6
+
+Facet coverage: **2/2** facets covered.
+Automation mix: **full 0, partial 2, manual 0**.
+
+| Facet | Automation | Covered by |
+|---|---|---|
+| contrast-computability-146 | partial | a11ycore-contrast-computable |
+| contrast-enhanced-text | partial | a11ycore-contrast-enhanced |
+
+| Rule ID | Type | Title | File | Facet | Notes |
+|---|---|---|---|---|---|
+| a11ycore-contrast-computable | automatic | Color contrast is computable for rendered text | src\rules\automatic\contrast-computable.js | contrast-computability-146 |  |
+| a11ycore-contrast-enhanced | automatic | Text meets enhanced color contrast (AAA) | src\rules\automatic\contrast-enhanced.js | contrast-enhanced-text |  |
+
+### 2.4.2
+
+Facet coverage: **2/2** facets covered.
+Automation mix: **full 1, partial 1, manual 0**.
+
+| Facet | Automation | Covered by |
+|---|---|---|
+| page-title-present | full | a11ycore-page-title-present |
+| page-title-patterns | partial | a11ycore-page-title-patterns |
+
+| Rule ID | Type | Title | File | Facet | Notes |
+|---|---|---|---|---|---|
+| a11ycore-page-title-patterns | automatic | Page title patterns that may indicate low descriptiveness | src\rules\automatic\a11ycore-page-title-patterns.js | page-title-patterns |  |
+| a11ycore-page-title-present | automatic | Page title is present and non-empty | src\rules\automatic\a11ycore-page-title-present.js | page-title-present |  |
 
 ### 3.1.1
 
@@ -195,6 +291,7 @@ Uncovered facets: form-control-name-quality
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | a11ycore-aria-hidden-programmatic-focus-review | manual | Review aria-hidden programmatic focus | src\rules\aria-hidden-programmatic-focus-review.js |  |  |
+| a11ycore-media-alternative-transcript-evidence | manual | Time-based media: transcript / media alternative evidence | src\rules\manual\a11ycore-media-transcript-present-manual.js |  |  |
 | a11ycore-area-alt-decorative | manual | &lt;area&gt; with alt="" must be decorative (manual review) | src\rules\manual\area-alt-decorative-manual.js |  |  |
 | a11ycore-area-alt-quality | manual | &lt;area&gt; alt text must be appropriate (manual review) | src\rules\manual\area-alt-quality-manual.js |  |  |
 | a11ycore-canvas-text-alternative-quality | manual | &lt;canvas&gt; text alternative must be appropriate (manual review) | src\rules\manual\canvas-text-alternative-quality-manual.js |  |  |

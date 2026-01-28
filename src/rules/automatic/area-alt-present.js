@@ -54,20 +54,6 @@ function runInPage(ctx) {
         catch { return []; }
       };
 
-  const buildSelector = helpers && typeof helpers.buildSelector === 'function'
-      ? helpers.buildSelector
-      : (el) => {
-        try {
-          if (!el || !el.tagName) return 'html';
-          const tag = (el.tagName || 'html').toLowerCase();
-          return el.id ? `${tag}#${el.id}` : tag;
-        } catch { return 'html'; }
-      };
-
-  const getOuterHtmlSnippet = helpers && typeof helpers.getOuterHtmlSnippet === 'function'
-      ? helpers.getOuterHtmlSnippet
-      : (el) => { try { return (el && el.outerHTML) ? String(el.outerHTML).slice(0, 2000) : ''; } catch { return ''; } };
-
   const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
       ? helpers.getEligibilityInfo
       : null;
@@ -98,6 +84,23 @@ function runInPage(ctx) {
     }
   }
 
+  // Cache mapName -> first referencing <img> in document order (deterministic)
+  const __usemapIndex = (() => {
+    const idx = new Map();
+    try {
+      const imgs = document && document.querySelectorAll ? document.querySelectorAll('img[usemap]') : [];
+      for (const img of imgs) {
+        if (!img || !img.getAttribute) continue;
+        const u = normUsemap(img.getAttribute('usemap'));
+        if (!u) continue;
+        if (!idx.has(u)) idx.set(u, img); // first in document order wins
+      }
+    } catch {
+      // ignore
+    }
+    return idx;
+  })();
+
   function getReferencingImgForArea(areaEl) {
     try {
       if (!areaEl || !areaEl.closest) return null;
@@ -107,12 +110,7 @@ function runInPage(ctx) {
       const mapName = getMapName(map);
       if (!mapName) return null;
 
-      // Deterministic: first matching <img usemap> in document order
-      const imgs = Array.from(document.querySelectorAll('img[usemap]'));
-      for (const img of imgs) {
-        const u = normUsemap(img.getAttribute('usemap'));
-        if (u && u === mapName) return img;
-      }
+      return __usemapIndex.get(mapName) || null;
     } catch {}
     return null;
   }
@@ -160,13 +158,12 @@ function runInPage(ctx) {
     const hasAlt = el.getAttribute('alt') !== null;
     if (hasAlt) continue;
 
-    const selector = (() => { try { return buildSelector(el); } catch { return 'html'; } })();
-    const html = getOuterHtmlSnippet(el);
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
-    occurrences.push({
-      selector,
-      html,
+    const baseOccurrence = {
+      // Leave selector/html empty so the engine can fill them from __node.
+      selector: '',
+      html: '',
       summary: 'Missing alt attribute on &lt;area&gt;.',
       hint: 'Add an alt attribute (use alt="" only for decorative areas).',
       i18n: {
@@ -177,7 +174,14 @@ function runInPage(ctx) {
       data: {
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
       }
-    });
+    };
+
+    if (helpers && typeof helpers.reportOccurrence === 'function') {
+      occurrences.push(helpers.reportOccurrence(el, baseOccurrence));
+    } else {
+      // Never compute selector/snippet in the rule.
+      occurrences.push({ ...baseOccurrence });
+    }
   }
 
   if (applicableCount === 0) {

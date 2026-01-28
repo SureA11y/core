@@ -1,0 +1,331 @@
+'use strict';
+
+const id = 'a11ycore-contrast-computable';
+
+const meta = {
+    title: 'Color contrast is computable for rendered text',
+    description:
+        'Determines whether sufficient information is available to compute WCAG color contrast for visible text (e.g., no gradients/images/blend modes that make background indeterminate).',
+    i18n: {
+        titleKey: 'a11ycore_contrastComputable_title',
+        descriptionKey: 'a11ycore_contrastComputable_description'
+    },
+    helpUrl: null,
+    tags: [
+        'wcag2a',
+        'wcag2aa',
+        'wcag2aaa',
+        'wcag143',
+        'wcag146',
+        'contrast',
+        'color',
+        'structure',
+        'atomic',
+        'automatic',
+        'dom'
+    ],
+    wcagSc: ['1.4.3', '1.4.6'],
+    normativeMappings: [
+        {
+            standard: 'WCAG',
+            version: '2.2',
+            requirement: '1.4.3',
+            title: 'Contrast (Minimum)',
+            conformanceLevel: 'AA'
+        },
+        {
+            standard: 'WCAG',
+            version: '2.2',
+            requirement: '1.4.6',
+            title: 'Contrast (Enhanced)',
+            conformanceLevel: 'AAA'
+        }
+    ],
+    defaultSeverity: 'minor',
+    category: 'perceivable',
+    type: 'automatic',
+    defaultConfidence: 'high',
+    coverage: {
+        facetsBySc: {
+            '1.4.3': ['contrast-computability-143'],
+            '1.4.6': ['contrast-computability-146']
+        }
+    }
+};
+
+function runInPage(ctx) {
+    const { helpers, rule, engineOptions } = ctx;
+
+    const __contrastSharedCache = helpers && helpers.contrast && helpers.contrast.sharedCache ? helpers.contrast.sharedCache : null;
+
+    const profile =
+        engineOptions && typeof engineOptions.profile === 'string' && engineOptions.profile.trim()
+            ? engineOptions.profile.trim()
+            : 'strictConformance';
+
+    const rootCanvasFallback =
+        engineOptions && typeof engineOptions.rootCanvasFallback === 'string' && engineOptions.rootCanvasFallback.trim()
+            ? engineOptions.rootCanvasFallback.trim()
+            : '#ffffff';
+
+    const MAX_OCCURRENCES = 50;
+
+    const occurrences = [];
+    let eligibleTextCount = 0;
+    let cantTellCount = 0;
+
+    const seenFailEls = new Set();
+
+    function pushCantTellOccurrence(el, reasonCode, extraDetails) {
+        try {
+            if (!el || seenFailEls.has(el)) return;
+            if (occurrences.length >= MAX_OCCURRENCES) return;
+            seenFailEls.add(el);
+
+            const rc = String(reasonCode || 'UNKNOWN');
+
+            // Match test contract: choose a specific summaryKey per computability blocker.
+            // Fall back to the generic notComputable key.
+            let summaryKey = 'a11ycore_contrastComputable_cantTell_notComputable';
+            if (rc === 'BACKGROUND_IMAGE_OR_GRADIENT') summaryKey = 'a11ycore_contrastComputable_cantTell_bgImageOrGradient';
+            else if (rc === 'MIX_BLEND_MODE') summaryKey = 'a11ycore_contrastComputable_cantTell_mixBlendMode';
+            else if (rc === 'BACKGROUND_FILTER_OR_BACKDROP_FILTER') {
+                const bp = extraDetails && typeof extraDetails === 'object' ? String(extraDetails.blockerProperty || '') : '';
+                if (bp === 'filter') summaryKey = 'a11ycore_contrastComputable_cantTell_filter';
+                else if (bp === 'backdrop-filter') summaryKey = 'a11ycore_contrastComputable_cantTell_backdropFilter';
+                else summaryKey = 'a11ycore_contrastComputable_cantTell_filterOrBackdropFilter';
+            }
+            else if (rc === 'BACKGROUND_NOT_OPAQUE_AT_ROOT') summaryKey = 'a11ycore_contrastComputable_cantTell_rootNotOpaque';
+
+            const details =
+                Object.assign(
+                    { reasonCode: rc },
+                    extraDetails && typeof extraDetails === 'object' ? extraDetails : {}
+                );
+
+            const occBase = {
+                selector: '',
+                html: '',
+                summary: '',
+                hint: '',
+                i18n: {
+                    summaryKey,
+                    hintKey: '',
+                    params: { reasonCode: rc }
+                },
+                data: { details }
+            };
+
+            if (helpers && typeof helpers.reportOccurrence === 'function') {
+                occurrences.push(helpers.reportOccurrence(el, occBase));
+            } else {
+                // Never compute selector/snippet in the rule.
+                occurrences.push({ ...occBase });
+            }
+        } catch {
+            // no-throw
+        }
+    }
+
+    // perf: cache per-element analysis so multiple text nodes in same element don't repeat expensive work
+    const __elBlockerCache = __contrastSharedCache
+        ? (__contrastSharedCache.__elBlockerCache || (__contrastSharedCache.__elBlockerCache = new WeakMap()))
+        : new WeakMap(); // Element -> { ok:boolean, reasonCode, blockerSelector, blockerProperty, blockerValue }
+    const __elBgCache = __contrastSharedCache
+        ? (__contrastSharedCache.__elBgCache || (__contrastSharedCache.__elBgCache = new WeakMap()))
+        : new WeakMap();      // Element -> { ok, rgba, alpha, reasonCode } (no stack)
+    const __elFgCache = __contrastSharedCache
+        ? (__contrastSharedCache.__elFgCache || (__contrastSharedCache.__elFgCache = new WeakMap()))
+        : new WeakMap();      // Element -> { rgba, alpha, opacityProduct }
+
+    // perf: fast-path memo for self-opaque background (common) to avoid ancestor walk
+    const __elBgSelfOpaqueCache = __contrastSharedCache
+        ? (__contrastSharedCache.__elBgSelfOpaqueCache || (__contrastSharedCache.__elBgSelfOpaqueCache = new WeakMap()))
+        : new WeakMap(); // Element -> { ok, rgba, alpha, reasonCode }
+
+    // Shared deterministic text scan (computed once per run and reused across contrast rules)
+    let scan = null;
+    try {
+        scan = helpers && helpers.contrast && typeof helpers.contrast.getTextScan === 'function'
+            ? helpers.contrast.getTextScan(ctx, helpers, engineOptions)
+            : null;
+    } catch {
+        scan = null;
+    }
+
+    // Walk eligible visible text nodes (counted per text node), but compute blockers/bg/fg once per element.
+    if (scan && scan.elements && Array.isArray(scan.elements)) {
+        try {
+            eligibleTextCount = Number(scan.eligibleTextCount) || 0;
+
+            for (const rec of scan.elements) {
+                // If we're already capped on occurrences and already know the final outcome is cantTell,
+                // stop scanning to avoid wasting time. Deterministic: we don't randomize; we just stop
+                // once further work cannot change the output (cantTell + capped occurrences).
+                if (cantTellCount > 0 && occurrences.length >= MAX_OCCURRENCES) break;
+
+                const el = rec && rec.el;
+                const textCount = rec && Number(rec.textCount) ? Number(rec.textCount) : 0;
+                if (!el || textCount <= 0) continue;
+
+                // 1) Blockers in ancestor chain (blend/filter/bg-image/gradient)
+                let blocker = __elBlockerCache.get(el);
+                if (!blocker) {
+                    blocker = helpers.contrast.getComputabilityBlocker(el);
+                    // Normalize to stable shape
+                    blocker = blocker || { ok: true, reasonCode: null, blockerSelector: '', blockerProperty: '', blockerValue: '' };
+                    __elBlockerCache.set(el, blocker);
+                }
+                if (blocker && blocker.ok === false) {
+                    cantTellCount += textCount;
+                    // occurrence is deduped per element (seenFailEls)
+                    pushCantTellOccurrence(el, blocker.reasonCode, {
+                        blockerProperty: blocker.blockerProperty,
+                        blockerValue: blocker.blockerValue,
+                        blockerSelector: blocker.blockerSelector
+                    });
+                    continue;
+                }
+
+                // 2) Background resolution (CSS-only), strict vs referenceEngineCompat
+                let bg = __elBgCache.get(el);
+                if (!bg) {
+                    // 2a) Fast-path: if the element itself paints an opaque background-color and opacity is 1,
+                    // then the background behind its text is computable without walking ancestors.
+                    // This is a strict subset of the full algorithm, so it is behavior-preserving:
+                    // if it doesn't match, we fall back to computeEffectiveBackground.
+                    let bgSelfOpaque = __elBgSelfOpaqueCache.get(el);
+                    if (bgSelfOpaque === undefined) {
+                        bgSelfOpaque = null;
+                        try {
+                            if (helpers && typeof helpers.getComputedStyle === 'function' && helpers.contrast && typeof helpers.contrast.parseCssColorToRgba === 'function') {
+                                const cs = helpers.getComputedStyle(el);
+                                const op = Number.parseFloat(cs && cs.opacity != null ? cs.opacity : '1');
+                                // Only treat as self-opaque if opacity is exactly 1 (string '1' or number 1)
+                                // to avoid float/serialization quirks and preserve determinism.
+                                if (Number.isFinite(op) && op === 1) {
+                                    const c = helpers.contrast.parseCssColorToRgba(cs && cs.backgroundColor);
+                                    if (c && typeof c.a === 'number' && c.a === 1) {
+                                        bgSelfOpaque = {
+                                            ok: true,
+                                            rgba: { r: c.r, g: c.g, b: c.b, a: 1 },
+                                            alpha: 1,
+                                            reasonCode: null
+                                        };
+                                    }
+                                }
+                            }
+                        } catch {
+                            bgSelfOpaque = null;
+                        }
+                        __elBgSelfOpaqueCache.set(el, bgSelfOpaque);
+                    }
+
+                    if (bgSelfOpaque && bgSelfOpaque.ok === true) {
+                        bg = bgSelfOpaque;
+                    } else {
+                        bg = helpers.contrast.computeEffectiveBackground(el, { profile, rootCanvasFallback, collectStack: false });
+                        bg = bg || { ok: false, reasonCode: 'BACKGROUND_NOT_COMPUTABLE', rgba: null, alpha: 0 };
+                    }
+
+                    __elBgCache.set(el, bg);
+                }
+                if (!bg || bg.ok === false) {
+                    cantTellCount += textCount;
+                    pushCantTellOccurrence(el, (bg && bg.reasonCode) || 'BACKGROUND_NOT_COMPUTABLE', {
+                        background: bg && bg.rgba ? helpers.contrast.rgbaToString(bg.rgba) : '',
+                        backgroundAlpha: bg && typeof bg.alpha === 'number' ? helpers.contrast.round2(bg.alpha) : ''
+                    });
+                    continue;
+                }
+
+                // 3) Foreground parsability (computed color should be rgb/rgba)
+                let fg = __elFgCache.get(el);
+                if (!fg) {
+                    fg = helpers.contrast.computeEffectiveForeground(el);
+                    fg = fg || { rgba: null, alpha: 0, opacityProduct: 1 };
+                    __elFgCache.set(el, fg);
+                }
+                if (!fg || !fg.rgba) {
+                    cantTellCount += textCount;
+                    pushCantTellOccurrence(el, 'FOREGROUND_UNPARSABLE', {
+                        background: bg && bg.rgba ? helpers.contrast.rgbaToString(bg.rgba) : '',
+                        backgroundAlpha: bg && typeof bg.alpha === 'number' ? helpers.contrast.round2(bg.alpha) : ''
+                    });
+                    continue;
+                }
+
+                // If we got here, this element's eligible text is computable.
+                // (We intentionally do not compute contrast ratio in this gatekeeper rule.)
+            }
+        } catch {
+            // If scan processing fails unexpectedly, keep determinism: treat as cantTell with one occurrence
+            return {
+                ruleId: rule.ruleId,
+                outcome: 'cantTell',
+                severity: rule.defaultSeverity || 'minor',
+                confidence: rule.defaultConfidence || 'high',
+                occurrences: [
+                    {
+                        selector: '',
+                        summary: '',
+                        hint: '',
+                        html: '',
+                        i18n: {
+                            summaryKey: 'a11ycore_contrastComputable_cantTell_engineFailure',
+                            hintKey: '',
+                            params: { reasonCode: 'ENGINE_EXCEPTION' }
+                        },
+                        data: { details: { reasonCode: 'ENGINE_EXCEPTION' } }
+                    }
+                ]
+            };
+        }
+    }
+
+    if (eligibleTextCount === 0) {
+        return {
+            ruleId: rule.ruleId,
+            outcome: 'notApplicable',
+            severity: rule.defaultSeverity || 'minor',
+            confidence: rule.defaultConfidence || 'high',
+            occurrences: []
+        };
+    }
+
+    if (cantTellCount > 0) {
+        return {
+            ruleId: rule.ruleId,
+            outcome: 'cantTell',
+            severity: rule.defaultSeverity || 'minor',
+            confidence: rule.defaultConfidence || 'high',
+            occurrences
+        };
+    }
+
+    // All eligible text is computable
+    return {
+        ruleId: rule.ruleId,
+        outcome: 'pass',
+        severity: rule.defaultSeverity || 'minor',
+        confidence: rule.defaultConfidence || 'high',
+        occurrences: [
+            {
+                selector: '',
+                summary: '',
+                hint: '',
+                html: '',
+                i18n: {
+                    summaryKey: 'a11ycore_contrastComputable_pass_allComputable',
+                    hintKey: '',
+                    params: {
+                        eligibleTextCount: String(eligibleTextCount)
+                    }
+                },
+                data: { details: { eligibleTextCount } }
+            }
+        ]
+    };
+}
+
+module.exports = { id, meta, runInPage };

@@ -51,24 +51,6 @@ function runInPage(ctx) {
             catch { return []; }
         };
 
-    const buildSelector = helpers && typeof helpers.buildSelector === 'function'
-        ? helpers.buildSelector
-        : (el) => {
-            try {
-                if (!el || !el.tagName) return 'html';
-                const tag = (el.tagName || 'html').toLowerCase();
-                return el.id ? `${tag}#${el.id}` : tag;
-            } catch { return 'html'; }
-        };
-
-    const getOuterHtmlSnippet = helpers && typeof helpers.getOuterHtmlSnippet === 'function'
-        ? helpers.getOuterHtmlSnippet
-        : (el) => { try { return (el && el.outerHTML) ? String(el.outerHTML).slice(0, 2000) : ''; } catch { return ''; } };
-
-    const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
-        ? helpers.getEligibilityInfo
-        : null;
-
     const isAccTreeEligible = helpers && typeof helpers.isAccTreeEligible === 'function'
         ? helpers.isAccTreeEligible
         : null;
@@ -96,11 +78,19 @@ function runInPage(ctx) {
         return !focusable;
     }
 
-
     const els = (() => {
-        try { return Array.from((queryAllSmart ? queryAllSmart("img") : queryAll("img")) || []); }
-        catch { return queryAll("img"); }
+        // Only likely candidates:
+        // - alt="" (exact)
+        // - alt that starts/ends with space (to catch whitespace-only like "   ")
+        const sel = 'img[alt=""], img[alt^=" "], img[alt$=" "]';
+        try { return Array.from((queryAllSmart ? queryAllSmart(sel) : queryAll(sel)) || []); }
+        catch { return queryAll(sel); }
     })();
+    const uniqueEls = [];
+    const seen = new Set();
+    for (const el of els) {
+        if (!seen.has(el)) { seen.add(el); uniqueEls.push(el); }
+    }
 
     if (!els.length) {
         return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
@@ -109,7 +99,7 @@ function runInPage(ctx) {
     const occurrences = [];
     let applicableCount = 0;
 
-    for (const el of els) {
+    for (const el of uniqueEls) {
         if (!el || !el.getAttribute) continue;
 
         if (isAccTreeEligible) {
@@ -122,29 +112,31 @@ function runInPage(ctx) {
         if (isRolePresentationExcluded(el)) continue;
 
         // Rule-specific applicability (only elements that already have a text alternative mechanism)
-        if (!((el.getAttribute('alt') != null && String(el.getAttribute('alt')).trim() === ''))) continue;
+        const rawAlt = el.getAttribute('alt');
+        if (rawAlt == null) continue;
+        if (String(rawAlt).trim() !== '') continue;
 
         applicableCount += 1;
 
-        const selectorStr = (() => { try { return buildSelector(el); } catch { return 'html'; } })();
-        const html = getOuterHtmlSnippet(el);
-        const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
-
-        occurrences.push({
-            selector: selectorStr,
-            html,
-            summary: "Review whether <img> is decorative (alt=\"\").",
-            hint: "Confirm the image is purely decorative. If it conveys information or function, provide meaningful alt text.",
+        const baseOccurrence = {
+            summary: 'Review whether <img> is decorative (alt="").',
+            hint: 'Confirm the image is purely decorative. If it conveys information or function, provide meaningful alt text.',
             i18n: {
-                summaryKey: "a11ycore_img_altDecorative_summary_cantTell",
-                hintKey: "a11ycore_img_altDecorative_hint_cantTell",
-                params: { element: (el.tagName || '').toLowerCase() }
+                summaryKey: 'a11ycore_img_altDecorative_summary_cantTell',
+                hintKey: 'a11ycore_img_altDecorative_hint_cantTell',
+                params: { element: 'img' }
             },
             data: {
-                visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
+                visibilityFilter: { targetSet: 'acc', accEligible: null, reasons: [] },
                 details: null
             }
-        });
+        };
+
+        if (helpers && typeof helpers.reportOccurrence === 'function') {
+            occurrences.push(helpers.reportOccurrence(el, baseOccurrence));
+        } else {
+            occurrences.push({ selector: '', html: '', ...baseOccurrence });
+        }
     }
 
     if (applicableCount === 0) {

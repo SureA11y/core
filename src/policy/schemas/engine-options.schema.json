@@ -62,6 +62,21 @@
         }
       },
       "description": "Optional policy overrides applied on top of the resolved policy contract."
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "includeSelector": {
+          "type": ["boolean", "null"],
+          "description": "When false, the engine will not populate occurrence.selector (kept as empty string)."
+        },
+        "includeHtml": {
+          "type": ["boolean", "null"],
+          "description": "When false, the engine will not populate occurrence.html (kept as empty string)."
+        }
+      },
+      "description": "Output shaping options for reporting/performance."
     }
   }
 }

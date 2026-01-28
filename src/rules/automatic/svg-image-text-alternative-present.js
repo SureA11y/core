@@ -56,20 +56,6 @@ function runInPage(ctx) {
         catch { return []; }
       };
 
-  const buildSelector = helpers && typeof helpers.buildSelector === 'function'
-    ? helpers.buildSelector
-    : (el) => {
-        try {
-          if (!el || !el.tagName) return 'html';
-          const tag = (el.tagName || 'html').toLowerCase();
-          return el.id ? `${tag}#${el.id}` : tag;
-        } catch { return 'html'; }
-      };
-
-  const getOuterHtmlSnippet = helpers && typeof helpers.getOuterHtmlSnippet === 'function'
-    ? helpers.getOuterHtmlSnippet
-    : (el) => { try { return (el && el.outerHTML) ? String(el.outerHTML).slice(0, 2000) : ''; } catch { return ''; } };
-
   const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
     ? helpers.getEligibilityInfo
     : null;
@@ -90,9 +76,8 @@ function runInPage(ctx) {
 
   function directChildText(el, localName) {
     try {
-      if (!el || !el.childNodes) return '';
-      for (const n of Array.from(el.childNodes)) {
-        if (!n || n.nodeType !== 1) continue;
+      if (!el) return '';
+      for (let n = el.firstElementChild; n; n = n.nextElementSibling) {
         const tn = (n.localName || n.tagName || '').toLowerCase();
         if (tn === localName) {
           const t = trim(n.textContent);
@@ -103,10 +88,15 @@ function runInPage(ctx) {
     return '';
   }
 
-  const images = (() => {
-    try { return Array.from((queryAllSmart ? queryAllSmart('svg image') : queryAll('svg image')) || []); }
+  const rawImages = (() => {
+    try { return Array.from((queryAllSmart ? queryAllSmart('image') : queryAll('image')) || []); }
     catch { return queryAll('svg image'); }
   })();
+
+  const images = rawImages.filter((el) => {
+    try { return el && (el.namespaceURI === 'http://www.w3.org/2000/svg') && (String(el.localName).toLowerCase() === 'image'); }
+    catch { return false; }
+  });
 
   if (!images.length) return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 
@@ -139,19 +129,43 @@ function runInPage(ctx) {
     applicableCount += 1;
 
     const titleText = directChildText(el, 'title');
+    if (titleText) continue;
+
     const descText = directChildText(el, 'desc');
-    const nameInfo = getAccessibleNameInfo ? (() => { try { return getAccessibleNameInfo(el, ctx); } catch { return null; } })() : null;
-    const hasName = !!(nameInfo && nameInfo.present && trim(nameInfo.value));
+    if (descText) continue;
 
-    if (titleText || descText || hasName) continue;
+    // Only now check “accessible name” (but scoped to allowed mechanisms)
+    const ariaLabelRaw = (() => { try { return el.getAttribute('aria-label'); } catch { return null; } })();
+    const ariaLabelledbyRaw = (() => { try { return el.getAttribute('aria-labelledby'); } catch { return null; } })();
+    const titleAttrRaw = (() => { try { return el.getAttribute('title'); } catch { return null; } })();
 
-    const selector = (() => { try { return buildSelector(el); } catch { return 'html'; } })();
-    const html = getOuterHtmlSnippet(el);
+    const ariaLabel = trim(ariaLabelRaw);
+    const ariaLabelledby = trim(ariaLabelledbyRaw);
+    const titleAttr = trim(titleAttrRaw);
+
+    const hasMechanism =
+        (ariaLabelRaw !== null && ariaLabel.length > 0) ||
+        (ariaLabelledbyRaw !== null && ariaLabelledby.length > 0) ||
+        (titleAttrRaw !== null && titleAttr.length > 0);
+
+    let nameInfo = null;
+    let hasName = false;
+
+    if (hasMechanism) {
+      if (getAccessibleNameInfo) {
+        nameInfo = (() => { try { return getAccessibleNameInfo(el, ctx); } catch { return null; } })();
+        hasName = !!(nameInfo && nameInfo.present && trim(nameInfo.value));
+      } else {
+        // Without helper, accept presence of non-empty allowed attributes
+        hasName = true;
+      }
+    }
+
+    if (hasName) continue;
+
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
-    occurrences.push({
-      selector,
-      html,
+    const baseOccurrence = {
       summary: 'Missing text alternative on SVG <image>.',
       hint: 'Add a <title> (and optionally <desc>) inside <image>, or provide aria-label/aria-labelledby.',
       i18n: {
@@ -162,7 +176,13 @@ function runInPage(ctx) {
       data: {
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
       }
-    });
+    };
+
+    if (helpers && typeof helpers.reportOccurrence === 'function') {
+      occurrences.push(helpers.reportOccurrence(el, baseOccurrence));
+    } else {
+      occurrences.push({ selector: '', html: '', ...baseOccurrence });
+    }
   }
 
   if (applicableCount === 0) return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };

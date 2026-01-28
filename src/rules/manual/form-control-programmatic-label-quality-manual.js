@@ -55,8 +55,6 @@ function runInPage(ctx) {
     const safeRoot = root || document;
 
     const queryAllSmart = helpers && typeof helpers.queryAllSmart === 'function' ? helpers.queryAllSmart : null;
-    const buildSelector = helpers && typeof helpers.buildSelector === 'function' ? helpers.buildSelector : null;
-    const getOuterHtmlSnippet = helpers && typeof helpers.getOuterHtmlSnippet === 'function' ? helpers.getOuterHtmlSnippet : null;
 
     const isAccTreeEligible = helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
     const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
@@ -215,7 +213,10 @@ function runInPage(ctx) {
             }
         })();
 
-        const fi = getFocusableInfo ? getFocusableInfo(el, ctx) : null;
+        let fi = null;
+        if (getFocusableInfo) {
+            try { fi = getFocusableInfo(el, ctx); } catch { fi = null; }
+        }
         const tabbable = !!(fi && fi.tabbable);
 
         if ((role === 'presentation' || role === 'none') && !tabbable) continue;
@@ -241,9 +242,7 @@ function runInPage(ctx) {
                 : method === 'placeholder' ? 'placeholder'
                     : 'title or placeholder';
 
-        occurrences.push({
-            selector: buildSelector ? buildSelector(el) : 'html',
-            html: getOuterHtmlSnippet ? getOuterHtmlSnippet(el) : '',
+        const baseOccurrence = {
             summary: 'Form control’s primary label is derived from title or placeholder.',
             hint: 'Prefer a persistent <label> or aria-labelledby. Avoid relying on placeholder/title as the primary label.',
             i18n: {
@@ -252,18 +251,22 @@ function runInPage(ctx) {
                 params: { element: (el.tagName || '').toLowerCase(), method, methodLabel }
             },
             data: {
-                visibilityFilter: vf
-                    ? { targetSet: vf.targetSet, accEligible: vf.accEligible, reasons: vf.reasons }
-                    : { targetSet: 'acc', accEligible: null, reasons: [] },
+                visibilityFilter: vf || { targetSet: 'acc', accEligible: null, reasons: [] },
                 details: {
                     reasonCode,
                     labelMethod: method,
                     labelStrength: 'weak',
                     recommendedMethods: ['label', 'aria-labelledby'],
-                    sourceText: (label && label.value ? String(label.value).slice(0, 120) : '') // deterministic truncation
+                    sourceText: (label && label.value ? String(label.value).slice(0, 120) : '')
                 }
             }
-        });
+        };
+
+        if (helpers && typeof helpers.reportOccurrence === 'function') {
+            occurrences.push(helpers.reportOccurrence(el, baseOccurrence));
+        } else {
+            occurrences.push({ selector: '', html: '', ...baseOccurrence });
+        }
     }
 
     if (metrics.applicableCount === 0) {

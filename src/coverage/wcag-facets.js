@@ -103,6 +103,11 @@ const FACETS = {
                 "automation": "full"
             },
             {
+                "id": "role-img-text-alternative-present",
+                "label": "role=\"img\" has text alternative",
+                "automation": "full"
+            },
+            {
                 "id": "input-image-alt-attr-present",
                 "label": "<input type=\"image\"> has alt attribute",
                 "automation": "full"
@@ -169,6 +174,11 @@ const FACETS = {
         "title": "Audio-only and Video-only (Prerecorded)",
         "level": "A",
         "facets": [
+            {
+                "id": "transcript-evidence",
+                "label": "Transcript / text alternative evidence for prerecorded audio-only or video-only media (in-page association or verified on-page target)",
+                "automation": "partial"
+            }
         ]
     },
     "1.2.2": {
@@ -282,6 +292,16 @@ const FACETS = {
         "title": "Contrast (Minimum)",
         "level": "AA",
         "facets": [
+            {
+                "id": "contrast-computability-143",
+                "label": "Text contrast is computable from CSS for 1.4.3 (no images/gradients/blending ambiguity)",
+                "automation": "partial"
+            },
+            {
+                "id": "contrast-minimum-text",
+                "label": "Visible text meets minimum contrast ratio (AA) when computable",
+                "automation": "partial"
+            }
         ]
     },
     "1.4.4": {
@@ -300,6 +320,16 @@ const FACETS = {
         "title": "Contrast (Enhanced)",
         "level": "AAA",
         "facets": [
+            {
+                "id": "contrast-computability-146",
+                "label": "Text contrast is computable from CSS for 1.4.6 (no images/gradients/blending ambiguity)",
+                "automation": "partial"
+            },
+            {
+                "id": "contrast-enhanced-text",
+                "label": "Visible text meets enhanced contrast ratio (AAA) when computable",
+                "automation": "partial"
+            }
         ]
     },
     "1.4.7": {
@@ -432,6 +462,16 @@ const FACETS = {
         "title": "Page Titled",
         "level": "A",
         "facets": [
+            {
+                "id": "page-title-present",
+                "label": "<title> element is present and non-empty",
+                "automation": "full"
+            },
+            {
+                "id": "page-title-patterns",
+                "label": "Page title patterns review (generic / duplicated / overly templated across pages)",
+                "automation": "partial"
+            }
         ]
     },
     "2.4.3": {
