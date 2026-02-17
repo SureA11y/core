@@ -15,10 +15,10 @@
     "test:typography-helpers": "node tests/contrast-typography.test.js",
     "coverage": "node scripts/generate-wcag-coverage.js",
     "coverage:strict": "node scripts/generate-wcag-coverage.js --strictFacets",
-    "validate:automatic-rules": "node scripts/validate-all-rules.js src/rules/automatic",
-    "validate:manual-rules": "node scripts/validate-all-rules.js src/rules/manual"
+    "validate:automatic-rules": "npm run build && node scripts/validate-all-rules.js src/checks/automatic",
+    "validate:manual-rules": "npm run build && node scripts/validate-all-rules.js src/checks/manual"
   },
   "devDependencies": {
-    "jsdom": "^27.4.0"
+    "jsdom": "^28.0.0"
   }
 }

@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Fixture — more name presence roles (4.1.2)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, sans-serif; line-height: 1.45; padding: 24px; }
+    section { margin: 18px 0; padding: 14px; border: 1px solid #ddd; border-radius: 12px; }
+    code { background: #f6f6f6; padding: 2px 6px; border-radius: 6px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 12px; }
+    .note { font-size: 0.95rem; color: #444; margin-top: 6px; }
+    .expect { font-weight: 700; }
+  </style>
+</head>
+<body>
+  <h1>Fixture — Additional accessible-name presence rules (4.1.2)</h1>
+  <p class="note">
+    Covers: role=textbox, role=searchbox, role=spinbutton, role=listbox, role=option, role=treeitem.
+    Text inside <code>aria-hidden="true"</code> or <code>[hidden]</code> must not contribute to content-derived names.
+  </p>
+
+  <div class="grid">
+    <section>
+      <h2>role=textbox</h2>
+      <div role="textbox" aria-label="Name"></div>
+      <div class="note"><span class="expect">Expected:</span> PASS (aria-label)</div>
+      <div role="textbox" contenteditable="true">Visible name</div>
+      <div class="note"><span class="expect">Expected:</span> PASS (content)</div>
+      <div role="textbox" contenteditable="true"><span aria-hidden="true">Hidden name</span></div>
+      <div class="note"><span class="expect">Expected:</span> FAIL (hidden-only content)</div>
+    </section>
+
+    <section>
+      <h2>role=searchbox</h2>
+      <span id="lbl">Search</span>
+      <div role="searchbox" aria-labelledby="lbl"></div>
+      <div class="note"><span class="expect">Expected:</span> PASS (aria-labelledby)</div>
+      <div role="searchbox"><span aria-hidden="true">Search</span></div>
+      <div class="note"><span class="expect">Expected:</span> FAIL (hidden-only content)</div>
+    </section>
+
+    <section>
+      <h2>role=spinbutton</h2>
+      <div role="spinbutton" aria-label="Quantity" aria-valuemin="0" aria-valuemax="10" aria-valuenow="1"></div>
+      <div class="note"><span class="expect">Expected:</span> PASS (aria-label)</div>
+      <div role="spinbutton" aria-valuemin="0" aria-valuemax="10" aria-valuenow="1"></div>
+      <div class="note"><span class="expect">Expected:</span> FAIL (no name)</div>
+    </section>
+
+    <section>
+      <h2>role=listbox + role=option</h2>
+      <div role="listbox" aria-label="Countries">
+        <div role="option">Canada</div>
+        <div role="option"><span aria-hidden="true">Hidden option</span></div>
+      </div>
+      <div class="note"><span class="expect">Expected:</span> listbox PASS, first option PASS, second option FAIL</div>
+      <div role="listbox"><span aria-hidden="true">Hidden listbox name</span></div>
+      <div class="note"><span class="expect">Expected:</span> listbox FAIL</div>
+    </section>
+
+    <section>
+      <h2>role=treeitem</h2>
+      <div role="treeitem">Documents</div>
+      <div class="note"><span class="expect">Expected:</span> PASS (content)</div>
+      <div role="treeitem"><span aria-hidden="true">Documents</span></div>
+      <div class="note"><span class="expect">Expected:</span> FAIL (hidden-only content)</div>
+    </section>
+  </div>
+</body>
+</html>

@@ -217,11 +217,20 @@ module.exports = {
   "a11ycore_contrastComputable_cantTell_bgImageOrGradient":
       'Le contraste n’est pas calculable car l’arrière-plan utilise une image ou un dégradé ({{blockerProperty}}={{blockerValue}}).',
 
+  "a11ycore_contrastComputable_cantTell_bgImage":
+      "Le contraste ne peut pas être calculé car l’arrière-plan utilise une image ({{blockerProperty}}={{blockerValue}}).",
+
+  "a11ycore_contrastComputable_cantTell_bgGradient":
+      "Le contraste ne peut pas être calculé car l’arrière-plan utilise un dégradé ({{blockerProperty}}={{blockerValue}}).",
+
+  "a11ycore_contrastComputable_cantTell_bgImageAndGradient":
+      "Le contraste ne peut pas être calculé car l’arrière-plan utilise une image et un dégradé ({{blockerProperty}}={{blockerValue}}).",
+
   "a11ycore_contrastComputable_cantTell_mixBlendMode":
       'Le contraste n’est pas calculable car mix-blend-mode est utilisé ({{blockerProperty}}={{blockerValue}}).',
 
   "a11ycore_contrastComputable_cantTell_filter":
-      'Le contraste n’est pas calculable car filter/backdrop-filter est utilisé ({{blockerProperty}}={{blockerValue}}).',
+      "Le contraste ne peut pas être calculé car la propriété filter est utilisée ({{blockerProperty}}={{blockerValue}}).",
 
   "a11ycore_contrastComputable_cantTell_rootNotOpaque":
       'Le contraste n’est pas calculable car l’arrière-plan effectif n’est pas totalement opaque à la racine (alpha={{backgroundAlpha}}).',
@@ -231,6 +240,12 @@ module.exports = {
 
   "a11ycore_contrastComputable_cantTell_engineFailure":
       'La calculabilité du contraste n’a pas pu être déterminée en raison d’une erreur interne du moteur ({{reasonCode}}).',
+
+  "a11ycore_contrastComputable_cantTell_backdropFilter":
+      "Le contraste ne peut pas être calculé car la propriété backdrop-filter est utilisée ({{blockerProperty}}={{blockerValue}}).",
+
+  "a11ycore_contrastComputable_cantTell_filterOrBackdropFilter":
+      "Le contraste ne peut pas être calculé car une propriété filter ou backdrop-filter est utilisée ({{blockerProperty}}={{blockerValue}}).",
 
 // --- Contraste DOM : minimum AA (1.4.3)
   "a11ycore_contrastMinimum_title": 'Le texte respecte le contraste minimum (AA)',
@@ -318,17 +333,195 @@ module.exports = {
       "Vérifiez manuellement le contraste du composant/graphique par rapport aux couleurs adjacentes ; assurez-vous qu’il respecte {{requiredRatio}}:1 pour l’information visuelle non textuelle essentielle.",
   "a11ycore_contrastEnhanced_pass_allTextMeetsThreshold": "Tout le texte calculable respecte le contraste renforcé (AAA).",
   "a11ycore_contrastMinimum_pass_allTextMeetsThreshold": "Tout le texte calculable respecte le contraste minimum (AA).",
-  a11ycore_roleImg_textAlternativePresent_title:
+  "a11ycore_contrastComputable_cantTell_notComputable":
+      "Le contraste ne peut pas être calculé pour ce texte ({{reasonCode}}).",
+
+  "a11ycore_roleImg_textAlternativePresent_title":
       'Les éléments avec role="img" doivent avoir une alternative textuelle accessible',
 
-  a11ycore_roleImg_textAlternativePresent_description:
+  "a11ycore_roleImg_textAlternativePresent_description":
       'Vérifie que les éléments ayant le rôle "img" fournissent une alternative textuelle accessible via aria-label ou aria-labelledby.',
 
   // Résumé d’échec & aide
-  a11ycore_roleImg_textAlternativePresent_summary_fail:
+  "a11ycore_roleImg_textAlternativePresent_summary_fail":
       'L’élément avec le rôle "img" ne possède pas d’alternative textuelle accessible.',
 
-  a11ycore_roleImg_textAlternativePresent_hint_fail:
-      'Fournissez une alternative textuelle à l’aide de aria-label ou de aria-labelledby pointant vers un texte non vide.'
+  "a11ycore_roleImg_textAlternativePresent_hint_fail":
+      'Fournissez une alternative textuelle à l’aide de aria-label ou de aria-labelledby pointant vers un texte non vide.',
 
+  // --- Taille de la cible (minimum) — WCAG 2.5.8 (AA)
+  "a11ycore_targetSizeMinimum_title": "Les cibles activables au pointeur respectent la taille minimale (AA)",
+  "a11ycore_targetSizeMinimum_description": "Vérifie que les cibles activables au pointeur ont une zone cliquable effective d’au moins 24×24 pixels CSS, ou respectent une exception autorisée (par ex. un espacement suffisant).",
+  "a11ycore_targetSizeMinimum_summary_fail": "La cible est plus petite que 24×24 px CSS et est trop proche d’une autre cible.",
+  "a11ycore_targetSizeMinimum_hint_fail": "Augmentez la taille de la cible à au moins 24×24 px CSS, ou ajoutez un espacement suffisant par rapport aux cibles voisines.",
+  "a11ycore_targetSizeMinimum_notApplicable_noTargets": "Aucune cible activable par pointeur n’était éligible à l’évaluation.",
+  "a11ycore_targetSizeMinimum_pass_allOk": "Toutes les cibles activables par pointeur respectent la taille minimale ou une exception autorisée.",
+
+// --- a11ycore-aria-hidden-focus
+  "a11ycore_ariaHidden_focus_title": "Les éléments aria-hidden ne doivent pas être focalisables",
+  "a11ycore_ariaHidden_focus_description":
+      "Vérifie que les éléments avec aria-hidden=\"true\" ne sont pas focalisables et ne contiennent pas d’éléments focalisables.",
+
+  "a11ycore_ariaHidden_focus_summary_fail_desc":
+      "L’élément aria-hidden {{element}} contient {{focusableCount}} élément(s) focalisable(s).",
+  "a11ycore_ariaHidden_focus_summary_fail_self":
+      "L’élément aria-hidden {{element}} est focalisable ({{focusableCount}} élément(s) focalisable(s)).",
+  "a11ycore_ariaHidden_focus_summary_fail_self_and_desc":
+      "L’élément aria-hidden {{element}} est focalisable et contient {{descendantFocusableCount}} descendant(s) focalisable(s) ({{focusableCount}} élément(s) focalisable(s) au total).",
+
+  "a11ycore_ariaHidden_focus_hint_fail":
+      "Supprimez la focalisation des descendants ou retirez aria-hidden ; assurez la cohérence entre l’ordre de focus et l’arbre d’accessibilité.",
+
+// --- a11ycore-css-hidden-focus
+  "a11ycore_cssHidden_focus_title": "Les éléments focalisables ne doivent pas être masqués visuellement",
+  "a11ycore_cssHidden_focus_description":
+      "Vérifie que les éléments focalisables au clavier ne sont pas masqués visuellement par des techniques CSS pouvant les laisser dans l’ordre de tabulation.",
+
+  "a11ycore_cssHidden_focus_summary_cantTell":
+      "L’élément focalisable {{element}} est masqué visuellement ({{visibilityHints}}).",
+  "a11ycore_cssHidden_focus_hint_cantTell":
+      "Rendez l’élément visible lorsqu’il peut recevoir le focus clavier, ou retirez-le de l’ordre de tabulation tant qu’il n’est pas visible.",
+
+  "a11ycore_linkNamePresent_title": "Les liens ont un nom accessible",
+  "a11ycore_linkNamePresent_description": "Vérifie que les liens exposent un nom accessible non vide.",
+  "a11ycore_linkNamePresent_summary_fail": "Ce lien n’a pas de nom accessible.",
+  "a11ycore_linkNamePresent_hint_fail": "Fournissez un texte de lien ou un mécanisme de nom accessible (par exemple aria-label) afin que les technologies d’assistance puissent identifier le lien.",
+  "a11ycore_buttonNamePresent_title": "Les boutons ont un nom accessible",
+  "a11ycore_buttonNamePresent_description": "Vérifie que les boutons exposent un nom accessible non vide.",
+  "a11ycore_buttonNamePresent_summary_fail": "Ce bouton n’a pas de nom accessible.",
+  "a11ycore_buttonNamePresent_hint_fail": "Fournissez un texte visible pour le bouton ou un mécanisme de nom accessible (par exemple aria-label) afin que les technologies d’assistance puissent identifier le bouton.",
+  "a11ycore_binaryControlNamePresent_title": "Les contrôles binaires ont un nom accessible",
+  "a11ycore_binaryControlNamePresent_description": "Vérifie que les cases à cocher, les boutons radio et les interrupteurs exposent un nom accessible non vide.",
+  "a11ycore_binaryControlNamePresent_summary_fail": "Ce contrôle n’a pas de nom accessible.",
+  "a11ycore_binaryControlNamePresent_hint_fail": "Fournissez un libellé, aria-label, aria-labelledby ou un autre mécanisme de nom accessible afin que les technologies d’assistance puissent identifier le contrôle.",
+  "a11ycore_comboboxNamePresent_title": "Les listes déroulantes (combobox) ont un nom accessible",
+  "a11ycore_comboboxNamePresent_description": "Vérifie que les éléments avec role=\"combobox\" exposent un nom accessible non vide.",
+  "a11ycore_comboboxNamePresent_summary_fail": "Cette combobox n’a pas de nom accessible.",
+  "a11ycore_comboboxNamePresent_hint_fail": "Fournissez aria-label ou aria-labelledby (préféré), ou assurez-vous que l’élément a un texte visible qui n’est pas masqué aux technologies d’assistance.",
+  "a11ycore_dialogNamePresent_title": "Les dialogues ont un nom accessible",
+  "a11ycore_dialogNamePresent_description": "Vérifie que les éléments avec role=\"dialog\" ou role=\"alertdialog\" exposent un nom accessible non vide.",
+  "a11ycore_dialogNamePresent_summary_fail": "Ce dialogue n’a pas de nom accessible.",
+  "a11ycore_dialogNamePresent_hint_fail": "Fournissez aria-labelledby (préféré) ou aria-label afin que les technologies d’assistance puissent annoncer le dialogue.",
+  "a11ycore_menuitemNamePresent_title": "Les éléments de menu ont un nom accessible",
+  "a11ycore_menuitemNamePresent_description": "Vérifie que les éléments de menu (role=\"menuitem*\", y compris les variantes case à cocher/radio) exposent un nom accessible non vide.",
+  "a11ycore_menuitemNamePresent_summary_fail": "Cet élément de menu n’a pas de nom accessible.",
+  "a11ycore_menuitemNamePresent_hint_fail": "Fournissez un texte visible qui n’est pas masqué aux technologies d’assistance, ou fournissez aria-label ou aria-labelledby.",
+  "a11ycore_tabNamePresent_title": "Les onglets ont un nom accessible",
+  "a11ycore_tabNamePresent_description": "Vérifie que les éléments avec role=\"tab\" exposent un nom accessible non vide.",
+  "a11ycore_tabNamePresent_summary_fail": "Cet onglet n’a pas de nom accessible.",
+  "a11ycore_tabNamePresent_hint_fail": "Fournissez un texte d’onglet qui n’est pas masqué aux technologies d’assistance, ou fournissez aria-label ou aria-labelledby.",
+  "a11ycore_sliderNamePresent_title": "Les curseurs ont un nom accessible",
+  "a11ycore_sliderNamePresent_description": "Vérifie que les curseurs (input[type=\"range\"] et role=\"slider\") exposent un nom accessible non vide.",
+  "a11ycore_sliderNamePresent_summary_fail": "Ce curseur n’a pas de nom accessible.",
+  "a11ycore_sliderNamePresent_hint_fail": "Fournissez un libellé, aria-label ou aria-labelledby afin que les technologies d’assistance puissent identifier le curseur.",
+  "a11ycore_textboxNamePresent_title": "Les champs de texte ont un nom accessible",
+  "a11ycore_textboxNamePresent_description": "Vérifie que les éléments avec role=\"textbox\" exposent un nom accessible non vide.",
+  "a11ycore_textboxNamePresent_summary_fail": "Ce champ de texte n’a pas de nom accessible.",
+  "a11ycore_textboxNamePresent_hint_fail": "Fournissez aria-label ou aria-labelledby (préféré), ou assurez-vous que le champ de texte a un texte visible qui n’est pas masqué aux technologies d’assistance.",
+  "a11ycore_searchboxNamePresent_title": "Les champs de recherche ont un nom accessible",
+  "a11ycore_searchboxNamePresent_description": "Vérifie que les éléments avec role=\"searchbox\" exposent un nom accessible non vide.",
+  "a11ycore_searchboxNamePresent_summary_fail": "Ce champ de recherche n’a pas de nom accessible.",
+  "a11ycore_searchboxNamePresent_hint_fail": "Fournissez aria-label ou aria-labelledby (préféré), ou assurez-vous que le champ de recherche a un texte visible qui n’est pas masqué aux technologies d’assistance.",
+  "a11ycore_spinbuttonNamePresent_title": "Les sélecteurs numériques (spinbutton) ont un nom accessible",
+  "a11ycore_spinbuttonNamePresent_description": "Vérifie que les éléments avec role=\"spinbutton\" exposent un nom accessible non vide.",
+  "a11ycore_spinbuttonNamePresent_summary_fail": "Ce spinbutton n’a pas de nom accessible.",
+  "a11ycore_spinbuttonNamePresent_hint_fail": "Fournissez aria-label ou aria-labelledby (préféré), ou assurez-vous que le spinbutton a un texte visible qui n’est pas masqué aux technologies d’assistance.",
+  "a11ycore_listboxNamePresent_title": "Les listes (listbox) ont un nom accessible",
+  "a11ycore_listboxNamePresent_description": "Vérifie que les éléments avec role=\"listbox\" exposent un nom accessible non vide.",
+  "a11ycore_listboxNamePresent_summary_fail": "Cette listbox n’a pas de nom accessible.",
+  "a11ycore_listboxNamePresent_hint_fail": "Fournissez aria-label ou aria-labelledby (préféré), ou assurez-vous que la listbox a un texte visible qui n’est pas masqué aux technologies d’assistance.",
+  "a11ycore_optionNamePresent_title": "Les options ont un nom accessible",
+  "a11ycore_optionNamePresent_description": "Vérifie que les éléments avec role=\"option\" exposent un nom accessible non vide.",
+  "a11ycore_optionNamePresent_summary_fail": "Cette option n’a pas de nom accessible.",
+  "a11ycore_optionNamePresent_hint_fail": "Fournissez un texte d’option qui n’est pas masqué aux technologies d’assistance, ou fournissez aria-label ou aria-labelledby.",
+  "a11ycore_treeitemNamePresent_title": "Les éléments d’arborescence ont un nom accessible",
+  "a11ycore_treeitemNamePresent_description": "Vérifie que les éléments avec role=\"treeitem\" exposent un nom accessible non vide.",
+  "a11ycore_treeitemNamePresent_summary_fail": "Cet élément d’arborescence n’a pas de nom accessible.",
+  "a11ycore_treeitemNamePresent_hint_fail": "Fournissez un texte d’élément d’arborescence qui n’est pas masqué aux technologies d’assistance, ou fournissez aria-label ou aria-labelledby.",
+  "a11ycore_ariaRoleNamePresent_title": "Les rôles ARIA de type widget/conteneur ont un nom accessible",
+  "a11ycore_ariaRoleNamePresent_description": "Vérifie que certains rôles ARIA de type widget/conteneur exposent un nom accessible non vide.",
+  "a11ycore_ariaRoleNamePresent_summary_fail": "Cet élément n’a pas de nom accessible.",
+  "a11ycore_ariaRoleNamePresent_hint_fail": "Fournissez aria-label ou aria-labelledby (préféré), ou un attribut title non vide.",
+
+  /* =========================
+   * Résumé des règles composites
+   * ========================= */
+  "a11ycore_composite_rollup_summary":
+  "Résultat de la règle composite : {{reasonCode}} ({{testCount}} contrôles)",
+
+      /* =========================
+       * WCAG 1.1.1 – Contenu non textuel
+       * ========================= */
+      "catalog.rules.wcag_111_non_text_content.title":
+  "Contenu non textuel : alternatives textuelles",
+      "catalog.rules.wcag_111_non_text_content.description":
+  "Regroupe les contrôles garantissant que le contenu non textuel dispose d’une alternative textuelle appropriée.",
+
+      /* =========================
+       * WCAG 1.2.1 – Audio seul / Vidéo seule
+       * ========================= */
+      "catalog.rules.wcag_121_prerecorded_transcript.title":
+  "Audio seul et vidéo seule (préenregistrés) : transcription",
+      "catalog.rules.wcag_121_prerecorded_transcript.description":
+  "Regroupe les contrôles vérifiant la disponibilité d’une transcription pour les médias audio seuls ou vidéo seuls préenregistrés.",
+
+      /* =========================
+       * WCAG 1.4.3 – Contraste (minimum)
+       * ========================= */
+      "catalog.rules.wcag_143_contrast_minimum.title":
+  "Contraste : minimum",
+      "catalog.rules.wcag_143_contrast_minimum.description":
+  "Regroupe les contrôles relatifs au contraste minimal du texte.",
+
+      /* =========================
+       * WCAG 1.4.6 – Contraste (renforcé)
+       * ========================= */
+      "catalog.rules.wcag_146_contrast_enhanced.title":
+  "Contraste : renforcé",
+      "catalog.rules.wcag_146_contrast_enhanced.description":
+  "Regroupe les contrôles relatifs au contraste renforcé du texte.",
+
+      /* =========================
+       * WCAG 2.4.2 – Page titrée
+       * ========================= */
+      "catalog.rules.wcag_242_page_titled.title":
+  "Page titrée",
+      "catalog.rules.wcag_242_page_titled.description":
+  "Regroupe les contrôles garantissant que les documents possèdent un titre de page pertinent.",
+
+      /* =========================
+       * WCAG 2.4.7 – Focus visible
+       * ========================= */
+      "catalog.rules.wcag_247_focus_visible.title":
+  "Focus visible",
+      "catalog.rules.wcag_247_focus_visible.description":
+  "Regroupe les contrôles garantissant que le focus clavier n’est pas masqué et reste perceptible.",
+
+      /* =========================
+       * WCAG 2.5.8 – Taille de la cible (minimum)
+       * ========================= */
+      "catalog.rules.wcag_258_target_size_minimum.title":
+  "Taille de la cible : minimum",
+      "catalog.rules.wcag_258_target_size_minimum.description":
+  "Regroupe les contrôles garantissant que les cibles de pointage respectent les dimensions minimales requises.",
+
+      /* =========================
+       * WCAG 3.1.1 – Langue de la page
+       * ========================= */
+      "catalog.rules.wcag_311_language_of_page.title":
+  "Langue de la page",
+      "catalog.rules.wcag_311_language_of_page.description":
+  "Regroupe les contrôles garantissant que la langue de la page est spécifiée.",
+
+      /* =========================
+       * WCAG 4.1.2 – Nom, rôle, valeur
+       * ========================= */
+      "catalog.rules.wcag_412_name.title":
+  "Nom, rôle, valeur : nom accessible",
+      "catalog.rules.wcag_412_name.description":
+  "Regroupe les contrôles garantissant que les éléments interactifs courants exposent un nom accessible non vide.",
+  "a11ycore_labelInName_title": "Intitulé dans le nom : le nom accessible contient le texte visible",
+  "a11ycore_labelInName_description": "Vérifie que lorsqu’un composant possède un libellé textuel visible, le nom accessible contient ce libellé visible (WCAG 2.5.3).",
+  "a11ycore_labelInName_summary_fail": "{{element}} : le libellé visible « {{visibleLabel}} » (source : {{labelSource}}) n’est pas inclus dans le nom accessible (source : {{nameMechanism}}).",
+  "a11ycore_labelInName_hint_fail": "Modifiez aria-label ou aria-labelledby (ou le texte du libellé visible) afin que le nom accessible inclue le libellé visible."
 }

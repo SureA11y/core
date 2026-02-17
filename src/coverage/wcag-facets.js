@@ -24,7 +24,7 @@
  *
  * NOTE
  * ----
- * Facets can be broader than a single atomic rule. Multiple atomic rules may map
+ * Facets can be broader than a single atomic rule. Multiple atomic checks may map
  * to the same facet, and a single SC often has multiple facets.
  */
 
@@ -47,11 +47,11 @@
  * --------------------------
  * Rules MUST NOT claim macro facets unless the rule explicitly implements the full
  * macro objective (i.e., a single atomic rule whose normative expectation matches
- * the macro facet definition without relying on other rules).
+ * the macro facet definition without relying on other checks).
  *
  * Why:
  * - Prevents overstating coverage when only one mechanism is checked (e.g., alt only).
- * - Avoids ambiguity as new mechanisms/rules are added later.
+ * - Avoids ambiguity as new mechanisms/checks are added later.
  * - Keeps coverage accounting deterministic and traceable.
  *
  * Practical guidance:
@@ -184,50 +184,42 @@ const FACETS = {
     "1.2.2": {
         "title": "Captions (Prerecorded)",
         "level": "A",
-        "facets": [
-        ]
+        "facets": []
     },
     "1.2.3": {
         "title": "Audio Description or Media Alternative (Prerecorded)",
         "level": "A",
-        "facets": [
-        ]
+        "facets": []
     },
     "1.2.4": {
         "title": "Captions (Live)",
         "level": "AA",
-        "facets": [
-        ]
+        "facets": []
     },
     "1.2.5": {
         "title": "Audio Description (Prerecorded)",
         "level": "AA",
-        "facets": [
-        ]
+        "facets": []
     },
     "1.2.6": {
         "title": "Sign Language (Prerecorded)",
         "level": "AAA",
-        "facets": [
-        ]
+        "facets": []
     },
     "1.2.7": {
         "title": "Extended Audio Description (Prerecorded)",
         "level": "AAA",
-        "facets": [
-        ]
+        "facets": []
     },
     "1.2.8": {
         "title": "Media Alternative (Prerecorded)",
         "level": "AAA",
-        "facets": [
-        ]
+        "facets": []
     },
     "1.2.9": {
         "title": "Audio-only (Live)",
         "level": "AAA",
-        "facets": [
-        ]
+        "facets": []
     },
     "1.3.1": {
         "title": "Info and Relationships",
@@ -249,44 +241,37 @@ const FACETS = {
     "1.3.2": {
         "title": "Meaningful Sequence",
         "level": "A",
-        "facets": [
-        ]
+        "facets": []
     },
     "1.3.3": {
         "title": "Sensory Characteristics",
         "level": "A",
-        "facets": [
-        ]
+        "facets": []
     },
     "1.3.4": {
         "title": "Orientation",
         "level": "AA",
-        "facets": [
-        ]
+        "facets": []
     },
     "1.3.5": {
         "title": "Identify Input Purpose",
         "level": "AA",
-        "facets": [
-        ]
+        "facets": []
     },
     "1.3.6": {
         "title": "Identify Purpose",
         "level": "AAA",
-        "facets": [
-        ]
+        "facets": []
     },
     "1.4.1": {
         "title": "Use of Color",
         "level": "A",
-        "facets": [
-        ]
+        "facets": []
     },
     "1.4.2": {
         "title": "Audio Control",
         "level": "A",
-        "facets": [
-        ]
+        "facets": []
     },
     "1.4.3": {
         "title": "Contrast (Minimum)",
@@ -307,14 +292,12 @@ const FACETS = {
     "1.4.4": {
         "title": "Resize Text",
         "level": "AA",
-        "facets": [
-        ]
+        "facets": []
     },
     "1.4.5": {
         "title": "Images of Text",
         "level": "AA",
-        "facets": [
-        ]
+        "facets": []
     },
     "1.4.6": {
         "title": "Contrast (Enhanced)",
@@ -335,128 +318,107 @@ const FACETS = {
     "1.4.7": {
         "title": "Low or No Background Audio",
         "level": "AAA",
-        "facets": [
-        ]
+        "facets": []
     },
     "1.4.8": {
         "title": "Visual Presentation",
         "level": "AAA",
-        "facets": [
-        ]
+        "facets": []
     },
     "1.4.9": {
         "title": "Images of Text (No Exception)",
         "level": "AAA",
-        "facets": [
-        ]
+        "facets": []
     },
     "1.4.10": {
         "title": "Reflow",
         "level": "AA",
-        "facets": [
-        ]
+        "facets": []
     },
     "1.4.11": {
         "title": "Non-text Contrast",
         "level": "AA",
-        "facets": [
-        ]
+        "facets": []
     },
     "1.4.12": {
         "title": "Text Spacing",
         "level": "AA",
-        "facets": [
-        ]
+        "facets": []
     },
     "1.4.13": {
         "title": "Content on Hover or Focus",
         "level": "AA",
-        "facets": [
-        ]
+        "facets": []
     },
     "2.1.1": {
         "title": "Keyboard",
         "level": "A",
-        "facets": [
-        ]
+        "facets": []
     },
     "2.1.2": {
         "title": "No Keyboard Trap",
         "level": "A",
-        "facets": [
-        ]
+        "facets": []
     },
     "2.1.3": {
         "title": "Keyboard (No Exception)",
         "level": "AAA",
-        "facets": [
-        ]
+        "facets": []
     },
     "2.1.4": {
         "title": "Character Key Shortcuts",
         "level": "A",
-        "facets": [
-        ]
+        "facets": []
     },
     "2.2.1": {
         "title": "Timing Adjustable",
         "level": "A",
-        "facets": [
-        ]
+        "facets": []
     },
     "2.2.2": {
         "title": "Pause, Stop, Hide",
         "level": "A",
-        "facets": [
-        ]
+        "facets": []
     },
     "2.2.3": {
         "title": "No Timing",
         "level": "AAA",
-        "facets": [
-        ]
+        "facets": []
     },
     "2.2.4": {
         "title": "Interruptions",
         "level": "AAA",
-        "facets": [
-        ]
+        "facets": []
     },
     "2.2.5": {
         "title": "Re-authenticating",
         "level": "AAA",
-        "facets": [
-        ]
+        "facets": []
     },
     "2.2.6": {
         "title": "Timeouts",
         "level": "AAA",
-        "facets": [
-        ]
+        "facets": []
     },
     "2.3.1": {
         "title": "Three Flashes or Below Threshold",
         "level": "A",
-        "facets": [
-        ]
+        "facets": []
     },
     "2.3.2": {
         "title": "Three Flashes",
         "level": "AAA",
-        "facets": [
-        ]
+        "facets": []
     },
     "2.3.3": {
         "title": "Animation from Interactions",
         "level": "AAA",
-        "facets": [
-        ]
+        "facets": []
     },
     "2.4.1": {
         "title": "Bypass Blocks",
         "level": "A",
-        "facets": [
-        ]
+        "facets": []
     },
     "2.4.2": {
         "title": "Page Titled",
@@ -477,115 +439,114 @@ const FACETS = {
     "2.4.3": {
         "title": "Focus Order",
         "level": "A",
-        "facets": [
-        ]
+        "facets": []
     },
     "2.4.4": {
         "title": "Link Purpose (In Context)",
         "level": "A",
-        "facets": [
-        ]
+        "facets": []
     },
     "2.4.5": {
         "title": "Multiple Ways",
         "level": "AA",
-        "facets": [
-        ]
+        "facets": []
     },
     "2.4.6": {
         "title": "Headings and Labels",
         "level": "AA",
-        "facets": [
-        ]
+        "facets": []
     },
     "2.4.7": {
         "title": "Focus Visible",
         "level": "AA",
         "facets": [
+            {
+                "id": "css-hidden-focusable",
+                "label": "tabbable element is visually hidden by CSS",
+                "automation": "full"
+            }
         ]
     },
     "2.4.8": {
         "title": "Location",
         "level": "AAA",
-        "facets": [
-        ]
+        "facets": []
     },
     "2.4.9": {
         "title": "Link Purpose (Link Only)",
         "level": "AAA",
-        "facets": [
-        ]
+        "facets": []
     },
     "2.4.10": {
         "title": "Section Headings",
         "level": "AAA",
-        "facets": [
-        ]
+        "facets": []
     },
     "2.4.11": {
         "title": "Focus Not Obscured (Minimum)",
         "level": "AA",
-        "facets": [
-        ]
+        "facets": []
     },
     "2.4.12": {
         "title": "Focus Not Obscured (Enhanced)",
         "level": "AAA",
-        "facets": [
-        ]
+        "facets": []
     },
     "2.4.13": {
         "title": "Focus Appearance",
         "level": "AAA",
-        "facets": [
-        ]
+        "facets": []
     },
     "2.5.1": {
         "title": "Pointer Gestures",
         "level": "A",
-        "facets": [
-        ]
+        "facets": []
     },
     "2.5.2": {
         "title": "Pointer Cancellation",
         "level": "A",
-        "facets": [
-        ]
+        "facets": []
     },
     "2.5.3": {
         "title": "Label in Name",
         "level": "A",
         "facets": [
+            {
+                "id": "label-in-name",
+                "label": "Controls with aria-label/aria-labelledby: accessible name contains visible label text",
+                "automation": "partial"
+            }
         ]
     },
     "2.5.4": {
         "title": "Motion Actuation",
         "level": "A",
-        "facets": [
-        ]
+        "facets": []
     },
     "2.5.5": {
         "title": "Target Size (Enhanced)",
         "level": "AAA",
-        "facets": [
-        ]
+        "facets": []
     },
     "2.5.6": {
         "title": "Concurrent Input Mechanisms",
         "level": "AAA",
-        "facets": [
-        ]
+        "facets": []
     },
     "2.5.7": {
         "title": "Dragging Movements",
         "level": "AA",
-        "facets": [
-        ]
+        "facets": []
     },
     "2.5.8": {
         "title": "Target Size (Minimum)",
         "level": "AA",
         "facets": [
+            {
+                "id": "target-size-minimum-pointer",
+                "label": "Pointer targets meet minimum size or spacing exception (24×24 CSS px) when measurable",
+                "automation": "partial"
+            }
         ]
     },
     "3.1.1": {
@@ -594,82 +555,65 @@ const FACETS = {
         "facets": [
             {
                 "id": "html-lang-attr-present",
-                "label": "<html> has non-empty lang attribute",
+                "label": "<html> has a valid non-empty lang attribute",
                 "automation": "full"
             }
-        ]
-    },
-    "3.1.2": {
-        "title": "Language of Parts",
-        "level": "AA",
-        "facets": [
         ]
     },
     "3.1.3": {
         "title": "Unusual Words",
         "level": "AAA",
-        "facets": [
-        ]
+        "facets": []
     },
     "3.1.4": {
         "title": "Abbreviations",
         "level": "AAA",
-        "facets": [
-        ]
+        "facets": []
     },
     "3.1.5": {
         "title": "Reading Level",
         "level": "AAA",
-        "facets": [
-        ]
+        "facets": []
     },
     "3.1.6": {
         "title": "Pronunciation",
         "level": "AAA",
-        "facets": [
-        ]
+        "facets": []
     },
     "3.2.1": {
         "title": "On Focus",
         "level": "A",
-        "facets": [
-        ]
+        "facets": []
     },
     "3.2.2": {
         "title": "On Input",
         "level": "A",
-        "facets": [
-        ]
+        "facets": []
     },
     "3.2.3": {
         "title": "Consistent Navigation",
         "level": "AA",
-        "facets": [
-        ]
+        "facets": []
     },
     "3.2.4": {
         "title": "Consistent Identification",
         "level": "AA",
-        "facets": [
-        ]
+        "facets": []
     },
     "3.2.5": {
         "title": "Change on Request",
         "level": "AAA",
-        "facets": [
-        ]
+        "facets": []
     },
     "3.2.6": {
         "title": "Consistent Help",
         "level": "A",
-        "facets": [
-        ]
+        "facets": []
     },
     "3.3.1": {
         "title": "Error Identification",
         "level": "A",
-        "facets": [
-        ]
+        "facets": []
     },
     "3.3.2": {
         "title": "Labels or Instructions",
@@ -685,50 +629,42 @@ const FACETS = {
     "3.3.3": {
         "title": "Error Suggestion",
         "level": "AA",
-        "facets": [
-        ]
+        "facets": []
     },
     "3.3.4": {
         "title": "Error Prevention (Legal, Financial, Data)",
         "level": "AA",
-        "facets": [
-        ]
+        "facets": []
     },
     "3.3.5": {
         "title": "Help",
         "level": "AAA",
-        "facets": [
-        ]
+        "facets": []
     },
     "3.3.6": {
         "title": "Error Prevention (All)",
         "level": "AAA",
-        "facets": [
-        ]
+        "facets": []
     },
     "3.3.7": {
         "title": "Redundant Entry",
         "level": "A",
-        "facets": [
-        ]
+        "facets": []
     },
     "3.3.8": {
         "title": "Accessible Authentication (Minimum)",
         "level": "AA",
-        "facets": [
-        ]
+        "facets": []
     },
     "3.3.9": {
         "title": "Accessible Authentication (Enhanced)",
         "level": "AAA",
-        "facets": [
-        ]
+        "facets": []
     },
     "4.1.1": {
         "title": "Parsing (Obsolete and removed)",
         "level": null,
-        "facets": [
-        ]
+        "facets": []
     },
     "4.1.2": {
         "title": "Name, Role, Value",
@@ -743,15 +679,104 @@ const FACETS = {
                 "id": "form-control-name-quality",
                 "label": "Form controls accessible name quality (avoid placeholder/title as primary)",
                 "automation": "manual"
+            },
+            {
+                "id": "aria-hidden-focusable",
+                "label": "aria-hidden subtree has focusable content",
+                "automation": "full"
+            },
+            {
+                "id": "link-name-present",
+                "label": "Links expose an accessible name (content text / aria-label / aria-labelledby / title)",
+                "automation": "full"
+            },
+            {
+                "id": "button-name-present",
+                "label": "Buttons expose an accessible name (content text / aria-label / aria-labelledby / title / value)",
+                "automation": "full"
+            },
+            {
+                "id": "checkbox-name-present",
+                "label": "Checkboxes expose an accessible name (label / aria-label / aria-labelledby / title)",
+                "automation": "full"
+            },
+            {
+                "id": "radio-name-present",
+                "label": "Radio buttons expose an accessible name (label / aria-label / aria-labelledby / title)",
+                "automation": "full"
+            },
+            {
+                "id": "switch-name-present",
+                "label": "Switches expose an accessible name (content / aria-label / aria-labelledby / title)",
+                "automation": "full"
+            },
+            {
+                "id": "combobox-name-present",
+                "label": "Comboboxes expose an accessible name (content / aria-label / aria-labelledby / title)",
+                "automation": "full"
+            },
+            {
+                "id": "dialog-name-present",
+                "label": "Dialogs expose an accessible name (aria-labelledby / aria-label / title / content)",
+                "automation": "full"
+            },
+            {
+                "id": "menuitem-name-present",
+                "label": "Menu items expose an accessible name (content / aria-label / aria-labelledby / title)",
+                "automation": "full"
+            },
+            {
+                "id": "tab-name-present",
+                "label": "Tabs expose an accessible name (content / aria-label / aria-labelledby / title)",
+                "automation": "full"
+            },
+            {
+                "id": "slider-name-present",
+                "label": "Sliders expose an accessible name (label / aria-label / aria-labelledby / title / content)",
+                "automation": "full"
+            },
+            {
+                "id": "textbox-name-present",
+                "label": "Textboxes (role=\\\"textbox\\\") expose an accessible name (content / aria-label / aria-labelledby / title)",
+                "automation": "full"
+            },
+            {
+                "id": "searchbox-name-present",
+                "label": "Searchboxes (role=\\\"searchbox\\\") expose an accessible name (content / aria-label / aria-labelledby / title)",
+                "automation": "full"
+            },
+            {
+                "id": "spinbutton-name-present",
+                "label": "Spinbuttons (role=\\\"spinbutton\\\") expose an accessible name (content / aria-label / aria-labelledby / title)",
+                "automation": "full"
+            },
+            {
+                "id": "listbox-name-present",
+                "label": "Listboxes (role=\\\"listbox\\\") expose an accessible name (content / aria-label / aria-labelledby / title)",
+                "automation": "full"
+            },
+            {
+                "id": "option-name-present",
+                "label": "Options (role=\\\"option\\\") expose an accessible name (content / aria-label / aria-labelledby / title)",
+                "automation": "full"
+            },
+            {
+                "id": "treeitem-name-present",
+                "label": "Tree items (role=\\\"treeitem\\\") expose an accessible name (content / aria-label / aria-labelledby / title)",
+                "automation": "full"
+            },
+            {
+                "id": "aria-role-name-present",
+                "label": "Selected ARIA widget/container roles (scrollbar, toolbar, tablist, radiogroup, tree, grid, menu, menubar) expose an accessible name",
+                "automation": "full"
             }
         ]
     },
     "4.1.3": {
         "title": "Status Messages",
         "level": "AA",
-        "facets": [
-        ]
+        "facets": []
     }
 };
 
-module.exports = { FACETS };
+module.exports = {FACETS};

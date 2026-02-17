@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Target Size (Minimum) – All Scenarios</title>
+  <style>
+    /* Default: everything visible and pointer-reachable */
+    html, body { margin: 0; padding: 0; }
+    body { position: relative; min-height: 900px; }
+
+    /* Make geometry deterministic-ish in real browsers */
+    button, a, summary {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      border: 1px solid transparent; /* keep stable box sizing */
+      line-height: 1;
+      font: 12px/1 sans-serif;
+    }
+
+    /* Your original classes */
+    .candidate { display: inline-block; }
+    .pe-none { pointer-events: none; }
+    .opacity0 { opacity: 0; } /* still pointer-reachable */
+    .hiddenAttr[hidden] { display: none; }
+    .visHidden { visibility: hidden; }
+    .dispNone { display: none; }
+    .cvHidden { content-visibility: hidden; } /* eligibility suppression */
+
+    /* Keep paragraphs visible even when we absolutely position children */
+    p { margin: 0; }
+
+    /* Optional: visualize hit boxes while debugging in a real browser */
+    /* [data-rect] { outline: 1px dashed rgba(0,0,0,.25); } */
+  </style>
+
+  <!--
+    Browser-only helper:
+    Convert data-rect="x,y,w,h" into real layout:
+      position:absolute; left:x; top:y; width:w; height:h;
+
+    In your JSDOM checks, this usually won't run (scripts often not executed),
+    and even if it does, your patched getBoundingClientRect/elementFromPoint still use data-rect.
+  -->
+  <script>
+    (function () {
+      function parseRect(raw) {
+        if (!raw) return null;
+        var parts = String(raw).split(',').map(function (s) { return Number(String(s).trim()); });
+        if (parts.length !== 4) return null;
+        for (var i = 0; i < 4; i++) if (!isFinite(parts[i])) return null;
+        return { x: parts[0], y: parts[1], w: parts[2], h: parts[3] };
+      }
+
+      function applyRect(el, r) {
+        // Respect existing author styles if explicitly set.
+        // But we *do* set width/height/left/top/position when they aren't set.
+        var s = el.style;
+
+        if (!s.position) s.position = 'absolute';
+        if (!s.left) s.left = r.x + 'px';
+        if (!s.top) s.top = r.y + 'px';
+        if (!s.width) s.width = r.w + 'px';
+        if (!s.height) s.height = r.h + 'px';
+
+        // Keep anchors behaving like inline text if you want the inline-text exception:
+        // They can still be positioned absolutely; display remains whatever you set inline/CSS.
+        // Same for <summary>.
+      }
+
+      function init() {
+        var all = document.querySelectorAll('[data-rect]');
+        for (var i = 0; i < all.length; i++) {
+          var el = all[i];
+          // Allow opting out if needed later:
+          if (el.getAttribute('data-rect-mode') === 'test-only') continue;
+
+          var r = parseRect(el.getAttribute('data-rect'));
+          if (!r) continue;
+          applyRect(el, r);
+        }
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
+    })();
+  </script>
+</head>
+
+<body>
+<!-- PASS: >= 24x24 -->
+<button id="pass_big" class="candidate" data-rect="10,10,30,30">Big</button>
+
+<!-- PASS: undersized but spaced (no other targets within 12px radius around center) -->
+<button id="pass_spaced_small" class="candidate" data-rect="200,10,10,10">Small spaced</button>
+
+<!-- FAIL: undersized and too close to another target -->
+<button id="fail_close_a" class="candidate" data-rect="10,80,10,10">A</button>
+<button id="fail_close_b" class="candidate" data-rect="25,80,10,10">B</button>
+
+<!-- FAIL: aria-hidden but still pointer-operable (should be evaluated) -->
+<button id="fail_aria_hidden" class="candidate" aria-hidden="true" data-rect="10,120,10,10">AH</button>
+<button id="near_aria_hidden" class="candidate" data-rect="25,120,10,10">N</button>
+
+<!-- FAIL: opacity:0 still pointer-reachable -->
+<button id="fail_opacity0" class="candidate opacity0" data-rect="10,160,10,10">O0</button>
+<button id="near_opacity0" class="candidate" data-rect="25,160,10,10">N</button>
+
+<!-- EXCLUDED: pointer-events none (should not be evaluated) -->
+<button id="excluded_pointer_events" class="candidate pe-none" style="pointer-events:none" data-rect="10,200,10,10">PE</button>
+<button id="near_pointer_events" class="candidate" data-rect="25,200,10,10">N</button>
+
+<!-- EXCLUDED: display none -->
+<button id="excluded_display_none" class="candidate dispNone" style="display:none" data-rect="10,240,10,10">DN</button>
+
+<!-- EXCLUDED: visibility hidden -->
+<button id="excluded_visibility_hidden" class="candidate visHidden" style="visibility:hidden" data-rect="10,280,10,10">VH</button>
+
+<!-- EXCLUDED: content-visibility hidden -->
+<button id="excluded_content_visibility_hidden" class="candidate cvHidden" style="content-visibility:hidden" data-rect="10,320,10,10">CV</button>
+
+<!-- EXCLUDED: hidden attribute -->
+<button id="excluded_hidden_attr" class="candidate hiddenAttr" hidden data-rect="10,360,10,10">HA</button>
+
+<details id="details_closed">
+  <summary id="details_summary" class="candidate" data-rect="10,400,20,20">Summary</summary>
+  <button id="excluded_details_content" class="candidate" data-rect="40,400,10,10">Inside closed details</button>
+</details>
+
+<!-- EXCLUDED: inert ancestor -->
+<div id="inert_container" inert>
+  <button id="excluded_inert" class="candidate" data-rect="10,440,10,10">Inert</button>
+</div>
+
+<!-- EXCLUDED: no client rects (simulates transform:scale(0) / zero geometry) -->
+<button id="excluded_no_rects" class="candidate" data-no-rects="1" data-rect="10,480,10,10">No rects</button>
+
+<!-- FAIL via occlusion: small target mostly covered by another target -->
+<button id="fail_occluded_small" class="candidate" data-rect="10,520,10,10">S</button>
+<!-- overlay candidate placed later in DOM, so treated as topmost by elementFromPoint patch -->
+<button id="occluder_big" class="candidate" data-rect="5,515,40,40">Cover</button>
+
+<!-- ========================================================= -->
+<!-- ADDITIONS for new rule behavior (inline exception, distance check, cantTell) -->
+<!-- ========================================================= -->
+
+<!-- PASS: inline text link in <p> (inline-text exception) -->
+<p id="p_inline_exception">
+  Read
+  <a id="pass_inline_link" href="#" style="display:inline" data-rect="10,580,10,10">more</a>
+  here.
+</p>
+
+<!-- PASS: inline-block link in <p> (design systems often use inline-block; you treat as exception) -->
+<p id="p_inline_block_exception">
+  Tags:
+  <a id="pass_inline_block_link" href="#" style="display:inline-block" data-rect="60,580,10,10">chip</a>
+</p>
+
+<!-- PASS: inline text link close to a small button should NOT create spacing conflict
+     (because inline-text exception targets are ignored as conflicts) -->
+<p id="p_inline_close_to_button">
+  Go
+  <a id="pass_inline_close_link" href="#" style="display:inline" data-rect="10,620,10,10">here</a>.
+</p>
+<button id="pass_button_near_inline_link" class="candidate" data-rect="25,620,10,10">B</button>
+
+<!-- FAIL: inline link NOT in a text container is NOT an exception; should be evaluated normally -->
+<div id="div_not_text_container">
+  <a id="fail_inline_not_text_container" href="#" style="display:inline" data-rect="10,660,10,10">Link</a>
+</div>
+<button id="fail_near_inline_not_text_container" class="candidate" data-rect="25,660,10,10">B</button>
+
+<!-- FAIL: geometry-only overlap (center distance < 24) should trigger conflict deterministically -->
+<button id="fail_geo_a" class="candidate" data-rect="200,700,10,10">GA</button>
+<button id="fail_geo_b" class="candidate" data-rect="220,700,10,10">GB</button>
+
+<!-- CANTTELL scenario inside SVG/foreignObject (kept for parity).
+     In real browsers, foreignObject rendering can vary; for your checks it's deterministic via data-rect.
+-->
+<svg id="svg_essential_region" width="200" height="100" style="position:absolute; left:0; top:0; overflow:visible;">
+  <foreignObject width="200" height="100" style="overflow:visible;">
+    <div xmlns="http://www.w3.org/1999/xhtml">
+      <button id="canttell_svg_a" class="candidate" data-rect="10,740,10,10">SA</button>
+      <button id="canttell_svg_b" class="candidate" data-rect="25,740,10,10">SB</button>
+    </div>
+  </foreignObject>
+</svg>
+
+<!-- OPTIONAL: operability exclusions you added (disabled / aria-disabled) -->
+<button id="excluded_disabled" class="candidate" disabled data-rect="10,780,10,10">Disabled</button>
+<button id="excluded_aria_disabled" class="candidate" aria-disabled="true" data-rect="25,780,10,10">Aria-disabled</button>
+
+<!-- OPTIONAL: sanity check that a lone undersized target still passes by spacing exception -->
+<button id="pass_lone_small" class="candidate" data-rect="400,780,10,10">Lone small</button>
+
+</body>
+</html>

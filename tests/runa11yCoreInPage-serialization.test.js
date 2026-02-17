@@ -33,5 +33,5 @@ test('runa11yCoreInPage can be serialized and run in a page realm (no free vars)
     assert.ok(result);
     assert.equal(result.url, 'https://example.test/');
     assert.equal(result.title, 'T');
-    assert.ok(Array.isArray(result.rules));
+    assert.ok(Array.isArray(result.checksResults));
 });

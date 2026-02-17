@@ -20,12 +20,12 @@
  *
  * - Rule validation policy:
  *
- * - automatic rules:
+ * - automatic checks:
  * -   - meta.type === 'automatic'
  * -   - normativeMappings MUST be non-empty
  * -   - outcomes: pass | fail | notApplicable
  *
- * - manual rules:
+ * - manual checks:
  * -   - meta.type === 'manual'
  * -   - normativeMappings MUST be []
  * -   - outcomes: cantTell | notApplicable
@@ -97,7 +97,7 @@ function validateRuleFacetsExistInRegistry(meta, facetsById, registryPath, ruleP
 }
 
 function validateRuleDoesNotUseMacroFacets(meta, facetsById, registryPath, rulePath) {
-    if (meta.type !== 'automatic') return; // allow manual rules
+    if (meta.type !== 'automatic') return; // allow manual checks
     for (const sc of meta.wcagSc) {
         const usedFacets = meta.coverage.facetsBySc[sc] || [];
         for (const facetId of usedFacets) {
@@ -132,8 +132,8 @@ function normalizeScTag(sc) {
 
 function expectedLevelTagFromMappings(mappings, informativeReferences) {
     // Observed tags in this repo follow wcag2a / wcag2aa / wcag2aaa.
-    // Automatic rules: derive from normativeMappings.conformanceLevel.
-    // Manual rules: normativeMappings is empty by design; derive from informativeReferences if present, else default to wcag2a.
+    // Automatic checks: derive from normativeMappings.conformanceLevel.
+    // Manual checks: normativeMappings is empty by design; derive from informativeReferences if present, else default to wcag2a.
     const list = (Array.isArray(mappings) && mappings.length > 0)
         ? mappings
         : (Array.isArray(informativeReferences) ? informativeReferences : []);
@@ -228,10 +228,10 @@ function validateMeta(meta) {
 
     assert.ok(Array.isArray(meta.normativeMappings), 'meta.normativeMappings must be an array');
 
-    // Repo rule: automatic rules are normative and must declare normativeMappings.
-    // Repo rule: manual rules must have normativeMappings as an empty array.
-    if (meta.type === 'automatic') {
-        assert.ok(meta.normativeMappings.length > 0, 'meta.normativeMappings must be non-empty array for automatic rules');
+    // Repo rule: automatic checks are normative and must declare normativeMappings.
+    // Repo rule: manual checks must have normativeMappings as an empty array.
+    if (meta.type === 'automatic' || meta.type === 'manual') {
+        assert.ok(meta.normativeMappings.length > 0, 'meta.normativeMappings must be non-empty array for automatic checks');
         for (const mm of meta.normativeMappings) {
             assert.ok(mm && typeof mm === 'object', 'normativeMappings entries must be objects');
             for (const kk of ['standard', 'version', 'requirement', 'title', 'conformanceLevel']) {
@@ -244,12 +244,6 @@ function validateMeta(meta) {
                 meta.normativeMappings.some((mm) => mm.requirement === sc),
                 `meta.normativeMappings must include requirement matching wcagSc: ${sc}`
             );
-        }
-    } else if (meta.type === 'manual') {
-        assert.ok(meta.normativeMappings.length === 0, 'meta.normativeMappings must be an empty array for manual rules');
-        // informativeReferences may carry SC context; optional.
-        if (hasOwn(meta, 'informativeReferences') && meta.informativeReferences != null) {
-            assert.ok(Array.isArray(meta.informativeReferences), 'meta.informativeReferences must be an array when present');
         }
     } else {
         assert.fail(`meta.type must be "automatic" or "manual" (got: ${meta.type})`);
@@ -416,21 +410,37 @@ function validateDeterminism(runFn, ruleIdForFocus) {
 }
 
 function getRuleResultFromEngineOutput(engineOutput, ruleId) {
-    // Prefer the repo helper
-    try {
-        // If expectedOutcome is null/undefined, some assertRule implementations accept it;
-        // if not, we'll fall back below.
-        return assertRule(engineOutput, ruleId, undefined);
-    } catch {
-        // Fallback: search common shapes
-        if (engineOutput && Array.isArray(engineOutput.rules)) {
-            return engineOutput.rules.find((r) => r && r.ruleId === ruleId);
+    if (!engineOutput) return null;
+
+    // Your engine outputs results in these arrays:
+    // - rulesResults: automatic + manual rule results
+    // - checksResults: (sometimes) check-like results
+    const arrays = [
+        engineOutput.rulesResults,
+        engineOutput.checksResults,
+        engineOutput.rules,        // legacy / other shapes
+        engineOutput.results,      // generic
+        engineOutput.ruleResults,  // generic
+    ];
+
+    for (const arr of arrays) {
+        if (Array.isArray(arr)) {
+            const found = arr.find((r) => r && (r.ruleId === ruleId || r.id === ruleId));
+            if (found) return found;
         }
-        if (engineOutput && engineOutput.byRuleId && engineOutput.byRuleId[ruleId]) {
-            return engineOutput.byRuleId[ruleId];
-        }
-        return null;
     }
+
+    // Map-style containers (just in case)
+    const maps = [
+        engineOutput.byRuleId,
+        engineOutput.resultsByRuleId,
+        engineOutput.ruleResultsById,
+    ];
+    for (const m of maps) {
+        if (m && typeof m === 'object' && m[ruleId]) return m[ruleId];
+    }
+
+    return null;
 }
 
 function main() {
@@ -498,12 +508,13 @@ function main() {
 
     // Runtime validation via engine
     const RULE_ID = mod.id;
+    console.log('RULE_ID:', RULE_ID);
 
-    // Probe HTML inputs (rule-specific tests should still exist; this is a safety harness)
+    // Probe HTML inputs (rule-specific checks should still exist; this is a safety harness)
     const htmlNoTargets = '<!doctype html><html><body><p>none</p></body></html>';
 
-    // A generic probe that tends to provide at least one element for image-related rules.
-    // For non-image rules, you should still rely on the rule’s dedicated .test.js, but this should not throw.
+    // A generic probe that tends to provide at least one element for image-related checks.
+    // For non-image checks, you should still rely on the rule’s dedicated .test.js, but this should not throw.
     const htmlProbe = '<!doctype html><html><body>'
         + '<img id="probe_img_ok" src="x.png" alt="ok">'
         + '<img id="probe_img_missing" src="x.png">'

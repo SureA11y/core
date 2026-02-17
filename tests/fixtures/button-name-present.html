@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Fixture — button-name-present</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, sans-serif; line-height: 1.45; padding: 24px; }
+    section { margin: 18px 0; padding: 14px; border: 1px solid #ddd; border-radius: 12px; }
+    code { background: #f6f6f6; padding: 2px 6px; border-radius: 6px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; }
+    .note { font-size: 0.95rem; color: #444; margin-top: 6px; }
+    .expect { font-weight: 600; }
+  </style>
+</head>
+<body>
+  <h1>Fixture — <code>button-name-present</code></h1>
+  <p class="note">
+    This file includes a wide range of cases for the button accessible-name presence rule.
+    Your rule should focus on <strong>presence</strong> only, and should treat <code>aria-hidden="true"</code> and
+    <code>[hidden]</code> descendants as not contributing to content-derived names.
+  </p>
+
+  <h2>PASS cases</h2>
+  <div class="grid">
+
+    <section id="pass-native-text">
+      <h3>Native button text</h3>
+      <button>Save</button>
+      <div class="note"><span class="expect">Expected:</span> PASS</div>
+    </section>
+
+    <section id="pass-native-whitespace">
+      <h3>Native button text with whitespace</h3>
+      <button>
+        Save
+      </button>
+      <div class="note"><span class="expect">Expected:</span> PASS</div>
+    </section>
+
+    <section id="pass-aria-label">
+      <h3>aria-label name</h3>
+      <button aria-label="Close"><span aria-hidden="true">✕</span></button>
+      <div class="note"><span class="expect">Expected:</span> PASS</div>
+    </section>
+
+    <section id="pass-aria-labelledby">
+      <h3>aria-labelledby name</h3>
+      <span id="lbl1">Download report</span>
+      <button aria-labelledby="lbl1"><span aria-hidden="true">⬇️</span></button>
+      <div class="note"><span class="expect">Expected:</span> PASS</div>
+    </section>
+
+    <section id="pass-content-aria-hidden-false">
+      <h3>Content under aria-hidden="false"</h3>
+      <button><span aria-hidden="false">asdfasdf</span></button>
+      <div class="note"><span class="expect">Expected:</span> PASS</div>
+    </section>
+
+    <section id="pass-content-mixed-hidden-visible">
+      <h3>Mixed hidden + visible text</h3>
+      <button><span aria-hidden="true">asdfasdf</span>asdf</button>
+      <div class="note"><span class="expect">Expected:</span> PASS</div>
+    </section>
+
+    <section id="pass-hidden-icon-visible-text">
+      <h3>Icon aria-hidden + visible label</h3>
+      <button><span aria-hidden="true">🗑</span> Delete</button>
+      <div class="note"><span class="expect">Expected:</span> PASS</div>
+    </section>
+
+    <section id="pass-hidden-descendant">
+      <h3>Hidden descendant ignored</h3>
+      <button>
+        Profile
+        <span hidden>(hidden extra)</span>
+      </button>
+      <div class="note"><span class="expect">Expected:</span> PASS</div>
+    </section>
+
+    <section id="pass-role-button-text">
+      <h3>role="button" with text</h3>
+      <div role="button" tabindex="0">Open menu</div>
+      <div class="note"><span class="expect">Expected:</span> PASS</div>
+    </section>
+
+    <section id="pass-role-button-aria-label">
+      <h3>role="button" with aria-label</h3>
+      <div role="button" tabindex="0" aria-label="Expand"><span aria-hidden="true">+</span></div>
+      <div class="note"><span class="expect">Expected:</span> PASS</div>
+    </section>
+
+    <section id="pass-input-submit">
+      <h3>input type=submit with value</h3>
+      <input type="submit" value="Submit form" />
+      <div class="note"><span class="expect">Expected:</span> PASS (if your accessible-name helper uses value)</div>
+    </section>
+
+    <section id="pass-input-button-aria-label">
+      <h3>input type=button with aria-label</h3>
+      <input type="button" aria-label="Refresh" />
+      <div class="note"><span class="expect">Expected:</span> PASS</div>
+    </section>
+
+  </div>
+
+  <h2>FAIL cases</h2>
+  <div class="grid">
+
+    <section id="fail-empty-button">
+      <h3>Empty &lt;button&gt;</h3>
+      <button></button>
+      <div class="note"><span class="expect">Expected:</span> FAIL</div>
+    </section>
+
+    <section id="fail-whitespace-only">
+      <h3>Whitespace-only content</h3>
+      <button>     </button>
+      <div class="note"><span class="expect">Expected:</span> FAIL</div>
+    </section>
+
+    <section id="fail-content-only-aria-hidden">
+      <h3>Only aria-hidden text</h3>
+      <button><span aria-hidden="true">asdfasdf</span></button>
+      <div class="note"><span class="expect">Expected:</span> FAIL</div>
+    </section>
+
+    <section id="fail-content-only-hidden-attr">
+      <h3>Only [hidden] text</h3>
+      <button><span hidden>Hidden label</span></button>
+      <div class="note"><span class="expect">Expected:</span> FAIL</div>
+    </section>
+
+    <section id="fail-aria-label-empty">
+      <h3>aria-label present but empty</h3>
+      <button aria-label=""><span aria-hidden="false">asdfasdf</span></button>
+      <div class="note"><span class="expect">Expected:</span> PASS or FAIL?</div>
+      <div class="note">
+        If your accessible-name helper treats empty aria-label as "no programmatic name", the fallback content should pass here
+        because <code>aria-hidden="false"</code> provides content text. If your helper treats empty aria-label as authoritative empty name,
+        you may see FAIL. Preferred behavior (presence-focused): PASS.
+      </div>
+    </section>
+
+    <section id="fail-role-button-empty">
+      <h3>role="button" with no name</h3>
+      <div role="button" tabindex="0"></div>
+      <div class="note"><span class="expect">Expected:</span> FAIL</div>
+    </section>
+
+    <section id="fail-role-button-only-aria-hidden">
+      <h3>role="button" only aria-hidden text</h3>
+      <div role="button" tabindex="0"><span aria-hidden="true">Hidden label</span></div>
+      <div class="note"><span class="expect">Expected:</span> FAIL</div>
+    </section>
+
+    <section id="fail-input-submit-no-value">
+      <h3>input type=submit without value</h3>
+      <input type="submit" />
+      <div class="note"><span class="expect">Expected:</span> FAIL (unless your helper provides a UA default name)</div>
+    </section>
+
+    <section id="fail-input-reset-no-value">
+      <h3>input type=reset without value</h3>
+      <input type="reset" />
+      <div class="note"><span class="expect">Expected:</span> FAIL (unless your helper provides a UA default name)</div>
+    </section>
+
+    <section id="fail-button-aria-hidden-self">
+      <h3>Button itself aria-hidden</h3>
+      <button aria-hidden="true">Hidden from AT</button>
+      <div class="note">
+        <span class="expect">Expected:</span> Typically NOT APPLICABLE if filtered by eligibility;
+        if kept eligible due to focusability rules and lacks programmatic name, should FAIL.
+      </div>
+    </section>
+
+  </div>
+
+  <h2>Edge / stress cases</h2>
+  <div class="grid">
+
+    <section id="edge-nested-elements">
+      <h3>Nested markup contributes text</h3>
+      <button><strong>Save</strong> <em>changes</em></button>
+      <div class="note"><span class="expect">Expected:</span> PASS</div>
+    </section>
+
+    <section id="edge-multiple-text-nodes">
+      <h3>Multiple text nodes normalize whitespace</h3>
+      <button>Save <span>now</span> please</button>
+      <div class="note"><span class="expect">Expected:</span> PASS (name: "Save now please")</div>
+    </section>
+
+    <section id="edge-icon-only-with-title">
+      <h3>Icon-only with title attribute</h3>
+      <button title="Settings"><span aria-hidden="true">⚙️</span></button>
+      <div class="note"><span class="expect">Expected:</span> PASS (if helper treats title as programmatic name)</div>
+    </section>
+
+    <section id="edge-disabled">
+      <h3>Disabled button</h3>
+      <button disabled>Disabled Save</button>
+      <div class="note">
+        <span class="expect">Expected:</span> Usually PASS if eligible; may be excluded by eligibility logic depending on your acc-tree policy.
+      </div>
+    </section>
+
+    <section id="edge-inert-container">
+      <h3>Inert container (eligibility check)</h3>
+      <div inert>
+        <button>Inert Save</button>
+      </div>
+      <div class="note">
+        <span class="expect">Expected:</span> Typically NOT APPLICABLE if inert excludes eligibility.
+      </div>
+    </section>
+
+    <section id="edge-role-button-with-hidden-and-visible">
+      <h3>role=button mixed hidden + visible</h3>
+      <div role="button" tabindex="0"><span aria-hidden="true">X</span> Expand</div>
+      <div class="note"><span class="expect">Expected:</span> PASS</div>
+    </section>
+
+  </div>
+
+</body>
+</html>

@@ -6,7 +6,7 @@ const {runa11yCoreInPage} = require('../../src/index.js');
 function normalizeEngineOptions(opts = {}) {
     const engineOptions = {...(opts.engineOptions || {})};
 
-    // Allow top-level convenience options used by tests
+    // Allow top-level convenience options used by checks
     if (opts.excludeSelectors !== undefined && engineOptions.excludeSelectors === undefined) {
         engineOptions.excludeSelectors = opts.excludeSelectors;
     }
@@ -24,7 +24,7 @@ function normalizeEngineOptions(opts = {}) {
  * Backwards-compatible helper:
  * - Creates a fresh JSDOM per call
  * - Sets global.window/global.document
- * - Runs rules immediately
+ * - Runs checks immediately
  */
 function runa11yCoreOnHtml(
     html,
@@ -34,7 +34,7 @@ function runa11yCoreOnHtml(
         engineOptions = {},
         runOnly = null,
 
-        // top-level conveniences (tests may pass these)
+        // top-level conveniences (checks may pass these)
         excludeSelectors,
         includeShadowDom,
         rules
@@ -94,13 +94,13 @@ function runa11yCoreOnHtml(
 }
 
 /**
- * New helper: build a DOM and return it so tests can mutate it (e.g., attachShadow)
- * before running rules.
+ * New helper: build a DOM and return it so checks can mutate it (e.g., attachShadow)
+ * before running checks.
  */
 function createDom(html, {url = 'https://example.test/', contentType = 'text/html'} = {}) {
     const dom = new JSDOM(html, {url, contentType, pretendToBeVisual: true});
 
-    // Optional: make the realm available immediately for tests that patch globals before running.
+    // Optional: make the realm available immediately for checks that patch globals before running.
     global.window = dom.window;
     global.document = dom.window.document;
 
@@ -108,7 +108,7 @@ function createDom(html, {url = 'https://example.test/', contentType = 'text/htm
 }
 
 /**
- * New helper: run rules on an existing JSDOM instance (supports Shadow DOM mutations).
+ * New helper: run checks on an existing JSDOM instance (supports Shadow DOM mutations).
  */
 function runa11yCoreOnDom(
     dom,
@@ -118,7 +118,7 @@ function runa11yCoreOnDom(
         engineOptions = {},
         runOnly = null,
 
-        // top-level conveniences (tests may pass these)
+        // top-level conveniences (checks may pass these)
         excludeSelectors,
         includeShadowDom,
         rules

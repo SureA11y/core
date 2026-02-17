@@ -53,9 +53,9 @@ const {
   SCHEMA_VERSION,
 
   // catalogs
-  getRulesCatalog,
-  getRulesForRunOnly,
-  getRuleDefById,
+  getChecksCatalog,
+  getChecksForRunOnly,
+  getCheckDefById,
 
   // runners
   runDomRulesInPage,      // Node/runtime runner

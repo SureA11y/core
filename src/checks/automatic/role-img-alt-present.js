@@ -1,0 +1,187 @@
+'use strict';
+
+/**
+ * @check a11ycore-role-img-text-alternative-present
+ * @atomic true
+ * @summary Accessible elements with role="img" must have an alternative text via aria-label or aria-labelledby
+ * @standard WCAG 2.2
+ * @sc 1.1.1
+ * @applicability
+ *   Applies to elements with role="img" that are exposed to assistive technologies.
+ *   Elements otherwise hidden from the accessibility tree remain applicable
+ *   if they are focusable or referenced by IDREF relationships (per engine eligibility checks).
+ * @expectation
+ *   Each applicable element with role="img" has an accessible text alternative:
+ *    - aria-label with a non-empty value; OR
+ *    - aria-labelledby referencing at least one existing element that contributes non-empty text.
+ */
+
+const id = 'a11ycore-role-img-text-alternative-present';
+
+const meta = {
+    title: '[role="img"] must have an accessible text alternative',
+    description:
+        'Checks that elements with role="img" provide an accessible text alternative via aria-label or aria-labelledby.',
+    i18n: {
+        titleKey: 'a11ycore_roleImg_textAlternativePresent_title',
+        descriptionKey: 'a11ycore_roleImg_textAlternativePresent_description'
+    },
+    helpUrl: null,
+    tags: ['wcag2a', 'wcag111', 'nontext', 'images', 'aria', 'atomic', 'automatic'],
+    wcagSc: ['1.1.1'],
+    normativeMappings: [
+        { standard: 'WCAG', version: '2.2', requirement: '1.1.1', title: 'Non-text Content', conformanceLevel: 'A' }
+    ],
+    defaultSeverity: 'serious',
+    category: 'perceivable',
+    type: 'automatic',
+    defaultConfidence: 'high',
+    coverage: {
+        facetsBySc: {
+            '1.1.1': ['role-img-text-alternative-present']
+        }
+    }
+};
+
+function runInPage(ctx) {
+    const { root, helpers, rule } = ctx;
+    const safeRoot = root || document;
+
+    const queryAllSmart = helpers && typeof helpers.queryAllSmart === 'function' ? helpers.queryAllSmart : null;
+    const queryAll = helpers && typeof helpers.queryAll === 'function'
+        ? helpers.queryAll
+        : (sel) => {
+            try { return safeRoot && safeRoot.querySelectorAll ? Array.from(safeRoot.querySelectorAll(sel)) : []; }
+            catch { return []; }
+        };
+
+    const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
+        ? helpers.getEligibilityInfo
+        : null;
+
+    const trim = (v) => {
+        try { return String(v == null ? '' : v).replace(/\s+/g, ' ').trim(); }
+        catch { return ''; }
+    };
+
+    const imgElements = (() => {
+        // do not consider element "img" because it has its own rule
+        const sel = '[role="img" i]:not(img)';
+        try { return Array.from((queryAllSmart ? queryAllSmart(sel) : queryAll(sel)) || []); }
+        catch { return queryAll(sel); }
+    })();
+
+    if (!imgElements.length) {
+        return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+    }
+
+    const occurrences = [];
+    let applicableCount = 0;
+
+    const isAccTreeEligible = helpers && typeof helpers.isAccTreeEligible === 'function'
+        ? helpers.isAccTreeEligible
+        : null;
+
+    const getAccessibleNameInfo = helpers && typeof helpers.getAccessibleNameInfo === 'function'
+        ? helpers.getAccessibleNameInfo
+        : null;
+
+    for (const el of imgElements) {
+        if (!el || !el.getAttribute) continue;
+
+        // Applicability: eligible in the acc tree (with helper exceptions).
+        if (isAccTreeEligible) {
+            const elig = (() => {
+                try { return isAccTreeEligible(el, ctx); } catch { return { eligible: true, reasons: [] }; }
+            })();
+            if (elig && elig.eligible === false) continue;
+        }
+
+        applicableCount += 1;
+
+        // Expectation: aria-label OR aria-labelledby. We use helper name-info when available,
+        // but we also validate the source to keep this rule scoped/deterministic.
+
+        const ariaLabelRaw = (() => { try { return el.getAttribute('aria-label'); } catch { return null; } })();
+        const ariaLabel = trim(ariaLabelRaw);
+
+        const ariaLabelledbyRaw = (() => { try { return el.getAttribute('aria-labelledby'); } catch { return null; } })();
+        const ariaLabelledby = trim(ariaLabelledbyRaw);
+
+        const hasAriaLabelAttr = ariaLabelRaw !== null;
+        const hasAriaLabelledbyAttr = ariaLabelledbyRaw !== null;
+
+        const hasValidAriaLabel = hasAriaLabelAttr && ariaLabel.length > 0;
+        const hasValidAriaLabelledbyAttr = hasAriaLabelledbyAttr && ariaLabelledby.length > 0;
+
+        let nameInfo = null;
+
+        // Fast outcomes first (no helper needed)
+        let reasonCode = '';
+        let hasName = false;
+
+        if (!hasAriaLabelAttr && !hasAriaLabelledbyAttr) {
+            reasonCode = 'missingTextAlternative';
+        } else if (hasAriaLabelAttr && !hasValidAriaLabel) {
+            reasonCode = 'emptyAriaLabel';
+        } else if (hasAriaLabelledbyAttr && !hasValidAriaLabelledbyAttr) {
+            reasonCode = 'emptyAriaLabelledby';
+        } else {
+            // Mechanism present + non-empty. Optionally validate resolution via helper.
+            if (getAccessibleNameInfo) {
+                nameInfo = (() => { try { return getAccessibleNameInfo(el, ctx); } catch { return null; } })();
+                const helperSaysHasName = !!(nameInfo && nameInfo.present && trim(nameInfo.value));
+                if (helperSaysHasName) {
+                    hasName = true;
+                } else {
+                    reasonCode = 'nameNotResolved';
+                }
+            } else {
+                // Without helper, accept non-empty aria-label/labelledby as sufficient.
+                hasName = true;
+            }
+        }
+
+        if (hasName) continue;
+
+
+        const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
+
+        const baseOccurrence = {
+            summary: 'Missing text alternative on element with role="img".',
+            hint: 'Provide aria-label or aria-labelledby (referencing non-empty text) to give this image a text alternative.',
+            i18n: {
+                summaryKey: 'a11ycore_roleImg_textAlternativePresent_summary_fail',
+                hintKey: 'a11ycore_roleImg_textAlternativePresent_hint_fail',
+                params: { role: 'img' }
+            },
+            data: {
+                details: {
+                    reasonCode,
+                    ariaLabel: ariaLabelRaw === null ? null : ariaLabel,
+                    ariaLabelledby: ariaLabelledbyRaw === null ? null : ariaLabelledby,
+                    accessibleNameInfo: nameInfo || null
+                },
+                visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+            }
+        };
+
+        if (helpers && typeof helpers.reportOccurrence === 'function') {
+            occurrences.push(helpers.reportOccurrence(el, baseOccurrence));
+        } else {
+            occurrences.push({ selector: '', html: '', ...baseOccurrence });
+        }
+    }
+
+    if (applicableCount === 0) {
+        return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+    }
+
+    if (!occurrences.length) {
+        return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+    }
+
+    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences };
+}
+
+module.exports = { id, meta, runInPage };

@@ -17,7 +17,7 @@
  *
  * Usage:
  *   node scripts/generate-wcag-coverage.js
- *   node scripts/generate-wcag-coverage.js --rulesDir src/rules --out coverage/coverage-report.md --json coverage/coverage-report.json --facets src/coverage/wcag-facets.js
+ *   node scripts/generate-wcag-coverage.js --rulesDir src/checks --out coverage/coverage-report.md --json coverage/coverage-report.json --facets src/coverage/wcag-facets.js
  *
  * Output:
  * - Markdown report (grouped by SC, with facet coverage when available)
@@ -218,7 +218,7 @@ function summarizeFacetCoverage(sc, facetDefs, rowsForSc) {
 
     const byFacet = new Map(facets.map((f) => [f.id, f]));
 
-    // ✅ NEW: collect facet IDs referenced by rules that don't exist in facetDefs
+    // ✅ NEW: collect facet IDs referenced by checks that don't exist in facetDefs
     const unknownFacetIds = [];
 
     for (const r of rowsForSc) {

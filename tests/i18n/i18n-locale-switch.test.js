@@ -26,16 +26,16 @@ test('i18n: locale switch applies translations when keys exist', () => {
         engineOptions: { locale: 'fr' }
     });
 
-    assert.ok(Array.isArray(en.rules), 'EN rules array exists');
-    assert.ok(Array.isArray(fr.rules), 'FR rules array exists');
+    assert.ok(Array.isArray(en.checksResults), 'EN checks array exists');
+    assert.ok(Array.isArray(fr.checksResults), 'FR checks array exists');
     assert.strictEqual(
-        en.rules.length,
-        fr.rules.length,
-        'EN and FR return same number of rules'
+        en.checksResults.length,
+        fr.checksResults.length,
+        'EN and FR return same number of checks'
     );
 
-    const enById = new Map(en.rules.map(r => [r.ruleId, r]));
-    const frById = new Map(fr.rules.map(r => [r.ruleId, r]));
+    const enById = new Map(en.checksResults.map(r => [r.ruleId, r]));
+    const frById = new Map(fr.checksResults.map(r => [r.ruleId, r]));
 
     for (const [ruleId, frRule] of frById.entries()) {
         const enRule = enById.get(ruleId);

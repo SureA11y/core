@@ -68,13 +68,13 @@ function hasAnyRunOnlyKeys(ro) {
 /**
  * Reference implementation of effective selection semantics (mirrors build-core.updated.js logic):
  * - If runOnly is non-empty => it takes precedence.
- * - Else derive from engineOptions.rules/tags/includeMode.
+ * - Else derive from engineOptions.checks/tags/includeMode.
  * - includeMode affects only the combination between includeRuleIds and includeTags.
  * - includeTags are ANY-match (intersection within tags is not supported).
  * - excludes always subtract after includes.
  */
 function referenceSelectedRuleIds(core, engineOptions, runOnly) {
-  const defs = Array.isArray(core.RULE_DEFS) ? core.RULE_DEFS : [];
+  const defs = Array.isArray(core.CHECK_DEFS) ? core.CHECK_DEFS : [];
   const ENGINE_TAG = core.ENGINE_TAG || 'a11ycore';
 
   // Normalize to arrays
@@ -149,8 +149,8 @@ function referenceSelectedRuleIds(core, engineOptions, runOnly) {
 }
 
 function gotSelectedRuleIds(core, runOnly, engineOptions) {
-  const entries = core.getRulesForRunOnly(runOnly, engineOptions);
-  assert.ok(Array.isArray(entries), 'getRulesForRunOnly must return an array');
+  const entries = core.getChecksForRunOnly(runOnly, engineOptions);
+  assert.ok(Array.isArray(entries), 'getChecksForRunOnly must return an array');
   return entries.map((e) => e.ruleId);
 }
 
@@ -183,7 +183,7 @@ function buildTagIndex(defs) {
 }
 
 function findSharedNonUniversalTag(defs, tagIndex) {
-  // Prefer a tag that appears in >=2 rules but not in all rules,
+  // Prefer a tag that appears in >=2 checks but not in all checks,
   // so we can pick both a rule-with-tag and a rule-without-tag deterministically.
   const total = defs.length;
   const entries = [...tagIndex.entries()]
@@ -199,20 +199,20 @@ function findSharedNonUniversalTag(defs, tagIndex) {
 
 const core = loadCore();
 
-test('rule selection: sanity - RULE_DEFS has content', () => {
-  assert.ok(Array.isArray(core.RULE_DEFS), 'RULE_DEFS should be an array');
-  assert.ok(core.RULE_DEFS.length > 0, 'RULE_DEFS should not be empty');
+test('rule selection: sanity - CHECK_DEFS has content', () => {
+  assert.ok(Array.isArray(core.CHECK_DEFS), 'CHECK_DEFS should be an array');
+  assert.ok(core.CHECK_DEFS.length > 0, 'CHECK_DEFS should not be empty');
 });
 
-test('rule selection: default (no runOnly, no engineOptions) => all rules', () => {
-  assertSelection(core, 'default all rules', undefined, undefined);
+test('rule selection: default (no runOnly, no engineOptions) => all checks', () => {
+  assertSelection(core, 'default all checks', undefined, undefined);
   const got = gotSelectedRuleIds(core, undefined, undefined);
-  assert.equal(got.length, core.RULE_DEFS.length);
+  assert.equal(got.length, core.CHECK_DEFS.length);
 });
 
-test('rule selection: engineOptions.rules.include supports comma list + spaces + duplicates + empty tokens', () => {
-  const some = core.RULE_DEFS.slice(0, Math.min(5, core.RULE_DEFS.length)).map((r) => r.ruleId);
-  assert.ok(some.length >= 2, 'need at least 2 rules to test');
+test('rule selection: engineOptions.checks.include supports comma list + spaces + duplicates + empty tokens', () => {
+  const some = core.CHECK_DEFS.slice(0, Math.min(5, core.CHECK_DEFS.length)).map((r) => r.ruleId);
+  assert.ok(some.length >= 2, 'need at least 2 checks to test');
 
   const engineOptions = {
     rules: {
@@ -220,13 +220,13 @@ test('rule selection: engineOptions.rules.include supports comma list + spaces +
     }
   };
 
-  assertSelection(core, 'rules.include parsing', engineOptions, undefined);
+  assertSelection(core, 'checks.include parsing', engineOptions, undefined);
   const got = gotSelectedRuleIds(core, undefined, engineOptions);
   assert.deepEqual(got, [some[0], some[1]]);
 });
 
-test('rule selection: engineOptions.rules.exclude subtracts after include', () => {
-  const some = core.RULE_DEFS.slice(0, Math.min(6, core.RULE_DEFS.length)).map((r) => r.ruleId);
+test('rule selection: engineOptions.checks.exclude subtracts after include', () => {
+  const some = core.CHECK_DEFS.slice(0, Math.min(6, core.CHECK_DEFS.length)).map((r) => r.ruleId);
   assert.ok(some.length >= 3);
 
   const engineOptions = {
@@ -239,10 +239,10 @@ test('rule selection: engineOptions.rules.exclude subtracts after include', () =
 });
 
 test('rule selection: tags.include filters by ANY matching tag', () => {
-  const tagIndex = buildTagIndex(core.RULE_DEFS);
-  // choose a tag that appears in >= 2 rules for a meaningful test
+  const tagIndex = buildTagIndex(core.CHECK_DEFS);
+  // choose a tag that appears in >= 2 checks for a meaningful test
   const candidate = [...tagIndex.entries()].find(([, ids]) => ids.length >= 2);
-  assert.ok(candidate, 'expected at least one tag shared by >=2 rules');
+  assert.ok(candidate, 'expected at least one tag shared by >=2 checks');
   const [tag, ids] = candidate;
 
   const engineOptions = { tags: { include: `${tag}` } };
@@ -254,10 +254,10 @@ test('rule selection: tags.include filters by ANY matching tag', () => {
 });
 
 test('rule selection: tags.exclude removes ANY matching tag', () => {
-  const tagIndex = buildTagIndex(core.RULE_DEFS);
-  // choose a tag that appears in >= 2 rules for meaningful shrink
+  const tagIndex = buildTagIndex(core.CHECK_DEFS);
+  // choose a tag that appears in >= 2 checks for meaningful shrink
   const candidate = [...tagIndex.entries()].find(([, ids]) => ids.length >= 2);
-  assert.ok(candidate, 'expected at least one tag shared by >=2 rules');
+  assert.ok(candidate, 'expected at least one tag shared by >=2 checks');
   const [tag, ids] = candidate;
 
   const engineOptions = { tags: { exclude: `${tag}` } };
@@ -267,8 +267,8 @@ test('rule selection: tags.exclude removes ANY matching tag', () => {
   for (const id of ids) assert.ok(!got.includes(id), `expected ${id} to be excluded by tag ${tag}`);
 });
 
-test('rule selection: includeMode=and (default) => intersection between rules.include and tags.include', () => {
-  const defs = core.RULE_DEFS;
+test('rule selection: includeMode=and (default) => intersection between checks.include and tags.include', () => {
+  const defs = core.CHECK_DEFS;
   const tagIndex = buildTagIndex(defs);
 
   const picked = findSharedNonUniversalTag(defs, tagIndex);
@@ -293,8 +293,8 @@ test('rule selection: includeMode=and (default) => intersection between rules.in
   assert.deepEqual(got, [idWith]);
 });
 
-test('rule selection: includeMode=or => union between rules.include and tags.include', () => {
-  const defs = core.RULE_DEFS;
+test('rule selection: includeMode=or => union between checks.include and tags.include', () => {
+  const defs = core.CHECK_DEFS;
   const tagIndex = buildTagIndex(defs);
 
   const picked = findSharedNonUniversalTag(defs, tagIndex);
@@ -322,7 +322,7 @@ test('rule selection: includeMode=or => union between rules.include and tags.inc
 });
 
 test('rule selection: excludes always win (even under includeMode=or)', () => {
-  const defs = core.RULE_DEFS;
+  const defs = core.CHECK_DEFS;
   const tagIndex = buildTagIndex(defs);
 
   const candidate = [...tagIndex.entries()].find(([, ids]) => ids.length >= 2);
@@ -344,7 +344,7 @@ test('rule selection: excludes always win (even under includeMode=or)', () => {
 
 test('rule selection: ruleId prefix matching (unprefixed id matches a11ycore- prefixed)', () => {
   const ENGINE_TAG = core.ENGINE_TAG || 'a11ycore';
-  const any = core.RULE_DEFS.find((d) => typeof d.ruleId === 'string' && d.ruleId.startsWith(ENGINE_TAG + '-'));
+  const any = core.CHECK_DEFS.find((d) => typeof d.ruleId === 'string' && d.ruleId.startsWith(ENGINE_TAG + '-'));
   assert.ok(any, `expected at least one ruleId prefixed with ${ENGINE_TAG}-`);
 
   const unprefixed = any.ruleId.slice((ENGINE_TAG + '-').length);
@@ -356,7 +356,7 @@ test('rule selection: ruleId prefix matching (unprefixed id matches a11ycore- pr
 });
 
 test('rule selection: runOnly takes precedence over engineOptions selection', () => {
-  const defs = core.RULE_DEFS;
+  const defs = core.CHECK_DEFS;
   assert.ok(defs.length >= 2);
 
   const engineOptions = { rules: { include: `${defs[0].ruleId}` } };
@@ -369,7 +369,7 @@ test('rule selection: runOnly takes precedence over engineOptions selection', ()
 });
 
 test('rule selection: legacy runOnly { type:"tag", values:[...] } still works', () => {
-  const tagIndex = buildTagIndex(core.RULE_DEFS);
+  const tagIndex = buildTagIndex(core.CHECK_DEFS);
   const candidate = [...tagIndex.entries()].find(([, ids]) => ids.length >= 2);
   assert.ok(candidate);
   const [tag] = candidate;
@@ -379,7 +379,7 @@ test('rule selection: legacy runOnly { type:"tag", values:[...] } still works', 
 });
 
 test('rule selection: runOnly supports excludeTags (extended)', () => {
-  const tagIndex = buildTagIndex(core.RULE_DEFS);
+  const tagIndex = buildTagIndex(core.CHECK_DEFS);
   const candidate = [...tagIndex.entries()].find(([, ids]) => ids.length >= 2);
   assert.ok(candidate);
   const [tag, ids] = candidate;
@@ -391,12 +391,12 @@ test('rule selection: runOnly supports excludeTags (extended)', () => {
 });
 
 /**
- * Combinatorial stress tests:
+ * Combinatorial stress checks:
  * Generate many selections using real ids/tags, validate against referenceSelectedRuleIds.
  * The goal is to catch regression in parsing, precedence, includeMode, and include/exclude ordering.
  */
 test('rule selection: generated combinations against reference selector', () => {
-  const defs = core.RULE_DEFS;
+  const defs = core.CHECK_DEFS;
   const ENGINE_TAG = core.ENGINE_TAG || 'a11ycore';
   const tagIndex = buildTagIndex(defs);
 
@@ -407,7 +407,7 @@ test('rule selection: generated combinations against reference selector', () => 
   const idsSample = ids.slice(0, Math.min(6, ids.length));
 
   // Choose deterministic subset of tags:
-  // - those shared by >=2 rules (more interesting)
+  // - those shared by >=2 checks (more interesting)
   const sharedTags = [...tagIndex.entries()]
       .filter(([, ruleIds]) => ruleIds.length >= 2)
       .map(([t]) => t)
@@ -489,7 +489,7 @@ test('rule selection: generated combinations against reference selector', () => 
     }
   }
 
-  // Cap number of cases to keep tests fast
+  // Cap number of cases to keep checks fast
   const MAX_CASES = 220;
   const trimmed = cases.slice(0, MAX_CASES);
 

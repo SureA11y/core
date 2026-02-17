@@ -7,7 +7,7 @@ const { JSDOM } = require('jsdom');
 const { createDomHelpers } = require('../../src/core/dom-helpers.js');
 
 /**
- * Additional cache + correctness "tripwire" tests.
+ * Additional cache + correctness "tripwire" checks.
  * These are intentionally black-box and use DOM API call counting to detect
  * whether memoization and cache scoping behave as intended.
  */

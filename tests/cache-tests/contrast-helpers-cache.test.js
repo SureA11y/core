@@ -26,7 +26,7 @@ function makeShared(window) {
 
         composedParent: (n) => {
             if (!n) return null;
-            // Minimal composed-parent semantics (sufficient for these tests)
+            // Minimal composed-parent semantics (sufficient for these checks)
             return n.parentNode || (n.assignedSlot ? n.assignedSlot : null);
         },
 

@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Fixture — name presence (4.1.2)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, sans-serif; line-height: 1.45; padding: 24px; }
+    section { margin: 18px 0; padding: 14px; border: 1px solid #ddd; border-radius: 12px; }
+    code { background: #f6f6f6; padding: 2px 6px; border-radius: 6px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 12px; }
+    .note { font-size: 0.95rem; color: #444; margin-top: 6px; }
+    .expect { font-weight: 700; }
+  </style>
+</head>
+<body>
+  <h1>Fixture — Accessible name presence (4.1.2)</h1>
+  <p class="note">
+    This fixture covers: checkboxes/radios/switches, combobox, dialog/alertdialog, menuitems, tabs, sliders.
+    Hidden text inside <code>aria-hidden="true"</code> or <code>[hidden]</code> should not contribute to content-derived names.
+  </p>
+
+  <h2>Binary controls</h2>
+  <div class="grid">
+    <section>
+      <h3>PASS: checkbox with label</h3>
+      <label><input type="checkbox"> Accept</label>
+      <div class="note"><span class="expect">Expected:</span> PASS</div>
+    </section>
+    <section>
+      <h3>FAIL: checkbox label text hidden</h3>
+      <label><input type="checkbox"><span aria-hidden="true">Accept</span></label>
+      <div class="note"><span class="expect">Expected:</span> FAIL</div>
+    </section>
+    <section>
+      <h3>PASS: radio with label[for]</h3>
+      <input id="r1" type="radio"><label for="r1">Choice A</label>
+      <div class="note"><span class="expect">Expected:</span> PASS</div>
+    </section>
+    <section>
+      <h3>FAIL: role=checkbox only aria-hidden content</h3>
+      <div role="checkbox" tabindex="0"><span aria-hidden="true">Option</span></div>
+      <div class="note"><span class="expect">Expected:</span> FAIL</div>
+    </section>
+    <section>
+      <h3>PASS: role=switch aria-label</h3>
+      <div role="switch" tabindex="0" aria-label="Airplane mode"></div>
+      <div class="note"><span class="expect">Expected:</span> PASS</div>
+    </section>
+  </div>
+
+  <h2>Combobox</h2>
+  <div class="grid">
+    <section>
+      <h3>PASS: role=combobox aria-label</h3>
+      <div role="combobox" tabindex="0" aria-label="Search"></div>
+      <div class="note"><span class="expect">Expected:</span> PASS</div>
+    </section>
+    <section>
+      <h3>FAIL: role=combobox content hidden</h3>
+      <div role="combobox" tabindex="0"><span aria-hidden="true">Search</span></div>
+      <div class="note"><span class="expect">Expected:</span> FAIL</div>
+    </section>
+    <section>
+      <h3>PASS: role=combobox visible content</h3>
+      <div role="combobox" tabindex="0">Search</div>
+      <div class="note"><span class="expect">Expected:</span> PASS</div>
+    </section>
+  </div>
+
+  <h2>Dialogs</h2>
+  <div class="grid">
+    <section>
+      <h3>PASS: dialog aria-labelledby</h3>
+      <h2 id="dlgTitle">Settings</h2>
+      <div role="dialog" aria-labelledby="dlgTitle"></div>
+      <div class="note"><span class="expect">Expected:</span> PASS</div>
+    </section>
+    <section>
+      <h3>FAIL: alertdialog missing name</h3>
+      <div role="alertdialog"></div>
+      <div class="note"><span class="expect">Expected:</span> FAIL</div>
+    </section>
+  </div>
+
+  <h2>Menu items</h2>
+  <div class="grid">
+    <section>
+      <h3>PASS: menuitem content</h3>
+      <div role="menuitem">File</div>
+      <div class="note"><span class="expect">Expected:</span> PASS</div>
+    </section>
+    <section>
+      <h3>FAIL: menuitem content hidden</h3>
+      <div role="menuitem"><span aria-hidden="true">File</span></div>
+      <div class="note"><span class="expect">Expected:</span> FAIL</div>
+    </section>
+    <section>
+      <h3>PASS: menuitemcheckbox aria-label</h3>
+      <div role="menuitemcheckbox" aria-label="Show line numbers"></div>
+      <div class="note"><span class="expect">Expected:</span> PASS</div>
+    </section>
+  </div>
+
+  <h2>Tabs</h2>
+  <div class="grid">
+    <section>
+      <h3>PASS: tab content</h3>
+      <div role="tab">Home</div>
+      <div class="note"><span class="expect">Expected:</span> PASS</div>
+    </section>
+    <section>
+      <h3>FAIL: tab content hidden</h3>
+      <div role="tab"><span aria-hidden="true">Home</span></div>
+      <div class="note"><span class="expect">Expected:</span> FAIL</div>
+    </section>
+  </div>
+
+  <h2>Sliders</h2>
+  <div class="grid">
+    <section>
+      <h3>PASS: range input labeled</h3>
+      <label>Volume <input type="range"></label>
+      <div class="note"><span class="expect">Expected:</span> PASS</div>
+    </section>
+    <section>
+      <h3>FAIL: range input label text hidden</h3>
+      <label><span aria-hidden="true">Volume</span><input type="range"></label>
+      <div class="note"><span class="expect">Expected:</span> FAIL</div>
+    </section>
+    <section>
+      <h3>PASS: role=slider aria-labelledby</h3>
+      <span id="slbl">Brightness</span>
+      <div role="slider" aria-labelledby="slbl"></div>
+      <div class="note"><span class="expect">Expected:</span> PASS</div>
+    </section>
+    <section>
+      <h3>FAIL: role=slider missing name</h3>
+      <div role="slider"></div>
+      <div class="note"><span class="expect">Expected:</span> FAIL</div>
+    </section>
+  </div>
+
+</body>
+</html>

@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * Build the generated core (src/core.js) from rule modules under src/rules.
+ * Build the generated core (src/core.js) from rule modules under src/checks.
  *
  * IMPORTANT DESIGN GOAL:
  * - The exported `runa11yCoreInPage` MUST be self-contained (no free vars),
@@ -17,10 +17,15 @@
  *     applicability?(ctx) { return boolean | { applicable:boolean, reason?:string } }
  *   }
  *
- * runOnly supports:
- * - { tags?: string[] }
- * - { includeRuleIds?: string[] }
- * - { excludeRuleIds?: string[] }
+ * * runOnly supports (legacy + extended):
+ *  * - legacy reference-engine-like: { type:'tag', values:[...] }
+ *  * - { includeMode?: 'and'|'or' }
+ *  * - { tags?: string[] }                 (include tags)
+ *  * - { excludeTags?: string[] }
+ *  * - { includeRuleIds?: string[] }       (can include composite ids)
+ *  * - { excludeRuleIds?: string[] }       (can exclude composite ids)
+ *  * - { includeTestIds?: string[] }       (atomic test ids)
+ *  * - { excludeTestIds?: string[] }
  */
 
 const fs = require('fs');
@@ -37,10 +42,13 @@ const SCHEMA_VERSION = '1.0.0';
 
 const ROOT_DIR = path.join(__dirname, '..');
 const SRC_DIR = path.join(ROOT_DIR, 'src');
-const RULES_DIR = path.join(SRC_DIR, 'rules');
+const RULES_DIR = path.join(SRC_DIR, 'checks');
 const OUTPUT_FILE = path.join(SRC_DIR, 'core.js');
 
 const I18N_DIR = path.join(SRC_DIR, 'i18n');
+
+const CATALOGS_DIR = path.join(SRC_DIR, 'catalogs');
+const COMPOSITE_RULES_FILE = path.join(CATALOGS_DIR, 'composites.wcag.js');
 
 function isI18nLocaleFile(name) {
   // supports en.js, fr.js, pt-BR.js, etc.
@@ -49,6 +57,41 @@ function isI18nLocaleFile(name) {
 
 function localeFromFileName(name) {
   return name.replace(/\.(cjs|mjs|js)$/, '');
+}
+
+function loadCompositeRulesCatalog() {
+  if (!fs.existsSync(COMPOSITE_RULES_FILE)) return [];
+
+  // eslint-disable-next-line global-require, import/no-dynamic-require
+  const raw = require(COMPOSITE_RULES_FILE);
+
+  if (!Array.isArray(raw)) {
+    throw new Error(`[build-core] ${path.relative(ROOT_DIR, COMPOSITE_RULES_FILE)} must export an array`);
+  }
+
+  const seen = new Set();
+  return raw.map((entry, idx) => {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+      throw new Error(`[build-core] composite rule entry at index ${idx} must be an object`);
+    }
+
+    const id = String(entry.id || '').trim();
+    const checksIds = Array.isArray(entry.checksIds)
+        ? entry.checksIds.map((s) => String(s).trim()).filter(Boolean)
+        : [];
+
+    if (!id) throw new Error(`[build-core] composite rule entry at index ${idx} is missing "id"`);
+    if (seen.has(id)) throw new Error(`[build-core] duplicate composite rule id: ${id}`);
+    if (!checksIds.length) throw new Error(`[build-core] composite rule "${id}" must include at least one testId`);
+
+    seen.add(id);
+
+    return {
+      id,
+      checksIds,
+      meta: (entry.meta && typeof entry.meta === 'object' && !Array.isArray(entry.meta)) ? entry.meta : null
+    };
+  });
 }
 
 function loadAllTranslations() {
@@ -85,8 +128,8 @@ function loadAllTranslations() {
 function isRuleFileName(fullPath) {
   const base = path.basename(fullPath);
 
-  // Exclude ONLY the top-level rules index (src/rules/index.*),
-  // but allow nested index.js (e.g. src/rules/manual-review/index.js)
+  // Exclude ONLY the top-level checks index (src/checks/index.*),
+  // but allow nested index.js (e.g. src/checks/manual-review/index.js)
   const isTopLevelIndex =
       path.dirname(fullPath) === RULES_DIR &&
       (base === 'index.js' || base === 'index.cjs' || base === 'index.mjs');
@@ -95,7 +138,7 @@ function isRuleFileName(fullPath) {
 
   if (base.endsWith('.test.js') || base.endsWith('.test.cjs') || base.endsWith('.test.mjs')) return false;
 
-  return base.endsWith('.js') || base.endsWith('.cjs') || base.endsWith('.mjs');
+  return base.endsWith('.js') || base.endsWith('.cjs');
 }
 
 function listRuleFilesRecursive(dirAbs) {
@@ -172,6 +215,18 @@ function normalizeObjectArray(value) {
       .map((v) => ({ ...v }));
 }
 
+function deriveWcagScFromNormativeMappings(normativeMappings) {
+  const nm = Array.isArray(normativeMappings) ? normativeMappings : [];
+  const out = new Set();
+  for (const m of nm) {
+    if (!m || typeof m !== 'object') continue;
+    if (String(m.standard || '').toUpperCase() !== 'WCAG') continue;
+    const req = String(m.requirement || '').trim();
+    if (req) out.add(req);
+  }
+  return Array.from(out).sort();
+}
+
 function normalizeRuleMeta(ruleId, id, meta) {
   const m = (meta && typeof meta === 'object') ? meta : {};
 
@@ -187,6 +242,7 @@ function normalizeRuleMeta(ruleId, id, meta) {
   if (!tags.includes(ENGINE_TAG)) tags.push(ENGINE_TAG);
 
   const normativeMappings = normalizeObjectArray(m.normativeMappings);
+  const wcagSc = deriveWcagScFromNormativeMappings(normativeMappings);
   const informativeReferences = normalizeObjectArray(m.informativeReferences);
 
   const defaultSeverity = (typeof m.defaultSeverity === 'string' && m.defaultSeverity.trim())
@@ -253,6 +309,7 @@ function normalizeRuleMeta(ruleId, id, meta) {
     i18n,
     helpUrl,
     tags,
+    wcagSc,
     normativeMappings,
     informativeReferences,
     defaultSeverity,
@@ -339,7 +396,7 @@ function assertJsonSerializable(name, value) {
 /**
  * Generate src/core.js as a single CommonJS module.
  */
-function generateCore(mods, i18nAll) {
+function generateCore(mods, i18nAll, compositeRulesCatalog) {
   const defs = mods.map((m) => ({
     ruleId: m.ruleId,
     title: m.meta.title,
@@ -347,8 +404,8 @@ function generateCore(mods, i18nAll) {
     i18n: m.meta.i18n,
     helpUrl: m.meta.helpUrl,
     tags: m.meta.tags,
+    wcagSc: Array.isArray(m.meta.wcagSc) ? m.meta.wcagSc : [],
     normativeMappings: m.meta.normativeMappings,
-    informativeReferences: m.meta.informativeReferences,
     defaultSeverity: m.meta.defaultSeverity,
     defaultConfidence: m.meta.defaultConfidence,
     type: m.meta.type,
@@ -371,7 +428,24 @@ function generateCore(mods, i18nAll) {
     mappings: m.meta.mappings
   }));
 
-  // Node/runtime implementations (require at runtime in Node, used by tests and server-side use).
+  const COMPOSITE_RULES = Array.isArray(compositeRulesCatalog) ? compositeRulesCatalog : [];
+
+  // Validate composite checks against the loaded atomic checks (fail fast at build time)
+  const knownRuleIds = new Set(defs.map((d) => d.ruleId));
+  for (const cr of COMPOSITE_RULES) {
+    if (!cr || typeof cr !== 'object') continue;
+    const cid = String(cr.id || '').trim();
+    const ids = Array.isArray(cr.checksIds) ? cr.checksIds : [];
+    for (const tid of ids) {
+      const rid = String(tid || '').trim();
+      if (!rid) continue;
+      if (!knownRuleIds.has(rid)) {
+        throw new Error(`[build-core] composite rule "${cid}" references unknown testId: ${rid}`);
+      }
+    }
+  }
+
+  // Node/runtime implementations (require at runtime in Node, used by checks and server-side use).
   // Normalize to a single shape: { run, applicability }
   const implEntries = mods.map((m) => {
     const rel = './' + path.relative(SRC_DIR, m.file).replace(/\\/g, '/');
@@ -563,15 +637,22 @@ function normalizeIncludeMode(mode) {
 
 function hasAnyRunOnlyKeys(runOnly) {
   if (!runOnly || typeof runOnly !== 'object') return false;
+
   // legacy reference-engine-like: { type:'tag', values:[...] }
-  if (runOnly.type === 'tag' && Array.isArray(runOnly.values) && runOnly.values.length) return true;
-  if (Array.isArray(runOnly.tags) && runOnly.tags.length) return true;
-  if (Array.isArray(runOnly.includeRuleIds) && runOnly.includeRuleIds.length) return true;
-  if (Array.isArray(runOnly.excludeRuleIds) && runOnly.excludeRuleIds.length) return true;
-  // extended (new)
-  if (Array.isArray(runOnly.excludeTags) && runOnly.excludeTags.length) return true;
-  if (typeof runOnly.includeMode === 'string' && runOnly.includeMode.trim()) return true;
-  return false;
+  const hasLegacyTag =
+    runOnly.type === 'tag' && Array.isArray(runOnly.values) && runOnly.values.length > 0;
+
+  const hasAnyFilters =
+    hasLegacyTag ||
+    (Array.isArray(runOnly.tags) && runOnly.tags.length > 0) ||
+    (Array.isArray(runOnly.excludeTags) && runOnly.excludeTags.length > 0) ||
+    (Array.isArray(runOnly.includeRuleIds) && runOnly.includeRuleIds.length > 0) ||
+    (Array.isArray(runOnly.excludeRuleIds) && runOnly.excludeRuleIds.length > 0) ||
+    (Array.isArray(runOnly.includeTestIds) && runOnly.includeTestIds.length > 0) ||
+    (Array.isArray(runOnly.excludeTestIds) && runOnly.excludeTestIds.length > 0);
+
+  // IMPORTANT: includeMode by itself should NOT cause runOnly to take precedence.
+  return hasAnyFilters;
 }
 
 /**
@@ -583,10 +664,18 @@ function hasAnyRunOnlyKeys(runOnly) {
  * - extended runOnly: { includeMode:'and'|'or', excludeTags:[...] }
  *
  * Output shape:
- * { includeMode, tags, excludeTags, includeRuleIds, excludeRuleIds }
+ * { includeMode, tags, excludeTags, includeRuleIds, excludeRuleIds, includeTestIds, excludeTestIds }
  */
 function normalizeRunOnly(runOnly) {
-  const out = { includeMode: 'and', tags: [], excludeTags: [], includeRuleIds: [], excludeRuleIds: [] };
+  const out = {
+    includeMode: 'and',
+    tags: [],
+    excludeTags: [],
+    includeRuleIds: [],
+    excludeRuleIds: [],
+    includeTestIds: [],
+    excludeTestIds: []
+  };
   if (!runOnly || typeof runOnly !== 'object') return out;
 
   out.includeMode = normalizeIncludeMode(runOnly.includeMode);
@@ -602,6 +691,9 @@ function normalizeRunOnly(runOnly) {
 
   out.includeRuleIds = parseCommaList(runOnly.includeRuleIds, { lower: false });
   out.excludeRuleIds = parseCommaList(runOnly.excludeRuleIds, { lower: false });
+  
+  out.includeTestIds = parseCommaList(runOnly.includeTestIds, { lower: false });
+  out.excludeTestIds = parseCommaList(runOnly.excludeTestIds, { lower: false });
 
   return out;
 }
@@ -621,6 +713,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
 
   const rules = (eo.rules && typeof eo.rules === 'object') ? eo.rules : null;
   const tags = (eo.tags && typeof eo.tags === 'object') ? eo.tags : null;
+  const tests = (eo.tests && typeof eo.tests === 'object') ? eo.tests : null;
 
   const includeRuleIds = parseCommaList(rules && rules.include, { lower: false });
   const excludeRuleIds = parseCommaList(rules && rules.exclude, { lower: false });
@@ -628,13 +721,19 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   const includeTags = parseCommaList(tags && tags.include, { lower: true });
   const excludeTags = parseCommaList(tags && tags.exclude, { lower: true });
 
+  const includeTestIds = parseCommaList(tests && tests.include, { lower: false });
+  const excludeTestIds = parseCommaList(tests && tests.exclude, { lower: false });
+
   return {
     includeMode: mode,
     tags: includeTags,
     excludeTags,
     includeRuleIds,
-    excludeRuleIds
+    excludeRuleIds,
+    includeTestIds,
+    excludeTestIds
   };
+
 }
 
 function ruleIdMatches(candidate, ruleId, engineTag) {
@@ -648,39 +747,99 @@ function ruleIdMatches(candidate, ruleId, engineTag) {
   return false;
 }
 
+function buildCompositeRuleIndex() {
+  const idx = Object.create(null);
+  if (!Array.isArray(COMPOSITE_RULES)) return idx;
+
+  for (const entry of COMPOSITE_RULES) {
+    if (!entry || typeof entry !== 'object') continue;
+    const id = typeof entry.id === 'string' ? entry.id.trim() : String(entry.id || '').trim();
+    if (!id) continue;
+
+    const checksIds = Array.isArray(entry.checksIds)
+      ? entry.checksIds.map(String).map((s) => s.trim()).filter(Boolean)
+      : [];
+
+    if (checksIds.length) idx[id] = checksIds;
+  }
+
+  return idx;
+}
+
+const COMPOSITE_RULE_INDEX = buildCompositeRuleIndex();
+
+function expandCompositeRuleId(candidateId) {
+  const id = typeof candidateId === 'string' ? candidateId.trim() : '';
+  if (!id) return null;
+  const checksIds = COMPOSITE_RULE_INDEX[id];
+  return Array.isArray(checksIds) && checksIds.length ? checksIds : null;
+}
+
 function ruleMatchesRunOnly(def, runOnly, engineTag) {
   const norm = normalizeRunOnly(runOnly);
   const includeMode = normalizeIncludeMode(norm.includeMode);
 
   const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).toLowerCase()) : [];
 
-  const hasIdInclude = norm.includeRuleIds.length > 0;
+  const hasRuleInclude = norm.includeRuleIds.length > 0;
+  const hasTestInclude = norm.includeTestIds.length > 0;
   const hasTagInclude = norm.tags.length > 0;
 
   let idMatch = true;
   let tagMatch = true;
 
-  if (hasIdInclude) {
-    idMatch = norm.includeRuleIds.some((id) => ruleIdMatches(id, def.ruleId, engineTag || ENGINE_TAG));
+  if (hasRuleInclude) {
+    idMatch = norm.includeRuleIds.some((ruleId) => {
+      // 1) Direct match always wins (this allows selecting the composite itself)
+      if (ruleIdMatches(ruleId, def.ruleId, engineTag || ENGINE_TAG)) return true;
+      
+      // 2) If candidate is a composite id, include atomic children as well
+      const expanded = expandCompositeRuleId(ruleId);
+      if (expanded) return expanded.includes(def.ruleId);
+      
+      return false;
+    });
   }
+
+  if (hasTestInclude) {
+    const testMatch = norm.includeTestIds.some((id) => ruleIdMatches(id, def.ruleId, engineTag || ENGINE_TAG));
+    idMatch = hasRuleInclude ? (idMatch && testMatch) : testMatch;
+  }
+
   if (hasTagInclude) {
     tagMatch = defTags.some((t) => norm.tags.includes(t));
   }
 
   // Includes
-  if (hasIdInclude || hasTagInclude) {
-    if (includeMode === 'or' && hasIdInclude && hasTagInclude) {
+  const hasAnyIdInclude = hasRuleInclude || hasTestInclude;
+
+  if (hasAnyIdInclude || hasTagInclude) {
+    if (includeMode === 'or' && hasAnyIdInclude && hasTagInclude) {
       if (!(idMatch || tagMatch)) return false;
     } else {
       // 'and' semantics (or only one include dimension present)
-      if (hasIdInclude && !idMatch) return false;
+      if (hasAnyIdInclude && !idMatch) return false;
       if (hasTagInclude && !tagMatch) return false;
     }
   }
 
   // Excludes (always subtractive; apply after include)
   if (norm.excludeRuleIds.length) {
-    const blocked = norm.excludeRuleIds.some((id) => ruleIdMatches(id, def.ruleId, engineTag || ENGINE_TAG));
+    const blocked = norm.excludeRuleIds.some((ruleId) => {
+      // 1) Direct match excludes the composite itself (and any atomic with same id)
+      if (ruleIdMatches(ruleId, def.ruleId, engineTag || ENGINE_TAG)) return true;
+  
+      // 2) If candidate is a composite id, exclude its atomic children too
+      const expanded = expandCompositeRuleId(ruleId);
+      if (expanded) return expanded.includes(def.ruleId);
+  
+      return false;
+    });
+    if (blocked) return false;
+  }
+
+  if (norm.excludeTestIds.length) {
+    const blocked = norm.excludeTestIds.some((id) => ruleIdMatches(id, def.ruleId, engineTag || ENGINE_TAG));
     if (blocked) return false;
   }
 
@@ -744,7 +903,6 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
     atomic: def.atomic,
     category: def.category || null,
     normativeMappings: Array.isArray(def.normativeMappings) ? def.normativeMappings.map((o) => ({ ...o })) : [],
-    informativeReferences: Array.isArray(def.informativeReferences) ? def.informativeReferences.map((o) => ({ ...o })) : [],
     standard: def.standard || null,
     applicability: def.applicability || '',
     expectation: def.expectation || '',
@@ -820,8 +978,8 @@ function toCatalogEntry(r, engineOptions) {
     i18n: r.i18n || null,
     helpUrl: r.helpUrl,
     tags: Array.isArray(r.tags) ? r.tags.slice() : [],
+    wcagSc: Array.isArray(r.wcagSc) ? r.wcagSc.slice() : [],
     normativeMappings: Array.isArray(r.normativeMappings) ? r.normativeMappings.map((o) => ({ ...o })) : [],
-    informativeReferences: Array.isArray(r.informativeReferences) ? r.informativeReferences.map((o) => ({ ...o })) : [],
     defaultSeverity: r.defaultSeverity,
     defaultConfidence: r.defaultConfidence,
     type: r.type,
@@ -859,7 +1017,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const ENGINE_TAG = ${jsStringify(ENGINE_TAG)};
   const SCHEMA_VERSION = ${jsStringify(SCHEMA_VERSION)};
 
-  const RULE_DEFS = ${jsStringify(defs)};
+  // Rule catalog (data only)
+  const CHECK_DEFS = ${jsStringify(defs)};
+
+  // Tests catalog (alias of CHECK_DEFS; tests are the atomic executable units)
+  const TEST_DEFS = CHECK_DEFS;
+
+  // Composite rules catalog (data only)
+  const COMPOSITE_RULES = ${jsStringify(COMPOSITE_RULES)};
 
   const RULE_IMPLS = {
 ${implEntriesInPage.join(',\n')}
@@ -867,7 +1032,17 @@ ${implEntriesInPage.join(',\n')}
 
   ${runnersSharedSource}
 
-  return runCore(pageUrl, contextSelector, engineOptions, resolveEffectiveRunOnly(engineOptions, runOnly), RULE_DEFS, RULE_IMPLS, ENGINE_TAG, SCHEMA_VERSION);
+  return runCore(
+    pageUrl,
+    contextSelector,
+    engineOptions,
+    resolveEffectiveRunOnly(engineOptions, runOnly),
+    CHECK_DEFS,
+    RULE_IMPLS,
+    ENGINE_TAG,
+    SCHEMA_VERSION,
+    COMPOSITE_RULES
+  );
 }
 `.trim();
 
@@ -877,7 +1052,13 @@ const ENGINE_TAG = ${jsStringify(ENGINE_TAG)};
 const SCHEMA_VERSION = ${jsStringify(SCHEMA_VERSION)};
 
 // Rule catalog (data only)
-const RULE_DEFS = ${jsStringify(defs)};
+const CHECK_DEFS = ${jsStringify(defs)};
+
+// Tests catalog (alias of CHECK_DEFS; tests are the atomic executable units)
+const TEST_DEFS = CHECK_DEFS;
+
+// Composite rules catalog (data only)
+const COMPOSITE_RULES = ${jsStringify(COMPOSITE_RULES)};
 
 // Node/runtime rule implementations (normalized)
 const RULE_IMPLS = {
@@ -886,17 +1067,38 @@ ${implEntries.join(',\n')}
 
 ${runnersSharedSource}
 
-function getRuleDefById(ruleId, engineOptions) {
-  const r = RULE_DEFS.find((x) => x.ruleId === ruleId) || null;
+function getCheckDefById(ruleId, engineOptions) {
+  const r = CHECK_DEFS.find((x) => x.ruleId === ruleId) || null;
   return r ? toCatalogEntry(r, engineOptions) : null;
 }
 
-function getRulesCatalog(engineOptions) {
-  return RULE_DEFS.map((r) => toCatalogEntry(r, engineOptions));
+function getChecksCatalog(engineOptions) {
+  // Tests are the atomic executable units (currently stored in CHECK_DEFS).
+  // We return the same catalog entries shape as rules for now.
+  return CHECK_DEFS.map((r) => toCatalogEntry(r, engineOptions));
 }
 
-function getRulesForRunOnly(runOnly, engineOptions) {
-  return RULE_DEFS
+function getRulesCatalog() {
+  // Data-only catalog. No i18n resolution yet (we can add later if needed).
+  return Array.isArray(COMPOSITE_RULES) ? COMPOSITE_RULES.map((x) => ({ ...x, checksIds: Array.isArray(x.checksIds) ? x.checksIds.slice() : [] })) : [];
+}
+
+function getCompositeRuleById(ruleId) {
+  if (!Array.isArray(COMPOSITE_RULES)) return null;
+  const found = COMPOSITE_RULES.find((x) => x && typeof x === 'object' && x.id === ruleId) || null;
+  if (!found) return null;
+  return { ...found, checksIds: Array.isArray(found.checksIds) ? found.checksIds.slice() : [] };
+}
+
+function getChecksForRunOnly(runOnly, engineOptions) {
+  return CHECK_DEFS
+    .filter((r) => ruleMatchesRunOnly(r, resolveEffectiveRunOnly(engineOptions, runOnly), ENGINE_TAG))
+    .map((r) => toCatalogEntry(r, engineOptions));
+}
+
+function getTestsForRunOnly(runOnly, engineOptions) {
+  // Tests are the atomic executable units; selection semantics live in ruleMatchesRunOnly.
+  return CHECK_DEFS
     .filter((r) => ruleMatchesRunOnly(r, resolveEffectiveRunOnly(engineOptions, runOnly), ENGINE_TAG))
     .map((r) => toCatalogEntry(r, engineOptions));
 }
@@ -905,7 +1107,17 @@ function getRulesForRunOnly(runOnly, engineOptions) {
  * Node/runtime runner.
  */
 function runDomRulesInPage(pageUrl, contextSelector, engineOptions, runOnly) {
-  return runCore(pageUrl, contextSelector, engineOptions, resolveEffectiveRunOnly(engineOptions, runOnly), RULE_DEFS, RULE_IMPLS, ENGINE_TAG, SCHEMA_VERSION);
+  return runCore(
+    pageUrl,
+    contextSelector,
+    engineOptions,
+    resolveEffectiveRunOnly(engineOptions, runOnly),
+    CHECK_DEFS,
+    RULE_IMPLS,
+    ENGINE_TAG,
+    SCHEMA_VERSION,
+    COMPOSITE_RULES
+  );
 }
 
 // =======================
@@ -919,10 +1131,15 @@ module.exports = {
   DEFAULT_POLICY,
   POLICY_CONTRACTS,
   resolvePolicy,
-  RULE_DEFS,
-  getRuleDefById,
+  CHECK_DEFS,
+  TEST_DEFS,
+  COMPOSITE_RULES,
+  getCheckDefById,
+  getChecksCatalog,
   getRulesCatalog,
-  getRulesForRunOnly,
+  getCompositeRuleById,
+  getChecksForRunOnly,
+  getTestsForRunOnly,
   runDomRulesInPage,
   runa11yCoreInPage,
   __internal: { normalizeRuleResult }
@@ -933,7 +1150,11 @@ module.exports = {
 function main() {
   const mods = loadRuleModules();
   const i18nAll = loadAllTranslations();
-  const out = generateCore(mods, i18nAll);
+
+  const compositeRulesCatalog = loadCompositeRulesCatalog();
+
+  const out = generateCore(mods, i18nAll, compositeRulesCatalog);
+
   fs.writeFileSync(OUTPUT_FILE, out, 'utf8');
   // eslint-disable-next-line no-console
   console.log(`[build-core] wrote ${path.relative(ROOT_DIR, OUTPUT_FILE)} (${mods.length} rules)`);

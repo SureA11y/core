@@ -25,7 +25,7 @@ test('shadow dom contract: enabling includeShadowDom does not crash any rule', (
     });
 
     // Contract: no rule should throw at runtime when Shadow DOM scanning is enabled.
-    for (const r of result.rules) {
+    for (const r of result.checksResults) {
         assert.ok(!r.error, `Rule ${r.ruleId} threw with includeShadowDom enabled: ${r.error}`);
     }
 });

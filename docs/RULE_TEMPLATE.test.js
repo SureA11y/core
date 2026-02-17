@@ -2,7 +2,7 @@
 
 /**
  * TEST TEMPLATE NOTES
- * - Filtering / engine-mechanics tests should use normative automatic rules, not advisory/manual rules.
+ * - Filtering / engine-mechanics checks should use normative automatic checks, not advisory/manual checks.
  * - If the rule under test is manual or advisory, it MUST NOT be expected to return `fail`.
  * - Prefer asserting stable evidence fields only (selector/summary/hint), not full HTML formatting.
  * - Optional: run twice and assert identical outcomes/occurrences for determinism.

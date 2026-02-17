@@ -11,7 +11,7 @@ const RULES = [
     'a11ycore-contrast-enhanced'
 ];
 
-// Reuse the same deterministic patches you already use in the other contrast tests.
+// Reuse the same deterministic patches you already use in the other contrast checks.
 // (Copied from your existing files; keep in sync if you change them later.)
 function patchGeometry(dom) {
     const { window } = dom;
@@ -77,7 +77,7 @@ function patchComputedStyleDefaults(dom) {
                     if (prop === 'filter') return 'none';
                     if (prop === 'backdropFilter') return 'none';
 
-                    // Typography defaults for AA/AAA rules (harmless for computable rule)
+                    // Typography defaults for AA/AAA checks (harmless for computable rule)
                     if (prop === 'fontSize') return '16px';
                     if (prop === 'fontWeight') return '400';
                     if (prop === 'color') return 'rgb(0, 0, 0)';
@@ -135,7 +135,7 @@ function runAllThreeContrastRules(dom, engineOptions = {}) {
     });
 }
 
-test('contrast.getTextScan cache: multiple contrast rules in one run should only create ONE TreeWalker', () => {
+test('contrast.getTextScan cache: multiple contrast checks in one run should only create ONE TreeWalker', () => {
     const html = `
 <!doctype html>
 <html style="background-color: rgb(255,255,255); opacity: 1">
@@ -152,7 +152,7 @@ test('contrast.getTextScan cache: multiple contrast rules in one run should only
 
     const tw = patchTreeWalkerCounter(dom);
 
-    // Run all three rules in the SAME engine invocation.
+    // Run all three checks in the SAME engine invocation.
     runAllThreeContrastRules(dom);
     assert.strictEqual(
         tw.getCalls(),

@@ -103,17 +103,6 @@ const meta = {
     }
   ],
 
-  // optional (relevant for manual rules)
-  informativeReferences: [
-    {
-      standard: '…',
-      version: '…',
-      requirement: '…',
-      title: '…',
-      conformanceLevel: '…'
-    }
-  ],
-
   defaultSeverity: 'minor' | 'moderate' | 'serious' | 'critical',
   category: 'perceivable' | 'operable' | 'understandable' | 'robust',
   type: 'automatic' | 'manual',

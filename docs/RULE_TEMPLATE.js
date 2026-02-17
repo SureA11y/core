@@ -3,7 +3,7 @@
 /**
  * DOM Rules: Rule Template (v1)
  *
- * Copy this file to src/rules/<kebab-id>.js and fill in the placeholders.
+ * Copy this file to src/checks/<kebab-id>.js and fill in the placeholders.
  *
  * IMPORTANT: This module is loaded in Node, but `runInPage(ctx)` is serialized and executed
  * inside the browser DOM via page.evaluate. Therefore:
@@ -19,16 +19,16 @@
  *   - hint
  *
  * Recommended key convention:
- *   rules.<canonicalRuleId>.meta.title
- *   rules.<canonicalRuleId>.meta.description
- *   rules.<canonicalRuleId>.occurrence.<case>.summary
- *   rules.<canonicalRuleId>.occurrence.<case>.hint
+ *   checks.<canonicalRuleId>.meta.title
+ *   checks.<canonicalRuleId>.meta.description
+ *   checks.<canonicalRuleId>.occurrence.<case>.summary
+ *   checks.<canonicalRuleId>.occurrence.<case>.hint
  *
  * Where <canonicalRuleId> is the engine-prefixed id (e.g. a11ycore-<kebab-id>).
  */
 
 /**
- * @rule <kebab-id>  (engine prefix is applied at build-time: a11ycore-<kebab-id>)
+ * @check <kebab-id>  (engine prefix is applied at build-time: a11ycore-<kebab-id>)
  * @atomic true
  * @summary <One-sentence summary of the single normative requirement>
  * @standard WCAG 2.2
@@ -47,8 +47,8 @@
  * - If any condition is not met, return `cantTell` (manual) or reclassify as advisory.
  *
  * RULE TYPE GUIDANCE
- * - Automatic rules: may return pass | fail | notApplicable | cantTell
- * - Manual rules: must NEVER return fail (only cantTell | notApplicable | pass)
+ * - Automatic checks: may return pass | fail | notApplicable | cantTell
+ * - Manual checks: must NEVER return fail (only cantTell | notApplicable | pass)
  *
  * RESULT PAYLOAD
  * - You may include a `data` object (non-normative) with: fixes[], usefulFor[], notes[]
@@ -71,14 +71,11 @@ const meta = {
   normativeMappings: [
     // { standard: 'WCAG', version: '2.2', requirement: '1.1.1', conformanceLevel: 'A', title: 'Non-text Content' }
   ],
-  informativeReferences: [
-    // { standard: 'WCAG', version: '2.2', type: 'Understanding', requirement: '1.1.1', title: 'Understanding Non-text Content', url: '...' }
-  ],
 
   // i18n keys (required when i18n provided)
   i18n: {
-    titleKey: 'rules.a11ycore-<kebab-id>.meta.title',
-    descriptionKey: 'rules.a11ycore-<kebab-id>.meta.description'
+    titleKey: 'checks.a11ycore-<kebab-id>.meta.title',
+    descriptionKey: 'checks.a11ycore-<kebab-id>.meta.description'
   }
 };
 
@@ -147,8 +144,8 @@ function runInPage(ctx) {
 
         // i18n keys (recommended)
         i18n: {
-          summaryKey: 'rules.' + rule.ruleId + '.occurrence.<case>.summary',
-          hintKey: 'rules.' + rule.ruleId + '.occurrence.<case>.hint',
+          summaryKey: 'checks.' + rule.ruleId + '.occurrence.<case>.summary',
+          hintKey: 'checks.' + rule.ruleId + '.occurrence.<case>.hint',
           params: {}
         }
       });
@@ -159,8 +156,8 @@ function runInPage(ctx) {
         summary: '<Needs human review (short)>',
         hint: '<What to verify>',
         i18n: {
-          summaryKey: 'rules.' + rule.ruleId + '.occurrence.<case>.summary',
-          hintKey: 'rules.' + rule.ruleId + '.occurrence.<case>.hint',
+          summaryKey: 'checks.' + rule.ruleId + '.occurrence.<case>.summary',
+          hintKey: 'checks.' + rule.ruleId + '.occurrence.<case>.hint',
           params: {}
         }
       });

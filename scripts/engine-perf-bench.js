@@ -14,7 +14,7 @@
  *   node scripts/engine-perf-bench.js --generated=bigTransparent
  *   node scripts/engine-perf-bench.js --generated=bigOpaque
  *
- *   # Contrast-focused fixtures (reduce img rules dominating; exercise background paths)
+ *   # Contrast-focused fixtures (reduce img checks dominating; exercise background paths)
  *   node scripts/engine-perf-bench.js --generated=contrastTransparent
  *   node scripts/engine-perf-bench.js --generated=contrastOpaque
  *
@@ -425,7 +425,7 @@ function parentMain() {
   console.log(`rss p50Δ:      ${fmtMb(rssP50)}`);
 
   if (!rules) {
-    console.log('\n(note: rule count detected as 0; engine result may not expose rules/results arrays)');
+    console.log('\n(note: rule count detected as 0; engine result may not expose checks/results arrays)');
   }
 
   if (!args.html) {

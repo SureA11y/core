@@ -19,13 +19,14 @@ function walk(dir) {
 
 const targetDir = process.argv[2];
 if (!targetDir) {
-    console.error('Usage: node validate-all-rules.js <dir>');
+    console.error('Usage: node validate-all-checks.js <dir>');
     process.exit(1);
 }
 
 const files = walk(targetDir);
 
 for (const file of files) {
+    console.log(`\n=== Validating: ${file} ===`);
     const res = spawnSync(
         'node',
         ['scripts/validate-rule.js', file],

@@ -6,7 +6,7 @@ function assertRule(result, ruleId, expectedOutcome, opts = {}) {
   const { minOccurrences = 0, maxOccurrences = null } = opts;
 
   assert.ok(result && typeof result === 'object', 'Expected result to be an object');
-  assert.ok(Array.isArray(result.rules), 'Expected result.rules to be an array');
+  assert.ok(Array.isArray(result.checksResults), 'Expected result.checks to be an array');
 
   const engineTag =
       result.engine && typeof result.engine.tag === 'string' && result.engine.tag.trim()
@@ -20,8 +20,8 @@ function assertRule(result, ruleId, expectedOutcome, opts = {}) {
     candidates.push(`${engineTag}-${ruleId}`);
   }
 
-  const rule = result.rules.find((r) => r && candidates.includes(r.ruleId));
-  assert.ok(rule, `Expected to find rule ${ruleId} in result.rules`);
+  const rule = result.checksResults.find((r) => r && candidates.includes(r.ruleId));
+  assert.ok(rule, `Expected to find rule ${ruleId} in result.checksResults`);
 
   assert.strictEqual(
       rule.outcome,

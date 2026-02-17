@@ -19,16 +19,16 @@ test('engine output is deterministic for rule ordering and occurrence ordering',
   const b = runa11yCoreOnHtml(html, { engineOptions: { includeShadowDom: false, excludeSelectors: [] } });
 
   // Compare shape deterministically:
-  // - rules order
+  // - checks order
   // - occurrences order per rule
-  const aRuleIds = a.rules.map((r) => r.ruleId);
-  const bRuleIds = b.rules.map((r) => r.ruleId);
+  const aRuleIds = a.checksResults.map((r) => r.ruleId);
+  const bRuleIds = b.checksResults.map((r) => r.ruleId);
 
   assert.deepEqual(aRuleIds, bRuleIds);
 
-  for (let i = 0; i < a.rules.length; i++) {
-    const ra = a.rules[i];
-    const rb = b.rules[i];
+  for (let i = 0; i < a.checksResults.length; i++) {
+    const ra = a.checksResults[i];
+    const rb = b.checksResults[i];
     assert.equal(ra.ruleId, rb.ruleId);
 
     const occA = (ra.occurrences || []).map((o) => `${o.selector}::${(o.summary || '').slice(0, 40)}`);

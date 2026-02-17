@@ -4,7 +4,7 @@ const ENGINE_TAG = "a11ycore";
 const SCHEMA_VERSION = "1.0.0";
 
 // Rule catalog (data only)
-const RULE_DEFS = [
+const CHECK_DEFS = [
   {
     "ruleId": "a11ycore-area-alt-decorative",
     "title": "<area> with alt=\"\" must be decorative (manual review)",
@@ -24,8 +24,10 @@ const RULE_DEFS = [
       "atomic",
       "a11ycore"
     ],
-    "normativeMappings": [],
-    "informativeReferences": [
+    "wcagSc": [
+      "1.1.1"
+    ],
+    "normativeMappings": [
       {
         "standard": "WCAG",
         "version": "2.2",
@@ -68,6 +70,7 @@ const RULE_DEFS = [
     "helpUrl": "",
     "tags": [
       "wcag2a",
+      "wcag2aa",
       "wcag111",
       "nontext",
       "images",
@@ -75,6 +78,9 @@ const RULE_DEFS = [
       "atomic",
       "automatic",
       "a11ycore"
+    ],
+    "wcagSc": [
+      "1.1.1"
     ],
     "normativeMappings": [
       {
@@ -85,7 +91,6 @@ const RULE_DEFS = [
         "conformanceLevel": "A"
       }
     ],
-    "informativeReferences": [],
     "defaultSeverity": "serious",
     "defaultConfidence": "high",
     "type": "automatic",
@@ -128,8 +133,10 @@ const RULE_DEFS = [
       "atomic",
       "a11ycore"
     ],
-    "normativeMappings": [],
-    "informativeReferences": [
+    "wcagSc": [
+      "1.1.1"
+    ],
+    "normativeMappings": [
       {
         "standard": "WCAG",
         "version": "2.2",
@@ -162,29 +169,220 @@ const RULE_DEFS = [
     "mappings": null
   },
   {
-    "ruleId": "a11ycore-aria-hidden-programmatic-focus-review",
-    "title": "Review aria-hidden programmatic focus",
-    "description": "Flags elements that are aria-hidden but programmatically focusable (tabindex < 0). Verify intended focus management and assistive technology exposure.",
+    "ruleId": "a11ycore-aria-hidden-focus",
+    "title": "ARIA hidden elements must not be focusable",
+    "description": "Checks that aria-hidden=\"true\" elements are not focusable and do not contain focusable descendants.",
     "i18n": {
-      "titleKey": "a11ycore_ariaHidden_programmaticFocus_review_title",
-      "descriptionKey": "a11ycore_ariaHidden_programmaticFocus_review_description"
+      "titleKey": "a11ycore_ariaHidden_focus_title",
+      "descriptionKey": "a11ycore_ariaHidden_focus_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag2aa",
+      "wcag412",
+      "structure",
+      "aria",
+      "focus",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "2.4.7",
+      "4.1.2"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.4.7",
+        "title": "Focus Visible",
+        "conformanceLevel": "AA"
+      },
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "4.1.2",
+        "title": "Name, Role, Value",
+        "conformanceLevel": "A"
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "4.1.2": [
+          "aria-hidden-focusable"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "a11ycore-aria-role-name-present",
+    "title": "ARIA widget/container roles have an accessible name",
+    "description": "Checks that selected ARIA widget/container roles expose a non-empty accessible name.",
+    "i18n": {
+      "titleKey": "a11ycore_ariaRoleNamePresent_title",
+      "descriptionKey": "a11ycore_ariaRoleNamePresent_description"
     },
     "helpUrl": "",
     "tags": [
       "wcag2a",
       "wcag412",
-      "focus",
-      "aria",
+      "navigation",
       "atomic",
-      "manual",
+      "automatic",
+      "name",
       "a11ycore"
     ],
-    "normativeMappings": [],
-    "informativeReferences": [],
-    "defaultSeverity": "moderate",
-    "defaultConfidence": "medium",
-    "type": "manual",
-    "coverage": null,
+    "wcagSc": [
+      "4.1.2"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "4.1.2",
+        "title": "Name, Role, Value",
+        "conformanceLevel": "A"
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "4.1.2": [
+          "aria-role-name-present"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "a11ycore-binary-control-name-present",
+    "title": "Binary controls have an accessible name",
+    "description": "Checks that checkbox, radio, and switch controls expose a non-empty accessible name.",
+    "i18n": {
+      "titleKey": "a11ycore_binaryControlNamePresent_title",
+      "descriptionKey": "a11ycore_binaryControlNamePresent_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag412",
+      "forms",
+      "atomic",
+      "automatic",
+      "name",
+      "checkbox",
+      "radio",
+      "switch",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "4.1.2"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "4.1.2",
+        "title": "Name, Role, Value",
+        "conformanceLevel": "A"
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "4.1.2": [
+          "checkbox-name-present",
+          "radio-name-present",
+          "switch-name-present"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "a11ycore-button-name-present",
+    "title": "Buttons have an accessible name",
+    "description": "Checks that buttons expose a non-empty accessible name.",
+    "i18n": {
+      "titleKey": "a11ycore_buttonNamePresent_title",
+      "descriptionKey": "a11ycore_buttonNamePresent_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag412",
+      "forms",
+      "atomic",
+      "automatic",
+      "buttons",
+      "name",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "4.1.2"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "4.1.2",
+        "title": "Name, Role, Value",
+        "conformanceLevel": "A"
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "4.1.2": [
+          "button-name-present"
+        ]
+      }
+    },
     "data": null,
     "ruleInterfaceVersion": "1.0.0",
     "ruleVersion": "0.0.0",
@@ -216,6 +414,9 @@ const RULE_DEFS = [
       "automatic",
       "a11ycore"
     ],
+    "wcagSc": [
+      "1.1.1"
+    ],
     "normativeMappings": [
       {
         "standard": "WCAG",
@@ -225,7 +426,6 @@ const RULE_DEFS = [
         "conformanceLevel": "A"
       }
     ],
-    "informativeReferences": [],
     "defaultSeverity": "serious",
     "defaultConfidence": "high",
     "type": "automatic",
@@ -267,8 +467,10 @@ const RULE_DEFS = [
       "atomic",
       "a11ycore"
     ],
-    "normativeMappings": [],
-    "informativeReferences": [
+    "wcagSc": [
+      "1.1.1"
+    ],
+    "normativeMappings": [
       {
         "standard": "WCAG",
         "version": "2.2",
@@ -301,6 +503,60 @@ const RULE_DEFS = [
     "mappings": null
   },
   {
+    "ruleId": "a11ycore-combobox-name-present",
+    "title": "Comboboxes have an accessible name",
+    "description": "Checks that elements with role=\"combobox\" expose a non-empty accessible name.",
+    "i18n": {
+      "titleKey": "a11ycore_comboboxNamePresent_title",
+      "descriptionKey": "a11ycore_comboboxNamePresent_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag412",
+      "forms",
+      "atomic",
+      "automatic",
+      "name",
+      "combobox",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "4.1.2"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "4.1.2",
+        "title": "Name, Role, Value",
+        "conformanceLevel": "A"
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "4.1.2": [
+          "combobox-name-present"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
     "ruleId": "a11ycore-contrast-computable",
     "title": "Color contrast is computable for rendered text",
     "description": "Determines whether sufficient information is available to compute WCAG color contrast for visible text (e.g., no gradients/images/blend modes that make background indeterminate).",
@@ -323,6 +579,10 @@ const RULE_DEFS = [
       "dom",
       "a11ycore"
     ],
+    "wcagSc": [
+      "1.4.3",
+      "1.4.6"
+    ],
     "normativeMappings": [
       {
         "standard": "WCAG",
@@ -339,8 +599,7 @@ const RULE_DEFS = [
         "conformanceLevel": "AAA"
       }
     ],
-    "informativeReferences": [],
-    "defaultSeverity": "minor",
+    "defaultSeverity": "serious",
     "defaultConfidence": "high",
     "type": "automatic",
     "coverage": {
@@ -368,7 +627,7 @@ const RULE_DEFS = [
   },
   {
     "ruleId": "a11ycore-contrast-enhanced",
-    "title": "Text meets enhanced color contrast (AAA)",
+    "title": "Text must meet the enhanced color contrast ratio",
     "description": "Checks that visible text has a contrast ratio of at least 7:1 (normal) or 4.5:1 (large), when contrast is computable from CSS.",
     "i18n": {
       "titleKey": "a11ycore_contrastEnhanced_title",
@@ -386,6 +645,9 @@ const RULE_DEFS = [
       "dom",
       "a11ycore"
     ],
+    "wcagSc": [
+      "1.4.6"
+    ],
     "normativeMappings": [
       {
         "standard": "WCAG",
@@ -395,7 +657,6 @@ const RULE_DEFS = [
         "conformanceLevel": "AAA"
       }
     ],
-    "informativeReferences": [],
     "defaultSeverity": "serious",
     "defaultConfidence": "high",
     "type": "automatic",
@@ -421,7 +682,7 @@ const RULE_DEFS = [
   },
   {
     "ruleId": "a11ycore-contrast-minimum",
-    "title": "Text meets minimum color contrast (AA)",
+    "title": "Text must meet the minimum color contrast ratio",
     "description": "Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3:1 (large), when contrast is computable from CSS.",
     "i18n": {
       "titleKey": "a11ycore_contrastMinimum_title",
@@ -439,6 +700,9 @@ const RULE_DEFS = [
       "dom",
       "a11ycore"
     ],
+    "wcagSc": [
+      "1.4.3"
+    ],
     "normativeMappings": [
       {
         "standard": "WCAG",
@@ -448,7 +712,6 @@ const RULE_DEFS = [
         "conformanceLevel": "AA"
       }
     ],
-    "informativeReferences": [],
     "defaultSeverity": "serious",
     "defaultConfidence": "high",
     "type": "automatic",
@@ -465,6 +728,114 @@ const RULE_DEFS = [
     "normative": true,
     "atomic": true,
     "category": "perceivable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "a11ycore-css-hidden-focus",
+    "title": "Focusable elements must not be visually hidden",
+    "description": "Checks that keyboard-focusable elements are not visually hidden by CSS techniques that can leave them in the tab order.",
+    "i18n": {
+      "titleKey": "a11ycore_cssHidden_focus_title",
+      "descriptionKey": "a11ycore_cssHidden_focus_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2aa",
+      "wcag247",
+      "navigation",
+      "focus",
+      "css",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "2.4.7"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.4.7",
+        "title": "Focus Visible",
+        "conformanceLevel": "AA"
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "low",
+    "type": "manual",
+    "coverage": {
+      "facetsBySc": {
+        "2.4.7": [
+          "css-hidden-focusable"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "category": "operable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "a11ycore-dialog-name-present",
+    "title": "Dialogs have an accessible name",
+    "description": "Checks that elements with role=\"dialog\" or role=\"alertdialog\" expose a non-empty accessible name.",
+    "i18n": {
+      "titleKey": "a11ycore_dialogNamePresent_title",
+      "descriptionKey": "a11ycore_dialogNamePresent_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag412",
+      "structure",
+      "atomic",
+      "automatic",
+      "name",
+      "dialog",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "4.1.2"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "4.1.2",
+        "title": "Name, Role, Value",
+        "conformanceLevel": "A"
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "4.1.2": [
+          "dialog-name-present"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "category": "robust",
     "standard": null,
     "applicability": "",
     "expectation": "",
@@ -490,6 +861,9 @@ const RULE_DEFS = [
       "automatic",
       "a11ycore"
     ],
+    "wcagSc": [
+      "1.1.1"
+    ],
     "normativeMappings": [
       {
         "standard": "WCAG",
@@ -499,7 +873,6 @@ const RULE_DEFS = [
         "conformanceLevel": "A"
       }
     ],
-    "informativeReferences": [],
     "defaultSeverity": "serious",
     "defaultConfidence": "high",
     "type": "automatic",
@@ -541,8 +914,10 @@ const RULE_DEFS = [
       "atomic",
       "a11ycore"
     ],
-    "normativeMappings": [],
-    "informativeReferences": [
+    "wcagSc": [
+      "1.1.1"
+    ],
+    "normativeMappings": [
       {
         "standard": "WCAG",
         "version": "2.2",
@@ -594,6 +969,9 @@ const RULE_DEFS = [
       "automatic",
       "a11ycore"
     ],
+    "wcagSc": [
+      "4.1.2"
+    ],
     "normativeMappings": [
       {
         "standard": "WCAG",
@@ -603,7 +981,6 @@ const RULE_DEFS = [
         "conformanceLevel": "A"
       }
     ],
-    "informativeReferences": [],
     "defaultSeverity": "serious",
     "defaultConfidence": "medium",
     "type": "automatic",
@@ -646,8 +1023,10 @@ const RULE_DEFS = [
       "manual",
       "a11ycore"
     ],
-    "normativeMappings": [],
-    "informativeReferences": [
+    "wcagSc": [
+      "4.1.2"
+    ],
+    "normativeMappings": [
       {
         "standard": "WCAG",
         "version": "2.2",
@@ -697,6 +1076,9 @@ const RULE_DEFS = [
       "atomic",
       "a11ycore"
     ],
+    "wcagSc": [
+      "3.1.1"
+    ],
     "normativeMappings": [
       {
         "standard": "WCAG",
@@ -706,7 +1088,6 @@ const RULE_DEFS = [
         "conformanceLevel": "A"
       }
     ],
-    "informativeReferences": [],
     "defaultSeverity": "serious",
     "defaultConfidence": "high",
     "type": "automatic",
@@ -748,8 +1129,10 @@ const RULE_DEFS = [
       "atomic",
       "a11ycore"
     ],
-    "normativeMappings": [],
-    "informativeReferences": [
+    "wcagSc": [
+      "1.1.1"
+    ],
+    "normativeMappings": [
       {
         "standard": "WCAG",
         "version": "2.2",
@@ -799,6 +1182,9 @@ const RULE_DEFS = [
       "automatic",
       "a11ycore"
     ],
+    "wcagSc": [
+      "1.1.1"
+    ],
     "normativeMappings": [
       {
         "standard": "WCAG",
@@ -808,7 +1194,6 @@ const RULE_DEFS = [
         "conformanceLevel": "A"
       }
     ],
-    "informativeReferences": [],
     "defaultSeverity": "serious",
     "defaultConfidence": "high",
     "type": "automatic",
@@ -850,8 +1235,10 @@ const RULE_DEFS = [
       "atomic",
       "a11ycore"
     ],
-    "normativeMappings": [],
-    "informativeReferences": [
+    "wcagSc": [
+      "1.1.1"
+    ],
+    "normativeMappings": [
       {
         "standard": "WCAG",
         "version": "2.2",
@@ -901,8 +1288,10 @@ const RULE_DEFS = [
       "atomic",
       "a11ycore"
     ],
-    "normativeMappings": [],
-    "informativeReferences": [
+    "wcagSc": [
+      "1.1.1"
+    ],
+    "normativeMappings": [
       {
         "standard": "WCAG",
         "version": "2.2",
@@ -952,6 +1341,9 @@ const RULE_DEFS = [
       "automatic",
       "a11ycore"
     ],
+    "wcagSc": [
+      "1.1.1"
+    ],
     "normativeMappings": [
       {
         "standard": "WCAG",
@@ -961,7 +1353,6 @@ const RULE_DEFS = [
         "conformanceLevel": "A"
       }
     ],
-    "informativeReferences": [],
     "defaultSeverity": "serious",
     "defaultConfidence": "high",
     "type": "automatic",
@@ -1003,8 +1394,10 @@ const RULE_DEFS = [
       "atomic",
       "a11ycore"
     ],
-    "normativeMappings": [],
-    "informativeReferences": [
+    "wcagSc": [
+      "1.1.1"
+    ],
+    "normativeMappings": [
       {
         "standard": "WCAG",
         "version": "2.2",
@@ -1037,6 +1430,166 @@ const RULE_DEFS = [
     "mappings": null
   },
   {
+    "ruleId": "a11ycore-label-in-name",
+    "title": "Label in Name: accessible name contains visible text",
+    "description": "Checks that when a control has a visible text label, the accessible name (from aria-label/aria-labelledby) contains that visible label text (WCAG 2.5.3).",
+    "i18n": {
+      "titleKey": "a11ycore_labelInName_title",
+      "descriptionKey": "a11ycore_labelInName_description"
+    },
+    "helpUrl": "https://www.w3.org/WAI/WCAG22/Understanding/label-in-name.html",
+    "tags": [
+      "wcag2a",
+      "wcag253",
+      "forms",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "2.5.3"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.5.3",
+        "title": "Label in Name",
+        "conformanceLevel": "A"
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "2.5.3": [
+          "label-in-name"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "category": "operable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "a11ycore-link-name-present",
+    "title": "Links have an accessible name",
+    "description": "Checks that links expose a non-empty accessible name.",
+    "i18n": {
+      "titleKey": "a11ycore_linkNamePresent_title",
+      "descriptionKey": "a11ycore_linkNamePresent_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag412",
+      "navigation",
+      "atomic",
+      "automatic",
+      "links",
+      "name",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "4.1.2"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "4.1.2",
+        "title": "Name, Role, Value",
+        "conformanceLevel": "A"
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "4.1.2": [
+          "link-name-present"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "a11ycore-listbox-name-present",
+    "title": "Accessible name is present",
+    "description": "Checks that elements expose a non-empty accessible name.",
+    "i18n": {
+      "titleKey": "a11ycore_listboxNamePresent_title",
+      "descriptionKey": "a11ycore_listboxNamePresent_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag412",
+      "forms",
+      "atomic",
+      "automatic",
+      "name",
+      "listbox",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "4.1.2"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "4.1.2",
+        "title": "Name, Role, Value",
+        "conformanceLevel": "A"
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "4.1.2": [
+          "listbox-name-present"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
     "ruleId": "a11ycore-manual-review",
     "title": "Manual review: keyboard navigation and focus order",
     "description": "Flags that a manual review of keyboard navigation and focus order is required.",
@@ -1046,14 +1599,19 @@ const RULE_DEFS = [
     },
     "helpUrl": "",
     "tags": [
-      "manual",
       "wcag2a",
-      "wcag2aa",
+      "wcag111",
+      "nontext",
+      "atomic",
       "manual",
       "a11ycore"
     ],
-    "normativeMappings": [],
-    "informativeReferences": [
+    "wcagSc": [
+      "2.1.1",
+      "2.4.3",
+      "2.4.7"
+    ],
+    "normativeMappings": [
       {
         "standard": "WCAG",
         "version": "2.2",
@@ -1151,12 +1709,15 @@ const RULE_DEFS = [
       "wcag2a",
       "wcag121",
       "timebasedmedia",
+      "media",
       "atomic",
       "manual",
       "a11ycore"
     ],
-    "normativeMappings": [],
-    "informativeReferences": [
+    "wcagSc": [
+      "1.2.1"
+    ],
+    "normativeMappings": [
       {
         "standard": "WCAG",
         "version": "2.2",
@@ -1189,6 +1750,60 @@ const RULE_DEFS = [
     "mappings": null
   },
   {
+    "ruleId": "a11ycore-menuitem-name-present",
+    "title": "Menu items have an accessible name",
+    "description": "Checks that menu items (role=\"menuitem*\", including checkbox/radio variants) expose a non-empty accessible name.",
+    "i18n": {
+      "titleKey": "a11ycore_menuitemNamePresent_title",
+      "descriptionKey": "a11ycore_menuitemNamePresent_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag412",
+      "navigation",
+      "atomic",
+      "automatic",
+      "name",
+      "menuitem",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "4.1.2"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "4.1.2",
+        "title": "Name, Role, Value",
+        "conformanceLevel": "A"
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "4.1.2": [
+          "menuitem-name-present"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
     "ruleId": "a11ycore-object-text-alternative-present",
     "title": "<object> must provide a text alternative",
     "description": "Checks that <object> elements provide a text alternative via fallback content or an accessible name.",
@@ -1206,6 +1821,9 @@ const RULE_DEFS = [
       "automatic",
       "a11ycore"
     ],
+    "wcagSc": [
+      "1.1.1"
+    ],
     "normativeMappings": [
       {
         "standard": "WCAG",
@@ -1215,7 +1833,6 @@ const RULE_DEFS = [
         "conformanceLevel": "A"
       }
     ],
-    "informativeReferences": [],
     "defaultSeverity": "serious",
     "defaultConfidence": "high",
     "type": "automatic",
@@ -1257,8 +1874,10 @@ const RULE_DEFS = [
       "atomic",
       "a11ycore"
     ],
-    "normativeMappings": [],
-    "informativeReferences": [
+    "wcagSc": [
+      "1.1.1"
+    ],
+    "normativeMappings": [
       {
         "standard": "WCAG",
         "version": "2.2",
@@ -1291,6 +1910,60 @@ const RULE_DEFS = [
     "mappings": null
   },
   {
+    "ruleId": "a11ycore-option-name-present",
+    "title": "Accessible name is present",
+    "description": "Checks that elements expose a non-empty accessible name.",
+    "i18n": {
+      "titleKey": "a11ycore_optionNamePresent_title",
+      "descriptionKey": "a11ycore_optionNamePresent_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag412",
+      "forms",
+      "atomic",
+      "automatic",
+      "name",
+      "option",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "4.1.2"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "4.1.2",
+        "title": "Name, Role, Value",
+        "conformanceLevel": "A"
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "4.1.2": [
+          "option-name-present"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
     "ruleId": "a11ycore-page-title-patterns",
     "title": "Page title patterns that may indicate low descriptiveness",
     "description": "Flags page titles that are likely too generic or templated as review signals (WCAG 2.2 SC 2.4.2). This rule is conservative and does not fail based on patterns alone.",
@@ -1308,6 +1981,9 @@ const RULE_DEFS = [
       "automatic",
       "a11ycore"
     ],
+    "wcagSc": [
+      "2.4.2"
+    ],
     "normativeMappings": [
       {
         "standard": "WCAG",
@@ -1317,7 +1993,6 @@ const RULE_DEFS = [
         "conformanceLevel": "A"
       }
     ],
-    "informativeReferences": [],
     "defaultSeverity": "minor",
     "defaultConfidence": "medium",
     "type": "automatic",
@@ -1359,6 +2034,9 @@ const RULE_DEFS = [
       "automatic",
       "a11ycore"
     ],
+    "wcagSc": [
+      "2.4.2"
+    ],
     "normativeMappings": [
       {
         "standard": "WCAG",
@@ -1368,7 +2046,6 @@ const RULE_DEFS = [
         "conformanceLevel": "A"
       }
     ],
-    "informativeReferences": [],
     "defaultSeverity": "serious",
     "defaultConfidence": "high",
     "type": "automatic",
@@ -1411,6 +2088,9 @@ const RULE_DEFS = [
       "automatic",
       "a11ycore"
     ],
+    "wcagSc": [
+      "1.1.1"
+    ],
     "normativeMappings": [
       {
         "standard": "WCAG",
@@ -1420,7 +2100,6 @@ const RULE_DEFS = [
         "conformanceLevel": "A"
       }
     ],
-    "informativeReferences": [],
     "defaultSeverity": "serious",
     "defaultConfidence": "high",
     "type": "automatic",
@@ -1437,6 +2116,168 @@ const RULE_DEFS = [
     "normative": true,
     "atomic": true,
     "category": "perceivable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "a11ycore-searchbox-name-present",
+    "title": "Accessible name is present",
+    "description": "Checks that elements expose a non-empty accessible name.",
+    "i18n": {
+      "titleKey": "a11ycore_searchboxNamePresent_title",
+      "descriptionKey": "a11ycore_searchboxNamePresent_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag412",
+      "forms",
+      "atomic",
+      "automatic",
+      "name",
+      "searchbox",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "4.1.2"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "4.1.2",
+        "title": "Name, Role, Value",
+        "conformanceLevel": "A"
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "4.1.2": [
+          "searchbox-name-present"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "a11ycore-slider-name-present",
+    "title": "Sliders have an accessible name",
+    "description": "Checks that sliders (input[type=\"range\"] and role=\"slider\") expose a non-empty accessible name.",
+    "i18n": {
+      "titleKey": "a11ycore_sliderNamePresent_title",
+      "descriptionKey": "a11ycore_sliderNamePresent_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag412",
+      "forms",
+      "atomic",
+      "automatic",
+      "name",
+      "slider",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "4.1.2"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "4.1.2",
+        "title": "Name, Role, Value",
+        "conformanceLevel": "A"
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "4.1.2": [
+          "slider-name-present"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "a11ycore-spinbutton-name-present",
+    "title": "Accessible name is present",
+    "description": "Checks that elements expose a non-empty accessible name.",
+    "i18n": {
+      "titleKey": "a11ycore_spinbuttonNamePresent_title",
+      "descriptionKey": "a11ycore_spinbuttonNamePresent_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag412",
+      "forms",
+      "atomic",
+      "automatic",
+      "name",
+      "spinbutton",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "4.1.2"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "4.1.2",
+        "title": "Name, Role, Value",
+        "conformanceLevel": "A"
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "4.1.2": [
+          "spinbutton-name-present"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "category": "robust",
     "standard": null,
     "applicability": "",
     "expectation": "",
@@ -1463,6 +2304,9 @@ const RULE_DEFS = [
       "automatic",
       "a11ycore"
     ],
+    "wcagSc": [
+      "1.1.1"
+    ],
     "normativeMappings": [
       {
         "standard": "WCAG",
@@ -1472,7 +2316,6 @@ const RULE_DEFS = [
         "conformanceLevel": "A"
       }
     ],
-    "informativeReferences": [],
     "defaultSeverity": "serious",
     "defaultConfidence": "medium",
     "type": "automatic",
@@ -1515,6 +2358,9 @@ const RULE_DEFS = [
       "automatic",
       "a11ycore"
     ],
+    "wcagSc": [
+      "1.1.1"
+    ],
     "normativeMappings": [
       {
         "standard": "WCAG",
@@ -1524,7 +2370,6 @@ const RULE_DEFS = [
         "conformanceLevel": "A"
       }
     ],
-    "informativeReferences": [],
     "defaultSeverity": "serious",
     "defaultConfidence": "high",
     "type": "automatic",
@@ -1566,8 +2411,10 @@ const RULE_DEFS = [
       "atomic",
       "a11ycore"
     ],
-    "normativeMappings": [],
-    "informativeReferences": [
+    "wcagSc": [
+      "1.1.1"
+    ],
+    "normativeMappings": [
       {
         "standard": "WCAG",
         "version": "2.2",
@@ -1600,6 +2447,224 @@ const RULE_DEFS = [
     "mappings": null
   },
   {
+    "ruleId": "a11ycore-tab-name-present",
+    "title": "Tabs have an accessible name",
+    "description": "Checks that elements with role=\"tab\" expose a non-empty accessible name.",
+    "i18n": {
+      "titleKey": "a11ycore_tabNamePresent_title",
+      "descriptionKey": "a11ycore_tabNamePresent_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag412",
+      "navigation",
+      "atomic",
+      "automatic",
+      "name",
+      "tab",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "4.1.2"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "4.1.2",
+        "title": "Name, Role, Value",
+        "conformanceLevel": "A"
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "4.1.2": [
+          "tab-name-present"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "a11ycore-target-size-minimum",
+    "title": "Pointer targets meet minimum size (AA)",
+    "description": "Checks that pointer-operable targets have an effective hit region of at least 24 by 24 CSS pixels, or meet an allowed exception (e.g. sufficient spacing).",
+    "i18n": {
+      "titleKey": "a11ycore_targetSizeMinimum_title",
+      "descriptionKey": "a11ycore_targetSizeMinimum_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2aa",
+      "wcag258",
+      "navigation",
+      "operable",
+      "pointer",
+      "target-size",
+      "atomic",
+      "automatic",
+      "dom",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "2.5.8"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.5.8",
+        "title": "Target Size (Minimum)",
+        "conformanceLevel": "AA"
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "medium",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "2.5.8": [
+          "target-size-minimum-pointer"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "category": "operable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "a11ycore-textbox-name-present",
+    "title": "Accessible name is present",
+    "description": "Checks that elements expose a non-empty accessible name.",
+    "i18n": {
+      "titleKey": "a11ycore_textboxNamePresent_title",
+      "descriptionKey": "a11ycore_textboxNamePresent_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag412",
+      "forms",
+      "atomic",
+      "automatic",
+      "name",
+      "textbox",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "4.1.2"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "4.1.2",
+        "title": "Name, Role, Value",
+        "conformanceLevel": "A"
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "4.1.2": [
+          "textbox-name-present"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "a11ycore-treeitem-name-present",
+    "title": "Accessible name is present",
+    "description": "Checks that elements expose a non-empty accessible name.",
+    "i18n": {
+      "titleKey": "a11ycore_treeitemNamePresent_title",
+      "descriptionKey": "a11ycore_treeitemNamePresent_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag412",
+      "navigation",
+      "atomic",
+      "automatic",
+      "name",
+      "treeitem",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "4.1.2"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "4.1.2",
+        "title": "Name, Role, Value",
+        "conformanceLevel": "A"
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "4.1.2": [
+          "treeitem-name-present"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
     "ruleId": "a11ycore-video-poster-text-alternative-present",
     "title": "<video> poster must have a text alternative",
     "description": "Checks that <video> elements with a poster image provide a text alternative (accessible name or fallback text).",
@@ -1617,6 +2682,9 @@ const RULE_DEFS = [
       "automatic",
       "a11ycore"
     ],
+    "wcagSc": [
+      "1.1.1"
+    ],
     "normativeMappings": [
       {
         "standard": "WCAG",
@@ -1626,7 +2694,6 @@ const RULE_DEFS = [
         "conformanceLevel": "A"
       }
     ],
-    "informativeReferences": [],
     "defaultSeverity": "serious",
     "defaultConfidence": "medium",
     "type": "automatic",
@@ -1652,39 +2719,273 @@ const RULE_DEFS = [
   }
 ];
 
+// Tests catalog (alias of CHECK_DEFS; tests are the atomic executable units)
+const TEST_DEFS = CHECK_DEFS;
+
+// Composite rules catalog (data only)
+const COMPOSITE_RULES = [
+  {
+    "id": "a11ycore-wcag-1.1.1-non-text-content",
+    "checksIds": [
+      "a11ycore-area-alt-present",
+      "a11ycore-img-alt-decorative",
+      "a11ycore-img-alt-quality",
+      "a11ycore-area-alt-decorative",
+      "a11ycore-area-alt-quality",
+      "a11ycore-canvas-text-alternative-quality",
+      "a11ycore-canvas-text-alternative-present",
+      "a11ycore-embed-text-alternative-present",
+      "a11ycore-img-alt-present",
+      "a11ycore-input-image-alt-present",
+      "a11ycore-object-text-alternative-present",
+      "a11ycore-role-img-text-alternative-present",
+      "a11ycore-svg-image-text-alternative-present",
+      "a11ycore-svg-text-alternative-present",
+      "a11ycore-video-poster-text-alternative-present",
+      "a11ycore-embed-text-alternative-quality",
+      "a11ycore-input-image-alt-decorative",
+      "a11ycore-input-image-alt-quality",
+      "a11ycore-object-text-alternative-quality",
+      "a11ycore-svg-text-alternative-quality"
+    ],
+    "meta": {
+      "title": "Non-text content: text alternatives",
+      "description": "Rollup of checks ensuring non-text content has an appropriate text alternative.",
+      "wcagSc": [
+        "1.1.1"
+      ],
+      "level": "A"
+    }
+  },
+  {
+    "id": "a11ycore-wcag-1.2.1-audio-only-video-only-prerecorded",
+    "checksIds": [
+      "a11ycore-media-alternative-transcript-evidence"
+    ],
+    "meta": {
+      "title": "Audio-only and video-only (prerecorded): transcript",
+      "description": "Rollup of checks for transcript availability for prerecorded audio-only/video-only media.",
+      "wcagSc": [
+        "1.2.1"
+      ],
+      "level": "A"
+    }
+  },
+  {
+    "id": "a11ycore-wcag-1.4.3-contrast-minimum",
+    "checksIds": [
+      "a11ycore-contrast-computable",
+      "a11ycore-contrast-minimum"
+    ],
+    "meta": {
+      "title": "Contrast: minimum",
+      "description": "Rollup of checks for minimum text contrast.",
+      "wcagSc": [
+        "1.4.3"
+      ],
+      "level": "AA"
+    }
+  },
+  {
+    "id": "a11ycore-wcag-1.4.6-contrast-enhanced",
+    "checksIds": [
+      "a11ycore-contrast-computable",
+      "a11ycore-contrast-enhanced"
+    ],
+    "meta": {
+      "title": "Contrast: enhanced",
+      "description": "Rollup of checks for enhanced text contrast.",
+      "wcagSc": [
+        "1.4.6"
+      ],
+      "level": "AAA"
+    }
+  },
+  {
+    "id": "a11ycore-wcag-2.1.1-keyboard",
+    "checksIds": [
+      "a11ycore-manual-review"
+    ],
+    "meta": {
+      "title": "Keyboard",
+      "description": "Rollup of checks ensuring functionality is operable through a keyboard interface.",
+      "wcagSc": [
+        "2.1.1"
+      ],
+      "level": "A"
+    }
+  },
+  {
+    "id": "a11ycore-wcag-2.4.2-page-titled",
+    "checksIds": [
+      "a11ycore-page-title-patterns",
+      "a11ycore-page-title-present"
+    ],
+    "meta": {
+      "title": "Page titled",
+      "description": "Rollup of checks ensuring documents have a meaningful page title.",
+      "wcagSc": [
+        "2.4.2"
+      ],
+      "level": "A"
+    }
+  },
+  {
+    "id": "a11ycore-wcag-2.4.3-focus-order",
+    "checksIds": [
+      "a11ycore-manual-review"
+    ],
+    "meta": {
+      "title": "Focus order",
+      "description": "Rollup of checks ensuring focus moves through content in a meaningful order.",
+      "wcagSc": [
+        "2.4.3"
+      ],
+      "level": "A"
+    }
+  },
+  {
+    "id": "a11ycore-wcag-2.4.7-focus-visible",
+    "checksIds": [
+      "a11ycore-aria-hidden-focus",
+      "a11ycore-css-hidden-focus",
+      "a11ycore-manual-review"
+    ],
+    "meta": {
+      "title": "Focus visible",
+      "description": "Rollup of checks ensuring keyboard focus is not hidden and remains perceivable.",
+      "wcagSc": [
+        "2.4.7"
+      ],
+      "level": "AA"
+    }
+  },
+  {
+    "id": "a11ycore-wcag-2.5.3-label-in-name",
+    "checksIds": [
+      "a11ycore-label-in-name"
+    ],
+    "meta": {
+      "title": "Label in name",
+      "description": "Rollup of checks ensuring that when a control has a visible text label, the accessible name contains that visible label text.",
+      "wcagSc": [
+        "2.5.3"
+      ],
+      "level": "A"
+    }
+  },
+  {
+    "id": "a11ycore-wcag-2.5.8-target-size-minimum",
+    "checksIds": [
+      "a11ycore-target-size-minimum"
+    ],
+    "meta": {
+      "title": "Target size: minimum",
+      "description": "Rollup of checks ensuring pointer targets meet minimum size requirements.",
+      "wcagSc": [
+        "2.5.8"
+      ],
+      "level": "AA"
+    }
+  },
+  {
+    "id": "a11ycore-wcag-3.1.1-language-of-page",
+    "checksIds": [
+      "a11ycore-html-lang-attr-present"
+    ],
+    "meta": {
+      "title": "Language of page",
+      "description": "Rollup of checks ensuring the page language is specified.",
+      "wcagSc": [
+        "3.1.1"
+      ],
+      "level": "A"
+    }
+  },
+  {
+    "id": "a11ycore-wcag-4.1.2-name",
+    "checksIds": [
+      "a11ycore-aria-role-name-present",
+      "a11ycore-binary-control-name-present",
+      "a11ycore-button-name-present",
+      "a11ycore-combobox-name-present",
+      "a11ycore-dialog-name-present",
+      "a11ycore-form-control-programmatic-label-present",
+      "a11ycore-link-name-present",
+      "a11ycore-listbox-name-present",
+      "a11ycore-menuitem-name-present",
+      "a11ycore-option-name-present",
+      "a11ycore-searchbox-name-present",
+      "a11ycore-slider-name-present",
+      "a11ycore-spinbutton-name-present",
+      "a11ycore-tab-name-present",
+      "a11ycore-textbox-name-present",
+      "a11ycore-treeitem-name-present",
+      "a11ycore-aria-hidden-focus",
+      "a11ycore-form-control-programmatic-label-quality"
+    ],
+    "meta": {
+      "title": "Name, role, value: accessible name",
+      "description": "Rollup of checks that common interactive elements expose a non-empty accessible name.",
+      "wcagSc": [
+        "4.1.2"
+      ],
+      "level": "A"
+    }
+  }
+];
+
 // Node/runtime rule implementations (normalized)
 const RULE_IMPLS = {
-  "a11ycore-area-alt-decorative": { run: require("./rules/manual/area-alt-decorative-manual.js").runInPage, applicability: require("./rules/manual/area-alt-decorative-manual.js").applicability || null },
-  "a11ycore-area-alt-present": { run: require("./rules/automatic/area-alt-present.js").runInPage, applicability: require("./rules/automatic/area-alt-present.js").applicability || null },
-  "a11ycore-area-alt-quality": { run: require("./rules/manual/area-alt-quality-manual.js").runInPage, applicability: require("./rules/manual/area-alt-quality-manual.js").applicability || null },
-  "a11ycore-aria-hidden-programmatic-focus-review": { run: require("./rules/aria-hidden-programmatic-focus-review.js").runInPage, applicability: require("./rules/aria-hidden-programmatic-focus-review.js").applicability || null },
-  "a11ycore-canvas-text-alternative-present": { run: require("./rules/automatic/canvas-text-alternative-present.js").runInPage, applicability: require("./rules/automatic/canvas-text-alternative-present.js").applicability || null },
-  "a11ycore-canvas-text-alternative-quality": { run: require("./rules/manual/canvas-text-alternative-quality-manual.js").runInPage, applicability: require("./rules/manual/canvas-text-alternative-quality-manual.js").applicability || null },
-  "a11ycore-contrast-computable": { run: require("./rules/automatic/contrast-computable.js").runInPage, applicability: require("./rules/automatic/contrast-computable.js").applicability || null },
-  "a11ycore-contrast-enhanced": { run: require("./rules/automatic/contrast-enhanced.js").runInPage, applicability: require("./rules/automatic/contrast-enhanced.js").applicability || null },
-  "a11ycore-contrast-minimum": { run: require("./rules/automatic/contrast-minimum.js").runInPage, applicability: require("./rules/automatic/contrast-minimum.js").applicability || null },
-  "a11ycore-embed-text-alternative-present": { run: require("./rules/automatic/embed-text-alternative-present.js").runInPage, applicability: require("./rules/automatic/embed-text-alternative-present.js").applicability || null },
-  "a11ycore-embed-text-alternative-quality": { run: require("./rules/manual/embed-text-alternative-quality-manual.js").runInPage, applicability: require("./rules/manual/embed-text-alternative-quality-manual.js").applicability || null },
-  "a11ycore-form-control-programmatic-label-present": { run: require("./rules/automatic/form-control-programmatic-label-present.js").runInPage, applicability: require("./rules/automatic/form-control-programmatic-label-present.js").applicability || null },
-  "a11ycore-form-control-programmatic-label-quality": { run: require("./rules/manual/form-control-programmatic-label-quality-manual.js").runInPage, applicability: require("./rules/manual/form-control-programmatic-label-quality-manual.js").applicability || null },
-  "a11ycore-html-lang-attr-present": { run: require("./rules/automatic/language-page-present.js").runInPage, applicability: require("./rules/automatic/language-page-present.js").applicability || null },
-  "a11ycore-img-alt-decorative": { run: require("./rules/manual/img-alt-decorative-manual.js").runInPage, applicability: require("./rules/manual/img-alt-decorative-manual.js").applicability || null },
-  "a11ycore-img-alt-present": { run: require("./rules/automatic/img-alt-present.js").runInPage, applicability: require("./rules/automatic/img-alt-present.js").applicability || null },
-  "a11ycore-img-alt-quality": { run: require("./rules/manual/img-alt-quality-manual.js").runInPage, applicability: require("./rules/manual/img-alt-quality-manual.js").applicability || null },
-  "a11ycore-input-image-alt-decorative": { run: require("./rules/manual/input-image-alt-decorative-manual.js").runInPage, applicability: require("./rules/manual/input-image-alt-decorative-manual.js").applicability || null },
-  "a11ycore-input-image-alt-present": { run: require("./rules/automatic/input-image-alt-present.js").runInPage, applicability: require("./rules/automatic/input-image-alt-present.js").applicability || null },
-  "a11ycore-input-image-alt-quality": { run: require("./rules/manual/input-image-alt-quality-manual.js").runInPage, applicability: require("./rules/manual/input-image-alt-quality-manual.js").applicability || null },
-  "a11ycore-manual-review": { run: require("./rules/manual-review.js").runInPage, applicability: require("./rules/manual-review.js").applicability || null },
-  "a11ycore-media-alternative-transcript-evidence": { run: require("./rules/manual/a11ycore-media-transcript-present-manual.js").runInPage, applicability: require("./rules/manual/a11ycore-media-transcript-present-manual.js").applicability || null },
-  "a11ycore-object-text-alternative-present": { run: require("./rules/automatic/object-text-alternative-present.js").runInPage, applicability: require("./rules/automatic/object-text-alternative-present.js").applicability || null },
-  "a11ycore-object-text-alternative-quality": { run: require("./rules/manual/object-text-alternative-quality-manual.js").runInPage, applicability: require("./rules/manual/object-text-alternative-quality-manual.js").applicability || null },
-  "a11ycore-page-title-patterns": { run: require("./rules/automatic/a11ycore-page-title-patterns.js").runInPage, applicability: require("./rules/automatic/a11ycore-page-title-patterns.js").applicability || null },
-  "a11ycore-page-title-present": { run: require("./rules/automatic/a11ycore-page-title-present.js").runInPage, applicability: require("./rules/automatic/a11ycore-page-title-present.js").applicability || null },
-  "a11ycore-role-img-text-alternative-present": { run: require("./rules/automatic/role-img-alt-present.js").runInPage, applicability: require("./rules/automatic/role-img-alt-present.js").applicability || null },
-  "a11ycore-svg-image-text-alternative-present": { run: require("./rules/automatic/svg-image-text-alternative-present.js").runInPage, applicability: require("./rules/automatic/svg-image-text-alternative-present.js").applicability || null },
-  "a11ycore-svg-text-alternative-present": { run: require("./rules/automatic/svg-text-alternative-present.js").runInPage, applicability: require("./rules/automatic/svg-text-alternative-present.js").applicability || null },
-  "a11ycore-svg-text-alternative-quality": { run: require("./rules/manual/svg-text-alternative-quality-manual.js").runInPage, applicability: require("./rules/manual/svg-text-alternative-quality-manual.js").applicability || null },
-  "a11ycore-video-poster-text-alternative-present": { run: require("./rules/automatic/video-poster-text-alternative-present.js").runInPage, applicability: require("./rules/automatic/video-poster-text-alternative-present.js").applicability || null }
+  "a11ycore-area-alt-decorative": { run: require("./checks/manual/area-alt-decorative-manual.js").runInPage, applicability: require("./checks/manual/area-alt-decorative-manual.js").applicability || null },
+  "a11ycore-area-alt-present": { run: require("./checks/automatic/area-alt-present.js").runInPage, applicability: require("./checks/automatic/area-alt-present.js").applicability || null },
+  "a11ycore-area-alt-quality": { run: require("./checks/manual/area-alt-quality-manual.js").runInPage, applicability: require("./checks/manual/area-alt-quality-manual.js").applicability || null },
+  "a11ycore-aria-hidden-focus": { run: require("./checks/automatic/aria-hidden-focus.js").runInPage, applicability: require("./checks/automatic/aria-hidden-focus.js").applicability || null },
+  "a11ycore-aria-role-name-present": { run: require("./checks/automatic/aria-role-name-present.js").runInPage, applicability: require("./checks/automatic/aria-role-name-present.js").applicability || null },
+  "a11ycore-binary-control-name-present": { run: require("./checks/automatic/binary-control-name-present.js").runInPage, applicability: require("./checks/automatic/binary-control-name-present.js").applicability || null },
+  "a11ycore-button-name-present": { run: require("./checks/automatic/button-name-present.js").runInPage, applicability: require("./checks/automatic/button-name-present.js").applicability || null },
+  "a11ycore-canvas-text-alternative-present": { run: require("./checks/automatic/canvas-text-alternative-present.js").runInPage, applicability: require("./checks/automatic/canvas-text-alternative-present.js").applicability || null },
+  "a11ycore-canvas-text-alternative-quality": { run: require("./checks/manual/canvas-text-alternative-quality-manual.js").runInPage, applicability: require("./checks/manual/canvas-text-alternative-quality-manual.js").applicability || null },
+  "a11ycore-combobox-name-present": { run: require("./checks/automatic/combobox-name-present.js").runInPage, applicability: require("./checks/automatic/combobox-name-present.js").applicability || null },
+  "a11ycore-contrast-computable": { run: require("./checks/automatic/contrast-computable.js").runInPage, applicability: require("./checks/automatic/contrast-computable.js").applicability || null },
+  "a11ycore-contrast-enhanced": { run: require("./checks/automatic/contrast-enhanced.js").runInPage, applicability: require("./checks/automatic/contrast-enhanced.js").applicability || null },
+  "a11ycore-contrast-minimum": { run: require("./checks/automatic/contrast-minimum.js").runInPage, applicability: require("./checks/automatic/contrast-minimum.js").applicability || null },
+  "a11ycore-css-hidden-focus": { run: require("./checks/manual/css-hidden-focus.js").runInPage, applicability: require("./checks/manual/css-hidden-focus.js").applicability || null },
+  "a11ycore-dialog-name-present": { run: require("./checks/automatic/dialog-name-present.js").runInPage, applicability: require("./checks/automatic/dialog-name-present.js").applicability || null },
+  "a11ycore-embed-text-alternative-present": { run: require("./checks/automatic/embed-text-alternative-present.js").runInPage, applicability: require("./checks/automatic/embed-text-alternative-present.js").applicability || null },
+  "a11ycore-embed-text-alternative-quality": { run: require("./checks/manual/embed-text-alternative-quality-manual.js").runInPage, applicability: require("./checks/manual/embed-text-alternative-quality-manual.js").applicability || null },
+  "a11ycore-form-control-programmatic-label-present": { run: require("./checks/automatic/form-control-programmatic-label-present.js").runInPage, applicability: require("./checks/automatic/form-control-programmatic-label-present.js").applicability || null },
+  "a11ycore-form-control-programmatic-label-quality": { run: require("./checks/manual/form-control-programmatic-label-quality-manual.js").runInPage, applicability: require("./checks/manual/form-control-programmatic-label-quality-manual.js").applicability || null },
+  "a11ycore-html-lang-attr-present": { run: require("./checks/automatic/language-page-present.js").runInPage, applicability: require("./checks/automatic/language-page-present.js").applicability || null },
+  "a11ycore-img-alt-decorative": { run: require("./checks/manual/img-alt-decorative-manual.js").runInPage, applicability: require("./checks/manual/img-alt-decorative-manual.js").applicability || null },
+  "a11ycore-img-alt-present": { run: require("./checks/automatic/img-alt-present.js").runInPage, applicability: require("./checks/automatic/img-alt-present.js").applicability || null },
+  "a11ycore-img-alt-quality": { run: require("./checks/manual/img-alt-quality-manual.js").runInPage, applicability: require("./checks/manual/img-alt-quality-manual.js").applicability || null },
+  "a11ycore-input-image-alt-decorative": { run: require("./checks/manual/input-image-alt-decorative-manual.js").runInPage, applicability: require("./checks/manual/input-image-alt-decorative-manual.js").applicability || null },
+  "a11ycore-input-image-alt-present": { run: require("./checks/automatic/input-image-alt-present.js").runInPage, applicability: require("./checks/automatic/input-image-alt-present.js").applicability || null },
+  "a11ycore-input-image-alt-quality": { run: require("./checks/manual/input-image-alt-quality-manual.js").runInPage, applicability: require("./checks/manual/input-image-alt-quality-manual.js").applicability || null },
+  "a11ycore-label-in-name": { run: require("./checks/automatic/label-in-name.js").runInPage, applicability: require("./checks/automatic/label-in-name.js").applicability || null },
+  "a11ycore-link-name-present": { run: require("./checks/automatic/link-name-present.js").runInPage, applicability: require("./checks/automatic/link-name-present.js").applicability || null },
+  "a11ycore-listbox-name-present": { run: require("./checks/automatic/listbox-name-present.js").runInPage, applicability: require("./checks/automatic/listbox-name-present.js").applicability || null },
+  "a11ycore-manual-review": { run: require("./checks/manual-review.js").runInPage, applicability: require("./checks/manual-review.js").applicability || null },
+  "a11ycore-media-alternative-transcript-evidence": { run: require("./checks/manual/a11ycore-media-transcript-present-manual.js").runInPage, applicability: require("./checks/manual/a11ycore-media-transcript-present-manual.js").applicability || null },
+  "a11ycore-menuitem-name-present": { run: require("./checks/automatic/menuitem-name-present.js").runInPage, applicability: require("./checks/automatic/menuitem-name-present.js").applicability || null },
+  "a11ycore-object-text-alternative-present": { run: require("./checks/automatic/object-text-alternative-present.js").runInPage, applicability: require("./checks/automatic/object-text-alternative-present.js").applicability || null },
+  "a11ycore-object-text-alternative-quality": { run: require("./checks/manual/object-text-alternative-quality-manual.js").runInPage, applicability: require("./checks/manual/object-text-alternative-quality-manual.js").applicability || null },
+  "a11ycore-option-name-present": { run: require("./checks/automatic/option-name-present.js").runInPage, applicability: require("./checks/automatic/option-name-present.js").applicability || null },
+  "a11ycore-page-title-patterns": { run: require("./checks/automatic/page-title-patterns.js").runInPage, applicability: require("./checks/automatic/page-title-patterns.js").applicability || null },
+  "a11ycore-page-title-present": { run: require("./checks/automatic/page-title-present.js").runInPage, applicability: require("./checks/automatic/page-title-present.js").applicability || null },
+  "a11ycore-role-img-text-alternative-present": { run: require("./checks/automatic/role-img-alt-present.js").runInPage, applicability: require("./checks/automatic/role-img-alt-present.js").applicability || null },
+  "a11ycore-searchbox-name-present": { run: require("./checks/automatic/searchbox-name-present.js").runInPage, applicability: require("./checks/automatic/searchbox-name-present.js").applicability || null },
+  "a11ycore-slider-name-present": { run: require("./checks/automatic/slider-name-present.js").runInPage, applicability: require("./checks/automatic/slider-name-present.js").applicability || null },
+  "a11ycore-spinbutton-name-present": { run: require("./checks/automatic/spinbutton-name-present.js").runInPage, applicability: require("./checks/automatic/spinbutton-name-present.js").applicability || null },
+  "a11ycore-svg-image-text-alternative-present": { run: require("./checks/automatic/svg-image-text-alternative-present.js").runInPage, applicability: require("./checks/automatic/svg-image-text-alternative-present.js").applicability || null },
+  "a11ycore-svg-text-alternative-present": { run: require("./checks/automatic/svg-text-alternative-present.js").runInPage, applicability: require("./checks/automatic/svg-text-alternative-present.js").applicability || null },
+  "a11ycore-svg-text-alternative-quality": { run: require("./checks/manual/svg-text-alternative-quality-manual.js").runInPage, applicability: require("./checks/manual/svg-text-alternative-quality-manual.js").applicability || null },
+  "a11ycore-tab-name-present": { run: require("./checks/automatic/tab-name-present.js").runInPage, applicability: require("./checks/automatic/tab-name-present.js").applicability || null },
+  "a11ycore-target-size-minimum": { run: require("./checks/automatic/target-size-minimum.js").runInPage, applicability: require("./checks/automatic/target-size-minimum.js").applicability || null },
+  "a11ycore-textbox-name-present": { run: require("./checks/automatic/textbox-name-present.js").runInPage, applicability: require("./checks/automatic/textbox-name-present.js").applicability || null },
+  "a11ycore-treeitem-name-present": { run: require("./checks/automatic/treeitem-name-present.js").runInPage, applicability: require("./checks/automatic/treeitem-name-present.js").applicability || null },
+  "a11ycore-video-poster-text-alternative-present": { run: require("./checks/automatic/video-poster-text-alternative-present.js").runInPage, applicability: require("./checks/automatic/video-poster-text-alternative-present.js").applicability || null }
 };
 
 const DEFAULT_POLICY = {
@@ -1834,11 +3135,16 @@ const I18N = {
     "a11ycore_contrastComputable_pass_allComputable": "Contrast is computable for all eligible text ({{eligibleTextCount}} text node(s)).",
     "a11ycore_contrastComputable_cantTell_generic": "Contrast may not be computable ({{reasonCode}}).",
     "a11ycore_contrastComputable_cantTell_bgImageOrGradient": "Contrast is not computable because the background uses an image or gradient ({{blockerProperty}}={{blockerValue}}).",
+    "a11ycore_contrastComputable_cantTell_bgImage": "Contrast is not computable because the background uses an image ({{blockerProperty}}={{blockerValue}}).",
+    "a11ycore_contrastComputable_cantTell_bgGradient": "Contrast is not computable because the background uses a gradient ({{blockerProperty}}={{blockerValue}}).",
+    "a11ycore_contrastComputable_cantTell_bgImageAndGradient": "Contrast is not computable because the background uses an image and a gradient ({{blockerProperty}}={{blockerValue}}).",
     "a11ycore_contrastComputable_cantTell_mixBlendMode": "Contrast is not computable because mix-blend-mode is used ({{blockerProperty}}={{blockerValue}}).",
     "a11ycore_contrastComputable_cantTell_filter": "Contrast is not computable because filter/backdrop-filter is used ({{blockerProperty}}={{blockerValue}}).",
     "a11ycore_contrastComputable_cantTell_rootNotOpaque": "Contrast is not computable because the effective background is not fully opaque at the root (alpha={{backgroundAlpha}}).",
     "a11ycore_contrastComputable_cantTell_foregroundUnparsable": "Contrast is not computable because the computed foreground color could not be parsed.",
     "a11ycore_contrastComputable_cantTell_engineFailure": "Contrast computability could not be determined due to an internal engine error ({{reasonCode}}).",
+    "a11ycore_contrastComputable_cantTell_backdropFilter": "Contrast is not computable because backdrop-filter is used ({{blockerProperty}}={{blockerValue}}).",
+    "a11ycore_contrastComputable_cantTell_filterOrBackdropFilter": "Contrast is not computable because filter is used ({{blockerProperty}}={{blockerValue}}).",
     "a11ycore_contrastMinimum_title": "Text meets minimum color contrast (AA)",
     "a11ycore_contrastMinimum_description": "Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3.0:1 (large), when contrast is computable from CSS.",
     "a11ycore_contrastMinimum_fail_belowThreshold": "Element has insufficient color contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).",
@@ -1874,10 +3180,110 @@ const I18N = {
     "a11ycore_dom_nonTextContrast_hint_cantTell": "Manually verify the component/graphic contrast against adjacent colors; ensure it meets {{requiredRatio}}:1 for essential non-text visual information.",
     "a11ycore_contrastEnhanced_pass_allTextMeetsThreshold": "All computable text meets enhanced contrast (AAA).",
     "a11ycore_contrastMinimum_pass_allTextMeetsThreshold": "All computable text meets minimum contrast (AA).",
+    "a11ycore_contrastComputable_cantTell_notComputable": "Contrast could not be computed for this text ({{reasonCode}}).",
     "a11ycore_roleImg_textAlternativePresent_title": "[role=\"img\"] must have an accessible text alternative",
     "a11ycore_roleImg_textAlternativePresent_description": "Checks that elements with role=\"img\" provide an accessible text alternative using aria-label or aria-labelledby.",
     "a11ycore_roleImg_textAlternativePresent_summary_fail": "The element with role=\"img\" does not have an accessible text alternative.",
-    "a11ycore_roleImg_textAlternativePresent_hint_fail": "Provide a text alternative using aria-label, or aria-labelledby that references non-empty text."
+    "a11ycore_roleImg_textAlternativePresent_hint_fail": "Provide a text alternative using aria-label, or aria-labelledby that references non-empty text.",
+    "a11ycore_targetSizeMinimum_title": "Pointer targets must be at least 24x24px large, or leave sufficient distance to other targets",
+    "a11ycore_targetSizeMinimum_description": "Checks that pointer-operable targets have an effective hit region of at least 24 by 24 CSS pixels, or meet an allowed exception (e.g. sufficient spacing).",
+    "a11ycore_targetSizeMinimum_summary_fail": "One or more pointer targets are smaller than 24×24 CSS px and are too close to another target.",
+    "a11ycore_targetSizeMinimum_hint_fail": "Increase the target size to at least 24×24 CSS px or add sufficient spacing from neighboring targets.",
+    "a11ycore_targetSizeMinimum_notApplicable_noTargets": "No pointer-operable targets were eligible for evaluation.",
+    "a11ycore_targetSizeMinimum_pass_allOk": "All eligible pointer targets meet the minimum size or a permitted exception.",
+    "a11ycore_ariaHidden_focus_title": "ARIA hidden elements must not be focusable",
+    "a11ycore_ariaHidden_focus_description": "Checks that aria-hidden=\"true\" elements are not focusable and do not contain focusable descendants.",
+    "a11ycore_ariaHidden_focus_summary_fail_desc": "aria-hidden {{element}} contains {{focusableCount}} focusable element(s).",
+    "a11ycore_ariaHidden_focus_summary_fail_self": "aria-hidden {{element}} is focusable ({{focusableCount}} focusable element(s)).",
+    "a11ycore_ariaHidden_focus_summary_fail_self_and_desc": "aria-hidden {{element}} is focusable and contains {{descendantFocusableCount}} focusable descendant(s) ({{focusableCount}} focusable element(s) total).",
+    "a11ycore_ariaHidden_focus_hint_fail": "Remove focusability from descendants or remove aria-hidden; ensure focus and accessibility trees stay aligned.",
+    "a11ycore_cssHidden_focus_title": "Focusable elements must not be visually hidden",
+    "a11ycore_cssHidden_focus_description": "Checks that keyboard-focusable elements are not visually hidden by CSS techniques that can leave them in the tab order.",
+    "a11ycore_cssHidden_focus_summary_cantTell": "Focusable {{element}} is visually hidden ({{visibilityHints}}).",
+    "a11ycore_cssHidden_focus_hint_cantTell": "Make the element visible when it can receive keyboard focus, or remove it from the tab order until it is visible.",
+    "a11ycore_linkNamePresent_title": "Links have an accessible name",
+    "a11ycore_linkNamePresent_description": "Checks that links expose a non-empty accessible name.",
+    "a11ycore_linkNamePresent_summary_fail": "This link has no accessible name.",
+    "a11ycore_linkNamePresent_hint_fail": "Provide link text or an accessible-name mechanism (for example aria-label) so assistive technologies can identify the link.",
+    "a11ycore_buttonNamePresent_title": "Buttons have an accessible name",
+    "a11ycore_buttonNamePresent_description": "Checks that buttons expose a non-empty accessible name.",
+    "a11ycore_buttonNamePresent_summary_fail": "This button has no accessible name.",
+    "a11ycore_buttonNamePresent_hint_fail": "Provide visible button text or a programmatic accessible-name mechanism (for example aria-label) so assistive technologies can identify the button.",
+    "a11ycore_binaryControlNamePresent_title": "Binary controls have an accessible name",
+    "a11ycore_binaryControlNamePresent_description": "Checks that checkbox, radio, and switch controls expose a non-empty accessible name.",
+    "a11ycore_binaryControlNamePresent_summary_fail": "This control has no accessible name.",
+    "a11ycore_binaryControlNamePresent_hint_fail": "Provide a label, aria-label, aria-labelledby, or other accessible-name mechanism so assistive technologies can identify the control.",
+    "a11ycore_comboboxNamePresent_title": "Comboboxes have an accessible name",
+    "a11ycore_comboboxNamePresent_description": "Checks that elements with role=\"combobox\" expose a non-empty accessible name.",
+    "a11ycore_comboboxNamePresent_summary_fail": "This combobox has no accessible name.",
+    "a11ycore_comboboxNamePresent_hint_fail": "Provide aria-label or aria-labelledby (preferred), or ensure the element has visible text that is not hidden from assistive technologies.",
+    "a11ycore_dialogNamePresent_title": "Dialogs have an accessible name",
+    "a11ycore_dialogNamePresent_description": "Checks that elements with role=\"dialog\" or role=\"alertdialog\" expose a non-empty accessible name.",
+    "a11ycore_dialogNamePresent_summary_fail": "This dialog has no accessible name.",
+    "a11ycore_dialogNamePresent_hint_fail": "Provide aria-labelledby (preferred) or aria-label so assistive technologies can announce the dialog.",
+    "a11ycore_menuitemNamePresent_title": "Menu items have an accessible name",
+    "a11ycore_menuitemNamePresent_description": "Checks that menu items (role=\"menuitem*\", including checkbox/radio variants) expose a non-empty accessible name.",
+    "a11ycore_menuitemNamePresent_summary_fail": "This menu item has no accessible name.",
+    "a11ycore_menuitemNamePresent_hint_fail": "Provide visible text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.",
+    "a11ycore_tabNamePresent_title": "Tabs have an accessible name",
+    "a11ycore_tabNamePresent_description": "Checks that elements with role=\"tab\" expose a non-empty accessible name.",
+    "a11ycore_tabNamePresent_summary_fail": "This tab has no accessible name.",
+    "a11ycore_tabNamePresent_hint_fail": "Provide tab text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.",
+    "a11ycore_sliderNamePresent_title": "Sliders have an accessible name",
+    "a11ycore_sliderNamePresent_description": "Checks that sliders (input[type=\"range\"] and role=\"slider\") expose a non-empty accessible name.",
+    "a11ycore_sliderNamePresent_summary_fail": "This slider has no accessible name.",
+    "a11ycore_sliderNamePresent_hint_fail": "Provide a label, aria-label, or aria-labelledby so assistive technologies can identify the slider.",
+    "a11ycore_textboxNamePresent_title": "Textboxes have an accessible name",
+    "a11ycore_textboxNamePresent_description": "Checks that elements with role=\"textbox\" expose a non-empty accessible name.",
+    "a11ycore_textboxNamePresent_summary_fail": "This textbox has no accessible name.",
+    "a11ycore_textboxNamePresent_hint_fail": "Provide aria-label or aria-labelledby (preferred), or ensure the textbox has visible text that is not hidden from assistive technologies.",
+    "a11ycore_searchboxNamePresent_title": "Searchboxes have an accessible name",
+    "a11ycore_searchboxNamePresent_description": "Checks that elements with role=\"searchbox\" expose a non-empty accessible name.",
+    "a11ycore_searchboxNamePresent_summary_fail": "This searchbox has no accessible name.",
+    "a11ycore_searchboxNamePresent_hint_fail": "Provide aria-label or aria-labelledby (preferred), or ensure the searchbox has visible text that is not hidden from assistive technologies.",
+    "a11ycore_spinbuttonNamePresent_title": "Spinbuttons have an accessible name",
+    "a11ycore_spinbuttonNamePresent_description": "Checks that elements with role=\"spinbutton\" expose a non-empty accessible name.",
+    "a11ycore_spinbuttonNamePresent_summary_fail": "This spinbutton has no accessible name.",
+    "a11ycore_spinbuttonNamePresent_hint_fail": "Provide aria-label or aria-labelledby (preferred), or ensure the spinbutton has visible text that is not hidden from assistive technologies.",
+    "a11ycore_listboxNamePresent_title": "Listboxes have an accessible name",
+    "a11ycore_listboxNamePresent_description": "Checks that elements with role=\"listbox\" expose a non-empty accessible name.",
+    "a11ycore_listboxNamePresent_summary_fail": "This listbox has no accessible name.",
+    "a11ycore_listboxNamePresent_hint_fail": "Provide aria-label or aria-labelledby (preferred), or ensure the listbox has visible text that is not hidden from assistive technologies.",
+    "a11ycore_optionNamePresent_title": "Options have an accessible name",
+    "a11ycore_optionNamePresent_description": "Checks that elements with role=\"option\" expose a non-empty accessible name.",
+    "a11ycore_optionNamePresent_summary_fail": "This option has no accessible name.",
+    "a11ycore_optionNamePresent_hint_fail": "Provide option text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.",
+    "a11ycore_treeitemNamePresent_title": "Tree items have an accessible name",
+    "a11ycore_treeitemNamePresent_description": "Checks that elements with role=\"treeitem\" expose a non-empty accessible name.",
+    "a11ycore_treeitemNamePresent_summary_fail": "This tree item has no accessible name.",
+    "a11ycore_treeitemNamePresent_hint_fail": "Provide tree item text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.",
+    "a11ycore_ariaRoleNamePresent_title": "ARIA widget/container roles have an accessible name",
+    "a11ycore_ariaRoleNamePresent_description": "Checks that selected ARIA widget/container roles expose a non-empty accessible name.",
+    "a11ycore_ariaRoleNamePresent_summary_fail": "This element has no accessible name.",
+    "a11ycore_ariaRoleNamePresent_hint_fail": "Provide aria-label or aria-labelledby (preferred), or a non-empty title attribute.",
+    "a11ycore_composite_rollup_summary": "Composite rule result: {{reasonCode}} ({{testCount}} checks)",
+    "catalog.rules.wcag_111_non_text_content.title": "Non-text content: text alternatives",
+    "catalog.rules.wcag_111_non_text_content.description": "Rollup of checks ensuring non-text content has an appropriate text alternative.",
+    "catalog.rules.wcag_121_prerecorded_transcript.title": "Audio-only and video-only (prerecorded): transcript",
+    "catalog.rules.wcag_121_prerecorded_transcript.description": "Rollup of checks for transcript availability for prerecorded audio-only or video-only media.",
+    "catalog.rules.wcag_143_contrast_minimum.title": "Contrast: minimum",
+    "catalog.rules.wcag_143_contrast_minimum.description": "Rollup of checks for minimum text contrast.",
+    "catalog.rules.wcag_146_contrast_enhanced.title": "Contrast: enhanced",
+    "catalog.rules.wcag_146_contrast_enhanced.description": "Rollup of checks for enhanced text contrast.",
+    "catalog.rules.wcag_242_page_titled.title": "Page titled",
+    "catalog.rules.wcag_242_page_titled.description": "Rollup of checks ensuring documents have a meaningful page title.",
+    "catalog.rules.wcag_247_focus_visible.title": "Focus visible",
+    "catalog.rules.wcag_247_focus_visible.description": "Rollup of checks ensuring keyboard focus is not hidden and remains perceivable.",
+    "catalog.rules.wcag_258_target_size_minimum.title": "Target size: minimum",
+    "catalog.rules.wcag_258_target_size_minimum.description": "Rollup of checks ensuring pointer targets meet minimum size requirements.",
+    "catalog.rules.wcag_311_language_of_page.title": "Language of page",
+    "catalog.rules.wcag_311_language_of_page.description": "Rollup of checks ensuring the page language is specified.",
+    "catalog.rules.wcag_412_name.title": "Name, role, value: accessible name",
+    "catalog.rules.wcag_412_name.description": "Rollup of checks that common interactive elements expose a non-empty accessible name.",
+    "a11ycore_labelInName_title": "Label in Name: accessible name contains visible text",
+    "a11ycore_labelInName_description": "Checks that when a control has a visible text label, the accessible name contains that visible label text (WCAG 2.5.3).",
+    "a11ycore_labelInName_summary_fail": "{{element}}: visible label \"{{visibleLabel}}\" (from {{labelSource}}) is not included in the accessible name (from {{nameMechanism}}).",
+    "a11ycore_labelInName_hint_fail": "Update aria-label/aria-labelledby (or the visible label text) so the accessible name includes the visible label wording."
   },
   "fr": {
     "a11ycore_img_altPresent_title": "<img> doit avoir un attribut alt",
@@ -2018,11 +3424,16 @@ const I18N = {
     "a11ycore_contrastComputable_pass_allComputable": "Le contraste est calculable pour tout le texte éligible ({{eligibleTextCount}} nœud(s) de texte).",
     "a11ycore_contrastComputable_cantTell_generic": "Le contraste peut ne pas être calculable ({{reasonCode}}).",
     "a11ycore_contrastComputable_cantTell_bgImageOrGradient": "Le contraste n’est pas calculable car l’arrière-plan utilise une image ou un dégradé ({{blockerProperty}}={{blockerValue}}).",
+    "a11ycore_contrastComputable_cantTell_bgImage": "Le contraste ne peut pas être calculé car l’arrière-plan utilise une image ({{blockerProperty}}={{blockerValue}}).",
+    "a11ycore_contrastComputable_cantTell_bgGradient": "Le contraste ne peut pas être calculé car l’arrière-plan utilise un dégradé ({{blockerProperty}}={{blockerValue}}).",
+    "a11ycore_contrastComputable_cantTell_bgImageAndGradient": "Le contraste ne peut pas être calculé car l’arrière-plan utilise une image et un dégradé ({{blockerProperty}}={{blockerValue}}).",
     "a11ycore_contrastComputable_cantTell_mixBlendMode": "Le contraste n’est pas calculable car mix-blend-mode est utilisé ({{blockerProperty}}={{blockerValue}}).",
-    "a11ycore_contrastComputable_cantTell_filter": "Le contraste n’est pas calculable car filter/backdrop-filter est utilisé ({{blockerProperty}}={{blockerValue}}).",
+    "a11ycore_contrastComputable_cantTell_filter": "Le contraste ne peut pas être calculé car la propriété filter est utilisée ({{blockerProperty}}={{blockerValue}}).",
     "a11ycore_contrastComputable_cantTell_rootNotOpaque": "Le contraste n’est pas calculable car l’arrière-plan effectif n’est pas totalement opaque à la racine (alpha={{backgroundAlpha}}).",
     "a11ycore_contrastComputable_cantTell_foregroundUnparsable": "Le contraste n’est pas calculable car la couleur de premier plan calculée n’a pas pu être analysée.",
     "a11ycore_contrastComputable_cantTell_engineFailure": "La calculabilité du contraste n’a pas pu être déterminée en raison d’une erreur interne du moteur ({{reasonCode}}).",
+    "a11ycore_contrastComputable_cantTell_backdropFilter": "Le contraste ne peut pas être calculé car la propriété backdrop-filter est utilisée ({{blockerProperty}}={{blockerValue}}).",
+    "a11ycore_contrastComputable_cantTell_filterOrBackdropFilter": "Le contraste ne peut pas être calculé car une propriété filter ou backdrop-filter est utilisée ({{blockerProperty}}={{blockerValue}}).",
     "a11ycore_contrastMinimum_title": "Le texte respecte le contraste minimum (AA)",
     "a11ycore_contrastMinimum_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 4,5:1 (texte normal) ou 3,0:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
     "a11ycore_contrastMinimum_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
@@ -2058,10 +3469,110 @@ const I18N = {
     "a11ycore_dom_nonTextContrast_hint_cantTell": "Vérifiez manuellement le contraste du composant/graphique par rapport aux couleurs adjacentes ; assurez-vous qu’il respecte {{requiredRatio}}:1 pour l’information visuelle non textuelle essentielle.",
     "a11ycore_contrastEnhanced_pass_allTextMeetsThreshold": "Tout le texte calculable respecte le contraste renforcé (AAA).",
     "a11ycore_contrastMinimum_pass_allTextMeetsThreshold": "Tout le texte calculable respecte le contraste minimum (AA).",
+    "a11ycore_contrastComputable_cantTell_notComputable": "Le contraste ne peut pas être calculé pour ce texte ({{reasonCode}}).",
     "a11ycore_roleImg_textAlternativePresent_title": "Les éléments avec role=\"img\" doivent avoir une alternative textuelle accessible",
     "a11ycore_roleImg_textAlternativePresent_description": "Vérifie que les éléments ayant le rôle \"img\" fournissent une alternative textuelle accessible via aria-label ou aria-labelledby.",
     "a11ycore_roleImg_textAlternativePresent_summary_fail": "L’élément avec le rôle \"img\" ne possède pas d’alternative textuelle accessible.",
-    "a11ycore_roleImg_textAlternativePresent_hint_fail": "Fournissez une alternative textuelle à l’aide de aria-label ou de aria-labelledby pointant vers un texte non vide."
+    "a11ycore_roleImg_textAlternativePresent_hint_fail": "Fournissez une alternative textuelle à l’aide de aria-label ou de aria-labelledby pointant vers un texte non vide.",
+    "a11ycore_targetSizeMinimum_title": "Les cibles activables au pointeur respectent la taille minimale (AA)",
+    "a11ycore_targetSizeMinimum_description": "Vérifie que les cibles activables au pointeur ont une zone cliquable effective d’au moins 24×24 pixels CSS, ou respectent une exception autorisée (par ex. un espacement suffisant).",
+    "a11ycore_targetSizeMinimum_summary_fail": "La cible est plus petite que 24×24 px CSS et est trop proche d’une autre cible.",
+    "a11ycore_targetSizeMinimum_hint_fail": "Augmentez la taille de la cible à au moins 24×24 px CSS, ou ajoutez un espacement suffisant par rapport aux cibles voisines.",
+    "a11ycore_targetSizeMinimum_notApplicable_noTargets": "Aucune cible activable par pointeur n’était éligible à l’évaluation.",
+    "a11ycore_targetSizeMinimum_pass_allOk": "Toutes les cibles activables par pointeur respectent la taille minimale ou une exception autorisée.",
+    "a11ycore_ariaHidden_focus_title": "Les éléments aria-hidden ne doivent pas être focalisables",
+    "a11ycore_ariaHidden_focus_description": "Vérifie que les éléments avec aria-hidden=\"true\" ne sont pas focalisables et ne contiennent pas d’éléments focalisables.",
+    "a11ycore_ariaHidden_focus_summary_fail_desc": "L’élément aria-hidden {{element}} contient {{focusableCount}} élément(s) focalisable(s).",
+    "a11ycore_ariaHidden_focus_summary_fail_self": "L’élément aria-hidden {{element}} est focalisable ({{focusableCount}} élément(s) focalisable(s)).",
+    "a11ycore_ariaHidden_focus_summary_fail_self_and_desc": "L’élément aria-hidden {{element}} est focalisable et contient {{descendantFocusableCount}} descendant(s) focalisable(s) ({{focusableCount}} élément(s) focalisable(s) au total).",
+    "a11ycore_ariaHidden_focus_hint_fail": "Supprimez la focalisation des descendants ou retirez aria-hidden ; assurez la cohérence entre l’ordre de focus et l’arbre d’accessibilité.",
+    "a11ycore_cssHidden_focus_title": "Les éléments focalisables ne doivent pas être masqués visuellement",
+    "a11ycore_cssHidden_focus_description": "Vérifie que les éléments focalisables au clavier ne sont pas masqués visuellement par des techniques CSS pouvant les laisser dans l’ordre de tabulation.",
+    "a11ycore_cssHidden_focus_summary_cantTell": "L’élément focalisable {{element}} est masqué visuellement ({{visibilityHints}}).",
+    "a11ycore_cssHidden_focus_hint_cantTell": "Rendez l’élément visible lorsqu’il peut recevoir le focus clavier, ou retirez-le de l’ordre de tabulation tant qu’il n’est pas visible.",
+    "a11ycore_linkNamePresent_title": "Les liens ont un nom accessible",
+    "a11ycore_linkNamePresent_description": "Vérifie que les liens exposent un nom accessible non vide.",
+    "a11ycore_linkNamePresent_summary_fail": "Ce lien n’a pas de nom accessible.",
+    "a11ycore_linkNamePresent_hint_fail": "Fournissez un texte de lien ou un mécanisme de nom accessible (par exemple aria-label) afin que les technologies d’assistance puissent identifier le lien.",
+    "a11ycore_buttonNamePresent_title": "Les boutons ont un nom accessible",
+    "a11ycore_buttonNamePresent_description": "Vérifie que les boutons exposent un nom accessible non vide.",
+    "a11ycore_buttonNamePresent_summary_fail": "Ce bouton n’a pas de nom accessible.",
+    "a11ycore_buttonNamePresent_hint_fail": "Fournissez un texte visible pour le bouton ou un mécanisme de nom accessible (par exemple aria-label) afin que les technologies d’assistance puissent identifier le bouton.",
+    "a11ycore_binaryControlNamePresent_title": "Les contrôles binaires ont un nom accessible",
+    "a11ycore_binaryControlNamePresent_description": "Vérifie que les cases à cocher, les boutons radio et les interrupteurs exposent un nom accessible non vide.",
+    "a11ycore_binaryControlNamePresent_summary_fail": "Ce contrôle n’a pas de nom accessible.",
+    "a11ycore_binaryControlNamePresent_hint_fail": "Fournissez un libellé, aria-label, aria-labelledby ou un autre mécanisme de nom accessible afin que les technologies d’assistance puissent identifier le contrôle.",
+    "a11ycore_comboboxNamePresent_title": "Les listes déroulantes (combobox) ont un nom accessible",
+    "a11ycore_comboboxNamePresent_description": "Vérifie que les éléments avec role=\"combobox\" exposent un nom accessible non vide.",
+    "a11ycore_comboboxNamePresent_summary_fail": "Cette combobox n’a pas de nom accessible.",
+    "a11ycore_comboboxNamePresent_hint_fail": "Fournissez aria-label ou aria-labelledby (préféré), ou assurez-vous que l’élément a un texte visible qui n’est pas masqué aux technologies d’assistance.",
+    "a11ycore_dialogNamePresent_title": "Les dialogues ont un nom accessible",
+    "a11ycore_dialogNamePresent_description": "Vérifie que les éléments avec role=\"dialog\" ou role=\"alertdialog\" exposent un nom accessible non vide.",
+    "a11ycore_dialogNamePresent_summary_fail": "Ce dialogue n’a pas de nom accessible.",
+    "a11ycore_dialogNamePresent_hint_fail": "Fournissez aria-labelledby (préféré) ou aria-label afin que les technologies d’assistance puissent annoncer le dialogue.",
+    "a11ycore_menuitemNamePresent_title": "Les éléments de menu ont un nom accessible",
+    "a11ycore_menuitemNamePresent_description": "Vérifie que les éléments de menu (role=\"menuitem*\", y compris les variantes case à cocher/radio) exposent un nom accessible non vide.",
+    "a11ycore_menuitemNamePresent_summary_fail": "Cet élément de menu n’a pas de nom accessible.",
+    "a11ycore_menuitemNamePresent_hint_fail": "Fournissez un texte visible qui n’est pas masqué aux technologies d’assistance, ou fournissez aria-label ou aria-labelledby.",
+    "a11ycore_tabNamePresent_title": "Les onglets ont un nom accessible",
+    "a11ycore_tabNamePresent_description": "Vérifie que les éléments avec role=\"tab\" exposent un nom accessible non vide.",
+    "a11ycore_tabNamePresent_summary_fail": "Cet onglet n’a pas de nom accessible.",
+    "a11ycore_tabNamePresent_hint_fail": "Fournissez un texte d’onglet qui n’est pas masqué aux technologies d’assistance, ou fournissez aria-label ou aria-labelledby.",
+    "a11ycore_sliderNamePresent_title": "Les curseurs ont un nom accessible",
+    "a11ycore_sliderNamePresent_description": "Vérifie que les curseurs (input[type=\"range\"] et role=\"slider\") exposent un nom accessible non vide.",
+    "a11ycore_sliderNamePresent_summary_fail": "Ce curseur n’a pas de nom accessible.",
+    "a11ycore_sliderNamePresent_hint_fail": "Fournissez un libellé, aria-label ou aria-labelledby afin que les technologies d’assistance puissent identifier le curseur.",
+    "a11ycore_textboxNamePresent_title": "Les champs de texte ont un nom accessible",
+    "a11ycore_textboxNamePresent_description": "Vérifie que les éléments avec role=\"textbox\" exposent un nom accessible non vide.",
+    "a11ycore_textboxNamePresent_summary_fail": "Ce champ de texte n’a pas de nom accessible.",
+    "a11ycore_textboxNamePresent_hint_fail": "Fournissez aria-label ou aria-labelledby (préféré), ou assurez-vous que le champ de texte a un texte visible qui n’est pas masqué aux technologies d’assistance.",
+    "a11ycore_searchboxNamePresent_title": "Les champs de recherche ont un nom accessible",
+    "a11ycore_searchboxNamePresent_description": "Vérifie que les éléments avec role=\"searchbox\" exposent un nom accessible non vide.",
+    "a11ycore_searchboxNamePresent_summary_fail": "Ce champ de recherche n’a pas de nom accessible.",
+    "a11ycore_searchboxNamePresent_hint_fail": "Fournissez aria-label ou aria-labelledby (préféré), ou assurez-vous que le champ de recherche a un texte visible qui n’est pas masqué aux technologies d’assistance.",
+    "a11ycore_spinbuttonNamePresent_title": "Les sélecteurs numériques (spinbutton) ont un nom accessible",
+    "a11ycore_spinbuttonNamePresent_description": "Vérifie que les éléments avec role=\"spinbutton\" exposent un nom accessible non vide.",
+    "a11ycore_spinbuttonNamePresent_summary_fail": "Ce spinbutton n’a pas de nom accessible.",
+    "a11ycore_spinbuttonNamePresent_hint_fail": "Fournissez aria-label ou aria-labelledby (préféré), ou assurez-vous que le spinbutton a un texte visible qui n’est pas masqué aux technologies d’assistance.",
+    "a11ycore_listboxNamePresent_title": "Les listes (listbox) ont un nom accessible",
+    "a11ycore_listboxNamePresent_description": "Vérifie que les éléments avec role=\"listbox\" exposent un nom accessible non vide.",
+    "a11ycore_listboxNamePresent_summary_fail": "Cette listbox n’a pas de nom accessible.",
+    "a11ycore_listboxNamePresent_hint_fail": "Fournissez aria-label ou aria-labelledby (préféré), ou assurez-vous que la listbox a un texte visible qui n’est pas masqué aux technologies d’assistance.",
+    "a11ycore_optionNamePresent_title": "Les options ont un nom accessible",
+    "a11ycore_optionNamePresent_description": "Vérifie que les éléments avec role=\"option\" exposent un nom accessible non vide.",
+    "a11ycore_optionNamePresent_summary_fail": "Cette option n’a pas de nom accessible.",
+    "a11ycore_optionNamePresent_hint_fail": "Fournissez un texte d’option qui n’est pas masqué aux technologies d’assistance, ou fournissez aria-label ou aria-labelledby.",
+    "a11ycore_treeitemNamePresent_title": "Les éléments d’arborescence ont un nom accessible",
+    "a11ycore_treeitemNamePresent_description": "Vérifie que les éléments avec role=\"treeitem\" exposent un nom accessible non vide.",
+    "a11ycore_treeitemNamePresent_summary_fail": "Cet élément d’arborescence n’a pas de nom accessible.",
+    "a11ycore_treeitemNamePresent_hint_fail": "Fournissez un texte d’élément d’arborescence qui n’est pas masqué aux technologies d’assistance, ou fournissez aria-label ou aria-labelledby.",
+    "a11ycore_ariaRoleNamePresent_title": "Les rôles ARIA de type widget/conteneur ont un nom accessible",
+    "a11ycore_ariaRoleNamePresent_description": "Vérifie que certains rôles ARIA de type widget/conteneur exposent un nom accessible non vide.",
+    "a11ycore_ariaRoleNamePresent_summary_fail": "Cet élément n’a pas de nom accessible.",
+    "a11ycore_ariaRoleNamePresent_hint_fail": "Fournissez aria-label ou aria-labelledby (préféré), ou un attribut title non vide.",
+    "a11ycore_composite_rollup_summary": "Résultat de la règle composite : {{reasonCode}} ({{testCount}} contrôles)",
+    "catalog.rules.wcag_111_non_text_content.title": "Contenu non textuel : alternatives textuelles",
+    "catalog.rules.wcag_111_non_text_content.description": "Regroupe les contrôles garantissant que le contenu non textuel dispose d’une alternative textuelle appropriée.",
+    "catalog.rules.wcag_121_prerecorded_transcript.title": "Audio seul et vidéo seule (préenregistrés) : transcription",
+    "catalog.rules.wcag_121_prerecorded_transcript.description": "Regroupe les contrôles vérifiant la disponibilité d’une transcription pour les médias audio seuls ou vidéo seuls préenregistrés.",
+    "catalog.rules.wcag_143_contrast_minimum.title": "Contraste : minimum",
+    "catalog.rules.wcag_143_contrast_minimum.description": "Regroupe les contrôles relatifs au contraste minimal du texte.",
+    "catalog.rules.wcag_146_contrast_enhanced.title": "Contraste : renforcé",
+    "catalog.rules.wcag_146_contrast_enhanced.description": "Regroupe les contrôles relatifs au contraste renforcé du texte.",
+    "catalog.rules.wcag_242_page_titled.title": "Page titrée",
+    "catalog.rules.wcag_242_page_titled.description": "Regroupe les contrôles garantissant que les documents possèdent un titre de page pertinent.",
+    "catalog.rules.wcag_247_focus_visible.title": "Focus visible",
+    "catalog.rules.wcag_247_focus_visible.description": "Regroupe les contrôles garantissant que le focus clavier n’est pas masqué et reste perceptible.",
+    "catalog.rules.wcag_258_target_size_minimum.title": "Taille de la cible : minimum",
+    "catalog.rules.wcag_258_target_size_minimum.description": "Regroupe les contrôles garantissant que les cibles de pointage respectent les dimensions minimales requises.",
+    "catalog.rules.wcag_311_language_of_page.title": "Langue de la page",
+    "catalog.rules.wcag_311_language_of_page.description": "Regroupe les contrôles garantissant que la langue de la page est spécifiée.",
+    "catalog.rules.wcag_412_name.title": "Nom, rôle, valeur : nom accessible",
+    "catalog.rules.wcag_412_name.description": "Regroupe les contrôles garantissant que les éléments interactifs courants exposent un nom accessible non vide.",
+    "a11ycore_labelInName_title": "Intitulé dans le nom : le nom accessible contient le texte visible",
+    "a11ycore_labelInName_description": "Vérifie que lorsqu’un composant possède un libellé textuel visible, le nom accessible contient ce libellé visible (WCAG 2.5.3).",
+    "a11ycore_labelInName_summary_fail": "{{element}} : le libellé visible « {{visibleLabel}} » (source : {{labelSource}}) n’est pas inclus dans le nom accessible (source : {{nameMechanism}}).",
+    "a11ycore_labelInName_hint_fail": "Modifiez aria-label ou aria-labelledby (ou le texte du libellé visible) afin que le nom accessible inclue le libellé visible."
   }
 };
 
@@ -2314,15 +3825,22 @@ function normalizeIncludeMode(mode) {
 
 function hasAnyRunOnlyKeys(runOnly) {
   if (!runOnly || typeof runOnly !== 'object') return false;
+
   // legacy reference-engine-like: { type:'tag', values:[...] }
-  if (runOnly.type === 'tag' && Array.isArray(runOnly.values) && runOnly.values.length) return true;
-  if (Array.isArray(runOnly.tags) && runOnly.tags.length) return true;
-  if (Array.isArray(runOnly.includeRuleIds) && runOnly.includeRuleIds.length) return true;
-  if (Array.isArray(runOnly.excludeRuleIds) && runOnly.excludeRuleIds.length) return true;
-  // extended (new)
-  if (Array.isArray(runOnly.excludeTags) && runOnly.excludeTags.length) return true;
-  if (typeof runOnly.includeMode === 'string' && runOnly.includeMode.trim()) return true;
-  return false;
+  const hasLegacyTag =
+    runOnly.type === 'tag' && Array.isArray(runOnly.values) && runOnly.values.length > 0;
+
+  const hasAnyFilters =
+    hasLegacyTag ||
+    (Array.isArray(runOnly.tags) && runOnly.tags.length > 0) ||
+    (Array.isArray(runOnly.excludeTags) && runOnly.excludeTags.length > 0) ||
+    (Array.isArray(runOnly.includeRuleIds) && runOnly.includeRuleIds.length > 0) ||
+    (Array.isArray(runOnly.excludeRuleIds) && runOnly.excludeRuleIds.length > 0) ||
+    (Array.isArray(runOnly.includeTestIds) && runOnly.includeTestIds.length > 0) ||
+    (Array.isArray(runOnly.excludeTestIds) && runOnly.excludeTestIds.length > 0);
+
+  // IMPORTANT: includeMode by itself should NOT cause runOnly to take precedence.
+  return hasAnyFilters;
 }
 
 /**
@@ -2334,10 +3852,18 @@ function hasAnyRunOnlyKeys(runOnly) {
  * - extended runOnly: { includeMode:'and'|'or', excludeTags:[...] }
  *
  * Output shape:
- * { includeMode, tags, excludeTags, includeRuleIds, excludeRuleIds }
+ * { includeMode, tags, excludeTags, includeRuleIds, excludeRuleIds, includeTestIds, excludeTestIds }
  */
 function normalizeRunOnly(runOnly) {
-  const out = { includeMode: 'and', tags: [], excludeTags: [], includeRuleIds: [], excludeRuleIds: [] };
+  const out = {
+    includeMode: 'and',
+    tags: [],
+    excludeTags: [],
+    includeRuleIds: [],
+    excludeRuleIds: [],
+    includeTestIds: [],
+    excludeTestIds: []
+  };
   if (!runOnly || typeof runOnly !== 'object') return out;
 
   out.includeMode = normalizeIncludeMode(runOnly.includeMode);
@@ -2353,6 +3879,9 @@ function normalizeRunOnly(runOnly) {
 
   out.includeRuleIds = parseCommaList(runOnly.includeRuleIds, { lower: false });
   out.excludeRuleIds = parseCommaList(runOnly.excludeRuleIds, { lower: false });
+  
+  out.includeTestIds = parseCommaList(runOnly.includeTestIds, { lower: false });
+  out.excludeTestIds = parseCommaList(runOnly.excludeTestIds, { lower: false });
 
   return out;
 }
@@ -2372,6 +3901,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
 
   const rules = (eo.rules && typeof eo.rules === 'object') ? eo.rules : null;
   const tags = (eo.tags && typeof eo.tags === 'object') ? eo.tags : null;
+  const tests = (eo.tests && typeof eo.tests === 'object') ? eo.tests : null;
 
   const includeRuleIds = parseCommaList(rules && rules.include, { lower: false });
   const excludeRuleIds = parseCommaList(rules && rules.exclude, { lower: false });
@@ -2379,13 +3909,19 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   const includeTags = parseCommaList(tags && tags.include, { lower: true });
   const excludeTags = parseCommaList(tags && tags.exclude, { lower: true });
 
+  const includeTestIds = parseCommaList(tests && tests.include, { lower: false });
+  const excludeTestIds = parseCommaList(tests && tests.exclude, { lower: false });
+
   return {
     includeMode: mode,
     tags: includeTags,
     excludeTags,
     includeRuleIds,
-    excludeRuleIds
+    excludeRuleIds,
+    includeTestIds,
+    excludeTestIds
   };
+
 }
 
 function ruleIdMatches(candidate, ruleId, engineTag) {
@@ -2399,39 +3935,99 @@ function ruleIdMatches(candidate, ruleId, engineTag) {
   return false;
 }
 
+function buildCompositeRuleIndex() {
+  const idx = Object.create(null);
+  if (!Array.isArray(COMPOSITE_RULES)) return idx;
+
+  for (const entry of COMPOSITE_RULES) {
+    if (!entry || typeof entry !== 'object') continue;
+    const id = typeof entry.id === 'string' ? entry.id.trim() : String(entry.id || '').trim();
+    if (!id) continue;
+
+    const checksIds = Array.isArray(entry.checksIds)
+      ? entry.checksIds.map(String).map((s) => s.trim()).filter(Boolean)
+      : [];
+
+    if (checksIds.length) idx[id] = checksIds;
+  }
+
+  return idx;
+}
+
+const COMPOSITE_RULE_INDEX = buildCompositeRuleIndex();
+
+function expandCompositeRuleId(candidateId) {
+  const id = typeof candidateId === 'string' ? candidateId.trim() : '';
+  if (!id) return null;
+  const checksIds = COMPOSITE_RULE_INDEX[id];
+  return Array.isArray(checksIds) && checksIds.length ? checksIds : null;
+}
+
 function ruleMatchesRunOnly(def, runOnly, engineTag) {
   const norm = normalizeRunOnly(runOnly);
   const includeMode = normalizeIncludeMode(norm.includeMode);
 
   const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).toLowerCase()) : [];
 
-  const hasIdInclude = norm.includeRuleIds.length > 0;
+  const hasRuleInclude = norm.includeRuleIds.length > 0;
+  const hasTestInclude = norm.includeTestIds.length > 0;
   const hasTagInclude = norm.tags.length > 0;
 
   let idMatch = true;
   let tagMatch = true;
 
-  if (hasIdInclude) {
-    idMatch = norm.includeRuleIds.some((id) => ruleIdMatches(id, def.ruleId, engineTag || ENGINE_TAG));
+  if (hasRuleInclude) {
+    idMatch = norm.includeRuleIds.some((ruleId) => {
+      // 1) Direct match always wins (this allows selecting the composite itself)
+      if (ruleIdMatches(ruleId, def.ruleId, engineTag || ENGINE_TAG)) return true;
+      
+      // 2) If candidate is a composite id, include atomic children as well
+      const expanded = expandCompositeRuleId(ruleId);
+      if (expanded) return expanded.includes(def.ruleId);
+      
+      return false;
+    });
   }
+
+  if (hasTestInclude) {
+    const testMatch = norm.includeTestIds.some((id) => ruleIdMatches(id, def.ruleId, engineTag || ENGINE_TAG));
+    idMatch = hasRuleInclude ? (idMatch && testMatch) : testMatch;
+  }
+
   if (hasTagInclude) {
     tagMatch = defTags.some((t) => norm.tags.includes(t));
   }
 
   // Includes
-  if (hasIdInclude || hasTagInclude) {
-    if (includeMode === 'or' && hasIdInclude && hasTagInclude) {
+  const hasAnyIdInclude = hasRuleInclude || hasTestInclude;
+
+  if (hasAnyIdInclude || hasTagInclude) {
+    if (includeMode === 'or' && hasAnyIdInclude && hasTagInclude) {
       if (!(idMatch || tagMatch)) return false;
     } else {
       // 'and' semantics (or only one include dimension present)
-      if (hasIdInclude && !idMatch) return false;
+      if (hasAnyIdInclude && !idMatch) return false;
       if (hasTagInclude && !tagMatch) return false;
     }
   }
 
   // Excludes (always subtractive; apply after include)
   if (norm.excludeRuleIds.length) {
-    const blocked = norm.excludeRuleIds.some((id) => ruleIdMatches(id, def.ruleId, engineTag || ENGINE_TAG));
+    const blocked = norm.excludeRuleIds.some((ruleId) => {
+      // 1) Direct match excludes the composite itself (and any atomic with same id)
+      if (ruleIdMatches(ruleId, def.ruleId, engineTag || ENGINE_TAG)) return true;
+  
+      // 2) If candidate is a composite id, exclude its atomic children too
+      const expanded = expandCompositeRuleId(ruleId);
+      if (expanded) return expanded.includes(def.ruleId);
+  
+      return false;
+    });
+    if (blocked) return false;
+  }
+
+  if (norm.excludeTestIds.length) {
+    const blocked = norm.excludeTestIds.some((id) => ruleIdMatches(id, def.ruleId, engineTag || ENGINE_TAG));
     if (blocked) return false;
   }
 
@@ -2495,7 +4091,6 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
     atomic: def.atomic,
     category: def.category || null,
     normativeMappings: Array.isArray(def.normativeMappings) ? def.normativeMappings.map((o) => ({ ...o })) : [],
-    informativeReferences: Array.isArray(def.informativeReferences) ? def.informativeReferences.map((o) => ({ ...o })) : [],
     standard: def.standard || null,
     applicability: def.applicability || '',
     expectation: def.expectation || '',
@@ -2571,8 +4166,8 @@ function toCatalogEntry(r, engineOptions) {
     i18n: r.i18n || null,
     helpUrl: r.helpUrl,
     tags: Array.isArray(r.tags) ? r.tags.slice() : [],
+    wcagSc: Array.isArray(r.wcagSc) ? r.wcagSc.slice() : [],
     normativeMappings: Array.isArray(r.normativeMappings) ? r.normativeMappings.map((o) => ({ ...o })) : [],
-    informativeReferences: Array.isArray(r.informativeReferences) ? r.informativeReferences.map((o) => ({ ...o })) : [],
     defaultSeverity: r.defaultSeverity,
     defaultConfidence: r.defaultConfidence,
     type: r.type,
@@ -2713,53 +4308,6 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     const __hasBlendModeCache = __getSharedWeakMapCache('__hasBlendModeCache') || __localHasBlendModeCache;
     const __hasFilterCache = __getSharedWeakMapCache('__hasFilterCache') || __localHasFilterCache;
 
-
-    // Cache parsed colors / numeric opacity per element (per run)
-    const __localOpacityFloatCache = new WeakMap();
-    const __opacityFloatCache = __getSharedWeakMapCache('__opacityFloatCache') || __localOpacityFloatCache;
-
-    const __localBgColorRgbaCache = new WeakMap();
-    const __bgColorRgbaCache = __getSharedWeakMapCache('__bgColorRgbaCache') || __localBgColorRgbaCache;
-
-    const __localFgColorRgbaCache = new WeakMap();
-    const __fgColorRgbaCache = __getSharedWeakMapCache('__fgColorRgbaCache') || __localFgColorRgbaCache;
-
-    function __opacityFloat(el, cs) {
-        try {
-            if (!el || el.nodeType !== 1) return clamp01(Number.parseFloat(cs && cs.opacity != null ? cs.opacity : '1'));
-            if (__opacityFloatCache.has(el)) return __opacityFloatCache.get(el);
-            const o = clamp01(Number.parseFloat(cs && cs.opacity != null ? cs.opacity : '1'));
-            __opacityFloatCache.set(el, o);
-            return o;
-        } catch {
-            return 1;
-        }
-    }
-
-    function __bgColorRgba(el, cs) {
-        try {
-            if (!el || el.nodeType !== 1) return parseCssColorToRgba(cs && cs.backgroundColor);
-            if (__bgColorRgbaCache.has(el)) return __bgColorRgbaCache.get(el);
-            const c = parseCssColorToRgba(cs && cs.backgroundColor);
-            __bgColorRgbaCache.set(el, c);
-            return c;
-        } catch {
-            return null;
-        }
-    }
-
-    function __fgColorRgba(el, cs) {
-        try {
-            if (!el || el.nodeType !== 1) return parseCssColorToRgba(cs && cs.color);
-            if (__fgColorRgbaCache.has(el)) return __fgColorRgbaCache.get(el);
-            const c = parseCssColorToRgba(cs && cs.color);
-            __fgColorRgbaCache.set(el, c);
-            return c;
-        } catch {
-            return null;
-        }
-    }
-
     // -------- Visibility mode resolution for getTextScan --------
 
     function __getVisibilityMode(engineOptions) {
@@ -2885,7 +4433,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             const cacheKey = `visibilityMode=${visibilityMode}`;
             if (cache && cache.has(cacheKey)) return cache.get(cacheKey);
 
-            const walkRoot = d.body || d.documentElement || d;
+            const walkRootRaw = (ctx && ctx.root) ? ctx.root : (d.body || d.documentElement || d);
+            const walkRoot = (walkRootRaw && walkRootRaw.nodeType === 9)
+                ? (walkRootRaw.body || walkRootRaw.documentElement || walkRootRaw)
+                : walkRootRaw;
 
             const SHOW_TEXT =
                 (w && w.NodeFilter && typeof w.NodeFilter.SHOW_TEXT === 'number')
@@ -2930,6 +4481,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
                     (node.parentNode && node.parentNode.nodeType === 1 ? node.parentNode : null);
 
                 if (!el) continue;
+                // Respect subtree exclusions from engineOptions.excludeSelectors
+                try {
+                    if (helpers && typeof helpers.isExcluded === 'function' && helpers.isExcluded(el)) continue;
+                } catch {}
                 if (!isVisibleEligible(el)) continue;
 
                 eligibleTextCount++;
@@ -3189,6 +4744,42 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             return { r, g, b, a };
         }
 
+        // Fallback: let the platform parse named/system colors.
+        // Useful in jsdom/browsers where computed styles may return keywords like "black" or "CanvasText".
+        try {
+            const w = window || null;
+            const d = w && w.document ? w.document : null;
+            if (w && d && typeof d.createElement === 'function' && typeof w.getComputedStyle === 'function') {
+                const probe = d.createElement('span');
+                // Avoid layout/paint side effects
+                probe.style.position = 'absolute';
+                probe.style.left = '-9999px';
+                probe.style.top = '-9999px';
+                probe.style.opacity = '0';
+                probe.style.color = String(input);
+                const parent = d.body || d.documentElement;
+                if (parent && typeof parent.appendChild === 'function') parent.appendChild(probe);
+
+                let computed = '';
+                try {
+                    computed = (w.getComputedStyle(probe) && w.getComputedStyle(probe).color) || '';
+                } catch (_e) {
+                    computed = '';
+                }
+
+                try {
+                    if (probe && probe.parentNode) probe.parentNode.removeChild(probe);
+                } catch (_e) {}
+
+                const normalized = __normalizeCssColorCacheKey(computed);
+                if (normalized && normalized !== __normalizeCssColorCacheKey(input)) {
+                    // Reuse the parser on the computed rgb()/rgba() string.
+                    const parsed = __parseCssColorToRgbaUncached(normalized);
+                    if (parsed) return parsed;
+                }
+            }
+        } catch (_e) {}
+
         return null;
     }
 
@@ -3347,7 +4938,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
                     continue;
                 }
                 const cs = __contrastComputedStyle(cur);
-                const o = __opacityFloat(cur, cs);
+                const o = clamp01(Number.parseFloat(cs && cs.opacity != null ? cs.opacity : '1'));
                 prod *= o;
                 cur = composedParent(cur);
                 if (prod <= 0) break;
@@ -3373,7 +4964,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         } catch (_e) {}
 
         const cs = __contrastComputedStyle(el);
-        const c = __fgColorRgba(el, cs);
+        const c = parseCssColorToRgba(cs && cs.color);
         if (!c) {
             const out = { rgba: null, alpha: 0, opacityProduct: computeOpacityProduct(el) };
             try { if (el) __effectiveForegroundCache.set(el, out); } catch (_e) {}
@@ -3395,11 +4986,16 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         __getSharedWeakMapCache('__effectiveBackgroundCache') || __localEffectiveBackgroundCache;
 
     function __bgCacheKey(opts2) {
-        const profileRaw = opts2 && typeof opts2.profile === 'string' ? opts2.profile : 'strictConformance';
-        const profile = String(profileRaw).trim().toLowerCase();
-        const rootCanvasFallback = opts2 && typeof opts2.rootCanvasFallback === 'string' ? opts2.rootCanvasFallback : '#ffffff';
-        const collectStack = !!(opts2 && opts2.collectStack);
-        return `p=${profile}|f=${rootCanvasFallback}|s=${collectStack ? '1' : '0'}`;
+        const contrast = (opts2 && opts2.contrast && typeof opts2.contrast === 'object') ? opts2.contrast : {};
+        const mode = (contrast.mode === 'auditorAssist') ? 'auditorAssist' : 'strictConformance';
+        const rootCanvasFallback =
+            (typeof contrast.rootCanvasFallback === 'string' && contrast.rootCanvasFallback.trim())
+                ? contrast.rootCanvasFallback.trim()
+                : '#ffffff';
+
+        // Cache key must include any input that can affect computed background.
+        // Note: we only cache when collectStack is false.
+        return `${mode}|${rootCanvasFallback}`;
     }
 
     function computeEffectiveBackground(el, opts2) {
@@ -3416,14 +5012,17 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             } catch (_e) {}
         }
 
-        const profileRaw = opts2 && typeof opts2.profile === 'string' ? opts2.profile : 'strictConformance';
-        const profile = String(profileRaw).trim().toLowerCase();
-        const rootCanvasFallback = opts2 && typeof opts2.rootCanvasFallback === 'string' ? opts2.rootCanvasFallback : '#ffffff';
+        const contrast = (opts2 && opts2.contrast && typeof opts2.contrast === 'object') ? opts2.contrast : {};
+        const mode = (contrast.mode === 'auditorAssist') ? 'auditorAssist' : 'strictConformance';
+        const rootCanvasFallback =
+            (typeof contrast.rootCanvasFallback === 'string' && contrast.rootCanvasFallback.trim())
+                ? contrast.rootCanvasFallback.trim()
+                : '#ffffff';
 
         const collectStack = !!(opts2 && opts2.collectStack);
         const stack = collectStack ? [] : null;
-        let acc = { r: 0, g: 0, b: 0, a: 0 };
 
+        let acc = { r: 0, g: 0, b: 0, a: 0 };
         let cur = el;
         let guard = 0;
 
@@ -3431,8 +5030,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             if (cur.nodeType !== 1) { cur = composedParent(cur); continue; }
 
             const cs = __contrastComputedStyle(cur);
-            const bg = __bgColorRgba(cur, cs);
-            const op = __opacityFloat(cur, cs);
+            const bg = parseCssColorToRgba(cs && cs.backgroundColor);
+            const op = clamp01(Number.parseFloat(cs && cs.opacity != null ? cs.opacity : '1'));
 
             if (bg) {
                 const layer = { r: bg.r, g: bg.g, b: bg.b, a: clamp01(bg.a * op) };
@@ -3451,16 +5050,36 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         }
 
         let out;
+        const allowAssumptions = (mode === 'auditorAssist');
+
         if (acc.a < 1) {
-            if (profile === 'referenceenginecompat') {
+            if (allowAssumptions) {
+                // If the root is not opaque, apply an explicit canvas fallback.
                 const fb = parseCssColorToRgba(rootCanvasFallback) || { r: 255, g: 255, b: 255, a: 1 };
-                acc = compositeRgba(fb, acc);
-                out = { ok: false, rgba: acc, alpha: acc.a, stack: stack || [], reasonCode: null };
+                const fbOpaque = { r: fb.r, g: fb.g, b: fb.b, a: 1 };
+
+                acc = compositeRgba(fbOpaque, acc);
+
+                out = {
+                    ok: true,
+                    rgba: { r: acc.r, g: acc.g, b: acc.b, a: 1 },
+                    alpha: 1,
+                    stack: stack || [],
+                    reasonCode: null,
+                    assumptionsApplied: ['ROOT_CANVAS_FALLBACK'],
+                    assumedRootCanvasColor: rootCanvasFallback
+                };
             } else {
-                out = { ok: false, rgba: acc, alpha: acc.a, stack, reasonCode: 'BACKGROUND_NOT_OPAQUE_AT_ROOT' };
+                out = {
+                    ok: false,
+                    rgba: acc,
+                    alpha: acc.a,
+                    stack: stack || [],
+                    reasonCode: 'BACKGROUND_NOT_OPAQUE_AT_ROOT'
+                };
             }
         } else {
-            out = { ok: true, rgba: acc, alpha: acc.a, stack, reasonCode: null };
+            out = { ok: true, rgba: acc, alpha: acc.a, stack: stack || [], reasonCode: null };
         }
 
         if (!__collectStack && el) {
@@ -3473,6 +5092,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
         return out;
     }
+
 
     // -------- Selector memoization --------
 
@@ -3488,6 +5108,34 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             return s || '';
         } catch (_e) {
             return '';
+        }
+    }
+
+    function classifyBackgroundImageValue(bgImageValue) {
+        try {
+            const v = (bgImageValue == null) ? '' : String(bgImageValue).trim();
+            if (!v) return 'unknown';
+            const s = v.toLowerCase();
+            if (s === 'none') return 'unknown';
+
+            // Multiple layers can be comma-separated; we keep it simple + deterministic:
+            // if any layer has url()/image-set() => image
+            // if any layer has *gradient( => gradient
+            const hasGradient = /gradient\s*\(/i.test(s);
+            const hasUrl = /\burl\s*\(/i.test(s);
+            const hasImageSet = /\bimage-set\s*\(/i.test(s);
+
+            const isImage = hasUrl || hasImageSet;
+            const isGradient = hasGradient;
+
+            if (isImage && isGradient) return 'imageAndGradient';
+            if (isImage) return 'image';
+            if (isGradient) return 'gradient';
+
+            // Other background-image functions exist; treat as unknown rather than guessing.
+            return 'unknown';
+        } catch {
+            return 'unknown';
         }
     }
 
@@ -3534,12 +5182,14 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             }
 
             if (__hasBackgroundImageOrGradientEl(cur, cs)) {
+                const bgImg = (cs && cs.backgroundImage) || '';
                 const out = {
                     ok: false,
                     reasonCode: 'BACKGROUND_IMAGE_OR_GRADIENT',
                     blockerSelector: __getSimpleSelectorCached(cur, (cur.tagName || '').toLowerCase() || 'html'),
                     blockerProperty: 'background-image',
-                    blockerValue: truncateCssValue(cs && cs.backgroundImage, 80)
+                    blockerValue: truncateCssValue(bgImg, 80),
+                    backgroundFillType: classifyBackgroundImageValue(bgImg)
                 };
                 try { if (el) __computabilityBlockerCache.set(el, out); } catch (_e) {}
                 return out;
@@ -3669,7 +5319,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     const computedStyle = (el) => {
         // Per-run memoization scoped by *helper scope* (root/document), to ensure
         // style caching does not bleed across helper instances with different roots.
-        // This aligns with eligibility cache scoping semantics locked by tests.
+        // This aligns with eligibility cache scoping semantics locked by checks.
         const scope = (root && typeof root === 'object') ? root : (document && typeof document === 'object' ? document : null);
 
         let map = null;
@@ -3943,7 +5593,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
         return {present: true, value: attrValue, mechanism: attr, flags};
     }
 
-    // --- ARIA name primitives (reusable across rules) ---
+    // --- ARIA name primitives (reusable across checks) ---
     function getAriaLabelInfo(el) {
         const flags = [];
         if (!isElement(el)) return {present: false, value: '', mechanism: 'unsupported', flags: ['notElement']};
@@ -4476,6 +6126,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     let __eligibilityAccCache = null;
     let __eligibilityDomCacheByMode = null; // Map<string, WeakMap<Element, Result>>
     let __focusabilityCache = null;
+    let __visibilityHintsCache = null; // WeakMap<Element, {hints:Array<string>, metrics:object}>
     let __computedStyleCacheByScope = null; // WeakMap<object, WeakMap<Element, CSSStyleDeclaration|object>>
     let __openModalDialogsByDoc = null; // WeakMap<Document, Array<Element>>
     let __ancestorBlockerAccByScope = null; // WeakMap<object, WeakMap<Element, {struct:string|null, css:string|null}>>
@@ -4517,6 +6168,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
             : (__domSharedCache.focusabilityCache = new WeakMap());
     } catch {
         __focusabilityCache = null;
+    }
+
+    try {
+        __visibilityHintsCache = __domSharedCache.visibilityHintsCache instanceof WeakMap
+            ? __domSharedCache.visibilityHintsCache
+            : (__domSharedCache.visibilityHintsCache = new WeakMap());
+    } catch {
+        __visibilityHintsCache = null;
     }
 
     try {
@@ -5030,14 +6689,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
             }
 
             // Exception: allow aria-hidden override for mechanisms where the engine must
-            // still evaluate required labeling/alt rules. Keep this narrowly scoped.
+            // still evaluate required labeling/alt checks. Keep this narrowly scoped.
             const tag = (node.tagName || '').toLowerCase();
             const type = tag === 'input'
                 ? ((node.getAttribute && (node.getAttribute('type') || '').toLowerCase()) || '')
                 : '';
 
             // Native form controls are tabbable by default (even without tabindex)
-            // and are targeted by labeling rules.
+            // and are targeted by labeling checks.
             const isNativeFormControl =
                 tag === 'select' ||
                 tag === 'textarea' ||
@@ -5210,6 +6869,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
         // Closed <details> hides content visually
         if (inClosedDetailsContent(node)) return __cacheAndReturn(out(false, ['detailsClosed'], {}));
 
+        const visibilityMode =
+            opts && opts.visibilityMode === 'pointer'
+                ? 'pointer'
+                : (opts && opts.visibilityMode === 'styleAndGeometry'
+                    ? 'styleAndGeometry'
+                    : 'styleOnly');
+
         // 2) CSS visibility suppression + opacity chain
         let opacityProduct = 1;
         for (const a of chain) {
@@ -5221,6 +6887,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
             let cachedVisibility = null;
             let cachedContentVisHidden = null;
             let cachedOpacity = null;
+            let cachedPointerEventsNone = null;
+            let cachedPointerEventsKnown = false;
             let cs = null;
 
             try {
@@ -5238,10 +6906,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
                         cachedVisibility = cached.visibility != null ? String(cached.visibility) : null;
                         cachedContentVisHidden = cached.contentVisHidden === true ? true : null;
-                        cachedOpacity =
-                            (typeof cached.opacity === 'number' && Number.isFinite(cached.opacity))
+                        cachedOpacity = (cached && typeof cached.opacity === 'number' && Number.isFinite(cached.opacity))
                                 ? cached.opacity
                                 : null;
+
+                        cachedPointerEventsNone = cached.pointerEventsNone === true ? true : null;
+                        cachedPointerEventsKnown = cached.pointerEventsKnown === true ? true : false;
                     }
                 } else {
                     __perfInc('ancestorBlockerDom.css.miss');
@@ -5272,6 +6942,16 @@ const createDomHelpers = (function createDomHelpers(opts) {
                     }
                 }
 
+                // Pointer reachability: pointer-events:none blocks hit-testing
+                if (visibilityMode === 'pointer' && !cachedPointerEventsKnown) {
+                    try {
+                        const pe = cs && cs.pointerEvents != null ? String(cs.pointerEvents).trim() : '';
+                        cachedPointerEventsKnown = true;
+                        if (pe === 'none') cachedPointerEventsNone = true;
+                    } catch {
+                    }
+                }
+
                 try {
                     if (__ancBlockDomCache) {
                         const prev = __ancBlockDomCache.has(a) ? (__ancBlockDomCache.get(a) || null) : null;
@@ -5281,7 +6961,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
                             cssKnown: true,
                             visibility: cachedVisibility || (prev && prev.visibility ? prev.visibility : null),
                             contentVisHidden: cachedContentVisHidden === true ? true : (prev && prev.contentVisHidden === true ? true : null),
-                            opacity: cachedOpacity == null ? (prev && typeof prev.opacity === 'number' ? prev.opacity : null) : cachedOpacity
+                            opacity: cachedOpacity == null ? (prev && typeof prev.opacity === 'number' ? prev.opacity : null) : cachedOpacity,
+                            pointerEventsNone: cachedPointerEventsNone === true ? true : (prev && prev.pointerEventsNone === true ? true : null),
+                            pointerEventsKnown: cachedPointerEventsKnown === true ? true : (prev && prev.pointerEventsKnown === true ? true : false)
                         });
                     }
                 } catch {
@@ -5295,6 +6977,56 @@ const createDomHelpers = (function createDomHelpers(opts) {
             }
             if (cssBlock === 'contentVisibilityHidden') {
                 return __cacheAndReturn(out(false, ['contentVisibilityHidden'], {}));
+            }
+
+            if (visibilityMode === 'pointer') {
+                // pointer-events:none prevents the element from receiving pointer interactions
+                if (cachedPointerEventsKnown === true && cachedPointerEventsNone === true) {
+                    return __cacheAndReturn(out(false, ['pointerEventsNone'], {}));
+                }
+
+                if (cachedPointerEventsKnown !== true) {
+                    try {
+                        if (!cs) cs = computedStyle(a);
+                        const pe = cs && cs.pointerEvents != null ? String(cs.pointerEvents).trim() : '';
+                        cachedPointerEventsKnown = true;
+                        if (pe === 'none') cachedPointerEventsNone = true;
+
+                        // Write back pointer-events status without disturbing other fields
+                        try {
+                            if (__ancBlockDomCache) {
+                                const prev = __ancBlockDomCache.has(a) ? (__ancBlockDomCache.get(a) || null) : null;
+                                if (prev) {
+                                    __ancBlockDomCache.set(a, {
+                                        struct: prev.struct || null,
+                                        css: prev.css || null,
+                                        cssKnown: prev.cssKnown === true ? true : false,
+                                        visibility: prev.visibility || null,
+                                        contentVisHidden: prev.contentVisHidden === true ? true : null,
+                                        opacity: typeof prev.opacity === 'number' ? prev.opacity : null,
+                                        pointerEventsNone: cachedPointerEventsNone === true ? true : null,
+                                        pointerEventsKnown: cachedPointerEventsKnown === true ? true : false
+                                    });
+                                } else {
+                                    __ancBlockDomCache.set(a, {
+                                        struct: null,
+                                        css: null,
+                                        cssKnown: false,
+                                        visibility: null,
+                                        contentVisHidden: null,
+                                        opacity: null,
+                                        pointerEventsNone: cachedPointerEventsNone === true ? true : null,
+                                        pointerEventsKnown: cachedPointerEventsKnown === true ? true : false
+                                    });
+                                }
+                            }
+                        } catch {}
+                    } catch {}
+                }
+
+                if (cachedPointerEventsNone === true) {
+                    return __cacheAndReturn(out(false, ['pointerEventsNone'], {}));
+                }
             }
 
             // If opacity isn't cached yet, compute once and write it back even when cssBlock was cached.
@@ -5317,7 +7049,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
                                         css: prev.css || null,
                                         visibility: prev.visibility || null,
                                         contentVisHidden: prev.contentVisHidden === true ? true : null,
-                                        opacity: cachedOpacity
+                                        opacity: cachedOpacity,
+                                        pointerEventsNone: prev.pointerEventsNone === true ? true : null,
+                                        pointerEventsKnown: prev.pointerEventsKnown === true ? true : false
                                     });
                                 } else {
                                     __ancBlockDomCache.set(a, {
@@ -5325,7 +7059,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
                                         css: cssBlock || null,
                                         visibility: cachedVisibility || null,
                                         contentVisHidden: cachedContentVisHidden === true ? true : null,
-                                        opacity: cachedOpacity
+                                        opacity: cachedOpacity,
+                                        pointerEventsNone: null,
+                                        pointerEventsKnown: false
                                     });
                                 }
                             }
@@ -5337,20 +7073,19 @@ const createDomHelpers = (function createDomHelpers(opts) {
             // opacity handling (visual)
             const op = cachedOpacity != null ? cachedOpacity : 1;
             opacityProduct *= op;
-            if (opacityProduct <= 0.0001) {
+            // Allow callers to ignore opacity-based invisibility (still focusable).
+            const ignoreOpacity = !!(opts && opts.ignoreOpacity === true);
+
+            if (!ignoreOpacity && visibilityMode !== 'pointer' && opacityProduct <= 0.0001) {
                 return __cacheAndReturn(out(false, ['opacityZero'], { opacity: opacityProduct }));
             }
         }
 
         // 3) Layout/geometry (optional)
-        const visibilityMode =
-            opts && opts.visibilityMode === 'styleAndGeometry'
-                ? 'styleAndGeometry'
-                : 'styleOnly';
-
         const useGeometry =
-            visibilityMode === 'styleAndGeometry' &&
-            !(opts && opts.disableGeometry === true);
+            visibilityMode === 'pointer'
+                ? !(opts && opts.disableGeometry === true)
+                : (visibilityMode === 'styleAndGeometry' && !(opts && opts.disableGeometry === true));
 
         if (useGeometry) {
             try {
@@ -5913,6 +7648,153 @@ const createDomHelpers = (function createDomHelpers(opts) {
         };
     }
 
+    function getVisibilityHintsInfo(el, _ctx, opts) {
+        // Deterministic, style-only visibility hints for triage.
+        // Does NOT decide eligibility; checks decide outcomes.
+        // Uses computedStyle() which is already scope-cached.
+
+        if (!isElement(el)) return {hints: [], metrics: {}, flags: ['notElement']};
+
+        // Cache per element per run
+        try {
+            if (__visibilityHintsCache && __visibilityHintsCache.has(el)) {
+                __perfInc('visibilityHints.hit');
+                const c = __visibilityHintsCache.get(el);
+                if (c && typeof c === 'object') {
+                    return {
+                        hints: Array.isArray(c.hints) ? c.hints.slice(0) : [],
+                        metrics: c.metrics && typeof c.metrics === 'object' ? {...c.metrics} : {},
+                        flags: Array.isArray(c.flags) ? c.flags.slice(0) : []
+                    };
+                }
+            }
+        } catch {
+            // ignore
+        }
+
+        __perfInc('visibilityHints.miss');
+
+        const hints = [];
+        const metrics = {};
+        const flags = [];
+
+        const cs = computedStyle(el) || {};
+
+        // opacity:0
+        try {
+            const raw = cs.opacity != null ? String(cs.opacity).trim() : '';
+            const op = raw ? Number.parseFloat(raw) : 1;
+            if (Number.isFinite(op)) metrics.opacity = op;
+            if (Number.isFinite(op) && op <= 0.0001) hints.push('opacityZero');
+        } catch {
+            flags.push('opacity-parse-failed');
+        }
+
+        // clip / clip-path
+        try {
+            const clip = cs.clip != null ? String(cs.clip).trim() : '';
+            const clipPath = cs.clipPath != null ? String(cs.clipPath).trim() : '';
+
+            const clipLow = clip.toLowerCase();
+            const clipPathLow = clipPath.toLowerCase();
+
+            if (clipLow && clipLow !== 'auto') {
+                // Detect common visually-hidden: rect(0,0,0,0)
+                const norm = clipLow.replace(/\s+/g, '');
+                if (norm.indexOf('rect(') !== -1 && norm.indexOf('rect(0') !== -1) hints.push('clipped');
+            }
+
+            if (clipPathLow && clipPathLow !== 'none') {
+                // Detect common visually-hidden: inset(50%) / inset(100%)
+                if (clipPathLow.indexOf('inset(') !== -1 && (clipPathLow.indexOf('50%') !== -1 || clipPathLow.indexOf('100%') !== -1)) {
+                    hints.push('clipped');
+                }
+            }
+
+            if (clip) metrics.clip = clip;
+            if (clipPath) metrics.clipPath = clipPath;
+        } catch {
+            flags.push('clip-parse-failed');
+        }
+
+        // zero-size + overflow hidden/clip
+        try {
+            const wv = cs.width != null ? String(cs.width).trim() : '';
+            const hv = cs.height != null ? String(cs.height).trim() : '';
+            const ov = cs.overflow != null ? String(cs.overflow).trim().toLowerCase() : '';
+
+            metrics.width = wv || null;
+            metrics.height = hv || null;
+            metrics.overflow = ov || null;
+
+            const isZeroW = wv === '0px' || wv === '0';
+            const isZeroH = hv === '0px' || hv === '0';
+            const hidesOverflow = ov === 'hidden' || ov === 'clip';
+            if ((isZeroW || isZeroH) && hidesOverflow) hints.push('zeroSizeOverflowHidden');
+        } catch {
+            flags.push('size-parse-failed');
+        }
+
+        // offscreen heuristic (string-based; no geometry)
+        try {
+            const pos = cs.position != null ? String(cs.position).trim().toLowerCase() : '';
+            const left = cs.left != null ? String(cs.left).trim().toLowerCase() : '';
+            const top = cs.top != null ? String(cs.top).trim().toLowerCase() : '';
+            const ti = cs.textIndent != null ? String(cs.textIndent).trim().toLowerCase() : '';
+
+            metrics.position = pos || null;
+            metrics.left = left || null;
+            metrics.top = top || null;
+            metrics.textIndent = ti || null;
+
+            const parsePx = (s) => {
+                if (!s || s === 'auto') return null;
+                const m = String(s).match(/-?\d+(\.\d+)?/);
+                if (!m) return null;
+                const n = Number.parseFloat(m[0]);
+                return Number.isFinite(n) ? n : null;
+            };
+
+            const l = parsePx(left);
+            const t = parsePx(top);
+            const ind = parsePx(ti);
+
+            if (pos === 'absolute' || pos === 'fixed') {
+                if ((l != null && l <= -5000) || (t != null && t <= -5000)) hints.push('offscreen');
+            }
+            if (ind != null && ind <= -5000) hints.push('offscreen');
+        } catch {
+            flags.push('offscreen-parse-failed');
+        }
+
+        // Dedupe hints, stable order
+        const order = ['opacityZero', 'offscreen', 'clipped', 'zeroSizeOverflowHidden'];
+        const seen = new Set();
+        const stable = [];
+        for (const k of order) {
+            if (hints.indexOf(k) !== -1 && !seen.has(k)) {
+                seen.add(k);
+                stable.push(k);
+            }
+        }
+
+        const out = {hints: stable, metrics, flags};
+
+        try {
+            if (__visibilityHintsCache) {
+                __visibilityHintsCache.set(el, {
+                    hints: stable.slice(0),
+                    metrics: {...metrics},
+                    flags: flags.slice(0)
+                });
+            }
+        } catch {
+            __perfInc('visibilityHints.nocache');
+        }
+
+        return out;
+    }
+
     // Back-compat: keep existing helper but implement via new name helper.
     function hasAccessibleName(el) {
         const info = getAccessibleNameInfo(el);
@@ -5940,8 +7822,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
             const tag = (el.tagName || '').toLowerCase();
 
-            const id = el.getAttribute('id');
-            if (id && id.trim()) inc(idCount, id.trim());
+            const elementId = el.getAttribute('id');
+            if (elementId && elementId.trim()) inc(idCount, elementId.trim());
 
             for (const a of ['data-testid', 'data-test', 'data-cy', 'data-qa']) {
                 const v = el.getAttribute(a);
@@ -5979,8 +7861,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
             const escapeAttrValue = __escapeAttrValue;
 
-            const id = el.getAttribute && el.getAttribute('id');
-            if (id && id.trim()) return '#' + cssEscapeIdent(id.trim());
+            const elementId = el.getAttribute && el.getAttribute('id');
+            if (elementId && elementId.trim()) return '#' + cssEscapeIdent(elementId.trim());
 
             for (const a of ['data-testid', 'data-test', 'data-cy', 'data-qa']) {
                 const v = el.getAttribute && el.getAttribute(a);
@@ -6037,9 +7919,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
             const tag = (el.tagName || '').toLowerCase();
 
             const uniqueIdSel = () => {
-                const id = el.getAttribute('id');
-                if (!id || !id.trim()) return null;
-                const v = id.trim();
+                const elementId = el.getAttribute('id');
+                if (!elementId || !elementId.trim()) return null;
+                const v = elementId.trim();
                 if (idx && (idx.idCount.get(v) || 0) === 1) return '#' + cssEscape(v);
                 return null;
             };
@@ -6343,7 +8225,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     let __contrastSharedCache = {};
     try {
-        // In Node/JSDOM tests, the harness sets global.window/global.document.
+        // In Node/JSDOM checks, the harness sets global.window/global.document.
         // The engine may instantiate helpers per rule without passing opts.window,
         // so we must be able to recover the stable realm window to share caches.
         const w =
@@ -6369,11 +8251,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
     };
 
     const contrast = createContrastHelpers(
-        {window: realmWindow || window, document, root},
+        {window: realmWindow || window, document, root, includeShadowDom, excludeSelectors},
         __contrastShared
     );
 
-    // Expose shared cache to rules (deterministic, in-memory only)
+    // Expose shared cache to checks (deterministic, in-memory only)
     contrast.sharedCache = __contrastShared.__contrastSharedCache;
 
     return {
@@ -6414,6 +8296,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
         // Role / focusability
         getRoleInfo,
         getFocusableInfo,
+        getVisibilityHintsInfo,
 
         getAttributeInfo,
 
@@ -6430,13 +8313,30 @@ const createDomHelpers = (function createDomHelpers(opts) {
 });
 
 // Inlined from src/core/dom-runner.js
-const runCore = (function runCore(pageUrl, contextSelector, engineOptions, runOnly, RULE_DEFS, RULE_IMPLS, ENGINE_TAG, SCHEMA_VERSION) {
+const runCore = (function runCore(pageUrl, contextSelector, engineOptions, runOnly, CHECK_DEFS, RULE_IMPLS, ENGINE_TAG, SCHEMA_VERSION, COMPOSITE_RULES) {
     const ctxSelector =
         (typeof contextSelector === 'string' && contextSelector.trim())
             ? contextSelector.trim()
             : null;
 
-    const policy = resolvePolicy(POLICY_CONTRACTS, engineOptions);
+    // Normalize contrast options without mutating caller-provided engineOptions.
+    function __normalizeContrastOptions(engineOptions2) {
+        const eo = engineOptions2 && typeof engineOptions2 === 'object' ? engineOptions2 : {};
+        const c = (eo.contrast && typeof eo.contrast === 'object') ? eo.contrast : {};
+        const mode = (c.mode === 'auditorAssist') ? 'auditorAssist' : 'strictConformance';
+        const rootCanvasFallback =
+            (typeof c.rootCanvasFallback === 'string' && c.rootCanvasFallback.trim())
+                ? c.rootCanvasFallback.trim()
+                : '#ffffff';
+        return { mode, rootCanvasFallback };
+    }
+
+    const engineOptionsResolved =
+        (engineOptions && typeof engineOptions === 'object')
+            ? { ...engineOptions, contrast: __normalizeContrastOptions(engineOptions) }
+            : { contrast: __normalizeContrastOptions(null) };
+
+    const policy = resolvePolicy(POLICY_CONTRACTS, engineOptionsResolved);
 
     const root =
         ctxSelector
@@ -6449,15 +8349,15 @@ const runCore = (function runCore(pageUrl, contextSelector, engineOptions, runOn
                 document.querySelector('html'));
 
 
-    const includeShadowDom = !!(engineOptions && engineOptions.includeShadowDom);
-    const excludeSelectors = normalizeSelectorList(engineOptions && engineOptions.excludeSelectors);
+    const includeShadowDom = !!(engineOptionsResolved && engineOptionsResolved.includeShadowDom);
+    const excludeSelectors = normalizeSelectorList(engineOptionsResolved && engineOptionsResolved.excludeSelectors);
 
     const url = pageUrl || (document.location && document.location.href) || null;
     const title = document.title || null;
     // Deterministic timestamp: only use host-provided value (no time-based logic).
     const timestamp =
-        (engineOptions && typeof engineOptions.timestamp === 'string' && engineOptions.timestamp.trim())
-            ? engineOptions.timestamp.trim()
+        (engineOptionsResolved && typeof engineOptionsResolved.timestamp === 'string' && engineOptionsResolved.timestamp.trim())
+            ? engineOptionsResolved.timestamp.trim()
             : null;
 
     const sharedHelpers = createDomHelpers({
@@ -6467,10 +8367,10 @@ const runCore = (function runCore(pageUrl, contextSelector, engineOptions, runOn
         includeShadowDom,
         excludeSelectors,
         // Optional perf counters (bench/debug only). Deterministic and per-run.
-        perfStats: !!(engineOptions && engineOptions.perfStats)
+        perfStats: !!(engineOptionsResolved && engineOptionsResolved.perfStats)
     });
 
-    const profileRules = !!(engineOptions && engineOptions.profileRules);
+    const profileRules = !!(engineOptionsResolved && engineOptionsResolved.profileRules);
     const ruleTimings = profileRules ? Object.create(null) : null;
 
     function nowMs() {
@@ -6508,7 +8408,7 @@ const runCore = (function runCore(pageUrl, contextSelector, engineOptions, runOn
 
         if (t === 'object') {
             const out = {};
-            const keys = Object.keys(v);
+            const keys = Object.keys(v).sort();
             // cap object keys
             const n = Math.min(keys.length, 50);
             for (let i = 0; i < n; i++) {
@@ -6525,19 +8425,19 @@ const runCore = (function runCore(pageUrl, contextSelector, engineOptions, runOn
 
     let probes = null;
     try {
-        const rawProbes = engineOptions && typeof engineOptions.probes === 'object' ? engineOptions.probes : null;
+        const rawProbes = engineOptionsResolved && typeof engineOptionsResolved.probes === 'object' ? engineOptionsResolved.probes : null;
         probes = rawProbes ? sanitizeProbeValue(rawProbes, 6) : null;
         if (!probes || typeof probes !== 'object' || Array.isArray(probes)) probes = null;
     } catch (e) {
         probes = null;
     }
 
-    const rulesResults = [];
+    const checksResults = [];
 
-    for (const def of RULE_DEFS) {
+    for (const def of CHECK_DEFS) {
         const t0 = ruleTimings ? nowMs() : 0;
-        const defResolved = resolveRuleDefI18n(def, engineOptions);
-        if (!ruleMatchesRunOnly(defResolved, runOnly)) continue;
+        const defResolved = resolveRuleDefI18n(def, engineOptionsResolved);
+        if (!ruleMatchesRunOnly(defResolved, runOnly, ENGINE_TAG)) continue;
 
         const implEntry = RULE_IMPLS[defResolved.ruleId];
         const impl = implEntry && typeof implEntry.run === 'function' ? implEntry.run : null;
@@ -6545,8 +8445,8 @@ const runCore = (function runCore(pageUrl, contextSelector, engineOptions, runOn
         if (typeof impl !== 'function') continue;
 
         const ruleConfig =
-            engineOptions && engineOptions.rules && engineOptions.rules[defResolved.ruleId]
-                ? engineOptions.rules[defResolved.ruleId]
+            engineOptionsResolved && engineOptionsResolved.rules && engineOptionsResolved.rules[defResolved.ruleId]
+                ? engineOptionsResolved.rules[defResolved.ruleId]
                 : null;
 
         const ctx = {
@@ -6558,7 +8458,7 @@ const runCore = (function runCore(pageUrl, contextSelector, engineOptions, runOn
             helpers: sharedHelpers,
             engineTag: ENGINE_TAG,
             contextSelector: ctxSelector,
-            engineOptions: (engineOptions && typeof engineOptions === 'object') ? engineOptions : {},
+            engineOptions: (engineOptionsResolved && typeof engineOptionsResolved === 'object') ? engineOptionsResolved : {},
 
             // Optional evidence channel provided by host app
             inputs: {
@@ -6577,9 +8477,9 @@ const runCore = (function runCore(pageUrl, contextSelector, engineOptions, runOn
                     outcome: 'cantTell',
                     occurrences: [],
                     error: String(err && err.message ? err.message : err),
-                    engineOptions: { locale: normalizeLocale(engineOptions && engineOptions.locale) }
+                    engineOptions: { ...(ctx.engineOptions || {}), locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale) }
                 };
-                rulesResults.push(normalizeRuleResult(defResolved, raw, SCHEMA_VERSION, policy, sharedHelpers));
+                checksResults.push(normalizeRuleResult(defResolved, raw, SCHEMA_VERSION, policy, sharedHelpers));
                 if (ruleTimings) ruleTimings[defResolved.ruleId] = (ruleTimings[defResolved.ruleId] || 0) + (nowMs() - t0);
                 continue;
             }
@@ -6588,9 +8488,9 @@ const runCore = (function runCore(pageUrl, contextSelector, engineOptions, runOn
                 const raw = {
                     outcome: 'notApplicable',
                     occurrences: [],
-                    engineOptions: { locale: normalizeLocale(engineOptions && engineOptions.locale) }
+                    engineOptions: { ...(ctx.engineOptions || {}), locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale) }
                 };
-                rulesResults.push(normalizeRuleResult(defResolved, raw, SCHEMA_VERSION, policy, sharedHelpers));
+                checksResults.push(normalizeRuleResult(defResolved, raw, SCHEMA_VERSION, policy, sharedHelpers));
                 if (ruleTimings) ruleTimings[defResolved.ruleId] = (ruleTimings[defResolved.ruleId] || 0) + (nowMs() - t0);
                 continue;
             }
@@ -6604,7 +8504,7 @@ const runCore = (function runCore(pageUrl, contextSelector, engineOptions, runOn
                 outcome: 'cantTell',
                 occurrences: [],
                 error: String(err && err.message ? err.message : err),
-                engineOptions: { locale: normalizeLocale(engineOptions && engineOptions.locale) }
+                engineOptions: { ...(ctx.engineOptions || {}), locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale) }
             };
         }
 
@@ -6613,17 +8513,287 @@ const runCore = (function runCore(pageUrl, contextSelector, engineOptions, runOn
             continue;
         }
         if (!result.engineOptions) {
-            result.engineOptions = { ...(ctx.engineOptions || {}), locale: normalizeLocale(engineOptions && engineOptions.locale) };
+            result.engineOptions = { ...(ctx.engineOptions || {}), locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale) };
         }
-        rulesResults.push(normalizeRuleResult(defResolved, result, SCHEMA_VERSION, policy, sharedHelpers));
+        checksResults.push(normalizeRuleResult(defResolved, result, SCHEMA_VERSION, policy, sharedHelpers));
         if (ruleTimings) ruleTimings[defResolved.ruleId] = (ruleTimings[defResolved.ruleId] || 0) + (nowMs() - t0);
     }
 
+    // =========================
+    // Composite rule aggregation (data-only rollups)
+    // =========================
+    const rulesResults = [];
+    try {
+        const composites = Array.isArray(COMPOSITE_RULES) ? COMPOSITE_RULES : [];
+
+        // Determine target conformance level from runOnly.tags (already normalized by caller)
+        const LEVEL_RANK = { A: 1, AA: 2, AAA: 3 };
+
+        function inferTargetLevelFromRunOnly(runOnly2) {
+            const tags = runOnly2 && Array.isArray(runOnly2.tags) ? runOnly2.tags : [];
+            // tags are already lowercase
+            if (tags.includes('wcag2aaa') || tags.includes('wcag22aaa') || tags.includes('wcag21aaa')) return 'AAA';
+            if (tags.includes('wcag2aa') || tags.includes('wcag22aa') || tags.includes('wcag21aa')) return 'AA';
+            if (tags.includes('wcag2a') || tags.includes('wcag22a') || tags.includes('wcag21a')) return 'A';
+            return null; // if not specified, don't filter composites (back-compat)
+        }
+
+        function normalizeLevel(s) {
+            const v = typeof s === 'string' ? s.trim().toUpperCase() : '';
+            return (v === 'A' || v === 'AA' || v === 'AAA') ? v : null;
+        }
+
+        function isAllowedByTargetLevel(compositeLevel, targetLevel) {
+            if (!targetLevel) return true;
+            const c = LEVEL_RANK[compositeLevel];
+            const t = LEVEL_RANK[targetLevel];
+            if (!c || !t) return false; // unknown level => safest: exclude
+            return c <= t;
+        }
+
+        const targetLevel = inferTargetLevelFromRunOnly(runOnly);
+
+        // Severity rollup (deterministic)
+        const SEVERITY_RANK = { minor: 1, moderate: 2, serious: 3, critical: 4 };
+
+        function normalizeSeverity(s) {
+            const v = typeof s === 'string' ? s.trim().toLowerCase() : '';
+            return SEVERITY_RANK[v] ? v : null;
+        }
+
+        function maxSeverity(a, b) {
+            if (!a) return b || null;
+            if (!b) return a || null;
+            return (SEVERITY_RANK[b] > SEVERITY_RANK[a]) ? b : a;
+        }
+
+        // Index atomic results by ruleId (deterministic)
+        const byRuleId = Object.create(null);
+        for (const rr of checksResults) {
+            if (rr && typeof rr === 'object' && typeof rr.ruleId === 'string' && rr.ruleId) {
+                byRuleId[rr.ruleId] = rr;
+            }
+        }
+
+        function isNonEmptyString(s) {
+            return typeof s === 'string' && !!s.trim();
+        }
+
+        function buildCompositeDef(entry) {
+            if (!entry || typeof entry !== 'object') return null;
+
+            const ruleId = isNonEmptyString(entry.id) ? entry.id.trim() : String(entry.id || '').trim();
+            if (!ruleId) return null;
+
+            const metaIn = (entry.meta && typeof entry.meta === 'object' && !Array.isArray(entry.meta)) ? entry.meta : {};
+
+            const titleKey = (typeof metaIn.titleKey === 'string' && metaIn.titleKey.trim()) ? metaIn.titleKey.trim() : '';
+            const descriptionKey = (typeof metaIn.descriptionKey === 'string' && metaIn.descriptionKey.trim()) ? metaIn.descriptionKey.trim() : '';
+
+            const tags = [];
+            tags.push(String(ENGINE_TAG || 'a11ycore').toLowerCase());
+            tags.push('composite');
+
+            const lvl = (typeof metaIn.level === 'string' ? metaIn.level.trim().toUpperCase() : '');
+            if (lvl === 'A') {
+                tags.push('wcag2a', 'wcag21a');
+            } else if (lvl === 'AA') {
+                tags.push('wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa');
+            } else if (lvl === 'AAA') {
+                tags.push('wcag2a', 'wcag2aa', 'wcag2aaa', 'wcag21a', 'wcag21aa', 'wcag21aaa');
+            }
+
+            const wcagSc = Array.isArray(metaIn.wcagSc) ? metaIn.wcagSc.map(String).map(s => s.trim()).filter(Boolean) : [];
+            // Build normativeMappings so downstream consumers (like adapters) can derive WCAG SC/level
+            const normativeMappingsFromMeta = wcagSc.map((sc) => {
+                const m = { standard: 'WCAG', requirement: sc };
+                if (lvl === 'A' || lvl === 'AA' || lvl === 'AAA') m.level = lvl;
+                return m;
+            });
+
+            const checksIds =
+                Array.isArray(entry.checksIds)
+                    ? entry.checksIds.map(String).map(s => s.trim()).filter(Boolean)
+                    : [];
+
+            return {
+                ruleId,
+                title: metaIn.title || ruleId,
+                description: metaIn.description || '',
+
+                i18n: (titleKey || descriptionKey) ? { titleKey: titleKey || '', descriptionKey: descriptionKey || '' } : null,
+
+                helpUrl: '',
+                tags,
+
+                normativeMappings: normativeMappingsFromMeta,
+
+                defaultSeverity: 'serious',
+                defaultConfidence: 'medium',
+                type: 'automatic',
+                coverage: null,
+
+                ruleInterfaceVersion: '1.0.0',
+                ruleVersion: '0.0.0',
+                normative: true,
+                atomic: false,
+                category: null,
+                standard: null,
+                applicability: '',
+                expectation: '',
+                references: [],
+                requirements: null,
+                mappings: null,
+
+                // optional catalog meta passthrough
+                data: {
+                    details: {
+                        kind: 'compositeRule',
+                        wcagSc,
+                        level: (typeof metaIn.level === 'string' && metaIn.level.trim()) ? metaIn.level.trim() : null
+                    }
+                },
+
+                __checksIds: checksIds
+            };
+        }
+
+        for (let i = 0; i < composites.length; i++) {
+            const entry = composites[i];
+            const cDef0 = buildCompositeDef(entry);
+            if (!cDef0) continue;
+
+            // Conformance-level gate: if scan is AA, suppress AAA composites even if tags match
+            const compositeLevel =
+                cDef0 &&
+                cDef0.data &&
+                cDef0.data.details &&
+                normalizeLevel(cDef0.data.details.level);
+
+            if (!isAllowedByTargetLevel(compositeLevel, targetLevel)) continue;
+
+            // Localize title/description (uses def.i18n.* keys)
+            const cDefResolved = resolveRuleDefI18n(cDef0, engineOptionsResolved);
+
+            // Apply same selection logic to composites
+            if (!ruleMatchesRunOnly(cDefResolved, runOnly, ENGINE_TAG)) continue;
+
+            const checksIds = Array.isArray(cDef0.__checksIds) ? cDef0.__checksIds : [];
+
+            // rollup metrics (stable order)
+            let failCount = 0;
+            let cantTellCount = 0;
+            let notApplicableCount = 0;
+            let passCount = 0;
+            let missingCount = 0;
+
+            const contributors = [];
+
+            let rolledFailSeverity = null;     // max severity among FAIL contributors
+            let rolledCantTellSeverity = null; // max severity among CANTTELL contributors (optional)
+
+            for (let j = 0; j < checksIds.length; j++) {
+                const tid = checksIds[j];
+                const child = tid ? byRuleId[tid] : null;
+
+                if (!child) {
+                    missingCount += 1;
+                    contributors.push({ testId: tid, outcome: 'missing' });
+                    continue;
+                }
+
+                const out = child.outcome;
+                const childSev = normalizeSeverity(child && child.severity);
+
+                contributors.push({ testId: tid, outcome: out, severity: childSev || null });
+
+                if (out === 'fail' && childSev) {
+                    rolledFailSeverity = maxSeverity(rolledFailSeverity, childSev);
+                } else if (out === 'cantTell' && childSev) {
+                    rolledCantTellSeverity = maxSeverity(rolledCantTellSeverity, childSev);
+                }
+
+                if (out === 'fail') failCount += 1;
+                else if (out === 'cantTell') cantTellCount += 1;
+                else if (out === 'notApplicable') notApplicableCount += 1;
+                else if (out === 'pass') passCount += 1;
+            }
+
+            // outcome precedence:
+            // fail if any fail
+            // cantTell if any cantTell OR missing and none fail
+            // notApplicable if all notApplicable (and there is at least one test)
+            // pass otherwise
+            let outcome = 'pass';
+            let reasonCode = 'composite.rollup.pass.otherwise';
+
+            if (failCount > 0) {
+                outcome = 'fail';
+                reasonCode = 'composite.rollup.fail.anyFail';
+            } else if (cantTellCount > 0) {
+                outcome = 'cantTell';
+                reasonCode = 'composite.rollup.cantTell.anyCantTell';
+            } else if (missingCount > 0) {
+                outcome = 'cantTell';
+                reasonCode = 'composite.rollup.cantTell.missingChild';
+            } else if (checksIds.length > 0 && notApplicableCount === checksIds.length) {
+                outcome = 'notApplicable';
+                reasonCode = 'composite.rollup.notApplicable.allInapplicable';
+            } else if (checksIds.length === 0) {
+                outcome = 'cantTell';
+                reasonCode = 'composite.rollup.cantTell.emptyComposite';
+            }
+
+            const raw = {
+                outcome,
+                occurrences: [],
+
+                // REQUIRED by your reporting schema (top-level)
+                summaryKey: 'Composite rule rollup',
+                i18nKey: 'a11ycore_composite_rollup_summary',
+                i18nParams: { reasonCode, testCount: String(checksIds.length) },
+
+                // REQUIRED by your reporting schema (machine-readable payload)
+                data: {
+                    details: {
+                        reasonCode,
+                        checksIds: checksIds.slice(),
+                        contributors,
+                        metrics: {
+                            failCount,
+                            cantTellCount,
+                            notApplicableCount,
+                            passCount,
+                            missingCount
+                        }
+                    }
+                },
+
+                engineOptions: {
+                    ...(engineOptionsResolved || {}),
+                    locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
+                }
+            };
+
+            // Promote composite severity based on contributors (deterministic).
+            // - If composite fails: use max severity among failing children.
+            // - If composite cantTell: use max severity among cantTell children (fallback to failing if you prefer).
+            if (outcome === 'fail' && rolledFailSeverity) {
+                raw.severity = rolledFailSeverity;
+            } else if (outcome === 'cantTell' && rolledCantTellSeverity) {
+                raw.severity = rolledCantTellSeverity;
+            }
+
+            rulesResults.push(normalizeRuleResult(cDefResolved, raw, SCHEMA_VERSION, policy, sharedHelpers));
+        }
+    } catch (e) {
+        // no-throws: omit rulesResults if anything goes wrong
+    }
 
     // Optional perf counters passthrough (only when enabled). Deterministic.
     let perfStats = null;
     try {
-        if (engineOptions && engineOptions.perfStats && sharedHelpers && typeof sharedHelpers.getPerfStats === 'function') {
+        if (engineOptionsResolved && engineOptionsResolved.perfStats && sharedHelpers && typeof sharedHelpers.getPerfStats === 'function') {
             perfStats = sharedHelpers.getPerfStats();
         }
     } catch (e) {
@@ -6631,7 +8801,7 @@ const runCore = (function runCore(pageUrl, contextSelector, engineOptions, runOn
     }
 
     if (ruleTimings) {
-        if (perfStats && engineOptions && engineOptions.profileRules) {
+        if (perfStats && engineOptionsResolved && engineOptionsResolved.profileRules) {
             perfStats.ruleTimings = ruleTimings; // (whatever your timing map is)
         }
     }
@@ -6643,21 +8813,43 @@ const runCore = (function runCore(pageUrl, contextSelector, engineOptions, runOn
         timestamp,
         perfStats,
         contextSelector: ctxSelector,
-        rules: rulesResults
+        checksResults,
+        rulesResults
     };
 });
 
-function getRuleDefById(ruleId, engineOptions) {
-  const r = RULE_DEFS.find((x) => x.ruleId === ruleId) || null;
+function getCheckDefById(ruleId, engineOptions) {
+  const r = CHECK_DEFS.find((x) => x.ruleId === ruleId) || null;
   return r ? toCatalogEntry(r, engineOptions) : null;
 }
 
-function getRulesCatalog(engineOptions) {
-  return RULE_DEFS.map((r) => toCatalogEntry(r, engineOptions));
+function getChecksCatalog(engineOptions) {
+  // Tests are the atomic executable units (currently stored in CHECK_DEFS).
+  // We return the same catalog entries shape as rules for now.
+  return CHECK_DEFS.map((r) => toCatalogEntry(r, engineOptions));
 }
 
-function getRulesForRunOnly(runOnly, engineOptions) {
-  return RULE_DEFS
+function getRulesCatalog() {
+  // Data-only catalog. No i18n resolution yet (we can add later if needed).
+  return Array.isArray(COMPOSITE_RULES) ? COMPOSITE_RULES.map((x) => ({ ...x, checksIds: Array.isArray(x.checksIds) ? x.checksIds.slice() : [] })) : [];
+}
+
+function getCompositeRuleById(ruleId) {
+  if (!Array.isArray(COMPOSITE_RULES)) return null;
+  const found = COMPOSITE_RULES.find((x) => x && typeof x === 'object' && x.id === ruleId) || null;
+  if (!found) return null;
+  return { ...found, checksIds: Array.isArray(found.checksIds) ? found.checksIds.slice() : [] };
+}
+
+function getChecksForRunOnly(runOnly, engineOptions) {
+  return CHECK_DEFS
+    .filter((r) => ruleMatchesRunOnly(r, resolveEffectiveRunOnly(engineOptions, runOnly), ENGINE_TAG))
+    .map((r) => toCatalogEntry(r, engineOptions));
+}
+
+function getTestsForRunOnly(runOnly, engineOptions) {
+  // Tests are the atomic executable units; selection semantics live in ruleMatchesRunOnly.
+  return CHECK_DEFS
     .filter((r) => ruleMatchesRunOnly(r, resolveEffectiveRunOnly(engineOptions, runOnly), ENGINE_TAG))
     .map((r) => toCatalogEntry(r, engineOptions));
 }
@@ -6666,7 +8858,17 @@ function getRulesForRunOnly(runOnly, engineOptions) {
  * Node/runtime runner.
  */
 function runDomRulesInPage(pageUrl, contextSelector, engineOptions, runOnly) {
-  return runCore(pageUrl, contextSelector, engineOptions, resolveEffectiveRunOnly(engineOptions, runOnly), RULE_DEFS, RULE_IMPLS, ENGINE_TAG, SCHEMA_VERSION);
+  return runCore(
+    pageUrl,
+    contextSelector,
+    engineOptions,
+    resolveEffectiveRunOnly(engineOptions, runOnly),
+    CHECK_DEFS,
+    RULE_IMPLS,
+    ENGINE_TAG,
+    SCHEMA_VERSION,
+    COMPOSITE_RULES
+  );
 }
 
 // =======================
@@ -6676,7 +8878,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const ENGINE_TAG = "a11ycore";
   const SCHEMA_VERSION = "1.0.0";
 
-  const RULE_DEFS = [
+  // Rule catalog (data only)
+  const CHECK_DEFS = [
   {
     "ruleId": "a11ycore-area-alt-decorative",
     "title": "<area> with alt=\"\" must be decorative (manual review)",
@@ -6696,8 +8899,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "atomic",
       "a11ycore"
     ],
-    "normativeMappings": [],
-    "informativeReferences": [
+    "wcagSc": [
+      "1.1.1"
+    ],
+    "normativeMappings": [
       {
         "standard": "WCAG",
         "version": "2.2",
@@ -6740,6 +8945,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "helpUrl": "",
     "tags": [
       "wcag2a",
+      "wcag2aa",
       "wcag111",
       "nontext",
       "images",
@@ -6747,6 +8953,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "atomic",
       "automatic",
       "a11ycore"
+    ],
+    "wcagSc": [
+      "1.1.1"
     ],
     "normativeMappings": [
       {
@@ -6757,7 +8966,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A"
       }
     ],
-    "informativeReferences": [],
     "defaultSeverity": "serious",
     "defaultConfidence": "high",
     "type": "automatic",
@@ -6800,8 +9008,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "atomic",
       "a11ycore"
     ],
-    "normativeMappings": [],
-    "informativeReferences": [
+    "wcagSc": [
+      "1.1.1"
+    ],
+    "normativeMappings": [
       {
         "standard": "WCAG",
         "version": "2.2",
@@ -6834,29 +9044,220 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "mappings": null
   },
   {
-    "ruleId": "a11ycore-aria-hidden-programmatic-focus-review",
-    "title": "Review aria-hidden programmatic focus",
-    "description": "Flags elements that are aria-hidden but programmatically focusable (tabindex < 0). Verify intended focus management and assistive technology exposure.",
+    "ruleId": "a11ycore-aria-hidden-focus",
+    "title": "ARIA hidden elements must not be focusable",
+    "description": "Checks that aria-hidden=\"true\" elements are not focusable and do not contain focusable descendants.",
     "i18n": {
-      "titleKey": "a11ycore_ariaHidden_programmaticFocus_review_title",
-      "descriptionKey": "a11ycore_ariaHidden_programmaticFocus_review_description"
+      "titleKey": "a11ycore_ariaHidden_focus_title",
+      "descriptionKey": "a11ycore_ariaHidden_focus_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag2aa",
+      "wcag412",
+      "structure",
+      "aria",
+      "focus",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "2.4.7",
+      "4.1.2"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.4.7",
+        "title": "Focus Visible",
+        "conformanceLevel": "AA"
+      },
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "4.1.2",
+        "title": "Name, Role, Value",
+        "conformanceLevel": "A"
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "4.1.2": [
+          "aria-hidden-focusable"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "a11ycore-aria-role-name-present",
+    "title": "ARIA widget/container roles have an accessible name",
+    "description": "Checks that selected ARIA widget/container roles expose a non-empty accessible name.",
+    "i18n": {
+      "titleKey": "a11ycore_ariaRoleNamePresent_title",
+      "descriptionKey": "a11ycore_ariaRoleNamePresent_description"
     },
     "helpUrl": "",
     "tags": [
       "wcag2a",
       "wcag412",
-      "focus",
-      "aria",
+      "navigation",
       "atomic",
-      "manual",
+      "automatic",
+      "name",
       "a11ycore"
     ],
-    "normativeMappings": [],
-    "informativeReferences": [],
-    "defaultSeverity": "moderate",
-    "defaultConfidence": "medium",
-    "type": "manual",
-    "coverage": null,
+    "wcagSc": [
+      "4.1.2"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "4.1.2",
+        "title": "Name, Role, Value",
+        "conformanceLevel": "A"
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "4.1.2": [
+          "aria-role-name-present"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "a11ycore-binary-control-name-present",
+    "title": "Binary controls have an accessible name",
+    "description": "Checks that checkbox, radio, and switch controls expose a non-empty accessible name.",
+    "i18n": {
+      "titleKey": "a11ycore_binaryControlNamePresent_title",
+      "descriptionKey": "a11ycore_binaryControlNamePresent_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag412",
+      "forms",
+      "atomic",
+      "automatic",
+      "name",
+      "checkbox",
+      "radio",
+      "switch",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "4.1.2"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "4.1.2",
+        "title": "Name, Role, Value",
+        "conformanceLevel": "A"
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "4.1.2": [
+          "checkbox-name-present",
+          "radio-name-present",
+          "switch-name-present"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "a11ycore-button-name-present",
+    "title": "Buttons have an accessible name",
+    "description": "Checks that buttons expose a non-empty accessible name.",
+    "i18n": {
+      "titleKey": "a11ycore_buttonNamePresent_title",
+      "descriptionKey": "a11ycore_buttonNamePresent_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag412",
+      "forms",
+      "atomic",
+      "automatic",
+      "buttons",
+      "name",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "4.1.2"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "4.1.2",
+        "title": "Name, Role, Value",
+        "conformanceLevel": "A"
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "4.1.2": [
+          "button-name-present"
+        ]
+      }
+    },
     "data": null,
     "ruleInterfaceVersion": "1.0.0",
     "ruleVersion": "0.0.0",
@@ -6888,6 +9289,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "automatic",
       "a11ycore"
     ],
+    "wcagSc": [
+      "1.1.1"
+    ],
     "normativeMappings": [
       {
         "standard": "WCAG",
@@ -6897,7 +9301,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A"
       }
     ],
-    "informativeReferences": [],
     "defaultSeverity": "serious",
     "defaultConfidence": "high",
     "type": "automatic",
@@ -6939,8 +9342,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "atomic",
       "a11ycore"
     ],
-    "normativeMappings": [],
-    "informativeReferences": [
+    "wcagSc": [
+      "1.1.1"
+    ],
+    "normativeMappings": [
       {
         "standard": "WCAG",
         "version": "2.2",
@@ -6973,6 +9378,60 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "mappings": null
   },
   {
+    "ruleId": "a11ycore-combobox-name-present",
+    "title": "Comboboxes have an accessible name",
+    "description": "Checks that elements with role=\"combobox\" expose a non-empty accessible name.",
+    "i18n": {
+      "titleKey": "a11ycore_comboboxNamePresent_title",
+      "descriptionKey": "a11ycore_comboboxNamePresent_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag412",
+      "forms",
+      "atomic",
+      "automatic",
+      "name",
+      "combobox",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "4.1.2"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "4.1.2",
+        "title": "Name, Role, Value",
+        "conformanceLevel": "A"
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "4.1.2": [
+          "combobox-name-present"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
     "ruleId": "a11ycore-contrast-computable",
     "title": "Color contrast is computable for rendered text",
     "description": "Determines whether sufficient information is available to compute WCAG color contrast for visible text (e.g., no gradients/images/blend modes that make background indeterminate).",
@@ -6995,6 +9454,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "dom",
       "a11ycore"
     ],
+    "wcagSc": [
+      "1.4.3",
+      "1.4.6"
+    ],
     "normativeMappings": [
       {
         "standard": "WCAG",
@@ -7011,8 +9474,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "AAA"
       }
     ],
-    "informativeReferences": [],
-    "defaultSeverity": "minor",
+    "defaultSeverity": "serious",
     "defaultConfidence": "high",
     "type": "automatic",
     "coverage": {
@@ -7040,7 +9502,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "a11ycore-contrast-enhanced",
-    "title": "Text meets enhanced color contrast (AAA)",
+    "title": "Text must meet the enhanced color contrast ratio",
     "description": "Checks that visible text has a contrast ratio of at least 7:1 (normal) or 4.5:1 (large), when contrast is computable from CSS.",
     "i18n": {
       "titleKey": "a11ycore_contrastEnhanced_title",
@@ -7058,6 +9520,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "dom",
       "a11ycore"
     ],
+    "wcagSc": [
+      "1.4.6"
+    ],
     "normativeMappings": [
       {
         "standard": "WCAG",
@@ -7067,7 +9532,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "AAA"
       }
     ],
-    "informativeReferences": [],
     "defaultSeverity": "serious",
     "defaultConfidence": "high",
     "type": "automatic",
@@ -7093,7 +9557,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "a11ycore-contrast-minimum",
-    "title": "Text meets minimum color contrast (AA)",
+    "title": "Text must meet the minimum color contrast ratio",
     "description": "Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3:1 (large), when contrast is computable from CSS.",
     "i18n": {
       "titleKey": "a11ycore_contrastMinimum_title",
@@ -7111,6 +9575,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "dom",
       "a11ycore"
     ],
+    "wcagSc": [
+      "1.4.3"
+    ],
     "normativeMappings": [
       {
         "standard": "WCAG",
@@ -7120,7 +9587,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "AA"
       }
     ],
-    "informativeReferences": [],
     "defaultSeverity": "serious",
     "defaultConfidence": "high",
     "type": "automatic",
@@ -7137,6 +9603,114 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "normative": true,
     "atomic": true,
     "category": "perceivable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "a11ycore-css-hidden-focus",
+    "title": "Focusable elements must not be visually hidden",
+    "description": "Checks that keyboard-focusable elements are not visually hidden by CSS techniques that can leave them in the tab order.",
+    "i18n": {
+      "titleKey": "a11ycore_cssHidden_focus_title",
+      "descriptionKey": "a11ycore_cssHidden_focus_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2aa",
+      "wcag247",
+      "navigation",
+      "focus",
+      "css",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "2.4.7"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.4.7",
+        "title": "Focus Visible",
+        "conformanceLevel": "AA"
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "low",
+    "type": "manual",
+    "coverage": {
+      "facetsBySc": {
+        "2.4.7": [
+          "css-hidden-focusable"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "category": "operable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "a11ycore-dialog-name-present",
+    "title": "Dialogs have an accessible name",
+    "description": "Checks that elements with role=\"dialog\" or role=\"alertdialog\" expose a non-empty accessible name.",
+    "i18n": {
+      "titleKey": "a11ycore_dialogNamePresent_title",
+      "descriptionKey": "a11ycore_dialogNamePresent_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag412",
+      "structure",
+      "atomic",
+      "automatic",
+      "name",
+      "dialog",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "4.1.2"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "4.1.2",
+        "title": "Name, Role, Value",
+        "conformanceLevel": "A"
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "4.1.2": [
+          "dialog-name-present"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "category": "robust",
     "standard": null,
     "applicability": "",
     "expectation": "",
@@ -7162,6 +9736,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "automatic",
       "a11ycore"
     ],
+    "wcagSc": [
+      "1.1.1"
+    ],
     "normativeMappings": [
       {
         "standard": "WCAG",
@@ -7171,7 +9748,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A"
       }
     ],
-    "informativeReferences": [],
     "defaultSeverity": "serious",
     "defaultConfidence": "high",
     "type": "automatic",
@@ -7213,8 +9789,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "atomic",
       "a11ycore"
     ],
-    "normativeMappings": [],
-    "informativeReferences": [
+    "wcagSc": [
+      "1.1.1"
+    ],
+    "normativeMappings": [
       {
         "standard": "WCAG",
         "version": "2.2",
@@ -7266,6 +9844,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "automatic",
       "a11ycore"
     ],
+    "wcagSc": [
+      "4.1.2"
+    ],
     "normativeMappings": [
       {
         "standard": "WCAG",
@@ -7275,7 +9856,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A"
       }
     ],
-    "informativeReferences": [],
     "defaultSeverity": "serious",
     "defaultConfidence": "medium",
     "type": "automatic",
@@ -7318,8 +9898,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "manual",
       "a11ycore"
     ],
-    "normativeMappings": [],
-    "informativeReferences": [
+    "wcagSc": [
+      "4.1.2"
+    ],
+    "normativeMappings": [
       {
         "standard": "WCAG",
         "version": "2.2",
@@ -7369,6 +9951,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "atomic",
       "a11ycore"
     ],
+    "wcagSc": [
+      "3.1.1"
+    ],
     "normativeMappings": [
       {
         "standard": "WCAG",
@@ -7378,7 +9963,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A"
       }
     ],
-    "informativeReferences": [],
     "defaultSeverity": "serious",
     "defaultConfidence": "high",
     "type": "automatic",
@@ -7420,8 +10004,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "atomic",
       "a11ycore"
     ],
-    "normativeMappings": [],
-    "informativeReferences": [
+    "wcagSc": [
+      "1.1.1"
+    ],
+    "normativeMappings": [
       {
         "standard": "WCAG",
         "version": "2.2",
@@ -7471,6 +10057,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "automatic",
       "a11ycore"
     ],
+    "wcagSc": [
+      "1.1.1"
+    ],
     "normativeMappings": [
       {
         "standard": "WCAG",
@@ -7480,7 +10069,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A"
       }
     ],
-    "informativeReferences": [],
     "defaultSeverity": "serious",
     "defaultConfidence": "high",
     "type": "automatic",
@@ -7522,8 +10110,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "atomic",
       "a11ycore"
     ],
-    "normativeMappings": [],
-    "informativeReferences": [
+    "wcagSc": [
+      "1.1.1"
+    ],
+    "normativeMappings": [
       {
         "standard": "WCAG",
         "version": "2.2",
@@ -7573,8 +10163,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "atomic",
       "a11ycore"
     ],
-    "normativeMappings": [],
-    "informativeReferences": [
+    "wcagSc": [
+      "1.1.1"
+    ],
+    "normativeMappings": [
       {
         "standard": "WCAG",
         "version": "2.2",
@@ -7624,6 +10216,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "automatic",
       "a11ycore"
     ],
+    "wcagSc": [
+      "1.1.1"
+    ],
     "normativeMappings": [
       {
         "standard": "WCAG",
@@ -7633,7 +10228,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A"
       }
     ],
-    "informativeReferences": [],
     "defaultSeverity": "serious",
     "defaultConfidence": "high",
     "type": "automatic",
@@ -7675,8 +10269,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "atomic",
       "a11ycore"
     ],
-    "normativeMappings": [],
-    "informativeReferences": [
+    "wcagSc": [
+      "1.1.1"
+    ],
+    "normativeMappings": [
       {
         "standard": "WCAG",
         "version": "2.2",
@@ -7709,6 +10305,166 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "mappings": null
   },
   {
+    "ruleId": "a11ycore-label-in-name",
+    "title": "Label in Name: accessible name contains visible text",
+    "description": "Checks that when a control has a visible text label, the accessible name (from aria-label/aria-labelledby) contains that visible label text (WCAG 2.5.3).",
+    "i18n": {
+      "titleKey": "a11ycore_labelInName_title",
+      "descriptionKey": "a11ycore_labelInName_description"
+    },
+    "helpUrl": "https://www.w3.org/WAI/WCAG22/Understanding/label-in-name.html",
+    "tags": [
+      "wcag2a",
+      "wcag253",
+      "forms",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "2.5.3"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.5.3",
+        "title": "Label in Name",
+        "conformanceLevel": "A"
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "2.5.3": [
+          "label-in-name"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "category": "operable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "a11ycore-link-name-present",
+    "title": "Links have an accessible name",
+    "description": "Checks that links expose a non-empty accessible name.",
+    "i18n": {
+      "titleKey": "a11ycore_linkNamePresent_title",
+      "descriptionKey": "a11ycore_linkNamePresent_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag412",
+      "navigation",
+      "atomic",
+      "automatic",
+      "links",
+      "name",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "4.1.2"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "4.1.2",
+        "title": "Name, Role, Value",
+        "conformanceLevel": "A"
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "4.1.2": [
+          "link-name-present"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "a11ycore-listbox-name-present",
+    "title": "Accessible name is present",
+    "description": "Checks that elements expose a non-empty accessible name.",
+    "i18n": {
+      "titleKey": "a11ycore_listboxNamePresent_title",
+      "descriptionKey": "a11ycore_listboxNamePresent_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag412",
+      "forms",
+      "atomic",
+      "automatic",
+      "name",
+      "listbox",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "4.1.2"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "4.1.2",
+        "title": "Name, Role, Value",
+        "conformanceLevel": "A"
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "4.1.2": [
+          "listbox-name-present"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
     "ruleId": "a11ycore-manual-review",
     "title": "Manual review: keyboard navigation and focus order",
     "description": "Flags that a manual review of keyboard navigation and focus order is required.",
@@ -7718,14 +10474,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     },
     "helpUrl": "",
     "tags": [
-      "manual",
       "wcag2a",
-      "wcag2aa",
+      "wcag111",
+      "nontext",
+      "atomic",
       "manual",
       "a11ycore"
     ],
-    "normativeMappings": [],
-    "informativeReferences": [
+    "wcagSc": [
+      "2.1.1",
+      "2.4.3",
+      "2.4.7"
+    ],
+    "normativeMappings": [
       {
         "standard": "WCAG",
         "version": "2.2",
@@ -7823,12 +10584,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "wcag2a",
       "wcag121",
       "timebasedmedia",
+      "media",
       "atomic",
       "manual",
       "a11ycore"
     ],
-    "normativeMappings": [],
-    "informativeReferences": [
+    "wcagSc": [
+      "1.2.1"
+    ],
+    "normativeMappings": [
       {
         "standard": "WCAG",
         "version": "2.2",
@@ -7861,6 +10625,60 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "mappings": null
   },
   {
+    "ruleId": "a11ycore-menuitem-name-present",
+    "title": "Menu items have an accessible name",
+    "description": "Checks that menu items (role=\"menuitem*\", including checkbox/radio variants) expose a non-empty accessible name.",
+    "i18n": {
+      "titleKey": "a11ycore_menuitemNamePresent_title",
+      "descriptionKey": "a11ycore_menuitemNamePresent_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag412",
+      "navigation",
+      "atomic",
+      "automatic",
+      "name",
+      "menuitem",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "4.1.2"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "4.1.2",
+        "title": "Name, Role, Value",
+        "conformanceLevel": "A"
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "4.1.2": [
+          "menuitem-name-present"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
     "ruleId": "a11ycore-object-text-alternative-present",
     "title": "<object> must provide a text alternative",
     "description": "Checks that <object> elements provide a text alternative via fallback content or an accessible name.",
@@ -7878,6 +10696,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "automatic",
       "a11ycore"
     ],
+    "wcagSc": [
+      "1.1.1"
+    ],
     "normativeMappings": [
       {
         "standard": "WCAG",
@@ -7887,7 +10708,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A"
       }
     ],
-    "informativeReferences": [],
     "defaultSeverity": "serious",
     "defaultConfidence": "high",
     "type": "automatic",
@@ -7929,8 +10749,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "atomic",
       "a11ycore"
     ],
-    "normativeMappings": [],
-    "informativeReferences": [
+    "wcagSc": [
+      "1.1.1"
+    ],
+    "normativeMappings": [
       {
         "standard": "WCAG",
         "version": "2.2",
@@ -7963,6 +10785,60 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "mappings": null
   },
   {
+    "ruleId": "a11ycore-option-name-present",
+    "title": "Accessible name is present",
+    "description": "Checks that elements expose a non-empty accessible name.",
+    "i18n": {
+      "titleKey": "a11ycore_optionNamePresent_title",
+      "descriptionKey": "a11ycore_optionNamePresent_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag412",
+      "forms",
+      "atomic",
+      "automatic",
+      "name",
+      "option",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "4.1.2"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "4.1.2",
+        "title": "Name, Role, Value",
+        "conformanceLevel": "A"
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "4.1.2": [
+          "option-name-present"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
     "ruleId": "a11ycore-page-title-patterns",
     "title": "Page title patterns that may indicate low descriptiveness",
     "description": "Flags page titles that are likely too generic or templated as review signals (WCAG 2.2 SC 2.4.2). This rule is conservative and does not fail based on patterns alone.",
@@ -7980,6 +10856,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "automatic",
       "a11ycore"
     ],
+    "wcagSc": [
+      "2.4.2"
+    ],
     "normativeMappings": [
       {
         "standard": "WCAG",
@@ -7989,7 +10868,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A"
       }
     ],
-    "informativeReferences": [],
     "defaultSeverity": "minor",
     "defaultConfidence": "medium",
     "type": "automatic",
@@ -8031,6 +10909,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "automatic",
       "a11ycore"
     ],
+    "wcagSc": [
+      "2.4.2"
+    ],
     "normativeMappings": [
       {
         "standard": "WCAG",
@@ -8040,7 +10921,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A"
       }
     ],
-    "informativeReferences": [],
     "defaultSeverity": "serious",
     "defaultConfidence": "high",
     "type": "automatic",
@@ -8083,6 +10963,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "automatic",
       "a11ycore"
     ],
+    "wcagSc": [
+      "1.1.1"
+    ],
     "normativeMappings": [
       {
         "standard": "WCAG",
@@ -8092,7 +10975,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A"
       }
     ],
-    "informativeReferences": [],
     "defaultSeverity": "serious",
     "defaultConfidence": "high",
     "type": "automatic",
@@ -8109,6 +10991,168 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "normative": true,
     "atomic": true,
     "category": "perceivable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "a11ycore-searchbox-name-present",
+    "title": "Accessible name is present",
+    "description": "Checks that elements expose a non-empty accessible name.",
+    "i18n": {
+      "titleKey": "a11ycore_searchboxNamePresent_title",
+      "descriptionKey": "a11ycore_searchboxNamePresent_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag412",
+      "forms",
+      "atomic",
+      "automatic",
+      "name",
+      "searchbox",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "4.1.2"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "4.1.2",
+        "title": "Name, Role, Value",
+        "conformanceLevel": "A"
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "4.1.2": [
+          "searchbox-name-present"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "a11ycore-slider-name-present",
+    "title": "Sliders have an accessible name",
+    "description": "Checks that sliders (input[type=\"range\"] and role=\"slider\") expose a non-empty accessible name.",
+    "i18n": {
+      "titleKey": "a11ycore_sliderNamePresent_title",
+      "descriptionKey": "a11ycore_sliderNamePresent_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag412",
+      "forms",
+      "atomic",
+      "automatic",
+      "name",
+      "slider",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "4.1.2"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "4.1.2",
+        "title": "Name, Role, Value",
+        "conformanceLevel": "A"
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "4.1.2": [
+          "slider-name-present"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "a11ycore-spinbutton-name-present",
+    "title": "Accessible name is present",
+    "description": "Checks that elements expose a non-empty accessible name.",
+    "i18n": {
+      "titleKey": "a11ycore_spinbuttonNamePresent_title",
+      "descriptionKey": "a11ycore_spinbuttonNamePresent_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag412",
+      "forms",
+      "atomic",
+      "automatic",
+      "name",
+      "spinbutton",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "4.1.2"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "4.1.2",
+        "title": "Name, Role, Value",
+        "conformanceLevel": "A"
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "4.1.2": [
+          "spinbutton-name-present"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "category": "robust",
     "standard": null,
     "applicability": "",
     "expectation": "",
@@ -8135,6 +11179,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "automatic",
       "a11ycore"
     ],
+    "wcagSc": [
+      "1.1.1"
+    ],
     "normativeMappings": [
       {
         "standard": "WCAG",
@@ -8144,7 +11191,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A"
       }
     ],
-    "informativeReferences": [],
     "defaultSeverity": "serious",
     "defaultConfidence": "medium",
     "type": "automatic",
@@ -8187,6 +11233,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "automatic",
       "a11ycore"
     ],
+    "wcagSc": [
+      "1.1.1"
+    ],
     "normativeMappings": [
       {
         "standard": "WCAG",
@@ -8196,7 +11245,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A"
       }
     ],
-    "informativeReferences": [],
     "defaultSeverity": "serious",
     "defaultConfidence": "high",
     "type": "automatic",
@@ -8238,8 +11286,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "atomic",
       "a11ycore"
     ],
-    "normativeMappings": [],
-    "informativeReferences": [
+    "wcagSc": [
+      "1.1.1"
+    ],
+    "normativeMappings": [
       {
         "standard": "WCAG",
         "version": "2.2",
@@ -8272,6 +11322,224 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "mappings": null
   },
   {
+    "ruleId": "a11ycore-tab-name-present",
+    "title": "Tabs have an accessible name",
+    "description": "Checks that elements with role=\"tab\" expose a non-empty accessible name.",
+    "i18n": {
+      "titleKey": "a11ycore_tabNamePresent_title",
+      "descriptionKey": "a11ycore_tabNamePresent_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag412",
+      "navigation",
+      "atomic",
+      "automatic",
+      "name",
+      "tab",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "4.1.2"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "4.1.2",
+        "title": "Name, Role, Value",
+        "conformanceLevel": "A"
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "4.1.2": [
+          "tab-name-present"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "a11ycore-target-size-minimum",
+    "title": "Pointer targets meet minimum size (AA)",
+    "description": "Checks that pointer-operable targets have an effective hit region of at least 24 by 24 CSS pixels, or meet an allowed exception (e.g. sufficient spacing).",
+    "i18n": {
+      "titleKey": "a11ycore_targetSizeMinimum_title",
+      "descriptionKey": "a11ycore_targetSizeMinimum_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2aa",
+      "wcag258",
+      "navigation",
+      "operable",
+      "pointer",
+      "target-size",
+      "atomic",
+      "automatic",
+      "dom",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "2.5.8"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.5.8",
+        "title": "Target Size (Minimum)",
+        "conformanceLevel": "AA"
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "medium",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "2.5.8": [
+          "target-size-minimum-pointer"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "category": "operable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "a11ycore-textbox-name-present",
+    "title": "Accessible name is present",
+    "description": "Checks that elements expose a non-empty accessible name.",
+    "i18n": {
+      "titleKey": "a11ycore_textboxNamePresent_title",
+      "descriptionKey": "a11ycore_textboxNamePresent_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag412",
+      "forms",
+      "atomic",
+      "automatic",
+      "name",
+      "textbox",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "4.1.2"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "4.1.2",
+        "title": "Name, Role, Value",
+        "conformanceLevel": "A"
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "4.1.2": [
+          "textbox-name-present"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "a11ycore-treeitem-name-present",
+    "title": "Accessible name is present",
+    "description": "Checks that elements expose a non-empty accessible name.",
+    "i18n": {
+      "titleKey": "a11ycore_treeitemNamePresent_title",
+      "descriptionKey": "a11ycore_treeitemNamePresent_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag412",
+      "navigation",
+      "atomic",
+      "automatic",
+      "name",
+      "treeitem",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "4.1.2"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "4.1.2",
+        "title": "Name, Role, Value",
+        "conformanceLevel": "A"
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "4.1.2": [
+          "treeitem-name-present"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
     "ruleId": "a11ycore-video-poster-text-alternative-present",
     "title": "<video> poster must have a text alternative",
     "description": "Checks that <video> elements with a poster image provide a text alternative (accessible name or fallback text).",
@@ -8289,6 +11557,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "automatic",
       "a11ycore"
     ],
+    "wcagSc": [
+      "1.1.1"
+    ],
     "normativeMappings": [
       {
         "standard": "WCAG",
@@ -8298,7 +11569,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A"
       }
     ],
-    "informativeReferences": [],
     "defaultSeverity": "serious",
     "defaultConfidence": "medium",
     "type": "automatic",
@@ -8321,6 +11591,222 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null
+  }
+];
+
+  // Tests catalog (alias of CHECK_DEFS; tests are the atomic executable units)
+  const TEST_DEFS = CHECK_DEFS;
+
+  // Composite rules catalog (data only)
+  const COMPOSITE_RULES = [
+  {
+    "id": "a11ycore-wcag-1.1.1-non-text-content",
+    "checksIds": [
+      "a11ycore-area-alt-present",
+      "a11ycore-img-alt-decorative",
+      "a11ycore-img-alt-quality",
+      "a11ycore-area-alt-decorative",
+      "a11ycore-area-alt-quality",
+      "a11ycore-canvas-text-alternative-quality",
+      "a11ycore-canvas-text-alternative-present",
+      "a11ycore-embed-text-alternative-present",
+      "a11ycore-img-alt-present",
+      "a11ycore-input-image-alt-present",
+      "a11ycore-object-text-alternative-present",
+      "a11ycore-role-img-text-alternative-present",
+      "a11ycore-svg-image-text-alternative-present",
+      "a11ycore-svg-text-alternative-present",
+      "a11ycore-video-poster-text-alternative-present",
+      "a11ycore-embed-text-alternative-quality",
+      "a11ycore-input-image-alt-decorative",
+      "a11ycore-input-image-alt-quality",
+      "a11ycore-object-text-alternative-quality",
+      "a11ycore-svg-text-alternative-quality"
+    ],
+    "meta": {
+      "title": "Non-text content: text alternatives",
+      "description": "Rollup of checks ensuring non-text content has an appropriate text alternative.",
+      "wcagSc": [
+        "1.1.1"
+      ],
+      "level": "A"
+    }
+  },
+  {
+    "id": "a11ycore-wcag-1.2.1-audio-only-video-only-prerecorded",
+    "checksIds": [
+      "a11ycore-media-alternative-transcript-evidence"
+    ],
+    "meta": {
+      "title": "Audio-only and video-only (prerecorded): transcript",
+      "description": "Rollup of checks for transcript availability for prerecorded audio-only/video-only media.",
+      "wcagSc": [
+        "1.2.1"
+      ],
+      "level": "A"
+    }
+  },
+  {
+    "id": "a11ycore-wcag-1.4.3-contrast-minimum",
+    "checksIds": [
+      "a11ycore-contrast-computable",
+      "a11ycore-contrast-minimum"
+    ],
+    "meta": {
+      "title": "Contrast: minimum",
+      "description": "Rollup of checks for minimum text contrast.",
+      "wcagSc": [
+        "1.4.3"
+      ],
+      "level": "AA"
+    }
+  },
+  {
+    "id": "a11ycore-wcag-1.4.6-contrast-enhanced",
+    "checksIds": [
+      "a11ycore-contrast-computable",
+      "a11ycore-contrast-enhanced"
+    ],
+    "meta": {
+      "title": "Contrast: enhanced",
+      "description": "Rollup of checks for enhanced text contrast.",
+      "wcagSc": [
+        "1.4.6"
+      ],
+      "level": "AAA"
+    }
+  },
+  {
+    "id": "a11ycore-wcag-2.1.1-keyboard",
+    "checksIds": [
+      "a11ycore-manual-review"
+    ],
+    "meta": {
+      "title": "Keyboard",
+      "description": "Rollup of checks ensuring functionality is operable through a keyboard interface.",
+      "wcagSc": [
+        "2.1.1"
+      ],
+      "level": "A"
+    }
+  },
+  {
+    "id": "a11ycore-wcag-2.4.2-page-titled",
+    "checksIds": [
+      "a11ycore-page-title-patterns",
+      "a11ycore-page-title-present"
+    ],
+    "meta": {
+      "title": "Page titled",
+      "description": "Rollup of checks ensuring documents have a meaningful page title.",
+      "wcagSc": [
+        "2.4.2"
+      ],
+      "level": "A"
+    }
+  },
+  {
+    "id": "a11ycore-wcag-2.4.3-focus-order",
+    "checksIds": [
+      "a11ycore-manual-review"
+    ],
+    "meta": {
+      "title": "Focus order",
+      "description": "Rollup of checks ensuring focus moves through content in a meaningful order.",
+      "wcagSc": [
+        "2.4.3"
+      ],
+      "level": "A"
+    }
+  },
+  {
+    "id": "a11ycore-wcag-2.4.7-focus-visible",
+    "checksIds": [
+      "a11ycore-aria-hidden-focus",
+      "a11ycore-css-hidden-focus",
+      "a11ycore-manual-review"
+    ],
+    "meta": {
+      "title": "Focus visible",
+      "description": "Rollup of checks ensuring keyboard focus is not hidden and remains perceivable.",
+      "wcagSc": [
+        "2.4.7"
+      ],
+      "level": "AA"
+    }
+  },
+  {
+    "id": "a11ycore-wcag-2.5.3-label-in-name",
+    "checksIds": [
+      "a11ycore-label-in-name"
+    ],
+    "meta": {
+      "title": "Label in name",
+      "description": "Rollup of checks ensuring that when a control has a visible text label, the accessible name contains that visible label text.",
+      "wcagSc": [
+        "2.5.3"
+      ],
+      "level": "A"
+    }
+  },
+  {
+    "id": "a11ycore-wcag-2.5.8-target-size-minimum",
+    "checksIds": [
+      "a11ycore-target-size-minimum"
+    ],
+    "meta": {
+      "title": "Target size: minimum",
+      "description": "Rollup of checks ensuring pointer targets meet minimum size requirements.",
+      "wcagSc": [
+        "2.5.8"
+      ],
+      "level": "AA"
+    }
+  },
+  {
+    "id": "a11ycore-wcag-3.1.1-language-of-page",
+    "checksIds": [
+      "a11ycore-html-lang-attr-present"
+    ],
+    "meta": {
+      "title": "Language of page",
+      "description": "Rollup of checks ensuring the page language is specified.",
+      "wcagSc": [
+        "3.1.1"
+      ],
+      "level": "A"
+    }
+  },
+  {
+    "id": "a11ycore-wcag-4.1.2-name",
+    "checksIds": [
+      "a11ycore-aria-role-name-present",
+      "a11ycore-binary-control-name-present",
+      "a11ycore-button-name-present",
+      "a11ycore-combobox-name-present",
+      "a11ycore-dialog-name-present",
+      "a11ycore-form-control-programmatic-label-present",
+      "a11ycore-link-name-present",
+      "a11ycore-listbox-name-present",
+      "a11ycore-menuitem-name-present",
+      "a11ycore-option-name-present",
+      "a11ycore-searchbox-name-present",
+      "a11ycore-slider-name-present",
+      "a11ycore-spinbutton-name-present",
+      "a11ycore-tab-name-present",
+      "a11ycore-textbox-name-present",
+      "a11ycore-treeitem-name-present",
+      "a11ycore-aria-hidden-focus",
+      "a11ycore-form-control-programmatic-label-quality"
+    ],
+    "meta": {
+      "title": "Name, role, value: accessible name",
+      "description": "Rollup of checks that common interactive elements expose a non-empty accessible name.",
+      "wcagSc": [
+        "4.1.2"
+      ],
+      "level": "A"
+    }
   }
 ];
 
@@ -8846,74 +12332,1106 @@ if (isAccTreeEligible) {
 
     return { ruleId: rule.ruleId, outcome: 'cantTell', severity: 'minor', occurrences };
 }), applicability: null },
-    "a11ycore-aria-hidden-programmatic-focus-review": { run: (function runInPage(ctx) {
-    const { document, root, helpers, rule } = ctx;
-    const safeRoot = root || document;
+    "a11ycore-aria-hidden-focus": { run: (function runInPage(ctx) {
+  const { document, root, helpers, rule } = ctx;
+  const safeRoot = root || document;
 
-    const queryAll = helpers && typeof helpers.queryAllSmart === 'function'
-        ? helpers.queryAllSmart
-        : (sel) => {
-            try { return safeRoot && safeRoot.querySelectorAll ? Array.from(safeRoot.querySelectorAll(sel)) : []; }
-            catch { return []; }
-        };
+  const queryAllSmart = helpers && typeof helpers.queryAllSmart === 'function' ? helpers.queryAllSmart : null;
 
-    const buildSelector = helpers && typeof helpers.buildSelector === 'function'
-        ? helpers.buildSelector
-        : (el) => {
+  const getFocusableInfo = helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
+
+  // Used only to exclude non-rendered elements; we explicitly DO NOT exclude opacity:0.
+  const isDomVisibleEligible = helpers && typeof helpers.isDomVisibleEligible === 'function' ? helpers.isDomVisibleEligible : null;
+
+  const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
+
+  // Prefer helper occurrence wrapper so the engine can attach selector/snippet later.
+  const reportOccurrence = helpers && typeof helpers.reportOccurrence === 'function'
+    ? helpers.reportOccurrence
+    : null;
+
+  const trim = (v) => (v == null ? '' : String(v)).trim();
+  const lower = (v) => trim(v).toLowerCase();
+
+  function qAll(sel) {
+    try {
+      if (queryAllSmart) {
+        const r = queryAllSmart(sel);
+        if (Array.isArray(r)) return r;
+        return Array.from(r || []);
+      }
+    } catch {
+      // fall through
+    }
+    try {
+      if (safeRoot && typeof safeRoot.querySelectorAll === 'function') return Array.from(safeRoot.querySelectorAll(sel));
+    } catch {
+      // fall through
+    }
+    return [];
+  }
+
+  // Deterministic composed parent (best-effort):
+  // - parentNode
+  // - assignedSlot
+  // - shadow host (composed: true)
+  function composedParent(n) {
+    if (!n) return null;
+    const p = n.parentNode || (n.assignedSlot ? n.assignedSlot : null);
+    if (p) return p;
+    try {
+      const rn = n.getRootNode ? n.getRootNode({ composed: true }) : null;
+      return rn && rn.host ? rn.host : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function closestAriaHiddenTrue(node) {
+    let cur = node;
+    let guard = 0;
+    while (cur && guard++ < 200) {
+      try {
+        if (cur.getAttribute) {
+          const v = cur.getAttribute('aria-hidden');
+          if (v != null && lower(v) === 'true') return cur;
+        }
+      } catch {
+        // ignore
+      }
+      cur = composedParent(cur);
+    }
+    return null;
+  }
+
+  // Lightweight "invisible but still focusable" hints.
+  // Only computed for a capped set of offenders per aria-hidden root.
+  function getVisibilityHints(el) {
+    const out = [];
+    if (!el) return out;
+
+    let cs = null;
+    try {
+      const w = (document && document.defaultView) ? document.defaultView : (typeof window !== 'undefined' ? window : null);
+      cs = w && w.getComputedStyle ? w.getComputedStyle(el) : null;
+    } catch {
+      cs = null;
+    }
+
+    // opacity:0 (still focusable)
+    try {
+      const rawOp = cs && cs.opacity != null ? String(cs.opacity).trim() : '';
+      const op = rawOp ? Number.parseFloat(rawOp) : 1;
+      if (Number.isFinite(op) && op <= 0.0001) out.push('opacityZero');
+    } catch {
+      // ignore
+    }
+
+    // clip / clip-path (still focusable)
+    try {
+      const clip = cs && cs.clip != null ? String(cs.clip).trim() : '';
+      const clipPath = cs && cs.clipPath != null ? String(cs.clipPath).trim() : '';
+      const clipLow = (clip || '').toLowerCase();
+      const clipPathLow = (clipPath || '').toLowerCase();
+
+      // Common visually-hidden patterns
+      if (clipLow && clipLow !== 'auto') {
+        // Examples: rect(0px, 0px, 0px, 0px) / rect(0,0,0,0)
+        if (clipLow.indexOf('rect(') !== -1 && clipLow.replace(/\s+/g, '').indexOf('rect(0') !== -1) out.push('clipped');
+      }
+      if (clipPathLow && clipPathLow !== 'none') {
+        // Examples: inset(100%) / inset(50%)
+        if (clipPathLow.indexOf('inset(') !== -1 && (clipPathLow.indexOf('100%') !== -1 || clipPathLow.indexOf('50%') !== -1)) {
+          out.push('clipped');
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    // zero-size + overflow hidden/clip (still focusable)
+    try {
+      const wv = cs && cs.width != null ? String(cs.width).trim() : '';
+      const hv = cs && cs.height != null ? String(cs.height).trim() : '';
+      const ov = cs && cs.overflow != null ? String(cs.overflow).trim().toLowerCase() : '';
+      const isZeroW = wv === '0px' || wv === '0';
+      const isZeroH = hv === '0px' || hv === '0';
+      const hidesOverflow = ov === 'hidden' || ov === 'clip';
+      if ((isZeroW || isZeroH) && hidesOverflow) out.push('zeroSizeOverflowHidden');
+    } catch {
+      // ignore
+    }
+
+    // Off-screen heuristic (still focusable)
+    // Deterministic string parsing; does not require layout geometry.
+    try {
+      const pos = cs && cs.position != null ? String(cs.position).trim().toLowerCase() : '';
+      const left = cs && cs.left != null ? String(cs.left).trim().toLowerCase() : '';
+      const top = cs && cs.top != null ? String(cs.top).trim().toLowerCase() : '';
+      const ti = cs && cs.textIndent != null ? String(cs.textIndent).trim().toLowerCase() : '';
+
+      const parsePx = (s) => {
+        if (!s || s === 'auto') return null;
+        const m = String(s).match(/-?\d+(\.\d+)?/);
+        if (!m) return null;
+        const n = Number.parseFloat(m[0]);
+        return Number.isFinite(n) ? n : null;
+      };
+
+      const l = parsePx(left);
+      const t = parsePx(top);
+      const ind = parsePx(ti);
+
+      if (pos === 'absolute' || pos === 'fixed') {
+        if ((l != null && l <= -5000) || (t != null && t <= -5000)) out.push('offscreen');
+      }
+      // Common text-indent technique
+      if (ind != null && ind <= -5000) out.push('offscreen');
+    } catch {
+      // ignore
+    }
+
+    // Dedup while preserving stable order
+    const seen = new Set();
+    const uniq = [];
+    for (const k of out) {
+      const kk = String(k);
+      if (!seen.has(kk)) { seen.add(kk); uniq.push(kk); }
+    }
+    return uniq;
+  }
+
+  // DOM-visibility gate to avoid false positives:
+  // Exclude structural/CSS hidden cases that prevent focus (display:none, visibility:hidden, hidden attr, etc.).
+  // IMPORTANT: Do NOT exclude opacity-based invisibility; opacity:0 remains in-scope.
+  function isActuallyFocusable(el) {
+    if (!el || !el.getAttribute) return false;
+
+    // Hard blockers that should always win (even if fallback logic would say "focusable")
+    if (hasInertAncestor(el)) return false;
+    if (isDisabledFormControl(el)) return false;
+
+    // 1) "DOM focusability" check (ignore aria-hidden)
+    // Prefer helper for broad coverage, but do not let aria-hidden flip focusable->false.
+    let helperInfo = null;
+    if (getFocusableInfo) {
+      try { helperInfo = getFocusableInfo(el, ctx); } catch { helperInfo = null; }
+    }
+
+    // Local fallback that does NOT care about aria-hidden
+    const tag = lower(el.tagName || '');
+    let fallbackFocusable = false;
+
+    if (tag === 'a' || tag === 'area') {
+      const href = trim(el.getAttribute('href'));
+      fallbackFocusable = !!href;
+    } else if (tag === 'button' || tag === 'select' || tag === 'textarea' || tag === 'summary') {
+      fallbackFocusable = true;
+    } else if (tag === 'input') {
+      const type = lower(el.getAttribute('type') || '');
+      fallbackFocusable = type !== 'hidden';
+    } else if (el.hasAttribute && el.hasAttribute('contenteditable')) {
+      fallbackFocusable = true;
+    } else {
+      const ti = el.getAttribute('tabindex');
+      const s = trim(ti);
+      if (ti != null && s !== '' && !Number.isNaN(Number(s))) {
+        fallbackFocusable = true; // tabindex makes it programmatically focusable
+      }
+    }
+
+    // Use helper focusable if it says true; otherwise use fallback focusable.
+    // This specifically prevents aria-hidden from suppressing "self focusable".
+    const focusable = (helperInfo && helperInfo.focusable === true) || fallbackFocusable;
+    if (!focusable) return false;
+
+    // 2) exclude non-rendered / non-visible-by-style blockers
+    // IMPORTANT: Do NOT exclude opacity-based invisibility; opacity:0 remains in-scope.
+    if (isDomVisibleEligible) {
+      try {
+        const vis = isDomVisibleEligible(el, ctx, { visibilityMode: 'styleOnly', disableGeometry: true });
+        if (vis && vis.eligible === false) {
+          const rs = Array.isArray(vis.reasons) ? vis.reasons : [];
+          const nonOpacity = rs.filter((r) => String(r) !== 'opacityZero');
+          if (nonOpacity.length) return false;
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    return true;
+  }
+
+  function hasInertAncestor(el) {
+    let cur = el;
+    let guard = 0;
+    while (cur && guard++ < 200) {
+      try {
+        if (cur.nodeType === 1 && cur.hasAttribute && cur.hasAttribute('inert')) return true;
+      } catch {
+        // ignore
+      }
+      cur = composedParent(cur);
+    }
+    return false;
+  }
+
+  function isDisabledFormControl(el) {
+    try {
+      // Covers button/input/select/textarea/option/optgroup/fieldset etc.
+      if (typeof el.disabled === 'boolean' && el.disabled) return true;
+    } catch {
+      // ignore
+    }
+    try {
+      const tag = lower(el.tagName || '');
+      if ((tag === 'button' || tag === 'input' || tag === 'select' || tag === 'textarea' || tag === 'option' || tag === 'optgroup') &&
+          el.hasAttribute && el.hasAttribute('disabled')) {
+        return true;
+      }
+    } catch {
+      // ignore
+    }
+    return false;
+  }
+
+  // 1) Find aria-hidden="true" roots.
+  const ariaHiddenRoots = qAll('[aria-hidden="true"]');
+  if (!ariaHiddenRoots.length) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+
+  // 2) Find focusable candidates once (performance) and bucket those inside aria-hidden.
+  // Keep selector fairly small to avoid huge candidate sets while still covering the reference engine cases.
+  const focusableCandidates = qAll(
+    'a[href],area[href],button,input,select,textarea,summary,[tabindex],[contenteditable]'
+  );
+
+  const bucket = new Map(); // ariaHiddenRoot -> { rootEl, count, offenders: [], hints:Set, rootIsFocusable }
+  const maxOffendersPerRoot = 5;
+
+  for (let i = 0; i < focusableCandidates.length; i++) {
+    const el = focusableCandidates[i];
+    if (!el || !el.getAttribute) continue;
+
+    if (!isActuallyFocusable(el)) continue;
+
+    const rootEl = closestAriaHiddenTrue(el);
+    if (!rootEl) continue;
+
+    let entry = bucket.get(rootEl);
+    if (!entry) {
+      entry = { rootEl, count: 0, offenders: [], hints: new Set(), rootIsFocusable: false };
+      bucket.set(rootEl, entry);
+    }
+    entry.count += 1;
+
+    // Capture a small, deterministic offender summary + visibility hints.
+    if (entry.offenders.length < maxOffendersPerRoot) {
+      let tag = '';
+      let ti = null;
+      let href = null;
+      let type = null;
+
+      try { tag = lower(el.tagName || ''); } catch { tag = ''; }
+      try { ti = el.getAttribute('tabindex'); } catch { ti = null; }
+      try { href = (tag === 'a' || tag === 'area') ? trim(el.getAttribute('href')) : null; } catch { href = null; }
+      try { type = tag === 'input' ? lower(el.getAttribute('type') || '') : null; } catch { type = null; }
+
+      const hints = getVisibilityHints(el);
+      for (const h of hints) entry.hints.add(h);
+
+      entry.offenders.push({
+        tag: tag || null,
+        tabindex: ti == null ? null : String(ti),
+        href: href || null,
+        type: type || null,
+        visibilityHints: hints
+      });
+    }
+  }
+
+  if (!bucket.size) {
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  }
+
+  // Ensure deterministic root focusability computation (done once per failing root).
+  for (const [, entry] of bucket) {
+    const el = entry.rootEl;
+    entry.rootIsFocusable = isActuallyFocusable(el);
+  }
+
+  // 3) Report one occurrence per aria-hidden root that contains focusable content.
+  const occurrences = [];
+  for (const [, entry] of bucket) {
+    const el = entry.rootEl;
+
+    const eligInfo = getEligibilityInfo
+      ? (() => { try { return getEligibilityInfo(el, ctx, { targetSet: 'acc' }); } catch { return null; } })()
+      : null;
+
+    // stable visibility hint ordering
+    const hintOrder = ['opacityZero', 'offscreen', 'clipped', 'zeroSizeOverflowHidden'];
+    const hintsArr = [];
+    for (const k of hintOrder) if (entry.hints.has(k)) hintsArr.push(k);
+
+    const tagName = (() => { try { return lower(el.tagName || ''); } catch { return ''; } })();
+
+    // Split counts deterministically
+    const selfFocusable = !!entry.rootIsFocusable;
+    const totalFocusable = entry.count;
+    const descendantFocusable = selfFocusable ? Math.max(0, totalFocusable - 1) : totalFocusable;
+
+    const summaryKey = selfFocusable
+      ? (descendantFocusable > 0
+          ? 'a11ycore_ariaHidden_focus_summary_fail_self_and_desc'
+          : 'a11ycore_ariaHidden_focus_summary_fail_self')
+      : 'a11ycore_ariaHidden_focus_summary_fail_desc';
+
+    const reasonCode = selfFocusable
+      ? (descendantFocusable > 0 ? 'ariaHiddenSelfAndDescendantsFocusable' : 'ariaHiddenSelfFocusable')
+      : 'ariaHiddenContainsFocusable';
+
+    const summaryText = selfFocusable
+      ? (descendantFocusable > 0
+          ? `aria-hidden ${tagName} is focusable and contains ${descendantFocusable} focusable descendant(s) (${totalFocusable} focusable element(s) total).`
+          : `aria-hidden ${tagName} is focusable (${totalFocusable} focusable element(s)).`)
+      : `aria-hidden ${tagName} contains ${totalFocusable} focusable element(s).`;
+
+    const baseOccurrence = {
+      summary: summaryText,
+      hint: 'Remove focusability from descendants or remove aria-hidden; ensure focus and accessibility trees stay aligned.',
+      i18n: {
+        summaryKey,
+        hintKey: 'a11ycore_ariaHidden_focus_hint_fail',
+        params: {
+          element: tagName,
+          focusableCount: String(totalFocusable),
+          descendantFocusableCount: String(descendantFocusable)
+        }
+      },
+      data: {
+        details: {
+          reasonCode,
+          metrics: {
+            focusableTotal: totalFocusable,
+            focusableDescendants: descendantFocusable,
+            rootIsFocusable: selfFocusable,
+            offendersCaptured: entry.offenders.length,
+            visibilityHints: hintsArr.slice(0)
+          },
+          offenders: entry.offenders.slice(0)
+        },
+        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+      }
+    };
+
+    if (reportOccurrence) occurrences.push(reportOccurrence(el, baseOccurrence));
+    else occurrences.push({ __node: el, selector: '', html: '', ...baseOccurrence });
+  }
+
+  return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences };
+}), applicability: null },
+    "a11ycore-aria-role-name-present": { run: (function runInPage(ctx) {
+  const { document, root, helpers, rule } = ctx;
+  const safeRoot = root || document;
+
+  const queryAllSmart = helpers && typeof helpers.queryAllSmart === 'function' ? helpers.queryAllSmart : null;
+  const queryAll = helpers && typeof helpers.queryAll === 'function'
+    ? helpers.queryAll
+    : (sel, rt) => {
+        try {
+          const scope = rt || safeRoot;
+          return scope && scope.querySelectorAll ? Array.from(scope.querySelectorAll(sel)) : [];
+        } catch {
+          return [];
+        }
+      };
+
+  const isAccTreeEligible =
+    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+
+  const getEligibilityInfo =
+    helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
+
+  const getAriaLabelledByInfo =
+    helpers && typeof helpers.getAriaLabelledByInfo === 'function' ? helpers.getAriaLabelledByInfo : null;
+
+  const normalizeWs = (s) => String(s || '').replace(/\s+/g, ' ').trim();
+
+  const getAttr = (el, name) => {
+    try {
+      if (!el || !el.getAttribute) return '';
+      return normalizeWs(el.getAttribute(name));
+    } catch {
+      return '';
+    }
+  };
+
+
+  const hasVisibleLabelledbyRef = (el) => {
+    const raw = getAttr(el, 'aria-labelledby');
+    if (!raw) return false;
+    const refs = raw.split(/\s+/).filter(Boolean).slice(0, 8);
+    for (const refKey of refs) {
+      try {
+        const refEl = document.getElementById(refKey);
+        if (!refEl) continue;
+        if (refEl.getAttribute && refEl.getAttribute('aria-hidden') === 'true') continue;
+        if (refEl.hasAttribute && refEl.hasAttribute('hidden')) continue;
+        return true;
+      } catch {}
+    }
+    return false;
+  };
+
+  const resolveLabelledby = (el, maxRefs) => {
+    const raw = getAttr(el, 'aria-labelledby');
+    if (!raw) return '';
+
+    const refs = raw.split(/\s+/).filter(Boolean).slice(0, Math.max(1, maxRefs || 8));
+
+    // If every referenced node is hidden from AT, treat aria-labelledby as empty.
+    let hasVisibleRef = false;
+    for (const refKey of refs) {
+      try {
+        const refEl = document.getElementById(refKey);
+        if (!refEl) continue;
+        try {
+          if (refEl.getAttribute && refEl.getAttribute('aria-hidden') === 'true') continue;
+          if (refEl.hasAttribute && refEl.hasAttribute('hidden')) continue;
+        } catch {}
+        hasVisibleRef = true;
+        break;
+      } catch {}
+    }
+    if (!hasVisibleRef) return '';
+
+    // Prefer shared helper (expected to follow engine semantics), but only after the visible-ref gate above.
+    if (getAriaLabelledByInfo) {
+      try {
+        const info = getAriaLabelledByInfo(el, ctx, { maxRefs: Math.max(1, maxRefs || 8) });
+        const v = info && info.present ? normalizeWs(info.value) : '';
+        if (v) return v;
+      } catch {}
+    }
+
+    // Fallback: resolve referenced nodes and ignore labels hidden from AT.
+    const parts = [];
+    for (const refKey of refs) {
+      try {
+        const refEl = document.getElementById(refKey);
+        if (!refEl) continue;
+
+        try {
+          if (refEl.getAttribute && refEl.getAttribute('aria-hidden') === 'true') continue;
+          if (refEl.hasAttribute && refEl.hasAttribute('hidden')) continue;
+        } catch {}
+
+        const stack = [refEl];
+        const txt = [];
+        while (stack.length) {
+          const node = stack.pop();
+          if (!node) continue;
+          if (node.nodeType === 3) {
+            const s = normalizeWs(node.nodeValue || '');
+            if (s) txt.push(s);
+            continue;
+          }
+          if (node.nodeType === 1) {
             try {
-                if (!el || !el.tagName) return 'html';
-                const tag = (el.tagName || 'html').toLowerCase();
-                return el.id ? `${tag}#${el.id}` : tag;
-            } catch { return 'html'; }
-        };
+              if (node.getAttribute && node.getAttribute('aria-hidden') === 'true') continue;
+              if (node.hasAttribute && node.hasAttribute('hidden')) continue;
+            } catch {}
+            const kids = node.childNodes ? Array.from(node.childNodes) : [];
+            for (let i = kids.length - 1; i >= 0; i -= 1) stack.push(kids[i]);
+          }
+        }
+        const text = normalizeWs(txt.join(' '));
+        if (text) parts.push(text);
+      } catch {}
+    }
+    return normalizeWs(parts.join(' '));
+  };
 
-    const getOuterHtmlSnippet = helpers && typeof helpers.getOuterHtmlSnippet === 'function'
-        ? helpers.getOuterHtmlSnippet
-        : (el) => { try { return (el && el.outerHTML) ? String(el.outerHTML).slice(0, 2000) : ''; } catch { return ''; } };
+  const isEligible = (el) => {
+    if (!isAccTreeEligible) return true;
+    try {
+      const r = isAccTreeEligible(el, ctx);
+      if (typeof r === 'boolean') return r;
+      return !!(r && r.eligible);
+    } catch {
+      return true;
+    }
+  };
 
-    const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
-        ? helpers.getEligibilityInfo
-        : null;
+  // Frozen allowlist of roles to check in this generic rule.
+  // (Keep this small, explicit, and standards-based for determinism.)
+  const roleSet = new Set([
+    'scrollbar',
+    'toolbar',
+    'tablist',
+    'radiogroup',
+    'tree',
+    'grid',
+    'menu',
+    'menubar',
+    'meter',
+    'progressbar'
+  ]);
 
-    // We only need to look at nodes that *might* be in this situation.
-    // Keep it deterministic and cheap.
-    const candidates = queryAll('[aria-hidden="true"], [aria-hidden="true"] *') || [];
-    if (!candidates.length) {
-        return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  const selector =
+    '[role="scrollbar"],[role="toolbar"],[role="tablist"],[role="radiogroup"],[role="tree"],[role="grid"],[role="menu"],[role="menubar"],[role="meter"],[role="progressbar"]';
+
+  const nodes = (() => {
+    try {
+      return (queryAllSmart ? queryAllSmart(selector, safeRoot) : queryAll(selector, safeRoot)) || [];
+    } catch {
+      return queryAll(selector, safeRoot);
+    }
+  })();
+
+  if (!nodes.length) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+
+  const occurrences = [];
+  let applicableCount = 0;
+
+  for (const el of nodes) {
+    if (!el || !el.getAttribute) continue;
+
+    // Role normalization + allowlist check (defensive).
+    const role = (() => {
+      try {
+        return normalizeWs(el.getAttribute('role')).toLowerCase();
+      } catch {
+        return '';
+      }
+    })();
+    if (!roleSet.has(role)) continue;
+
+    if (!isEligible(el)) continue;
+
+    applicableCount += 1;
+
+    const ariaLabel = getAttr(el, 'aria-label');
+
+    // aria-labelledby: only valid if it references at least one AT-visible node
+    let labelled = '';
+    if (!ariaLabel && hasVisibleLabelledbyRef(el)) {
+      labelled = resolveLabelledby(el, 8);
     }
 
-    const occurrences = [];
+    const title = ariaLabel || labelled ? '' : getAttr(el, 'title');
 
-    for (const el of candidates) {
-        if (!el || !el.getAttribute) continue;
+    const ok = !!(ariaLabel || labelled || title);
+    if (ok) continue;
 
-        const info = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
-        const reasons = info && Array.isArray(info.reasons) ? info.reasons : [];
+    const eligInfo = getEligibilityInfo ? (() => {
+      try { return getEligibilityInfo(el, ctx, { targetSet: 'acc' }); } catch { return null; }
+    })() : null;
 
-        // We only flag the precise, “low-confidence override” case.
-        if (!reasons.includes('ariaHiddenOverriddenProgrammaticFocus')) continue;
+    const baseOccurrence = {
+      summary: 'This element has no accessible name.',
+      hint: 'Provide aria-label or aria-labelledby (preferred), or a non-empty title attribute.',
+      i18n: {
+        summaryKey: 'a11ycore_ariaRoleNamePresent_summary_fail',
+        hintKey: 'a11ycore_ariaRoleNamePresent_hint_fail',
+        params: { role }
+      },
+      data: {
+        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
+        details: {
+          reasonCode: 'name_missing',
+          role,
+          nameSourcesChecked: ['aria-label', 'aria-labelledby', 'title']
+        }
+      }
+    };
 
-        occurrences.push({
-            selector: (() => { try { return buildSelector(el); } catch { return 'html'; } })(),
-            html: getOuterHtmlSnippet(el),
-            summary: 'Review: aria-hidden element is programmatically focusable.',
-            hint: 'Check that focus management is intentional and that the element should remain hidden from assistive technologies.',
-            i18n: {
-                summaryKey: 'a11ycore_ariaHidden_programmaticFocus_review_summary',
-                hintKey: 'a11ycore_ariaHidden_programmaticFocus_review_hint'
-            },
-            data: {
-                visibilityFilter: info || { targetSet: 'acc', accEligible: null, reasons: [] }
+    if (helpers && typeof helpers.reportOccurrence === 'function') {
+      occurrences.push(helpers.reportOccurrence(el, baseOccurrence));
+    } else {
+      occurrences.push({ selector: '', html: '', ...baseOccurrence });
+    }
+  }
+
+  if (applicableCount === 0) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+
+  if (!occurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  }
+
+  return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences };
+}), applicability: null },
+    "a11ycore-binary-control-name-present": { run: (function runInPage(ctx) {
+  const { document, root, helpers, rule } = ctx;
+  const safeRoot = root || document;
+
+
+  function normalizeWs(s) {
+    return String(s || '').replace(/\s+/g, ' ').trim();
+  }
+
+  function getAttr(el, name) {
+    try {
+      if (!el || !el.getAttribute) return '';
+      return normalizeWs(el.getAttribute(name));
+    } catch { return ''; }
+  }
+
+  function hasAttr(el, name) {
+    try { return !!(el && el.hasAttribute && el.hasAttribute(name)); } catch { return false; }
+  }
+
+  function isExplicitProgrammatic(el) {
+    // Programmatic name mechanisms we treat as authoritative (presence-only):
+    // - aria-label (non-empty)
+    // - aria-labelledby (non-empty)
+    // - title (non-empty) [weak but allowed for presence]
+    const al = getAttr(el, 'aria-label');
+    if (al) return true;
+    const alb = getAttr(el, 'aria-labelledby');
+    if (alb) return true;
+    const t = getAttr(el, 'title');
+    if (t) return true;
+    return false;
+  }
+
+  function buildLabelForMap(doc) {
+    const map = new Map(); // id -> label element (first)
+    try {
+      const labels = doc && doc.getElementsByTagName ? doc.getElementsByTagName('label') : [];
+      for (let i = 0; i < labels.length; i += 1) {
+        const lab = labels[i];
+        if (!lab || !lab.getAttribute) continue;
+        const f = normalizeWs(lab.getAttribute('for'));
+        if (!f) continue;
+        if (!map.has(f)) map.set(f, lab);
+      }
+    } catch {}
+    return map;
+  }
+
+  function getConservativeSubtreeText(document, container) {
+    // Deterministic text extraction excluding aria-hidden="true" and [hidden] subtrees.
+    // Use TreeWalker when available; avoid NodeFilter global.
+    const SHOW_TEXT = 4;
+    try {
+      const walker = document.createTreeWalker(container, SHOW_TEXT, null);
+      const parts = [];
+      let n = walker.nextNode();
+      while (n) {
+        const raw = normalizeWs(n.nodeValue || '');
+        if (raw) {
+          const pe = n.parentElement;
+          let blocked = false;
+          if (pe && typeof pe.closest === 'function') {
+            const blocker = pe.closest('[aria-hidden="true"],[hidden]');
+            if (blocker && container.contains(blocker)) blocked = true;
+          } else {
+            let p = pe;
+            while (p && p !== container) {
+              if (p.getAttribute && p.getAttribute('aria-hidden') === 'true') { blocked = true; break; }
+              if (p.hasAttribute && p.hasAttribute('hidden')) { blocked = true; break; }
+              p = p.parentElement;
             }
-        });
+          }
+          if (!blocked) {
+            if (container.getAttribute && container.getAttribute('aria-hidden') === 'true') blocked = true;
+            if (!blocked && container.hasAttribute && container.hasAttribute('hidden')) blocked = true;
+          }
+          if (!blocked) parts.push(raw);
+        }
+        n = walker.nextNode();
+      }
+      return normalizeWs(parts.join(' '));
+    } catch {
+      // Manual deterministic walk
+      try {
+        const parts = [];
+        const stack = [container];
+        while (stack.length) {
+          const node = stack.pop();
+          if (!node) continue;
+          if (node.nodeType === 3) { // TEXT_NODE
+            const raw = normalizeWs(node.nodeValue || '');
+            if (raw) parts.push(raw);
+            continue;
+          }
+          if (node.nodeType === 1) { // ELEMENT_NODE
+            if (node.getAttribute && node.getAttribute('aria-hidden') === 'true') continue;
+            if (node.hasAttribute && node.hasAttribute('hidden')) continue;
+            const kids = node.childNodes ? Array.from(node.childNodes) : [];
+            for (let i = kids.length - 1; i >= 0; i -= 1) stack.push(kids[i]);
+          }
+        }
+        return normalizeWs(parts.join(' '));
+      } catch {
+        return '';
+      }
+    }
+  }
+
+  function resolveAriaLabelledbyText(document, el, maxRefs) {
+    const raw = getAttr(el, 'aria-labelledby');
+    if (!raw) return '';
+    const ids = raw.split(/\s+/).filter(Boolean).slice(0, Math.max(1, maxRefs || 8));
+    const parts = [];
+    for (const elementId of ids) {
+      try {
+        const ref = document.getElementById(elementId);
+        if (ref) {
+          const t = getConservativeSubtreeText(document, ref);
+          if (t) parts.push(t);
+        }
+      } catch {}
+    }
+    return normalizeWs(parts.join(' '));
+  }
+
+  function getInputValueName(el) {
+    try {
+      const type = getAttr(el, 'type').toLowerCase();
+      if (type !== 'button' && type !== 'submit' && type !== 'reset') return '';
+      const v = getAttr(el, 'value');
+      return v;
+    } catch { return ''; }
+  }
+
+  function isEligibleAcc(helpers, el, ctx) {
+    const fn = helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+    if (!fn) return true;
+    try {
+      const r = fn(el, ctx);
+      if (typeof r === 'boolean') return r;
+      return !!(r && r.eligible);
+    } catch {
+      return true;
+    }
+  }
+
+
+  const occurrences = [];
+  let applicableCount = 0;
+
+  const selector = 'input[type="checkbox"], input[type="radio"], [role="checkbox"], [role="radio"], [role="switch"]';
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+
+
+  // Precompute label[for] associations once for speed/determinism.
+  const labelForMap = buildLabelForMap(document);
+
+  function getNativeLabelText(el) {
+    // 1) labels API
+    try {
+      if ('labels' in el && el.labels && el.labels.length) {
+        // concatenate conservative text of all associated labels (cap at 4 for determinism)
+        const parts = [];
+        const max = Math.min(4, el.labels.length);
+        for (let i = 0; i < max; i += 1) {
+          const lab = el.labels[i];
+          const t = lab ? getConservativeSubtreeText(document, lab) : '';
+          if (t) parts.push(t);
+        }
+        const joined = normalizeWs(parts.join(' '));
+        if (joined) return joined;
+      }
+    } catch {}
+
+    // 2) wrapped by <label>
+    try {
+      if (el.closest) {
+        const wrap = el.closest('label');
+        if (wrap) {
+          const t = getConservativeSubtreeText(document, wrap);
+          if (t) return t;
+        }
+      }
+    } catch {}
+
+    // 3) label[for=id]
+    try {
+      const idAttr = getAttr(el, 'id');
+      if (idAttr && labelForMap.has(idAttr)) {
+        const lab = labelForMap.get(idAttr);
+        const t = lab ? getConservativeSubtreeText(document, lab) : '';
+        if (t) return t;
+      }
+    } catch {}
+
+    return '';
+  }
+
+  function evaluate(el, controlType) {
+    // Programmatic mechanisms
+    const ariaLabel = getAttr(el, 'aria-label');
+    if (ariaLabel) return { ok: true, method: 'aria-label' };
+
+    const ariaLabelledby = resolveAriaLabelledbyText(document, el, 8);
+    if (ariaLabelledby) return { ok: true, method: 'aria-labelledby' };
+
+    const title = getAttr(el, 'title');
+    if (title) return { ok: true, method: 'title' };
+
+    // Native input label association (for input[type=checkbox|radio])
+    if (controlType === 'checkbox' || controlType === 'radio') {
+      const lab = getNativeLabelText(el);
+      if (lab) return { ok: true, method: 'label' };
     }
 
-    if (!occurrences.length) {
-        return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'moderate', occurrences: [] };
+    // ARIA roles (checkbox/radio/switch) can use content as name
+    if (controlType === 'switch' || controlType === 'aria-checkbox' || controlType === 'aria-radio') {
+      const t = getConservativeSubtreeText(document, el);
+      if (t) return { ok: true, method: 'content' };
     }
 
-    // Manual rule: never fail.
-    return { ruleId: rule.ruleId, outcome: 'cantTell', severity: rule.defaultSeverity || 'minor', occurrences };
+    return { ok: false, method: 'none' };
+  }
+
+  for (const el of nodes) {
+    if (!el) continue;
+    if (!isEligibleAcc(helpers, el, ctx)) continue;
+
+    // Determine control type
+    const tag = (el.tagName || '').toLowerCase();
+    const type = getAttr(el, 'type').toLowerCase();
+    const role = getAttr(el, 'role').toLowerCase();
+
+    let controlType = '';
+    if (tag === 'input' && type === 'checkbox') controlType = 'checkbox';
+    else if (tag === 'input' && type === 'radio') controlType = 'radio';
+    else if (role === 'checkbox') controlType = 'aria-checkbox';
+    else if (role === 'radio') controlType = 'aria-radio';
+    else if (role === 'switch') controlType = 'switch';
+    else continue;
+
+    applicableCount += 1;
+
+    const res = evaluate(el, controlType);
+    if (res.ok) continue;
+
+    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+
+    occurrences.push({
+      selector: stableSelector,
+      html,
+      summary: 'This control has no accessible name.',
+      hint: 'Provide a label, aria-label, aria-labelledby, or other accessible-name mechanism so assistive technologies can identify the control.',
+      summaryKey: 'a11ycore_binaryControlNamePresent_summary_fail',
+      hintKey: 'a11ycore_binaryControlNamePresent_hint_fail',
+      i18nParams: { controlType },
+      data: {
+        details: {
+          reasonCode: 'name_missing',
+          controlType,
+          methodTried: res.method
+        }
+      }
+    });
+  }
+
+
+  if (applicableCount === 0) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  if (occurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences };
+  }
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+}), applicability: null },
+    "a11ycore-button-name-present": { run: (function runInPage(ctx) {
+  const { document, root, helpers, rule } = ctx;
+  const safeRoot = root || document;
+
+  const occurrences = [];
+  let applicableCount = 0;
+
+  function normalizeWs(s) {
+    return String(s || '').replace(/\s+/g, ' ').trim();
+  }
+
+  function getConservativeSubtreeText(container) {
+    // Deterministic content-derived naming:
+    // - counts text nodes
+    // - excludes text where any ancestor within container has aria-hidden="true" or [hidden]
+    //
+    // IMPORTANT: do NOT reference global NodeFilter (can be undefined in some runtimes).
+    // Use the constant SHOW_TEXT = 4.
+    const SHOW_TEXT = 4;
+
+    try {
+      const walker = document.createTreeWalker(container, SHOW_TEXT, null);
+      const parts = [];
+      let n = walker.nextNode();
+
+      while (n) {
+        const raw = normalizeWs(n.nodeValue || '');
+        if (raw) {
+          const pe = n.parentElement;
+          let blocked = false;
+
+          if (pe && typeof pe.closest === 'function') {
+            const blocker = pe.closest('[aria-hidden="true"],[hidden]');
+            if (blocker && container.contains(blocker)) blocked = true;
+          } else {
+            let p = pe;
+            while (p && p !== container) {
+              if (p.getAttribute && p.getAttribute('aria-hidden') === 'true') { blocked = true; break; }
+              if (p.hasAttribute && p.hasAttribute('hidden')) { blocked = true; break; }
+              p = p.parentElement;
+            }
+          }
+
+          if (!blocked) {
+            if (container.getAttribute && container.getAttribute('aria-hidden') === 'true') blocked = true;
+            if (!blocked && container.hasAttribute && container.hasAttribute('hidden')) blocked = true;
+          }
+
+          if (!blocked) parts.push(raw);
+        }
+        n = walker.nextNode();
+      }
+
+      return normalizeWs(parts.join(' '));
+    } catch {
+      // As a last resort, fall back to a manual text-node scan without NodeFilter/TreeWalker.
+      // This remains deterministic and still respects aria-hidden/hidden.
+      try {
+        const textNodes = [];
+        const stack = [container];
+        while (stack.length) {
+          const node = stack.pop();
+          if (!node) continue;
+
+          if (node.nodeType === 3) { // TEXT_NODE
+            textNodes.push(node);
+            continue;
+          }
+
+          if (node.nodeType === 1) { // ELEMENT_NODE
+            // If this element is hidden from AT, skip its subtree
+            if (node.getAttribute && node.getAttribute('aria-hidden') === 'true') continue;
+            if (node.hasAttribute && node.hasAttribute('hidden')) continue;
+
+            // Push children in reverse to preserve document order
+            const kids = node.childNodes ? Array.from(node.childNodes) : [];
+            for (let i = kids.length - 1; i >= 0; i -= 1) stack.push(kids[i]);
+          }
+        }
+
+        const parts = [];
+        for (const tn of textNodes) {
+          const raw = normalizeWs(tn.nodeValue || '');
+          if (raw) parts.push(raw);
+        }
+        return normalizeWs(parts.join(' '));
+      } catch {
+        return '';
+      }
+    }
+  }
+
+  function getInputButtonValueName(el) {
+    try {
+      const type = normalizeWs(el.getAttribute ? el.getAttribute('type') : '').toLowerCase();
+      if (type !== 'button' && type !== 'submit' && type !== 'reset') return '';
+      const vAttr = el.getAttribute ? el.getAttribute('value') : '';
+      return normalizeWs(vAttr != null ? vAttr : (typeof el.value === 'string' ? el.value : ''));
+    } catch {
+      return '';
+    }
+  }
+
+  function hasExplicitProgrammaticName(el) {
+    const ariaLabel = normalizeWs(el.getAttribute ? el.getAttribute('aria-label') : '');
+    if (ariaLabel) return true;
+
+    const ariaLabelledby = normalizeWs(el.getAttribute ? el.getAttribute('aria-labelledby') : '');
+    if (ariaLabelledby) return true;
+
+    const title = normalizeWs(el.getAttribute ? el.getAttribute('title') : '');
+    if (title) return true;
+
+    return false;
+  }
+
+  const selector = 'button, input[type="button"], input[type="submit"], input[type="reset"], [role="button"]';
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+
+  for (const el of nodes) {
+    const eligInfo = helpers.getEligibilityInfo ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
+    const eligible = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el, ctx) : true;
+    if (!eligible) continue;
+
+    applicableCount += 1;
+
+    const tag = (el.tagName || '').toLowerCase();
+    const role = el.getAttribute ? el.getAttribute('role') : null;
+
+    const nameInfo = helpers.getAccessibleNameInfo ? helpers.getAccessibleNameInfo(el, ctx) : null;
+    const explicitProg = hasExplicitProgrammaticName(el);
+
+    // Only trust helper value as programmatic when we can prove a programmatic mechanism exists.
+    let trustedProgrammaticName = '';
+    if (explicitProg) {
+      trustedProgrammaticName = normalizeWs(nameInfo && typeof nameInfo.value === 'string' ? nameInfo.value : '');
+    }
+
+    let inputValueName = '';
+    if (!trustedProgrammaticName && tag === 'input') {
+      inputValueName = getInputButtonValueName(el);
+    }
+
+    const isContentNameCandidate = tag === 'button' || role === 'button';
+    const contentName =
+      (!trustedProgrammaticName && !inputValueName && isContentNameCandidate)
+        ? getConservativeSubtreeText(el)
+        : '';
+
+    const finalName = normalizeWs(trustedProgrammaticName || inputValueName || contentName);
+
+    if (!finalName) {
+      const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
+      const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+
+      occurrences.push({
+        selector: stableSelector,
+        html,
+        summary: 'This button has no accessible name.',
+        hint: 'Provide visible button text or a programmatic accessible-name mechanism (for example aria-label) so assistive technologies can identify the button.',
+        summaryKey: 'a11ycore_buttonNamePresent_summary_fail',
+        hintKey: 'a11ycore_buttonNamePresent_hint_fail',
+        i18nParams: { element: tag },
+        data: {
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
+          details: {
+            reasonCode: 'name_missing',
+            metrics: {
+              trustedProgrammaticNameLength: trustedProgrammaticName.length,
+              inputValueNameLength: inputValueName.length,
+              contentNameLength: contentName.length,
+              explicitProgrammatic: explicitProg ? 1 : 0
+            },
+            refs: { accessibleName: nameInfo || null }
+          }
+        }
+      });
+    }
+  }
+
+  if (applicableCount === 0) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  if (occurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences };
+  }
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "a11ycore-canvas-text-alternative-present": { run: (function runInPage(ctx) {
   const { document, root, helpers, rule } = ctx;
@@ -8986,7 +13504,7 @@ if (isAccTreeEligible) {
         params: { element: 'canvas' }
       },
       data: {
-        // Always log eligibility/filter info (engine contract for targetSet=acc rules)
+        // Always log eligibility/filter info (engine contract for targetSet=acc checks)
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
         // Debuggable, deterministic helper facts (non-verdict)
         textAlternative: ti || null
@@ -9140,19 +13658,228 @@ if (isAccTreeEligible) {
 
     return { ruleId: rule.ruleId, outcome: 'cantTell', severity: 'minor', occurrences };
 }), applicability: null },
+    "a11ycore-combobox-name-present": { run: (function runInPage(ctx) {
+  const { document, root, helpers, rule } = ctx;
+  const safeRoot = root || document;
+
+
+  function normalizeWs(s) {
+    return String(s || '').replace(/\s+/g, ' ').trim();
+  }
+
+  function getAttr(el, name) {
+    try {
+      if (!el || !el.getAttribute) return '';
+      return normalizeWs(el.getAttribute(name));
+    } catch { return ''; }
+  }
+
+  function hasAttr(el, name) {
+    try { return !!(el && el.hasAttribute && el.hasAttribute(name)); } catch { return false; }
+  }
+
+  function isExplicitProgrammatic(el) {
+    // Programmatic name mechanisms we treat as authoritative (presence-only):
+    // - aria-label (non-empty)
+    // - aria-labelledby (non-empty)
+    // - title (non-empty) [weak but allowed for presence]
+    const al = getAttr(el, 'aria-label');
+    if (al) return true;
+    const alb = getAttr(el, 'aria-labelledby');
+    if (alb) return true;
+    const t = getAttr(el, 'title');
+    if (t) return true;
+    return false;
+  }
+
+  function buildLabelForMap(doc) {
+    const map = new Map(); // id -> label element (first)
+    try {
+      const labels = doc && doc.getElementsByTagName ? doc.getElementsByTagName('label') : [];
+      for (let i = 0; i < labels.length; i += 1) {
+        const lab = labels[i];
+        if (!lab || !lab.getAttribute) continue;
+        const f = normalizeWs(lab.getAttribute('for'));
+        if (!f) continue;
+        if (!map.has(f)) map.set(f, lab);
+      }
+    } catch {}
+    return map;
+  }
+
+  function getConservativeSubtreeText(document, container) {
+    // Deterministic text extraction excluding aria-hidden="true" and [hidden] subtrees.
+    // Use TreeWalker when available; avoid NodeFilter global.
+    const SHOW_TEXT = 4;
+    try {
+      const walker = document.createTreeWalker(container, SHOW_TEXT, null);
+      const parts = [];
+      let n = walker.nextNode();
+      while (n) {
+        const raw = normalizeWs(n.nodeValue || '');
+        if (raw) {
+          const pe = n.parentElement;
+          let blocked = false;
+          if (pe && typeof pe.closest === 'function') {
+            const blocker = pe.closest('[aria-hidden="true"],[hidden]');
+            if (blocker && container.contains(blocker)) blocked = true;
+          } else {
+            let p = pe;
+            while (p && p !== container) {
+              if (p.getAttribute && p.getAttribute('aria-hidden') === 'true') { blocked = true; break; }
+              if (p.hasAttribute && p.hasAttribute('hidden')) { blocked = true; break; }
+              p = p.parentElement;
+            }
+          }
+          if (!blocked) {
+            if (container.getAttribute && container.getAttribute('aria-hidden') === 'true') blocked = true;
+            if (!blocked && container.hasAttribute && container.hasAttribute('hidden')) blocked = true;
+          }
+          if (!blocked) parts.push(raw);
+        }
+        n = walker.nextNode();
+      }
+      return normalizeWs(parts.join(' '));
+    } catch {
+      // Manual deterministic walk
+      try {
+        const parts = [];
+        const stack = [container];
+        while (stack.length) {
+          const node = stack.pop();
+          if (!node) continue;
+          if (node.nodeType === 3) { // TEXT_NODE
+            const raw = normalizeWs(node.nodeValue || '');
+            if (raw) parts.push(raw);
+            continue;
+          }
+          if (node.nodeType === 1) { // ELEMENT_NODE
+            if (node.getAttribute && node.getAttribute('aria-hidden') === 'true') continue;
+            if (node.hasAttribute && node.hasAttribute('hidden')) continue;
+            const kids = node.childNodes ? Array.from(node.childNodes) : [];
+            for (let i = kids.length - 1; i >= 0; i -= 1) stack.push(kids[i]);
+          }
+        }
+        return normalizeWs(parts.join(' '));
+      } catch {
+        return '';
+      }
+    }
+  }
+
+  function resolveAriaLabelledbyText(document, el, maxRefs) {
+    const raw = getAttr(el, 'aria-labelledby');
+    if (!raw) return '';
+    const ids = raw.split(/\s+/).filter(Boolean).slice(0, Math.max(1, maxRefs || 8));
+    const parts = [];
+    for (const elementId of ids) {
+      try {
+        const ref = document.getElementById(elementId);
+        if (ref) {
+          const t = getConservativeSubtreeText(document, ref);
+          if (t) parts.push(t);
+        }
+      } catch {}
+    }
+    return normalizeWs(parts.join(' '));
+  }
+
+  function getInputValueName(el) {
+    try {
+      const type = getAttr(el, 'type').toLowerCase();
+      if (type !== 'button' && type !== 'submit' && type !== 'reset') return '';
+      const v = getAttr(el, 'value');
+      return v;
+    } catch { return ''; }
+  }
+
+  function isEligibleAcc(helpers, el, ctx) {
+    const fn = helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+    if (!fn) return true;
+    try {
+      const r = fn(el, ctx);
+      if (typeof r === 'boolean') return r;
+      return !!(r && r.eligible);
+    } catch {
+      return true;
+    }
+  }
+
+
+  const occurrences = [];
+  let applicableCount = 0;
+
+  const selector = '[role="combobox"]';
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+
+
+  function evaluate(el, controlType) {
+    const ariaLabel = getAttr(el, 'aria-label');
+    if (ariaLabel) return { ok: true, method: 'aria-label' };
+
+    const ariaLabelledby = resolveAriaLabelledbyText(document, el, 8);
+    if (ariaLabelledby) return { ok: true, method: 'aria-labelledby' };
+
+    const title = getAttr(el, 'title');
+    if (title) return { ok: true, method: 'title' };
+
+    // Content-derived name is allowed for role-based combobox patterns (often a button-like element).
+    const t = getConservativeSubtreeText(document, el);
+    if (t) return { ok: true, method: 'content' };
+
+    return { ok: false, method: 'none' };
+  }
+
+  for (const el of nodes) {
+    if (!el) continue;
+    if (!isEligibleAcc(helpers, el, ctx)) continue;
+
+    const role = getAttr(el, 'role').toLowerCase();
+    if (role !== 'combobox') continue;
+
+    applicableCount += 1;
+
+    const res = evaluate(el, 'combobox');
+    if (res.ok) continue;
+
+    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+
+    occurrences.push({
+      selector: stableSelector,
+      html,
+      summary: 'This combobox has no accessible name.',
+      hint: 'Provide aria-label or aria-labelledby (preferred), or ensure the element has visible text that is not hidden from assistive technologies.',
+      summaryKey: 'a11ycore_comboboxNamePresent_summary_fail',
+      hintKey: 'a11ycore_comboboxNamePresent_hint_fail',
+      i18nParams: {},
+      data: { details: { reasonCode: 'name_missing', controlType: 'combobox', methodTried: res.method } }
+    });
+  }
+
+
+  if (applicableCount === 0) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  if (occurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences };
+  }
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+}), applicability: null },
     "a11ycore-contrast-computable": { run: (function runInPage(ctx) {
-    const { helpers, rule, engineOptions } = ctx;
+    const {helpers, rule, engineOptions} = ctx;
 
     const __contrastSharedCache = helpers && helpers.contrast && helpers.contrast.sharedCache ? helpers.contrast.sharedCache : null;
 
-    const profile =
-        engineOptions && typeof engineOptions.profile === 'string' && engineOptions.profile.trim()
-            ? engineOptions.profile.trim()
-            : 'strictConformance';
+    const contrast = engineOptions && typeof engineOptions.contrast === 'object' && engineOptions.contrast
+        ? engineOptions.contrast
+        : {};
+
+    const mode = contrast.mode === 'auditorAssist' ? 'auditorAssist' : 'strictConformance';
 
     const rootCanvasFallback =
-        engineOptions && typeof engineOptions.rootCanvasFallback === 'string' && engineOptions.rootCanvasFallback.trim()
-            ? engineOptions.rootCanvasFallback.trim()
+        typeof contrast.rootCanvasFallback === 'string' && contrast.rootCanvasFallback.trim()
+            ? contrast.rootCanvasFallback.trim()
             : '#ffffff';
 
     const MAX_OCCURRENCES = 50;
@@ -9160,6 +13887,8 @@ if (isAccTreeEligible) {
     const occurrences = [];
     let eligibleTextCount = 0;
     let cantTellCount = 0;
+    let assumptionsCount = 0;
+    const assumptionsAppliedSet = new Set();
 
     const seenFailEls = new Set();
 
@@ -9174,19 +13903,27 @@ if (isAccTreeEligible) {
             // Match test contract: choose a specific summaryKey per computability blocker.
             // Fall back to the generic notComputable key.
             let summaryKey = 'a11ycore_contrastComputable_cantTell_notComputable';
-            if (rc === 'BACKGROUND_IMAGE_OR_GRADIENT') summaryKey = 'a11ycore_contrastComputable_cantTell_bgImageOrGradient';
-            else if (rc === 'MIX_BLEND_MODE') summaryKey = 'a11ycore_contrastComputable_cantTell_mixBlendMode';
+            if (rc === 'BACKGROUND_IMAGE_OR_GRADIENT') {
+                const t =
+                    extraDetails && typeof extraDetails === 'object'
+                        ? String(extraDetails.backgroundFillType || '')
+                        : '';
+
+                if (t === 'image') summaryKey = 'a11ycore_contrastComputable_cantTell_bgImage';
+                else if (t === 'gradient') summaryKey = 'a11ycore_contrastComputable_cantTell_bgGradient';
+                else if (t === 'imageAndGradient') summaryKey = 'a11ycore_contrastComputable_cantTell_bgImageAndGradient';
+                else summaryKey = 'a11ycore_contrastComputable_cantTell_bgImageOrGradient';
+            } else if (rc === 'MIX_BLEND_MODE') summaryKey = 'a11ycore_contrastComputable_cantTell_mixBlendMode';
             else if (rc === 'BACKGROUND_FILTER_OR_BACKDROP_FILTER') {
                 const bp = extraDetails && typeof extraDetails === 'object' ? String(extraDetails.blockerProperty || '') : '';
                 if (bp === 'filter') summaryKey = 'a11ycore_contrastComputable_cantTell_filter';
                 else if (bp === 'backdrop-filter') summaryKey = 'a11ycore_contrastComputable_cantTell_backdropFilter';
                 else summaryKey = 'a11ycore_contrastComputable_cantTell_filterOrBackdropFilter';
-            }
-            else if (rc === 'BACKGROUND_NOT_OPAQUE_AT_ROOT') summaryKey = 'a11ycore_contrastComputable_cantTell_rootNotOpaque';
+            } else if (rc === 'BACKGROUND_NOT_OPAQUE_AT_ROOT') summaryKey = 'a11ycore_contrastComputable_cantTell_rootNotOpaque';
 
             const details =
                 Object.assign(
-                    { reasonCode: rc },
+                    {reasonCode: rc},
                     extraDetails && typeof extraDetails === 'object' ? extraDetails : {}
                 );
 
@@ -9198,16 +13935,28 @@ if (isAccTreeEligible) {
                 i18n: {
                     summaryKey,
                     hintKey: '',
-                    params: { reasonCode: rc }
+                    params: Object.assign(
+                        {reasonCode: rc},
+                        (details && typeof details === 'object')
+                            ? {
+                                blockerProperty: details.blockerProperty ? String(details.blockerProperty) : '',
+                                blockerValue: details.blockerValue ? String(details.blockerValue) : '',
+                                backgroundAlpha:
+                                    (details.backgroundAlpha !== undefined && details.backgroundAlpha !== null)
+                                        ? String(details.backgroundAlpha)
+                                        : ''
+                            }
+                            : {}
+                    )
                 },
-                data: { details }
+                data: {details}
             };
 
             if (helpers && typeof helpers.reportOccurrence === 'function') {
                 occurrences.push(helpers.reportOccurrence(el, occBase));
             } else {
                 // Never compute selector/snippet in the rule.
-                occurrences.push({ ...occBase });
+                occurrences.push({...occBase});
             }
         } catch {
             // no-throw
@@ -9230,7 +13979,7 @@ if (isAccTreeEligible) {
         ? (__contrastSharedCache.__elBgSelfOpaqueCache || (__contrastSharedCache.__elBgSelfOpaqueCache = new WeakMap()))
         : new WeakMap(); // Element -> { ok, rgba, alpha, reasonCode }
 
-    // Shared deterministic text scan (computed once per run and reused across contrast rules)
+    // Shared deterministic text scan (computed once per run and reused across contrast checks)
     let scan = null;
     try {
         scan = helpers && helpers.contrast && typeof helpers.contrast.getTextScan === 'function'
@@ -9260,7 +14009,13 @@ if (isAccTreeEligible) {
                 if (!blocker) {
                     blocker = helpers.contrast.getComputabilityBlocker(el);
                     // Normalize to stable shape
-                    blocker = blocker || { ok: true, reasonCode: null, blockerSelector: '', blockerProperty: '', blockerValue: '' };
+                    blocker = blocker || {
+                        ok: true,
+                        reasonCode: null,
+                        blockerSelector: '',
+                        blockerProperty: '',
+                        blockerValue: ''
+                    };
                     __elBlockerCache.set(el, blocker);
                 }
                 if (blocker && blocker.ok === false) {
@@ -9269,7 +14024,8 @@ if (isAccTreeEligible) {
                     pushCantTellOccurrence(el, blocker.reasonCode, {
                         blockerProperty: blocker.blockerProperty,
                         blockerValue: blocker.blockerValue,
-                        blockerSelector: blocker.blockerSelector
+                        blockerSelector: blocker.blockerSelector,
+                        backgroundFillType: blocker.backgroundFillType
                     });
                     continue;
                 }
@@ -9295,7 +14051,7 @@ if (isAccTreeEligible) {
                                     if (c && typeof c.a === 'number' && c.a === 1) {
                                         bgSelfOpaque = {
                                             ok: true,
-                                            rgba: { r: c.r, g: c.g, b: c.b, a: 1 },
+                                            rgba: {r: c.r, g: c.g, b: c.b, a: 1},
                                             alpha: 1,
                                             reasonCode: null
                                         };
@@ -9311,8 +14067,11 @@ if (isAccTreeEligible) {
                     if (bgSelfOpaque && bgSelfOpaque.ok === true) {
                         bg = bgSelfOpaque;
                     } else {
-                        bg = helpers.contrast.computeEffectiveBackground(el, { profile, rootCanvasFallback, collectStack: false });
-                        bg = bg || { ok: false, reasonCode: 'BACKGROUND_NOT_COMPUTABLE', rgba: null, alpha: 0 };
+                        bg = helpers.contrast.computeEffectiveBackground(el, {
+                            contrast: {mode, rootCanvasFallback},
+                            collectStack: false
+                        });
+                        bg = bg || {ok: false, reasonCode: 'BACKGROUND_NOT_COMPUTABLE', rgba: null, alpha: 0};
                     }
 
                     __elBgCache.set(el, bg);
@@ -9326,11 +14085,20 @@ if (isAccTreeEligible) {
                     continue;
                 }
 
+                // Track any explicit assumptions applied by background resolution.
+                try {
+                    if (bg && Array.isArray(bg.assumptionsApplied) && bg.assumptionsApplied.length) {
+                        assumptionsCount += textCount;
+                        for (const a of bg.assumptionsApplied) assumptionsAppliedSet.add(String(a));
+                    }
+                } catch { /* no-throw */
+                }
+
                 // 3) Foreground parsability (computed color should be rgb/rgba)
                 let fg = __elFgCache.get(el);
                 if (!fg) {
                     fg = helpers.contrast.computeEffectiveForeground(el);
-                    fg = fg || { rgba: null, alpha: 0, opacityProduct: 1 };
+                    fg = fg || {rgba: null, alpha: 0, opacityProduct: 1};
                     __elFgCache.set(el, fg);
                 }
                 if (!fg || !fg.rgba) {
@@ -9350,7 +14118,7 @@ if (isAccTreeEligible) {
             return {
                 ruleId: rule.ruleId,
                 outcome: 'cantTell',
-                severity: rule.defaultSeverity || 'minor',
+                severity: rule.defaultSeverity || 'serious',
                 confidence: rule.defaultConfidence || 'high',
                 occurrences: [
                     {
@@ -9361,9 +14129,9 @@ if (isAccTreeEligible) {
                         i18n: {
                             summaryKey: 'a11ycore_contrastComputable_cantTell_engineFailure',
                             hintKey: '',
-                            params: { reasonCode: 'ENGINE_EXCEPTION' }
+                            params: {reasonCode: 'ENGINE_EXCEPTION'}
                         },
-                        data: { details: { reasonCode: 'ENGINE_EXCEPTION' } }
+                        data: {details: {reasonCode: 'ENGINE_EXCEPTION'}}
                     }
                 ]
             };
@@ -9374,7 +14142,7 @@ if (isAccTreeEligible) {
         return {
             ruleId: rule.ruleId,
             outcome: 'notApplicable',
-            severity: rule.defaultSeverity || 'minor',
+            severity: rule.defaultSeverity || 'serious',
             confidence: rule.defaultConfidence || 'high',
             occurrences: []
         };
@@ -9384,7 +14152,7 @@ if (isAccTreeEligible) {
         return {
             ruleId: rule.ruleId,
             outcome: 'cantTell',
-            severity: rule.defaultSeverity || 'minor',
+            severity: rule.defaultSeverity || 'serious',
             confidence: rule.defaultConfidence || 'high',
             occurrences
         };
@@ -9394,7 +14162,7 @@ if (isAccTreeEligible) {
     return {
         ruleId: rule.ruleId,
         outcome: 'pass',
-        severity: rule.defaultSeverity || 'minor',
+        severity: rule.defaultSeverity || 'serious',
         confidence: rule.defaultConfidence || 'high',
         occurrences: [
             {
@@ -9409,7 +14177,13 @@ if (isAccTreeEligible) {
                         eligibleTextCount: String(eligibleTextCount)
                     }
                 },
-                data: { details: { eligibleTextCount } }
+                data: {
+                    details: {
+                        eligibleTextCount,
+                        assumptionsCount,
+                        assumptionsApplied: Array.from(assumptionsAppliedSet).sort()
+                    }
+                }
             }
         ]
     };
@@ -9449,7 +14223,7 @@ if (isAccTreeEligible) {
         try {
             if (!el || el.nodeType !== 1) return null;
 
-            // Prefer engine helper (matches tests/engine behavior + may be cached)
+            // Prefer engine helper (matches checks/engine behavior + may be cached)
             if (helpers && typeof helpers.computedStyle === 'function') {
                 const cs = helpers.computedStyle(el);
                 if (cs) return cs;
@@ -9514,14 +14288,15 @@ if (isAccTreeEligible) {
         }
     }
 
-    const profile =
-        engineOptions && typeof engineOptions.profile === 'string' && engineOptions.profile.trim()
-            ? engineOptions.profile.trim()
-            : 'strictConformance';
+    const contrast = engineOptions && typeof engineOptions.contrast === 'object' && engineOptions.contrast
+        ? engineOptions.contrast
+        : {};
+
+    const mode = contrast.mode === 'auditorAssist' ? 'auditorAssist' : 'strictConformance';
 
     const rootCanvasFallback =
-        engineOptions && typeof engineOptions.rootCanvasFallback === 'string' && engineOptions.rootCanvasFallback.trim()
-            ? engineOptions.rootCanvasFallback.trim()
+        typeof contrast.rootCanvasFallback === 'string' && contrast.rootCanvasFallback.trim()
+            ? contrast.rootCanvasFallback.trim()
             : '#ffffff';
 
     const MAX_OCCURRENCES = 50;
@@ -9587,24 +14362,55 @@ if (isAccTreeEligible) {
                 data: { details: det }
             };
 
-            if (helpers && typeof helpers.reportOccurrence === 'function') {
-                occurrences.push(helpers.reportOccurrence(el, occBase));
-            } else {
-                // Never compute selector/snippet in the rule.
-                occurrences.push({ ...occBase });
+            // Bind the occurrence to an element deterministically, but still let the engine
+            // attach canonical selector + HTML snippet via reportOccurrence when available.
+            let nodeSelector = '';
+            try {
+                const elementId = el && typeof el.getAttribute === 'function' ? (el.getAttribute('id') || '') : '';
+                if (elementId) nodeSelector = `#${elementId}`;
+            } catch {
+                // no-throw
             }
+            const tagName = el && el.tagName ? String(el.tagName).toLowerCase() : 'element';
+
+            let occ = { ...occBase };
+
+            // IMPORTANT: this is what populates occ.selector and occ.html (snippet)
+            if (helpers && typeof helpers.reportOccurrence === 'function') {
+                try {
+                    const reported = helpers.reportOccurrence(el, occBase);
+                    if (reported && typeof reported === 'object') occ = reported;
+                } catch {
+                    // no-throw
+                }
+            }
+
+            occ.selector = occ.selector || nodeSelector || '';
+
+            occ.data = occ.data || {};
+            occ.data.details = occ.data.details || {};
+            occ.data.details.node = { selector: nodeSelector, tagName };
+
+            occurrences.push(occ);
         } catch {
             // no-throw
         }
     }
 
-    // perf: per-element analysis cache
-    const __elAnalysisCache = __contrastSharedCache
-        ? (__contrastSharedCache.__elAnalysisCacheAAA || (__contrastSharedCache.__elAnalysisCacheAAA = new WeakMap()))
-             : new WeakMap();
+    // perf: per-element analysis cache (per run)
+    let __elAnalysisCache = new WeakMap();
+    if (__contrastSharedCache) {
+        try {
+            if (!__contrastSharedCache.__elAnalysisCacheAAA) __contrastSharedCache.__elAnalysisCacheAAA = new WeakMap();
+            __elAnalysisCache = __contrastSharedCache.__elAnalysisCacheAAA;
+        } catch {
+            __elAnalysisCache = new WeakMap();
+        }
+    }
 
 
-// Shared deterministic text scan (computed once per run and reused across contrast rules)
+
+// Shared deterministic text scan (computed once per run and reused across contrast checks)
 let scan = null;
 try {
     scan = helpers && helpers.contrast && typeof helpers.contrast.getTextScan === 'function'
@@ -9640,10 +14446,20 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
                 } else {
                     let bg = __elBgCache ? __elBgCache.get(el) : null;
                     if (!bg) {
-                        bg = helpers.contrast.computeEffectiveBackground(el, { profile, rootCanvasFallback, collectStack: false });
+                        bg = helpers.contrast.computeEffectiveBackground(el, {
+                            contrast: {mode, rootCanvasFallback},
+                            collectStack: false
+                        });
                         bg = bg || { ok: false, reasonCode: 'BACKGROUND_NOT_COMPUTABLE', rgba: null, alpha: 0 };
                         if (__elBgCache) __elBgCache.set(el, bg);
                     }
+
+                    const bgAssumptionsApplied = (bg && Array.isArray(bg.assumptionsApplied) && bg.assumptionsApplied.length)
+                        ? bg.assumptionsApplied.slice(0)
+                        : null;
+                    const bgAssumedRootCanvasColor = (bg && typeof bg.assumedRootCanvasColor === 'string')
+                        ? bg.assumedRootCanvasColor
+                        : null;
 
                     let fg = __elFgCache ? __elFgCache.get(el) : null;
                     if (!fg) {
@@ -9670,6 +14486,8 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
                         analysis = {
                             computable: true,
                             ratio,
+                            bgAssumptionsApplied,
+                            bgAssumedRootCanvasColor,
                             ratioStr: helpers.contrast.round2(ratio),
                             threshold,
                             thresholdStr: `${threshold}`,
@@ -9739,6 +14557,13 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
                     isLargeText: font.isLargeText
                 };
 
+                const assumptionsApplied = (analysis && Array.isArray(analysis.bgAssumptionsApplied) && analysis.bgAssumptionsApplied.length)
+                    ? analysis.bgAssumptionsApplied.slice(0)
+                    : null;
+                const assumedRootCanvasColor = (analysis && typeof analysis.bgAssumedRootCanvasColor === 'string')
+                    ? analysis.bgAssumedRootCanvasColor
+                    : null;
+
                 const details = {
                     reasonCode: 'BELOW_THRESHOLD',
                     metrics: { ratio, threshold },
@@ -9755,7 +14580,9 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
                         backgroundHex: bgHex,
                         foregroundRgba: fgRgbaStr,
                         backgroundRgba: bgRgbaStr
-                    }
+                    },
+                    assumptionsApplied: assumptionsApplied,
+                    assumedRootCanvasColor: assumedRootCanvasColor
                 };
 
                 pushFailOccurrence(el, params, details);
@@ -9941,14 +14768,15 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
         }
     }
 
-    const profile =
-        engineOptions && typeof engineOptions.profile === 'string' && engineOptions.profile.trim()
-            ? engineOptions.profile.trim()
-            : 'strictConformance';
+    const contrast = engineOptions && typeof engineOptions.contrast === 'object' && engineOptions.contrast
+        ? engineOptions.contrast
+        : {};
+
+    const mode = contrast.mode === 'auditorAssist' ? 'auditorAssist' : 'strictConformance';
 
     const rootCanvasFallback =
-        engineOptions && typeof engineOptions.rootCanvasFallback === 'string' && engineOptions.rootCanvasFallback.trim()
-            ? engineOptions.rootCanvasFallback.trim()
+        typeof contrast.rootCanvasFallback === 'string' && contrast.rootCanvasFallback.trim()
+            ? contrast.rootCanvasFallback.trim()
             : '#ffffff';
 
     const MAX_OCCURRENCES = 50;
@@ -10014,24 +14842,53 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
                 data: { details: det }
             };
 
-            if (helpers && typeof helpers.reportOccurrence === 'function') {
-                occurrences.push(helpers.reportOccurrence(el, occBase));
-            } else {
-                // Never compute selector/snippet in the rule.
-                occurrences.push({ ...occBase });
+            // Optional deterministic node metadata
+            let nodeMeta = null;
+            try {
+                const elementId = el && typeof el.getAttribute === 'function' ? (el.getAttribute('id') || '') : '';
+                const tagName = el && el.tagName ? String(el.tagName).toLowerCase() : 'element';
+                nodeMeta = { selector: elementId ? `#${elementId}` : '', tagName };
+            } catch {
+                // no-throw
             }
+
+            let occ = { ...occBase };
+
+            // IMPORTANT: this populates occ.selector and occ.html (snippet) when available
+            if (helpers && typeof helpers.reportOccurrence === 'function') {
+                try {
+                    const reported = helpers.reportOccurrence(el, occBase);
+                    if (reported && typeof reported === 'object') occ = reported;
+                } catch {
+                    // no-throw
+                }
+            }
+
+            if (nodeMeta) {
+                occ.node = nodeMeta;
+                if (!occ.selector) occ.selector = nodeMeta.selector || '';
+            }
+
+            occurrences.push(occ);
         } catch {
             // no-throw
         }
     }
 
-    // perf: per-element analysis cache
-    const __elAnalysisCache = __contrastSharedCache
-        ? (__contrastSharedCache.__elAnalysisCacheAA || (__contrastSharedCache.__elAnalysisCacheAA = new WeakMap()))
-        : new WeakMap();
+    // perf: per-element analysis cache (per run)
+    let __elAnalysisCache = new WeakMap();
+    if (__contrastSharedCache) {
+        try {
+            if (!__contrastSharedCache.__elAnalysisCacheAA) __contrastSharedCache.__elAnalysisCacheAA = new WeakMap();
+            __elAnalysisCache = __contrastSharedCache.__elAnalysisCacheAA;
+        } catch {
+            __elAnalysisCache = new WeakMap();
+        }
+    }
 
 
-    // Shared deterministic text scan (computed once per run and reused across contrast rules)
+
+    // Shared deterministic text scan (computed once per run and reused across contrast checks)
     let scan = null;
     try {
         scan = helpers && helpers.contrast && typeof helpers.contrast.getTextScan === 'function'
@@ -10067,10 +14924,20 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
                     } else {
                         let bg = __elBgCache ? __elBgCache.get(el) : null;
                         if (!bg) {
-                            bg = helpers.contrast.computeEffectiveBackground(el, { profile, rootCanvasFallback, collectStack: false });
+                            bg = helpers.contrast.computeEffectiveBackground(el, {
+                                contrast: {mode, rootCanvasFallback},
+                                collectStack: false
+                            });
                             bg = bg || { ok: false, reasonCode: 'BACKGROUND_NOT_COMPUTABLE', rgba: null, alpha: 0 };
                             if (__elBgCache) __elBgCache.set(el, bg);
                         }
+
+                        const bgAssumptionsApplied = (bg && Array.isArray(bg.assumptionsApplied) && bg.assumptionsApplied.length)
+                            ? bg.assumptionsApplied.slice(0)
+                            : null;
+                        const bgAssumedRootCanvasColor = (bg && typeof bg.assumedRootCanvasColor === 'string')
+                            ? bg.assumedRootCanvasColor
+                            : null;
 
                         let fg = __elFgCache ? __elFgCache.get(el) : null;
                         if (!fg) {
@@ -10097,6 +14964,8 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
                             analysis = {
                                 computable: true,
                                 ratio,
+                                bgAssumptionsApplied,
+                                bgAssumedRootCanvasColor,
                                 ratioStr: helpers.contrast.round2(ratio),
                                 threshold,
                                 thresholdStr: `${threshold}`,
@@ -10164,6 +15033,13 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
                         isLargeText: font.isLargeText
                     };
 
+                    const assumptionsApplied = (analysis && Array.isArray(analysis.bgAssumptionsApplied) && analysis.bgAssumptionsApplied.length)
+                        ? analysis.bgAssumptionsApplied.slice(0)
+                        : null;
+                    const assumedRootCanvasColor = (analysis && typeof analysis.bgAssumedRootCanvasColor === 'string')
+                        ? analysis.bgAssumedRootCanvasColor
+                        : null;
+
                     const details = {
                         reasonCode: 'BELOW_THRESHOLD',
                         metrics: {ratio, threshold},
@@ -10180,7 +15056,9 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
                             backgroundHex: bgHex,
                             foregroundRgba: fgRgbaStr,
                             backgroundRgba: bgRgbaStr
-                        }
+                        },
+                        assumptionsApplied: assumptionsApplied,
+                        assumedRootCanvasColor: assumedRootCanvasColor
                     };
 
                     pushFailOccurrence(el, params, details);
@@ -10270,6 +15148,424 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
         confidence: rule.defaultConfidence || 'high',
         occurrences
     };
+}), applicability: null },
+    "a11ycore-css-hidden-focus": { run: (function runInPage(ctx) {
+    const {document, root, helpers, rule} = ctx;
+    const safeRoot = root || document;
+
+    const queryAllSmart = helpers && typeof helpers.queryAllSmart === 'function' ? helpers.queryAllSmart : null;
+    const getFocusableInfo = helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
+    const isDomVisibleEligible = helpers && typeof helpers.isDomVisibleEligible === 'function' ? helpers.isDomVisibleEligible : null;
+    const reportOccurrence = helpers && typeof helpers.reportOccurrence === 'function' ? helpers.reportOccurrence : null;
+
+    const trim = (v) => (v == null ? '' : String(v)).trim();
+    const lower = (v) => trim(v).toLowerCase();
+
+    function qAll(sel) {
+        try {
+            if (queryAllSmart) {
+                const r = queryAllSmart(sel);
+                if (Array.isArray(r)) return r;
+                return Array.from(r || []);
+            }
+        } catch {
+            // fall through
+        }
+        try {
+            if (safeRoot && typeof safeRoot.querySelectorAll === 'function') return Array.from(safeRoot.querySelectorAll(sel));
+        } catch {
+            // fall through
+        }
+        return [];
+    }
+
+    function getComputedStyleSafe(el) {
+        try {
+            const w = (document && document.defaultView) ? document.defaultView : (typeof window !== 'undefined' ? window : null);
+            return w && w.getComputedStyle ? w.getComputedStyle(el) : null;
+        } catch {
+            return null;
+        }
+    }
+
+    // Returns deterministic "visually hidden but can remain focusable" hints.
+    function getVisibilityHints(el) {
+        const out = [];
+        if (!el) return out;
+        const cs = getComputedStyleSafe(el);
+
+        // opacity:0
+        try {
+            const rawOp = cs && cs.opacity != null ? String(cs.opacity).trim() : '';
+            const op = rawOp ? Number.parseFloat(rawOp) : 1;
+            if (Number.isFinite(op) && op <= 0.0001) out.push('opacityZero');
+        } catch {
+        }
+
+        // clip / clip-path
+        try {
+            const clip = cs && cs.clip != null ? String(cs.clip).trim() : '';
+            const clipPath = cs && cs.clipPath != null ? String(cs.clipPath).trim() : '';
+            const clipLow = (clip || '').toLowerCase();
+            const clipPathLow = (clipPath || '').toLowerCase();
+
+            if (clipLow && clipLow !== 'auto') {
+                if (clipLow.indexOf('rect(') !== -1 && clipLow.replace(/\s+/g, '').indexOf('rect(0') !== -1) out.push('clipped');
+            }
+            if (clipPathLow && clipPathLow !== 'none') {
+                if (clipPathLow.indexOf('inset(') !== -1 && (clipPathLow.indexOf('100%') !== -1 || clipPathLow.indexOf('50%') !== -1)) {
+                    out.push('clipped');
+                }
+            }
+        } catch {
+        }
+
+        // zero-size + overflow hidden/clip
+        try {
+            const wv = cs && cs.width != null ? String(cs.width).trim() : '';
+            const hv = cs && cs.height != null ? String(cs.height).trim() : '';
+            const ov = cs && cs.overflow != null ? String(cs.overflow).trim().toLowerCase() : '';
+            const isZeroW = wv === '0px' || wv === '0';
+            const isZeroH = hv === '0px' || hv === '0';
+            const hidesOverflow = ov === 'hidden' || ov === 'clip';
+            if ((isZeroW || isZeroH) && hidesOverflow) out.push('zeroSizeOverflowHidden');
+        } catch {
+        }
+
+        // off-screen heuristic (absolute/fixed + left/top <= -5000 OR text-indent <= -5000)
+        try {
+            const pos = cs && cs.position != null ? String(cs.position).trim().toLowerCase() : '';
+            const left = cs && cs.left != null ? String(cs.left).trim().toLowerCase() : '';
+            const top = cs && cs.top != null ? String(cs.top).trim().toLowerCase() : '';
+            const ti = cs && cs.textIndent != null ? String(cs.textIndent).trim().toLowerCase() : '';
+
+            const parsePx = (s) => {
+                if (!s || s === 'auto') return null;
+                const m = String(s).match(/-?\d+(\.\d+)?/);
+                if (!m) return null;
+                const n = Number.parseFloat(m[0]);
+                return Number.isFinite(n) ? n : null;
+            };
+
+            const l = parsePx(left);
+            const t = parsePx(top);
+            const ind = parsePx(ti);
+
+            if (pos === 'absolute' || pos === 'fixed') {
+                if ((l != null && l <= -5000) || (t != null && t <= -5000)) out.push('offscreen');
+            }
+            if (ind != null && ind <= -5000) out.push('offscreen');
+        } catch {
+        }
+
+        // Dedup
+        const seen = new Set();
+        const uniq = [];
+        for (const k of out) {
+            const kk = String(k);
+            if (!seen.has(kk)) {
+                seen.add(kk);
+                uniq.push(kk);
+            }
+        }
+        return uniq;
+    }
+
+    function getFocusableInfoSafe(el) {
+        if (!getFocusableInfo) return null;
+        try {
+            return getFocusableInfo(el, ctx);
+        } catch {
+            return null;
+        }
+    }
+
+    function isTabbable(el, info) {
+        const f = info || getFocusableInfoSafe(el);
+        return !!(f && f.focusable && f.tabbable);
+    }
+
+    // Exclude elements that are not rendered / not in the visual rendering tree.
+    function isRendered(el) {
+        if (!isDomVisibleEligible) return true;
+        try {
+            const vis = isDomVisibleEligible(el, ctx, {visibilityMode: 'styleOnly', disableGeometry: true});
+            if (vis && vis.eligible === false) {
+                const rs = Array.isArray(vis.reasons) ? vis.reasons : [];
+                // We *include* opacityZero in this rule. Everything else is treated as not rendered for this purpose.
+                const nonOpacity = rs.filter((r) => String(r) !== 'opacityZero');
+                if (nonOpacity.length) return false;
+            }
+        } catch {
+            // If in doubt, keep deterministic behavior and consider it rendered.
+        }
+        return true;
+    }
+  const candidates = qAll('a[href],area[href],button,input,select,textarea,summary,[tabindex],[contenteditable]');
+  if (!candidates.length) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+
+  const occurrences = [];
+
+  for (const el of candidates) {
+    if (!el || !el.getAttribute) continue;
+
+    const finfo = getFocusableInfoSafe(el);
+    if (!isTabbable(el, finfo)) continue;
+
+    // Skip elements not rendered (display:none, visibility:hidden, [hidden], etc.)
+    if (!isRendered(el)) continue;
+
+    const hints = getVisibilityHints(el);
+    if (!hints.length) continue; // <-- applicability gate
+
+    const tagName = (() => { try { return lower(el.tagName || ''); } catch { return ''; } })();
+
+    const hintOrder = ['opacityZero', 'offscreen', 'clipped', 'zeroSizeOverflowHidden'];
+    const hintsArr = [];
+    for (const k of hintOrder) if (hints.includes(k)) hintsArr.push(k);
+
+    const baseOccurrence = {
+      summary: `Focusable ${tagName} appears visually hidden (${hintsArr.join(',')}). Verify it becomes visible on keyboard focus.`,
+      hint: 'Manually tab to the element and confirm a visible focus indicator and that the element is visible when focused. If it remains hidden while focused, fix CSS/JS so it becomes visible or is removed from the tab order until visible.',
+      i18n: {
+        summaryKey: 'a11ycore_cssHidden_focus_summary_cantTell',
+        hintKey: 'a11ycore_cssHidden_focus_hint_cantTell',
+        params: { element: tagName, visibilityHints: hintsArr.join(',') }
+      },
+      data: {
+        details: {
+          reasonCode: 'cssHiddenTabbable_needsFocusStateVerification',
+          metrics: { visibilityHints: hintsArr.slice(0) }
+        }
+      }
+    };
+
+    occurrences.push(
+        reportOccurrence ? reportOccurrence(el, baseOccurrence) : { __node: el, selector: '', html: '', ...baseOccurrence }
+    );
+  }
+
+  // Manual rule + validator invariant: cantTell must have >= 1 occurrence
+  if (!occurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'cantTell',
+    severity: rule.defaultSeverity || 'minor',
+    occurrences
+  };
+}), applicability: null },
+    "a11ycore-dialog-name-present": { run: (function runInPage(ctx) {
+  const { document, root, helpers, rule } = ctx;
+  const safeRoot = root || document;
+
+
+  function normalizeWs(s) {
+    return String(s || '').replace(/\s+/g, ' ').trim();
+  }
+
+  function getAttr(el, name) {
+    try {
+      if (!el || !el.getAttribute) return '';
+      return normalizeWs(el.getAttribute(name));
+    } catch { return ''; }
+  }
+
+  function hasAttr(el, name) {
+    try { return !!(el && el.hasAttribute && el.hasAttribute(name)); } catch { return false; }
+  }
+
+  function isExplicitProgrammatic(el) {
+    // Programmatic name mechanisms we treat as authoritative (presence-only):
+    // - aria-label (non-empty)
+    // - aria-labelledby (non-empty)
+    // - title (non-empty) [weak but allowed for presence]
+    const al = getAttr(el, 'aria-label');
+    if (al) return true;
+    const alb = getAttr(el, 'aria-labelledby');
+    if (alb) return true;
+    const t = getAttr(el, 'title');
+    if (t) return true;
+    return false;
+  }
+
+  function buildLabelForMap(doc) {
+    const map = new Map(); // id -> label element (first)
+    try {
+      const labels = doc && doc.getElementsByTagName ? doc.getElementsByTagName('label') : [];
+      for (let i = 0; i < labels.length; i += 1) {
+        const lab = labels[i];
+        if (!lab || !lab.getAttribute) continue;
+        const f = normalizeWs(lab.getAttribute('for'));
+        if (!f) continue;
+        if (!map.has(f)) map.set(f, lab);
+      }
+    } catch {}
+    return map;
+  }
+
+  function getConservativeSubtreeText(document, container) {
+    // Deterministic text extraction excluding aria-hidden="true" and [hidden] subtrees.
+    // Use TreeWalker when available; avoid NodeFilter global.
+    const SHOW_TEXT = 4;
+    try {
+      const walker = document.createTreeWalker(container, SHOW_TEXT, null);
+      const parts = [];
+      let n = walker.nextNode();
+      while (n) {
+        const raw = normalizeWs(n.nodeValue || '');
+        if (raw) {
+          const pe = n.parentElement;
+          let blocked = false;
+          if (pe && typeof pe.closest === 'function') {
+            const blocker = pe.closest('[aria-hidden="true"],[hidden]');
+            if (blocker && container.contains(blocker)) blocked = true;
+          } else {
+            let p = pe;
+            while (p && p !== container) {
+              if (p.getAttribute && p.getAttribute('aria-hidden') === 'true') { blocked = true; break; }
+              if (p.hasAttribute && p.hasAttribute('hidden')) { blocked = true; break; }
+              p = p.parentElement;
+            }
+          }
+          if (!blocked) {
+            if (container.getAttribute && container.getAttribute('aria-hidden') === 'true') blocked = true;
+            if (!blocked && container.hasAttribute && container.hasAttribute('hidden')) blocked = true;
+          }
+          if (!blocked) parts.push(raw);
+        }
+        n = walker.nextNode();
+      }
+      return normalizeWs(parts.join(' '));
+    } catch {
+      // Manual deterministic walk
+      try {
+        const parts = [];
+        const stack = [container];
+        while (stack.length) {
+          const node = stack.pop();
+          if (!node) continue;
+          if (node.nodeType === 3) { // TEXT_NODE
+            const raw = normalizeWs(node.nodeValue || '');
+            if (raw) parts.push(raw);
+            continue;
+          }
+          if (node.nodeType === 1) { // ELEMENT_NODE
+            if (node.getAttribute && node.getAttribute('aria-hidden') === 'true') continue;
+            if (node.hasAttribute && node.hasAttribute('hidden')) continue;
+            const kids = node.childNodes ? Array.from(node.childNodes) : [];
+            for (let i = kids.length - 1; i >= 0; i -= 1) stack.push(kids[i]);
+          }
+        }
+        return normalizeWs(parts.join(' '));
+      } catch {
+        return '';
+      }
+    }
+  }
+
+  function resolveAriaLabelledbyText(document, el, maxRefs) {
+    const raw = getAttr(el, 'aria-labelledby');
+    if (!raw) return '';
+    const ids = raw.split(/\s+/).filter(Boolean).slice(0, Math.max(1, maxRefs || 8));
+    const parts = [];
+    for (const elementId of ids) {
+      try {
+        const ref = document.getElementById(elementId);
+        if (ref) {
+          const t = getConservativeSubtreeText(document, ref);
+          if (t) parts.push(t);
+        }
+      } catch {}
+    }
+    return normalizeWs(parts.join(' '));
+  }
+
+  function getInputValueName(el) {
+    try {
+      const type = getAttr(el, 'type').toLowerCase();
+      if (type !== 'button' && type !== 'submit' && type !== 'reset') return '';
+      const v = getAttr(el, 'value');
+      return v;
+    } catch { return ''; }
+  }
+
+  function isEligibleAcc(helpers, el, ctx) {
+    const fn = helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+    if (!fn) return true;
+    try {
+      const r = fn(el, ctx);
+      if (typeof r === 'boolean') return r;
+      return !!(r && r.eligible);
+    } catch {
+      return true;
+    }
+  }
+
+
+  const occurrences = [];
+  let applicableCount = 0;
+
+  const selector = '[role="dialog"],[role="alertdialog"]';
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+
+
+  function evaluate(el) {
+    const ariaLabel = getAttr(el, 'aria-label');
+    if (ariaLabel) return { ok: true, method: 'aria-label' };
+
+    const ariaLabelledby = resolveAriaLabelledbyText(document, el, 8);
+    if (ariaLabelledby) return { ok: true, method: 'aria-labelledby' };
+
+    const title = getAttr(el, 'title');
+    if (title) return { ok: true, method: 'title' };
+
+    // Content name is allowed in some patterns, but label mechanisms are strongly preferred.
+    const t = getConservativeSubtreeText(document, el);
+    if (t) return { ok: true, method: 'content' };
+
+    return { ok: false, method: 'none' };
+  }
+
+  for (const el of nodes) {
+    if (!el) continue;
+    if (!isEligibleAcc(helpers, el, ctx)) continue;
+
+    const role = getAttr(el, 'role').toLowerCase();
+    if (role !== 'dialog' && role !== 'alertdialog') continue;
+
+    applicableCount += 1;
+
+    const res = evaluate(el);
+    if (res.ok) continue;
+
+    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+
+    occurrences.push({
+      selector: stableSelector,
+      html,
+      summary: 'This dialog has no accessible name.',
+      hint: 'Provide aria-labelledby (preferred) or aria-label so assistive technologies can announce the dialog.',
+      summaryKey: 'a11ycore_dialogNamePresent_summary_fail',
+      hintKey: 'a11ycore_dialogNamePresent_hint_fail',
+      i18nParams: { role },
+      data: { details: { reasonCode: 'name_missing', controlType: role, methodTried: res.method } }
+    });
+  }
+
+
+  if (applicableCount === 0) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  if (occurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences };
+  }
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "a11ycore-embed-text-alternative-present": { run: (function runInPage(ctx) {
   const { document, root, helpers, rule } = ctx;
@@ -11461,7 +16757,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     const { document, root, helpers, rule } = ctx;
     const safeRoot = root || document;
 
-    // Cap occurrences to keep manual “quality” rules fast on large pages.
+    // Cap occurrences to keep manual “quality” checks fast on large pages.
     // Deterministic: we keep DOM order, just stop collecting after N.
     const MAX_OCCURRENCES = 50;
 
@@ -11885,6 +17181,513 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
 
     return { ruleId: rule.ruleId, outcome: 'cantTell', severity: 'minor', occurrences };
 }), applicability: null },
+    "a11ycore-label-in-name": { run: (function runInPage(ctx) {
+  const { document, root, helpers, rule } = ctx;
+  const safeRoot = root || document;
+
+  const occurrences = [];
+  let applicableCount = 0;
+
+  // Applicability: focus/activation controls with explicit ARIA naming.
+  // NOTE: aria-hidden is intentionally NOT excluded here; it does not affect visual rendering.
+  const selector = ':is(button, a[href], summary, input:not([type="hidden"]), textarea, select, [role="button"], [role="link"], [role="checkbox"], [role="radio"], [role="switch"], [role="searchbox"], [role="tab"], [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="option"], [role="treeitem"], [role="gridcell"]):not([hidden]):not([disabled]):not([aria-disabled="true"]):is([aria-label], [aria-labelledby])';
+
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+
+  function norm(s) {
+    const v = (s == null ? '' : String(s));
+    // deterministic normalization: trim + collapse whitespace + case-fold
+    return v.replace(/\s+/g, ' ').trim().toLowerCase();
+  }
+
+  function getElementDescriptor(el) {
+    const tag = (el && el.tagName ? String(el.tagName).toLowerCase() : 'element');
+    let role = '';
+    try { role = el && el.getAttribute ? (el.getAttribute('role') || '') : ''; } catch { role = ''; }
+    const r = String(role || '').trim();
+    return r ? `${tag}[role="${r}"]` : tag;
+  }
+
+  function clipForSummary(s) {
+    const v = (s == null ? '' : String(s)).replace(/\s+/g, ' ').trim();
+    if (v.length <= 80) return v;
+    return v.slice(0, 77) + '...';
+  }
+
+  function isNonRenderedTag(el) {
+    const tn = (el && el.tagName ? String(el.tagName).toLowerCase() : '');
+    return tn === 'script' || tn === 'style' || tn === 'template' || tn === 'noscript' || tn === 'meta' || tn === 'link';
+  }
+
+  function isDomVisible(el) {
+    if (!el) return false;
+    if (helpers.isDomVisibleEligible) return !!helpers.isDomVisibleEligible(el, ctx, { targetSet: 'dom' }).eligible;
+    if (helpers.getEligibilityInfo) return !!helpers.getEligibilityInfo(el, ctx, { targetSet: 'dom' }).eligible;
+    return true;
+  }
+
+  function collectVisibleTextUnder(container) {
+    if (!container) return '';
+    if (!isDomVisible(container)) return '';
+
+    // TreeWalker is deterministic in document order.
+    let walker = null;
+    try {
+      walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null);
+    } catch {
+      walker = null;
+    }
+    if (!walker) {
+      try {
+        const t = container.textContent;
+        return t == null ? '' : String(t);
+      } catch {
+        return '';
+      }
+    }
+
+    const parts = [];
+    let n = null;
+    // eslint-disable-next-line no-cond-assign
+    while ((n = walker.nextNode())) {
+      try {
+        const raw = n && n.nodeValue != null ? String(n.nodeValue) : '';
+        const t = raw.replace(/\s+/g, ' ').trim();
+        if (!t) continue;
+
+        const p = n.parentElement || null;
+        if (!p || !p.tagName) continue;
+        if (isNonRenderedTag(p)) continue;
+
+        // Require the parent element to be visually eligible.
+        if (!isDomVisible(p)) continue;
+
+        parts.push(t);
+      } catch {
+        // no-throws
+      }
+    }
+    return parts.join(' ').replace(/\s+/g, ' ').trim();
+  }
+
+  function getAssociatedLabelElements(control) {
+    const labels = [];
+    try {
+      if (control && control.labels && typeof control.labels.length === 'number') {
+        for (const l of control.labels) labels.push(l);
+      }
+    } catch {
+      // ignore
+    }
+
+    // Fallback: wrapped label
+    try {
+      const w = control && control.closest ? control.closest('label') : null;
+      if (w) labels.push(w);
+    } catch {
+      // ignore
+    }
+
+    // Fallback: label[for=id]
+    try {
+      const idAttribute = control && control.getAttribute ? (control.getAttribute('id') || '') : '';
+      const key = String(idAttribute || '').trim();
+      if (key && safeRoot && safeRoot.querySelector) {
+        const l = safeRoot.querySelector('label[for="' + CSS.escape(key) + '"]');
+        if (l) labels.push(l);
+      }
+    } catch {
+      // ignore
+    }
+
+    // De-dupe in document order
+    const seen = new Set();
+    const out = [];
+    for (const l of labels) {
+      try {
+        if (!l || !l.tagName) continue;
+        if (seen.has(l)) continue;
+        seen.add(l);
+        out.push(l);
+      } catch {
+        // ignore
+      }
+    }
+    return out;
+  }
+
+  function getVisibleTextLabelInfo(el) {
+    // Returns { text, source } where source helps reporting.
+    // Source policy (deterministic):
+    // 1) <label> association for form controls
+    // 2) visible text inside the element
+    // 3) visible text from aria-labelledby referenced elements
+    let text = '';
+    let source = 'none';
+
+    const tn = (el && el.tagName ? String(el.tagName).toLowerCase() : '');
+
+    // 1) Label association (native form controls)
+    const isFormControl = tn === 'input' || tn === 'select' || tn === 'textarea';
+    if (isFormControl) {
+      const labels = getAssociatedLabelElements(el);
+      const labelParts = [];
+      for (const l of labels) {
+        if (!l || !isDomVisible(l)) continue;
+        const t = collectVisibleTextUnder(l);
+        if (t) labelParts.push(t);
+      }
+      const joined = labelParts.join(' ').replace(/\s+/g, ' ').trim();
+      if (joined) return { text: joined, source: 'label' };
+    }
+
+    // 2) Text inside the control itself
+    text = collectVisibleTextUnder(el);
+    if (text) return { text, source: 'self' };
+
+    // 3) aria-labelledby referenced visible text (only if refs exist and are visible)
+    try {
+      const idrefs = el && el.getAttribute ? el.getAttribute('aria-labelledby') : null;
+      if (idrefs && helpers.resolveIdRefs) {
+        const r = helpers.resolveIdRefs(idrefs, ctx, { maxRefs: 8 });
+        const parts = [];
+        for (const ref of (r && Array.isArray(r.refs) ? r.refs : [])) {
+          if (!ref || !ref.tagName) continue;
+          if (!isDomVisible(ref)) continue;
+          const t = collectVisibleTextUnder(ref);
+          if (t) parts.push(t);
+        }
+        const joined = parts.join(' ').replace(/\s+/g, ' ').trim();
+        if (joined) return { text: joined, source: 'aria-labelledby' };
+      }
+    } catch {
+      // ignore
+    }
+
+    return { text: '', source };
+  }
+
+  for (const el of nodes) {
+    // Gate: control must be visually rendered (SC is about visual labels).
+    if (!isDomVisible(el)) continue;
+
+    const labelInfo = getVisibleTextLabelInfo(el);
+    const visibleLabel = labelInfo && labelInfo.text ? String(labelInfo.text) : '';
+    const visibleNorm = norm(visibleLabel);
+
+    // Applicability: only when we can deterministically extract visible label text.
+    if (!visibleNorm) continue;
+
+    applicableCount += 1;
+
+    let acc = { present: false, value: '', mechanism: 'none', flags: [] };
+    try {
+      acc = helpers.getAccessibleNameInfo ? helpers.getAccessibleNameInfo(el, ctx, { maxRefs: 8 }) : acc;
+    } catch {
+      acc = { present: false, value: '', mechanism: 'none', flags: ['exception'] };
+    }
+    const accName = acc && acc.value != null ? String(acc.value) : '';
+    const accNorm = norm(accName);
+
+    const contains = !!(accNorm && visibleNorm && accNorm.indexOf(visibleNorm) !== -1);
+
+    if (!contains) {
+      const selectorOut = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
+      const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+
+      occurrences.push({
+        selector: selectorOut,
+        html,
+        summary: 'Accessible name does not contain the visible label text.',
+        hint: 'Ensure the accessible name includes the visible text label (e.g., update aria-label/aria-labelledby to include the visible wording).',
+        i18n: {
+          summaryKey: 'a11ycore_labelInName_summary_fail',
+          hintKey: 'a11ycore_labelInName_hint_fail',
+          params: {
+            element: getElementDescriptor(el),
+            visibleLabel: clipForSummary(visibleLabel),
+            labelSource: labelInfo && labelInfo.source ? labelInfo.source : 'none',
+            nameMechanism: acc && acc.mechanism ? acc.mechanism : 'none'
+          }
+        },
+        data: {
+          details: {
+            reasonCode: 'VISIBLE_LABEL_NOT_IN_ACCESSIBLE_NAME',
+            visibleLabel,
+            accessibleName: accName,
+            normalized: { visibleLabel: visibleNorm, accessibleName: accNorm },
+            labelSource: labelInfo && labelInfo.source ? labelInfo.source : 'none',
+            nameMechanism: acc && acc.mechanism ? acc.mechanism : 'none'
+          }
+        }
+      });
+    }
+  }
+
+  if (applicableCount === 0) return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  if (occurrences.length) return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences };
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+}), applicability: null },
+    "a11ycore-link-name-present": { run: (function runInPage(ctx) {
+  const { document, root, helpers, rule } = ctx;
+  const safeRoot = root || document;
+
+  const occurrences = [];
+  let applicableCount = 0;
+
+  function getConservativeSubtreeText(container) {
+    try {
+      const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null);
+      const parts = [];
+      let n = walker.nextNode();
+
+      while (n) {
+        const raw = (n.nodeValue || '').replace(/\s+/g, ' ').trim();
+        if (raw) {
+          let p = n.parentElement;
+          let blocked = false;
+
+          while (p && p !== container) {
+            if (p.getAttribute && p.getAttribute('aria-hidden') === 'true') { blocked = true; break; }
+            if (p.hasAttribute && p.hasAttribute('hidden')) { blocked = true; break; }
+            p = p.parentElement;
+          }
+
+          if (!blocked) {
+            if (container.getAttribute && container.getAttribute('aria-hidden') === 'true') blocked = true;
+            if (!blocked && container.hasAttribute && container.hasAttribute('hidden')) blocked = true;
+          }
+
+          if (!blocked) parts.push(raw);
+        }
+        n = walker.nextNode();
+      }
+
+      return parts.join(' ').replace(/\s+/g, ' ').trim();
+    } catch {
+      const t = (container && container.textContent) ? String(container.textContent) : '';
+      return t.replace(/\s+/g, ' ').trim();
+    }
+  }
+
+  const selector = 'a[href], area[href], [role="link"]';
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+
+  for (const el of nodes) {
+    const eligInfo = helpers.getEligibilityInfo ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
+    const eligible = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el, ctx) : true;
+    if (!eligible) continue;
+
+    applicableCount += 1;
+
+    const nameInfo = helpers.getAccessibleNameInfo ? helpers.getAccessibleNameInfo(el, ctx) : null;
+    const programmaticName = (nameInfo && typeof nameInfo.value === 'string') ? nameInfo.value : '';
+
+    const contentName = programmaticName.trim().length === 0 ? getConservativeSubtreeText(el) : '';
+    const finalName = (programmaticName.trim().length ? programmaticName : contentName).trim();
+
+    if (finalName.length === 0) {
+      const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
+      const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+      const tag = (el.tagName || '').toLowerCase();
+
+      occurrences.push({
+        selector: stableSelector,
+        html,
+
+        // Human fallbacks (allowed)
+        summary: 'This link has no accessible name.',
+        hint: 'Provide link text or an accessible-name mechanism (for example aria-label) so assistive technologies can identify the link.',
+
+        // Validator requires these keys to exist in the English dictionary
+        summaryKey: 'a11ycore_linkNamePresent_summary_fail',
+        hintKey: 'a11ycore_linkNamePresent_hint_fail',
+        i18nParams: { element: tag },
+
+        data: {
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
+          details: {
+            reasonCode: 'name_missing',
+            metrics: {
+              programmaticNameLength: programmaticName.trim().length,
+              contentNameLength: contentName.trim().length
+            },
+            refs: { accessibleName: nameInfo || null }
+          }
+        }
+      });
+    }
+  }
+
+  if (applicableCount === 0) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  if (occurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences };
+  }
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+}), applicability: null },
+    "a11ycore-listbox-name-present": { run: (function runInPage(ctx) {
+  const { document, root, helpers, rule } = ctx;
+  const safeRoot = root || document;
+
+
+  function normalizeWs(s) {
+    return String(s || '').replace(/\s+/g, ' ').trim();
+  }
+
+  function getAttr(el, name) {
+    try {
+      if (!el || !el.getAttribute) return '';
+      return normalizeWs(el.getAttribute(name));
+    } catch { return ''; }
+  }
+
+  function getConservativeSubtreeText(document, container) {
+    const SHOW_TEXT = 4; // TreeWalker SHOW_TEXT
+    try {
+      const walker = document.createTreeWalker(container, SHOW_TEXT, null);
+      const parts = [];
+      let n = walker.nextNode();
+      while (n) {
+        const raw = normalizeWs(n.nodeValue || '');
+        if (raw) {
+          const pe = n.parentElement;
+          let blocked = false;
+          if (pe && typeof pe.closest === 'function') {
+            const blocker = pe.closest('[aria-hidden="true"],[hidden]');
+            if (blocker && container.contains(blocker)) blocked = true;
+          } else {
+            let p = pe;
+            while (p && p !== container) {
+              if (p.getAttribute && p.getAttribute('aria-hidden') === 'true') { blocked = true; break; }
+              if (p.hasAttribute && p.hasAttribute('hidden')) { blocked = true; break; }
+              p = p.parentElement;
+            }
+          }
+          if (!blocked) {
+            if (container.getAttribute && container.getAttribute('aria-hidden') === 'true') blocked = true;
+            if (!blocked && container.hasAttribute && container.hasAttribute('hidden')) blocked = true;
+          }
+          if (!blocked) parts.push(raw);
+        }
+        n = walker.nextNode();
+      }
+      return normalizeWs(parts.join(' '));
+    } catch {
+      try {
+        const parts = [];
+        const stack = [container];
+        while (stack.length) {
+          const node = stack.pop();
+          if (!node) continue;
+          if (node.nodeType === 3) { // TEXT_NODE
+            const raw = normalizeWs(node.nodeValue || '');
+            if (raw) parts.push(raw);
+            continue;
+          }
+          if (node.nodeType === 1) { // ELEMENT_NODE
+            if (node.getAttribute && node.getAttribute('aria-hidden') === 'true') continue;
+            if (node.hasAttribute && node.hasAttribute('hidden')) continue;
+            const kids = node.childNodes ? Array.from(node.childNodes) : [];
+            for (let i = kids.length - 1; i >= 0; i -= 1) stack.push(kids[i]);
+          }
+        }
+        return normalizeWs(parts.join(' '));
+      } catch {
+        return '';
+      }
+    }
+  }
+
+  function resolveAriaLabelledbyText(document, el, maxRefs) {
+    const raw = getAttr(el, 'aria-labelledby');
+    if (!raw) return '';
+    const refs = raw.split(/\s+/).filter(Boolean).slice(0, Math.max(1, maxRefs || 8));
+    const parts = [];
+    for (const refKey of refs) {
+      try {
+        const refEl = document.getElementById(refKey);
+        if (refEl) {
+          const t = getConservativeSubtreeText(document, refEl);
+          if (t) parts.push(t);
+        }
+      } catch {}
+    }
+    return normalizeWs(parts.join(' '));
+  }
+
+  function isEligibleAcc(helpers, el, ctx) {
+    const fn = helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+    if (!fn) return true;
+    try {
+      const r = fn(el, ctx);
+      if (typeof r === 'boolean') return r;
+      return !!(r && r.eligible);
+    } catch {
+      return true;
+    }
+  }
+
+
+  const occurrences = [];
+  let applicableCount = 0;
+
+  const selector = "[role=\"listbox\"]";
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+
+
+  function hasName(el) {
+    const ariaLabel = getAttr(el, 'aria-label');
+    if (ariaLabel) return { ok: true, method: 'aria-label' };
+
+    const labelled = resolveAriaLabelledbyText(document, el, 8);
+    if (labelled) return { ok: true, method: 'aria-labelledby' };
+
+    const title = getAttr(el, 'title');
+    if (title) return { ok: true, method: 'title' };
+
+
+    const t = getConservativeSubtreeText(document, el);
+    if (t) return { ok: true, method: 'content' };
+
+
+    return { ok: false, method: 'none' };
+  }
+
+  for (const el of nodes) {
+    if (!el) continue;
+    if (!isEligibleAcc(helpers, el, ctx)) continue;
+
+    applicableCount += 1;
+
+    const res = hasName(el);
+    if (res.ok) continue;
+
+    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+
+    occurrences.push({
+      selector: stableSelector,
+      html,
+      summary: 'This element has no accessible name.',
+      hint: 'Provide aria-label or aria-labelledby (preferred), or provide visible text that is not hidden from assistive technologies.',
+      summaryKey: 'a11ycore_listboxNamePresent_summary_fail',
+      hintKey: 'a11ycore_listboxNamePresent_hint_fail',
+      i18nParams: { controlType: 'listbox' },
+      data: { details: { reasonCode: 'name_missing', controlType: 'listbox', methodTried: res.method } }
+    });
+  }
+
+
+  if (applicableCount === 0) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  if (occurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences };
+  }
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+}), applicability: null },
     "a11ycore-manual-review": { run: (function runInPage(ctx) {
   const { document, root, helpers, rule } = ctx;
 
@@ -12032,8 +17835,8 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   function nodeRef(el) {
     try {
       if (!el || el.nodeType !== 1) return null;
-      const id = el.getAttribute && el.getAttribute('id');
-      if (id) return { type: 'id', value: String(id) };
+      const elementId = el.getAttribute && el.getAttribute('id');
+      if (elementId) return { type: 'id', value: String(elementId) };
       const tag = (el.tagName || '').toLowerCase();
       return { type: 'tag', value: tag };
     } catch {
@@ -12256,6 +18059,214 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   }
 
   // Strong evidence found for all applicable media elements.
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+}), applicability: null },
+    "a11ycore-menuitem-name-present": { run: (function runInPage(ctx) {
+  const { document, root, helpers, rule } = ctx;
+  const safeRoot = root || document;
+
+
+  function normalizeWs(s) {
+    return String(s || '').replace(/\s+/g, ' ').trim();
+  }
+
+  function getAttr(el, name) {
+    try {
+      if (!el || !el.getAttribute) return '';
+      return normalizeWs(el.getAttribute(name));
+    } catch { return ''; }
+  }
+
+  function hasAttr(el, name) {
+    try { return !!(el && el.hasAttribute && el.hasAttribute(name)); } catch { return false; }
+  }
+
+  function isExplicitProgrammatic(el) {
+    // Programmatic name mechanisms we treat as authoritative (presence-only):
+    // - aria-label (non-empty)
+    // - aria-labelledby (non-empty)
+    // - title (non-empty) [weak but allowed for presence]
+    const al = getAttr(el, 'aria-label');
+    if (al) return true;
+    const alb = getAttr(el, 'aria-labelledby');
+    if (alb) return true;
+    const t = getAttr(el, 'title');
+    if (t) return true;
+    return false;
+  }
+
+  function buildLabelForMap(doc) {
+    const map = new Map(); // id -> label element (first)
+    try {
+      const labels = doc && doc.getElementsByTagName ? doc.getElementsByTagName('label') : [];
+      for (let i = 0; i < labels.length; i += 1) {
+        const lab = labels[i];
+        if (!lab || !lab.getAttribute) continue;
+        const f = normalizeWs(lab.getAttribute('for'));
+        if (!f) continue;
+        if (!map.has(f)) map.set(f, lab);
+      }
+    } catch {}
+    return map;
+  }
+
+  function getConservativeSubtreeText(document, container) {
+    // Deterministic text extraction excluding aria-hidden="true" and [hidden] subtrees.
+    // Use TreeWalker when available; avoid NodeFilter global.
+    const SHOW_TEXT = 4;
+    try {
+      const walker = document.createTreeWalker(container, SHOW_TEXT, null);
+      const parts = [];
+      let n = walker.nextNode();
+      while (n) {
+        const raw = normalizeWs(n.nodeValue || '');
+        if (raw) {
+          const pe = n.parentElement;
+          let blocked = false;
+          if (pe && typeof pe.closest === 'function') {
+            const blocker = pe.closest('[aria-hidden="true"],[hidden]');
+            if (blocker && container.contains(blocker)) blocked = true;
+          } else {
+            let p = pe;
+            while (p && p !== container) {
+              if (p.getAttribute && p.getAttribute('aria-hidden') === 'true') { blocked = true; break; }
+              if (p.hasAttribute && p.hasAttribute('hidden')) { blocked = true; break; }
+              p = p.parentElement;
+            }
+          }
+          if (!blocked) {
+            if (container.getAttribute && container.getAttribute('aria-hidden') === 'true') blocked = true;
+            if (!blocked && container.hasAttribute && container.hasAttribute('hidden')) blocked = true;
+          }
+          if (!blocked) parts.push(raw);
+        }
+        n = walker.nextNode();
+      }
+      return normalizeWs(parts.join(' '));
+    } catch {
+      // Manual deterministic walk
+      try {
+        const parts = [];
+        const stack = [container];
+        while (stack.length) {
+          const node = stack.pop();
+          if (!node) continue;
+          if (node.nodeType === 3) { // TEXT_NODE
+            const raw = normalizeWs(node.nodeValue || '');
+            if (raw) parts.push(raw);
+            continue;
+          }
+          if (node.nodeType === 1) { // ELEMENT_NODE
+            if (node.getAttribute && node.getAttribute('aria-hidden') === 'true') continue;
+            if (node.hasAttribute && node.hasAttribute('hidden')) continue;
+            const kids = node.childNodes ? Array.from(node.childNodes) : [];
+            for (let i = kids.length - 1; i >= 0; i -= 1) stack.push(kids[i]);
+          }
+        }
+        return normalizeWs(parts.join(' '));
+      } catch {
+        return '';
+      }
+    }
+  }
+
+  function resolveAriaLabelledbyText(document, el, maxRefs) {
+    const raw = getAttr(el, 'aria-labelledby');
+    if (!raw) return '';
+    const ids = raw.split(/\s+/).filter(Boolean).slice(0, Math.max(1, maxRefs || 8));
+    const parts = [];
+    for (const elementId of ids) {
+      try {
+        const ref = document.getElementById(elementId);
+        if (ref) {
+          const t = getConservativeSubtreeText(document, ref);
+          if (t) parts.push(t);
+        }
+      } catch {}
+    }
+    return normalizeWs(parts.join(' '));
+  }
+
+  function getInputValueName(el) {
+    try {
+      const type = getAttr(el, 'type').toLowerCase();
+      if (type !== 'button' && type !== 'submit' && type !== 'reset') return '';
+      const v = getAttr(el, 'value');
+      return v;
+    } catch { return ''; }
+  }
+
+  function isEligibleAcc(helpers, el, ctx) {
+    const fn = helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+    if (!fn) return true;
+    try {
+      const r = fn(el, ctx);
+      if (typeof r === 'boolean') return r;
+      return !!(r && r.eligible);
+    } catch {
+      return true;
+    }
+  }
+
+
+  const occurrences = [];
+  let applicableCount = 0;
+
+  const selector = '[role="menuitem"],[role="menuitemcheckbox"],[role="menuitemradio"]';
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+
+
+  function evaluate(el) {
+    const ariaLabel = getAttr(el, 'aria-label');
+    if (ariaLabel) return { ok: true, method: 'aria-label' };
+
+    const ariaLabelledby = resolveAriaLabelledbyText(document, el, 8);
+    if (ariaLabelledby) return { ok: true, method: 'aria-labelledby' };
+
+    const title = getAttr(el, 'title');
+    if (title) return { ok: true, method: 'title' };
+
+    // Menuitem name is commonly from content.
+    const t = getConservativeSubtreeText(document, el);
+    if (t) return { ok: true, method: 'content' };
+
+    return { ok: false, method: 'none' };
+  }
+
+  for (const el of nodes) {
+    if (!el) continue;
+    if (!isEligibleAcc(helpers, el, ctx)) continue;
+
+    const role = getAttr(el, 'role').toLowerCase();
+    if (role !== 'menuitem' && role !== 'menuitemcheckbox' && role !== 'menuitemradio') continue;
+
+    applicableCount += 1;
+
+    const res = evaluate(el);
+    if (res.ok) continue;
+
+    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+
+    occurrences.push({
+      selector: stableSelector,
+      html,
+      summary: 'This menu item has no accessible name.',
+      hint: 'Provide visible text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.',
+      summaryKey: 'a11ycore_menuitemNamePresent_summary_fail',
+      hintKey: 'a11ycore_menuitemNamePresent_hint_fail',
+      i18nParams: { role },
+      data: { details: { reasonCode: 'name_missing', controlType: role, methodTried: res.method } }
+    });
+  }
+
+
+  if (applicableCount === 0) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  if (occurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences };
+  }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "a11ycore-object-text-alternative-present": { run: (function runInPage(ctx) {
@@ -12559,6 +18570,167 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     }
 
     return {ruleId: rule.ruleId, outcome: 'cantTell', severity: 'minor', occurrences};
+}), applicability: null },
+    "a11ycore-option-name-present": { run: (function runInPage(ctx) {
+  const { document, root, helpers, rule } = ctx;
+  const safeRoot = root || document;
+
+
+  function normalizeWs(s) {
+    return String(s || '').replace(/\s+/g, ' ').trim();
+  }
+
+  function getAttr(el, name) {
+    try {
+      if (!el || !el.getAttribute) return '';
+      return normalizeWs(el.getAttribute(name));
+    } catch { return ''; }
+  }
+
+  function getConservativeSubtreeText(document, container) {
+    const SHOW_TEXT = 4; // TreeWalker SHOW_TEXT
+    try {
+      const walker = document.createTreeWalker(container, SHOW_TEXT, null);
+      const parts = [];
+      let n = walker.nextNode();
+      while (n) {
+        const raw = normalizeWs(n.nodeValue || '');
+        if (raw) {
+          const pe = n.parentElement;
+          let blocked = false;
+          if (pe && typeof pe.closest === 'function') {
+            const blocker = pe.closest('[aria-hidden="true"],[hidden]');
+            if (blocker && container.contains(blocker)) blocked = true;
+          } else {
+            let p = pe;
+            while (p && p !== container) {
+              if (p.getAttribute && p.getAttribute('aria-hidden') === 'true') { blocked = true; break; }
+              if (p.hasAttribute && p.hasAttribute('hidden')) { blocked = true; break; }
+              p = p.parentElement;
+            }
+          }
+          if (!blocked) {
+            if (container.getAttribute && container.getAttribute('aria-hidden') === 'true') blocked = true;
+            if (!blocked && container.hasAttribute && container.hasAttribute('hidden')) blocked = true;
+          }
+          if (!blocked) parts.push(raw);
+        }
+        n = walker.nextNode();
+      }
+      return normalizeWs(parts.join(' '));
+    } catch {
+      try {
+        const parts = [];
+        const stack = [container];
+        while (stack.length) {
+          const node = stack.pop();
+          if (!node) continue;
+          if (node.nodeType === 3) { // TEXT_NODE
+            const raw = normalizeWs(node.nodeValue || '');
+            if (raw) parts.push(raw);
+            continue;
+          }
+          if (node.nodeType === 1) { // ELEMENT_NODE
+            if (node.getAttribute && node.getAttribute('aria-hidden') === 'true') continue;
+            if (node.hasAttribute && node.hasAttribute('hidden')) continue;
+            const kids = node.childNodes ? Array.from(node.childNodes) : [];
+            for (let i = kids.length - 1; i >= 0; i -= 1) stack.push(kids[i]);
+          }
+        }
+        return normalizeWs(parts.join(' '));
+      } catch {
+        return '';
+      }
+    }
+  }
+
+  function resolveAriaLabelledbyText(document, el, maxRefs) {
+    const raw = getAttr(el, 'aria-labelledby');
+    if (!raw) return '';
+    const refs = raw.split(/\s+/).filter(Boolean).slice(0, Math.max(1, maxRefs || 8));
+    const parts = [];
+    for (const refKey of refs) {
+      try {
+        const refEl = document.getElementById(refKey);
+        if (refEl) {
+          const t = getConservativeSubtreeText(document, refEl);
+          if (t) parts.push(t);
+        }
+      } catch {}
+    }
+    return normalizeWs(parts.join(' '));
+  }
+
+  function isEligibleAcc(helpers, el, ctx) {
+    const fn = helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+    if (!fn) return true;
+    try {
+      const r = fn(el, ctx);
+      if (typeof r === 'boolean') return r;
+      return !!(r && r.eligible);
+    } catch {
+      return true;
+    }
+  }
+
+
+  const occurrences = [];
+  let applicableCount = 0;
+
+  const selector = "[role=\"option\"]";
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+
+
+  function hasName(el) {
+    const ariaLabel = getAttr(el, 'aria-label');
+    if (ariaLabel) return { ok: true, method: 'aria-label' };
+
+    const labelled = resolveAriaLabelledbyText(document, el, 8);
+    if (labelled) return { ok: true, method: 'aria-labelledby' };
+
+    const title = getAttr(el, 'title');
+    if (title) return { ok: true, method: 'title' };
+
+
+    const t = getConservativeSubtreeText(document, el);
+    if (t) return { ok: true, method: 'content' };
+
+
+    return { ok: false, method: 'none' };
+  }
+
+  for (const el of nodes) {
+    if (!el) continue;
+    if (!isEligibleAcc(helpers, el, ctx)) continue;
+
+    applicableCount += 1;
+
+    const res = hasName(el);
+    if (res.ok) continue;
+
+    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+
+    occurrences.push({
+      selector: stableSelector,
+      html,
+      summary: 'This element has no accessible name.',
+      hint: 'Provide aria-label or aria-labelledby (preferred), or provide visible text that is not hidden from assistive technologies.',
+      summaryKey: 'a11ycore_optionNamePresent_summary_fail',
+      hintKey: 'a11ycore_optionNamePresent_hint_fail',
+      i18nParams: { controlType: 'option' },
+      data: { details: { reasonCode: 'name_missing', controlType: 'option', methodTried: res.method } }
+    });
+  }
+
+
+  if (applicableCount === 0) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  if (occurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences };
+  }
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "a11ycore-page-title-patterns": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
@@ -12987,6 +19159,585 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     }
 
     return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences };
+}), applicability: null },
+    "a11ycore-searchbox-name-present": { run: (function runInPage(ctx) {
+  const { document, root, helpers, rule } = ctx;
+  const safeRoot = root || document;
+
+
+  function normalizeWs(s) {
+    return String(s || '').replace(/\s+/g, ' ').trim();
+  }
+
+  function getAttr(el, name) {
+    try {
+      if (!el || !el.getAttribute) return '';
+      return normalizeWs(el.getAttribute(name));
+    } catch { return ''; }
+  }
+
+  function getConservativeSubtreeText(document, container) {
+    const SHOW_TEXT = 4; // TreeWalker SHOW_TEXT
+    try {
+      const walker = document.createTreeWalker(container, SHOW_TEXT, null);
+      const parts = [];
+      let n = walker.nextNode();
+      while (n) {
+        const raw = normalizeWs(n.nodeValue || '');
+        if (raw) {
+          const pe = n.parentElement;
+          let blocked = false;
+          if (pe && typeof pe.closest === 'function') {
+            const blocker = pe.closest('[aria-hidden="true"],[hidden]');
+            if (blocker && container.contains(blocker)) blocked = true;
+          } else {
+            let p = pe;
+            while (p && p !== container) {
+              if (p.getAttribute && p.getAttribute('aria-hidden') === 'true') { blocked = true; break; }
+              if (p.hasAttribute && p.hasAttribute('hidden')) { blocked = true; break; }
+              p = p.parentElement;
+            }
+          }
+          if (!blocked) {
+            if (container.getAttribute && container.getAttribute('aria-hidden') === 'true') blocked = true;
+            if (!blocked && container.hasAttribute && container.hasAttribute('hidden')) blocked = true;
+          }
+          if (!blocked) parts.push(raw);
+        }
+        n = walker.nextNode();
+      }
+      return normalizeWs(parts.join(' '));
+    } catch {
+      try {
+        const parts = [];
+        const stack = [container];
+        while (stack.length) {
+          const node = stack.pop();
+          if (!node) continue;
+          if (node.nodeType === 3) { // TEXT_NODE
+            const raw = normalizeWs(node.nodeValue || '');
+            if (raw) parts.push(raw);
+            continue;
+          }
+          if (node.nodeType === 1) { // ELEMENT_NODE
+            if (node.getAttribute && node.getAttribute('aria-hidden') === 'true') continue;
+            if (node.hasAttribute && node.hasAttribute('hidden')) continue;
+            const kids = node.childNodes ? Array.from(node.childNodes) : [];
+            for (let i = kids.length - 1; i >= 0; i -= 1) stack.push(kids[i]);
+          }
+        }
+        return normalizeWs(parts.join(' '));
+      } catch {
+        return '';
+      }
+    }
+  }
+
+  function resolveAriaLabelledbyText(document, el, maxRefs) {
+    const raw = getAttr(el, 'aria-labelledby');
+    if (!raw) return '';
+    const refs = raw.split(/\s+/).filter(Boolean).slice(0, Math.max(1, maxRefs || 8));
+    const parts = [];
+    for (const refKey of refs) {
+      try {
+        const refEl = document.getElementById(refKey);
+        if (refEl) {
+          const t = getConservativeSubtreeText(document, refEl);
+          if (t) parts.push(t);
+        }
+      } catch {}
+    }
+    return normalizeWs(parts.join(' '));
+  }
+
+  function isEligibleAcc(helpers, el, ctx) {
+    const fn = helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+    if (!fn) return true;
+    try {
+      const r = fn(el, ctx);
+      if (typeof r === 'boolean') return r;
+      return !!(r && r.eligible);
+    } catch {
+      return true;
+    }
+  }
+
+
+  const occurrences = [];
+  let applicableCount = 0;
+
+  const selector = "[role=\"searchbox\"]";
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+
+
+  function hasName(el) {
+    const ariaLabel = getAttr(el, 'aria-label');
+    if (ariaLabel) return { ok: true, method: 'aria-label' };
+
+    const labelled = resolveAriaLabelledbyText(document, el, 8);
+    if (labelled) return { ok: true, method: 'aria-labelledby' };
+
+    const title = getAttr(el, 'title');
+    if (title) return { ok: true, method: 'title' };
+
+
+    const t = getConservativeSubtreeText(document, el);
+    if (t) return { ok: true, method: 'content' };
+
+
+    return { ok: false, method: 'none' };
+  }
+
+  for (const el of nodes) {
+    if (!el) continue;
+    if (!isEligibleAcc(helpers, el, ctx)) continue;
+
+    applicableCount += 1;
+
+    const res = hasName(el);
+    if (res.ok) continue;
+
+    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+
+    occurrences.push({
+      selector: stableSelector,
+      html,
+      summary: 'This element has no accessible name.',
+      hint: 'Provide aria-label or aria-labelledby (preferred), or provide visible text that is not hidden from assistive technologies.',
+      summaryKey: 'a11ycore_searchboxNamePresent_summary_fail',
+      hintKey: 'a11ycore_searchboxNamePresent_hint_fail',
+      i18nParams: { controlType: 'searchbox' },
+      data: { details: { reasonCode: 'name_missing', controlType: 'searchbox', methodTried: res.method } }
+    });
+  }
+
+
+  if (applicableCount === 0) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  if (occurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences };
+  }
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+}), applicability: null },
+    "a11ycore-slider-name-present": { run: (function runInPage(ctx) {
+  const { document, root, helpers, rule } = ctx;
+  const safeRoot = root || document;
+
+
+  function normalizeWs(s) {
+    return String(s || '').replace(/\s+/g, ' ').trim();
+  }
+
+  function getAttr(el, name) {
+    try {
+      if (!el || !el.getAttribute) return '';
+      return normalizeWs(el.getAttribute(name));
+    } catch { return ''; }
+  }
+
+  function hasAttr(el, name) {
+    try { return !!(el && el.hasAttribute && el.hasAttribute(name)); } catch { return false; }
+  }
+
+  function isExplicitProgrammatic(el) {
+    // Programmatic name mechanisms we treat as authoritative (presence-only):
+    // - aria-label (non-empty)
+    // - aria-labelledby (non-empty)
+    // - title (non-empty) [weak but allowed for presence]
+    const al = getAttr(el, 'aria-label');
+    if (al) return true;
+    const alb = getAttr(el, 'aria-labelledby');
+    if (alb) return true;
+    const t = getAttr(el, 'title');
+    if (t) return true;
+    return false;
+  }
+
+  function buildLabelForMap(doc) {
+    const map = new Map(); // id -> label element (first)
+    try {
+      const labels = doc && doc.getElementsByTagName ? doc.getElementsByTagName('label') : [];
+      for (let i = 0; i < labels.length; i += 1) {
+        const lab = labels[i];
+        if (!lab || !lab.getAttribute) continue;
+        const f = normalizeWs(lab.getAttribute('for'));
+        if (!f) continue;
+        if (!map.has(f)) map.set(f, lab);
+      }
+    } catch {}
+    return map;
+  }
+
+  function getConservativeSubtreeText(document, container) {
+    // Deterministic text extraction excluding aria-hidden="true" and [hidden] subtrees.
+    // Use TreeWalker when available; avoid NodeFilter global.
+    const SHOW_TEXT = 4;
+    try {
+      const walker = document.createTreeWalker(container, SHOW_TEXT, null);
+      const parts = [];
+      let n = walker.nextNode();
+      while (n) {
+        const raw = normalizeWs(n.nodeValue || '');
+        if (raw) {
+          const pe = n.parentElement;
+          let blocked = false;
+          if (pe && typeof pe.closest === 'function') {
+            const blocker = pe.closest('[aria-hidden="true"],[hidden]');
+            if (blocker && container.contains(blocker)) blocked = true;
+          } else {
+            let p = pe;
+            while (p && p !== container) {
+              if (p.getAttribute && p.getAttribute('aria-hidden') === 'true') { blocked = true; break; }
+              if (p.hasAttribute && p.hasAttribute('hidden')) { blocked = true; break; }
+              p = p.parentElement;
+            }
+          }
+          if (!blocked) {
+            if (container.getAttribute && container.getAttribute('aria-hidden') === 'true') blocked = true;
+            if (!blocked && container.hasAttribute && container.hasAttribute('hidden')) blocked = true;
+          }
+          if (!blocked) parts.push(raw);
+        }
+        n = walker.nextNode();
+      }
+      return normalizeWs(parts.join(' '));
+    } catch {
+      // Manual deterministic walk
+      try {
+        const parts = [];
+        const stack = [container];
+        while (stack.length) {
+          const node = stack.pop();
+          if (!node) continue;
+          if (node.nodeType === 3) { // TEXT_NODE
+            const raw = normalizeWs(node.nodeValue || '');
+            if (raw) parts.push(raw);
+            continue;
+          }
+          if (node.nodeType === 1) { // ELEMENT_NODE
+            if (node.getAttribute && node.getAttribute('aria-hidden') === 'true') continue;
+            if (node.hasAttribute && node.hasAttribute('hidden')) continue;
+            const kids = node.childNodes ? Array.from(node.childNodes) : [];
+            for (let i = kids.length - 1; i >= 0; i -= 1) stack.push(kids[i]);
+          }
+        }
+        return normalizeWs(parts.join(' '));
+      } catch {
+        return '';
+      }
+    }
+  }
+
+  function resolveAriaLabelledbyText(document, el, maxRefs) {
+    const raw = getAttr(el, 'aria-labelledby');
+    if (!raw) return '';
+    const ids = raw.split(/\s+/).filter(Boolean).slice(0, Math.max(1, maxRefs || 8));
+    const parts = [];
+    for (const elementId of ids) {
+      try {
+        const ref = document.getElementById(elementId);
+        if (ref) {
+          const t = getConservativeSubtreeText(document, ref);
+          if (t) parts.push(t);
+        }
+      } catch {}
+    }
+    return normalizeWs(parts.join(' '));
+  }
+
+  function getInputValueName(el) {
+    try {
+      const type = getAttr(el, 'type').toLowerCase();
+      if (type !== 'button' && type !== 'submit' && type !== 'reset') return '';
+      const v = getAttr(el, 'value');
+      return v;
+    } catch { return ''; }
+  }
+
+  function isEligibleAcc(helpers, el, ctx) {
+    const fn = helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+    if (!fn) return true;
+    try {
+      const r = fn(el, ctx);
+      if (typeof r === 'boolean') return r;
+      return !!(r && r.eligible);
+    } catch {
+      return true;
+    }
+  }
+
+
+  const occurrences = [];
+  let applicableCount = 0;
+
+  const selector = 'input[type="range"], [role="slider"]';
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+
+
+  // Precompute label[for] map for native range inputs.
+  const labelForMap = buildLabelForMap(document);
+
+  function getNativeLabelText(el) {
+    try {
+      if ('labels' in el && el.labels && el.labels.length) {
+        const parts = [];
+        const max = Math.min(4, el.labels.length);
+        for (let i = 0; i < max; i += 1) {
+          const lab = el.labels[i];
+          const t = lab ? getConservativeSubtreeText(document, lab) : '';
+          if (t) parts.push(t);
+        }
+        const joined = normalizeWs(parts.join(' '));
+        if (joined) return joined;
+      }
+    } catch {}
+    try {
+      if (el.closest) {
+        const wrap = el.closest('label');
+        if (wrap) {
+          const t = getConservativeSubtreeText(document, wrap);
+          if (t) return t;
+        }
+      }
+    } catch {}
+    try {
+      const idAttr = getAttr(el, 'id');
+      if (idAttr && labelForMap.has(idAttr)) {
+        const lab = labelForMap.get(idAttr);
+        const t = lab ? getConservativeSubtreeText(document, lab) : '';
+        if (t) return t;
+      }
+    } catch {}
+    return '';
+  }
+
+  function evaluate(el, kind) {
+    const ariaLabel = getAttr(el, 'aria-label');
+    if (ariaLabel) return { ok: true, method: 'aria-label' };
+
+    const ariaLabelledby = resolveAriaLabelledbyText(document, el, 8);
+    if (ariaLabelledby) return { ok: true, method: 'aria-labelledby' };
+
+    const title = getAttr(el, 'title');
+    if (title) return { ok: true, method: 'title' };
+
+    if (kind === 'native-slider') {
+      const lab = getNativeLabelText(el);
+      if (lab) return { ok: true, method: 'label' };
+      return { ok: false, method: 'none' };
+    }
+
+    // role=slider can derive name from content in some patterns
+    const t = getConservativeSubtreeText(document, el);
+    if (t) return { ok: true, method: 'content' };
+
+    return { ok: false, method: 'none' };
+  }
+
+  for (const el of nodes) {
+    if (!el) continue;
+    if (!isEligibleAcc(helpers, el, ctx)) continue;
+
+    const tag = (el.tagName || '').toLowerCase();
+    const type = getAttr(el, 'type').toLowerCase();
+    const role = getAttr(el, 'role').toLowerCase();
+
+    let kind = '';
+    if (tag === 'input' && type === 'range') kind = 'native-slider';
+    else if (role === 'slider') kind = 'aria-slider';
+    else continue;
+
+    applicableCount += 1;
+
+    const res = evaluate(el, kind);
+    if (res.ok) continue;
+
+    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+
+    occurrences.push({
+      selector: stableSelector,
+      html,
+      summary: 'This slider has no accessible name.',
+      hint: 'Provide a label, aria-label, or aria-labelledby so assistive technologies can identify the slider.',
+      summaryKey: 'a11ycore_sliderNamePresent_summary_fail',
+      hintKey: 'a11ycore_sliderNamePresent_hint_fail',
+      i18nParams: { kind },
+      data: { details: { reasonCode: 'name_missing', controlType: kind, methodTried: res.method } }
+    });
+  }
+
+
+  if (applicableCount === 0) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  if (occurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences };
+  }
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+}), applicability: null },
+    "a11ycore-spinbutton-name-present": { run: (function runInPage(ctx) {
+  const { document, root, helpers, rule } = ctx;
+  const safeRoot = root || document;
+
+
+  function normalizeWs(s) {
+    return String(s || '').replace(/\s+/g, ' ').trim();
+  }
+
+  function getAttr(el, name) {
+    try {
+      if (!el || !el.getAttribute) return '';
+      return normalizeWs(el.getAttribute(name));
+    } catch { return ''; }
+  }
+
+  function getConservativeSubtreeText(document, container) {
+    const SHOW_TEXT = 4; // TreeWalker SHOW_TEXT
+    try {
+      const walker = document.createTreeWalker(container, SHOW_TEXT, null);
+      const parts = [];
+      let n = walker.nextNode();
+      while (n) {
+        const raw = normalizeWs(n.nodeValue || '');
+        if (raw) {
+          const pe = n.parentElement;
+          let blocked = false;
+          if (pe && typeof pe.closest === 'function') {
+            const blocker = pe.closest('[aria-hidden="true"],[hidden]');
+            if (blocker && container.contains(blocker)) blocked = true;
+          } else {
+            let p = pe;
+            while (p && p !== container) {
+              if (p.getAttribute && p.getAttribute('aria-hidden') === 'true') { blocked = true; break; }
+              if (p.hasAttribute && p.hasAttribute('hidden')) { blocked = true; break; }
+              p = p.parentElement;
+            }
+          }
+          if (!blocked) {
+            if (container.getAttribute && container.getAttribute('aria-hidden') === 'true') blocked = true;
+            if (!blocked && container.hasAttribute && container.hasAttribute('hidden')) blocked = true;
+          }
+          if (!blocked) parts.push(raw);
+        }
+        n = walker.nextNode();
+      }
+      return normalizeWs(parts.join(' '));
+    } catch {
+      try {
+        const parts = [];
+        const stack = [container];
+        while (stack.length) {
+          const node = stack.pop();
+          if (!node) continue;
+          if (node.nodeType === 3) { // TEXT_NODE
+            const raw = normalizeWs(node.nodeValue || '');
+            if (raw) parts.push(raw);
+            continue;
+          }
+          if (node.nodeType === 1) { // ELEMENT_NODE
+            if (node.getAttribute && node.getAttribute('aria-hidden') === 'true') continue;
+            if (node.hasAttribute && node.hasAttribute('hidden')) continue;
+            const kids = node.childNodes ? Array.from(node.childNodes) : [];
+            for (let i = kids.length - 1; i >= 0; i -= 1) stack.push(kids[i]);
+          }
+        }
+        return normalizeWs(parts.join(' '));
+      } catch {
+        return '';
+      }
+    }
+  }
+
+  function resolveAriaLabelledbyText(document, el, maxRefs) {
+    const raw = getAttr(el, 'aria-labelledby');
+    if (!raw) return '';
+    const refs = raw.split(/\s+/).filter(Boolean).slice(0, Math.max(1, maxRefs || 8));
+    const parts = [];
+    for (const refKey of refs) {
+      try {
+        const refEl = document.getElementById(refKey);
+        if (refEl) {
+          const t = getConservativeSubtreeText(document, refEl);
+          if (t) parts.push(t);
+        }
+      } catch {}
+    }
+    return normalizeWs(parts.join(' '));
+  }
+
+  function isEligibleAcc(helpers, el, ctx) {
+    const fn = helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+    if (!fn) return true;
+    try {
+      const r = fn(el, ctx);
+      if (typeof r === 'boolean') return r;
+      return !!(r && r.eligible);
+    } catch {
+      return true;
+    }
+  }
+
+
+  const occurrences = [];
+  let applicableCount = 0;
+
+  const selector = "[role=\"spinbutton\"]";
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+
+
+  function hasName(el) {
+    const ariaLabel = getAttr(el, 'aria-label');
+    if (ariaLabel) return { ok: true, method: 'aria-label' };
+
+    const labelled = resolveAriaLabelledbyText(document, el, 8);
+    if (labelled) return { ok: true, method: 'aria-labelledby' };
+
+    const title = getAttr(el, 'title');
+    if (title) return { ok: true, method: 'title' };
+
+
+    const t = getConservativeSubtreeText(document, el);
+    if (t) return { ok: true, method: 'content' };
+
+
+    return { ok: false, method: 'none' };
+  }
+
+  for (const el of nodes) {
+    if (!el) continue;
+    if (!isEligibleAcc(helpers, el, ctx)) continue;
+
+    applicableCount += 1;
+
+    const res = hasName(el);
+    if (res.ok) continue;
+
+    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+
+    occurrences.push({
+      selector: stableSelector,
+      html,
+      summary: 'This element has no accessible name.',
+      hint: 'Provide aria-label or aria-labelledby (preferred), or provide visible text that is not hidden from assistive technologies.',
+      summaryKey: 'a11ycore_spinbuttonNamePresent_summary_fail',
+      hintKey: 'a11ycore_spinbuttonNamePresent_hint_fail',
+      i18nParams: { controlType: 'spinbutton' },
+      data: { details: { reasonCode: 'name_missing', controlType: 'spinbutton', methodTried: res.method } }
+    });
+  }
+
+
+  if (applicableCount === 0) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  if (occurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences };
+  }
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "a11ycore-svg-image-text-alternative-present": { run: (function runInPage(ctx) {
   const { document, root, helpers, rule } = ctx;
@@ -13510,6 +20261,935 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
 
     return {ruleId: rule.ruleId, outcome: 'cantTell', severity: 'minor', occurrences};
 }), applicability: null },
+    "a11ycore-tab-name-present": { run: (function runInPage(ctx) {
+  const { document, root, helpers, rule } = ctx;
+  const safeRoot = root || document;
+
+
+  function normalizeWs(s) {
+    return String(s || '').replace(/\s+/g, ' ').trim();
+  }
+
+  function getAttr(el, name) {
+    try {
+      if (!el || !el.getAttribute) return '';
+      return normalizeWs(el.getAttribute(name));
+    } catch { return ''; }
+  }
+
+  function hasAttr(el, name) {
+    try { return !!(el && el.hasAttribute && el.hasAttribute(name)); } catch { return false; }
+  }
+
+  function isExplicitProgrammatic(el) {
+    // Programmatic name mechanisms we treat as authoritative (presence-only):
+    // - aria-label (non-empty)
+    // - aria-labelledby (non-empty)
+    // - title (non-empty) [weak but allowed for presence]
+    const al = getAttr(el, 'aria-label');
+    if (al) return true;
+    const alb = getAttr(el, 'aria-labelledby');
+    if (alb) return true;
+    const t = getAttr(el, 'title');
+    if (t) return true;
+    return false;
+  }
+
+  function buildLabelForMap(doc) {
+    const map = new Map(); // id -> label element (first)
+    try {
+      const labels = doc && doc.getElementsByTagName ? doc.getElementsByTagName('label') : [];
+      for (let i = 0; i < labels.length; i += 1) {
+        const lab = labels[i];
+        if (!lab || !lab.getAttribute) continue;
+        const f = normalizeWs(lab.getAttribute('for'));
+        if (!f) continue;
+        if (!map.has(f)) map.set(f, lab);
+      }
+    } catch {}
+    return map;
+  }
+
+  function getConservativeSubtreeText(document, container) {
+    // Deterministic text extraction excluding aria-hidden="true" and [hidden] subtrees.
+    // Use TreeWalker when available; avoid NodeFilter global.
+    const SHOW_TEXT = 4;
+    try {
+      const walker = document.createTreeWalker(container, SHOW_TEXT, null);
+      const parts = [];
+      let n = walker.nextNode();
+      while (n) {
+        const raw = normalizeWs(n.nodeValue || '');
+        if (raw) {
+          const pe = n.parentElement;
+          let blocked = false;
+          if (pe && typeof pe.closest === 'function') {
+            const blocker = pe.closest('[aria-hidden="true"],[hidden]');
+            if (blocker && container.contains(blocker)) blocked = true;
+          } else {
+            let p = pe;
+            while (p && p !== container) {
+              if (p.getAttribute && p.getAttribute('aria-hidden') === 'true') { blocked = true; break; }
+              if (p.hasAttribute && p.hasAttribute('hidden')) { blocked = true; break; }
+              p = p.parentElement;
+            }
+          }
+          if (!blocked) {
+            if (container.getAttribute && container.getAttribute('aria-hidden') === 'true') blocked = true;
+            if (!blocked && container.hasAttribute && container.hasAttribute('hidden')) blocked = true;
+          }
+          if (!blocked) parts.push(raw);
+        }
+        n = walker.nextNode();
+      }
+      return normalizeWs(parts.join(' '));
+    } catch {
+      // Manual deterministic walk
+      try {
+        const parts = [];
+        const stack = [container];
+        while (stack.length) {
+          const node = stack.pop();
+          if (!node) continue;
+          if (node.nodeType === 3) { // TEXT_NODE
+            const raw = normalizeWs(node.nodeValue || '');
+            if (raw) parts.push(raw);
+            continue;
+          }
+          if (node.nodeType === 1) { // ELEMENT_NODE
+            if (node.getAttribute && node.getAttribute('aria-hidden') === 'true') continue;
+            if (node.hasAttribute && node.hasAttribute('hidden')) continue;
+            const kids = node.childNodes ? Array.from(node.childNodes) : [];
+            for (let i = kids.length - 1; i >= 0; i -= 1) stack.push(kids[i]);
+          }
+        }
+        return normalizeWs(parts.join(' '));
+      } catch {
+        return '';
+      }
+    }
+  }
+
+  function resolveAriaLabelledbyText(document, el, maxRefs) {
+    const raw = getAttr(el, 'aria-labelledby');
+    if (!raw) return '';
+    const ids = raw.split(/\s+/).filter(Boolean).slice(0, Math.max(1, maxRefs || 8));
+    const parts = [];
+    for (const elementId of ids) {
+      try {
+        const ref = document.getElementById(elementId);
+        if (ref) {
+          const t = getConservativeSubtreeText(document, ref);
+          if (t) parts.push(t);
+        }
+      } catch {}
+    }
+    return normalizeWs(parts.join(' '));
+  }
+
+  function getInputValueName(el) {
+    try {
+      const type = getAttr(el, 'type').toLowerCase();
+      if (type !== 'button' && type !== 'submit' && type !== 'reset') return '';
+      const v = getAttr(el, 'value');
+      return v;
+    } catch { return ''; }
+  }
+
+  function isEligibleAcc(helpers, el, ctx) {
+    const fn = helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+    if (!fn) return true;
+    try {
+      const r = fn(el, ctx);
+      if (typeof r === 'boolean') return r;
+      return !!(r && r.eligible);
+    } catch {
+      return true;
+    }
+  }
+
+
+  const occurrences = [];
+  let applicableCount = 0;
+
+  const selector = '[role="tab"]';
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+
+
+  function evaluate(el) {
+    const ariaLabel = getAttr(el, 'aria-label');
+    if (ariaLabel) return { ok: true, method: 'aria-label' };
+
+    const ariaLabelledby = resolveAriaLabelledbyText(document, el, 8);
+    if (ariaLabelledby) return { ok: true, method: 'aria-labelledby' };
+
+    const title = getAttr(el, 'title');
+    if (title) return { ok: true, method: 'title' };
+
+    const t = getConservativeSubtreeText(document, el);
+    if (t) return { ok: true, method: 'content' };
+
+    return { ok: false, method: 'none' };
+  }
+
+  for (const el of nodes) {
+    if (!el) continue;
+    if (!isEligibleAcc(helpers, el, ctx)) continue;
+
+    const role = getAttr(el, 'role').toLowerCase();
+    if (role !== 'tab') continue;
+
+    applicableCount += 1;
+
+    const res = evaluate(el);
+    if (res.ok) continue;
+
+    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+
+    occurrences.push({
+      selector: stableSelector,
+      html,
+      summary: 'This tab has no accessible name.',
+      hint: 'Provide tab text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.',
+      summaryKey: 'a11ycore_tabNamePresent_summary_fail',
+      hintKey: 'a11ycore_tabNamePresent_hint_fail',
+      i18nParams: {},
+      data: { details: { reasonCode: 'name_missing', controlType: 'tab', methodTried: res.method } }
+    });
+  }
+
+
+  if (applicableCount === 0) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  if (occurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences };
+  }
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+}), applicability: null },
+    "a11ycore-target-size-minimum": { run: (function runInPage(ctx) {
+  'use strict';
+
+  const { document, root, helpers, rule } = ctx;
+  const safeRoot = root || document;
+
+  const RULE_ID = (rule && rule.ruleId) || 'a11ycore-target-size-minimum';
+  const MIN = 24;
+  const RADIUS = MIN / 2;
+
+  // --- tiny safe helpers (never throw) ---
+  function qsa(sel) {
+    try {
+      return Array.from(safeRoot.querySelectorAll(sel));
+    } catch {
+      return [];
+    }
+  }
+
+  function buildSelector(el) {
+    try {
+      if (helpers && typeof helpers.buildSelector === 'function') return helpers.buildSelector(el);
+    } catch {}
+    try {
+      if (el && el.id) return `#${el.id}`;
+    } catch {}
+    return 'html';
+  }
+
+  function htmlSnippet(el) {
+    try {
+      if (helpers && typeof helpers.getOuterHtmlSnippet === 'function') return helpers.getOuterHtmlSnippet(el);
+    } catch {}
+    try {
+      return (el && el.outerHTML) ? String(el.outerHTML) : '';
+    } catch {}
+    return '';
+  }
+
+  function isInlineTextExceptionTarget(el) {
+    // SC 2.5.8 exception: target is in a sentence/block of text (inline)
+    // Deterministic heuristic:
+    // - must be a link-like target
+    // - must be rendered as inline/inline-*
+    // - must be inside a typical text container
+    try {
+      if (!el || el.nodeType !== 1) return false;
+
+      const tag = (el.tagName || '').toLowerCase();
+      const role = (el.getAttribute && String(el.getAttribute('role') || '').trim().toLowerCase()) || '';
+      const isLinkLike = (tag === 'a' && el.getAttribute && el.getAttribute('href')) || role === 'link';
+      if (!isLinkLike) return false;
+
+      const cs = getStyle(el);
+      const display = cs && cs.display ? String(cs.display) : '';
+      if (!display) return false;
+
+      // Inline exception is for inline text runs; many design systems use inline-block for links,
+      // so treat inline-block variants as eligible for this exception.
+      const isInline =
+          display === 'inline' ||
+          display === 'inline-block' ||
+          display === 'inline-flex' ||
+          display === 'inline-grid' ||
+          display === 'inline-table';
+
+      if (!isInline) return false;
+
+      const t = (el.textContent || '').trim();
+      if (!t) return false;
+
+      // Require that it sits in a "text block" context
+      const textContainer = closest(el, 'p, li, dd, dt, blockquote, figcaption, caption, td, th');
+      if (textContainer) return true;
+
+      // Fallback: sometimes links are inside spans within a paragraph-like region
+      const inlineContainer = closest(el, 'span, em, strong, small, label');
+      if (inlineContainer) {
+        const outerTextBlock = closest(inlineContainer, 'p, li, dd, dt, blockquote, figcaption, caption, td, th');
+        if (outerTextBlock) return true;
+      }
+
+      return false;
+    } catch {
+      return false;
+    }
+  }
+
+  function getRects(el) {
+    try {
+      if (!el || typeof el.getClientRects !== 'function') return [];
+      const r = el.getClientRects();
+      return r ? Array.from(r) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function getBcr(el) {
+    try {
+      if (!el || typeof el.getBoundingClientRect !== 'function') return null;
+      return el.getBoundingClientRect();
+    } catch {
+      return null;
+    }
+  }
+
+  function hasHiddenAttr(el) {
+    try {
+      return !!(el && el.hasAttribute && el.hasAttribute('hidden'));
+    } catch {
+      return false;
+    }
+  }
+
+  function closest(el, sel) {
+    try {
+      return el && typeof el.closest === 'function' ? el.closest(sel) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function inClosedDetails(el) {
+    const det = closest(el, 'details');
+    if (!det) return false;
+
+    try {
+      if (det.hasAttribute('open')) return false;
+
+      const tag = (el && el.tagName) ? String(el.tagName).toLowerCase() : '';
+      // summary remains operable even when <details> is closed
+      if (tag === 'summary') return false;
+
+      // everything else inside closed details is suppressed
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  function inInertSubtree(el) {
+    // Any ancestor with [inert] suppresses, including self.
+    try {
+      return !!closest(el, '[inert]');
+    } catch {
+      return false;
+    }
+  }
+
+  function getStyle(el) {
+    try {
+      return (document && document.defaultView && document.defaultView.getComputedStyle)
+          ? document.defaultView.getComputedStyle(el)
+          : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function isPointerReachable(el) {
+    // Match test expectations:
+    // - exclude display:none
+    // - exclude [hidden]
+    // - exclude content-visibility:hidden
+    // - exclude visibility hidden/collapse
+    // - exclude pointer-events:none
+    // - exclude inert subtree
+    // - exclude elements inside closed details (except summary)
+    // - exclude elements with no client rects
+    // - DO NOT exclude aria-hidden or opacity:0
+    if (!el || el.nodeType !== 1) return false;
+
+    if (hasHiddenAttr(el)) return false;
+    if (inInertSubtree(el)) return false;
+    if (inClosedDetails(el)) return false;
+
+    // Not operable => exclude
+    try {
+      if (typeof el.matches === 'function' && el.matches(':disabled')) return false;
+    } catch {}
+
+    // aria-disabled elements are typically treated as not operable
+    try {
+      const ad = el.getAttribute && String(el.getAttribute('aria-disabled') || '').trim().toLowerCase();
+      if (ad === 'true') return false;
+    } catch {}
+
+    const rects = getRects(el);
+    if (!rects || rects.length === 0) return false;
+
+    const cs = getStyle(el);
+    const display = cs && cs.display ? String(cs.display) : 'block';
+    const visibility = cs && cs.visibility ? String(cs.visibility) : 'visible';
+    const contentVisibility = cs && cs.contentVisibility ? String(cs.contentVisibility) : 'visible';
+    const pointerEvents = cs && cs.pointerEvents ? String(cs.pointerEvents) : 'auto';
+
+    if (display === 'none') return false;
+    if (visibility === 'hidden' || visibility === 'collapse') return false;
+    if (contentVisibility === 'hidden') return false;
+    if (pointerEvents === 'none') return false;
+
+    return true;
+  }
+
+  function centerOfRect(r) {
+    return { cx: r.left + r.width / 2, cy: r.top + r.height / 2 };
+  }
+
+  function dist(a, b) {
+    const dx = a.cx - b.cx;
+    const dy = a.cy - b.cy;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  function elementFromPoint(x, y) {
+    try {
+      if (document && typeof document.elementFromPoint === 'function') return document.elementFromPoint(x, y);
+    } catch {}
+    return null;
+  }
+
+  function isSameOrInside(hit, target) {
+    try {
+      if (!hit || !target) return false;
+      return hit === target || (typeof target.contains === 'function' && target.contains(hit));
+    } catch {
+      return false;
+    }
+  }
+
+  // --- candidate collection ---
+  const candidates = qsa('button, summary, a[href], input, select, textarea, [role="button"], [role="link"]');
+
+  const applicable = [];
+  for (const el of candidates) {
+    if (isPointerReachable(el)) applicable.push(el);
+  }
+
+  if (applicable.length === 0) {
+    return { ruleId: RULE_ID, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+
+  // Precompute geometry for applicable elements.
+  const items = [];
+  for (const el of applicable) {
+    const r = getBcr(el);
+    if (!r) continue;
+    // Guard against nonsense
+    const w = Number(r.width);
+    const h = Number(r.height);
+    if (!Number.isFinite(w) || !Number.isFinite(h)) continue;
+    if (w <= 0 || h <= 0) continue;
+
+    items.push({
+      el,
+      rect: { left: r.left, top: r.top, width: w, height: h, right: r.left + w, bottom: r.top + h },
+      center: centerOfRect({ left: r.left, top: r.top, width: w, height: h })
+    });
+  }
+
+  if (items.length === 0) {
+    // had “applicable” but no measurable geometry
+    return { ruleId: RULE_ID, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+
+  const undersized = items.filter((it) => it.rect.width < MIN || it.rect.height < MIN);
+
+  // --- spacing/occlusion evaluation ---
+  function hasSpacingConflict(target) {
+    // 0) Pure geometry: if another undersized target's 24px "exception circle" overlaps ours,
+    // spacing exception is not met. This is deterministic and avoids elementFromPoint quirks.
+    for (const other of undersized) {
+      if (!other || !other.el || other.el === target.el) continue;
+
+      // Ignore inline-text exception targets when evaluating spacing conflicts.
+      // (Inline links in text are exempt and should not invalidate spacing.)
+      if (isInlineTextExceptionTarget(other.el)) continue;
+
+      if (dist(target.center, other.center) < MIN) {
+        return { conflict: true, hitCount: 0, conflictEl: other.el };
+      }
+    }
+
+    // 1) Perimeter sampling: reduce false positives from incidental overlaps/stacking.
+    const HIT_THRESHOLD = 3;
+    let hitCount = 0;
+    let firstConflictEl = null;
+
+    const STEPS = 16;
+    for (let i = 0; i < STEPS; i++) {
+      const ang = (Math.PI * 2 * i) / STEPS;
+      const x = target.center.cx + RADIUS * Math.cos(ang);
+      const y = target.center.cy + RADIUS * Math.sin(ang);
+
+      const hit = elementFromPoint(x, y);
+      if (!hit) continue;
+
+      let hitCandidate = null;
+      try {
+        hitCandidate = hit.closest
+            ? hit.closest('button, summary, a[href], input, select, textarea, [role="button"], [role="link"]')
+            : null;
+      } catch {}
+
+      if (!hitCandidate) continue;
+      if (!isPointerReachable(hitCandidate)) continue;
+
+      // If the thing we hit is an inline-text exception target, don't treat it as a spacing conflict.
+      if (isInlineTextExceptionTarget(hitCandidate)) continue;
+
+      if (!isSameOrInside(hitCandidate, target.el) && hitCandidate !== target.el) {
+        hitCount++;
+        if (!firstConflictEl) firstConflictEl = hitCandidate;
+        if (hitCount >= HIT_THRESHOLD) {
+          return { conflict: true, hitCount, conflictEl: firstConflictEl };
+        }
+      }
+    }
+
+    return { conflict: false, hitCount: 0, conflictEl: null };
+  }
+
+  function isPlausiblyEssentialOrEquivalent(el) {
+    try {
+      if (!el || el.nodeType !== 1) return false;
+
+      const tag = (el.tagName || '').toLowerCase();
+
+      // Image map targets are often constrained by the underlying image.
+      if (tag === 'area') return true;
+
+      // Graphics / spatial interaction regions are commonly essential by design.
+      if (closest(el, 'svg, canvas, map')) return true;
+
+      // Otherwise: do NOT guess "essential/equivalent" from layout containers.
+      return false;
+    } catch {
+      return false; // conservative: don't mask failures as cantTell
+    }
+  }
+
+  const occurrences = [];
+  let hasUncertainConflicts = false;
+
+  for (const it of undersized) {
+    // Inline-text exception: do not fail purely on size/spacing for inline links in text.
+    if (isInlineTextExceptionTarget(it.el)) {
+      continue; // pass by exception (no occurrence)
+    }
+
+    const info = hasSpacingConflict(it);
+    if (info.conflict) {
+      if (isPlausiblyEssentialOrEquivalent(it.el)) {
+        hasUncertainConflicts = true;
+        continue;
+      }
+
+      occurrences.push({
+        selector: buildSelector(it.el),
+        html: htmlSnippet(it.el),
+        summary: 'Target is too small and too close to another target.',
+        hint: 'Increase target size to at least 24 by 24 CSS pixels, or add sufficient spacing.',
+        i18n: {
+          summaryKey: 'a11ycore_targetSizeMinimum_summary_fail',
+          hintKey: 'a11ycore_targetSizeMinimum_hint_fail',
+          params: {}
+        },
+        data: {
+          details: {
+            measured: { width: it.rect.width, height: it.rect.height },
+            reasonCode: 'undersized-and-too-close',
+            conflictHitCount: info.hitCount,
+            conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null
+          }
+        }
+      });
+    }
+  }
+
+  if (occurrences.length > 0) {
+    return {
+      ruleId: RULE_ID,
+      outcome: 'fail',
+      severity: (rule && rule.defaultSeverity) || 'minor',
+      occurrences
+    };
+  }
+
+  if (hasUncertainConflicts) {
+    return {
+      ruleId: RULE_ID,
+      outcome: 'cantTell',
+      severity: 'minor',
+      occurrences: []
+    };
+  }
+
+  return { ruleId: RULE_ID, outcome: 'pass', severity: 'minor', occurrences: [] };
+}), applicability: null },
+    "a11ycore-textbox-name-present": { run: (function runInPage(ctx) {
+  const { document, root, helpers, rule } = ctx;
+  const safeRoot = root || document;
+
+
+  function normalizeWs(s) {
+    return String(s || '').replace(/\s+/g, ' ').trim();
+  }
+
+  function getAttr(el, name) {
+    try {
+      if (!el || !el.getAttribute) return '';
+      return normalizeWs(el.getAttribute(name));
+    } catch { return ''; }
+  }
+
+  function getConservativeSubtreeText(document, container) {
+    const SHOW_TEXT = 4; // TreeWalker SHOW_TEXT
+    try {
+      const walker = document.createTreeWalker(container, SHOW_TEXT, null);
+      const parts = [];
+      let n = walker.nextNode();
+      while (n) {
+        const raw = normalizeWs(n.nodeValue || '');
+        if (raw) {
+          const pe = n.parentElement;
+          let blocked = false;
+          if (pe && typeof pe.closest === 'function') {
+            const blocker = pe.closest('[aria-hidden="true"],[hidden]');
+            if (blocker && container.contains(blocker)) blocked = true;
+          } else {
+            let p = pe;
+            while (p && p !== container) {
+              if (p.getAttribute && p.getAttribute('aria-hidden') === 'true') { blocked = true; break; }
+              if (p.hasAttribute && p.hasAttribute('hidden')) { blocked = true; break; }
+              p = p.parentElement;
+            }
+          }
+          if (!blocked) {
+            if (container.getAttribute && container.getAttribute('aria-hidden') === 'true') blocked = true;
+            if (!blocked && container.hasAttribute && container.hasAttribute('hidden')) blocked = true;
+          }
+          if (!blocked) parts.push(raw);
+        }
+        n = walker.nextNode();
+      }
+      return normalizeWs(parts.join(' '));
+    } catch {
+      try {
+        const parts = [];
+        const stack = [container];
+        while (stack.length) {
+          const node = stack.pop();
+          if (!node) continue;
+          if (node.nodeType === 3) { // TEXT_NODE
+            const raw = normalizeWs(node.nodeValue || '');
+            if (raw) parts.push(raw);
+            continue;
+          }
+          if (node.nodeType === 1) { // ELEMENT_NODE
+            if (node.getAttribute && node.getAttribute('aria-hidden') === 'true') continue;
+            if (node.hasAttribute && node.hasAttribute('hidden')) continue;
+            const kids = node.childNodes ? Array.from(node.childNodes) : [];
+            for (let i = kids.length - 1; i >= 0; i -= 1) stack.push(kids[i]);
+          }
+        }
+        return normalizeWs(parts.join(' '));
+      } catch {
+        return '';
+      }
+    }
+  }
+
+  function resolveAriaLabelledbyText(document, el, maxRefs) {
+    const raw = getAttr(el, 'aria-labelledby');
+    if (!raw) return '';
+    const refs = raw.split(/\s+/).filter(Boolean).slice(0, Math.max(1, maxRefs || 8));
+    const parts = [];
+    for (const refKey of refs) {
+      try {
+        const refEl = document.getElementById(refKey);
+        if (refEl) {
+          const t = getConservativeSubtreeText(document, refEl);
+          if (t) parts.push(t);
+        }
+      } catch {}
+    }
+    return normalizeWs(parts.join(' '));
+  }
+
+  function isEligibleAcc(helpers, el, ctx) {
+    const fn = helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+    if (!fn) return true;
+    try {
+      const r = fn(el, ctx);
+      if (typeof r === 'boolean') return r;
+      return !!(r && r.eligible);
+    } catch {
+      return true;
+    }
+  }
+
+
+  const occurrences = [];
+  let applicableCount = 0;
+
+  const selector = "[role=\"textbox\"]";
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+
+
+  function hasName(el) {
+    const ariaLabel = getAttr(el, 'aria-label');
+    if (ariaLabel) return { ok: true, method: 'aria-label' };
+
+    const labelled = resolveAriaLabelledbyText(document, el, 8);
+    if (labelled) return { ok: true, method: 'aria-labelledby' };
+
+    const title = getAttr(el, 'title');
+    if (title) return { ok: true, method: 'title' };
+
+
+    const t = getConservativeSubtreeText(document, el);
+    if (t) return { ok: true, method: 'content' };
+
+
+    return { ok: false, method: 'none' };
+  }
+
+  for (const el of nodes) {
+    if (!el) continue;
+    if (!isEligibleAcc(helpers, el, ctx)) continue;
+
+    applicableCount += 1;
+
+    const res = hasName(el);
+    if (res.ok) continue;
+
+    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+
+    occurrences.push({
+      selector: stableSelector,
+      html,
+      summary: 'This element has no accessible name.',
+      hint: 'Provide aria-label or aria-labelledby (preferred), or provide visible text that is not hidden from assistive technologies.',
+      summaryKey: 'a11ycore_textboxNamePresent_summary_fail',
+      hintKey: 'a11ycore_textboxNamePresent_hint_fail',
+      i18nParams: { controlType: 'textbox' },
+      data: { details: { reasonCode: 'name_missing', controlType: 'textbox', methodTried: res.method } }
+    });
+  }
+
+
+  if (applicableCount === 0) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  if (occurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences };
+  }
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+}), applicability: null },
+    "a11ycore-treeitem-name-present": { run: (function runInPage(ctx) {
+  const { document, root, helpers, rule } = ctx;
+  const safeRoot = root || document;
+
+
+  function normalizeWs(s) {
+    return String(s || '').replace(/\s+/g, ' ').trim();
+  }
+
+  function getAttr(el, name) {
+    try {
+      if (!el || !el.getAttribute) return '';
+      return normalizeWs(el.getAttribute(name));
+    } catch { return ''; }
+  }
+
+  function getConservativeSubtreeText(document, container) {
+    const SHOW_TEXT = 4; // TreeWalker SHOW_TEXT
+    try {
+      const walker = document.createTreeWalker(container, SHOW_TEXT, null);
+      const parts = [];
+      let n = walker.nextNode();
+      while (n) {
+        const raw = normalizeWs(n.nodeValue || '');
+        if (raw) {
+          const pe = n.parentElement;
+          let blocked = false;
+          if (pe && typeof pe.closest === 'function') {
+            const blocker = pe.closest('[aria-hidden="true"],[hidden]');
+            if (blocker && container.contains(blocker)) blocked = true;
+          } else {
+            let p = pe;
+            while (p && p !== container) {
+              if (p.getAttribute && p.getAttribute('aria-hidden') === 'true') { blocked = true; break; }
+              if (p.hasAttribute && p.hasAttribute('hidden')) { blocked = true; break; }
+              p = p.parentElement;
+            }
+          }
+          if (!blocked) {
+            if (container.getAttribute && container.getAttribute('aria-hidden') === 'true') blocked = true;
+            if (!blocked && container.hasAttribute && container.hasAttribute('hidden')) blocked = true;
+          }
+          if (!blocked) parts.push(raw);
+        }
+        n = walker.nextNode();
+      }
+      return normalizeWs(parts.join(' '));
+    } catch {
+      try {
+        const parts = [];
+        const stack = [container];
+        while (stack.length) {
+          const node = stack.pop();
+          if (!node) continue;
+          if (node.nodeType === 3) { // TEXT_NODE
+            const raw = normalizeWs(node.nodeValue || '');
+            if (raw) parts.push(raw);
+            continue;
+          }
+          if (node.nodeType === 1) { // ELEMENT_NODE
+            if (node.getAttribute && node.getAttribute('aria-hidden') === 'true') continue;
+            if (node.hasAttribute && node.hasAttribute('hidden')) continue;
+            const kids = node.childNodes ? Array.from(node.childNodes) : [];
+            for (let i = kids.length - 1; i >= 0; i -= 1) stack.push(kids[i]);
+          }
+        }
+        return normalizeWs(parts.join(' '));
+      } catch {
+        return '';
+      }
+    }
+  }
+
+  function resolveAriaLabelledbyText(document, el, maxRefs) {
+    const raw = getAttr(el, 'aria-labelledby');
+    if (!raw) return '';
+    const refs = raw.split(/\s+/).filter(Boolean).slice(0, Math.max(1, maxRefs || 8));
+    const parts = [];
+    for (const refKey of refs) {
+      try {
+        const refEl = document.getElementById(refKey);
+        if (refEl) {
+          const t = getConservativeSubtreeText(document, refEl);
+          if (t) parts.push(t);
+        }
+      } catch {}
+    }
+    return normalizeWs(parts.join(' '));
+  }
+
+  function isEligibleAcc(helpers, el, ctx) {
+    const fn = helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+    if (!fn) return true;
+    try {
+      const r = fn(el, ctx);
+      if (typeof r === 'boolean') return r;
+      return !!(r && r.eligible);
+    } catch {
+      return true;
+    }
+  }
+
+
+  const occurrences = [];
+  let applicableCount = 0;
+
+  const selector = "[role=\"treeitem\"]";
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+
+
+  function hasName(el) {
+    const ariaLabel = getAttr(el, 'aria-label');
+    if (ariaLabel) return { ok: true, method: 'aria-label' };
+
+    const labelled = resolveAriaLabelledbyText(document, el, 8);
+    if (labelled) return { ok: true, method: 'aria-labelledby' };
+
+    const title = getAttr(el, 'title');
+    if (title) return { ok: true, method: 'title' };
+
+
+    const t = getConservativeSubtreeText(document, el);
+    if (t) return { ok: true, method: 'content' };
+
+
+    return { ok: false, method: 'none' };
+  }
+
+  for (const el of nodes) {
+    if (!el) continue;
+    if (!isEligibleAcc(helpers, el, ctx)) continue;
+
+    applicableCount += 1;
+
+    const res = hasName(el);
+    if (res.ok) continue;
+
+    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+
+    occurrences.push({
+      selector: stableSelector,
+      html,
+      summary: 'This element has no accessible name.',
+      hint: 'Provide aria-label or aria-labelledby (preferred), or provide visible text that is not hidden from assistive technologies.',
+      summaryKey: 'a11ycore_treeitemNamePresent_summary_fail',
+      hintKey: 'a11ycore_treeitemNamePresent_hint_fail',
+      i18nParams: { controlType: 'treeitem' },
+      data: { details: { reasonCode: 'name_missing', controlType: 'treeitem', methodTried: res.method } }
+    });
+  }
+
+
+  if (applicableCount === 0) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  if (occurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences };
+  }
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+}), applicability: null },
     "a11ycore-video-poster-text-alternative-present": { run: (function runInPage(ctx) {
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
@@ -13786,11 +21466,16 @@ const I18N = {
     "a11ycore_contrastComputable_pass_allComputable": "Contrast is computable for all eligible text ({{eligibleTextCount}} text node(s)).",
     "a11ycore_contrastComputable_cantTell_generic": "Contrast may not be computable ({{reasonCode}}).",
     "a11ycore_contrastComputable_cantTell_bgImageOrGradient": "Contrast is not computable because the background uses an image or gradient ({{blockerProperty}}={{blockerValue}}).",
+    "a11ycore_contrastComputable_cantTell_bgImage": "Contrast is not computable because the background uses an image ({{blockerProperty}}={{blockerValue}}).",
+    "a11ycore_contrastComputable_cantTell_bgGradient": "Contrast is not computable because the background uses a gradient ({{blockerProperty}}={{blockerValue}}).",
+    "a11ycore_contrastComputable_cantTell_bgImageAndGradient": "Contrast is not computable because the background uses an image and a gradient ({{blockerProperty}}={{blockerValue}}).",
     "a11ycore_contrastComputable_cantTell_mixBlendMode": "Contrast is not computable because mix-blend-mode is used ({{blockerProperty}}={{blockerValue}}).",
     "a11ycore_contrastComputable_cantTell_filter": "Contrast is not computable because filter/backdrop-filter is used ({{blockerProperty}}={{blockerValue}}).",
     "a11ycore_contrastComputable_cantTell_rootNotOpaque": "Contrast is not computable because the effective background is not fully opaque at the root (alpha={{backgroundAlpha}}).",
     "a11ycore_contrastComputable_cantTell_foregroundUnparsable": "Contrast is not computable because the computed foreground color could not be parsed.",
     "a11ycore_contrastComputable_cantTell_engineFailure": "Contrast computability could not be determined due to an internal engine error ({{reasonCode}}).",
+    "a11ycore_contrastComputable_cantTell_backdropFilter": "Contrast is not computable because backdrop-filter is used ({{blockerProperty}}={{blockerValue}}).",
+    "a11ycore_contrastComputable_cantTell_filterOrBackdropFilter": "Contrast is not computable because filter is used ({{blockerProperty}}={{blockerValue}}).",
     "a11ycore_contrastMinimum_title": "Text meets minimum color contrast (AA)",
     "a11ycore_contrastMinimum_description": "Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3.0:1 (large), when contrast is computable from CSS.",
     "a11ycore_contrastMinimum_fail_belowThreshold": "Element has insufficient color contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).",
@@ -13826,10 +21511,110 @@ const I18N = {
     "a11ycore_dom_nonTextContrast_hint_cantTell": "Manually verify the component/graphic contrast against adjacent colors; ensure it meets {{requiredRatio}}:1 for essential non-text visual information.",
     "a11ycore_contrastEnhanced_pass_allTextMeetsThreshold": "All computable text meets enhanced contrast (AAA).",
     "a11ycore_contrastMinimum_pass_allTextMeetsThreshold": "All computable text meets minimum contrast (AA).",
+    "a11ycore_contrastComputable_cantTell_notComputable": "Contrast could not be computed for this text ({{reasonCode}}).",
     "a11ycore_roleImg_textAlternativePresent_title": "[role=\"img\"] must have an accessible text alternative",
     "a11ycore_roleImg_textAlternativePresent_description": "Checks that elements with role=\"img\" provide an accessible text alternative using aria-label or aria-labelledby.",
     "a11ycore_roleImg_textAlternativePresent_summary_fail": "The element with role=\"img\" does not have an accessible text alternative.",
-    "a11ycore_roleImg_textAlternativePresent_hint_fail": "Provide a text alternative using aria-label, or aria-labelledby that references non-empty text."
+    "a11ycore_roleImg_textAlternativePresent_hint_fail": "Provide a text alternative using aria-label, or aria-labelledby that references non-empty text.",
+    "a11ycore_targetSizeMinimum_title": "Pointer targets must be at least 24x24px large, or leave sufficient distance to other targets",
+    "a11ycore_targetSizeMinimum_description": "Checks that pointer-operable targets have an effective hit region of at least 24 by 24 CSS pixels, or meet an allowed exception (e.g. sufficient spacing).",
+    "a11ycore_targetSizeMinimum_summary_fail": "One or more pointer targets are smaller than 24×24 CSS px and are too close to another target.",
+    "a11ycore_targetSizeMinimum_hint_fail": "Increase the target size to at least 24×24 CSS px or add sufficient spacing from neighboring targets.",
+    "a11ycore_targetSizeMinimum_notApplicable_noTargets": "No pointer-operable targets were eligible for evaluation.",
+    "a11ycore_targetSizeMinimum_pass_allOk": "All eligible pointer targets meet the minimum size or a permitted exception.",
+    "a11ycore_ariaHidden_focus_title": "ARIA hidden elements must not be focusable",
+    "a11ycore_ariaHidden_focus_description": "Checks that aria-hidden=\"true\" elements are not focusable and do not contain focusable descendants.",
+    "a11ycore_ariaHidden_focus_summary_fail_desc": "aria-hidden {{element}} contains {{focusableCount}} focusable element(s).",
+    "a11ycore_ariaHidden_focus_summary_fail_self": "aria-hidden {{element}} is focusable ({{focusableCount}} focusable element(s)).",
+    "a11ycore_ariaHidden_focus_summary_fail_self_and_desc": "aria-hidden {{element}} is focusable and contains {{descendantFocusableCount}} focusable descendant(s) ({{focusableCount}} focusable element(s) total).",
+    "a11ycore_ariaHidden_focus_hint_fail": "Remove focusability from descendants or remove aria-hidden; ensure focus and accessibility trees stay aligned.",
+    "a11ycore_cssHidden_focus_title": "Focusable elements must not be visually hidden",
+    "a11ycore_cssHidden_focus_description": "Checks that keyboard-focusable elements are not visually hidden by CSS techniques that can leave them in the tab order.",
+    "a11ycore_cssHidden_focus_summary_cantTell": "Focusable {{element}} is visually hidden ({{visibilityHints}}).",
+    "a11ycore_cssHidden_focus_hint_cantTell": "Make the element visible when it can receive keyboard focus, or remove it from the tab order until it is visible.",
+    "a11ycore_linkNamePresent_title": "Links have an accessible name",
+    "a11ycore_linkNamePresent_description": "Checks that links expose a non-empty accessible name.",
+    "a11ycore_linkNamePresent_summary_fail": "This link has no accessible name.",
+    "a11ycore_linkNamePresent_hint_fail": "Provide link text or an accessible-name mechanism (for example aria-label) so assistive technologies can identify the link.",
+    "a11ycore_buttonNamePresent_title": "Buttons have an accessible name",
+    "a11ycore_buttonNamePresent_description": "Checks that buttons expose a non-empty accessible name.",
+    "a11ycore_buttonNamePresent_summary_fail": "This button has no accessible name.",
+    "a11ycore_buttonNamePresent_hint_fail": "Provide visible button text or a programmatic accessible-name mechanism (for example aria-label) so assistive technologies can identify the button.",
+    "a11ycore_binaryControlNamePresent_title": "Binary controls have an accessible name",
+    "a11ycore_binaryControlNamePresent_description": "Checks that checkbox, radio, and switch controls expose a non-empty accessible name.",
+    "a11ycore_binaryControlNamePresent_summary_fail": "This control has no accessible name.",
+    "a11ycore_binaryControlNamePresent_hint_fail": "Provide a label, aria-label, aria-labelledby, or other accessible-name mechanism so assistive technologies can identify the control.",
+    "a11ycore_comboboxNamePresent_title": "Comboboxes have an accessible name",
+    "a11ycore_comboboxNamePresent_description": "Checks that elements with role=\"combobox\" expose a non-empty accessible name.",
+    "a11ycore_comboboxNamePresent_summary_fail": "This combobox has no accessible name.",
+    "a11ycore_comboboxNamePresent_hint_fail": "Provide aria-label or aria-labelledby (preferred), or ensure the element has visible text that is not hidden from assistive technologies.",
+    "a11ycore_dialogNamePresent_title": "Dialogs have an accessible name",
+    "a11ycore_dialogNamePresent_description": "Checks that elements with role=\"dialog\" or role=\"alertdialog\" expose a non-empty accessible name.",
+    "a11ycore_dialogNamePresent_summary_fail": "This dialog has no accessible name.",
+    "a11ycore_dialogNamePresent_hint_fail": "Provide aria-labelledby (preferred) or aria-label so assistive technologies can announce the dialog.",
+    "a11ycore_menuitemNamePresent_title": "Menu items have an accessible name",
+    "a11ycore_menuitemNamePresent_description": "Checks that menu items (role=\"menuitem*\", including checkbox/radio variants) expose a non-empty accessible name.",
+    "a11ycore_menuitemNamePresent_summary_fail": "This menu item has no accessible name.",
+    "a11ycore_menuitemNamePresent_hint_fail": "Provide visible text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.",
+    "a11ycore_tabNamePresent_title": "Tabs have an accessible name",
+    "a11ycore_tabNamePresent_description": "Checks that elements with role=\"tab\" expose a non-empty accessible name.",
+    "a11ycore_tabNamePresent_summary_fail": "This tab has no accessible name.",
+    "a11ycore_tabNamePresent_hint_fail": "Provide tab text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.",
+    "a11ycore_sliderNamePresent_title": "Sliders have an accessible name",
+    "a11ycore_sliderNamePresent_description": "Checks that sliders (input[type=\"range\"] and role=\"slider\") expose a non-empty accessible name.",
+    "a11ycore_sliderNamePresent_summary_fail": "This slider has no accessible name.",
+    "a11ycore_sliderNamePresent_hint_fail": "Provide a label, aria-label, or aria-labelledby so assistive technologies can identify the slider.",
+    "a11ycore_textboxNamePresent_title": "Textboxes have an accessible name",
+    "a11ycore_textboxNamePresent_description": "Checks that elements with role=\"textbox\" expose a non-empty accessible name.",
+    "a11ycore_textboxNamePresent_summary_fail": "This textbox has no accessible name.",
+    "a11ycore_textboxNamePresent_hint_fail": "Provide aria-label or aria-labelledby (preferred), or ensure the textbox has visible text that is not hidden from assistive technologies.",
+    "a11ycore_searchboxNamePresent_title": "Searchboxes have an accessible name",
+    "a11ycore_searchboxNamePresent_description": "Checks that elements with role=\"searchbox\" expose a non-empty accessible name.",
+    "a11ycore_searchboxNamePresent_summary_fail": "This searchbox has no accessible name.",
+    "a11ycore_searchboxNamePresent_hint_fail": "Provide aria-label or aria-labelledby (preferred), or ensure the searchbox has visible text that is not hidden from assistive technologies.",
+    "a11ycore_spinbuttonNamePresent_title": "Spinbuttons have an accessible name",
+    "a11ycore_spinbuttonNamePresent_description": "Checks that elements with role=\"spinbutton\" expose a non-empty accessible name.",
+    "a11ycore_spinbuttonNamePresent_summary_fail": "This spinbutton has no accessible name.",
+    "a11ycore_spinbuttonNamePresent_hint_fail": "Provide aria-label or aria-labelledby (preferred), or ensure the spinbutton has visible text that is not hidden from assistive technologies.",
+    "a11ycore_listboxNamePresent_title": "Listboxes have an accessible name",
+    "a11ycore_listboxNamePresent_description": "Checks that elements with role=\"listbox\" expose a non-empty accessible name.",
+    "a11ycore_listboxNamePresent_summary_fail": "This listbox has no accessible name.",
+    "a11ycore_listboxNamePresent_hint_fail": "Provide aria-label or aria-labelledby (preferred), or ensure the listbox has visible text that is not hidden from assistive technologies.",
+    "a11ycore_optionNamePresent_title": "Options have an accessible name",
+    "a11ycore_optionNamePresent_description": "Checks that elements with role=\"option\" expose a non-empty accessible name.",
+    "a11ycore_optionNamePresent_summary_fail": "This option has no accessible name.",
+    "a11ycore_optionNamePresent_hint_fail": "Provide option text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.",
+    "a11ycore_treeitemNamePresent_title": "Tree items have an accessible name",
+    "a11ycore_treeitemNamePresent_description": "Checks that elements with role=\"treeitem\" expose a non-empty accessible name.",
+    "a11ycore_treeitemNamePresent_summary_fail": "This tree item has no accessible name.",
+    "a11ycore_treeitemNamePresent_hint_fail": "Provide tree item text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.",
+    "a11ycore_ariaRoleNamePresent_title": "ARIA widget/container roles have an accessible name",
+    "a11ycore_ariaRoleNamePresent_description": "Checks that selected ARIA widget/container roles expose a non-empty accessible name.",
+    "a11ycore_ariaRoleNamePresent_summary_fail": "This element has no accessible name.",
+    "a11ycore_ariaRoleNamePresent_hint_fail": "Provide aria-label or aria-labelledby (preferred), or a non-empty title attribute.",
+    "a11ycore_composite_rollup_summary": "Composite rule result: {{reasonCode}} ({{testCount}} checks)",
+    "catalog.rules.wcag_111_non_text_content.title": "Non-text content: text alternatives",
+    "catalog.rules.wcag_111_non_text_content.description": "Rollup of checks ensuring non-text content has an appropriate text alternative.",
+    "catalog.rules.wcag_121_prerecorded_transcript.title": "Audio-only and video-only (prerecorded): transcript",
+    "catalog.rules.wcag_121_prerecorded_transcript.description": "Rollup of checks for transcript availability for prerecorded audio-only or video-only media.",
+    "catalog.rules.wcag_143_contrast_minimum.title": "Contrast: minimum",
+    "catalog.rules.wcag_143_contrast_minimum.description": "Rollup of checks for minimum text contrast.",
+    "catalog.rules.wcag_146_contrast_enhanced.title": "Contrast: enhanced",
+    "catalog.rules.wcag_146_contrast_enhanced.description": "Rollup of checks for enhanced text contrast.",
+    "catalog.rules.wcag_242_page_titled.title": "Page titled",
+    "catalog.rules.wcag_242_page_titled.description": "Rollup of checks ensuring documents have a meaningful page title.",
+    "catalog.rules.wcag_247_focus_visible.title": "Focus visible",
+    "catalog.rules.wcag_247_focus_visible.description": "Rollup of checks ensuring keyboard focus is not hidden and remains perceivable.",
+    "catalog.rules.wcag_258_target_size_minimum.title": "Target size: minimum",
+    "catalog.rules.wcag_258_target_size_minimum.description": "Rollup of checks ensuring pointer targets meet minimum size requirements.",
+    "catalog.rules.wcag_311_language_of_page.title": "Language of page",
+    "catalog.rules.wcag_311_language_of_page.description": "Rollup of checks ensuring the page language is specified.",
+    "catalog.rules.wcag_412_name.title": "Name, role, value: accessible name",
+    "catalog.rules.wcag_412_name.description": "Rollup of checks that common interactive elements expose a non-empty accessible name.",
+    "a11ycore_labelInName_title": "Label in Name: accessible name contains visible text",
+    "a11ycore_labelInName_description": "Checks that when a control has a visible text label, the accessible name contains that visible label text (WCAG 2.5.3).",
+    "a11ycore_labelInName_summary_fail": "{{element}}: visible label \"{{visibleLabel}}\" (from {{labelSource}}) is not included in the accessible name (from {{nameMechanism}}).",
+    "a11ycore_labelInName_hint_fail": "Update aria-label/aria-labelledby (or the visible label text) so the accessible name includes the visible label wording."
   },
   "fr": {
     "a11ycore_img_altPresent_title": "<img> doit avoir un attribut alt",
@@ -13970,11 +21755,16 @@ const I18N = {
     "a11ycore_contrastComputable_pass_allComputable": "Le contraste est calculable pour tout le texte éligible ({{eligibleTextCount}} nœud(s) de texte).",
     "a11ycore_contrastComputable_cantTell_generic": "Le contraste peut ne pas être calculable ({{reasonCode}}).",
     "a11ycore_contrastComputable_cantTell_bgImageOrGradient": "Le contraste n’est pas calculable car l’arrière-plan utilise une image ou un dégradé ({{blockerProperty}}={{blockerValue}}).",
+    "a11ycore_contrastComputable_cantTell_bgImage": "Le contraste ne peut pas être calculé car l’arrière-plan utilise une image ({{blockerProperty}}={{blockerValue}}).",
+    "a11ycore_contrastComputable_cantTell_bgGradient": "Le contraste ne peut pas être calculé car l’arrière-plan utilise un dégradé ({{blockerProperty}}={{blockerValue}}).",
+    "a11ycore_contrastComputable_cantTell_bgImageAndGradient": "Le contraste ne peut pas être calculé car l’arrière-plan utilise une image et un dégradé ({{blockerProperty}}={{blockerValue}}).",
     "a11ycore_contrastComputable_cantTell_mixBlendMode": "Le contraste n’est pas calculable car mix-blend-mode est utilisé ({{blockerProperty}}={{blockerValue}}).",
-    "a11ycore_contrastComputable_cantTell_filter": "Le contraste n’est pas calculable car filter/backdrop-filter est utilisé ({{blockerProperty}}={{blockerValue}}).",
+    "a11ycore_contrastComputable_cantTell_filter": "Le contraste ne peut pas être calculé car la propriété filter est utilisée ({{blockerProperty}}={{blockerValue}}).",
     "a11ycore_contrastComputable_cantTell_rootNotOpaque": "Le contraste n’est pas calculable car l’arrière-plan effectif n’est pas totalement opaque à la racine (alpha={{backgroundAlpha}}).",
     "a11ycore_contrastComputable_cantTell_foregroundUnparsable": "Le contraste n’est pas calculable car la couleur de premier plan calculée n’a pas pu être analysée.",
     "a11ycore_contrastComputable_cantTell_engineFailure": "La calculabilité du contraste n’a pas pu être déterminée en raison d’une erreur interne du moteur ({{reasonCode}}).",
+    "a11ycore_contrastComputable_cantTell_backdropFilter": "Le contraste ne peut pas être calculé car la propriété backdrop-filter est utilisée ({{blockerProperty}}={{blockerValue}}).",
+    "a11ycore_contrastComputable_cantTell_filterOrBackdropFilter": "Le contraste ne peut pas être calculé car une propriété filter ou backdrop-filter est utilisée ({{blockerProperty}}={{blockerValue}}).",
     "a11ycore_contrastMinimum_title": "Le texte respecte le contraste minimum (AA)",
     "a11ycore_contrastMinimum_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 4,5:1 (texte normal) ou 3,0:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
     "a11ycore_contrastMinimum_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
@@ -14010,10 +21800,110 @@ const I18N = {
     "a11ycore_dom_nonTextContrast_hint_cantTell": "Vérifiez manuellement le contraste du composant/graphique par rapport aux couleurs adjacentes ; assurez-vous qu’il respecte {{requiredRatio}}:1 pour l’information visuelle non textuelle essentielle.",
     "a11ycore_contrastEnhanced_pass_allTextMeetsThreshold": "Tout le texte calculable respecte le contraste renforcé (AAA).",
     "a11ycore_contrastMinimum_pass_allTextMeetsThreshold": "Tout le texte calculable respecte le contraste minimum (AA).",
+    "a11ycore_contrastComputable_cantTell_notComputable": "Le contraste ne peut pas être calculé pour ce texte ({{reasonCode}}).",
     "a11ycore_roleImg_textAlternativePresent_title": "Les éléments avec role=\"img\" doivent avoir une alternative textuelle accessible",
     "a11ycore_roleImg_textAlternativePresent_description": "Vérifie que les éléments ayant le rôle \"img\" fournissent une alternative textuelle accessible via aria-label ou aria-labelledby.",
     "a11ycore_roleImg_textAlternativePresent_summary_fail": "L’élément avec le rôle \"img\" ne possède pas d’alternative textuelle accessible.",
-    "a11ycore_roleImg_textAlternativePresent_hint_fail": "Fournissez une alternative textuelle à l’aide de aria-label ou de aria-labelledby pointant vers un texte non vide."
+    "a11ycore_roleImg_textAlternativePresent_hint_fail": "Fournissez une alternative textuelle à l’aide de aria-label ou de aria-labelledby pointant vers un texte non vide.",
+    "a11ycore_targetSizeMinimum_title": "Les cibles activables au pointeur respectent la taille minimale (AA)",
+    "a11ycore_targetSizeMinimum_description": "Vérifie que les cibles activables au pointeur ont une zone cliquable effective d’au moins 24×24 pixels CSS, ou respectent une exception autorisée (par ex. un espacement suffisant).",
+    "a11ycore_targetSizeMinimum_summary_fail": "La cible est plus petite que 24×24 px CSS et est trop proche d’une autre cible.",
+    "a11ycore_targetSizeMinimum_hint_fail": "Augmentez la taille de la cible à au moins 24×24 px CSS, ou ajoutez un espacement suffisant par rapport aux cibles voisines.",
+    "a11ycore_targetSizeMinimum_notApplicable_noTargets": "Aucune cible activable par pointeur n’était éligible à l’évaluation.",
+    "a11ycore_targetSizeMinimum_pass_allOk": "Toutes les cibles activables par pointeur respectent la taille minimale ou une exception autorisée.",
+    "a11ycore_ariaHidden_focus_title": "Les éléments aria-hidden ne doivent pas être focalisables",
+    "a11ycore_ariaHidden_focus_description": "Vérifie que les éléments avec aria-hidden=\"true\" ne sont pas focalisables et ne contiennent pas d’éléments focalisables.",
+    "a11ycore_ariaHidden_focus_summary_fail_desc": "L’élément aria-hidden {{element}} contient {{focusableCount}} élément(s) focalisable(s).",
+    "a11ycore_ariaHidden_focus_summary_fail_self": "L’élément aria-hidden {{element}} est focalisable ({{focusableCount}} élément(s) focalisable(s)).",
+    "a11ycore_ariaHidden_focus_summary_fail_self_and_desc": "L’élément aria-hidden {{element}} est focalisable et contient {{descendantFocusableCount}} descendant(s) focalisable(s) ({{focusableCount}} élément(s) focalisable(s) au total).",
+    "a11ycore_ariaHidden_focus_hint_fail": "Supprimez la focalisation des descendants ou retirez aria-hidden ; assurez la cohérence entre l’ordre de focus et l’arbre d’accessibilité.",
+    "a11ycore_cssHidden_focus_title": "Les éléments focalisables ne doivent pas être masqués visuellement",
+    "a11ycore_cssHidden_focus_description": "Vérifie que les éléments focalisables au clavier ne sont pas masqués visuellement par des techniques CSS pouvant les laisser dans l’ordre de tabulation.",
+    "a11ycore_cssHidden_focus_summary_cantTell": "L’élément focalisable {{element}} est masqué visuellement ({{visibilityHints}}).",
+    "a11ycore_cssHidden_focus_hint_cantTell": "Rendez l’élément visible lorsqu’il peut recevoir le focus clavier, ou retirez-le de l’ordre de tabulation tant qu’il n’est pas visible.",
+    "a11ycore_linkNamePresent_title": "Les liens ont un nom accessible",
+    "a11ycore_linkNamePresent_description": "Vérifie que les liens exposent un nom accessible non vide.",
+    "a11ycore_linkNamePresent_summary_fail": "Ce lien n’a pas de nom accessible.",
+    "a11ycore_linkNamePresent_hint_fail": "Fournissez un texte de lien ou un mécanisme de nom accessible (par exemple aria-label) afin que les technologies d’assistance puissent identifier le lien.",
+    "a11ycore_buttonNamePresent_title": "Les boutons ont un nom accessible",
+    "a11ycore_buttonNamePresent_description": "Vérifie que les boutons exposent un nom accessible non vide.",
+    "a11ycore_buttonNamePresent_summary_fail": "Ce bouton n’a pas de nom accessible.",
+    "a11ycore_buttonNamePresent_hint_fail": "Fournissez un texte visible pour le bouton ou un mécanisme de nom accessible (par exemple aria-label) afin que les technologies d’assistance puissent identifier le bouton.",
+    "a11ycore_binaryControlNamePresent_title": "Les contrôles binaires ont un nom accessible",
+    "a11ycore_binaryControlNamePresent_description": "Vérifie que les cases à cocher, les boutons radio et les interrupteurs exposent un nom accessible non vide.",
+    "a11ycore_binaryControlNamePresent_summary_fail": "Ce contrôle n’a pas de nom accessible.",
+    "a11ycore_binaryControlNamePresent_hint_fail": "Fournissez un libellé, aria-label, aria-labelledby ou un autre mécanisme de nom accessible afin que les technologies d’assistance puissent identifier le contrôle.",
+    "a11ycore_comboboxNamePresent_title": "Les listes déroulantes (combobox) ont un nom accessible",
+    "a11ycore_comboboxNamePresent_description": "Vérifie que les éléments avec role=\"combobox\" exposent un nom accessible non vide.",
+    "a11ycore_comboboxNamePresent_summary_fail": "Cette combobox n’a pas de nom accessible.",
+    "a11ycore_comboboxNamePresent_hint_fail": "Fournissez aria-label ou aria-labelledby (préféré), ou assurez-vous que l’élément a un texte visible qui n’est pas masqué aux technologies d’assistance.",
+    "a11ycore_dialogNamePresent_title": "Les dialogues ont un nom accessible",
+    "a11ycore_dialogNamePresent_description": "Vérifie que les éléments avec role=\"dialog\" ou role=\"alertdialog\" exposent un nom accessible non vide.",
+    "a11ycore_dialogNamePresent_summary_fail": "Ce dialogue n’a pas de nom accessible.",
+    "a11ycore_dialogNamePresent_hint_fail": "Fournissez aria-labelledby (préféré) ou aria-label afin que les technologies d’assistance puissent annoncer le dialogue.",
+    "a11ycore_menuitemNamePresent_title": "Les éléments de menu ont un nom accessible",
+    "a11ycore_menuitemNamePresent_description": "Vérifie que les éléments de menu (role=\"menuitem*\", y compris les variantes case à cocher/radio) exposent un nom accessible non vide.",
+    "a11ycore_menuitemNamePresent_summary_fail": "Cet élément de menu n’a pas de nom accessible.",
+    "a11ycore_menuitemNamePresent_hint_fail": "Fournissez un texte visible qui n’est pas masqué aux technologies d’assistance, ou fournissez aria-label ou aria-labelledby.",
+    "a11ycore_tabNamePresent_title": "Les onglets ont un nom accessible",
+    "a11ycore_tabNamePresent_description": "Vérifie que les éléments avec role=\"tab\" exposent un nom accessible non vide.",
+    "a11ycore_tabNamePresent_summary_fail": "Cet onglet n’a pas de nom accessible.",
+    "a11ycore_tabNamePresent_hint_fail": "Fournissez un texte d’onglet qui n’est pas masqué aux technologies d’assistance, ou fournissez aria-label ou aria-labelledby.",
+    "a11ycore_sliderNamePresent_title": "Les curseurs ont un nom accessible",
+    "a11ycore_sliderNamePresent_description": "Vérifie que les curseurs (input[type=\"range\"] et role=\"slider\") exposent un nom accessible non vide.",
+    "a11ycore_sliderNamePresent_summary_fail": "Ce curseur n’a pas de nom accessible.",
+    "a11ycore_sliderNamePresent_hint_fail": "Fournissez un libellé, aria-label ou aria-labelledby afin que les technologies d’assistance puissent identifier le curseur.",
+    "a11ycore_textboxNamePresent_title": "Les champs de texte ont un nom accessible",
+    "a11ycore_textboxNamePresent_description": "Vérifie que les éléments avec role=\"textbox\" exposent un nom accessible non vide.",
+    "a11ycore_textboxNamePresent_summary_fail": "Ce champ de texte n’a pas de nom accessible.",
+    "a11ycore_textboxNamePresent_hint_fail": "Fournissez aria-label ou aria-labelledby (préféré), ou assurez-vous que le champ de texte a un texte visible qui n’est pas masqué aux technologies d’assistance.",
+    "a11ycore_searchboxNamePresent_title": "Les champs de recherche ont un nom accessible",
+    "a11ycore_searchboxNamePresent_description": "Vérifie que les éléments avec role=\"searchbox\" exposent un nom accessible non vide.",
+    "a11ycore_searchboxNamePresent_summary_fail": "Ce champ de recherche n’a pas de nom accessible.",
+    "a11ycore_searchboxNamePresent_hint_fail": "Fournissez aria-label ou aria-labelledby (préféré), ou assurez-vous que le champ de recherche a un texte visible qui n’est pas masqué aux technologies d’assistance.",
+    "a11ycore_spinbuttonNamePresent_title": "Les sélecteurs numériques (spinbutton) ont un nom accessible",
+    "a11ycore_spinbuttonNamePresent_description": "Vérifie que les éléments avec role=\"spinbutton\" exposent un nom accessible non vide.",
+    "a11ycore_spinbuttonNamePresent_summary_fail": "Ce spinbutton n’a pas de nom accessible.",
+    "a11ycore_spinbuttonNamePresent_hint_fail": "Fournissez aria-label ou aria-labelledby (préféré), ou assurez-vous que le spinbutton a un texte visible qui n’est pas masqué aux technologies d’assistance.",
+    "a11ycore_listboxNamePresent_title": "Les listes (listbox) ont un nom accessible",
+    "a11ycore_listboxNamePresent_description": "Vérifie que les éléments avec role=\"listbox\" exposent un nom accessible non vide.",
+    "a11ycore_listboxNamePresent_summary_fail": "Cette listbox n’a pas de nom accessible.",
+    "a11ycore_listboxNamePresent_hint_fail": "Fournissez aria-label ou aria-labelledby (préféré), ou assurez-vous que la listbox a un texte visible qui n’est pas masqué aux technologies d’assistance.",
+    "a11ycore_optionNamePresent_title": "Les options ont un nom accessible",
+    "a11ycore_optionNamePresent_description": "Vérifie que les éléments avec role=\"option\" exposent un nom accessible non vide.",
+    "a11ycore_optionNamePresent_summary_fail": "Cette option n’a pas de nom accessible.",
+    "a11ycore_optionNamePresent_hint_fail": "Fournissez un texte d’option qui n’est pas masqué aux technologies d’assistance, ou fournissez aria-label ou aria-labelledby.",
+    "a11ycore_treeitemNamePresent_title": "Les éléments d’arborescence ont un nom accessible",
+    "a11ycore_treeitemNamePresent_description": "Vérifie que les éléments avec role=\"treeitem\" exposent un nom accessible non vide.",
+    "a11ycore_treeitemNamePresent_summary_fail": "Cet élément d’arborescence n’a pas de nom accessible.",
+    "a11ycore_treeitemNamePresent_hint_fail": "Fournissez un texte d’élément d’arborescence qui n’est pas masqué aux technologies d’assistance, ou fournissez aria-label ou aria-labelledby.",
+    "a11ycore_ariaRoleNamePresent_title": "Les rôles ARIA de type widget/conteneur ont un nom accessible",
+    "a11ycore_ariaRoleNamePresent_description": "Vérifie que certains rôles ARIA de type widget/conteneur exposent un nom accessible non vide.",
+    "a11ycore_ariaRoleNamePresent_summary_fail": "Cet élément n’a pas de nom accessible.",
+    "a11ycore_ariaRoleNamePresent_hint_fail": "Fournissez aria-label ou aria-labelledby (préféré), ou un attribut title non vide.",
+    "a11ycore_composite_rollup_summary": "Résultat de la règle composite : {{reasonCode}} ({{testCount}} contrôles)",
+    "catalog.rules.wcag_111_non_text_content.title": "Contenu non textuel : alternatives textuelles",
+    "catalog.rules.wcag_111_non_text_content.description": "Regroupe les contrôles garantissant que le contenu non textuel dispose d’une alternative textuelle appropriée.",
+    "catalog.rules.wcag_121_prerecorded_transcript.title": "Audio seul et vidéo seule (préenregistrés) : transcription",
+    "catalog.rules.wcag_121_prerecorded_transcript.description": "Regroupe les contrôles vérifiant la disponibilité d’une transcription pour les médias audio seuls ou vidéo seuls préenregistrés.",
+    "catalog.rules.wcag_143_contrast_minimum.title": "Contraste : minimum",
+    "catalog.rules.wcag_143_contrast_minimum.description": "Regroupe les contrôles relatifs au contraste minimal du texte.",
+    "catalog.rules.wcag_146_contrast_enhanced.title": "Contraste : renforcé",
+    "catalog.rules.wcag_146_contrast_enhanced.description": "Regroupe les contrôles relatifs au contraste renforcé du texte.",
+    "catalog.rules.wcag_242_page_titled.title": "Page titrée",
+    "catalog.rules.wcag_242_page_titled.description": "Regroupe les contrôles garantissant que les documents possèdent un titre de page pertinent.",
+    "catalog.rules.wcag_247_focus_visible.title": "Focus visible",
+    "catalog.rules.wcag_247_focus_visible.description": "Regroupe les contrôles garantissant que le focus clavier n’est pas masqué et reste perceptible.",
+    "catalog.rules.wcag_258_target_size_minimum.title": "Taille de la cible : minimum",
+    "catalog.rules.wcag_258_target_size_minimum.description": "Regroupe les contrôles garantissant que les cibles de pointage respectent les dimensions minimales requises.",
+    "catalog.rules.wcag_311_language_of_page.title": "Langue de la page",
+    "catalog.rules.wcag_311_language_of_page.description": "Regroupe les contrôles garantissant que la langue de la page est spécifiée.",
+    "catalog.rules.wcag_412_name.title": "Nom, rôle, valeur : nom accessible",
+    "catalog.rules.wcag_412_name.description": "Regroupe les contrôles garantissant que les éléments interactifs courants exposent un nom accessible non vide.",
+    "a11ycore_labelInName_title": "Intitulé dans le nom : le nom accessible contient le texte visible",
+    "a11ycore_labelInName_description": "Vérifie que lorsqu’un composant possède un libellé textuel visible, le nom accessible contient ce libellé visible (WCAG 2.5.3).",
+    "a11ycore_labelInName_summary_fail": "{{element}} : le libellé visible « {{visibleLabel}} » (source : {{labelSource}}) n’est pas inclus dans le nom accessible (source : {{nameMechanism}}).",
+    "a11ycore_labelInName_hint_fail": "Modifiez aria-label ou aria-labelledby (ou le texte du libellé visible) afin que le nom accessible inclue le libellé visible."
   }
 };
 
@@ -14266,15 +22156,22 @@ function normalizeIncludeMode(mode) {
 
 function hasAnyRunOnlyKeys(runOnly) {
   if (!runOnly || typeof runOnly !== 'object') return false;
+
   // legacy reference-engine-like: { type:'tag', values:[...] }
-  if (runOnly.type === 'tag' && Array.isArray(runOnly.values) && runOnly.values.length) return true;
-  if (Array.isArray(runOnly.tags) && runOnly.tags.length) return true;
-  if (Array.isArray(runOnly.includeRuleIds) && runOnly.includeRuleIds.length) return true;
-  if (Array.isArray(runOnly.excludeRuleIds) && runOnly.excludeRuleIds.length) return true;
-  // extended (new)
-  if (Array.isArray(runOnly.excludeTags) && runOnly.excludeTags.length) return true;
-  if (typeof runOnly.includeMode === 'string' && runOnly.includeMode.trim()) return true;
-  return false;
+  const hasLegacyTag =
+    runOnly.type === 'tag' && Array.isArray(runOnly.values) && runOnly.values.length > 0;
+
+  const hasAnyFilters =
+    hasLegacyTag ||
+    (Array.isArray(runOnly.tags) && runOnly.tags.length > 0) ||
+    (Array.isArray(runOnly.excludeTags) && runOnly.excludeTags.length > 0) ||
+    (Array.isArray(runOnly.includeRuleIds) && runOnly.includeRuleIds.length > 0) ||
+    (Array.isArray(runOnly.excludeRuleIds) && runOnly.excludeRuleIds.length > 0) ||
+    (Array.isArray(runOnly.includeTestIds) && runOnly.includeTestIds.length > 0) ||
+    (Array.isArray(runOnly.excludeTestIds) && runOnly.excludeTestIds.length > 0);
+
+  // IMPORTANT: includeMode by itself should NOT cause runOnly to take precedence.
+  return hasAnyFilters;
 }
 
 /**
@@ -14286,10 +22183,18 @@ function hasAnyRunOnlyKeys(runOnly) {
  * - extended runOnly: { includeMode:'and'|'or', excludeTags:[...] }
  *
  * Output shape:
- * { includeMode, tags, excludeTags, includeRuleIds, excludeRuleIds }
+ * { includeMode, tags, excludeTags, includeRuleIds, excludeRuleIds, includeTestIds, excludeTestIds }
  */
 function normalizeRunOnly(runOnly) {
-  const out = { includeMode: 'and', tags: [], excludeTags: [], includeRuleIds: [], excludeRuleIds: [] };
+  const out = {
+    includeMode: 'and',
+    tags: [],
+    excludeTags: [],
+    includeRuleIds: [],
+    excludeRuleIds: [],
+    includeTestIds: [],
+    excludeTestIds: []
+  };
   if (!runOnly || typeof runOnly !== 'object') return out;
 
   out.includeMode = normalizeIncludeMode(runOnly.includeMode);
@@ -14305,6 +22210,9 @@ function normalizeRunOnly(runOnly) {
 
   out.includeRuleIds = parseCommaList(runOnly.includeRuleIds, { lower: false });
   out.excludeRuleIds = parseCommaList(runOnly.excludeRuleIds, { lower: false });
+  
+  out.includeTestIds = parseCommaList(runOnly.includeTestIds, { lower: false });
+  out.excludeTestIds = parseCommaList(runOnly.excludeTestIds, { lower: false });
 
   return out;
 }
@@ -14324,6 +22232,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
 
   const rules = (eo.rules && typeof eo.rules === 'object') ? eo.rules : null;
   const tags = (eo.tags && typeof eo.tags === 'object') ? eo.tags : null;
+  const tests = (eo.tests && typeof eo.tests === 'object') ? eo.tests : null;
 
   const includeRuleIds = parseCommaList(rules && rules.include, { lower: false });
   const excludeRuleIds = parseCommaList(rules && rules.exclude, { lower: false });
@@ -14331,13 +22240,19 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   const includeTags = parseCommaList(tags && tags.include, { lower: true });
   const excludeTags = parseCommaList(tags && tags.exclude, { lower: true });
 
+  const includeTestIds = parseCommaList(tests && tests.include, { lower: false });
+  const excludeTestIds = parseCommaList(tests && tests.exclude, { lower: false });
+
   return {
     includeMode: mode,
     tags: includeTags,
     excludeTags,
     includeRuleIds,
-    excludeRuleIds
+    excludeRuleIds,
+    includeTestIds,
+    excludeTestIds
   };
+
 }
 
 function ruleIdMatches(candidate, ruleId, engineTag) {
@@ -14351,39 +22266,99 @@ function ruleIdMatches(candidate, ruleId, engineTag) {
   return false;
 }
 
+function buildCompositeRuleIndex() {
+  const idx = Object.create(null);
+  if (!Array.isArray(COMPOSITE_RULES)) return idx;
+
+  for (const entry of COMPOSITE_RULES) {
+    if (!entry || typeof entry !== 'object') continue;
+    const id = typeof entry.id === 'string' ? entry.id.trim() : String(entry.id || '').trim();
+    if (!id) continue;
+
+    const checksIds = Array.isArray(entry.checksIds)
+      ? entry.checksIds.map(String).map((s) => s.trim()).filter(Boolean)
+      : [];
+
+    if (checksIds.length) idx[id] = checksIds;
+  }
+
+  return idx;
+}
+
+const COMPOSITE_RULE_INDEX = buildCompositeRuleIndex();
+
+function expandCompositeRuleId(candidateId) {
+  const id = typeof candidateId === 'string' ? candidateId.trim() : '';
+  if (!id) return null;
+  const checksIds = COMPOSITE_RULE_INDEX[id];
+  return Array.isArray(checksIds) && checksIds.length ? checksIds : null;
+}
+
 function ruleMatchesRunOnly(def, runOnly, engineTag) {
   const norm = normalizeRunOnly(runOnly);
   const includeMode = normalizeIncludeMode(norm.includeMode);
 
   const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).toLowerCase()) : [];
 
-  const hasIdInclude = norm.includeRuleIds.length > 0;
+  const hasRuleInclude = norm.includeRuleIds.length > 0;
+  const hasTestInclude = norm.includeTestIds.length > 0;
   const hasTagInclude = norm.tags.length > 0;
 
   let idMatch = true;
   let tagMatch = true;
 
-  if (hasIdInclude) {
-    idMatch = norm.includeRuleIds.some((id) => ruleIdMatches(id, def.ruleId, engineTag || ENGINE_TAG));
+  if (hasRuleInclude) {
+    idMatch = norm.includeRuleIds.some((ruleId) => {
+      // 1) Direct match always wins (this allows selecting the composite itself)
+      if (ruleIdMatches(ruleId, def.ruleId, engineTag || ENGINE_TAG)) return true;
+      
+      // 2) If candidate is a composite id, include atomic children as well
+      const expanded = expandCompositeRuleId(ruleId);
+      if (expanded) return expanded.includes(def.ruleId);
+      
+      return false;
+    });
   }
+
+  if (hasTestInclude) {
+    const testMatch = norm.includeTestIds.some((id) => ruleIdMatches(id, def.ruleId, engineTag || ENGINE_TAG));
+    idMatch = hasRuleInclude ? (idMatch && testMatch) : testMatch;
+  }
+
   if (hasTagInclude) {
     tagMatch = defTags.some((t) => norm.tags.includes(t));
   }
 
   // Includes
-  if (hasIdInclude || hasTagInclude) {
-    if (includeMode === 'or' && hasIdInclude && hasTagInclude) {
+  const hasAnyIdInclude = hasRuleInclude || hasTestInclude;
+
+  if (hasAnyIdInclude || hasTagInclude) {
+    if (includeMode === 'or' && hasAnyIdInclude && hasTagInclude) {
       if (!(idMatch || tagMatch)) return false;
     } else {
       // 'and' semantics (or only one include dimension present)
-      if (hasIdInclude && !idMatch) return false;
+      if (hasAnyIdInclude && !idMatch) return false;
       if (hasTagInclude && !tagMatch) return false;
     }
   }
 
   // Excludes (always subtractive; apply after include)
   if (norm.excludeRuleIds.length) {
-    const blocked = norm.excludeRuleIds.some((id) => ruleIdMatches(id, def.ruleId, engineTag || ENGINE_TAG));
+    const blocked = norm.excludeRuleIds.some((ruleId) => {
+      // 1) Direct match excludes the composite itself (and any atomic with same id)
+      if (ruleIdMatches(ruleId, def.ruleId, engineTag || ENGINE_TAG)) return true;
+  
+      // 2) If candidate is a composite id, exclude its atomic children too
+      const expanded = expandCompositeRuleId(ruleId);
+      if (expanded) return expanded.includes(def.ruleId);
+  
+      return false;
+    });
+    if (blocked) return false;
+  }
+
+  if (norm.excludeTestIds.length) {
+    const blocked = norm.excludeTestIds.some((id) => ruleIdMatches(id, def.ruleId, engineTag || ENGINE_TAG));
     if (blocked) return false;
   }
 
@@ -14447,7 +22422,6 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
     atomic: def.atomic,
     category: def.category || null,
     normativeMappings: Array.isArray(def.normativeMappings) ? def.normativeMappings.map((o) => ({ ...o })) : [],
-    informativeReferences: Array.isArray(def.informativeReferences) ? def.informativeReferences.map((o) => ({ ...o })) : [],
     standard: def.standard || null,
     applicability: def.applicability || '',
     expectation: def.expectation || '',
@@ -14523,8 +22497,8 @@ function toCatalogEntry(r, engineOptions) {
     i18n: r.i18n || null,
     helpUrl: r.helpUrl,
     tags: Array.isArray(r.tags) ? r.tags.slice() : [],
+    wcagSc: Array.isArray(r.wcagSc) ? r.wcagSc.slice() : [],
     normativeMappings: Array.isArray(r.normativeMappings) ? r.normativeMappings.map((o) => ({ ...o })) : [],
-    informativeReferences: Array.isArray(r.informativeReferences) ? r.informativeReferences.map((o) => ({ ...o })) : [],
     defaultSeverity: r.defaultSeverity,
     defaultConfidence: r.defaultConfidence,
     type: r.type,
@@ -14665,53 +22639,6 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     const __hasBlendModeCache = __getSharedWeakMapCache('__hasBlendModeCache') || __localHasBlendModeCache;
     const __hasFilterCache = __getSharedWeakMapCache('__hasFilterCache') || __localHasFilterCache;
 
-
-    // Cache parsed colors / numeric opacity per element (per run)
-    const __localOpacityFloatCache = new WeakMap();
-    const __opacityFloatCache = __getSharedWeakMapCache('__opacityFloatCache') || __localOpacityFloatCache;
-
-    const __localBgColorRgbaCache = new WeakMap();
-    const __bgColorRgbaCache = __getSharedWeakMapCache('__bgColorRgbaCache') || __localBgColorRgbaCache;
-
-    const __localFgColorRgbaCache = new WeakMap();
-    const __fgColorRgbaCache = __getSharedWeakMapCache('__fgColorRgbaCache') || __localFgColorRgbaCache;
-
-    function __opacityFloat(el, cs) {
-        try {
-            if (!el || el.nodeType !== 1) return clamp01(Number.parseFloat(cs && cs.opacity != null ? cs.opacity : '1'));
-            if (__opacityFloatCache.has(el)) return __opacityFloatCache.get(el);
-            const o = clamp01(Number.parseFloat(cs && cs.opacity != null ? cs.opacity : '1'));
-            __opacityFloatCache.set(el, o);
-            return o;
-        } catch {
-            return 1;
-        }
-    }
-
-    function __bgColorRgba(el, cs) {
-        try {
-            if (!el || el.nodeType !== 1) return parseCssColorToRgba(cs && cs.backgroundColor);
-            if (__bgColorRgbaCache.has(el)) return __bgColorRgbaCache.get(el);
-            const c = parseCssColorToRgba(cs && cs.backgroundColor);
-            __bgColorRgbaCache.set(el, c);
-            return c;
-        } catch {
-            return null;
-        }
-    }
-
-    function __fgColorRgba(el, cs) {
-        try {
-            if (!el || el.nodeType !== 1) return parseCssColorToRgba(cs && cs.color);
-            if (__fgColorRgbaCache.has(el)) return __fgColorRgbaCache.get(el);
-            const c = parseCssColorToRgba(cs && cs.color);
-            __fgColorRgbaCache.set(el, c);
-            return c;
-        } catch {
-            return null;
-        }
-    }
-
     // -------- Visibility mode resolution for getTextScan --------
 
     function __getVisibilityMode(engineOptions) {
@@ -14837,7 +22764,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             const cacheKey = `visibilityMode=${visibilityMode}`;
             if (cache && cache.has(cacheKey)) return cache.get(cacheKey);
 
-            const walkRoot = d.body || d.documentElement || d;
+            const walkRootRaw = (ctx && ctx.root) ? ctx.root : (d.body || d.documentElement || d);
+            const walkRoot = (walkRootRaw && walkRootRaw.nodeType === 9)
+                ? (walkRootRaw.body || walkRootRaw.documentElement || walkRootRaw)
+                : walkRootRaw;
 
             const SHOW_TEXT =
                 (w && w.NodeFilter && typeof w.NodeFilter.SHOW_TEXT === 'number')
@@ -14882,6 +22812,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
                     (node.parentNode && node.parentNode.nodeType === 1 ? node.parentNode : null);
 
                 if (!el) continue;
+                // Respect subtree exclusions from engineOptions.excludeSelectors
+                try {
+                    if (helpers && typeof helpers.isExcluded === 'function' && helpers.isExcluded(el)) continue;
+                } catch {}
                 if (!isVisibleEligible(el)) continue;
 
                 eligibleTextCount++;
@@ -15141,6 +23075,42 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             return { r, g, b, a };
         }
 
+        // Fallback: let the platform parse named/system colors.
+        // Useful in jsdom/browsers where computed styles may return keywords like "black" or "CanvasText".
+        try {
+            const w = window || null;
+            const d = w && w.document ? w.document : null;
+            if (w && d && typeof d.createElement === 'function' && typeof w.getComputedStyle === 'function') {
+                const probe = d.createElement('span');
+                // Avoid layout/paint side effects
+                probe.style.position = 'absolute';
+                probe.style.left = '-9999px';
+                probe.style.top = '-9999px';
+                probe.style.opacity = '0';
+                probe.style.color = String(input);
+                const parent = d.body || d.documentElement;
+                if (parent && typeof parent.appendChild === 'function') parent.appendChild(probe);
+
+                let computed = '';
+                try {
+                    computed = (w.getComputedStyle(probe) && w.getComputedStyle(probe).color) || '';
+                } catch (_e) {
+                    computed = '';
+                }
+
+                try {
+                    if (probe && probe.parentNode) probe.parentNode.removeChild(probe);
+                } catch (_e) {}
+
+                const normalized = __normalizeCssColorCacheKey(computed);
+                if (normalized && normalized !== __normalizeCssColorCacheKey(input)) {
+                    // Reuse the parser on the computed rgb()/rgba() string.
+                    const parsed = __parseCssColorToRgbaUncached(normalized);
+                    if (parsed) return parsed;
+                }
+            }
+        } catch (_e) {}
+
         return null;
     }
 
@@ -15299,7 +23269,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
                     continue;
                 }
                 const cs = __contrastComputedStyle(cur);
-                const o = __opacityFloat(cur, cs);
+                const o = clamp01(Number.parseFloat(cs && cs.opacity != null ? cs.opacity : '1'));
                 prod *= o;
                 cur = composedParent(cur);
                 if (prod <= 0) break;
@@ -15325,7 +23295,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         } catch (_e) {}
 
         const cs = __contrastComputedStyle(el);
-        const c = __fgColorRgba(el, cs);
+        const c = parseCssColorToRgba(cs && cs.color);
         if (!c) {
             const out = { rgba: null, alpha: 0, opacityProduct: computeOpacityProduct(el) };
             try { if (el) __effectiveForegroundCache.set(el, out); } catch (_e) {}
@@ -15347,11 +23317,16 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         __getSharedWeakMapCache('__effectiveBackgroundCache') || __localEffectiveBackgroundCache;
 
     function __bgCacheKey(opts2) {
-        const profileRaw = opts2 && typeof opts2.profile === 'string' ? opts2.profile : 'strictConformance';
-        const profile = String(profileRaw).trim().toLowerCase();
-        const rootCanvasFallback = opts2 && typeof opts2.rootCanvasFallback === 'string' ? opts2.rootCanvasFallback : '#ffffff';
-        const collectStack = !!(opts2 && opts2.collectStack);
-        return `p=${profile}|f=${rootCanvasFallback}|s=${collectStack ? '1' : '0'}`;
+        const contrast = (opts2 && opts2.contrast && typeof opts2.contrast === 'object') ? opts2.contrast : {};
+        const mode = (contrast.mode === 'auditorAssist') ? 'auditorAssist' : 'strictConformance';
+        const rootCanvasFallback =
+            (typeof contrast.rootCanvasFallback === 'string' && contrast.rootCanvasFallback.trim())
+                ? contrast.rootCanvasFallback.trim()
+                : '#ffffff';
+
+        // Cache key must include any input that can affect computed background.
+        // Note: we only cache when collectStack is false.
+        return `${mode}|${rootCanvasFallback}`;
     }
 
     function computeEffectiveBackground(el, opts2) {
@@ -15368,14 +23343,17 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             } catch (_e) {}
         }
 
-        const profileRaw = opts2 && typeof opts2.profile === 'string' ? opts2.profile : 'strictConformance';
-        const profile = String(profileRaw).trim().toLowerCase();
-        const rootCanvasFallback = opts2 && typeof opts2.rootCanvasFallback === 'string' ? opts2.rootCanvasFallback : '#ffffff';
+        const contrast = (opts2 && opts2.contrast && typeof opts2.contrast === 'object') ? opts2.contrast : {};
+        const mode = (contrast.mode === 'auditorAssist') ? 'auditorAssist' : 'strictConformance';
+        const rootCanvasFallback =
+            (typeof contrast.rootCanvasFallback === 'string' && contrast.rootCanvasFallback.trim())
+                ? contrast.rootCanvasFallback.trim()
+                : '#ffffff';
 
         const collectStack = !!(opts2 && opts2.collectStack);
         const stack = collectStack ? [] : null;
-        let acc = { r: 0, g: 0, b: 0, a: 0 };
 
+        let acc = { r: 0, g: 0, b: 0, a: 0 };
         let cur = el;
         let guard = 0;
 
@@ -15383,8 +23361,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             if (cur.nodeType !== 1) { cur = composedParent(cur); continue; }
 
             const cs = __contrastComputedStyle(cur);
-            const bg = __bgColorRgba(cur, cs);
-            const op = __opacityFloat(cur, cs);
+            const bg = parseCssColorToRgba(cs && cs.backgroundColor);
+            const op = clamp01(Number.parseFloat(cs && cs.opacity != null ? cs.opacity : '1'));
 
             if (bg) {
                 const layer = { r: bg.r, g: bg.g, b: bg.b, a: clamp01(bg.a * op) };
@@ -15403,16 +23381,36 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         }
 
         let out;
+        const allowAssumptions = (mode === 'auditorAssist');
+
         if (acc.a < 1) {
-            if (profile === 'referenceenginecompat') {
+            if (allowAssumptions) {
+                // If the root is not opaque, apply an explicit canvas fallback.
                 const fb = parseCssColorToRgba(rootCanvasFallback) || { r: 255, g: 255, b: 255, a: 1 };
-                acc = compositeRgba(fb, acc);
-                out = { ok: false, rgba: acc, alpha: acc.a, stack: stack || [], reasonCode: null };
+                const fbOpaque = { r: fb.r, g: fb.g, b: fb.b, a: 1 };
+
+                acc = compositeRgba(fbOpaque, acc);
+
+                out = {
+                    ok: true,
+                    rgba: { r: acc.r, g: acc.g, b: acc.b, a: 1 },
+                    alpha: 1,
+                    stack: stack || [],
+                    reasonCode: null,
+                    assumptionsApplied: ['ROOT_CANVAS_FALLBACK'],
+                    assumedRootCanvasColor: rootCanvasFallback
+                };
             } else {
-                out = { ok: false, rgba: acc, alpha: acc.a, stack, reasonCode: 'BACKGROUND_NOT_OPAQUE_AT_ROOT' };
+                out = {
+                    ok: false,
+                    rgba: acc,
+                    alpha: acc.a,
+                    stack: stack || [],
+                    reasonCode: 'BACKGROUND_NOT_OPAQUE_AT_ROOT'
+                };
             }
         } else {
-            out = { ok: true, rgba: acc, alpha: acc.a, stack, reasonCode: null };
+            out = { ok: true, rgba: acc, alpha: acc.a, stack: stack || [], reasonCode: null };
         }
 
         if (!__collectStack && el) {
@@ -15425,6 +23423,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
         return out;
     }
+
 
     // -------- Selector memoization --------
 
@@ -15440,6 +23439,34 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             return s || '';
         } catch (_e) {
             return '';
+        }
+    }
+
+    function classifyBackgroundImageValue(bgImageValue) {
+        try {
+            const v = (bgImageValue == null) ? '' : String(bgImageValue).trim();
+            if (!v) return 'unknown';
+            const s = v.toLowerCase();
+            if (s === 'none') return 'unknown';
+
+            // Multiple layers can be comma-separated; we keep it simple + deterministic:
+            // if any layer has url()/image-set() => image
+            // if any layer has *gradient( => gradient
+            const hasGradient = /gradient\s*\(/i.test(s);
+            const hasUrl = /\burl\s*\(/i.test(s);
+            const hasImageSet = /\bimage-set\s*\(/i.test(s);
+
+            const isImage = hasUrl || hasImageSet;
+            const isGradient = hasGradient;
+
+            if (isImage && isGradient) return 'imageAndGradient';
+            if (isImage) return 'image';
+            if (isGradient) return 'gradient';
+
+            // Other background-image functions exist; treat as unknown rather than guessing.
+            return 'unknown';
+        } catch {
+            return 'unknown';
         }
     }
 
@@ -15486,12 +23513,14 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             }
 
             if (__hasBackgroundImageOrGradientEl(cur, cs)) {
+                const bgImg = (cs && cs.backgroundImage) || '';
                 const out = {
                     ok: false,
                     reasonCode: 'BACKGROUND_IMAGE_OR_GRADIENT',
                     blockerSelector: __getSimpleSelectorCached(cur, (cur.tagName || '').toLowerCase() || 'html'),
                     blockerProperty: 'background-image',
-                    blockerValue: truncateCssValue(cs && cs.backgroundImage, 80)
+                    blockerValue: truncateCssValue(bgImg, 80),
+                    backgroundFillType: classifyBackgroundImageValue(bgImg)
                 };
                 try { if (el) __computabilityBlockerCache.set(el, out); } catch (_e) {}
                 return out;
@@ -15621,7 +23650,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     const computedStyle = (el) => {
         // Per-run memoization scoped by *helper scope* (root/document), to ensure
         // style caching does not bleed across helper instances with different roots.
-        // This aligns with eligibility cache scoping semantics locked by tests.
+        // This aligns with eligibility cache scoping semantics locked by checks.
         const scope = (root && typeof root === 'object') ? root : (document && typeof document === 'object' ? document : null);
 
         let map = null;
@@ -15895,7 +23924,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
         return {present: true, value: attrValue, mechanism: attr, flags};
     }
 
-    // --- ARIA name primitives (reusable across rules) ---
+    // --- ARIA name primitives (reusable across checks) ---
     function getAriaLabelInfo(el) {
         const flags = [];
         if (!isElement(el)) return {present: false, value: '', mechanism: 'unsupported', flags: ['notElement']};
@@ -16428,6 +24457,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     let __eligibilityAccCache = null;
     let __eligibilityDomCacheByMode = null; // Map<string, WeakMap<Element, Result>>
     let __focusabilityCache = null;
+    let __visibilityHintsCache = null; // WeakMap<Element, {hints:Array<string>, metrics:object}>
     let __computedStyleCacheByScope = null; // WeakMap<object, WeakMap<Element, CSSStyleDeclaration|object>>
     let __openModalDialogsByDoc = null; // WeakMap<Document, Array<Element>>
     let __ancestorBlockerAccByScope = null; // WeakMap<object, WeakMap<Element, {struct:string|null, css:string|null}>>
@@ -16469,6 +24499,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
             : (__domSharedCache.focusabilityCache = new WeakMap());
     } catch {
         __focusabilityCache = null;
+    }
+
+    try {
+        __visibilityHintsCache = __domSharedCache.visibilityHintsCache instanceof WeakMap
+            ? __domSharedCache.visibilityHintsCache
+            : (__domSharedCache.visibilityHintsCache = new WeakMap());
+    } catch {
+        __visibilityHintsCache = null;
     }
 
     try {
@@ -16982,14 +25020,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
             }
 
             // Exception: allow aria-hidden override for mechanisms where the engine must
-            // still evaluate required labeling/alt rules. Keep this narrowly scoped.
+            // still evaluate required labeling/alt checks. Keep this narrowly scoped.
             const tag = (node.tagName || '').toLowerCase();
             const type = tag === 'input'
                 ? ((node.getAttribute && (node.getAttribute('type') || '').toLowerCase()) || '')
                 : '';
 
             // Native form controls are tabbable by default (even without tabindex)
-            // and are targeted by labeling rules.
+            // and are targeted by labeling checks.
             const isNativeFormControl =
                 tag === 'select' ||
                 tag === 'textarea' ||
@@ -17162,6 +25200,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
         // Closed <details> hides content visually
         if (inClosedDetailsContent(node)) return __cacheAndReturn(out(false, ['detailsClosed'], {}));
 
+        const visibilityMode =
+            opts && opts.visibilityMode === 'pointer'
+                ? 'pointer'
+                : (opts && opts.visibilityMode === 'styleAndGeometry'
+                    ? 'styleAndGeometry'
+                    : 'styleOnly');
+
         // 2) CSS visibility suppression + opacity chain
         let opacityProduct = 1;
         for (const a of chain) {
@@ -17173,6 +25218,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
             let cachedVisibility = null;
             let cachedContentVisHidden = null;
             let cachedOpacity = null;
+            let cachedPointerEventsNone = null;
+            let cachedPointerEventsKnown = false;
             let cs = null;
 
             try {
@@ -17190,10 +25237,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
                         cachedVisibility = cached.visibility != null ? String(cached.visibility) : null;
                         cachedContentVisHidden = cached.contentVisHidden === true ? true : null;
-                        cachedOpacity =
-                            (typeof cached.opacity === 'number' && Number.isFinite(cached.opacity))
+                        cachedOpacity = (cached && typeof cached.opacity === 'number' && Number.isFinite(cached.opacity))
                                 ? cached.opacity
                                 : null;
+
+                        cachedPointerEventsNone = cached.pointerEventsNone === true ? true : null;
+                        cachedPointerEventsKnown = cached.pointerEventsKnown === true ? true : false;
                     }
                 } else {
                     __perfInc('ancestorBlockerDom.css.miss');
@@ -17224,6 +25273,16 @@ const createDomHelpers = (function createDomHelpers(opts) {
                     }
                 }
 
+                // Pointer reachability: pointer-events:none blocks hit-testing
+                if (visibilityMode === 'pointer' && !cachedPointerEventsKnown) {
+                    try {
+                        const pe = cs && cs.pointerEvents != null ? String(cs.pointerEvents).trim() : '';
+                        cachedPointerEventsKnown = true;
+                        if (pe === 'none') cachedPointerEventsNone = true;
+                    } catch {
+                    }
+                }
+
                 try {
                     if (__ancBlockDomCache) {
                         const prev = __ancBlockDomCache.has(a) ? (__ancBlockDomCache.get(a) || null) : null;
@@ -17233,7 +25292,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
                             cssKnown: true,
                             visibility: cachedVisibility || (prev && prev.visibility ? prev.visibility : null),
                             contentVisHidden: cachedContentVisHidden === true ? true : (prev && prev.contentVisHidden === true ? true : null),
-                            opacity: cachedOpacity == null ? (prev && typeof prev.opacity === 'number' ? prev.opacity : null) : cachedOpacity
+                            opacity: cachedOpacity == null ? (prev && typeof prev.opacity === 'number' ? prev.opacity : null) : cachedOpacity,
+                            pointerEventsNone: cachedPointerEventsNone === true ? true : (prev && prev.pointerEventsNone === true ? true : null),
+                            pointerEventsKnown: cachedPointerEventsKnown === true ? true : (prev && prev.pointerEventsKnown === true ? true : false)
                         });
                     }
                 } catch {
@@ -17247,6 +25308,56 @@ const createDomHelpers = (function createDomHelpers(opts) {
             }
             if (cssBlock === 'contentVisibilityHidden') {
                 return __cacheAndReturn(out(false, ['contentVisibilityHidden'], {}));
+            }
+
+            if (visibilityMode === 'pointer') {
+                // pointer-events:none prevents the element from receiving pointer interactions
+                if (cachedPointerEventsKnown === true && cachedPointerEventsNone === true) {
+                    return __cacheAndReturn(out(false, ['pointerEventsNone'], {}));
+                }
+
+                if (cachedPointerEventsKnown !== true) {
+                    try {
+                        if (!cs) cs = computedStyle(a);
+                        const pe = cs && cs.pointerEvents != null ? String(cs.pointerEvents).trim() : '';
+                        cachedPointerEventsKnown = true;
+                        if (pe === 'none') cachedPointerEventsNone = true;
+
+                        // Write back pointer-events status without disturbing other fields
+                        try {
+                            if (__ancBlockDomCache) {
+                                const prev = __ancBlockDomCache.has(a) ? (__ancBlockDomCache.get(a) || null) : null;
+                                if (prev) {
+                                    __ancBlockDomCache.set(a, {
+                                        struct: prev.struct || null,
+                                        css: prev.css || null,
+                                        cssKnown: prev.cssKnown === true ? true : false,
+                                        visibility: prev.visibility || null,
+                                        contentVisHidden: prev.contentVisHidden === true ? true : null,
+                                        opacity: typeof prev.opacity === 'number' ? prev.opacity : null,
+                                        pointerEventsNone: cachedPointerEventsNone === true ? true : null,
+                                        pointerEventsKnown: cachedPointerEventsKnown === true ? true : false
+                                    });
+                                } else {
+                                    __ancBlockDomCache.set(a, {
+                                        struct: null,
+                                        css: null,
+                                        cssKnown: false,
+                                        visibility: null,
+                                        contentVisHidden: null,
+                                        opacity: null,
+                                        pointerEventsNone: cachedPointerEventsNone === true ? true : null,
+                                        pointerEventsKnown: cachedPointerEventsKnown === true ? true : false
+                                    });
+                                }
+                            }
+                        } catch {}
+                    } catch {}
+                }
+
+                if (cachedPointerEventsNone === true) {
+                    return __cacheAndReturn(out(false, ['pointerEventsNone'], {}));
+                }
             }
 
             // If opacity isn't cached yet, compute once and write it back even when cssBlock was cached.
@@ -17269,7 +25380,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
                                         css: prev.css || null,
                                         visibility: prev.visibility || null,
                                         contentVisHidden: prev.contentVisHidden === true ? true : null,
-                                        opacity: cachedOpacity
+                                        opacity: cachedOpacity,
+                                        pointerEventsNone: prev.pointerEventsNone === true ? true : null,
+                                        pointerEventsKnown: prev.pointerEventsKnown === true ? true : false
                                     });
                                 } else {
                                     __ancBlockDomCache.set(a, {
@@ -17277,7 +25390,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
                                         css: cssBlock || null,
                                         visibility: cachedVisibility || null,
                                         contentVisHidden: cachedContentVisHidden === true ? true : null,
-                                        opacity: cachedOpacity
+                                        opacity: cachedOpacity,
+                                        pointerEventsNone: null,
+                                        pointerEventsKnown: false
                                     });
                                 }
                             }
@@ -17289,20 +25404,19 @@ const createDomHelpers = (function createDomHelpers(opts) {
             // opacity handling (visual)
             const op = cachedOpacity != null ? cachedOpacity : 1;
             opacityProduct *= op;
-            if (opacityProduct <= 0.0001) {
+            // Allow callers to ignore opacity-based invisibility (still focusable).
+            const ignoreOpacity = !!(opts && opts.ignoreOpacity === true);
+
+            if (!ignoreOpacity && visibilityMode !== 'pointer' && opacityProduct <= 0.0001) {
                 return __cacheAndReturn(out(false, ['opacityZero'], { opacity: opacityProduct }));
             }
         }
 
         // 3) Layout/geometry (optional)
-        const visibilityMode =
-            opts && opts.visibilityMode === 'styleAndGeometry'
-                ? 'styleAndGeometry'
-                : 'styleOnly';
-
         const useGeometry =
-            visibilityMode === 'styleAndGeometry' &&
-            !(opts && opts.disableGeometry === true);
+            visibilityMode === 'pointer'
+                ? !(opts && opts.disableGeometry === true)
+                : (visibilityMode === 'styleAndGeometry' && !(opts && opts.disableGeometry === true));
 
         if (useGeometry) {
             try {
@@ -17865,6 +25979,153 @@ const createDomHelpers = (function createDomHelpers(opts) {
         };
     }
 
+    function getVisibilityHintsInfo(el, _ctx, opts) {
+        // Deterministic, style-only visibility hints for triage.
+        // Does NOT decide eligibility; checks decide outcomes.
+        // Uses computedStyle() which is already scope-cached.
+
+        if (!isElement(el)) return {hints: [], metrics: {}, flags: ['notElement']};
+
+        // Cache per element per run
+        try {
+            if (__visibilityHintsCache && __visibilityHintsCache.has(el)) {
+                __perfInc('visibilityHints.hit');
+                const c = __visibilityHintsCache.get(el);
+                if (c && typeof c === 'object') {
+                    return {
+                        hints: Array.isArray(c.hints) ? c.hints.slice(0) : [],
+                        metrics: c.metrics && typeof c.metrics === 'object' ? {...c.metrics} : {},
+                        flags: Array.isArray(c.flags) ? c.flags.slice(0) : []
+                    };
+                }
+            }
+        } catch {
+            // ignore
+        }
+
+        __perfInc('visibilityHints.miss');
+
+        const hints = [];
+        const metrics = {};
+        const flags = [];
+
+        const cs = computedStyle(el) || {};
+
+        // opacity:0
+        try {
+            const raw = cs.opacity != null ? String(cs.opacity).trim() : '';
+            const op = raw ? Number.parseFloat(raw) : 1;
+            if (Number.isFinite(op)) metrics.opacity = op;
+            if (Number.isFinite(op) && op <= 0.0001) hints.push('opacityZero');
+        } catch {
+            flags.push('opacity-parse-failed');
+        }
+
+        // clip / clip-path
+        try {
+            const clip = cs.clip != null ? String(cs.clip).trim() : '';
+            const clipPath = cs.clipPath != null ? String(cs.clipPath).trim() : '';
+
+            const clipLow = clip.toLowerCase();
+            const clipPathLow = clipPath.toLowerCase();
+
+            if (clipLow && clipLow !== 'auto') {
+                // Detect common visually-hidden: rect(0,0,0,0)
+                const norm = clipLow.replace(/\s+/g, '');
+                if (norm.indexOf('rect(') !== -1 && norm.indexOf('rect(0') !== -1) hints.push('clipped');
+            }
+
+            if (clipPathLow && clipPathLow !== 'none') {
+                // Detect common visually-hidden: inset(50%) / inset(100%)
+                if (clipPathLow.indexOf('inset(') !== -1 && (clipPathLow.indexOf('50%') !== -1 || clipPathLow.indexOf('100%') !== -1)) {
+                    hints.push('clipped');
+                }
+            }
+
+            if (clip) metrics.clip = clip;
+            if (clipPath) metrics.clipPath = clipPath;
+        } catch {
+            flags.push('clip-parse-failed');
+        }
+
+        // zero-size + overflow hidden/clip
+        try {
+            const wv = cs.width != null ? String(cs.width).trim() : '';
+            const hv = cs.height != null ? String(cs.height).trim() : '';
+            const ov = cs.overflow != null ? String(cs.overflow).trim().toLowerCase() : '';
+
+            metrics.width = wv || null;
+            metrics.height = hv || null;
+            metrics.overflow = ov || null;
+
+            const isZeroW = wv === '0px' || wv === '0';
+            const isZeroH = hv === '0px' || hv === '0';
+            const hidesOverflow = ov === 'hidden' || ov === 'clip';
+            if ((isZeroW || isZeroH) && hidesOverflow) hints.push('zeroSizeOverflowHidden');
+        } catch {
+            flags.push('size-parse-failed');
+        }
+
+        // offscreen heuristic (string-based; no geometry)
+        try {
+            const pos = cs.position != null ? String(cs.position).trim().toLowerCase() : '';
+            const left = cs.left != null ? String(cs.left).trim().toLowerCase() : '';
+            const top = cs.top != null ? String(cs.top).trim().toLowerCase() : '';
+            const ti = cs.textIndent != null ? String(cs.textIndent).trim().toLowerCase() : '';
+
+            metrics.position = pos || null;
+            metrics.left = left || null;
+            metrics.top = top || null;
+            metrics.textIndent = ti || null;
+
+            const parsePx = (s) => {
+                if (!s || s === 'auto') return null;
+                const m = String(s).match(/-?\d+(\.\d+)?/);
+                if (!m) return null;
+                const n = Number.parseFloat(m[0]);
+                return Number.isFinite(n) ? n : null;
+            };
+
+            const l = parsePx(left);
+            const t = parsePx(top);
+            const ind = parsePx(ti);
+
+            if (pos === 'absolute' || pos === 'fixed') {
+                if ((l != null && l <= -5000) || (t != null && t <= -5000)) hints.push('offscreen');
+            }
+            if (ind != null && ind <= -5000) hints.push('offscreen');
+        } catch {
+            flags.push('offscreen-parse-failed');
+        }
+
+        // Dedupe hints, stable order
+        const order = ['opacityZero', 'offscreen', 'clipped', 'zeroSizeOverflowHidden'];
+        const seen = new Set();
+        const stable = [];
+        for (const k of order) {
+            if (hints.indexOf(k) !== -1 && !seen.has(k)) {
+                seen.add(k);
+                stable.push(k);
+            }
+        }
+
+        const out = {hints: stable, metrics, flags};
+
+        try {
+            if (__visibilityHintsCache) {
+                __visibilityHintsCache.set(el, {
+                    hints: stable.slice(0),
+                    metrics: {...metrics},
+                    flags: flags.slice(0)
+                });
+            }
+        } catch {
+            __perfInc('visibilityHints.nocache');
+        }
+
+        return out;
+    }
+
     // Back-compat: keep existing helper but implement via new name helper.
     function hasAccessibleName(el) {
         const info = getAccessibleNameInfo(el);
@@ -17892,8 +26153,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
             const tag = (el.tagName || '').toLowerCase();
 
-            const id = el.getAttribute('id');
-            if (id && id.trim()) inc(idCount, id.trim());
+            const elementId = el.getAttribute('id');
+            if (elementId && elementId.trim()) inc(idCount, elementId.trim());
 
             for (const a of ['data-testid', 'data-test', 'data-cy', 'data-qa']) {
                 const v = el.getAttribute(a);
@@ -17931,8 +26192,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
             const escapeAttrValue = __escapeAttrValue;
 
-            const id = el.getAttribute && el.getAttribute('id');
-            if (id && id.trim()) return '#' + cssEscapeIdent(id.trim());
+            const elementId = el.getAttribute && el.getAttribute('id');
+            if (elementId && elementId.trim()) return '#' + cssEscapeIdent(elementId.trim());
 
             for (const a of ['data-testid', 'data-test', 'data-cy', 'data-qa']) {
                 const v = el.getAttribute && el.getAttribute(a);
@@ -17989,9 +26250,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
             const tag = (el.tagName || '').toLowerCase();
 
             const uniqueIdSel = () => {
-                const id = el.getAttribute('id');
-                if (!id || !id.trim()) return null;
-                const v = id.trim();
+                const elementId = el.getAttribute('id');
+                if (!elementId || !elementId.trim()) return null;
+                const v = elementId.trim();
                 if (idx && (idx.idCount.get(v) || 0) === 1) return '#' + cssEscape(v);
                 return null;
             };
@@ -18295,7 +26556,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     let __contrastSharedCache = {};
     try {
-        // In Node/JSDOM tests, the harness sets global.window/global.document.
+        // In Node/JSDOM checks, the harness sets global.window/global.document.
         // The engine may instantiate helpers per rule without passing opts.window,
         // so we must be able to recover the stable realm window to share caches.
         const w =
@@ -18321,11 +26582,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
     };
 
     const contrast = createContrastHelpers(
-        {window: realmWindow || window, document, root},
+        {window: realmWindow || window, document, root, includeShadowDom, excludeSelectors},
         __contrastShared
     );
 
-    // Expose shared cache to rules (deterministic, in-memory only)
+    // Expose shared cache to checks (deterministic, in-memory only)
     contrast.sharedCache = __contrastShared.__contrastSharedCache;
 
     return {
@@ -18366,6 +26627,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
         // Role / focusability
         getRoleInfo,
         getFocusableInfo,
+        getVisibilityHintsInfo,
 
         getAttributeInfo,
 
@@ -18382,13 +26644,30 @@ const createDomHelpers = (function createDomHelpers(opts) {
 });
 
 // Inlined from src/core/dom-runner.js
-const runCore = (function runCore(pageUrl, contextSelector, engineOptions, runOnly, RULE_DEFS, RULE_IMPLS, ENGINE_TAG, SCHEMA_VERSION) {
+const runCore = (function runCore(pageUrl, contextSelector, engineOptions, runOnly, CHECK_DEFS, RULE_IMPLS, ENGINE_TAG, SCHEMA_VERSION, COMPOSITE_RULES) {
     const ctxSelector =
         (typeof contextSelector === 'string' && contextSelector.trim())
             ? contextSelector.trim()
             : null;
 
-    const policy = resolvePolicy(POLICY_CONTRACTS, engineOptions);
+    // Normalize contrast options without mutating caller-provided engineOptions.
+    function __normalizeContrastOptions(engineOptions2) {
+        const eo = engineOptions2 && typeof engineOptions2 === 'object' ? engineOptions2 : {};
+        const c = (eo.contrast && typeof eo.contrast === 'object') ? eo.contrast : {};
+        const mode = (c.mode === 'auditorAssist') ? 'auditorAssist' : 'strictConformance';
+        const rootCanvasFallback =
+            (typeof c.rootCanvasFallback === 'string' && c.rootCanvasFallback.trim())
+                ? c.rootCanvasFallback.trim()
+                : '#ffffff';
+        return { mode, rootCanvasFallback };
+    }
+
+    const engineOptionsResolved =
+        (engineOptions && typeof engineOptions === 'object')
+            ? { ...engineOptions, contrast: __normalizeContrastOptions(engineOptions) }
+            : { contrast: __normalizeContrastOptions(null) };
+
+    const policy = resolvePolicy(POLICY_CONTRACTS, engineOptionsResolved);
 
     const root =
         ctxSelector
@@ -18401,15 +26680,15 @@ const runCore = (function runCore(pageUrl, contextSelector, engineOptions, runOn
                 document.querySelector('html'));
 
 
-    const includeShadowDom = !!(engineOptions && engineOptions.includeShadowDom);
-    const excludeSelectors = normalizeSelectorList(engineOptions && engineOptions.excludeSelectors);
+    const includeShadowDom = !!(engineOptionsResolved && engineOptionsResolved.includeShadowDom);
+    const excludeSelectors = normalizeSelectorList(engineOptionsResolved && engineOptionsResolved.excludeSelectors);
 
     const url = pageUrl || (document.location && document.location.href) || null;
     const title = document.title || null;
     // Deterministic timestamp: only use host-provided value (no time-based logic).
     const timestamp =
-        (engineOptions && typeof engineOptions.timestamp === 'string' && engineOptions.timestamp.trim())
-            ? engineOptions.timestamp.trim()
+        (engineOptionsResolved && typeof engineOptionsResolved.timestamp === 'string' && engineOptionsResolved.timestamp.trim())
+            ? engineOptionsResolved.timestamp.trim()
             : null;
 
     const sharedHelpers = createDomHelpers({
@@ -18419,10 +26698,10 @@ const runCore = (function runCore(pageUrl, contextSelector, engineOptions, runOn
         includeShadowDom,
         excludeSelectors,
         // Optional perf counters (bench/debug only). Deterministic and per-run.
-        perfStats: !!(engineOptions && engineOptions.perfStats)
+        perfStats: !!(engineOptionsResolved && engineOptionsResolved.perfStats)
     });
 
-    const profileRules = !!(engineOptions && engineOptions.profileRules);
+    const profileRules = !!(engineOptionsResolved && engineOptionsResolved.profileRules);
     const ruleTimings = profileRules ? Object.create(null) : null;
 
     function nowMs() {
@@ -18460,7 +26739,7 @@ const runCore = (function runCore(pageUrl, contextSelector, engineOptions, runOn
 
         if (t === 'object') {
             const out = {};
-            const keys = Object.keys(v);
+            const keys = Object.keys(v).sort();
             // cap object keys
             const n = Math.min(keys.length, 50);
             for (let i = 0; i < n; i++) {
@@ -18477,19 +26756,19 @@ const runCore = (function runCore(pageUrl, contextSelector, engineOptions, runOn
 
     let probes = null;
     try {
-        const rawProbes = engineOptions && typeof engineOptions.probes === 'object' ? engineOptions.probes : null;
+        const rawProbes = engineOptionsResolved && typeof engineOptionsResolved.probes === 'object' ? engineOptionsResolved.probes : null;
         probes = rawProbes ? sanitizeProbeValue(rawProbes, 6) : null;
         if (!probes || typeof probes !== 'object' || Array.isArray(probes)) probes = null;
     } catch (e) {
         probes = null;
     }
 
-    const rulesResults = [];
+    const checksResults = [];
 
-    for (const def of RULE_DEFS) {
+    for (const def of CHECK_DEFS) {
         const t0 = ruleTimings ? nowMs() : 0;
-        const defResolved = resolveRuleDefI18n(def, engineOptions);
-        if (!ruleMatchesRunOnly(defResolved, runOnly)) continue;
+        const defResolved = resolveRuleDefI18n(def, engineOptionsResolved);
+        if (!ruleMatchesRunOnly(defResolved, runOnly, ENGINE_TAG)) continue;
 
         const implEntry = RULE_IMPLS[defResolved.ruleId];
         const impl = implEntry && typeof implEntry.run === 'function' ? implEntry.run : null;
@@ -18497,8 +26776,8 @@ const runCore = (function runCore(pageUrl, contextSelector, engineOptions, runOn
         if (typeof impl !== 'function') continue;
 
         const ruleConfig =
-            engineOptions && engineOptions.rules && engineOptions.rules[defResolved.ruleId]
-                ? engineOptions.rules[defResolved.ruleId]
+            engineOptionsResolved && engineOptionsResolved.rules && engineOptionsResolved.rules[defResolved.ruleId]
+                ? engineOptionsResolved.rules[defResolved.ruleId]
                 : null;
 
         const ctx = {
@@ -18510,7 +26789,7 @@ const runCore = (function runCore(pageUrl, contextSelector, engineOptions, runOn
             helpers: sharedHelpers,
             engineTag: ENGINE_TAG,
             contextSelector: ctxSelector,
-            engineOptions: (engineOptions && typeof engineOptions === 'object') ? engineOptions : {},
+            engineOptions: (engineOptionsResolved && typeof engineOptionsResolved === 'object') ? engineOptionsResolved : {},
 
             // Optional evidence channel provided by host app
             inputs: {
@@ -18529,9 +26808,9 @@ const runCore = (function runCore(pageUrl, contextSelector, engineOptions, runOn
                     outcome: 'cantTell',
                     occurrences: [],
                     error: String(err && err.message ? err.message : err),
-                    engineOptions: { locale: normalizeLocale(engineOptions && engineOptions.locale) }
+                    engineOptions: { ...(ctx.engineOptions || {}), locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale) }
                 };
-                rulesResults.push(normalizeRuleResult(defResolved, raw, SCHEMA_VERSION, policy, sharedHelpers));
+                checksResults.push(normalizeRuleResult(defResolved, raw, SCHEMA_VERSION, policy, sharedHelpers));
                 if (ruleTimings) ruleTimings[defResolved.ruleId] = (ruleTimings[defResolved.ruleId] || 0) + (nowMs() - t0);
                 continue;
             }
@@ -18540,9 +26819,9 @@ const runCore = (function runCore(pageUrl, contextSelector, engineOptions, runOn
                 const raw = {
                     outcome: 'notApplicable',
                     occurrences: [],
-                    engineOptions: { locale: normalizeLocale(engineOptions && engineOptions.locale) }
+                    engineOptions: { ...(ctx.engineOptions || {}), locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale) }
                 };
-                rulesResults.push(normalizeRuleResult(defResolved, raw, SCHEMA_VERSION, policy, sharedHelpers));
+                checksResults.push(normalizeRuleResult(defResolved, raw, SCHEMA_VERSION, policy, sharedHelpers));
                 if (ruleTimings) ruleTimings[defResolved.ruleId] = (ruleTimings[defResolved.ruleId] || 0) + (nowMs() - t0);
                 continue;
             }
@@ -18556,7 +26835,7 @@ const runCore = (function runCore(pageUrl, contextSelector, engineOptions, runOn
                 outcome: 'cantTell',
                 occurrences: [],
                 error: String(err && err.message ? err.message : err),
-                engineOptions: { locale: normalizeLocale(engineOptions && engineOptions.locale) }
+                engineOptions: { ...(ctx.engineOptions || {}), locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale) }
             };
         }
 
@@ -18565,17 +26844,287 @@ const runCore = (function runCore(pageUrl, contextSelector, engineOptions, runOn
             continue;
         }
         if (!result.engineOptions) {
-            result.engineOptions = { ...(ctx.engineOptions || {}), locale: normalizeLocale(engineOptions && engineOptions.locale) };
+            result.engineOptions = { ...(ctx.engineOptions || {}), locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale) };
         }
-        rulesResults.push(normalizeRuleResult(defResolved, result, SCHEMA_VERSION, policy, sharedHelpers));
+        checksResults.push(normalizeRuleResult(defResolved, result, SCHEMA_VERSION, policy, sharedHelpers));
         if (ruleTimings) ruleTimings[defResolved.ruleId] = (ruleTimings[defResolved.ruleId] || 0) + (nowMs() - t0);
     }
 
+    // =========================
+    // Composite rule aggregation (data-only rollups)
+    // =========================
+    const rulesResults = [];
+    try {
+        const composites = Array.isArray(COMPOSITE_RULES) ? COMPOSITE_RULES : [];
+
+        // Determine target conformance level from runOnly.tags (already normalized by caller)
+        const LEVEL_RANK = { A: 1, AA: 2, AAA: 3 };
+
+        function inferTargetLevelFromRunOnly(runOnly2) {
+            const tags = runOnly2 && Array.isArray(runOnly2.tags) ? runOnly2.tags : [];
+            // tags are already lowercase
+            if (tags.includes('wcag2aaa') || tags.includes('wcag22aaa') || tags.includes('wcag21aaa')) return 'AAA';
+            if (tags.includes('wcag2aa') || tags.includes('wcag22aa') || tags.includes('wcag21aa')) return 'AA';
+            if (tags.includes('wcag2a') || tags.includes('wcag22a') || tags.includes('wcag21a')) return 'A';
+            return null; // if not specified, don't filter composites (back-compat)
+        }
+
+        function normalizeLevel(s) {
+            const v = typeof s === 'string' ? s.trim().toUpperCase() : '';
+            return (v === 'A' || v === 'AA' || v === 'AAA') ? v : null;
+        }
+
+        function isAllowedByTargetLevel(compositeLevel, targetLevel) {
+            if (!targetLevel) return true;
+            const c = LEVEL_RANK[compositeLevel];
+            const t = LEVEL_RANK[targetLevel];
+            if (!c || !t) return false; // unknown level => safest: exclude
+            return c <= t;
+        }
+
+        const targetLevel = inferTargetLevelFromRunOnly(runOnly);
+
+        // Severity rollup (deterministic)
+        const SEVERITY_RANK = { minor: 1, moderate: 2, serious: 3, critical: 4 };
+
+        function normalizeSeverity(s) {
+            const v = typeof s === 'string' ? s.trim().toLowerCase() : '';
+            return SEVERITY_RANK[v] ? v : null;
+        }
+
+        function maxSeverity(a, b) {
+            if (!a) return b || null;
+            if (!b) return a || null;
+            return (SEVERITY_RANK[b] > SEVERITY_RANK[a]) ? b : a;
+        }
+
+        // Index atomic results by ruleId (deterministic)
+        const byRuleId = Object.create(null);
+        for (const rr of checksResults) {
+            if (rr && typeof rr === 'object' && typeof rr.ruleId === 'string' && rr.ruleId) {
+                byRuleId[rr.ruleId] = rr;
+            }
+        }
+
+        function isNonEmptyString(s) {
+            return typeof s === 'string' && !!s.trim();
+        }
+
+        function buildCompositeDef(entry) {
+            if (!entry || typeof entry !== 'object') return null;
+
+            const ruleId = isNonEmptyString(entry.id) ? entry.id.trim() : String(entry.id || '').trim();
+            if (!ruleId) return null;
+
+            const metaIn = (entry.meta && typeof entry.meta === 'object' && !Array.isArray(entry.meta)) ? entry.meta : {};
+
+            const titleKey = (typeof metaIn.titleKey === 'string' && metaIn.titleKey.trim()) ? metaIn.titleKey.trim() : '';
+            const descriptionKey = (typeof metaIn.descriptionKey === 'string' && metaIn.descriptionKey.trim()) ? metaIn.descriptionKey.trim() : '';
+
+            const tags = [];
+            tags.push(String(ENGINE_TAG || 'a11ycore').toLowerCase());
+            tags.push('composite');
+
+            const lvl = (typeof metaIn.level === 'string' ? metaIn.level.trim().toUpperCase() : '');
+            if (lvl === 'A') {
+                tags.push('wcag2a', 'wcag21a');
+            } else if (lvl === 'AA') {
+                tags.push('wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa');
+            } else if (lvl === 'AAA') {
+                tags.push('wcag2a', 'wcag2aa', 'wcag2aaa', 'wcag21a', 'wcag21aa', 'wcag21aaa');
+            }
+
+            const wcagSc = Array.isArray(metaIn.wcagSc) ? metaIn.wcagSc.map(String).map(s => s.trim()).filter(Boolean) : [];
+            // Build normativeMappings so downstream consumers (like adapters) can derive WCAG SC/level
+            const normativeMappingsFromMeta = wcagSc.map((sc) => {
+                const m = { standard: 'WCAG', requirement: sc };
+                if (lvl === 'A' || lvl === 'AA' || lvl === 'AAA') m.level = lvl;
+                return m;
+            });
+
+            const checksIds =
+                Array.isArray(entry.checksIds)
+                    ? entry.checksIds.map(String).map(s => s.trim()).filter(Boolean)
+                    : [];
+
+            return {
+                ruleId,
+                title: metaIn.title || ruleId,
+                description: metaIn.description || '',
+
+                i18n: (titleKey || descriptionKey) ? { titleKey: titleKey || '', descriptionKey: descriptionKey || '' } : null,
+
+                helpUrl: '',
+                tags,
+
+                normativeMappings: normativeMappingsFromMeta,
+
+                defaultSeverity: 'serious',
+                defaultConfidence: 'medium',
+                type: 'automatic',
+                coverage: null,
+
+                ruleInterfaceVersion: '1.0.0',
+                ruleVersion: '0.0.0',
+                normative: true,
+                atomic: false,
+                category: null,
+                standard: null,
+                applicability: '',
+                expectation: '',
+                references: [],
+                requirements: null,
+                mappings: null,
+
+                // optional catalog meta passthrough
+                data: {
+                    details: {
+                        kind: 'compositeRule',
+                        wcagSc,
+                        level: (typeof metaIn.level === 'string' && metaIn.level.trim()) ? metaIn.level.trim() : null
+                    }
+                },
+
+                __checksIds: checksIds
+            };
+        }
+
+        for (let i = 0; i < composites.length; i++) {
+            const entry = composites[i];
+            const cDef0 = buildCompositeDef(entry);
+            if (!cDef0) continue;
+
+            // Conformance-level gate: if scan is AA, suppress AAA composites even if tags match
+            const compositeLevel =
+                cDef0 &&
+                cDef0.data &&
+                cDef0.data.details &&
+                normalizeLevel(cDef0.data.details.level);
+
+            if (!isAllowedByTargetLevel(compositeLevel, targetLevel)) continue;
+
+            // Localize title/description (uses def.i18n.* keys)
+            const cDefResolved = resolveRuleDefI18n(cDef0, engineOptionsResolved);
+
+            // Apply same selection logic to composites
+            if (!ruleMatchesRunOnly(cDefResolved, runOnly, ENGINE_TAG)) continue;
+
+            const checksIds = Array.isArray(cDef0.__checksIds) ? cDef0.__checksIds : [];
+
+            // rollup metrics (stable order)
+            let failCount = 0;
+            let cantTellCount = 0;
+            let notApplicableCount = 0;
+            let passCount = 0;
+            let missingCount = 0;
+
+            const contributors = [];
+
+            let rolledFailSeverity = null;     // max severity among FAIL contributors
+            let rolledCantTellSeverity = null; // max severity among CANTTELL contributors (optional)
+
+            for (let j = 0; j < checksIds.length; j++) {
+                const tid = checksIds[j];
+                const child = tid ? byRuleId[tid] : null;
+
+                if (!child) {
+                    missingCount += 1;
+                    contributors.push({ testId: tid, outcome: 'missing' });
+                    continue;
+                }
+
+                const out = child.outcome;
+                const childSev = normalizeSeverity(child && child.severity);
+
+                contributors.push({ testId: tid, outcome: out, severity: childSev || null });
+
+                if (out === 'fail' && childSev) {
+                    rolledFailSeverity = maxSeverity(rolledFailSeverity, childSev);
+                } else if (out === 'cantTell' && childSev) {
+                    rolledCantTellSeverity = maxSeverity(rolledCantTellSeverity, childSev);
+                }
+
+                if (out === 'fail') failCount += 1;
+                else if (out === 'cantTell') cantTellCount += 1;
+                else if (out === 'notApplicable') notApplicableCount += 1;
+                else if (out === 'pass') passCount += 1;
+            }
+
+            // outcome precedence:
+            // fail if any fail
+            // cantTell if any cantTell OR missing and none fail
+            // notApplicable if all notApplicable (and there is at least one test)
+            // pass otherwise
+            let outcome = 'pass';
+            let reasonCode = 'composite.rollup.pass.otherwise';
+
+            if (failCount > 0) {
+                outcome = 'fail';
+                reasonCode = 'composite.rollup.fail.anyFail';
+            } else if (cantTellCount > 0) {
+                outcome = 'cantTell';
+                reasonCode = 'composite.rollup.cantTell.anyCantTell';
+            } else if (missingCount > 0) {
+                outcome = 'cantTell';
+                reasonCode = 'composite.rollup.cantTell.missingChild';
+            } else if (checksIds.length > 0 && notApplicableCount === checksIds.length) {
+                outcome = 'notApplicable';
+                reasonCode = 'composite.rollup.notApplicable.allInapplicable';
+            } else if (checksIds.length === 0) {
+                outcome = 'cantTell';
+                reasonCode = 'composite.rollup.cantTell.emptyComposite';
+            }
+
+            const raw = {
+                outcome,
+                occurrences: [],
+
+                // REQUIRED by your reporting schema (top-level)
+                summaryKey: 'Composite rule rollup',
+                i18nKey: 'a11ycore_composite_rollup_summary',
+                i18nParams: { reasonCode, testCount: String(checksIds.length) },
+
+                // REQUIRED by your reporting schema (machine-readable payload)
+                data: {
+                    details: {
+                        reasonCode,
+                        checksIds: checksIds.slice(),
+                        contributors,
+                        metrics: {
+                            failCount,
+                            cantTellCount,
+                            notApplicableCount,
+                            passCount,
+                            missingCount
+                        }
+                    }
+                },
+
+                engineOptions: {
+                    ...(engineOptionsResolved || {}),
+                    locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
+                }
+            };
+
+            // Promote composite severity based on contributors (deterministic).
+            // - If composite fails: use max severity among failing children.
+            // - If composite cantTell: use max severity among cantTell children (fallback to failing if you prefer).
+            if (outcome === 'fail' && rolledFailSeverity) {
+                raw.severity = rolledFailSeverity;
+            } else if (outcome === 'cantTell' && rolledCantTellSeverity) {
+                raw.severity = rolledCantTellSeverity;
+            }
+
+            rulesResults.push(normalizeRuleResult(cDefResolved, raw, SCHEMA_VERSION, policy, sharedHelpers));
+        }
+    } catch (e) {
+        // no-throws: omit rulesResults if anything goes wrong
+    }
 
     // Optional perf counters passthrough (only when enabled). Deterministic.
     let perfStats = null;
     try {
-        if (engineOptions && engineOptions.perfStats && sharedHelpers && typeof sharedHelpers.getPerfStats === 'function') {
+        if (engineOptionsResolved && engineOptionsResolved.perfStats && sharedHelpers && typeof sharedHelpers.getPerfStats === 'function') {
             perfStats = sharedHelpers.getPerfStats();
         }
     } catch (e) {
@@ -18583,7 +27132,7 @@ const runCore = (function runCore(pageUrl, contextSelector, engineOptions, runOn
     }
 
     if (ruleTimings) {
-        if (perfStats && engineOptions && engineOptions.profileRules) {
+        if (perfStats && engineOptionsResolved && engineOptionsResolved.profileRules) {
             perfStats.ruleTimings = ruleTimings; // (whatever your timing map is)
         }
     }
@@ -18595,11 +27144,22 @@ const runCore = (function runCore(pageUrl, contextSelector, engineOptions, runOn
         timestamp,
         perfStats,
         contextSelector: ctxSelector,
-        rules: rulesResults
+        checksResults,
+        rulesResults
     };
 });
 
-  return runCore(pageUrl, contextSelector, engineOptions, resolveEffectiveRunOnly(engineOptions, runOnly), RULE_DEFS, RULE_IMPLS, ENGINE_TAG, SCHEMA_VERSION);
+  return runCore(
+    pageUrl,
+    contextSelector,
+    engineOptions,
+    resolveEffectiveRunOnly(engineOptions, runOnly),
+    CHECK_DEFS,
+    RULE_IMPLS,
+    ENGINE_TAG,
+    SCHEMA_VERSION,
+    COMPOSITE_RULES
+  );
 }
 
 module.exports = {
@@ -18608,10 +27168,15 @@ module.exports = {
   DEFAULT_POLICY,
   POLICY_CONTRACTS,
   resolvePolicy,
-  RULE_DEFS,
-  getRuleDefById,
+  CHECK_DEFS,
+  TEST_DEFS,
+  COMPOSITE_RULES,
+  getCheckDefById,
+  getChecksCatalog,
   getRulesCatalog,
-  getRulesForRunOnly,
+  getCompositeRuleById,
+  getChecksForRunOnly,
+  getTestsForRunOnly,
   runDomRulesInPage,
   runa11yCoreInPage,
   __internal: { normalizeRuleResult }

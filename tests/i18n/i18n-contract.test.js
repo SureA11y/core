@@ -28,10 +28,10 @@ test('i18n contract: all rule results expose localized text and i18n metadata', 
         engineOptions: { locale: 'fr' }
     });
 
-    assert.ok(Array.isArray(result.rules), 'rules array exists');
-    assert.ok(result.rules.length > 0, 'at least one rule executed');
+    assert.ok(Array.isArray(result.checksResults), 'checks array exists');
+    assert.ok(result.checksResults.length > 0, 'at least one rule executed');
 
-    for (const rule of result.rules) {
+    for (const rule of result.checksResults) {
         // --- rule-level contract ---
         assert.ok(rule.ruleId, 'ruleId exists');
         assert.ok(VALID_OUTCOMES.has(rule.outcome), 'valid outcome');
@@ -69,13 +69,13 @@ test('result schema is stable', () => {
     const result = runa11yCoreOnHtml('<img src="x">');
     assert.deepStrictEqual(
         Object.keys(result).sort(),
-        ['contextSelector','engine','perfStats', 'rules','timestamp','title','url']
+        ['checksResults', 'contextSelector', 'engine', 'perfStats', 'rulesResults', 'timestamp', 'title', 'url']
     );
 });
 
-test('manual rules never return fail', () => {
+test('manual checks never return fail', () => {
     const result = runa11yCoreOnHtml('<img alt="">');
-    const manualRules = result.rules.filter(r => r.type === 'manual');
+    const manualRules = result.checksResults.filter(r => r.type === 'manual');
     for (const r of manualRules) {
         assert.notStrictEqual(r.outcome, 'fail');
     }

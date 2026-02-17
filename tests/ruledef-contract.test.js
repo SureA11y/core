@@ -7,7 +7,7 @@ const assert = require('node:assert/strict');
 // It doesn't try to unit-test build-core.js directly; it protects against
 // accidental rule metadata drift.
 
-test('RULE_DEFS contract invariants', () => {
+test('CHECK_DEFS contract invariants', () => {
   // eslint-disable-next-line global-require
   const core = require('../src/core');
 
@@ -17,10 +17,10 @@ test('RULE_DEFS contract invariants', () => {
   assert.equal(typeof core.SCHEMA_VERSION, 'string');
   assert.ok(core.SCHEMA_VERSION.length > 0);
 
-  assert.ok(Array.isArray(core.RULE_DEFS));
-  assert.ok(core.RULE_DEFS.length > 0);
+  assert.ok(Array.isArray(core.CHECK_DEFS));
+  assert.ok(core.CHECK_DEFS.length > 0);
 
-  for (const def of core.RULE_DEFS) {
+  for (const def of core.CHECK_DEFS) {
     assert.equal(typeof def.ruleId, 'string');
     assert.ok(def.ruleId.startsWith(core.ENGINE_TAG + '-'));
 
@@ -30,10 +30,6 @@ test('RULE_DEFS contract invariants', () => {
     assert.equal(typeof def.description, 'string');
     assert.equal(typeof def.helpUrl, 'string');
 
-    if (def.type === 'manual') {
-      assert.equal(def.normativeMappings.length, 0, `${def.ruleId} is manual, so normativeMappings must be empty`);
-    }
-
     assert.ok(Array.isArray(def.tags));
     assert.ok(def.tags.includes(core.ENGINE_TAG), `${def.ruleId} must include ENGINE_TAG in tags`);
     // Build-time normalization guarantees lowercase
@@ -42,11 +38,6 @@ test('RULE_DEFS contract invariants', () => {
     assert.ok(Array.isArray(def.normativeMappings), `${def.ruleId} normativeMappings must be an array`);
     for (const m of def.normativeMappings) {
       assert.ok(m && typeof m === 'object' && !Array.isArray(m), `${def.ruleId} normativeMappings entries must be plain objects`);
-    }
-
-    assert.ok(Array.isArray(def.informativeReferences), `${def.ruleId} informativeReferences must be an array`);
-    for (const r of def.informativeReferences) {
-      assert.ok(r && typeof r === 'object' && !Array.isArray(r), `${def.ruleId} informativeReferences entries must be plain objects`);
     }
 
     assert.ok(['automatic', 'manual'].includes(def.type));
@@ -80,20 +71,19 @@ test('RULE_DEFS contract invariants', () => {
   }
 });
 
-test('getRulesCatalog includes contract fields', () => {
+test('getChecksCatalog includes contract fields', () => {
   // eslint-disable-next-line global-require
   const core = require('../src/core');
 
-  const catalog = core.getRulesCatalog();
+  const catalog = core.getChecksCatalog();
   assert.ok(Array.isArray(catalog));
-  assert.ok(catalog.length === core.RULE_DEFS.length);
+  assert.ok(catalog.length === core.CHECK_DEFS.length);
 
   const first = catalog[0];
   assert.ok(first);
   assert.equal(typeof first.ruleId, 'string');
 
   assert.ok(Array.isArray(first.normativeMappings));
-  assert.ok(Array.isArray(first.informativeReferences));
 
   // Spot-check a few fields are present in catalog entries
   assert.equal(typeof first.ruleInterfaceVersion, 'string');

@@ -210,6 +210,15 @@ module.exports = {
     "a11ycore_contrastComputable_cantTell_bgImageOrGradient":
         'Contrast is not computable because the background uses an image or gradient ({{blockerProperty}}={{blockerValue}}).',
 
+    "a11ycore_contrastComputable_cantTell_bgImage":
+        'Contrast is not computable because the background uses an image ({{blockerProperty}}={{blockerValue}}).',
+
+    "a11ycore_contrastComputable_cantTell_bgGradient":
+        'Contrast is not computable because the background uses a gradient ({{blockerProperty}}={{blockerValue}}).',
+
+    "a11ycore_contrastComputable_cantTell_bgImageAndGradient":
+        'Contrast is not computable because the background uses an image and a gradient ({{blockerProperty}}={{blockerValue}}).',
+
     "a11ycore_contrastComputable_cantTell_mixBlendMode":
         'Contrast is not computable because mix-blend-mode is used ({{blockerProperty}}={{blockerValue}}).',
 
@@ -224,6 +233,12 @@ module.exports = {
 
     "a11ycore_contrastComputable_cantTell_engineFailure":
         'Contrast computability could not be determined due to an internal engine error ({{reasonCode}}).',
+
+    "a11ycore_contrastComputable_cantTell_backdropFilter":
+        'Contrast is not computable because backdrop-filter is used ({{blockerProperty}}={{blockerValue}}).',
+
+    "a11ycore_contrastComputable_cantTell_filterOrBackdropFilter":
+        'Contrast is not computable because filter is used ({{blockerProperty}}={{blockerValue}}).',
 
 // --- DOM Contrast: AA minimum (1.4.3)
     "a11ycore_contrastMinimum_title": 'Text meets minimum color contrast (AA)',
@@ -314,17 +329,199 @@ module.exports = {
     "a11ycore_contrastEnhanced_pass_allTextMeetsThreshold": "All computable text meets enhanced contrast (AAA).",
     "a11ycore_contrastMinimum_pass_allTextMeetsThreshold": "All computable text meets minimum contrast (AA).",
 
+    "a11ycore_contrastComputable_cantTell_notComputable":
+        "Contrast could not be computed for this text ({{reasonCode}}).",
+
     // Title & description
-    a11ycore_roleImg_textAlternativePresent_title:
+    "a11ycore_roleImg_textAlternativePresent_title":
         '[role="img"] must have an accessible text alternative',
 
-    a11ycore_roleImg_textAlternativePresent_description:
+    "a11ycore_roleImg_textAlternativePresent_description":
         'Checks that elements with role="img" provide an accessible text alternative using aria-label or aria-labelledby.',
 
     // Failure summary & hint
-    a11ycore_roleImg_textAlternativePresent_summary_fail:
+    "a11ycore_roleImg_textAlternativePresent_summary_fail":
         'The element with role="img" does not have an accessible text alternative.',
 
-    a11ycore_roleImg_textAlternativePresent_hint_fail:
-        'Provide a text alternative using aria-label, or aria-labelledby that references non-empty text.'
-};
+    "a11ycore_roleImg_textAlternativePresent_hint_fail":
+        'Provide a text alternative using aria-label, or aria-labelledby that references non-empty text.',
+
+    // --- Target Size (Minimum) — WCAG 2.5.8 (AA)
+    "a11ycore_targetSizeMinimum_title": "Pointer targets must be at least 24x24px large, or leave sufficient distance to other targets",
+    "a11ycore_targetSizeMinimum_description": "Checks that pointer-operable targets have an effective hit region of at least 24 by 24 CSS pixels, or meet an allowed exception (e.g. sufficient spacing).",
+
+    "a11ycore_targetSizeMinimum_summary_fail": "One or more pointer targets are smaller than 24×24 CSS px and are too close to another target.",
+    "a11ycore_targetSizeMinimum_hint_fail": "Increase the target size to at least 24×24 CSS px or add sufficient spacing from neighboring targets.",
+
+    "a11ycore_targetSizeMinimum_notApplicable_noTargets": "No pointer-operable targets were eligible for evaluation.",
+    "a11ycore_targetSizeMinimum_pass_allOk": "All eligible pointer targets meet the minimum size or a permitted exception.",
+
+// --- a11ycore-aria-hidden-focus
+    "a11ycore_ariaHidden_focus_title": "ARIA hidden elements must not be focusable",
+    "a11ycore_ariaHidden_focus_description":
+        "Checks that aria-hidden=\"true\" elements are not focusable and do not contain focusable descendants.",
+
+    "a11ycore_ariaHidden_focus_summary_fail_desc":
+        "aria-hidden {{element}} contains {{focusableCount}} focusable element(s).",
+    "a11ycore_ariaHidden_focus_summary_fail_self":
+        "aria-hidden {{element}} is focusable ({{focusableCount}} focusable element(s)).",
+    "a11ycore_ariaHidden_focus_summary_fail_self_and_desc":
+        "aria-hidden {{element}} is focusable and contains {{descendantFocusableCount}} focusable descendant(s) ({{focusableCount}} focusable element(s) total).",
+
+    "a11ycore_ariaHidden_focus_hint_fail":
+        "Remove focusability from descendants or remove aria-hidden; ensure focus and accessibility trees stay aligned.",
+
+// --- a11ycore-css-hidden-focus
+    "a11ycore_cssHidden_focus_title": "Focusable elements must not be visually hidden",
+    "a11ycore_cssHidden_focus_description":
+        "Checks that keyboard-focusable elements are not visually hidden by CSS techniques that can leave them in the tab order.",
+
+    "a11ycore_cssHidden_focus_summary_cantTell":
+        "Focusable {{element}} is visually hidden ({{visibilityHints}}).",
+    "a11ycore_cssHidden_focus_hint_cantTell":
+        "Make the element visible when it can receive keyboard focus, or remove it from the tab order until it is visible.",
+
+    "a11ycore_linkNamePresent_title": "Links have an accessible name",
+    "a11ycore_linkNamePresent_description": "Checks that links expose a non-empty accessible name.",
+    "a11ycore_linkNamePresent_summary_fail": "This link has no accessible name.",
+    "a11ycore_linkNamePresent_hint_fail": "Provide link text or an accessible-name mechanism (for example aria-label) so assistive technologies can identify the link.",
+    "a11ycore_buttonNamePresent_title": "Buttons have an accessible name",
+    "a11ycore_buttonNamePresent_description": "Checks that buttons expose a non-empty accessible name.",
+    "a11ycore_buttonNamePresent_summary_fail": "This button has no accessible name.",
+    "a11ycore_buttonNamePresent_hint_fail": "Provide visible button text or a programmatic accessible-name mechanism (for example aria-label) so assistive technologies can identify the button.",
+
+    "a11ycore_binaryControlNamePresent_title": "Binary controls have an accessible name",
+    "a11ycore_binaryControlNamePresent_description": "Checks that checkbox, radio, and switch controls expose a non-empty accessible name.",
+    "a11ycore_binaryControlNamePresent_summary_fail": "This control has no accessible name.",
+    "a11ycore_binaryControlNamePresent_hint_fail": "Provide a label, aria-label, aria-labelledby, or other accessible-name mechanism so assistive technologies can identify the control.",
+    "a11ycore_comboboxNamePresent_title": "Comboboxes have an accessible name",
+    "a11ycore_comboboxNamePresent_description": "Checks that elements with role=\"combobox\" expose a non-empty accessible name.",
+    "a11ycore_comboboxNamePresent_summary_fail": "This combobox has no accessible name.",
+    "a11ycore_comboboxNamePresent_hint_fail": "Provide aria-label or aria-labelledby (preferred), or ensure the element has visible text that is not hidden from assistive technologies.",
+    "a11ycore_dialogNamePresent_title": "Dialogs have an accessible name",
+    "a11ycore_dialogNamePresent_description": "Checks that elements with role=\"dialog\" or role=\"alertdialog\" expose a non-empty accessible name.",
+    "a11ycore_dialogNamePresent_summary_fail": "This dialog has no accessible name.",
+    "a11ycore_dialogNamePresent_hint_fail": "Provide aria-labelledby (preferred) or aria-label so assistive technologies can announce the dialog.",
+    "a11ycore_menuitemNamePresent_title": "Menu items have an accessible name",
+    "a11ycore_menuitemNamePresent_description": "Checks that menu items (role=\"menuitem*\", including checkbox/radio variants) expose a non-empty accessible name.",
+    "a11ycore_menuitemNamePresent_summary_fail": "This menu item has no accessible name.",
+    "a11ycore_menuitemNamePresent_hint_fail": "Provide visible text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.",
+    "a11ycore_tabNamePresent_title": "Tabs have an accessible name",
+    "a11ycore_tabNamePresent_description": "Checks that elements with role=\"tab\" expose a non-empty accessible name.",
+    "a11ycore_tabNamePresent_summary_fail": "This tab has no accessible name.",
+    "a11ycore_tabNamePresent_hint_fail": "Provide tab text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.",
+    "a11ycore_sliderNamePresent_title": "Sliders have an accessible name",
+    "a11ycore_sliderNamePresent_description": "Checks that sliders (input[type=\"range\"] and role=\"slider\") expose a non-empty accessible name.",
+    "a11ycore_sliderNamePresent_summary_fail": "This slider has no accessible name.",
+    "a11ycore_sliderNamePresent_hint_fail": "Provide a label, aria-label, or aria-labelledby so assistive technologies can identify the slider.",
+    "a11ycore_textboxNamePresent_title": "Textboxes have an accessible name",
+    "a11ycore_textboxNamePresent_description": "Checks that elements with role=\"textbox\" expose a non-empty accessible name.",
+    "a11ycore_textboxNamePresent_summary_fail": "This textbox has no accessible name.",
+    "a11ycore_textboxNamePresent_hint_fail": "Provide aria-label or aria-labelledby (preferred), or ensure the textbox has visible text that is not hidden from assistive technologies.",
+    "a11ycore_searchboxNamePresent_title": "Searchboxes have an accessible name",
+    "a11ycore_searchboxNamePresent_description": "Checks that elements with role=\"searchbox\" expose a non-empty accessible name.",
+    "a11ycore_searchboxNamePresent_summary_fail": "This searchbox has no accessible name.",
+    "a11ycore_searchboxNamePresent_hint_fail": "Provide aria-label or aria-labelledby (preferred), or ensure the searchbox has visible text that is not hidden from assistive technologies.",
+    "a11ycore_spinbuttonNamePresent_title": "Spinbuttons have an accessible name",
+    "a11ycore_spinbuttonNamePresent_description": "Checks that elements with role=\"spinbutton\" expose a non-empty accessible name.",
+    "a11ycore_spinbuttonNamePresent_summary_fail": "This spinbutton has no accessible name.",
+    "a11ycore_spinbuttonNamePresent_hint_fail": "Provide aria-label or aria-labelledby (preferred), or ensure the spinbutton has visible text that is not hidden from assistive technologies.",
+    "a11ycore_listboxNamePresent_title": "Listboxes have an accessible name",
+    "a11ycore_listboxNamePresent_description": "Checks that elements with role=\"listbox\" expose a non-empty accessible name.",
+    "a11ycore_listboxNamePresent_summary_fail": "This listbox has no accessible name.",
+    "a11ycore_listboxNamePresent_hint_fail": "Provide aria-label or aria-labelledby (preferred), or ensure the listbox has visible text that is not hidden from assistive technologies.",
+    "a11ycore_optionNamePresent_title": "Options have an accessible name",
+    "a11ycore_optionNamePresent_description": "Checks that elements with role=\"option\" expose a non-empty accessible name.",
+    "a11ycore_optionNamePresent_summary_fail": "This option has no accessible name.",
+    "a11ycore_optionNamePresent_hint_fail": "Provide option text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.",
+    "a11ycore_treeitemNamePresent_title": "Tree items have an accessible name",
+    "a11ycore_treeitemNamePresent_description": "Checks that elements with role=\"treeitem\" expose a non-empty accessible name.",
+    "a11ycore_treeitemNamePresent_summary_fail": "This tree item has no accessible name.",
+    "a11ycore_treeitemNamePresent_hint_fail": "Provide tree item text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.",
+    "a11ycore_ariaRoleNamePresent_title": "ARIA widget/container roles have an accessible name",
+    "a11ycore_ariaRoleNamePresent_description": "Checks that selected ARIA widget/container roles expose a non-empty accessible name.",
+    "a11ycore_ariaRoleNamePresent_summary_fail": "This element has no accessible name.",
+    "a11ycore_ariaRoleNamePresent_hint_fail": "Provide aria-label or aria-labelledby (preferred), or a non-empty title attribute.",
+
+    /* =========================
+     * Composite rule summaries
+     * ========================= */
+    "a11ycore_composite_rollup_summary":
+    "Composite rule result: {{reasonCode}} ({{testCount}} checks)",
+
+        /* =========================
+         * WCAG 1.1.1 – Non-text content
+         * ========================= */
+        "catalog.rules.wcag_111_non_text_content.title":
+    "Non-text content: text alternatives",
+        "catalog.rules.wcag_111_non_text_content.description":
+    "Rollup of checks ensuring non-text content has an appropriate text alternative.",
+
+        /* =========================
+         * WCAG 1.2.1 – Audio-only / Video-only
+         * ========================= */
+        "catalog.rules.wcag_121_prerecorded_transcript.title":
+    "Audio-only and video-only (prerecorded): transcript",
+        "catalog.rules.wcag_121_prerecorded_transcript.description":
+    "Rollup of checks for transcript availability for prerecorded audio-only or video-only media.",
+
+        /* =========================
+         * WCAG 1.4.3 – Contrast (Minimum)
+         * ========================= */
+        "catalog.rules.wcag_143_contrast_minimum.title":
+    "Contrast: minimum",
+        "catalog.rules.wcag_143_contrast_minimum.description":
+    "Rollup of checks for minimum text contrast.",
+
+        /* =========================
+         * WCAG 1.4.6 – Contrast (Enhanced)
+         * ========================= */
+        "catalog.rules.wcag_146_contrast_enhanced.title":
+    "Contrast: enhanced",
+        "catalog.rules.wcag_146_contrast_enhanced.description":
+    "Rollup of checks for enhanced text contrast.",
+
+        /* =========================
+         * WCAG 2.4.2 – Page titled
+         * ========================= */
+        "catalog.rules.wcag_242_page_titled.title":
+    "Page titled",
+        "catalog.rules.wcag_242_page_titled.description":
+    "Rollup of checks ensuring documents have a meaningful page title.",
+
+        /* =========================
+         * WCAG 2.4.7 – Focus visible
+         * ========================= */
+        "catalog.rules.wcag_247_focus_visible.title":
+    "Focus visible",
+        "catalog.rules.wcag_247_focus_visible.description":
+    "Rollup of checks ensuring keyboard focus is not hidden and remains perceivable.",
+
+        /* =========================
+         * WCAG 2.5.8 – Target size (Minimum)
+         * ========================= */
+        "catalog.rules.wcag_258_target_size_minimum.title":
+    "Target size: minimum",
+        "catalog.rules.wcag_258_target_size_minimum.description":
+    "Rollup of checks ensuring pointer targets meet minimum size requirements.",
+
+        /* =========================
+         * WCAG 3.1.1 – Language of page
+         * ========================= */
+        "catalog.rules.wcag_311_language_of_page.title":
+    "Language of page",
+        "catalog.rules.wcag_311_language_of_page.description":
+    "Rollup of checks ensuring the page language is specified.",
+
+        /* =========================
+         * WCAG 4.1.2 – Name, role, value
+         * ========================= */
+        "catalog.rules.wcag_412_name.title":
+    "Name, role, value: accessible name",
+        "catalog.rules.wcag_412_name.description":
+    "Rollup of checks that common interactive elements expose a non-empty accessible name.",
+    "a11ycore_labelInName_title": "Label in Name: accessible name contains visible text",
+    "a11ycore_labelInName_description": "Checks that when a control has a visible text label, the accessible name contains that visible label text (WCAG 2.5.3).",
+    "a11ycore_labelInName_summary_fail":  "{{element}}: visible label \"{{visibleLabel}}\" (from {{labelSource}}) is not included in the accessible name (from {{nameMechanism}}).",
+    "a11ycore_labelInName_hint_fail": "Update aria-label/aria-labelledby (or the visible label text) so the accessible name includes the visible label wording."
+}

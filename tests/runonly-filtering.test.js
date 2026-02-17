@@ -6,7 +6,7 @@ const { runa11yCoreOnHtml } = require('./helpers/runa11yCoreOnHtml');
 const { assertRule } = require('./helpers/assertRule');
 
 /**
- * These tests lock down runOnly behavior for both:
+ * These checks lock down runOnly behavior for both:
  * - legacy shape: { type:'tag', values:[...] }
  * - modern shape: { tags/includeRuleIds/excludeRuleIds }
  *
@@ -14,7 +14,7 @@ const { assertRule } = require('./helpers/assertRule');
  *   runa11yCoreOnHtml(html, { runOnly, engineOptions, contextSelector, excludeSelectors })
  */
 
-test('runOnly: legacy tag filter includes only matching-tag rules', () => {
+test('runOnly: legacy tag filter includes only matching-tag checks', () => {
   const html = `<!doctype html><html><body><img src="x.png"></body></html>`;
 
   // img-alt-attr-present is tagged wcag2a
@@ -23,18 +23,18 @@ test('runOnly: legacy tag filter includes only matching-tag rules', () => {
   assertRule(result, 'a11ycore-img-alt-present', 'fail', { minOccurrences: 1 });
 
   // best-practice rule should not run when filtering to wcag2a
-  const noopener = result.rules.find((r) => r.ruleId === 'a11ycore-links-target-blank-noopener');
+  const noopener = result.checksResults.find((r) => r.ruleId === 'a11ycore-links-target-blank-noopener');
   assert.ok(!noopener, 'best-practice rule should not be present when filtering to wcag2a');
 });
 
-test('runOnly: modern tags filter includes only matching-tag rules', () => {
+test('runOnly: modern tags filter includes only matching-tag checks', () => {
   const html = `<!doctype html><html><body><img src="x.png"></body></html>`;
 
   const result = runa11yCoreOnHtml(html, { runOnly: { tags: ['wcag2a'] } });
 
   assertRule(result, 'a11ycore-img-alt-present', 'fail', { minOccurrences: 1 });
 
-  const noopener = result.rules.find((r) => r.ruleId === 'a11ycore-links-target-blank-noopener');
+  const noopener = result.checksResults.find((r) => r.ruleId === 'a11ycore-links-target-blank-noopener');
   assert.ok(!noopener, 'best-practice rule should not be present when filtering to wcag2a');
 });
 
@@ -50,8 +50,8 @@ test('runOnly: includeRuleIds allows selecting a single rule', () => {
   // Only the included rule should run
   assertRule(result, 'a11ycore-form-control-programmatic-label-present', 'fail', { minOccurrences: 1 });
 
-  const anyOther = result.rules.find((r) => r.ruleId !== 'a11ycore-form-control-programmatic-label-present');
-  assert.ok(!anyOther, 'no other rules should be present when includeRuleIds is set');
+  const anyOther = result.checksResults.find((r) => r.ruleId !== 'a11ycore-form-control-programmatic-label-present');
+  assert.ok(!anyOther, 'no other checks should be present when includeRuleIds is set');
 });
 
 test('runOnly: excludeRuleIds blocks a rule even if tags match', () => {
@@ -64,7 +64,7 @@ test('runOnly: excludeRuleIds blocks a rule even if tags match', () => {
     }
   });
 
-  const blocked = result.rules.find((r) => r.ruleId === 'a11ycore-img-alt-present');
+  const blocked = result.checksResults.find((r) => r.ruleId === 'a11ycore-img-alt-present');
   assert.ok(!blocked, 'excluded rule should not be present');
 });
 

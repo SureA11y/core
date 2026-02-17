@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Fixture — a11ycore-link-name-present</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, sans-serif; line-height: 1.4; padding: 24px; }
+    section { margin: 20px 0; padding: 12px; border: 1px solid #ddd; border-radius: 12px; }
+    code { background: #f6f6f6; padding: 2px 6px; border-radius: 6px; }
+    .note { font-size: 0.95rem; color: #444; }
+  </style>
+</head>
+<body>
+  <h1>Fixture — <code>a11ycore-link-name-present</code></h1>
+  <p class="note">
+    This page includes cases that should <strong>PASS</strong> and <strong>FAIL</strong> for the rule.
+    Run your engine over this HTML and compare results to the expectations in each section.
+  </p>
+
+  <!-- ===================== PASS CASES ===================== -->
+  <h2>PASS cases</h2>
+
+  <section id="pass-text-link">
+    <h3>PASS: Text content provides name</h3>
+    <p><a href="/docs">Read more</a></p>
+    <p class="note">Expected: PASS (link text is the accessible name).</p>
+  </section>
+
+  <section id="pass-aria-label">
+    <h3>PASS: aria-label provides name</h3>
+    <p><a href="/search" aria-label="Search">🔍</a></p>
+    <p class="note">Expected: PASS.</p>
+  </section>
+
+  <section id="pass-aria-labelledby">
+    <h3>PASS: aria-labelledby provides name</h3>
+    <p>
+      <span id="lbl-download">Download report</span>
+      <a href="/download" aria-labelledby="lbl-download">⬇️</a>
+    </p>
+    <p class="note">Expected: PASS.</p>
+  </section>
+
+  <section id="pass-role-link-text">
+    <h3>PASS: role="link" with text content</h3>
+    <p><span role="link" tabindex="0">Open settings</span></p>
+    <p class="note">Expected: PASS (content-text fallback should provide the name).</p>
+  </section>
+
+  <section id="pass-aria-hidden-icon">
+    <h3>PASS: Visible text + aria-hidden icon</h3>
+    <p>
+      <a href="/cart">
+        <span aria-hidden="true">🛒</span>
+        View cart
+      </a>
+    </p>
+    <p class="note">Expected: PASS (aria-hidden text should be ignored; "View cart" remains).</p>
+  </section>
+
+  <section id="pass-hidden-descendant">
+    <h3>PASS: Text + hidden descendant</h3>
+    <p>
+      <a href="/profile">
+        Profile
+        <span hidden>(hidden extra)</span>
+      </a>
+    </p>
+    <p class="note">Expected: PASS (hidden descendant text should be ignored).</p>
+  </section>
+
+  <!-- Optional: image map area alt (depends on your getAccessibleNameInfo support for <area alt>) -->
+  <section id="pass-area-alt">
+    <h3>PASS (if supported): &lt;area href&gt; with alt</h3>
+    <p class="note">
+      Expected: PASS if your accessible-name helper includes <code>alt</code> for <code>&lt;area&gt;</code>.
+      If not supported yet, your rule may flag this as FAIL.
+    </p>
+    <img
+      src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='80'><rect width='300' height='80' fill='%23eaeaea'/><text x='12' y='45' font-family='Arial' font-size='16'>Image map placeholder</text></svg>"
+      alt="placeholder"
+      usemap="#map1"
+    />
+    <map name="map1" id="map1">
+      <area shape="rect" coords="0,0,150,80" href="/left" alt="Left region link" />
+      <area shape="rect" coords="150,0,300,80" href="/right" alt="Right region link" />
+    </map>
+  </section>
+
+  <!-- ===================== FAIL CASES ===================== -->
+  <h2>FAIL cases</h2>
+
+  <section id="fail-empty-anchor">
+    <h3>FAIL: Empty link (no text, no aria)</h3>
+    <p><a href="/empty"></a></p>
+    <p class="note">Expected: FAIL (name missing).</p>
+  </section>
+
+  <section id="fail-aria-label-empty">
+    <h3>FAIL: aria-label present but empty</h3>
+    <p><a href="/empty-label" aria-label=""></a></p>
+    <p class="note">Expected: FAIL (name missing).</p>
+  </section>
+
+  <section id="fail-only-aria-hidden">
+    <h3>FAIL: Only aria-hidden text inside</h3>
+    <p>
+      <a href="/icon-only">
+        <span aria-hidden="true">Home</span>
+      </a>
+    </p>
+    <p class="note">Expected: FAIL (content is aria-hidden; no remaining name).</p>
+  </section>
+
+  <section id="fail-role-link-no-name">
+    <h3>FAIL: role="link" focusable but no name</h3>
+    <p><span role="link" tabindex="0"></span></p>
+    <p class="note">Expected: FAIL.</p>
+  </section>
+
+  <!-- If your engine includes eligibility filtering, this may be excluded. Keep as a manual spot-check. -->
+  <section id="note-hidden-inert">
+    <h3>Note: Eligibility edge case (may be excluded)</h3>
+    <p class="note">
+      If your engine marks inert/non-composed nodes ineligible, this might not be applicable.
+      If it remains eligible due to focusability/IDREF rules, it should be evaluated accordingly.
+    </p>
+    <div inert>
+      <a href="/inert">Inert link text</a>
+    </div>
+  </section>
+
+</body>
+</html>

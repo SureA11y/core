@@ -19,7 +19,6 @@ const meta = {
   normativeMappings: [
     { standard: 'WCAG', version: '2.2', requirement: '1.1.1', title: 'Non-text Content', conformanceLevel: 'A' }
   ],
-  // informativeReferences: [ ... ],
   defaultSeverity: 'serious',
   category: 'perceivable',
   type: 'automatic',

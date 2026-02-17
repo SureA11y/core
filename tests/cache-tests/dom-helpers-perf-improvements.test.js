@@ -7,8 +7,8 @@ const { JSDOM } = require('jsdom');
 const { createDomHelpers } = require('../../src/core/dom-helpers.js');
 
 /**
- * Perf-oriented "tripwire" tests for dom-helpers changes.
- * These tests lock perf-related behaviors using either:
+ * Perf-oriented "tripwire" checks for dom-helpers changes.
+ * These checks lock perf-related behaviors using either:
  * - opts.perfStats counters (preferred), or
  * - coarse DOM API call counting (fallback).
  *

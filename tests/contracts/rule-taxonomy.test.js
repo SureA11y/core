@@ -6,14 +6,14 @@ const assert = require('node:assert');
 // This test validates the rule-tag taxonomy described in A11yCore-Rule-Taxonomy.md.
 //
 // Notes:
-// - The engine runs `npm run build` before tests, so src/core.js is generated.
-// - We validate *catalog* entries (RULE_DEFS), not implementation modules.
+// - The engine runs `npm run build` before checks, so src/core.js is generated.
+// - We validate *catalog* entries (CHECK_DEFS), not implementation modules.
 
-const { RULE_DEFS } = require('../../src/core.js');
+const { CHECK_DEFS } = require('../../src/core.js');
 
 const WORKFLOW_TAGS = ['automatic', 'manual'];
 
-// Content categories (exactly one for WCAG-mapped rules)
+// Content categories (exactly one for WCAG-mapped checks)
 const CATEGORY_TAGS = ['nontext', 'forms', 'media', 'structure', 'navigation'];
 
 // Tags that represent outcomes (forbidden as rule tags)
@@ -44,9 +44,9 @@ function xor(a, b) {
 }
 
 test('rule taxonomy: tags are lowercase + workflow tags are well-formed', () => {
-  assert.ok(Array.isArray(RULE_DEFS), 'RULE_DEFS must be an array');
+  assert.ok(Array.isArray(CHECK_DEFS), 'CHECK_DEFS must be an array');
 
-  for (const def of RULE_DEFS) {
+  for (const def of CHECK_DEFS) {
     const tags = normalizeTags(def);
 
     // 1) tags must be lowercase (engine already lowercases at build time; enforce anyway)
@@ -76,8 +76,8 @@ test('rule taxonomy: tags are lowercase + workflow tags are well-formed', () => 
   }
 });
 
-test('rule taxonomy: WCAG-mapped rules must include SC tag + exactly one content category', () => {
-  for (const def of RULE_DEFS) {
+test('rule taxonomy: WCAG-mapped checks must include SC tag + exactly one content category', () => {
+  for (const def of CHECK_DEFS) {
     const tags = normalizeTags(def);
 
     if (!isWcagMapped(def)) {

@@ -4,22 +4,22 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const runDomRulesOnHtml = require('./helpers/runDomRulesOnHtml');
-const { getRuleDefById } = require('../src/index.js');
+const { getCheckDefById } = require('../src/index.js');
 
 /**
  * Helper: get a rule result by ruleId from domResult
  */
-function findRule(domResult, ruleId) {
-    const rules = domResult && Array.isArray(domResult.rules) ? domResult.rules : [];
-    return rules.find((r) => r && r.ruleId === ruleId) || null;
+function findCheck(domResult, ruleId) {
+    const checks = domResult && Array.isArray(domResult.checksResults) ? domResult.checksResults : [];
+    return checks.find((r) => r && r.ruleId === ruleId) || null;
 }
 
 /**
  * Helper: list ruleIds from domResult
  */
-function listRuleIds(domResult) {
-    const rules = domResult && Array.isArray(domResult.rules) ? domResult.rules : [];
-    return rules.map((r) => r.ruleId).filter(Boolean);
+function listCheckIds(domResult) {
+    const checks = domResult && Array.isArray(domResult.checksResults) ? domResult.checksResults : [];
+    return checks.map((r) => r.ruleId).filter(Boolean);
 }
 
 test('runOnly.includeRuleIds: runs ONLY the included rule IDs', () => {
@@ -33,11 +33,11 @@ test('runOnly.includeRuleIds: runs ONLY the included rule IDs', () => {
         }
     });
 
-    assert.deepEqual(listRuleIds(result), ['a11ycore-img-alt-present']);
-    assert.equal(findRule(result, 'a11ycore-img-alt-present')?.outcome, 'fail');
+    assert.deepEqual(listCheckIds(result), ['a11ycore-img-alt-present']);
+    assert.equal(findCheck(result, 'a11ycore-img-alt-present')?.outcome, 'fail');
 });
 
-test('runOnly.excludeRuleIds: exclude removes rules (exclude wins even if included)', () => {
+test('runOnly.excludeRuleIds: exclude removes checks (exclude wins even if included)', () => {
     const html = `<!doctype html><html><body>
     <img src="x.png">
   </body></html>`;
@@ -49,12 +49,12 @@ test('runOnly.excludeRuleIds: exclude removes rules (exclude wins even if includ
         }
     });
 
-    const ids = listRuleIds(result);
+    const ids = listCheckIds(result);
     assert.ok(ids.includes('a11ycore-img-alt-present'));
     assert.ok(!ids.includes('a11ycore-area-alt-present'));
 });
 
-test('runOnly.tags: only runs rules whose tags intersect the provided tags', () => {
+test('runOnly.tags: only runs checks whose tags intersect the provided tags', () => {
     const html = `<!doctype html><html><body>
     <img src="x.png">
     <input type="text">
@@ -66,13 +66,13 @@ test('runOnly.tags: only runs rules whose tags intersect the provided tags', () 
         }
     });
 
-    const ids = listRuleIds(result);
+    const ids = listCheckIds(result);
     assert.ok(ids.length > 0);
 
     // Every returned rule must have at least one of the requested tags.
     for (const id of ids) {
-        const def = getRuleDefById(id);
-        assert.ok(def, `Expected getRuleDefById(${id}) to return a definition`);
+        const def = getCheckDefById(id);
+        assert.ok(def, `Expected getCheckDefById(${id}) to return a definition`);
         const tags = Array.isArray(def.tags) ? def.tags : [];
         assert.ok(tags.includes('images'), `Expected ${id} to include tag "images"`);
     }
@@ -88,12 +88,12 @@ test('runOnly legacy shape: { type:"tag", values:[...] } still works', () => {
         runOnly: { type: 'tag', values: ['images'] }
     });
 
-    const ids = listRuleIds(result);
+    const ids = listCheckIds(result);
     assert.ok(ids.length > 0);
 
     for (const id of ids) {
-        const def = getRuleDefById(id);
-        assert.ok(def, `Expected getRuleDefById(${id}) to return a definition`);
+        const def = getCheckDefById(id);
+        assert.ok(def, `Expected getCheckDefById(${id}) to return a definition`);
         const tags = Array.isArray(def.tags) ? def.tags : [];
         assert.ok(tags.includes('images'), `Expected ${id} to include tag "images"`);
     }
@@ -113,7 +113,7 @@ test('runOnly include + tags: both must match (tags refine include list)', () =>
     });
 
     // Only the image rule should remain after tags filtering.
-    assert.deepEqual(listRuleIds(result), ['a11ycore-img-alt-present']);
+    assert.deepEqual(listCheckIds(result), ['a11ycore-img-alt-present']);
 });
 
 test('contextSelector limits scanning scope (image outside context => notApplicable)', () => {
@@ -127,8 +127,8 @@ test('contextSelector limits scanning scope (image outside context => notApplica
         runOnly: { includeRuleIds: ['a11ycore-img-alt-present'] }
     });
 
-    assert.deepEqual(listRuleIds(result), ['a11ycore-img-alt-present']);
-    assert.equal(findRule(result, 'a11ycore-img-alt-present')?.outcome, 'notApplicable');
+    assert.deepEqual(listCheckIds(result), ['a11ycore-img-alt-present']);
+    assert.equal(findCheck(result, 'a11ycore-img-alt-present')?.outcome, 'notApplicable');
 });
 
 test('engineOptions.excludeSelectors excludes subtrees (image inside excluded => notApplicable)', () => {
@@ -143,8 +143,8 @@ test('engineOptions.excludeSelectors excludes subtrees (image inside excluded =>
         runOnly: { includeRuleIds: ['a11ycore-img-alt-present'] }
     });
 
-    assert.deepEqual(listRuleIds(result), ['a11ycore-img-alt-present']);
-    assert.equal(findRule(result, 'a11ycore-img-alt-present')?.outcome, 'notApplicable');
+    assert.deepEqual(listCheckIds(result), ['a11ycore-img-alt-present']);
+    assert.equal(findCheck(result, 'a11ycore-img-alt-present')?.outcome, 'notApplicable');
 });
 
 test('contextSelector + excludeSelectors together: excluded inside context is ignored', () => {
@@ -164,5 +164,5 @@ test('contextSelector + excludeSelectors together: excluded inside context is ig
     });
 
     // The image in excluded subtree is ignored, but the second image should trigger the rule.
-    assert.equal(findRule(result, 'a11ycore-img-alt-present')?.outcome, 'fail');
+    assert.equal(findCheck(result, 'a11ycore-img-alt-present')?.outcome, 'fail');
 });

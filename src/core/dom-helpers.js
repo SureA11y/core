@@ -1,12 +1,12 @@
 'use strict';
 
 /**
- * DOM helpers used by rules (ctx.helpers).
+ * DOM helpers used by checks (ctx.helpers).
  *
  * Kernel philosophy (A11yCore helpers contract)
  * ---------------------------------------------
- * These helpers exist to keep rules:
- * - **Atomic** (rules decide outcomes; helpers provide facts),
+ * These helpers exist to keep checks:
+ * - **Atomic** (checks decide outcomes; helpers provide facts),
  * - **Deterministic** (no randomness, time, locale, or non-deterministic iteration),
  * - **Serializable** (inlined into generated core.js; no Node-only APIs),
  * - **Standards-aligned** (helpers are mechanism-aware where requirements depend on element/type).
@@ -119,7 +119,7 @@ function createDomHelpers(opts) {
     const computedStyle = (el) => {
         // Per-run memoization scoped by *helper scope* (root/document), to ensure
         // style caching does not bleed across helper instances with different roots.
-        // This aligns with eligibility cache scoping semantics locked by tests.
+        // This aligns with eligibility cache scoping semantics locked by checks.
         const scope = (root && typeof root === 'object') ? root : (document && typeof document === 'object' ? document : null);
 
         let map = null;
@@ -393,7 +393,7 @@ function createDomHelpers(opts) {
         return {present: true, value: attrValue, mechanism: attr, flags};
     }
 
-    // --- ARIA name primitives (reusable across rules) ---
+    // --- ARIA name primitives (reusable across checks) ---
     function getAriaLabelInfo(el) {
         const flags = [];
         if (!isElement(el)) return {present: false, value: '', mechanism: 'unsupported', flags: ['notElement']};
@@ -926,6 +926,7 @@ function createDomHelpers(opts) {
     let __eligibilityAccCache = null;
     let __eligibilityDomCacheByMode = null; // Map<string, WeakMap<Element, Result>>
     let __focusabilityCache = null;
+    let __visibilityHintsCache = null; // WeakMap<Element, {hints:Array<string>, metrics:object}>
     let __computedStyleCacheByScope = null; // WeakMap<object, WeakMap<Element, CSSStyleDeclaration|object>>
     let __openModalDialogsByDoc = null; // WeakMap<Document, Array<Element>>
     let __ancestorBlockerAccByScope = null; // WeakMap<object, WeakMap<Element, {struct:string|null, css:string|null}>>
@@ -967,6 +968,14 @@ function createDomHelpers(opts) {
             : (__domSharedCache.focusabilityCache = new WeakMap());
     } catch {
         __focusabilityCache = null;
+    }
+
+    try {
+        __visibilityHintsCache = __domSharedCache.visibilityHintsCache instanceof WeakMap
+            ? __domSharedCache.visibilityHintsCache
+            : (__domSharedCache.visibilityHintsCache = new WeakMap());
+    } catch {
+        __visibilityHintsCache = null;
     }
 
     try {
@@ -1480,14 +1489,14 @@ function createDomHelpers(opts) {
             }
 
             // Exception: allow aria-hidden override for mechanisms where the engine must
-            // still evaluate required labeling/alt rules. Keep this narrowly scoped.
+            // still evaluate required labeling/alt checks. Keep this narrowly scoped.
             const tag = (node.tagName || '').toLowerCase();
             const type = tag === 'input'
                 ? ((node.getAttribute && (node.getAttribute('type') || '').toLowerCase()) || '')
                 : '';
 
             // Native form controls are tabbable by default (even without tabindex)
-            // and are targeted by labeling rules.
+            // and are targeted by labeling checks.
             const isNativeFormControl =
                 tag === 'select' ||
                 tag === 'textarea' ||
@@ -1660,6 +1669,13 @@ function createDomHelpers(opts) {
         // Closed <details> hides content visually
         if (inClosedDetailsContent(node)) return __cacheAndReturn(out(false, ['detailsClosed'], {}));
 
+        const visibilityMode =
+            opts && opts.visibilityMode === 'pointer'
+                ? 'pointer'
+                : (opts && opts.visibilityMode === 'styleAndGeometry'
+                    ? 'styleAndGeometry'
+                    : 'styleOnly');
+
         // 2) CSS visibility suppression + opacity chain
         let opacityProduct = 1;
         for (const a of chain) {
@@ -1671,6 +1687,8 @@ function createDomHelpers(opts) {
             let cachedVisibility = null;
             let cachedContentVisHidden = null;
             let cachedOpacity = null;
+            let cachedPointerEventsNone = null;
+            let cachedPointerEventsKnown = false;
             let cs = null;
 
             try {
@@ -1688,10 +1706,12 @@ function createDomHelpers(opts) {
 
                         cachedVisibility = cached.visibility != null ? String(cached.visibility) : null;
                         cachedContentVisHidden = cached.contentVisHidden === true ? true : null;
-                        cachedOpacity =
-                            (typeof cached.opacity === 'number' && Number.isFinite(cached.opacity))
+                        cachedOpacity = (cached && typeof cached.opacity === 'number' && Number.isFinite(cached.opacity))
                                 ? cached.opacity
                                 : null;
+
+                        cachedPointerEventsNone = cached.pointerEventsNone === true ? true : null;
+                        cachedPointerEventsKnown = cached.pointerEventsKnown === true ? true : false;
                     }
                 } else {
                     __perfInc('ancestorBlockerDom.css.miss');
@@ -1722,6 +1742,16 @@ function createDomHelpers(opts) {
                     }
                 }
 
+                // Pointer reachability: pointer-events:none blocks hit-testing
+                if (visibilityMode === 'pointer' && !cachedPointerEventsKnown) {
+                    try {
+                        const pe = cs && cs.pointerEvents != null ? String(cs.pointerEvents).trim() : '';
+                        cachedPointerEventsKnown = true;
+                        if (pe === 'none') cachedPointerEventsNone = true;
+                    } catch {
+                    }
+                }
+
                 try {
                     if (__ancBlockDomCache) {
                         const prev = __ancBlockDomCache.has(a) ? (__ancBlockDomCache.get(a) || null) : null;
@@ -1731,7 +1761,9 @@ function createDomHelpers(opts) {
                             cssKnown: true,
                             visibility: cachedVisibility || (prev && prev.visibility ? prev.visibility : null),
                             contentVisHidden: cachedContentVisHidden === true ? true : (prev && prev.contentVisHidden === true ? true : null),
-                            opacity: cachedOpacity == null ? (prev && typeof prev.opacity === 'number' ? prev.opacity : null) : cachedOpacity
+                            opacity: cachedOpacity == null ? (prev && typeof prev.opacity === 'number' ? prev.opacity : null) : cachedOpacity,
+                            pointerEventsNone: cachedPointerEventsNone === true ? true : (prev && prev.pointerEventsNone === true ? true : null),
+                            pointerEventsKnown: cachedPointerEventsKnown === true ? true : (prev && prev.pointerEventsKnown === true ? true : false)
                         });
                     }
                 } catch {
@@ -1745,6 +1777,56 @@ function createDomHelpers(opts) {
             }
             if (cssBlock === 'contentVisibilityHidden') {
                 return __cacheAndReturn(out(false, ['contentVisibilityHidden'], {}));
+            }
+
+            if (visibilityMode === 'pointer') {
+                // pointer-events:none prevents the element from receiving pointer interactions
+                if (cachedPointerEventsKnown === true && cachedPointerEventsNone === true) {
+                    return __cacheAndReturn(out(false, ['pointerEventsNone'], {}));
+                }
+
+                if (cachedPointerEventsKnown !== true) {
+                    try {
+                        if (!cs) cs = computedStyle(a);
+                        const pe = cs && cs.pointerEvents != null ? String(cs.pointerEvents).trim() : '';
+                        cachedPointerEventsKnown = true;
+                        if (pe === 'none') cachedPointerEventsNone = true;
+
+                        // Write back pointer-events status without disturbing other fields
+                        try {
+                            if (__ancBlockDomCache) {
+                                const prev = __ancBlockDomCache.has(a) ? (__ancBlockDomCache.get(a) || null) : null;
+                                if (prev) {
+                                    __ancBlockDomCache.set(a, {
+                                        struct: prev.struct || null,
+                                        css: prev.css || null,
+                                        cssKnown: prev.cssKnown === true ? true : false,
+                                        visibility: prev.visibility || null,
+                                        contentVisHidden: prev.contentVisHidden === true ? true : null,
+                                        opacity: typeof prev.opacity === 'number' ? prev.opacity : null,
+                                        pointerEventsNone: cachedPointerEventsNone === true ? true : null,
+                                        pointerEventsKnown: cachedPointerEventsKnown === true ? true : false
+                                    });
+                                } else {
+                                    __ancBlockDomCache.set(a, {
+                                        struct: null,
+                                        css: null,
+                                        cssKnown: false,
+                                        visibility: null,
+                                        contentVisHidden: null,
+                                        opacity: null,
+                                        pointerEventsNone: cachedPointerEventsNone === true ? true : null,
+                                        pointerEventsKnown: cachedPointerEventsKnown === true ? true : false
+                                    });
+                                }
+                            }
+                        } catch {}
+                    } catch {}
+                }
+
+                if (cachedPointerEventsNone === true) {
+                    return __cacheAndReturn(out(false, ['pointerEventsNone'], {}));
+                }
             }
 
             // If opacity isn't cached yet, compute once and write it back even when cssBlock was cached.
@@ -1767,7 +1849,9 @@ function createDomHelpers(opts) {
                                         css: prev.css || null,
                                         visibility: prev.visibility || null,
                                         contentVisHidden: prev.contentVisHidden === true ? true : null,
-                                        opacity: cachedOpacity
+                                        opacity: cachedOpacity,
+                                        pointerEventsNone: prev.pointerEventsNone === true ? true : null,
+                                        pointerEventsKnown: prev.pointerEventsKnown === true ? true : false
                                     });
                                 } else {
                                     __ancBlockDomCache.set(a, {
@@ -1775,7 +1859,9 @@ function createDomHelpers(opts) {
                                         css: cssBlock || null,
                                         visibility: cachedVisibility || null,
                                         contentVisHidden: cachedContentVisHidden === true ? true : null,
-                                        opacity: cachedOpacity
+                                        opacity: cachedOpacity,
+                                        pointerEventsNone: null,
+                                        pointerEventsKnown: false
                                     });
                                 }
                             }
@@ -1787,20 +1873,19 @@ function createDomHelpers(opts) {
             // opacity handling (visual)
             const op = cachedOpacity != null ? cachedOpacity : 1;
             opacityProduct *= op;
-            if (opacityProduct <= 0.0001) {
+            // Allow callers to ignore opacity-based invisibility (still focusable).
+            const ignoreOpacity = !!(opts && opts.ignoreOpacity === true);
+
+            if (!ignoreOpacity && visibilityMode !== 'pointer' && opacityProduct <= 0.0001) {
                 return __cacheAndReturn(out(false, ['opacityZero'], { opacity: opacityProduct }));
             }
         }
 
         // 3) Layout/geometry (optional)
-        const visibilityMode =
-            opts && opts.visibilityMode === 'styleAndGeometry'
-                ? 'styleAndGeometry'
-                : 'styleOnly';
-
         const useGeometry =
-            visibilityMode === 'styleAndGeometry' &&
-            !(opts && opts.disableGeometry === true);
+            visibilityMode === 'pointer'
+                ? !(opts && opts.disableGeometry === true)
+                : (visibilityMode === 'styleAndGeometry' && !(opts && opts.disableGeometry === true));
 
         if (useGeometry) {
             try {
@@ -2363,6 +2448,153 @@ function createDomHelpers(opts) {
         };
     }
 
+    function getVisibilityHintsInfo(el, _ctx, opts) {
+        // Deterministic, style-only visibility hints for triage.
+        // Does NOT decide eligibility; checks decide outcomes.
+        // Uses computedStyle() which is already scope-cached.
+
+        if (!isElement(el)) return {hints: [], metrics: {}, flags: ['notElement']};
+
+        // Cache per element per run
+        try {
+            if (__visibilityHintsCache && __visibilityHintsCache.has(el)) {
+                __perfInc('visibilityHints.hit');
+                const c = __visibilityHintsCache.get(el);
+                if (c && typeof c === 'object') {
+                    return {
+                        hints: Array.isArray(c.hints) ? c.hints.slice(0) : [],
+                        metrics: c.metrics && typeof c.metrics === 'object' ? {...c.metrics} : {},
+                        flags: Array.isArray(c.flags) ? c.flags.slice(0) : []
+                    };
+                }
+            }
+        } catch {
+            // ignore
+        }
+
+        __perfInc('visibilityHints.miss');
+
+        const hints = [];
+        const metrics = {};
+        const flags = [];
+
+        const cs = computedStyle(el) || {};
+
+        // opacity:0
+        try {
+            const raw = cs.opacity != null ? String(cs.opacity).trim() : '';
+            const op = raw ? Number.parseFloat(raw) : 1;
+            if (Number.isFinite(op)) metrics.opacity = op;
+            if (Number.isFinite(op) && op <= 0.0001) hints.push('opacityZero');
+        } catch {
+            flags.push('opacity-parse-failed');
+        }
+
+        // clip / clip-path
+        try {
+            const clip = cs.clip != null ? String(cs.clip).trim() : '';
+            const clipPath = cs.clipPath != null ? String(cs.clipPath).trim() : '';
+
+            const clipLow = clip.toLowerCase();
+            const clipPathLow = clipPath.toLowerCase();
+
+            if (clipLow && clipLow !== 'auto') {
+                // Detect common visually-hidden: rect(0,0,0,0)
+                const norm = clipLow.replace(/\s+/g, '');
+                if (norm.indexOf('rect(') !== -1 && norm.indexOf('rect(0') !== -1) hints.push('clipped');
+            }
+
+            if (clipPathLow && clipPathLow !== 'none') {
+                // Detect common visually-hidden: inset(50%) / inset(100%)
+                if (clipPathLow.indexOf('inset(') !== -1 && (clipPathLow.indexOf('50%') !== -1 || clipPathLow.indexOf('100%') !== -1)) {
+                    hints.push('clipped');
+                }
+            }
+
+            if (clip) metrics.clip = clip;
+            if (clipPath) metrics.clipPath = clipPath;
+        } catch {
+            flags.push('clip-parse-failed');
+        }
+
+        // zero-size + overflow hidden/clip
+        try {
+            const wv = cs.width != null ? String(cs.width).trim() : '';
+            const hv = cs.height != null ? String(cs.height).trim() : '';
+            const ov = cs.overflow != null ? String(cs.overflow).trim().toLowerCase() : '';
+
+            metrics.width = wv || null;
+            metrics.height = hv || null;
+            metrics.overflow = ov || null;
+
+            const isZeroW = wv === '0px' || wv === '0';
+            const isZeroH = hv === '0px' || hv === '0';
+            const hidesOverflow = ov === 'hidden' || ov === 'clip';
+            if ((isZeroW || isZeroH) && hidesOverflow) hints.push('zeroSizeOverflowHidden');
+        } catch {
+            flags.push('size-parse-failed');
+        }
+
+        // offscreen heuristic (string-based; no geometry)
+        try {
+            const pos = cs.position != null ? String(cs.position).trim().toLowerCase() : '';
+            const left = cs.left != null ? String(cs.left).trim().toLowerCase() : '';
+            const top = cs.top != null ? String(cs.top).trim().toLowerCase() : '';
+            const ti = cs.textIndent != null ? String(cs.textIndent).trim().toLowerCase() : '';
+
+            metrics.position = pos || null;
+            metrics.left = left || null;
+            metrics.top = top || null;
+            metrics.textIndent = ti || null;
+
+            const parsePx = (s) => {
+                if (!s || s === 'auto') return null;
+                const m = String(s).match(/-?\d+(\.\d+)?/);
+                if (!m) return null;
+                const n = Number.parseFloat(m[0]);
+                return Number.isFinite(n) ? n : null;
+            };
+
+            const l = parsePx(left);
+            const t = parsePx(top);
+            const ind = parsePx(ti);
+
+            if (pos === 'absolute' || pos === 'fixed') {
+                if ((l != null && l <= -5000) || (t != null && t <= -5000)) hints.push('offscreen');
+            }
+            if (ind != null && ind <= -5000) hints.push('offscreen');
+        } catch {
+            flags.push('offscreen-parse-failed');
+        }
+
+        // Dedupe hints, stable order
+        const order = ['opacityZero', 'offscreen', 'clipped', 'zeroSizeOverflowHidden'];
+        const seen = new Set();
+        const stable = [];
+        for (const k of order) {
+            if (hints.indexOf(k) !== -1 && !seen.has(k)) {
+                seen.add(k);
+                stable.push(k);
+            }
+        }
+
+        const out = {hints: stable, metrics, flags};
+
+        try {
+            if (__visibilityHintsCache) {
+                __visibilityHintsCache.set(el, {
+                    hints: stable.slice(0),
+                    metrics: {...metrics},
+                    flags: flags.slice(0)
+                });
+            }
+        } catch {
+            __perfInc('visibilityHints.nocache');
+        }
+
+        return out;
+    }
+
     // Back-compat: keep existing helper but implement via new name helper.
     function hasAccessibleName(el) {
         const info = getAccessibleNameInfo(el);
@@ -2390,8 +2622,8 @@ function createDomHelpers(opts) {
 
             const tag = (el.tagName || '').toLowerCase();
 
-            const id = el.getAttribute('id');
-            if (id && id.trim()) inc(idCount, id.trim());
+            const elementId = el.getAttribute('id');
+            if (elementId && elementId.trim()) inc(idCount, elementId.trim());
 
             for (const a of ['data-testid', 'data-test', 'data-cy', 'data-qa']) {
                 const v = el.getAttribute(a);
@@ -2429,8 +2661,8 @@ function createDomHelpers(opts) {
 
             const escapeAttrValue = __escapeAttrValue;
 
-            const id = el.getAttribute && el.getAttribute('id');
-            if (id && id.trim()) return '#' + cssEscapeIdent(id.trim());
+            const elementId = el.getAttribute && el.getAttribute('id');
+            if (elementId && elementId.trim()) return '#' + cssEscapeIdent(elementId.trim());
 
             for (const a of ['data-testid', 'data-test', 'data-cy', 'data-qa']) {
                 const v = el.getAttribute && el.getAttribute(a);
@@ -2487,9 +2719,9 @@ function createDomHelpers(opts) {
             const tag = (el.tagName || '').toLowerCase();
 
             const uniqueIdSel = () => {
-                const id = el.getAttribute('id');
-                if (!id || !id.trim()) return null;
-                const v = id.trim();
+                const elementId = el.getAttribute('id');
+                if (!elementId || !elementId.trim()) return null;
+                const v = elementId.trim();
                 if (idx && (idx.idCount.get(v) || 0) === 1) return '#' + cssEscape(v);
                 return null;
             };
@@ -2793,7 +3025,7 @@ function createDomHelpers(opts) {
 
     let __contrastSharedCache = {};
     try {
-        // In Node/JSDOM tests, the harness sets global.window/global.document.
+        // In Node/JSDOM checks, the harness sets global.window/global.document.
         // The engine may instantiate helpers per rule without passing opts.window,
         // so we must be able to recover the stable realm window to share caches.
         const w =
@@ -2819,11 +3051,11 @@ function createDomHelpers(opts) {
     };
 
     const contrast = createContrastHelpers(
-        {window: realmWindow || window, document, root},
+        {window: realmWindow || window, document, root, includeShadowDom, excludeSelectors},
         __contrastShared
     );
 
-    // Expose shared cache to rules (deterministic, in-memory only)
+    // Expose shared cache to checks (deterministic, in-memory only)
     contrast.sharedCache = __contrastShared.__contrastSharedCache;
 
     return {
@@ -2864,6 +3096,7 @@ function createDomHelpers(opts) {
         // Role / focusability
         getRoleInfo,
         getFocusableInfo,
+        getVisibilityHintsInfo,
 
         getAttributeInfo,
 

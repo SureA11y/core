@@ -22,6 +22,27 @@
         { "type": "array", "items": { "type": "string", "minLength": 1 } }
       ]
     },
+
+    "contrast": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Options that control contrast-related computations and assumptions.",
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["strictConformance", "auditorAssist"],
+          "default": "strictConformance",
+          "description": "Controls whether the engine may apply explicit assumptions to reduce cantTell for contrast checks."
+        },
+        "rootCanvasFallback": {
+          "type": "string",
+          "minLength": 1,
+          "default": "#ffffff",
+          "description": "Used only when the effective root/canvas background is not computable and contrast.mode allows assumptions."
+        }
+      }
+    },
+
     "rules": {
       "type": "object",
       "description": "Per-rule configuration. Keys are canonical ruleIds (e.g. 'a11ycore-img-alt-attr-present').",

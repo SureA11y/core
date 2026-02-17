@@ -118,53 +118,6 @@ function createContrastHelpers(opts, shared) {
     const __hasBlendModeCache = __getSharedWeakMapCache('__hasBlendModeCache') || __localHasBlendModeCache;
     const __hasFilterCache = __getSharedWeakMapCache('__hasFilterCache') || __localHasFilterCache;
 
-
-    // Cache parsed colors / numeric opacity per element (per run)
-    const __localOpacityFloatCache = new WeakMap();
-    const __opacityFloatCache = __getSharedWeakMapCache('__opacityFloatCache') || __localOpacityFloatCache;
-
-    const __localBgColorRgbaCache = new WeakMap();
-    const __bgColorRgbaCache = __getSharedWeakMapCache('__bgColorRgbaCache') || __localBgColorRgbaCache;
-
-    const __localFgColorRgbaCache = new WeakMap();
-    const __fgColorRgbaCache = __getSharedWeakMapCache('__fgColorRgbaCache') || __localFgColorRgbaCache;
-
-    function __opacityFloat(el, cs) {
-        try {
-            if (!el || el.nodeType !== 1) return clamp01(Number.parseFloat(cs && cs.opacity != null ? cs.opacity : '1'));
-            if (__opacityFloatCache.has(el)) return __opacityFloatCache.get(el);
-            const o = clamp01(Number.parseFloat(cs && cs.opacity != null ? cs.opacity : '1'));
-            __opacityFloatCache.set(el, o);
-            return o;
-        } catch {
-            return 1;
-        }
-    }
-
-    function __bgColorRgba(el, cs) {
-        try {
-            if (!el || el.nodeType !== 1) return parseCssColorToRgba(cs && cs.backgroundColor);
-            if (__bgColorRgbaCache.has(el)) return __bgColorRgbaCache.get(el);
-            const c = parseCssColorToRgba(cs && cs.backgroundColor);
-            __bgColorRgbaCache.set(el, c);
-            return c;
-        } catch {
-            return null;
-        }
-    }
-
-    function __fgColorRgba(el, cs) {
-        try {
-            if (!el || el.nodeType !== 1) return parseCssColorToRgba(cs && cs.color);
-            if (__fgColorRgbaCache.has(el)) return __fgColorRgbaCache.get(el);
-            const c = parseCssColorToRgba(cs && cs.color);
-            __fgColorRgbaCache.set(el, c);
-            return c;
-        } catch {
-            return null;
-        }
-    }
-
     // -------- Visibility mode resolution for getTextScan --------
 
     function __getVisibilityMode(engineOptions) {
@@ -290,7 +243,10 @@ function createContrastHelpers(opts, shared) {
             const cacheKey = `visibilityMode=${visibilityMode}`;
             if (cache && cache.has(cacheKey)) return cache.get(cacheKey);
 
-            const walkRoot = d.body || d.documentElement || d;
+            const walkRootRaw = (ctx && ctx.root) ? ctx.root : (d.body || d.documentElement || d);
+            const walkRoot = (walkRootRaw && walkRootRaw.nodeType === 9)
+                ? (walkRootRaw.body || walkRootRaw.documentElement || walkRootRaw)
+                : walkRootRaw;
 
             const SHOW_TEXT =
                 (w && w.NodeFilter && typeof w.NodeFilter.SHOW_TEXT === 'number')
@@ -335,6 +291,10 @@ function createContrastHelpers(opts, shared) {
                     (node.parentNode && node.parentNode.nodeType === 1 ? node.parentNode : null);
 
                 if (!el) continue;
+                // Respect subtree exclusions from engineOptions.excludeSelectors
+                try {
+                    if (helpers && typeof helpers.isExcluded === 'function' && helpers.isExcluded(el)) continue;
+                } catch {}
                 if (!isVisibleEligible(el)) continue;
 
                 eligibleTextCount++;
@@ -594,6 +554,42 @@ function createContrastHelpers(opts, shared) {
             return { r, g, b, a };
         }
 
+        // Fallback: let the platform parse named/system colors.
+        // Useful in jsdom/browsers where computed styles may return keywords like "black" or "CanvasText".
+        try {
+            const w = window || null;
+            const d = w && w.document ? w.document : null;
+            if (w && d && typeof d.createElement === 'function' && typeof w.getComputedStyle === 'function') {
+                const probe = d.createElement('span');
+                // Avoid layout/paint side effects
+                probe.style.position = 'absolute';
+                probe.style.left = '-9999px';
+                probe.style.top = '-9999px';
+                probe.style.opacity = '0';
+                probe.style.color = String(input);
+                const parent = d.body || d.documentElement;
+                if (parent && typeof parent.appendChild === 'function') parent.appendChild(probe);
+
+                let computed = '';
+                try {
+                    computed = (w.getComputedStyle(probe) && w.getComputedStyle(probe).color) || '';
+                } catch (_e) {
+                    computed = '';
+                }
+
+                try {
+                    if (probe && probe.parentNode) probe.parentNode.removeChild(probe);
+                } catch (_e) {}
+
+                const normalized = __normalizeCssColorCacheKey(computed);
+                if (normalized && normalized !== __normalizeCssColorCacheKey(input)) {
+                    // Reuse the parser on the computed rgb()/rgba() string.
+                    const parsed = __parseCssColorToRgbaUncached(normalized);
+                    if (parsed) return parsed;
+                }
+            }
+        } catch (_e) {}
+
         return null;
     }
 
@@ -752,7 +748,7 @@ function createContrastHelpers(opts, shared) {
                     continue;
                 }
                 const cs = __contrastComputedStyle(cur);
-                const o = __opacityFloat(cur, cs);
+                const o = clamp01(Number.parseFloat(cs && cs.opacity != null ? cs.opacity : '1'));
                 prod *= o;
                 cur = composedParent(cur);
                 if (prod <= 0) break;
@@ -778,7 +774,7 @@ function createContrastHelpers(opts, shared) {
         } catch (_e) {}
 
         const cs = __contrastComputedStyle(el);
-        const c = __fgColorRgba(el, cs);
+        const c = parseCssColorToRgba(cs && cs.color);
         if (!c) {
             const out = { rgba: null, alpha: 0, opacityProduct: computeOpacityProduct(el) };
             try { if (el) __effectiveForegroundCache.set(el, out); } catch (_e) {}
@@ -800,11 +796,16 @@ function createContrastHelpers(opts, shared) {
         __getSharedWeakMapCache('__effectiveBackgroundCache') || __localEffectiveBackgroundCache;
 
     function __bgCacheKey(opts2) {
-        const profileRaw = opts2 && typeof opts2.profile === 'string' ? opts2.profile : 'strictConformance';
-        const profile = String(profileRaw).trim().toLowerCase();
-        const rootCanvasFallback = opts2 && typeof opts2.rootCanvasFallback === 'string' ? opts2.rootCanvasFallback : '#ffffff';
-        const collectStack = !!(opts2 && opts2.collectStack);
-        return `p=${profile}|f=${rootCanvasFallback}|s=${collectStack ? '1' : '0'}`;
+        const contrast = (opts2 && opts2.contrast && typeof opts2.contrast === 'object') ? opts2.contrast : {};
+        const mode = (contrast.mode === 'auditorAssist') ? 'auditorAssist' : 'strictConformance';
+        const rootCanvasFallback =
+            (typeof contrast.rootCanvasFallback === 'string' && contrast.rootCanvasFallback.trim())
+                ? contrast.rootCanvasFallback.trim()
+                : '#ffffff';
+
+        // Cache key must include any input that can affect computed background.
+        // Note: we only cache when collectStack is false.
+        return `${mode}|${rootCanvasFallback}`;
     }
 
     function computeEffectiveBackground(el, opts2) {
@@ -821,14 +822,17 @@ function createContrastHelpers(opts, shared) {
             } catch (_e) {}
         }
 
-        const profileRaw = opts2 && typeof opts2.profile === 'string' ? opts2.profile : 'strictConformance';
-        const profile = String(profileRaw).trim().toLowerCase();
-        const rootCanvasFallback = opts2 && typeof opts2.rootCanvasFallback === 'string' ? opts2.rootCanvasFallback : '#ffffff';
+        const contrast = (opts2 && opts2.contrast && typeof opts2.contrast === 'object') ? opts2.contrast : {};
+        const mode = (contrast.mode === 'auditorAssist') ? 'auditorAssist' : 'strictConformance';
+        const rootCanvasFallback =
+            (typeof contrast.rootCanvasFallback === 'string' && contrast.rootCanvasFallback.trim())
+                ? contrast.rootCanvasFallback.trim()
+                : '#ffffff';
 
         const collectStack = !!(opts2 && opts2.collectStack);
         const stack = collectStack ? [] : null;
-        let acc = { r: 0, g: 0, b: 0, a: 0 };
 
+        let acc = { r: 0, g: 0, b: 0, a: 0 };
         let cur = el;
         let guard = 0;
 
@@ -836,8 +840,8 @@ function createContrastHelpers(opts, shared) {
             if (cur.nodeType !== 1) { cur = composedParent(cur); continue; }
 
             const cs = __contrastComputedStyle(cur);
-            const bg = __bgColorRgba(cur, cs);
-            const op = __opacityFloat(cur, cs);
+            const bg = parseCssColorToRgba(cs && cs.backgroundColor);
+            const op = clamp01(Number.parseFloat(cs && cs.opacity != null ? cs.opacity : '1'));
 
             if (bg) {
                 const layer = { r: bg.r, g: bg.g, b: bg.b, a: clamp01(bg.a * op) };
@@ -856,16 +860,36 @@ function createContrastHelpers(opts, shared) {
         }
 
         let out;
+        const allowAssumptions = (mode === 'auditorAssist');
+
         if (acc.a < 1) {
-            if (profile === 'referenceenginecompat') {
+            if (allowAssumptions) {
+                // If the root is not opaque, apply an explicit canvas fallback.
                 const fb = parseCssColorToRgba(rootCanvasFallback) || { r: 255, g: 255, b: 255, a: 1 };
-                acc = compositeRgba(fb, acc);
-                out = { ok: false, rgba: acc, alpha: acc.a, stack: stack || [], reasonCode: null };
+                const fbOpaque = { r: fb.r, g: fb.g, b: fb.b, a: 1 };
+
+                acc = compositeRgba(fbOpaque, acc);
+
+                out = {
+                    ok: true,
+                    rgba: { r: acc.r, g: acc.g, b: acc.b, a: 1 },
+                    alpha: 1,
+                    stack: stack || [],
+                    reasonCode: null,
+                    assumptionsApplied: ['ROOT_CANVAS_FALLBACK'],
+                    assumedRootCanvasColor: rootCanvasFallback
+                };
             } else {
-                out = { ok: false, rgba: acc, alpha: acc.a, stack, reasonCode: 'BACKGROUND_NOT_OPAQUE_AT_ROOT' };
+                out = {
+                    ok: false,
+                    rgba: acc,
+                    alpha: acc.a,
+                    stack: stack || [],
+                    reasonCode: 'BACKGROUND_NOT_OPAQUE_AT_ROOT'
+                };
             }
         } else {
-            out = { ok: true, rgba: acc, alpha: acc.a, stack, reasonCode: null };
+            out = { ok: true, rgba: acc, alpha: acc.a, stack: stack || [], reasonCode: null };
         }
 
         if (!__collectStack && el) {
@@ -878,6 +902,7 @@ function createContrastHelpers(opts, shared) {
 
         return out;
     }
+
 
     // -------- Selector memoization --------
 
@@ -893,6 +918,34 @@ function createContrastHelpers(opts, shared) {
             return s || '';
         } catch (_e) {
             return '';
+        }
+    }
+
+    function classifyBackgroundImageValue(bgImageValue) {
+        try {
+            const v = (bgImageValue == null) ? '' : String(bgImageValue).trim();
+            if (!v) return 'unknown';
+            const s = v.toLowerCase();
+            if (s === 'none') return 'unknown';
+
+            // Multiple layers can be comma-separated; we keep it simple + deterministic:
+            // if any layer has url()/image-set() => image
+            // if any layer has *gradient( => gradient
+            const hasGradient = /gradient\s*\(/i.test(s);
+            const hasUrl = /\burl\s*\(/i.test(s);
+            const hasImageSet = /\bimage-set\s*\(/i.test(s);
+
+            const isImage = hasUrl || hasImageSet;
+            const isGradient = hasGradient;
+
+            if (isImage && isGradient) return 'imageAndGradient';
+            if (isImage) return 'image';
+            if (isGradient) return 'gradient';
+
+            // Other background-image functions exist; treat as unknown rather than guessing.
+            return 'unknown';
+        } catch {
+            return 'unknown';
         }
     }
 
@@ -939,12 +992,14 @@ function createContrastHelpers(opts, shared) {
             }
 
             if (__hasBackgroundImageOrGradientEl(cur, cs)) {
+                const bgImg = (cs && cs.backgroundImage) || '';
                 const out = {
                     ok: false,
                     reasonCode: 'BACKGROUND_IMAGE_OR_GRADIENT',
                     blockerSelector: __getSimpleSelectorCached(cur, (cur.tagName || '').toLowerCase() || 'html'),
                     blockerProperty: 'background-image',
-                    blockerValue: truncateCssValue(cs && cs.backgroundImage, 80)
+                    blockerValue: truncateCssValue(bgImg, 80),
+                    backgroundFillType: classifyBackgroundImageValue(bgImg)
                 };
                 try { if (el) __computabilityBlockerCache.set(el, out); } catch (_e) {}
                 return out;
