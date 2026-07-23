@@ -62,6 +62,10 @@ function runInPage(ctx) {
         ? helpers.isAccTreeEligible
         : null;
 
+    const getAriaNameInfo = helpers && typeof helpers.getAriaNameInfo === 'function'
+        ? helpers.getAriaNameInfo
+        : null;
+
     const inputs = (() => {
         try { return Array.from((queryAllSmart ? queryAllSmart('input[type="image"]') : queryAll('input[type="image"]')) || []); }
         catch { return queryAll('input[type="image"]'); }
@@ -89,6 +93,30 @@ function runInPage(ctx) {
 
         const hasAlt = el.getAttribute('alt') !== null;
         if (hasAlt) continue;
+
+        // aria-label / aria-labelledby is also a valid, standards-recognized
+        // text-alternative mechanism for <input type="image"> (HTML-AAM
+        // accessible name computation includes ARIA naming before falling
+        // back to alt).
+        if (getAriaNameInfo) {
+            let ariaName = null;
+            try {
+                ariaName = getAriaNameInfo(el, ctx);
+            } catch {
+                ariaName = null;
+            }
+            if (ariaName && ariaName.present) continue;
+        }
+
+        // A non-empty title attribute is HTML-AAM's own next fallback naming
+        // source once alt is entirely absent -- also accepted by the reference engine's
+        // equivalent input-image-alt rule (non-empty-title, same "any" list
+        // as non-empty-alt/aria-label/aria-labelledby). See img-alt-present's
+        // sibling fix (2026-07-23, AliExpress's title-only logo <img>) for
+        // the real page this was found via -- same gap, same fix, different
+        // element.
+        const titleRaw = (() => { try { return el.getAttribute('title'); } catch { return null; } })();
+        if (titleRaw !== null && String(titleRaw).trim()) continue;
 
         const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 

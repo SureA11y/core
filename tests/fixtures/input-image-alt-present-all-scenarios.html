@@ -141,6 +141,58 @@
     </div>
 </div>
 
+<h2 id="aria_naming">F. ARIA naming mechanism (aria-label / aria-labelledby satisfy without <code>alt</code>)</h2>
+
+<div class="case" id="case_14">
+    <div class="case-title">14 — PASS: input-image with <code>aria-label</code>, no <code>alt</code></div>
+    <div class="row">
+        <input id="input_image_case_14" type="image" aria-label="Search" src="x.png">
+        <span>ARIA naming (aria-label) satisfies the mechanism without alt.</span>
+    </div>
+</div>
+
+<div class="case" id="case_15">
+    <div class="case-title">15 — PASS: input-image with <code>aria-labelledby</code> referencing non-empty text, no <code>alt</code></div>
+    <div class="row">
+        <input id="input_image_case_15" type="image" aria-labelledby="input_image_case_15_label" src="x.png">
+        <span id="input_image_case_15_label">Submit form label</span>
+    </div>
+</div>
+
+<div class="case" id="case_16">
+    <div class="case-title">16 — FAIL: input-image with <code>aria-labelledby</code> pointing to non-existent id, no <code>alt</code></div>
+    <div class="row">
+        <input id="input_image_case_16" type="image" aria-labelledby="input_image_case_16_does_not_exist" src="x.png">
+        <span>Dangling IDREF does not resolve to a name; alt is also missing.</span>
+    </div>
+</div>
+
+<div class="case" id="case_17">
+    <div class="case-title">17 — FAIL: input-image with <code>aria-label=""</code> (empty), no <code>alt</code></div>
+    <div class="row">
+        <input id="input_image_case_17" type="image" aria-label="" src="x.png">
+        <span>Empty aria-label does not satisfy ARIA naming; alt is also missing.</span>
+    </div>
+</div>
+
+<h2 id="visibility_inheritance">G. Visibility inheritance (invertible via explicit descendant override)</h2>
+
+<div class="case" id="case_18">
+    <div class="case-title">18 — FAIL (eligible): ancestor <code>visibility:hidden</code>, input-image itself explicitly <code>visibility:visible</code>, missing alt</div>
+    <div class="row" style="visibility:hidden">
+        <input id="input_image_case_18" type="image" style="visibility:visible" src="x.png">
+        <span>The input's own computed visibility is "visible" (explicit override), so it remains eligible despite the hidden ancestor.</span>
+    </div>
+</div>
+
+<div class="case" id="case_19">
+    <div class="case-title">19 — NEUTRAL/INELIGIBLE: ancestor <code>visibility:hidden</code>, input-image inherits (no override), missing alt</div>
+    <div class="row" style="visibility:hidden">
+        <input id="input_image_case_19" type="image" src="x.png">
+        <span>No explicit override; the input inherits visibility:hidden and stays ineligible.</span>
+    </div>
+</div>
+
 <p class="note">End of fixture.</p>
 </body>
 </html>

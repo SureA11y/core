@@ -2,6 +2,8 @@
 
 const test = require('node:test');
 const assert = require('node:assert');
+const fs = require('node:fs');
+const path = require('node:path');
 
 const {
     createDom,
@@ -108,6 +110,10 @@ function run(html, engineOptions = {}) {
             ...engineOptions
         }
     });
+}
+
+function hasOccurrenceForId(rule, id) {
+    return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
 }
 
 test(`${RULE_ID}: no visible eligible text => notApplicable`, () => {
@@ -251,6 +257,78 @@ test(`${RULE_ID}: auditorAssist + root not opaque => pass (rootCanvasFallback ap
     const occ = rule.occurrences[0];
     assert.strictEqual(occ.i18n.summaryKey, 'a11ycore_contrastComputable_pass_allComputable');
     assert.ok(Number(occ.data.details.eligibleTextCount) >= 1);
+});
+
+test(`${RULE_ID}: ANCESTOR opacity < 1 blocker => cantTell with reasonCode ANCESTOR_OPACITY`, () => {
+    const html = `
+<!doctype html>
+<html style="background-color: rgb(255, 255, 255); opacity: 1">
+<head></head>
+<body style="background-color: rgb(255, 255, 255); opacity: 1">
+  <div style="opacity: 0.5; background-color: rgb(255, 255, 255);">
+    <p id="anc_op" style="color: rgb(0, 0, 0); background-color: rgb(255, 255, 255); opacity: 1;">
+      Ancestor opacity text
+    </p>
+  </div>
+</body></html>`;
+
+    const result = run(html);
+
+    const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+    const occ = rule.occurrences[0];
+    assert.strictEqual(occ.data.details.reasonCode, 'ANCESTOR_OPACITY');
+    assert.strictEqual(occ.i18n.summaryKey, 'a11ycore_contrastComputable_cantTell_notComputable');
+    assert.ok(hasOccurrenceForId(rule, 'anc_op'));
+});
+
+test(`${RULE_ID}: element's OWN opacity < 1 (no ancestor blocker) => pass (still computable)`, () => {
+    const html = `
+<!doctype html>
+<html style="background-color: rgb(255, 255, 255); opacity: 1">
+<head></head>
+<body style="background-color: rgb(255, 255, 255); opacity: 1">
+  <p id="own_op" style="color: rgb(0, 0, 0); background-color: rgb(255, 255, 255); opacity: 0.5;">
+    Own opacity text
+  </p>
+</body></html>`;
+
+    const result = run(html);
+
+    // Own opacity is folded into the foreground via the per-element opacity
+    // product; it must NOT be treated as a computability blocker.
+    const rule = assertRule(result, RULE_ID, 'pass', { minOccurrences: 1, maxOccurrences: 1 });
+    assert.strictEqual(rule.occurrences[0].i18n.summaryKey, 'a11ycore_contrastComputable_pass_allComputable');
+});
+
+test(`${RULE_ID}: fixture coverage (tests/fixtures/contrast-all-scenarios.html)`, () => {
+    const fixturePath = path.join(__dirname, '../..', 'fixtures', 'contrast-all-scenarios.html');
+    const html = fs.readFileSync(fixturePath, 'utf8');
+
+    const result = run(html);
+
+    const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 8, maxOccurrences: 8 });
+
+    const expectedReasonCodeById = {
+        blocker_gradient_bg: 'BACKGROUND_IMAGE_OR_GRADIENT',
+        blocker_image_bg: 'BACKGROUND_IMAGE_OR_GRADIENT',
+        blocker_mix_blend_mode: 'MIX_BLEND_MODE',
+        blocker_filter: 'BACKGROUND_FILTER_OR_BACKDROP_FILTER',
+        blocker_backdrop_filter: 'BACKGROUND_FILTER_OR_BACKDROP_FILTER',
+        blocker_ancestor_opacity: 'ANCESTOR_OPACITY'
+    };
+
+    for (const [id, reasonCode] of Object.entries(expectedReasonCodeById)) {
+        const occ = (rule.occurrences || []).find(
+            (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+        );
+        assert.ok(occ, `Expected occurrence for id="${id}"`);
+        assert.strictEqual(occ.data.details.reasonCode, reasonCode, `Expected reasonCode for id="${id}"`);
+    }
+
+    // The gradient/image blockers are set on the ANCESTOR <section>, so the
+    // sibling ".label" paragraph in each of those two sections is also
+    // blocked (2 extra anonymous occurrences), for 6 + 2 = 8 total.
+    assert.strictEqual(rule.occurrences.length, 8);
 });
 
 // Optional: determinism smoke check (run twice, compare results)

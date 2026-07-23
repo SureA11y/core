@@ -2,9 +2,11 @@
 
 const test = require('node:test');
 const assert = require('node:assert');
+const fs = require('node:fs');
+const path = require('node:path');
 
 const { assertRule } = require('../../helpers/assertRule.js');
-const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
+const { runa11yCoreOnHtml, createDom, runa11yCoreOnDom } = require('../../helpers/runDomRulesOnHtml.js');
 
 const RULE_ID = 'a11ycore-aria-hidden-focus';
 
@@ -63,6 +65,51 @@ test(`${RULE_ID}: fail when aria-hidden subtree contains focusable descendant (l
     assert.strictEqual(rule.occurrences[0].summary, 'aria-hidden div contains 1 focusable element(s).');
 });
 
+test(`${RULE_ID}: fail when a slotted focusable element's aria-hidden ancestor only exists across a shadow-DOM slot boundary`, () => {
+    // Regression for composedParent's assignedSlot-vs-parentNode ordering
+    // bug (found while root-causing the aria-required-parent Spectrum Web
+    // Components false positive, 2026-07-22): closestAriaHiddenTrue walks
+    // ancestors via composedParent, which previously checked parentNode
+    // before assignedSlot — parentNode is always truthy for a normally-
+    // connected slotted element, so the assignedSlot branch never fired,
+    // silently missing any aria-hidden ancestor that only exists inside the
+    // shadow tree a light-DOM element is distributed into. This is a real
+    // false NEGATIVE (a genuinely hidden-but-focusable element going
+    // unflagged), the opposite direction from the aria-required-parent bug.
+    const dom = createDom(`<!doctype html><html><body>
+      <div id="host"><button id="a" slot="x">Btn</button></div>
+    </body></html>`);
+    const host = dom.window.document.getElementById('host');
+    host.attachShadow({ mode: 'open' }).innerHTML = `<div id="ah_shadow_root" aria-hidden="true"><slot name="x"></slot></div>`;
+
+    const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID], engineOptions: { includeShadowDom: true } });
+    // The rule reports against the aria-hidden root (not the offending
+    // descendant) — same convention as the "focusable descendant (link)"
+    // test above — with the offender summarized in data.details.offenders.
+    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+    assert.ok(hasOccurrenceForId(rule, 'ah_shadow_root'));
+    assert.strictEqual(rule.occurrences[0].data.details.offenders[0].tag, 'button');
+});
+
+test(`${RULE_ID}: pass when the only "focusable" content has an explicit negative tabindex (found on a real site — Wikipedia's sticky header)`, () => {
+    const html = `<!doctype html><html><body>
+      <div id="ah_neg_desc" aria-hidden="true">
+        <button tabindex="-1">Not tabbable</button>
+        <a href="#x" tabindex="-1">Not tabbable link</a>
+      </div>
+    </body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: pass when the aria-hidden root itself has an explicit negative tabindex`, () => {
+    const html = `<!doctype html><html><body>
+      <div id="ah_neg_self" aria-hidden="true" tabindex="-1">Root has negative tabindex</div>
+    </body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
 test(`${RULE_ID}: fail when aria-hidden element is focusable AND contains focusable descendants`, () => {
     const html = `<!doctype html><html><body>
       <div id="ah_root_mix" aria-hidden="true" tabindex="0">
@@ -98,6 +145,30 @@ test(`${RULE_ID}: excludes visibility:hidden focusable candidates (pass when onl
     assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+test(`${RULE_ID}: excludes candidates that are opacity:0 AND visibility:hidden together (pass — visibility:hidden wins; found on a real site, Getty's global nav dropdowns)`, () => {
+    const html = `<!doctype html><html><body>
+      <div id="ah_root_op_vh" aria-hidden="true">
+        <a id="op_vh_link" href="#x" style="opacity:0;visibility:hidden">Hidden link</a>
+      </div>
+    </body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: excludes a candidate whose closer ancestor is opacity:0 but a FARTHER ancestor is display:none — the closer, filterable opacity:0 must not mask the farther, unconditional display:none (found on a real site, BuzzFeed's carousel slides)`, () => {
+    const html = `<!doctype html><html><body>
+      <div id="ah_outer_display_none" style="display:none">
+        <div id="ah_root_deep" aria-hidden="true">
+          <div style="opacity:0">
+            <a href="#x">Nested link</a>
+          </div>
+        </div>
+      </div>
+    </body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
 test(`${RULE_ID}: does NOT exclude opacity:0 focusable candidates (fail when opacity:0 link exists)`, () => {
     const html = `<!doctype html><html><body>
       <div id="ah_root5" aria-hidden="true">
@@ -118,6 +189,131 @@ test(`${RULE_ID}: inert subtree is not focusable => pass when only inert focusab
     </body></html>`;
     const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
     assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: contenteditable="false" does NOT trigger a fail (explicit non-editing host is not focus-enabling)`, () => {
+    const html = `<!doctype html><html><body>
+      <div id="ah_ce_false" aria-hidden="true">
+        <div contenteditable="false">Not editable</div>
+      </div>
+    </body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: contenteditable (empty attr = true) triggers a fail`, () => {
+    const html = `<!doctype html><html><body>
+      <div id="ah_ce_empty" aria-hidden="true">
+        <div contenteditable>Editable</div>
+      </div>
+    </body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+    assert.ok(hasOccurrenceForId(rule, 'ah_ce_empty'));
+});
+
+test(`${RULE_ID}: iframe under aria-hidden triggers a fail`, () => {
+    const html = `<!doctype html><html><body>
+      <div id="ah_iframe" aria-hidden="true">
+        <iframe title="f" src="about:blank"></iframe>
+      </div>
+    </body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+    assert.ok(hasOccurrenceForId(rule, 'ah_iframe'));
+});
+
+test(`${RULE_ID}: audio[controls] under aria-hidden triggers a fail`, () => {
+    const html = `<!doctype html><html><body>
+      <div id="ah_audio" aria-hidden="true">
+        <audio controls src="a.mp3"></audio>
+      </div>
+    </body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+    assert.ok(hasOccurrenceForId(rule, 'ah_audio'));
+});
+
+test(`${RULE_ID}: audio WITHOUT controls under aria-hidden does not trigger a fail`, () => {
+    const html = `<!doctype html><html><body>
+      <div id="ah_audio_nc" aria-hidden="true">
+        <audio src="a.mp3"></audio>
+      </div>
+    </body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: video[controls] under aria-hidden triggers a fail`, () => {
+    const html = `<!doctype html><html><body>
+      <div id="ah_video" aria-hidden="true">
+        <video controls src="v.mp4"></video>
+      </div>
+    </body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+    assert.ok(hasOccurrenceForId(rule, 'ah_video'));
+});
+
+test(`${RULE_ID}: disabled form control exception (pass even though disabled button matches focusable selector)`, () => {
+    const html = `<!doctype html><html><body>
+      <div id="ah_disabled_btn" aria-hidden="true">
+        <button disabled>Disabled</button>
+      </div>
+    </body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-hidden-focus-all-scenarios.html)`, () => {
+    const fixturePath = path.join(__dirname, '../..', 'fixtures', 'aria-hidden-focus-all-scenarios.html');
+    const html = fs.readFileSync(fixturePath, 'utf8');
+
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 16, maxOccurrences: 16 });
+
+    const expectedFailIds = [
+        'case_link_href',
+        'case_button',
+        'case_input',
+        'case_select',
+        'case_textarea',
+        'case_summary',
+        'case_tabindex',
+        'case_contenteditable_true',
+        'case_contenteditable_empty',
+        'case_iframe',
+        'case_audio_controls',
+        'case_video_controls',
+        'case_area_href',
+        'case_opacity_zero',
+        'case_self_focusable',
+        'case_self_and_descendant'
+    ];
+
+    const expectedNoOccIds = [
+        'case_non_focusable_content',
+        'case_contenteditable_false',
+        'case_audio_no_controls',
+        'case_video_no_controls',
+        'case_inert',
+        'case_disabled_button',
+        'case_disabled_input',
+        'case_display_none',
+        'case_visibility_hidden',
+        'case_opacity_and_visibility_hidden',
+        'case_opacity_close_display_none_far',
+        'case_tabindex_negative_descendant',
+        'case_tabindex_negative_self'
+    ];
+
+    for (const id of expectedFailIds) {
+        assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);
+    }
+
+    for (const id of expectedNoOccIds) {
+        assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
+    }
 });
 
 test(`${RULE_ID}: i18n default is English (title/description/occurrence strings)`, () => {

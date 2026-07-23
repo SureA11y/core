@@ -28,7 +28,12 @@ function runInPage(ctx) {
   const occurrences = [];
   let applicableCount = 1;
 
-  const titleEl = document.querySelector('head > title');
+  // Not restricted to `head > title`: per HTML parsing, a <title> encountered
+  // after <head> has closed is not re-parented into <head>, yet the browser
+  // (and document.title, used below) still recognizes it as the document's
+  // title — matching that here avoids a false "missing title" report for a
+  // <title> that legitimately ended up outside <head>.
+  const titleEl = document.querySelector('title');
   const titleText = (document.title || '').replace(/\s+/g, ' ').trim();
 
   const missingTitleEl = !titleEl;

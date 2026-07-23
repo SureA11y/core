@@ -74,13 +74,40 @@ function runInPage(ctx) {
 
   function trim(v) { return (v == null ? '' : String(v)).trim(); }
 
-  function directChildText(el, localName) {
+  // Per SVG accessible-name conventions, only a <title> that is literally
+  // the first child element is used by assistive technologies as the
+  // element's accessible name; a <title> appearing later among the
+  // children is commonly ignored by AT even though it's still a valid DOM
+  // child.
+  function firstChildTitleText(el) {
     try {
       if (!el) return '';
-      for (let n = el.firstElementChild; n; n = n.nextElementSibling) {
-        const tn = (n.localName || n.tagName || '').toLowerCase();
-        if (tn === localName) {
-          const t = trim(n.textContent);
+      const first = el.firstElementChild;
+      const tn = first ? (first.localName || first.tagName || '').toLowerCase() : '';
+      if (tn === 'title') {
+        const t = trim(first.textContent);
+        if (t) return t;
+      }
+    } catch {}
+    return '';
+  }
+
+  // <desc> counts when it is the first child, or the second child
+  // immediately following a <title> — the standard <title>+<desc> pairing.
+  // A <desc> appearing later than that is not reliably read by AT.
+  function descText(el) {
+    try {
+      if (!el) return '';
+      const first = el.firstElementChild;
+      const firstTag = first ? (first.localName || first.tagName || '').toLowerCase() : '';
+      if (firstTag === 'desc') {
+        const t = trim(first.textContent);
+        if (t) return t;
+      } else if (firstTag === 'title' && first.nextElementSibling) {
+        const second = first.nextElementSibling;
+        const secondTag = (second.localName || second.tagName || '').toLowerCase();
+        if (secondTag === 'desc') {
+          const t = trim(second.textContent);
           if (t) return t;
         }
       }
@@ -128,11 +155,11 @@ function runInPage(ctx) {
 
     applicableCount += 1;
 
-    const titleText = directChildText(el, 'title');
+    const titleText = firstChildTitleText(el);
     if (titleText) continue;
 
-    const descText = directChildText(el, 'desc');
-    if (descText) continue;
+    const desc = descText(el);
+    if (desc) continue;
 
     // Only now check “accessible name” (but scoped to allowed mechanisms)
     const ariaLabelRaw = (() => { try { return el.getAttribute('aria-label'); } catch { return null; } })();

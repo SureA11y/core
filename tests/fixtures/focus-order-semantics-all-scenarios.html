@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-focus-order-semantics — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-focus-order-semantics</code></h1>
+
+  <p class="note">
+    Each target element has a stable <code>id</code> of the form <code>fos_case_NN</code>.
+  </p>
+
+  <h2>A. CANTTELL — tabbable with a non-interactive role</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — CANTTELL: tabindex="0" with role="heading"</div>
+    <div id="fos_case_01" role="heading" tabindex="0">Fake focusable heading</div>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — CANTTELL: tabindex="1" with role="list"</div>
+    <div id="fos_case_02" role="list" tabindex="1">Fake focusable list</div>
+  </div>
+
+  <h2>B. Not flagged</h2>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — NEUTRAL: tabindex="0" with an interactive role (role="button")</div>
+    <div id="fos_case_03" role="button" tabindex="0">Real custom button</div>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — NEUTRAL: role="heading" but tabindex="-1" (not in tab order)</div>
+    <div id="fos_case_04" role="heading" tabindex="-1">Not tabbable</div>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — NEUTRAL: tabindex="0" with no role at all</div>
+    <div id="fos_case_05" tabindex="0">No role, cannot judge from markup alone</div>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

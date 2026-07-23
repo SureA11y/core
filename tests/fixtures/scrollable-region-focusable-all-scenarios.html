@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-scrollable-region-focusable — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+    .scrollY { overflow-y: auto; height: 100px; }
+    .scrollX { overflow-x: scroll; }
+    .noScroll { overflow: visible; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-scrollable-region-focusable</code></h1>
+
+  <p class="note">
+    Each target element has a stable <code>id</code> of the form <code>srf_case_NN</code>.
+    jsdom does not perform layout, so these cases are driven entirely by
+    declared CSS overflow, not actual measured scroll overflow.
+  </p>
+
+  <h2>A. CANTTELL — scrollable overflow, not reachable by keyboard</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — CANTTELL: overflow-y:auto, no focusable descendant, not itself focusable</div>
+    <div id="srf_case_01" class="scrollY">Plain long text content with no interactive children at all.</div>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — CANTTELL: overflow-x:scroll, no focusable descendant, not itself focusable</div>
+    <pre id="srf_case_02" class="scrollX">a very long line of preformatted text that would overflow horizontally</pre>
+  </div>
+
+  <h2>B. Not flagged</h2>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — NEUTRAL: scrollable overflow but itself has tabindex="0"</div>
+    <div id="srf_case_03" class="scrollY" tabindex="0">Long content, but the region itself is focusable.</div>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — NEUTRAL: scrollable overflow but contains a focusable descendant</div>
+    <div id="srf_case_04" class="scrollY">Long content with <a href="#">a link</a> inside it.</div>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — NEUTRAL: not scrollable (overflow:visible)</div>
+    <div id="srf_case_05" class="noScroll">Plain content, no declared scroll overflow.</div>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

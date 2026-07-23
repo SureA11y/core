@@ -80,6 +80,7 @@ function resolveRulesDir(repoRoot, rulesDirArg) {
     }
 
     const candidates = [
+        path.join(repoRoot, 'src', 'checks'),
         path.join(repoRoot, 'src', 'rules'),
         path.join(repoRoot, 'rules')
     ];
@@ -88,7 +89,7 @@ function resolveRulesDir(repoRoot, rulesDirArg) {
         if (fs.existsSync(candidate) && fs.statSync(candidate).isDirectory()) return candidate;
     }
 
-    return path.join(repoRoot, 'rules');
+    return path.join(repoRoot, 'src', 'checks');
 }
 
 function resolveFacetsFile(repoRoot, facetsArg) {
@@ -644,7 +645,12 @@ function main() {
 
             mdSection += `| Rule ID | Type | Title | File | Facet | Notes |\n|---|---|---|---|---|---|\n`;
             for (const r of rowsForSc) {
-                const notes = r.error ? `ERROR: ${String(r.error).replaceAll('|', '\\|')}` : '';
+                // escapeMdHtml (already used for safeTitle below) also
+                // guards this field: a rule-load error message could
+                // plausibly quote markup (e.g. an attribute name in
+                // backticks or angle brackets) and hit the same
+                // unescaped-HTML-in-a-markdown-table risk as rule titles.
+                const notes = r.error ? `ERROR: ${escapeMdHtml(String(r.error)).replaceAll('|', '\\|')}` : '';
                 const facetIds = getFacetIdsForScFromRow(r, sc);
                 const facetText = facetIds.length ? facetIds.join(', ') : '';
                 const safeTitle = escapeMdHtml(r.title || '').replaceAll('|', '\\|');

@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-empty-table-header — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+    table { border-collapse: collapse; }
+    td, th { border: 1px solid #ccc; padding: 4px 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-empty-table-header</code></h1>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — NEUTRAL: th with text content</div>
+    <table><tr><th id="eth_case_01">Name</th></tr></table>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — CANTTELL: empty th</div>
+    <table><tr><th id="eth_case_02"></th></tr></table>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — CANTTELL: th named only via aria-label, no visible text — real screen-reader/browser testing (NVDA+Firefox, iOS VoiceOver+Safari) confirms aria-label is ignored on &lt;th&gt;, found via a live-DOM cross-engine run 2026-07-21 (DuckDuckGo's browser-comparison table, icon-only column headers)</div>
+    <table><tr><th id="eth_case_03" aria-label="Chrome"></th></tr></table>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — CANTTELL: empty div with role="columnheader" — the reference engine's own selector covers ARIA-role headers, not just native &lt;th&gt;, found missing entirely via the cross-engine diff tool 2026-07-23</div>
+    <div role="columnheader" id="eth_case_04"></div>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — CANTTELL: empty div with role="rowheader"</div>
+    <div role="rowheader" id="eth_case_05"></div>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — NEUTRAL: empty th with role="presentation" — no longer meaningfully a header, matches the reference engine's `th:not([role])` exclusion</div>
+    <table><tr><th id="eth_case_06" role="presentation"></th></tr></table>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

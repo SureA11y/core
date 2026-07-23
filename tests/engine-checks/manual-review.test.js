@@ -2,8 +2,12 @@
 
 const test = require('node:test');
 const assert = require('node:assert');
+const fs = require('node:fs');
+const path = require('node:path');
 const { runa11yCoreOnHtml } = require('../helpers/runa11yCoreOnHtml');
 const { assertRule } = require('../helpers/assertRule');
+
+const RULE_ID = 'a11ycore-manual-review';
 
 test('manual-review: cantTell with one occurrence bound to html by default', () => {
     const html = `
@@ -48,4 +52,11 @@ test('manual-review: uses contextSelector when provided', () => {
 
     const occ = rule.occurrences[0];
     assert.strictEqual(occ.selector, '#main');
+});
+
+test(`${RULE_ID}: fixture coverage (tests/fixtures/manual-review-all-scenarios.html)`, () => {
+    const fixturePath = path.join(__dirname, '..', 'fixtures', 'manual-review-all-scenarios.html');
+    const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
+    const result = runa11yCoreOnHtml(fixtureHtml);
+    assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
 });

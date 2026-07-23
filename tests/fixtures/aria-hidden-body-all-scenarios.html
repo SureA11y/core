@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-aria-hidden-body — scenario fixture (FAIL case)</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body aria-hidden="true">
+  <h1>Scenario fixture: <code>a11ycore-aria-hidden-body</code></h1>
+  <div class="case-title">01 — FAIL: the &lt;body&gt; element itself carries aria-hidden="true"</div>
+  <p class="note">
+    This hides the entire page from assistive technologies. This is a whole-document check
+    (evaluates <code>document.body</code> directly), so only one outcome is possible per page —
+    the PASS case is simply any page whose &lt;body&gt; has no aria-hidden="true" (already covered
+    by the inline unit tests in this rule's .test.js file; not worth a second fixture file).
+  </p>
+</body>
+</html>

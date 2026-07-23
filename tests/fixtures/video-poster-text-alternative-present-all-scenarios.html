@@ -42,10 +42,10 @@
   </div>
 
   <div class="case" id="case_03">
-    <div class="case-title">03 — PASS: poster present, fallback text provides alternative</div>
+    <div class="case-title">03 — FAIL: poster present, only between-tag fallback text (not exposed to AT)</div>
     <div class="row">
       <video id="video_case_03" poster="poster.png">A short demo video.</video>
-      <span>Fallback text inside &lt;video&gt;.</span>
+      <span>Fallback text inside &lt;video&gt; is only rendered by browsers without &lt;video&gt; support.</span>
     </div>
   </div>
 
@@ -100,6 +100,36 @@
     <div class="row">
       <video id="video_case_09" poster="  " aria-label="Named"></video>
       <span>Poster is empty/whitespace; rule does not apply.</span>
+    </div>
+  </div>
+
+  <h2>E. Additional accessible-name mechanisms</h2>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — PASS: poster present, aria-labelledby provides name</div>
+    <div class="row">
+      <span id="video_case_10_label">Product demo video label</span>
+      <video id="video_case_10" poster="poster.png" aria-labelledby="video_case_10_label"></video>
+      <span>Accessible name via aria-labelledby.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — PASS: poster present, title attribute provides name (best-effort)</div>
+    <div class="row">
+      <video id="video_case_11" poster="poster.png" title="Demo video poster"></video>
+      <span>Title is accepted as a last resort.</span>
+    </div>
+  </div>
+
+  <h2>F. IDREF reference exception</h2>
+
+  <div class="case" id="case_12">
+    <div class="case-title">12 — FAIL: aria-hidden but IDREF-referenced, poster present, unnamed</div>
+    <div class="row">
+      <div aria-labelledby="video_case_12">This element references the video by IDREF.</div>
+      <video id="video_case_12" poster="poster.png" aria-hidden="true"></video>
+      <span>Eligibility override: referenced by IDREF, so it remains applicable; missing name => fail.</span>
     </div>
   </div>
 

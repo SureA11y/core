@@ -218,6 +218,27 @@ function createContrastHelpers(opts, shared) {
         return !!v;
     }
 
+    // WCAG 1.4.3/1.4.6 "Incidental" exception: text that is part of an inactive
+    // (disabled) user interface component has no contrast requirement. Walk the
+    // ancestor chain (not just the text's immediate parent) so text nested inside
+    // a disabled control, e.g. <button disabled><span>Label</span></button>, is
+    // still recognized as inactive.
+    function isInactiveUiComponent(el) {
+        let node = el;
+        let depth = 0;
+        while (node && node.nodeType === 1 && depth++ < 100) {
+            try {
+                if (typeof node.matches === 'function' && node.matches(':disabled')) return true;
+            } catch {}
+            try {
+                const ad = node.getAttribute ? String(node.getAttribute('aria-disabled') || '').trim().toLowerCase() : '';
+                if (ad === 'true') return true;
+            } catch {}
+            node = node.parentElement;
+        }
+        return false;
+    }
+
     function getTextScan(ctx, helpers, engineOptions) {
         try {
             const d = (ctx && ctx.document) || (opts && opts.document) || null;
@@ -243,17 +264,20 @@ function createContrastHelpers(opts, shared) {
             const cacheKey = `visibilityMode=${visibilityMode}`;
             if (cache && cache.has(cacheKey)) return cache.get(cacheKey);
 
-            const walkRootRaw = (ctx && ctx.root) ? ctx.root : (d.body || d.documentElement || d);
-            const walkRoot = (walkRootRaw && walkRootRaw.nodeType === 9)
-                ? (walkRootRaw.body || walkRootRaw.documentElement || walkRootRaw)
-                : walkRootRaw;
+            // ctx.root is an array with multi-region contextSelector support
+            // (dom-runner.js resolves it that way now) but back-compat with
+            // any caller still passing a single element directly.
+            const walkRootsRaw = (ctx && ctx.root)
+                ? (Array.isArray(ctx.root) ? ctx.root : [ctx.root])
+                : [(d.body || d.documentElement || d)];
+            const walkRoots = walkRootsRaw
+                .map((wr) => (wr && wr.nodeType === 9) ? (wr.body || wr.documentElement || wr) : wr)
+                .filter(Boolean);
 
             const SHOW_TEXT =
                 (w && w.NodeFilter && typeof w.NodeFilter.SHOW_TEXT === 'number')
                     ? w.NodeFilter.SHOW_TEXT
                     : 4;
-
-            const walker = d.createTreeWalker(walkRoot, SHOW_TEXT, null);
 
             const isNonEmptyText = (t) => t != null && /\S/.test(String(t));
 
@@ -262,6 +286,7 @@ function createContrastHelpers(opts, shared) {
             let eligibleTextCount = 0;
 
             const eligCache = new WeakMap();
+            const inactiveCache = new WeakMap();
 
             const isVisibleEligible = (el) => {
                 if (!helpers || typeof helpers.isDomVisibleEligible !== 'function') return true;
@@ -279,32 +304,63 @@ function createContrastHelpers(opts, shared) {
                 return ok;
             };
 
+            const isInactive = (el) => {
+                if (inactiveCache.has(el)) return inactiveCache.get(el);
+                let inactive = false;
+                try {
+                    inactive = isInactiveUiComponent(el);
+                } catch {
+                    inactive = false;
+                }
+                inactiveCache.set(el, inactive);
+                return inactive;
+            };
+
             let node = null;
             let guard = 0;
+            // Guards against double-counting text nodes reachable from more
+            // than one root when contextSelector regions overlap/nest (a
+            // single TreeWalker never revisits a node, but running one
+            // walker per root could otherwise walk the same subtree twice).
+            const visitedTextNodes = new Set();
 
-            while ((node = walker.nextNode()) && guard++ < 500000) {
-                const text = node && node.nodeValue;
-                if (!isNonEmptyText(text)) continue;
-
-                const el =
-                    node.parentElement ||
-                    (node.parentNode && node.parentNode.nodeType === 1 ? node.parentNode : null);
-
-                if (!el) continue;
-                // Respect subtree exclusions from engineOptions.excludeSelectors
+            for (const walkRoot of walkRoots) {
+                if (guard >= 500000) break;
+                let walker;
                 try {
-                    if (helpers && typeof helpers.isExcluded === 'function' && helpers.isExcluded(el)) continue;
-                } catch {}
-                if (!isVisibleEligible(el)) continue;
+                    walker = d.createTreeWalker(walkRoot, SHOW_TEXT, null);
+                } catch {
+                    continue;
+                }
 
-                eligibleTextCount++;
+                while ((node = walker.nextNode()) && guard++ < 500000) {
+                    if (visitedTextNodes.has(node)) continue;
+                    visitedTextNodes.add(node);
 
-                const prev = elToCount.get(el);
-                if (prev === undefined) {
-                    elToCount.set(el, 1);
-                    elements.push(el);
-                } else {
-                    elToCount.set(el, prev + 1);
+                    const text = node && node.nodeValue;
+                    if (!isNonEmptyText(text)) continue;
+
+                    const el =
+                        node.parentElement ||
+                        (node.parentNode && node.parentNode.nodeType === 1 ? node.parentNode : null);
+
+                    if (!el) continue;
+                    // Respect subtree exclusions from engineOptions.excludeSelectors
+                    try {
+                        if (helpers && typeof helpers.isExcluded === 'function' && helpers.isExcluded(el)) continue;
+                    } catch {}
+                    if (!isVisibleEligible(el)) continue;
+                    if (isInactive(el)) continue;
+
+                    eligibleTextCount++;
+
+                    const prev = elToCount.get(el);
+                    if (prev === undefined) {
+                        elToCount.set(el, 1);
+                        elements.push(el);
+                    } else {
+                        elToCount.set(el, prev + 1);
+                    }
                 }
             }
 
@@ -844,7 +900,7 @@ function createContrastHelpers(opts, shared) {
             const op = clamp01(Number.parseFloat(cs && cs.opacity != null ? cs.opacity : '1'));
 
             if (bg) {
-                const layer = { r: bg.r, g: bg.g, b: bg.b, a: clamp01(bg.a * op) };
+                const layer = { r: bg.r, g: bg.g, b: bg.b, a: clamp01(bg.a) };
                 if (collectStack) {
                     stack.push({
                         selector: __getSimpleSelectorCached(cur, (cur.tagName || '').toLowerCase() || 'html'),
@@ -852,8 +908,24 @@ function createContrastHelpers(opts, shared) {
                         opacity: op
                     });
                 }
-                acc = compositeRgba(layer, acc);
-                if (acc.a >= 1) break;
+                // This ancestor's own background sits BEHIND everything
+                // already accumulated from its descendants (acc is painted
+                // over it here).
+                acc = compositeRgba(acc, layer);
+            }
+
+            // CSS opacity on an ancestor scales the *entire rendered
+            // subtree* (its own background plus everything already
+            // accumulated from descendants) as one compositing group
+            // against whatever is further out — not just that ancestor's
+            // own background layer. Applying it here (after folding in
+            // this ancestor's own bg) keeps that correct even when
+            // accumulated alpha already reached 1 from an inner opaque
+            // layer, which is why there is no longer an early
+            // `acc.a >= 1` exit: a still-unvisited outer ancestor's
+            // opacity can still reduce that alpha.
+            if (op < 1) {
+                acc = { r: acc.r, g: acc.g, b: acc.b, a: clamp01(acc.a * op) };
             }
 
             cur = composedParent(cur);
@@ -1005,6 +1077,36 @@ function createContrastHelpers(opts, shared) {
                 return out;
             }
 
+            // An ANCESTOR (not el itself) with fractional opacity is treated
+            // as a computability blocker rather than being folded into a
+            // confident ratio. Group opacity uniformly scales an ancestor's
+            // *entire* rendered subtree (its own background AND everything
+            // already accumulated from descendants, including el's text)
+            // when compositing against what's behind it — computing that
+            // precisely for the foreground would require re-deriving the
+            // text's rendered color the same way the background is folded
+            // (rather than compositing a separately opacity-scaled
+            // foreground against the fully-folded background, which
+            // double-counts the ancestor's opacity). Rather than risk a
+            // confidently wrong pass/fail from that mismatch, defer to
+            // manual review. (el's own opacity, if any, does not trigger
+            // this: it is already handled correctly by the existing
+            // per-element opacity product used for the foreground.)
+            if (cur !== el) {
+                const ancestorOpacity = clamp01(Number.parseFloat(cs && cs.opacity != null ? cs.opacity : '1'));
+                if (ancestorOpacity < 1) {
+                    const out = {
+                        ok: false,
+                        reasonCode: 'ANCESTOR_OPACITY',
+                        blockerSelector: __getSimpleSelectorCached(cur, (cur.tagName || '').toLowerCase() || 'html'),
+                        blockerProperty: 'opacity',
+                        blockerValue: truncateCssValue(String(cs && cs.opacity != null ? cs.opacity : '1'), 80)
+                    };
+                    try { if (el) __computabilityBlockerCache.set(el, out); } catch (_e) {}
+                    return out;
+                }
+            }
+
             cur = composedParent(cur);
         }
 
@@ -1037,7 +1139,8 @@ function createContrastHelpers(opts, shared) {
         computeEffectiveForeground,
         computeEffectiveBackground,
         getComputabilityBlocker,
-        getTextScan
+        getTextScan,
+        isInactiveUiComponent
     };
 }
 

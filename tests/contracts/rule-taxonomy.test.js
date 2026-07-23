@@ -19,8 +19,14 @@ const CATEGORY_TAGS = ['nontext', 'forms', 'media', 'structure', 'navigation'];
 // Tags that represent outcomes (forbidden as rule tags)
 const FORBIDDEN_OUTCOME_TAGS = ['pass', 'fail', 'canttell', 'notapplicable', 'inapplicable'];
 
-// Optional level tags (not required)
-const WCAG_LEVEL_TAGS = ['wcag2a', 'wcag2aa', 'wcag2aaa', 'wcag21', 'wcag22'];
+// Optional level tags (not required). wcag2*/wcag21*/wcag22* mark a rule's WCAG-version
+// origin (bare wcag2 = 2.0 baseline, wcag21/wcag22 = introduced in that version) crossed with
+// its conformance level -- see src/coverage/wcag-version-map.js for which SCs are 2.1/2.2-new.
+const WCAG_LEVEL_TAGS = [
+  'wcag2a', 'wcag2aa', 'wcag2aaa',
+  'wcag21a', 'wcag21aa', 'wcag21aaa',
+  'wcag22a', 'wcag22aa', 'wcag22aaa'
+];
 
 // Detect if a rule is WCAG-mapped in normative mappings
 function isWcagMapped(ruleDef) {

@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-iframe-focusable-content — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+    iframe { width: 200px; height: 100px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-iframe-focusable-content</code> (tabindex="-1" frames must not contain focusable content)</h1>
+
+  <p class="note">
+    <strong>Coverage note:</strong> this rule inspects <code>iframe.contentDocument</code>, which
+    jsdom does not populate from a <code>srcdoc</code> attribute synchronously — only via a live
+    <code>load</code> event or direct script mutation after parse. A static HTML page therefore
+    cannot statically express a same-origin frame whose embedded document contains a real
+    focusable element (the FAIL case). That branch is covered programmatically instead, in this
+    rule's <code>tests/engine-checks/automatic/iframe-focusable-content.test.js</code>, via
+    <code>dom.window.document.getElementById(...).contentDocument.body.innerHTML = ...</code>
+    after the page is parsed. What IS expressible statically — and covered below — is every other
+    branch: not applicable, and pass (empty embedded document).
+  </p>
+
+  <h2>A. Not applicable (skipped, not counted)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — NEUTRAL: iframe with no negative tabindex</div>
+    <iframe id="ifc_case_01" src="content.html"></iframe>
+  </div>
+
+  <h2>B. Applicable, pass</h2>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — PASS: tabindex="-1", embedded document has no focusable content (jsdom's default empty document for a bare iframe)</div>
+    <iframe id="ifc_case_02" tabindex="-1"></iframe>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

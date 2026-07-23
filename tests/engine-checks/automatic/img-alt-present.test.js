@@ -63,6 +63,23 @@ test(`${RULE_ID}: role=presentation but focusable is NOT excluded and fails if a
     assert.ok(hasOccurrenceForId(rule, 'pres_focus'));
 });
 
+test(`${RULE_ID}: pass when alt is entirely absent but a non-empty title attribute is present (found on a real site — AliExpress's homepage logo, 2026-07-23: <img title="..."> with no alt attribute at all is a real, valid HTML-AAM text-alternative fallback, also accepted by the reference engine's own image-alt rule via its non-empty-title check)`, () => {
+    const html = `<!doctype html><html><body>
+    <img id="title_only" src="x.png" title="Company logo">
+  </body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: fail when title is present but empty/whitespace-only (an empty title is not a real text alternative)`, () => {
+    const html = `<!doctype html><html><body>
+    <img id="empty_title" src="x.png" title="   ">
+  </body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
+    assert.ok(hasOccurrenceForId(rule, 'empty_title'));
+});
+
 test(`${RULE_ID}: inert subtree is ineligible and does not cause pass (=> notApplicable when only inert imgs)`, () => {
     const html = `<!doctype html><html><body>
     <div inert>
@@ -79,8 +96,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/img-alt-present-all-scenarios
 
     const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-    // With the current helper behavior and the fixed presentation logic, we expect 9 fails.
-    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 9, maxOccurrences: 9 });
+    // With the current helper behavior and the fixed presentation logic, we expect 12 fails.
+    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 12, maxOccurrences: 12 });
 
     const expectedFailIds = [
         'img_case_01',
@@ -92,6 +109,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/img-alt-present-all-scenarios
         'img_case_26',
         'img_case_23',
         'img_case_27a',
+        'img_case_30',   // aria-labelledby dangling IDREF, no alt => fails
+        'img_case_31',   // aria-label="" empty, no alt => fails
+        'img_case_32',   // ancestor visibility:hidden but own visibility:visible override => eligible, missing alt => fails
     ];
 
     const expectedNoOccIds = [
@@ -111,6 +131,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/img-alt-present-all-scenarios
         'img_case_26b',  // aria-hidden and not focusable => ineligible
         'img_case_25a',  // aria-hidden and not focusable => ineligible
         'img_case_25b',  // hiddenAttr => ineligible
+        'img_case_28',   // aria-label present, no alt => satisfies ARIA naming mechanism
+        'img_case_29',   // aria-labelledby resolves non-empty text => satisfies ARIA naming mechanism
+        'img_case_33',   // ancestor visibility:hidden, no override => inherited, ineligible
     ];
 
     for (const id of expectedFailIds) {

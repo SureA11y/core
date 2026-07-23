@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-p-as-heading — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+    .fakeHeading { font-weight: bold; font-size: 22px; }
+    .normalText { font-weight: 400; font-size: 16px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-p-as-heading</code></h1>
+
+  <p class="note">
+    Each target &lt;p&gt; has a stable <code>id</code> of the form <code>pah_case_NN</code>.
+  </p>
+
+  <h2>A. CANTTELL — bold, heading-sized, short</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — CANTTELL: bold + 22px via own computed style, short text</div>
+    <p id="pah_case_01" class="fakeHeading">Section Title</p>
+  </div>
+
+  <h2>B. Not flagged</h2>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — NEUTRAL: normal weight, normal size</div>
+    <p id="pah_case_02" class="normalText">Just a normal paragraph of body text that is not bold at all.</p>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — NEUTRAL: bold and large, but too long to be heading-like (&gt;120 chars)</div>
+    <p id="pah_case_03" class="fakeHeading">This paragraph is bold and large but has way more than one hundred and twenty characters of text so it should not be flagged as a fake heading despite being bold and large sized</p>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — NEUTRAL: bold via wrapping &lt;strong&gt;, but default (small) font size</div>
+    <p id="pah_case_04"><strong>Wrapped bold title</strong></p>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

@@ -372,6 +372,37 @@
   </div>
 </div>
 
+<div class="case" id="case_41">
+  <div class="case-title">41 — FAIL: wrapping &lt;label&gt; whose only text is aria-hidden gives no real accessible name</div>
+  <div class="row">
+    <label><input id="fc_case_41" type="checkbox" /><span aria-hidden="true">Accept</span></label>
+    <span>Structural association exists, but its text is aria-hidden — no accessible name.</span>
+  </div>
+</div>
+
+<div class="case" id="case_42">
+  <div class="case-title">42 — PASS: wrapping &lt;label&gt; with visible text (control before text)</div>
+  <div class="row">
+    <label><input id="fc_case_42" type="checkbox" />Accept</label>
+  </div>
+</div>
+
+<div class="case" id="case_43">
+  <div class="case-title">43 — FAIL: &lt;label for&gt; whose only text is aria-hidden gives no real accessible name</div>
+  <div class="row">
+    <label for="fc_case_43"><span aria-hidden="true">Volume</span></label>
+    <input id="fc_case_43" type="range" />
+  </div>
+</div>
+
+<div class="case" id="case_44">
+  <div class="case-title">44 — PASS: wrapping &lt;label&gt; has its own aria-label; its only child content is aria-hidden (real-world pattern, verified on a live site)</div>
+  <div class="row">
+    <label aria-label="Toggle navigation" for="fc_case_44"><svg aria-hidden="true"><path d="M0 0"/></svg></label>
+    <input id="fc_case_44" type="checkbox" />
+  </div>
+</div>
+
 <p class="note">End of fixture.</p>
 </body>
 </html>

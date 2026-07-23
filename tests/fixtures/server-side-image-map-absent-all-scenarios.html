@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-server-side-image-map-absent — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-server-side-image-map-absent</code> (no server-side image maps)</h1>
+
+  <p class="note">
+    Each target &lt;img&gt; has a stable <code>id</code> of the form <code>ssim_case_NN</code>.
+    Presence of ismap is itself the violation — there is no partial-pass case.
+  </p>
+
+  <h2>A. Invalid</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: img with ismap, inside a link</div>
+    <a href="/map"><img id="ssim_case_01" src="map.png" ismap alt="Site map"></a>
+  </div>
+
+  <h2>B. Valid / not applicable (skipped, not counted)</h2>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — NEUTRAL: ordinary image, no ismap attribute</div>
+    <img id="ssim_case_02" src="photo.jpg" alt="A photo">
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — NEUTRAL: client-side image map (usemap), not flagged by this rule</div>
+    <img id="ssim_case_03" src="map2.png" usemap="#sitemap" alt="Site map">
+    <map name="sitemap"><area shape="rect" coords="0,0,50,50" href="/home" alt="Home"></map>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

@@ -25,16 +25,21 @@ test(`${RULE_ID}: cantTell when at least one applicable element triggers manual 
   const html = fs.readFileSync(fixturePath, 'utf8');
 
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 3, maxOccurrences: 3 });
 
   const expected = [
   "img_d_01",
-  "img_d_05"
+  "img_d_05",
+  "img_d_08"
 ];
   const notExpected = [
   "img_d_02",
   "img_d_03",
-  "img_d_04"
+  "img_d_04",
+  "img_d_06",
+  "img_d_07",
+  "img_d_09",
+  "img_d_10"
 ];
 
   for (const id of expected) {

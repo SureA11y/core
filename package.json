@@ -3,7 +3,22 @@
   "version": "1.1.0",
   "description": "Lightweight DOM rules accessibility core with modular rules.",
   "main": "src/index.js",
+  "bin": {
+    "a11y-core": "./bin/a11y-core.js"
+  },
   "license": "MIT",
+  "engines": {
+    "node": ">=18.13.0"
+  },
+  "files": [
+    "src",
+    "bin",
+    "docs/**/*.md",
+    "docs/**/*.js",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
   "scripts": {
     "build": "node scripts/build-core.js",
     "test": "npm run build && node --test \"tests/**/*.test.js\"",
@@ -13,12 +28,20 @@
     "engine-perf-bench-transparent": "node --expose-gc scripts/engine-perf-bench.js --profileRules=true --top=15 --iters=25 --generated=contrastTransparent",
     "engine-perf-bench-opaque": "node --expose-gc scripts/engine-perf-bench.js --profileRules=true --top=15 --iters=25 --generated=contrastOpaque",
     "test:typography-helpers": "node tests/contrast-typography.test.js",
-    "coverage": "node scripts/generate-wcag-coverage.js",
-    "coverage:strict": "node scripts/generate-wcag-coverage.js --strictFacets",
+    "coverage": "node scripts/generate-wcag-coverage.js --rulesDir src/checks",
+    "coverage:strict": "node scripts/generate-wcag-coverage.js --rulesDir src/checks --strictFacets",
+    "fixtures:index": "node scripts/generate-fixture-index.js",
+    "docs:rule-catalog": "npm run build && node scripts/generate-rule-catalog.js",
     "validate:automatic-rules": "npm run build && node scripts/validate-all-rules.js src/checks/automatic",
-    "validate:manual-rules": "npm run build && node scripts/validate-all-rules.js src/checks/manual"
+    "validate:manual-rules": "npm run build && node scripts/validate-all-rules.js src/checks/manual",
+    "validate:cross-engine-mapping": "npm run build && node scripts/cross-engine/validate-rule-mapping.js",
+    "cross-engine-diff": "node scripts/cross-engine/cross-engine-diff.js"
+  },
+  "dependencies": {
+    "jsdom": "^29.1.1"
   },
   "devDependencies": {
-    "jsdom": "^28.0.0"
+    "the reference engine": "^4.12.1",
+    "playwright": "^1.61.1"
   }
 }

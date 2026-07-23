@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-aria-prohibited-children — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-aria-prohibited-children</code> (container roles must not own a disallowed child role)</h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>apc_case_NN</code>.
+  </p>
+
+  <h2>A. Valid</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — PASS: menubar with only menuitem children</div>
+    <ul role="menubar" id="apc_case_01">
+      <li role="menuitem">File</li>
+      <li role="menuitem">Edit</li>
+    </ul>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — PASS: menubar with menuitems wrapped in a role="group" (group is itself one of menubar's allowed owned roles, so it's transparent)</div>
+    <ul role="menubar" id="apc_case_02">
+      <li role="group">
+        <span role="menuitem">File</span>
+        <span role="menuitem">Edit</span>
+      </li>
+    </ul>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — PASS: menubar with a role="none" wrapper hiding a menuitem (presentational wrappers are transparent, same as WAI-ARIA's own accessibility-tree pruning)</div>
+    <ul role="menubar" id="apc_case_03">
+      <li role="none"><button role="menuitem">File</button></li>
+    </ul>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — PASS: listbox with only option children</div>
+    <div role="listbox" id="apc_case_04"><div role="option">A</div></div>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — PASS: an aria-hidden descendant with a would-be-disallowed role is pruned from the accessible tree, not flagged</div>
+    <ul role="menubar" id="apc_case_05">
+      <li role="menuitem">File</li>
+      <li aria-hidden="true"><nav role="region">Hidden, ignored</nav></li>
+    </ul>
+  </div>
+
+  <h2>B. Invalid</h2>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — FAIL: a role="none" wrapper hides a disallowed role="region" descendant (found on a real site — Red Cross's utility-nav dropdown menu)</div>
+    <ul role="menubar" id="apc_case_06">
+      <li role="menuitem">File</li>
+      <li role="none">
+        <nav id="apc_case_06_child" role="region">Dropdown panel</nav>
+      </li>
+    </ul>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — FAIL: a container role is directly owned by another container role not in its allowed set (listbox nested directly in menubar)</div>
+    <ul role="menubar" id="apc_case_07">
+      <li role="menuitem">File</li>
+      <li><div id="apc_case_07_child" role="listbox"><div role="option">x</div></div></li>
+    </ul>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — FAIL: table directly owns a disallowed role="button"</div>
+    <div role="table" id="apc_case_08">
+      <div role="row"><div role="cell">x</div></div>
+      <div id="apc_case_08_child" role="button">Not a valid table child</div>
+    </div>
+  </div>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — FAIL: a roleless-but-focusable (tabindex) child is a real accessible-tree node, not a transparent wrapper (widened 2026-07-21 — matches the reference engine's own getOwnedRoles exactly)</div>
+    <ul role="menubar" id="apc_case_10">
+      <li role="menuitem">File</li>
+      <li id="apc_case_10_child" tabindex="0">Roleless but focusable</li>
+    </ul>
+  </div>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — FAIL: a roleless-but-globally-aria-attributed (aria-label) child is a real accessible-tree node, not a transparent wrapper</div>
+    <ul role="menubar" id="apc_case_11">
+      <li role="menuitem">File</li>
+      <li id="apc_case_11_child" aria-label="Roleless but named">Something</li>
+    </ul>
+  </div>
+
+  <h2>C. Not applicable (skipped, not counted)</h2>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — NEUTRAL: role has no required-owned entry</div>
+    <div role="button" id="apc_case_09"></div>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

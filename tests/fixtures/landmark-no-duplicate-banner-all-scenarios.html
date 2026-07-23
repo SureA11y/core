@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-landmark-no-duplicate-banner — scenario fixture (FAIL case)</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-landmark-no-duplicate-banner</code></h1>
+  <div class="case-title">01 — CANTTELL: two banner landmarks on the same page</div>
+  <header id="ndb_case_01a">First header</header>
+  <header id="ndb_case_01b">Second header</header>
+  <p class="note">
+    This rule reports one occurrence per banner instance when more than one exists (both
+    are flagged, not just the "extra" one, since which is "correct" is ambiguous). The
+    PASS case (0 or 1 banner) is covered by the inline unit tests in this rule's
+    <code>.test.js</code> file rather than a second fixture file.
+  </p>
+</body>
+</html>

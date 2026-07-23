@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-aria-braille-equivalent — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-aria-braille-equivalent</code></h1>
+
+  <p class="note">
+    Each target element has a stable <code>id</code> of the form <code>abe_case_NN</code>.
+  </p>
+
+  <h2>A. PASS — braille attribute has a non-braille equivalent</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — PASS: aria-braillelabel + visible text content (name-from-content)</div>
+    <button id="abe_case_01" aria-braillelabel="save">Save</button>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — PASS: aria-braillelabel + aria-label</div>
+    <div id="abe_case_02" role="button" tabindex="0" aria-braillelabel="save" aria-label="Save document"></div>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — PASS: aria-brailleroledescription + aria-roledescription both present</div>
+    <div id="abe_case_03" role="img" aria-brailleroledescription="pic" aria-roledescription="picture" aria-label="cat">x</div>
+  </div>
+
+  <h2>B. FAIL — braille attribute used without its non-braille equivalent</h2>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — FAIL: aria-braillelabel with no accessible name at all</div>
+    <button id="abe_case_04" aria-braillelabel="save"></button>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — FAIL: aria-brailleroledescription with no aria-roledescription</div>
+    <div id="abe_case_05" role="img" aria-brailleroledescription="pic" aria-label="cat">x</div>
+  </div>
+
+  <h2>C. Not applicable (skipped, not counted)</h2>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — NEUTRAL: no braille-specific attribute at all</div>
+    <button id="abe_case_06">Plain button</button>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

@@ -109,6 +109,13 @@ function runInPage(ctx) {
     return { present: false, value: '', mechanism: 'none', flags };
   }
 
+  // `title` is a weaker text-alternative mechanism than aria-label/
+  // aria-labelledby — it is not reliably exposed to assistive technology
+  // in every context (e.g. touch/mobile) — so a pass achieved only via
+  // `title` is reported at reduced confidence rather than the rule's
+  // default `high`.
+  let anyPassedViaWeakMechanism = false;
+
   for (const el of embeds) {
     if (!el || !el.getAttribute) continue;
 
@@ -134,7 +141,10 @@ function runInPage(ctx) {
     applicableCount += 1;
 
     const name = computeNameInfo(el);
-    if (name.present) continue;
+    if (name.present) {
+      if (name.mechanism === 'title') anyPassedViaWeakMechanism = true;
+      continue;
+    }
 
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
@@ -165,7 +175,13 @@ function runInPage(ctx) {
   }
 
   if (!occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'pass',
+      severity: 'minor',
+      confidence: anyPassedViaWeakMechanism ? 'medium' : 'high',
+      occurrences: []
+    };
   }
 
   return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences };

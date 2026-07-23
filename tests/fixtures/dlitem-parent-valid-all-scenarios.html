@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-dlitem-parent-valid — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-dlitem-parent-valid</code> (&lt;dt&gt;/&lt;dd&gt; must be inside a &lt;dl&gt;)</h1>
+
+  <p class="note">
+    Each target &lt;dt&gt;/&lt;dd&gt; has a stable <code>id</code> of the form <code>dip_case_NN</code>.
+    Valid: direct child of &lt;dl&gt;, or wrapped in a single &lt;div&gt; whose parent is &lt;dl&gt;.
+  </p>
+
+  <h2>A. Valid parents</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — PASS: dt is a direct child of dl</div>
+    <dl><dt id="dip_case_01">Term</dt><dd>Definition</dd></dl>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — PASS: dd wrapped in a single div under dl</div>
+    <dl><div><dt>Term</dt><dd id="dip_case_02">Definition</dd></div></dl>
+  </div>
+
+  <h2>B. Invalid parents</h2>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — FAIL: dt's parent is a plain div outside dl</div>
+    <div><dt id="dip_case_03">orphan</dt></div>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — FAIL: dd has no dl ancestor at all</div>
+    <section><dd id="dip_case_04">Definition</dd></section>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — FAIL: dt wrapped two divs deep (only one level of wrapping is allowed)</div>
+    <dl><div><div><dt id="dip_case_05">Term</dt></div></div></dl>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

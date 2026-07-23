@@ -33,9 +33,21 @@ const path = require('path');
 
 const { POLICY_CONTRACTS } = require('../src/policy/contracts');
 const { resolvePolicy } = require('../src/policy/resolvePolicy');
-const { normalizeSelectorList, createDomHelpers } = require('../src/core/dom-helpers');
+const { normalizeSelectorList, resolveContextRoots, createDomHelpers } = require('../src/core/dom-helpers');
 const { runCore } = require('../src/core/dom-runner');
 const { createContrastHelpers } = require('../src/core/contrast-helpers');
+const { createAriaHelpers } = require('../src/core/aria-helpers');
+const { normalizeRuleMeta } = require('../src/core/rule-meta');
+const {
+  FRAME_RPC_CHANNEL,
+  getFrameRpcRegistry,
+  installFrameRpcListener,
+  nextFrameRpcRequestId,
+  pingFrame,
+  sendFrameRunCommand,
+  enableFrameRpcResponder
+} = require('../src/core/frame-messaging');
+const { findChildFrameElements, getFrameElementUrl, runa11yCoreAcrossFrames, a11yCoreEnableFrameResponder } = require('../src/core/frame-scan');
 
 const ENGINE_TAG = 'a11ycore';
 const SCHEMA_VERSION = '1.0.0';
@@ -203,134 +215,6 @@ function assertString(name, value) {
   return value.trim();
 }
 
-function normalizeStringArray(value) {
-  if (!Array.isArray(value)) return [];
-  return value.map(String).map((s) => s.trim()).filter(Boolean);
-}
-
-function normalizeObjectArray(value) {
-  if (!Array.isArray(value)) return [];
-  return value
-      .filter((v) => v && typeof v === 'object' && !Array.isArray(v))
-      .map((v) => ({ ...v }));
-}
-
-function deriveWcagScFromNormativeMappings(normativeMappings) {
-  const nm = Array.isArray(normativeMappings) ? normativeMappings : [];
-  const out = new Set();
-  for (const m of nm) {
-    if (!m || typeof m !== 'object') continue;
-    if (String(m.standard || '').toUpperCase() !== 'WCAG') continue;
-    const req = String(m.requirement || '').trim();
-    if (req) out.add(req);
-  }
-  return Array.from(out).sort();
-}
-
-function normalizeRuleMeta(ruleId, id, meta) {
-  const m = (meta && typeof meta === 'object') ? meta : {};
-
-  const title = (typeof m.title === 'string' && m.title.trim()) ? m.title.trim() : id;
-  const description = (typeof m.description === 'string') ? m.description : '';
-  const helpUrl = (typeof m.helpUrl === 'string') ? m.helpUrl : '';
-
-  const i18n = (m.i18n && typeof m.i18n === 'object' && !Array.isArray(m.i18n))
-      ? { ...m.i18n }
-      : null;
-
-  const tags = normalizeStringArray(m.tags).map((t) => t.toLowerCase());
-  if (!tags.includes(ENGINE_TAG)) tags.push(ENGINE_TAG);
-
-  const normativeMappings = normalizeObjectArray(m.normativeMappings);
-  const wcagSc = deriveWcagScFromNormativeMappings(normativeMappings);
-  const informativeReferences = normalizeObjectArray(m.informativeReferences);
-
-  const defaultSeverity = (typeof m.defaultSeverity === 'string' && m.defaultSeverity.trim())
-      ? m.defaultSeverity.trim()
-      : 'moderate';
-
-  const defaultConfidence = (typeof m.defaultConfidence === 'string' && m.defaultConfidence.trim())
-      ? m.defaultConfidence.trim()
-      : 'medium';
-
-  const type = (m.type === 'manual' || m.type === 'automatic')
-      ? m.type
-      : 'automatic';
-
-  const coverage = (m.coverage === null || typeof m.coverage === 'string' || typeof m.coverage === 'object')
-      ? m.coverage
-      : null;
-
-  // Contract fields (normalized at build-time; no runtime mutation needed)
-  const ruleInterfaceVersion = (typeof m.ruleInterfaceVersion === 'string' && m.ruleInterfaceVersion.trim())
-      ? m.ruleInterfaceVersion.trim()
-      : '1.0.0';
-
-  const ruleVersion = (typeof m.ruleVersion === 'string' && m.ruleVersion.trim())
-      ? m.ruleVersion.trim()
-      : '0.0.0';
-
-  const normative = (typeof m.normative === 'boolean') ? m.normative : true;
-  const atomic = (typeof m.atomic === 'boolean') ? m.atomic : true;
-
-  const category = (typeof m.category === 'string' && m.category.trim()) ? m.category.trim() : null;
-  const standard = (typeof m.standard === 'string' && m.standard.trim()) ? m.standard.trim() : null;
-
-  const applicability = (typeof m.applicability === 'string') ? m.applicability : '';
-  const expectation = (typeof m.expectation === 'string') ? m.expectation : '';
-
-  const references = Array.isArray(m.references) ? m.references.slice() : [];
-  const requirements = (m.requirements === null || typeof m.requirements === 'string' || typeof m.requirements === 'object')
-      ? m.requirements
-      : null;
-
-  const mappings = (m.mappings === null || typeof m.mappings === 'string' || typeof m.mappings === 'object')
-      ? m.mappings
-      : null;
-
-  // Minimal validation (fail fast at build time)
-  if (!Array.isArray(tags)) throw new Error(`Rule ${ruleId}: meta.tags must be an array`);
-  if (!Array.isArray(normativeMappings)) throw new Error(`Rule ${ruleId}: meta.normativeMappings must be an array`);
-  if (!Array.isArray(informativeReferences)) throw new Error(`Rule ${ruleId}: meta.informativeReferences must be an array`);
-  if (type !== 'automatic' && type !== 'manual') throw new Error(`Rule ${ruleId}: meta.type must be "automatic" or "manual"`);
-
-  if (i18n) {
-    if (typeof i18n.titleKey !== 'string' || !i18n.titleKey.trim()) {
-      throw new Error(`Rule ${ruleId}: meta.i18n.titleKey must be a non-empty string`);
-    }
-    if (i18n.descriptionKey != null && (typeof i18n.descriptionKey !== 'string' || !i18n.descriptionKey.trim())) {
-      throw new Error(`Rule ${ruleId}: meta.i18n.descriptionKey must be a non-empty string when provided`);
-    }
-  }
-
-  return {
-    title,
-    description,
-    i18n,
-    helpUrl,
-    tags,
-    wcagSc,
-    normativeMappings,
-    informativeReferences,
-    defaultSeverity,
-    defaultConfidence,
-    type,
-    coverage,
-
-    ruleInterfaceVersion,
-    ruleVersion,
-    normative,
-    atomic,
-    category,
-    standard,
-    applicability,
-    expectation,
-    references,
-    requirements,
-    mappings
-  };
-}
-
 function loadRuleModules() {
   const files = listRuleFilesRecursive(RULES_DIR);
 
@@ -360,7 +244,7 @@ function loadRuleModules() {
     const applicabilityFnSource =
         (typeof applicabilityFn === 'function') ? applicabilityFn.toString() : null;
 
-    const normalizedMeta = normalizeRuleMeta(ruleId, id, meta);
+    const normalizedMeta = normalizeRuleMeta(ruleId, id, meta, ENGINE_TAG);
 
     const data = assertJsonSerializable(`Rule ${ruleId}: export "data"`, mod.data);
 
@@ -938,6 +822,23 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
       }
     }
 
+    // A more robust element-identity mechanism than the CSS selector string
+    // alone (see dom-helpers.js's buildStructuralPath for the full
+    // rationale) -- computed centrally here, for every occurrence, rather
+    // than requiring each of the ~124 rules to compute it themselves.
+    // Prefers the actual element reference (node, when the rule reported
+    // one); falls back to re-resolving via the occurrence's own selector
+    // otherwise, same as buildStructuralPath already does internally.
+    if (needsDetails && helpers && typeof helpers.buildStructuralPath === 'function') {
+      try {
+        o.structuralPath = helpers.buildStructuralPath(node, o.selector);
+      } catch {
+        o.structuralPath = null;
+      }
+    } else {
+      o.structuralPath = null;
+    }
+
     // Enforce string types (deterministic / no-throw)
     if (typeof o.selector !== 'string') o.selector = '';
     if (typeof o.summary !== 'string') o.summary = '';
@@ -1004,12 +905,33 @@ function toCatalogEntry(r, engineOptions) {
 // Inlined from src/core/contrast-helpers.js
 ${inlineConstFunction('createContrastHelpers', createContrastHelpers)}
 
+// Inlined from src/core/aria-helpers.js
+${inlineConstFunction('createAriaHelpers', createAriaHelpers)}
+
 // Inlined from src/core/dom-helpers.js
 ${inlineConstFunction('normalizeSelectorList', normalizeSelectorList)}
+${inlineConstFunction('resolveContextRoots', resolveContextRoots)}
 ${inlineConstFunction('createDomHelpers', createDomHelpers)}
+
+// Inlined from src/core/rule-meta.js (also used at build time by loadRuleModules
+// above -- single source of truth -- and here so runtime-registered custom
+// rules via engineOptions.customRules get identical meta defaulting/validation
+// to build-time rules; see runCore's own customRules handling)
+${inlineConstFunction('normalizeRuleMeta', normalizeRuleMeta)}
 
 // Inlined from src/core/dom-runner.js
 ${inlineConstFunction('runCore', runCore)}
+
+// Inlined from src/core/frame-messaging.js -- postMessage RPC used by
+// runa11yCoreAcrossFrames/a11yCoreEnableFrameResponder below (browser-only
+// cross-frame scanning for the "plain script injection" consumption mode).
+const FRAME_RPC_CHANNEL = ${jsStringify(FRAME_RPC_CHANNEL)};
+${inlineConstFunction('getFrameRpcRegistry', getFrameRpcRegistry)}
+${inlineConstFunction('installFrameRpcListener', installFrameRpcListener)}
+${inlineConstFunction('nextFrameRpcRequestId', nextFrameRpcRequestId)}
+${inlineConstFunction('pingFrame', pingFrame)}
+${inlineConstFunction('sendFrameRunCommand', sendFrameRunCommand)}
+${inlineConstFunction('enableFrameRpcResponder', enableFrameRpcResponder)}
 `.trim();
 
   const inPageRunnerSource = `
@@ -1044,6 +966,69 @@ ${implEntriesInPage.join(',\n')}
     COMPOSITE_RULES
   );
 }
+`.trim();
+
+  // Cross-frame scanning for the "plain script injection" consumption mode
+  // (a11y-core loaded directly into a page with no automation driver -- see
+  // docs/INTEGRATION.md's "Browser extension context" section). Browser-only;
+  // not needed for a Playwright-driven scan, which reaches cross-origin
+  // frames unconditionally via CDP already (see a11y-core-playwright's
+  // ROADMAP.md gap #1) -- strictly better than what this cooperative
+  // postMessage protocol can achieve, which requires the child frame to
+  // also call a11yCoreEnableFrameResponder(), the same real limitation
+  // the reference engine's own runPartial/finishRun protocol has for non-cooperating
+  // frames.
+  //
+  // Wrapped in its own private IIFE with its OWN local copy of
+  // CHECK_DEFS/RULE_IMPLS/runnersSharedSource -- mirroring exactly how
+  // runa11yCoreInPage achieves self-containment above, and deliberately
+  // independent of the outer, Node-require-based RULE_IMPLS section, so
+  // this stays usable the same bundler-free way runa11yCoreInPage already
+  // is (raw source injected into a page -- a bookmarklet, a content script
+  // with no build step -- rather than requiring a real bundler to resolve
+  // require() calls first).
+  //
+  // The IIFE assigns onto `window` directly (not just returning a value to
+  // a const) so these two functions remain callable from a LATER, SEPARATE
+  // script evaluation in the same page -- a real, common browser-extension
+  // pattern ("inject once at page load via a content script, invoke later
+  // on demand via chrome.scripting.executeScript"). Verified empirically:
+  // top-level const/let bindings from an earlier <script>/eval do not
+  // reliably survive into a later, separately-evaluated script in the same
+  // page (a known V8 Inspector/DevTools-protocol quirk around per-evaluate
+  // declarative environments), but explicit assignment onto the global
+  // object does, exactly like a plain top-level function declaration
+  // already does for runa11yCoreInPage/runDomRulesInPage.
+  const crossFrameRunnerSource = `
+const __a11yCoreCrossFrameApi = (function () {
+  const ENGINE_TAG = ${jsStringify(ENGINE_TAG)};
+  const SCHEMA_VERSION = ${jsStringify(SCHEMA_VERSION)};
+  const CHECK_DEFS = ${jsStringify(defs)};
+  const TEST_DEFS = CHECK_DEFS;
+  const COMPOSITE_RULES = ${jsStringify(COMPOSITE_RULES)};
+  const RULE_IMPLS = {
+${implEntriesInPage.join(',\n')}
+  };
+
+  ${runnersSharedSource}
+
+${findChildFrameElements.toString()}
+
+${getFrameElementUrl.toString()}
+
+${runa11yCoreAcrossFrames.toString()}
+
+${a11yCoreEnableFrameResponder.toString()}
+
+  if (typeof window !== 'undefined') {
+    window.runa11yCoreAcrossFrames = runa11yCoreAcrossFrames;
+    window.a11yCoreEnableFrameResponder = a11yCoreEnableFrameResponder;
+  }
+
+  return { runa11yCoreAcrossFrames: runa11yCoreAcrossFrames, a11yCoreEnableFrameResponder: a11yCoreEnableFrameResponder };
+})();
+const runa11yCoreAcrossFrames = __a11yCoreCrossFrameApi.runa11yCoreAcrossFrames;
+const a11yCoreEnableFrameResponder = __a11yCoreCrossFrameApi.a11yCoreEnableFrameResponder;
 `.trim();
 
   return `'use strict';
@@ -1125,6 +1110,13 @@ function runDomRulesInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 // =======================
 ${inPageRunnerSource}
 
+// =======================
+// SELF-CONTAINED cross-frame scanning for the "plain script injection"
+// consumption mode (see the comment above crossFrameRunnerSource's own
+// definition earlier in this file for the full reasoning).
+// =======================
+${crossFrameRunnerSource}
+
 module.exports = {
   ENGINE_TAG,
   SCHEMA_VERSION,
@@ -1142,6 +1134,8 @@ module.exports = {
   getTestsForRunOnly,
   runDomRulesInPage,
   runa11yCoreInPage,
+  runa11yCoreAcrossFrames,
+  a11yCoreEnableFrameResponder,
   __internal: { normalizeRuleResult }
 };
 `;

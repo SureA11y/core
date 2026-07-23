@@ -8,4 +8,15 @@
 <map name="unused">
   <area id="area_q_04" alt="Unused map" shape="rect" coords="0,0,1,1">
 </map>
+<map name="m2">
+  <area id="area_q_05" alt="Hidden attr on area" hidden shape="rect" coords="0,0,1,1">
+  <area id="area_q_06" alt="Inert on area is ignored by engine policy" inert shape="rect" coords="0,0,1,1">
+</map>
+<img alt="" usemap="#m2" src="x.png">
+<div aria-hidden="true">
+  <img id="img_q_hidden" alt="" usemap="#m3" src="x.png">
+</div>
+<map name="m3">
+  <area id="area_q_07" alt="Referencing img is aria-hidden" shape="rect" coords="0,0,1,1">
+</map>
 </body></html>

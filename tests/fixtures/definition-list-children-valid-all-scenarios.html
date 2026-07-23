@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-definition-list-children-valid — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-definition-list-children-valid</code> (&lt;dl&gt; structure)</h1>
+
+  <p class="note">
+    Each target &lt;dl&gt; has a stable <code>id</code> of the form <code>dlv_case_NN</code>.
+    Allowed direct children (after flattening one wrapping &lt;div&gt;): &lt;dt&gt;, &lt;dd&gt;, &lt;script&gt;, &lt;template&gt;, &lt;style&gt;.
+  </p>
+
+  <h2>A. Valid</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — PASS: dl with direct dt/dd</div>
+    <dl id="dlv_case_01"><dt>Term</dt><dd>Definition</dd></dl>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — PASS: dt/dd wrapped in a single div</div>
+    <dl id="dlv_case_02"><div><dt>Term</dt><dd>Definition</dd></div></dl>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — PASS: dl's only children are passthrough (script) — nothing to structurally judge, matches the reference engine's "when not empty" framing</div>
+    <dl id="dlv_case_04"><script></script></dl>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — PASS: dl's only children are passthrough (template)</div>
+    <dl id="dlv_case_07"><template></template></dl>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — PASS: dl has no dt/dd and nothing else after flattening (empty wrapping div) — verified against the reference engine: vacuously fine, same "when not empty" framing as the passthrough-only cases above</div>
+    <dl id="dlv_case_08"><div></div></dl>
+  </div>
+
+  <h2>B. Invalid</h2>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — FAIL: dl has a non-dt/dd direct child</div>
+    <dl id="dlv_case_03"><dt>Term</dt><dd>Definition</dd><p>oops</p></dl>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — FAIL: invalid child inside the wrapping div</div>
+    <dl id="dlv_case_05"><div><dt>Term</dt><span>oops</span></div></dl>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — FAIL: dt present with no matching dd (unbalanced pairing)</div>
+    <dl id="dlv_case_09"><dt>Term</dt></dl>
+  </div>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — FAIL: dd present with no matching dt (unbalanced pairing)</div>
+    <dl id="dlv_case_10"><dd>Definition</dd></dl>
+  </div>
+
+  <h2>C. Not applicable (skipped, not counted)</h2>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — NEUTRAL: empty dl, no element children</div>
+    <dl id="dlv_case_06"></dl>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

@@ -197,5 +197,33 @@
 <!-- OPTIONAL: sanity check that a lone undersized target still passes by spacing exception -->
 <button id="pass_lone_small" class="candidate" data-rect="400,780,10,10">Lone small</button>
 
+<!-- PASS: nested interactive controls (small inner control inside its own wrapping
+     link) must never be treated as two independently-placed targets conflicting
+     with each other — that's a11ycore-nested-interactive-controls-absent's
+     concern, not target spacing. Nothing else is nearby, so if the ancestor/
+     descendant relationship weren't excluded, both would incorrectly fail. -->
+<a href="/card" id="pass_nested_outer_link" class="candidate" data-rect="10,820,300,80">
+  <button id="pass_nested_inner_button" class="candidate" data-rect="270,830,10,10">X</button>
+</a>
+
+<!-- PASS: unstyled native checkbox/radio pair in a typical compact list.
+     WCAG 2.5.8 "User Agent Control" exception — size is browser-default, not
+     the author's choice, so the size requirement (and any spacing conflict
+     stemming from it) doesn't apply at all, even though they sit close
+     together the way real checkbox lists usually do. -->
+<label class="candidate" style="position:absolute; left:10px; top:920px;">
+  <input type="checkbox" id="pass_ua_checkbox_1" data-rect="10,920,13,13"> Option A
+</label>
+<label class="candidate" style="position:absolute; left:10px; top:940px;">
+  <input type="checkbox" id="pass_ua_checkbox_2" data-rect="10,940,13,13"> Option B
+</label>
+
+<!-- FAIL: same shape as above, but the author has reset appearance:none —
+     the User Agent Control exception no longer applies once the author has
+     taken over styling, so this pair must be evaluated normally (and fails,
+     same as any other undersized-and-close pair). -->
+<input type="checkbox" id="fail_styled_checkbox_1" class="candidate" style="appearance:none; -webkit-appearance:none;" data-rect="10,980,10,10">
+<input type="checkbox" id="fail_styled_checkbox_2" class="candidate" style="appearance:none; -webkit-appearance:none;" data-rect="25,980,10,10">
+
 </body>
 </html>

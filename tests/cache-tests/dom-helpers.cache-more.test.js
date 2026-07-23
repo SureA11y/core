@@ -24,41 +24,52 @@ test('dom helpers cache: getAccessibleNameInfo does not reuse memoized result ac
   const { window } = dom;
   const { document } = window;
 
-  const originalQS = document.querySelector.bind(document);
-  let querySelectorCalls = 0;
-  document.querySelector = (...args) => {
-    querySelectorCalls++;
-    return originalQS(...args);
-  };
+  // getAccessibleNameInfo resolves label association via the native
+  // `.labels` API first (element references, no query needed), so spy on
+  // the `.labels` getter itself as the "a fresh lookup happened" signal —
+  // document.querySelector('label[for]') is no longer reached on this path.
+  let labelsGetterCalls = 0;
+  const proto = window.HTMLInputElement.prototype;
+  const originalDescriptor = Object.getOwnPropertyDescriptor(proto, 'labels')
+    || Object.getOwnPropertyDescriptor(Object.getPrototypeOf(proto), 'labels');
+  Object.defineProperty(proto, 'labels', {
+    configurable: true,
+    get() {
+      labelsGetterCalls++;
+      return originalDescriptor.get.call(this);
+    }
+  });
 
   const helpers = createDomHelpers({ window, document, root: document });
   const input = document.getElementById('x');
 
   // First call (key A)
-  const before1 = querySelectorCalls;
+  const before1 = labelsGetterCalls;
   const r1 = helpers.getAccessibleNameInfo(input, { helpers }, { disallowContents: true });
-  const after1 = querySelectorCalls;
+  const after1 = labelsGetterCalls;
 
   assert.equal(r1.present, true);
   assert.equal(r1.mechanism, 'label');
   assert.equal(r1.value, 'Full Name');
-  assert.ok(after1 > before1, 'first call should query label[for]');
+  assert.ok(after1 > before1, 'first call should perform DOM work (.labels)');
 
   // Second call with same opts (should be cached for key A)
-  const before2 = querySelectorCalls;
+  const before2 = labelsGetterCalls;
   const r2 = helpers.getAccessibleNameInfo(input, { helpers }, { disallowContents: true });
-  const after2 = querySelectorCalls;
+  const after2 = labelsGetterCalls;
 
   assert.deepEqual(r2, r1);
   assert.equal(after2, before2, 'second call should be cached for same opts key');
 
   // Call with different opts (key B) should not reuse key A result
-  const before3 = querySelectorCalls;
+  const before3 = labelsGetterCalls;
   const r3 = helpers.getAccessibleNameInfo(input, { helpers }, { disallowContents: false });
-  const after3 = querySelectorCalls;
+  const after3 = labelsGetterCalls;
 
   assert.deepEqual(r3, r1, 'output may be identical, but cache key must differ');
   assert.ok(after3 > before3, 'different opts key should cause a fresh lookup (no cross-key reuse)');
+
+  Object.defineProperty(proto, 'labels', originalDescriptor);
 });
 
 test('dom helpers cache: eligibility caches are scoped by root/document and do not bleed across roots', () => {
@@ -163,13 +174,17 @@ test('dom helpers cache + semantics: resolveIdRefs dedupes, reports missing, tru
   assert.equal(rAgain.refsCount, 2, 'cached base result should remain untruncated');
 });
 
-test('dom helpers semantics: aria-hidden eligibility override only for tabbable focus (tabindex >= 0)', () => {
+test('dom helpers semantics: aria-hidden eligibility override for explicit tabindex >= 0, natively-tabbable elements, and programmatic-focus exclusion', () => {
   const dom = new JSDOM(
     `<!doctype html><html><body>
       <div aria-hidden="true">
         <button id="t0" tabindex="0">Tabbable</button>
         <button id="tm1" tabindex="-1">Programmatic</button>
-        <button id="none">None</button>
+        <button id="nativeButton">Native button, no tabindex</button>
+        <summary id="nativeSummary">Native summary, no tabindex</summary>
+        <a id="nativeLinkHref" href="#x">Native link with href, no tabindex</a>
+        <a id="nativeLinkNoHref">Native link without href</a>
+        <span id="notFocusable">Not natively focusable</span>
       </div>
     </body></html>`,
     { pretendToBeVisual: true }
@@ -182,7 +197,11 @@ test('dom helpers semantics: aria-hidden eligibility override only for tabbable 
 
   const t0 = document.getElementById('t0');
   const tm1 = document.getElementById('tm1');
-  const none = document.getElementById('none');
+  const nativeButton = document.getElementById('nativeButton');
+  const nativeSummary = document.getElementById('nativeSummary');
+  const nativeLinkHref = document.getElementById('nativeLinkHref');
+  const nativeLinkNoHref = document.getElementById('nativeLinkNoHref');
+  const notFocusable = document.getElementById('notFocusable');
 
   const e0 = helpers.isAccTreeEligible(t0);
   assert.equal(e0.eligible, true);
@@ -192,7 +211,27 @@ test('dom helpers semantics: aria-hidden eligibility override only for tabbable 
   assert.equal(em1.eligible, false);
   assert.ok(em1.reasons.includes('ariaHiddenProgrammaticFocusExcluded'));
 
-  const en = helpers.isAccTreeEligible(none);
+  // <button>/<summary>/<a href> are tabbable by default (no explicit tabindex
+  // required) — real browsers keep them in the tab order regardless of
+  // aria-hidden, so the eligibility model must evaluate them too.
+  const eButton = helpers.isAccTreeEligible(nativeButton);
+  assert.equal(eButton.eligible, true);
+  assert.ok(eButton.reasons.includes('ariaHiddenOverriddenTabbable'));
+
+  const eSummary = helpers.isAccTreeEligible(nativeSummary);
+  assert.equal(eSummary.eligible, true);
+  assert.ok(eSummary.reasons.includes('ariaHiddenOverriddenTabbable'));
+
+  const eLinkHref = helpers.isAccTreeEligible(nativeLinkHref);
+  assert.equal(eLinkHref.eligible, true);
+  assert.ok(eLinkHref.reasons.includes('ariaHiddenOverriddenTabbable'));
+
+  // <a> without href is not natively focusable, so no override applies.
+  const eLinkNoHref = helpers.isAccTreeEligible(nativeLinkNoHref);
+  assert.equal(eLinkNoHref.eligible, false);
+  assert.ok(eLinkNoHref.reasons.includes('ariaHidden'));
+
+  const en = helpers.isAccTreeEligible(notFocusable);
   assert.equal(en.eligible, false);
   assert.ok(en.reasons.includes('ariaHidden'));
 });

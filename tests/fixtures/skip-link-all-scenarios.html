@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-skip-link — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-skip-link</code></h1>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — NEUTRAL: skip link with a resolvable target</div>
+    <a href="#sl_target" id="sl_case_01">Skip to content</a>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — CANTTELL: skip link whose target does not exist</div>
+    <a href="#sl_missing" id="sl_case_02">Skip to main content</a>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — NEUTRAL: unrelated anchor link, not a "skip" link (not applicable)</div>
+    <a href="#sl_missing2" id="sl_case_03">Read more</a>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — CANTTELL: "Jump to ..." link (not literally containing "skip") whose target does not exist (found on a real site — Wish.com's homepage, 2026-07-23)</div>
+    <a href="#sl_missing3" id="sl_case_04">Jump to section</a>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — NEUTRAL: "Jump to ..." link with a resolvable target</div>
+    <a href="#sl_target" id="sl_case_05">Jump to main content</a>
+  </div>
+
+  <div id="sl_target">Target content</div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

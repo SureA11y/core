@@ -14,7 +14,7 @@ const meta = {
   i18n: { titleKey: 'a11ycore_manualReview_title', descriptionKey: 'a11ycore_manualReview_description' },
 
   helpUrl: null,
-  tags: ['wcag2a', 'wcag111', 'nontext', 'atomic', 'manual'],
+  tags: ['wcag2a', 'wcag2aa', 'wcag211', 'wcag243', 'wcag247', 'nontext', 'atomic', 'manual'],
   defaultSeverity: 'moderate',
   category: 'operable',
   type: 'manual',

@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-heading-order — scenario fixture (FAIL case)</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: a11ycore-heading-order</h1>
+  <div class="case-title">01 — CANTTELL: heading level jumps from 1 to 3, skipping level 2</div>
+  <h3 id="ho_case_01">Skipped level</h3>
+  <p class="note">
+    This rule needs at least two headings to evaluate, and the violation is inherently a
+    relationship between two headings rather than a single element, so a single-page
+    fixture demonstrating just the FAIL branch is the clearest form. The PASS cases
+    (consecutive levels; decreasing levels; a later heading revisiting a level already
+    reached earlier in the document, e.g. h1,h2,h3,h2,h4) are covered by the inline unit
+    tests in this rule's <code>.test.js</code> file.
+  </p>
+</body>
+</html>

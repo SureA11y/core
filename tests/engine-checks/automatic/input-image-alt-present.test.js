@@ -29,6 +29,14 @@ test(`${RULE_ID}: pass when at least one applicable <input type="image"> exists 
     assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+test(`${RULE_ID}: pass when alt is entirely absent but a non-empty title attribute is present (sibling fix to img-alt-present's real AliExpress finding, 2026-07-23 — same HTML-AAM fallback, also accepted by the reference engine's own input-image-alt rule)`, () => {
+    const html = `<!doctype html><html><body>
+    <input id="title_only" type="image" title="Search" src="x.png">
+  </body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
 test(`${RULE_ID}: fail when aria-hidden and no alt)`, () => {
     const html = `<!doctype html><html><body>
     <input id="ah" type="image" aria-hidden="true" src="x.png">
@@ -79,7 +87,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/input-image-alt-present-all-s
 
     const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 6, maxOccurrences: 6 });
+    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 9, maxOccurrences: 9 });
 
     const expectedFailIds = [
         'input_image_case_01',
@@ -87,7 +95,10 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/input-image-alt-present-all-s
         'input_image_case_10',
         'input_image_case_11',
         'input_image_case_12',
-        'input_image_case_13'
+        'input_image_case_13',
+        'input_image_case_16',  // aria-labelledby dangling IDREF, no alt => fails
+        'input_image_case_17',  // aria-label="" empty, no alt => fails
+        'input_image_case_18'   // ancestor visibility:hidden but own visibility:visible override => eligible, missing alt => fails
     ];
 
     const expectedNoOccIds = [
@@ -97,7 +108,10 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/input-image-alt-present-all-s
         'input_image_case_06',
         'input_image_case_07',
         'input_image_case_08',
-        'input_image_case_09'
+        'input_image_case_09',
+        'input_image_case_14',  // aria-label present, no alt => satisfies ARIA naming mechanism
+        'input_image_case_15',  // aria-labelledby resolves non-empty text => satisfies ARIA naming mechanism
+        'input_image_case_19'   // ancestor visibility:hidden, no override => inherited, ineligible
     ];
 
     for (const id of expectedFailIds) {

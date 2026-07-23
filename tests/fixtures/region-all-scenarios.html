@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-region — scenario fixture (FAIL case)</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Main content</h1>
+    <div class="case-title">01 — CANTTELL: a sibling paragraph is a direct child of body, outside any landmark</div>
+    <p class="note">
+      This rule is deliberately scoped to direct children of &lt;body&gt; only (see the
+      rule's implementation notes on why a full recursive scan would be too noisy). The
+      PASS case (all top-level body content already inside a landmark) is covered by the
+      inline unit tests in this rule's <code>.test.js</code> file. Note this explanatory
+      text is intentionally placed inside &lt;main&gt; so it does not itself become a
+      second violation in this fixture.
+    </p>
+  </main>
+  <p id="rg_case_01">Stray content that landed outside every landmark region.</p>
+</body>
+</html>

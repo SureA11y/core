@@ -51,6 +51,7 @@ function runInPage(ctx) {
 
   const isAccTreeEligible = helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
   const getFocusableInfo = helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
+  const getAriaNameInfo = helpers && typeof helpers.getAriaNameInfo === 'function' ? helpers.getAriaNameInfo : null;
 
   // Prefer tagName collection when available (cheap), otherwise fall back.
   function getImgsCollection() {
@@ -159,6 +160,33 @@ function runInPage(ctx) {
       hasAlt = false;
     }
     if (hasAlt) continue;
+
+    // aria-label / aria-labelledby is also a valid, standards-recognized
+    // text-alternative mechanism for <img> (HTML-AAM accessible name
+    // computation includes ARIA naming before falling back to alt); an
+    // image with a non-empty ARIA name is not missing a text alternative
+    // just because it lacks an alt attribute.
+    if (getAriaNameInfo) {
+      let ariaName = null;
+      try {
+        ariaName = getAriaNameInfo(el, ctx);
+      } catch {
+        ariaName = null;
+      }
+      if (ariaName && ariaName.present) continue;
+    }
+
+    // A non-empty title attribute is HTML-AAM's own next fallback naming
+    // source for <img> once alt is entirely absent (not merely alt="",
+    // which explicitly marks decorative and stays excluded from this
+    // branch since hasAlt already short-circuited above) -- confirmed
+    // against the reference engine's own image-alt rule, which lists a non-empty
+    // title as one of its "any" satisfying conditions alongside has-alt/
+    // aria-label/aria-labelledby. Found via a real page (AliExpress's
+    // logo, 2026-07-23): <img src="..." title="...">, no alt attribute
+    // at all -- a real false positive, not a missing text alternative.
+    const title = trim(el.getAttribute('title'));
+    if (title) continue;
 
     const eligInfo = getEligibilityInfo ? (() => { try { return getEligibilityInfo(el, ctx, { targetSet: 'acc' }); } catch { return null; } })() : null;
 

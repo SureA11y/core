@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-aria-role-name-present — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+    .hiddenvis { visibility: hidden; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-aria-role-name-present</code></h1>
+
+  <p class="note">
+    Covers roles: scrollbar, toolbar, tablist, radiogroup, tree, grid, menu, menubar, meter,
+    progressbar. Allowed name sources: aria-label, aria-labelledby, title — subtree content
+    is NOT a valid name source for these roles. Each target has a stable id
+    <code>role_case_NN</code>.
+  </p>
+
+  <h2>A. One role per allowlisted role: baseline pass/fail</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: role=scrollbar, no name</div>
+    <div role="scrollbar" id="role_case_01"></div>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — PASS: role=scrollbar, aria-label</div>
+    <div role="scrollbar" id="role_case_02" aria-label="Content scroll"></div>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — FAIL: role=toolbar, no name</div>
+    <div role="toolbar" id="role_case_03"></div>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — PASS: role=toolbar, aria-labelledby</div>
+    <span id="role_case_04_lbl">Editor tools</span>
+    <div role="toolbar" id="role_case_04" aria-labelledby="role_case_04_lbl"></div>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — FAIL: role=tablist, no name</div>
+    <div role="tablist" id="role_case_05"><div role="tab" aria-label="Overview"></div></div>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — PASS: role=tablist, title</div>
+    <div role="tablist" id="role_case_06" title="Account tabs"><div role="tab" aria-label="Overview"></div></div>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — FAIL: role=radiogroup, no name (even though content has text)</div>
+    <div role="radiogroup" id="role_case_07">Contact method</div>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — PASS: role=radiogroup, aria-label</div>
+    <div role="radiogroup" id="role_case_08" aria-label="Contact method"></div>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — FAIL: role=tree, no name (even though items have text)</div>
+    <div role="tree" id="role_case_09"><div role="treeitem">Documents</div></div>
+  </div>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — PASS: role=tree, aria-label</div>
+    <div role="tree" id="role_case_10" aria-label="File browser"><div role="treeitem">Documents</div></div>
+  </div>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — FAIL: role=grid, no name</div>
+    <div role="grid" id="role_case_11"></div>
+  </div>
+
+  <div class="case" id="case_12">
+    <div class="case-title">12 — PASS: role=grid, aria-label</div>
+    <div role="grid" id="role_case_12" aria-label="Orders"></div>
+  </div>
+
+  <div class="case" id="case_13">
+    <div class="case-title">13 — FAIL: role=menu, no name</div>
+    <div role="menu" id="role_case_13"></div>
+  </div>
+
+  <div class="case" id="case_14">
+    <div class="case-title">14 — PASS: role=menu, aria-label</div>
+    <div role="menu" id="role_case_14" aria-label="Main menu"></div>
+  </div>
+
+  <div class="case" id="case_15">
+    <div class="case-title">15 — FAIL: role=menubar, no name</div>
+    <div role="menubar" id="role_case_15"></div>
+  </div>
+
+  <div class="case" id="case_16">
+    <div class="case-title">16 — PASS: role=menubar, aria-label</div>
+    <div role="menubar" id="role_case_16" aria-label="App menu"></div>
+  </div>
+
+  <div class="case" id="case_17">
+    <div class="case-title">17 — FAIL: role=meter, no name</div>
+    <div role="meter" id="role_case_17"></div>
+  </div>
+
+  <div class="case" id="case_18">
+    <div class="case-title">18 — PASS: role=meter, aria-label</div>
+    <div role="meter" id="role_case_18" aria-label="Disk usage"></div>
+  </div>
+
+  <div class="case" id="case_19">
+    <div class="case-title">19 — FAIL: role=progressbar, no name</div>
+    <div role="progressbar" id="role_case_19"></div>
+  </div>
+
+  <div class="case" id="case_20">
+    <div class="case-title">20 — PASS: role=progressbar, title</div>
+    <div role="progressbar" id="role_case_20" title="Upload progress"></div>
+  </div>
+
+  <h2>B. aria-labelledby referencing a hidden node still counts (spec-conformant)</h2>
+
+  <div class="case" id="case_21">
+    <div class="case-title">21 — PASS: role=scrollbar, aria-labelledby references aria-hidden node (still counts as name text per spec)</div>
+    <span id="role_case_21_lbl" aria-hidden="true">Scroll</span>
+    <div role="scrollbar" id="role_case_21" aria-labelledby="role_case_21_lbl"></div>
+  </div>
+
+  <h2>C. Empty/whitespace attribute edge cases</h2>
+
+  <div class="case" id="case_22">
+    <div class="case-title">22 — FAIL: role=radiogroup, whitespace-only aria-label</div>
+    <div role="radiogroup" id="role_case_22" aria-label=" "></div>
+  </div>
+
+  <div class="case" id="case_23">
+    <div class="case-title">23 — FAIL: role=grid, aria-labelledby references non-existent id</div>
+    <div role="grid" id="role_case_23" aria-labelledby="role_case_23_missing"></div>
+  </div>
+
+  <h2>D. Visible but excluded from AT (ineligible)</h2>
+
+  <div class="case" id="case_24">
+    <div class="case-title">24 — NEUTRAL/INELIGIBLE: role=toolbar, aria-hidden="true", not focusable, missing name</div>
+    <div role="toolbar" aria-hidden="true" id="role_case_24"></div>
+  </div>
+
+  <div class="case" id="case_25">
+    <div class="case-title">25 — EXCEPTION: role=toolbar, aria-hidden="true" but focusable (tabindex=0) => eligible, missing name => FAIL</div>
+    <div role="toolbar" aria-hidden="true" tabindex="0" id="role_case_25"></div>
+  </div>
+
+  <h2>E. Hidden by HTML/CSS (ineligible)</h2>
+
+  <div class="case" id="case_26">
+    <div class="case-title">26 — NEUTRAL/INELIGIBLE: hidden attribute</div>
+    <div role="toolbar" hidden id="role_case_26"></div>
+  </div>
+
+  <div class="case" id="case_27">
+    <div class="case-title">27 — NEUTRAL/INELIGIBLE: display:none</div>
+    <div role="toolbar" style="display:none" id="role_case_27"></div>
+  </div>
+
+  <div class="case" id="case_28">
+    <div class="case-title">28 — NEUTRAL/INELIGIBLE: visibility:hidden</div>
+    <div role="toolbar" class="hiddenvis" id="role_case_28"></div>
+  </div>
+
+  <div class="case" id="case_29">
+    <div class="case-title">29 — EXCEPTION: visibility:hidden ancestor overridden by descendant visibility:visible => eligible, missing name => FAIL</div>
+    <div style="visibility:hidden">
+      <div role="toolbar" tabindex="0" style="visibility:visible" id="role_case_29"></div>
+    </div>
+  </div>
+
+  <h2>F. Inertness (ineligible)</h2>
+
+  <div class="case" id="case_30">
+    <div class="case-title">30 — NEUTRAL/INELIGIBLE: inert on element itself</div>
+    <div role="toolbar" inert id="role_case_30"></div>
+  </div>
+
+  <div class="case" id="case_31">
+    <div class="case-title">31 — NEUTRAL/INELIGIBLE: inert ancestor</div>
+    <div inert>
+      <div role="toolbar" id="role_case_31"></div>
+    </div>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

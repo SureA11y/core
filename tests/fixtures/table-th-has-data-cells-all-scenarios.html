@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-table-th-has-data-cells — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+    table { border-collapse: collapse; }
+    td, th { border: 1px solid #ccc; padding: 4px 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-table-th-has-data-cells</code> (a table with &lt;th&gt; must also have &lt;td&gt;)</h1>
+
+  <p class="note">
+    Deliberately scoped rule: only catches a table with &lt;th&gt; and ZERO &lt;td&gt; anywhere.
+    Each target &lt;th&gt; has a stable <code>id</code> of the form <code>thdc_case_NN</code>.
+  </p>
+
+  <h2>A. Valid</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — PASS: table has both th and td</div>
+    <table><tr><th id="thdc_case_01">Name</th></tr><tr><td>Apple</td></tr></table>
+  </div>
+
+  <h2>B. Invalid</h2>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — FAIL: table has a single th and zero td anywhere</div>
+    <table><tr><th id="thdc_case_02">Name</th></tr></table>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — FAIL: table has two th's and zero td (one occurrence per th)</div>
+    <table><tr><th id="thdc_case_03a">Name</th><th id="thdc_case_03b">Value</th></tr></table>
+  </div>
+
+  <h2>C. Not applicable (skipped, not counted)</h2>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — NEUTRAL: table with no th at all</div>
+    <table><tr><td id="thdc_case_04">Apple</td></tr></table>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

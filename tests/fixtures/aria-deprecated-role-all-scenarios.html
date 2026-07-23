@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-aria-deprecated-role — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-aria-deprecated-role</code> (role attribute must not be deprecated)</h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>adr_case_NN</code>.
+  </p>
+
+  <h2>A. Valid</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — PASS: role is valid and not deprecated</div>
+    <div role="list" id="adr_case_01"></div>
+  </div>
+
+  <h2>B. Invalid</h2>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — FAIL: role is deprecated (directory)</div>
+    <div role="directory" id="adr_case_02"></div>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — FAIL: role="generic" explicitly declared (reserved for user-agent-internal use, not authors — verified against WAI-ARIA 1.2 spec + MDN)</div>
+    <div role="generic" id="adr_case_04"></div>
+  </div>
+
+  <h2>C. Not applicable (skipped, not counted)</h2>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — NEUTRAL: role is invalid/unrecognized (not this rule's concern)</div>
+    <div role="buton" id="adr_case_03"></div>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

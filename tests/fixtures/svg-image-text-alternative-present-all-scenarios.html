@@ -123,6 +123,127 @@
     </div>
   </div>
 
+  <h2>F. <code>&lt;title&gt;</code>/<code>&lt;desc&gt;</code> DOM-position rules</h2>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — FAIL: &lt;title&gt; that is NOT the first child element</div>
+    <div class="row">
+      <svg width="40" height="24">
+        <image id="svgimg_case_10" href="x.png"><rect width="1" height="1"/><title>Logo</title></image>
+      </svg>
+      <span>A &lt;title&gt; that isn't the first child element is not read as the alternative.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — PASS: &lt;desc&gt; as the first child element</div>
+    <div class="row">
+      <svg width="40" height="24">
+        <image id="svgimg_case_11" href="x.png"><desc>Detailed logo description</desc></image>
+      </svg>
+      <span>&lt;desc&gt; as the first child provides the alternative.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_12">
+    <div class="case-title">12 — PASS: empty &lt;title&gt; first child, &lt;desc&gt; immediately second</div>
+    <div class="row">
+      <svg width="40" height="24">
+        <image id="svgimg_case_12" href="x.png"><title></title><desc>Detailed description</desc></image>
+      </svg>
+      <span>Standard &lt;title&gt;+&lt;desc&gt; pairing: desc as second child immediately after title counts.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_13">
+    <div class="case-title">13 — FAIL: &lt;desc&gt; that is neither first child nor pair-second after &lt;title&gt;</div>
+    <div class="row">
+      <svg width="40" height="24">
+        <image id="svgimg_case_13" href="x.png"><rect width="1" height="1"/><desc>Misplaced description</desc></image>
+      </svg>
+      <span>A misplaced &lt;desc&gt; is not read as the alternative.</span>
+    </div>
+  </div>
+
+  <h2>G. Accessible-name attribute mechanisms</h2>
+
+  <div class="case" id="case_14">
+    <div class="case-title">14 — PASS: HTML <code>title</code> attribute (best-effort accessible name)</div>
+    <div class="row">
+      <svg width="40" height="24">
+        <image id="svgimg_case_14" href="x.png" title="Logo via title attribute"></image>
+      </svg>
+      <span>Title attribute is accepted as an accessible-name mechanism.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_15">
+    <div class="case-title">15 — PASS: aria-labelledby referencing non-empty text</div>
+    <div class="row">
+      <span id="svgimg_case_15_label">Logo label</span>
+      <svg width="40" height="24">
+        <image id="svgimg_case_15" href="x.png" aria-labelledby="svgimg_case_15_label"></image>
+      </svg>
+      <span>ARIA idref name counts.</span>
+    </div>
+  </div>
+
+  <h2>H. Guardrails: conditions that should NOT exclude eligibility</h2>
+
+  <div class="case" id="case_16">
+    <div class="case-title">16 — FAIL: opacity:0 should remain eligible</div>
+    <div class="row">
+      <svg width="40" height="24">
+        <image id="svgimg_case_16" href="x.png" style="opacity:0"></image>
+      </svg>
+      <span>Opacity does not exclude eligibility; missing alternative => fail.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_17">
+    <div class="case-title">17 — FAIL: offscreen should remain eligible</div>
+    <div class="row">
+      <svg width="40" height="24">
+        <image id="svgimg_case_17" href="x.png" style="position:absolute;left:-9999px"></image>
+      </svg>
+      <span>Offscreen does not exclude eligibility; missing alternative => fail.</span>
+    </div>
+  </div>
+
+  <h2>I. Hidden by HTML/CSS and non-composed content (ineligible)</h2>
+
+  <div class="case" id="case_18">
+    <div class="case-title">18 — NOT APPLICABLE: ancestor &lt;svg&gt; display:none</div>
+    <div class="row">
+      <svg width="40" height="24" style="display:none">
+        <image id="svgimg_case_18" href="x.png"></image>
+      </svg>
+      <span>display:none makes it ineligible.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_19">
+    <div class="case-title">19 — NOT APPLICABLE: ancestor &lt;svg&gt; visibility:hidden</div>
+    <div class="row">
+      <svg width="40" height="24" style="visibility:hidden">
+        <image id="svgimg_case_19" href="x.png"></image>
+      </svg>
+      <span>visibility:hidden makes it ineligible.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_20">
+    <div class="case-title">20 — NOT APPLICABLE: inside &lt;template&gt; (non-composed)</div>
+    <div class="row">
+      <template>
+        <svg width="40" height="24">
+          <image id="svgimg_case_20" href="x.png"></image>
+        </svg>
+      </template>
+      <span>Template content is not composed into the DOM.</span>
+    </div>
+  </div>
+
   <p class="note">End of fixture.</p>
 </body>
 </html>

@@ -203,6 +203,39 @@
 </section>
 
 <!-- ========================================================= -->
+<!-- 13b) Computability blocker: ANCESTOR opacity < 1 -->
+<!-- An ancestor (not the text element itself) has fractional opacity.
+     Group opacity uniformly scales the ancestor's whole rendered subtree,
+     so the ratio can't be confidently computed by compositing a
+     separately-scaled foreground against a fully-folded background =>
+     cantTell (reasonCode ANCESTOR_OPACITY). -->
+<!-- ========================================================= -->
+<section class="case bgWhite" id="case-blocker-ancestor-opacity">
+  <p class="label">Blocker: ANCESTOR opacity &lt; 1 (group opacity)</p>
+  <div style="opacity:0.5; background-color:#ffffff;">
+    <p class="text normalText" id="blocker_ancestor_opacity" style="color:#000000; background-color:#ffffff; opacity:1;">
+      NOT COMPUTABLE: ancestor has opacity:0.5 (group opacity).
+    </p>
+  </div>
+</section>
+
+<!-- ========================================================= -->
+<!-- 13c) NOT a blocker: the text element's OWN opacity < 1 -->
+<!-- The element's own fractional opacity is folded into the foreground
+     via the existing per-element opacity product; it does not block
+     computability. Contrast IS computed here (and, with these colors,
+     the resulting ratio is below the AA/AAA thresholds — this fixture
+     entry intentionally demonstrates "computable but low ratio", not
+     "not computable"). -->
+<!-- ========================================================= -->
+<section class="case bgWhite" id="case-own-opacity-still-computable">
+  <p class="label">NOT a blocker: element's OWN opacity &lt; 1</p>
+  <p class="text normalText" id="own_opacity_still_computable" style="color:#000000; background-color:#ffffff; opacity:0.5;">
+    Computable: only the text element's own opacity is fractional (no ancestor blocker).
+  </p>
+</section>
+
+<!-- ========================================================= -->
 <!-- 14) Not visible: hidden attribute (excluded by eligibility) -->
 <!-- ========================================================= -->
 <section class="case bgWhite" id="case-hidden-attr" hidden>
@@ -339,6 +372,64 @@
   <p class="text normalText zeroSize" id="eligible_zero_size_text" style="color:#999999;">
     Zero-size text.
   </p>
+</section>
+
+<!-- ========================================================= -->
+<!-- 27) Inactive UI component: native [disabled] (WCAG 1.4.3/1.4.6
+     "Incidental" exception — text in an inactive control has no
+     contrast requirement) -->
+<!-- ========================================================= -->
+<section class="case bgWhite" id="case-disabled-native">
+  <p class="label">Native [disabled] button (should be excluded)</p>
+  <button class="text normalText" id="excluded_disabled_button_fail" style="color:#999999; background:#ffffff;" disabled>
+    Should be excluded (disabled button).
+  </button>
+</section>
+
+<!-- ========================================================= -->
+<!-- 28) Inactive UI component: text nested inside a disabled control -->
+<!-- ========================================================= -->
+<section class="case bgWhite" id="case-disabled-native-nested">
+  <p class="label">Text nested inside a disabled button (should be excluded)</p>
+  <button class="normalText" id="disabled_button_nested_wrapper" style="background:#ffffff;" disabled>
+    <span class="text" id="excluded_disabled_button_nested_fail" style="color:#999999;">
+      Should be excluded (nested inside disabled button).
+    </span>
+  </button>
+</section>
+
+<!-- ========================================================= -->
+<!-- 29) Inactive UI component: disabled control inside a
+     <fieldset disabled> (native disabled propagates via :disabled) -->
+<!-- ========================================================= -->
+<section class="case bgWhite" id="case-disabled-fieldset">
+  <p class="label">Button inside &lt;fieldset disabled&gt; (should be excluded)</p>
+  <fieldset disabled>
+    <button class="text normalText" id="excluded_disabled_fieldset_fail" style="color:#999999; background:#ffffff;">
+      Should be excluded (disabled fieldset propagation).
+    </button>
+  </fieldset>
+</section>
+
+<!-- ========================================================= -->
+<!-- 30) Inactive UI component: aria-disabled="true" (custom widget) -->
+<!-- ========================================================= -->
+<section class="case bgWhite" id="case-aria-disabled">
+  <p class="label">role="button" aria-disabled="true" (should be excluded)</p>
+  <div class="text normalText" id="excluded_aria_disabled_fail" role="button" aria-disabled="true" style="color:#999999; background:#ffffff;">
+    Should be excluded (aria-disabled custom widget).
+  </div>
+</section>
+
+<!-- ========================================================= -->
+<!-- 31) NOT inactive: enabled button with the same low-contrast
+     colors (should still be evaluated and fail) -->
+<!-- ========================================================= -->
+<section class="case bgWhite" id="case-enabled-button-control">
+  <p class="label">Enabled button, same colors as disabled cases (should still fail)</p>
+  <button class="text normalText" id="eligible_enabled_button_fail" style="color:#999999; background:#ffffff;">
+    Eligible: enabled button, should be evaluated.
+  </button>
 </section>
 
 <!-- ========================================================= -->

@@ -1,0 +1,31 @@
+# Known limitations
+
+Stated plainly and upfront, not left for you to discover. Every item here is a deliberate, reasoned decision (see `../ROADMAP.md` for the full research behind each), not an oversight — but "deliberate" doesn't mean "unimportant to know before you rely on this tool."
+
+## Structural — this architecture cannot do these at all
+
+a11y-core is a **static DOM scan**: it reads the DOM tree and computed styles at one instant, with no ability to simulate user interaction, wait for async state changes, or measure real layout at arbitrary viewport sizes. These aren't missing rules — no rule implementation, however clever, can close them without a fundamentally different architecture (real browser automation driving actual keyboard/pointer events over time):
+
+- **Keyboard-trap detection** (WCAG 2.1.2) — requires simulating actual focus/keydown sequences and observing whether focus can escape. No static markup signal exists for this.
+- **Reflow / clipping at zoom** (WCAG 1.4.10) — requires real layout measurement (`clientWidth`/`scrollWidth`) at a simulated 320px-equivalent viewport. Unlike some CSS-declaration-based heuristics elsewhere in this engine, there is no static markup proxy for "does content get clipped at 400% zoom" at all.
+- **Dynamic/post-interaction state** — anything that only exists after a click, hover, or async data load (a modal's contents, a dropdown's options, form-validation error messages) is invisible to a scan of the page's *current* DOM. If your framework renders it eagerly (even off-screen/`hidden`), it's scannable; if it only exists after interaction, it isn't, unless you drive that interaction yourself before scanning (e.g. click the button, *then* scan).
+
+## Environment-dependent — depends on how you run it
+
+- **jsdom (Node, no real browser) has no CSS layout engine.** Rules needing real geometry — most notably `target-size-minimum` (WCAG 2.5.8, needs real `getBoundingClientRect()`) — report `notApplicable` under plain jsdom rather than guess. Run under a real browser (Puppeteer/Playwright — see [`INTEGRATION.md`](./INTEGRATION.md) Pattern 2) to get real findings from these rules.
+- **`<dialog>` and other elements hidden by the default UA stylesheet** (no `open` attribute, `display: none` by spec) are skipped by most tools' visibility-aware checks, including the reference engine — but a11y-core's static-markup-validity checks (like ARIA ID-reference validity) still evaluate them, since a markup defect is still a defect even before the dialog opens. This is a deliberate a11y-core choice that can occasionally make it *more* thorough than other engines on hidden content, not a bug — see `cross-engine-diffing.design.md` for the case that surfaced this.
+- **Static markup vs. live/post-hydration DOM state.** The rule logic itself is DOM-source-agnostic — it evaluates whatever DOM it's handed, whether that's jsdom-parsed static HTML (Pattern 1) or an already-loaded, already-hydrated real browser tab (Pattern 2, see [`INTEGRATION.md`](./INTEGRATION.md)). But the CLI (`npx a11y-core scan <url>`) specifically fetches static HTML only, with no JS execution — see [`CLI.md`](./CLI.md). For a JS-framework-hydrated widget whose server-rendered markup intentionally ships one state before client JS syncs it (e.g. `<input type="checkbox" aria-checked="true">` shipped before client JS sets the native `checked` property to match on hydration — an extremely common, entirely legitimate pattern), a CLI scan only sees the pre-hydration markup. the reference engine running inside an actual loaded browser tab sees the post-hydration state instead, so the two can disagree on exactly this class of element for reasons that have nothing to do with either engine's rule correctness. `a11ycore-aria-checked-state-mismatch` is deliberately `manual`/`cantTell`-capped for this exact reason rather than a hard `fail`. If you need live-DOM accuracy for hydration-sensitive checks, run the library directly against an already-loaded page via Pattern 2, not the static-fetch CLI.
+
+## Deliberately not attempted — judgment calls, not automatable safely
+
+These have no comparably safe heuristic at this engine's confidence bar (`fail` must stay reserved for deterministic, high-confidence violations — see the mission's non-negotiables in `../ROADMAP.md`). Building them anyway would either catch almost nothing (too narrow to be useful) or risk real false positives (too broad to trust):
+
+- **"Is this heading/label text meaningful?"** — real headings and labels are enormously varied and legitimately short ("FAQ," "Name," "Overview" are all fine). Unlike link text (where a small, well-established "always bad" phrase list exists — see `link-name-quality`), there's no equivalent safe list here.
+- **"Does this error message describe the problem?"** — what triggers a validation error and its content are almost always JS/validation-library-driven, invisible to a static scan in the first place; not just a heuristic-design problem.
+- **Fine-grained time-based-media sub-checks** (WCAG 1.2.x has ~8 distinct ACT-rule-level cases beyond what's built) — audio/video content itself is fundamentally unverifiable from static markup; the two broadest, safest cases are covered (`media-alternative-transcript-evidence`, `video-caption`), the narrower ones are not, by design.
+- **Images-of-text content analysis** (WCAG 1.4.5/1.4.9) — would need OCR-equivalent image understanding; out of scope for a static-markup engine.
+- **Motion-actuation controls** (WCAG 2.5.4) — niche, low real-world incidence; not prioritized, not structurally impossible.
+
+## What this means in practice
+
+None of the above is unique to a11y-core — every static-analysis accessibility tool (the reference engine included) shares the structural limitations, and most share the judgment-call ones too. The reason to state it explicitly here: a `pass` from this engine (or any automated tool) is never a substitute for the manual review WCAG itself requires for the criteria above. See [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md) for exactly what a `pass`/composite `pass` does and doesn't claim.

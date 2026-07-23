@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-tooltip-name-present — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-tooltip-name-present</code> (role="tooltip" must have an accessible name)</h1>
+
+  <p class="note">
+    Each target element has a stable <code>id</code> of the form <code>tip_case_NN</code>.
+    Mechanism priority: aria-label &gt; aria-labelledby &gt; title &gt; content.
+  </p>
+
+  <h2>A. Named (eligible)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — PASS: role=tooltip, visible text content</div>
+    <div role="tooltip" id="tip_case_01">Click to save your changes</div>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — PASS: role=tooltip, aria-label</div>
+    <div role="tooltip" id="tip_case_02" aria-label="Save"></div>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — PASS: role=tooltip, aria-labelledby</div>
+    <span id="tip_case_03_lbl">Undo</span>
+    <div role="tooltip" id="tip_case_03" aria-labelledby="tip_case_03_lbl"></div>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — PASS: role=tooltip, title</div>
+    <div role="tooltip" id="tip_case_04" title="Redo"></div>
+  </div>
+
+  <h2>B. Unnamed (eligible, FAIL)</h2>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — FAIL: role=tooltip, no name at all</div>
+    <div role="tooltip" id="tip_case_05"></div>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — FAIL: role=tooltip, whitespace-only content</div>
+    <div role="tooltip" id="tip_case_06">   </div>
+  </div>
+
+  <h2>C. Ineligible (excluded from accessibility tree, skipped)</h2>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — NEUTRAL/INELIGIBLE: aria-hidden, not focusable, missing name</div>
+    <div role="tooltip" aria-hidden="true" id="tip_case_07"></div>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

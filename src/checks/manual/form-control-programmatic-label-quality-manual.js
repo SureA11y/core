@@ -282,7 +282,10 @@ function runInPage(ctx) {
         };
     }
 
-    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [], data: { details: { metrics } } };
+    // Manual rules may only emit cantTell/notApplicable (never pass/fail) —
+    // no applicable control relied on a weak (title/placeholder) primary
+    // label, so there is nothing to flag for review.
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [], data: { details: { metrics } } };
 }
 
 module.exports = { id, meta, runInPage };

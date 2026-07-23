@@ -38,6 +38,7 @@ const path = require('node:path');
 // Adjust these imports to match your repo layout if needed
 const { runa11yCoreOnHtml } = require('../tests/helpers/runDomRulesOnHtml.js');
 const { assertRule } = require('../tests/helpers/assertRule.js');
+const { versionTagPrefixForScs } = require('../src/coverage/wcag-version-map.js');
 
 function loadWcagFacetsRegistry(repoRoot) {
     const p = path.join(repoRoot, 'src', 'coverage', 'wcag-facets.js');
@@ -56,15 +57,22 @@ function loadWcagFacetsRegistry(repoRoot) {
         assert.ok(isNonEmptyString(bucket.title), `FACETS["${sc}"].title must be non-empty (${p})`);
         assert.ok(Array.isArray(bucket.facets), `FACETS["${sc}"].facets must be an array (${p})`);
 
+        const seenInThisSc = new Set();
         for (const f of bucket.facets) {
             assert.ok(f && typeof f === 'object', `Facet entries must be objects (${p})`);
             assert.ok(isNonEmptyString(f.id), `Facet.id must be non-empty (${p})`);
             assert.ok(isNonEmptyString(f.label), `Facet.label must be non-empty (${p})`);
             assert.ok(isNonEmptyString(f.automation), `Facet.automation must be non-empty (${p})`);
 
-            // Global uniqueness across SCs
-            assert.ok(!byId.has(f.id), `Duplicate facet id "${f.id}" found (SC ${sc}) in ${p}`);
-            byId.set(f.id, { ...f, sc });
+            // Uniqueness within this SC's own facets array only. The same facet id
+            // legitimately repeats ACROSS different SCs when one rule/facet genuinely
+            // satisfies multiple SCs at once (e.g. scrollable-region-focusable-evidence
+            // under both 2.1.1 and 2.1.3, mirroring the rule's own dual-mapped
+            // coverage.facetsBySc) — that's intentional dual-mapping, not a data bug.
+            assert.ok(!seenInThisSc.has(f.id), `Duplicate facet id "${f.id}" listed twice within SC ${sc} in ${p}`);
+            seenInThisSc.add(f.id);
+
+            if (!byId.has(f.id)) byId.set(f.id, { ...f, sc });
             all.push({ ...f, sc });
         }
     }
@@ -130,19 +138,23 @@ function normalizeScTag(sc) {
     return `wcag${String(sc).replace(/\./g, '')}`;
 }
 
-function expectedLevelTagFromMappings(mappings, informativeReferences) {
-    // Observed tags in this repo follow wcag2a / wcag2aa / wcag2aaa.
+function expectedLevelTagFromMappings(mappings, informativeReferences, wcagSc) {
+    // Observed tags in this repo follow wcag2a / wcag2aa / wcag2aaa for WCAG-2.0-baseline
+    // SCs, and wcag21a/wcag21aa/wcag21aaa or wcag22a/wcag22aa/wcag22aaa (never a plain
+    // wcag2* alongside) for SCs introduced in WCAG 2.1/2.2 -- see
+    // src/coverage/wcag-version-map.js, the canonical source for which SCs are which.
     // Automatic checks: derive from normativeMappings.conformanceLevel.
-    // Manual checks: normativeMappings is empty by design; derive from informativeReferences if present, else default to wcag2a.
+    // Manual checks: normativeMappings is empty by design; derive from informativeReferences if present, else default to level A.
     const list = (Array.isArray(mappings) && mappings.length > 0)
         ? mappings
         : (Array.isArray(informativeReferences) ? informativeReferences : []);
 
     const levels = new Set(list.map((m) => String(m && m.conformanceLevel || '').toUpperCase()).filter(Boolean));
-    if (levels.has('AAA')) return 'wcag2aaa';
-    if (levels.has('AA')) return 'wcag2aa';
+    const prefix = versionTagPrefixForScs(wcagSc);
+    if (levels.has('AAA')) return `${prefix}aaa`;
+    if (levels.has('AA')) return `${prefix}aa`;
     // Default (also matches the majority of existing tags)
-    return 'wcag2a';
+    return `${prefix}a`;
 }
 
 function loadEnDictionary(repoRoot) {
@@ -224,14 +236,31 @@ function validateMeta(meta) {
     assert.ok(isNonEmptyString(meta.i18n.descriptionKey), 'meta.i18n.descriptionKey must be non-empty string');
 
     assert.ok(Array.isArray(meta.tags) && meta.tags.length > 0, 'meta.tags must be non-empty array');
-    assert.ok(Array.isArray(meta.wcagSc) && meta.wcagSc.length > 0, 'meta.wcagSc must be non-empty array');
+
+    // wcagSc: automatic checks are always WCAG-normative and must declare at least one SC.
+    // Manual checks legitimately come in two shapes (verified against every existing manual
+    // rule file, not assumed): a pure the reference engine "Best Practice" advisory rule with NO WCAG SC at
+    // all (wcagSc: [], normativeMappings: [], coverage: {} -- Tier 1b, see ROADMAP.md), or a
+    // WCAG-SC-tied quality/manual-review rule (wcagSc non-empty, e.g. the *-quality-manual
+    // family) that otherwise follows the same shape as an automatic rule's mappings.
+    assert.ok(Array.isArray(meta.wcagSc), 'meta.wcagSc must be an array');
+    if (meta.type === 'automatic') {
+        assert.ok(meta.wcagSc.length > 0, 'meta.wcagSc must be non-empty array for automatic checks');
+    }
 
     assert.ok(Array.isArray(meta.normativeMappings), 'meta.normativeMappings must be an array');
 
-    // Repo rule: automatic checks are normative and must declare normativeMappings.
-    // Repo rule: manual checks must have normativeMappings as an empty array.
     if (meta.type === 'automatic' || meta.type === 'manual') {
-        assert.ok(meta.normativeMappings.length > 0, 'meta.normativeMappings must be non-empty array for automatic checks');
+        if (meta.type === 'automatic') {
+            assert.ok(meta.normativeMappings.length > 0, 'meta.normativeMappings must be non-empty array for automatic checks');
+        }
+        // wcagSc and normativeMappings must be consistently empty or both populated -- a
+        // Tier 1b advisory rule declares neither; every other rule (automatic, or a manual
+        // quality-review rule) declares both, aligned 1:1 below.
+        assert.ok(
+            (meta.wcagSc.length === 0) === (meta.normativeMappings.length === 0),
+            'meta.wcagSc and meta.normativeMappings must be consistently empty or both non-empty'
+        );
         for (const mm of meta.normativeMappings) {
             assert.ok(mm && typeof mm === 'object', 'normativeMappings entries must be objects');
             for (const kk of ['standard', 'version', 'requirement', 'title', 'conformanceLevel']) {
@@ -249,12 +278,15 @@ function validateMeta(meta) {
         assert.fail(`meta.type must be "automatic" or "manual" (got: ${meta.type})`);
     }
 
-    // coverage facets
+    // coverage facets (only applies to SC-tied rules; a Tier 1b wcagSc:[] rule has none --
+    // its coverage is legitimately {}, since coverage.facetsBySc is WCAG-SC-keyed only)
     assert.ok(meta.coverage && typeof meta.coverage === 'object', 'meta.coverage must be object');
-    assert.ok(meta.coverage.facetsBySc && typeof meta.coverage.facetsBySc === 'object', 'meta.coverage.facetsBySc must be object');
-    for (const sc of meta.wcagSc) {
-        const facets = meta.coverage.facetsBySc[sc];
-        assert.ok(Array.isArray(facets) && facets.length > 0, `coverage.facetsBySc must include non-empty facets array for SC ${sc}`);
+    if (meta.wcagSc.length > 0) {
+        assert.ok(meta.coverage.facetsBySc && typeof meta.coverage.facetsBySc === 'object', 'meta.coverage.facetsBySc must be object');
+        for (const sc of meta.wcagSc) {
+            const facets = meta.coverage.facetsBySc[sc];
+            assert.ok(Array.isArray(facets) && facets.length > 0, `coverage.facetsBySc must include non-empty facets array for SC ${sc}`);
+        }
     }
 }
 
@@ -265,8 +297,16 @@ function validateTags(meta) {
     assert.ok(tags.has('atomic'), 'meta.tags must include "atomic"');
     assert.ok(tags.has(meta.type), `meta.tags must include "${meta.type}"`);
 
+    if (meta.wcagSc.length === 0) {
+        // Tier 1b: a pure the reference engine "Best Practice" advisory rule with no WCAG SC at all carries
+        // 'best-practice' instead of any wcag2*/wcag21*/wcag22* level tag (verified across
+        // every existing wcagSc:[] manual rule file -- none carry a level tag).
+        assert.ok(tags.has('best-practice'), 'meta.tags must include "best-practice" for a rule with no wcagSc (Tier 1b advisory)');
+        return;
+    }
+
     // WCAG level tag derived from mappings (automatic) or informative refs (manual) or default.
-    const expectedLevel = expectedLevelTagFromMappings(meta.normativeMappings, meta.informativeReferences);
+    const expectedLevel = expectedLevelTagFromMappings(meta.normativeMappings, meta.informativeReferences, meta.wcagSc);
     assert.ok(tags.has(expectedLevel), `meta.tags must include conformance level tag "${expectedLevel}" derived from mappings/references`);
 
     // SC tags derived from wcagSc (applies to both automatic and manual)
@@ -314,10 +354,15 @@ function validateRunInPageSerialization(runInPage) {
     // - meta: would indicate outer-scope meta reference
     // - id: would indicate outer-scope id reference
     //
-    // We intentionally allow `.id` property access and strings containing "id".
+    // We intentionally allow `.id` property access, strings containing "id", and
+    // `id: ...`/`meta: ...` used as an object-literal property KEY (a common,
+    // safe pattern for reporting e.g. `data: { details: { id: refId } }`) — a
+    // property key is never evaluated as an outer-scope variable reference,
+    // unlike a bare `id`/`meta` token or the `{ id }` shorthand (still caught,
+    // since it isn't followed by a colon).
     const forbidden = [
-        { re: /(?<![\.\w$])meta(?![\w$])/g, name: 'meta' },
-        { re: /(?<![\.\w$])id(?![\w$])/g, name: 'id' },
+        { re: /(?<![\.\w$])meta(?![\w$])(?!\s*:)/g, name: 'meta' },
+        { re: /(?<![\.\w$])id(?![\w$])(?!\s*:)/g, name: 'id' },
         { re: /\brequire\s*\(/g, name: 'require(' },
         { re: /\bimport\b/g, name: 'import' },
     ];
@@ -345,11 +390,17 @@ function validateOccurrencesShape(ruleResult) {
         }
 
         assert.ok(o.data && typeof o.data === 'object', 'occurrence.data must exist');
-        assert.ok(o.data.visibilityFilter && typeof o.data.visibilityFilter === 'object', 'occurrence.data.visibilityFilter must exist');
-        const vf = o.data.visibilityFilter;
-        assert.ok('targetSet' in vf, 'visibilityFilter.targetSet required');
-        assert.ok('accEligible' in vf, 'visibilityFilter.accEligible required');
-        assert.ok('reasons' in vf, 'visibilityFilter.reasons required');
+        // data.visibilityFilter is documented as optional (docs/OUTPUT_SCHEMA.md: "Present on
+        // most occurrences" -- not a universal requirement, e.g. rules with no single
+        // accessibility-tree-eligibility-relevant target element legitimately omit it).
+        // Validate its shape only when the rule actually provided one.
+        if (o.data.visibilityFilter != null) {
+            const vf = o.data.visibilityFilter;
+            assert.ok(typeof vf === 'object', 'occurrence.data.visibilityFilter must be object when present');
+            assert.ok('targetSet' in vf, 'visibilityFilter.targetSet required');
+            assert.ok('accEligible' in vf, 'visibilityFilter.accEligible required');
+            assert.ok('reasons' in vf, 'visibilityFilter.reasons required');
+        }
     }
 }
 

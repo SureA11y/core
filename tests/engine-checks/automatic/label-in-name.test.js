@@ -2,8 +2,16 @@
 
 const test = require('node:test');
 const assert = require('node:assert');
+const fs = require('node:fs');
+const path = require('node:path');
 const { runa11yCoreOnHtml } = require('../../helpers/runa11yCoreOnHtml');
 const { assertRule } = require('../../helpers/assertRule');
+
+const RULE_ID = 'a11ycore-label-in-name';
+
+function hasOccurrenceForId(rule, id) {
+  return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
+}
 
 function findRuleResultDeep(root, ruleId) {
   const seen = new Set();
@@ -114,4 +122,60 @@ test('a11ycore-label-in-name: control not visually rendered => notApplicable (el
   `;
   const result = runa11yCoreOnHtml(html);
   assertRule(result, 'a11ycore-label-in-name', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test('a11ycore-label-in-name: aria-hidden decorative icon glyph does not count as visible label text => notApplicable', () => {
+  // Regression for the Material Icons ligature-font false positive found via
+  // a live-DOM cross-engine run 2026-07-21: an aria-hidden icon
+  // (<mat-icon aria-hidden="true">format_color_fill</mat-icon> in the real
+  // case) was being treated as "visible label text" that must be included
+  // in the aria-label, purely because the previous implementation collected
+  // text via raw container.textContent (which ignores aria-hidden and CSS
+  // visibility entirely) instead of the intended TreeWalker-based, filtered
+  // collection — itself caused by a free-var bug (a bare `NodeFilter`
+  // reference that silently threw and fell back to textContent on every
+  // call). Both are fixed together; this only has content inside the
+  // aria-hidden icon, so nothing counts as a visible label at all.
+  const html = `
+<!doctype html><html><body>
+  <button aria-label="Select a theme"><span aria-hidden="true">format_color_fill</span></button>
+</body></html>
+  `;
+  const result = runa11yCoreOnHtml(html);
+  assertRule(result, 'a11ycore-label-in-name', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test('a11ycore-label-in-name: real visible text alongside an aria-hidden icon is still compared correctly => pass', () => {
+  const html = `
+<!doctype html><html><body>
+  <button aria-label="Save changes"><span aria-hidden="true">icon</span> Save</button>
+</body></html>
+  `;
+  const result = runa11yCoreOnHtml(html);
+  assertRule(result, 'a11ycore-label-in-name', 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: fixture coverage (tests/fixtures/label-in-name-all-scenarios.html)`, () => {
+  const fixturePath = path.join(__dirname, '../..', 'fixtures', 'label-in-name-all-scenarios.html');
+  const html = fs.readFileSync(fixturePath, 'utf8');
+
+  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 5, maxOccurrences: 5 });
+
+  const expectedFailIds = [
+    'lin_case_02', 'lin_case_04', 'lin_case_06', 'lin_case_14', 'lin_case_15'
+  ];
+
+  const expectedNoOccIds = [
+    'lin_case_01', 'lin_case_03', 'lin_case_05', 'lin_case_07', 'lin_case_08', 'lin_case_09', 'lin_case_10', 'lin_case_11', 'lin_case_12', 'lin_case_13', 'lin_case_16', 'lin_case_17'
+  ];
+
+  for (const id of expectedFailIds) {
+    assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);
+  }
+  for (const id of expectedNoOccIds) {
+    assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
+  }
 });

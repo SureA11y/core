@@ -11,7 +11,7 @@ const meta = {
     descriptionKey: 'a11ycore_labelInName_description'
   },
   helpUrl: 'https://www.w3.org/WAI/WCAG22/Understanding/label-in-name.html',
-  tags: ['wcag2a', 'wcag253', 'forms', 'atomic', 'automatic'],
+  tags: ['wcag21a', 'wcag253', 'forms', 'atomic', 'automatic'],
   wcagSc: ['2.5.3'],
   normativeMappings: [
     {
@@ -74,6 +74,46 @@ function runInPage(ctx) {
     return true;
   }
 
+  // Unlike isDomVisible above, this also excludes aria-hidden subtrees.
+  // Needed specifically for collectVisibleTextUnder's per-text-node check
+  // below: an aria-hidden icon-font glyph (e.g. Material Icons' ligature
+  // pattern, <mat-icon aria-hidden="true">format_color_fill</mat-icon>) is
+  // technically DOM-visible pixels, but is never perceived by a sighted or
+  // voice-control user as literal readable words the way real visible text
+  // is — the reference engine's own label-content-name-mismatch check reaches the same
+  // practical outcome via a canvas-based ligature-detection heuristic
+  // (measuring rendered glyph shapes), not replicable here since this rule
+  // runs against static markup with no real canvas/font rendering
+  // available; excluding aria-hidden content is a cheaper, static-markup
+  // signal that gets the common case (decorative icon fonts) right without
+  // needing one. Confirmed via a live-DOM cross-engine run 2026-07-21
+  // (Angular Material's theme-picker button, aria-label="Select a theme",
+  // aria-hidden icon rendering literally as "format_color_fill").
+  function isAccEligible(el) {
+    if (!el) return false;
+    const fn = helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+    if (!fn) return isDomVisible(el);
+    try {
+      const r = fn(el, ctx);
+      if (typeof r === 'boolean') return r;
+      return !!(r && r.eligible);
+    } catch {
+      return isDomVisible(el);
+    }
+  }
+
+  // DOM's NodeFilter.SHOW_TEXT constant, inlined as a numeric literal rather
+  // than referencing the global NodeFilter object directly: runInPage must
+  // have zero free vars (see docs/RULE_AUTHORING.md's free-var footgun) and
+  // NodeFilter is not itself present in the execution realm this function
+  // actually runs in, unlike window/document. Confirmed 2026-07-21 — this
+  // silently made createTreeWalker throw on every call, falling back to
+  // raw container.textContent (which respects none of isNonRenderedTag/
+  // isDomVisible/isAccEligible below, since that whole per-node loop is
+  // skipped in the fallback path). Same pattern already used correctly in
+  // region-manual.js's own createTreeWalker call.
+  const SHOW_TEXT = 4;
+
   function collectVisibleTextUnder(container) {
     if (!container) return '';
     if (!isDomVisible(container)) return '';
@@ -81,7 +121,7 @@ function runInPage(ctx) {
     // TreeWalker is deterministic in document order.
     let walker = null;
     try {
-      walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null);
+      walker = document.createTreeWalker(container, SHOW_TEXT, null);
     } catch {
       walker = null;
     }
@@ -107,8 +147,9 @@ function runInPage(ctx) {
         if (!p || !p.tagName) continue;
         if (isNonRenderedTag(p)) continue;
 
-        // Require the parent element to be visually eligible.
-        if (!isDomVisible(p)) continue;
+        // Require the parent element to be visually eligible AND not inside
+        // an aria-hidden subtree (see isAccEligible's docblock above).
+        if (!isAccEligible(p)) continue;
 
         parts.push(t);
       } catch {
@@ -136,12 +177,17 @@ function runInPage(ctx) {
       // ignore
     }
 
-    // Fallback: label[for=id]
+    // Fallback: label[for=id]. Uses `document` directly rather than
+    // ctx.root/safeRoot -- label[for] association is a document-wide
+    // relationship (IDs are document-unique), not bounded by whatever
+    // contextSelector region happens to be scanned, and ctx.root is an
+    // array (multi-region contextSelector support), not a single element
+    // with its own .querySelector to call directly.
     try {
       const idAttribute = control && control.getAttribute ? (control.getAttribute('id') || '') : '';
       const key = String(idAttribute || '').trim();
-      if (key && safeRoot && safeRoot.querySelector) {
-        const l = safeRoot.querySelector('label[for="' + CSS.escape(key) + '"]');
+      if (key && document && document.querySelector) {
+        const l = document.querySelector('label[for="' + CSS.escape(key) + '"]');
         if (l) labels.push(l);
       }
     } catch {

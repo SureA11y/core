@@ -154,14 +154,6 @@ function runInPage(ctx) {
 
   const __evidenceCache = new WeakMap();
 
-  function getContainer(mediaEl) {
-    try {
-      return mediaEl && mediaEl.parentElement ? mediaEl.parentElement : null;
-    } catch {
-      return null;
-    }
-  }
-
   // Walk a small neighborhood around the media element to find transcript cues.
   // Bounded for determinism and performance.
   function findTranscriptEvidence(mediaEl) {
@@ -290,11 +282,17 @@ function runInPage(ctx) {
 
     applicableCount += 1;
 
-    const container = getContainer(el);
-    let evidence = container ? __evidenceCache.get(container) : null;
+    // Evidence must be computed and cached per media element: two sibling
+    // <audio>/<video> elements under the same container do not necessarily
+    // share the same transcript evidence (e.g. one has a strong
+    // aria-describedby binding, the other has none). Keying this cache by
+    // the shared container instead of the element itself previously caused
+    // an undocumented sibling to silently inherit another element's
+    // evidence classification.
+    let evidence = __evidenceCache.get(el);
     if (!evidence) {
       evidence = findTranscriptEvidence(el);
-      if (container) __evidenceCache.set(container, evidence);
+      __evidenceCache.set(el, evidence);
     }
 
     const mediaTag = (el.tagName || '').toLowerCase();
@@ -366,8 +364,10 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'cantTell', severity: rule.defaultSeverity || 'minor', occurrences };
   }
 
-  // Strong evidence found for all applicable media elements.
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  // Manual rules may only emit cantTell/notApplicable (never pass/fail).
+  // Strong evidence was found for all applicable media elements, so there
+  // is nothing to flag for review.
+  return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }
 
 module.exports = { id, meta, runInPage };

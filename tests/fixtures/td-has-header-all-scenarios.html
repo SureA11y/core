@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-td-has-header — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+    table { border-collapse: collapse; }
+    td, th { border: 1px solid #ccc; padding: 4px 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-td-has-header</code></h1>
+
+  <p class="note">
+    Each target &lt;table&gt; has a stable <code>id</code> of the form <code>tdh_case_NN</code>.
+  </p>
+
+  <h2>A. FAIL — large simple table with unheaded data cells</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: 4x4 table with no headers at all — every &lt;td&gt; is unheaded</div>
+    <table id="tdh_case_01">
+      <tr><td>1</td><td>2</td><td>3</td><td>4</td></tr>
+      <tr><td>5</td><td>6</td><td>7</td><td>8</td></tr>
+      <tr><td>9</td><td>10</td><td>11</td><td>12</td></tr>
+      <tr><td>13</td><td>14</td><td>15</td><td>16</td></tr>
+    </table>
+  </div>
+
+  <h2>B. Not flagged</h2>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — NEUTRAL: 4x4 table with a full header row and header column (every td implicitly headed)</div>
+    <table id="tdh_case_02">
+      <tr><th></th><th>Q1</th><th>Q2</th><th>Q3</th></tr>
+      <tr><th>North</th><td>1</td><td>2</td><td>3</td></tr>
+      <tr><th>South</th><td>4</td><td>5</td><td>6</td></tr>
+      <tr><th>East</th><td>7</td><td>8</td><td>9</td></tr>
+    </table>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — NEUTRAL: 4x4 table using explicit headers="..." attributes instead of implicit position</div>
+    <table id="tdh_case_03">
+      <tr><th id="tdh3_c1">A</th><th id="tdh3_c2">B</th><th id="tdh3_c3">C</th><th id="tdh3_c4">D</th></tr>
+      <tr><td headers="tdh3_c1">1</td><td headers="tdh3_c2">2</td><td headers="tdh3_c3">3</td><td headers="tdh3_c4">4</td></tr>
+      <tr><td headers="tdh3_c1">5</td><td headers="tdh3_c2">6</td><td headers="tdh3_c3">7</td><td headers="tdh3_c4">8</td></tr>
+      <tr><td headers="tdh3_c1">9</td><td headers="tdh3_c2">10</td><td headers="tdh3_c3">11</td><td headers="tdh3_c4">12</td></tr>
+    </table>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — NEUTRAL: table has a colspan — skipped entirely to avoid wrong column-index math</div>
+    <table id="tdh_case_04">
+      <tr><th colspan="2">Group</th><th>C</th><th>D</th></tr>
+      <tr><td>1</td><td>2</td><td>3</td><td>4</td></tr>
+      <tr><td>5</td><td>6</td><td>7</td><td>8</td></tr>
+      <tr><td>9</td><td>10</td><td>11</td><td>12</td></tr>
+    </table>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — NEUTRAL: 3x3 table (too small, below the "large table" threshold)</div>
+    <table id="tdh_case_05">
+      <tr><td>1</td><td>2</td><td>3</td></tr>
+      <tr><td>4</td><td>5</td><td>6</td></tr>
+      <tr><td>7</td><td>8</td><td>9</td></tr>
+    </table>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

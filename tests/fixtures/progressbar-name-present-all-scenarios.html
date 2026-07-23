@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-progressbar-name-present — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-progressbar-name-present</code> (role="progressbar" must have an accessible name)</h1>
+
+  <p class="note">
+    Each target element has a stable <code>id</code> of the form <code>pbar_case_NN</code>.
+    Mechanism priority: aria-label &gt; aria-labelledby &gt; title. role="progressbar" is
+    name-from-author-only per WAI-ARIA — it does NOT support name-from-content at all
+    (verified against the reference engine's own aria-progressbar-name check).
+  </p>
+
+  <h2>A. Named (eligible)</h2>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — PASS: role=progressbar, aria-label</div>
+    <div role="progressbar" aria-valuenow="50" id="pbar_case_02" aria-label="Upload progress"></div>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — PASS: role=progressbar, aria-labelledby</div>
+    <span id="pbar_case_03_lbl">Download progress</span>
+    <div role="progressbar" aria-valuenow="50" id="pbar_case_03" aria-labelledby="pbar_case_03_lbl"></div>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — PASS: role=progressbar, title</div>
+    <div role="progressbar" aria-valuenow="50" id="pbar_case_04" title="Sync progress"></div>
+  </div>
+
+  <h2>B. Unnamed (eligible, FAIL)</h2>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — FAIL: role=progressbar, no name at all</div>
+    <div role="progressbar" aria-valuenow="50" id="pbar_case_05"></div>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — FAIL: role=progressbar, content is [hidden] (does not count)</div>
+    <div role="progressbar" aria-valuenow="50" id="pbar_case_06"><span hidden>50%</span></div>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — FAIL: role=progressbar, visible text content (content must NOT count as a name — role="progressbar" is name-from-author-only, unlike e.g. role="tab"/"option")</div>
+    <div role="progressbar" aria-valuenow="50" id="pbar_case_08">Loading, 50%</div>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — FAIL: role=progressbar, no name of its own, but a descendant carries an unrelated aria-label (must not be picked up as a fallback name — found on a real site, Instacart's &lt;ul role="progressbar"&gt; loading skeleton)</div>
+    <ul role="progressbar" aria-valuenow="50" id="pbar_case_09"><li><span aria-label="Loading Box"></span></li></ul>
+  </div>
+
+  <h2>C. Ineligible (excluded from accessibility tree, skipped)</h2>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — NEUTRAL/INELIGIBLE: display:none, missing name</div>
+    <div role="progressbar" style="display:none" id="pbar_case_07"></div>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

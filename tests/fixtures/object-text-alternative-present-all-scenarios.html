@@ -176,6 +176,17 @@
     </div>
   </div>
 
+  <h2>F. Fallback content edge cases</h2>
+
+  <div class="case" id="case_18">
+    <div class="case-title">18 — FAIL: whitespace-only fallback content does not count</div>
+    <div class="row">
+      <object id="object_case_18" data="x.svg" type="image/svg+xml">
+      </object>
+      <span>Fallback content that trims to empty is not a valid text alternative.</span>
+    </div>
+  </div>
+
   <p class="note">End of fixture.</p>
 </body>
 </html>

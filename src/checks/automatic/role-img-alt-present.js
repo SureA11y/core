@@ -13,7 +13,9 @@
  * @expectation
  *   Each applicable element with role="img" has an accessible text alternative:
  *    - aria-label with a non-empty value; OR
- *    - aria-labelledby referencing at least one existing element that contributes non-empty text.
+ *    - aria-labelledby referencing at least one existing element that contributes non-empty text; OR
+ *    - a non-empty title attribute (last-resort accessible-name source per HTML-AAM,
+ *      also accepted by the reference engine's equivalent role-img-alt rule).
  */
 
 const id = 'a11ycore-role-img-text-alternative-present';
@@ -21,7 +23,7 @@ const id = 'a11ycore-role-img-text-alternative-present';
 const meta = {
     title: '[role="img"] must have an accessible text alternative',
     description:
-        'Checks that elements with role="img" provide an accessible text alternative via aria-label or aria-labelledby.',
+        'Checks that elements with role="img" provide an accessible text alternative via aria-label, aria-labelledby, or a title attribute.',
     i18n: {
         titleKey: 'a11ycore_roleImg_textAlternativePresent_title',
         descriptionKey: 'a11ycore_roleImg_textAlternativePresent_description'
@@ -114,6 +116,11 @@ function runInPage(ctx) {
         const hasValidAriaLabel = hasAriaLabelAttr && ariaLabel.length > 0;
         const hasValidAriaLabelledbyAttr = hasAriaLabelledbyAttr && ariaLabelledby.length > 0;
 
+        // Last-resort naming mechanism per HTML-AAM (also accepted by
+        // the reference engine's role-img-alt): a non-empty title attribute.
+        const titleRaw = (() => { try { return el.getAttribute('title'); } catch { return null; } })();
+        const hasValidTitle = titleRaw !== null && trim(titleRaw).length > 0;
+
         let nameInfo = null;
 
         // Fast outcomes first (no helper needed)
@@ -121,11 +128,23 @@ function runInPage(ctx) {
         let hasName = false;
 
         if (!hasAriaLabelAttr && !hasAriaLabelledbyAttr) {
-            reasonCode = 'missingTextAlternative';
+            if (hasValidTitle) {
+                hasName = true;
+            } else {
+                reasonCode = 'missingTextAlternative';
+            }
         } else if (hasAriaLabelAttr && !hasValidAriaLabel) {
-            reasonCode = 'emptyAriaLabel';
+            if (hasValidTitle) {
+                hasName = true;
+            } else {
+                reasonCode = 'emptyAriaLabel';
+            }
         } else if (hasAriaLabelledbyAttr && !hasValidAriaLabelledbyAttr) {
-            reasonCode = 'emptyAriaLabelledby';
+            if (hasValidTitle) {
+                hasName = true;
+            } else {
+                reasonCode = 'emptyAriaLabelledby';
+            }
         } else {
             // Mechanism present + non-empty. Optionally validate resolution via helper.
             if (getAccessibleNameInfo) {

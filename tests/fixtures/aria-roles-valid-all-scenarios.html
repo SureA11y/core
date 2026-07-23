@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-aria-roles-valid — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-aria-roles-valid</code> (role must be a real, non-abstract ARIA role)</h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>arv_case_NN</code>.
+    Only the first token of a fallback role list is evaluated.
+  </p>
+
+  <h2>A. Valid</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — PASS: valid concrete role</div>
+    <div role="button" id="arv_case_01">Click</div>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — PASS: first token of a fallback role list is valid</div>
+    <div role="presentation button" id="arv_case_02">Click</div>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — PASS: role="text" is a valid ARIA 1.2 concrete role (also checked by a11ycore-aria-text)</div>
+    <span role="text" id="arv_case_06">Plain text run</span>
+  </div>
+
+  <h2>B. Invalid</h2>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — FAIL: role does not exist (typo)</div>
+    <div role="buton" id="arv_case_03"></div>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — FAIL: role is abstract (must not be used directly)</div>
+    <div role="widget" id="arv_case_04"></div>
+  </div>
+
+  <h2>C. Not applicable (skipped, not counted)</h2>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — NEUTRAL: role attribute is empty/whitespace</div>
+    <div role="   " id="arv_case_05"></div>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

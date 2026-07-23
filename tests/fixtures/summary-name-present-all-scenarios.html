@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-summary-name-present — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-summary-name-present</code> (&lt;summary&gt; must have an accessible name)</h1>
+
+  <p class="note">
+    Each target &lt;summary&gt; has a stable <code>id</code> of the form <code>sum_case_NN</code>.
+    Mechanism priority: aria-label &gt; aria-labelledby &gt; title &gt; content.
+  </p>
+
+  <h2>A. Named</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — PASS: summary with visible text content</div>
+    <details><summary id="sum_case_01">More details</summary><p>Body</p></details>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — PASS: summary with aria-label</div>
+    <details><summary id="sum_case_02" aria-label="Expand section"></summary><p>Body</p></details>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — PASS: summary with aria-labelledby</div>
+    <span id="sum_case_03_lbl">Show advanced options</span>
+    <details><summary id="sum_case_03" aria-labelledby="sum_case_03_lbl"></summary><p>Body</p></details>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — PASS: summary with title</div>
+    <details><summary id="sum_case_04" title="Show FAQ"></summary><p>Body</p></details>
+  </div>
+
+  <h2>B. Unnamed (FAIL)</h2>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — FAIL: summary with no name at all</div>
+    <details><summary id="sum_case_05"></summary><p>Body</p></details>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — FAIL: summary content is aria-hidden (does not count)</div>
+    <details><summary id="sum_case_06"><span aria-hidden="true">More info</span></summary><p>Body</p></details>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

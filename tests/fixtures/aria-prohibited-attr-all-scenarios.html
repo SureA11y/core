@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-aria-prohibited-attr — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-aria-prohibited-attr</code> (naming attrs must not be used on naming-prohibited roles)</h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>apa_case_NN</code>.
+    Scoped to ~13 pure-text-semantic roles (see rule's implementation notes).
+  </p>
+
+  <h2>A. Valid</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — PASS: naming-prohibited role with no naming attribute</div>
+    <div role="generic" id="apa_case_01"></div>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — PASS: naming attribute is empty/whitespace</div>
+    <div role="generic" aria-label="   " id="apa_case_02"></div>
+  </div>
+
+  <h2>B. Invalid</h2>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — FAIL: aria-label on a naming-prohibited role</div>
+    <div role="generic" aria-label="Something" id="apa_case_03"></div>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — FAIL: aria-labelledby on a naming-prohibited role</div>
+    <span id="apa_case_04_lbl">Label</span>
+    <strong role="strong" aria-labelledby="apa_case_04_lbl" id="apa_case_04"></strong>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — FAIL: both aria-label and aria-labelledby on the same element (two occurrences)</div>
+    <span id="apa_case_05_lbl">Label</span>
+    <div role="paragraph" aria-label="Something" aria-labelledby="apa_case_05_lbl" id="apa_case_05"></div>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — FAIL: aria-label on role="mark" (widened role, 2026-07-19 Tier 4)</div>
+    <div role="mark" aria-label="Highlighted" id="apa_case_07"></div>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — FAIL: aria-label on role="presentation" (widened role, 2026-07-21 — verified directly against the reference engine's own prohibitedAttrs table and the W3C spec's §5.2.8.6 "Roles which cannot be named")</div>
+    <div role="presentation" aria-label="Something" id="apa_case_08"></div>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — FAIL: aria-labelledby on role="none" (widened role, 2026-07-21 — "none" is "presentation"'s documented ARIA 1.2 alias, identical semantics)</div>
+    <span id="apa_case_09_lbl">Label</span>
+    <div role="none" aria-labelledby="apa_case_09_lbl" id="apa_case_09"></div>
+  </div>
+
+  <h2>C. Not applicable (skipped, not counted)</h2>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — NEUTRAL: role does not prohibit naming</div>
+    <div role="button" aria-label="Submit" id="apa_case_06"></div>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

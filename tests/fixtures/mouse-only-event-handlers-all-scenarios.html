@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-mouse-only-event-handlers — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-mouse-only-event-handlers</code></h1>
+
+  <p class="note">
+    Each target element has a stable <code>id</code> of the form <code>moeh_case_NN</code>.
+  </p>
+
+  <h2>A. CANTTELL — pointer-only handler, no keyboard-reachable equivalent</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — CANTTELL: onmouseover/onmouseout, no keyboard equivalent at all</div>
+    <div id="moeh_case_01" onmouseover="show()" onmouseout="hide()">Hover-only tooltip trigger</div>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — CANTTELL: onmousedown, no keyboard equivalent at all</div>
+    <div id="moeh_case_02" onmousedown="startDrag()">Mouse-drag-only handle</div>
+  </div>
+
+  <h2>B. Not flagged</h2>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — NEUTRAL: onmouseover/onmouseout paired with onfocus/onblur</div>
+    <div id="moeh_case_03" onmouseover="show()" onmouseout="hide()" onfocus="show()" onblur="hide()" tabindex="0">Hover + focus pair</div>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — NEUTRAL: onmousedown paired with onkeydown</div>
+    <div id="moeh_case_04" onmousedown="drag()" onkeydown="drag()" tabindex="0">Mousedown + keydown pair</div>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — NEUTRAL: only onclick (not a pointer-only handler this rule targets)</div>
+    <div id="moeh_case_05" onclick="act()">Click-only, out of scope for this rule</div>
+  </div>
+
+  <h2>C. Not applicable (skipped, not counted)</h2>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — NEUTRAL: pointer-only handler, but element is hidden (not reachable by anyone)</div>
+    <div id="moeh_case_06" onmouseover="show()" hidden>Hidden hover trigger</div>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

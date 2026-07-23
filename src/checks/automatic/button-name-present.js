@@ -36,84 +36,19 @@ function runInPage(ctx) {
   }
 
   function getConservativeSubtreeText(container) {
-    // Deterministic content-derived naming:
-    // - counts text nodes
-    // - excludes text where any ancestor within container has aria-hidden="true" or [hidden]
-    //
-    // IMPORTANT: do NOT reference global NodeFilter (can be undefined in some runtimes).
-    // Use the constant SHOW_TEXT = 4.
-    const SHOW_TEXT = 4;
-
-    try {
-      const walker = document.createTreeWalker(container, SHOW_TEXT, null);
-      const parts = [];
-      let n = walker.nextNode();
-
-      while (n) {
-        const raw = normalizeWs(n.nodeValue || '');
-        if (raw) {
-          const pe = n.parentElement;
-          let blocked = false;
-
-          if (pe && typeof pe.closest === 'function') {
-            const blocker = pe.closest('[aria-hidden="true"],[hidden]');
-            if (blocker && container.contains(blocker)) blocked = true;
-          } else {
-            let p = pe;
-            while (p && p !== container) {
-              if (p.getAttribute && p.getAttribute('aria-hidden') === 'true') { blocked = true; break; }
-              if (p.hasAttribute && p.hasAttribute('hidden')) { blocked = true; break; }
-              p = p.parentElement;
-            }
-          }
-
-          if (!blocked) {
-            if (container.getAttribute && container.getAttribute('aria-hidden') === 'true') blocked = true;
-            if (!blocked && container.hasAttribute && container.hasAttribute('hidden')) blocked = true;
-          }
-
-          if (!blocked) parts.push(raw);
-        }
-        n = walker.nextNode();
-      }
-
-      return normalizeWs(parts.join(' '));
-    } catch {
-      // As a last resort, fall back to a manual text-node scan without NodeFilter/TreeWalker.
-      // This remains deterministic and still respects aria-hidden/hidden.
-      try {
-        const textNodes = [];
-        const stack = [container];
-        while (stack.length) {
-          const node = stack.pop();
-          if (!node) continue;
-
-          if (node.nodeType === 3) { // TEXT_NODE
-            textNodes.push(node);
-            continue;
-          }
-
-          if (node.nodeType === 1) { // ELEMENT_NODE
-            // If this element is hidden from AT, skip its subtree
-            if (node.getAttribute && node.getAttribute('aria-hidden') === 'true') continue;
-            if (node.hasAttribute && node.hasAttribute('hidden')) continue;
-
-            // Push children in reverse to preserve document order
-            const kids = node.childNodes ? Array.from(node.childNodes) : [];
-            for (let i = kids.length - 1; i >= 0; i -= 1) stack.push(kids[i]);
-          }
-        }
-
-        const parts = [];
-        for (const tn of textNodes) {
-          const raw = normalizeWs(tn.nodeValue || '');
-          if (raw) parts.push(raw);
-        }
-        return normalizeWs(parts.join(' '));
-      } catch {
-        return '';
-      }
+    // "Name from content" — recurses into descendants and uses each one's
+    // own accessible name (img alt, aria-label/aria-labelledby, title) when
+    // it has one, not just literal text nodes. See getContentNameInfo's
+    // header comment in src/core/dom-helpers.js for the full rationale
+    // (this replaced a text-node-only TreeWalker that missed the common
+    // "<a><img alt='...'></a>" logo-link / "<button><img alt='...'></button>"
+    // icon-button pattern).
+    if (helpers.getContentNameInfo) {
+      const info = helpers.getContentNameInfo(container, ctx);
+      return info && info.present ? info.value : '';
     }
+    const t = (container && container.textContent) ? String(container.textContent) : '';
+    return t.replace(/\s+/g, ' ').trim();
   }
 
   function getInputButtonValueName(el) {
@@ -127,25 +62,13 @@ function runInPage(ctx) {
     }
   }
 
-  function hasExplicitProgrammaticName(el) {
-    const ariaLabel = normalizeWs(el.getAttribute ? el.getAttribute('aria-label') : '');
-    if (ariaLabel) return true;
-
-    const ariaLabelledby = normalizeWs(el.getAttribute ? el.getAttribute('aria-labelledby') : '');
-    if (ariaLabelledby) return true;
-
-    const title = normalizeWs(el.getAttribute ? el.getAttribute('title') : '');
-    if (title) return true;
-
-    return false;
-  }
-
   const selector = 'button, input[type="button"], input[type="submit"], input[type="reset"], [role="button"]';
   const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
 
   for (const el of nodes) {
-    const eligInfo = helpers.getEligibilityInfo ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
-    const eligible = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el, ctx) : true;
+    // isAccTreeEligible returns { eligible, reasons }, not a boolean.
+    const eligResult = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el, ctx) : true;
+    const eligible = typeof eligResult === 'boolean' ? eligResult : !!(eligResult && eligResult.eligible);
     if (!eligible) continue;
 
     applicableCount += 1;
@@ -154,13 +77,13 @@ function runInPage(ctx) {
     const role = el.getAttribute ? el.getAttribute('role') : null;
 
     const nameInfo = helpers.getAccessibleNameInfo ? helpers.getAccessibleNameInfo(el, ctx) : null;
-    const explicitProg = hasExplicitProgrammaticName(el);
 
-    // Only trust helper value as programmatic when we can prove a programmatic mechanism exists.
-    let trustedProgrammaticName = '';
-    if (explicitProg) {
-      trustedProgrammaticName = normalizeWs(nameInfo && typeof nameInfo.value === 'string' ? nameInfo.value : '');
-    }
+    // getAccessibleNameInfo only resolves programmatic mechanisms (aria-labelledby,
+    // aria-label, native <label> association, title) — it never falls back to
+    // subtree content — so it's safe to trust directly whenever present.
+    const trustedProgrammaticName =
+      normalizeWs(nameInfo && nameInfo.present && typeof nameInfo.value === 'string' ? nameInfo.value : '');
+    const explicitProg = !!trustedProgrammaticName;
 
     let inputValueName = '';
     if (!trustedProgrammaticName && tag === 'input') {
@@ -176,6 +99,11 @@ function runInPage(ctx) {
     const finalName = normalizeWs(trustedProgrammaticName || inputValueName || contentName);
 
     if (!finalName) {
+      // Only compute the richer eligibility-info payload (used solely for
+      // the occurrence's visibilityFilter) once we know an occurrence is
+      // actually being built, rather than for every applicable element.
+      const eligInfo = helpers.getEligibilityInfo ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
+
       const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
       const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
 
@@ -184,9 +112,11 @@ function runInPage(ctx) {
         html,
         summary: 'This button has no accessible name.',
         hint: 'Provide visible button text or a programmatic accessible-name mechanism (for example aria-label) so assistive technologies can identify the button.',
-        summaryKey: 'a11ycore_buttonNamePresent_summary_fail',
-        hintKey: 'a11ycore_buttonNamePresent_hint_fail',
-        i18nParams: { element: tag },
+        i18n: {
+          summaryKey: 'a11ycore_buttonNamePresent_summary_fail',
+          hintKey: 'a11ycore_buttonNamePresent_hint_fail',
+          params: { element: tag }
+        },
         data: {
           visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
           details: {

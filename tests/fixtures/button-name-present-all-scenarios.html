@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-button-name-present — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+    .hiddenvis { visibility: hidden; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-button-name-present</code></h1>
+
+  <p class="note">
+    Targets: &lt;button&gt;, input[type=button|submit|reset], [role="button"]. Name sources:
+    aria-labelledby &gt; aria-label &gt; title (programmatic, via getAccessibleNameInfo) &gt;
+    input value (for input[type=button|submit|reset]) &gt; subtree content (for &lt;button&gt;
+    and [role="button"] only — NOT for input elements). Each target has a stable id
+    <code>btn_case_NN</code>.
+  </p>
+
+  <h2>A. Baseline: mechanism priority order (eligible)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: empty &lt;button&gt;, no name</div>
+    <button id="btn_case_01"></button>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — PASS: &lt;button&gt; with text content</div>
+    <button id="btn_case_02">Save</button>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — PASS: &lt;button&gt; aria-label overrides content</div>
+    <button id="btn_case_03" aria-label="Close"><span aria-hidden="true">✕</span></button>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — PASS: &lt;button&gt; aria-labelledby</div>
+    <span id="btn_case_04_lbl">Download report</span>
+    <button id="btn_case_04" aria-labelledby="btn_case_04_lbl"><span aria-hidden="true">⬇️</span></button>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — PASS: &lt;button&gt; title</div>
+    <button id="btn_case_05" title="Settings"><span aria-hidden="true">⚙️</span></button>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — FAIL: &lt;button&gt; content only aria-hidden (does not count)</div>
+    <button id="btn_case_06"><span aria-hidden="true">Hidden label</span></button>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — FAIL: &lt;button&gt; content only [hidden] (does not count)</div>
+    <button id="btn_case_07"><span hidden>Hidden label</span></button>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — FAIL: &lt;button&gt; whitespace-only content</div>
+    <button id="btn_case_08">   </button>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — PASS: input[type=submit] value provides name</div>
+    <input type="submit" id="btn_case_09" value="Submit form" />
+  </div>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — FAIL: input[type=submit] no value, no aria</div>
+    <input type="submit" id="btn_case_10" />
+  </div>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — PASS: input[type=reset] value</div>
+    <input type="reset" id="btn_case_11" value="Reset form" />
+  </div>
+
+  <div class="case" id="case_12">
+    <div class="case-title">12 — FAIL: input[type=button] no value, no aria (input has no content fallback)</div>
+    <input type="button" id="btn_case_12" />
+  </div>
+
+  <div class="case" id="case_13">
+    <div class="case-title">13 — PASS: input[type=button] aria-label overrides missing value</div>
+    <input type="button" id="btn_case_13" aria-label="Refresh" />
+  </div>
+
+  <div class="case" id="case_14">
+    <div class="case-title">14 — FAIL: role=button, no name, no content</div>
+    <div role="button" tabindex="0" id="btn_case_14"></div>
+  </div>
+
+  <div class="case" id="case_15">
+    <div class="case-title">15 — PASS: role=button, content (content fallback allowed for role=button)</div>
+    <div role="button" tabindex="0" id="btn_case_15">Open menu</div>
+  </div>
+
+  <div class="case" id="case_16">
+    <div class="case-title">16 — FAIL: role=button, content only aria-hidden</div>
+    <div role="button" tabindex="0" id="btn_case_16"><span aria-hidden="true">Hidden label</span></div>
+  </div>
+
+  <div class="case" id="case_17">
+    <div class="case-title">17 — FAIL: aria-label empty string, content is aria-hidden=false but still no valid programmatic name — falls back to content since aria-label counted empty</div>
+    <button id="btn_case_17" aria-label=""><span aria-hidden="false"></span></button>
+  </div>
+
+  <h2>B. Visible but excluded from AT (eligibility exceptions that hold either way)</h2>
+
+  <p class="note">
+    FIXED: <code>button-name-present.js</code> previously called
+    <code>helpers.isAccTreeEligible(el, ctx)</code> and treated its return value
+    directly as a boolean, but the helper returns an object
+    <code>{ eligible, reasons }</code> — always truthy — so the eligibility filter
+    never actually excluded anything. The rule now correctly reads
+    <code>.eligible</code>, so the ineligibility cases below (previously excluded
+    from this fixture to avoid asserting the buggy behavior) are exercised here.
+  </p>
+
+  <div class="case" id="case_18b">
+    <div class="case-title">18b — NEUTRAL/INELIGIBLE: aria-hidden="true", no focus/IDREF exception, missing name</div>
+    <button aria-hidden="true" tabindex="-1" id="btn_case_18b"></button>
+    <div class="meta">Explicit tabindex&lt;0 (programmatic focus only) does not override aria-hidden.</div>
+  </div>
+
+  <div class="case" id="case_18c">
+    <div class="case-title">18c — NEUTRAL/INELIGIBLE: hidden attribute, missing name</div>
+    <button hidden id="btn_case_18c"></button>
+  </div>
+
+  <div class="case" id="case_18d">
+    <div class="case-title">18d — NEUTRAL/INELIGIBLE: display:none, missing name</div>
+    <button style="display:none" id="btn_case_18d"></button>
+  </div>
+
+  <div class="case" id="case_18e">
+    <div class="case-title">18e — NEUTRAL/INELIGIBLE: visibility:hidden, no visible-descendant override, missing name</div>
+    <button style="visibility:hidden" id="btn_case_18e"></button>
+  </div>
+
+  <div class="case" id="case_18f">
+    <div class="case-title">18f — NEUTRAL/INELIGIBLE: inert, missing name</div>
+    <button inert id="btn_case_18f"></button>
+  </div>
+
+  <div class="case" id="case_18g">
+    <div class="case-title">18g — NEUTRAL/INELIGIBLE: inert ancestor, missing name</div>
+    <div inert>
+      <button id="btn_case_18g"></button>
+    </div>
+  </div>
+
+  <div class="case" id="case_19">
+    <div class="case-title">19 — EXCEPTION: role=button, aria-hidden="true" but focusable => eligible, missing name => FAIL</div>
+    <div role="button" aria-hidden="true" tabindex="0" id="btn_case_19"></div>
+  </div>
+
+  <div class="case" id="case_19b">
+    <div class="case-title">19b — EXCEPTION: native &lt;button&gt;, aria-hidden="true", no explicit tabindex needed => eligible, missing name => FAIL</div>
+    <button aria-hidden="true" id="btn_case_19b"></button>
+    <div class="meta">&lt;button&gt; is natively tabbable by default; the engine's aria-hidden
+      override exception now covers &lt;button&gt;/&lt;summary&gt;/&lt;a href&gt; in addition to
+      &lt;area&gt;/&lt;select&gt;/&lt;textarea&gt;/&lt;input&gt; (see isAccTreeEligible), matching real
+      browser tab-order behavior.</div>
+  </div>
+
+  <div class="case" id="case_23">
+    <div class="case-title">23 — EXCEPTION: visibility:hidden ancestor overridden by descendant visibility:visible => eligible, missing name => FAIL</div>
+    <div style="visibility:hidden">
+      <button style="visibility:visible" id="btn_case_23"></button>
+    </div>
+  </div>
+
+  <h2>E. role=presentation exclusion behavior</h2>
+
+  <div class="case" id="case_26">
+    <div class="case-title">26 — FAIL (eligible, still evaluated): &lt;button role="presentation"&gt; focusable native control, no name</div>
+    <button role="presentation" id="btn_case_26"></button>
+  </div>
+
+  <h2>F. Native &lt;label&gt; association</h2>
+
+  <div class="case" id="case_27">
+    <div class="case-title">27 — NEUTRAL (PASS): icon-only button named via a wrapping &lt;label&gt; alongside a sibling description (found on a real site — DeviantArt's settings toggles wrap a description div and an unlabeled aria-pressed button in one &lt;label&gt;)</div>
+    <label><div>Display Mature Content</div><button id="btn_case_27" aria-pressed="false"><span></span></button></label>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

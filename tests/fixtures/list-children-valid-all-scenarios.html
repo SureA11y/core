@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-list-children-valid — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-list-children-valid</code> (&lt;ul&gt;/&lt;ol&gt; must only directly contain &lt;li&gt;)</h1>
+
+  <p class="note">
+    Each target &lt;ul&gt;/&lt;ol&gt; has a stable <code>id</code> of the form <code>lcv_case_NN</code>.
+    Allowed direct children: &lt;li&gt;, &lt;script&gt;, &lt;template&gt;.
+  </p>
+
+  <h2>A. Valid lists</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — PASS: ul, only li children</div>
+    <ul id="lcv_case_01"><li>Apple</li><li>Banana</li></ul>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — PASS: ol, li plus script/template</div>
+    <ol id="lcv_case_02"><li>Cherry</li><script></script><template></template></ol>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — PASS: nested list (inner ul's own children are all li)</div>
+    <ul id="lcv_case_03"><li>Date<ul><li>Nested</li></ul></li></ul>
+  </div>
+
+  <h2>B. Invalid lists</h2>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — FAIL: ul, li plus a wrapping div</div>
+    <ul id="lcv_case_04"><li>Elderberry</li><div>wrapper</div></ul>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — FAIL: ol, li plus a span</div>
+    <ol id="lcv_case_05"><li>Fig</li><span>oops</span></ol>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — FAIL: ul, multiple invalid direct children</div>
+    <ul id="lcv_case_06"><div>a</div><p>b</p></ul>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — PASS: ul, li plus an invalid child that is display:none (not exposed to AT, excluded from consideration — found on a real site, Stanford's main nav interleaves &lt;li&gt; with hydration-marker &lt;span style="display:none"&gt;)</div>
+    <ul id="lcv_case_08"><li>Grape</li><span style="display:none">hydration marker</span></ul>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — PASS: ul, li plus an &lt;input type="hidden"&gt; direct child (UA-stylesheet display:none by spec, not exposed to AT — found on a real site, Spotify's newsroom Mailchimp embed)</div>
+    <ul id="lcv_case_09"><li>Honeydew</li><input type="hidden" value="x"></ul>
+  </div>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — PASS: ul, li plus an invalid child hidden via the [hidden] attribute</div>
+    <ul id="lcv_case_10"><li>Kiwi</li><div hidden>wrapper</div></ul>
+  </div>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — PASS: ul, li plus an invalid child that is aria-hidden="true"</div>
+    <ul id="lcv_case_11"><li>Lime</li><div aria-hidden="true">wrapper</div></ul>
+  </div>
+
+  <div class="case" id="case_12">
+    <div class="case-title">12 — FAIL: ul, an &lt;li role="none"&gt; direct child (an explicit role always wins over the &lt;li&gt; tag — verified against the reference engine's own only-listitems algorithm; found on a real site, Notion's footer nav lists use &lt;li role="none"&gt; to host the list's own visually-hidden label)</div>
+    <ul id="lcv_case_12"><li role="none">Section label</li><li>Mango</li></ul>
+  </div>
+
+  <div class="case" id="case_13">
+    <div class="case-title">13 — FAIL: ul, an &lt;li role="menuitem"&gt; direct child (found on a real site — LinkedIn's top-nav menu list)</div>
+    <ul id="lcv_case_13"><li role="menuitem">Item</li></ul>
+  </div>
+
+  <div class="case" id="case_14">
+    <div class="case-title">14 — PASS: ul, a non-&lt;li&gt; child explicitly given role="listitem" (the explicit role wins the other direction too — this is valid despite the non-&lt;li&gt; tag)</div>
+    <ul id="lcv_case_14"><div role="listitem">Nectarine</div></ul>
+  </div>
+
+  <h2>C. Not applicable (skipped, not counted)</h2>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — NEUTRAL: empty ul, no element children</div>
+    <ul id="lcv_case_07"></ul>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

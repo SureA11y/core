@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-iframe-name-present — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+    iframe { width: 200px; height: 100px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-iframe-name-present</code> (&lt;iframe&gt;/&lt;frame&gt; must have an accessible name)</h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>ifn_case_NN</code>.
+    Name-from-author-only: title/aria-label/aria-labelledby, never subtree content (the
+    embedded document is a separate browsing context).
+  </p>
+
+  <h2>A. Named (eligible)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — PASS: iframe with title attribute</div>
+    <iframe id="ifn_case_01" title="Video player" src="content.html"></iframe>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — PASS: iframe with aria-label</div>
+    <iframe id="ifn_case_02" aria-label="Payment form" src="content.html"></iframe>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — PASS: iframe with aria-labelledby</div>
+    <span id="ifn_case_03_lbl">Product demo</span>
+    <iframe id="ifn_case_03" aria-labelledby="ifn_case_03_lbl" src="content.html"></iframe>
+  </div>
+
+  <h2>B. Unnamed (eligible, FAIL)</h2>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — FAIL: iframe with no name at all</div>
+    <iframe id="ifn_case_04" src="content.html"></iframe>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — FAIL: iframe with empty title</div>
+    <iframe id="ifn_case_05" title="" src="content.html"></iframe>
+  </div>
+
+  <h2>C. Ineligible (excluded from accessibility tree, skipped)</h2>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — NEUTRAL/INELIGIBLE: hidden iframe, missing name</div>
+    <iframe id="ifn_case_06" hidden src="content.html"></iframe>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

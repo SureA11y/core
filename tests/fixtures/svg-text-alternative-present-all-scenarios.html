@@ -48,11 +48,11 @@
   </div>
 
   <div class="case" id="case_03">
-    <div class="case-title">03 — PASS: role="img" with non-empty &lt;desc&gt;</div>
+    <div class="case-title">03 — FAIL: role="img" with only &lt;desc&gt; (no &lt;title&gt;/ARIA name) — verified against SVG-AAM spec §7.1: desc only ever contributes to the accessible DESCRIPTION, never the NAME</div>
     <div class="row">
       <span class="icon">svg</span>
       <svg id="svg_case_03" role="img" xmlns="http://www.w3.org/2000/svg"><desc>Settings icon</desc></svg>
-      <span>&lt;desc&gt; provides the alternative.</span>
+      <span>&lt;desc&gt; alone does not provide an accessible name; still applicable since desc signals intent.</span>
     </div>
   </div>
 
@@ -222,6 +222,44 @@
       <span class="icon">svg</span>
       <svg id="svg_case_20" xmlns="http://www.w3.org/2000/svg"></svg>
       <span>No intent signal; skipped by rule to avoid noisy false positives.</span>
+    </div>
+  </div>
+
+  <h2 id="title_desc_position">G. <code>&lt;title&gt;</code> DOM-position rule (<code>&lt;desc&gt;</code> never satisfies the name requirement regardless of position — see section A case 03)</h2>
+
+  <div class="case" id="case_21">
+    <div class="case-title">21 — FAIL: role="img" with &lt;title&gt; that is NOT the first child element</div>
+    <div class="row">
+      <span class="icon">svg</span>
+      <svg id="svg_case_21" role="img" xmlns="http://www.w3.org/2000/svg"><rect width="1" height="1"/><title>Close</title></svg>
+      <span>A &lt;title&gt; that isn't the first child element is not read as the accessible name.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_22">
+    <div class="case-title">22 — FAIL: role="img" with &lt;desc&gt; as the first child element — still doesn't count as a name, regardless of position</div>
+    <div class="row">
+      <span class="icon">svg</span>
+      <svg id="svg_case_22" role="img" xmlns="http://www.w3.org/2000/svg"><desc>Settings icon description</desc></svg>
+      <span>&lt;desc&gt; never provides an accessible name, even as the first child.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_23">
+    <div class="case-title">23 — FAIL: role="img" with empty &lt;title&gt; first child, &lt;desc&gt; immediately second — desc still doesn't count as a name</div>
+    <div class="row">
+      <span class="icon">svg</span>
+      <svg id="svg_case_23" role="img" xmlns="http://www.w3.org/2000/svg"><title></title><desc>Detailed chart description</desc></svg>
+      <span>Empty &lt;title&gt; provides no name; the &lt;desc&gt; that follows never counts as one either.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_24">
+    <div class="case-title">24 — FAIL: role="img" with &lt;desc&gt; that is neither first child nor immediately after &lt;title&gt;</div>
+    <div class="row">
+      <span class="icon">svg</span>
+      <svg id="svg_case_24" role="img" xmlns="http://www.w3.org/2000/svg"><rect width="1" height="1"/><desc>Misplaced description</desc></svg>
+      <span>Already failed even before this fix — desc-as-name was position-gated, and now never counts as a name at any position.</span>
     </div>
   </div>
 

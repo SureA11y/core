@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-role-img-text-alternative-present — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+    .meta { font-size: 12px; opacity: 0.8; margin: 6px 0 0; }
+    .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .offscreen { position: absolute; left: -9999px; top: 0; }
+    .zerosize { width: 0; height: 0; overflow: hidden; display: inline-block; }
+    .hiddenvis { visibility: hidden; }
+    .icon { width: 24px; height: 24px; border: 1px dashed #bbb; border-radius: 6px; display:inline-flex; align-items:center; justify-content:center; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-role-img-text-alternative-present</code> (“[role=&quot;img&quot;] must have an accessible text alternative”)</h1>
+
+  <p class="note">
+    This file intentionally includes many edge cases to test eligibility and rule outcomes.
+    Each test element has a stable <code>id</code> of the form <code>roleimg_case_XX</code>.
+    Native &lt;img role="img"&gt; elements are excluded by this rule (covered by a11ycore-img-alt-present).
+  </p>
+
+  <h2 id="baseline">A. Baseline (eligible)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: role="img" with no aria-label/aria-labelledby (even with text content)</div>
+    <div class="row">
+      <span class="icon">img</span>
+      <span id="roleimg_case_01" role="img">notifications</span>
+      <span>Text content alone is not a valid mechanism for this rule.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — PASS: role="img" with non-empty aria-label</div>
+    <div class="row">
+      <span class="icon">img</span>
+      <span id="roleimg_case_02" role="img" aria-label="Notifications"></span>
+      <span>aria-label provides the alternative.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — PASS: role="img" with aria-labelledby referencing non-empty text</div>
+    <div class="row">
+      <span id="roleimg_case_03_label">Bell icon</span>
+      <span class="icon">img</span>
+      <span id="roleimg_case_03" role="img" aria-labelledby="roleimg_case_03_label"></span>
+      <span>aria-labelledby provides the alternative.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — PASS: role="img" named via title only (last-resort HTML-AAM mechanism, also accepted by the reference engine's role-img-alt)</div>
+    <div class="row">
+      <span class="icon">img</span>
+      <span id="roleimg_case_04" role="img" title="Logo"></span>
+      <span>title is an accepted last-resort mechanism for this rule.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — FAIL: role="img" with aria-label="" (empty)</div>
+    <div class="row">
+      <span class="icon">img</span>
+      <span id="roleimg_case_05" role="img" aria-label=""></span>
+      <span>Empty aria-label does not satisfy the mechanism.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — FAIL: role="img" with aria-labelledby="" (empty attribute)</div>
+    <div class="row">
+      <span class="icon">img</span>
+      <span id="roleimg_case_06" role="img" aria-labelledby=""></span>
+      <span>Empty aria-labelledby does not satisfy the mechanism.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — FAIL: role="img" with aria-labelledby pointing to a non-existent id</div>
+    <div class="row">
+      <span class="icon">img</span>
+      <span id="roleimg_case_07" role="img" aria-labelledby="roleimg_case_07_does_not_exist"></span>
+      <span>Dangling IDREF does not resolve to a name.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — FAIL: role="img" with aria-labelledby pointing to an existing but empty-text element</div>
+    <div class="row">
+      <span id="roleimg_case_08_empty"></span>
+      <span class="icon">img</span>
+      <span id="roleimg_case_08" role="img" aria-labelledby="roleimg_case_08_empty"></span>
+      <span>Referenced element contributes no text.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — PASS: role="img" with both aria-label and aria-labelledby (aria-label alone suffices)</div>
+    <div class="row">
+      <span id="roleimg_case_09_lb">Labelledby text</span>
+      <span class="icon">img</span>
+      <span id="roleimg_case_09" role="img" aria-label="Aria label text" aria-labelledby="roleimg_case_09_lb"></span>
+      <span>Either mechanism resolving to a non-empty name is sufficient.</span>
+    </div>
+  </div>
+
+  <h2 id="aria_hidden">B. Visible but excluded from AT (ineligible)</h2>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — NEUTRAL/INELIGIBLE: aria-hidden="true" (not focusable)</div>
+    <div class="row">
+      <span class="icon">img</span>
+      <span id="roleimg_case_10" role="img" aria-hidden="true"></span>
+      <span>Ineligible per helper.</span>
+    </div>
+  </div>
+
+  <h2 id="hidden_css">C. Hidden by HTML/CSS (ineligible)</h2>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — NEUTRAL/INELIGIBLE: hidden attribute</div>
+    <div class="row">
+      <span class="icon">img</span>
+      <span id="roleimg_case_11" role="img" hidden></span>
+      <span>Ineligible per helper.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_12">
+    <div class="case-title">12 — NEUTRAL/INELIGIBLE: display:none</div>
+    <div class="row">
+      <span class="icon">img</span>
+      <span id="roleimg_case_12" role="img" style="display:none"></span>
+      <span>Ineligible per helper.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_13">
+    <div class="case-title">13 — NEUTRAL/INELIGIBLE: visibility:hidden</div>
+    <div class="row hiddenvis">
+      <span class="icon">img</span>
+      <span id="roleimg_case_13" role="img"></span>
+      <span>Ineligible per helper.</span>
+    </div>
+  </div>
+
+  <h2 id="inert">D. Inertness (ineligible)</h2>
+
+  <div class="case" id="case_14">
+    <div class="case-title">14 — NEUTRAL/INELIGIBLE: inert ancestor</div>
+    <div class="row" inert>
+      <span class="icon">img</span>
+      <span id="roleimg_case_14" role="img"></span>
+      <span>Ineligible per helper.</span>
+    </div>
+  </div>
+
+  <h2 id="exceptions">E. Exceptions that keep eligibility (focusable / IDREF)</h2>
+
+  <div class="case" id="case_15">
+    <div class="case-title">15 — FAIL (eligible): aria-hidden="true" but focusable (tabindex="0"), no mechanism</div>
+    <div class="row">
+      <span class="icon">img</span>
+      <span id="roleimg_case_15" role="img" aria-hidden="true" tabindex="0"></span>
+      <span>Focusable overrides aria-hidden eligibility; missing mechanism fails.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_16">
+    <div class="case-title">16 — NEUTRAL/INELIGIBLE: aria-hidden="true" with tabindex="-1" (programmatic focus only)</div>
+    <div class="row">
+      <span class="icon">img</span>
+      <span id="roleimg_case_16" role="img" aria-hidden="true" tabindex="-1"></span>
+      <span>Programmatic-only focus does not override aria-hidden eligibility.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_17">
+    <div class="case-title">17 — FAIL (eligible): IDREF-referenced aria-hidden element, no mechanism</div>
+    <div class="row">
+      <div aria-labelledby="roleimg_case_17">Host references the icon by IDREF.</div>
+      <span class="icon">img</span>
+      <span id="roleimg_case_17" role="img" aria-hidden="true"></span>
+      <span>IDREF override makes it eligible; missing mechanism fails.</span>
+    </div>
+  </div>
+
+  <h2 id="not_excluded">F. Conditions that should NOT exclude eligibility</h2>
+
+  <div class="case" id="case_18">
+    <div class="case-title">18 — FAIL (eligible): opacity:0, no mechanism</div>
+    <div class="row">
+      <span class="icon">img</span>
+      <span id="roleimg_case_18" role="img" style="opacity:0"></span>
+      <span>Opacity does not exclude eligibility.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_19">
+    <div class="case-title">19 — FAIL (eligible): offscreen, no mechanism</div>
+    <div class="row">
+      <span class="icon">img</span>
+      <span id="roleimg_case_19" role="img" class="offscreen"></span>
+      <span>Offscreen does not exclude eligibility.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_20">
+    <div class="case-title">20 — FAIL (eligible): zero-size container, no mechanism</div>
+    <div class="row">
+      <span class="icon">img</span>
+      <span class="zerosize">
+        <span id="roleimg_case_20" role="img"></span>
+      </span>
+      <span>Zero-size does not exclude eligibility.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_21">
+    <div class="case-title">21 — FAIL (eligible): aria-disabled="true", no mechanism</div>
+    <div class="row">
+      <span class="icon">img</span>
+      <span id="roleimg_case_21" role="img" aria-disabled="true"></span>
+      <span>aria-disabled does not exclude eligibility.</span>
+    </div>
+  </div>
+
+  <h2 id="non_composed">G. Non-composed content (ineligible)</h2>
+
+  <div class="case" id="case_22">
+    <div class="case-title">22 — NEUTRAL/INELIGIBLE: inside &lt;template&gt;</div>
+    <div class="row">
+      <span class="icon">tpl</span>
+      <span>Template contents are not composed into the DOM:</span>
+      <template>
+        <span id="roleimg_case_22" role="img"></span>
+      </template>
+    </div>
+  </div>
+
+  <h2 id="img_excluded">H. Native &lt;img role="img"&gt; is excluded (own rule)</h2>
+
+  <div class="case" id="case_23">
+    <div class="case-title">23 — NOT APPLICABLE (excluded by rule): &lt;img role="img"&gt; without aria-label</div>
+    <div class="row">
+      <img id="roleimg_case_23" role="img" src="x.png">
+      <span>Native &lt;img&gt; is covered by a11ycore-img-alt-present, not this rule.</span>
+    </div>
+  </div>
+
+  <h2 id="aggregation">I. Aggregation / whole-rule behavior</h2>
+
+  <div class="case" id="case_24">
+    <div class="case-title">24 — PASS candidate: eligible element passes; ineligible element missing mechanism should not fail</div>
+    <div class="row">
+      <span class="icon">mix</span>
+      <span id="roleimg_case_24a" role="img" aria-label="Named icon"></span>
+      <span id="roleimg_case_24b" role="img" aria-hidden="true"></span>
+      <span>One eligible element has aria-label; the other is aria-hidden and ineligible.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_25">
+    <div class="case-title">25 — FAIL candidate: eligible element missing mechanism should fail even if other elements are ineligible</div>
+    <div class="row">
+      <span class="icon">mix</span>
+      <span id="roleimg_case_25a" role="img"></span>
+      <span id="roleimg_case_25b" role="img" aria-hidden="true" aria-label="Hidden from AT"></span>
+      <span>Eligible element (left) is missing a mechanism; other element is aria-hidden and ineligible.</span>
+    </div>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

@@ -167,6 +167,16 @@ const FACETS = {
                 "label": "Excluded due to accessibility-tree eligibility",
                 "automation": "partial",
                 "macro": true
+            },
+            {
+                "id": "meter-name-present",
+                "label": "role=\"meter\" elements expose an accessible name",
+                "automation": "full"
+            },
+            {
+                "id": "progressbar-name-present",
+                "label": "role=\"progressbar\" elements expose an accessible name",
+                "automation": "full"
             }
         ]
     },
@@ -184,7 +194,13 @@ const FACETS = {
     "1.2.2": {
         "title": "Captions (Prerecorded)",
         "level": "A",
-        "facets": []
+        "facets": [
+            {
+                "id": "video-captions-track-evidence",
+                "label": "<video> declares a captions/subtitles <track> (evidence only — cannot verify audio content)",
+                "automation": "manual"
+            }
+        ]
     },
     "1.2.3": {
         "title": "Audio Description or Media Alternative (Prerecorded)",
@@ -235,6 +251,56 @@ const FACETS = {
                 "label": "Form control labels are appropriate",
                 "automation": "manual",
                 "macro": true
+            },
+            {
+                "id": "table-headers-attr-valid",
+                "label": "Table cell headers attribute references valid <th> cells within the same table",
+                "automation": "full"
+            },
+            {
+                "id": "table-th-has-data-cells",
+                "label": "Tables with <th> cells also have data cells for them to describe",
+                "automation": "partial"
+            },
+            {
+                "id": "aria-hidden-body-absent",
+                "label": "The document <body> does not have aria-hidden=\"true\"",
+                "automation": "full"
+            },
+            {
+                "id": "list-children-valid",
+                "label": "<ul>/<ol> only directly contain <li> (or <script>/<template>)",
+                "automation": "full"
+            },
+            {
+                "id": "listitem-parent-valid",
+                "label": "<li> elements are contained by a list container (<ul>/<ol>/role=\"list\")",
+                "automation": "full"
+            },
+            {
+                "id": "definition-list-children-valid",
+                "label": "<dl> only directly contains <dt>/<dd> groups (optionally wrapped in one <div>), <script>, <template>, or <style>",
+                "automation": "full"
+            },
+            {
+                "id": "dlitem-parent-valid",
+                "label": "<dt>/<dd> elements are contained by a <dl>, directly or via one wrapping <div>",
+                "automation": "full"
+            },
+            {
+                "id": "p-as-heading-evidence",
+                "label": "Bold, heading-sized <p> text that may need a real heading element (evidence only)",
+                "automation": "manual"
+            },
+            {
+                "id": "table-fake-caption-evidence",
+                "label": "Table first-row cell that may be standing in for a real <caption> (evidence only)",
+                "automation": "manual"
+            },
+            {
+                "id": "td-has-header",
+                "label": "Data cells in large, simple tables have an associated header",
+                "automation": "full"
             }
         ]
     },
@@ -251,12 +317,24 @@ const FACETS = {
     "1.3.4": {
         "title": "Orientation",
         "level": "AA",
-        "facets": []
+        "facets": [
+            {
+                "id": "css-orientation-lock",
+                "label": "No CSS orientation media query rotates the page to lock its display orientation",
+                "automation": "full"
+            }
+        ]
     },
     "1.3.5": {
         "title": "Identify Input Purpose",
         "level": "AA",
-        "facets": []
+        "facets": [
+            {
+                "id": "autocomplete-valid",
+                "label": "A non-empty autocomplete attribute is a valid autofill value",
+                "automation": "full"
+            }
+        ]
     },
     "1.3.6": {
         "title": "Identify Purpose",
@@ -266,12 +344,24 @@ const FACETS = {
     "1.4.1": {
         "title": "Use of Color",
         "level": "A",
-        "facets": []
+        "facets": [
+            {
+                "id": "link-in-text-block",
+                "label": "Links inside blocks of text are distinguishable from surrounding text by non-color means (underline, weight/style difference, or >=3:1 contrast)",
+                "automation": "partial"
+            }
+        ]
     },
     "1.4.2": {
         "title": "Audio Control",
         "level": "A",
-        "facets": []
+        "facets": [
+            {
+                "id": "no-autoplay-audio-evidence",
+                "label": "Autoplaying unmuted audio/video has a controls mechanism (evidence only — clip duration is not statically knowable)",
+                "automation": "manual"
+            }
+        ]
     },
     "1.4.3": {
         "title": "Contrast (Minimum)",
@@ -292,7 +382,13 @@ const FACETS = {
     "1.4.4": {
         "title": "Resize Text",
         "level": "AA",
-        "facets": []
+        "facets": [
+            {
+                "id": "meta-viewport-zoom-enabled",
+                "label": "<meta name=\"viewport\"> does not disable or cap pinch-zoom below 200%",
+                "automation": "full"
+            }
+        ]
     },
     "1.4.5": {
         "title": "Images of Text",
@@ -343,7 +439,13 @@ const FACETS = {
     "1.4.12": {
         "title": "Text Spacing",
         "level": "AA",
-        "facets": []
+        "facets": [
+            {
+                "id": "avoid-inline-spacing",
+                "label": "Inline style does not force line-height/letter-spacing/word-spacing with !important",
+                "automation": "full"
+            }
+        ]
     },
     "1.4.13": {
         "title": "Content on Hover or Focus",
@@ -353,7 +455,28 @@ const FACETS = {
     "2.1.1": {
         "title": "Keyboard",
         "level": "A",
-        "facets": []
+        "facets": [
+            {
+                "id": "iframe-tabindex-negative-content-not-focusable",
+                "label": "Same-origin frames with tabindex=\"-1\" contain no focusable content",
+                "automation": "partial"
+            },
+            {
+                "id": "server-side-image-map-absent",
+                "label": "<img> does not use a server-side image map (ismap)",
+                "automation": "full"
+            },
+            {
+                "id": "scrollable-region-focusable-evidence",
+                "label": "A CSS-scrollable region with no focusable descendant is itself keyboard-focusable (evidence only — actual overflow not statically knowable)",
+                "automation": "manual"
+            },
+            {
+                "id": "mouse-only-event-handlers-evidence",
+                "label": "Pointer-only inline event handlers have a keyboard-reachable equivalent (evidence only — JS-attached listeners are not statically visible)",
+                "automation": "manual"
+            }
+        ]
     },
     "2.1.2": {
         "title": "No Keyboard Trap",
@@ -363,7 +486,13 @@ const FACETS = {
     "2.1.3": {
         "title": "Keyboard (No Exception)",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "scrollable-region-focusable-evidence",
+                "label": "A CSS-scrollable region with no focusable descendant is itself keyboard-focusable (evidence only — actual overflow not statically knowable)",
+                "automation": "manual"
+            }
+        ]
     },
     "2.1.4": {
         "title": "Character Key Shortcuts",
@@ -373,12 +502,24 @@ const FACETS = {
     "2.2.1": {
         "title": "Timing Adjustable",
         "level": "A",
-        "facets": []
+        "facets": [
+            {
+                "id": "meta-refresh-timing-absent",
+                "label": "<meta http-equiv=\"refresh\"> does not impose a delayed page refresh",
+                "automation": "full"
+            }
+        ]
     },
     "2.2.2": {
         "title": "Pause, Stop, Hide",
         "level": "A",
-        "facets": []
+        "facets": [
+            {
+                "id": "deprecated-non-stoppable-elements-absent",
+                "label": "Obsolete non-stoppable elements (<blink>, <marquee>) are not present",
+                "automation": "full"
+            }
+        ]
     },
     "2.2.3": {
         "title": "No Timing",
@@ -388,7 +529,13 @@ const FACETS = {
     "2.2.4": {
         "title": "Interruptions",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "meta-refresh-no-exceptions",
+                "label": "No meta refresh is used, regardless of delay (AAA)",
+                "automation": "full"
+            }
+        ]
     },
     "2.2.5": {
         "title": "Re-authenticating",
@@ -418,7 +565,13 @@ const FACETS = {
     "2.4.1": {
         "title": "Bypass Blocks",
         "level": "A",
-        "facets": []
+        "facets": [
+            {
+                "id": "bypass-blocks-present",
+                "label": "Page has a main landmark, working same-page anchor link, or heading (recognized bypass-blocks mechanism)",
+                "automation": "partial"
+            }
+        ]
     },
     "2.4.2": {
         "title": "Page Titled",
@@ -444,7 +597,13 @@ const FACETS = {
     "2.4.4": {
         "title": "Link Purpose (In Context)",
         "level": "A",
-        "facets": []
+        "facets": [
+            {
+                "id": "link-text-descriptive-evidence",
+                "label": "Link text is not a known non-descriptive/generic phrase (evidence only — surrounding-context sufficiency not verified)",
+                "automation": "manual"
+            }
+        ]
     },
     "2.4.5": {
         "title": "Multiple Ways",
@@ -475,7 +634,13 @@ const FACETS = {
     "2.4.9": {
         "title": "Link Purpose (Link Only)",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "identical-links-same-purpose-evidence",
+                "label": "Links sharing an accessible name resolve to a single shared destination",
+                "automation": "manual"
+            }
+        ]
     },
     "2.4.10": {
         "title": "Section Headings",
@@ -557,6 +722,22 @@ const FACETS = {
                 "id": "html-lang-attr-present",
                 "label": "<html> has a valid non-empty lang attribute",
                 "automation": "full"
+            },
+            {
+                "id": "html-xml-lang-mismatch",
+                "label": "lang and xml:lang on <html> declare the same primary language, when both are present",
+                "automation": "full"
+            }
+        ]
+    },
+    "3.1.2": {
+        "title": "Language of Parts",
+        "level": "AA",
+        "facets": [
+            {
+                "id": "element-lang-valid",
+                "label": "Any element's lang attribute (when present) is a syntactically valid language tag",
+                "automation": "full"
             }
         ]
     },
@@ -603,7 +784,13 @@ const FACETS = {
     "3.2.5": {
         "title": "Change on Request",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "meta-refresh-no-exceptions",
+                "label": "No meta refresh is used, regardless of delay (AAA)",
+                "automation": "full"
+            }
+        ]
     },
     "3.2.6": {
         "title": "Consistent Help",
@@ -622,6 +809,11 @@ const FACETS = {
             {
                 "id": "form-control-labels-or-instructions-present",
                 "label": "Form controls provide labels or instructions (label/aria-label/aria-labelledby/title/placeholder)",
+                "automation": "full"
+            },
+            {
+                "id": "form-control-single-label",
+                "label": "Form controls are associated with at most one <label>",
                 "automation": "full"
             }
         ]
@@ -769,6 +961,111 @@ const FACETS = {
                 "id": "aria-role-name-present",
                 "label": "Selected ARIA widget/container roles (scrollbar, toolbar, tablist, radiogroup, tree, grid, menu, menubar) expose an accessible name",
                 "automation": "full"
+            },
+            {
+                "id": "aria-role-valid",
+                "label": "Explicit role attribute resolves to a real, non-abstract ARIA role",
+                "automation": "full"
+            },
+            {
+                "id": "aria-role-not-deprecated",
+                "label": "Explicit role attribute does not use a deprecated ARIA role",
+                "automation": "full"
+            },
+            {
+                "id": "aria-attr-name-valid",
+                "label": "Every aria-* attribute name present is a real, defined ARIA attribute",
+                "automation": "full"
+            },
+            {
+                "id": "aria-attr-value-valid",
+                "label": "Every recognized aria-* attribute has a value matching its declared type",
+                "automation": "full"
+            },
+            {
+                "id": "aria-attr-allowed-for-role",
+                "label": "aria-* attributes present are permitted for the element's explicit role",
+                "automation": "full"
+            },
+            {
+                "id": "aria-attr-not-prohibited",
+                "label": "ARIA naming attributes are not used on roles that prohibit them",
+                "automation": "full"
+            },
+            {
+                "id": "aria-attr-required-for-role",
+                "label": "Roles with an unambiguous required state/property carry it (e.g. role=\\\"checkbox\\\" has aria-checked)",
+                "automation": "full"
+            },
+            {
+                "id": "aria-role-allowed-for-element",
+                "label": "Explicit role attribute is permitted by the ARIA-in-HTML spec for its host element",
+                "automation": "full"
+            },
+            {
+                "id": "aria-role-required-owned-children",
+                "label": "Container roles (list, listbox, menu, table, tablist, tree, ...) own at least one required child role",
+                "automation": "full"
+            },
+            {
+                "id": "aria-role-owned-children-allowed",
+                "label": "Container roles do not own an accessible-tree child with a disallowed role",
+                "automation": "full"
+            },
+            {
+                "id": "aria-role-required-context-parent",
+                "label": "Roles requiring a specific context role (listitem, option, tab, treeitem, row, cell, ...) have an acceptable ancestor/owner",
+                "automation": "full"
+            },
+            {
+                "id": "iframe-name-present",
+                "label": "<iframe>/<frame> elements expose an accessible name (aria-label / aria-labelledby / title)",
+                "automation": "full"
+            },
+            {
+                "id": "iframe-title-unique",
+                "label": "No two <iframe>/<frame> elements share the same title attribute value",
+                "automation": "full"
+            },
+            {
+                "id": "aria-hidden-body-absent",
+                "label": "The document <body> does not have aria-hidden=\"true\"",
+                "automation": "full"
+            },
+            {
+                "id": "duplicate-id-aria",
+                "label": "IDs referenced by ARIA ID-reference attributes are unique in the document",
+                "automation": "full"
+            },
+            {
+                "id": "summary-name-present",
+                "label": "<summary> elements expose an accessible name",
+                "automation": "full"
+            },
+            {
+                "id": "tooltip-name-present",
+                "label": "role=\"tooltip\" elements expose an accessible name",
+                "automation": "full"
+            },
+            {
+                "id": "nested-interactive-controls-absent",
+                "label": "Interactive controls do not contain other interactive controls",
+                "automation": "full"
+            },
+            {
+                "id": "aria-braille-equivalent",
+                "label": "aria-braillelabel/aria-brailleroledescription have a non-braille equivalent",
+                "automation": "full"
+            },
+            {
+                "id": "aria-conditional-attr",
+                "label": "aria-errormessage is only used when aria-invalid is not false/absent",
+                "automation": "full"
+            },
+            {
+                "id": "aria-checked-state-mismatch",
+                "label": "Native checkbox/radio aria-checked matches its actual checked/indeterminate state (evidence only — static markup can't rule out later JS hydration)",
+                "automation": "manual"
             }
         ]
     },

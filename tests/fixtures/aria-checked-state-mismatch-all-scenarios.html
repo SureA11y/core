@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-aria-checked-state-mismatch — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-aria-checked-state-mismatch</code></h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>acsm_case_NN</code>.
+  </p>
+
+  <h2>A. Valid</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — PASS: checkbox checked, aria-checked="true" (matches)</div>
+    <input type="checkbox" checked aria-checked="true" id="acsm_case_01">
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — PASS: checkbox unchecked, aria-checked="false" (matches)</div>
+    <input type="checkbox" aria-checked="false" id="acsm_case_02">
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — PASS: radio checked, aria-checked="true" (matches)</div>
+    <input type="radio" checked aria-checked="true" id="acsm_case_03">
+  </div>
+
+  <h2>B. Invalid (cantTell — see rule's implementation notes for why this is manual, not fail)</h2>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — CANTTELL: checkbox checked, aria-checked="false" (mismatch)</div>
+    <input type="checkbox" checked aria-checked="false" id="acsm_case_04">
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — CANTTELL: checkbox unchecked, aria-checked="true" (mismatch)</div>
+    <input type="checkbox" aria-checked="true" id="acsm_case_05">
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — CANTTELL: radio unchecked, aria-checked="true" (mismatch)</div>
+    <input type="radio" aria-checked="true" id="acsm_case_06">
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — CANTTELL: checkbox unchecked, aria-checked="mixed" — jsdom's static-parse .indeterminate is always false, no attribute reflects it (found via a real hydration pattern: server-rendered aria-checked="mixed" before client JS sets .indeterminate on load)</div>
+    <input type="checkbox" aria-checked="mixed" id="acsm_case_07">
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — CANTTELL: radio checked, aria-checked="mixed" — radio has no indeterminate state, so "mixed" always normalizes to "false" and mismatches an actually-checked radio</div>
+    <input type="radio" checked aria-checked="mixed" id="acsm_case_08">
+  </div>
+
+  <h2>C. Not applicable (skipped, not counted)</h2>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — NEUTRAL: checkbox with no aria-checked at all (redundant-but-harmless native state, not this rule's concern)</div>
+    <input type="checkbox" checked id="acsm_case_09">
+  </div>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — NEUTRAL: role="checkbox" on a non-native element (this rule is scoped to native &lt;input&gt; only)</div>
+    <div role="checkbox" aria-checked="false" id="acsm_case_10"></div>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

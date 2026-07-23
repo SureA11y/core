@@ -31,46 +31,27 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   function getConservativeSubtreeText(container) {
-    try {
-      const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null);
-      const parts = [];
-      let n = walker.nextNode();
-
-      while (n) {
-        const raw = (n.nodeValue || '').replace(/\s+/g, ' ').trim();
-        if (raw) {
-          let p = n.parentElement;
-          let blocked = false;
-
-          while (p && p !== container) {
-            if (p.getAttribute && p.getAttribute('aria-hidden') === 'true') { blocked = true; break; }
-            if (p.hasAttribute && p.hasAttribute('hidden')) { blocked = true; break; }
-            p = p.parentElement;
-          }
-
-          if (!blocked) {
-            if (container.getAttribute && container.getAttribute('aria-hidden') === 'true') blocked = true;
-            if (!blocked && container.hasAttribute && container.hasAttribute('hidden')) blocked = true;
-          }
-
-          if (!blocked) parts.push(raw);
-        }
-        n = walker.nextNode();
-      }
-
-      return parts.join(' ').replace(/\s+/g, ' ').trim();
-    } catch {
-      const t = (container && container.textContent) ? String(container.textContent) : '';
-      return t.replace(/\s+/g, ' ').trim();
+    // "Name from content" — recurses into descendants and uses each one's
+    // own accessible name (img alt, aria-label/aria-labelledby, title) when
+    // it has one, not just literal text nodes. See getContentNameInfo's
+    // header comment in src/core/dom-helpers.js for the full rationale
+    // (this replaced a text-node-only TreeWalker that missed the common
+    // "<a><img alt='...'></a>" logo-link pattern).
+    if (helpers.getContentNameInfo) {
+      const info = helpers.getContentNameInfo(container, ctx);
+      return info && info.present ? info.value : '';
     }
+    const t = (container && container.textContent) ? String(container.textContent) : '';
+    return t.replace(/\s+/g, ' ').trim();
   }
 
   const selector = 'a[href], area[href], [role="link"]';
   const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
 
   for (const el of nodes) {
-    const eligInfo = helpers.getEligibilityInfo ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
-    const eligible = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el, ctx) : true;
+    // isAccTreeEligible returns { eligible, reasons }, not a boolean.
+    const eligResult = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el, ctx) : true;
+    const eligible = typeof eligResult === 'boolean' ? eligResult : !!(eligResult && eligResult.eligible);
     if (!eligible) continue;
 
     applicableCount += 1;
@@ -82,6 +63,11 @@ function runInPage(ctx) {
     const finalName = (programmaticName.trim().length ? programmaticName : contentName).trim();
 
     if (finalName.length === 0) {
+      // Only compute the richer eligibility-info payload (used solely for
+      // the occurrence's visibilityFilter) once we know an occurrence is
+      // actually being built, rather than for every applicable element.
+      const eligInfo = helpers.getEligibilityInfo ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
+
       const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
       const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
       const tag = (el.tagName || '').toLowerCase();
@@ -95,9 +81,11 @@ function runInPage(ctx) {
         hint: 'Provide link text or an accessible-name mechanism (for example aria-label) so assistive technologies can identify the link.',
 
         // Validator requires these keys to exist in the English dictionary
-        summaryKey: 'a11ycore_linkNamePresent_summary_fail',
-        hintKey: 'a11ycore_linkNamePresent_hint_fail',
-        i18nParams: { element: tag },
+        i18n: {
+          summaryKey: 'a11ycore_linkNamePresent_summary_fail',
+          hintKey: 'a11ycore_linkNamePresent_hint_fail',
+          params: { element: tag }
+        },
 
         data: {
           visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },

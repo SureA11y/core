@@ -24,6 +24,9 @@ const meta = {
 
 function runInPage(ctx) {
   const { document, root, helpers, rule } = ctx;
+  const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
+      ? helpers.getEligibilityInfo
+      : null;
   const safeRoot = root || document;
 
 
@@ -72,80 +75,44 @@ function runInPage(ctx) {
   }
 
   function getConservativeSubtreeText(document, container) {
-    // Deterministic text extraction excluding aria-hidden="true" and [hidden] subtrees.
-    // Use TreeWalker when available; avoid NodeFilter global.
-    const SHOW_TEXT = 4;
-    try {
-      const walker = document.createTreeWalker(container, SHOW_TEXT, null);
-      const parts = [];
-      let n = walker.nextNode();
-      while (n) {
-        const raw = normalizeWs(n.nodeValue || '');
-        if (raw) {
-          const pe = n.parentElement;
-          let blocked = false;
-          if (pe && typeof pe.closest === 'function') {
-            const blocker = pe.closest('[aria-hidden="true"],[hidden]');
-            if (blocker && container.contains(blocker)) blocked = true;
-          } else {
-            let p = pe;
-            while (p && p !== container) {
-              if (p.getAttribute && p.getAttribute('aria-hidden') === 'true') { blocked = true; break; }
-              if (p.hasAttribute && p.hasAttribute('hidden')) { blocked = true; break; }
-              p = p.parentElement;
-            }
-          }
-          if (!blocked) {
-            if (container.getAttribute && container.getAttribute('aria-hidden') === 'true') blocked = true;
-            if (!blocked && container.hasAttribute && container.hasAttribute('hidden')) blocked = true;
-          }
-          if (!blocked) parts.push(raw);
-        }
-        n = walker.nextNode();
-      }
-      return normalizeWs(parts.join(' '));
-    } catch {
-      // Manual deterministic walk
-      try {
-        const parts = [];
-        const stack = [container];
-        while (stack.length) {
-          const node = stack.pop();
-          if (!node) continue;
-          if (node.nodeType === 3) { // TEXT_NODE
-            const raw = normalizeWs(node.nodeValue || '');
-            if (raw) parts.push(raw);
-            continue;
-          }
-          if (node.nodeType === 1) { // ELEMENT_NODE
-            if (node.getAttribute && node.getAttribute('aria-hidden') === 'true') continue;
-            if (node.hasAttribute && node.hasAttribute('hidden')) continue;
-            const kids = node.childNodes ? Array.from(node.childNodes) : [];
-            for (let i = kids.length - 1; i >= 0; i -= 1) stack.push(kids[i]);
-          }
-        }
-        return normalizeWs(parts.join(' '));
-      } catch {
-        return '';
-      }
+    // "Name from content" — recurses into descendants and uses each one's
+    // own accessible name (img alt, aria-label/aria-labelledby, title) when
+    // it has one, not just literal text nodes. See getContentNameInfo's
+    // header comment in src/core/dom-helpers.js for the full rationale
+    // (this replaced a text-node-only TreeWalker that missed the common
+    // "<a><img alt='...'></a>" logo-link / "<button><img alt='...'></button>"
+    // icon-button pattern).
+    if (helpers.getContentNameInfo) {
+      const info = helpers.getContentNameInfo(container, ctx);
+      return info && info.present ? info.value : '';
     }
+    const t = (container && container.textContent) ? String(container.textContent) : '';
+    return t.replace(/\s+/g, ' ').trim();
   }
 
   function resolveAriaLabelledbyText(document, el, maxRefs) {
     const raw = getAttr(el, 'aria-labelledby');
     if (!raw) return '';
-    const ids = raw.split(/\s+/).filter(Boolean).slice(0, Math.max(1, maxRefs || 8));
-    const parts = [];
-    for (const elementId of ids) {
+    // Resolve via the shared getTextFromIdRefs helper — computes each
+    // referenced element's own ACCESSIBLE NAME (aria-label, then
+    // aria-labelledby, then a value-like name, then content, then title),
+    // not just its content text. Found via a real page (BBC News' cookie-
+    // consent dialog, 2026-07-22): aria-labelledby pointed at an
+    // <iframe title="SP Consent Message">, whose only name source is its
+    // title attribute (an iframe's content is opaque/cross-origin per
+    // HTML-AAM, so "name from content" is always empty). The previous
+    // version here only ever computed name-from-content of the referenced
+    // node (via getConservativeSubtreeText), silently missing the title
+    // fallback and reporting no accessible name at all — the identical
+    // pattern was hand-copied into 15 other *-name-present rules; all
+    // fixed the same way.
+    if (helpers.getTextFromIdRefs) {
       try {
-        const ref = document.getElementById(elementId);
-        if (ref) {
-          const t = getConservativeSubtreeText(document, ref);
-          if (t) parts.push(t);
-        }
+        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 });
+        return normalizeWs(r && r.text);
       } catch {}
     }
-    return normalizeWs(parts.join(' '));
+    return '';
   }
 
   function getInputValueName(el) {
@@ -187,10 +154,10 @@ function runInPage(ctx) {
     const title = getAttr(el, 'title');
     if (title) return { ok: true, method: 'title' };
 
-    // Content name is allowed in some patterns, but label mechanisms are strongly preferred.
-    const t = getConservativeSubtreeText(document, el);
-    if (t) return { ok: true, method: 'content' };
-
+    // role="dialog"/"alertdialog" is name-from-author-only per WAI-ARIA: it
+    // must NOT fall back to subtree content. A dialog's heading or body
+    // text is not reliably exposed to assistive technologies as the
+    // dialog's accessible name unless explicitly wired via aria-labelledby.
     return { ok: false, method: 'none' };
   }
 
@@ -206,6 +173,9 @@ function runInPage(ctx) {
     const res = evaluate(el);
     if (res.ok) continue;
 
+    const eligInfo = getEligibilityInfo
+        ? (() => { try { return getEligibilityInfo(el, ctx, { targetSet: 'acc' }); } catch { return null; } })()
+        : null;
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
     const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
 
@@ -214,10 +184,15 @@ function runInPage(ctx) {
       html,
       summary: 'This dialog has no accessible name.',
       hint: 'Provide aria-labelledby (preferred) or aria-label so assistive technologies can announce the dialog.',
-      summaryKey: 'a11ycore_dialogNamePresent_summary_fail',
-      hintKey: 'a11ycore_dialogNamePresent_hint_fail',
-      i18nParams: { role },
-      data: { details: { reasonCode: 'name_missing', controlType: role, methodTried: res.method } }
+      i18n: {
+        summaryKey: 'a11ycore_dialogNamePresent_summary_fail',
+        hintKey: 'a11ycore_dialogNamePresent_hint_fail',
+        params: { role }
+      },
+      data: {
+        details: { reasonCode: 'name_missing', controlType: role, methodTried: res.method },
+        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+      }
     });
   }
 

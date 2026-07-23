@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-listitem-parent-valid — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-listitem-parent-valid</code> (&lt;li&gt; must be inside a list container)</h1>
+
+  <p class="note">
+    Each target &lt;li&gt; has a stable <code>id</code> of the form <code>lpv_case_NN</code>.
+    Valid parents: &lt;ul&gt;, &lt;ol&gt;, or an element with role="list".
+  </p>
+
+  <h2>A. Valid parents</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — PASS: li inside ul</div>
+    <ul><li id="lpv_case_01">Apple</li></ul>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — PASS: li inside ol</div>
+    <ol><li id="lpv_case_02">Banana</li></ol>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — PASS: li inside role="list"</div>
+    <div role="list"><li id="lpv_case_03">Cherry</li></div>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — PASS: li inside ul role="presentation" (list semantics deliberately suppressed for the whole subtree — matches the reference engine's own listitem check)</div>
+    <ul role="presentation"><li id="lpv_case_07">Grape</li></ul>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — PASS: li inside ol role="none" (role="none" is a synonym for role="presentation")</div>
+    <ol role="none"><li id="lpv_case_08">Honeydew</li></ol>
+  </div>
+
+  <h2>B. Invalid parents</h2>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — FAIL: li inside a plain div</div>
+    <div><li id="lpv_case_04">Date</li></div>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — FAIL: li inside role="listbox" (not "list")</div>
+    <div role="listbox"><li id="lpv_case_05">Elderberry</li></div>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — FAIL: li inside a nav</div>
+    <nav><li id="lpv_case_06">Fig</li></nav>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — FAIL: li inside ul role="menu" — an explicit role overrides the &lt;ul&gt;'s native "list" role entirely, so the tag alone no longer makes it a valid list container (found on a real site — Nike's desktop nav dropdown)</div>
+    <ul role="menu"><li id="lpv_case_09">Kiwi</li></ul>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

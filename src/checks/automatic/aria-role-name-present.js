@@ -74,89 +74,19 @@ function runInPage(ctx) {
   };
 
 
-  const hasVisibleLabelledbyRef = (el) => {
-    const raw = getAttr(el, 'aria-labelledby');
-    if (!raw) return false;
-    const refs = raw.split(/\s+/).filter(Boolean).slice(0, 8);
-    for (const refKey of refs) {
-      try {
-        const refEl = document.getElementById(refKey);
-        if (!refEl) continue;
-        if (refEl.getAttribute && refEl.getAttribute('aria-hidden') === 'true') continue;
-        if (refEl.hasAttribute && refEl.hasAttribute('hidden')) continue;
-        return true;
-      } catch {}
-    }
-    return false;
-  };
-
+  // aria-labelledby resolution: delegate to the shared helper (used by
+  // button-name-present et al.), which correctly includes hidden/aria-hidden
+  // referenced nodes per the Accessible Name and Description Computation
+  // spec (a hidden node directly referenced by aria-labelledby still
+  // supplies its text — this is a standard visually-hidden-label pattern).
   const resolveLabelledby = (el, maxRefs) => {
-    const raw = getAttr(el, 'aria-labelledby');
-    if (!raw) return '';
-
-    const refs = raw.split(/\s+/).filter(Boolean).slice(0, Math.max(1, maxRefs || 8));
-
-    // If every referenced node is hidden from AT, treat aria-labelledby as empty.
-    let hasVisibleRef = false;
-    for (const refKey of refs) {
-      try {
-        const refEl = document.getElementById(refKey);
-        if (!refEl) continue;
-        try {
-          if (refEl.getAttribute && refEl.getAttribute('aria-hidden') === 'true') continue;
-          if (refEl.hasAttribute && refEl.hasAttribute('hidden')) continue;
-        } catch {}
-        hasVisibleRef = true;
-        break;
-      } catch {}
+    if (!getAriaLabelledByInfo) return '';
+    try {
+      const info = getAriaLabelledByInfo(el, ctx, { maxRefs: Math.max(1, maxRefs || 8) });
+      return info && info.present ? normalizeWs(info.value) : '';
+    } catch {
+      return '';
     }
-    if (!hasVisibleRef) return '';
-
-    // Prefer shared helper (expected to follow engine semantics), but only after the visible-ref gate above.
-    if (getAriaLabelledByInfo) {
-      try {
-        const info = getAriaLabelledByInfo(el, ctx, { maxRefs: Math.max(1, maxRefs || 8) });
-        const v = info && info.present ? normalizeWs(info.value) : '';
-        if (v) return v;
-      } catch {}
-    }
-
-    // Fallback: resolve referenced nodes and ignore labels hidden from AT.
-    const parts = [];
-    for (const refKey of refs) {
-      try {
-        const refEl = document.getElementById(refKey);
-        if (!refEl) continue;
-
-        try {
-          if (refEl.getAttribute && refEl.getAttribute('aria-hidden') === 'true') continue;
-          if (refEl.hasAttribute && refEl.hasAttribute('hidden')) continue;
-        } catch {}
-
-        const stack = [refEl];
-        const txt = [];
-        while (stack.length) {
-          const node = stack.pop();
-          if (!node) continue;
-          if (node.nodeType === 3) {
-            const s = normalizeWs(node.nodeValue || '');
-            if (s) txt.push(s);
-            continue;
-          }
-          if (node.nodeType === 1) {
-            try {
-              if (node.getAttribute && node.getAttribute('aria-hidden') === 'true') continue;
-              if (node.hasAttribute && node.hasAttribute('hidden')) continue;
-            } catch {}
-            const kids = node.childNodes ? Array.from(node.childNodes) : [];
-            for (let i = kids.length - 1; i >= 0; i -= 1) stack.push(kids[i]);
-          }
-        }
-        const text = normalizeWs(txt.join(' '));
-        if (text) parts.push(text);
-      } catch {}
-    }
-    return normalizeWs(parts.join(' '));
   };
 
   const isEligible = (el) => {
@@ -221,12 +151,7 @@ function runInPage(ctx) {
     applicableCount += 1;
 
     const ariaLabel = getAttr(el, 'aria-label');
-
-    // aria-labelledby: only valid if it references at least one AT-visible node
-    let labelled = '';
-    if (!ariaLabel && hasVisibleLabelledbyRef(el)) {
-      labelled = resolveLabelledby(el, 8);
-    }
+    const labelled = ariaLabel ? '' : resolveLabelledby(el, 8);
 
     const title = ariaLabel || labelled ? '' : getAttr(el, 'title');
 

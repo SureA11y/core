@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-binary-control-name-present — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+    .hiddenvis { visibility: hidden; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-binary-control-name-present</code> (checkbox / radio / switch must have an accessible name)</h1>
+
+  <p class="note">
+    Each target element has a stable <code>id</code> of the form <code>binctl_case_NN</code>.
+    Native <code>input[type=checkbox|radio]</code> support &lt;label&gt; association but NOT
+    content fallback (they have no renderable subtree content). ARIA <code>role="switch"</code>,
+    <code>role="checkbox"</code>, and <code>role="radio"</code> DO support content fallback but
+    do NOT resolve native &lt;label&gt; association (the rule only applies label resolution to
+    native input controls).
+  </p>
+
+  <h2>A. Native input[type=checkbox]: mechanism priority order</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: native checkbox, no name at all</div>
+    <input type="checkbox" id="binctl_case_01" />
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — PASS: native checkbox, aria-label</div>
+    <input type="checkbox" id="binctl_case_02" aria-label="Subscribe" />
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — PASS: native checkbox, aria-labelledby</div>
+    <span id="binctl_case_03_lbl">Accept terms</span>
+    <input type="checkbox" id="binctl_case_03" aria-labelledby="binctl_case_03_lbl" />
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — PASS: native checkbox, title</div>
+    <input type="checkbox" id="binctl_case_04" title="Remember me" />
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — PASS: native checkbox, native &lt;label for&gt;</div>
+    <label for="binctl_case_05">Enable notifications</label>
+    <input type="checkbox" id="binctl_case_05" />
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — PASS: native checkbox, wrapping &lt;label&gt;</div>
+    <label><input type="checkbox" id="binctl_case_06" /> Dark mode</label>
+  </div>
+
+  <h2>B. Native input[type=radio]: mechanism priority order</h2>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — FAIL: native radio, no name at all</div>
+    <input type="radio" name="binctl_r" id="binctl_case_07" />
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — PASS: native radio, aria-label</div>
+    <input type="radio" name="binctl_r" id="binctl_case_08" aria-label="Small" />
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — PASS: native radio, wrapping &lt;label&gt;</div>
+    <label><input type="radio" name="binctl_r" id="binctl_case_09" /> Medium</label>
+  </div>
+
+  <h2>C. role="switch": content fallback allowed, no label resolution</h2>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — FAIL: role=switch, no name, no content</div>
+    <div role="switch" tabindex="0" aria-checked="false" id="binctl_case_10"></div>
+  </div>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — PASS: role=switch, visible content (content fallback allowed)</div>
+    <div role="switch" tabindex="0" aria-checked="true" id="binctl_case_11">Wi-Fi</div>
+  </div>
+
+  <div class="case" id="case_12">
+    <div class="case-title">12 — PASS: role=switch, aria-label</div>
+    <div role="switch" tabindex="0" aria-checked="false" id="binctl_case_12" aria-label="Bluetooth"></div>
+  </div>
+
+  <div class="case" id="case_13">
+    <div class="case-title">13 — FAIL: role=switch, wrapped by &lt;label&gt; (label association not resolved for ARIA-role kind)</div>
+    <label>Airplane mode <div role="switch" tabindex="0" aria-checked="false" id="binctl_case_13"></div></label>
+  </div>
+
+  <h2>D. role="checkbox" / role="radio" (ARIA-only): content fallback allowed</h2>
+
+  <div class="case" id="case_14">
+    <div class="case-title">14 — PASS: role=checkbox, content</div>
+    <div role="checkbox" tabindex="0" aria-checked="false" id="binctl_case_14">Gift wrap</div>
+  </div>
+
+  <div class="case" id="case_15">
+    <div class="case-title">15 — FAIL: role=checkbox, content is aria-hidden (does not count)</div>
+    <div role="checkbox" tabindex="0" aria-checked="false" id="binctl_case_15"><span aria-hidden="true">Insurance</span></div>
+  </div>
+
+  <div class="case" id="case_16">
+    <div class="case-title">16 — PASS: role=radio, content</div>
+    <div role="radio" tabindex="0" aria-checked="true" id="binctl_case_16">Express shipping</div>
+  </div>
+
+  <div class="case" id="case_17">
+    <div class="case-title">17 — FAIL: role=radio, no name</div>
+    <div role="radio" tabindex="0" aria-checked="false" id="binctl_case_17"></div>
+  </div>
+
+  <h2>E. Visible but excluded from AT (ineligible)</h2>
+
+  <div class="case" id="case_18">
+    <div class="case-title">18 — NEUTRAL/INELIGIBLE: role=switch, aria-hidden="true", not natively focusable and no explicit tabindex, missing name</div>
+    <div role="switch" aria-hidden="true" aria-checked="false" id="binctl_case_18"></div>
+  </div>
+
+  <div class="case" id="case_19">
+    <div class="case-title">19 — EXCEPTION: aria-hidden="true" but focusable (tabindex=0) => eligible, missing name => FAIL</div>
+    <div role="switch" aria-hidden="true" tabindex="0" aria-checked="false" id="binctl_case_19"></div>
+  </div>
+
+  <div class="case" id="case_18b">
+    <div class="case-title">18b — EXCEPTION: native checkbox, aria-hidden="true", no explicit tabindex — native form controls are tabbable by default so this remains eligible, missing name => FAIL</div>
+    <input type="checkbox" aria-hidden="true" id="binctl_case_18b" />
+  </div>
+
+  <h2>F. Hidden by HTML/CSS (ineligible)</h2>
+
+  <div class="case" id="case_20">
+    <div class="case-title">20 — NEUTRAL/INELIGIBLE: hidden attribute</div>
+    <input type="checkbox" hidden id="binctl_case_20" />
+  </div>
+
+  <div class="case" id="case_21">
+    <div class="case-title">21 — NEUTRAL/INELIGIBLE: display:none</div>
+    <input type="checkbox" style="display:none" id="binctl_case_21" />
+  </div>
+
+  <div class="case" id="case_22">
+    <div class="case-title">22 — NEUTRAL/INELIGIBLE: visibility:hidden</div>
+    <input type="checkbox" class="hiddenvis" id="binctl_case_22" />
+  </div>
+
+  <div class="case" id="case_23">
+    <div class="case-title">23 — EXCEPTION: visibility:hidden ancestor overridden by descendant visibility:visible => eligible, missing name => FAIL</div>
+    <div style="visibility:hidden">
+      <input type="checkbox" style="visibility:visible" id="binctl_case_23" />
+    </div>
+  </div>
+
+  <h2>G. Inertness (ineligible)</h2>
+
+  <div class="case" id="case_24">
+    <div class="case-title">24 — NEUTRAL/INELIGIBLE: inert on element itself</div>
+    <input type="checkbox" inert id="binctl_case_24" />
+  </div>
+
+  <div class="case" id="case_25">
+    <div class="case-title">25 — NEUTRAL/INELIGIBLE: inert ancestor</div>
+    <div inert>
+      <input type="checkbox" id="binctl_case_25" />
+    </div>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

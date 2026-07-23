@@ -106,17 +106,20 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/canvas-text-alternative-prese
 
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  // Crafted fixture: expect 7 fails.
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 7, maxOccurrences: 7 });
+  // Crafted fixture: expect 9 fails (canvas_case_06 now correctly fails —
+  // <canvas> is not labelable, so label[for] is not a valid mechanism).
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 9, maxOccurrences: 9 });
 
   const expectedFailIds = [
     'canvas_case_01',
+    'canvas_case_06', // label[for] is not a valid mechanism for <canvas>
     'canvas_case_10',
     'canvas_case_11',
     'canvas_case_12',
     'canvas_case_13',
     'canvas_case_20',
-    'canvas_case_21'
+    'canvas_case_21',
+    'canvas_case_23'  // descendant img[alt=""] is empty, not meaningful fallback
   ];
 
   const expectedNoOccIds = [
@@ -124,7 +127,6 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/canvas-text-alternative-prese
     'canvas_case_03', // aria-label
     'canvas_case_04', // aria-labelledby
     'canvas_case_05', // title attr name
-    'canvas_case_06', // label[for]
     'canvas_case_07', // aria-hidden ineligible
     'canvas_case_08', // display:none ineligible
     'canvas_case_09', // inert ineligible
@@ -133,7 +135,10 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/canvas-text-alternative-prese
     'canvas_case_16', // aria-hidden + tabindex=-1 ineligible
     'canvas_case_17', // idref referenced but has name => pass
     'canvas_case_18', // details closed ineligible
-    'canvas_case_19'  // visibility:hidden ineligible
+    'canvas_case_19', // visibility:hidden ineligible
+    'canvas_case_22', // descendant img[alt] non-empty => meaningful fallback
+    'canvas_case_24', // descendant area[alt] non-empty => meaningful fallback
+    'canvas_case_25'  // descendant [aria-label] non-empty => meaningful fallback
   ];
 
   for (const id of expectedFailIds) {

@@ -7,15 +7,12 @@
  * - This function is inlined into generated core.js (Node + in-page runner).
  * - It intentionally references shared runtime helpers that core.js defines:
  *   resolvePolicy, POLICY_CONTRACTS, resolveRuleDefI18n, ruleMatchesRunOnly,
- *   normalizeRuleResult, normalizeLocale, createDomHelpers, normalizeSelectorList.
+ *   normalizeRuleResult, normalizeLocale, createDomHelpers, normalizeSelectorList,
+ *   resolveContextRoots (src/core/dom-helpers.js -- also used by frame-scan.js),
+ *   normalizeRuleMeta (src/core/rule-meta.js -- used for engineOptions.customRules).
  */
 
 function runCore(pageUrl, contextSelector, engineOptions, runOnly, CHECK_DEFS, RULE_IMPLS, ENGINE_TAG, SCHEMA_VERSION, COMPOSITE_RULES) {
-    const ctxSelector =
-        (typeof contextSelector === 'string' && contextSelector.trim())
-            ? contextSelector.trim()
-            : null;
-
     // Normalize contrast options without mutating caller-provided engineOptions.
     function __normalizeContrastOptions(engineOptions2) {
         const eo = engineOptions2 && typeof engineOptions2 === 'object' ? engineOptions2 : {};
@@ -35,18 +32,22 @@ function runCore(pageUrl, contextSelector, engineOptions, runOnly, CHECK_DEFS, R
 
     const policy = resolvePolicy(POLICY_CONTRACTS, engineOptionsResolved);
 
-    const root =
-        ctxSelector
-            ? (document.querySelector(ctxSelector) ||
-                document.documentElement ||
-                document.body ||
-                document.querySelector('html'))
-            : (document.documentElement ||
-                document.body ||
-                document.querySelector('html'));
+    // contextSelector accepts a single selector string (which may itself be a
+    // comma-separated selector list -- ordinary CSS union semantics) OR an
+    // array of selector strings for scanning multiple, possibly disjoint
+    // regions in one run (the reference engine's multi-.include() capability has no
+    // equivalent here otherwise). Both forms resolve via querySelectorAll,
+    // not querySelector -- previously a single string only ever scanned its
+    // FIRST match, silently ignoring the rest if it happened to match more
+    // than one element. That was a real gap, not a deliberate "one region
+    // only" design: switched to querySelectorAll for both forms so
+    // "matches this selector" actually means all matches, consistently.
+    // Shared with frame-scan.js (same resolution used to discover which
+    // child <iframe>/<frame> elements fall within the same scan scope).
+    const { ctxSelector, roots } = resolveContextRoots(document, contextSelector);
 
-
-    const includeShadowDom = !!(engineOptionsResolved && engineOptionsResolved.includeShadowDom);
+    // Default on: opt OUT with `includeShadowDom: false`, not opt in.
+    const includeShadowDom = !(engineOptionsResolved && engineOptionsResolved.includeShadowDom === false);
     const excludeSelectors = normalizeSelectorList(engineOptionsResolved && engineOptionsResolved.excludeSelectors);
 
     const url = pageUrl || (document.location && document.location.href) || null;
@@ -60,7 +61,7 @@ function runCore(pageUrl, contextSelector, engineOptions, runOnly, CHECK_DEFS, R
     const sharedHelpers = createDomHelpers({
         document,
         window,
-        root,
+        root: roots,
         includeShadowDom,
         excludeSelectors,
         // Optional perf counters (bench/debug only). Deterministic and per-run.
@@ -129,14 +130,93 @@ function runCore(pageUrl, contextSelector, engineOptions, runOnly, CHECK_DEFS, R
         probes = null;
     }
 
+    // =========================
+    // Runtime custom rules (engineOptions.customRules)
+    // =========================
+    // Same module shape as an internal rule file: { id, meta, runInPage, applicability?, data? }.
+    // runInPage/applicability may be a real function (fine for same-realm/Node/jsdom callers)
+    // or a function-source string (required for cross-realm callers, e.g. a Playwright
+    // page.evaluate(runa11yCoreInPage, { engineOptions }) call -- engineOptions crosses a
+    // structured-clone/JSON boundary there, so a live Function reference can't survive it,
+    // but a string can). Reconstructed via `new Function`, matching exactly how build-core.js
+    // already embeds each built-in rule's own runInPage source into the in-page runner.
+    // Scan-scoped only (not added to the static CHECK_DEFS/getRulesCatalog() catalog) --
+    // matches a11y-core's existing "fresh engineOptions per call, no mutable global config"
+    // design (see ROADMAP.md), rather than the reference engine's stateful global configure().
+    let effectiveCheckDefs = CHECK_DEFS;
+    let effectiveRuleImpls = RULE_IMPLS;
+    const rawCustomRules = Array.isArray(engineOptionsResolved.customRules) ? engineOptionsResolved.customRules : [];
+    if (rawCustomRules.length) {
+        function reviveRuleFn(value) {
+            if (typeof value === 'function') return value;
+            if (typeof value === 'string' && value.trim()) {
+                try {
+                    const fn = new Function('return (' + value + ')')();
+                    if (typeof fn === 'function') return fn;
+                } catch (e) {
+                    return null;
+                }
+            }
+            return null;
+        }
+
+        const extraDefsById = new Map();
+        const extraImpls = {};
+        for (const c of rawCustomRules) {
+            if (!c || typeof c !== 'object') continue;
+            const ruleId = typeof c.id === 'string' ? c.id.trim() : '';
+            if (!ruleId) continue;
+            const runFn = reviveRuleFn(c.runInPage);
+            if (typeof runFn !== 'function') continue; // invalid custom rule: skipped, not a crash
+
+            const applicabilityFn = reviveRuleFn(c.applicability);
+            const normalizedMeta = normalizeRuleMeta(ruleId, ruleId, c.meta, ENGINE_TAG);
+
+            extraDefsById.set(ruleId, {
+                ruleId,
+                title: normalizedMeta.title,
+                description: normalizedMeta.description,
+                i18n: normalizedMeta.i18n,
+                helpUrl: normalizedMeta.helpUrl,
+                tags: normalizedMeta.tags,
+                wcagSc: normalizedMeta.wcagSc,
+                normativeMappings: normalizedMeta.normativeMappings,
+                defaultSeverity: normalizedMeta.defaultSeverity,
+                defaultConfidence: normalizedMeta.defaultConfidence,
+                type: normalizedMeta.type,
+                coverage: normalizedMeta.coverage,
+                data: (c.data === undefined ? null : c.data),
+                ruleInterfaceVersion: normalizedMeta.ruleInterfaceVersion,
+                ruleVersion: normalizedMeta.ruleVersion,
+                normative: normalizedMeta.normative,
+                atomic: normalizedMeta.atomic,
+                category: normalizedMeta.category,
+                standard: normalizedMeta.standard,
+                applicability: normalizedMeta.applicability,
+                expectation: normalizedMeta.expectation,
+                references: normalizedMeta.references,
+                requirements: normalizedMeta.requirements,
+                mappings: normalizedMeta.mappings
+            });
+            extraImpls[ruleId] = { run: runFn, applicability: applicabilityFn || null };
+        }
+
+        if (extraDefsById.size) {
+            effectiveCheckDefs = CHECK_DEFS
+                .filter((d) => !extraDefsById.has(d.ruleId))
+                .concat(Array.from(extraDefsById.values()));
+            effectiveRuleImpls = { ...RULE_IMPLS, ...extraImpls };
+        }
+    }
+
     const checksResults = [];
 
-    for (const def of CHECK_DEFS) {
+    for (const def of effectiveCheckDefs) {
         const t0 = ruleTimings ? nowMs() : 0;
         const defResolved = resolveRuleDefI18n(def, engineOptionsResolved);
         if (!ruleMatchesRunOnly(defResolved, runOnly, ENGINE_TAG)) continue;
 
-        const implEntry = RULE_IMPLS[defResolved.ruleId];
+        const implEntry = effectiveRuleImpls[defResolved.ruleId];
         const impl = implEntry && typeof implEntry.run === 'function' ? implEntry.run : null;
         const applicabilityFn = implEntry && typeof implEntry.applicability === 'function' ? implEntry.applicability : null;
         if (typeof impl !== 'function') continue;
@@ -149,7 +229,7 @@ function runCore(pageUrl, contextSelector, engineOptions, runOnly, CHECK_DEFS, R
         const ctx = {
             document,
             window,
-            root,
+            root: roots,
             rule: defResolved,
             config: ruleConfig,
             helpers: sharedHelpers,
@@ -287,20 +367,32 @@ function runCore(pageUrl, contextSelector, engineOptions, runOnly, CHECK_DEFS, R
             const titleKey = (typeof metaIn.titleKey === 'string' && metaIn.titleKey.trim()) ? metaIn.titleKey.trim() : '';
             const descriptionKey = (typeof metaIn.descriptionKey === 'string' && metaIn.descriptionKey.trim()) ? metaIn.descriptionKey.trim() : '';
 
+            const wcagSc = Array.isArray(metaIn.wcagSc) ? metaIn.wcagSc.map(String).map(s => s.trim()).filter(Boolean) : [];
+
             const tags = [];
             tags.push(String(ENGINE_TAG || 'a11ycore').toLowerCase());
             tags.push('composite');
 
+            // Fixed WCAG-version-introduction lists (2.1 and 2.2 additions only -- every other
+            // SC, including all pre-2.1 ones, is WCAG 2.0 baseline). Keep in sync with
+            // src/coverage/wcag-version-map.js (the canonical copy the rule-authoring
+            // consistency test checks against) -- this one has to stay a self-contained
+            // literal since runCore is inlined via .toString() with no module access at runtime.
+            const WCAG21_NEW_SCS = ['1.3.4', '1.3.5', '1.3.6', '1.4.10', '1.4.11', '1.4.12', '1.4.13', '2.1.4', '2.2.6', '2.3.3', '2.5.1', '2.5.2', '2.5.3', '2.5.4', '2.5.5', '2.5.6', '4.1.3'];
+            const WCAG22_NEW_SCS = ['2.4.11', '2.4.12', '2.4.13', '2.5.7', '2.5.8', '3.2.6', '3.3.7', '3.3.8', '3.3.9'];
+            const isWcag22Sc = wcagSc.some((sc) => WCAG22_NEW_SCS.includes(sc));
+            const isWcag21Sc = !isWcag22Sc && wcagSc.some((sc) => WCAG21_NEW_SCS.includes(sc));
+            const versionTagPrefix = isWcag22Sc ? 'wcag22' : (isWcag21Sc ? 'wcag21' : 'wcag2');
+
             const lvl = (typeof metaIn.level === 'string' ? metaIn.level.trim().toUpperCase() : '');
             if (lvl === 'A') {
-                tags.push('wcag2a', 'wcag21a');
+                tags.push(versionTagPrefix + 'a');
             } else if (lvl === 'AA') {
-                tags.push('wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa');
+                tags.push(versionTagPrefix + 'a', versionTagPrefix + 'aa');
             } else if (lvl === 'AAA') {
-                tags.push('wcag2a', 'wcag2aa', 'wcag2aaa', 'wcag21a', 'wcag21aa', 'wcag21aaa');
+                tags.push(versionTagPrefix + 'a', versionTagPrefix + 'aa', versionTagPrefix + 'aaa');
             }
 
-            const wcagSc = Array.isArray(metaIn.wcagSc) ? metaIn.wcagSc.map(String).map(s => s.trim()).filter(Boolean) : [];
             // Build normativeMappings so downstream consumers (like adapters) can derive WCAG SC/level
             const normativeMappingsFromMeta = wcagSc.map((sc) => {
                 const m = { standard: 'WCAG', requirement: sc };

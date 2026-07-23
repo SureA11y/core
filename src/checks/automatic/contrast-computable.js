@@ -12,7 +12,6 @@ const meta = {
     },
     helpUrl: null,
     tags: [
-        'wcag2a',
         'wcag2aa',
         'wcag2aaa',
         'wcag143',

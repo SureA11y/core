@@ -26,7 +26,7 @@ const meta = {
     descriptionKey: 'a11ycore_area_altPresent_description'
   },
   helpUrl: null,
-  tags: ['wcag2a', 'wcag2aa', 'wcag111', 'nontext', 'images', 'imagemap', 'atomic', 'automatic'],
+  tags: ['wcag2a', 'wcag111', 'nontext', 'images', 'imagemap', 'atomic', 'automatic'],
   wcagSc: ['1.1.1'],
   normativeMappings: [
     { standard: 'WCAG', version: '2.2', requirement: '1.1.1', title: 'Non-text Content', conformanceLevel: 'A' }
@@ -60,6 +60,10 @@ function runInPage(ctx) {
 
   const isAccTreeEligible = helpers && typeof helpers.isAccTreeEligible === 'function'
       ? helpers.isAccTreeEligible
+      : null;
+
+  const getAriaNameInfo = helpers && typeof helpers.getAriaNameInfo === 'function'
+      ? helpers.getAriaNameInfo
       : null;
 
   // --- image-map semantics (rule-local) ---
@@ -157,6 +161,29 @@ function runInPage(ctx) {
 
     const hasAlt = el.getAttribute('alt') !== null;
     if (hasAlt) continue;
+
+    // aria-label / aria-labelledby is also a valid, standards-recognized
+    // text-alternative mechanism for <area> (HTML-AAM accessible name
+    // computation includes ARIA naming before falling back to alt).
+    if (getAriaNameInfo) {
+      let ariaName = null;
+      try {
+        ariaName = getAriaNameInfo(el, ctx);
+      } catch {
+        ariaName = null;
+      }
+      if (ariaName && ariaName.present) continue;
+    }
+
+    // A non-empty title attribute is HTML-AAM's own next fallback naming
+    // source once alt is entirely absent -- also accepted by the reference engine's
+    // equivalent area-alt rule (non-empty-title, same "any" list as
+    // non-empty-alt/aria-label/aria-labelledby). See img-alt-present's
+    // sibling fix (2026-07-23, AliExpress's title-only logo <img>) for
+    // the real page this was found via -- same gap, same fix, different
+    // element.
+    const titleRaw = (() => { try { return el.getAttribute('title'); } catch { return null; } })();
+    if (titleRaw !== null && String(titleRaw).trim()) continue;
 
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 

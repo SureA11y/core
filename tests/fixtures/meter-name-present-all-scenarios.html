@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-meter-name-present — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-meter-name-present</code> (role="meter" must have an accessible name)</h1>
+
+  <p class="note">
+    Each target element has a stable <code>id</code> of the form <code>meter_case_NN</code>.
+    Mechanism priority: aria-label &gt; aria-labelledby &gt; title. role="meter" is
+    name-from-author-only per WAI-ARIA — it does NOT support name-from-content at all
+    (verified against the reference engine's own aria-meter-name check).
+  </p>
+
+  <h2>A. Named (eligible)</h2>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — PASS: role=meter, aria-label</div>
+    <div role="meter" aria-valuenow="80" id="meter_case_02" aria-label="Disk usage"></div>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — PASS: role=meter, aria-labelledby</div>
+    <span id="meter_case_03_lbl">Battery level</span>
+    <div role="meter" aria-valuenow="80" id="meter_case_03" aria-labelledby="meter_case_03_lbl"></div>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — PASS: role=meter, title</div>
+    <div role="meter" aria-valuenow="80" id="meter_case_04" title="Storage quota"></div>
+  </div>
+
+  <h2>B. Unnamed (eligible, FAIL)</h2>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — FAIL: role=meter, no name at all</div>
+    <div role="meter" aria-valuenow="80" id="meter_case_05"></div>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — FAIL: role=meter, content is aria-hidden (does not count)</div>
+    <div role="meter" aria-valuenow="80" id="meter_case_06"><span aria-hidden="true">80%</span></div>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — FAIL: role=meter, visible text content (content must NOT count as a name — role="meter" is name-from-author-only)</div>
+    <div role="meter" aria-valuenow="80" id="meter_case_08">80% full</div>
+  </div>
+
+  <h2>C. Ineligible (excluded from accessibility tree, skipped)</h2>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — NEUTRAL/INELIGIBLE: hidden attribute, missing name</div>
+    <div role="meter" hidden id="meter_case_07"></div>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-manual-review — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <div class="case-title">01 — CANTTELL: this rule always flags keyboard navigation and focus order for manual review, regardless of page content</div>
+  <p class="note">
+    <code>a11ycore-manual-review</code> has no pass/fail branching logic at all — it
+    unconditionally returns <code>cantTell</code> for every page, since keyboard
+    navigation and focus order cannot be fully verified by static analysis. This
+    fixture exists for index completeness; there is no alternate scenario to
+    demonstrate (any page produces the same outcome).
+  </p>
+  <p>Some ordinary page content.</p>
+</body>
+</html>

@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-form-control-programmatic-label-quality — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+    .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .hiddenvis { visibility: hidden; }
+  </style>
+</head>
+<body>
+<h1>Scenario fixture: <code>a11ycore-form-control-programmatic-label-quality</code></h1>
+
+<p class="note">
+  This is a MANUAL rule: automatic outcomes are restricted to
+  <code>cantTell</code> (at least one applicable control's primary label
+  method is <code>title</code> or <code>placeholder</code>) and
+  <code>notApplicable</code> (no applicable controls) — this rule must NEVER
+  produce <code>pass</code>/<code>fail</code> per this repo's manual-rule
+  contract. This fixture is deliberately built so the whole-file aggregate is
+  always <code>cantTell</code> (it includes flagged controls), and every case
+  is checked only for occurrence presence/absence, never for a whole-rule
+  pass/fail outcome. Each target has a stable id <code>fcq_case_NN</code>.
+</p>
+
+<h2>A. Flagged: primary label method is title or placeholder</h2>
+
+<div class="case" id="case_01">
+  <div class="case-title">01 — FLAGGED: placeholder-only (primary method = placeholder)</div>
+  <div class="row">
+    <input id="fcq_case_01" type="text" placeholder="Search" />
+  </div>
+</div>
+
+<div class="case" id="case_02">
+  <div class="case-title">02 — FLAGGED: title-only (primary method = title)</div>
+  <div class="row">
+    <input id="fcq_case_02" type="text" title="Account number" />
+  </div>
+</div>
+
+<div class="case" id="case_03">
+  <div class="case-title">03 — FLAGGED: both title and placeholder present (title wins priority, still flagged either way)</div>
+  <div class="row">
+    <input id="fcq_case_03" type="text" title="Email address" placeholder="you@example.com" />
+  </div>
+</div>
+
+<div class="case" id="case_04">
+  <div class="case-title">04 — FLAGGED: textarea with placeholder only</div>
+  <div class="row">
+    <textarea id="fcq_case_04" placeholder="Your message"></textarea>
+  </div>
+</div>
+
+<h2>B. Not flagged: primary label method is a strong/medium mechanism</h2>
+
+<div class="case" id="case_05">
+  <div class="case-title">05 — NOT FLAGGED: &lt;label for&gt; association (strong)</div>
+  <div class="row">
+    <label for="fcq_case_05">Full name</label>
+    <input id="fcq_case_05" type="text" placeholder="ignored, label wins" />
+  </div>
+</div>
+
+<div class="case" id="case_06">
+  <div class="case-title">06 — NOT FLAGGED: wrapping &lt;label&gt; association (strong)</div>
+  <div class="row">
+    <label>Email <input id="fcq_case_06" type="email" title="ignored, label wins" /></label>
+  </div>
+</div>
+
+<div class="case" id="case_07">
+  <div class="case-title">07 — NOT FLAGGED: aria-labelledby (strong)</div>
+  <div class="row">
+    <span id="fcq_case_07_lbl">Username</span>
+    <input id="fcq_case_07" type="text" aria-labelledby="fcq_case_07_lbl" placeholder="ignored" />
+  </div>
+</div>
+
+<div class="case" id="case_08">
+  <div class="case-title">08 — NOT FLAGGED: aria-label (medium)</div>
+  <div class="row">
+    <input id="fcq_case_08" type="text" aria-label="Search products" title="ignored" />
+  </div>
+</div>
+
+<h2>C. Applicability / eligibility (role=presentation exception, acc-ineligible exclusions)</h2>
+
+<div class="case" id="case_09">
+  <div class="case-title">09 — FLAGGED: role=presentation but focusable (tabindex=0), placeholder primary</div>
+  <div class="row">
+    <input id="fcq_case_09" type="text" role="presentation" tabindex="0" placeholder="X" />
+  </div>
+</div>
+
+<div class="case" id="case_10">
+  <div class="case-title">10 — NEUTRAL/EXCLUDED: role=presentation, not focusable (tabindex=-1), excluded from applicability</div>
+  <div class="row">
+    <input id="fcq_case_10" type="text" role="presentation" tabindex="-1" placeholder="X" />
+  </div>
+</div>
+
+<div class="case" id="case_11">
+  <div class="case-title">11 — NEUTRAL/INELIGIBLE (acc): hidden attribute</div>
+  <div class="row">
+    <input id="fcq_case_11" type="text" hidden placeholder="X" />
+  </div>
+</div>
+
+<div class="case" id="case_12">
+  <div class="case-title">12 — NEUTRAL/INELIGIBLE (acc): display:none</div>
+  <div class="row">
+    <input id="fcq_case_12" type="text" style="display:none" placeholder="X" />
+  </div>
+</div>
+
+<div class="case" id="case_13">
+  <div class="case-title">13 — NEUTRAL/INELIGIBLE (acc): inert subtree</div>
+  <div class="row" inert>
+    <input id="fcq_case_13" type="text" placeholder="X" />
+  </div>
+</div>
+
+<h2>D. Untargeted by selector</h2>
+
+<div class="case" id="case_14">
+  <div class="case-title">14 — NOT TARGETED: input type=submit (excluded by selector)</div>
+  <div class="row">
+    <input id="fcq_case_14" type="submit" value="Go" />
+  </div>
+</div>
+
+<p class="note">End of fixture.</p>
+</body>
+</html>

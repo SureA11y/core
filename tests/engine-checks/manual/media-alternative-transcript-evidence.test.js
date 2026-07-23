@@ -39,7 +39,7 @@ test(`${RULE_ID}: no applicable <audio>/<video> => notApplicable`, () => {
     assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0 });
 });
 
-test(`${RULE_ID}: pass when aria-describedby contains transcript token and substantial text`, () => {
+test(`${RULE_ID}: notApplicable when aria-describedby contains transcript token and substantial text`, () => {
     const transcript = `Transcript: ${longText(220)}`;
 
     const html = `<!doctype html><html><body>
@@ -50,10 +50,11 @@ test(`${RULE_ID}: pass when aria-describedby contains transcript token and subst
   </body></html>`;
 
     const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0 });
+    // Manual rules may only emit cantTell/notApplicable, never pass.
+    assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0 });
 });
 
-test(`${RULE_ID}: pass when aria-describedby has no token but is very substantial (>= 400 chars)`, () => {
+test(`${RULE_ID}: notApplicable when aria-describedby has no token but is very substantial (>= 400 chars)`, () => {
     // No "transcript" token intentionally.
     const described = longText(420);
 
@@ -65,10 +66,11 @@ test(`${RULE_ID}: pass when aria-describedby has no token but is very substantia
   </body></html>`;
 
     const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0 });
+    // Manual rules may only emit cantTell/notApplicable, never pass.
+    assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0 });
 });
 
-test(`${RULE_ID}: pass when transcript heading exists with substantial adjacent text (adjacent-heading)`, () => {
+test(`${RULE_ID}: notApplicable when transcript heading exists with substantial adjacent text (adjacent-heading)`, () => {
     const tx = longText(220);
 
     const html = `<!doctype html><html><body>
@@ -82,10 +84,11 @@ test(`${RULE_ID}: pass when transcript heading exists with substantial adjacent 
   </body></html>`;
 
     const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0 });
+    // Manual rules may only emit cantTell/notApplicable, never pass.
+    assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0 });
 });
 
-test(`${RULE_ID}: pass when explicit Transcript link resolves to on-page transcript section with heading + substantial text (anchor-target)`, () => {
+test(`${RULE_ID}: notApplicable when explicit Transcript link resolves to on-page transcript section with heading + substantial text (anchor-target)`, () => {
     const tx = longText(220);
 
     const html = `<!doctype html><html><body>
@@ -103,7 +106,8 @@ test(`${RULE_ID}: pass when explicit Transcript link resolves to on-page transcr
   </body></html>`;
 
     const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0 });
+    // Manual rules may only emit cantTell/notApplicable, never pass.
+    assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0 });
 });
 
 test(`${RULE_ID}: cantTell when no transcript evidence is detected (reasonCode transcriptNotDetected)`, () => {
@@ -173,6 +177,37 @@ test(`${RULE_ID}: cantTell when transcript link is same-page but target cannot b
     assert.equal(o.data.details.evidence.strength, 'weak');
     assert.equal(o.data.details.evidence.method, 'anchor-unverified');
     assert.equal(o.data.details.evidence.transcriptLinkHref, '#tgt');
+});
+
+test(`${RULE_ID}: sibling media elements under the same container do not share evidence classification`, () => {
+    // Regression test: the evidence cache was previously keyed by
+    // mediaEl.parentElement instead of the media element itself, so a
+    // sibling with no evidence at all could silently inherit the first
+    // sibling's strong evidence and escape review.
+    const tx = `Transcript: ${longText(220)}`;
+
+    const html = `<!doctype html><html><body>
+    <div>
+      <audio id="evidenced" aria-describedby="tx">
+        <source src="x.mp3" type="audio/mpeg" />
+      </audio>
+      <div id="tx">${tx}</div>
+      <audio id="unevidenced"></audio>
+    </div>
+  </body></html>`;
+
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+
+    const flaggedIds = rule.occurrences.map((o) => (typeof o.html === 'string' ? o.html : ''));
+    assert.ok(
+        flaggedIds.some((html) => html.includes('id="unevidenced"')),
+        'Expected the unevidenced sibling to be flagged'
+    );
+    assert.ok(
+        !flaggedIds.some((html) => html.includes('id="evidenced"')),
+        'Did not expect the evidenced sibling to be flagged'
+    );
 });
 
 test(`${RULE_ID}: determinism — running twice yields identical rule result`, () => {

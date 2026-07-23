@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-aria-required-parent — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-aria-required-parent</code> (context-dependent roles need an acceptable ancestor/owner)</h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>arp_case_NN</code>.
+  </p>
+
+  <h2>A. Valid</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — PASS: matching explicit ancestor role is present</div>
+    <div role="tablist"><div role="tab" id="arp_case_01">t1</div></div>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — PASS: plain native ancestor satisfies the context role (option inside select)</div>
+    <select><option role="option" id="arp_case_02">x</option></select>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — PASS: context role only reachable via aria-owns</div>
+    <div role="tablist" aria-owns="arp_case_03"></div>
+    <div id="arp_case_03" role="tab">t1</div>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — PASS: role="group" is the immediate-parent context for menuitem, between it and its owning menu — found on a real site, Ant Design's sectioned sidebar nav (menu &gt; presentation &gt; group &gt; menuitem), verified against the reference engine's own menuitem role descriptor (requiredContext: ['menu','menubar','group'])</div>
+    <ul role="menu"><li role="presentation"><ul role="group"><li role="menuitem" tabindex="-1" id="arp_case_08">Item</li></ul></li></ul>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — PASS: role="group" is likewise a valid immediate-parent context for option, between it and its owning listbox</div>
+    <ul role="listbox"><li role="presentation"><ul role="group"><li role="option" id="arp_case_09">Opt</li></ul></li></ul>
+  </div>
+
+  <h2>B. Invalid</h2>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — FAIL: no acceptable ancestor/owner context role exists</div>
+    <nav role="tab" id="arp_case_04"></nav>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — FAIL: the required-context role exists further up the tree, but a real intervening ancestor role (a plain &lt;li&gt;'s native "listitem") blocks the search — found on a real site, Le Monde's review-carousel tablist</div>
+    <ul role="tablist"><li><button id="arp_case_07" role="tab">t1</button></li></ul>
+  </div>
+
+  <h2>C. Not applicable (skipped, not counted)</h2>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — NEUTRAL: role has no required-context entry</div>
+    <div role="button" id="arp_case_05"></div>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — NEUTRAL: role has an explicitly unconstrained context entry (tabpanel)</div>
+    <div role="tabpanel" id="arp_case_06"></div>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

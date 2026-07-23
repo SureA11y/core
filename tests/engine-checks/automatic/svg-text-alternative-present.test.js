@@ -54,6 +54,23 @@ test(`${RULE_ID}: fail when applicable <svg role="img"> has no title/desc and no
   assert.ok(hasOccurrenceForId(rule, 'bad1'));
 });
 
+test(`${RULE_ID}: fail when applicable <svg role="img"> has only <desc> (no <title>/aria name) — SVG-AAM §7.1: desc only contributes to the accessible description, never the name`, () => {
+  const html = `<!doctype html><html><body>
+    <svg id="desc_only" role="img" xmlns="http://www.w3.org/2000/svg"><desc>Settings icon</desc></svg>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'desc_only'));
+});
+
+test(`${RULE_ID}: pass when applicable <svg role="img"> has both <title> and <desc>`, () => {
+  const html = `<!doctype html><html><body>
+    <svg id="title_and_desc" role="img" xmlns="http://www.w3.org/2000/svg"><title>Settings</title><desc>Longer description of the settings icon</desc></svg>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
 test(`${RULE_ID}: notApplicable when only ineligible svgs exist (aria-hidden and not tabbable)`, () => {
   const html = `<!doctype html><html><body>
     <svg id="ah" role="img" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"></svg>
@@ -114,21 +131,25 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/svg-text-alternative-present-
 
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 7, maxOccurrences: 7 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 12, maxOccurrences: 12 });
 
   const expectedFailIds = [
     'svg_case_01',
+    'svg_case_03',  // <desc> alone never provides a name (SVG-AAM §7.1)
     'svg_case_06',
     'svg_case_07',
     'svg_case_09',
     'svg_case_10',
     'svg_case_12',
-    'svg_case_15'
+    'svg_case_15',
+    'svg_case_21',  // <title> not first child does not count
+    'svg_case_22',  // <desc> as first child still doesn't count as a name
+    'svg_case_23',  // empty <title> + <desc> second: desc still doesn't count as a name
+    'svg_case_24'   // <desc> misplaced (not first, not pair-second) does not count
   ];
 
   const expectedNoOccIds = [
     'svg_case_02',
-    'svg_case_03',
     'svg_case_04',
     'svg_case_05',
     'svg_case_08',
@@ -166,14 +187,14 @@ test(`${RULE_ID}: i18n (fr) rule title/description are localized`, () => {
   assert.strictEqual(rule.title, '<svg> doit fournir une alternative textuelle');
   assert.strictEqual(
     rule.description,
-    'Vérifie que les éléments <svg> en ligne fournissent une alternative textuelle via <title>/<desc> ou un nom ARIA.'
+    'Vérifie que les éléments <svg> en ligne fournissent une alternative textuelle via un élément <title> ou un nom ARIA (un élément <desc> seul ne suffit pas).'
   );
 
   const occ = rule.occurrences[0];
   assert.strictEqual(occ.summary, 'Alternative textuelle manquante pour <svg>.');
   assert.strictEqual(
     occ.hint,
-    'Fournissez un élément <title> ou <desc> avec du texte, ou un nom ARIA (aria-label/aria-labelledby).'
+    'Fournissez un élément <title> avec du texte, ou un nom ARIA (aria-label/aria-labelledby) — un élément <desc> seul ne fournit pas de nom accessible.'
   );
 });
 
@@ -186,14 +207,14 @@ test(`${RULE_ID}: i18n default is English`, () => {
   assert.strictEqual(rule.title, '<svg> must provide a text alternative');
   assert.strictEqual(
     rule.description,
-    'Checks that inline <svg> elements provide a text alternative via <title>/<desc> or an ARIA name.'
+    'Checks that inline <svg> elements provide a text alternative via a <title> element or an ARIA name (a <desc> element alone does not count).'
   );
 
   const occ = rule.occurrences[0];
   assert.strictEqual(occ.summary, 'Missing text alternative for <svg>.');
   assert.strictEqual(
     occ.hint,
-    'Provide a <title> or <desc> element with text, or an ARIA name (aria-label/aria-labelledby).'
+    'Provide a <title> element with text, or an ARIA name (aria-label/aria-labelledby) — a <desc> element alone does not provide an accessible name.'
   );
 });
 
@@ -210,6 +231,6 @@ test(`${RULE_ID}: i18n unknown locale falls back to English`, () => {
   assert.strictEqual(rule.title, '<svg> must provide a text alternative');
   assert.strictEqual(
     rule.description,
-    'Checks that inline <svg> elements provide a text alternative via <title>/<desc> or an ARIA name.'
+    'Checks that inline <svg> elements provide a text alternative via a <title> element or an ARIA name (a <desc> element alone does not count).'
   );
 });

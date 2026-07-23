@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-accesskeys — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-accesskeys</code></h1>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — NEUTRAL: two distinct accesskeys</div>
+    <a href="/a" accesskey="a" id="ak_case_01a">A</a>
+    <a href="/b" accesskey="b" id="ak_case_01b">B</a>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — CANTTELL: two elements share the same accesskey</div>
+    <a href="/s1" accesskey="s" id="ak_case_02a">S1</a>
+    <a href="/s2" accesskey="s" id="ak_case_02b">S2</a>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-label-in-name — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-label-in-name</code> (WCAG 2.5.3 Label in Name)</h1>
+
+  <p class="note">
+    Applicability requires the control to (a) match the selector (interactive
+    control with a non-empty <code>aria-label</code> or <code>aria-labelledby</code>,
+    not [hidden]/[disabled]/[aria-disabled="true"]), (b) be visually rendered
+    (DOM-visible; note aria-hidden on the <em>control itself</em> does NOT
+    gate this — see case 14), and (c) have a deterministically-extractable
+    visible text label — <strong>text inside an aria-hidden descendant does
+    not count as visible label text</strong> (2026-07-21: an aria-hidden
+    icon-font glyph, e.g. Material Icons' ligature pattern, is technically
+    DOM-visible pixels but never perceived as literal readable words the way
+    the reference engine's own canvas-based icon-ligature detection also concludes —
+    see case 13). When applicable, the rule fails if the normalized
+    accessible name does not contain the normalized visible label as a
+    substring. Each target has a stable id <code>lin_case_NN</code>.
+  </p>
+
+  <h2>A. Baseline: accessible name contains visible label</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — PASS: button aria-label is a superset of visible text</div>
+    <button id="lin_case_01" aria-label="Save changes">Save</button>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — FAIL: button aria-label unrelated to visible text</div>
+    <button id="lin_case_02" aria-label="Submit form">Save</button>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — PASS: case-insensitive + whitespace-normalized match</div>
+    <button id="lin_case_03" aria-label="SAVE   NOW please">Save Now</button>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — FAIL: accessible name is a strict subset missing part of the visible label</div>
+    <button id="lin_case_04" aria-label="Delete">Delete item</button>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — PASS: &lt;a href&gt; aria-labelledby text contains visible self content</div>
+    <a href="/dl" id="lin_case_05" aria-labelledby="lin_case_05_lbl">Download</a>
+    <span id="lin_case_05_lbl" hidden>Download the quarterly report</span>
+  </div>
+
+  <h2>B. Native form controls: visible label from &lt;label&gt; association</h2>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — FAIL: input wrapped by &lt;label&gt;, aria-label mismatched</div>
+    <label>Email address <input type="text" id="lin_case_06" aria-label="Phone number" /></label>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — PASS: input with &lt;label for&gt;, aria-label matches</div>
+    <label for="lin_case_07">Email address</label>
+    <input type="text" id="lin_case_07" aria-label="Your email address" />
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — PASS: &lt;select&gt; with &lt;label for&gt; matching aria-labelledby</div>
+    <label for="lin_case_08">Country</label>
+    <span id="lin_case_08_lbl">Country selector</span>
+    <select id="lin_case_08" aria-labelledby="lin_case_08_lbl"><option>A</option></select>
+  </div>
+
+  <h2>C. Not applicable: no extractable visible label / not a match candidate</h2>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — N/A: no aria-label/aria-labelledby at all (excluded by selector)</div>
+    <button id="lin_case_09">Plain button</button>
+  </div>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — N/A: not visually rendered (display:none, excluded via DOM-visibility gate)</div>
+    <button id="lin_case_10" aria-label="Submit form" style="display:none">Save</button>
+  </div>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — N/A: disabled input (excluded by selector)</div>
+    <input type="text" id="lin_case_11" aria-label="Phone number" disabled />
+  </div>
+
+  <div class="case" id="case_12">
+    <div class="case-title">12 — N/A: aria-disabled="true" (excluded by selector)</div>
+    <button id="lin_case_12" aria-label="Submit form" aria-disabled="true">Save</button>
+  </div>
+
+  <h2>D. aria-hidden on the control itself does NOT gate applicability; on a descendant, it DOES exclude that text from the visible-label comparison</h2>
+
+  <div class="case" id="case_13">
+    <div class="case-title">13 — N/A: only content is an aria-hidden decorative glyph, which does not count as visible label text (2026-07-21)</div>
+    <button id="lin_case_13" aria-label="Close dialog"><span aria-hidden="true">✕</span></button>
+  </div>
+
+  <div class="case" id="case_14">
+    <div class="case-title">14 — FAIL: control itself is aria-hidden="true" but still visually rendered with a visible label mismatch</div>
+    <button id="lin_case_14" aria-hidden="true" aria-label="Submit form">Save</button>
+  </div>
+
+  <h2>E. Other interactive roles in the selector list</h2>
+
+  <div class="case" id="case_15">
+    <div class="case-title">15 — FAIL: role=checkbox, aria-label mismatched with visible text</div>
+    <div role="checkbox" tabindex="0" aria-checked="false" id="lin_case_15" aria-label="Enable notifications">Gift wrap</div>
+  </div>
+
+  <div class="case" id="case_16">
+    <div class="case-title">16 — PASS: role=tab, aria-label superset of visible text</div>
+    <div role="tab" tabindex="0" id="lin_case_16" aria-label="Overview tab">Overview</div>
+  </div>
+
+  <div class="case" id="case_17">
+    <div class="case-title">17 — PASS: aria-hidden decorative icon alongside real visible text — the icon is excluded, only "Save" is compared (2026-07-21, the actual Angular Material button-with-icon shape)</div>
+    <button id="lin_case_17" aria-label="Save changes"><span aria-hidden="true">💾</span> Save</button>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

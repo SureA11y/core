@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-landmark-no-duplicate-main — scenario fixture (FAIL case)</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-landmark-no-duplicate-main</code></h1>
+  <div class="case-title">01 — CANTTELL: two main landmarks on the same page</div>
+  <main id="ndm_case_01a">First main</main>
+  <main id="ndm_case_01b">Second main</main>
+  <p class="note">
+    This rule reports one occurrence per main instance when more than one exists.
+    The PASS case (exactly 1 main) and notApplicable case (0 mains) are covered by the
+    inline unit tests in this rule's <code>.test.js</code> file rather than more fixture
+    files.
+  </p>
+</body>
+</html>

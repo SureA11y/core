@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-dialog-name-present — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+    .hiddenvis { visibility: hidden; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-dialog-name-present</code> (role="dialog"/"alertdialog" must have an accessible name)</h1>
+
+  <p class="note">
+    Each target element has a stable <code>id</code> of the form <code>dialog_case_NN</code>.
+    role="dialog"/"alertdialog" is name-from-author-only per WAI-ARIA: only aria-label,
+    aria-labelledby, and title are valid; heading/body content is NOT a valid name source
+    unless explicitly wired via aria-labelledby.
+  </p>
+
+  <h2>A. Baseline: mechanism priority order (eligible)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: role=dialog, no name at all</div>
+    <div role="dialog" id="dialog_case_01"><p>Body text only.</p></div>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — FAIL: role=dialog, visible heading text only (does NOT count)</div>
+    <div role="dialog" id="dialog_case_02"><h2>Confirm deletion</h2></div>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — PASS: role=dialog, aria-label</div>
+    <div role="dialog" id="dialog_case_03" aria-label="Confirm deletion"><p>Are you sure?</p></div>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — PASS: role=dialog, aria-labelledby (references heading)</div>
+    <div role="dialog" id="dialog_case_04" aria-labelledby="dialog_case_04_h"><h2 id="dialog_case_04_h">Settings</h2></div>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — PASS: role=dialog, title</div>
+    <div role="dialog" id="dialog_case_05" title="Preferences"><p>Body</p></div>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — FAIL: role=alertdialog, no name at all</div>
+    <div role="alertdialog" id="dialog_case_06"><p>Unsaved changes will be lost.</p></div>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — PASS: role=alertdialog, aria-label</div>
+    <div role="alertdialog" id="dialog_case_07" aria-label="Warning"><p>Unsaved changes.</p></div>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — FAIL: aria-label empty string</div>
+    <div role="dialog" id="dialog_case_08" aria-label=""><h2>Visible heading ignored</h2></div>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — FAIL: aria-labelledby references non-existent id</div>
+    <div role="dialog" id="dialog_case_09" aria-labelledby="dialog_case_09_missing"></div>
+  </div>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — FAIL: whitespace-only aria-label</div>
+    <div role="dialog" id="dialog_case_10" aria-label="   "></div>
+  </div>
+
+  <h2>B. Visible but excluded from AT (ineligible)</h2>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — NEUTRAL/INELIGIBLE: aria-hidden="true", not focusable, missing name</div>
+    <div role="dialog" aria-hidden="true" id="dialog_case_11"></div>
+  </div>
+
+  <div class="case" id="case_12">
+    <div class="case-title">12 — EXCEPTION: aria-hidden="true" but focusable (tabindex=0) => eligible, missing name => FAIL</div>
+    <div role="dialog" aria-hidden="true" tabindex="0" id="dialog_case_12"></div>
+  </div>
+
+  <div class="case" id="case_13">
+    <div class="case-title">13 — EXCEPTION: aria-hidden="true" but IDREF-referenced => eligible, missing name => FAIL</div>
+    <div aria-labelledby="dialog_case_13">This references the dialog below by id.</div>
+    <div role="dialog" aria-hidden="true" id="dialog_case_13"></div>
+  </div>
+
+  <h2>C. Hidden by HTML/CSS (ineligible)</h2>
+
+  <div class="case" id="case_14">
+    <div class="case-title">14 — NEUTRAL/INELIGIBLE: hidden attribute</div>
+    <div role="dialog" hidden id="dialog_case_14"></div>
+  </div>
+
+  <div class="case" id="case_15">
+    <div class="case-title">15 — NEUTRAL/INELIGIBLE: display:none</div>
+    <div role="dialog" style="display:none" id="dialog_case_15"></div>
+  </div>
+
+  <div class="case" id="case_16">
+    <div class="case-title">16 — NEUTRAL/INELIGIBLE: visibility:hidden</div>
+    <div role="dialog" class="hiddenvis" id="dialog_case_16"></div>
+  </div>
+
+  <div class="case" id="case_17">
+    <div class="case-title">17 — EXCEPTION: visibility:hidden ancestor overridden by descendant visibility:visible => eligible, missing name => FAIL</div>
+    <div style="visibility:hidden">
+      <div role="dialog" tabindex="0" style="visibility:visible" id="dialog_case_17"></div>
+    </div>
+  </div>
+
+  <h2>D. Inertness (ineligible)</h2>
+
+  <div class="case" id="case_18">
+    <div class="case-title">18 — NEUTRAL/INELIGIBLE: inert on element itself</div>
+    <div role="dialog" inert id="dialog_case_18"></div>
+  </div>
+
+  <div class="case" id="case_19">
+    <div class="case-title">19 — NEUTRAL/INELIGIBLE: inert ancestor</div>
+    <div inert>
+      <div role="dialog" id="dialog_case_19"></div>
+    </div>
+  </div>
+
+  <h2>E. Non-composed content (ineligible)</h2>
+
+  <div class="case" id="case_20">
+    <div class="case-title">20 — NEUTRAL/INELIGIBLE: inside closed &lt;details&gt;</div>
+    <details>
+      <summary>More</summary>
+      <div role="dialog" id="dialog_case_20"></div>
+    </details>
+  </div>
+
+  <div class="case" id="case_21">
+    <div class="case-title">21 — NEUTRAL/INELIGIBLE: inside &lt;template&gt; (not composed)</div>
+    <template>
+      <div role="dialog" id="dialog_case_21"></div>
+    </template>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

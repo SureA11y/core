@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-tab-name-present — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+    .hiddenvis { visibility: hidden; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-tab-name-present</code> (role="tab" must have an accessible name)</h1>
+
+  <p class="note">
+    Each target element has a stable <code>id</code> of the form <code>tab_case_NN</code>.
+    role="tab" is name-from-content: aria-label &gt; aria-labelledby &gt; title &gt; content.
+  </p>
+
+  <h2>A. Baseline: mechanism priority order (eligible)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: role=tab, no name at all, no content</div>
+    <div role="tab" tabindex="0" id="tab_case_01"></div>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — PASS: role=tab, visible text content</div>
+    <div role="tab" tabindex="0" id="tab_case_02">Apple</div>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — PASS: role=tab, aria-label</div>
+    <div role="tab" tabindex="0" id="tab_case_03" aria-label="Banana"></div>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — PASS: role=tab, aria-labelledby</div>
+    <span id="tab_case_04_lbl">Cherry</span>
+    <div role="tab" tabindex="0" id="tab_case_04" aria-labelledby="tab_case_04_lbl"></div>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — PASS: role=tab, title</div>
+    <div role="tab" tabindex="0" id="tab_case_05" title="Date"></div>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — FAIL: role=tab, content is aria-hidden (does not count)</div>
+    <div role="tab" tabindex="0" id="tab_case_06"><span aria-hidden="true">Elderberry</span></div>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — FAIL: role=tab, content is [hidden] (does not count)</div>
+    <div role="tab" tabindex="0" id="tab_case_07"><span hidden>Fig</span></div>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — FAIL: role=tab, whitespace-only content</div>
+    <div role="tab" tabindex="0" id="tab_case_08">   </div>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — FAIL: role=tab, aria-label empty string, no fallback content</div>
+    <div role="tab" tabindex="0" id="tab_case_09" aria-label=""></div>
+  </div>
+
+  <h2>B. Visible but excluded from AT (ineligible)</h2>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — NEUTRAL/INELIGIBLE: aria-hidden="true", not focusable, missing name</div>
+    <div role="tab" aria-hidden="true" id="tab_case_10"></div>
+  </div>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — EXCEPTION: aria-hidden="true" but focusable => eligible, missing name => FAIL</div>
+    <div role="tab" aria-hidden="true" tabindex="0" id="tab_case_11"></div>
+  </div>
+
+  <h2>C. Hidden by HTML/CSS (ineligible)</h2>
+
+  <div class="case" id="case_12">
+    <div class="case-title">12 — NEUTRAL/INELIGIBLE: hidden attribute</div>
+    <div role="tab" hidden id="tab_case_12"></div>
+  </div>
+
+  <div class="case" id="case_13">
+    <div class="case-title">13 — NEUTRAL/INELIGIBLE: display:none</div>
+    <div role="tab" style="display:none" id="tab_case_13"></div>
+  </div>
+
+  <div class="case" id="case_14">
+    <div class="case-title">14 — NEUTRAL/INELIGIBLE: visibility:hidden</div>
+    <div role="tab" class="hiddenvis" id="tab_case_14"></div>
+  </div>
+
+  <div class="case" id="case_15">
+    <div class="case-title">15 — EXCEPTION: visibility:hidden ancestor overridden by descendant visibility:visible => eligible, missing name => FAIL</div>
+    <div style="visibility:hidden">
+      <div role="tab" tabindex="0" style="visibility:visible" id="tab_case_15"></div>
+    </div>
+  </div>
+
+  <h2>D. Inertness (ineligible)</h2>
+
+  <div class="case" id="case_16">
+    <div class="case-title">16 — NEUTRAL/INELIGIBLE: inert on element itself</div>
+    <div role="tab" inert id="tab_case_16"></div>
+  </div>
+
+  <div class="case" id="case_17">
+    <div class="case-title">17 — NEUTRAL/INELIGIBLE: inert ancestor</div>
+    <div inert>
+      <div role="tab" id="tab_case_17"></div>
+    </div>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

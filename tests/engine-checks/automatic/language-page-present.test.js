@@ -2,6 +2,8 @@
 
 const test = require('node:test');
 const assert = require('node:assert');
+const fs = require('node:fs');
+const path = require('node:path');
 
 const { assertRule } = require('../../helpers/assertRule.js');
 const { runa11yCoreOnHtml, createDom, runa11yCoreOnDom } = require('../../helpers/runDomRulesOnHtml.js');
@@ -113,4 +115,33 @@ test('pass when <html> lang is valid language tag with subtags (fr-CH)', () => {
 
     const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
     assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test('pass when <html> lang is valid language tag with subtags (pt-BR)', () => {
+    const html = '<!doctype html><html lang="pt-BR"><head><title>x</title></head><body>Oi</body></html>';
+
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test('pass (known scope limitation) when lang is syntactically valid but not a real registered subtag (xx-ZZ)', () => {
+    // The rule performs a minimal BCP47 *syntax* check only; it does not validate
+    // against the IANA Language Subtag Registry. "xx-ZZ" is syntactically well-formed
+    // (2-letter primary subtag + 2-letter region subtag) even though neither subtag is
+    // a real registered value, so it currently passes. This is a documented, accepted
+    // scope limitation (semantic/registry validation is out of scope for SC 3.1.1's
+    // "programmatically declared" requirement), not a bug to fix here.
+    const html = '<!doctype html><html lang="xx-ZZ"><head><title>x</title></head><body>Hi</body></html>';
+
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: fixture coverage (tests/fixtures/language-page-present-all-scenarios.html)`, () => {
+    const fixturePath = path.join(__dirname, '../..', 'fixtures', 'language-page-present-all-scenarios.html');
+    const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
+    const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
+
+    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+    assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'lang-invalid-bcp47');
 });

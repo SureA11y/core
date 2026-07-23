@@ -252,6 +252,41 @@
     </div>
   </div>
 
+  <h2 id="aria_naming">F. ARIA naming mechanism (aria-label / aria-labelledby satisfy without <code>alt</code>)</h2>
+
+  <div class="case" id="case_21">
+    <div class="case-title">21 — PASS: used map &lt;area&gt; with <code>aria-label</code>, no <code>alt</code></div>
+    <div class="row">
+      <img alt="" usemap="#m_aria_label" src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%2345c46a'/%3E%3C/svg%3E">
+      <map name="m_aria_label">
+        <area id="area_case_21" aria-label="Region one" shape="rect" coords="0,0,40,24">
+      </map>
+      <span>ARIA naming (aria-label) satisfies the mechanism without alt.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_22">
+    <div class="case-title">22 — PASS: used map &lt;area&gt; with <code>aria-labelledby</code> referencing non-empty text, no <code>alt</code></div>
+    <div class="row">
+      <img alt="" usemap="#m_aria_lb" src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%2345c46a'/%3E%3C/svg%3E">
+      <map name="m_aria_lb">
+        <area id="area_case_22" aria-labelledby="area_case_22_label" shape="rect" coords="0,0,40,24">
+      </map>
+      <span id="area_case_22_label">Region two label</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_23">
+    <div class="case-title">23 — FAIL: used map &lt;area&gt; with <code>aria-labelledby</code> pointing to non-existent id, no <code>alt</code></div>
+    <div class="row">
+      <img alt="" usemap="#m_aria_bad" src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%2345c46a'/%3E%3C/svg%3E">
+      <map name="m_aria_bad">
+        <area id="area_case_23" aria-labelledby="area_case_23_does_not_exist" shape="rect" coords="0,0,40,24">
+      </map>
+      <span>Dangling IDREF does not resolve to a name; alt is also missing.</span>
+    </div>
+  </div>
+
   <p class="note">End of fixture.</p>
 </body>
 </html>

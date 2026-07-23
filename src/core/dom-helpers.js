@@ -30,6 +30,7 @@
  */
 
 const {createContrastHelpers} = require('./contrast-helpers');
+const {createAriaHelpers} = require('./aria-helpers');
 
 function normalizeSelectorList(value) {
     if (!value) return [];
@@ -41,6 +42,58 @@ function normalizeSelectorList(value) {
     return [];
 }
 
+/**
+ * Resolves a raw contextSelector (string | string[] | null) to the
+ * normalized selector value (`ctxSelector`) plus the actual root elements to
+ * scan (`roots`, deduped, in resolution order), falling back to
+ * documentElement/body/html when nothing matches. Extracted out of
+ * dom-runner.js's runCore so frame-scan.js can discover which child
+ * <iframe>/<frame> elements fall within the same scan scope, without
+ * duplicating this resolution logic a second time.
+ */
+function resolveContextRoots(document, contextSelector) {
+    const ctxSelector =
+        Array.isArray(contextSelector)
+            ? (() => {
+                const list = contextSelector
+                    .map((s) => (typeof s === 'string' ? s.trim() : ''))
+                    .filter(Boolean);
+                return list.length ? list : null;
+            })()
+            : (typeof contextSelector === 'string' && contextSelector.trim())
+                ? contextSelector.trim()
+                : null;
+
+    let roots = [];
+    {
+        const selectorList = Array.isArray(ctxSelector) ? ctxSelector : (ctxSelector ? [ctxSelector] : []);
+        const seen = new Set();
+        for (const sel of selectorList) {
+            let matches = [];
+            try {
+                matches = document.querySelectorAll(sel);
+            } catch {
+                matches = [];
+            }
+            for (const el of matches) {
+                if (el && !seen.has(el)) {
+                    seen.add(el);
+                    roots.push(el);
+                }
+            }
+        }
+    }
+    if (!roots.length) {
+        const fallback =
+            document.documentElement ||
+            document.body ||
+            document.querySelector('html');
+        if (fallback) roots = [fallback];
+    }
+
+    return { ctxSelector, roots };
+}
+
 function createDomHelpers(opts) {
     const document = opts && opts.document ? opts.document : null;
     const window = opts && opts.window ? opts.window : null;
@@ -49,9 +102,29 @@ function createDomHelpers(opts) {
         window ||
         (document && document.defaultView) ||
         null;
-    const root = opts && opts.root ? opts.root : null;
-    const includeShadowDom = !!(opts && opts.includeShadowDom);
+    // opts.root accepts either a single element (back-compat -- every
+    // existing call site, including every test, passes one) or an array of
+    // elements (multi-region contextSelector support, dom-runner.js). Every
+    // internal consumer below works off `roots` (always an array, possibly
+    // empty) rather than assuming a single element.
+    const roots = (() => {
+        const r = opts && opts.root;
+        if (Array.isArray(r)) return r.filter((x) => x && typeof x === 'object');
+        if (r && typeof r === 'object') return [r];
+        return [];
+    })();
+    // Default on: opt OUT with `includeShadowDom: false`, not opt in.
+    const includeShadowDom = !(opts && opts.includeShadowDom === false);
     const excludeSelectors = Array.isArray(opts && opts.excludeSelectors) ? opts.excludeSelectors : [];
+
+    // Selector-related caches (selector uniqueness index, per-element built
+    // selector strings) depend on includeShadowDom/excludeSelectors, since
+    // those change which elements are considered when checking uniqueness.
+    // The underlying storage is shared across createDomHelpers() calls on
+    // the same window/document (see __domSharedCache below), so a run with
+    // different options must not read/write another run's cached selectors.
+    // This key partitions those caches per effective option set.
+    const __selectorOptsKey = (includeShadowDom ? 'sd1' : 'sd0') + '|' + excludeSelectors.slice().sort().join(',');
 
     // -------------------------------------------------------------------------
     // Per-run shared caches (DOM helpers)
@@ -67,6 +140,19 @@ function createDomHelpers(opts) {
     var __idRefReverseIndexByScope = null; // WeakMap<object, Map<string, Set<Element>>>
     var __uniqIndexByScope = null; // WeakMap<object, object> (selector uniqueness index per scope)
     var __shadowRootsByRoot = null; // WeakMap<object, Array<object>> (cached open shadow roots per root)
+
+    // Shared recursion-depth guard across the mutually-recursive naming
+    // functions (computeIdRefTargetTextAlternative <-> getContentNameInfo <->
+    // getAccessibleNameInfo, via aria-labelledby targets that themselves
+    // contain elements with their own aria-labelledby). Each per-call
+    // `visited` Set only guards against cycles *within* a single top-level
+    // getTextFromIdRefs() invocation; a cross-function hop (e.g. resolving a
+    // labelledby target's content, which contains a descendant with its own
+    // aria-labelledby) starts a *fresh* visited Set and would defeat that
+    // guard on a genuine circular reference. This counter bounds the total
+    // combined call depth regardless of which function is on the stack.
+    var __nameComputationDepth = 0;
+    var __NAME_COMPUTATION_MAX_DEPTH = 40;
 
     // -------------------------------------------------------------------------
     // Optional per-run performance counters (debug/benchmark only)
@@ -104,12 +190,63 @@ function createDomHelpers(opts) {
             return String(s);
         }
     };
+    // Spec-accurate CSS.escape() fallback (CSSOM "serialize an identifier"
+    // algorithm) for environments without a native window.CSS.escape — this
+    // is jsdom's actual situation (confirmed: window.CSS.escape is
+    // undefined there), so this fallback is not a rare edge case, it's the
+    // one actually exercised on every selector this engine ever builds.
+    // The previous fallback (a flat "escape any disallowed character"
+    // regex) didn't handle CSS identifiers that START with a digit or a
+    // hyphen+digit — a real pattern on real sites (UUID-style element IDs,
+    // e.g. Nike's homepage: id="13cbc70d-ca70-4938-9150-5abddc780c24").
+    // An unescaped leading digit makes the resulting selector fragment
+    // (e.g. "#13cbc70d-...") invalid CSS, which made buildSelectorUncached's
+    // own el.matches(candidate) verification throw (silently caught),
+    // degrading the selector to buildSimpleSelector's bare-tag-name
+    // fallback — losing all positional/uniqueness information for every
+    // element anchored under that ancestor.
+    function __cssEscapeIdentFallback(value) {
+        const string = String(value);
+        const length = string.length;
+        const firstCodeUnit = string.charCodeAt(0);
+        if (length === 1 && firstCodeUnit === 0x002d) return '\\' + string;
+        let result = '';
+        for (let index = 0; index < length; index++) {
+            const codeUnit = string.charCodeAt(index);
+            if (codeUnit === 0x0000) {
+                result += '\uFFFD';
+                continue;
+            }
+            if (
+                (codeUnit >= 0x0001 && codeUnit <= 0x001f) ||
+                codeUnit === 0x007f ||
+                (index === 0 && codeUnit >= 0x0030 && codeUnit <= 0x0039) ||
+                (index === 1 && codeUnit >= 0x0030 && codeUnit <= 0x0039 && firstCodeUnit === 0x002d)
+            ) {
+                result += '\\' + codeUnit.toString(16) + ' ';
+                continue;
+            }
+            if (
+                codeUnit >= 0x0080 ||
+                codeUnit === 0x002d ||
+                codeUnit === 0x005f ||
+                (codeUnit >= 0x0030 && codeUnit <= 0x0039) ||
+                (codeUnit >= 0x0041 && codeUnit <= 0x005a) ||
+                (codeUnit >= 0x0061 && codeUnit <= 0x007a)
+            ) {
+                result += string.charAt(index);
+                continue;
+            }
+            result += '\\' + string.charAt(index);
+        }
+        return result;
+    }
     const __cssEscapeIdent = (s) => {
         try {
             if (__w && __w.CSS && typeof __w.CSS.escape === 'function') return __w.CSS.escape(String(s));
         } catch {
         }
-        return String(s).replace(/[^a-zA-Z0-9\-_]/g, '\\$&');
+        return __cssEscapeIdentFallback(s);
     };
     const __escapeAttrValue = (s) => String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 
@@ -120,7 +257,7 @@ function createDomHelpers(opts) {
         // Per-run memoization scoped by *helper scope* (root/document), to ensure
         // style caching does not bleed across helper instances with different roots.
         // This aligns with eligibility cache scoping semantics locked by checks.
-        const scope = (root && typeof root === 'object') ? root : (document && typeof document === 'object' ? document : null);
+        const scope = __getScopeObj();
 
         let map = null;
 
@@ -200,19 +337,26 @@ function createDomHelpers(opts) {
         return list;
     };
 
-    const getRootNodeSafe = (n) => {
-        try {
-            return n && n.getRootNode ? n.getRootNode({composed: true}) : (document || null);
-        } catch {
-            return document || null;
-        }
-    };
+    // Flat-tree (composed) parent: a distributed/slotted node's real rendered
+    // parent is the <slot> it's assigned to, NOT its own light-DOM parentNode
+    // (parentNode is unaffected by slot assignment and stays truthy for any
+    // normally-connected slotted element — checking it first, as an earlier
+    // version of this helper did, means the assignedSlot branch never fires
+    // for the common case of a real, connected slotted child, silently
+    // treating it as if it rendered under its light-DOM parent instead of
+    // the shadow-tree container it's actually distributed into). assignedSlot
+    // must be checked first; parentNode only applies to nodes that aren't
+    // currently distributed through a slot. Once climbing reaches a
+    // ShadowRoot itself (parentNode is null there), `.host` is the shadow
+    // host element directly — NOT `getRootNode({composed:true})`, which
+    // resolves all the way to the top-level document, skipping past the
+    // immediate shadow boundary this function is trying to climb out of one
+    // level at a time.
     const composedParent = (n) => {
         if (!n) return null;
-        const p = n.parentNode || (n.assignedSlot ? n.assignedSlot : null);
-        if (p) return p;
-        const rn = getRootNodeSafe(n);
-        return rn && rn.host ? rn.host : null;
+        if (n.assignedSlot) return n.assignedSlot;
+        if (n.parentNode) return n.parentNode;
+        return n.host || null;
     };
     const ancestorsIncludingSelf = (n) => {
         if (!n) return [];
@@ -457,6 +601,30 @@ function createDomHelpers(opts) {
         return {present: false, value: '', mechanism: 'none', flags};
     }
 
+    // Landmark-role naming (nav/main/region/banner/contentinfo/etc.): these roles don't derive
+    // a name from content (unlike a button/link), so per the accname spec their only sources are
+    // aria-label, aria-labelledby, then a title-attribute fallback. Was duplicated ad hoc across 7
+    // landmark rule files (landmark-unique, landmark-no-duplicate-banner/-contentinfo,
+    // landmark-banner/-main/-contentinfo-is-top-level, region), each its own local
+    // getAccessibleLandmarkName -- some using getAriaLabelledByInfo's target-name resolution,
+    // others a raw ref.textContent copy predating that fix, and NONE checking title at all.
+    // Confirmed via a real page (2026-07-22, live-DOM corpus): DuckDuckGo's homepage has two
+    // <nav>s distinguished only by title="navigation" on one of them -- the reference engine's landmark-unique
+    // correctly treats them as uniquely named (verified directly against a real the reference engine's run(), not
+    // assumed), while every one of the 7 local copies saw both as unnamed and flagged a false
+    // duplicate. One shared, correct implementation replaces all 7 copies.
+    function getLandmarkNameInfo(el, ctx) {
+        if (!isElement(el)) return {present: false, value: '', mechanism: 'unsupported', flags: ['notElement']};
+
+        const aria = getAriaNameInfo(el, ctx);
+        if (aria.present && aria.value) return aria;
+
+        const title = trim(getAttr(el, 'title'));
+        if (title) return {present: true, value: title, mechanism: 'title', flags: (aria.flags || [])};
+
+        return {present: false, value: '', mechanism: 'none', flags: (aria.flags || []).concat(title === '' && getAttr(el, 'title') != null ? ['title-empty'] : [])};
+    }
+
     const lower = (v) => trim(v).toLowerCase();
 
     const safeDocGetById = (id) => {
@@ -491,9 +659,12 @@ function createDomHelpers(opts) {
     const safeRootQueryById = (id) => {
         // Best-effort for cases where root is not the document (e.g. shadow root-like, fragment roots).
         // Note: IDs are document-global in HTML, but test harnesses may use scoped roots.
+        // With multi-region contextSelector, tries each root in turn and
+        // returns the first match -- IDs are meant to be document-unique
+        // anyway, so at most one root should ever actually contain it.
         const key = trim(id);
         if (!key) return null;
-        if (!root || !root.querySelector) return null;
+        if (!roots.length) return null;
 
         try {
             const cacheKey = '#' + key;
@@ -506,10 +677,14 @@ function createDomHelpers(opts) {
 
         __perfInc('idLookup.root.miss');
         let el = null;
-        try {
-            el = root.querySelector('#' + key);
-        } catch {
-            el = null;
+        for (const r of roots) {
+            if (!r || !r.querySelector) continue;
+            try {
+                el = r.querySelector('#' + key);
+            } catch {
+                el = null;
+            }
+            if (el) break;
         }
 
         try {
@@ -572,7 +747,12 @@ function createDomHelpers(opts) {
             if (type !== 'hidden') return true;
         }
         if (tag === 'select' || tag === 'textarea' || tag === 'button' || tag === 'summary') return true;
-        if (el.hasAttribute && el.hasAttribute('contenteditable')) return true;
+        if (el.hasAttribute && el.hasAttribute('contenteditable')) {
+            // contenteditable="false" explicitly disables the editing host
+            // and does not by itself add the element to the tab order.
+            const ceVal = lower(getAttr(el, 'contenteditable'));
+            if (ceVal !== 'false') return true;
+        }
 
         const tabindex = el.getAttribute && el.getAttribute('tabindex');
         if (tabindex != null && String(tabindex).trim() !== '' && !Number.isNaN(Number(tabindex))) return true;
@@ -715,16 +895,52 @@ function createDomHelpers(opts) {
     }
 
     function queryAll(sel) {
-        if (!root) return [];
-        try {
-            return Array.from(root.querySelectorAll(sel));
-        } catch {
-            return [];
+        if (!roots.length) return [];
+        const out = [];
+        const seen = new Set();
+        // Per root: self-match first (matching the original single-root
+        // ordering), then descendants, deduped across all roots -- matters
+        // when multiple contextSelector regions overlap/nest, so an element
+        // reachable from more than one root is only ever reported once.
+        for (const r of roots) {
+            if (!r) continue;
+            // querySelectorAll never returns its own context node, only
+            // descendants — so an attribute/role selector can never match
+            // `r` itself this way. In the default (unscoped) case `r` is
+            // `document.documentElement` (the <html> element), meaning every
+            // rule using this helper was structurally blind to an issue
+            // asserted directly on <html> (e.g. `<html role="...">`,
+            // `[lang]`, any `[aria-*]`) — not a narrow, rule-specific gap.
+            // Found via a real page: news24.com's South Africa homepage,
+            // `<html role="document">`, which the reference engine correctly flags but
+            // this engine's aria-allowed-role couldn't reach at all, no
+            // matter how correct its ALLOWED_ROLES_BY_ELEMENT entry was.
+            if (r.nodeType === 1 && typeof r.matches === 'function' && !seen.has(r)) {
+                try {
+                    if (r.matches(sel)) {
+                        seen.add(r);
+                        out.push(r);
+                    }
+                } catch {
+                }
+            }
+            try {
+                const list = r.querySelectorAll(sel);
+                for (const el of list) {
+                    if (el && !seen.has(el)) {
+                        seen.add(el);
+                        out.push(el);
+                    }
+                }
+            } catch {
+                // skip this root, keep results from the others
+            }
         }
+        return out;
     }
 
     function queryAllDeep(sel) {
-        if (!root) return [];
+        if (!roots.length) return [];
         // Performance note:
         // Avoid the old "querySelectorAll('*')" approach which is O(N) per shadow host
         // and explodes on huge DOMs. Instead, walk shadow roots only and run the selector
@@ -746,6 +962,19 @@ function createDomHelpers(opts) {
                 if (el && !seen.has(el) && !isExcluded(el)) {
                     seen.add(el);
                     results.push(el);
+                }
+            }
+            // Same root-self-match gap as queryAll above: querySelectorAll
+            // never returns `scope` itself, so a shadow-root host element
+            // (or the top-level <html> root) matching `sel` directly would
+            // otherwise be invisible here too.
+            if (scope.nodeType === 1 && typeof scope.matches === 'function' && !seen.has(scope) && !isExcluded(scope)) {
+                try {
+                    if (scope.matches(sel)) {
+                        seen.add(scope);
+                        results.push(scope);
+                    }
+                } catch {
                 }
             }
         };
@@ -809,7 +1038,11 @@ function createDomHelpers(opts) {
             return roots;
         };
 
-        const q = [root];
+        // Seed the BFS queue with every resolved context root (not just one)
+        // -- the existing shadow-root discovery loop below already
+        // generalizes to multiple starting points without further changes,
+        // since it was already a growing queue, not a single fixed root.
+        const q = roots.slice();
         for (let qi = 0; qi < q.length; qi++) {
             const curRoot = q[qi];
             if (!curRoot || visitedRoots.has(curRoot)) continue;
@@ -847,13 +1080,28 @@ function createDomHelpers(opts) {
         __domSharedCache = {};
     }
 
-    // Selector/snippet caches (per element)
+    // Selector cache (per element), partitioned by __selectorOptsKey since
+    // built selectors depend on includeShadowDom/excludeSelectors.
     try {
-        __selectorCache = __domSharedCache.selectorCache instanceof WeakMap
+        __selectorCache = __domSharedCache.selectorCache instanceof Map
             ? __domSharedCache.selectorCache
-            : (__domSharedCache.selectorCache = new WeakMap());
+            : (__domSharedCache.selectorCache = new Map());
     } catch {
         __selectorCache = null;
+    }
+
+    function __getSelectorCacheForOpts() {
+        if (!__selectorCache) return null;
+        try {
+            let wm = __selectorCache.get(__selectorOptsKey);
+            if (!(wm instanceof WeakMap)) {
+                wm = new WeakMap();
+                __selectorCache.set(__selectorOptsKey, wm);
+            }
+            return wm;
+        } catch {
+            return null;
+        }
     }
 
     try {
@@ -1063,11 +1311,13 @@ function createDomHelpers(opts) {
 
 
     function __getScopeObj() {
-        const scopeObj =
-            (root && typeof root === 'object') ? root :
-                (document && typeof document === 'object') ? document :
-                    null;
-        return scopeObj;
+        // Purely a cache-partition key -- doesn't need to BE a real scan
+        // scope, just a value that's stable for this run and distinct across
+        // runs with a different root set. `roots` itself (the array) is a
+        // stable reference for the whole run when there's more than one.
+        if (roots.length === 1) return roots[0];
+        if (roots.length > 1) return roots;
+        return (document && typeof document === 'object') ? document : null;
     }
 
 
@@ -1403,6 +1653,10 @@ function createDomHelpers(opts) {
         }
 
         // 3) CSS rendering suppression
+        // display:none is NOT inherited: if ANY ancestor (or self) has
+        // display:none, the whole subtree is unrendered no matter what a
+        // descendant's own display is, so this must be resolved via an
+        // ancestor walk that breaks on the first blocker found.
         for (const a of chain) {
             if (!isElement(a)) continue;
 
@@ -1413,7 +1667,7 @@ function createDomHelpers(opts) {
                 if (tn === 'area') continue;
             }
 
-            // Cache ancestor CSS blockers (display/visibility) per scope.
+            // Cache ancestor CSS blockers (display) per scope.
             let cssBlock = null;
             let cssKnown = false;
             try {
@@ -1434,8 +1688,7 @@ function createDomHelpers(opts) {
 
             if (!cssKnown) {
                 const cs = computedStyle(a);
-                if (cs && cs.display === 'none') cssBlock = 'displayNone';
-                else if (cs && (cs.visibility === 'hidden' || cs.visibility === 'collapse')) cssBlock = 'visibilityHidden';
+                cssBlock = (cs && cs.display === 'none') ? 'displayNone' : null;
 
                 try {
                     if (__ancBlockCache) {
@@ -1452,10 +1705,23 @@ function createDomHelpers(opts) {
             }
 
             if (cssBlock === 'displayNone') return __cacheAndReturn({eligible: false, reasons: ['displayNone']});
-            if (cssBlock === 'visibilityHidden') return __cacheAndReturn({
-                eligible: false,
-                reasons: ['visibilityHidden']
-            });
+        }
+
+        // visibility IS inherited (and thus invertible): a descendant with an
+        // explicit visibility:visible re-renders even under a
+        // visibility:hidden ancestor. The fully resolved, post-inheritance
+        // value is already reflected in the target node's own computed
+        // style, so this is checked on `node` directly rather than by
+        // walking ancestors (which would incorrectly treat visibility like
+        // the non-inherited `display` property above).
+        {
+            const tn = (node.tagName || '').toLowerCase();
+            if (tn !== 'area') {
+                const cs = computedStyle(node);
+                if (cs && (cs.visibility === 'hidden' || cs.visibility === 'collapse')) {
+                    return __cacheAndReturn({eligible: false, reasons: ['visibilityHidden']});
+                }
+            }
         }
 
         // 4) ARIA subtree hiding with exceptions with exceptions
@@ -1502,7 +1768,21 @@ function createDomHelpers(opts) {
                 tag === 'textarea' ||
                 (tag === 'input' && type !== 'hidden'); // includes type=image
 
-            if (tag === 'area' || isNativeFormControl) {
+            // Other elements that are natively tabbable by default (no explicit
+            // tabindex required): <button>, <summary>, and <a>/<area> with a
+            // non-empty href. Real browsers keep these in the tab order
+            // regardless of aria-hidden — this is exactly the "aria-hidden on a
+            // focusable element" anti-pattern that aria-hidden-focus.js itself
+            // detects as a violation, so the eligibility model must evaluate
+            // these too rather than silently excluding them. getPlatformFocusability
+            // (via isPlatformFocusable) already checks the href/disabled/inert
+            // conditions correctly for each of these tags.
+            const isOtherNativelyFocusable =
+                tag === 'button' ||
+                tag === 'summary' ||
+                tag === 'a';
+
+            if (tag === 'area' || isNativeFormControl || isOtherNativelyFocusable) {
                 const f2 = getPlatformFocusability(node);
                 if (f2 && f2.tabbable) {
                     return __cacheAndReturn({eligible: true, reasons: ['ariaHiddenOverriddenTabbable']});
@@ -1676,8 +1956,53 @@ function createDomHelpers(opts) {
                     ? 'styleAndGeometry'
                     : 'styleOnly');
 
+        // CSS visibility is inherited, so the target node's own computed
+        // style already reflects the fully-resolved (post-inheritance)
+        // value. Checked here, before the opacity accumulation walk below,
+        // so an element that is BOTH opacity:0 AND visibility:hidden (a
+        // common hover/JS-reveal dropdown pattern — confirmed on a real
+        // site, Getty's global nav dropdowns) is correctly reported as
+        // 'visibilityHidden' rather than only 'opacityZero'. Reporting only
+        // 'opacityZero' matters because callers that deliberately treat
+        // opacity:0 as "still in-scope" (e.g. aria-hidden-focus, which must
+        // not exclude opacity-based hiding) would otherwise see no other
+        // blocking reason and wrongly conclude the element is focusable,
+        // even though visibility:hidden alone already removes it from the
+        // tab order in real browsers.
+        {
+            const nodeCs = computedStyle(node);
+            if (nodeCs && (nodeCs.visibility === 'hidden' || nodeCs.visibility === 'collapse')) {
+                return __cacheAndReturn(out(false, ['visibilityHidden'], {visibility: nodeCs.visibility}));
+            }
+        }
+
         // 2) CSS visibility suppression + opacity chain
-        let opacityProduct = 1;
+        //
+        // Two passes over the SAME ancestor chain, deliberately NOT
+        // interleaved: display:none (and content-visibility:hidden) are
+        // absolute, un-overridable blocks — there is no CSS mechanism for a
+        // descendant to un-hide itself from a display:none ancestor, unlike
+        // visibility:hidden (invertible) or opacity (never a hard block by
+        // this function's own design — see callers like aria-hidden-focus
+        // that deliberately keep opacity:0 in-scope). A single interleaved
+        // loop that returns on the FIRST blocking condition found while
+        // walking outward from the target would let a CLOSER ancestor's
+        // opacity:0 short-circuit before a FARTHER ancestor's display:none
+        // is ever reached — silently hiding the stronger, unconditional
+        // block behind the weaker, filterable one. Found via a real site:
+        // BuzzFeed's carousel slides are aria-hidden with opacity:0 (by
+        // design, for a fade transition) AND nested several levels inside a
+        // responsive wrapper that is display:none at the simulated
+        // viewport width — the opacity:0 on the closer ancestor was
+        // masking the display:none on the farther one, wrongly reporting
+        // only 'opacityZero' (which aria-hidden-focus filters out as
+        // still-in-scope) and missing the real, unconditional
+        // non-rendering. Pass 1 here checks every ancestor for a hard
+        // structural CSS block first, with no early exit for opacity; pass
+        // 2 (below) computes the accumulated opacity only once no hard
+        // block was found anywhere in the chain.
+        const __cssInfoByAncestor = new Map();
+
         for (const a of chain) {
             if (!isElement(a)) continue;
 
@@ -1771,13 +2096,29 @@ function createDomHelpers(opts) {
                 }
             }
 
+            __cssInfoByAncestor.set(a, {cssBlock, cachedOpacity, cachedPointerEventsNone, cachedPointerEventsKnown});
+
             if (cssBlock === 'displayNone') return __cacheAndReturn(out(false, ['displayNone'], {}));
-            if (cssBlock === 'visibilityHidden') {
-                return __cacheAndReturn(out(false, ['visibilityHidden'], {visibility: cachedVisibility || 'hidden'}));
-            }
+            // NOTE: unlike display:none, CSS visibility is inherited and thus
+            // invertible — a descendant with an explicit visibility:visible
+            // re-renders even under a visibility:hidden ancestor. So an
+            // ancestor's visibility:hidden must NOT short-circuit this walk;
+            // the target node's own fully-resolved visibility is checked
+            // once, after the loop (see below).
             if (cssBlock === 'contentVisibilityHidden') {
                 return __cacheAndReturn(out(false, ['contentVisibilityHidden'], {}));
             }
+        }
+
+        let opacityProduct = 1;
+        for (const a of chain) {
+            if (!isElement(a)) continue;
+
+            const info = __cssInfoByAncestor.get(a) || {};
+            let cachedOpacity = info.cachedOpacity;
+            let cachedPointerEventsNone = info.cachedPointerEventsNone;
+            let cachedPointerEventsKnown = info.cachedPointerEventsKnown;
+            let cs = null;
 
             if (visibilityMode === 'pointer') {
                 // pointer-events:none prevents the element from receiving pointer interactions
@@ -1854,11 +2195,16 @@ function createDomHelpers(opts) {
                                         pointerEventsKnown: prev.pointerEventsKnown === true ? true : false
                                     });
                                 } else {
+                                    // No prior cache entry for this ancestor and no hard
+                                    // structural block was found for it in pass 1 above
+                                    // (pass 1 would have returned early otherwise), so
+                                    // struct/css/visibility/contentVisHidden are all
+                                    // known-null here.
                                     __ancBlockDomCache.set(a, {
                                         struct: null,
-                                        css: cssBlock || null,
-                                        visibility: cachedVisibility || null,
-                                        contentVisHidden: cachedContentVisHidden === true ? true : null,
+                                        css: null,
+                                        visibility: null,
+                                        contentVisHidden: null,
                                         opacity: cachedOpacity,
                                         pointerEventsNone: null,
                                         pointerEventsKnown: false
@@ -1943,10 +2289,7 @@ function createDomHelpers(opts) {
         // Root-scoped cache map
         let cacheMap = null;
         if (__idRefCacheByRoot) {
-            const scopeObj =
-                (root && typeof root === 'object') ? root :
-                    (document && typeof document === 'object') ? document :
-                        null;
+            const scopeObj = __getScopeObj();
             if (scopeObj) {
                 try {
                     cacheMap = __idRefCacheByRoot.get(scopeObj) || null;
@@ -2032,12 +2375,117 @@ function createDomHelpers(opts) {
         return {refs, missing, flags};
     }
 
+    // Native "name is derived from value/alt" mechanisms, used when resolving
+    // an IDREF *target*'s own text alternative (see computeIdRefTargetTextAlternative).
+    function __getElementValueLikeName(el) {
+        if (!isElement(el)) return '';
+        const tag = (el.tagName || '').toLowerCase();
+
+        if (tag === 'img' || tag === 'area') {
+            const alt = getAttr(el, 'alt');
+            if (alt != null) {
+                const t = trim(alt);
+                if (t) return t;
+            }
+            return '';
+        }
+
+        if (tag === 'input') {
+            const type = lower(getAttr(el, 'type') || 'text');
+            if (type === 'button' || type === 'submit' || type === 'reset' || type === 'image') {
+                const v = getAttr(el, 'value');
+                if (v != null) {
+                    const t = trim(v);
+                    if (t) return t;
+                }
+                if (type === 'submit') return 'Submit';
+                if (type === 'reset') return 'Reset';
+            }
+        }
+
+        return '';
+    }
+
+    // Recursively computes an IDREF-referenced node's own text alternative,
+    // per the Accessible Name and Description Computation spec (resolving a
+    // reference re-applies the name-computation algorithm to the target, it
+    // does not just read raw textContent — see getContentNameInfo for why
+    // raw textContent misses image alt text and other attribute-sourced
+    // names on descendants). `visited` guards against cycles reachable via
+    // direct aria-labelledby chains (e.g. two elements labelling each
+    // other); `__nameComputationDepth` additionally bounds the combined
+    // depth across this function and getContentNameInfo/
+    // getAccessibleNameInfo, since a hop through a target's *content* (a
+    // descendant with its own aria-labelledby) starts a fresh `visited` Set
+    // and would otherwise defeat that per-call guard on a genuine cycle.
+    function computeIdRefTargetTextAlternative(el, visited, _ctx, opts) {
+        if (!isElement(el)) return '';
+        if (visited.has(el)) return '';
+        visited.add(el);
+        if (__nameComputationDepth >= __NAME_COMPUTATION_MAX_DEPTH) return '';
+
+        // Establish opts.includeHidden exactly once per aria-labelledby/aria-describedby
+        // traversal, from the top-level referenced target's own hidden state -- mirrors
+        // the reference engine's prepareContext, which only computes context.includeHidden when it's
+        // still undefined and never overwrites it on recursive calls, so the whole
+        // referenced subtree (nested labelledby chains included) shares one decision. See
+        // getContentNameInfo's collect() for what this bypasses and why (real bug found via
+        // Discord's live-DOM footer nav, 2026-07-23).
+        let effOpts = opts;
+        if (!opts || opts.includeHidden === undefined) {
+            let hidden = false;
+            try {
+                const elig = isAccTreeEligible(el);
+                hidden = !(elig && elig.eligible);
+            } catch {
+                hidden = false;
+            }
+            effOpts = Object.assign({}, opts, {includeHidden: hidden});
+        }
+
+        __nameComputationDepth += 1;
+        try {
+            const ariaLabel = trim(getAttr(el, 'aria-label'));
+            if (ariaLabel) return ariaLabel;
+
+            const labelledBy = trim(getAttr(el, 'aria-labelledby'));
+            if (labelledBy) {
+                const parts = labelledBy.split(/\s+/).filter(Boolean);
+                const texts = [];
+                for (const id of parts) {
+                    let ref = safeDocGetById(id);
+                    if (!ref) ref = safeRootQueryById(id);
+                    if (ref && isElement(ref)) {
+                        const t = computeIdRefTargetTextAlternative(ref, visited, _ctx, effOpts);
+                        if (t) texts.push(t);
+                    }
+                }
+                const joined = trim(texts.join(' '));
+                if (joined) return joined;
+            }
+
+            const valueLike = __getElementValueLikeName(el);
+            if (valueLike) return valueLike;
+
+            const contentInfo = getContentNameInfo(el, _ctx, effOpts);
+            if (contentInfo && contentInfo.present && contentInfo.value) return contentInfo.value;
+
+            const title = trim(getAttr(el, 'title'));
+            if (title) return title;
+
+            return '';
+        } finally {
+            __nameComputationDepth -= 1;
+        }
+    }
+
     function getTextFromIdRefs(idrefString, _ctx, opts) {
         const r = resolveIdRefs(idrefString, _ctx, opts);
         const texts = [];
+        const visited = new Set();
         for (const el of r.refs) {
             try {
-                const t = trim(el.textContent);
+                const t = computeIdRefTargetTextAlternative(el, visited, _ctx, opts);
                 if (t) texts.push(t);
             } catch {
             }
@@ -2065,6 +2513,7 @@ function createDomHelpers(opts) {
 
         const texts = [];
         const excluded = []; // [{ id, reasons }]
+        const visited = new Set();
         for (const el of r.refs) {
             const elig = isIdRefEligibleTarget(el);
             if (!elig.eligible) {
@@ -2073,7 +2522,7 @@ function createDomHelpers(opts) {
                 continue;
             }
             try {
-                const t = trim(el.textContent);
+                const t = computeIdRefTargetTextAlternative(el, visited, _ctx, opts);
                 if (t) texts.push(t);
             } catch {
             }
@@ -2095,6 +2544,86 @@ function createDomHelpers(opts) {
     }
 
     // B) Accessible name / description helpers (mechanism-first, but scoped & deterministic)
+    // Computes a wrapping/explicit <label>'s own text for the purpose of
+    // naming ONE specific control inside it, excluding that control's own
+    // subtree (matches HTML-AAM's "label text minus embedded control
+    // content" and the reference engine's implicit-evaluate/explicit-evaluate, which do
+    // the same exclusion via a startNode/inControlContext flag on their own
+    // subtreeText recursion). Deliberately does NOT call back into
+    // getAccessibleNameInfo/getContentNameInfo for descendants — only img
+    // alt (getTextAlternativeInfo), aria-label (getAriaLabelInfo), and
+    // aria-labelledby (getAriaLabelledByInfo) on descendants, all of which
+    // are leaf-safe with respect to <label> lookups. This is intentional:
+    // getAccessibleNameInfo calls this function, and getContentNameInfo's
+    // own descendant walk calls getAccessibleNameInfo — if this function
+    // routed back through either of those instead, a control nested inside
+    // its own naming <label> (the exact case this exists to handle) would
+    // recurse forever between "what's my name" and "what's my label's
+    // content."
+    function getLabelSubtreeNameInfo(labelEl, excludeEl, _ctx, opts) {
+        if (!isElement(labelEl)) return {present: false, value: '', mechanism: 'none', flags: []};
+
+        const parts = [];
+        let guardCount = 0;
+
+        function isImageLikeNode(node) {
+            const tag = lower(node.tagName);
+            const type = tag === 'input' ? lower(getAttr(node, 'type')) : '';
+            return tag === 'img' || tag === 'area' || (tag === 'input' && type === 'image');
+        }
+
+        function walk(node) {
+            if (node === excludeEl) return; // exclude the target control's own subtree
+            guardCount += 1;
+            if (guardCount > 5000) return;
+
+            if (node.nodeType === 3) {
+                const t = trim(node.nodeValue);
+                if (t) parts.push(t);
+                return;
+            }
+            if (!isElement(node)) return;
+
+            let eligible = true;
+            try {
+                const r = isAccTreeEligible(node);
+                eligible = !!(r && r.eligible);
+            } catch {
+                eligible = true;
+            }
+            if (!eligible) return;
+
+            const al = getAriaLabelInfo(node);
+            if (al && al.present && al.value) {
+                parts.push(al.value);
+                return;
+            }
+            const alb = getAriaLabelledByInfo(node, _ctx, opts);
+            if (alb && alb.present && alb.value) {
+                parts.push(alb.value);
+                return;
+            }
+
+            if (isImageLikeNode(node)) {
+                const alt = getTextAlternativeInfo(node, _ctx, opts);
+                if (alt && alt.present && alt.value) parts.push(alt.value);
+                return;
+            }
+
+            const kids = node.childNodes ? Array.from(node.childNodes) : [];
+            for (const kid of kids) walk(kid);
+        }
+
+        try {
+            const kids = labelEl.childNodes ? Array.from(labelEl.childNodes) : [];
+            for (const kid of kids) walk(kid);
+        } catch {
+        }
+
+        const value = trim(parts.join(' ').replace(/\s+/g, ' '));
+        return {present: !!value, value, mechanism: 'label', flags: value ? [] : ['empty']};
+    }
+
     function getAccessibleNameInfo(el, _ctx, opts) {
         const flags = [];
         if (!isElement(el)) return {present: false, value: '', mechanism: 'unsupported', flags: ['notElement']};
@@ -2146,7 +2675,47 @@ function createDomHelpers(opts) {
             for (const f of aria.flags) flags.push(f);
         }
 
+        // Native <label> association via the HTML `.labels` API, which
+        // resolves BOTH `<label for="...">` and wrapping `<label>...</label>`
+        // in one call, for any genuinely labelable element (button, input,
+        // meter, output, progress, select, textarea — `.labels` is simply
+        // absent/undefined on anything else, so this never over-triggers).
+        // Found via a real page: DeviantArt's settings toggles wrap a
+        // description div and an unlabeled icon-only <button aria-pressed>
+        // in one <label> — a spec-valid naming mechanism (HTML lists
+        // <button> as labelable) that the reference engine's button-name rule already
+        // checks (its implicit-label/explicit-label checks) but this engine
+        // wasn't checking at all, since the id-based lookup below only ever
+        // handled explicit for="" and this button has no id to begin with.
+        try {
+            if (el.labels && el.labels.length) {
+                for (const labelEl of Array.from(el.labels)) {
+                    const info = getLabelSubtreeNameInfo(labelEl, el, _ctx, opts);
+                    if (info.present && info.value) {
+                        const out = {present: true, value: info.value, mechanism: 'label', flags};
+                        try {
+                            if (__accessibleNameCacheByKey) {
+                                const wm = __accessibleNameCacheByKey.get(key) || (__accessibleNameCacheByKey.set(key, new WeakMap()), __accessibleNameCacheByKey.get(key));
+                                if (wm && wm instanceof WeakMap) wm.set(el, {
+                                    present: true,
+                                    value: out.value,
+                                    mechanism: out.mechanism,
+                                    flags: out.flags.slice(0)
+                                });
+                            }
+                        } catch {
+                        }
+                        return out;
+                    }
+                }
+            }
+        } catch {
+        }
+
         // Explicit <label for="..."> or wrapping <label> (common and deterministic for form controls)
+        // (fallback for elements where `.labels` isn't natively available,
+        // e.g. a non-native-labelable element like <div role="button" id="x">
+        // still explicitly pointed at by <label for="x">.)
         const id = trim(getAttr(el, 'id'));
         if (id) {
             // Prefer indexed lookup (1 build per run) over repeated querySelector per element.
@@ -2174,6 +2743,15 @@ function createDomHelpers(opts) {
         }
 
 
+        // POLICY NOTE (2026-07-23, revisit if ever reconsidered): title is accepted here as a
+        // last-resort accessible-name source, matching HTML-AAM/accname and the reference engine's own
+        // behavior (confirmed by reading its source -- several the reference engine rules explicitly accept a
+        // non-empty title, e.g. image-alt's non-empty-title check). This is a deliberate,
+        // spec-compliant choice, not an oversight -- but title is a genuinely weak mechanism in
+        // practice (no touch/mobile exposure, inconsistent screen-reader support, no visible
+        // affordance for sighted users), and this is the shared function nearly every
+        // accessible-name-dependent rule in the engine goes through. Kept for spec/reference-engine-parity
+        // rather than removed outright; flagged here so it isn't silently load-bearing.
         const title = trim(getAttr(el, 'title'));
         if (title) {
             flags.push('title-used');
@@ -2295,6 +2873,35 @@ function createDomHelpers(opts) {
         return out;
     }
 
+    // <canvas> fallback content is the element's *children*, not just its
+    // rendered text — a documented HTML5 technique is an equivalent <img
+    // alt="..."> (or similarly self-describing element) inside <canvas>.
+    // textContent alone misses that, since alt text isn't part of it.
+    function __hasMeaningfulCanvasFallbackDescendant(container) {
+        try {
+            if (!container || !container.querySelectorAll) return false;
+
+            const imgs = container.querySelectorAll('img[alt]');
+            for (const img of imgs) {
+                if (trim(img.getAttribute && img.getAttribute('alt'))) return true;
+            }
+
+            const areas = container.querySelectorAll('area[alt]');
+            for (const area of areas) {
+                if (trim(area.getAttribute && area.getAttribute('alt'))) return true;
+            }
+
+            const named = container.querySelectorAll('[aria-label]');
+            for (const n of named) {
+                if (trim(n.getAttribute && n.getAttribute('aria-label'))) return true;
+            }
+
+            return false;
+        } catch {
+            return false;
+        }
+    }
+
     // C) Text alternative helper (mechanism-aware by element/type)
     function getTextAlternativeInfo(el, _ctx, opts) {
         const flags = [];
@@ -2347,25 +2954,41 @@ function createDomHelpers(opts) {
         }
 
         if (tag === 'canvas') {
-            const fallback = trim(el.textContent || '');
-            if (fallback) {
+            const fallbackText = trim(el.textContent || '');
+            if (fallbackText || __hasMeaningfulCanvasFallbackDescendant(el)) {
                 return {
                     present: true,
-                    value: fallback,
+                    value: fallbackText || 'fallback-content',
                     mechanism: 'canvas-fallback',
                     requiredMechanism: 'fallback-or-name',
                     flags
                 };
             }
 
-            const name = getAccessibleNameInfo(el, _ctx, opts);
-            if (name && name.present && name.value) {
+            // <canvas> is not a labelable element (no browser computes an
+            // accessible name from <label for="...">), so only ARIA naming
+            // (and title, as a generic last-resort accname source) count —
+            // unlike getAccessibleNameInfo, which also accepts native
+            // <label> associations.
+            const aria = getAriaNameInfo(el, _ctx, opts);
+            if (aria && aria.present && aria.value) {
                 return {
                     present: true,
-                    value: name.value,
-                    mechanism: 'accessible-name',
+                    value: aria.value,
+                    mechanism: aria.mechanism || 'aria',
                     requiredMechanism: 'fallback-or-name',
-                    flags: flags.concat(name.flags ? name.flags.slice(0) : [])
+                    flags: flags.concat(aria.flags ? aria.flags.slice(0) : [])
+                };
+            }
+
+            const title = trim(getAttr(el, 'title'));
+            if (title) {
+                return {
+                    present: true,
+                    value: title,
+                    mechanism: 'title',
+                    requiredMechanism: 'fallback-or-name',
+                    flags: flags.concat(['title-used'])
                 };
             }
 
@@ -2374,7 +2997,7 @@ function createDomHelpers(opts) {
                 value: '',
                 mechanism: 'none',
                 requiredMechanism: 'fallback-or-name',
-                flags
+                flags: flags.concat(aria && aria.flags ? aria.flags.slice(0) : [])
             };
         }
 
@@ -2384,6 +3007,179 @@ function createDomHelpers(opts) {
             mechanism: 'unsupported',
             requiredMechanism: 'unknown',
             flags: ['unsupported-element']
+        };
+    }
+
+    // C.1) "Name from content" — recursive accname-aligned content-name computation.
+    //
+    // Rationale: the accname spec's "name from content" step (2F) is recursive —
+    // for each child node, use that CHILD's own accessible name if it has one
+    // (aria-label/aria-labelledby/native <label>/title, or `alt` for image-like
+    // elements) rather than only concatenating literal text nodes. A naive
+    // TreeWalker(SHOW_TEXT)-only walk (the pattern previously duplicated across
+    // the *-name-present rule family) misses any descendant that gets its name
+    // from an attribute rather than visible text — the single most common
+    // real-world case being `<a href="..."><img alt="Company Name"></a>` (a
+    // logo link) and `<button><span role="img" aria-label="Close"></span></button>`
+    // (an icon-only button). Both were confirmed to false-positive under the
+    // old text-node-only approach before this helper was added.
+    function getContentNameInfo(el, _ctx, opts) {
+        const flags = [];
+        if (!isElement(el)) return {present: false, value: '', mechanism: 'unsupported', flags: ['notElement']};
+
+        // Shares __nameComputationDepth with computeIdRefTargetTextAlternative
+        // — see that function's header comment for why a single per-call
+        // guard isn't enough on its own.
+        if (__nameComputationDepth >= __NAME_COMPUTATION_MAX_DEPTH) {
+            return {present: false, value: '', mechanism: 'none', flags: ['depth-limit']};
+        }
+
+        const maxNodes = (opts && Number.isFinite(opts.maxContentNodes)) ? Math.max(1, opts.maxContentNodes) : 5000;
+        let visitedCount = 0;
+        let truncated = false;
+
+        function isImageLikeNode(node) {
+            const tag = lower(node.tagName);
+            const type = tag === 'input' ? lower(getAttr(node, 'type')) : '';
+            return tag === 'img' || tag === 'area' || (tag === 'input' && type === 'image');
+        }
+
+        function collect(node, parts) {
+            if (truncated) return;
+            visitedCount += 1;
+            if (visitedCount > maxNodes) {
+                truncated = true;
+                if (flags.indexOf('truncated') === -1) flags.push('truncated');
+                return;
+            }
+
+            if (node.nodeType === 3) {
+                const t = trim(node.nodeValue);
+                if (t) parts.push(t);
+                return;
+            }
+
+            if (!isElement(node)) return;
+
+            // Skip anything not exposed to the accessibility tree (hidden,
+            // aria-hidden, display:none, inert, etc.) — same scope as
+            // isAccTreeEligible, so a hidden descendant never contributes.
+            //
+            // Exception: opts.includeHidden (set by computeIdRefTargetTextAlternative
+            // when the aria-labelledby/aria-describedby TARGET itself is hidden) skips
+            // this check entirely except for genuinely non-rendered tags. Per the accname
+            // spec, a directly-referenced target's own hidden state doesn't block name
+            // computation, and per the reference engine's own prepareContext/context.includeHidden
+            // (verified by reading its source directly), that bypass covers the target's whole
+            // subtree, not just the target element itself -- confirmed via a real page
+            // (Discord's footer, 2026-07-23): four <nav aria-labelledby="...">, each
+            // referencing a CSS-hidden (display:none, a responsive/interaction-gated
+            // dropdown toggle) heading with genuinely distinct text ("Product"/"Company"/
+            // "Resources"/"Policies"). a11y-core's own isAccTreeEligible correctly treats
+            // each toggle's hidden text as ineligible on its own terms (nothing wrong with
+            // that check in isolation), but applying it while resolving what a
+            // labelledby-referencing element is NAMED disagreed with the reference engine's real, spec-aligned
+            // "pass" (distinct names) -- a11y-core saw all four as unnamed and collapsed them
+            // into one false "not unique" cluster (a11ycore-landmark-unique, and any other
+            // rule resolving an aria-labelledby name through a hidden target, e.g. dialog/
+            // tab/menuitem-name-present).
+            if (opts && opts.includeHidden) {
+                const tag = lower(node.tagName);
+                if (tag === 'script' || tag === 'style' || tag === 'noscript' || tag === 'template') return;
+            } else {
+                let eligible = true;
+                try {
+                    const eligRes = isAccTreeEligible(node);
+                    eligible = !!(eligRes && eligRes.eligible);
+                } catch {
+                    eligible = true;
+                }
+                if (!eligible) return;
+            }
+
+            if (isImageLikeNode(node)) {
+                // aria-labelledby/aria-label take priority over alt per the
+                // accname spec (HTML-AAM) — checked first. Found via a real
+                // page (eBay's product-card links): an <img alt=""
+                // aria-labelledby="..."> pointing to real product-title text
+                // was contributing nothing to the parent <a>'s content name,
+                // since getTextAlternativeInfo alone only ever looks at alt
+                // (by design, for the separate "is alt present" question
+                // img-alt-present cares about) and an empty-but-present alt
+                // short-circuited before aria-labelledby was ever checked.
+                const ariaName = getAccessibleNameInfo(node, _ctx, opts);
+                if (ariaName && ariaName.present && ariaName.value) {
+                    parts.push(ariaName.value);
+                    if (flags.indexOf('descendant-name-used:image-aria') === -1) flags.push('descendant-name-used:image-aria');
+                    return;
+                }
+                const alt = getTextAlternativeInfo(node, _ctx, opts);
+                if (alt && alt.present && alt.value) {
+                    parts.push(alt.value);
+                    if (flags.indexOf('descendant-alt-used') === -1) flags.push('descendant-alt-used');
+                }
+                return; // image-like elements have no meaningful children to recurse into
+            }
+
+            const ownName = getAccessibleNameInfo(node, _ctx, opts);
+            if (ownName && ownName.present && ownName.value) {
+                parts.push(ownName.value);
+                const tag = `descendant-name-used:${ownName.mechanism || 'unknown'}`;
+                if (flags.indexOf(tag) === -1) flags.push(tag);
+                return; // this descendant speaks for itself; don't also use its content
+            }
+
+            // A <slot>'s own childNodes are its FALLBACK content only —
+            // rendered solely when nothing is assigned to it. When real
+            // content IS distributed into it, that's what's actually
+            // rendered/exposed to the accessibility tree, and it lives
+            // elsewhere in the light DOM, not as this node's children.
+            // Found via a real page (Shoelace's <sl-button>, whose shadow
+            // root renders <a part="base"><slot name="prefix">...
+            // <slot part="label">...<slot name="suffix">...</a> — walking
+            // the slots' own (empty) childNodes found nothing, when the
+            // button's real accessible name ("Follow") was a plain light-DOM
+            // text node assigned to the unnamed middle slot).
+            if (lower(node.tagName) === 'slot' && typeof node.assignedNodes === 'function') {
+                let assigned = [];
+                try {
+                    assigned = node.assignedNodes({flatten: true}) || [];
+                } catch {
+                    assigned = [];
+                }
+                const kids = assigned.length ? assigned : (node.childNodes ? Array.from(node.childNodes) : []);
+                for (const kid of kids) {
+                    collect(kid, parts);
+                    if (truncated) break;
+                }
+                return;
+            }
+
+            const kids = node.childNodes ? Array.from(node.childNodes) : [];
+            for (const kid of kids) {
+                collect(kid, parts);
+                if (truncated) break;
+            }
+        }
+
+        const parts = [];
+        __nameComputationDepth += 1;
+        try {
+            const topKids = el.childNodes ? Array.from(el.childNodes) : [];
+            for (const kid of topKids) {
+                collect(kid, parts);
+                if (truncated) break;
+            }
+        } finally {
+            __nameComputationDepth -= 1;
+        }
+
+        const value = trim(parts.join(' ').replace(/\s+/g, ' '));
+        return {
+            present: !!value,
+            value,
+            mechanism: value ? 'content' : 'none',
+            flags
         };
     }
 
@@ -2602,8 +3398,6 @@ function createDomHelpers(opts) {
     }
 
     function createSelectorUniqIndex() {
-        const scope = root && root.querySelectorAll ? root : document;
-
         const idCount = new Map();
         const testIdCount = new Map(); // data-testid + data-test + data-cy + data-qa
         const nameCount = new Map();   // key: tag|name
@@ -2611,9 +3405,25 @@ function createDomHelpers(opts) {
         const roleAriaLabelCount = new Map(); // key: role|aria-label
 
         const sel = '[id],[data-testid],[data-test],[data-cy],[data-qa],[name],[aria-label],[role]';
-        const nodes = (typeof queryAllSmart === 'function')
-            ? (queryAllSmart(sel) || [])
-            : Array.from(scope.querySelectorAll(sel));
+        let nodes;
+        if (typeof queryAllSmart === 'function') {
+            nodes = queryAllSmart(sel) || [];
+        } else {
+            // Defensive fallback (queryAllSmart is always defined in this
+            // module, so this branch is not expected to run) -- loop every
+            // resolved root rather than assuming a single scope element.
+            nodes = [];
+            const seen = new Set();
+            for (const r of roots) {
+                if (!r || !r.querySelectorAll) continue;
+                for (const el of r.querySelectorAll(sel)) {
+                    if (el && !seen.has(el)) { seen.add(el); nodes.push(el); }
+                }
+            }
+            if (!nodes.length && !roots.length && document) {
+                nodes = Array.from(document.querySelectorAll(sel));
+            }
+        }
 
         const inc = (map, key) => map.set(key, (map.get(key) || 0) + 1);
 
@@ -2651,13 +3461,7 @@ function createDomHelpers(opts) {
 
             const tag = (el.tagName || fallbackTag || 'html').toLowerCase();
 
-            const cssEscapeIdent = (s) => {
-                try {
-                    if (window && window.CSS && typeof window.CSS.escape === 'function') return window.CSS.escape(String(s));
-                } catch {
-                }
-                return String(s).replace(/[^a-zA-Z0-9\\-_]/g, '\\$&');
-            };
+            const cssEscapeIdent = __cssEscapeIdent;
 
             const escapeAttrValue = __escapeAttrValue;
 
@@ -2686,7 +3490,22 @@ function createDomHelpers(opts) {
             return createSelectorUniqIndex();
         }
 
-        const cached = __uniqIndexByScope.get(scopeObj);
+        // Partitioned by __selectorOptsKey: the index's counts depend on
+        // includeShadowDom/excludeSelectors (via queryAllSmart), so a scope
+        // reused across runs with different options must not share indices.
+        let perScope = null;
+        try {
+            perScope = __uniqIndexByScope.get(scopeObj);
+            if (!(perScope instanceof Map)) {
+                perScope = new Map();
+                __uniqIndexByScope.set(scopeObj, perScope);
+            }
+        } catch {
+            __perfInc('uniqIndex.nocache');
+            return createSelectorUniqIndex();
+        }
+
+        const cached = perScope.get(__selectorOptsKey);
         if (cached) {
             __perfInc('uniqIndex.hit');
             return cached;
@@ -2695,7 +3514,7 @@ function createDomHelpers(opts) {
         __perfInc('uniqIndex.miss');
         const idx = createSelectorUniqIndex();
         try {
-            __uniqIndexByScope.set(scopeObj, idx);
+            perScope.set(__selectorOptsKey, idx);
         } catch { /* ignore */
         }
         __perfInc('uniqIndex.build');
@@ -2707,13 +3526,7 @@ function createDomHelpers(opts) {
         try {
             if (!el || el.nodeType !== 1) return 'html';
 
-            const cssEscape = (s) => {
-                try {
-                    if (window && window.CSS && typeof window.CSS.escape === 'function') return window.CSS.escape(String(s));
-                } catch {
-                }
-                return String(s).replace(/[^a-zA-Z0-9\\-_]/g, '\\$&');
-            };
+            const cssEscape = __cssEscapeIdent;
 
             const idx = getUniqIndex();
             const tag = (el.tagName || '').toLowerCase();
@@ -2788,15 +3601,13 @@ function createDomHelpers(opts) {
                     sib = sib.previousElementSibling;
                 }
 
-                let hasSame = false;
-                sib = node.nextElementSibling;
-                while (sib) {
-                    if ((sib.tagName || '').toLowerCase() === t) {
-                        hasSame = true;
-                        break;
-                    }
-                    sib = sib.nextElementSibling;
-                }
+                // A same-tag sibling before this node (i > 1) already means
+                // an unqualified tag selector would be ambiguous — no need
+                // to also scan forward in that case. Only scan
+                // nextElementSibling when this node is the first of its tag
+                // among its siblings, to catch the case where the
+                // disambiguating sibling comes after it instead.
+                let hasSame = i > 1;
                 if (!hasSame) {
                     sib = node.nextElementSibling;
                     while (sib) {
@@ -2804,7 +3615,7 @@ function createDomHelpers(opts) {
                             hasSame = true;
                             break;
                         }
-                        sib = sib.previousElementSibling;
+                        sib = sib.nextElementSibling;
                     }
                 }
                 return hasSame ? t + ':nth-of-type(' + i + ')' : t;
@@ -2852,16 +3663,32 @@ function createDomHelpers(opts) {
                     parts.unshift(nthOfType(node));
                 }
 
-                if (!node.parentElement || node === root) break;
+                if (!node.parentElement || roots.includes(node)) break;
                 node = node.parentElement;
             }
 
             const candidate = parts.join(' > ') || (tag || 'html');
 
+            // Verify the constructed selector string actually resolves to
+            // `el` per the CSS engine's own semantics — a real safety net,
+            // since some selector engines (observed in jsdom) disagree with
+            // this function's own :nth-of-type sibling counting in edge
+            // cases. `el.matches(candidate)` checks exactly that (does the
+            // engine agree this element satisfies the string we built) at a
+            // cost bounded by el's own ancestor-chain depth.
+            //
+            // This intentionally does NOT re-verify global uniqueness via a
+            // whole-document query: every path segment above pins an exact
+            // position relative to its own parent via `>` (child, not
+            // descendant) combinators, so a correctly-matching chain can
+            // only resolve to one element short of a malformed document
+            // (e.g. two <html> roots). Re-deriving that guarantee via a
+            // document-wide :nth-of-type scan was measured to cost O(total
+            // same-tag siblings) per call — pathological on pages with many
+            // flat, unidentified siblings (e.g. hundreds of unlabeled
+            // <img>s), while contributing no realistic additional safety.
             try {
-                const scope = root && root.querySelectorAll ? root : document;
-                const matches = scope.querySelectorAll(candidate);
-                if (matches && matches.length === 1 && matches[0] === el) return candidate;
+                if (el && typeof el.matches === 'function' && el.matches(candidate)) return candidate;
             } catch {
             }
 
@@ -2872,20 +3699,75 @@ function createDomHelpers(opts) {
     }
 
     function buildSelector(el) {
+        const cache = __getSelectorCacheForOpts();
         try {
-            if (__selectorCache && el && typeof el === 'object' && __selectorCache.has(el)) {
+            if (cache && el && typeof el === 'object' && cache.has(el)) {
                 __perfInc('selector.hit');
-                return __selectorCache.get(el) || 'html';
+                return cache.get(el) || 'html';
             }
         } catch {
         }
         __perfInc('selector.miss');
         const sel = buildSelectorUncached(el);
         try {
-            if (__selectorCache && el && typeof el === 'object') __selectorCache.set(el, sel);
+            if (cache && el && typeof el === 'object') cache.set(el, sel);
         } catch {
         }
         return sel;
+    }
+
+    // Sibling-index path from documentElement's descendants down to `el`
+    // ([] if `el` IS the documentElement); null if `el` is falsy or detached
+    // in a way that makes indexing impossible. A more robust element-identity
+    // mechanism than a CSS selector string alone (survives some DOM changes
+    // a selector wouldn't -- e.g. an id/class rename), at the cost of not
+    // being usable as a real CSS selector itself. Deliberately mirrors
+    // scripts/cross-engine/structural-path.js's algorithm exactly (used
+    // there for cross-engine result matching) rather than requiring it --
+    // this file must stay self-contained (embedded into the generated
+    // runtime via .toString(), no module requires survive that), so a
+    // correctness fix to the algorithm must be applied to both copies.
+    function structuralPath(el) {
+        if (!el || typeof el !== 'object') return null;
+        const path = [];
+        let node = el;
+        try {
+            while (node && node.parentElement) {
+                const parent = node.parentElement;
+                const idx = Array.prototype.indexOf.call(parent.children, node);
+                if (idx < 0) return null;
+                path.unshift(idx);
+                node = parent;
+            }
+        } catch {
+            return null;
+        }
+        return path;
+    }
+
+    // Occurrence-level structural path: prefers the actual element reference
+    // (exact, no re-resolution risk) and only falls back to re-resolving via
+    // the occurrence's own selector when no element reference was kept --
+    // the same technique the cross-engine live-DOM adapters already use to
+    // recover an element from a reported selector, with the same accepted
+    // caveat (a non-unique selector could resolve to a different element
+    // than originally intended -- already documented as "structural-path
+    // collisions" for the cross-engine tooling).
+    function buildStructuralPath(node, selector) {
+        if (node && typeof node === 'object') {
+            const p = structuralPath(node);
+            if (p) return p;
+        }
+        if (selector && typeof selector === 'string' && document && typeof document.querySelector === 'function') {
+            let el = null;
+            try {
+                el = document.querySelector(selector);
+            } catch {
+                el = null;
+            }
+            if (el) return structuralPath(el);
+        }
+        return null;
     }
 
     function getNonEmptyTitle(el) {
@@ -2899,8 +3781,28 @@ function createDomHelpers(opts) {
         }
     }
 
+    function isPlaceholderCapable(el) {
+        // Per HTML, `placeholder` is only a name/hint source for text-entry
+        // input types and <textarea> — browsers/AT ignore it on other input
+        // types (checkbox, radio, range, color, date, file, ...) and on
+        // <select>, so it must not be treated as an accessible-name source
+        // for those.
+        try {
+            if (!isElement(el)) return false;
+            const tag = (el.tagName || '').toLowerCase();
+            if (tag === 'textarea') return true;
+            if (tag !== 'input') return false;
+            const type = (el.getAttribute && (el.getAttribute('type') || 'text') || 'text').toLowerCase().trim();
+            const t = type || 'text';
+            return t === 'text' || t === 'search' || t === 'tel' || t === 'url' || t === 'email' || t === 'password' || t === 'number';
+        } catch {
+            return false;
+        }
+    }
+
     function getNonEmptyPlaceholder(el) {
         if (!getAttributeInfo) return null;
+        if (!isPlaceholderCapable(el)) return null;
         try {
             const info = getAttributeInfo(el, 'placeholder');
             const v = info && info.present ? trim(info.value) : '';
@@ -2910,10 +3812,36 @@ function createDomHelpers(opts) {
         }
     }
 
+    // A <label> contributes a name to its associated control either via its
+    // own aria-label/aria-labelledby (checked first, same precedence any
+    // element's accessible name gives ARIA over content — verified against
+    // a real page: <label aria-label="Toggle Navigation"><svg
+    // aria-hidden="true">...</svg></label> names its control "Toggle
+    // Navigation" even though the label's only child content is aria-
+    // hidden) or, failing that, its rendered content (getContentNameInfo,
+    // which already excludes aria-hidden/display:none/inert descendants —
+    // e.g. <label><input><span aria-hidden="true">Accept</span></label>
+    // gives the control no name despite the DOM association existing).
+    function labelContributesAccessibleName(lab) {
+        try {
+            const aria = getAriaNameInfo(lab, null, {});
+            if (aria && aria.present && trim(aria.value)) return true;
+        } catch {
+        }
+        try {
+            const info = getContentNameInfo(lab, null, {});
+            return !!(info && info.present && trim(info.value));
+        } catch {
+            return true; // conservative on error: don't newly fail
+        }
+    }
+
     function hasLabelAssociation(el) {
         // Deterministic, stable subset:
         // - <label for="id">
         // - wrapping <label> ... <input> ...
+        // A structural association alone isn't enough — see
+        // labelContributesAccessibleName above for what counts.
         if (!isElement(el)) return false;
 
         try {
@@ -2926,21 +3854,38 @@ function createDomHelpers(opts) {
 
         __perfInc('labelAssociation.miss');
         let out = false;
+        let associatedLabels = [];
 
-        const id = trim(getAttr(el, 'id'));
-        if (id) {
-            const entry = __lookupLabelForId(id, '__default__');
-            if (entry && entry.exists) {
-                out = true;
+        // Prefer the native `.labels` API — resolves both wrapping <label>
+        // and <label for="id"> association in one call, as real elements.
+        try {
+            if (el && 'labels' in el && el.labels && el.labels.length) {
+                associatedLabels = Array.prototype.slice.call(el.labels);
+            }
+        } catch {
+        }
+
+        if (!associatedLabels.length) {
+            // Fallback for environments without a working `.labels` API:
+            // structural-only (pre-existing behavior, no content check —
+            // __lookupLabelForId's cache doesn't retain an element ref).
+            const id = trim(getAttr(el, 'id'));
+            if (id) {
+                const entry = __lookupLabelForId(id, '__default__');
+                if (entry && entry.exists) out = true;
+            }
+
+            if (!out && el.closest) {
+                try {
+                    const wrap = el.closest('label');
+                    if (wrap && isElement(wrap)) associatedLabels = [wrap];
+                } catch {
+                }
             }
         }
 
-        if (!out && el.closest) {
-            try {
-                const wrap = el.closest('label');
-                if (wrap && isElement(wrap)) out = true;
-            } catch {
-            }
+        if (!out && associatedLabels.length) {
+            out = associatedLabels.some(labelContributesAccessibleName);
         }
 
         try {
@@ -3051,12 +3996,17 @@ function createDomHelpers(opts) {
     };
 
     const contrast = createContrastHelpers(
-        {window: realmWindow || window, document, root, includeShadowDom, excludeSelectors},
+        {window: realmWindow || window, document, root: roots, includeShadowDom, excludeSelectors},
         __contrastShared
     );
 
     // Expose shared cache to checks (deterministic, in-memory only)
     contrast.sharedCache = __contrastShared.__contrastSharedCache;
+
+    const aria = createAriaHelpers(
+        {window: realmWindow || window, document, root: roots},
+        {trim}
+    );
 
     return {
         // Existing query/snippet utilities
@@ -3066,6 +4016,7 @@ function createDomHelpers(opts) {
         getOuterHtmlSnippet,
         buildSimpleSelector,
         buildSelector,
+        buildStructuralPath,
 
         // Existing (back-compat)
         hasAccessibleName,
@@ -3086,12 +4037,19 @@ function createDomHelpers(opts) {
         getAriaLabelledByInfo,
         getAriaNameInfo,
 
+        // Landmark-role naming (aria-label -> aria-labelledby -> title; no content fallback --
+        // see getLandmarkNameInfo's own header comment for why this replaced 7 duplicated copies)
+        getLandmarkNameInfo,
+
         // Name / description
         getAccessibleNameInfo,
         getAccessibleDescriptionInfo,
 
         // Text alternatives
         getTextAlternativeInfo,
+
+        // Recursive "name from content" (accname-aligned; see getContentNameInfo header comment)
+        getContentNameInfo,
 
         // Role / focusability
         getRoleInfo,
@@ -3102,17 +4060,24 @@ function createDomHelpers(opts) {
 
         getLabelMethod, getLabelStrength,
 
+        // Flat-tree ancestor walk (assignedSlot-aware, then shadow host) —
+        // see this function's own definition above for why assignedSlot
+        // must win over parentNode.
+        composedParent,
+
         // Perf counters (only populated when opts.perfStats === true)
         getPerfStats,
         resetPerfStats,
 
         reportOccurrence,
 
-        contrast
+        contrast,
+        aria
     };
 }
 
 module.exports = {
     normalizeSelectorList,
+    resolveContextRoots,
     createDomHelpers
 };

@@ -32,6 +32,17 @@ test(`${RULE_ID}: pass when at least one applicable <area> exists and all have a
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+test(`${RULE_ID}: pass when alt is entirely absent but a non-empty title attribute is present (sibling fix to img-alt-present's real AliExpress finding, 2026-07-23 — same HTML-AAM fallback, also accepted by the reference engine's own area-alt rule)`, () => {
+  const html = `<!doctype html><html><body>
+    <img alt="" usemap="#m" src="x.png">
+    <map name="m">
+      <area id="title_only" title="Go to home" shape="rect" coords="0,0,1,1">
+    </map>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
 test(`${RULE_ID}: notApplicable when only ineligible or non-focusable areas exist`, () => {
   const html = `<!doctype html><html><body>
     <map name="mu">
@@ -83,7 +94,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/area-alt-present-all-scenario
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
   // Expected fails for the crafted fixture.
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 7, maxOccurrences: 7 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 8, maxOccurrences: 8 });
 
   const expectedFailIds = [
     'area_case_01',
@@ -92,7 +103,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/area-alt-present-all-scenario
     'area_case_10',
     'area_case_14',
     'area_case_15',
-    'area_case_16'
+    'area_case_16',
+    'area_case_23'   // aria-labelledby dangling IDREF, no alt => fails
   ];
 
   const expectedNoOccIds = [
@@ -108,7 +120,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/area-alt-present-all-scenario
     'area_case_17',
     'area_case_18',
     'area_case_19',
-    'area_case_20'
+    'area_case_20',
+    'area_case_21',  // aria-label satisfies mechanism without alt
+    'area_case_22'   // aria-labelledby resolves non-empty text
   ];
 
   for (const id of expectedFailIds) {

@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-tabindex — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-tabindex</code></h1>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — NEUTRAL: tabindex="0"</div>
+    <div tabindex="0" id="ti_case_01">Focusable</div>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — NEUTRAL: tabindex="-1"</div>
+    <div tabindex="-1" id="ti_case_02">Removed from tab order</div>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — CANTTELL: positive tabindex</div>
+    <div tabindex="3" id="ti_case_03">Reordered</div>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

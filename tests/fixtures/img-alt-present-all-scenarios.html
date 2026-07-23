@@ -336,6 +336,80 @@
     </div>
   </div>
 
+  <h2 id="aria_naming">I. ARIA naming mechanism (aria-label / aria-labelledby satisfy without <code>alt</code>)</h2>
+
+  <div class="case" id="case_28">
+    <div class="case-title">28 — PASS: &lt;img&gt; with <code>aria-label</code>, no <code>alt</code></div>
+    <div class="row">
+      <span class="imgbox">img</span>
+      <img id="img_case_28" aria-label="Green rectangle icon"
+           src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%2345c46a'/%3E%3C/svg%3E">
+      <span>ARIA naming (aria-label) is a valid text-alternative mechanism even without alt.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_29">
+    <div class="case-title">29 — PASS: &lt;img&gt; with <code>aria-labelledby</code> referencing non-empty text, no <code>alt</code></div>
+    <div class="row">
+      <span class="imgbox">img</span>
+      <img id="img_case_29" aria-labelledby="img_case_29_label"
+           src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%2345c46a'/%3E%3C/svg%3E">
+      <span id="img_case_29_label">Dog photo label</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_30">
+    <div class="case-title">30 — FAIL: &lt;img&gt; with <code>aria-labelledby</code> pointing to a non-existent id, no <code>alt</code></div>
+    <div class="row">
+      <span class="imgbox">img</span>
+      <img id="img_case_30" aria-labelledby="img_case_30_does_not_exist"
+           src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%2345c46a'/%3E%3C/svg%3E">
+      <span>Dangling IDREF should not resolve to a name; alt is also missing.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_31">
+    <div class="case-title">31 — FAIL: &lt;img&gt; with <code>aria-label=""</code> (empty), no <code>alt</code></div>
+    <div class="row">
+      <span class="imgbox">img</span>
+      <img id="img_case_31" aria-label=""
+           src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%2345c46a'/%3E%3C/svg%3E">
+      <span>Empty aria-label does not satisfy ARIA naming; alt is also missing.</span>
+    </div>
+  </div>
+
+  <h2 id="visibility_inheritance">J. Visibility inheritance (invertible via explicit descendant override)</h2>
+
+  <div class="case" id="case_32">
+    <div class="case-title">32 — FAIL (eligible): ancestor <code>visibility:hidden</code>, &lt;img&gt; itself explicitly <code>visibility:visible</code>, missing alt</div>
+    <div class="row" style="visibility:hidden">
+      <span class="imgbox">img</span>
+      <img id="img_case_32" style="visibility:visible"
+           src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%2345c46a'/%3E%3C/svg%3E">
+      <span>The image's own computed visibility is "visible" (explicit override), so it re-renders visible despite the hidden ancestor and remains eligible.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_33">
+    <div class="case-title">33 — NEUTRAL/INELIGIBLE: ancestor <code>visibility:hidden</code>, &lt;img&gt; inherits (no override), missing alt</div>
+    <div class="row" style="visibility:hidden">
+      <span class="imgbox">img</span>
+      <img id="img_case_33"
+           src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%2345c46a'/%3E%3C/svg%3E">
+      <span>No explicit override; the image inherits visibility:hidden and stays ineligible.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_34">
+    <div class="case-title">34 — PASS: alt entirely absent, but a non-empty <code>title</code> attribute is present (found on a real site — AliExpress's homepage logo, 2026-07-23; a real HTML-AAM text-alternative fallback once alt is absent, also accepted by the reference engine's own image-alt rule)</div>
+    <div class="row">
+      <span class="imgbox">img</span>
+      <img id="img_case_34" title="Company logo"
+           src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%2345c46a'/%3E%3C/svg%3E">
+      <span>No alt attribute at all; title provides a real accessible name.</span>
+    </div>
+  </div>
+
   <p class="note">
     End of fixture.
   </p>

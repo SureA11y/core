@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-slider-name-present — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+    .hiddenvis { visibility: hidden; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-slider-name-present</code> (input[type=range] / role="slider" must have an accessible name)</h1>
+
+  <p class="note">
+    Each target element has a stable <code>id</code> of the form <code>slider_case_NN</code>.
+    Two "kinds" are covered: native <code>input[type=range]</code> (supports &lt;label&gt; association),
+    and <code>role="slider"</code> (name-from-author-only per WAI-ARIA: no content fallback,
+    and — unlike the native control — no &lt;label&gt; fallback either, since the rule only
+    applies native-label resolution to the native-slider kind).
+  </p>
+
+  <h2>A. Native input[type=range]: mechanism priority order</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: native range, no name at all</div>
+    <input type="range" id="slider_case_01" />
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — PASS: native range, aria-label</div>
+    <input type="range" id="slider_case_02" aria-label="Volume" />
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — PASS: native range, aria-labelledby</div>
+    <span id="slider_case_03_lbl">Brightness</span>
+    <input type="range" id="slider_case_03" aria-labelledby="slider_case_03_lbl" />
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — PASS: native range, title</div>
+    <input type="range" id="slider_case_04" title="Zoom" />
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — PASS: native range, native &lt;label for&gt;</div>
+    <label for="slider_case_05">Contrast</label>
+    <input type="range" id="slider_case_05" />
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — PASS: native range, wrapping &lt;label&gt;</div>
+    <label>Saturation <input type="range" id="slider_case_06" /></label>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — FAIL: native range, aria-label empty string, no label fallback</div>
+    <input type="range" id="slider_case_07" aria-label="" />
+  </div>
+
+  <h2>B. role="slider": author-only-name, no content, no label fallback</h2>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — FAIL: role=slider, no name at all</div>
+    <div role="slider" tabindex="0" aria-valuenow="5" aria-valuemin="0" aria-valuemax="10" id="slider_case_08"></div>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — FAIL: role=slider, visible content only (does NOT count)</div>
+    <div role="slider" tabindex="0" aria-valuenow="5" aria-valuemin="0" aria-valuemax="10" id="slider_case_09">Volume</div>
+  </div>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — FAIL: role=slider, wrapped by &lt;label&gt; (does NOT count for aria-slider kind)</div>
+    <label>Balance <div role="slider" tabindex="0" id="slider_case_10"></div></label>
+  </div>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — PASS: role=slider, aria-label</div>
+    <div role="slider" tabindex="0" aria-label="Playback position" id="slider_case_11"></div>
+  </div>
+
+  <div class="case" id="case_12">
+    <div class="case-title">12 — PASS: role=slider, aria-labelledby</div>
+    <span id="slider_case_12_lbl">Speed</span>
+    <div role="slider" tabindex="0" aria-labelledby="slider_case_12_lbl" id="slider_case_12"></div>
+  </div>
+
+  <div class="case" id="case_13">
+    <div class="case-title">13 — PASS: role=slider, title</div>
+    <div role="slider" tabindex="0" title="Pitch" id="slider_case_13"></div>
+  </div>
+
+  <h2>C. Visible but excluded from AT (ineligible)</h2>
+
+  <div class="case" id="case_14">
+    <div class="case-title">14 — NEUTRAL/INELIGIBLE: role=slider, aria-hidden="true", not focusable, missing name</div>
+    <div role="slider" aria-hidden="true" id="slider_case_14"></div>
+  </div>
+
+  <div class="case" id="case_15">
+    <div class="case-title">15 — EXCEPTION: role=slider, aria-hidden="true" but focusable => eligible, missing name => FAIL</div>
+    <div role="slider" aria-hidden="true" tabindex="0" id="slider_case_15"></div>
+  </div>
+
+  <h2>D. Hidden by HTML/CSS (ineligible)</h2>
+
+  <div class="case" id="case_16">
+    <div class="case-title">16 — NEUTRAL/INELIGIBLE: hidden attribute</div>
+    <div role="slider" hidden id="slider_case_16"></div>
+  </div>
+
+  <div class="case" id="case_17">
+    <div class="case-title">17 — NEUTRAL/INELIGIBLE: display:none</div>
+    <div role="slider" style="display:none" id="slider_case_17"></div>
+  </div>
+
+  <div class="case" id="case_18">
+    <div class="case-title">18 — NEUTRAL/INELIGIBLE: visibility:hidden</div>
+    <div role="slider" class="hiddenvis" id="slider_case_18"></div>
+  </div>
+
+  <div class="case" id="case_19">
+    <div class="case-title">19 — EXCEPTION: visibility:hidden ancestor overridden by descendant visibility:visible => eligible, missing name => FAIL</div>
+    <div style="visibility:hidden">
+      <div role="slider" tabindex="0" style="visibility:visible" id="slider_case_19"></div>
+    </div>
+  </div>
+
+  <h2>E. Inertness (ineligible)</h2>
+
+  <div class="case" id="case_20">
+    <div class="case-title">20 — NEUTRAL/INELIGIBLE: inert on element itself</div>
+    <div role="slider" inert id="slider_case_20"></div>
+  </div>
+
+  <div class="case" id="case_21">
+    <div class="case-title">21 — NEUTRAL/INELIGIBLE: inert ancestor</div>
+    <div inert>
+      <div role="slider" id="slider_case_21"></div>
+    </div>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

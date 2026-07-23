@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-aria-valid-attr — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-aria-valid-attr</code> (aria-* attribute names must be real, defined ARIA attributes)</h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>ava_case_NN</code>.
+  </p>
+
+  <h2>A. Valid</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — PASS: all aria-* attributes are recognized</div>
+    <div aria-label="Hello" aria-hidden="true" id="ava_case_01"></div>
+  </div>
+
+  <h2>B. Invalid</h2>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — FAIL: aria-* attribute name is not recognized (typo)</div>
+    <div aria-labell="Hello" id="ava_case_02"></div>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — FAIL: two invalid attributes on the same element (one occurrence each)</div>
+    <div aria-foo="1" aria-bar="2" id="ava_case_03"></div>
+  </div>
+
+  <h2>C. Not applicable (skipped, not counted)</h2>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — NEUTRAL: no aria-* attributes present</div>
+    <div id="ava_case_04"></div>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — NEUTRAL: only a non-aria data attribute that merely looks similar</div>
+    <div data-aria-label="not real" id="ava_case_05"></div>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

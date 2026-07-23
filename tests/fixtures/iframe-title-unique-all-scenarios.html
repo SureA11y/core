@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-iframe-title-unique — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+    iframe { width: 200px; height: 100px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-iframe-title-unique</code> (frame titles must be unique)</h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>ifu_case_NN</code>.
+    Compares the title ATTRIBUTE only, not the full computed accessible name.
+  </p>
+
+  <h2>A. Unique titles</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — PASS: unique title among all frames on this page</div>
+    <iframe id="ifu_case_01" title="Chat widget" src="content.html"></iframe>
+  </div>
+
+  <h2>B. Duplicate titles</h2>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — FAIL: first frame sharing title "Video player"</div>
+    <iframe id="ifu_case_02" title="Video player" src="a.html"></iframe>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — FAIL: second frame sharing title "Video player"</div>
+    <iframe id="ifu_case_03" title="Video player" src="b.html"></iframe>
+  </div>
+
+  <h2>C. Not applicable (skipped, not counted)</h2>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — NEUTRAL: frame with no title attribute</div>
+    <iframe id="ifu_case_04" src="content.html"></iframe>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

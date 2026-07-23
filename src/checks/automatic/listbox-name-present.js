@@ -24,6 +24,9 @@ const meta = {
 
 function runInPage(ctx) {
   const { document, root, helpers, rule } = ctx;
+  const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
+      ? helpers.getEligibilityInfo
+      : null;
   const safeRoot = root || document;
 
 
@@ -39,77 +42,62 @@ function runInPage(ctx) {
   }
 
   function getConservativeSubtreeText(document, container) {
-    const SHOW_TEXT = 4; // TreeWalker SHOW_TEXT
-    try {
-      const walker = document.createTreeWalker(container, SHOW_TEXT, null);
-      const parts = [];
-      let n = walker.nextNode();
-      while (n) {
-        const raw = normalizeWs(n.nodeValue || '');
-        if (raw) {
-          const pe = n.parentElement;
-          let blocked = false;
-          if (pe && typeof pe.closest === 'function') {
-            const blocker = pe.closest('[aria-hidden="true"],[hidden]');
-            if (blocker && container.contains(blocker)) blocked = true;
-          } else {
-            let p = pe;
-            while (p && p !== container) {
-              if (p.getAttribute && p.getAttribute('aria-hidden') === 'true') { blocked = true; break; }
-              if (p.hasAttribute && p.hasAttribute('hidden')) { blocked = true; break; }
-              p = p.parentElement;
-            }
-          }
-          if (!blocked) {
-            if (container.getAttribute && container.getAttribute('aria-hidden') === 'true') blocked = true;
-            if (!blocked && container.hasAttribute && container.hasAttribute('hidden')) blocked = true;
-          }
-          if (!blocked) parts.push(raw);
-        }
-        n = walker.nextNode();
-      }
-      return normalizeWs(parts.join(' '));
-    } catch {
-      try {
-        const parts = [];
-        const stack = [container];
-        while (stack.length) {
-          const node = stack.pop();
-          if (!node) continue;
-          if (node.nodeType === 3) { // TEXT_NODE
-            const raw = normalizeWs(node.nodeValue || '');
-            if (raw) parts.push(raw);
-            continue;
-          }
-          if (node.nodeType === 1) { // ELEMENT_NODE
-            if (node.getAttribute && node.getAttribute('aria-hidden') === 'true') continue;
-            if (node.hasAttribute && node.hasAttribute('hidden')) continue;
-            const kids = node.childNodes ? Array.from(node.childNodes) : [];
-            for (let i = kids.length - 1; i >= 0; i -= 1) stack.push(kids[i]);
-          }
-        }
-        return normalizeWs(parts.join(' '));
-      } catch {
-        return '';
-      }
+    // "Name from content" — recurses into descendants and uses each one's
+    // own accessible name (img alt, aria-label/aria-labelledby, title) when
+    // it has one, not just literal text nodes. See getContentNameInfo's
+    // header comment in src/core/dom-helpers.js for the full rationale
+    // (this replaced a text-node-only TreeWalker that missed the common
+    // "<a><img alt='...'></a>" logo-link / "<button><img alt='...'></button>"
+    // icon-button pattern).
+    if (helpers.getContentNameInfo) {
+      const info = helpers.getContentNameInfo(container, ctx);
+      return info && info.present ? info.value : '';
     }
+    const t = (container && container.textContent) ? String(container.textContent) : '';
+    return t.replace(/\s+/g, ' ').trim();
+  }
+
+  // A <label> contributes a name via its own aria-label/aria-labelledby
+  // (checked first, same ARIA-over-content precedence any element's
+  // accessible name gives — e.g. <label aria-label="Search"><svg
+  // aria-hidden="true">...</svg></label> names its control "Search" even
+  // though the label's only child content is aria-hidden) or, failing
+  // that, its rendered content (getConservativeSubtreeText).
+  function getLabelText(lab) {
+    if (helpers.getAriaNameInfo) {
+      try {
+        const aria = helpers.getAriaNameInfo(lab, ctx);
+        if (aria && aria.present && aria.value) return normalizeWs(aria.value);
+      } catch {}
+    }
+    const content = getConservativeSubtreeText(document, lab);
+    if (content) return content;
+    // Final fallback per the general accname text-alternative algorithm,
+    // which applies to any element being asked for its name regardless of
+    // why (own aria-label, an aria-labelledby reference, or — here — native
+    // <label for> association): title, when nothing else yields a name.
+    // Purely additive (only fills in a name where there was none before),
+    // so it carries no false-positive risk — see dialog-name-present.js's
+    // identical <iframe>-title-fallback fix for the concrete real-world
+    // trigger this same accname step covers elsewhere.
+    return getAttr(lab, 'title');
   }
 
   function resolveAriaLabelledbyText(document, el, maxRefs) {
     const raw = getAttr(el, 'aria-labelledby');
     if (!raw) return '';
-    const refs = raw.split(/\s+/).filter(Boolean).slice(0, Math.max(1, maxRefs || 8));
-    const parts = [];
-    for (const refKey of refs) {
+    // Delegates to the shared getTextFromIdRefs helper instead of computing
+    // name-from-content of the referenced element — see dialog-name-
+    // present.js's identical fix for the full rationale (an <iframe>
+    // aria-labelledby target's only name source is its title attribute,
+    // which name-from-content alone can never see).
+    if (helpers.getTextFromIdRefs) {
       try {
-        const refEl = document.getElementById(refKey);
-        if (refEl) {
-          const t = getConservativeSubtreeText(document, refEl);
-          if (t) parts.push(t);
-        }
+        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 });
+        return normalizeWs(r && r.text);
       } catch {}
     }
-    return normalizeWs(parts.join(' '));
+    return '';
   }
 
   function isEligibleAcc(helpers, el, ctx) {
@@ -124,6 +112,21 @@ function runInPage(ctx) {
     }
   }
 
+  function buildLabelForMap(doc) {
+    const map = new Map(); // id -> label element (first)
+    try {
+      const labels = doc && doc.getElementsByTagName ? doc.getElementsByTagName('label') : [];
+      for (let i = 0; i < labels.length; i += 1) {
+        const lab = labels[i];
+        if (!lab || !lab.getAttribute) continue;
+        const f = normalizeWs(lab.getAttribute('for'));
+        if (!f) continue;
+        if (!map.has(f)) map.set(f, lab);
+      }
+    } catch {}
+    return map;
+  }
+
 
   const occurrences = [];
   let applicableCount = 0;
@@ -131,6 +134,43 @@ function runInPage(ctx) {
   const selector = "[role=\"listbox\"]";
   const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
 
+  // Precompute label[for] map for listbox elements that are labelable
+  // native form controls (e.g. <select multiple role="listbox">).
+  const labelForMap = buildLabelForMap(document);
+
+  function getNativeLabelText(el) {
+    try {
+      if ('labels' in el && el.labels && el.labels.length) {
+        const parts = [];
+        const max = Math.min(4, el.labels.length);
+        for (let i = 0; i < max; i += 1) {
+          const lab = el.labels[i];
+          const t = lab ? getLabelText(lab) : '';
+          if (t) parts.push(t);
+        }
+        const joined = normalizeWs(parts.join(' '));
+        if (joined) return joined;
+      }
+    } catch {}
+    try {
+      if (el.closest) {
+        const wrap = el.closest('label');
+        if (wrap) {
+          const t = getLabelText(wrap);
+          if (t) return t;
+        }
+      }
+    } catch {}
+    try {
+      const idAttr = getAttr(el, 'id');
+      if (idAttr && labelForMap.has(idAttr)) {
+        const lab = labelForMap.get(idAttr);
+        const t = lab ? getLabelText(lab) : '';
+        if (t) return t;
+      }
+    } catch {}
+    return '';
+  }
 
   function hasName(el) {
     const ariaLabel = getAttr(el, 'aria-label');
@@ -142,11 +182,12 @@ function runInPage(ctx) {
     const title = getAttr(el, 'title');
     if (title) return { ok: true, method: 'title' };
 
+    // Native <label> association (e.g. <select multiple role="listbox">).
+    const lab = getNativeLabelText(el);
+    if (lab) return { ok: true, method: 'label' };
 
-    const t = getConservativeSubtreeText(document, el);
-    if (t) return { ok: true, method: 'content' };
-
-
+    // role="listbox" is name-from-author-only per WAI-ARIA: it must NOT
+    // fall back to subtree content.
     return { ok: false, method: 'none' };
   }
 
@@ -159,6 +200,9 @@ function runInPage(ctx) {
     const res = hasName(el);
     if (res.ok) continue;
 
+    const eligInfo = getEligibilityInfo
+        ? (() => { try { return getEligibilityInfo(el, ctx, { targetSet: 'acc' }); } catch { return null; } })()
+        : null;
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
     const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
 
@@ -167,10 +211,15 @@ function runInPage(ctx) {
       html,
       summary: 'This element has no accessible name.',
       hint: 'Provide aria-label or aria-labelledby (preferred), or provide visible text that is not hidden from assistive technologies.',
-      summaryKey: 'a11ycore_listboxNamePresent_summary_fail',
-      hintKey: 'a11ycore_listboxNamePresent_hint_fail',
-      i18nParams: { controlType: 'listbox' },
-      data: { details: { reasonCode: 'name_missing', controlType: 'listbox', methodTried: res.method } }
+      i18n: {
+        summaryKey: 'a11ycore_listboxNamePresent_summary_fail',
+        hintKey: 'a11ycore_listboxNamePresent_hint_fail',
+        params: { controlType: 'listbox' }
+      },
+      data: {
+        details: { reasonCode: 'name_missing', controlType: 'listbox', methodTried: res.method },
+        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+      }
     });
   }
 

@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>aria-hidden-focus fixtures — many combinations</title>
+</head>
+<body>
+
+<!-- ========================================================= -->
+<!-- 1) PASS: aria-hidden subtree with no focusable content -->
+<!-- ========================================================= -->
+<div id="case_non_focusable_content" aria-hidden="true">
+  <p>Just text</p>
+  <span>More text</span>
+</div>
+
+<!-- ========================================================= -->
+<!-- 2) FAIL: descendant focusable types, one root per type -->
+<!-- ========================================================= -->
+<div id="case_link_href" aria-hidden="true">
+  <a href="#x">Link</a>
+</div>
+
+<div id="case_button" aria-hidden="true">
+  <button>Button</button>
+</div>
+
+<div id="case_input" aria-hidden="true">
+  <input type="text" value="x">
+</div>
+
+<div id="case_select" aria-hidden="true">
+  <select><option>One</option></select>
+</div>
+
+<div id="case_textarea" aria-hidden="true">
+  <textarea>text</textarea>
+</div>
+
+<div id="case_summary" aria-hidden="true">
+  <details>
+    <summary>Summary</summary>
+    <p>Details content</p>
+  </details>
+</div>
+
+<div id="case_tabindex" aria-hidden="true">
+  <div tabindex="0">Focusable via tabindex</div>
+</div>
+
+<div id="case_contenteditable_true" aria-hidden="true">
+  <div contenteditable="true">Editable</div>
+</div>
+
+<div id="case_contenteditable_empty" aria-hidden="true">
+  <div contenteditable>Editable (empty attr = true)</div>
+</div>
+
+<div id="case_iframe" aria-hidden="true">
+  <iframe title="frame" src="about:blank"></iframe>
+</div>
+
+<div id="case_audio_controls" aria-hidden="true">
+  <audio controls src="a.mp3"></audio>
+</div>
+
+<div id="case_video_controls" aria-hidden="true">
+  <video controls src="v.mp4"></video>
+</div>
+
+<!-- Browsers apply a UA default of `area { display: none }` (areas are
+     hotspots on a referenced <img>, not independently rendered), so an
+     explicit style override is needed here to exercise the focusable-area
+     code path deterministically. -->
+<map name="fixturemap">
+  <div id="case_area_href" aria-hidden="true">
+    <area shape="rect" coords="0,0,10,10" href="#x" alt="Area" style="display:inline">
+  </div>
+</map>
+
+<!-- ========================================================= -->
+<!-- 3) PASS (exceptions): contenteditable="false" does NOT trigger focus -->
+<!-- ========================================================= -->
+<div id="case_contenteditable_false" aria-hidden="true">
+  <div contenteditable="false">Not editable</div>
+</div>
+
+<!-- ========================================================= -->
+<!-- 4) PASS: audio/video WITHOUT controls are not focusable -->
+<!-- ========================================================= -->
+<div id="case_audio_no_controls" aria-hidden="true">
+  <audio src="a.mp3"></audio>
+</div>
+
+<div id="case_video_no_controls" aria-hidden="true">
+  <video src="v.mp4"></video>
+</div>
+
+<!-- ========================================================= -->
+<!-- 5) PASS: inert exception (inert subtree is not focusable) -->
+<!-- ========================================================= -->
+<div id="case_inert" aria-hidden="true" inert>
+  <a href="#x">Inert link</a>
+</div>
+
+<!-- ========================================================= -->
+<!-- 6) PASS: disabled form control exception -->
+<!-- ========================================================= -->
+<div id="case_disabled_button" aria-hidden="true">
+  <button disabled>Disabled button</button>
+</div>
+
+<div id="case_disabled_input" aria-hidden="true">
+  <input type="text" disabled>
+</div>
+
+<!-- ========================================================= -->
+<!-- 7) PASS: not rendered => excluded (display:none / visibility:hidden) -->
+<!-- ========================================================= -->
+<div id="case_display_none" aria-hidden="true">
+  <a href="#x" style="display:none">Hidden link</a>
+</div>
+
+<div id="case_visibility_hidden" aria-hidden="true">
+  <a href="#x" style="visibility:hidden">Hidden link</a>
+</div>
+
+<!-- visibility:hidden must win even when opacity:0 is ALSO present on the
+     same element (found on a real site — Getty's global nav dropdowns,
+     which use `opacity:0;visibility:hidden` together as a fade transition
+     for collapsed menu panels). visibility:hidden alone already removes an
+     element from the tab order in real browsers, so this must still PASS. -->
+<div id="case_opacity_and_visibility_hidden" aria-hidden="true">
+  <a href="#x" style="opacity:0;visibility:hidden">Hidden link</a>
+</div>
+
+<!-- opacity:0 on a CLOSE ancestor must not mask display:none on a FARTHER
+     ancestor — a single interleaved chain walk that returns on the first
+     blocking condition found would miss the farther, unconditional block
+     (found on a real site — BuzzFeed's carousel slides are aria-hidden with
+     opacity:0 for a fade transition, nested inside a responsive wrapper
+     that is display:none at some viewport widths). -->
+<div id="case_opacity_close_display_none_far" style="display:none">
+  <div aria-hidden="true">
+    <div style="opacity:0">
+      <a href="#x">Opacity-zero link nested inside a display:none ancestor</a>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================================= -->
+<!-- 8) FAIL: opacity:0 is still in-scope (visually hidden ≠ not-focusable) -->
+<!-- ========================================================= -->
+<div id="case_opacity_zero" aria-hidden="true">
+  <a href="#x" style="opacity:0">Invisible but focusable link</a>
+</div>
+
+<!-- ========================================================= -->
+<!-- 9) FAIL: root itself focusable (self) -->
+<!-- ========================================================= -->
+<div id="case_self_focusable" aria-hidden="true" tabindex="0">Focusable hidden root</div>
+
+<!-- ========================================================= -->
+<!-- 10) FAIL: root focusable AND contains a focusable descendant (self + desc) -->
+<!-- ========================================================= -->
+<div id="case_self_and_descendant" aria-hidden="true" tabindex="0">
+  <a href="#x">Focusable link</a>
+</div>
+
+<!-- ========================================================= -->
+<!-- 11) PASS: negative tabindex removes an element from the tab -->
+<!-- sequence entirely — the standard technique for safely hiding -->
+<!-- focusable content behind aria-hidden (verified on a real site, -->
+<!-- Wikipedia's sticky header: <button tabindex="-1">/<a tabindex="-1"> -->
+<!-- inside aria-hidden divs; matches the reference engine's own aria-hidden-focus -->
+<!-- check, which requires tabbability, not raw focusability). -->
+<!-- ========================================================= -->
+<div id="case_tabindex_negative_descendant" aria-hidden="true">
+  <button tabindex="-1">Not tabbable</button>
+  <a href="#x" tabindex="-1">Not tabbable link</a>
+</div>
+
+<div id="case_tabindex_negative_self" aria-hidden="true" tabindex="-1">Root itself has negative tabindex</div>
+
+</body>
+</html>

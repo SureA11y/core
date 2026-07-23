@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-bypass-blocks-present — scenario fixture (FAIL case)</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <div class="case-title">01 — FAIL: no main landmark, no working same-page anchor link, no heading</div>
+  <nav>Home | About | Contact</nav>
+  <div>
+    <p>This page has repeated navigation content but no main landmark
+    (&lt;main&gt;/role="main"), no resolvable same-page anchor link, and no heading
+    (&lt;h1&gt;-&lt;h6&gt;/role="heading") anywhere.</p>
+  </div>
+  <p class="note">
+    This is a whole-document check: only one outcome per page. See the companion
+    scenarios in this rule's <code>.test.js</code> file for the three independent PASS
+    conditions (main landmark / working anchor link / heading) — each is trivial to
+    demonstrate individually and not worth three separate fixture files.
+  </p>
+</body>
+</html>

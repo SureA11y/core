@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-presentation-role-conflict — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-presentation-role-conflict</code></h1>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — NEUTRAL: role="presentation" with no naming attribute</div>
+    <div role="presentation" id="prc_case_01">Decorative</div>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — CANTTELL: role="presentation" combined with aria-label</div>
+    <div role="presentation" aria-label="Conflicting" id="prc_case_02">Content</div>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — CANTTELL: role="none" combined with aria-describedby</div>
+    <span id="prc_case_03_desc">Description</span>
+    <div role="none" aria-describedby="prc_case_03_desc" id="prc_case_03">Content</div>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — CANTTELL: role="presentation" on a natively focusable element (button)</div>
+    <button role="presentation" id="prc_case_04">Click</button>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — CANTTELL: role="none" combined with tabindex="0"</div>
+    <div role="none" tabindex="0" id="prc_case_05">Content</div>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — NEUTRAL: role="presentation" on a disabled (non-focusable) button</div>
+    <button role="presentation" disabled id="prc_case_06">Click</button>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — CANTTELL: &lt;img alt=""&gt; combined with aria-hidden="" (empty value, but still a SPECIFIED global ARIA attribute — presence, not value, triggers the WAI-ARIA role-conflict-resolution rule; found on a real site, Slack's homepage)</div>
+    <img src="x.png" alt="" aria-hidden="" id="prc_case_07">
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — NEUTRAL: &lt;img alt=""&gt; alone (empty alt gives it an implicit presentation role via HTML-AAM, but no conflicting condition exists)</div>
+    <img src="x.png" alt="" id="prc_case_08">
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — NEUTRAL: &lt;img alt="decorative"&gt; (non-empty alt does not give an implicit presentation role at all — out of scope for this check)</div>
+    <img src="x.png" alt="decorative" id="prc_case_09">
+  </div>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — CANTTELL: role="presentation" combined with aria-current (a global ARIA attribute outside the narrow naming-only set this rule originally checked)</div>
+    <div role="presentation" aria-current="page" id="prc_case_10">Content</div>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

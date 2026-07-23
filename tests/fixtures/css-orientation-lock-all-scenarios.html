@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-css-orientation-lock — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+
+    /* B — FAIL: locks landscape content to rotate when device is portrait */
+    @media (orientation: landscape) {
+      .lockedRegion { transform: rotate(90deg); }
+    }
+
+    /* C — not flagged: orientation media query with no rotate */
+    @media (orientation: portrait) {
+      .responsiveRegion { padding: 4px; }
+    }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-css-orientation-lock</code></h1>
+
+  <p class="note">
+    This is a whole-document check (like <code>aria-hidden-body</code>):
+    only one outcome is demonstrable per fixture page (see
+    <code>docs/RULE_AUTHORING.md</code> §11.2). This fixture demonstrates
+    the FAIL branch; PASS/notApplicable are covered by this rule's inline
+    unit tests instead.
+  </p>
+
+  <div class="lockedRegion">Content affected by the orientation-lock media query above.</div>
+  <div class="responsiveRegion">Content in a normal, non-locking orientation media query.</div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

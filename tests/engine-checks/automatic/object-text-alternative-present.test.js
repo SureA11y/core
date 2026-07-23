@@ -87,7 +87,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/object-text-alternative-prese
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
   // Expected fails for the crafted fixture.
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 6, maxOccurrences: 6 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 7, maxOccurrences: 7 });
 
   const expectedFailIds = [
     'object_case_01',
@@ -95,7 +95,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/object-text-alternative-prese
     'object_case_10',
     'object_case_11',
     'object_case_12',
-    'object_case_17'
+    'object_case_17',
+    'object_case_18'  // whitespace-only fallback content does not count
   ];
 
   const expectedNoOccIds = [

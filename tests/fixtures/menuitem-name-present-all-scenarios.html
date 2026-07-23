@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-menuitem-name-present — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+    .hiddenvis { visibility: hidden; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-menuitem-name-present</code> (role="menuitem"/"menuitemcheckbox"/"menuitemradio" must have an accessible name)</h1>
+
+  <p class="note">
+    Each target element has a stable <code>id</code> of the form <code>menuitem_case_NN</code>.
+    Unlike combobox/listbox/textbox/searchbox/spinbutton/slider/dialog, menu items ARE
+    name-from-content: visible subtree text is a valid fallback name source (priority:
+    aria-label &gt; aria-labelledby &gt; title &gt; content).
+  </p>
+
+  <h2>A. Baseline: mechanism priority order (eligible)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: role=menuitem, no name at all, no content</div>
+    <div role="menuitem" tabindex="0" id="menuitem_case_01"></div>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — PASS: role=menuitem, visible text content (content fallback allowed here)</div>
+    <div role="menuitem" tabindex="0" id="menuitem_case_02">Cut</div>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — PASS: role=menuitem, aria-label</div>
+    <div role="menuitem" tabindex="0" id="menuitem_case_03" aria-label="Copy"><span aria-hidden="true">📋</span></div>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — PASS: role=menuitem, aria-labelledby</div>
+    <span id="menuitem_case_04_lbl">Paste</span>
+    <div role="menuitem" tabindex="0" id="menuitem_case_04" aria-labelledby="menuitem_case_04_lbl"></div>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — PASS: role=menuitem, title</div>
+    <div role="menuitem" tabindex="0" id="menuitem_case_05" title="Undo"></div>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — FAIL: role=menuitem, content is aria-hidden (does not count)</div>
+    <div role="menuitem" tabindex="0" id="menuitem_case_06"><span aria-hidden="true">Redo</span></div>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — FAIL: role=menuitem, content is [hidden] (does not count)</div>
+    <div role="menuitem" tabindex="0" id="menuitem_case_07"><span hidden>Duplicate</span></div>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — FAIL: role=menuitem, whitespace-only content</div>
+    <div role="menuitem" tabindex="0" id="menuitem_case_08">   </div>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — PASS: role=menuitemcheckbox, content</div>
+    <div role="menuitemcheckbox" tabindex="0" aria-checked="false" id="menuitem_case_09">Show toolbar</div>
+  </div>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — FAIL: role=menuitemcheckbox, no name</div>
+    <div role="menuitemcheckbox" tabindex="0" aria-checked="false" id="menuitem_case_10"></div>
+  </div>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — PASS: role=menuitemradio, content</div>
+    <div role="menuitemradio" tabindex="0" aria-checked="true" id="menuitem_case_11">List view</div>
+  </div>
+
+  <div class="case" id="case_12">
+    <div class="case-title">12 — FAIL: role=menuitemradio, no name</div>
+    <div role="menuitemradio" tabindex="0" aria-checked="false" id="menuitem_case_12"></div>
+  </div>
+
+  <h2>B. Visible but excluded from AT (ineligible)</h2>
+
+  <div class="case" id="case_13">
+    <div class="case-title">13 — NEUTRAL/INELIGIBLE: aria-hidden="true", not focusable, missing name</div>
+    <div role="menuitem" aria-hidden="true" id="menuitem_case_13"></div>
+  </div>
+
+  <div class="case" id="case_14">
+    <div class="case-title">14 — EXCEPTION: aria-hidden="true" but focusable => eligible, missing name => FAIL</div>
+    <div role="menuitem" aria-hidden="true" tabindex="0" id="menuitem_case_14"></div>
+  </div>
+
+  <h2>C. Hidden by HTML/CSS (ineligible)</h2>
+
+  <div class="case" id="case_15">
+    <div class="case-title">15 — NEUTRAL/INELIGIBLE: hidden attribute</div>
+    <div role="menuitem" hidden id="menuitem_case_15"></div>
+  </div>
+
+  <div class="case" id="case_16">
+    <div class="case-title">16 — NEUTRAL/INELIGIBLE: display:none</div>
+    <div role="menuitem" style="display:none" id="menuitem_case_16"></div>
+  </div>
+
+  <div class="case" id="case_17">
+    <div class="case-title">17 — NEUTRAL/INELIGIBLE: visibility:hidden</div>
+    <div role="menuitem" class="hiddenvis" id="menuitem_case_17"></div>
+  </div>
+
+  <div class="case" id="case_18">
+    <div class="case-title">18 — EXCEPTION: visibility:hidden ancestor overridden by descendant visibility:visible => eligible, missing name => FAIL</div>
+    <div style="visibility:hidden">
+      <div role="menuitem" tabindex="0" style="visibility:visible" id="menuitem_case_18"></div>
+    </div>
+  </div>
+
+  <h2>D. Inertness (ineligible)</h2>
+
+  <div class="case" id="case_19">
+    <div class="case-title">19 — NEUTRAL/INELIGIBLE: inert on element itself</div>
+    <div role="menuitem" inert id="menuitem_case_19"></div>
+  </div>
+
+  <div class="case" id="case_20">
+    <div class="case-title">20 — NEUTRAL/INELIGIBLE: inert ancestor</div>
+    <div inert>
+      <div role="menuitem" id="menuitem_case_20"></div>
+    </div>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

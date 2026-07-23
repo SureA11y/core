@@ -11,7 +11,7 @@
  *   "Intended to be conveyed" is approximated deterministically by at least one of:
  *     - role="img"
  *     - aria-label / aria-labelledby present
- *     - <title> or <desc> present
+ *     - <title> or <desc> present (desc alone is an applicability signal only — see @expectation)
  *     - focusable/tabbable (e.g., tabindex, native focusability)
  *
  *   Images with role="presentation" or role="none" are excluded only when they are not focusable.
@@ -19,15 +19,21 @@
  *   if they are tabbable-focusable or referenced by IDREF relationships (per engine eligibility checks).
  * @expectation
  *   Each applicable <svg> element provides a text alternative via:
- *     - non-empty <title> or <desc> text, OR
+ *     - non-empty <title> text, OR
  *     - an ARIA name (aria-label / aria-labelledby).
+ *   A <desc> element alone does NOT satisfy this — per the SVG Accessibility
+ *   API Mappings spec §7.1, <desc> only ever contributes to the accessible
+ *   DESCRIPTION, never the accessible NAME (verified 2026-07-20 directly
+ *   against the SVG-AAM spec text, not assumed). An <svg> with only a
+ *   <desc> and no <title>/ARIA name is still "applicable" (desc signals
+ *   authorial intent) but fails, matching the reference engine's svg-img-alt.
  */
 
 const id = 'a11ycore-svg-text-alternative-present';
 
 const meta = {
     title: '<svg> must provide a text alternative',
-    description: 'Checks that inline <svg> elements provide a text alternative via <title>/<desc> or an ARIA name.',
+    description: 'Checks that inline <svg> elements provide a text alternative via a <title> element or an ARIA name (a <desc> element alone does not count — it only contributes to the accessible description, not the name).',
     i18n: {
         titleKey: 'a11ycore_svg_textAltPresent_title',
         descriptionKey: 'a11ycore_svg_textAltPresent_description'
@@ -88,12 +94,39 @@ function runInPage(ctx) {
         }
     }
 
-    function nonEmptyDirectChildText(svg, localName) {
+    // Per SVG accessible-name conventions, only a <title> that is literally
+    // the first child element is used by assistive technologies as the
+    // SVG's accessible name; a <title> appearing later among the children
+    // is commonly ignored by AT even though it's still a valid DOM child.
+    function nonEmptyFirstChildTitleText(svg) {
         try {
-            for (let n = svg.firstElementChild; n; n = n.nextElementSibling) {
-                const tn = (n.localName || n.tagName || '').toLowerCase();
-                if (tn === localName) {
-                    const txt = trim(n.textContent);
+            const first = svg.firstElementChild;
+            const tn = first ? (first.localName || first.tagName || '').toLowerCase() : '';
+            if (tn === 'title') {
+                const txt = trim(first.textContent);
+                if (txt) return txt;
+            }
+        } catch {
+        }
+        return '';
+    }
+
+    // <desc> counts when it is the first child, or the second child
+    // immediately following a <title> — the standard <title>+<desc> pairing
+    // (e.g. <svg><title>...</title><desc>...</desc>...</svg>). A <desc>
+    // appearing later than that is not reliably read by AT.
+    function nonEmptyDescText(svg) {
+        try {
+            const first = svg.firstElementChild;
+            const firstTag = first ? (first.localName || first.tagName || '').toLowerCase() : '';
+            if (firstTag === 'desc') {
+                const txt = trim(first.textContent);
+                if (txt) return txt;
+            } else if (firstTag === 'title' && first.nextElementSibling) {
+                const second = first.nextElementSibling;
+                const secondTag = (second.localName || second.tagName || '').toLowerCase();
+                if (secondTag === 'desc') {
+                    const txt = trim(second.textContent);
                     if (txt) return txt;
                 }
             }
@@ -174,8 +207,8 @@ function runInPage(ctx) {
         } catch {
         }
 
-        const titleText = nonEmptyDirectChildText(el, 'title');
-        const descText = titleText ? '' : nonEmptyDirectChildText(el, 'desc'); // avoid second scan if title already passes
+        const titleText = nonEmptyFirstChildTitleText(el);
+        const descText = titleText ? '' : nonEmptyDescText(el); // avoid second scan if title already passes
         const hasTitleOrDesc = !!(titleText || descText);
 
         const hasIntent =
@@ -220,7 +253,10 @@ function runInPage(ctx) {
             }
         }
 
-        const ok = hasTitleOrDesc || hasAriaName;
+        // Per SVG-AAM §7.1: <desc> contributes only to the accessible
+        // DESCRIPTION, never the accessible NAME — so descText does not
+        // count here even though it does count toward applicability above.
+        const ok = !!titleText || hasAriaName;
         if (ok) continue;
 
         let eligInfo = null;
@@ -230,7 +266,7 @@ function runInPage(ctx) {
 
         const baseOccurrence = {
             summary: 'Missing text alternative for <svg>.',
-            hint: 'Provide a <title> or <desc> element with text, or an ARIA name (aria-label/aria-labelledby).',
+            hint: 'Provide a <title> element with text, or an ARIA name (aria-label/aria-labelledby) — a <desc> element alone does not provide an accessible name.',
             i18n: {
                 summaryKey: 'a11ycore_svg_textAltPresent_summary_fail',
                 hintKey: 'a11ycore_svg_textAltPresent_hint_fail',

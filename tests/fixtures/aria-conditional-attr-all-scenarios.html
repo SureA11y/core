@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-aria-conditional-attr — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-aria-conditional-attr</code></h1>
+
+  <p class="note">
+    Each target element has a stable <code>id</code> of the form <code>aca_case_NN</code>.
+  </p>
+
+  <h2>A. PASS — aria-invalid is a truthy value</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — PASS: aria-invalid="true"</div>
+    <input id="aca_case_01" aria-errormessage="err1" aria-invalid="true">
+    <div id="err1">Error text</div>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — PASS: aria-invalid="grammar"</div>
+    <input id="aca_case_02" aria-errormessage="err2" aria-invalid="grammar">
+    <div id="err2">Error text</div>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — PASS: aria-invalid="spelling"</div>
+    <input id="aca_case_03" aria-errormessage="err3" aria-invalid="spelling">
+    <div id="err3">Error text</div>
+  </div>
+
+  <h2>B. FAIL — aria-invalid missing or "false"</h2>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — FAIL: aria-errormessage present, aria-invalid absent</div>
+    <input id="aca_case_04" aria-errormessage="err4">
+    <div id="err4">Error text</div>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — FAIL: aria-errormessage present, aria-invalid="false"</div>
+    <input id="aca_case_05" aria-errormessage="err5" aria-invalid="false">
+    <div id="err5">Error text</div>
+  </div>
+
+  <h2>C. Not applicable (skipped, not counted)</h2>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — NEUTRAL: no aria-errormessage at all</div>
+    <input id="aca_case_06" aria-invalid="true">
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

@@ -15,8 +15,12 @@
  *   Videos with role="presentation" or role="none" are excluded only when they are not focusable.
  * @expectation
  *   Each applicable <video> element provides a text alternative for the poster image, via:
- *   - an accessible name (aria-label / aria-labelledby / title), OR
- *   - meaningful fallback text inside the <video> element.
+ *   - an accessible name (aria-label / aria-labelledby / title).
+ *   Between-tag fallback content inside <video> is NOT accepted: it is only
+ *   rendered by browsers that don't support <video>, so it is not reliably
+ *   exposed to assistive technologies in practice. <video> is also not a
+ *   labelable element, so native <label for="..."> associations are not
+ *   accepted either.
  */
 
 const id = 'a11ycore-video-poster-text-alternative-present';
@@ -24,7 +28,7 @@ const id = 'a11ycore-video-poster-text-alternative-present';
 const meta = {
   title: '<video> poster must have a text alternative',
   description:
-    'Checks that <video> elements with a poster image provide a text alternative (accessible name or fallback text).',
+    'Checks that <video> elements with a poster image provide a text alternative (accessible name).',
   i18n: {
     titleKey: 'a11ycore_videoPoster_textAltPresent_title',
     descriptionKey: 'a11ycore_videoPoster_textAltPresent_description'
@@ -71,19 +75,38 @@ function runInPage(ctx) {
     ? helpers.getFocusableInfo
     : null;
 
-  const getAccessibleNameInfo = helpers && typeof helpers.getAccessibleNameInfo === 'function'
-    ? helpers.getAccessibleNameInfo
+  const getAriaNameInfo = helpers && typeof helpers.getAriaNameInfo === 'function'
+    ? helpers.getAriaNameInfo
     : null;
 
   function trim(v) { return (v == null ? '' : String(v)).trim(); }
 
-  function hasMeaningfulFallbackText(el) {
-    try {
-      const t = trim((el && el.textContent) || '');
-      return t.length > 0;
-    } catch {
-      return false;
+  function computeNameInfo(el) {
+    // <video> is not a labelable element (no browser computes an accessible
+    // name from <label for="...">), so only ARIA naming and title count —
+    // do not accept native <label> associations.
+    const flags = [];
+    let aria = null;
+
+    if (getAriaNameInfo) {
+      aria = (() => { try { return getAriaNameInfo(el, ctx); } catch { return null; } })();
     }
+
+    if (aria && aria.present && trim(aria.value)) {
+      return { present: true, value: trim(aria.value), mechanism: aria.mechanism || 'aria', flags: (aria.flags || []).slice(0) };
+    }
+
+    const title = trim(el.getAttribute && el.getAttribute('title'));
+    if (title) {
+      flags.push('title-used');
+      return { present: true, value: title, mechanism: 'title', flags };
+    }
+
+    if (aria && aria.flags && aria.flags.length) {
+      for (const f of aria.flags) flags.push(f);
+    }
+
+    return { present: false, value: '', mechanism: 'none', flags };
   }
 
   const videos = (() => {
@@ -132,15 +155,8 @@ function runInPage(ctx) {
 
     applicableCount += 1;
 
-    const hasFallback = hasMeaningfulFallbackText(el);
-    if (hasFallback) continue;
-
-    const nameInfo = getAccessibleNameInfo
-        ? (() => { try { return getAccessibleNameInfo(el, ctx); } catch { return null; } })()
-        : null;
-
-    const hasName = !!(nameInfo && nameInfo.present && trim(nameInfo.value));
-    if (hasName) continue;
+    const nameInfo = computeNameInfo(el);
+    if (nameInfo.present) continue;
 
     let eligInfo = null;
     if (getEligibilityInfo) {
@@ -149,7 +165,7 @@ function runInPage(ctx) {
 
     const baseOccurrence = {
       summary: 'Missing text alternative for <video> poster.',
-      hint: 'Provide an accessible name (e.g., aria-label/aria-labelledby) or meaningful fallback text inside <video>.',
+      hint: 'Provide an accessible name (e.g., aria-label/aria-labelledby) for the poster image.',
       i18n: {
         summaryKey: 'a11ycore_videoPoster_textAltPresent_summary_fail',
         hintKey: 'a11ycore_videoPoster_textAltPresent_hint_fail',

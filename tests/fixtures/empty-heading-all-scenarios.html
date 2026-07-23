@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-empty-heading — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-empty-heading</code></h1>
+
+  <p class="note">Each target has a stable <code>id</code> of the form <code>eh_case_NN</code>.</p>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — NEUTRAL: heading with text content</div>
+    <h2 id="eh_case_01">Section title</h2>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — CANTTELL: empty heading, no accessible name</div>
+    <h2 id="eh_case_02"></h2>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — NEUTRAL: empty native heading but has aria-label</div>
+    <h2 id="eh_case_03" aria-label="Section title"></h2>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — NEUTRAL: empty heading but has a title attribute (last-resort naming fallback)</div>
+    <h2 id="eh_case_04" title="Section title"></h2>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — NEUTRAL: empty heading, but aria-hidden (not exposed to AT, skipped)</div>
+    <h2 id="eh_case_05" aria-hidden="true"></h2>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — NEUTRAL: empty heading, but display:none (not exposed to AT, skipped)</div>
+    <h2 id="eh_case_06" style="display:none"></h2>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — NEUTRAL: heading has no direct text, but a named descendant (icon-only link with its own aria-label) contributes an accessible name (found on a real site — Navy Federal's logo-link header)</div>
+    <h2 id="eh_case_07"><a href="/" aria-label="Site homepage"><svg width="10" height="10"></svg></a></h2>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — CANTTELL: heading has no direct text, and its only descendant link has no name either (icon-only link with no aria-label)</div>
+    <h2 id="eh_case_08"><a href="/"><svg width="10" height="10"></svg></a></h2>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — CANTTELL: heading's only text content is inside a CSS display:none descendant — never exposed to assistive technology, so it must not count as a name (found on a real site — Instacart's footer "Top departments" toggle, a responsive-hidden &lt;button&gt;)</div>
+    <h2 id="eh_case_09"><button style="display:none"><span>Top departments</span></button></h2>
+  </div>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — NEUTRAL: heading has no direct text, but a named descendant image (alt text, nested through an extra non-naming &lt;div&gt; wrapper) contributes an accessible name (found on a real site — Party City's logo header)</div>
+    <h1 id="eh_case_10"><a href="/"><div><img src="logo.png" alt="Colorful 'Party City' logo"></div></a></h1>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

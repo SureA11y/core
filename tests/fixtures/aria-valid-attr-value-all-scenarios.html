@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-aria-valid-attr-value — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-aria-valid-attr-value</code> (aria-* values must match their declared type)</h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>avav_case_NN</code>.
+  </p>
+
+  <h2>A. Valid</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — PASS: valid boolean value</div>
+    <div aria-hidden="true" id="avav_case_01"></div>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — PASS: valid tristate value ("mixed")</div>
+    <div aria-checked="mixed" id="avav_case_02"></div>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — PASS: valid enumerated token</div>
+    <div aria-live="assertive" id="avav_case_03"></div>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — PASS: valid integer aria-level</div>
+    <div role="heading" aria-level="3" id="avav_case_04"></div>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — PASS: any non-empty string-typed attribute value</div>
+    <div aria-label="Anything at all" id="avav_case_05"></div>
+  </div>
+
+  <div class="case" id="case_12">
+    <div class="case-title">12 — PASS: idref-list resolves (at least one id exists)</div>
+    <span id="avav_case_12_label">Label text</span>
+    <div aria-labelledby="avav_case_12_label" id="avav_case_12"></div>
+  </div>
+
+  <div class="case" id="case_13">
+    <div class="case-title">13 — PASS: idref-list is partially dangling (one id exists, one doesn't) — conservatively not flagged</div>
+    <span id="avav_case_13_label">Label text</span>
+    <div aria-labelledby="avav_case_13_label avav_case_13_missing" id="avav_case_13"></div>
+  </div>
+
+  <h2>B. Invalid</h2>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — FAIL: invalid boolean value</div>
+    <div aria-hidden="yes" id="avav_case_06"></div>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — FAIL: invalid tristate value</div>
+    <div aria-checked="maybe" id="avav_case_07"></div>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — FAIL: invalid enumerated token</div>
+    <div aria-live="loud" id="avav_case_08"></div>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — FAIL: non-integer aria-level</div>
+    <div role="heading" aria-level="abc" id="avav_case_09"></div>
+  </div>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — FAIL: empty ID-reference-list value</div>
+    <div aria-labelledby="" id="avav_case_10"></div>
+  </div>
+
+  <div class="case" id="case_14">
+    <div class="case-title">14 — FAIL: idref-list references only a non-existent id (dangling)</div>
+    <div aria-labelledby="avav_case_14_does_not_exist" id="avav_case_14"></div>
+  </div>
+
+  <div class="case" id="case_15">
+    <div class="case-title">15 — FAIL: single-idref attribute (aria-activedescendant) references a non-existent id</div>
+    <div role="listbox" aria-activedescendant="avav_case_15_does_not_exist" id="avav_case_15"></div>
+  </div>
+
+  <h2>C. Not applicable (skipped, not counted)</h2>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — NEUTRAL: the only aria-* attribute is unrecognized (a different rule's concern)</div>
+    <div aria-labell="typo" id="avav_case_11"></div>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

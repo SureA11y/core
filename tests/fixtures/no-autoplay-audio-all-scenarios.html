@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-no-autoplay-audio — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-no-autoplay-audio</code></h1>
+
+  <p class="note">
+    Each target media element has a stable <code>id</code> of the form <code>naa_case_NN</code>.
+  </p>
+
+  <h2>A. CANTTELL — autoplaying, unmuted, no controls mechanism</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — CANTTELL: autoplaying &lt;audio&gt;, no controls, not muted</div>
+    <audio id="naa_case_01" autoplay src="x.mp3"></audio>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — CANTTELL: autoplaying &lt;video&gt;, no controls, not muted</div>
+    <video id="naa_case_02" autoplay src="x.mp4"></video>
+  </div>
+
+  <h2>B. Not flagged</h2>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — NEUTRAL: autoplaying but muted (not audible)</div>
+    <audio id="naa_case_03" autoplay muted src="x.mp3"></audio>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — NEUTRAL: autoplaying with native controls (pause/volume mechanism present)</div>
+    <audio id="naa_case_04" autoplay controls src="x.mp3"></audio>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — NEUTRAL: no autoplay attribute at all</div>
+    <audio id="naa_case_05" src="x.mp3"></audio>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

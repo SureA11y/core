@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-duplicate-id-aria — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-duplicate-id-aria</code> (ids referenced by ARIA attrs must be unique)</h1>
+
+  <p class="note">
+    Each duplicated-id element carries its own stable <code>id</code> of the form
+    <code>dia_case_NN</code>; the ARIA-referenced/duplicated id itself is a separate string
+    (e.g. <code>dia_ref_01</code>) reused by two elements.
+  </p>
+
+  <h2>A. Valid (unique)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — PASS: aria-labelledby references a unique id</div>
+    <span id="dia_ref_ok">Unique label</span>
+    <button id="dia_case_01" aria-labelledby="dia_ref_ok">x</button>
+  </div>
+
+  <h2>B. Invalid (duplicated, ARIA-referenced)</h2>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — FAIL: two elements share an id referenced by aria-labelledby (first duplicate)</div>
+    <span id="dia_ref_01" class="dia-dup-01">Label A</span>
+    <button id="dia_case_02" aria-labelledby="dia_ref_01">x</button>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — FAIL: second element sharing that same id</div>
+    <span id="dia_ref_01" class="dia-dup-01" data-dupe="true">Label A duplicate</span>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — FAIL: duplicated id referenced via aria-describedby</div>
+    <span id="dia_ref_02">Description</span>
+    <input id="dia_case_04" aria-describedby="dia_ref_02">
+    <span id="dia_ref_02" data-dupe="true">Description duplicate</span>
+  </div>
+
+  <h2>C. Not applicable (skipped, not counted)</h2>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — NEUTRAL: duplicated id that is never referenced by any ARIA attribute</div>
+    <div id="dia_unreferenced_dup" data-dupe="true"></div>
+    <div id="dia_unreferenced_dup" data-dupe="true"></div>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

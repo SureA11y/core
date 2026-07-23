@@ -9,10 +9,21 @@
  * - Reduce per-element DOM queries and avoid unnecessary helper calls.
  *
  * Key safety points:
- * - Control discovery remains scoped to `root || document` (same as original).
+ * - Control discovery goes through helpers.queryAllSmart/queryAll (multi-root
+ *   and shadow-DOM aware), not a direct root/safeRoot DOM query -- ctx.root
+ *   is an array (multi-region contextSelector support), not a single element.
  * - label[for] association uses a single precomputed Set of `for` values (document-wide, like original).
  * - getFocusableInfo is only invoked when role is presentational and thus relevant.
  * - aria-labelledby / aria-label helper resolution is only invoked when the attribute is present.
+ *
+ * WCAG mapping: matches technique H44 ("Using label elements to associate
+ * text labels with form controls"), which WCAG's own Techniques document
+ * lists as sufficient for 1.3.1, 3.3.2, AND 4.1.2 simultaneously — a label
+ * that programmatically associates with a control conveys the
+ * relationship (1.3.1), provides the instruction (3.3.2), and exposes the
+ * accessible name (4.1.2) all at once. This rule was originally only wired
+ * to 4.1.2, even though its own `tags` already listed wcag131/wcag332 and
+ * wcag-facets.js already had matching facet ids under those SCs.
  */
 
 const id = 'a11ycore-form-control-programmatic-label-present';
@@ -27,8 +38,10 @@ const meta = {
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag131', 'wcag332', 'wcag412', 'forms', 'labels', 'atomic', 'automatic'],
-  wcagSc: ['4.1.2'],
+  wcagSc: ['1.3.1', '3.3.2', '4.1.2'],
   normativeMappings: [
+    { standard: 'WCAG', version: '2.2', requirement: '1.3.1', title: 'Info and Relationships', conformanceLevel: 'A' },
+    { standard: 'WCAG', version: '2.2', requirement: '3.3.2', title: 'Labels or Instructions', conformanceLevel: 'A' },
     { standard: 'WCAG', version: '2.2', requirement: '4.1.2', title: 'Name, Role, Value', conformanceLevel: 'A' }
   ],
   defaultSeverity: 'serious',
@@ -37,14 +50,15 @@ const meta = {
   defaultConfidence: 'medium',
   coverage: {
     facetsBySc: {
+      '1.3.1': ['form-control-programmatic-label-present'],
+      '3.3.2': ['form-control-labels-or-instructions-present'],
       '4.1.2': ['form-control-name-present']
     }
   }
 };
 
 function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const isAccTreeEligible = helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
   const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
@@ -56,6 +70,36 @@ function runInPage(ctx) {
 
   const getAttributeInfo = helpers && typeof helpers.getAttributeInfo === 'function' ? helpers.getAttributeInfo : null;
   const getLabelMethod = helpers && typeof helpers.getLabelMethod === 'function' ? helpers.getLabelMethod : null;
+  const getContentNameInfo = helpers && typeof helpers.getContentNameInfo === 'function' ? helpers.getContentNameInfo : null;
+  const getAriaNameInfo = helpers && typeof helpers.getAriaNameInfo === 'function' ? helpers.getAriaNameInfo : null;
+
+  // A <label> counts as an association if it contributes a name either via
+  // its own aria-label/aria-labelledby (checked first, same ARIA-over-
+  // content precedence any element's accessible name gives — verified
+  // against a real page: <label aria-label="Toggle Navigation"><svg
+  // aria-hidden="true">...</svg></label> names its control "Toggle
+  // Navigation" even though the label's only child content is aria-hidden)
+  // or, failing that, non-empty ACCESSIBLE content (getContentNameInfo
+  // already excludes aria-hidden/display:none/inert descendants — a label
+  // whose only text is aria-hidden gives the control no real accessible
+  // name even though the structural association exists). See
+  // dom-helpers.js's labelContributesAccessibleName for the primary
+  // (shared-helper) path; this is the fallback-only mirror.
+  function labelHasAccessibleContent(labelEl) {
+    if (getAriaNameInfo) {
+      try {
+        const aria = getAriaNameInfo(labelEl, ctx);
+        if (aria && aria.present && trim(aria.value)) return true;
+      } catch {}
+    }
+    if (!getContentNameInfo) return true; // conservative: don't newly fail without the helper
+    try {
+      const info = getContentNameInfo(labelEl, ctx);
+      return !!(info && info.present && trim(info.value));
+    } catch {
+      return true;
+    }
+  }
 
   const trim = (v) => (v == null ? '' : String(v)).trim();
 
@@ -84,9 +128,11 @@ function runInPage(ctx) {
     }
   }
 
-  // Build a document-wide Set of label[for] values once (O(#labels) instead of O(#controls) selector queries).
-  // This matches original semantics, which queried `document.querySelector(label[for="id"])`.
-  const labelForSet = new Set();
+  // Build a document-wide Map of label[for] value -> label element once
+  // (O(#labels) instead of O(#controls) selector queries). Keeps the
+  // element reference (not just a presence flag) so hasLabelAssociation can
+  // check the label's actual accessible content.
+  const labelForMap = new Map();
   try {
     if (document && typeof document.getElementsByTagName === 'function') {
       const labels = document.getElementsByTagName('label');
@@ -94,7 +140,7 @@ function runInPage(ctx) {
         const lab = labels[i];
         if (!lab || !lab.getAttribute) continue;
         const f = trim(lab.getAttribute('for'));
-        if (f) labelForSet.add(f);
+        if (f && !labelForMap.has(f)) labelForMap.set(f, lab);
       }
     }
   } catch {
@@ -113,16 +159,19 @@ function runInPage(ctx) {
   }
 
   function hasLabelAssociation(el) {
-    // 1) Native labels API
+    // 1) Native labels API — resolves both wrapping <label> and
+    // <label for="id"> as real elements in one call.
     try {
-      if (el && 'labels' in el && el.labels && el.labels.length) return true;
+      if (el && 'labels' in el && el.labels && el.labels.length) {
+        return Array.prototype.some.call(el.labels, labelHasAccessibleContent);
+      }
     } catch {}
 
     // 2) Wrapped by <label>
     try {
       if (el && el.closest) {
         const wrap = el.closest('label');
-        if (wrap) return true;
+        if (wrap) return labelHasAccessibleContent(wrap);
       }
     } catch {}
 
@@ -130,7 +179,8 @@ function runInPage(ctx) {
     try {
       const idAttr = el && el.getAttribute ? trim(el.getAttribute('id')) : '';
       if (!idAttr) return false;
-      return labelForSet.has(idAttr);
+      const lab = labelForMap.get(idAttr);
+      return !!lab && labelHasAccessibleContent(lab);
     } catch {
       return false;
     }
@@ -176,9 +226,24 @@ function runInPage(ctx) {
     })();
     if (titleV) return { method: 'title', value: titleV };
 
-    const phV = getNonEmptyAttrViaHelper(el, 'placeholder') || (() => {
-      try { return trim(el.getAttribute('placeholder')); } catch { return ''; }
+    // `placeholder` is only a valid name/hint source for text-entry input
+    // types and <textarea> — not checkbox/radio/range/color/date/... or
+    // <select>, which browsers/AT never read a placeholder from.
+    const isPlaceholderCapable = (() => {
+      try {
+        const tag = (el.tagName || '').toLowerCase();
+        if (tag === 'textarea') return true;
+        if (tag !== 'input') return false;
+        const type = trim(el.getAttribute('type') || 'text').toLowerCase() || 'text';
+        return ['text', 'search', 'tel', 'url', 'email', 'password', 'number'].includes(type);
+      } catch {
+        return false;
+      }
     })();
+
+    const phV = isPlaceholderCapable && (getNonEmptyAttrViaHelper(el, 'placeholder') || (() => {
+      try { return trim(el.getAttribute('placeholder')); } catch { return ''; }
+    })());
     if (phV) return { method: 'placeholder', value: phV };
 
     return { method: 'none', value: '' };
@@ -199,40 +264,27 @@ function runInPage(ctx) {
     return computeLabelMethodFallback(el);
   }
 
-  // Collect nodes scoped to safeRoot (matching original semantics).
-  // Prefer getElementsByTagName (fast) when available on the root.
+  // Collect candidate nodes via the shared queryAllSmart/queryAll helpers
+  // (multi-root/shadow-DOM-aware, cached) rather than raw safeRoot DOM
+  // access -- safeRoot is ctx.root, which is an array with multi-region
+  // contextSelector support and never had a .querySelectorAll/
+  // .getElementsByTagName of its own to call directly.
   const nodes = [];
   try {
-    const rootHasGetByTag = safeRoot && typeof safeRoot.getElementsByTagName === 'function';
+    const sel = 'input,select,textarea';
+    const candidates = (helpers && typeof helpers.queryAllSmart === 'function')
+      ? helpers.queryAllSmart(sel)
+      : (helpers && typeof helpers.queryAll === 'function' ? helpers.queryAll(sel) : []);
 
-    const pushInputs = (coll) => {
-      for (let i = 0; i < coll.length; i++) {
-        const el = coll[i];
-        if (!el || !el.getAttribute) continue;
+    for (const el of (candidates || [])) {
+      if (!el || !el.getAttribute) continue;
+      const tag = (el.tagName || '').toLowerCase();
+      if (tag === 'input') {
         const t = trim(el.getAttribute('type')).toLowerCase();
         // exclude hidden|submit|reset|button|image
         if (t === 'hidden' || t === 'submit' || t === 'reset' || t === 'button' || t === 'image') continue;
-        nodes.push(el);
       }
-    };
-
-    const pushAll = (coll) => {
-      for (let i = 0; i < coll.length; i++) {
-        const el = coll[i];
-        if (el) nodes.push(el);
-      }
-    };
-
-    if (rootHasGetByTag) {
-      pushInputs(safeRoot.getElementsByTagName('input'));
-      pushAll(safeRoot.getElementsByTagName('select'));
-      pushAll(safeRoot.getElementsByTagName('textarea'));
-    } else if (safeRoot && typeof safeRoot.querySelectorAll === 'function') {
-      // fallback: match original selector
-      const sel =
-        'input:not([type="hidden"]):not([type="submit"]):not([type="reset"]):not([type="button"]):not([type="image"]),select,textarea';
-      const list = safeRoot.querySelectorAll(sel);
-      for (let i = 0; i < list.length; i++) nodes.push(list[i]);
+      nodes.push(el);
     }
   } catch {
     // no-throw

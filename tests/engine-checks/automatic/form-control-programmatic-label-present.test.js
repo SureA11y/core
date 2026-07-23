@@ -37,6 +37,40 @@ test('pass: wrapping <label> association', () => {
     assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+test('fail: wrapping <label> whose only text is aria-hidden gives no real accessible name', () => {
+    const html = `
+    <!doctype html><html><body>
+      <label><input id="b" type="checkbox"><span aria-hidden="true">Accept</span></label>
+    </body></html>
+  `;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+    assert.ok(hasOccurrenceForId(rule, 'b'));
+});
+
+test('pass: wrapping <label> has its own aria-label even though its only child content is aria-hidden (found on a real site — basecamp.com\'s nav toggle)', () => {
+    const html = `
+    <!doctype html><html><body>
+      <label aria-label="Toggle Navigation" for="c"><svg aria-hidden="true"><path d="M0 0"/></svg></label>
+      <input id="c" type="checkbox">
+    </body></html>
+  `;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test('fail: <label for> whose only text is aria-hidden gives no real accessible name', () => {
+    const html = `
+    <!doctype html><html><body>
+      <label for="b"><span aria-hidden="true">Volume</span></label>
+      <input id="b" type="range">
+    </body></html>
+  `;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+    assert.ok(hasOccurrenceForId(rule, 'b'));
+});
+
 test('pass: aria-label (non-empty)', () => {
     const html = `
     <!doctype html><html><body>
@@ -164,12 +198,15 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/form-control-programmatic-lab
         'fc_case_37',
         'fc_case_39a',
         'fc_case_40b',
+        'fc_case_41',
+        'fc_case_43',
     ];
 
     const expectedNoOccIds = [
         // PASS cases
         'fc_case_02','fc_case_03','fc_case_04','fc_case_05','fc_case_06','fc_case_07',
         'fc_case_11','fc_case_13','fc_case_14','fc_case_15','fc_case_16','fc_case_17','fc_case_20','fc_case_23','fc_case_26','fc_case_38','fc_case_40a',
+        'fc_case_42','fc_case_44',
 
         // Ineligible in acc (should not produce occurrences)
         'fc_case_24','fc_case_27','fc_case_28','fc_case_29','fc_case_30','fc_case_31','fc_case_32',

@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-link-in-text-block — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; background: #ffffff; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+    .case p { color: #222222; font-weight: 400; font-style: normal; margin: 0; }
+    /* Reset link decoration via a class, not a bare `a {}` selector — jsdom's
+       cascade does not let a plain-tag author selector win over the UA
+       default underline on <a>, even though a class selector correctly
+       does. Every case below applies .nodeco explicitly for that reason. */
+    .nodeco { text-decoration: none; }
+    .underlined { text-decoration: underline; }
+    .bold { font-weight: 700; }
+    .italic { font-style: italic; }
+    .sufficientContrast { color: #969696; } /* vs #222222 parent text: ~5.4:1, >= 3:1 */
+    .colorOnly { color: #2a2a2a; } /* vs #222222 parent text: ~1.1:1, well under 3:1 */
+    .bgImage { background-image: linear-gradient(90deg, #ffffff, #000000); }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-link-in-text-block</code> (links in text distinguishable without color alone)</h1>
+
+  <p class="note">
+    Each target link has a stable <code>id</code> of the form <code>litb_case_NN</code>.
+    All cases render on a plain white page background so link/background
+    contrast is always computable; only the link-vs-surrounding-text
+    comparison varies between cases.
+  </p>
+
+  <h2>A. PASS — non-color differentiator present</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — PASS: link is underlined (most common real-world case)</div>
+    <p>Read <a href="#" id="litb_case_01" class="nodeco underlined">this underlined link</a> for more information.</p>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — PASS: link is bold while surrounding text is not</div>
+    <p>Read <a href="#" id="litb_case_02" class="nodeco bold">this bold link</a> for more information.</p>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — PASS: link is italic while surrounding text is not</div>
+    <p>Read <a href="#" id="litb_case_03" class="nodeco italic">this italic link</a> for more information.</p>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — PASS: no non-color differentiator, but color contrast vs surrounding text is >= 3:1 (WCAG technique G183)</div>
+    <p>Read <a href="#" id="litb_case_04" class="nodeco sufficientContrast">this sufficiently-contrasting link</a> for more information.</p>
+  </div>
+
+  <h2>B. FAIL — color is the only cue, and it is an insufficient one</h2>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — FAIL: no underline/weight/style difference, contrast vs surrounding text ~1.1:1 (color-only, indistinguishable)</div>
+    <p>Read <a href="#" id="litb_case_05" class="nodeco colorOnly">this color-only link</a> for more information.</p>
+  </div>
+
+  <h2>C. Not applicable (skipped, not counted)</h2>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — NEUTRAL: link is the sole content of its parent (not "in a text block") — a standalone nav-style link</div>
+    <ul><li><a href="#" id="litb_case_06" class="nodeco">standalone nav link</a></li></ul>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — NEUTRAL: color contrast vs surrounding text not confidently computable (background-image blocker on the link itself) — skipped, not flagged</div>
+    <p>Read <a href="#" id="litb_case_07" class="nodeco colorOnly bgImage">this link over a background image</a> for more information.</p>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

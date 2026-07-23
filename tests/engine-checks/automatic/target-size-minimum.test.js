@@ -2,6 +2,8 @@
 
 const test = require('node:test');
 const assert = require('node:assert');
+const fs = require('node:fs');
+const path = require('node:path');
 
 const { createDom, runa11yCoreOnDom } = require('../../helpers/runa11yCoreOnHtml');
 const { assertRule } = require('../../helpers/assertRule');
@@ -328,4 +330,165 @@ test(`${RULE_ID}: conflict inside svg => cantTell (essential/equivalent uncertai
   </body></html>`;
   const result = run(html);
   assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: undersized target flush against an adequately-sized neighbor => fail (widened geometry check)`, () => {
+  // Regression guard for the fix that widened the pure-geometry spacing
+  // check to compare against ANY nearby target (not just other undersized
+  // ones). #big is >=24x24, so an "undersized-only" comparison would have
+  // missed this conflict; centers are 22.36px apart (< MIN 24), so the
+  // deterministic distance check must catch it directly (hitCount: 0).
+  const html = `<!doctype html><html><body>
+    <button id="small" data-rect="10,10,10,10">Small</button>
+    <button id="big" data-rect="20,10,30,30">Big</button>
+  </body></html>`;
+  const result = run(html);
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const occ = rule.occurrences[0];
+  assert.match(occ.selector, /#small\b/);
+  assert.strictEqual(occ.data.details.reasonCode, 'undersized-and-too-close');
+  assert.strictEqual(occ.data.details.conflictHitCount, 0);
+  assert.match(occ.data.details.conflictWith, /#big\b/);
+});
+
+test(`${RULE_ID}: ambiguous near-threshold perimeter sampling => cantTell (not a hard fail)`, () => {
+  // Empirically verified: centers are ~26.9px apart (just outside the pure
+  // geometry MIN=24 distance check), but the 24x24 sampling circle around
+  // #small's center clips the corner of #big for 3 of 16 perimeter
+  // samples. That lands in the ambiguous band (>= HIT_THRESHOLD-1 but
+  // < CONFIDENT_THRESHOLD), so the rule must defer to manual review
+  // instead of committing to pass or fail.
+  const html = `<!doctype html><html><body>
+    <button id="small" data-rect="10,10,10,10">Small</button>
+    <button id="big" data-rect="25,10,30,30">Big</button>
+  </body></html>`;
+  const result = run(html);
+  assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: nested interactive controls (small control inside its own wrapping link) => pass`, () => {
+  // A small <button> inside a wrapping <a href>, nothing else on the page.
+  // Before the fix, the pure-geometry pass flagged the button as "too
+  // close" to its own ancestor; the perimeter-sampling fallback had the
+  // same one-directional isSameOrInside gap for the reverse (ancestor-hit)
+  // case. Both must now recognize ancestor/descendant as one region, not
+  // two independent targets.
+  const html = `<!doctype html><html><body>
+    <a href="/card" id="outerLink" data-rect="0,0,300,80">
+      <button id="innerBtn" data-rect="270,10,10,10">X</button>
+    </a>
+  </body></html>`;
+  const result = run(html);
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: nested interactive controls, BOTH undersized => pass (pure-geometry pass would otherwise catch it too)`, () => {
+  const html = `<!doctype html><html><body>
+    <a href="/x" id="outerLink2" data-rect="0,0,20,20">
+      <button id="innerBtn2" data-rect="4,4,10,10">X</button>
+    </a>
+  </body></html>`;
+  const result = run(html);
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: User Agent Control exception — unstyled native checkbox/radio pair in a typical list => pass`, () => {
+  // Ordinary, unstyled checkboxes (appearance still "auto") in a normal
+  // compact list layout. Size is browser-default, not the author's choice
+  // — the size requirement doesn't apply at all, regardless of spacing.
+  const html = `<!doctype html><html><body>
+    <label><input type="checkbox" id="cb1" data-rect="0,0,13,13"> Option A</label>
+    <label><input type="checkbox" id="cb2" data-rect="0,20,13,13"> Option B</label>
+  </body></html>`;
+  const result = run(html);
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: User Agent Control exception does NOT apply once the author resets appearance:none`, () => {
+  // Same shape as the pass case above, but the author has taken over
+  // styling (appearance:none) — evaluated normally, and fails like any
+  // other undersized-and-close pair.
+  const html = `<!doctype html><html><body>
+    <input type="checkbox" id="cb3" style="appearance:none" data-rect="0,0,10,10">
+    <input type="checkbox" id="cb4" style="appearance:none" data-rect="15,0,10,10">
+  </body></html>`;
+  const result = run(html);
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  assert.ok(rule.occurrences.some((o) => /#cb3\b/.test(o.selector)));
+  assert.ok(rule.occurrences.some((o) => /#cb4\b/.test(o.selector)));
+});
+
+test(`${RULE_ID}: User Agent Control exception is scoped to checkbox/radio only (not e.g. a small unstyled <select>)`, () => {
+  const html = `<!doctype html><html><body>
+    <select id="sel1" data-rect="0,0,10,10"></select>
+    <select id="sel2" data-rect="15,0,10,10"></select>
+  </body></html>`;
+  const result = run(html);
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+});
+
+test(`${RULE_ID}: fixture coverage (tests/fixtures/target-size-all-scenarios.html)`, () => {
+  const fixturePath = path.join(__dirname, '../..', 'fixtures', 'target-size-all-scenarios.html');
+  const html = fs.readFileSync(fixturePath, 'utf8');
+
+  const result = run(html);
+
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 13, maxOccurrences: 13 });
+
+  function hasOccurrenceForId(id) {
+    return rule.occurrences.some((o) => typeof o.selector === 'string' && new RegExp(`#${id}\\b`).test(o.selector));
+  }
+
+  const expectedFailIds = [
+    'fail_close_a',
+    'fail_close_b',
+    'fail_aria_hidden',
+    'near_aria_hidden',
+    'fail_opacity0',
+    'near_opacity0',
+    'fail_occluded_small',
+    'fail_inline_not_text_container',
+    'fail_near_inline_not_text_container',
+    'fail_geo_a',
+    'fail_geo_b',
+    'fail_styled_checkbox_1',
+    'fail_styled_checkbox_2'
+  ];
+
+  const expectedNoOccIds = [
+    'pass_big',
+    'pass_spaced_small',
+    'excluded_pointer_events',
+    'near_pointer_events', // sole remaining target after excluding pe-none => passes by spacing exception
+    'excluded_display_none',
+    'excluded_visibility_hidden',
+    'excluded_content_visibility_hidden',
+    'excluded_hidden_attr',
+    'details_summary',
+    'excluded_details_content',
+    'excluded_inert',
+    'excluded_no_rects',
+    'occluder_big', // not undersized, not iterated
+    'pass_inline_link',
+    'pass_inline_block_link',
+    'pass_inline_close_link',
+    'pass_button_near_inline_link',
+    'excluded_disabled',
+    'excluded_aria_disabled',
+    'pass_lone_small',
+    'canttell_svg_a', // essential/equivalent uncertainty inside svg => not reported as an occurrence
+    'canttell_svg_b',
+    'pass_nested_outer_link', // ancestor/descendant relationship excluded from spacing conflicts
+    'pass_nested_inner_button',
+    'pass_ua_checkbox_1', // User Agent Control exception: unstyled native checkbox/radio
+    'pass_ua_checkbox_2'
+  ];
+
+  for (const id of expectedFailIds) {
+    assert.ok(hasOccurrenceForId(id), `Expected occurrence for id="${id}"`);
+  }
+
+  for (const id of expectedNoOccIds) {
+    assert.ok(!hasOccurrenceForId(id), `Did not expect occurrence for id="${id}"`);
+  }
 });

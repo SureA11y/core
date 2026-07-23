@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-video-caption — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-video-caption</code></h1>
+
+  <p class="note">
+    Each target &lt;video&gt; has a stable <code>id</code> of the form <code>vc_case_NN</code>.
+  </p>
+
+  <h2>A. Not flagged — captions/subtitles track present</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — NEUTRAL: has a kind="captions" track with a src</div>
+    <video id="vc_case_01" src="x.mp4"><track kind="captions" src="cap.vtt"></video>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — NEUTRAL: has a kind="subtitles" track with a src (accepted as evidence)</div>
+    <video id="vc_case_02" src="x.mp4"><track kind="subtitles" src="sub.vtt"></video>
+  </div>
+
+  <h2>B. CANTTELL — no captions/subtitles evidence</h2>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — CANTTELL: no &lt;track&gt; child at all</div>
+    <video id="vc_case_03" src="x.mp4"></video>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — CANTTELL: has a track, but not kind="captions"/"subtitles"</div>
+    <video id="vc_case_04" src="x.mp4"><track kind="descriptions" src="d.vtt"></video>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — CANTTELL: kind="captions" track present but with no src</div>
+    <video id="vc_case_05" src="x.mp4"><track kind="captions"></video>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

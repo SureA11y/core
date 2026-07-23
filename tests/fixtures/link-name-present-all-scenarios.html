@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-link-name-present — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+    .hiddenvis { visibility: hidden; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-link-name-present</code></h1>
+
+  <p class="note">
+    Targets: a[href], area[href], [role="link"]. Name sources: aria-label /
+    aria-labelledby / label[for] / title (via getAccessibleNameInfo), then
+    conservative subtree-text content fallback for ALL matched elements
+    (unlike the "author-only-name" widget roles). Each target has a stable id
+    <code>link_case_NN</code>.
+  </p>
+
+  <h2>A. Baseline: mechanism priority order (eligible)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: empty &lt;a href&gt;, no text, no aria</div>
+    <a href="/x" id="link_case_01"></a>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — PASS: &lt;a href&gt; with text content</div>
+    <a href="/x" id="link_case_02">Read more</a>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — PASS: &lt;a href&gt; aria-label overrides content</div>
+    <a href="/search" id="link_case_03" aria-label="Search">🔍</a>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — PASS: &lt;a href&gt; aria-labelledby</div>
+    <span id="link_case_04_lbl">Download report</span>
+    <a href="/download" id="link_case_04" aria-labelledby="link_case_04_lbl">⬇️</a>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — PASS: &lt;a href&gt; title</div>
+    <a href="/info" id="link_case_05" title="More information"></a>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — PASS: &lt;a href&gt; visible text + aria-hidden icon (icon ignored)</div>
+    <a href="/cart" id="link_case_06"><span aria-hidden="true">🛒</span> View cart</a>
+  </div>
+
+  <!--
+    FIXED: link-name-present.js's getConservativeSubtreeText() previously
+    referenced the bare global `NodeFilter` (undefined in this engine's
+    execution context), which threw and silently fell back to raw
+    container.textContent — not excluding aria-hidden/[hidden] descendants.
+    It now uses a local SHOW_TEXT = 4 constant, matching every sibling rule.
+  -->
+  <div class="case" id="case_08b">
+    <div class="case-title">08b — FAIL: &lt;a href&gt; whose only content is aria-hidden text</div>
+    <a href="/x" id="link_case_08b"><span aria-hidden="true">Hidden text</span></a>
+    <div class="meta">Content hidden from AT must not count as the link's accessible name.</div>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — FAIL: &lt;a href&gt; whitespace-only content</div>
+    <a href="/ws" id="link_case_09">   </a>
+  </div>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — FAIL: &lt;a href&gt; aria-label empty string, empty content</div>
+    <a href="/empty-label" id="link_case_10" aria-label=""></a>
+  </div>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — FAIL: role=link (span), focusable, no name, no content</div>
+    <span role="link" tabindex="0" id="link_case_11"></span>
+  </div>
+
+  <div class="case" id="case_12">
+    <div class="case-title">12 — PASS: role=link (span), content (content fallback allowed)</div>
+    <span role="link" tabindex="0" id="link_case_12">Open settings</span>
+  </div>
+
+  <div class="case" id="case_13">
+    <div class="case-title">13 — FAIL: &lt;area href&gt; with alt only (alt is not a recognized name mechanism for this rule), no aria</div>
+    <img
+      src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%2345c46a'/%3E%3C/svg%3E"
+      alt="" usemap="#link_case_13_map" />
+    <map name="link_case_13_map" id="link_case_13_map">
+      <area shape="rect" coords="0,0,20,24" href="/left" alt="Left region link" id="link_case_13" />
+    </map>
+  </div>
+
+  <div class="case" id="case_14">
+    <div class="case-title">14 — PASS: &lt;area href&gt; with aria-label</div>
+    <img
+      src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%2345c46a'/%3E%3C/svg%3E"
+      alt="" usemap="#link_case_14_map" />
+    <map name="link_case_14_map" id="link_case_14_map">
+      <area shape="rect" coords="0,0,20,24" href="/right" aria-label="Right region link" id="link_case_14" />
+    </map>
+  </div>
+
+  <h2>B. Eligibility exceptions that hold either way</h2>
+
+  <p class="note">
+    FIXED: <code>link-name-present.js</code> previously treated
+    <code>helpers.isAccTreeEligible(el, ctx)</code>'s return value (an object,
+    always truthy) directly as a boolean, so the eligibility filter never
+    actually excluded anything. It now correctly reads <code>.eligible</code>,
+    so the ineligibility cases below (previously excluded from this fixture)
+    are exercised here.
+  </p>
+
+  <div class="case" id="case_15b">
+    <div class="case-title">15b — NEUTRAL/INELIGIBLE: aria-hidden="true", no focus exception, missing name</div>
+    <a href="/x" aria-hidden="true" tabindex="-1" id="link_case_15b"></a>
+    <div class="meta">Explicit tabindex&lt;0 (programmatic focus only) does not override aria-hidden.</div>
+  </div>
+
+  <div class="case" id="case_15c">
+    <div class="case-title">15c — EXCEPTION: native &lt;a href&gt;, aria-hidden="true", no explicit tabindex needed => eligible, missing name => FAIL</div>
+    <a href="/x" aria-hidden="true" id="link_case_15c"></a>
+    <div class="meta">&lt;a href&gt; is natively tabbable by default; the engine's aria-hidden
+      override exception now covers &lt;a href&gt;/&lt;button&gt;/&lt;summary&gt; in addition to
+      &lt;area&gt;/&lt;select&gt;/&lt;textarea&gt;/&lt;input&gt; (see isAccTreeEligible), matching real
+      browser tab-order behavior.</div>
+  </div>
+
+  <div class="case" id="case_15d">
+    <div class="case-title">15d — NEUTRAL/INELIGIBLE: hidden attribute, missing name</div>
+    <a href="/x" hidden id="link_case_15d"></a>
+  </div>
+
+  <div class="case" id="case_15e">
+    <div class="case-title">15e — NEUTRAL/INELIGIBLE: display:none, missing name</div>
+    <a href="/x" style="display:none" id="link_case_15e"></a>
+  </div>
+
+  <div class="case" id="case_15f">
+    <div class="case-title">15f — NEUTRAL/INELIGIBLE: visibility:hidden, no visible-descendant override, missing name</div>
+    <a href="/x" style="visibility:hidden" id="link_case_15f"></a>
+  </div>
+
+  <div class="case" id="case_15g">
+    <div class="case-title">15g — NEUTRAL/INELIGIBLE: inert, missing name</div>
+    <a href="/x" inert id="link_case_15g"></a>
+  </div>
+
+  <div class="case" id="case_15h">
+    <div class="case-title">15h — NEUTRAL/INELIGIBLE: inert ancestor, missing name</div>
+    <div inert>
+      <a href="/x" id="link_case_15h"></a>
+    </div>
+  </div>
+
+  <div class="case" id="case_16">
+    <div class="case-title">16 — EXCEPTION: aria-hidden="true" but focusable (explicit tabindex=0) => eligible, missing name => FAIL</div>
+    <a href="/x" aria-hidden="true" tabindex="0" id="link_case_16"></a>
+  </div>
+
+  <div class="case" id="case_20">
+    <div class="case-title">20 — EXCEPTION: visibility:hidden ancestor overridden by descendant visibility:visible => eligible, missing name => FAIL</div>
+    <div style="visibility:hidden">
+      <a href="/x" style="visibility:visible" id="link_case_20"></a>
+    </div>
+  </div>
+
+  <h2>C. Name from content — recursive (2026-07-19 fix)</h2>
+
+  <div class="case" id="case_21">
+    <div class="case-title">21 — PASS: logo link, name comes from a wrapped &lt;img alt&gt; (name-from-content recursion, not just literal text nodes)</div>
+    <a href="/" id="link_case_21"><img alt="Company logo" src="x.png"></a>
+  </div>
+
+  <div class="case" id="case_22">
+    <div class="case-title">22 — PASS: name comes from a nested role="img" element's aria-label (name-from-content recursion)</div>
+    <a href="/" id="link_case_22"><span role="img" aria-label="Company logo"></span></a>
+  </div>
+
+  <div class="case" id="case_23">
+    <div class="case-title">23 — PASS: name comes from a nested &lt;img alt="" aria-labelledby&gt; — empty alt correctly marks the image itself decorative, but aria-labelledby (pointing to real text elsewhere) takes priority over alt per the accname spec — found on a real site, eBay's product-card links (2026-07-21)</div>
+    <span id="lnp_case_23_lbl">Sony Wireless Headphones</span>
+    <a href="/item/1" id="link_case_23"><img alt="" aria-labelledby="lnp_case_23_lbl"></a>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

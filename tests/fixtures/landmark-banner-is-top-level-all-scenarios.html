@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-landmark-banner-is-top-level — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-landmark-banner-is-top-level</code></h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>lbtl_case_NN</code>.
+  </p>
+
+  <h2>A. Valid</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — CANTTELL(none)/NEUTRAL: top-level header banner, not nested in another landmark</div>
+    <header id="lbtl_case_01">Site header</header>
+  </div>
+
+  <h2>B. Invalid</h2>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — CANTTELL: explicit role="banner" nested inside a role="navigation" landmark</div>
+    <div role="navigation">
+      <div role="banner" id="lbtl_case_02">Nested banner</div>
+    </div>
+  </div>
+
+  <h2>C. Not applicable (skipped, not counted)</h2>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — NEUTRAL: header nested inside main loses implicit banner role entirely (not this rule's concern)</div>
+    <main>
+      <header id="lbtl_case_03">Not a banner at all here</header>
+    </main>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

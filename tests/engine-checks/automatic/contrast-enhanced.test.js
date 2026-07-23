@@ -2,6 +2,8 @@
 
 const test = require('node:test');
 const assert = require('node:assert');
+const fs = require('node:fs');
+const path = require('node:path');
 
 const {
     createDom,
@@ -296,6 +298,170 @@ test(`${RULE_ID}: dedup failures per element (multiple text nodes in same elemen
     const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 50 });
     assert.strictEqual(rule.occurrences.length, 1);
     assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'BELOW_THRESHOLD');
+});
+
+test(`${RULE_ID}: boundary just above 7:1 (rgb(89,89,89) on white, normal text) => pass`, () => {
+    const html = `
+<!doctype html>
+<html style="background-color: rgb(255, 255, 255); opacity: 1">
+<head></head>
+<body style="background-color: rgb(255, 255, 255); opacity: 1">
+  <p style="color: rgb(89, 89, 89); background-color: rgb(255, 255, 255); font-size: 16px; font-weight: 400; opacity: 1">
+    Boundary pass
+  </p>
+</body></html>`;
+
+    const result = run(html);
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 1, maxOccurrences: 1 });
+});
+
+test(`${RULE_ID}: boundary just below 7:1 (rgb(90,90,90) on white, normal text) => fail`, () => {
+    const html = `
+<!doctype html>
+<html style="background-color: rgb(255, 255, 255); opacity: 1">
+<head></head>
+<body style="background-color: rgb(255, 255, 255); opacity: 1">
+  <p id="bnd" style="color: rgb(90, 90, 90); background-color: rgb(255, 255, 255); font-size: 16px; font-weight: 400; opacity: 1">
+    Boundary fail
+  </p>
+</body></html>`;
+
+    const result = run(html);
+    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+    assert.strictEqual(rule.occurrences[0].i18n.params.threshold, '7');
+});
+
+test(`${RULE_ID}: boundary just above 4.5:1 for large text (rgb(118,118,118) @ 24px) => pass`, () => {
+    const html = `
+<!doctype html>
+<html style="background-color: rgb(255, 255, 255); opacity: 1">
+<head></head>
+<body style="background-color: rgb(255, 255, 255); opacity: 1">
+  <p style="color: rgb(118, 118, 118); background-color: rgb(255, 255, 255); font-size: 24px; font-weight: 400; opacity: 1">
+    Boundary pass large
+  </p>
+</body></html>`;
+
+    const result = run(html);
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 1, maxOccurrences: 1 });
+});
+
+test(`${RULE_ID}: boundary just below 4.5:1 for large text (rgb(119,119,119) @ 24px) => fail`, () => {
+    const html = `
+<!doctype html>
+<html style="background-color: rgb(255, 255, 255); opacity: 1">
+<head></head>
+<body style="background-color: rgb(255, 255, 255); opacity: 1">
+  <p id="bndl" style="color: rgb(119, 119, 119); background-color: rgb(255, 255, 255); font-size: 24px; font-weight: 400; opacity: 1">
+    Boundary fail large
+  </p>
+</body></html>`;
+
+    const result = run(html);
+    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+    assert.strictEqual(rule.occurrences[0].i18n.params.threshold, '4.5');
+});
+
+test(`${RULE_ID}: ANCESTOR opacity < 1 gates to notApplicable instead of a confidently wrong ratio`, () => {
+    const html = `
+<!doctype html>
+<html style="background-color: rgb(255, 255, 255); opacity: 1">
+<head></head>
+<body style="background-color: rgb(255, 255, 255); opacity: 1">
+  <div style="opacity: 0.5; background-color: rgb(255, 255, 255);">
+    <p style="color: rgb(0, 0, 0); background-color: rgb(255, 255, 255); opacity: 1;">
+      Ancestor opacity text
+    </p>
+  </div>
+</body></html>`;
+
+    const result = run(html);
+    const rule = assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 1, maxOccurrences: 1 });
+    assert.strictEqual(
+        rule.occurrences[0].i18n.summaryKey,
+        'a11ycore_contrastEnhanced_notApplicable_noComputableText'
+    );
+    assert.strictEqual(Number(rule.occurrences[0].data.details.computableTextCount), 0);
+});
+
+test(`${RULE_ID}: element's OWN opacity < 1 is NOT a computability blocker; ratio is computed (and here fails)`, () => {
+    const html = `
+<!doctype html>
+<html style="background-color: rgb(255, 255, 255); opacity: 1">
+<head></head>
+<body style="background-color: rgb(255, 255, 255); opacity: 1">
+  <p id="ownop" style="color: rgb(0, 0, 0); background-color: rgb(255, 255, 255); opacity: 0.5;">
+    Own opacity text
+  </p>
+</body></html>`;
+
+    const result = run(html);
+    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+    assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'BELOW_THRESHOLD');
+    assert.strictEqual(rule.occurrences[0].i18n.params.ratio, '3.95');
+});
+
+test(`${RULE_ID}: fixture coverage (tests/fixtures/contrast-all-scenarios.html)`, () => {
+    const fixturePath = path.join(__dirname, '../..', 'fixtures', 'contrast-all-scenarios.html');
+    const html = fs.readFileSync(fixturePath, 'utf8');
+
+    const result = run(html);
+
+    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 14, maxOccurrences: 14 });
+
+    const expectedFailIds = [
+        'aa_pass_aaa_fail_gray_on_white', // passes AA, fails AAA
+        'aa_fail_light_gray_on_white',
+        'large_text_light_gray_on_white',
+        'bold_large_text_light_gray_on_white',
+        'fg_alpha_black_50_on_white',
+        'own_opacity_still_computable',
+        'excluded_inert_fail',
+        'excluded_aria_hidden_fail',
+        'eligible_aria_hidden_tabbable_fail',
+        'excluded_aria_hidden_prog_focus',
+        'eligible_offscreen_fail',
+        'eligible_sr_only_fail',
+        'eligible_zero_size_text',
+        'eligible_enabled_button_fail'
+    ];
+
+    const expectedNoOccIds = [
+        'pass_black_on_white',
+        'bg_alpha_white_50_black_text',
+        'bg_alpha_80_over_gray_black_text',
+        'excluded_hidden_attr_fail',
+        'excluded_display_none_fail',
+        'excluded_visibility_hidden_fail',
+        'excluded_visibility_collapse_fail',
+        'excluded_details_closed_fail',
+        'excluded_template_fail',
+        'whitespace_only',
+        'blocker_gradient_bg',
+        'blocker_image_bg',
+        'blocker_mix_blend_mode',
+        'blocker_filter',
+        'blocker_backdrop_filter',
+        'blocker_ancestor_opacity',
+        'excluded_disabled_button_fail', // inactive UI component (WCAG 1.4.3/1.4.6 Incidental exception)
+        'excluded_disabled_button_nested_fail',
+        'excluded_disabled_fieldset_fail',
+        'excluded_aria_disabled_fail'
+    ];
+
+    for (const id of expectedFailIds) {
+        assert.ok(
+            rule.occurrences.some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)),
+            `Expected occurrence for id="${id}"`
+        );
+    }
+
+    for (const id of expectedNoOccIds) {
+        assert.ok(
+            !rule.occurrences.some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)),
+            `Did not expect occurrence for id="${id}"`
+        );
+    }
 });
 
 // Optional determinism smoke check

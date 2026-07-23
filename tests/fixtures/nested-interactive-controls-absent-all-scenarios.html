@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-nested-interactive-controls-absent — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-nested-interactive-controls-absent</code> (no nested interactive controls)</h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>nic_case_NN</code>.
+    Reports on the OUTER (containing) control, not the nested descendant.
+  </p>
+
+  <h2>A. Valid</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — PASS: plain button, no nested controls</div>
+    <button id="nic_case_01">Click me</button>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — PASS: link with only static text</div>
+    <a id="nic_case_02" href="/about">About us</a>
+  </div>
+
+  <h2>B. Invalid</h2>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — FAIL: button containing a checkbox</div>
+    <button id="nic_case_03"><input type="checkbox"> Accept</button>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — FAIL: link containing a button</div>
+    <a id="nic_case_04" href="/cart">View cart <button>Remove</button></a>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — FAIL: role=button containing a role=textbox</div>
+    <div id="nic_case_05" role="button" tabindex="0">Edit: <span role="textbox" contenteditable="true">value</span></div>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

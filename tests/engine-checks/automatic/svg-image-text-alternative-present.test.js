@@ -103,10 +103,32 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/svg-image-text-alternative-pr
 
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 4, maxOccurrences: 4 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 8, maxOccurrences: 8 });
 
-  const expectedFailIds = ['svgimg_case_01', 'svgimg_case_05', 'svgimg_case_07', 'svgimg_case_09'];
-  const expectedNoOccIds = ['svgimg_case_02', 'svgimg_case_03', 'svgimg_case_04', 'svgimg_case_06', 'svgimg_case_08'];
+  const expectedFailIds = [
+    'svgimg_case_01',
+    'svgimg_case_05',
+    'svgimg_case_07',
+    'svgimg_case_09',
+    'svgimg_case_10', // <title> not first child does not count
+    'svgimg_case_13', // <desc> misplaced does not count
+    'svgimg_case_16', // opacity:0 remains eligible
+    'svgimg_case_17'  // offscreen remains eligible
+  ];
+  const expectedNoOccIds = [
+    'svgimg_case_02',
+    'svgimg_case_03',
+    'svgimg_case_04',
+    'svgimg_case_06',
+    'svgimg_case_08',
+    'svgimg_case_11', // <desc> as first child counts
+    'svgimg_case_12', // empty <title> + <desc> pair-second counts
+    'svgimg_case_14', // title attribute counts
+    'svgimg_case_15', // aria-labelledby counts
+    'svgimg_case_18', // display:none ineligible
+    'svgimg_case_19', // visibility:hidden ineligible
+    'svgimg_case_20'  // template non-composed ineligible
+  ];
 
   for (const id of expectedFailIds) assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);
   for (const id of expectedNoOccIds) assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);

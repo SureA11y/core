@@ -2,6 +2,8 @@
 
 const test = require('node:test');
 const assert = require('node:assert');
+const fs = require('node:fs');
+const path = require('node:path');
 const { runa11yCoreOnHtml } = require('../../helpers/runa11yCoreOnHtml');
 const { assertRule } = require('../../helpers/assertRule');
 
@@ -23,14 +25,15 @@ test(`${RULE_ID}: no native controls => notApplicable`, () => {
     assert.equal(rule.data.details.metrics.applicableCount, 0);
 });
 
-test(`${RULE_ID}: native input with associated <label> => pass`, () => {
+test(`${RULE_ID}: native input with associated <label> => notApplicable (not flagged)`, () => {
     const html = `<!doctype html><html><body>
     <label for="a">First name</label>
     <input id="a" type="text">
   </body></html>`;
 
     const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-    const rule = assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+    // Manual rules may only emit cantTell/notApplicable, never pass.
+    const rule = assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 
     const m = rule.data.details.metrics;
     assert.equal(m.applicableCount, 1);
@@ -38,13 +41,14 @@ test(`${RULE_ID}: native input with associated <label> => pass`, () => {
     assert.equal(m.byMethod.label, 1);
 });
 
-test(`${RULE_ID}: native input with aria-label => pass (not flagged)`, () => {
+test(`${RULE_ID}: native input with aria-label => notApplicable (not flagged)`, () => {
     const html = `<!doctype html><html><body>
     <input id="b" type="text" aria-label="Email address">
   </body></html>`;
 
     const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-    const rule = assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+    // Manual rules may only emit cantTell/notApplicable, never pass.
+    const rule = assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 
     const m = rule.data.details.metrics;
     assert.equal(m.applicableCount, 1);
@@ -153,4 +157,31 @@ test(`${RULE_ID}: deterministic output (run twice)`, () => {
             }))
         }
     );
+});
+
+test(`${RULE_ID}: fixture coverage (tests/fixtures/form-control-programmatic-label-quality-manual-all-scenarios.html)`, () => {
+  const fixturePath = path.join(__dirname, '../..', 'fixtures', 'form-control-programmatic-label-quality-manual-all-scenarios.html');
+  const html = fs.readFileSync(fixturePath, 'utf8');
+
+  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+
+  // Manual rule: automatic outcomes are restricted to cantTell / notApplicable.
+  // Never assert pass/fail here.
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 5, maxOccurrences: 5 });
+
+  const expectedFailIds = [
+    'fcq_case_01', 'fcq_case_02', 'fcq_case_03', 'fcq_case_04', 'fcq_case_09'
+  ];
+
+  const expectedNoOccIds = [
+    'fcq_case_05', 'fcq_case_06', 'fcq_case_07', 'fcq_case_08', 'fcq_case_10', 'fcq_case_11', 'fcq_case_12', 'fcq_case_13', 'fcq_case_14'
+  ];
+
+  for (const id of expectedFailIds) {
+    assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);
+  }
+  for (const id of expectedNoOccIds) {
+    assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
+  }
 });

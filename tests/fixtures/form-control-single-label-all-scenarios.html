@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-form-control-single-label — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-form-control-single-label</code> (at most one &lt;label&gt; per control)</h1>
+
+  <p class="note">
+    Each target control has a stable <code>id</code> of the form <code>fcsl_case_NN</code>.
+  </p>
+
+  <h2>A. Valid</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — PASS: single wrapping label</div>
+    <label>Name <input id="fcsl_case_01" type="text"></label>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — PASS: single label[for]</div>
+    <label for="fcsl_case_02">Email</label>
+    <input id="fcsl_case_02" type="text">
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — PASS: label wraps AND self-references via for (counts once, not two)</div>
+    <label for="fcsl_case_03">Phone<input id="fcsl_case_03" type="text"></label>
+  </div>
+
+  <h2>B. Invalid</h2>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — FAIL: two label[for] point at the same control</div>
+    <label for="fcsl_case_04">Address</label>
+    <label for="fcsl_case_04">Mailing address</label>
+    <input id="fcsl_case_04" type="text">
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — FAIL: wrapping label plus a separate label[for] targeting the same control</div>
+    <label>Extra label text<input id="fcsl_case_05" type="text"></label>
+    <label for="fcsl_case_05">Duplicate label</label>
+  </div>
+
+  <h2>C. Not applicable (skipped, not counted)</h2>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — NEUTRAL: control with no label at all (covered by a different rule)</div>
+    <input id="fcsl_case_06" type="text" aria-label="Unlabeled by &lt;label&gt;, but has aria-label">
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

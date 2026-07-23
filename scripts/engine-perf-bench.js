@@ -250,13 +250,19 @@ function workerMain() {
   const html = payload.html;
   const engineOptions = payload.engineOptions || { perfStats: true, includeShadowDom: false };
 
+  // IMPORTANT: keep this require inside the worker so module state doesn't leak into parent.
+  // Also IMPORTANT: this must happen BEFORE memBefore/t0 are captured below — requiring
+  // this module pulls in jsdom and the whole generated core.js, which cold-loads in the
+  // ~200ms range by itself. Measuring from before the require conflates one-time module-load
+  // cost with actual per-page engine-scan cost (a real bug this comment now guards against
+  // regressing back into — confirmed empirically: a cold `require()` of this module alone
+  // took ~227ms in a fresh process, larger than most real page scans this bench measures).
+  const { runa11yCoreOnHtml } = require('../tests/helpers/runDomRulesOnHtml');
+
   // Measure process memory (not perfect, but consistent within a single run)
   gcIfAvailable();
   const memBefore = process.memoryUsage();
   const t0 = process.hrtime.bigint();
-
-  // IMPORTANT: keep this require inside the worker so module state doesn't leak into parent.
-  const { runa11yCoreOnHtml } = require('../tests/helpers/runDomRulesOnHtml');
 
   function extractRuleTimings(result) {
     if (!result) return null;
@@ -286,6 +292,7 @@ function workerMain() {
 
   function getRuleCount(r) {
     if (!r) return 0;
+    if (Array.isArray(r.checksResults)) return r.checksResults.length;
     if (Array.isArray(r.rules)) return r.rules.length;
     if (Array.isArray(r.results)) return r.results.length;
     if (Array.isArray(r.outcomes)) return r.outcomes.length;
@@ -442,4 +449,10 @@ function main() {
   return parentMain();
 }
 
-main();
+if (require.main === module) {
+  main();
+} else {
+  // Loaded as a module (e.g. by the comparison benchmark script) rather than run
+  // directly: expose the fixture generator instead of executing the CLI.
+  module.exports = { makeBigHtml };
+}

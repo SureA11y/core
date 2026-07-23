@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="refresh" content="5;url=https://example.com" />
+  <title>a11ycore-meta-refresh-timing-absent — scenario fixture (FAIL case)</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-meta-refresh-timing-absent</code></h1>
+  <div class="case-title">01 — FAIL: meta refresh with a 5-second delay</div>
+  <p class="note">
+    This rule inspects the document's own &lt;meta http-equiv="refresh"&gt; tag, so only
+    one scenario can be demonstrated per page. The PASS case (delay="0", an immediate
+    redirect) and the not-applicable case (no meta refresh tag at all) are covered by
+    the inline unit tests in this rule's <code>.test.js</code> file rather than a second
+    fixture file.
+  </p>
+</body>
+</html>

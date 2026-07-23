@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>a11ycore-landmark-one-main — scenario fixture (FAIL case)</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>a11ycore-landmark-one-main</code></h1>
+  <div class="case-title">01 — CANTTELL: page has no main landmark at all</div>
+  <nav>Nav only, no main content region</nav>
+  <p class="note">
+    This is a whole-document check. The other FAIL branch (more than one main) and the
+    notApplicable/success branch (exactly one main) are covered by the inline unit tests
+    in this rule's <code>.test.js</code> file rather than more fixture files.
+  </p>
+</body>
+</html>
