@@ -1,13 +1,13 @@
 'use strict';
 
-const id = 'a11ycore-option-name-present';
+const id = 'option-name-present';
 
 const meta = {
   title: 'Accessible name is present',
   description: 'Checks that elements expose a non-empty accessible name.',
   i18n: {
-    titleKey: 'a11ycore_optionNamePresent_title',
-    descriptionKey: 'a11ycore_optionNamePresent_description'
+    titleKey: 'optionNamePresent_title',
+    descriptionKey: 'optionNamePresent_description'
   },
   helpUrl: null,
   tags: ["wcag2a", "wcag412", "forms", "atomic", "automatic", "name", "option"],
@@ -133,8 +133,8 @@ function runInPage(ctx) {
       summary: 'This element has no accessible name.',
       hint: 'Provide aria-label or aria-labelledby (preferred), or provide visible text that is not hidden from assistive technologies.',
       i18n: {
-        summaryKey: 'a11ycore_optionNamePresent_summary_fail',
-        hintKey: 'a11ycore_optionNamePresent_hint_fail',
+        summaryKey: 'optionNamePresent_summary_fail',
+        hintKey: 'optionNamePresent_hint_fail',
         params: { controlType: 'option' }
       },
       data: {

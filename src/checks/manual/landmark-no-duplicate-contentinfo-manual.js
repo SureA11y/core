@@ -1,36 +1,36 @@
 'use strict';
 
 /**
- * @check a11ycore-landmark-no-duplicate-contentinfo
+ * @check landmark-no-duplicate-contentinfo
  * @atomic true
  * @summary A page must not have more than one contentinfo landmark
- * @standard the reference engine "Best Practices" (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (a widely-used reference engine's classification; no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
  * @applicability
  *   Applies whenever the page contains at least one contentinfo landmark
  *   (explicit role="contentinfo", or an implicit, non-nested <footer>).
  * @expectation
  *   At most one contentinfo landmark exists on the page — mirrors
- *   a11ycore-landmark-no-duplicate-banner's rationale for contentinfo.
+ *   landmark-no-duplicate-banner's rationale for contentinfo.
  * @implementation-notes
  * - Not WCAG-normative — authored as an advisory, cantTell-capped
- *   `type: 'manual'` rule; see a11ycore-landmark-banner-is-top-level's
+ *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent.
  * - Only landmarks actually exposed to assistive technology can collide —
- *   matches the reference engine's own `page-no-duplicate` check (confirmed by reading
+ *   matches a widely-used reference engine's own `page-no-duplicate` check (confirmed by reading
  *   its source directly: `query_selector_all_filter_default(..., elm =>
  *   _isVisibleToScreenReaders(elm))`) — same fix applied to the sibling
  *   banner/main rules after finding real hidden-duplicate false positives
  *   on Trello and Zoom.
  */
 
-const id = 'a11ycore-landmark-no-duplicate-contentinfo';
+const id = 'landmark-no-duplicate-contentinfo';
 
 const meta = {
   title: 'Page must not have more than one contentinfo landmark',
   description: 'Checks that at most one contentinfo landmark (role="contentinfo" or a non-nested <footer>) exists on the page.',
   i18n: {
-    titleKey: 'a11ycore_landmarkNoDuplicateContentinfo_title',
-    descriptionKey: 'a11ycore_landmarkNoDuplicateContentinfo_description'
+    titleKey: 'landmarkNoDuplicateContentinfo_title',
+    descriptionKey: 'landmarkNoDuplicateContentinfo_description'
   },
   helpUrl: null,
   tags: ['best-practice', 'landmarks', 'structure', 'atomic', 'manual'],
@@ -153,8 +153,8 @@ function runInPage(ctx) {
       summary: 'This page has more than one contentinfo landmark.',
       hint: 'Keep only one contentinfo landmark (footer/role="contentinfo") per page.',
       i18n: {
-        summaryKey: 'a11ycore_landmarkNoDuplicateContentinfo_summary_cantTell',
-        hintKey: 'a11ycore_landmarkNoDuplicateContentinfo_hint_cantTell',
+        summaryKey: 'landmarkNoDuplicateContentinfo_summary_cantTell',
+        hintKey: 'landmarkNoDuplicateContentinfo_hint_cantTell',
         params: { count: String(contentinfos.length) }
       },
       data: {

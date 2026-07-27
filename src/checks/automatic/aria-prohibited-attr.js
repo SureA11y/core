@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-aria-prohibited-attr
+ * @check aria-prohibited-attr
  * @atomic true
  * @summary Certain ARIA naming attributes are explicitly prohibited on specific roles
  * @standard WCAG 2.2
@@ -26,14 +26,15 @@
  * - Role list widened 2026-07-19 (Tier 4) from 10 to 13 roles, adding
  *   `mark`, `suggestion`, and `time` — the other ARIA 1.2 "HTML-alignment"
  *   text-level roles that share the same documented prohibition as the
- *   original 10. Still deliberately not claiming full the reference engine parity:
+ *   original 10. Still deliberately not claiming full parity with a widely-used
+ *   reference engine:
  *   only roles/attrs this engine has high confidence in from the spec
  *   text are included, per the file's own "wrong entries cause false-
  *   positive fails" caution.
  * - Widened again 2026-07-21 to add `presentation`/`none`, verified
- *   directly against the reference engine 4.12.1's own role data table
- *   (`node_modules/the reference engine/its source` — both have `prohibitedAttrs:
- *   ['aria-label', 'aria-labelledby']`), and corroborated by the W3C
+ *   directly against a widely-used reference engine's own role data table
+ *   (both have `prohibitedAttrs: ['aria-label', 'aria-labelledby']`), and
+ *   corroborated by the W3C
  *   WAI-ARIA 1.2 spec's own §5.2.8.6 "Roles which cannot be named"
  *   listing `presentation` explicitly (`none` is `presentation`'s
  *   documented 1.2-introduced alias, identical semantics). The
@@ -47,7 +48,7 @@
  * - Investigated, but deliberately did NOT add, `definition`/`term`
  *   despite both appearing on MDN's aria-label reference page's
  *   "not supported" list: that MDN list is demonstrably wrong for these
- *   two — the reference engine's own role data explicitly declares
+ *   two — a widely-used reference engine's own role data explicitly declares
  *   `nameFrom: ['author']` (`definition`) / `nameFrom: ['author',
  *   'contents']` (`term`), and the W3C spec's own §5.2.8.4 "Roles
  *   Supporting Name From Author" index lists both by name; MDN's
@@ -57,14 +58,14 @@
  * - Not gated on isAccTreeEligible: this is a static markup property.
  */
 
-const id = 'a11ycore-aria-prohibited-attr';
+const id = 'aria-prohibited-attr';
 
 const meta = {
   title: 'ARIA naming attributes must not be used on roles that prohibit them',
   description: 'Checks that aria-label/aria-labelledby are not present on WAI-ARIA roles whose specification explicitly prohibits ARIA naming (e.g. generic, emphasis, strong, paragraph).',
   i18n: {
-    titleKey: 'a11ycore_ariaProhibitedAttr_title',
-    descriptionKey: 'a11ycore_ariaProhibitedAttr_description'
+    titleKey: 'ariaProhibitedAttr_title',
+    descriptionKey: 'ariaProhibitedAttr_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag412', 'aria', 'structure', 'atomic', 'automatic'],
@@ -132,8 +133,8 @@ function runInPage(ctx) {
         summary: 'This attribute is prohibited on this element’s role.',
         hint: 'Remove this attribute; this role must not carry an accessible name.',
         i18n: {
-          summaryKey: 'a11ycore_ariaProhibitedAttr_summary_fail',
-          hintKey: 'a11ycore_ariaProhibitedAttr_hint_fail',
+          summaryKey: 'ariaProhibitedAttr_summary_fail',
+          hintKey: 'ariaProhibitedAttr_hint_fail',
           params: { attr, role }
         },
         data: {

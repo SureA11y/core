@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-aria-valid-attr
+ * @check aria-valid-attr
  * @atomic true
  * @summary Every aria-* attribute present must be a real, defined ARIA attribute
  * @standard WCAG 2.2
@@ -15,20 +15,20 @@
  *   silently ignored by assistive technology and therefore a real,
  *   deterministic defect).
  * @implementation-notes
- * - Distinct from a11ycore-aria-valid-attr-value (which validates the VALUE
+ * - Distinct from aria-valid-attr-value (which validates the VALUE
  *   of a recognized attribute) — this rule only validates the attribute
  *   NAME.
  * - Not gated on isAccTreeEligible: this is a static markup property.
  */
 
-const id = 'a11ycore-aria-valid-attr';
+const id = 'aria-valid-attr';
 
 const meta = {
   title: 'aria-* attributes must be real, defined ARIA attributes',
   description: 'Checks that every aria-* attribute name present in the DOM is a real attribute defined by the WAI-ARIA specification.',
   i18n: {
-    titleKey: 'a11ycore_ariaValidAttr_title',
-    descriptionKey: 'a11ycore_ariaValidAttr_description'
+    titleKey: 'ariaValidAttr_title',
+    descriptionKey: 'ariaValidAttr_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag412', 'aria', 'structure', 'atomic', 'automatic'],
@@ -86,8 +86,8 @@ function runInPage(ctx) {
         summary: 'This element has an attribute that is not a recognized ARIA attribute.',
         hint: 'Correct the attribute name (check for typos), or remove it if not needed.',
         i18n: {
-          summaryKey: 'a11ycore_ariaValidAttr_summary_fail',
-          hintKey: 'a11ycore_ariaValidAttr_hint_fail',
+          summaryKey: 'ariaValidAttr_summary_fail',
+          hintKey: 'ariaValidAttr_hint_fail',
           params: { attr: name }
         },
         data: {

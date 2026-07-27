@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-svg-text-alternative-present
+ * @check svg-text-alternative-present
  * @atomic true
  * @summary Accessible <svg> elements must provide a text alternative
  * @standard WCAG 2.2
@@ -26,17 +26,17 @@
  *   DESCRIPTION, never the accessible NAME (verified 2026-07-20 directly
  *   against the SVG-AAM spec text, not assumed). An <svg> with only a
  *   <desc> and no <title>/ARIA name is still "applicable" (desc signals
- *   authorial intent) but fails, matching the reference engine's svg-img-alt.
+ *   authorial intent) but fails, matching a widely-used reference engine's svg-img-alt.
  */
 
-const id = 'a11ycore-svg-text-alternative-present';
+const id = 'svg-text-alternative-present';
 
 const meta = {
     title: '<svg> must provide a text alternative',
     description: 'Checks that inline <svg> elements provide a text alternative via a <title> element or an ARIA name (a <desc> element alone does not count — it only contributes to the accessible description, not the name).',
     i18n: {
-        titleKey: 'a11ycore_svg_textAltPresent_title',
-        descriptionKey: 'a11ycore_svg_textAltPresent_description'
+        titleKey: 'svg_textAltPresent_title',
+        descriptionKey: 'svg_textAltPresent_description'
     },
     helpUrl: null,
     tags: ['wcag2a', 'wcag111', 'svg', 'nontext', 'images', 'atomic', 'automatic'],
@@ -268,8 +268,8 @@ function runInPage(ctx) {
             summary: 'Missing text alternative for <svg>.',
             hint: 'Provide a <title> element with text, or an ARIA name (aria-label/aria-labelledby) — a <desc> element alone does not provide an accessible name.',
             i18n: {
-                summaryKey: 'a11ycore_svg_textAltPresent_summary_fail',
-                hintKey: 'a11ycore_svg_textAltPresent_hint_fail',
+                summaryKey: 'svg_textAltPresent_summary_fail',
+                hintKey: 'svg_textAltPresent_hint_fail',
                 params: {element: 'svg'}
             },
             data: {

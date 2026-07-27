@@ -8,7 +8,7 @@ const path = require('node:path');
 const { assertRule } = require('../../helpers/assertRule.js');
 const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 
-const RULE_ID = 'a11ycore-duplicate-id-aria';
+const RULE_ID = 'duplicate-id-aria';
 
 test(`${RULE_ID}: notApplicable when no ARIA id-reference attribute is present`, () => {
   const html = `<!doctype html><html><body><div id="a">A</div><div id="a">A2</div></body></html>`;

@@ -7,7 +7,7 @@ const path = require('node:path');
 const { runa11yCoreOnHtml } = require('../../helpers/runa11yCoreOnHtml');
 const { assertRule } = require('../../helpers/assertRule');
 
-const RULE_ID = 'a11ycore-form-control-programmatic-label-quality';
+const RULE_ID = 'form-control-programmatic-label-quality';
 
 function hasOccurrenceForId(rule, id) {
     return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));

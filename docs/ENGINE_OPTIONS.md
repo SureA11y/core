@@ -10,15 +10,15 @@ There are **two independent ways** to select rules — the 4th argument (`runOnl
 
 ```js
 runDomRulesInPage(url, null, {}, {
-  includeRuleIds: ['a11ycore-img-alt-present', 'a11ycore-button-name-present'],
-  excludeRuleIds: ['a11ycore-region'],
+  includeRuleIds: ['img-alt-present', 'button-name-present'],
+  excludeRuleIds: ['region'],
   tags: ['wcag412'],
   excludeTags: ['best-practice'],
   includeMode: 'and'   // 'and' (default) | 'or' — see below
 });
 ```
 
-> ⚠️ **`runOnly` must be this object shape, not a bare array.** `runOnly: ['a11ycore-img-alt-present']` (a plain array — the the reference engine convention) is **silently ignored**; the engine runs every rule instead. This is the single most common integration mistake — see [`TROUBLESHOOTING.md`](./TROUBLESHOOTING.md).
+> ⚠️ **`runOnly` must be this object shape, not a bare array.** `runOnly: ['img-alt-present']` (a plain array — a convention used by another engine) is **silently ignored**; the engine runs every rule instead. This is the single most common integration mistake — see [`TROUBLESHOOTING.md`](./TROUBLESHOOTING.md).
 
 | Field | Type | Meaning |
 |---|---|---|
@@ -29,13 +29,13 @@ runDomRulesInPage(url, null, {}, {
 | `excludeTags` | `string[]` | Never run rules carrying any of these tags, applied after include. |
 | `includeMode` | `'and'` \| `'or'` | When **both** an ID include and a tag include are given: `'and'` (default) requires a rule to satisfy both; `'or'` runs a rule if it satisfies either. Irrelevant if you only use one dimension. |
 
-Rule-ID matching accepts the ID with or without the `a11ycore-` prefix (`'img-alt-present'` and `'a11ycore-img-alt-present'` both work).
+Rule IDs are bare (no engine prefix), e.g. `'img-alt-present'`. For backward compatibility, matching also accepts a legacy `a11ycore-`-prefixed form of the same id (`'a11ycore-img-alt-present'`).
 
-A **legacy, reference-engine-like shape** is also accepted as the whole `runOnly` value: `{ type: 'tag', values: ['wcag2a', 'wcag2aa'] }` — equivalent to `{ tags: ['wcag2a', 'wcag2aa'] }`.
+A **legacy, tag-filter shape used by other engines** is also accepted as the whole `runOnly` value: `{ type: 'tag', values: ['wcag2a', 'wcag2aa'] }` — equivalent to `{ tags: ['wcag2a', 'wcag2aa'] }`.
 
 ### Filtering by WCAG version (2.1 vs 2.2)
 
-Every rule and composite carries exactly one WCAG-version-origin level tag, matching the reference engine's own convention: `wcag2a`/`wcag2aa`/`wcag2aaa` for a Success Criterion that's WCAG 2.0 baseline, `wcag21a`/`wcag21aa`/`wcag21aaa` for one newly introduced in WCAG 2.1 (e.g. `1.3.5` Identify Input Purpose), `wcag22a`/`wcag22aa`/`wcag22aaa` for one newly introduced in WCAG 2.2 (e.g. `2.5.8` Target Size Minimum). A rule gets **only** the tag for its SC's actual origin version — a 2.1-introduced SC is never also tagged `wcag2aa`, since it doesn't exist under a WCAG 2.0 conformance target. See `src/coverage/wcag-version-map.js` for the exact, canonical per-version SC list.
+Every rule and composite carries exactly one WCAG-version-origin level tag, matching the convention used by other engines: `wcag2a`/`wcag2aa`/`wcag2aaa` for a Success Criterion that's WCAG 2.0 baseline, `wcag21a`/`wcag21aa`/`wcag21aaa` for one newly introduced in WCAG 2.1 (e.g. `1.3.5` Identify Input Purpose), `wcag22a`/`wcag22aa`/`wcag22aaa` for one newly introduced in WCAG 2.2 (e.g. `2.5.8` Target Size Minimum). A rule gets **only** the tag for its SC's actual origin version — a 2.1-introduced SC is never also tagged `wcag2aa`, since it doesn't exist under a WCAG 2.0 conformance target. See `src/coverage/wcag-version-map.js` for the exact, canonical per-version SC list.
 
 Since versions are cumulative (2.1 = 2.0 + new; 2.2 = 2.0 + 2.1 + new), select a WCAG-version conformance target by combining tag sets — the engine's OR-matching on `tags` (any one match includes the rule) does the rest:
 
@@ -59,7 +59,7 @@ Same filtering, expressed as comma-separated strings (or arrays) nested in `engi
 
 ```js
 runDomRulesInPage(url, null, {
-  rules: { include: 'a11ycore-img-alt-present, a11ycore-button-name-present', exclude: 'a11ycore-region' },
+  rules: { include: 'img-alt-present, button-name-present', exclude: 'region' },
   tags: { include: 'wcag412', exclude: 'best-practice' },
   includeMode: 'and'
 }, null);
@@ -94,7 +94,7 @@ const engineOptions = {
   },
 
   rules: {
-    'a11ycore-some-rule-id': { /* per-rule config, currently unused — see note */ }
+    'some-rule-id': { /* per-rule config, currently unused — see note */ }
   },
 
   probes: { /* optional host-supplied evidence, see note */ },
@@ -123,9 +123,9 @@ const engineOptions = {
 | `perfStats` / `profileRules` | Debug-only. `perfStats: true` returns internal counters on the result's `perfStats` field; `profileRules: true` additionally adds a per-rule timing breakdown. Shape is not part of the stable output contract — don't build on it. |
 | `pingWaitTime` / `frameWaitTime` | Only read by `runa11yCoreAcrossFrames` (see [`INTEGRATION.md`](./INTEGRATION.md#cross-frame-scanning-including-cross-origin)) — how long to wait for a child frame to answer a ping (default `500`ms) and a full run request (default `60000`ms) before treating it as unreachable. Ignored by `runDomRulesInPage`/`runa11yCoreInPage`. |
 
-## `customRules` — runtime-registered rules (the reference engine's `configure({rules,checks})` equivalent)
+## `customRules` — runtime-registered rules (equivalent to the rule/check registration pattern used by other engines)
 
-Every shipped rule is baked into `src/core.js` at build time. `engineOptions.customRules` is the runtime escape hatch: an array of rule descriptors registered for that one call only — nothing is added to the static catalog (`getRulesCatalog()`/`getChecksCatalog()`), and nothing persists between calls. This is deliberate, not a limitation to work around: a11y-core already takes fresh `engineOptions` per call with no mutable global config (unlike the reference engine, which needs `configure()`/`reset()` against a shared runtime), and custom rules follow that same per-call model.
+Every shipped rule is baked into `src/core.js` at build time. `engineOptions.customRules` is the runtime escape hatch: an array of rule descriptors registered for that one call only — nothing is added to the static catalog (`getRulesCatalog()`/`getChecksCatalog()`), and nothing persists between calls. This is deliberate, not a limitation to work around: surea11y already takes fresh `engineOptions` per call with no mutable global config (unlike some other engines, which need a `configure()`/`reset()` step against a shared runtime), and custom rules follow that same per-call model.
 
 A descriptor has the *same shape as an internal rule module's own export* — if you already know how to write a rule file for this engine, you already know this API:
 
@@ -141,7 +141,7 @@ A descriptor has the *same shape as an internal rule module's own export* — if
 
 - `runInPage`/`applicability` may be a **real function** or a **function-source string** (i.e. `fn.toString()`). Pass a real function when `engineOptions` never leaves the current JS realm (plain Node/jsdom use). Pass a string when it does — e.g. a Playwright `page.evaluate(runa11yCoreInPage, { engineOptions })` call, where `engineOptions` crosses a JSON/structured-clone boundary that cannot carry a live `Function` reference but can carry a string. The engine reconstructs a string via `new Function`, the same mechanism `scripts/build-core.js` already uses to embed every built-in rule's source into the in-page runner.
 - `meta` gets identical defaulting/validation to a build-time rule (via the same `normalizeRuleMeta` used for the other 125 rules) — omit anything you don't need; `severity` defaults to `moderate`, `confidence` to `medium`, `type` to `automatic`, etc.
-- A custom rule whose `id` collides with a built-in one **overrides it for that scan** (matches the reference engine's `configure()` override semantics), rather than running both.
+- A custom rule whose `id` collides with a built-in one **overrides it for that scan** (matches the override semantics used by other engines' configuration APIs), rather than running both. Since a same-named custom rule is just as likely to be an accidental collision as a deliberate override, every collision is surfaced two ways: a `console.warn` naming the id(s), and a top-level `overriddenBuiltinIds` array on the result (empty when there's no collision) — see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md).
 - An invalid descriptor (missing/non-string `id`, or a `runInPage` that isn't a function and isn't a reconstructable source string) is silently skipped — the rest of the scan, including every built-in rule, still runs normally. This isn't a validation gap to fix: a custom rule is arbitrary caller-supplied code, so "fail this one entry closed, don't abort the scan" is the safer default, mirroring how a *built-in* rule that throws is contained to a `cantTell` for that rule rather than crashing the run.
 - Results appear in `checksResults` exactly like any other rule's, including automatic `selector`/`html`/`structuralPath` fill-in for `fail`/`cantTell` occurrences that only attach `{ __node }` (see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md)).
 
@@ -150,6 +150,6 @@ A descriptor has the *same shape as an internal rule module's own export* — if
 A CSS selector (or array of selectors) scoping the scan to one or more subtrees, resolved via `document.querySelectorAll` (all matches, not just the first), falling back to `document.documentElement`/`document.body` if nothing matches. Pass `null` to scan the whole document.
 
 - **A single string** may itself be a comma-separated selector list (ordinary CSS union semantics) — `'#a, #b'` scans both `#a` and `#b`.
-- **An array of strings** scans the union of every selector's matches — `['#a', '.card']` behaves the same as `'#a, .card'`; the array form exists for callers building the list programmatically. The reference engine's equivalent is calling `.include()` multiple times.
+- **An array of strings** scans the union of every selector's matches — `['#a', '.card']` behaves the same as `'#a, .card'`; the array form exists for callers building the list programmatically. Other engines' equivalent is calling an `.include()` method multiple times.
 - Overlapping/nested regions are deduped automatically — an element reachable from more than one matched root is only ever reported once, not once per region.
 - This changed from single-match (`querySelector`) to all-matches (`querySelectorAll`) semantics for the plain-string form too (2026-07-22) — a selector matching several elements previously scanned only the first, silently dropping the rest. If you relied on that first-match-only behavior, pin to a selector that only ever matches one element (e.g. an `#id`).

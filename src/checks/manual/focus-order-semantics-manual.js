@@ -1,10 +1,10 @@
 'use strict';
 
 /**
- * @check a11ycore-focus-order-semantics
+ * @check focus-order-semantics
  * @atomic true
  * @summary Elements added to the tab order should have interactive semantics
- * @standard the reference engine "Best Practices" (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (a widely-used reference engine's classification; no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
  * @applicability
  *   Elements with an explicit `tabindex` of `0` or greater (in the tab
  *   order) AND an explicit `role` attribute that is one of a curated set
@@ -16,7 +16,7 @@
  *   announce, which is confusing for keyboard users who land on it and
  *   get no indication of what activating it (if anything) would do.
  * @implementation-notes
- * - Not WCAG-normative by the reference engine's own classification — authored as an
+ * - Not WCAG-normative by a widely-used reference engine's own classification — authored as an
  *   advisory, cantTell-capped `type: 'manual'` rule.
  * - The non-interactive role list is deliberately curated and
  *   conservative (structural/document roles only) — legitimate custom
@@ -27,14 +27,14 @@
  *   distinguished from markup alone with the same confidence.
  */
 
-const id = 'a11ycore-focus-order-semantics';
+const id = 'focus-order-semantics';
 
 const meta = {
   title: 'Elements added to the tab order should have interactive semantics',
   description: 'Flags elements with tabindex >= 0 whose explicit role is a non-interactive structural/document role (e.g. heading, list, region, presentation), for manual review.',
   i18n: {
-    titleKey: 'a11ycore_focusOrderSemantics_title',
-    descriptionKey: 'a11ycore_focusOrderSemantics_description'
+    titleKey: 'focusOrderSemantics_title',
+    descriptionKey: 'focusOrderSemantics_description'
   },
   helpUrl: null,
   tags: ['best-practice', 'aria', 'structure', 'atomic', 'manual'],
@@ -87,8 +87,8 @@ function runInPage(ctx) {
       summary: `This element is in the tab order (tabindex="${tabindex}") but has a non-interactive role ("${role}").`,
       hint: 'Remove tabindex if this element is not meant to be interactive, or use an interactive role that matches its actual behavior.',
       i18n: {
-        summaryKey: 'a11ycore_focusOrderSemantics_summary_cantTell',
-        hintKey: 'a11ycore_focusOrderSemantics_hint_cantTell',
+        summaryKey: 'focusOrderSemantics_summary_cantTell',
+        hintKey: 'focusOrderSemantics_hint_cantTell',
         params: { tabindex: String(tabindex), role }
       },
       data: {

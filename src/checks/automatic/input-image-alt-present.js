@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-inputImage-alt-present
+ * @check inputImage-alt-present
  * @atomic true
  * @summary Accessible <input type="image"> elements must have an alt attribute
  * @standard WCAG 2.2
@@ -15,15 +15,15 @@
  *   The alt attribute may be empty (alt="").
  */
 
-const id = 'a11ycore-input-image-alt-present';
+const id = 'input-image-alt-present';
 
 const meta = {
     title: '<input type="image"> must have an alt attribute',
     description:
         'Checks that <input type="image"> elements provide an alt attribute to support a text alternative mechanism.',
     i18n: {
-        titleKey: 'a11ycore_inputImage_altPresent_title',
-        descriptionKey: 'a11ycore_inputImage_altPresent_description'
+        titleKey: 'inputImage_altPresent_title',
+        descriptionKey: 'inputImage_altPresent_description'
     },
     helpUrl: null,
     tags: ['wcag2a', 'wcag111', 'nontext', 'images', 'atomic', 'automatic'],
@@ -109,8 +109,8 @@ function runInPage(ctx) {
         }
 
         // A non-empty title attribute is HTML-AAM's own next fallback naming
-        // source once alt is entirely absent -- also accepted by the reference engine's
-        // equivalent input-image-alt rule (non-empty-title, same "any" list
+        // source once alt is entirely absent -- also accepted by a widely-used
+        // reference engine's equivalent input-image-alt rule (non-empty-title, same "any" list
         // as non-empty-alt/aria-label/aria-labelledby). See img-alt-present's
         // sibling fix (2026-07-23, AliExpress's title-only logo <img>) for
         // the real page this was found via -- same gap, same fix, different
@@ -124,8 +124,8 @@ function runInPage(ctx) {
             summary: 'Missing alt attribute on <input type="image">.',
             hint: 'Add an alt attribute (use alt="" only when a separate accessible name is provided).',
             i18n: {
-                summaryKey: 'a11ycore_inputImage_altPresent_summary_fail',
-                hintKey: 'a11ycore_inputImage_altPresent_hint_fail',
+                summaryKey: 'inputImage_altPresent_summary_fail',
+                hintKey: 'inputImage_altPresent_hint_fail',
                 params: { element: 'input[type=image]' }
             },
             data: {

@@ -8,7 +8,7 @@ const path = require('node:path');
 const { assertRule } = require('../../helpers/assertRule.js');
 const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 
-const RULE_ID = 'a11ycore-meta-refresh-no-exceptions';
+const RULE_ID = 'meta-refresh-no-exceptions';
 
 test(`${RULE_ID}: notApplicable when there is no meta refresh tag`, () => {
   const html = `<!doctype html><html><head></head><body></body></html>`;
@@ -34,8 +34,8 @@ test(`${RULE_ID}: notApplicable for a meta refresh nested inside noscript`, () =
   // run 2026-07-21: Slack's homepage has
   // <noscript><meta http-equiv="refresh" content="0; URL=/?nojsmode=1"></noscript>
   // — a JS-disabled fallback that never takes effect for any context capable
-  // of running accessibility tooling in the first place (the reference engine's own
-  // same-named check correctly doesn't flag it either).
+  // of running accessibility tooling in the first place (a widely-used
+  // reference engine's own same-named check correctly doesn't flag it either).
   const html = `<!doctype html><html><head><noscript><meta http-equiv="refresh" content="0; URL=/?nojsmode=1"></noscript></head><body></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });

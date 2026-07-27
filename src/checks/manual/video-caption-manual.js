@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-video-caption
+ * @check video-caption
  * @atomic true
  * @summary Prerecorded <video> should provide a captions track
  * @standard WCAG 2.2
@@ -15,7 +15,7 @@
  *   verified from static markup alone (jsdom does not decode media).
  *   This rule is therefore `type: 'manual'` (cantTell-capped, never
  *   fail), matching the precedent set by
- *   `a11ycore-media-alternative-transcript-evidence` for the same class
+ *   `media-alternative-transcript-evidence` for the same class
  *   of "normatively mapped but not staticaly verifiable" gap. A <video>
  *   with a `<track kind="captions">` (or `kind="subtitles"`, commonly
  *   used interchangeably in the wild even though captions and subtitles
@@ -27,15 +27,15 @@
  *   `src`.
  */
 
-const id = 'a11ycore-video-caption';
+const id = 'video-caption';
 
 const meta = {
   title: 'Prerecorded video should provide a captions track',
   description:
     'Flags <video> elements with no <track kind="captions"|"subtitles"> child, for manual review of whether the video has an audio track that needs captions.',
   i18n: {
-    titleKey: 'a11ycore_videoCaption_title',
-    descriptionKey: 'a11ycore_videoCaption_description'
+    titleKey: 'videoCaption_title',
+    descriptionKey: 'videoCaption_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag122', 'media', 'timebasedmedia', 'atomic', 'manual'],
@@ -86,8 +86,8 @@ function runInPage(ctx) {
       summary: 'This video has no captions (or subtitles) track.',
       hint: 'If this video has an audio track that conveys information, add a <track kind="captions" src="..."> with the captioned content.',
       i18n: {
-        summaryKey: 'a11ycore_videoCaption_summary_cantTell',
-        hintKey: 'a11ycore_videoCaption_hint_cantTell',
+        summaryKey: 'videoCaption_summary_cantTell',
+        hintKey: 'videoCaption_hint_cantTell',
         params: {}
       },
       data: {

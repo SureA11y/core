@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-aria-prohibited-children
+ * @check aria-prohibited-children
  * @atomic true
  * @summary Container roles must not own an accessible-tree child with a disallowed role
  * @standard WCAG 2.2
@@ -9,7 +9,7 @@
  * @applicability
  *   Applies to elements with an explicit, valid role that is one of the
  *   container roles with a documented "required owned elements" entry
- *   (the same REQUIRED_OWNED_ROLES table a11ycore-aria-required-children
+ *   (the same REQUIRED_OWNED_ROLES table aria-required-children
  *   uses — see src/core/aria-helpers.js).
  * @expectation
  *   Every accessible-tree-owned descendant of the container (after
@@ -20,60 +20,71 @@
  *   owned set. Nothing else is a structurally valid direct child of a
  *   composite/container role.
  * @implementation-notes
- * - A distinct atomic decision from a11ycore-aria-required-children (see
+ * - A distinct atomic decision from aria-required-children (see
  *   that rule): "does at least one required child exist" vs "is every
- *   owned child one of the allowed roles." the reference engine bundles both under
- *   one check (`aria-required-children`); this repo's "one rule = one
- *   normative decision" principle splits them, matching the established
- *   pattern elsewhere of a11y-core rules mapping many-to-one against a
- *   single the reference engine check (see scripts/cross-engine/rule-mapping.js).
+ *   owned child one of the allowed roles." A widely-used reference engine
+ *   bundles both under one check (`aria-required-children`); this repo's
+ *   "one rule = one normative decision" principle splits them, matching
+ *   the established pattern elsewhere of surea11y rules mapping
+ *   many-to-one against a single check in that reference engine.
  * - The "allowed owned roles" set is exactly REQUIRED_OWNED_ROLES — not
- *   a separately authored, broader list. Verified directly against
- *   the reference engine 4.12.1's own ariaRequiredChildren/getOwnedRoles algorithm
- *   (node_modules/the reference engine/its source): an owned element is only considered
- *   allowed if its role is literally in the container's required set;
- *   the reference engine does not define a superset "allowed but not required" list
- *   for this purpose. Found and verified via a real page (Red Cross's
- *   homepage: a <nav role="region"> nested inside a <ul role="menubar">
- *   through a role="none" <li> wrapper — a real violation the reference engine
- *   caught that a11ycore-aria-required-children's own scope (documented
+ *   a separately authored, broader list. Verified directly against a
+ *   widely-used reference engine's own ariaRequiredChildren/getOwnedRoles
+ *   algorithm: an owned element is only considered allowed if its role is
+ *   literally in the container's required set; that engine does not
+ *   define a superset "allowed but not required" list for this purpose.
+ *   Found and verified via a real page (Red Cross's homepage: a
+ *   <nav role="region"> nested inside a <ul role="menubar"> through a
+ *   role="none" <li> wrapper — a real violation that reference engine
+ *   caught that aria-required-children's own scope (documented
  *   there as "can only under-report, never over-report") does not).
  * - Widened 2026-07-21 to also flag a ROLELESS descendant that has any
- *   global WAI-ARIA attribute or is focusable, matching the reference engine's own
- *   `getOwnedRoles` exactly (verified directly against its source,
- *   `node_modules/the reference engine/its source`: `hasGlobalAriaOrFocusable =
+ *   global WAI-ARIA attribute or is focusable, matching a widely-used
+ *   reference engine's own `getOwnedRoles` exactly (verified directly
+ *   against its source: `hasGlobalAriaOrFocusable =
  *   !!globalAriaAttr || _isFocusable(vNode)` — such a descendant is
  *   pushed as an owned entry with `role: null`, which can never match a
  *   container's required-owned-roles set, so it's always "unallowed").
  *   Previously left out as riskier to replicate — re-evaluated given
- *   direct access to the reference engine's exact algorithm (not a guess) plus this
+ *   direct access to that engine's exact algorithm (not a guess) plus this
  *   engine's own already-existing, shared `helpers.getFocusableInfo` for
  *   the focusability half. Both signals (global-attribute presence,
  *   focusability) are static, declarative markup facts with no live-DOM/
  *   hydration risk, unlike e.g. `aria-checked-state-mismatch`'s DOM-
  *   property comparison.
  * - Recursion stops at the first non-transparent role boundary, same as
- *   the reference engine: a nested container with its own real role (e.g. a
+ *   that reference engine: a nested container with its own real role (e.g. a
  *   <div role="listbox"> inside a menubar) is evaluated as ITS OWN
  *   owned-role entry against the outer container (and, separately, gets
  *   its own applicability pass as a container in the same rule run) —
  *   its descendants are never misattributed to the outer container.
- * - Not gated on isAccTreeEligible for the container itself (matches
- *   a11ycore-aria-required-children: this is a static markup structural
- *   property), but descendants ARE skipped (subtree not walked further)
- *   when they fail accessible-tree eligibility (aria-hidden, display:
- *   none, inert, etc.) — an invisible descendant contributes nothing to
- *   the real accessibility tree the reference engine (and any AT) would see.
+ * - Gated on isAccTreeEligible for the container itself, matching the fix
+ *   applied to aria-required-children (see that rule's header): the
+ *   original "not gated" note here just cited that rule's reasoning
+ *   without re-deriving it, and that reasoning turned out not to hold —
+ *   a closed dialog/flyout menu populated on open is a real false-positive
+ *   shape. In this rule specifically the descendant-level eligibility gate
+ *   already made the container-level gate redundant for correctness (an
+ *   ineligible container has no eligible descendants either, so `owned`
+ *   ends up empty and nothing fails) — but skipping the container up front
+ *   reports `notApplicable` instead of a vacuous `pass`, which is the more
+ *   accurate outcome for a container that isn't currently exposed at all,
+ *   and avoids walking a subtree whose result is already known.
+ * - No aria-busy exemption here (unlike aria-required-children): the
+ *   WAI-ARIA spec's aria-busy escape hatch is specifically about a
+ *   container missing its required owned elements while loading, not
+ *   about a container that already has extra/disallowed owned elements —
+ *   that scenario isn't this rule's concern.
  */
 
-const id = 'a11ycore-aria-prohibited-children';
+const id = 'aria-prohibited-children';
 
 const meta = {
   title: 'Container roles must not own a child with a disallowed role',
   description: 'Checks that every accessible-tree-owned child of a container role (list, listbox, menu, menubar, radiogroup, rowgroup, table, grid, treegrid, tablist, tree, row) has one of that role\'s allowed owned roles — the same set as its required owned roles.',
   i18n: {
-    titleKey: 'a11ycore_ariaProhibitedChildren_title',
-    descriptionKey: 'a11ycore_ariaProhibitedChildren_description'
+    titleKey: 'ariaProhibitedChildren_title',
+    descriptionKey: 'ariaProhibitedChildren_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag412', 'aria', 'structure', 'atomic', 'automatic'],
@@ -113,7 +124,7 @@ function runInPage(ctx) {
   // aria-allowed-attr.js's GLOBAL_ATTRS — duplicated, not imported, since
   // runInPage must be self-contained per scripts/build-core.js). A
   // roleless descendant carrying any of these is a real accessible-tree
-  // node the reference engine's getOwnedRoles also flags, not a transparent wrapper.
+  // node a widely-used reference engine's getOwnedRoles also flags, not a transparent wrapper.
   const GLOBAL_ARIA_ATTRS = [
     'aria-atomic', 'aria-braillelabel', 'aria-brailleroledescription', 'aria-busy',
     'aria-controls', 'aria-current', 'aria-describedby', 'aria-description',
@@ -140,7 +151,7 @@ function runInPage(ctx) {
   // roleless descendant is ALSO a non-transparent boundary (an owned
   // entry with role: null, which can never satisfy a required-role set)
   // when it carries a global aria-* attribute or is focusable — matches
-  // the reference engine's own getOwnedRoles exactly (see header comment).
+  // a widely-used reference engine's own getOwnedRoles exactly (see header comment).
   function collectOwnedRoles(el, requiredSet, out, depth) {
     if (depth > MAX_DEPTH) return;
     const kids = el.children ? Array.prototype.slice.call(el.children) : [];
@@ -193,6 +204,8 @@ function runInPage(ctx) {
     const requiredOwned = ariaHelpers.getRequiredOwnedRoles(role);
     if (!requiredOwned || !requiredOwned.length) continue;
 
+    if (!isEligibleAcc(el)) continue; // not currently exposed to the accessibility tree
+
     applicableCount += 1;
 
     const requiredSet = new Set(requiredOwned);
@@ -220,8 +233,8 @@ function runInPage(ctx) {
         summary,
         hint,
         i18n: {
-          summaryKey: isRoleless ? 'a11ycore_ariaProhibitedChildren_summary_fail_roleless' : 'a11ycore_ariaProhibitedChildren_summary_fail',
-          hintKey: isRoleless ? 'a11ycore_ariaProhibitedChildren_hint_fail_roleless' : 'a11ycore_ariaProhibitedChildren_hint_fail',
+          summaryKey: isRoleless ? 'ariaProhibitedChildren_summary_fail_roleless' : 'ariaProhibitedChildren_summary_fail',
+          hintKey: isRoleless ? 'ariaProhibitedChildren_hint_fail_roleless' : 'ariaProhibitedChildren_hint_fail',
           params: isRoleless
             ? { attr: entry.attr, containerRole: role }
             : { childRole: entry.role, containerRole: role, allowedRoles: requiredOwned.join(', ') }

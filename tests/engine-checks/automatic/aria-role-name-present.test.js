@@ -15,7 +15,7 @@ try {
   // Running outside repo context.
 }
 
-const RULE_ID = 'a11ycore-aria-role-name-present';
+const RULE_ID = 'aria-role-name-present';
 
 function hasOccurrenceForId(rule, id) {
   return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));

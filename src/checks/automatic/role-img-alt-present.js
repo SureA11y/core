@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-role-img-text-alternative-present
+ * @check role-img-text-alternative-present
  * @atomic true
  * @summary Accessible elements with role="img" must have an alternative text via aria-label or aria-labelledby
  * @standard WCAG 2.2
@@ -15,18 +15,18 @@
  *    - aria-label with a non-empty value; OR
  *    - aria-labelledby referencing at least one existing element that contributes non-empty text; OR
  *    - a non-empty title attribute (last-resort accessible-name source per HTML-AAM,
- *      also accepted by the reference engine's equivalent role-img-alt rule).
+ *      also accepted by a widely-used reference engine's equivalent role-img-alt rule).
  */
 
-const id = 'a11ycore-role-img-text-alternative-present';
+const id = 'role-img-text-alternative-present';
 
 const meta = {
     title: '[role="img"] must have an accessible text alternative',
     description:
         'Checks that elements with role="img" provide an accessible text alternative via aria-label, aria-labelledby, or a title attribute.',
     i18n: {
-        titleKey: 'a11ycore_roleImg_textAlternativePresent_title',
-        descriptionKey: 'a11ycore_roleImg_textAlternativePresent_description'
+        titleKey: 'roleImg_textAlternativePresent_title',
+        descriptionKey: 'roleImg_textAlternativePresent_description'
     },
     helpUrl: null,
     tags: ['wcag2a', 'wcag111', 'nontext', 'images', 'aria', 'atomic', 'automatic'],
@@ -117,7 +117,7 @@ function runInPage(ctx) {
         const hasValidAriaLabelledbyAttr = hasAriaLabelledbyAttr && ariaLabelledby.length > 0;
 
         // Last-resort naming mechanism per HTML-AAM (also accepted by
-        // the reference engine's role-img-alt): a non-empty title attribute.
+        // a widely-used reference engine's role-img-alt): a non-empty title attribute.
         const titleRaw = (() => { try { return el.getAttribute('title'); } catch { return null; } })();
         const hasValidTitle = titleRaw !== null && trim(titleRaw).length > 0;
 
@@ -170,8 +170,8 @@ function runInPage(ctx) {
             summary: 'Missing text alternative on element with role="img".',
             hint: 'Provide aria-label or aria-labelledby (referencing non-empty text) to give this image a text alternative.',
             i18n: {
-                summaryKey: 'a11ycore_roleImg_textAlternativePresent_summary_fail',
-                hintKey: 'a11ycore_roleImg_textAlternativePresent_hint_fail',
+                summaryKey: 'roleImg_textAlternativePresent_summary_fail',
+                hintKey: 'roleImg_textAlternativePresent_hint_fail',
                 params: { role: 'img' }
             },
             data: {

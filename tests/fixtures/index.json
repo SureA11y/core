@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-23T13:13:09.308Z",
+  "generatedAt": "2026-07-24T14:32:29.015Z",
   "summary": {
     "total": 125,
     "withFixture": 125,
@@ -7,7 +7,7 @@
   },
   "rows": [
     {
-      "ruleId": "a11ycore-accesskeys",
+      "ruleId": "accesskeys",
       "title": "accesskey values must be unique",
       "type": "manual",
       "wcagSc": [],
@@ -24,7 +24,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-area-alt-decorative",
+      "ruleId": "area-alt-decorative",
       "title": "<area> with alt=\"\" must be decorative (manual review)",
       "type": "manual",
       "wcagSc": [
@@ -43,7 +43,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-area-alt-present",
+      "ruleId": "area-alt-present",
       "title": "&lt;area&gt; must have an alt attribute",
       "type": "automatic",
       "wcagSc": [
@@ -62,7 +62,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-area-alt-quality",
+      "ruleId": "area-alt-quality",
       "title": "<area> alt text must be appropriate (manual review)",
       "type": "manual",
       "wcagSc": [
@@ -81,7 +81,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-aria-allowed-attr",
+      "ruleId": "aria-allowed-attr",
       "title": "aria-* attributes must be permitted for the element’s role",
       "type": "automatic",
       "wcagSc": [
@@ -100,7 +100,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-aria-allowed-role",
+      "ruleId": "aria-allowed-role",
       "title": "Explicit role must be permitted for its host element",
       "type": "automatic",
       "wcagSc": [
@@ -119,7 +119,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-aria-braille-equivalent",
+      "ruleId": "aria-braille-equivalent",
       "title": "aria-braillelabel/aria-brailleroledescription must have a non-braille equivalent",
       "type": "automatic",
       "wcagSc": [
@@ -138,7 +138,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-aria-checked-state-mismatch",
+      "ruleId": "aria-checked-state-mismatch",
       "title": "Native checkbox/radio aria-checked should match its actual state",
       "type": "manual",
       "wcagSc": [
@@ -157,7 +157,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-aria-conditional-attr",
+      "ruleId": "aria-conditional-attr",
       "title": "aria-errormessage requires aria-invalid to be set to a non-false value",
       "type": "automatic",
       "wcagSc": [
@@ -176,7 +176,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-aria-deprecated-role",
+      "ruleId": "aria-deprecated-role",
       "title": "role attribute must not use a deprecated or author-prohibited ARIA role",
       "type": "automatic",
       "wcagSc": [
@@ -195,7 +195,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-aria-hidden-body",
+      "ruleId": "aria-hidden-body",
       "title": "The document <body> must not be aria-hidden",
       "type": "automatic",
       "wcagSc": [
@@ -215,7 +215,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-aria-hidden-focus",
+      "ruleId": "aria-hidden-focus",
       "title": "ARIA hidden elements must not be focusable",
       "type": "automatic",
       "wcagSc": [
@@ -234,7 +234,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-aria-prohibited-attr",
+      "ruleId": "aria-prohibited-attr",
       "title": "ARIA naming attributes must not be used on roles that prohibit them",
       "type": "automatic",
       "wcagSc": [
@@ -253,7 +253,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-aria-prohibited-children",
+      "ruleId": "aria-prohibited-children",
       "title": "Container roles must not own a child with a disallowed role",
       "type": "automatic",
       "wcagSc": [
@@ -272,7 +272,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-aria-required-attr",
+      "ruleId": "aria-required-attr",
       "title": "Roles with a required ARIA state/property must carry it",
       "type": "automatic",
       "wcagSc": [
@@ -291,7 +291,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-aria-required-children",
+      "ruleId": "aria-required-children",
       "title": "Container roles must own at least one required child role",
       "type": "automatic",
       "wcagSc": [
@@ -310,7 +310,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-aria-required-parent",
+      "ruleId": "aria-required-parent",
       "title": "Roles requiring a specific context role must be in that context",
       "type": "automatic",
       "wcagSc": [
@@ -329,7 +329,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-aria-role-name-present",
+      "ruleId": "aria-role-name-present",
       "title": "ARIA widget/container roles have an accessible name",
       "type": "automatic",
       "wcagSc": [
@@ -348,7 +348,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-aria-roles-valid",
+      "ruleId": "aria-roles-valid",
       "title": "role attribute must be a valid, non-abstract ARIA role",
       "type": "automatic",
       "wcagSc": [
@@ -367,7 +367,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-aria-text",
+      "ruleId": "aria-text",
       "title": "role=\"text\" elements should have no focusable descendants",
       "type": "manual",
       "wcagSc": [],
@@ -384,7 +384,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-aria-valid-attr",
+      "ruleId": "aria-valid-attr",
       "title": "aria-* attributes must be real, defined ARIA attributes",
       "type": "automatic",
       "wcagSc": [
@@ -403,7 +403,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-aria-valid-attr-value",
+      "ruleId": "aria-valid-attr-value",
       "title": "aria-* attribute values must match their declared type",
       "type": "automatic",
       "wcagSc": [
@@ -422,7 +422,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-autocomplete-valid",
+      "ruleId": "autocomplete-valid",
       "title": "autocomplete attribute must be a valid autofill value",
       "type": "automatic",
       "wcagSc": [
@@ -441,7 +441,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-avoid-inline-spacing",
+      "ruleId": "avoid-inline-spacing",
       "title": "Inline style must not force text spacing with !important",
       "type": "automatic",
       "wcagSc": [
@@ -460,7 +460,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-binary-control-name-present",
+      "ruleId": "binary-control-name-present",
       "title": "Binary controls have an accessible name",
       "type": "automatic",
       "wcagSc": [
@@ -479,7 +479,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-button-name-present",
+      "ruleId": "button-name-present",
       "title": "Buttons have an accessible name",
       "type": "automatic",
       "wcagSc": [
@@ -498,7 +498,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-bypass-blocks-present",
+      "ruleId": "bypass-blocks-present",
       "title": "Page must provide a way to bypass repeated blocks",
       "type": "automatic",
       "wcagSc": [
@@ -517,7 +517,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-canvas-text-alternative-present",
+      "ruleId": "canvas-text-alternative-present",
       "title": "<canvas> must provide a text alternative",
       "type": "automatic",
       "wcagSc": [
@@ -536,7 +536,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-canvas-text-alternative-quality",
+      "ruleId": "canvas-text-alternative-quality",
       "title": "<canvas> text alternative must be appropriate (manual review)",
       "type": "manual",
       "wcagSc": [
@@ -555,7 +555,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-combobox-name-present",
+      "ruleId": "combobox-name-present",
       "title": "Comboboxes have an accessible name",
       "type": "automatic",
       "wcagSc": [
@@ -574,7 +574,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-contrast-computable",
+      "ruleId": "contrast-computable",
       "title": "Color contrast is computable for rendered text",
       "type": "automatic",
       "wcagSc": [
@@ -594,7 +594,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-contrast-enhanced",
+      "ruleId": "contrast-enhanced",
       "title": "Text must meet the enhanced color contrast ratio",
       "type": "automatic",
       "wcagSc": [
@@ -613,7 +613,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-contrast-minimum",
+      "ruleId": "contrast-minimum",
       "title": "Text must meet the minimum color contrast ratio",
       "type": "automatic",
       "wcagSc": [
@@ -632,7 +632,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-css-hidden-focus",
+      "ruleId": "css-hidden-focus",
       "title": "Focusable elements must not be visually hidden",
       "type": "manual",
       "wcagSc": [
@@ -651,7 +651,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-css-orientation-lock",
+      "ruleId": "css-orientation-lock",
       "title": "CSS must not lock the page to a single orientation",
       "type": "automatic",
       "wcagSc": [
@@ -670,7 +670,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-definition-list-children-valid",
+      "ruleId": "definition-list-children-valid",
       "title": "Description lists must be structured correctly",
       "type": "automatic",
       "wcagSc": [
@@ -689,7 +689,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-deprecated-elements-not-used",
+      "ruleId": "deprecated-elements-not-used",
       "title": "Obsolete non-stoppable elements (<blink>, <marquee>) must not be used",
       "type": "automatic",
       "wcagSc": [
@@ -708,7 +708,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-dialog-name-present",
+      "ruleId": "dialog-name-present",
       "title": "Dialogs have an accessible name",
       "type": "automatic",
       "wcagSc": [
@@ -727,7 +727,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-dlitem-parent-valid",
+      "ruleId": "dlitem-parent-valid",
       "title": "Description-list items must be inside a description list",
       "type": "automatic",
       "wcagSc": [
@@ -746,7 +746,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-duplicate-id-aria",
+      "ruleId": "duplicate-id-aria",
       "title": "IDs referenced by ARIA must be unique",
       "type": "automatic",
       "wcagSc": [
@@ -765,7 +765,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-embed-text-alternative-present",
+      "ruleId": "embed-text-alternative-present",
       "title": "<embed> must provide a text alternative",
       "type": "automatic",
       "wcagSc": [
@@ -784,7 +784,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-embed-text-alternative-quality",
+      "ruleId": "embed-text-alternative-quality",
       "title": "<embed> text alternative must be appropriate (manual review)",
       "type": "manual",
       "wcagSc": [
@@ -803,7 +803,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-empty-heading",
+      "ruleId": "empty-heading",
       "title": "Headings must not be empty",
       "type": "manual",
       "wcagSc": [],
@@ -820,7 +820,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-empty-table-header",
+      "ruleId": "empty-table-header",
       "title": "Table header cells must not be empty",
       "type": "manual",
       "wcagSc": [],
@@ -837,7 +837,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-focus-order-semantics",
+      "ruleId": "focus-order-semantics",
       "title": "Elements added to the tab order should have interactive semantics",
       "type": "manual",
       "wcagSc": [],
@@ -854,7 +854,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-form-control-programmatic-label-present",
+      "ruleId": "form-control-programmatic-label-present",
       "title": "Form controls must have a programmatic label",
       "type": "automatic",
       "wcagSc": [
@@ -875,7 +875,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-form-control-programmatic-label-quality",
+      "ruleId": "form-control-programmatic-label-quality",
       "title": "Form controls should not rely on placeholder or title as the primary label",
       "type": "manual",
       "wcagSc": [
@@ -894,7 +894,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-form-control-single-label",
+      "ruleId": "form-control-single-label",
       "title": "Form controls must not have multiple labels",
       "type": "automatic",
       "wcagSc": [
@@ -913,7 +913,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-heading-order",
+      "ruleId": "heading-order",
       "title": "Heading levels must not skip a level",
       "type": "manual",
       "wcagSc": [],
@@ -930,7 +930,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-html-lang-attr-present",
+      "ruleId": "html-lang-attr-present",
       "title": "Page language is declared",
       "type": "automatic",
       "wcagSc": [
@@ -949,7 +949,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-html-xml-lang-mismatch",
+      "ruleId": "html-xml-lang-mismatch",
       "title": "lang and xml:lang must not disagree",
       "type": "automatic",
       "wcagSc": [
@@ -968,7 +968,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-identical-links-same-purpose",
+      "ruleId": "identical-links-same-purpose",
       "title": "Links with the same accessible name should lead to the same destination",
       "type": "manual",
       "wcagSc": [
@@ -987,7 +987,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-iframe-focusable-content",
+      "ruleId": "iframe-focusable-content",
       "title": "Frames with tabindex=\"-1\" must not contain focusable content",
       "type": "automatic",
       "wcagSc": [
@@ -1006,7 +1006,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-iframe-name-present",
+      "ruleId": "iframe-name-present",
       "title": "Frames have an accessible name",
       "type": "automatic",
       "wcagSc": [
@@ -1025,7 +1025,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-iframe-title-unique",
+      "ruleId": "iframe-title-unique",
       "title": "Frame titles must be unique",
       "type": "automatic",
       "wcagSc": [
@@ -1044,7 +1044,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-image-redundant-alt",
+      "ruleId": "image-redundant-alt",
       "title": "Image alt text must not duplicate adjacent visible text",
       "type": "manual",
       "wcagSc": [],
@@ -1061,7 +1061,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-img-alt-decorative",
+      "ruleId": "img-alt-decorative",
       "title": "<img> with alt=\"\" must be decorative (manual review)",
       "type": "manual",
       "wcagSc": [
@@ -1080,7 +1080,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-img-alt-present",
+      "ruleId": "img-alt-present",
       "title": "<img> must have an alt attribute",
       "type": "automatic",
       "wcagSc": [
@@ -1099,7 +1099,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-img-alt-quality",
+      "ruleId": "img-alt-quality",
       "title": "<img> alt text must be appropriate (manual review)",
       "type": "manual",
       "wcagSc": [
@@ -1118,7 +1118,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-input-image-alt-decorative",
+      "ruleId": "input-image-alt-decorative",
       "title": "<input type=\"image\"> with alt=\"\" must be appropriate (manual review)",
       "type": "manual",
       "wcagSc": [
@@ -1137,7 +1137,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-input-image-alt-present",
+      "ruleId": "input-image-alt-present",
       "title": "<input type=\"image\"> must have an alt attribute",
       "type": "automatic",
       "wcagSc": [
@@ -1156,7 +1156,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-input-image-alt-quality",
+      "ruleId": "input-image-alt-quality",
       "title": "<input type=\"image\"> alt text must be appropriate (manual review)",
       "type": "manual",
       "wcagSc": [
@@ -1175,7 +1175,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-label-in-name",
+      "ruleId": "label-in-name",
       "title": "Label in Name: accessible name contains visible text",
       "type": "automatic",
       "wcagSc": [
@@ -1194,7 +1194,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-label-title-only",
+      "ruleId": "label-title-only",
       "title": "Form controls should not use title as their only label",
       "type": "manual",
       "wcagSc": [],
@@ -1211,7 +1211,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-landmark-banner-is-top-level",
+      "ruleId": "landmark-banner-is-top-level",
       "title": "Banner landmark must be top-level",
       "type": "manual",
       "wcagSc": [],
@@ -1228,7 +1228,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-landmark-contentinfo-is-top-level",
+      "ruleId": "landmark-contentinfo-is-top-level",
       "title": "Contentinfo landmark must be top-level",
       "type": "manual",
       "wcagSc": [],
@@ -1245,7 +1245,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-landmark-main-is-top-level",
+      "ruleId": "landmark-main-is-top-level",
       "title": "Main landmark must be top-level",
       "type": "manual",
       "wcagSc": [],
@@ -1262,7 +1262,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-landmark-no-duplicate-banner",
+      "ruleId": "landmark-no-duplicate-banner",
       "title": "Page must not have more than one banner landmark",
       "type": "manual",
       "wcagSc": [],
@@ -1279,7 +1279,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-landmark-no-duplicate-contentinfo",
+      "ruleId": "landmark-no-duplicate-contentinfo",
       "title": "Page must not have more than one contentinfo landmark",
       "type": "manual",
       "wcagSc": [],
@@ -1296,7 +1296,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-landmark-no-duplicate-main",
+      "ruleId": "landmark-no-duplicate-main",
       "title": "Page must not have more than one main landmark",
       "type": "manual",
       "wcagSc": [],
@@ -1313,7 +1313,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-landmark-one-main",
+      "ruleId": "landmark-one-main",
       "title": "Page should have a main landmark",
       "type": "manual",
       "wcagSc": [],
@@ -1330,7 +1330,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-landmark-unique",
+      "ruleId": "landmark-unique",
       "title": "Landmarks with the same role must have unique names",
       "type": "manual",
       "wcagSc": [],
@@ -1347,7 +1347,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-link-in-text-block",
+      "ruleId": "link-in-text-block",
       "title": "Links in text blocks must be distinguishable from surrounding text without relying on color alone",
       "type": "automatic",
       "wcagSc": [
@@ -1366,7 +1366,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-link-name-present",
+      "ruleId": "link-name-present",
       "title": "Links have an accessible name",
       "type": "automatic",
       "wcagSc": [
@@ -1385,7 +1385,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-link-name-quality",
+      "ruleId": "link-name-quality",
       "title": "Link text should be descriptive, not generic",
       "type": "manual",
       "wcagSc": [
@@ -1404,7 +1404,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-list-children-valid",
+      "ruleId": "list-children-valid",
       "title": "Lists must only directly contain list items",
       "type": "automatic",
       "wcagSc": [
@@ -1423,7 +1423,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-listbox-name-present",
+      "ruleId": "listbox-name-present",
       "title": "Accessible name is present",
       "type": "automatic",
       "wcagSc": [
@@ -1442,7 +1442,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-listitem-parent-valid",
+      "ruleId": "listitem-parent-valid",
       "title": "List items must be inside a list container",
       "type": "automatic",
       "wcagSc": [
@@ -1461,7 +1461,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-manual-review",
+      "ruleId": "manual-review",
       "title": "Manual review: keyboard navigation and focus order",
       "type": "manual",
       "wcagSc": [],
@@ -1478,16 +1478,16 @@
       }
     },
     {
-      "ruleId": "a11ycore-media-alternative-transcript-evidence",
+      "ruleId": "media-alternative-transcript-evidence",
       "title": "Time-based media: transcript / media alternative evidence",
       "type": "manual",
       "wcagSc": [
         "1.2.1"
       ],
-      "ruleFile": "src/checks/manual/a11ycore-media-transcript-present-manual.js",
-      "testFile": "tests/engine-checks/manual/a11ycore-media-transcript-present.test.js",
+      "ruleFile": "src/checks/manual/media-transcript-present-manual.js",
+      "testFile": "tests/engine-checks/manual/media-transcript-present.test.js",
       "hasFixture": true,
-      "fixtureFile": "tests/fixtures/a11ycore-media-transcript-present-manual-all-scenarios.html",
+      "fixtureFile": "tests/fixtures/media-transcript-present-manual-all-scenarios.html",
       "totalCases": 0,
       "caseCounts": {
         "PASS": 0,
@@ -1497,7 +1497,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-menuitem-name-present",
+      "ruleId": "menuitem-name-present",
       "title": "Menu items have an accessible name",
       "type": "automatic",
       "wcagSc": [
@@ -1516,7 +1516,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-meta-refresh-no-exceptions",
+      "ruleId": "meta-refresh-no-exceptions",
       "title": "Page must not use a meta refresh at all (AAA)",
       "type": "automatic",
       "wcagSc": [
@@ -1536,7 +1536,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-meta-refresh-timing-absent",
+      "ruleId": "meta-refresh-timing-absent",
       "title": "Page must not use a timed meta refresh",
       "type": "automatic",
       "wcagSc": [
@@ -1555,7 +1555,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-meta-viewport-large",
+      "ruleId": "meta-viewport-large",
       "title": "Viewport meta tag should allow zooming up to 500%",
       "type": "manual",
       "wcagSc": [],
@@ -1572,7 +1572,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-meta-viewport-zoom-enabled",
+      "ruleId": "meta-viewport-zoom-enabled",
       "title": "Viewport meta tag must not disable zoom",
       "type": "automatic",
       "wcagSc": [
@@ -1591,7 +1591,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-meter-name-present",
+      "ruleId": "meter-name-present",
       "title": "Meters have an accessible name",
       "type": "automatic",
       "wcagSc": [
@@ -1610,7 +1610,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-mouse-only-event-handlers",
+      "ruleId": "mouse-only-event-handlers",
       "title": "Pointer-only inline event handlers should have a keyboard-reachable equivalent",
       "type": "manual",
       "wcagSc": [
@@ -1629,7 +1629,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-nested-interactive-controls-absent",
+      "ruleId": "nested-interactive-controls-absent",
       "title": "Interactive controls must not be nested",
       "type": "automatic",
       "wcagSc": [
@@ -1648,7 +1648,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-no-autoplay-audio",
+      "ruleId": "no-autoplay-audio",
       "title": "Autoplaying audio should provide a pause/stop or volume-control mechanism",
       "type": "manual",
       "wcagSc": [
@@ -1667,7 +1667,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-object-text-alternative-present",
+      "ruleId": "object-text-alternative-present",
       "title": "<object> must provide a text alternative",
       "type": "automatic",
       "wcagSc": [
@@ -1686,7 +1686,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-object-text-alternative-quality",
+      "ruleId": "object-text-alternative-quality",
       "title": "<object> text alternative must be appropriate (manual review)",
       "type": "manual",
       "wcagSc": [
@@ -1705,7 +1705,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-option-name-present",
+      "ruleId": "option-name-present",
       "title": "Accessible name is present",
       "type": "automatic",
       "wcagSc": [
@@ -1724,7 +1724,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-p-as-heading",
+      "ruleId": "p-as-heading",
       "title": "A <p> styled to look like a heading should probably be a real heading",
       "type": "manual",
       "wcagSc": [
@@ -1743,7 +1743,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-page-has-heading-one",
+      "ruleId": "page-has-heading-one",
       "title": "Page should have a level-one heading",
       "type": "manual",
       "wcagSc": [],
@@ -1760,7 +1760,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-page-title-patterns",
+      "ruleId": "page-title-patterns",
       "title": "Page title patterns that may indicate low descriptiveness",
       "type": "manual",
       "wcagSc": [
@@ -1779,7 +1779,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-page-title-present",
+      "ruleId": "page-title-present",
       "title": "Page title is present and non-empty",
       "type": "automatic",
       "wcagSc": [
@@ -1798,7 +1798,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-presentation-role-conflict",
+      "ruleId": "presentation-role-conflict",
       "title": "Presentational role must not conflict with a global ARIA attribute or focusability",
       "type": "manual",
       "wcagSc": [],
@@ -1815,7 +1815,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-progressbar-name-present",
+      "ruleId": "progressbar-name-present",
       "title": "Progress bars have an accessible name",
       "type": "automatic",
       "wcagSc": [
@@ -1834,7 +1834,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-region",
+      "ruleId": "region",
       "title": "Page content should be inside a landmark region",
       "type": "manual",
       "wcagSc": [],
@@ -1851,7 +1851,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-role-img-text-alternative-present",
+      "ruleId": "role-img-text-alternative-present",
       "title": "[role=\"img\"] must have an accessible text alternative",
       "type": "automatic",
       "wcagSc": [
@@ -1870,7 +1870,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-scope-attr-valid",
+      "ruleId": "scope-attr-valid",
       "title": "scope attribute must have a valid value",
       "type": "manual",
       "wcagSc": [],
@@ -1887,7 +1887,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-scrollable-region-focusable",
+      "ruleId": "scrollable-region-focusable",
       "title": "Scrollable regions with no focusable content should be keyboard-focusable",
       "type": "manual",
       "wcagSc": [
@@ -1907,7 +1907,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-searchbox-name-present",
+      "ruleId": "searchbox-name-present",
       "title": "Accessible name is present",
       "type": "automatic",
       "wcagSc": [
@@ -1926,7 +1926,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-server-side-image-map-absent",
+      "ruleId": "server-side-image-map-absent",
       "title": "Images must not use a server-side image map",
       "type": "automatic",
       "wcagSc": [
@@ -1945,7 +1945,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-skip-link",
+      "ruleId": "skip-link",
       "title": "Skip link must have a resolvable target",
       "type": "manual",
       "wcagSc": [],
@@ -1962,7 +1962,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-slider-name-present",
+      "ruleId": "slider-name-present",
       "title": "Sliders have an accessible name",
       "type": "automatic",
       "wcagSc": [
@@ -1981,7 +1981,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-spinbutton-name-present",
+      "ruleId": "spinbutton-name-present",
       "title": "Accessible name is present",
       "type": "automatic",
       "wcagSc": [
@@ -2000,7 +2000,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-summary-name-present",
+      "ruleId": "summary-name-present",
       "title": "Summary elements have an accessible name",
       "type": "automatic",
       "wcagSc": [
@@ -2019,7 +2019,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-svg-image-text-alternative-present",
+      "ruleId": "svg-image-text-alternative-present",
       "title": "SVG <image> must have a text alternative",
       "type": "automatic",
       "wcagSc": [
@@ -2038,7 +2038,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-svg-text-alternative-present",
+      "ruleId": "svg-text-alternative-present",
       "title": "<svg> must provide a text alternative",
       "type": "automatic",
       "wcagSc": [
@@ -2057,7 +2057,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-svg-text-alternative-quality",
+      "ruleId": "svg-text-alternative-quality",
       "title": "<svg> text alternative must be appropriate (manual review)",
       "type": "manual",
       "wcagSc": [
@@ -2076,7 +2076,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-tab-name-present",
+      "ruleId": "tab-name-present",
       "title": "Tabs have an accessible name",
       "type": "automatic",
       "wcagSc": [
@@ -2095,7 +2095,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-tabindex",
+      "ruleId": "tabindex",
       "title": "tabindex should not be greater than 0",
       "type": "manual",
       "wcagSc": [],
@@ -2112,7 +2112,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-table-duplicate-name",
+      "ruleId": "table-duplicate-name",
       "title": "Table caption must not duplicate its summary attribute",
       "type": "manual",
       "wcagSc": [],
@@ -2129,7 +2129,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-table-fake-caption",
+      "ruleId": "table-fake-caption",
       "title": "A table's first row should not stand in for a real <caption>",
       "type": "manual",
       "wcagSc": [
@@ -2148,7 +2148,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-table-headers-attr-valid",
+      "ruleId": "table-headers-attr-valid",
       "title": "Table cell \"headers\" attribute must reference valid header cells",
       "type": "automatic",
       "wcagSc": [
@@ -2167,7 +2167,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-table-th-has-data-cells",
+      "ruleId": "table-th-has-data-cells",
       "title": "<th> elements must describe at least one data cell",
       "type": "automatic",
       "wcagSc": [
@@ -2186,7 +2186,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-target-size-minimum",
+      "ruleId": "target-size-minimum",
       "title": "Pointer targets meet minimum size (AA)",
       "type": "automatic",
       "wcagSc": [
@@ -2205,7 +2205,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-td-has-header",
+      "ruleId": "td-has-header",
       "title": "Data cells in large tables must have an associated header",
       "type": "automatic",
       "wcagSc": [
@@ -2224,7 +2224,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-textbox-name-present",
+      "ruleId": "textbox-name-present",
       "title": "Accessible name is present",
       "type": "automatic",
       "wcagSc": [
@@ -2243,7 +2243,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-tooltip-name-present",
+      "ruleId": "tooltip-name-present",
       "title": "Tooltips have an accessible name",
       "type": "automatic",
       "wcagSc": [
@@ -2262,7 +2262,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-treeitem-name-present",
+      "ruleId": "treeitem-name-present",
       "title": "Accessible name is present",
       "type": "automatic",
       "wcagSc": [
@@ -2281,7 +2281,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-valid-lang",
+      "ruleId": "valid-lang",
       "title": "Element lang attribute must be syntactically valid",
       "type": "automatic",
       "wcagSc": [
@@ -2300,7 +2300,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-video-caption",
+      "ruleId": "video-caption",
       "title": "Prerecorded video should provide a captions track",
       "type": "manual",
       "wcagSc": [
@@ -2319,7 +2319,7 @@
       }
     },
     {
-      "ruleId": "a11ycore-video-poster-text-alternative-present",
+      "ruleId": "video-poster-text-alternative-present",
       "title": "<video> poster must have a text alternative",
       "type": "automatic",
       "wcagSc": [

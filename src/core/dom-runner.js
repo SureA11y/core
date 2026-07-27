@@ -35,8 +35,8 @@ function runCore(pageUrl, contextSelector, engineOptions, runOnly, CHECK_DEFS, R
     // contextSelector accepts a single selector string (which may itself be a
     // comma-separated selector list -- ordinary CSS union semantics) OR an
     // array of selector strings for scanning multiple, possibly disjoint
-    // regions in one run (the reference engine's multi-.include() capability has no
-    // equivalent here otherwise). Both forms resolve via querySelectorAll,
+    // regions in one run (a widely-used reference engine's multi-.include()
+    // capability has no equivalent here otherwise). Both forms resolve via querySelectorAll,
     // not querySelector -- previously a single string only ever scanned its
     // FIRST match, silently ignoring the rest if it happened to match more
     // than one element. That was a real gap, not a deliberate "one region
@@ -141,10 +141,11 @@ function runCore(pageUrl, contextSelector, engineOptions, runOnly, CHECK_DEFS, R
     // but a string can). Reconstructed via `new Function`, matching exactly how build-core.js
     // already embeds each built-in rule's own runInPage source into the in-page runner.
     // Scan-scoped only (not added to the static CHECK_DEFS/getRulesCatalog() catalog) --
-    // matches a11y-core's existing "fresh engineOptions per call, no mutable global config"
-    // design (see ROADMAP.md), rather than the reference engine's stateful global configure().
+    // matches surea11y's existing "fresh engineOptions per call, no mutable global config"
+    // design (see ROADMAP.md), rather than a widely-used reference engine's stateful global configure().
     let effectiveCheckDefs = CHECK_DEFS;
     let effectiveRuleImpls = RULE_IMPLS;
+    let overriddenBuiltinIds = [];
     const rawCustomRules = Array.isArray(engineOptionsResolved.customRules) ? engineOptionsResolved.customRules : [];
     if (rawCustomRules.length) {
         function reviveRuleFn(value) {
@@ -171,6 +172,15 @@ function runCore(pageUrl, contextSelector, engineOptions, runOnly, CHECK_DEFS, R
 
             const applicabilityFn = reviveRuleFn(c.applicability);
             const normalizedMeta = normalizeRuleMeta(ruleId, ruleId, c.meta, ENGINE_TAG);
+
+            // Overriding a built-in rule id is supported (see docs/ENGINE_OPTIONS.md),
+            // but a same-named custom rule is just as likely to be an accidental
+            // collision (a generic name like "region" or "tabindex" picked without
+            // realizing it's already a built-in id) as a deliberate override -- so
+            // surface it either way rather than silently swapping the rule out.
+            if (CHECK_DEFS.some((d) => d && d.ruleId === ruleId)) {
+                overriddenBuiltinIds.push(ruleId);
+            }
 
             extraDefsById.set(ruleId, {
                 ruleId,
@@ -206,6 +216,12 @@ function runCore(pageUrl, contextSelector, engineOptions, runOnly, CHECK_DEFS, R
                 .filter((d) => !extraDefsById.has(d.ruleId))
                 .concat(Array.from(extraDefsById.values()));
             effectiveRuleImpls = { ...RULE_IMPLS, ...extraImpls };
+        }
+
+        if (overriddenBuiltinIds.length) {
+            try {
+                console.warn('[surea11y] customRules overriding built-in rule id(s) for this scan: ' + overriddenBuiltinIds.join(', '));
+            } catch (e) {}
         }
     }
 
@@ -539,7 +555,7 @@ function runCore(pageUrl, contextSelector, engineOptions, runOnly, CHECK_DEFS, R
 
                 // REQUIRED by your reporting schema (top-level)
                 summaryKey: 'Composite rule rollup',
-                i18nKey: 'a11ycore_composite_rollup_summary',
+                i18nKey: 'composite_rollup_summary',
                 i18nParams: { reasonCode, testCount: String(checksIds.length) },
 
                 // REQUIRED by your reporting schema (machine-readable payload)
@@ -603,7 +619,8 @@ function runCore(pageUrl, contextSelector, engineOptions, runOnly, CHECK_DEFS, R
         perfStats,
         contextSelector: ctxSelector,
         checksResults,
-        rulesResults
+        rulesResults,
+        overriddenBuiltinIds
     };
 }
 

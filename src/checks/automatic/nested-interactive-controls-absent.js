@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-nested-interactive-controls-absent
+ * @check nested-interactive-controls-absent
  * @atomic true
  * @summary An interactive control must not contain another interactive control
  * @standard WCAG 2.2
@@ -20,7 +20,7 @@
  *   technology — activating the outer control and the inner one become
  *   ambiguous, and some AT only exposes one of the two.
  * @implementation-notes
- * - Matches the reference engine's nested-interactive. Reports on the outer
+ * - Matches a widely-used reference engine's nested-interactive. Reports on the outer
  *   (containing) control, not the nested descendant — this engine
  *   considers the container the fixable unit ("move the nested control
  *   outside this element").
@@ -30,14 +30,14 @@
  *   genuinely contains a nested interactive control.
  */
 
-const id = 'a11ycore-nested-interactive-controls-absent';
+const id = 'nested-interactive-controls-absent';
 
 const meta = {
   title: 'Interactive controls must not be nested',
   description: 'Checks that an interactive control (link, button, form control, or ARIA widget role) does not contain another interactive control.',
   i18n: {
-    titleKey: 'a11ycore_nestedInteractiveControlsAbsent_title',
-    descriptionKey: 'a11ycore_nestedInteractiveControlsAbsent_description'
+    titleKey: 'nestedInteractiveControlsAbsent_title',
+    descriptionKey: 'nestedInteractiveControlsAbsent_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag412', 'structure', 'atomic', 'automatic'],
@@ -113,8 +113,8 @@ function runInPage(ctx) {
       summary: 'This interactive control contains one or more other interactive controls.',
       hint: 'Move the nested interactive control(s) outside this element; nested interactive controls are not reliably operable via assistive technology.',
       i18n: {
-        summaryKey: 'a11ycore_nestedInteractiveControlsAbsent_summary_fail',
-        hintKey: 'a11ycore_nestedInteractiveControlsAbsent_hint_fail',
+        summaryKey: 'nestedInteractiveControlsAbsent_summary_fail',
+        hintKey: 'nestedInteractiveControlsAbsent_hint_fail',
         params: { element: tag, nestedElements: nestedTags.join(', ') }
       },
       data: {

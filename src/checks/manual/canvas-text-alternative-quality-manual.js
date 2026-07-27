@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-canvas-text-alternative-quality
+ * @check canvas-text-alternative-quality
  * @atomic true
  * @summary Manual review: text alternative appropriateness (WCAG 1.1.1)
  * @standard WCAG 2.2
@@ -11,14 +11,14 @@
  *   Human review is required to confirm that the provided text alternative is accurate and appropriate.
  */
 
-const id = "a11ycore-canvas-text-alternative-quality";
+const id = "canvas-text-alternative-quality";
 
 const meta = {
   title: "<canvas> text alternative must be appropriate (manual review)",
   description: "Flags <canvas> elements with a detected text alternative for human review of equivalence and appropriateness.",
   i18n: {
-    titleKey: "a11ycore_canvas_textAltQuality_title",
-    descriptionKey: "a11ycore_canvas_textAltQuality_description"
+    titleKey: "canvas_textAltQuality_title",
+    descriptionKey: "canvas_textAltQuality_description"
   },
   helpUrl: null,
   tags: ["wcag2a", "wcag111", "nontext", "canvas", "manual", "atomic"],
@@ -143,8 +143,8 @@ function runInPage(ctx) {
             summary: 'Review text alternative for <canvas> for equivalence and appropriateness.',
             hint: 'Confirm the fallback text or accessible name conveys the same information/function as the canvas content.',
             i18n: {
-                summaryKey: 'a11ycore_canvas_textAltQuality_summary_cantTell',
-                hintKey: 'a11ycore_canvas_textAltQuality_hint_cantTell',
+                summaryKey: 'canvas_textAltQuality_summary_cantTell',
+                hintKey: 'canvas_textAltQuality_hint_cantTell',
                 params: { element: (el.tagName || '').toLowerCase() }
             },
             data: {

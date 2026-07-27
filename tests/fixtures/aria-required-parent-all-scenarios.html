@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>a11ycore-aria-required-parent — scenario fixture</title>
+  <title>aria-required-parent — scenario fixture</title>
   <style>
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
     h1 { font-size: 20px; margin: 0 0 16px; }
@@ -14,7 +14,7 @@
   </style>
 </head>
 <body>
-  <h1>Scenario fixture: <code>a11ycore-aria-required-parent</code> (context-dependent roles need an acceptable ancestor/owner)</h1>
+  <h1>Scenario fixture: <code>aria-required-parent</code> (context-dependent roles need an acceptable ancestor/owner)</h1>
 
   <p class="note">
     Each target has a stable <code>id</code> of the form <code>arp_case_NN</code>.
@@ -39,7 +39,7 @@
   </div>
 
   <div class="case" id="case_08">
-    <div class="case-title">08 — PASS: role="group" is the immediate-parent context for menuitem, between it and its owning menu — found on a real site, Ant Design's sectioned sidebar nav (menu &gt; presentation &gt; group &gt; menuitem), verified against the reference engine's own menuitem role descriptor (requiredContext: ['menu','menubar','group'])</div>
+    <div class="case-title">08 — PASS: role="group" is the immediate-parent context for menuitem, between it and its owning menu — found on a real site, Ant Design's sectioned sidebar nav (menu &gt; presentation &gt; group &gt; menuitem), verified against a widely-used reference engine's own menuitem role descriptor (requiredContext: ['menu','menubar','group'])</div>
     <ul role="menu"><li role="presentation"><ul role="group"><li role="menuitem" tabindex="-1" id="arp_case_08">Item</li></ul></li></ul>
   </div>
 
@@ -70,6 +70,11 @@
   <div class="case" id="case_06">
     <div class="case-title">06 — NEUTRAL: role has an explicitly unconstrained context entry (tabpanel)</div>
     <div role="tabpanel" id="arp_case_06"></div>
+  </div>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — NEUTRAL: element has the `hidden` attribute — not currently exposed to the accessibility tree, so a missing required-context ancestor is not flagged (e.g. an item staged outside its owning widget until reveal)</div>
+    <nav role="tab" hidden id="arp_case_10"></nav>
   </div>
 
   <p class="note">End of fixture.</p>

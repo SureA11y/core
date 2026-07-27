@@ -8,7 +8,7 @@ const path = require('node:path');
 const { assertRule } = require('../../helpers/assertRule.js');
 const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 
-const RULE_ID = 'a11ycore-td-has-header';
+const RULE_ID = 'td-has-header';
 
 function hasOccurrenceUnderTableId(rule, tableId) {
   return (rule.occurrences || []).some((o) => typeof o.selector === 'string' && o.selector.includes(`#${tableId}`));

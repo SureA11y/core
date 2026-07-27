@@ -9,30 +9,30 @@
  */
 module.exports = [
     {
-        id: 'a11ycore-wcag-1.1.1-non-text-content',
+        id: 'wcag-1.1.1-non-text-content',
         checksIds: [
-            'a11ycore-area-alt-present',
-            'a11ycore-img-alt-decorative',
-            'a11ycore-img-alt-quality',
-            'a11ycore-area-alt-decorative',
-            'a11ycore-area-alt-quality',
-            'a11ycore-canvas-text-alternative-quality',
-            'a11ycore-canvas-text-alternative-present',
-            'a11ycore-embed-text-alternative-present',
-            'a11ycore-img-alt-present',
-            'a11ycore-input-image-alt-present',
-            'a11ycore-object-text-alternative-present',
-            'a11ycore-role-img-text-alternative-present',
-            'a11ycore-svg-image-text-alternative-present',
-            'a11ycore-svg-text-alternative-present',
-            'a11ycore-video-poster-text-alternative-present',
-            'a11ycore-embed-text-alternative-quality',
-            'a11ycore-input-image-alt-decorative',
-            'a11ycore-input-image-alt-quality',
-            'a11ycore-object-text-alternative-quality',
-            'a11ycore-svg-text-alternative-quality',
-            'a11ycore-meter-name-present',
-            'a11ycore-progressbar-name-present'
+            'area-alt-present',
+            'img-alt-decorative',
+            'img-alt-quality',
+            'area-alt-decorative',
+            'area-alt-quality',
+            'canvas-text-alternative-quality',
+            'canvas-text-alternative-present',
+            'embed-text-alternative-present',
+            'img-alt-present',
+            'input-image-alt-present',
+            'object-text-alternative-present',
+            'role-img-text-alternative-present',
+            'svg-image-text-alternative-present',
+            'svg-text-alternative-present',
+            'video-poster-text-alternative-present',
+            'embed-text-alternative-quality',
+            'input-image-alt-decorative',
+            'input-image-alt-quality',
+            'object-text-alternative-quality',
+            'svg-text-alternative-quality',
+            'meter-name-present',
+            'progressbar-name-present'
         ],
         meta: {
             title: 'Non-text content: text alternatives',
@@ -43,9 +43,9 @@ module.exports = [
     },
 
     {
-        id: 'a11ycore-wcag-1.2.1-audio-only-video-only-prerecorded',
+        id: 'wcag-1.2.1-audio-only-video-only-prerecorded',
         checksIds: [
-            'a11ycore-media-alternative-transcript-evidence'
+            'media-alternative-transcript-evidence'
         ],
         meta: {
             title: 'Audio-only and video-only (prerecorded): transcript',
@@ -56,9 +56,9 @@ module.exports = [
     },
 
     {
-        id: 'a11ycore-wcag-1.2.2-captions-prerecorded',
+        id: 'wcag-1.2.2-captions-prerecorded',
         checksIds: [
-            'a11ycore-video-caption'
+            'video-caption'
         ],
         meta: {
             title: 'Captions (Prerecorded)',
@@ -69,19 +69,19 @@ module.exports = [
     },
 
     {
-        id: 'a11ycore-wcag-1.3.1-info-and-relationships',
+        id: 'wcag-1.3.1-info-and-relationships',
         checksIds: [
-            'a11ycore-table-headers-attr-valid',
-            'a11ycore-table-th-has-data-cells',
-            'a11ycore-aria-hidden-body',
-            'a11ycore-list-children-valid',
-            'a11ycore-listitem-parent-valid',
-            'a11ycore-definition-list-children-valid',
-            'a11ycore-dlitem-parent-valid',
-            'a11ycore-form-control-programmatic-label-present',
-            'a11ycore-p-as-heading',
-            'a11ycore-table-fake-caption',
-            'a11ycore-td-has-header'
+            'table-headers-attr-valid',
+            'table-th-has-data-cells',
+            'aria-hidden-body',
+            'list-children-valid',
+            'listitem-parent-valid',
+            'definition-list-children-valid',
+            'dlitem-parent-valid',
+            'form-control-programmatic-label-present',
+            'p-as-heading',
+            'table-fake-caption',
+            'td-has-header'
         ],
         meta: {
             title: 'Info and Relationships',
@@ -92,9 +92,9 @@ module.exports = [
     },
 
     {
-        id: 'a11ycore-wcag-1.4.1-use-of-color',
+        id: 'wcag-1.4.1-use-of-color',
         checksIds: [
-            'a11ycore-link-in-text-block'
+            'link-in-text-block'
         ],
         meta: {
             title: 'Use of Color',
@@ -105,9 +105,9 @@ module.exports = [
     },
 
     {
-        id: 'a11ycore-wcag-1.4.2-audio-control',
+        id: 'wcag-1.4.2-audio-control',
         checksIds: [
-            'a11ycore-no-autoplay-audio'
+            'no-autoplay-audio'
         ],
         meta: {
             title: 'Audio Control',
@@ -118,10 +118,10 @@ module.exports = [
     },
 
     {
-        id: 'a11ycore-wcag-1.4.3-contrast-minimum',
+        id: 'wcag-1.4.3-contrast-minimum',
         checksIds: [
-            'a11ycore-contrast-computable',
-            'a11ycore-contrast-minimum'
+            'contrast-computable',
+            'contrast-minimum'
         ],
         meta: {
             title: 'Contrast: minimum',
@@ -132,10 +132,10 @@ module.exports = [
     },
 
     {
-        id: 'a11ycore-wcag-1.4.6-contrast-enhanced',
+        id: 'wcag-1.4.6-contrast-enhanced',
         checksIds: [
-            'a11ycore-contrast-computable',
-            'a11ycore-contrast-enhanced'
+            'contrast-computable',
+            'contrast-enhanced'
         ],
         meta: {
             title: 'Contrast: enhanced',
@@ -146,13 +146,13 @@ module.exports = [
     },
 
     {
-        id: 'a11ycore-wcag-2.1.1-keyboard',
+        id: 'wcag-2.1.1-keyboard',
         checksIds: [
-            'a11ycore-manual-review',
-            'a11ycore-iframe-focusable-content',
-            'a11ycore-server-side-image-map-absent',
-            'a11ycore-scrollable-region-focusable',
-            'a11ycore-mouse-only-event-handlers'
+            'manual-review',
+            'iframe-focusable-content',
+            'server-side-image-map-absent',
+            'scrollable-region-focusable',
+            'mouse-only-event-handlers'
         ],
         meta: {
             title: 'Keyboard',
@@ -163,9 +163,9 @@ module.exports = [
     },
 
     {
-        id: 'a11ycore-wcag-2.1.3-keyboard-no-exception',
+        id: 'wcag-2.1.3-keyboard-no-exception',
         checksIds: [
-            'a11ycore-scrollable-region-focusable'
+            'scrollable-region-focusable'
         ],
         meta: {
             title: 'Keyboard (No Exception)',
@@ -176,9 +176,9 @@ module.exports = [
     },
 
     {
-        id: 'a11ycore-wcag-2.2.2-pause-stop-hide',
+        id: 'wcag-2.2.2-pause-stop-hide',
         checksIds: [
-            'a11ycore-deprecated-elements-not-used'
+            'deprecated-elements-not-used'
         ],
         meta: {
             title: 'Pause, Stop, Hide',
@@ -189,9 +189,9 @@ module.exports = [
     },
 
     {
-        id: 'a11ycore-wcag-2.4.1-bypass-blocks',
+        id: 'wcag-2.4.1-bypass-blocks',
         checksIds: [
-            'a11ycore-bypass-blocks-present'
+            'bypass-blocks-present'
         ],
         meta: {
             title: 'Bypass Blocks',
@@ -202,10 +202,10 @@ module.exports = [
     },
 
     {
-        id: 'a11ycore-wcag-2.4.2-page-titled',
+        id: 'wcag-2.4.2-page-titled',
         checksIds: [
-            'a11ycore-page-title-patterns',
-            'a11ycore-page-title-present'
+            'page-title-patterns',
+            'page-title-present'
         ],
         meta: {
             title: 'Page titled',
@@ -216,9 +216,9 @@ module.exports = [
     },
 
     {
-        id: 'a11ycore-wcag-2.4.3-focus-order',
+        id: 'wcag-2.4.3-focus-order',
         checksIds: [
-            'a11ycore-manual-review'
+            'manual-review'
         ],
         meta: {
             title: 'Focus order',
@@ -229,9 +229,9 @@ module.exports = [
     },
 
     {
-        id: 'a11ycore-wcag-2.4.4-link-purpose-in-context',
+        id: 'wcag-2.4.4-link-purpose-in-context',
         checksIds: [
-            'a11ycore-link-name-quality'
+            'link-name-quality'
         ],
         meta: {
             title: 'Link Purpose (In Context)',
@@ -242,11 +242,11 @@ module.exports = [
     },
 
     {
-        id: 'a11ycore-wcag-2.4.7-focus-visible',
+        id: 'wcag-2.4.7-focus-visible',
         checksIds: [
-            'a11ycore-aria-hidden-focus',
-            'a11ycore-css-hidden-focus',
-            'a11ycore-manual-review'
+            'aria-hidden-focus',
+            'css-hidden-focus',
+            'manual-review'
         ],
         meta: {
             title: 'Focus visible',
@@ -257,9 +257,9 @@ module.exports = [
     },
 
     {
-        id: 'a11ycore-wcag-2.4.9-link-purpose-link-only',
+        id: 'wcag-2.4.9-link-purpose-link-only',
         checksIds: [
-            'a11ycore-identical-links-same-purpose'
+            'identical-links-same-purpose'
         ],
         meta: {
             title: 'Link Purpose (Link Only)',
@@ -269,9 +269,9 @@ module.exports = [
         }
     },
     {
-        id: 'a11ycore-wcag-2.5.3-label-in-name',
+        id: 'wcag-2.5.3-label-in-name',
         checksIds: [
-            'a11ycore-label-in-name'
+            'label-in-name'
         ],
         meta: {
             title: 'Label in name',
@@ -281,9 +281,9 @@ module.exports = [
         }
     },
     {
-        id: 'a11ycore-wcag-2.5.8-target-size-minimum',
+        id: 'wcag-2.5.8-target-size-minimum',
         checksIds: [
-            'a11ycore-target-size-minimum'
+            'target-size-minimum'
         ],
         meta: {
             title: 'Target size: minimum',
@@ -294,10 +294,10 @@ module.exports = [
     },
 
     {
-        id: 'a11ycore-wcag-3.1.1-language-of-page',
+        id: 'wcag-3.1.1-language-of-page',
         checksIds: [
-            'a11ycore-html-lang-attr-present',
-            'a11ycore-html-xml-lang-mismatch'
+            'html-lang-attr-present',
+            'html-xml-lang-mismatch'
         ],
         meta: {
             title: 'Language of page',
@@ -308,9 +308,9 @@ module.exports = [
     },
 
     {
-        id: 'a11ycore-wcag-3.1.2-language-of-parts',
+        id: 'wcag-3.1.2-language-of-parts',
         checksIds: [
-            'a11ycore-valid-lang'
+            'valid-lang'
         ],
         meta: {
             title: 'Language of Parts',
@@ -321,9 +321,9 @@ module.exports = [
     },
 
     {
-        id: 'a11ycore-wcag-1.3.4-orientation',
+        id: 'wcag-1.3.4-orientation',
         checksIds: [
-            'a11ycore-css-orientation-lock'
+            'css-orientation-lock'
         ],
         meta: {
             title: 'Orientation',
@@ -334,9 +334,9 @@ module.exports = [
     },
 
     {
-        id: 'a11ycore-wcag-1.3.5-identify-input-purpose',
+        id: 'wcag-1.3.5-identify-input-purpose',
         checksIds: [
-            'a11ycore-autocomplete-valid'
+            'autocomplete-valid'
         ],
         meta: {
             title: 'Identify Input Purpose',
@@ -347,9 +347,9 @@ module.exports = [
     },
 
     {
-        id: 'a11ycore-wcag-1.4.12-text-spacing',
+        id: 'wcag-1.4.12-text-spacing',
         checksIds: [
-            'a11ycore-avoid-inline-spacing'
+            'avoid-inline-spacing'
         ],
         meta: {
             title: 'Text Spacing',
@@ -360,9 +360,9 @@ module.exports = [
     },
 
     {
-        id: 'a11ycore-wcag-2.2.4-interruptions',
+        id: 'wcag-2.2.4-interruptions',
         checksIds: [
-            'a11ycore-meta-refresh-no-exceptions'
+            'meta-refresh-no-exceptions'
         ],
         meta: {
             title: 'Interruptions',
@@ -373,9 +373,9 @@ module.exports = [
     },
 
     {
-        id: 'a11ycore-wcag-3.2.5-change-on-request',
+        id: 'wcag-3.2.5-change-on-request',
         checksIds: [
-            'a11ycore-meta-refresh-no-exceptions'
+            'meta-refresh-no-exceptions'
         ],
         meta: {
             title: 'Change on Request',
@@ -386,31 +386,31 @@ module.exports = [
     },
 
     {
-        id: 'a11ycore-wcag-4.1.2-name',
+        id: 'wcag-4.1.2-name',
         checksIds: [
-            'a11ycore-aria-role-name-present',
-            'a11ycore-binary-control-name-present',
-            'a11ycore-button-name-present',
-            'a11ycore-combobox-name-present',
-            'a11ycore-dialog-name-present',
-            'a11ycore-form-control-programmatic-label-present',
-            'a11ycore-iframe-name-present',
-            'a11ycore-iframe-title-unique',
-            'a11ycore-link-name-present',
-            'a11ycore-listbox-name-present',
-            'a11ycore-menuitem-name-present',
-            'a11ycore-option-name-present',
-            'a11ycore-searchbox-name-present',
-            'a11ycore-slider-name-present',
-            'a11ycore-spinbutton-name-present',
-            'a11ycore-tab-name-present',
-            'a11ycore-textbox-name-present',
-            'a11ycore-treeitem-name-present',
-            'a11ycore-aria-hidden-focus',
-            'a11ycore-aria-hidden-body',
-            'a11ycore-form-control-programmatic-label-quality',
-            'a11ycore-summary-name-present',
-            'a11ycore-tooltip-name-present'
+            'aria-role-name-present',
+            'binary-control-name-present',
+            'button-name-present',
+            'combobox-name-present',
+            'dialog-name-present',
+            'form-control-programmatic-label-present',
+            'iframe-name-present',
+            'iframe-title-unique',
+            'link-name-present',
+            'listbox-name-present',
+            'menuitem-name-present',
+            'option-name-present',
+            'searchbox-name-present',
+            'slider-name-present',
+            'spinbutton-name-present',
+            'tab-name-present',
+            'textbox-name-present',
+            'treeitem-name-present',
+            'aria-hidden-focus',
+            'aria-hidden-body',
+            'form-control-programmatic-label-quality',
+            'summary-name-present',
+            'tooltip-name-present'
         ],
         meta: {
             title: 'Name, role, value: accessible name',
@@ -421,24 +421,24 @@ module.exports = [
     },
 
     {
-        id: 'a11ycore-wcag-4.1.2-aria-validity',
+        id: 'wcag-4.1.2-aria-validity',
         checksIds: [
-            'a11ycore-aria-roles-valid',
-            'a11ycore-aria-deprecated-role',
-            'a11ycore-aria-valid-attr',
-            'a11ycore-aria-valid-attr-value',
-            'a11ycore-aria-allowed-attr',
-            'a11ycore-aria-prohibited-attr',
-            'a11ycore-aria-required-attr',
-            'a11ycore-aria-allowed-role',
-            'a11ycore-aria-required-children',
-            'a11ycore-aria-prohibited-children',
-            'a11ycore-aria-required-parent',
-            'a11ycore-duplicate-id-aria',
-            'a11ycore-nested-interactive-controls-absent',
-            'a11ycore-aria-braille-equivalent',
-            'a11ycore-aria-conditional-attr',
-            'a11ycore-aria-checked-state-mismatch'
+            'aria-roles-valid',
+            'aria-deprecated-role',
+            'aria-valid-attr',
+            'aria-valid-attr-value',
+            'aria-allowed-attr',
+            'aria-prohibited-attr',
+            'aria-required-attr',
+            'aria-allowed-role',
+            'aria-required-children',
+            'aria-prohibited-children',
+            'aria-required-parent',
+            'duplicate-id-aria',
+            'nested-interactive-controls-absent',
+            'aria-braille-equivalent',
+            'aria-conditional-attr',
+            'aria-checked-state-mismatch'
         ],
         meta: {
             title: 'Name, role, value: ARIA validity',
@@ -449,9 +449,9 @@ module.exports = [
     },
 
     {
-        id: 'a11ycore-wcag-1.4.4-resize-text',
+        id: 'wcag-1.4.4-resize-text',
         checksIds: [
-            'a11ycore-meta-viewport-zoom-enabled'
+            'meta-viewport-zoom-enabled'
         ],
         meta: {
             title: 'Resize Text',
@@ -462,9 +462,9 @@ module.exports = [
     },
 
     {
-        id: 'a11ycore-wcag-2.2.1-timing-adjustable',
+        id: 'wcag-2.2.1-timing-adjustable',
         checksIds: [
-            'a11ycore-meta-refresh-timing-absent'
+            'meta-refresh-timing-absent'
         ],
         meta: {
             title: 'Timing Adjustable',
@@ -475,10 +475,10 @@ module.exports = [
     },
 
     {
-        id: 'a11ycore-wcag-3.3.2-labels-or-instructions',
+        id: 'wcag-3.3.2-labels-or-instructions',
         checksIds: [
-            'a11ycore-form-control-single-label',
-            'a11ycore-form-control-programmatic-label-present'
+            'form-control-single-label',
+            'form-control-programmatic-label-present'
         ],
         meta: {
             title: 'Labels or Instructions',

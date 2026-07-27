@@ -1,27 +1,44 @@
 {
-  "name": "a11y-core",
-  "version": "1.1.0",
+  "name": "@surea11y/core",
+  "version": "1.0.0",
   "description": "Lightweight DOM rules accessibility core with modular rules.",
   "main": "src/index.js",
   "bin": {
-    "a11y-core": "./bin/a11y-core.js"
+    "surea11y": "./bin/core.js"
   },
+  "author": "Jorge Rumoroso",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rumoroso/surea11y-core.git"
+  },
+  "homepage": "https://github.com/rumoroso/surea11y-core#readme",
+  "bugs": {
+    "url": "https://github.com/rumoroso/surea11y-core/issues"
+  },
   "engines": {
-    "node": ">=18.13.0"
+    "node": "^20.19.0 || ^22.13.0 || >=24.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "files": [
     "src",
     "bin",
     "docs/**/*.md",
-    "docs/**/*.js",
     "README.md",
     "LICENSE",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "!docs/RULE_TEMPLATE.md",
+    "!docs/RULE_TEST_TEMPLATE.md",
+    "!docs/RULE_TEST_AUTHORING.md",
+    "!docs/TEST_OUTCOME_STABILITY.md",
+    "!src/explain"
   ],
   "scripts": {
     "build": "node scripts/build-core.js",
-    "test": "npm run build && node --test \"tests/**/*.test.js\"",
+    "pretest": "playwright install chromium",
+    "test": "npm run build && node scripts/run-tests.js",
     "test:contrast-helpers": "node tests/contrast-helpers.test.js",
     "helpers-perf-bench": "node --expose-gc scripts/dom-helpers-perf-bench.js",
     "engine-perf-bench": "node --expose-gc scripts/engine-perf-bench.js  --profileRules=true --iters=25 --top=15",
@@ -33,15 +50,12 @@
     "fixtures:index": "node scripts/generate-fixture-index.js",
     "docs:rule-catalog": "npm run build && node scripts/generate-rule-catalog.js",
     "validate:automatic-rules": "npm run build && node scripts/validate-all-rules.js src/checks/automatic",
-    "validate:manual-rules": "npm run build && node scripts/validate-all-rules.js src/checks/manual",
-    "validate:cross-engine-mapping": "npm run build && node scripts/cross-engine/validate-rule-mapping.js",
-    "cross-engine-diff": "node scripts/cross-engine/cross-engine-diff.js"
+    "validate:manual-rules": "npm run build && node scripts/validate-all-rules.js src/checks/manual"
   },
   "dependencies": {
     "jsdom": "^29.1.1"
   },
   "devDependencies": {
-    "the reference engine": "^4.12.1",
     "playwright": "^1.61.1"
   }
 }

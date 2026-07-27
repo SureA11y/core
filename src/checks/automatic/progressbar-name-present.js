@@ -1,13 +1,13 @@
 'use strict';
 
-const id = 'a11ycore-progressbar-name-present';
+const id = 'progressbar-name-present';
 
 const meta = {
   title: 'Progress bars have an accessible name',
   description: 'Checks that elements with role="progressbar" expose a non-empty accessible name.',
   i18n: {
-    titleKey: 'a11ycore_progressbarNamePresent_title',
-    descriptionKey: 'a11ycore_progressbarNamePresent_description'
+    titleKey: 'progressbarNamePresent_title',
+    descriptionKey: 'progressbarNamePresent_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag111', 'nontext', 'atomic', 'automatic', 'name'],
@@ -105,15 +105,15 @@ function runInPage(ctx) {
     if (title) return { ok: true, method: 'title' };
 
     // role="progressbar" is name-from-author-only per WAI-ARIA (verified
-    // against the reference engine's own aria-progressbar-name check: any:
+    // against a widely-used reference engine's own aria-progressbar-name check: any:
     // ['aria-label', 'aria-labelledby', title] — no content-based naming
     // method at all). It must NOT fall back to subtree content: found on a
     // real site, Instacart's <ul role="progressbar"> loading skeleton has
     // no name of its own, but nested descendants carry their own
     // aria-label="Loading Box" (for a completely different purpose) —
     // falling back to subtree content picked that up and wrongly treated
-    // it as the progressbar's own name, when the reference engine correctly still flags it
-    // as unnamed.
+    // it as the progressbar's own name, when that reference engine correctly
+    // still flags it as unnamed.
     return { ok: false, method: 'none' };
   }
 
@@ -141,8 +141,8 @@ function runInPage(ctx) {
       summary: 'This progress bar has no accessible name.',
       hint: 'Provide progress bar text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.',
       i18n: {
-        summaryKey: 'a11ycore_progressbarNamePresent_summary_fail',
-        hintKey: 'a11ycore_progressbarNamePresent_hint_fail',
+        summaryKey: 'progressbarNamePresent_summary_fail',
+        hintKey: 'progressbarNamePresent_hint_fail',
         params: {}
       },
       data: {

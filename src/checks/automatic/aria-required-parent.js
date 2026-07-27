@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-aria-required-parent
+ * @check aria-required-parent
  * @atomic true
  * @summary Roles that require a specific ancestor/owner context role must have one
  * @standard WCAG 2.2
@@ -30,18 +30,27 @@
  *   tree role="list" wrapper around its <slot>) is found even though it's
  *   invisible to plain DOM containment; aria-owns is checked as a second,
  *   independent path via a reverse lookup over the search root.
- * - Not gated on isAccTreeEligible: this is a static markup structural
- *   property.
+ * - Gated on isAccTreeEligible for the element itself. The ancestor-role
+ *   walk itself doesn't care about visibility (a hidden ancestor's role is
+ *   still found by plain DOM/composed-tree containment, so a genuinely
+ *   correctly-nested-but-hidden widget was never at risk here) — the
+ *   remaining false-positive shape is an element whose required ancestor
+ *   context doesn't exist YET because it (and its wrapping context) are
+ *   assembled together at reveal time (e.g. a portal-rendered item staged
+ *   outside the live menu until opened). Same category of fix as
+ *   aria-required-children/aria-prohibited-children, applied for
+ *   consistency; an element that isn't currently exposed to the
+ *   accessibility tree is skipped (notApplicable), not failed.
  */
 
-const id = 'a11ycore-aria-required-parent';
+const id = 'aria-required-parent';
 
 const meta = {
   title: 'Roles requiring a specific context role must be in that context',
   description: 'Checks that roles with a documented "required context role" entry (listitem, option, tab, treeitem, row, cell, ...) have an ancestor or aria-owns owner with an acceptable context role.',
   i18n: {
-    titleKey: 'a11ycore_ariaRequiredParent_title',
-    descriptionKey: 'a11ycore_ariaRequiredParent_description'
+    titleKey: 'ariaRequiredParent_title',
+    descriptionKey: 'ariaRequiredParent_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag412', 'aria', 'structure', 'atomic', 'automatic'],
@@ -65,23 +74,35 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
+  function isEligibleAcc(el) {
+    const fn = helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+    if (!fn) return true;
+    try {
+      const r = fn(el, ctx);
+      if (typeof r === 'boolean') return r;
+      return !!(r && r.eligible);
+    } catch {
+      return true;
+    }
+  }
+
   // Roles that may host a nested listitem/treeitem group without breaking
-  // the required-context chain (verified against the reference engine 4.12.1's own
-  // getMissingContext, which special-cases exactly these two roles via its
-  // ownGroupRoles option).
+  // the required-context chain (verified against a widely-used reference
+  // engine's own getMissingContext, which special-cases exactly these two
+  // roles via its ownGroupRoles option).
   const GROUP_TRANSPARENT_FOR_ROLES = new Set(['listitem', 'treeitem']);
 
   // A real ancestor role — not "no role at all" and not the two roles that
   // strip an element from the accessibility tree's parent/child chain
-  // entirely (presentation/none) — stops the search, matching the reference engine's
-  // getMissingContext. This is stricter than "any ancestor with the right
+  // entirely (presentation/none) — stops the search, matching that reference
+  // engine's getMissingContext. This is stricter than "any ancestor with the right
   // role anywhere up the tree": the required-context relationship is about
   // the accessibility tree's actual PARENT, so an intervening ancestor with
   // its OWN distinct real role (e.g. a plain <li>'s native "listitem" role)
   // blocks the search even if a further-up ancestor has the correct role.
   // Found via a real page — Le Monde's review-carousel tablist, where each
   // <button role="tab"> sits inside a plain <li> (native listitem) inside
-  // <ul role="tablist">: the reference engine correctly fails this (the tablist is never the
+  // <ul role="tablist">: that reference engine correctly fails this (the tablist is never the
   // tab's accessible-tree parent, listitem is), which the old "walk every
   // ancestor" version here missed entirely.
   function getRealContextRole(el) {
@@ -159,6 +180,8 @@ function runInPage(ctx) {
     const requiredContext = ariaHelpers.getRequiredContextRoles(role);
     if (!requiredContext || !requiredContext.length) continue; // no entry, or explicitly unconstrained
 
+    if (!isEligibleAcc(el)) continue; // not currently exposed to the accessibility tree
+
     applicableCount += 1;
 
     const acceptableRoles = new Set(requiredContext);
@@ -177,8 +200,8 @@ function runInPage(ctx) {
       summary: 'This role requires a specific ancestor/owner context role, which was not found.',
       hint: 'Place this element inside (or aria-owns-reference it from) an element with an acceptable context role.',
       i18n: {
-        summaryKey: 'a11ycore_ariaRequiredParent_summary_fail',
-        hintKey: 'a11ycore_ariaRequiredParent_hint_fail',
+        summaryKey: 'ariaRequiredParent_summary_fail',
+        hintKey: 'ariaRequiredParent_hint_fail',
         params: { role, requiredRoles: requiredContext.join(', ') }
       },
       data: {

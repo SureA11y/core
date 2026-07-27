@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-aria-deprecated-role
+ * @check aria-deprecated-role
  * @atomic true
  * @summary An explicit role attribute must not use a deprecated or author-prohibited ARIA role
  * @standard WCAG 2.2
@@ -17,19 +17,19 @@
  *   not be used by web authors" guidance).
  * @expectation
  *   The role in use is neither deprecated nor author-prohibited. This is a
- *   distinct, atomic decision from a11ycore-aria-roles-valid (existence/
+ *   distinct, atomic decision from aria-roles-valid (existence/
  *   abstractness): a role can be perfectly valid and non-abstract while
  *   still being off-limits for explicit author use.
  */
 
-const id = 'a11ycore-aria-deprecated-role';
+const id = 'aria-deprecated-role';
 
 const meta = {
   title: 'role attribute must not use a deprecated or author-prohibited ARIA role',
   description: 'Checks that an explicit role="" attribute does not use a role deprecated by the WAI-ARIA specification, or one reserved for user-agent-internal use only (e.g. role="generic").',
   i18n: {
-    titleKey: 'a11ycore_ariaDeprecatedRole_title',
-    descriptionKey: 'a11ycore_ariaDeprecatedRole_description'
+    titleKey: 'ariaDeprecatedRole_title',
+    descriptionKey: 'ariaDeprecatedRole_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag412', 'aria', 'structure', 'atomic', 'automatic'],
@@ -65,7 +65,7 @@ function runInPage(ctx) {
     if (!role) continue;
 
     // Only applicable to roles that are otherwise valid + concrete;
-    // invalid/abstract usage is a11ycore-aria-roles-valid's concern.
+    // invalid/abstract usage is aria-roles-valid's concern.
     if (!ariaHelpers.isValidConcreteRole(role)) continue;
 
     applicableCount += 1;
@@ -84,8 +84,8 @@ function runInPage(ctx) {
       summary: `This element uses role="${role}", which authors must not explicitly declare.`,
       hint: guidance,
       i18n: {
-        summaryKey: 'a11ycore_ariaDeprecatedRole_summary_fail',
-        hintKey: 'a11ycore_ariaDeprecatedRole_hint_fail',
+        summaryKey: 'ariaDeprecatedRole_summary_fail',
+        hintKey: 'ariaDeprecatedRole_hint_fail',
         params: { role, guidance }
       },
       data: {

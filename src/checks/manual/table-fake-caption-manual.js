@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-table-fake-caption
+ * @check table-fake-caption
  * @atomic true
  * @summary A table's first row should not stand in for a real <caption>
  * @standard WCAG 2.2
@@ -28,14 +28,14 @@
  *   purpose without risking a wrong column-index computation.
  */
 
-const id = 'a11ycore-table-fake-caption';
+const id = 'table-fake-caption';
 
 const meta = {
   title: "A table's first row should not stand in for a real <caption>",
   description: 'Flags tables with no <caption> whose first row has a single non-empty cell while other rows have multiple cells, for manual review of whether that cell is acting as a fake caption.',
   i18n: {
-    titleKey: 'a11ycore_tableFakeCaption_title',
-    descriptionKey: 'a11ycore_tableFakeCaption_description'
+    titleKey: 'tableFakeCaption_title',
+    descriptionKey: 'tableFakeCaption_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag131', 'structure', 'atomic', 'manual'],
@@ -92,8 +92,8 @@ function runInPage(ctx) {
       summary: 'This table has no <caption>, but its first row is a single cell sitting above multi-cell rows — it may be acting as a fake caption.',
       hint: 'If this cell is meant to describe the table, use a real <caption> element instead of a lone first-row cell.',
       i18n: {
-        summaryKey: 'a11ycore_tableFakeCaption_summary_cantTell',
-        hintKey: 'a11ycore_tableFakeCaption_hint_cantTell',
+        summaryKey: 'tableFakeCaption_summary_cantTell',
+        hintKey: 'tableFakeCaption_hint_cantTell',
         params: {}
       },
       data: {

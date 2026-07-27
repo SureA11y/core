@@ -99,7 +99,7 @@ test('runa11yCoreAcrossFrames / a11yCoreEnableFrameResponder (real browser, real
     assert.strictEqual(result.frames.length, 1);
     assert.strictEqual(result.frames[0].error, undefined);
     assert.ok(Array.isArray(result.frames[0].topFrame.checksResults));
-    const altRule = result.frames[0].topFrame.checksResults.find((r) => r.ruleId === 'a11ycore-img-alt-present');
+    const altRule = result.frames[0].topFrame.checksResults.find((r) => r.ruleId === 'img-alt-present');
     assert.strictEqual(altRule.outcome, 'fail'); // the child's own <img> with no alt, found and reported correctly
     assert.deepStrictEqual(result.frames[0].frames, []); // no further nesting
 
@@ -126,7 +126,7 @@ test('runa11yCoreAcrossFrames / a11yCoreEnableFrameResponder (real browser, real
     assert.strictEqual(result.frames.length, 1);
     assert.strictEqual(result.frames[0].error, undefined);
     assert.strictEqual(result.frames[0].url, serverUrl(childServer));
-    const buttonRule = result.frames[0].topFrame.checksResults.find((r) => r.ruleId === 'a11ycore-button-name-present');
+    const buttonRule = result.frames[0].topFrame.checksResults.find((r) => r.ruleId === 'button-name-present');
     assert.strictEqual(buttonRule.outcome, 'fail'); // the child's own empty <button>, found and reported correctly
 
     await page.close();
@@ -154,7 +154,7 @@ test('runa11yCoreAcrossFrames / a11yCoreEnableFrameResponder (real browser, real
     assert.strictEqual(child.frames.length, 1);
     const grandchild = child.frames[0];
     assert.strictEqual(grandchild.error, undefined);
-    const altRule = grandchild.topFrame.checksResults.find((r) => r.ruleId === 'a11ycore-img-alt-present');
+    const altRule = grandchild.topFrame.checksResults.find((r) => r.ruleId === 'img-alt-present');
     assert.strictEqual(altRule.outcome, 'fail'); // the grandchild's own <img>, reached two levels deep
 
     await page.close();

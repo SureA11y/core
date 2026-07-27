@@ -1,10 +1,10 @@
 'use strict';
 
 /**
- * @check a11ycore-landmark-unique
+ * @check landmark-unique
  * @atomic true
  * @summary Landmarks sharing the same role must have unique accessible names
- * @standard the reference engine "Best Practices" (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (a widely-used reference engine's classification; no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
  * @applicability
  *   Applies whenever two or more landmark regions on the page share the
  *   same landmark role (banner, contentinfo, main, navigation,
@@ -18,7 +18,7 @@
  *   users navigating by landmark.
  * @implementation-notes
  * - Not WCAG-normative — authored as an advisory, cantTell-capped
- *   `type: 'manual'` rule; see a11ycore-landmark-banner-is-top-level's
+ *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent and the landmark-
  *   detection model (HTML-AAM implicit-role mapping + explicit role
  *   override).
@@ -27,14 +27,14 @@
  *   "extra" ones.
  */
 
-const id = 'a11ycore-landmark-unique';
+const id = 'landmark-unique';
 
 const meta = {
   title: 'Landmarks with the same role must have unique names',
   description: 'Checks that when two or more landmarks share the same role, each has a distinct accessible name.',
   i18n: {
-    titleKey: 'a11ycore_landmarkUnique_title',
-    descriptionKey: 'a11ycore_landmarkUnique_description'
+    titleKey: 'landmarkUnique_title',
+    descriptionKey: 'landmarkUnique_description'
   },
   helpUrl: null,
   tags: ['best-practice', 'landmarks', 'structure', 'atomic', 'manual'],
@@ -75,10 +75,10 @@ function runInPage(ctx) {
     return raw.split(/\s+/)[0].toLowerCase();
   }
 
-  // Two distinct ancestor sets, verified against the reference engine 4.12.1's own
-  // implicit-role functions directly (2026-07-20) rather than assumed from
-  // one shared list: <header>/<footer> use "sectioning content PLUS
-  // <main>" (the reference engine's getSectioningContentPlusMainSelector) to decide
+  // Two distinct ancestor sets, verified 2026-07-20 against a widely-used
+  // reference engine's own implicit-role functions directly rather than
+  // assumed from one shared list: <header>/<footer> use "sectioning content
+  // PLUS <main>" (that engine's getSectioningContentPlusMainSelector) to decide
   // banner/contentinfo suppression, but <aside> uses PLAIN sectioning
   // content only (article/aside/nav/section — NOT main) to decide
   // complementary suppression. The old single SECTIONING_ANCESTORS set
@@ -86,8 +86,8 @@ function runInPage(ctx) {
   // aside — found via a real page: Know Your Meme's two unnamed
   // <aside class="extra-large-only"> elements are direct children of
   // <main>, which incorrectly suppressed their implicit "complementary"
-  // role entirely, hiding a real duplicate-landmark violation the reference engine
-  // correctly flags.
+  // role entirely, hiding a real duplicate-landmark violation that
+  // reference engine correctly flags.
   const SECTIONING_ANCESTORS_PLUS_MAIN = new Set(['article', 'aside', 'main', 'nav', 'section']);
   const SECTIONING_ANCESTORS = new Set(['article', 'aside', 'nav', 'section']);
 
@@ -108,7 +108,7 @@ function runInPage(ctx) {
     if (tag === 'main') return 'main';
     if (tag === 'nav') return 'navigation';
     if (tag === 'aside') {
-      // Per the reference engine's own `aside` implicit-role function: suppressed by a
+      // Per a widely-used reference engine's own `aside` implicit-role function: suppressed by a
       // sectioning-content ancestor ONLY when the <aside> also has no
       // accessible name — a named <aside> is never suppressed, even when
       // nested. Not yet evidenced by a real page in this corpus, but
@@ -134,8 +134,8 @@ function runInPage(ctx) {
       // got there. This applies whether the role is implicit (already
       // handled in getImplicitLandmarkRole below) or explicit, but an
       // explicit role bypassed the check entirely before this fix. Verified
-      // against the reference engine's isLandmarkVirtual (checks nodeName === 'section'
-      // || 'form' unconditionally, regardless of role source) and the W3C
+      // against a widely-used reference engine's isLandmarkVirtual (checks
+      // nodeName === 'section' || 'form' unconditionally, regardless of role source) and the W3C
       // ARIA-in-HTML spec ("a form is not exposed as a landmark region
       // unless it has been provided an accessible name"). Found via a real
       // page: europa.eu's unnamed <form role="search"> nested inside an
@@ -166,9 +166,9 @@ function runInPage(ctx) {
   // queryAllSmart (shadow-DOM-aware, includeShadowDom defaults true) instead of a plain
   // document.querySelectorAll -- a real page (Airtable's homepage, 2026-07-23) has a
   // third-party Transcend cookie-consent widget rendering its own unnamed <nav>/<footer>
-  // inside a shadow root (#transcend-shadow-root), which the reference engine's own landmark-unique
-  // (a real browser DOM, shadow roots included by design) correctly sees as colliding
-  // with the page's own unnamed header <nav>/page <footer> -- a real, confirmed a11y-core
+  // inside a shadow root (#transcend-shadow-root), which a widely-used reference engine's
+  // own landmark-unique (a real browser DOM, shadow roots included by design) correctly sees as colliding
+  // with the page's own unnamed header <nav>/page <footer> -- a real, confirmed surea11y
   // false-negative miss, invisible to plain querySelectorAll's light-DOM-only reach.
   let nodes = [];
   try {
@@ -180,7 +180,7 @@ function runInPage(ctx) {
   }
 
   // Only landmarks actually exposed to assistive technology can collide —
-  // matches the reference engine's own `landmarkUniqueMatches` gate
+  // matches a widely-used reference engine's own `landmarkUniqueMatches` gate
   // (`_isVisibleToScreenReaders`), confirmed by reading its source
   // directly. Without this, responsive layouts that render both a
   // desktop and a mobile copy of the same named nav (one hidden via CSS
@@ -230,9 +230,9 @@ function runInPage(ctx) {
           hint: `Give each ${role} landmark a distinct name via aria-label or aria-labelledby.`,
           i18n: {
             summaryKey: normalizedName
-                ? 'a11ycore_landmarkUnique_summary_cantTell_duplicateName'
-                : 'a11ycore_landmarkUnique_summary_cantTell_bothUnnamed',
-            hintKey: 'a11ycore_landmarkUnique_hint_cantTell',
+                ? 'landmarkUnique_summary_cantTell_duplicateName'
+                : 'landmarkUnique_summary_cantTell_bothUnnamed',
+            hintKey: 'landmarkUnique_hint_cantTell',
             params: { role }
           },
           data: {

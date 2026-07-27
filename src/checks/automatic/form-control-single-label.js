@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-form-control-single-label
+ * @check form-control-single-label
  * @atomic true
  * @summary A form control must not be associated with more than one <label>
  * @standard WCAG 2.2
@@ -17,20 +17,20 @@
  *   are ambiguous: many screen readers only announce one of them, and it
  *   is not deterministic which.
  * @implementation-notes
- * - Matches the reference engine's form-field-multiple-labels. Distinct, atomic
- *   decision from a11ycore-form-control-programmatic-label-present (that
+ * - Matches a widely-used reference engine's form-field-multiple-labels. Distinct, atomic
+ *   decision from form-control-programmatic-label-present (that
  *   rule checks a label exists at all; this one checks there is at most
  *   one).
  */
 
-const id = 'a11ycore-form-control-single-label';
+const id = 'form-control-single-label';
 
 const meta = {
   title: 'Form controls must not have multiple labels',
   description: 'Checks that a form control is associated with at most one <label> (by wrapping or by label[for]).',
   i18n: {
-    titleKey: 'a11ycore_formControlSingleLabel_title',
-    descriptionKey: 'a11ycore_formControlSingleLabel_description'
+    titleKey: 'formControlSingleLabel_title',
+    descriptionKey: 'formControlSingleLabel_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag332', 'forms', 'atomic', 'automatic'],
@@ -95,8 +95,8 @@ function runInPage(ctx) {
       summary: 'This form control is associated with more than one <label>.',
       hint: 'Keep only one <label> per form control (either wrapping it or referencing it via for/id).',
       i18n: {
-        summaryKey: 'a11ycore_formControlSingleLabel_summary_fail',
-        hintKey: 'a11ycore_formControlSingleLabel_hint_fail',
+        summaryKey: 'formControlSingleLabel_summary_fail',
+        hintKey: 'formControlSingleLabel_hint_fail',
         params: { element: tag, labelCount: String(labels.size) }
       },
       data: {

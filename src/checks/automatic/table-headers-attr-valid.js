@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-table-headers-attr-valid
+ * @check table-headers-attr-valid
  * @atomic true
  * @summary Table cell "headers" attribute must reference real <th> cells in the same table
  * @standard WCAG 2.2
@@ -14,19 +14,19 @@
  *   the referencing cell, and (d) is not the cell itself.
  * @implementation-notes
  * - One occurrence per offending cell (not per bad token), listing every
- *   invalid reference — matches the reference engine's td-headers-attr reporting
- *   granularity.
+ *   invalid reference — matches a widely-used reference engine's
+ *   td-headers-attr reporting granularity.
  * - Not gated on isAccTreeEligible: this is a static markup property.
  */
 
-const id = 'a11ycore-table-headers-attr-valid';
+const id = 'table-headers-attr-valid';
 
 const meta = {
   title: 'Table cell "headers" attribute must reference valid header cells',
   description: 'Checks that each id in a <td>/<th> headers attribute resolves to a <th> element within the same table (not missing, not a non-th element, not itself).',
   i18n: {
-    titleKey: 'a11ycore_tableHeadersAttrValid_title',
-    descriptionKey: 'a11ycore_tableHeadersAttrValid_description'
+    titleKey: 'tableHeadersAttrValid_title',
+    descriptionKey: 'tableHeadersAttrValid_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag131', 'structure', 'atomic', 'automatic', 'table'],
@@ -100,8 +100,8 @@ function runInPage(ctx) {
       summary: 'This cell’s headers attribute references one or more invalid header cells.',
       hint: 'Update the headers attribute so every id refers to a <th> element within the same table.',
       i18n: {
-        summaryKey: 'a11ycore_tableHeadersAttrValid_summary_fail',
-        hintKey: 'a11ycore_tableHeadersAttrValid_hint_fail',
+        summaryKey: 'tableHeadersAttrValid_summary_fail',
+        hintKey: 'tableHeadersAttrValid_hint_fail',
         params: { element: tag, invalidIds: invalid.map((i) => i.id).join(', ') }
       },
       data: {

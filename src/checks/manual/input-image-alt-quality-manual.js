@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-input-image-alt-quality
+ * @check input-image-alt-quality
  * @atomic true
  * @summary Manual review: text alternative appropriateness (WCAG 1.1.1)
  * @standard WCAG 2.2
@@ -11,14 +11,14 @@
  *   Human review is required to confirm that the provided text alternative is accurate and appropriate.
  */
 
-const id = "a11ycore-input-image-alt-quality";
+const id = "input-image-alt-quality";
 
 const meta = {
   title: "<input type=\"image\"> alt text must be appropriate (manual review)",
   description: "Flags <input type=\"image\"> elements with non-empty alt text for human review of appropriateness.",
   i18n: {
-    titleKey: "a11ycore_inputImage_altQuality_title",
-    descriptionKey: "a11ycore_inputImage_altQuality_description"
+    titleKey: "inputImage_altQuality_title",
+    descriptionKey: "inputImage_altQuality_description"
   },
   helpUrl: null,
   tags: ["wcag2a", "wcag111", "forms", "images", "manual", "atomic"],
@@ -117,8 +117,8 @@ function runInPage(ctx) {
             summary: 'Review alt text on <input type="image"> for accuracy and appropriateness.',
             hint: 'Ensure the alt text describes the control’s action (e.g., “Search”, “Submit order”) in context.',
             i18n: {
-                summaryKey: 'a11ycore_inputImage_altQuality_summary_cantTell',
-                hintKey: 'a11ycore_inputImage_altQuality_hint_cantTell',
+                summaryKey: 'inputImage_altQuality_summary_cantTell',
+                hintKey: 'inputImage_altQuality_hint_cantTell',
                 params: { element: 'input[type=image]' }
             },
             data: {

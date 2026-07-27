@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>a11ycore-role-img-text-alternative-present — scenario fixture</title>
+  <title>role-img-text-alternative-present — scenario fixture</title>
   <style>
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
     h1 { font-size: 20px; margin: 0 0 16px; }
@@ -20,12 +20,12 @@
   </style>
 </head>
 <body>
-  <h1>Scenario fixture: <code>a11ycore-role-img-text-alternative-present</code> (“[role=&quot;img&quot;] must have an accessible text alternative”)</h1>
+  <h1>Scenario fixture: <code>role-img-text-alternative-present</code> (“[role=&quot;img&quot;] must have an accessible text alternative”)</h1>
 
   <p class="note">
     This file intentionally includes many edge cases to test eligibility and rule outcomes.
     Each test element has a stable <code>id</code> of the form <code>roleimg_case_XX</code>.
-    Native &lt;img role="img"&gt; elements are excluded by this rule (covered by a11ycore-img-alt-present).
+    Native &lt;img role="img"&gt; elements are excluded by this rule (covered by img-alt-present).
   </p>
 
   <h2 id="baseline">A. Baseline (eligible)</h2>
@@ -59,7 +59,7 @@
   </div>
 
   <div class="case" id="case_04">
-    <div class="case-title">04 — PASS: role="img" named via title only (last-resort HTML-AAM mechanism, also accepted by the reference engine's role-img-alt)</div>
+    <div class="case-title">04 — PASS: role="img" named via title only (last-resort HTML-AAM mechanism, also accepted by a widely-used reference engine's role-img-alt)</div>
     <div class="row">
       <span class="icon">img</span>
       <span id="roleimg_case_04" role="img" title="Logo"></span>
@@ -254,7 +254,7 @@
     <div class="case-title">23 — NOT APPLICABLE (excluded by rule): &lt;img role="img"&gt; without aria-label</div>
     <div class="row">
       <img id="roleimg_case_23" role="img" src="x.png">
-      <span>Native &lt;img&gt; is covered by a11ycore-img-alt-present, not this rule.</span>
+      <span>Native &lt;img&gt; is covered by img-alt-present, not this rule.</span>
     </div>
   </div>
 

@@ -1,15 +1,15 @@
 'use strict';
 
 /**
- * @check a11ycore-empty-table-header
+ * @check empty-table-header
  * @atomic true
  * @summary Table header cells must not be empty
- * @standard the reference engine "Best Practices" (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (a widely-used reference engine's classification; no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
  * @applicability
  *   Applies to <th> elements that don't carry a conflicting explicit role,
  *   plus any element (native <th> or not) with role="columnheader" or
- *   role="rowheader" — matches the reference engine's own `empty-table-header` selector
- *   exactly (`th:not([role]), [role="columnheader"], [role="rowheader"]`,
+ *   role="rowheader" — matches a widely-used reference engine's own
+ *   `empty-table-header` selector exactly (`th:not([role]), [role="columnheader"], [role="rowheader"]`,
  *   verified directly against its rule descriptor): a <th> that explicitly
  *   restates role="columnheader"/"rowheader" is still covered via the second
  *   clause, but a <th role="presentation"> (no longer meaningfully a header)
@@ -27,13 +27,13 @@
  *   practice: NVDA+Firefox and iOS VoiceOver+Safari ignore it entirely
  *   (only visible text is announced), JAWS+Chrome/IE11 also only announce
  *   visible text in the header cell itself. Visible text is the one
- *   mechanism confirmed to work across every tested combination. the reference engine's
- *   own equivalent check (`has-visible-text` only, no aria-label/
+ *   mechanism confirmed to work across every tested combination. A widely-used
+ *   reference engine's own equivalent check (`has-visible-text` only, no aria-label/
  *   aria-labelledby alternative — confirmed directly against its rule
  *   descriptor) reaches the same conclusion.
  * @implementation-notes
  * - Not WCAG-normative — authored as an advisory, cantTell-capped
- *   `type: 'manual'` rule; see a11ycore-landmark-banner-is-top-level's
+ *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent.
  * - Two distinct reasonCodes: TABLE_HEADER_EMPTY (no accessible name at
  *   all) vs. TABLE_HEADER_NAME_NOT_VISIBLE_TEXT (has aria-label/
@@ -42,14 +42,14 @@
  *   literally nameless, just unreliably named in practice.
  */
 
-const id = 'a11ycore-empty-table-header';
+const id = 'empty-table-header';
 
 const meta = {
   title: 'Table header cells must not be empty',
   description: 'Checks that table header cells (<th>, or any element with role="columnheader"/"rowheader") have visible text content — a header named only via aria-label/aria-labelledby is also flagged, since real screen-reader/browser support for that is inconsistent.',
   i18n: {
-    titleKey: 'a11ycore_emptyTableHeader_title',
-    descriptionKey: 'a11ycore_emptyTableHeader_description'
+    titleKey: 'emptyTableHeader_title',
+    descriptionKey: 'emptyTableHeader_description'
   },
   helpUrl: null,
   tags: ['best-practice', 'tables', 'structure', 'atomic', 'manual'],
@@ -96,7 +96,7 @@ function runInPage(ctx) {
 
   let nodes = [];
   try {
-    // Matches the reference engine's own empty-table-header selector exactly: a <th> with
+    // Matches a widely-used reference engine's own empty-table-header selector exactly: a <th> with
     // no conflicting explicit role, plus any element carrying an explicit
     // columnheader/rowheader role (native or not).
     nodes = document.querySelectorAll('th:not([role]), [role="columnheader"], [role="rowheader"]');
@@ -124,8 +124,8 @@ function runInPage(ctx) {
         summary: 'This table header cell has no visible text — its only accessible name comes from aria-label/aria-labelledby, which real screen-reader/browser combinations (e.g. NVDA+Firefox, iOS VoiceOver+Safari) are known to ignore on <th> elements.',
         hint: 'Add visible text content to this header cell (in addition to, or instead of, aria-label/aria-labelledby) — visible text is the only naming mechanism confirmed to work across tested screen readers.',
         i18n: {
-          summaryKey: 'a11ycore_emptyTableHeader_summary_cantTell_ariaOnly',
-          hintKey: 'a11ycore_emptyTableHeader_hint_cantTell_ariaOnly',
+          summaryKey: 'emptyTableHeader_summary_cantTell_ariaOnly',
+          hintKey: 'emptyTableHeader_hint_cantTell_ariaOnly',
           params: {}
         },
         data: {
@@ -141,8 +141,8 @@ function runInPage(ctx) {
       summary: 'This table header cell has no accessible name.',
       hint: 'Add text content (or aria-label/aria-labelledby) to this header cell, or remove it if it is not needed.',
       i18n: {
-        summaryKey: 'a11ycore_emptyTableHeader_summary_cantTell',
-        hintKey: 'a11ycore_emptyTableHeader_hint_cantTell',
+        summaryKey: 'emptyTableHeader_summary_cantTell',
+        hintKey: 'emptyTableHeader_hint_cantTell',
         params: {}
       },
       data: {

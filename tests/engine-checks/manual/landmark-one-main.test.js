@@ -8,7 +8,7 @@ const path = require('node:path');
 const { assertRule } = require('../../helpers/assertRule.js');
 const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 
-const RULE_ID = 'a11ycore-landmark-one-main';
+const RULE_ID = 'landmark-one-main';
 
 test(`${RULE_ID}: notApplicable when there is exactly one main`, () => {
   const html = `<!doctype html><html><body><main>Content</main></body></html>`;
@@ -23,12 +23,13 @@ test(`${RULE_ID}: cantTell when there is no main at all`, () => {
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'LANDMARK_MAIN_MISSING');
 });
 
-// Presence-only, matching the reference engine's real landmark-one-main scope exactly (its page-has-main
-// check is a plain descendant-exists test, confirmed by reading its source directly) -- "more than
-// one main" is a11ycore-landmark-no-duplicate-main's job, a fully separate rule, matching the reference engine
-// shipping landmark-one-main/landmark-no-duplicate-main as two distinct checks. See this rule's
-// own header comment for the real page (Resy, DuckDuckGo) that exposed the previous, wrongly
-// reference-engine-disagreeing "also flag multiple" branch.
+// Presence-only, matching a reference engine's real landmark-one-main scope exactly (its
+// page-has-main check is a plain descendant-exists test, confirmed by reading that engine's
+// source directly) -- "more than one main" is landmark-no-duplicate-main's job, a
+// fully separate rule, matching that same reference engine shipping landmark-one-main/
+// landmark-no-duplicate-main as two distinct checks. See this rule's own header comment for
+// the real page (Resy, DuckDuckGo) that exposed the previous, wrongly diverging "also flag
+// multiple" branch.
 test(`${RULE_ID}: notApplicable when more than one main exists (out of this rule's scope)`, () => {
   const html = `<!doctype html><html><body><main id="a">A</main><main id="b">B</main></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });

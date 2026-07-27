@@ -12,7 +12,7 @@ try {
   ({ assertRule } = require('../../helpers/assertRule'));
 } catch (e) {}
 
-const RULE_ID = 'a11ycore-slider-name-present';
+const RULE_ID = 'slider-name-present';
 
 function hasOccurrenceForId(rule, id) {
   return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));

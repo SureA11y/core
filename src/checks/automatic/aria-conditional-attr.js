@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-aria-conditional-attr
+ * @check aria-conditional-attr
  * @atomic true
  * @summary aria-errormessage is only exposed when aria-invalid is not false/absent
  * @standard WCAG 2.2
@@ -16,28 +16,28 @@
  *   `"false"` silently drops the error message from the accessibility
  *   tree — authors almost always intend it to be exposed.
  * @implementation-notes
- * - This is deliberately narrow: the reference engine's own `aria-conditional-attr`
- *   rule covers a broader table of attribute/condition pairs. This rule
- *   implements only the one pairing (`aria-errormessage` /
+ * - This is deliberately narrow: a widely-used reference engine's own
+ *   `aria-conditional-attr` rule covers a broader table of attribute/condition
+ *   pairs. This rule implements only the one pairing (`aria-errormessage` /
  *   `aria-invalid`) that is unambiguous and explicitly stated in the
  *   ARIA spec, to keep `fail` high-confidence — matches this repo's
  *   established pattern (see `aria-required-attr`/`aria-prohibited-attr`
- *   for the same "narrower than the reference engine, but zero false positives"
+ *   for the same "narrower than that reference engine, but zero false positives"
  *   trade-off).
  * - Does not check whether the `aria-errormessage` ID reference itself
  *   resolves to an existing element — that is `aria-valid-attr-value`'s
  *   concern, not this rule's.
  */
 
-const id = 'a11ycore-aria-conditional-attr';
+const id = 'aria-conditional-attr';
 
 const meta = {
   title: 'aria-errormessage requires aria-invalid to be set to a non-false value',
   description:
     'Checks that elements with aria-errormessage also have aria-invalid set to "true", "grammar", or "spelling" — otherwise the error message is dropped from the accessibility tree.',
   i18n: {
-    titleKey: 'a11ycore_ariaConditionalAttr_title',
-    descriptionKey: 'a11ycore_ariaConditionalAttr_description'
+    titleKey: 'ariaConditionalAttr_title',
+    descriptionKey: 'ariaConditionalAttr_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag412', 'aria', 'structure', 'atomic', 'automatic'],
@@ -88,8 +88,8 @@ function runInPage(ctx) {
       summary: 'This element has aria-errormessage but aria-invalid is missing or "false", so the error message is not exposed.',
       hint: 'Set aria-invalid to "true" (or "grammar"/"spelling") whenever aria-errormessage should be exposed to assistive technology.',
       i18n: {
-        summaryKey: 'a11ycore_ariaConditionalAttr_summary_fail',
-        hintKey: 'a11ycore_ariaConditionalAttr_hint_fail',
+        summaryKey: 'ariaConditionalAttr_summary_fail',
+        hintKey: 'ariaConditionalAttr_hint_fail',
         params: { element: tag, ariaInvalid: invalidValue || '(absent)' }
       },
       data: {

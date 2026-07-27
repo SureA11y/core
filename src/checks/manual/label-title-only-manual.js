@@ -1,10 +1,10 @@
 'use strict';
 
 /**
- * @check a11ycore-label-title-only
+ * @check label-title-only
  * @atomic true
  * @summary Form controls should not rely on the title attribute as their only label
- * @standard the reference engine "Best Practices" (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (a widely-used reference engine's classification; no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
  * @applicability
  *   Applies to labelable form controls (input, excluding
  *   hidden/submit/reset/button/image; select; textarea) that have a
@@ -17,21 +17,21 @@
  *   unlike a persistent visible label.
  * @implementation-notes
  * - Not WCAG-normative — authored as an advisory, cantTell-capped
- *   `type: 'manual'` rule; see a11ycore-landmark-banner-is-top-level's
+ *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent.
- * - Distinct from a11ycore-form-control-programmatic-label-present (that
+ * - Distinct from form-control-programmatic-label-present (that
  *   rule accepts title as one of several valid presence mechanisms;
  *   this rule flags the narrower case where title is the ONLY one).
  */
 
-const id = 'a11ycore-label-title-only';
+const id = 'label-title-only';
 
 const meta = {
   title: 'Form controls should not use title as their only label',
   description: 'Checks that a form control with a title attribute also has a real label (label element, aria-label, or aria-labelledby).',
   i18n: {
-    titleKey: 'a11ycore_labelTitleOnly_title',
-    descriptionKey: 'a11ycore_labelTitleOnly_description'
+    titleKey: 'labelTitleOnly_title',
+    descriptionKey: 'labelTitleOnly_description'
   },
   helpUrl: null,
   tags: ['best-practice', 'forms', 'structure', 'atomic', 'manual'],
@@ -93,8 +93,8 @@ function runInPage(ctx) {
       summary: 'This form control relies on the title attribute as its only label.',
       hint: 'Add a visible <label> (or aria-label/aria-labelledby) in addition to, or instead of, the title attribute.',
       i18n: {
-        summaryKey: 'a11ycore_labelTitleOnly_summary_cantTell',
-        hintKey: 'a11ycore_labelTitleOnly_hint_cantTell',
+        summaryKey: 'labelTitleOnly_summary_cantTell',
+        hintKey: 'labelTitleOnly_hint_cantTell',
         params: { element: tag }
       },
       data: {

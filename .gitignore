@@ -51,12 +51,17 @@ Thumbs.db
 *.mov
 *.wmv
 
-# Cross-engine diffing tool: regenerable via `npm run cross-engine-diff`
-# (see scripts/cross-engine/README.md). These grow unbounded (history/ is
-# never overwritten, cross-engine-report.json scales with corpus size) and
-# pushed a >50MB-file warning + a fast-growing .git — not worth keeping in
-# version control. cross-engine-summary.json stays tracked (small, useful
-# for a quick glance at run-over-run trends in PRs).
-cross-engine-report/history/
-cross-engine-report/cross-engine-report.json
+# Personal/internal working notes (live in ../internal-notes, not this repo)
+ROADMAP.md
+surea11y-engine.design.md
+surea11y-performance-context.md
+engine_selector_snippet_refactor_plan.md
+next-steps.md
+stateful_accessibility_evaluation_concept_note.md
+docs/surea11y-overview.md
+docs/ai-assisted-explanations.design.md
+*.docx
+DHS Trusted Tester Certification*.pdf
+Stateful Accessibility Evaluation*.pdf
+docs/How we approach a WCAG SC in this engine.docx
 

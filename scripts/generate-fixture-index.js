@@ -91,7 +91,7 @@ function safeRequire(file) {
     return require(file);
 }
 
-/** Load the rule catalog: ruleId (a11ycore-prefixed) -> { title, type, file } */
+/** Load the rule catalog: ruleId (prefixed) -> { title, type, file } */
 function loadRuleCatalog(repoRoot, checksDirArg) {
     const checksDirAbs = path.isAbsolute(checksDirArg) ? checksDirArg : path.resolve(repoRoot, checksDirArg);
     const files = listFilesRecursive(checksDirAbs, isRuleFileName);
@@ -226,7 +226,7 @@ function renderHtmlIndex(rows, now) {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>a11y-core Fixture Index</title>
+<title>surea11y Fixture Index</title>
 <style>
   :root { color-scheme: light dark; }
   body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; max-width: 1100px; }
@@ -249,7 +249,7 @@ function renderHtmlIndex(rows, now) {
 </style>
 </head>
 <body>
-  <h1>a11y-core Fixture Index</h1>
+  <h1>surea11y Fixture Index</h1>
   <p class="meta">Generated: ${now} &middot; ${withFixture.length}/${rows.length} rules have a fixture &middot; regenerate with <code>node scripts/generate-fixture-index.js</code></p>
 
   <div class="toolbar">

@@ -1,36 +1,36 @@
 'use strict';
 
 /**
- * @check a11ycore-meta-viewport-large
+ * @check meta-viewport-large
  * @atomic true
  * @summary Viewport meta tag should allow zooming up to 500% (AAA-level)
- * @standard the reference engine "Best Practices" (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (a widely-used reference engine's classification; no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
  * @applicability
  *   Applies to <meta name="viewport"> elements that carry a non-empty
  *   content attribute.
  * @expectation
  *   The content attribute does not set user-scalable to "no"/"0", and
  *   does not set maximum-scale below 5 (500%). This is the AAA-level,
- *   stricter counterpart of a11ycore-meta-viewport-zoom-enabled (which
+ *   stricter counterpart of meta-viewport-zoom-enabled (which
  *   enforces the AA 200% minimum as a hard, WCAG-normative fail); this
  *   rule is advisory best-practice guidance toward the higher AAA bar.
  * @implementation-notes
  * - Not WCAG-normative — authored as an advisory, cantTell-capped
- *   `type: 'manual'` rule; see a11ycore-landmark-banner-is-top-level's
+ *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent.
- * - Distinct, atomic decision from a11ycore-meta-viewport-zoom-enabled
+ * - Distinct, atomic decision from meta-viewport-zoom-enabled
  *   (that rule is the hard-fail 200% floor; this one is the softer 500%
  *   best-practice ceiling target).
  */
 
-const id = 'a11ycore-meta-viewport-large';
+const id = 'meta-viewport-large';
 
 const meta = {
   title: 'Viewport meta tag should allow zooming up to 500%',
   description: 'Checks that <meta name="viewport"> does not set user-scalable=no or maximum-scale below 5 (500%).',
   i18n: {
-    titleKey: 'a11ycore_metaViewportLarge_title',
-    descriptionKey: 'a11ycore_metaViewportLarge_description'
+    titleKey: 'metaViewportLarge_title',
+    descriptionKey: 'metaViewportLarge_description'
   },
   helpUrl: null,
   tags: ['best-practice', 'structure', 'atomic', 'manual'],
@@ -97,8 +97,8 @@ function runInPage(ctx) {
       summary: 'This viewport meta tag restricts zoom below the 500% best-practice target.',
       hint: 'Remove user-scalable=no and raise maximum-scale to at least 5 (500%) if possible.',
       i18n: {
-        summaryKey: 'a11ycore_metaViewportLarge_summary_cantTell',
-        hintKey: 'a11ycore_metaViewportLarge_hint_cantTell',
+        summaryKey: 'metaViewportLarge_summary_cantTell',
+        hintKey: 'metaViewportLarge_hint_cantTell',
         params: { reasons: reasons.join(', ') }
       },
       data: {

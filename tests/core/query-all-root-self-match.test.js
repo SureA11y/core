@@ -14,8 +14,8 @@ const { createDomHelpers } = require('../../src/core/dom-helpers.js');
 // structurally blind to an issue asserted directly on <html> itself, no
 // matter how correct that rule's own logic was. Found via a real page —
 // news24.com's South Africa homepage, `<html role="document">`, which
-// the reference engine correctly flags but a11ycore-aria-allowed-role couldn't reach at
-// all before this fix.
+// a widely-used reference engine correctly flags but aria-allowed-role
+// couldn't reach at all before this fix.
 test('queryAllSmart: matches the root element itself when it satisfies the selector', () => {
   const dom = new JSDOM(
     `<!doctype html><html lang="en" role="document"><body><div id="d"></div></body></html>`,

@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-aria-allowed-role
+ * @check aria-allowed-role
  * @atomic true
  * @summary Explicit role must be permitted by the ARIA-in-HTML spec for its host element
  * @standard WCAG 2.2
@@ -21,14 +21,14 @@
  * - Not gated on isAccTreeEligible: this is a static markup property.
  */
 
-const id = 'a11ycore-aria-allowed-role';
+const id = 'aria-allowed-role';
 
 const meta = {
   title: 'Explicit role must be permitted for its host element',
   description: 'Checks that an explicit role="" attribute is one of the roles the ARIA-in-HTML specification permits for the host element (e.g. role="tab" is not permitted on <nav>).',
   i18n: {
-    titleKey: 'a11ycore_ariaAllowedRole_title',
-    descriptionKey: 'a11ycore_ariaAllowedRole_description'
+    titleKey: 'ariaAllowedRole_title',
+    descriptionKey: 'ariaAllowedRole_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag412', 'aria', 'structure', 'atomic', 'automatic'],
@@ -80,8 +80,8 @@ function runInPage(ctx) {
       summary: 'This role is not permitted on this element.',
       hint: 'Use a role permitted for this element, or change the host element.',
       i18n: {
-        summaryKey: 'a11ycore_ariaAllowedRole_summary_fail',
-        hintKey: 'a11ycore_ariaAllowedRole_hint_fail',
+        summaryKey: 'ariaAllowedRole_summary_fail',
+        hintKey: 'ariaAllowedRole_hint_fail',
         params: { role, element: tag }
       },
       data: {

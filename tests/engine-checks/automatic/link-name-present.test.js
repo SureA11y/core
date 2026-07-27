@@ -17,13 +17,13 @@ try {
   // Repo layout fallback
 }
 
-const RULE_ID = 'a11ycore-link-name-present';
+const RULE_ID = 'link-name-present';
 
 function hasOccurrenceForId(rule, id) {
   return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
 }
 
-test('a11ycore-link-name-present: no applicable elements => notApplicable', () => {
+test('link-name-present: no applicable elements => notApplicable', () => {
   const html = `
 <!doctype html><html><body>
   <div>no links</div>
@@ -36,13 +36,13 @@ test('a11ycore-link-name-present: no applicable elements => notApplicable', () =
   }
 
   const result = runa11yCoreOnHtml(html);
-  assertRule(result, 'a11ycore-link-name-present', 'notApplicable', {
+  assertRule(result, 'link-name-present', 'notApplicable', {
     minOccurrences: 0,
     maxOccurrences: 0
   });
 });
 
-test('a11ycore-link-name-present: missing name => fail', () => {
+test('link-name-present: missing name => fail', () => {
   const html = `
 <!doctype html><html><body>
   <a href="/x" aria-label=""></a>
@@ -55,13 +55,13 @@ test('a11ycore-link-name-present: missing name => fail', () => {
   }
 
   const result = runa11yCoreOnHtml(html);
-  assertRule(result, 'a11ycore-link-name-present', 'fail', {
+  assertRule(result, 'link-name-present', 'fail', {
     minOccurrences: 1,
     maxOccurrences: 1
   });
 });
 
-test('a11ycore-link-name-present: named link => pass', () => {
+test('link-name-present: named link => pass', () => {
   const html = `
 <!doctype html><html><body>
   <a href="/x">Read more</a>
@@ -74,13 +74,13 @@ test('a11ycore-link-name-present: named link => pass', () => {
   }
 
   const result = runa11yCoreOnHtml(html);
-  assertRule(result, 'a11ycore-link-name-present', 'pass', {
+  assertRule(result, 'link-name-present', 'pass', {
     minOccurrences: 0,
     maxOccurrences: 0
   });
 });
 
-test('a11ycore-link-name-present: named via a child image with alt="" but aria-labelledby pointing to real text => pass', () => {
+test('link-name-present: named via a child image with alt="" but aria-labelledby pointing to real text => pass', () => {
   // Regression for a real false positive found via a live-DOM cross-engine
   // run 2026-07-21: eBay's product-card links wrap an
   // <img alt="" aria-labelledby="..."> (empty alt, correctly marking the
@@ -105,7 +105,7 @@ test('a11ycore-link-name-present: named via a child image with alt="" but aria-l
   }
 
   const result = runa11yCoreOnHtml(html);
-  assertRule(result, 'a11ycore-link-name-present', 'pass', {
+  assertRule(result, 'link-name-present', 'pass', {
     minOccurrences: 0,
     maxOccurrences: 0
   });

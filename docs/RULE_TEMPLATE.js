@@ -24,11 +24,11 @@
  *   checks.<canonicalRuleId>.occurrence.<case>.summary
  *   checks.<canonicalRuleId>.occurrence.<case>.hint
  *
- * Where <canonicalRuleId> is the engine-prefixed id (e.g. a11ycore-<kebab-id>).
+ * Where <canonicalRuleId> is the engine-prefixed id (e.g. <kebab-id>).
  */
 
 /**
- * @check <kebab-id>  (engine prefix is applied at build-time: a11ycore-<kebab-id>)
+ * @check <kebab-id>  (engine prefix is applied at build-time: <kebab-id>)
  * @atomic true
  * @summary <One-sentence summary of the single normative requirement>
  * @standard WCAG 2.2
@@ -74,13 +74,13 @@ const meta = {
 
   // i18n keys (required when i18n provided)
   i18n: {
-    titleKey: 'checks.a11ycore-<kebab-id>.meta.title',
-    descriptionKey: 'checks.a11ycore-<kebab-id>.meta.description'
+    titleKey: 'checks.<kebab-id>.meta.title',
+    descriptionKey: 'checks.<kebab-id>.meta.description'
   }
 };
 
 /**
- * NOTE: runInPage() is serialized/executed from source by a11y-core.
+ * NOTE: runInPage() is serialized/executed from source by surea11y.
  * Do not reference outer-scope variables like `meta` or `id`.
  */
 function runInPage(ctx) {

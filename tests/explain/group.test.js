@@ -81,6 +81,6 @@ test('buildExplainGroups: does not mutate the input result at all', () => {
 });
 
 test('computeGroupKey: matches the shape documented in the design doc (ruleId|reasonCode|signature)', () => {
-  const key = computeGroupKey('a11ycore-nested-interactive-controls-absent', 'NESTED_INTERACTIVE_CONTROL', 'a > span[role="button"]');
-  assert.strictEqual(key, 'a11ycore-nested-interactive-controls-absent|NESTED_INTERACTIVE_CONTROL|a>span[role="button"]');
+  const key = computeGroupKey('nested-interactive-controls-absent', 'NESTED_INTERACTIVE_CONTROL', 'a > span[role="button"]');
+  assert.strictEqual(key, 'nested-interactive-controls-absent|NESTED_INTERACTIVE_CONTROL|a>span[role="button"]');
 });

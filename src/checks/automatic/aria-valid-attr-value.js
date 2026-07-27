@@ -1,14 +1,14 @@
 'use strict';
 
 /**
- * @check a11ycore-aria-valid-attr-value
+ * @check aria-valid-attr-value
  * @atomic true
  * @summary Every recognized aria-* attribute must have a value matching its declared type
  * @standard WCAG 2.2
  * @sc 4.1.2
  * @applicability
  *   Applies to any element carrying at least one recognized aria-* attribute
- *   (unrecognized attribute names are a11ycore-aria-valid-attr's concern,
+ *   (unrecognized attribute names are aria-valid-attr's concern,
  *   not evaluated here).
  * @expectation
  *   Each attribute's value conforms to its WAI-ARIA-declared value type:
@@ -23,23 +23,23 @@
  *   aria-describedby, aria-controls, aria-owns, etc.) when NONE of the
  *   space-separated ids resolve — a partially-dangling list (some ids
  *   exist, some don't) is left unflagged. Verified 2026-07-21 directly
- *   against the reference engine 4.12.1's own `validateAttrValue` source: this is not
- *   a conservative guess, it's an exact match for the reference engine's own behavior
- *   (`idrefs(vNode, attr).some(node => !!node)` — the reference engine itself only
- *   invalidates when every token fails to resolve). Single-idref
+ *   against a widely-used reference engine's own `validateAttrValue` source:
+ *   this is not a conservative guess, it's an exact match for that engine's
+ *   own behavior (`idrefs(vNode, attr).some(node => !!node)` — that engine
+ *   itself only invalidates when every token fails to resolve). Single-idref
  *   attributes (aria-activedescendant, aria-errormessage) are flagged
- *   whenever their one id doesn't resolve, also matching the reference engine's `idref`
+ *   whenever their one id doesn't resolve, also matching that engine's `idref`
  *   case exactly.
  */
 
-const id = 'a11ycore-aria-valid-attr-value';
+const id = 'aria-valid-attr-value';
 
 const meta = {
   title: 'aria-* attribute values must match their declared type',
   description: 'Checks that every recognized aria-* attribute has a value conforming to its WAI-ARIA-declared value type (boolean, tristate, token, integer, number, or ID reference).',
   i18n: {
-    titleKey: 'a11ycore_ariaValidAttrValue_title',
-    descriptionKey: 'a11ycore_ariaValidAttrValue_description'
+    titleKey: 'ariaValidAttrValue_title',
+    descriptionKey: 'ariaValidAttrValue_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag412', 'aria', 'structure', 'atomic', 'automatic'],
@@ -76,7 +76,7 @@ function runInPage(ctx) {
     for (let i = 0; i < attrs.length; i++) {
       const name = String(attrs[i].name || '').toLowerCase();
       if (name.slice(0, 5) !== 'aria-') continue;
-      if (!ariaHelpers.isValidAriaAttrName(name)) continue; // a11ycore-aria-valid-attr's concern
+      if (!ariaHelpers.isValidAriaAttrName(name)) continue; // aria-valid-attr's concern
 
       applicableCount += 1;
 
@@ -100,8 +100,8 @@ function runInPage(ctx) {
         summary: 'This element has an ARIA attribute with an invalid value.',
         hint: 'Use a value that matches the attribute’s expected type (see the WAI-ARIA specification for this attribute).',
         i18n: {
-          summaryKey: 'a11ycore_ariaValidAttrValue_summary_fail',
-          hintKey: 'a11ycore_ariaValidAttrValue_hint_fail',
+          summaryKey: 'ariaValidAttrValue_summary_fail',
+          hintKey: 'ariaValidAttrValue_hint_fail',
           params: { attr: item.name, value: item.value }
         },
         data: {

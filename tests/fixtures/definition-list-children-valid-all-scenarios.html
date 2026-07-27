@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>a11ycore-definition-list-children-valid — scenario fixture</title>
+  <title>definition-list-children-valid — scenario fixture</title>
   <style>
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
     h1 { font-size: 20px; margin: 0 0 16px; }
@@ -14,7 +14,7 @@
   </style>
 </head>
 <body>
-  <h1>Scenario fixture: <code>a11ycore-definition-list-children-valid</code> (&lt;dl&gt; structure)</h1>
+  <h1>Scenario fixture: <code>definition-list-children-valid</code> (&lt;dl&gt; structure)</h1>
 
   <p class="note">
     Each target &lt;dl&gt; has a stable <code>id</code> of the form <code>dlv_case_NN</code>.
@@ -34,7 +34,7 @@
   </div>
 
   <div class="case" id="case_04">
-    <div class="case-title">04 — PASS: dl's only children are passthrough (script) — nothing to structurally judge, matches the reference engine's "when not empty" framing</div>
+    <div class="case-title">04 — PASS: dl's only children are passthrough (script) — nothing to structurally judge, matches a widely-used reference engine's "when not empty" framing</div>
     <dl id="dlv_case_04"><script></script></dl>
   </div>
 
@@ -44,7 +44,7 @@
   </div>
 
   <div class="case" id="case_08">
-    <div class="case-title">08 — PASS: dl has no dt/dd and nothing else after flattening (empty wrapping div) — verified against the reference engine: vacuously fine, same "when not empty" framing as the passthrough-only cases above</div>
+    <div class="case-title">08 — PASS: dl has no dt/dd and nothing else after flattening (empty wrapping div) — verified against a widely-used reference engine: vacuously fine, same "when not empty" framing as the passthrough-only cases above</div>
     <dl id="dlv_case_08"><div></div></dl>
   </div>
 

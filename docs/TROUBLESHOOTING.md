@@ -2,12 +2,12 @@
 
 ## "I passed `runOnly: ['some-rule-id']` but every rule still ran"
 
-`runOnly` must be an object, not a bare array — `runOnly: ['a11ycore-img-alt-present']` is silently ignored (the engine falls through to "run everything"), because that shape has none of the fields the engine actually checks (`includeRuleIds`, `tags`, etc.). This is easy to get wrong if you're coming from the reference engine, which does accept a bare array.
+`runOnly` must be an object, not a bare array — `runOnly: ['img-alt-present']` is silently ignored (the engine falls through to "run everything"), because that shape has none of the fields the engine actually checks (`includeRuleIds`, `tags`, etc.). This is easy to get wrong if you're coming from another engine that does accept a bare array.
 
 Fix:
 
 ```js
-runOnly: { includeRuleIds: ['a11ycore-img-alt-present'] }
+runOnly: { includeRuleIds: ['img-alt-present'] }
 ```
 
 See [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#via-runonly-4th-argument) for the full shape.

@@ -20,7 +20,7 @@ test('normalizeRuleResult: coerces manual fail to cantTell when enabled', () => 
     });
 
     const def = {
-        ruleId: 'a11ycore-test-manual',
+        ruleId: 'test-manual',
         defaultSeverity: 'moderate',
         defaultConfidence: 'medium',
         type: 'manual',
@@ -58,7 +58,7 @@ test('normalizeRuleResult: invalid outcome becomes cantTell', () => {
     });
 
     const def = {
-        ruleId: 'a11ycore-test-invalid-outcome',
+        ruleId: 'test-invalid-outcome',
         defaultSeverity: 'moderate',
         defaultConfidence: 'high',
         type: 'automatic',

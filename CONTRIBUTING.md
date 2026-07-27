@@ -1,12 +1,12 @@
 # Contributing
 
-This repository is currently private and not yet open to outside contribution — this document describes the standard the project already holds itself to internally, so it's ready if/when that changes, and so anyone with access today has a clear reference.
+This document describes the standard the project holds itself to — the same one any change, from anyone, is expected to meet.
 
 ## Before you start
 
-- Read [`a11y-core-engine.design.md`](./a11y-core-engine.design.md) — the engine's constitution: the non-negotiables (`fail` is reserved for deterministic, high-confidence, normative violations; deterministic output; atomic rules) that every change is expected to preserve.
+- Internalize the engine's non-negotiables — every change is expected to preserve them: `fail` is reserved for deterministic, high-confidence, normative violations; output is deterministic (same input, same result, always); every rule is atomic (one normative decision per rule).
 - Read [`docs/RULE_AUTHORING.md`](./docs/RULE_AUTHORING.md) in full before touching any rule — in particular §1.1's free-variable footgun. It's the single most common way to accidentally ship a silently-broken rule (the build succeeds; the rule just always returns `cantTell` with an unhelpful-looking `error`).
-- Skim [`ROADMAP.md`](./ROADMAP.md) — it's the living project plan (mission, current state, what's already been decided against and why). Check it before proposing something that might already be a deliberate, reasoned non-goal (see [`docs/LIMITATIONS.md`](./docs/LIMITATIONS.md) too).
+- Check [`docs/LIMITATIONS.md`](./docs/LIMITATIONS.md) before proposing something that might already be a deliberate, reasoned non-goal.
 
 ## Adding or changing a rule
 
@@ -28,13 +28,13 @@ npm run docs:rule-catalog  # regenerate docs/RULE_CATALOG.md
 
 ## Fixing a bug
 
-Prefer finding the root cause over a narrow patch — this codebase's own convention (see `ROADMAP.md` throughout) is to verify against a primary source (the WAI-ARIA spec, HTML-AAM, direct probing of the reference engine's actual behavior) before changing rule logic, not to guess. If a false positive or false negative is confirmed, add a fixture case and a regression test that would have caught it.
+Prefer finding the root cause over a narrow patch — this codebase's own convention is to verify against a primary source (the WAI-ARIA spec, HTML-AAM, direct probing of real browser/AT behavior) before changing rule logic, not to guess. If a false positive or false negative is confirmed, add a fixture case and a regression test that would have caught it.
 
 ## Commit and PR conventions
 
 - Keep commits focused — one logical change per commit, with a message explaining *why*, not just *what* (the diff already shows what).
 - Run the full test suite (`npm test`) before opening a PR; it must be green.
-- If your change affects the cross-engine tool's expectations (`scripts/cross-engine/rule-mapping.js`), run `npm run validate:cross-engine-mapping` and, ideally, `npm run cross-engine-diff -- --corpus=fixtures` to confirm no new unexplained divergence.
+- If your change affects a rule's documented scope relative to other engines, update that rule's implementation notes accordingly so the scope decision stays traceable.
 
 ## Code style
 

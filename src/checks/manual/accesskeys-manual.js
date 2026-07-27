@@ -1,10 +1,10 @@
 'use strict';
 
 /**
- * @check a11ycore-accesskeys
+ * @check accesskeys
  * @atomic true
  * @summary accesskey values must be unique on the page
- * @standard the reference engine "Best Practices" (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (a widely-used reference engine's classification; no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
  * @applicability
  *   Applies whenever two or more elements share the same non-empty
  *   accesskey attribute value (case-insensitive).
@@ -15,18 +15,18 @@
  *   one is browser/platform-dependent.
  * @implementation-notes
  * - Not WCAG-normative — authored as an advisory, cantTell-capped
- *   `type: 'manual'` rule; see a11ycore-landmark-banner-is-top-level's
+ *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent.
  */
 
-const id = 'a11ycore-accesskeys';
+const id = 'accesskeys';
 
 const meta = {
   title: 'accesskey values must be unique',
   description: 'Checks that no two elements on the page share the same accesskey attribute value.',
   i18n: {
-    titleKey: 'a11ycore_accesskeys_title',
-    descriptionKey: 'a11ycore_accesskeys_description'
+    titleKey: 'accesskeys_title',
+    descriptionKey: 'accesskeys_description'
   },
   helpUrl: null,
   tags: ['best-practice', 'keyboard', 'structure', 'atomic', 'manual'],
@@ -73,8 +73,8 @@ function runInPage(ctx) {
         summary: 'This element\'s accesskey is shared with another element on the page.',
         hint: 'Make each accesskey value unique across the page.',
         i18n: {
-          summaryKey: 'a11ycore_accesskeys_summary_cantTell',
-          hintKey: 'a11ycore_accesskeys_hint_cantTell',
+          summaryKey: 'accesskeys_summary_cantTell',
+          hintKey: 'accesskeys_hint_cantTell',
           params: { accesskey: key, duplicateCount: String(els.length) }
         },
         data: {

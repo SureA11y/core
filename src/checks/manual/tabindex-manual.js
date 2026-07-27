@@ -1,10 +1,10 @@
 'use strict';
 
 /**
- * @check a11ycore-tabindex
+ * @check tabindex
  * @atomic true
  * @summary tabindex should not be greater than 0
- * @standard the reference engine "Best Practices" (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (a widely-used reference engine's classification; no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
  * @applicability
  *   Applies to elements with a tabindex attribute whose value parses as
  *   a valid integer.
@@ -15,18 +15,18 @@
  *   fixed instead.
  * @implementation-notes
  * - Not WCAG-normative — authored as an advisory, cantTell-capped
- *   `type: 'manual'` rule; see a11ycore-landmark-banner-is-top-level's
+ *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent.
  */
 
-const id = 'a11ycore-tabindex';
+const id = 'tabindex';
 
 const meta = {
   title: 'tabindex should not be greater than 0',
   description: 'Checks that tabindex values are 0 or negative, not a positive number.',
   i18n: {
-    titleKey: 'a11ycore_tabindex_title',
-    descriptionKey: 'a11ycore_tabindex_description'
+    titleKey: 'tabindex_title',
+    descriptionKey: 'tabindex_description'
   },
   helpUrl: null,
   tags: ['best-practice', 'keyboard', 'structure', 'atomic', 'manual'],
@@ -72,8 +72,8 @@ function runInPage(ctx) {
       summary: 'This element has a positive tabindex, overriding the natural tab order.',
       hint: 'Use tabindex="0" (or a negative value to remove from tab order) instead of a positive number; fix the DOM order if a different tab order is needed.',
       i18n: {
-        summaryKey: 'a11ycore_tabindex_summary_cantTell',
-        hintKey: 'a11ycore_tabindex_hint_cantTell',
+        summaryKey: 'tabindex_summary_cantTell',
+        hintKey: 'tabindex_hint_cantTell',
         params: { value: String(n) }
       },
       data: {

@@ -119,7 +119,7 @@ test('composite severity is the max severity of failing contributors', async () 
     // Pick a composite that will fail in the fixture HTML.
     // The existing HTML in the other test triggers many "name present" failures,
     // and should cause the WCAG 4.1.2-name composite to exist.
-    const compositeId = 'a11ycore-wcag-4.1.2-name';
+    const compositeId = 'wcag-4.1.2-name';
 
     // Ensure it exists in the catalog (otherwise test is meaningless)
     assert.ok(

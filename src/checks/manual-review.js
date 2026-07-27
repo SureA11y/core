@@ -5,13 +5,13 @@
  * Manual review for keyboard navigation and focus order.
  */
 
-const id = 'a11ycore-manual-review';
+const id = 'manual-review';
 
 const meta = {
   ruleId: 'manual-review',
   title: 'Manual review: keyboard navigation and focus order',
   description: 'Flags that a manual review of keyboard navigation and focus order is required.',
-  i18n: { titleKey: 'a11ycore_manualReview_title', descriptionKey: 'a11ycore_manualReview_description' },
+  i18n: { titleKey: 'manualReview_title', descriptionKey: 'manualReview_description' },
 
   helpUrl: null,
   tags: ['wcag2a', 'wcag2aa', 'wcag211', 'wcag243', 'wcag247', 'nontext', 'atomic', 'manual'],
@@ -82,7 +82,7 @@ function runInPage(ctx) {
         selector: contextSelector || 'html',
         html,
         summary: 'Manual review required for keyboard navigation and focus order.',
-        i18n: { summaryKey: 'a11ycore_manualReview_summary_cantTell', hintKey: 'a11ycore_manualReview_hint_cantTell', params: {} },
+        i18n: { summaryKey: 'manualReview_summary_cantTell', hintKey: 'manualReview_hint_cantTell', params: {} },
       }
     ]
   };

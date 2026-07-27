@@ -1,13 +1,13 @@
 'use strict';
 
-const id = 'a11ycore-dialog-name-present';
+const id = 'dialog-name-present';
 
 const meta = {
   title: 'Dialogs have an accessible name',
   description: 'Checks that elements with role="dialog" or role="alertdialog" expose a non-empty accessible name.',
   i18n: {
-    titleKey: 'a11ycore_dialogNamePresent_title',
-    descriptionKey: 'a11ycore_dialogNamePresent_description'
+    titleKey: 'dialogNamePresent_title',
+    descriptionKey: 'dialogNamePresent_description'
   },
   helpUrl: null,
   tags: ['wcag2a','wcag412','structure','atomic','automatic','name','dialog'],
@@ -185,8 +185,8 @@ function runInPage(ctx) {
       summary: 'This dialog has no accessible name.',
       hint: 'Provide aria-labelledby (preferred) or aria-label so assistive technologies can announce the dialog.',
       i18n: {
-        summaryKey: 'a11ycore_dialogNamePresent_summary_fail',
-        hintKey: 'a11ycore_dialogNamePresent_hint_fail',
+        summaryKey: 'dialogNamePresent_summary_fail',
+        hintKey: 'dialogNamePresent_hint_fail',
         params: { role }
       },
       data: {

@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-img-alt-quality
+ * @check img-alt-quality
  * @atomic true
  * @summary Manual review: text alternative appropriateness (WCAG 1.1.1)
  * @standard WCAG 2.2
@@ -11,14 +11,14 @@
  *   Human review is required to confirm that the provided text alternative is accurate and appropriate.
  */
 
-const id = "a11ycore-img-alt-quality";
+const id = "img-alt-quality";
 
 const meta = {
   title: "<img> alt text must be appropriate (manual review)",
   description: "Flags <img> elements with non-empty alt text for human review of appropriateness.",
   i18n: {
-    titleKey: "a11ycore_img_altQuality_title",
-    descriptionKey: "a11ycore_img_altQuality_description"
+    titleKey: "img_altQuality_title",
+    descriptionKey: "img_altQuality_description"
   },
   helpUrl: null,
   tags: ["wcag2a", "wcag111", "nontext", "images", "manual", "atomic"],
@@ -132,8 +132,8 @@ function runInPage(ctx) {
             summary: 'Review alt text on <img> for accuracy and appropriateness.',
             hint: 'Ensure the alt text conveys the image’s purpose/information in context (not redundant, not filename-like).',
             i18n: {
-                summaryKey: 'a11ycore_img_altQuality_summary_cantTell',
-                hintKey: 'a11ycore_img_altQuality_hint_cantTell',
+                summaryKey: 'img_altQuality_summary_cantTell',
+                hintKey: 'img_altQuality_hint_cantTell',
                 params: { element: 'img' }
             },
             data: {

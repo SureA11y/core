@@ -12,7 +12,7 @@ const {
 
 const { assertRule } = require('../../helpers/assertRule');
 
-const RULE_ID = 'a11ycore-contrast-enhanced';
+const RULE_ID = 'contrast-enhanced';
 
 /**
  * JSDOM caveats (carried over from other contrast rule checks):
@@ -135,7 +135,7 @@ test(`${RULE_ID}: eligible text exists but none computable => notApplicable (noC
     const rule = assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 1, maxOccurrences: 1 });
     assert.strictEqual(
         rule.occurrences[0].i18n.summaryKey,
-        'a11ycore_contrastEnhanced_notApplicable_noComputableText'
+        'contrastEnhanced_notApplicable_noComputableText'
     );
     assert.ok(Number(rule.occurrences[0].data.details.eligibleTextCount) >= 1);
     assert.strictEqual(Number(rule.occurrences[0].data.details.computableTextCount), 0);
@@ -154,7 +154,7 @@ test(`${RULE_ID}: strictConformance + root not opaque => notApplicable (noComput
     const result = run(html, { contrast: { mode: 'strictConformance', rootCanvasFallback: '#ffffff' } });
 
     const rule = assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 1, maxOccurrences: 1 });
-    assert.strictEqual(rule.occurrences[0].i18n.summaryKey, 'a11ycore_contrastEnhanced_notApplicable_noComputableText');
+    assert.strictEqual(rule.occurrences[0].i18n.summaryKey, 'contrastEnhanced_notApplicable_noComputableText');
     assert.ok(Number(rule.occurrences[0].data.details.eligibleTextCount) >= 1);
     assert.strictEqual(Number(rule.occurrences[0].data.details.computableTextCount), 0);
 });
@@ -190,7 +190,7 @@ test(`${RULE_ID}: computable normal text meets 7:1 => pass`, () => {
     const result = run(html);
 
     const rule = assertRule(result, RULE_ID, 'pass', { minOccurrences: 1, maxOccurrences: 1 });
-    assert.strictEqual(rule.occurrences[0].i18n.summaryKey, 'a11ycore_contrastEnhanced_pass_allAboveThreshold');
+    assert.strictEqual(rule.occurrences[0].i18n.summaryKey, 'contrastEnhanced_pass_allAboveThreshold');
     assert.ok(Number(rule.occurrences[0].data.details.eligibleTextCount) >= 1);
     assert.ok(Number(rule.occurrences[0].data.details.computableTextCount) >= 1);
 });
@@ -220,7 +220,7 @@ test(`${RULE_ID}: computable normal text below 7:1 => fail (BELOW_THRESHOLD)`, (
     assert.ok(typeof occ.selector === 'string' && occ.selector.length > 0, 'expected occ.selector to be populated');
     assert.match(occ.selector, /#t\b/);
 
-    assert.strictEqual(occ.i18n.summaryKey, 'a11ycore_contrastEnhanced_fail_belowThreshold');
+    assert.strictEqual(occ.i18n.summaryKey, 'contrastEnhanced_fail_belowThreshold');
     assert.strictEqual(occ.data.details.reasonCode, 'BELOW_THRESHOLD');
 
     // Threshold for normal text at AAA is 7
@@ -246,7 +246,7 @@ test(`${RULE_ID}: large text uses 4.5:1 threshold (passes when <7 but >=4.5) => 
     const result = run(html);
 
     const rule = assertRule(result, RULE_ID, 'pass', { minOccurrences: 1, maxOccurrences: 1 });
-    assert.strictEqual(rule.occurrences[0].i18n.summaryKey, 'a11ycore_contrastEnhanced_pass_allAboveThreshold');
+    assert.strictEqual(rule.occurrences[0].i18n.summaryKey, 'contrastEnhanced_pass_allAboveThreshold');
 });
 
 test(`${RULE_ID}: large text below 4.5:1 => fail`, () => {
@@ -274,7 +274,7 @@ test(`${RULE_ID}: large text below 4.5:1 => fail`, () => {
     assert.ok(typeof occ.selector === 'string' && occ.selector.length > 0, 'expected occ.selector to be populated');
     assert.match(occ.selector, /#lt\b/);
 
-    assert.strictEqual(occ.i18n.summaryKey, 'a11ycore_contrastEnhanced_fail_belowThreshold');
+    assert.strictEqual(occ.i18n.summaryKey, 'contrastEnhanced_fail_belowThreshold');
     assert.strictEqual(occ.data.details.reasonCode, 'BELOW_THRESHOLD');
 
     // Threshold for large text at AAA is 4.5
@@ -379,7 +379,7 @@ test(`${RULE_ID}: ANCESTOR opacity < 1 gates to notApplicable instead of a confi
     const rule = assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 1, maxOccurrences: 1 });
     assert.strictEqual(
         rule.occurrences[0].i18n.summaryKey,
-        'a11ycore_contrastEnhanced_notApplicable_noComputableText'
+        'contrastEnhanced_notApplicable_noComputableText'
     );
     assert.strictEqual(Number(rule.occurrences[0].data.details.computableTextCount), 0);
 });

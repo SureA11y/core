@@ -8,7 +8,7 @@ const path = require('node:path');
 const { assertRule } = require('../../helpers/assertRule.js');
 const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 
-const RULE_ID = 'a11ycore-progressbar-name-present';
+const RULE_ID = 'progressbar-name-present';
 
 function hasOccurrenceForId(rule, id) {
   return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
@@ -20,7 +20,7 @@ test(`${RULE_ID}: notApplicable when no role="progressbar" is present`, () => {
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail when progressbar has visible text content but no aria-label/aria-labelledby/title (role="progressbar" is name-from-author-only per WAI-ARIA — verified against the reference engine's own aria-progressbar-name check, which has no content-based naming method at all)`, () => {
+test(`${RULE_ID}: fail when progressbar has visible text content but no aria-label/aria-labelledby/title (role="progressbar" is name-from-author-only per WAI-ARIA — verified against a widely-used reference engine's own aria-progressbar-name check, which has no content-based naming method at all)`, () => {
   const html = `<!doctype html><html><body><div id="a" role="progressbar" aria-valuenow="50">Loading</div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });

@@ -1,13 +1,13 @@
 'use strict';
 
-const id = 'a11ycore-spinbutton-name-present';
+const id = 'spinbutton-name-present';
 
 const meta = {
   title: 'Accessible name is present',
   description: 'Checks that elements expose a non-empty accessible name.',
   i18n: {
-    titleKey: 'a11ycore_spinbuttonNamePresent_title',
-    descriptionKey: 'a11ycore_spinbuttonNamePresent_description'
+    titleKey: 'spinbuttonNamePresent_title',
+    descriptionKey: 'spinbuttonNamePresent_description'
   },
   helpUrl: null,
   tags: ["wcag2a", "wcag412", "forms", "atomic", "automatic", "name", "spinbutton"],
@@ -212,8 +212,8 @@ function runInPage(ctx) {
       summary: 'This element has no accessible name.',
       hint: 'Provide aria-label or aria-labelledby (preferred), or provide visible text that is not hidden from assistive technologies.',
       i18n: {
-        summaryKey: 'a11ycore_spinbuttonNamePresent_summary_fail',
-        hintKey: 'a11ycore_spinbuttonNamePresent_hint_fail',
+        summaryKey: 'spinbuttonNamePresent_summary_fail',
+        hintKey: 'spinbuttonNamePresent_hint_fail',
         params: { controlType: 'spinbutton' }
       },
       data: {

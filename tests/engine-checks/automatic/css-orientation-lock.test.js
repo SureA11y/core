@@ -8,7 +8,7 @@ const path = require('node:path');
 const { assertRule } = require('../../helpers/assertRule.js');
 const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 
-const RULE_ID = 'a11ycore-css-orientation-lock';
+const RULE_ID = 'css-orientation-lock';
 
 test(`${RULE_ID}: notApplicable when there are no stylesheets`, () => {
   const html = `<!doctype html><html><body><p>No styles.</p></body></html>`;
@@ -53,7 +53,7 @@ test(`${RULE_ID}: pass when a rotate() in an orientation media query is a small 
   // rotate(45deg) sitting inside an @media (orientation:portrait) block (one
   // of several OR'd responsive conditions) was wrongly flagged as an
   // orientation-lock hack. Only rotations near 90/270 degrees are a lock,
-  // matching the reference engine's own degree-based check exactly.
+  // matching a reference engine's own degree-based check exactly.
   const html = `<!doctype html><html><head><style>@media (orientation: portrait) { .icon:after { transform: rotate(45deg); } }</style></head><body><span class="icon"></span></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });

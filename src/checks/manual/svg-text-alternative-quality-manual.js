@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-svg-text-alternative-quality
+ * @check svg-text-alternative-quality
  * @atomic true
  * @summary Manual review: text alternative appropriateness (WCAG 1.1.1)
  * @standard WCAG 2.2
@@ -11,14 +11,14 @@
  *   Human review is required to confirm that the provided text alternative is accurate and appropriate.
  */
 
-const id = "a11ycore-svg-text-alternative-quality";
+const id = "svg-text-alternative-quality";
 
 const meta = {
     title: "<svg> text alternative must be appropriate (manual review)",
     description: "Flags applicable <svg> graphics with a detected text alternative for human review of appropriateness.",
     i18n: {
-        titleKey: "a11ycore_svg_textAltQuality_title",
-        descriptionKey: "a11ycore_svg_textAltQuality_description"
+        titleKey: "svg_textAltQuality_title",
+        descriptionKey: "svg_textAltQuality_description"
     },
     helpUrl: null,
     tags: ["wcag2a", "wcag111", "nontext", "svg", "manual", "atomic"],
@@ -174,8 +174,8 @@ function runInPage(ctx) {
             summary: 'Review text alternative for <svg> for accuracy and appropriateness.',
             hint: 'Confirm the <title>/<desc> or ARIA name conveys the meaning/purpose of the graphic in context.',
             i18n: {
-                summaryKey: 'a11ycore_svg_textAltQuality_summary_cantTell',
-                hintKey: 'a11ycore_svg_textAltQuality_hint_cantTell',
+                summaryKey: 'svg_textAltQuality_summary_cantTell',
+                hintKey: 'svg_textAltQuality_hint_cantTell',
                 params: { element: 'svg' }
             },
             data: {

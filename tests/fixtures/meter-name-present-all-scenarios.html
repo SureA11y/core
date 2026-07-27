@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>a11ycore-meter-name-present — scenario fixture</title>
+  <title>meter-name-present — scenario fixture</title>
   <style>
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
     h1 { font-size: 20px; margin: 0 0 16px; }
@@ -14,13 +14,13 @@
   </style>
 </head>
 <body>
-  <h1>Scenario fixture: <code>a11ycore-meter-name-present</code> (role="meter" must have an accessible name)</h1>
+  <h1>Scenario fixture: <code>meter-name-present</code> (role="meter" must have an accessible name)</h1>
 
   <p class="note">
     Each target element has a stable <code>id</code> of the form <code>meter_case_NN</code>.
     Mechanism priority: aria-label &gt; aria-labelledby &gt; title. role="meter" is
     name-from-author-only per WAI-ARIA — it does NOT support name-from-content at all
-    (verified against the reference engine's own aria-meter-name check).
+    (verified against a widely-used reference engine's own aria-meter-name check).
   </p>
 
   <h2>A. Named (eligible)</h2>

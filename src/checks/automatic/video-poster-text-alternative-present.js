@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-video-poster-text-alternative-present
+ * @check video-poster-text-alternative-present
  * @atomic true
  * @summary Accessible <video> elements with a poster must provide a text alternative
  * @standard WCAG 2.2
@@ -23,15 +23,15 @@
  *   accepted either.
  */
 
-const id = 'a11ycore-video-poster-text-alternative-present';
+const id = 'video-poster-text-alternative-present';
 
 const meta = {
   title: '<video> poster must have a text alternative',
   description:
     'Checks that <video> elements with a poster image provide a text alternative (accessible name).',
   i18n: {
-    titleKey: 'a11ycore_videoPoster_textAltPresent_title',
-    descriptionKey: 'a11ycore_videoPoster_textAltPresent_description'
+    titleKey: 'videoPoster_textAltPresent_title',
+    descriptionKey: 'videoPoster_textAltPresent_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag111', 'media', 'video', 'atomic', 'automatic'],
@@ -167,8 +167,8 @@ function runInPage(ctx) {
       summary: 'Missing text alternative for <video> poster.',
       hint: 'Provide an accessible name (e.g., aria-label/aria-labelledby) for the poster image.',
       i18n: {
-        summaryKey: 'a11ycore_videoPoster_textAltPresent_summary_fail',
-        hintKey: 'a11ycore_videoPoster_textAltPresent_hint_fail',
+        summaryKey: 'videoPoster_textAltPresent_summary_fail',
+        hintKey: 'videoPoster_textAltPresent_hint_fail',
         params: { element: 'video' }
       },
       data: {

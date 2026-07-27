@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-input-image-alt-decorative
+ * @check input-image-alt-decorative
  * @atomic true
  * @summary Manual review: text alternative appropriateness (WCAG 1.1.1)
  * @standard WCAG 2.2
@@ -11,14 +11,14 @@
  *   Human review is required to confirm that the provided text alternative is accurate and appropriate.
  */
 
-const id = "a11ycore-input-image-alt-decorative";
+const id = "input-image-alt-decorative";
 
 const meta = {
   title: "<input type=\"image\"> with alt=\"\" must be appropriate (manual review)",
   description: "Flags <input type=\"image\"> elements with empty alt for human review (usually not appropriate for functional controls).",
   i18n: {
-    titleKey: "a11ycore_inputImage_altDecorative_title",
-    descriptionKey: "a11ycore_inputImage_altDecorative_description"
+    titleKey: "inputImage_altDecorative_title",
+    descriptionKey: "inputImage_altDecorative_description"
   },
   helpUrl: null,
   tags: ["wcag2a", "wcag111", "forms", "images", "manual", "atomic"],
@@ -117,8 +117,8 @@ function runInPage(ctx) {
             summary: 'Review <input type="image"> with alt="".',
             hint: 'This control is typically functional. Confirm it has an equivalent accessible name elsewhere, or provide meaningful alt text.',
             i18n: {
-                summaryKey: 'a11ycore_inputImage_altDecorative_summary_cantTell',
-                hintKey: 'a11ycore_inputImage_altDecorative_hint_cantTell',
+                summaryKey: 'inputImage_altDecorative_summary_cantTell',
+                hintKey: 'inputImage_altDecorative_hint_cantTell',
                 params: { element: 'input[type=image]' }
             },
             data: {

@@ -1,14 +1,14 @@
 'use strict';
 
-const id = 'a11ycore-contrast-computable';
+const id = 'contrast-computable';
 
 const meta = {
     title: 'Color contrast is computable for rendered text',
     description:
         'Determines whether sufficient information is available to compute WCAG color contrast for visible text (e.g., no gradients/images/blend modes that make background indeterminate).',
     i18n: {
-        titleKey: 'a11ycore_contrastComputable_title',
-        descriptionKey: 'a11ycore_contrastComputable_description'
+        titleKey: 'contrastComputable_title',
+        descriptionKey: 'contrastComputable_description'
     },
     helpUrl: null,
     tags: [
@@ -88,24 +88,24 @@ function runInPage(ctx) {
 
             // Match test contract: choose a specific summaryKey per computability blocker.
             // Fall back to the generic notComputable key.
-            let summaryKey = 'a11ycore_contrastComputable_cantTell_notComputable';
+            let summaryKey = 'contrastComputable_cantTell_notComputable';
             if (rc === 'BACKGROUND_IMAGE_OR_GRADIENT') {
                 const t =
                     extraDetails && typeof extraDetails === 'object'
                         ? String(extraDetails.backgroundFillType || '')
                         : '';
 
-                if (t === 'image') summaryKey = 'a11ycore_contrastComputable_cantTell_bgImage';
-                else if (t === 'gradient') summaryKey = 'a11ycore_contrastComputable_cantTell_bgGradient';
-                else if (t === 'imageAndGradient') summaryKey = 'a11ycore_contrastComputable_cantTell_bgImageAndGradient';
-                else summaryKey = 'a11ycore_contrastComputable_cantTell_bgImageOrGradient';
-            } else if (rc === 'MIX_BLEND_MODE') summaryKey = 'a11ycore_contrastComputable_cantTell_mixBlendMode';
+                if (t === 'image') summaryKey = 'contrastComputable_cantTell_bgImage';
+                else if (t === 'gradient') summaryKey = 'contrastComputable_cantTell_bgGradient';
+                else if (t === 'imageAndGradient') summaryKey = 'contrastComputable_cantTell_bgImageAndGradient';
+                else summaryKey = 'contrastComputable_cantTell_bgImageOrGradient';
+            } else if (rc === 'MIX_BLEND_MODE') summaryKey = 'contrastComputable_cantTell_mixBlendMode';
             else if (rc === 'BACKGROUND_FILTER_OR_BACKDROP_FILTER') {
                 const bp = extraDetails && typeof extraDetails === 'object' ? String(extraDetails.blockerProperty || '') : '';
-                if (bp === 'filter') summaryKey = 'a11ycore_contrastComputable_cantTell_filter';
-                else if (bp === 'backdrop-filter') summaryKey = 'a11ycore_contrastComputable_cantTell_backdropFilter';
-                else summaryKey = 'a11ycore_contrastComputable_cantTell_filterOrBackdropFilter';
-            } else if (rc === 'BACKGROUND_NOT_OPAQUE_AT_ROOT') summaryKey = 'a11ycore_contrastComputable_cantTell_rootNotOpaque';
+                if (bp === 'filter') summaryKey = 'contrastComputable_cantTell_filter';
+                else if (bp === 'backdrop-filter') summaryKey = 'contrastComputable_cantTell_backdropFilter';
+                else summaryKey = 'contrastComputable_cantTell_filterOrBackdropFilter';
+            } else if (rc === 'BACKGROUND_NOT_OPAQUE_AT_ROOT') summaryKey = 'contrastComputable_cantTell_rootNotOpaque';
 
             const details =
                 Object.assign(
@@ -216,7 +216,7 @@ function runInPage(ctx) {
                     continue;
                 }
 
-                // 2) Background resolution (CSS-only), strict vs referenceEngineCompat
+                // 2) Background resolution (CSS-only), strict vs. reference-engine-compatible mode
                 let bg = __elBgCache.get(el);
                 if (!bg) {
                     // 2a) Fast-path: if the element itself paints an opaque background-color and opacity is 1,
@@ -313,7 +313,7 @@ function runInPage(ctx) {
                         hint: '',
                         html: '',
                         i18n: {
-                            summaryKey: 'a11ycore_contrastComputable_cantTell_engineFailure',
+                            summaryKey: 'contrastComputable_cantTell_engineFailure',
                             hintKey: '',
                             params: {reasonCode: 'ENGINE_EXCEPTION'}
                         },
@@ -357,7 +357,7 @@ function runInPage(ctx) {
                 hint: '',
                 html: '',
                 i18n: {
-                    summaryKey: 'a11ycore_contrastComputable_pass_allComputable',
+                    summaryKey: 'contrastComputable_pass_allComputable',
                     hintKey: '',
                     params: {
                         eligibleTextCount: String(eligibleTextCount)

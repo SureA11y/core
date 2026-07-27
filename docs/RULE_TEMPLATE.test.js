@@ -25,7 +25,7 @@ test('<kebab-id>: no applicable elements => notApplicable', () => {
   // const result2 = runa11yCoreOnHtml(html);
   // assert.deepStrictEqual(result2, result);
 
-  assertRule(result, 'a11ycore-<kebab-id>', 'notApplicable', {
+  assertRule(result, '<kebab-id>', 'notApplicable', {
     minOccurrences: 0,
     maxOccurrences: 0
   });
@@ -40,7 +40,7 @@ test('<kebab-id>: failing case => fail with 1+ occurrences', () => {
 
   const result = runa11yCoreOnHtml(html);
 
-  assertRule(result, 'a11ycore-<kebab-id>', 'fail', {
+  assertRule(result, '<kebab-id>', 'fail', {
     minOccurrences: 1
   });
 });
@@ -54,7 +54,7 @@ test('<kebab-id>: passing case => pass', () => {
 
   const result = runa11yCoreOnHtml(html);
 
-  assertRule(result, 'a11ycore-<kebab-id>', 'pass', {
+  assertRule(result, '<kebab-id>', 'pass', {
     minOccurrences: 0,
     maxOccurrences: 0
   });
@@ -71,7 +71,7 @@ test('<kebab-id>: manual judgment required => cantTell with 1+ occurrences', () 
 
   const result = runa11yCoreOnHtml(html);
 
-  assertRule(result, 'a11ycore-<kebab-id>', 'cantTell', {
+  assertRule(result, '<kebab-id>', 'cantTell', {
     minOccurrences: 1
   });
 });

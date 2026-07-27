@@ -1,13 +1,13 @@
 'use strict';
 
-const id = 'a11ycore-menuitem-name-present';
+const id = 'menuitem-name-present';
 
 const meta = {
   title: 'Menu items have an accessible name',
   description: 'Checks that menu items (role="menuitem*", including checkbox/radio variants) expose a non-empty accessible name.',
   i18n: {
-    titleKey: 'a11ycore_menuitemNamePresent_title',
-    descriptionKey: 'a11ycore_menuitemNamePresent_description'
+    titleKey: 'menuitemNamePresent_title',
+    descriptionKey: 'menuitemNamePresent_description'
   },
   helpUrl: null,
   tags: ['wcag2a','wcag412','navigation','atomic','automatic','name','menuitem'],
@@ -177,8 +177,8 @@ function runInPage(ctx) {
       summary: 'This menu item has no accessible name.',
       hint: 'Provide visible text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.',
       i18n: {
-        summaryKey: 'a11ycore_menuitemNamePresent_summary_fail',
-        hintKey: 'a11ycore_menuitemNamePresent_hint_fail',
+        summaryKey: 'menuitemNamePresent_summary_fail',
+        hintKey: 'menuitemNamePresent_hint_fail',
         params: { role }
       },
       data: {

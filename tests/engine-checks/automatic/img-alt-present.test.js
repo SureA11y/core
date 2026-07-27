@@ -8,7 +8,7 @@ const path = require('node:path');
 const { assertRule } = require('../../helpers/assertRule.js');
 const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 
-const RULE_ID = 'a11ycore-img-alt-present';
+const RULE_ID = 'img-alt-present';
 
 function hasOccurrenceForId(rule, id) {
     return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
@@ -63,7 +63,7 @@ test(`${RULE_ID}: role=presentation but focusable is NOT excluded and fails if a
     assert.ok(hasOccurrenceForId(rule, 'pres_focus'));
 });
 
-test(`${RULE_ID}: pass when alt is entirely absent but a non-empty title attribute is present (found on a real site — AliExpress's homepage logo, 2026-07-23: <img title="..."> with no alt attribute at all is a real, valid HTML-AAM text-alternative fallback, also accepted by the reference engine's own image-alt rule via its non-empty-title check)`, () => {
+test(`${RULE_ID}: pass when alt is entirely absent but a non-empty title attribute is present (found on a real site — AliExpress's homepage logo, 2026-07-23: <img title="..."> with no alt attribute at all is a real, valid HTML-AAM text-alternative fallback, also accepted by a reference engine's own image-alt rule via its non-empty-title check)`, () => {
     const html = `<!doctype html><html><body>
     <img id="title_only" src="x.png" title="Company logo">
   </body></html>`;

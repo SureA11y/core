@@ -4,7 +4,7 @@
 // See docs/ai-assisted-explanations.design.md. Never required by
 // scripts/build-core.js, never inlined into src/core.js, never runs inside
 // runInPage -- this file is plain Node code a consumer requires directly
-// (e.g. require('a11y-core/src/explain')).
+// (e.g. require('surea11y/src/explain')).
 
 const { buildExplainGroups } = require('./group');
 
@@ -94,7 +94,7 @@ async function explain(result, options = {}) {
     );
   }
   if (!result || !Array.isArray(result.checksResults)) {
-    throw new TypeError('explain(result, options): result must be a finished a11y-core scan result (missing checksResults)');
+    throw new TypeError('explain(result, options): result must be a finished surea11y scan result (missing checksResults)');
   }
 
   const augmented = cloneForExplain(result);

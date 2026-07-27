@@ -16,9 +16,10 @@ function helpersFor(html) {
 
 // buildStructuralPath is a more robust element-identity mechanism than a CSS
 // selector string alone (survives some DOM changes a selector wouldn't --
-// e.g. an id/class rename), mirroring scripts/cross-engine/structural-path.js's
-// algorithm exactly (see dom-helpers.js's own comment for why that's a
-// necessary duplication rather than a shared require).
+// e.g. an id/class rename), mirroring the structural-path algorithm used by
+// this project's separately-maintained cross-engine diffing tool exactly
+// (see dom-helpers.js's own comment for why that's a necessary duplication
+// rather than a shared require).
 
 test('buildStructuralPath: computes the sibling-index path from documentElement down to the element', () => {
   const { helpers, document } = helpersFor(`<!doctype html><html><body>
@@ -66,7 +67,7 @@ test('buildStructuralPath: returns null when neither a node nor a resolvable sel
 test(`engine integration: every fail/cantTell occurrence carries a structuralPath alongside selector/html`, () => {
   const html = `<!doctype html><html><body><div><section><img src="x.png"></section></div></body></html>`;
   const result = runa11yCoreOnHtml(html, {});
-  const rule = result.checksResults.find((r) => r.ruleId === 'a11ycore-img-alt-present');
+  const rule = result.checksResults.find((r) => r.ruleId === 'img-alt-present');
 
   assert.strictEqual(rule.outcome, 'fail');
   assert.strictEqual(rule.occurrences.length, 1);

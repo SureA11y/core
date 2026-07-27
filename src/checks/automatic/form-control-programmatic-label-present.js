@@ -2,7 +2,7 @@
 
 /**
  * Optimized, regression-safe rewrite of:
- * a11ycore-form-control-programmatic-label-present
+ * form-control-programmatic-label-present
  *
  * Goals:
  * - Preserve semantics, schema, determinism, and no-throw behavior.
@@ -26,15 +26,15 @@
  * wcag-facets.js already had matching facet ids under those SCs.
  */
 
-const id = 'a11ycore-form-control-programmatic-label-present';
+const id = 'form-control-programmatic-label-present';
 
 const meta = {
   title: 'Form controls must have a programmatic label',
   description:
     'Checks that form controls have a programmatic label via <label>, aria-label, aria-labelledby, title, or placeholder.',
   i18n: {
-    titleKey: 'a11ycore_formControl_programmaticLabelPresent_title',
-    descriptionKey: 'a11ycore_formControl_programmaticLabelPresent_description'
+    titleKey: 'formControl_programmaticLabelPresent_title',
+    descriptionKey: 'formControl_programmaticLabelPresent_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag131', 'wcag332', 'wcag412', 'forms', 'labels', 'atomic', 'automatic'],
@@ -356,8 +356,8 @@ function runInPage(ctx) {
       summary: 'Form control is missing a programmatic label.',
       hint: 'Provide a <label> association, aria-label, aria-labelledby, title, or placeholder.',
       i18n: {
-        summaryKey: 'a11ycore_formControl_programmaticLabelPresent_summary_fail',
-        hintKey: 'a11ycore_formControl_programmaticLabelPresent_hint_fail',
+        summaryKey: 'formControl_programmaticLabelPresent_summary_fail',
+        hintKey: 'formControl_programmaticLabelPresent_hint_fail',
         params: { element: (el.tagName || '').toLowerCase() }
       },
       data: {

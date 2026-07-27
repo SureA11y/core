@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-area-alt-quality
+ * @check area-alt-quality
  * @atomic true
  * @summary Manual review: text alternative appropriateness (WCAG 1.1.1)
  * @standard WCAG 2.2
@@ -11,14 +11,14 @@
  *   Human review is required to confirm that the provided text alternative is accurate and appropriate.
  */
 
-const id = "a11ycore-area-alt-quality";
+const id = "area-alt-quality";
 
 const meta = {
   title: "<area> alt text must be appropriate (manual review)",
   description: "Flags <area> elements with non-empty alt text for human review of appropriateness.",
   i18n: {
-    titleKey: "a11ycore_area_altQuality_title",
-    descriptionKey: "a11ycore_area_altQuality_description"
+    titleKey: "area_altQuality_title",
+    descriptionKey: "area_altQuality_description"
   },
   helpUrl: null,
   tags: ["wcag2a", "wcag111", "nontext", "images", "imagemap", "manual", "atomic"],
@@ -177,8 +177,8 @@ if (isAccTreeEligible) {
             summary: 'Review alt text on <area> for accuracy and appropriateness.',
             hint: 'Ensure the alt text identifies the destination/action of the image map area in context.',
             i18n: {
-                summaryKey: 'a11ycore_area_altQuality_summary_cantTell',
-                hintKey: 'a11ycore_area_altQuality_hint_cantTell',
+                summaryKey: 'area_altQuality_summary_cantTell',
+                hintKey: 'area_altQuality_hint_cantTell',
                 params: { element: (el.tagName || '').toLowerCase() }
             },
             data: {

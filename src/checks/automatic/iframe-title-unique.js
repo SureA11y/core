@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-iframe-title-unique
+ * @check iframe-title-unique
  * @atomic true
  * @summary <iframe>/<frame> title attributes must be unique among frames
  * @standard WCAG 2.2
@@ -14,23 +14,23 @@
  *   attribute value — a duplicate title prevents assistive technology
  *   users from telling frames apart when scanning by name.
  * @implementation-notes
- * - Distinct, atomic decision from a11ycore-iframe-name-present (presence):
+ * - Distinct, atomic decision from iframe-name-present (presence):
  *   a frame can have a non-empty title while still failing uniqueness.
  * - Compares the title ATTRIBUTE specifically, not the full computed
  *   accessible name (aria-label could legitimately differ in wording even
- *   when title happens to collide) — matches the reference engine's frame-title-unique.
+ *   when title happens to collide) — matches a widely-used reference engine's frame-title-unique.
  * - Not gated on isAccTreeEligible: a duplicate title is a static markup
  *   property independent of the frame's current visibility.
  */
 
-const id = 'a11ycore-iframe-title-unique';
+const id = 'iframe-title-unique';
 
 const meta = {
   title: 'Frame titles must be unique',
   description: 'Checks that no two <iframe>/<frame> elements in scope share the same title attribute value.',
   i18n: {
-    titleKey: 'a11ycore_iframeTitleUnique_title',
-    descriptionKey: 'a11ycore_iframeTitleUnique_description'
+    titleKey: 'iframeTitleUnique_title',
+    descriptionKey: 'iframeTitleUnique_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag412', 'structure', 'atomic', 'automatic', 'name', 'iframe'],
@@ -87,8 +87,8 @@ function runInPage(ctx) {
         summary: 'This frame’s title is not unique among the frames on this page.',
         hint: 'Give each frame a distinct title describing its specific content or purpose.',
         i18n: {
-          summaryKey: 'a11ycore_iframeTitleUnique_summary_fail',
-          hintKey: 'a11ycore_iframeTitleUnique_hint_fail',
+          summaryKey: 'iframeTitleUnique_summary_fail',
+          hintKey: 'iframeTitleUnique_hint_fail',
           params: { element: tag, title }
         },
         data: {

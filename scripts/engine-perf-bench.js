@@ -452,7 +452,7 @@ function main() {
 if (require.main === module) {
   main();
 } else {
-  // Loaded as a module (e.g. by the comparison benchmark script) rather than run
+  // Loaded as a module (e.g. by an external reference-engine comparison bench) rather than run
   // directly: expose the fixture generator instead of executing the CLI.
   module.exports = { makeBigHtml };
 }

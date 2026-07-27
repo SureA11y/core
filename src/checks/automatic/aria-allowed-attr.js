@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-aria-allowed-attr
+ * @check aria-allowed-attr
  * @atomic true
  * @summary aria-* attributes present must be permitted for the element's role
  * @standard WCAG 2.2
@@ -20,12 +20,12 @@
  *   role-specific; scope kept deliberately narrow to avoid false positives
  *   on implicit-role ARIA-in-HTML edge cases not modeled here.
  * - SUPPORTED_ATTRS_BY_ROLE widened 2026-07-21 (7 new roles), cross-checked
- *   against the reference engine 4.12.1's own per-role `allowedAttrs` table AND
- *   verified each addition is an unambiguous, well-established ARIA fact
- *   rather than a blind import — the reference engine's own table has ~68 roles, far more
- *   than were reconciled here; this pass deliberately took only the
+ *   against a widely-used reference engine's own per-role `allowedAttrs`
+ *   table AND verified each addition is an unambiguous, well-established ARIA
+ *   fact rather than a blind import — that engine's own table has ~68 roles,
+ *   far more than were reconciled here; this pass deliberately took only the
  *   additions with clear, specific supported attributes (not just the
- *   near-universal, thin `aria-expanded` the reference engine allows on most roles), and
+ *   near-universal, thin `aria-expanded` that engine allows on most roles), and
  *   left the rest for a dedicated future full-reconciliation pass rather
  *   than rushing all 68 through at lower confidence:
  *   - `searchbox`: identical to the already-covered `textbox` (ARIA
@@ -50,14 +50,14 @@
  * - Not gated on isAccTreeEligible: this is a static markup property.
  */
 
-const id = 'a11ycore-aria-allowed-attr';
+const id = 'aria-allowed-attr';
 
 const meta = {
   title: 'aria-* attributes must be permitted for the element’s role',
   description: 'Checks that every recognized aria-* attribute present on an element with an explicit role is either globally supported or supported by that role.',
   i18n: {
-    titleKey: 'a11ycore_ariaAllowedAttr_title',
-    descriptionKey: 'a11ycore_ariaAllowedAttr_description'
+    titleKey: 'ariaAllowedAttr_title',
+    descriptionKey: 'ariaAllowedAttr_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag412', 'aria', 'structure', 'atomic', 'automatic'],
@@ -161,7 +161,7 @@ function runInPage(ctx) {
     for (let i = 0; i < attrs.length; i++) {
       const name = String(attrs[i].name || '').toLowerCase();
       if (name.slice(0, 5) !== 'aria-') continue;
-      if (!ariaHelpers.isValidAriaAttrName(name)) continue; // a11ycore-aria-valid-attr's concern
+      if (!ariaHelpers.isValidAriaAttrName(name)) continue; // aria-valid-attr's concern
 
       applicableCount += 1;
 
@@ -183,8 +183,8 @@ function runInPage(ctx) {
         summary: 'This ARIA attribute is not permitted for this element’s role.',
         hint: 'Remove this attribute, or use a role that supports it.',
         i18n: {
-          summaryKey: 'a11ycore_ariaAllowedAttr_summary_fail',
-          hintKey: 'a11ycore_ariaAllowedAttr_hint_fail',
+          summaryKey: 'ariaAllowedAttr_summary_fail',
+          hintKey: 'ariaAllowedAttr_hint_fail',
           params: { attr: name, role }
         },
         data: {

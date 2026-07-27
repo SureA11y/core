@@ -8,7 +8,7 @@ const path = require('node:path');
 const { assertRule } = require('../../helpers/assertRule.js');
 const { runa11yCoreOnHtml, createDom, runa11yCoreOnDom } = require('../../helpers/runDomRulesOnHtml.js');
 
-const RULE_ID = 'a11ycore-aria-required-children';
+const RULE_ID = 'aria-required-children';
 
 function hasOccurrenceForId(rule, id) {
   return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
@@ -90,6 +90,31 @@ test(`${RULE_ID}: fail when a shadow-DOM container has a <slot> but nothing assi
   assert.ok(hasOccurrenceForId(rule, 'list'));
 });
 
+test(`${RULE_ID}: notApplicable when the container has the hidden attribute (not currently exposed to the accessibility tree)`, () => {
+  const html = `<!doctype html><html><body><div id="a" role="menu" hidden></div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: notApplicable when the container is inside a closed <dialog> (display:none via the UA stylesheet)`, () => {
+  const html = `<!doctype html><html><body><dialog><ul id="a" role="list"></ul></dialog></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: notApplicable when the container has aria-busy="true" (WAI-ARIA's own required-owned-elements escape hatch)`, () => {
+  const html = `<!doctype html><html><body><ul id="a" role="list" aria-busy="true"></ul></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: aria-busy="false" does NOT exempt an empty container (only the exact string "true" counts)`, () => {
+  const html = `<!doctype html><html><body><ul id="a" role="list" aria-busy="false"></ul></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+});
+
 test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><body><div id="a" role="listbox"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
@@ -105,7 +130,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-required-children-all-sc
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
 
   assert.ok(hasOccurrenceForId(rule, 'arc_case_04'));
-  for (const id of ['arc_case_01', 'arc_case_02', 'arc_case_03', 'arc_case_05']) {
+  for (const id of ['arc_case_01', 'arc_case_02', 'arc_case_03', 'arc_case_05', 'arc_case_06', 'arc_case_07', 'arc_case_08']) {
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
 });

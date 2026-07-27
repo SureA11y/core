@@ -8,7 +8,7 @@ const path = require('node:path');
 const { assertRule } = require('../../helpers/assertRule.js');
 const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 
-const RULE_ID = 'a11ycore-aria-allowed-attr';
+const RULE_ID = 'aria-allowed-attr';
 
 function hasOccurrenceForId(rule, id) {
   return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
@@ -62,7 +62,7 @@ test(`${RULE_ID}: reports one occurrence per disallowed attribute on the same el
   assert.deepStrictEqual(attrs, ['aria-valuemin', 'aria-valuenow']);
 });
 
-test(`${RULE_ID}: pass when aria-modal is present on role="dialog" (widened 2026-07-21 — verified against the reference engine's own allowedAttrs table)`, () => {
+test(`${RULE_ID}: pass when aria-modal is present on role="dialog" (widened 2026-07-21 — verified against a reference engine's own allowedAttrs table)`, () => {
   const html = `<!doctype html><html><body><div id="a" role="dialog" aria-modal="true"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });

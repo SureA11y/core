@@ -8,7 +8,7 @@ const path = require('node:path');
 const { assertRule } = require('../../helpers/assertRule.js');
 const { runa11yCoreOnHtml, createDom, runa11yCoreOnDom } = require('../../helpers/runDomRulesOnHtml.js');
 
-const RULE_ID = 'a11ycore-landmark-unique';
+const RULE_ID = 'landmark-unique';
 
 function hasOccurrenceForId(rule, id) {
   return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
@@ -72,7 +72,7 @@ test(`${RULE_ID}: cantTell when two unnamed <aside> elements are direct children
   assert.ok(hasOccurrenceForId(rule, 'b'));
 });
 
-test(`${RULE_ID}: notApplicable when a NAMED <aside> is nested inside real sectioning content (an <article>) — the reference engine's own aside() function only suppresses when both nested AND unnamed`, () => {
+test(`${RULE_ID}: notApplicable when a NAMED <aside> is nested inside real sectioning content (an <article>) — a reference engine's own aside() function only suppresses when both nested AND unnamed`, () => {
   const html = `<!doctype html><html><body>
     <article><aside aria-label="Related" id="a">Related content</aside></article>
     <aside aria-label="Related" id="b">Duplicate name, top-level</aside>
@@ -83,7 +83,7 @@ test(`${RULE_ID}: notApplicable when a NAMED <aside> is nested inside real secti
   assert.ok(hasOccurrenceForId(rule, 'b'));
 });
 
-test(`${RULE_ID}: notApplicable when the only "duplicate" of a named nav is display:none (a responsive desktop/mobile pattern) — matches the reference engine's own visibility gate (found on real sites, BuzzFeed/Kraken/weather.com)`, () => {
+test(`${RULE_ID}: notApplicable when the only "duplicate" of a named nav is display:none (a responsive desktop/mobile pattern) — matches a reference engine's own visibility gate (found on real sites, BuzzFeed/Kraken/weather.com)`, () => {
   const html = `<!doctype html><html><body>
     <nav aria-label="Hot Topics" id="a">Visible</nav>
     <nav aria-label="Hot Topics" id="b" style="display:none">Hidden mobile copy</nav>

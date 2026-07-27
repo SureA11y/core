@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-bypass-blocks-present
+ * @check bypass-blocks-present
  * @atomic true
  * @summary The page must provide at least one mechanism to bypass repeated blocks of content
  * @standard WCAG 2.2
@@ -9,7 +9,7 @@
  * @applicability
  *   Always applicable to any HTML document with a <body> element —
  *   "bypass blocks" is a whole-page concern, matching
- *   a11ycore-aria-hidden-body / a11ycore-page-title-present's pattern of
+ *   aria-hidden-body / page-title-present's pattern of
  *   evaluating the document directly rather than a scoped root.
  * @expectation
  *   At least one of the following recognized WCAG 2.4.1 techniques is
@@ -27,7 +27,7 @@
  *       mechanism (e.g. a screen reader's "jump by heading" command).
  * @implementation-notes
  * - This rule intentionally checks presence, not position, for the
- *   same-page-anchor condition (b): the reference engine's real bypass algorithm is
+ *   same-page-anchor condition (b): a widely-used reference engine's real bypass algorithm is
  *   heuristic (see ROADMAP.md's Tier 1a note on why this rule was
  *   deferred from the rest of that batch), and getting DOM-order /
  *   keyboard-focus-order positioning exactly right without introducing
@@ -45,14 +45,14 @@
  *   bypass mechanism.
  */
 
-const id = 'a11ycore-bypass-blocks-present';
+const id = 'bypass-blocks-present';
 
 const meta = {
   title: 'Page must provide a way to bypass repeated blocks',
   description: 'Checks that the page has at least one recognized WCAG 2.4.1 bypass-blocks mechanism: a main landmark, a working same-page anchor link, or a heading.',
   i18n: {
-    titleKey: 'a11ycore_bypassBlocksPresent_title',
-    descriptionKey: 'a11ycore_bypassBlocksPresent_description'
+    titleKey: 'bypassBlocksPresent_title',
+    descriptionKey: 'bypassBlocksPresent_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag241', 'navigation', 'atomic', 'automatic'],
@@ -146,8 +146,8 @@ function runInPage(ctx) {
     summary: 'This page has no recognized way to bypass repeated blocks of content.',
     hint: 'Add a main landmark (<main> or role="main"), a working "skip to content" link, or heading elements that assistive technology can use to jump past repeated content.',
     i18n: {
-      summaryKey: 'a11ycore_bypassBlocksPresent_summary_fail',
-      hintKey: 'a11ycore_bypassBlocksPresent_hint_fail',
+      summaryKey: 'bypassBlocksPresent_summary_fail',
+      hintKey: 'bypassBlocksPresent_hint_fail',
       params: {}
     },
     data: {

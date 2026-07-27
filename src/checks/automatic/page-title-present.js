@@ -1,13 +1,13 @@
 'use strict';
 
-const id = 'a11ycore-page-title-present';
+const id = 'page-title-present';
 
 const meta = {
   title: 'Page title is present and non-empty',
   description: 'Checks that the document has a non-empty <title> element (WCAG 2.2 SC 2.4.2).',
   i18n: {
-    titleKey: 'a11ycore_pageTitlePresent_title',
-    descriptionKey: 'a11ycore_pageTitlePresent_description'
+    titleKey: 'pageTitlePresent_title',
+    descriptionKey: 'pageTitlePresent_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag242', 'titles', 'atomic', 'navigation', 'automatic'],
@@ -51,9 +51,9 @@ function runInPage(ctx) {
       hint: 'Provide a descriptive, non-empty <title> that identifies the page topic or purpose.',
       i18n: {
         summaryKey: missingTitleEl
-            ? 'a11ycore_pageTitlePresent_summary_fail_missing'
-            : 'a11ycore_pageTitlePresent_summary_fail_empty',
-        hintKey: 'a11ycore_pageTitlePresent_hint_fail',
+            ? 'pageTitlePresent_summary_fail_missing'
+            : 'pageTitlePresent_summary_fail_empty',
+        hintKey: 'pageTitlePresent_hint_fail',
         params: {}
       },
       data: {

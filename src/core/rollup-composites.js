@@ -15,7 +15,7 @@ function inferScanLevelFromRunOnly(runOnly) {
     const tags = runOnly && Array.isArray(runOnly.tags) ? runOnly.tags : null;
     if (!tags || tags.length === 0) return null;
 
-    // Common the reference engine-style tags; adjust if your app uses different ones.
+    // Common reference-engine-style tags; adjust if your app uses different ones.
     if (tags.includes('wcag2aaa') || tags.includes('wcag22aaa')) return 'AAA';
     if (tags.includes('wcag2aa') || tags.includes('wcag22aa')) return 'AA';
     if (tags.includes('wcag2a') || tags.includes('wcag22a')) return 'A';

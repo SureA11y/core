@@ -22,21 +22,23 @@ This is the exact shape of the object returned by `runDomRulesInPage(...)` / `ru
   perfStats: object | null,
   contextSelector: string | string[] | null,
   checksResults: CheckResult[],
-  rulesResults: CompositeResult[]
+  rulesResults: CompositeResult[],
+  overriddenBuiltinIds: string[]
 }
 ```
 
 | Field | Meaning |
 |---|---|
-| `engine.tag` | The rule-ID prefix, currently `"a11ycore"`. Every `ruleId` in the result starts with `<tag>-`. |
+| `engine.tag` | The engine's own identity tag, currently `"a11ycore"`. Every rule (built-in or custom) carries it in `meta.tags` — rule `ruleId`s themselves are bare (no prefix). |
 | `engine.schemaVersion` | The result-schema version (`"1.0.0"`). Bump-worthy if this document's shape ever changes incompatibly — pin to it if you're parsing output programmatically. |
 | `url` | The `pageUrl` argument you passed in, or `document.location.href` if you passed `null`/omitted it, or `null` if neither is available. |
 | `title` | `document.title` at scan time, or `null`. |
-| `timestamp` | **Not auto-generated.** Only set if you pass `engineOptions.timestamp` as a non-empty string — the engine has no built-in clock (deterministic-by-design; see [`docs/TEST_OUTCOME_STABILITY.md`](./TEST_OUTCOME_STABILITY.md)). If you want a scan timestamp in the result, supply it yourself. |
+| `timestamp` | **Not auto-generated.** Only set if you pass `engineOptions.timestamp` as a non-empty string — the engine has no built-in clock (deterministic-by-design). If you want a scan timestamp in the result, supply it yourself. |
 | `perfStats` | `null` unless `engineOptions.perfStats: true`. Internal timing/counters — shape not covered by this document, treat as debug-only. |
 | `contextSelector` | The (trimmed) `contextSelector` argument you passed — a string, an array of strings (multi-region scanning, see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md)), or `null` if none/empty. |
 | `checksResults` | One entry per **atomic rule** that ran (every rule not filtered out by `runOnly` — see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md)). **Every loaded rule produces an entry, even ones that outcome `notApplicable`** — this is not a "violations only" list. |
 | `rulesResults` | One entry per **composite (WCAG-SC rollup) rule** that ran — see [Composite result](#a-composite-result-rulesresultsi) and [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md). Empty array if no composite matched the current `runOnly`/tag filter. |
+| `overriddenBuiltinIds` | Rule ids where an `engineOptions.customRules` entry shared its `id` with a built-in rule, so the custom implementation replaced the built-in one for this scan (see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md)). Always an array; empty when no collision occurred. Also logged via `console.warn` at scan time, since a same-named custom rule is as likely to be an accidental collision as a deliberate override. |
 
 ## Cross-frame result (`runa11yCoreAcrossFrames`)
 
@@ -54,7 +56,7 @@ This is the exact shape of the object returned by `runDomRulesInPage(...)` / `ru
 
 - `topFrame` is exactly the [top-level result](#top-level-result) shape, for the frame the function was called in.
 - `frames` has one entry per direct child `<iframe>`/`<frame>` in the scanned scope. A reachable child (one that called `a11yCoreEnableFrameResponder()`) contributes its own complete `{ url, topFrame, frames }` — including *its own* nested `frames`, recursively, since a further-nested grandchild is only reachable through its immediate parent. An unreachable child (the common case for most third-party embeds — no cooperating responder, or it timed out) contributes `{ url, error }` instead, and does not abort the rest of the scan.
-- This is a **tree, not a flat list** — a deliberate difference from the `a11y-core-playwright` binding's `.frames(true)`, which *can* flatten because Playwright's `page.frames()` already gives every frame regardless of nesting depth; a `postMessage` relay has no such global view, so nesting is expressed structurally instead.
+- This is a **tree, not a flat list** — a deliberate difference from the `surea11y-playwright` binding's `.frames(true)`, which *can* flatten because Playwright's `page.frames()` already gives every frame regardless of nesting depth; a `postMessage` relay has no such global view, so nesting is expressed structurally instead.
 
 ## A check result (`checksResults[i]`)
 
@@ -95,7 +97,7 @@ Notes:
 
 - **`outcome` vs `outcomeNormalized`**: identical except `notApplicable` becomes `"inapplicable"` in `outcomeNormalized`. Both are provided so you can match either your own vocabulary or the engine's internal one.
 - **`type: "manual"` rules can never report `outcome: "fail"`.** If a manual rule's own logic would have said `fail`, the engine coerces it to `cantTell` and appends an explanatory note to `error` — this is enforced centrally (`policy.coerceManualFailToCantTell`, on by default under the `a11y` policy contract; see [`POLICY.md`](./POLICY.md)), not something each rule has to remember. `fail` is reserved for deterministic, high-confidence, `type: "automatic"` findings only.
-- **`meta.normativeMappings`** is how a check result ties back to a WCAG Success Criterion — `[]` for rules with no formal WCAG mapping (the reference engine calls these "Best Practices"; this engine calls them advisory `type: "manual"` rules). See [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md) for how these roll up.
+- **`meta.normativeMappings`** is how a check result ties back to a WCAG Success Criterion — `[]` for rules with no formal WCAG mapping (other engines call these "Best Practices"; this engine calls them advisory `type: "manual"` rules). See [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md) for how these roll up.
 - **`error`**: only present if the rule implementation threw an uncaught exception, or if the manual-fail coercion above fired. A thrown rule always surfaces as `outcome: "cantTell"` with `occurrences: []` and `error` set to the exception message — the engine never lets one broken rule crash the whole scan.
 - **`engineOptions`** on each result is the *resolved* options object (after locale/contrast defaults were applied), not literally what you passed in — useful for confirming what a given rule actually saw, especially the resolved `locale` and `contrast.mode`/`contrast.rootCanvasFallback`.
 
@@ -131,11 +133,11 @@ Only present when `outcome` is `fail` or `cantTell` (a `pass`/`notApplicable` re
 
 ## A composite result (`rulesResults[i]`)
 
-Composites roll multiple atomic rules up to one WCAG Success Criterion (e.g. `a11ycore-wcag-1.1.1-non-text-content` rolls up 22 atomic rules). Shape is the same envelope as a check result, with composite-specific `data.details`:
+Composites roll multiple atomic rules up to one WCAG Success Criterion (e.g. `wcag-1.1.1-non-text-content` rolls up 22 atomic rules). Shape is the same envelope as a check result, with composite-specific `data.details`:
 
 ```ts
 {
-  ruleId: string,              // e.g. "a11ycore-wcag-1.1.1-non-text-content"
+  ruleId: string,              // e.g. "wcag-1.1.1-non-text-content"
   outcome: "pass" | "fail" | "cantTell" | "notApplicable",
   severity, confidence, type, title, description, meta, engineOptions, schemaVersion,  // same as a check result
   occurrences: [],              // always empty — composites are rollups, not element-level findings
@@ -161,7 +163,7 @@ Rollup precedence (deterministic, in this order): **any contributor `fail` → c
 | `cantTell` | Requires human judgment — either genuinely ambiguous, or a `manual` rule's advisory finding. | Yes |
 | `notApplicable` | The rule found no elements it applies to on this page/scope. | Yes |
 
-`fail` is intentionally the narrowest, highest-bar outcome in this engine — see the mission's non-negotiables in `../ROADMAP.md` (`fail` is reserved for deterministic, normative violations; chasing coverage must never dilute this).
+`fail` is intentionally the narrowest, highest-bar outcome in this engine: reserved for deterministic, normative violations; chasing rule coverage must never dilute this.
 
 ## Severity and confidence values
 
@@ -177,7 +179,7 @@ const result = runDomRulesInPage(
   'https://example.test/',
   null,
   {},
-  { includeRuleIds: ['a11ycore-img-alt-present', 'a11ycore-button-name-present'] }
+  { includeRuleIds: ['img-alt-present', 'button-name-present'] }
 );
 ```
 
@@ -191,7 +193,7 @@ const result = runDomRulesInPage(
   "contextSelector": null,
   "checksResults": [
     {
-      "ruleId": "a11ycore-button-name-present",
+      "ruleId": "button-name-present",
       "outcome": "fail",
       "severity": "serious",
       "confidence": "high",
@@ -211,7 +213,7 @@ const result = runDomRulesInPage(
       ]
     },
     {
-      "ruleId": "a11ycore-img-alt-present",
+      "ruleId": "img-alt-present",
       "outcome": "fail",
       "severity": "serious",
       "confidence": "high",
@@ -227,7 +229,8 @@ const result = runDomRulesInPage(
       ]
     }
   ],
-  "rulesResults": []
+  "rulesResults": [],
+  "overriddenBuiltinIds": []
 }
 ```
 

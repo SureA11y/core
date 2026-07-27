@@ -20,7 +20,7 @@ function makeOccurrence(overrides = {}) {
 
 function makeCheckResult(overrides = {}) {
   return {
-    ruleId: 'a11ycore-img-alt-present',
+    ruleId: 'img-alt-present',
     outcome: 'fail',
     outcomeNormalized: 'fail',
     severity: 'serious',
@@ -30,7 +30,7 @@ function makeCheckResult(overrides = {}) {
     description: 'Checks that <img> elements provide an alt attribute.',
     i18n: null,
     meta: {
-      ruleId: 'a11ycore-img-alt-present',
+      ruleId: 'img-alt-present',
       normativeMappings: [{ standard: 'WCAG', version: '2.2', requirement: '1.1.1', title: 'Non-text Content', conformanceLevel: 'A' }]
     },
     engineOptions: {},

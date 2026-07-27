@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>a11ycore-aria-prohibited-children — scenario fixture</title>
+  <title>aria-prohibited-children — scenario fixture</title>
   <style>
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
     h1 { font-size: 20px; margin: 0 0 16px; }
@@ -14,7 +14,7 @@
   </style>
 </head>
 <body>
-  <h1>Scenario fixture: <code>a11ycore-aria-prohibited-children</code> (container roles must not own a disallowed child role)</h1>
+  <h1>Scenario fixture: <code>aria-prohibited-children</code> (container roles must not own a disallowed child role)</h1>
 
   <p class="note">
     Each target has a stable <code>id</code> of the form <code>apc_case_NN</code>.
@@ -89,7 +89,7 @@
   </div>
 
   <div class="case" id="case_10">
-    <div class="case-title">10 — FAIL: a roleless-but-focusable (tabindex) child is a real accessible-tree node, not a transparent wrapper (widened 2026-07-21 — matches the reference engine's own getOwnedRoles exactly)</div>
+    <div class="case-title">10 — FAIL: a roleless-but-focusable (tabindex) child is a real accessible-tree node, not a transparent wrapper (widened 2026-07-21 — matches a widely-used reference engine's own getOwnedRoles exactly)</div>
     <ul role="menubar" id="apc_case_10">
       <li role="menuitem">File</li>
       <li id="apc_case_10_child" tabindex="0">Roleless but focusable</li>
@@ -109,6 +109,14 @@
   <div class="case" id="case_09">
     <div class="case-title">09 — NEUTRAL: role has no required-owned entry</div>
     <div role="button" id="apc_case_09"></div>
+  </div>
+
+  <div class="case" id="case_13">
+    <div class="case-title">13 — NEUTRAL: container has the `hidden` attribute, so it (and its would-be-disallowed child) is not currently exposed to the accessibility tree</div>
+    <ul role="menubar" hidden id="apc_case_13">
+      <li role="menuitem">File</li>
+      <li role="region">Disallowed, but hidden</li>
+    </ul>
   </div>
 
   <p class="note">End of fixture.</p>

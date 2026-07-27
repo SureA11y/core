@@ -1,13 +1,13 @@
 'use strict';
 
-const id = 'a11ycore-link-name-present';
+const id = 'link-name-present';
 
 const meta = {
   title: 'Links have an accessible name',
   description: 'Checks that links expose a non-empty accessible name.',
   i18n: {
-    titleKey: 'a11ycore_linkNamePresent_title',
-    descriptionKey: 'a11ycore_linkNamePresent_description'
+    titleKey: 'linkNamePresent_title',
+    descriptionKey: 'linkNamePresent_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag412', 'navigation', 'atomic', 'automatic', 'links', 'name'],
@@ -82,8 +82,8 @@ function runInPage(ctx) {
 
         // Validator requires these keys to exist in the English dictionary
         i18n: {
-          summaryKey: 'a11ycore_linkNamePresent_summary_fail',
-          hintKey: 'a11ycore_linkNamePresent_hint_fail',
+          summaryKey: 'linkNamePresent_summary_fail',
+          hintKey: 'linkNamePresent_hint_fail',
           params: { element: tag }
         },
 

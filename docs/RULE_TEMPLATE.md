@@ -7,12 +7,12 @@
 ```js
 'use strict';
 
-const id = 'a11ycore-your-rule-id';
+const id = 'your-rule-id';
 
 const meta = {
   title: 'Human title',
   description: 'English fallback description.',
-  i18n: { titleKey: 'a11ycore_yourRule_title', descriptionKey: 'a11ycore_yourRule_description' },
+  i18n: { titleKey: 'yourRule_title', descriptionKey: 'yourRule_description' },
   helpUrl: null,
   tags: ['wcag2a', 'wcag111', 'atomic', 'automatic'],
   wcagSc: ['1.1.1'],
@@ -52,8 +52,8 @@ function runInPage(ctx) {
         summary: 'Fallback summary.',
         hint: 'Fallback hint.',
         i18n: {
-          summaryKey: 'a11ycore_yourRule_summary_fail',
-          hintKey: 'a11ycore_yourRule_hint_fail',
+          summaryKey: 'yourRule_summary_fail',
+          hintKey: 'yourRule_hint_fail',
           params: { element: (el.tagName || '').toLowerCase() }
         },
         data: { visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] } }

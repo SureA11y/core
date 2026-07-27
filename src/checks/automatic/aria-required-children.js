@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-aria-required-children
+ * @check aria-required-children
  * @atomic true
  * @summary Container roles that require specific owned elements must contain at least one
  * @standard WCAG 2.2
@@ -28,8 +28,23 @@
  *   the requirement); the full subtree is scanned without excluding nested
  *   containers with their own differing role, favoring simplicity — this
  *   can only under-report (recall), never over-report (fail integrity).
- * - Not gated on isAccTreeEligible: this is a static markup structural
- *   property.
+ * - Gated on isAccTreeEligible for the container itself: unlike this
+ *   file's sibling attribute/role-validity checks (e.g. aria-roles-valid),
+ *   "does this container currently have a required child" is not a fact
+ *   that stays fixed once written — it is routinely filled in by the same
+ *   script/interaction that reveals the container (a closed flyout menu
+ *   or <dialog> populated on open). Flagging it while the container isn't
+ *   currently exposed to the accessibility tree is a false positive; such
+ *   a container is skipped entirely (does not count toward applicability),
+ *   matching the pattern already used by this engine's accessible-name
+ *   rules (svg-text-alternative-present, iframe-name-present, ...).
+ * - Also honors the WAI-ARIA spec's own explicit escape hatch: "When a
+ *   widget is missing required owned elements due to script execution or
+ *   loading, authors MUST mark a containing element with aria-busy equal
+ *   to true." A container carrying aria-busy="true" is skipped the same
+ *   way — only the exact string "true" counts (absent/"false" do not),
+ *   matching a widely-used reference engine's own aria-required-children
+ *   behavior.
  * - Descendant search tries a fast native querySelectorAll(CANDIDATE_
  *   SELECTOR) first (covers the light-DOM-only common case with no added
  *   cost); only when that finds nothing AND the container has a <slot>
@@ -42,14 +57,14 @@
  *   that yet.
  */
 
-const id = 'a11ycore-aria-required-children';
+const id = 'aria-required-children';
 
 const meta = {
   title: 'Container roles must own at least one required child role',
   description: 'Checks that container roles with a documented "required owned elements" entry (list, listbox, menu, radiogroup, table, grid, tablist, tree, row, ...) contain at least one descendant or aria-owns-referenced element with an acceptable owned role.',
   i18n: {
-    titleKey: 'a11ycore_ariaRequiredChildren_title',
-    descriptionKey: 'a11ycore_ariaRequiredChildren_description'
+    titleKey: 'ariaRequiredChildren_title',
+    descriptionKey: 'ariaRequiredChildren_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag412', 'aria', 'structure', 'atomic', 'automatic'],
@@ -71,6 +86,23 @@ function runInPage(ctx) {
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
   if (!ariaHelpers) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+
+  function isEligibleAcc(el) {
+    const fn = helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+    if (!fn) return true;
+    try {
+      const r = fn(el, ctx);
+      if (typeof r === 'boolean') return r;
+      return !!(r && r.eligible);
+    } catch {
+      return true;
+    }
+  }
+
+  function isMarkedBusy(el) {
+    const v = el.getAttribute('aria-busy');
+    return v != null && String(v).trim().toLowerCase() === 'true';
   }
 
   // Candidate selector for descendant scanning: explicit role attributes,
@@ -140,6 +172,9 @@ function runInPage(ctx) {
 
     const requiredOwned = ariaHelpers.getRequiredOwnedRoles(role);
     if (!requiredOwned || !requiredOwned.length) continue;
+
+    if (!isEligibleAcc(el)) continue; // not currently exposed to the accessibility tree
+    if (isMarkedBusy(el)) continue; // author has signaled transient incompleteness per WAI-ARIA
 
     applicableCount += 1;
 
@@ -217,8 +252,8 @@ function runInPage(ctx) {
       summary: 'This container role has no owned child with a required role.',
       hint: 'Add a descendant (or aria-owns-referenced element) with one of the required owned roles.',
       i18n: {
-        summaryKey: 'a11ycore_ariaRequiredChildren_summary_fail',
-        hintKey: 'a11ycore_ariaRequiredChildren_hint_fail',
+        summaryKey: 'ariaRequiredChildren_summary_fail',
+        hintKey: 'ariaRequiredChildren_hint_fail',
         params: { role, requiredRoles: requiredOwned.join(', ') }
       },
       data: {

@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-img-alt-present
+ * @check img-alt-present
  * @atomic true
  * @summary Accessible <img> elements must have an alt attribute
  * @standard WCAG 2.2
@@ -16,14 +16,14 @@
  *   The alt attribute may be empty (alt="").
  */
 
-const id = 'a11ycore-img-alt-present';
+const id = 'img-alt-present';
 
 const meta = {
   title: '<img> must have an alt attribute',
   description: 'Checks that <img> elements provide an alt attribute to support a text alternative mechanism.',
   i18n: {
-    titleKey: 'a11ycore_img_altPresent_title',
-    descriptionKey: 'a11ycore_img_altPresent_description'
+    titleKey: 'img_altPresent_title',
+    descriptionKey: 'img_altPresent_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag111', 'nontext', 'images', 'atomic', 'automatic'],
@@ -180,7 +180,7 @@ function runInPage(ctx) {
     // source for <img> once alt is entirely absent (not merely alt="",
     // which explicitly marks decorative and stays excluded from this
     // branch since hasAlt already short-circuited above) -- confirmed
-    // against the reference engine's own image-alt rule, which lists a non-empty
+    // against a widely-used reference engine's own image-alt rule, which lists a non-empty
     // title as one of its "any" satisfying conditions alongside has-alt/
     // aria-label/aria-labelledby. Found via a real page (AliExpress's
     // logo, 2026-07-23): <img src="..." title="...">, no alt attribute
@@ -194,8 +194,8 @@ function runInPage(ctx) {
       summary: 'Missing alt attribute on <img>.',
       hint: 'Add an alt attribute (use alt="" only for decorative images).',
       i18n: {
-        summaryKey: 'a11ycore_img_altPresent_summary_fail',
-        hintKey: 'a11ycore_img_altPresent_hint_fail',
+        summaryKey: 'img_altPresent_summary_fail',
+        hintKey: 'img_altPresent_hint_fail',
         params: {}
       },
       data: { visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] } }

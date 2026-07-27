@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-meta-refresh-no-exceptions
+ * @check meta-refresh-no-exceptions
  * @atomic true
  * @summary At the AAA level, a meta refresh must not be used at all
  * @standard WCAG 2.2
@@ -11,7 +11,7 @@
  *   content attribute.
  * @expectation
  *   No meta refresh is present, regardless of delay. This is the
- *   stricter AAA-level counterpart of a11ycore-meta-refresh-timing-absent
+ *   stricter AAA-level counterpart of meta-refresh-timing-absent
  *   (the A-level rule, which only forbids a positive delay and allows
  *   delay="0" as an immediate redirect). At AAA, WCAG 2.2.4
  *   (Interruptions) and 3.2.5 (Change on Request) require that automatic
@@ -19,25 +19,25 @@
  *   happen only at the user's request, with no exception for a zero
  *   delay.
  * @implementation-notes
- * - Distinct, atomic decision from a11ycore-meta-refresh-timing-absent:
+ * - Distinct, atomic decision from meta-refresh-timing-absent:
  *   that rule's delay="0" pass case is this rule's fail case.
  * - A <meta> nested inside <noscript> is excluded: it only ever takes
  *   effect when scripting is disabled, which is never the case for any
  *   context capable of running accessibility tooling in the first place
  *   (confirmed 2026-07-21 via a real-world false positive: Slack's
  *   homepage has a <noscript><meta http-equiv="refresh" content="0;
- *   URL=/?nojsmode=1"></noscript> JS-disabled fallback — the reference engine's own
- *   same-named check correctly doesn't flag it either).
+ *   URL=/?nojsmode=1"></noscript> JS-disabled fallback — a widely-used
+ *   reference engine's own same-named check correctly doesn't flag it either).
  */
 
-const id = 'a11ycore-meta-refresh-no-exceptions';
+const id = 'meta-refresh-no-exceptions';
 
 const meta = {
   title: 'Page must not use a meta refresh at all (AAA)',
   description: 'Checks that <meta http-equiv="refresh"> is not present at all, regardless of delay — the stricter AAA-level counterpart of the A-level positive-delay-only check.',
   i18n: {
-    titleKey: 'a11ycore_metaRefreshNoExceptions_title',
-    descriptionKey: 'a11ycore_metaRefreshNoExceptions_description'
+    titleKey: 'metaRefreshNoExceptions_title',
+    descriptionKey: 'metaRefreshNoExceptions_description'
   },
   helpUrl: null,
   tags: ['wcag2aaa', 'wcag224', 'wcag325', 'structure', 'atomic', 'automatic'],
@@ -83,8 +83,8 @@ function runInPage(ctx) {
       summary: 'This page uses a meta refresh, which is an automatic context change not initiated by the user.',
       hint: 'Remove the meta refresh; trigger the redirect/refresh only in response to a user action instead.',
       i18n: {
-        summaryKey: 'a11ycore_metaRefreshNoExceptions_summary_fail',
-        hintKey: 'a11ycore_metaRefreshNoExceptions_hint_fail',
+        summaryKey: 'metaRefreshNoExceptions_summary_fail',
+        hintKey: 'metaRefreshNoExceptions_hint_fail',
         params: {}
       },
       data: {

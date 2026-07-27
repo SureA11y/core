@@ -1,10 +1,10 @@
 'use strict';
 
 /**
- * @check a11ycore-heading-order
+ * @check heading-order
  * @atomic true
  * @summary Heading levels must not skip a level going deeper
- * @standard the reference engine "Best Practices" (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (a widely-used reference engine's classification; no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
  * @applicability
  *   Applies whenever the page contains two or more heading elements
  *   (native <h1>-<h6>, or explicit role="heading" with aria-level —
@@ -18,7 +18,7 @@
  *   point is always fine.
  * @implementation-notes
  * - Not WCAG-normative — authored as an advisory, cantTell-capped
- *   `type: 'manual'` rule; see a11ycore-landmark-banner-is-top-level's
+ *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent.
  * - Tracks the highest level reached so far (not just the immediately
  *   previous heading's level), so a sequence like h1, h2, h3, h2, h4 is
@@ -26,14 +26,14 @@
  *   reached, even though the immediately preceding heading was h2).
  */
 
-const id = 'a11ycore-heading-order';
+const id = 'heading-order';
 
 const meta = {
   title: 'Heading levels must not skip a level',
   description: 'Checks that heading levels increase by at most one at a time in document order.',
   i18n: {
-    titleKey: 'a11ycore_headingOrder_title',
-    descriptionKey: 'a11ycore_headingOrder_description'
+    titleKey: 'headingOrder_title',
+    descriptionKey: 'headingOrder_description'
   },
   helpUrl: null,
   tags: ['best-practice', 'headings', 'structure', 'atomic', 'manual'],
@@ -108,8 +108,8 @@ function runInPage(ctx) {
         summary: `This heading jumps from level ${highestSoFar} to level ${level}, skipping a level.`,
         hint: 'Use consecutive heading levels (do not skip a level when going deeper) so the document outline stays predictable.',
         i18n: {
-          summaryKey: 'a11ycore_headingOrder_summary_cantTell',
-          hintKey: 'a11ycore_headingOrder_hint_cantTell',
+          summaryKey: 'headingOrder_summary_cantTell',
+          hintKey: 'headingOrder_hint_cantTell',
           params: { fromLevel: String(highestSoFar), toLevel: String(level) }
         },
         data: {

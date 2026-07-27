@@ -1,13 +1,13 @@
 'use strict';
 
-const id = 'a11ycore-binary-control-name-present';
+const id = 'binary-control-name-present';
 
 const meta = {
   title: 'Binary controls have an accessible name',
   description: 'Checks that checkbox, radio, and switch controls expose a non-empty accessible name.',
   i18n: {
-    titleKey: 'a11ycore_binaryControlNamePresent_title',
-    descriptionKey: 'a11ycore_binaryControlNamePresent_description'
+    titleKey: 'binaryControlNamePresent_title',
+    descriptionKey: 'binaryControlNamePresent_description'
   },
   helpUrl: null,
   tags: ['wcag2a','wcag412','forms','atomic','automatic','name','checkbox','radio','switch'],
@@ -266,8 +266,8 @@ function runInPage(ctx) {
       summary: 'This control has no accessible name.',
       hint: 'Provide a label, aria-label, aria-labelledby, or other accessible-name mechanism so assistive technologies can identify the control.',
       i18n: {
-        summaryKey: 'a11ycore_binaryControlNamePresent_summary_fail',
-        hintKey: 'a11ycore_binaryControlNamePresent_hint_fail',
+        summaryKey: 'binaryControlNamePresent_summary_fail',
+        hintKey: 'binaryControlNamePresent_hint_fail',
         params: { controlType }
       },
       data: {

@@ -8,7 +8,7 @@ const path = require('node:path');
 const { assertRule } = require('../../helpers/assertRule.js');
 const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 
-const RULE_ID = 'a11ycore-aria-hidden-body';
+const RULE_ID = 'aria-hidden-body';
 
 test(`${RULE_ID}: pass when body has no aria-hidden attribute`, () => {
   const html = `<!doctype html><html><body><p>content</p></body></html>`;

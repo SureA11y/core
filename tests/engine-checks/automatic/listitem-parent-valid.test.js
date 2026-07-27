@@ -8,7 +8,7 @@ const path = require('node:path');
 const { assertRule } = require('../../helpers/assertRule.js');
 const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 
-const RULE_ID = 'a11ycore-listitem-parent-valid';
+const RULE_ID = 'listitem-parent-valid';
 
 function hasOccurrenceForId(rule, id) {
   return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
@@ -45,7 +45,7 @@ test(`${RULE_ID}: fail when li's parent is a <ul> with an explicit role="menu" (
   assert.ok(hasOccurrenceForId(rule, 'a'));
 });
 
-test(`${RULE_ID}: pass when li's parent is a <ul> with an explicit role="presentation" (list semantics deliberately suppressed, matches the reference engine's own listitem check)`, () => {
+test(`${RULE_ID}: pass when li's parent is a <ul> with an explicit role="presentation" (list semantics deliberately suppressed, matches a reference engine's own listitem check)`, () => {
   const html = `<!doctype html><html><body><ul role="presentation"><li id="a">item</li></ul></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });

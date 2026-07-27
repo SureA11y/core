@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-deprecated-elements-not-used
+ * @check deprecated-elements-not-used
  * @atomic true
  * @summary Obsolete non-stoppable elements must not be used
  * @standard WCAG 2.2
@@ -14,7 +14,7 @@
  * @expectation
  *   Neither element is present. Since their movement can never be paused,
  *   stopped, or hidden by the user, presence is itself the violation — this
- *   rule has no partial-pass case, matching the reference engine's `blink`/`marquee`
+ *   rule has no partial-pass case, matching a widely-used reference engine's `blink`/`marquee`
  *   rules (which report only when the element is found).
  * @implementation-notes
  * - Not gated on isAccTreeEligible: presence in markup is itself the
@@ -23,14 +23,14 @@
  *   change, so hiding it today does not remove the underlying defect).
  */
 
-const id = 'a11ycore-deprecated-elements-not-used';
+const id = 'deprecated-elements-not-used';
 
 const meta = {
   title: 'Obsolete non-stoppable elements (<blink>, <marquee>) must not be used',
   description: 'Checks that deprecated, non-standard HTML elements whose blinking/scrolling content cannot be paused, stopped, or hidden by the user (<blink>, <marquee>) are not present.',
   i18n: {
-    titleKey: 'a11ycore_deprecatedElements_title',
-    descriptionKey: 'a11ycore_deprecatedElements_description'
+    titleKey: 'deprecatedElements_title',
+    descriptionKey: 'deprecatedElements_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag222', 'structure', 'atomic', 'automatic'],
@@ -69,8 +69,8 @@ function runInPage(ctx) {
       summary: 'This element’s content cannot be paused, stopped, or hidden by the user.',
       hint: 'Remove this element; use static content, or an animation with a user-facing pause/stop control, instead.',
       i18n: {
-        summaryKey: 'a11ycore_deprecatedElements_summary_fail',
-        hintKey: 'a11ycore_deprecatedElements_hint_fail',
+        summaryKey: 'deprecatedElements_summary_fail',
+        hintKey: 'deprecatedElements_hint_fail',
         params: { element: tag }
       },
       data: {

@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-scrollable-region-focusable
+ * @check scrollable-region-focusable
  * @atomic true
  * @summary A scrollable region with no focusable content should itself be keyboard-focusable
  * @standard WCAG 2.2
@@ -11,7 +11,7 @@
  *   (div, section, article, aside, main, nav, pre, table, blockquote, ul,
  *   ol, textarea) with computed `overflow-x`/`overflow-y` of `auto` or
  *   `scroll` — not every element on the page, to keep this deterministic
- *   and performant (same style of scope-down as `a11ycore-region`).
+ *   and performant (same style of scope-down as `region`).
  * @expectation
  *   A region whose CSS declares it may scroll (`auto`/`scroll`) should be
  *   reachable by keyboard: either it already contains a focusable
@@ -26,7 +26,7 @@
  *   overflowing, which would be a false positive if treated as a hard
  *   `fail`. For that reason this is authored as `type: 'manual'`
  *   (cantTell-capped, never fail) rather than `automatic` — same class of
- *   layout-dependent gap as `a11ycore-iframe-focusable-content`'s
+ *   layout-dependent gap as `iframe-focusable-content`'s
  *   `contentDocument` limitation.
  * - "Has a focusable descendant" is a presence check (link/button/form
  *   control/`[tabindex]`/`iframe`/`[contenteditable]`), not a full
@@ -34,15 +34,15 @@
  *   deliberate simplification to keep this rule self-contained and fast.
  */
 
-const id = 'a11ycore-scrollable-region-focusable';
+const id = 'scrollable-region-focusable';
 
 const meta = {
   title: 'Scrollable regions with no focusable content should be keyboard-focusable',
   description:
     'Flags elements whose CSS declares overflow:auto/scroll, contain no focusable descendant, and are not themselves keyboard-focusable, for manual review of whether their content actually overflows and needs keyboard scroll access.',
   i18n: {
-    titleKey: 'a11ycore_scrollableRegionFocusable_title',
-    descriptionKey: 'a11ycore_scrollableRegionFocusable_description'
+    titleKey: 'scrollableRegionFocusable_title',
+    descriptionKey: 'scrollableRegionFocusable_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag2aaa', 'wcag211', 'wcag213', 'structure', 'atomic', 'manual'],
@@ -136,8 +136,8 @@ function runInPage(ctx) {
       summary: 'This element declares overflow:auto/scroll, has no focusable descendant, and is not itself keyboard-focusable.',
       hint: 'If this region’s content actually overflows, add tabindex="0" (and a suitable label) so keyboard users can focus it and scroll with the arrow keys.',
       i18n: {
-        summaryKey: 'a11ycore_scrollableRegionFocusable_summary_cantTell',
-        hintKey: 'a11ycore_scrollableRegionFocusable_hint_cantTell',
+        summaryKey: 'scrollableRegionFocusable_summary_cantTell',
+        hintKey: 'scrollableRegionFocusable_hint_cantTell',
         params: { element: tag }
       },
       data: {

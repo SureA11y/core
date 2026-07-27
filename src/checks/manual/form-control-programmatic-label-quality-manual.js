@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-form-control-programmatic-label-quality
+ * @check form-control-programmatic-label-quality
  * @atomic true
  * @summary Form controls should not rely on placeholder or title as the primary label
  * @standard WCAG 2.2
@@ -22,15 +22,15 @@
  *   while relying on placeholder/title; this rule surfaces that risk as cantTell.
  */
 
-const id = 'a11ycore-form-control-programmatic-label-quality';
+const id = 'form-control-programmatic-label-quality';
 
 const meta = {
     title: 'Form controls should not rely on placeholder or title as the primary label',
     description:
         'Flags form controls whose computed accessible name relies on placeholder or title as the primary labeling method. Prefer <label> or aria-labelledby.',
     i18n: {
-        titleKey: 'a11ycore_formControl_programmaticLabelQuality_title',
-        descriptionKey: 'a11ycore_formControl_programmaticLabelQuality_description'
+        titleKey: 'formControl_programmaticLabelQuality_title',
+        descriptionKey: 'formControl_programmaticLabelQuality_description'
     },
     helpUrl: null,
     tags: ['wcag2a', 'wcag412', 'forms', 'labels', 'quality', 'atomic', 'manual'],
@@ -245,8 +245,8 @@ function runInPage(ctx) {
             summary: 'Form control’s primary label is derived from title or placeholder.',
             hint: 'Prefer a persistent <label> or aria-labelledby. Avoid relying on placeholder/title as the primary label.',
             i18n: {
-                summaryKey: 'a11ycore_formControl_programmaticLabelQuality_summary_cantTell',
-                hintKey: 'a11ycore_formControl_programmaticLabelQuality_hint_cantTell',
+                summaryKey: 'formControl_programmaticLabelQuality_summary_cantTell',
+                hintKey: 'formControl_programmaticLabelQuality_hint_cantTell',
                 params: { element: (el.tagName || '').toLowerCase(), method, methodLabel }
             },
             data: {

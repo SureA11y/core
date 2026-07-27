@@ -1,14 +1,14 @@
 'use strict';
 
 /**
- * @check a11ycore-landmark-no-duplicate-banner
+ * @check landmark-no-duplicate-banner
  * @atomic true
  * @summary A page must not have more than one banner landmark
- * @standard the reference engine "Best Practices" (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (a widely-used reference engine's classification; no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
  * @applicability
  *   Applies whenever the page contains at least one banner landmark
  *   (explicit role="banner", or an implicit, non-nested <header> — see
- *   a11ycore-landmark-banner-is-top-level's implementation notes for the
+ *   landmark-banner-is-top-level's implementation notes for the
  *   shared landmark-detection model).
  * @expectation
  *   At most one banner landmark exists on the page. Per WAI-ARIA
@@ -17,12 +17,12 @@
  *   is ambiguous for assistive technology users navigating by landmark.
  * @implementation-notes
  * - Not WCAG-normative — authored as an advisory, cantTell-capped
- *   `type: 'manual'` rule; see a11ycore-landmark-banner-is-top-level's
+ *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent.
  * - Flags every banner instance (not just the "extra" ones) when more
  *   than one exists, since which instance is "correct" is ambiguous.
  * - Only landmarks actually exposed to assistive technology can collide —
- *   matches the reference engine's own `page-no-duplicate` check (confirmed by reading
+ *   matches a widely-used reference engine's own `page-no-duplicate` check (confirmed by reading
  *   its source directly: `query_selector_all_filter_default(..., elm =>
  *   _isVisibleToScreenReaders(elm))`). Without this, a responsive layout
  *   rendering both a visible and a CSS-hidden duplicate `<header>` (found
@@ -31,14 +31,14 @@
  *   actually reachable by AT.
  */
 
-const id = 'a11ycore-landmark-no-duplicate-banner';
+const id = 'landmark-no-duplicate-banner';
 
 const meta = {
   title: 'Page must not have more than one banner landmark',
   description: 'Checks that at most one banner landmark (role="banner" or a non-nested <header>) exists on the page.',
   i18n: {
-    titleKey: 'a11ycore_landmarkNoDuplicateBanner_title',
-    descriptionKey: 'a11ycore_landmarkNoDuplicateBanner_description'
+    titleKey: 'landmarkNoDuplicateBanner_title',
+    descriptionKey: 'landmarkNoDuplicateBanner_description'
   },
   helpUrl: null,
   tags: ['best-practice', 'landmarks', 'structure', 'atomic', 'manual'],
@@ -161,8 +161,8 @@ function runInPage(ctx) {
       summary: 'This page has more than one banner landmark.',
       hint: 'Keep only one banner landmark (header/role="banner") per page.',
       i18n: {
-        summaryKey: 'a11ycore_landmarkNoDuplicateBanner_summary_cantTell',
-        hintKey: 'a11ycore_landmarkNoDuplicateBanner_hint_cantTell',
+        summaryKey: 'landmarkNoDuplicateBanner_summary_cantTell',
+        hintKey: 'landmarkNoDuplicateBanner_hint_cantTell',
         params: { count: String(banners.length) }
       },
       data: {

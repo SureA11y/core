@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>a11ycore-empty-table-header — scenario fixture</title>
+  <title>empty-table-header — scenario fixture</title>
   <style>
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
     h1 { font-size: 20px; margin: 0 0 16px; }
@@ -15,7 +15,7 @@
   </style>
 </head>
 <body>
-  <h1>Scenario fixture: <code>a11ycore-empty-table-header</code></h1>
+  <h1>Scenario fixture: <code>empty-table-header</code></h1>
 
   <div class="case" id="case_01">
     <div class="case-title">01 — NEUTRAL: th with text content</div>
@@ -33,7 +33,7 @@
   </div>
 
   <div class="case" id="case_04">
-    <div class="case-title">04 — CANTTELL: empty div with role="columnheader" — the reference engine's own selector covers ARIA-role headers, not just native &lt;th&gt;, found missing entirely via the cross-engine diff tool 2026-07-23</div>
+    <div class="case-title">04 — CANTTELL: empty div with role="columnheader" — a widely-used reference engine's own selector covers ARIA-role headers, not just native &lt;th&gt;, found missing entirely via the cross-engine diff tool 2026-07-23</div>
     <div role="columnheader" id="eth_case_04"></div>
   </div>
 
@@ -43,7 +43,7 @@
   </div>
 
   <div class="case" id="case_06">
-    <div class="case-title">06 — NEUTRAL: empty th with role="presentation" — no longer meaningfully a header, matches the reference engine's `th:not([role])` exclusion</div>
+    <div class="case-title">06 — NEUTRAL: empty th with role="presentation" — no longer meaningfully a header, matches a widely-used reference engine's `th:not([role])` exclusion</div>
     <table><tr><th id="eth_case_06" role="presentation"></th></tr></table>
   </div>
 

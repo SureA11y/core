@@ -43,7 +43,7 @@ Each rule file is a CommonJS module exporting exactly:
 ```js
 'use strict';
 
-const id = 'a11ycore-some-rule-id';
+const id = 'some-rule-id';
 
 const meta = { /* see Meta Contract */ };
 
@@ -58,19 +58,19 @@ No other exports.
 
 ## 3) Rule ID conventions (repo reality)
 
-IDs are kebab-case and namespaced under `a11ycore-`.
+IDs are kebab-case, bare (no engine prefix).
 
 Common pattern used in this ruleset:
 ```
-a11ycore-<target>-<topic>-<intent>
+<target>-<topic>-<intent>
 ```
 
 Examples observed:
-- `a11ycore-img-alt-present`
-- `a11ycore-img-alt-quality`
-- `a11ycore-img-alt-decorative`
-- `a11ycore-canvas-text-alternative-present`
-- `a11ycore-video-poster-text-alternative-present`
+- `img-alt-present`
+- `img-alt-quality`
+- `img-alt-decorative`
+- `canvas-text-alternative-present`
+- `video-poster-text-alternative-present`
 
 **Manual vs automatic is NOT encoded in the id** in this repo; it is encoded by `meta.type`.
 
@@ -290,8 +290,7 @@ exercised as real pages), not just embedded as strings inside `.test.js` files.
 ### 11.1 The fixture file
 
 - Path: `tests/fixtures/<rule-slug>-all-scenarios.html`, where `<rule-slug>` is the rule
-  id with the `a11ycore-` prefix stripped (e.g. `a11ycore-tab-name-present` →
-  `tab-name-present-all-scenarios.html`).
+  id itself (e.g. `tab-name-present` → `tab-name-present-all-scenarios.html`).
 - Structure: a real HTML page (`<!doctype html>`, `<title>`, minimal inline `<style>`)
   containing numbered scenario blocks, each:
   ```html
@@ -356,7 +355,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/<rule-slug>-all-scenarios.htm
 });
 ```
 
-The file MUST declare `const RULE_ID = 'a11ycore-...'` near the top (the fixture-index
+The file MUST declare `const RULE_ID = '...'` near the top (the fixture-index
 generator discovers a rule's test file and fixture by scanning for that constant —
 tests using only inline string literals won't be picked up; see
 `tests/engine-checks/manual-review.test.js` for the fix applied when this was missed).

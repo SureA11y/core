@@ -8,7 +8,7 @@ const path = require('node:path');
 const { assertRule } = require('../../helpers/assertRule.js');
 const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 
-const RULE_ID = 'a11ycore-aria-prohibited-attr';
+const RULE_ID = 'aria-prohibited-attr';
 
 function hasOccurrenceForId(rule, id) {
   return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
@@ -57,7 +57,7 @@ test(`${RULE_ID}: fail when aria-label is present on role="mark" (widened role, 
   assert.equal(rule.occurrences[0].data.details.role, 'mark');
 });
 
-test(`${RULE_ID}: fail when aria-label is present on role="presentation" (widened 2026-07-21 — verified against the reference engine's own prohibitedAttrs table)`, () => {
+test(`${RULE_ID}: fail when aria-label is present on role="presentation" (widened 2026-07-21 — verified against a reference engine's own prohibitedAttrs table)`, () => {
   const html = `<!doctype html><html><body><div id="a" role="presentation" aria-label="Something"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });

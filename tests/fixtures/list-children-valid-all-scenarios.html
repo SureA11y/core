@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>a11ycore-list-children-valid — scenario fixture</title>
+  <title>list-children-valid — scenario fixture</title>
   <style>
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
     h1 { font-size: 20px; margin: 0 0 16px; }
@@ -14,7 +14,7 @@
   </style>
 </head>
 <body>
-  <h1>Scenario fixture: <code>a11ycore-list-children-valid</code> (&lt;ul&gt;/&lt;ol&gt; must only directly contain &lt;li&gt;)</h1>
+  <h1>Scenario fixture: <code>list-children-valid</code> (&lt;ul&gt;/&lt;ol&gt; must only directly contain &lt;li&gt;)</h1>
 
   <p class="note">
     Each target &lt;ul&gt;/&lt;ol&gt; has a stable <code>id</code> of the form <code>lcv_case_NN</code>.
@@ -76,7 +76,7 @@
   </div>
 
   <div class="case" id="case_12">
-    <div class="case-title">12 — FAIL: ul, an &lt;li role="none"&gt; direct child (an explicit role always wins over the &lt;li&gt; tag — verified against the reference engine's own only-listitems algorithm; found on a real site, Notion's footer nav lists use &lt;li role="none"&gt; to host the list's own visually-hidden label)</div>
+    <div class="case-title">12 — FAIL: ul, an &lt;li role="none"&gt; direct child (an explicit role always wins over the &lt;li&gt; tag — verified against a widely-used reference engine's own only-listitems algorithm; found on a real site, Notion's footer nav lists use &lt;li role="none"&gt; to host the list's own visually-hidden label)</div>
     <ul id="lcv_case_12"><li role="none">Section label</li><li>Mango</li></ul>
   </div>
 

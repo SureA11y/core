@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-meta-viewport-zoom-enabled
+ * @check meta-viewport-zoom-enabled
  * @atomic true
  * @summary <meta name="viewport"> must not disable or cap pinch-zoom below 200%
  * @standard WCAG 2.2
@@ -20,14 +20,14 @@
  *   this engine's no-false-positives policy.
  */
 
-const id = 'a11ycore-meta-viewport-zoom-enabled';
+const id = 'meta-viewport-zoom-enabled';
 
 const meta = {
   title: 'Viewport meta tag must not disable zoom',
   description: 'Checks that <meta name="viewport"> does not set user-scalable=no or maximum-scale below 2 (200%).',
   i18n: {
-    titleKey: 'a11ycore_metaViewportZoomEnabled_title',
-    descriptionKey: 'a11ycore_metaViewportZoomEnabled_description'
+    titleKey: 'metaViewportZoomEnabled_title',
+    descriptionKey: 'metaViewportZoomEnabled_description'
   },
   helpUrl: null,
   tags: ['wcag2aa', 'wcag144', 'structure', 'atomic', 'automatic'],
@@ -96,8 +96,8 @@ function runInPage(ctx) {
       summary: 'This viewport meta tag restricts the user’s ability to zoom.',
       hint: 'Remove user-scalable=no and any maximum-scale below 2 from the viewport meta content.',
       i18n: {
-        summaryKey: 'a11ycore_metaViewportZoomEnabled_summary_fail',
-        hintKey: 'a11ycore_metaViewportZoomEnabled_hint_fail',
+        summaryKey: 'metaViewportZoomEnabled_summary_fail',
+        hintKey: 'metaViewportZoomEnabled_hint_fail',
         params: { reasons: reasons.join(', ') }
       },
       data: {

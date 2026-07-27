@@ -1,10 +1,10 @@
 'use strict';
 
 /**
- * @check a11ycore-table-duplicate-name
+ * @check table-duplicate-name
  * @atomic true
  * @summary A table's caption must not duplicate its summary attribute
- * @standard the reference engine "Best Practices" (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (a widely-used reference engine's classification; no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
  * @applicability
  *   Applies to <table> elements that have both a <caption> with text
  *   content and a (deprecated but still encountered) summary attribute.
@@ -15,21 +15,21 @@
  *   same text twice for one table.
  * @implementation-notes
  * - Not WCAG-normative — authored as an advisory, cantTell-capped
- *   `type: 'manual'` rule; see a11ycore-landmark-banner-is-top-level's
+ *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent.
  * - Narrowly scoped to caption-vs-summary duplication specifically
- *   (matching the reference engine's table-duplicate-name), not a general "table
+ *   (matching a reference engine's table-duplicate-name check), not a general "table
  *   name quality" check.
  */
 
-const id = 'a11ycore-table-duplicate-name';
+const id = 'table-duplicate-name';
 
 const meta = {
   title: 'Table caption must not duplicate its summary attribute',
   description: 'Checks that a <table>\'s <caption> text is not identical to its (deprecated) summary attribute.',
   i18n: {
-    titleKey: 'a11ycore_tableDuplicateName_title',
-    descriptionKey: 'a11ycore_tableDuplicateName_description'
+    titleKey: 'tableDuplicateName_title',
+    descriptionKey: 'tableDuplicateName_description'
   },
   helpUrl: null,
   tags: ['best-practice', 'tables', 'structure', 'atomic', 'manual'],
@@ -77,8 +77,8 @@ function runInPage(ctx) {
       summary: 'This table\'s caption duplicates its summary attribute.',
       hint: 'Remove the redundant summary attribute, or make it provide different information than the caption.',
       i18n: {
-        summaryKey: 'a11ycore_tableDuplicateName_summary_cantTell',
-        hintKey: 'a11ycore_tableDuplicateName_hint_cantTell',
+        summaryKey: 'tableDuplicateName_summary_cantTell',
+        hintKey: 'tableDuplicateName_hint_cantTell',
         params: {}
       },
       data: {

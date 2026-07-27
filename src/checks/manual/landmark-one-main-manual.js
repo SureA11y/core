@@ -1,14 +1,14 @@
 'use strict';
 
 /**
- * @check a11ycore-landmark-one-main
+ * @check landmark-one-main
  * @atomic true
  * @summary The page should have a main landmark
- * @standard the reference engine "Best Practices" (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (a widely-used reference engine's classification; no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
  * @applicability
  *   Always applicable to any HTML document with a <body> element —
  *   "does the page have a main landmark" is a whole-page concern,
- *   matching a11ycore-bypass-blocks-present's pattern of evaluating the
+ *   matching bypass-blocks-present's pattern of evaluating the
  *   document directly.
  * @expectation
  *   At least one main landmark (role="main" or <main>), exposed to
@@ -16,38 +16,39 @@
  *   AT users no landmark to jump straight to for the primary content.
  * @implementation-notes
  * - Not WCAG-normative — authored as an advisory, cantTell-capped
- *   `type: 'manual'` rule; see a11ycore-landmark-banner-is-top-level's
+ *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent.
- * - Presence-only, matching the reference engine's real `landmark-one-main` scope
- *   exactly (confirmed 2026-07-22 by reading `node_modules/the reference engine/its source`
- *   directly: its `page-has-main` check is a plain descendant-exists test,
- *   `has-descendant-evaluate` — it does NOT flag more than one). This
- *   rule previously ALSO flagged "more than one main," which was both a
- *   real scope mismatch against the reference engine (the reference engine ships that as a fully separate
- *   rule, `landmark-no-duplicate-main` / `page-no-duplicate-main`, already
- *   correctly implemented here as `a11ycore-landmark-no-duplicate-main`)
- *   and missing that sibling rule's accessibility-tree visibility filter,
- *   so it double-flagged cases the sibling rule already handles correctly
- *   — found via a real page (2026-07-22, live-DOM corpus): Resy's and
- *   DuckDuckGo's homepages each genuinely have two visible `<main>`
- *   elements, which the reference engine's `landmark-one-main` doesn't flag at all (out of
- *   its scope) but this rule wrongly did, disagreeing with the reference engine for a
+ * - Presence-only, matching a widely-used reference engine's real
+ *   `landmark-one-main` scope exactly (confirmed 2026-07-22 by reading that
+ *   engine's source directly: its `page-has-main` check is a plain
+ *   descendant-exists test, `has-descendant-evaluate` — it does NOT flag
+ *   more than one). This rule previously ALSO flagged "more than one main,"
+ *   which was both a real scope mismatch against that reference engine (it
+ *   ships that as a fully separate rule, `landmark-no-duplicate-main` /
+ *   `page-no-duplicate-main`, already correctly implemented here as
+ *   `landmark-no-duplicate-main`) and missing that sibling rule's
+ *   accessibility-tree visibility filter, so it double-flagged cases the
+ *   sibling rule already handles correctly — found via a real page
+ *   (2026-07-22, live-DOM corpus): Resy's and DuckDuckGo's homepages each
+ *   genuinely have two visible `<main>` elements, which that reference
+ *   engine's `landmark-one-main` doesn't flag at all (out of its scope) but
+ *   this rule wrongly did, disagreeing with it for a
  *   reason that wasn't a real coverage gap on either side — just a
  *   redundant, incorrectly-scoped extra branch here.
  * - Filters candidates through `isAccTreeEligible` (hidden/aria-hidden/
  *   display:none/inert elements don't count as "a main landmark exists"),
- *   matching `a11ycore-landmark-no-duplicate-main`'s own precedent and
- *   the reference engine's own accessibility-tree-scoped matching.
+ *   matching `landmark-no-duplicate-main`'s own precedent and
+ *   that reference engine's own accessibility-tree-scoped matching.
  */
 
-const id = 'a11ycore-landmark-one-main';
+const id = 'landmark-one-main';
 
 const meta = {
   title: 'Page should have a main landmark',
   description: 'Checks that the page has at least one main landmark (role="main" or <main>).',
   i18n: {
-    titleKey: 'a11ycore_landmarkOneMain_title',
-    descriptionKey: 'a11ycore_landmarkOneMain_description'
+    titleKey: 'landmarkOneMain_title',
+    descriptionKey: 'landmarkOneMain_description'
   },
   helpUrl: null,
   tags: ['best-practice', 'landmarks', 'structure', 'atomic', 'manual'],
@@ -136,8 +137,8 @@ function runInPage(ctx) {
       summary: 'This page has no main landmark.',
       hint: 'Add a main landmark (<main> or role="main") around the page\'s primary content.',
       i18n: {
-        summaryKey: 'a11ycore_landmarkOneMain_summary_cantTell_missing',
-        hintKey: 'a11ycore_landmarkOneMain_hint_cantTell_missing',
+        summaryKey: 'landmarkOneMain_summary_cantTell_missing',
+        hintKey: 'landmarkOneMain_hint_cantTell_missing',
         params: {}
       },
       data: {

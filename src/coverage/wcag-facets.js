@@ -13,7 +13,7 @@
  * • are NOT enforced
  * • MUST NOT affect rule outcomes or policy
  *
- * ALIGNMENT WITH a11y-core
+ * ALIGNMENT WITH surea11y
  * -----------------------
  * • Referenced from rule meta via meta.coverage.facetsBySc
  * • Stable identifiers once published

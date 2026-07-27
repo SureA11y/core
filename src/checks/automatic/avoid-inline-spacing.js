@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-avoid-inline-spacing
+ * @check avoid-inline-spacing
  * @atomic true
  * @summary Inline style must not force text-spacing properties with !important
  * @standard WCAG 2.2
@@ -19,18 +19,18 @@
  * @implementation-notes
  * - Static text-based parsing of the style attribute string (regex for
  *   the three property names followed by `!important`), not computed
- *   style — matches the property list the reference engine's avoid-inline-spacing
+ *   style — matches the property list a widely-used reference engine's avoid-inline-spacing
  *   rule checks.
  */
 
-const id = 'a11ycore-avoid-inline-spacing';
+const id = 'avoid-inline-spacing';
 
 const meta = {
   title: 'Inline style must not force text spacing with !important',
   description: 'Checks that inline style does not set line-height, letter-spacing, or word-spacing with !important, which blocks user text-spacing overrides.',
   i18n: {
-    titleKey: 'a11ycore_avoidInlineSpacing_title',
-    descriptionKey: 'a11ycore_avoidInlineSpacing_description'
+    titleKey: 'avoidInlineSpacing_title',
+    descriptionKey: 'avoidInlineSpacing_description'
   },
   helpUrl: null,
   tags: ['wcag21aa', 'wcag1412', 'structure', 'atomic', 'automatic'],
@@ -85,8 +85,8 @@ function runInPage(ctx) {
       summary: `This element's inline style forces ${flagged.join(', ')} with !important, blocking user text-spacing overrides.`,
       hint: 'Remove !important from line-height/letter-spacing/word-spacing in inline styles so users can override text spacing.',
       i18n: {
-        summaryKey: 'a11ycore_avoidInlineSpacing_summary_fail',
-        hintKey: 'a11ycore_avoidInlineSpacing_hint_fail',
+        summaryKey: 'avoidInlineSpacing_summary_fail',
+        hintKey: 'avoidInlineSpacing_hint_fail',
         params: { element: tag, properties: flagged.join(', ') }
       },
       data: {

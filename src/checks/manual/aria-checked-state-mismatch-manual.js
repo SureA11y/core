@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-aria-checked-state-mismatch
+ * @check aria-checked-state-mismatch
  * @atomic true
  * @summary A native checkbox/radio's aria-checked should match its actual checked/indeterminate state
  * @standard WCAG 2.2
@@ -15,13 +15,13 @@
  *   it explicitly it should agree with the element's actual state —
  *   otherwise assistive technology is told something different from what
  *   a sighted user perceives. This is the same static/live-DOM check
- *   the reference engine's own `aria-conditional-attr` rule performs (verified
- *   directly against its `ariaConditionalCheckboxAttr`/
+ *   a widely-used reference engine's own `aria-conditional-attr` rule
+ *   performs (verified directly against its `ariaConditionalCheckboxAttr`/
  *   `ariaConditionalRadioAttr` source).
  * @implementation-notes
  * - Deliberately authored as `type: 'manual'` (cantTell-capped, never
- *   fail), unlike most ARIA-validity rules in this file family. the reference engine
- *   runs as a script injected into the LIVE, already-hydrated DOM, so a
+ *   fail), unlike most ARIA-validity rules in this file family. That
+ *   reference engine runs as a script injected into the LIVE, already-hydrated DOM, so a
  *   mismatch it reports is a genuine, current-state fact. This engine
  *   analyzes STATIC markup only (no script execution) — `.checked`
  *   reliably reflects the static `checked` attribute for freshly-parsed
@@ -36,24 +36,24 @@
  *   same signal without the false-positive risk of asserting it as a
  *   confirmed violation.
  * - `aria-checked="mixed"` is only meaningful for checkboxes (radio
- *   buttons have no indeterminate state) — matches the reference engine's own
- *   `normalizeAriaChecked` (radio) vs `normalizeAriaChecked2` (checkbox)
+ *   buttons have no indeterminate state) — matches that reference engine's
+ *   own `normalizeAriaChecked` (radio) vs `normalizeAriaChecked2` (checkbox)
  *   split, verified directly against its source.
  * - Any `aria-checked` value other than "true"/"false"/"mixed" (checkbox)
  *   or "true"/"false" (radio) is treated as equivalent to "false" — also
- *   matches the reference engine's own normalization exactly.
+ *   matches that reference engine's own normalization exactly.
  * - Not gated on isAccTreeEligible: whether the accessible state matches
  *   is a markup-correctness property independent of current visibility.
  */
 
-const id = 'a11ycore-aria-checked-state-mismatch';
+const id = 'aria-checked-state-mismatch';
 
 const meta = {
   title: 'Native checkbox/radio aria-checked should match its actual state',
   description: 'Flags a native <input type="checkbox">/<input type="radio"> whose explicit aria-checked value disagrees with its actual checked/indeterminate state, for manual review.',
   i18n: {
-    titleKey: 'a11ycore_ariaCheckedStateMismatch_title',
-    descriptionKey: 'a11ycore_ariaCheckedStateMismatch_description'
+    titleKey: 'ariaCheckedStateMismatch_title',
+    descriptionKey: 'ariaCheckedStateMismatch_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag412', 'aria', 'forms', 'atomic', 'manual'],
@@ -119,8 +119,8 @@ function runInPage(ctx) {
       summary: 'This element’s aria-checked value does not match its actual checked/indeterminate state.',
       hint: 'Set aria-checked to match the element’s real state, or remove it — a native checkbox/radio already exposes this state without it.',
       i18n: {
-        summaryKey: 'a11ycore_ariaCheckedStateMismatch_summary_cantTell',
-        hintKey: 'a11ycore_ariaCheckedStateMismatch_hint_cantTell',
+        summaryKey: 'ariaCheckedStateMismatch_summary_cantTell',
+        hintKey: 'ariaCheckedStateMismatch_hint_cantTell',
         params: { ariaChecked: normalizedAriaChecked, actualState, type }
       },
       data: {

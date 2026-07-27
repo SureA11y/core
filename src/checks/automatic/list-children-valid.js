@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-list-children-valid
+ * @check list-children-valid
  * @atomic true
  * @summary <ul>/<ol> must only directly contain <li>, <script>, or <template>
  * @standard WCAG 2.2
@@ -20,12 +20,12 @@
  * @implementation-notes
  * - Checked via el.children, which already excludes text/comment nodes —
  *   no whitespace-node filtering needed.
- * - Distinct, atomic decision from a11ycore-listitem-parent-valid (the
+ * - Distinct, atomic decision from listitem-parent-valid (the
  *   inverse relationship: does a given <li> have a valid parent).
  * - Direct children that are not exposed to the accessibility tree (e.g.
  *   display:none, [hidden], aria-hidden="true") are excluded from
- *   consideration entirely — matching the reference engine's own `only-listitems`
- *   check, which likewise skips non-AT-visible children. Confirmed against
+ *   consideration entirely — matching a widely-used reference engine's own
+ *   `only-listitems` check, which likewise skips non-AT-visible children. Confirmed against
  *   two real sites: Spotify's newsroom has a stray `<input type="hidden">`
  *   as a direct <ul> child (UA-stylesheet display:none by spec for
  *   input[type=hidden]), and Stanford's main nav interleaves `<li>` with
@@ -33,10 +33,10 @@
  *   by assistive technology, so neither breaks the list semantics a screen
  *   reader actually announces.
  * - The explicit-role-overrides-tag behavior above was added after reading
- *   the reference engine's ACTUAL `only-listitems` evaluate function directly
- *   (`invalidChildrenEvaluate`/`getInvalidSelector` — note this is a
+ *   a widely-used reference engine's ACTUAL `only-listitems` evaluate function
+ *   directly (`invalidChildrenEvaluate`/`getInvalidSelector` — note this is a
  *   DIFFERENT function from the similarly-named, unused `onlyListitemsEvaluate`
- *   elsewhere in its source; don't confuse the two when re-verifying). Its
+ *   elsewhere in that engine's source; don't confuse the two when re-verifying). Its
  *   exact rule: if a child has an explicit role, only `validRoles` (here,
  *   `['listitem']`) is consulted — the tag name is never checked. Only
  *   without an explicit role does the tag name (`validNodeNames`) matter.
@@ -44,18 +44,18 @@
  *   `<li role="none">` used purely to host the list's own visually-hidden
  *   label (referenced by the `<ul>`'s `aria-labelledby`), and LinkedIn has
  *   both an all-`<li role="menuitem">` menu list and a footer list mixing
- *   real `<li>`s with one `<li role="presentation">` — the reference engine correctly
- *   flags all of these, a11y-core's tag-only check missed them entirely.
+ *   real `<li>`s with one `<li role="presentation">` — that reference engine
+ *   correctly flags all of these, surea11y's tag-only check missed them entirely.
  */
 
-const id = 'a11ycore-list-children-valid';
+const id = 'list-children-valid';
 
 const meta = {
   title: 'Lists must only directly contain list items',
   description: 'Checks that <ul>/<ol> elements only have <li>, <script>, or <template> as direct children.',
   i18n: {
-    titleKey: 'a11ycore_listChildrenValid_title',
-    descriptionKey: 'a11ycore_listChildrenValid_description'
+    titleKey: 'listChildrenValid_title',
+    descriptionKey: 'listChildrenValid_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag131', 'structure', 'atomic', 'automatic', 'list'],
@@ -130,8 +130,8 @@ function runInPage(ctx) {
       summary: 'This list contains a direct child that is not a list item.',
       hint: 'Only use <li> (or <script>/<template>) as direct children of <ul>/<ol>; move other markup inside an <li>.',
       i18n: {
-        summaryKey: 'a11ycore_listChildrenValid_summary_fail',
-        hintKey: 'a11ycore_listChildrenValid_hint_fail',
+        summaryKey: 'listChildrenValid_summary_fail',
+        hintKey: 'listChildrenValid_hint_fail',
         params: { element: tag, invalidChildren: invalidTags.join(', ') }
       },
       data: {

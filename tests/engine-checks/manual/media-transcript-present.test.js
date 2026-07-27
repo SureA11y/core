@@ -8,7 +8,7 @@ const path = require('node:path');
 const { assertRule } = require('../../helpers/assertRule.js');
 const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 
-const RULE_ID = "a11ycore-media-alternative-transcript-evidence";
+const RULE_ID = "media-alternative-transcript-evidence";
 
 function hasOccurrenceForId(rule, id) {
   return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
@@ -21,7 +21,7 @@ test(`${RULE_ID}: notApplicable when no matching elements`, () => {
 });
 
 test(`${RULE_ID}: cantTell when at least one applicable element triggers manual review`, () => {
-  const fixturePath = path.join(__dirname, '../..', 'fixtures', "a11ycore-media-transcript-present-manual-all-scenarios.html");
+  const fixturePath = path.join(__dirname, '../..', 'fixtures', "media-transcript-present-manual-all-scenarios.html");
   const html = fs.readFileSync(fixturePath, 'utf8');
 
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });

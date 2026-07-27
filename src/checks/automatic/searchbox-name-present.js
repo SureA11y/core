@@ -1,13 +1,13 @@
 'use strict';
 
-const id = 'a11ycore-searchbox-name-present';
+const id = 'searchbox-name-present';
 
 const meta = {
   title: 'Accessible name is present',
   description: 'Checks that elements expose a non-empty accessible name.',
   i18n: {
-    titleKey: 'a11ycore_searchboxNamePresent_title',
-    descriptionKey: 'a11ycore_searchboxNamePresent_description'
+    titleKey: 'searchboxNamePresent_title',
+    descriptionKey: 'searchboxNamePresent_description'
   },
   helpUrl: null,
   tags: ["wcag2a", "wcag412", "forms", "atomic", "automatic", "name", "searchbox"],
@@ -212,8 +212,8 @@ function runInPage(ctx) {
       summary: 'This element has no accessible name.',
       hint: 'Provide aria-label or aria-labelledby (preferred), or provide visible text that is not hidden from assistive technologies.',
       i18n: {
-        summaryKey: 'a11ycore_searchboxNamePresent_summary_fail',
-        hintKey: 'a11ycore_searchboxNamePresent_hint_fail',
+        summaryKey: 'searchboxNamePresent_summary_fail',
+        hintKey: 'searchboxNamePresent_hint_fail',
         params: { controlType: 'searchbox' }
       },
       data: {

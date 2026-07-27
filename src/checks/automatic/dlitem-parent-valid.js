@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-dlitem-parent-valid
+ * @check dlitem-parent-valid
  * @atomic true
  * @summary <dt>/<dd> elements must be contained by a <dl> (directly or via one wrapping <div>)
  * @standard WCAG 2.2
@@ -15,18 +15,18 @@
  *   description-list container is not exposed as a term/definition to
  *   assistive technologies.
  * @implementation-notes
- * - Distinct, atomic decision from a11ycore-definition-list-children-valid
+ * - Distinct, atomic decision from definition-list-children-valid
  *   (the inverse relationship: does a given <dl> have valid children).
  */
 
-const id = 'a11ycore-dlitem-parent-valid';
+const id = 'dlitem-parent-valid';
 
 const meta = {
   title: 'Description-list items must be inside a description list',
   description: 'Checks that <dt>/<dd> elements are contained by a <dl>, directly or via one wrapping <div>.',
   i18n: {
-    titleKey: 'a11ycore_dlitemParentValid_title',
-    descriptionKey: 'a11ycore_dlitemParentValid_description'
+    titleKey: 'dlitemParentValid_title',
+    descriptionKey: 'dlitemParentValid_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag131', 'structure', 'atomic', 'automatic', 'list'],
@@ -78,8 +78,8 @@ function runInPage(ctx) {
       summary: 'This description-list item is not contained by a <dl>.',
       hint: 'Place this <dt>/<dd> inside a <dl>, directly or wrapped in a single <div>.',
       i18n: {
-        summaryKey: 'a11ycore_dlitemParentValid_summary_fail',
-        hintKey: 'a11ycore_dlitemParentValid_hint_fail',
+        summaryKey: 'dlitemParentValid_summary_fail',
+        hintKey: 'dlitemParentValid_hint_fail',
         params: { element: tag, parentElement: parentTag }
       },
       data: {

@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-aria-braille-equivalent
+ * @check aria-braille-equivalent
  * @atomic true
  * @summary aria-braillelabel/aria-brailleroledescription must not be the only naming mechanism
  * @standard WCAG 2.2
@@ -28,15 +28,15 @@
  *   (non-braille) name — no special-casing needed there.
  */
 
-const id = 'a11ycore-aria-braille-equivalent';
+const id = 'aria-braille-equivalent';
 
 const meta = {
   title: 'aria-braillelabel/aria-brailleroledescription must have a non-braille equivalent',
   description:
     'Checks that elements using aria-braillelabel also have a regular accessible name, and elements using aria-brailleroledescription also have aria-roledescription.',
   i18n: {
-    titleKey: 'a11ycore_ariaBrailleEquivalent_title',
-    descriptionKey: 'a11ycore_ariaBrailleEquivalent_description'
+    titleKey: 'ariaBrailleEquivalent_title',
+    descriptionKey: 'ariaBrailleEquivalent_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag412', 'aria', 'structure', 'atomic', 'automatic'],
@@ -116,8 +116,8 @@ function runInPage(ctx) {
         summary: `This element has ${m.attr} but no ${m.requires}, its non-braille equivalent.`,
         hint: `${m.attr} is a Braille-specific supplement, not a replacement — also provide ${m.requires}.`,
         i18n: {
-          summaryKey: 'a11ycore_ariaBrailleEquivalent_summary_fail',
-          hintKey: 'a11ycore_ariaBrailleEquivalent_hint_fail',
+          summaryKey: 'ariaBrailleEquivalent_summary_fail',
+          hintKey: 'ariaBrailleEquivalent_hint_fail',
           params: { element: tag, attr: m.attr, requires: m.requires }
         },
         data: {

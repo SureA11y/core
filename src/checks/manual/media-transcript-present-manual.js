@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-media-alternative-transcript-evidence
+ * @check media-alternative-transcript-evidence
  * @atomic
  * @summary Detects time-based media elements (<audio>/<video>) where a transcript / text alternative
  *          is not strongly evidenced in-page. Designed for WCAG 2.2 SC 1.2.1 (A).
@@ -13,7 +13,7 @@
  *              Otherwise, the rule reports cantTell (insufficient evidence) for that media element.
  */
 
-const id = 'a11ycore-media-alternative-transcript-evidence';
+const id = 'media-alternative-transcript-evidence';
 
 const meta = {
   title: 'Time-based media: transcript / media alternative evidence',
@@ -21,8 +21,8 @@ const meta = {
     'Finds <audio>/<video> elements where a transcript or other text alternative is not strongly evidenced in-page. ' +
     'This rule is conservative and returns cantTell when evidence is missing or unverified.',
   i18n: {
-    titleKey: 'a11ycore_mediaTranscriptPresent_title',
-    descriptionKey: 'a11ycore_mediaTranscriptPresent_description'
+    titleKey: 'mediaTranscriptPresent_title',
+    descriptionKey: 'mediaTranscriptPresent_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag121', 'timebasedmedia', 'media', 'atomic', 'manual'],
@@ -304,8 +304,8 @@ function runInPage(ctx) {
         hint:
             'Provide a clearly identified transcript or other text alternative for audio-only/video-only prerecorded media (for example, a “Transcript” section or link).',
         i18n: {
-          summaryKey: 'a11ycore_mediaTranscriptPresent_summary_cantTell_missing',
-          hintKey: 'a11ycore_mediaTranscriptPresent_hint_cantTell_missing',
+          summaryKey: 'mediaTranscriptPresent_summary_cantTell_missing',
+          hintKey: 'mediaTranscriptPresent_hint_cantTell_missing',
           params: { element: mediaTag }
         },
         data: {
@@ -334,8 +334,8 @@ function runInPage(ctx) {
         hint:
             'Ensure a clearly identified transcript or other text alternative is available and programmatically or visibly associated with the media on the page.',
         i18n: {
-          summaryKey: 'a11ycore_mediaTranscriptPresent_summary_cantTell_unverified',
-          hintKey: 'a11ycore_mediaTranscriptPresent_hint_cantTell_unverified',
+          summaryKey: 'mediaTranscriptPresent_summary_cantTell_unverified',
+          hintKey: 'mediaTranscriptPresent_hint_cantTell_unverified',
           params: { element: mediaTag }
         },
         data: {

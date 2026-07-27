@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-meta-refresh-timing-absent
+ * @check meta-refresh-timing-absent
  * @atomic true
  * @summary <meta http-equiv="refresh"> must not impose a delayed page refresh
  * @standard WCAG 2.2
@@ -24,17 +24,17 @@
  *   time to act, so "adjustable" ceases to be a meaningful requirement).
  *   A delay over 72000 seconds is therefore not flagged.
  * - A <meta> nested inside <noscript> is excluded — see
- *   a11ycore-meta-refresh-no-exceptions's header comment for why.
+ *   meta-refresh-no-exceptions's header comment for why.
  */
 
-const id = 'a11ycore-meta-refresh-timing-absent';
+const id = 'meta-refresh-timing-absent';
 
 const meta = {
   title: 'Page must not use a timed meta refresh',
   description: 'Checks that <meta http-equiv="refresh"> does not impose a positive delay of 20 hours or less.',
   i18n: {
-    titleKey: 'a11ycore_metaRefreshTimingAbsent_title',
-    descriptionKey: 'a11ycore_metaRefreshTimingAbsent_description'
+    titleKey: 'metaRefreshTimingAbsent_title',
+    descriptionKey: 'metaRefreshTimingAbsent_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag221', 'structure', 'atomic', 'automatic'],
@@ -85,8 +85,8 @@ function runInPage(ctx) {
       summary: 'This page refreshes itself automatically after a delay.',
       hint: 'Remove the timed meta refresh, or provide a way for users to turn it off, extend it, or pause it before it triggers.',
       i18n: {
-        summaryKey: 'a11ycore_metaRefreshTimingAbsent_summary_fail',
-        hintKey: 'a11ycore_metaRefreshTimingAbsent_hint_fail',
+        summaryKey: 'metaRefreshTimingAbsent_summary_fail',
+        hintKey: 'metaRefreshTimingAbsent_hint_fail',
         params: { delay: String(delay) }
       },
       data: {

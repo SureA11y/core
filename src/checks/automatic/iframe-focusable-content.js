@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-iframe-focusable-content
+ * @check iframe-focusable-content
  * @atomic true
  * @summary <iframe>/<frame> elements with tabindex="-1" must not contain focusable content
  * @standard WCAG 2.2
@@ -32,14 +32,14 @@
  *   document that may be a distinct realm.
  */
 
-const id = 'a11ycore-iframe-focusable-content';
+const id = 'iframe-focusable-content';
 
 const meta = {
   title: 'Frames with tabindex="-1" must not contain focusable content',
   description: 'Checks that same-origin <iframe>/<frame> elements with tabindex="-1" do not contain focusable content, since browsers do not propagate that restriction into the frame’s embedded document.',
   i18n: {
-    titleKey: 'a11ycore_iframeFocusableContent_title',
-    descriptionKey: 'a11ycore_iframeFocusableContent_description'
+    titleKey: 'iframeFocusableContent_title',
+    descriptionKey: 'iframeFocusableContent_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag211', 'structure', 'atomic', 'automatic', 'keyboard', 'iframe'],
@@ -119,8 +119,8 @@ function runInPage(ctx) {
       summary: 'This frame has tabindex="-1" but its content contains focusable elements, which remain reachable by keyboard.',
       hint: 'Remove focusable content from the frame, or remove tabindex="-1" if the frame is meant to be reachable.',
       i18n: {
-        summaryKey: 'a11ycore_iframeFocusableContent_summary_fail',
-        hintKey: 'a11ycore_iframeFocusableContent_hint_fail',
+        summaryKey: 'iframeFocusableContent_summary_fail',
+        hintKey: 'iframeFocusableContent_hint_fail',
         params: { element: tag }
       },
       data: {

@@ -2,16 +2,16 @@
 
 /**
  * postMessage-based RPC used to reach into cooperating child frames (same-
- * or cross-origin -- treated identically, exactly like the reference engine's own
- * runPartial/finishRun/frameMessenger protocol, confirmed by reading
- * node_modules/the reference engine/its source's _sendCommandToFrame/_collectResultsFromFrames
- * directly rather than assuming). Used by frame-scan.js.
+ * or cross-origin -- treated identically, exactly like a widely-used
+ * reference engine's own runPartial/finishRun/frameMessenger protocol,
+ * confirmed by reading that engine's _sendCommandToFrame/_collectResultsFromFrames
+ * source directly rather than assuming). Used by frame-scan.js.
  *
- * Only matters for the "plain script injection" consumption mode (a11y-core
+ * Only matters for the "plain script injection" consumption mode (surea11y
  * loaded directly into a page with no automation driver -- see
  * docs/INTEGRATION.md's "Browser extension context" section). A Playwright-
  * driven scan doesn't need any of this: Playwright reaches cross-origin
- * frames unconditionally via CDP (see a11y-core-playwright's ROADMAP.md gap
+ * frames unconditionally via CDP (see surea11y-playwright's ROADMAP.md gap
  * #1), which is strictly better than what a cooperative postMessage protocol
  * can achieve. This exists for when there IS no automation driver.
  *
@@ -24,7 +24,7 @@
  * respect to anything OUTSIDE that shared generated scope.
  */
 
-const FRAME_RPC_CHANNEL = '__a11ycore_frame_rpc_v1__';
+const FRAME_RPC_CHANNEL = '__frame_rpc_v1__';
 
 function getFrameRpcRegistry(win) {
     if (!win.__a11yCoreFrameRpc__) {
@@ -58,7 +58,7 @@ function installFrameRpcListener(win, channel) {
 
         if (data.type === 'run') {
             const responder = registry.responder;
-            if (typeof responder !== 'function') return; // no responder enabled here: unreachable, same as the reference engine's own limitation
+            if (typeof responder !== 'function') return; // no responder enabled here: unreachable, same as a widely-used reference engine's own limitation
             Promise.resolve()
                 .then(function () { return responder(data.payload); })
                 .then(function (result) {
@@ -89,7 +89,7 @@ function installFrameRpcListener(win, channel) {
         }
         registry.pending.delete(data.requestId);
         if (data.type === 'result') pending.resolve(data.payload);
-        else pending.reject(new Error(typeof data.payload === 'string' ? data.payload : 'a11y-core frame RPC error'));
+        else pending.reject(new Error(typeof data.payload === 'string' ? data.payload : 'surea11y frame RPC error'));
     });
 
     registry.listening = true;
@@ -99,14 +99,14 @@ function installFrameRpcListener(win, channel) {
 function nextFrameRpcRequestId(win) {
     const registry = getFrameRpcRegistry(win);
     registry.seq += 1;
-    return 'a11ycore_req_' + Date.now().toString(36) + '_' + registry.seq + '_' + Math.random().toString(36).slice(2, 8);
+    return 'req_' + Date.now().toString(36) + '_' + registry.seq + '_' + Math.random().toString(36).slice(2, 8);
 }
 
 /**
- * Pings a target frame's window; resolves true if a cooperating a11y-core
- * responder answers within pingWaitTime (default 500ms, matching the reference engine's own
- * default), false otherwise. Never rejects -- "not reachable" is a normal,
- * expected outcome (most iframes on the web have no a11y-core loaded at
+ * Pings a target frame's window; resolves true if a cooperating surea11y
+ * responder answers within pingWaitTime (default 500ms, matching a widely-used
+ * reference engine's own default), false otherwise. Never rejects -- "not reachable" is a normal,
+ * expected outcome (most iframes on the web have no surea11y loaded at
  * all), not an error.
  */
 function pingFrame(win, targetWindow, pingWaitTime) {
@@ -152,7 +152,7 @@ function pingFrame(win, targetWindow, pingWaitTime) {
 /**
  * Sends a 'run' command to a target frame's window (already confirmed
  * reachable via pingFrame) and resolves with its reply payload, or rejects
- * on timeout (default 60s, matching the reference engine's own frameWaitTime default) or an
+ * on timeout (default 60s, matching a widely-used reference engine's own frameWaitTime default) or an
  * explicit error reply.
  */
 function sendFrameRunCommand(win, targetWindow, payload, frameWaitTime) {
@@ -164,7 +164,7 @@ function sendFrameRunCommand(win, targetWindow, payload, frameWaitTime) {
     return new Promise(function (resolve, reject) {
         const timeout = setTimeout(function () {
             registry.pending.delete(requestId);
-            reject(new Error('a11y-core frame RPC timed out waiting for a run result'));
+            reject(new Error('surea11y frame RPC timed out waiting for a run result'));
         }, waitMs);
 
         registry.pending.set(requestId, {

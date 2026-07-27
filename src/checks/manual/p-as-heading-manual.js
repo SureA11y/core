@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-p-as-heading
+ * @check p-as-heading
  * @atomic true
  * @summary A <p> styled to look like a heading should probably be a real heading
  * @standard WCAG 2.2
@@ -30,14 +30,14 @@
  *   judgment than a relative-contrast one.
  */
 
-const id = 'a11ycore-p-as-heading';
+const id = 'p-as-heading';
 
 const meta = {
   title: 'A <p> styled to look like a heading should probably be a real heading',
   description: 'Flags short <p> elements whose entire text is bold and rendered at >=18px, for manual review of whether a real heading element should be used instead.',
   i18n: {
-    titleKey: 'a11ycore_pAsHeading_title',
-    descriptionKey: 'a11ycore_pAsHeading_description'
+    titleKey: 'pAsHeading_title',
+    descriptionKey: 'pAsHeading_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag131', 'structure', 'atomic', 'manual'],
@@ -133,8 +133,8 @@ function runInPage(ctx) {
       summary: 'This paragraph is entirely bold and rendered at a heading-like size.',
       hint: 'If this text introduces a new section, use a real heading element (<h1>-<h6> or role="heading") instead of styling a paragraph to look like one.',
       i18n: {
-        summaryKey: 'a11ycore_pAsHeading_summary_cantTell',
-        hintKey: 'a11ycore_pAsHeading_hint_cantTell',
+        summaryKey: 'pAsHeading_summary_cantTell',
+        hintKey: 'pAsHeading_hint_cantTell',
         params: { fontSizePx: String(fontSizePx) }
       },
       data: {

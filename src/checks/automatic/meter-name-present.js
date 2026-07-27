@@ -1,13 +1,13 @@
 'use strict';
 
-const id = 'a11ycore-meter-name-present';
+const id = 'meter-name-present';
 
 const meta = {
   title: 'Meters have an accessible name',
   description: 'Checks that elements with role="meter" expose a non-empty accessible name.',
   i18n: {
-    titleKey: 'a11ycore_meterNamePresent_title',
-    descriptionKey: 'a11ycore_meterNamePresent_description'
+    titleKey: 'meterNamePresent_title',
+    descriptionKey: 'meterNamePresent_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag111', 'nontext', 'atomic', 'automatic', 'name'],
@@ -105,7 +105,7 @@ function runInPage(ctx) {
     if (title) return { ok: true, method: 'title' };
 
     // role="meter" is name-from-author-only per WAI-ARIA (verified against
-    // the reference engine's own aria-meter-name check: any: ['aria-label',
+    // a widely-used reference engine's own aria-meter-name check: any: ['aria-label',
     // 'aria-labelledby', title] — no content-based naming method at all).
     // It must NOT fall back to subtree content — visible text near/inside a
     // custom meter widget is not reliably exposed as its accessible name.
@@ -136,8 +136,8 @@ function runInPage(ctx) {
       summary: 'This meter has no accessible name.',
       hint: 'Provide meter text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.',
       i18n: {
-        summaryKey: 'a11ycore_meterNamePresent_summary_fail',
-        hintKey: 'a11ycore_meterNamePresent_hint_fail',
+        summaryKey: 'meterNamePresent_summary_fail',
+        hintKey: 'meterNamePresent_hint_fail',
         params: {}
       },
       data: {

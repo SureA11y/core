@@ -609,9 +609,9 @@ function createDomHelpers(opts) {
     // getAccessibleLandmarkName -- some using getAriaLabelledByInfo's target-name resolution,
     // others a raw ref.textContent copy predating that fix, and NONE checking title at all.
     // Confirmed via a real page (2026-07-22, live-DOM corpus): DuckDuckGo's homepage has two
-    // <nav>s distinguished only by title="navigation" on one of them -- the reference engine's landmark-unique
-    // correctly treats them as uniquely named (verified directly against a real the reference engine's run(), not
-    // assumed), while every one of the 7 local copies saw both as unnamed and flagged a false
+    // <nav>s distinguished only by title="navigation" on one of them -- a widely-used reference
+    // engine's landmark-unique correctly treats them as uniquely named (verified directly against
+    // that engine's own runtime, not assumed), while every one of the 7 local copies saw both as unnamed and flagged a false
     // duplicate. One shared, correct implementation replaces all 7 copies.
     function getLandmarkNameInfo(el, ctx) {
         if (!isElement(el)) return {present: false, value: '', mechanism: 'unsupported', flags: ['notElement']};
@@ -912,7 +912,7 @@ function createDomHelpers(opts) {
             // asserted directly on <html> (e.g. `<html role="...">`,
             // `[lang]`, any `[aria-*]`) — not a narrow, rule-specific gap.
             // Found via a real page: news24.com's South Africa homepage,
-            // `<html role="document">`, which the reference engine correctly flags but
+            // `<html role="document">`, which a widely-used reference engine correctly flags but
             // this engine's aria-allowed-role couldn't reach at all, no
             // matter how correct its ALLOWED_ROLES_BY_ELEMENT entry was.
             if (r.nodeType === 1 && typeof r.matches === 'function' && !seen.has(r)) {
@@ -2426,7 +2426,7 @@ function createDomHelpers(opts) {
 
         // Establish opts.includeHidden exactly once per aria-labelledby/aria-describedby
         // traversal, from the top-level referenced target's own hidden state -- mirrors
-        // the reference engine's prepareContext, which only computes context.includeHidden when it's
+        // a widely-used reference engine's prepareContext, which only computes context.includeHidden when it's
         // still undefined and never overwrites it on recursive calls, so the whole
         // referenced subtree (nested labelledby chains included) shares one decision. See
         // getContentNameInfo's collect() for what this bypasses and why (real bug found via
@@ -2547,7 +2547,7 @@ function createDomHelpers(opts) {
     // Computes a wrapping/explicit <label>'s own text for the purpose of
     // naming ONE specific control inside it, excluding that control's own
     // subtree (matches HTML-AAM's "label text minus embedded control
-    // content" and the reference engine's implicit-evaluate/explicit-evaluate, which do
+    // content" and a widely-used reference engine's implicit-evaluate/explicit-evaluate, which do
     // the same exclusion via a startNode/inControlContext flag on their own
     // subtreeText recursion). Deliberately does NOT call back into
     // getAccessibleNameInfo/getContentNameInfo for descendants — only img
@@ -2683,8 +2683,8 @@ function createDomHelpers(opts) {
         // Found via a real page: DeviantArt's settings toggles wrap a
         // description div and an unlabeled icon-only <button aria-pressed>
         // in one <label> — a spec-valid naming mechanism (HTML lists
-        // <button> as labelable) that the reference engine's button-name rule already
-        // checks (its implicit-label/explicit-label checks) but this engine
+        // <button> as labelable) that a widely-used reference engine's
+        // button-name rule already checks (its implicit-label/explicit-label checks) but this engine
         // wasn't checking at all, since the id-based lookup below only ever
         // handled explicit for="" and this button has no id to begin with.
         try {
@@ -2744,8 +2744,9 @@ function createDomHelpers(opts) {
 
 
         // POLICY NOTE (2026-07-23, revisit if ever reconsidered): title is accepted here as a
-        // last-resort accessible-name source, matching HTML-AAM/accname and the reference engine's own
-        // behavior (confirmed by reading its source -- several the reference engine rules explicitly accept a
+        // last-resort accessible-name source, matching HTML-AAM/accname and a widely-used
+        // reference engine's own behavior (confirmed by reading that engine's source -- several
+        // of its rules explicitly accept a
         // non-empty title, e.g. image-alt's non-empty-title check). This is a deliberate,
         // spec-compliant choice, not an oversight -- but title is a genuinely weak mechanism in
         // practice (no touch/mobile exposure, inconsistent screen-reader support, no visible
@@ -3069,18 +3070,19 @@ function createDomHelpers(opts) {
             // when the aria-labelledby/aria-describedby TARGET itself is hidden) skips
             // this check entirely except for genuinely non-rendered tags. Per the accname
             // spec, a directly-referenced target's own hidden state doesn't block name
-            // computation, and per the reference engine's own prepareContext/context.includeHidden
-            // (verified by reading its source directly), that bypass covers the target's whole
+            // computation, and per a widely-used reference engine's own
+            // prepareContext/context.includeHidden (verified by reading that engine's source
+            // directly), that bypass covers the target's whole
             // subtree, not just the target element itself -- confirmed via a real page
             // (Discord's footer, 2026-07-23): four <nav aria-labelledby="...">, each
             // referencing a CSS-hidden (display:none, a responsive/interaction-gated
             // dropdown toggle) heading with genuinely distinct text ("Product"/"Company"/
-            // "Resources"/"Policies"). a11y-core's own isAccTreeEligible correctly treats
+            // "Resources"/"Policies"). surea11y's own isAccTreeEligible correctly treats
             // each toggle's hidden text as ineligible on its own terms (nothing wrong with
             // that check in isolation), but applying it while resolving what a
-            // labelledby-referencing element is NAMED disagreed with the reference engine's real, spec-aligned
-            // "pass" (distinct names) -- a11y-core saw all four as unnamed and collapsed them
-            // into one false "not unique" cluster (a11ycore-landmark-unique, and any other
+            // labelledby-referencing element is NAMED disagreed with that reference engine's real,
+            // spec-aligned "pass" (distinct names) -- surea11y saw all four as unnamed and collapsed them
+            // into one false "not unique" cluster (landmark-unique, and any other
             // rule resolving an aria-labelledby name through a hidden target, e.g. dialog/
             // tab/menuitem-name-present).
             if (opts && opts.includeHidden) {
@@ -3721,9 +3723,9 @@ function createDomHelpers(opts) {
     // in a way that makes indexing impossible. A more robust element-identity
     // mechanism than a CSS selector string alone (survives some DOM changes
     // a selector wouldn't -- e.g. an id/class rename), at the cost of not
-    // being usable as a real CSS selector itself. Deliberately mirrors
-    // scripts/cross-engine/structural-path.js's algorithm exactly (used
-    // there for cross-engine result matching) rather than requiring it --
+    // being usable as a real CSS selector itself. Deliberately mirrors the
+    // same algorithm used by this project's (external) cross-engine
+    // result-matching tooling exactly, rather than requiring it --
     // this file must stay self-contained (embedded into the generated
     // runtime via .toString(), no module requires survive that), so a
     // correctness fix to the algorithm must be applied to both copies.

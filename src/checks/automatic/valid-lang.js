@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-valid-lang
+ * @check valid-lang
  * @atomic true
  * @summary Any element's lang attribute must be a syntactically valid language tag
  * @standard WCAG 2.2
@@ -15,7 +15,7 @@
  *   from the page's default, it is identified programmatically — an
  *   invalid tag fails to identify a real language at all.
  * @implementation-notes
- * - Distinct, atomic decision from a11ycore-html-lang-attr-present (that
+ * - Distinct, atomic decision from html-lang-attr-present (that
  *   rule covers the root <html> element only, for SC 3.1.1); this rule
  *   covers every other element, for SC 3.1.2.
  * - Same minimal BCP47 *syntax* check as html-lang-attr-present (primary
@@ -24,14 +24,14 @@
  *   well-formed but unregistered tags like "xx-ZZ" are not flagged).
  */
 
-const id = 'a11ycore-valid-lang';
+const id = 'valid-lang';
 
 const meta = {
   title: 'Element lang attribute must be syntactically valid',
   description: 'Checks that any element (other than the root <html>) with a non-empty lang attribute uses a syntactically valid language tag.',
   i18n: {
-    titleKey: 'a11ycore_validLang_title',
-    descriptionKey: 'a11ycore_validLang_description'
+    titleKey: 'validLang_title',
+    descriptionKey: 'validLang_description'
   },
   helpUrl: null,
   tags: ['wcag2aa', 'wcag312', 'structure', 'language', 'atomic', 'automatic'],
@@ -78,8 +78,8 @@ function runInPage(ctx) {
       summary: `This lang attribute value ("${raw}") is not a syntactically valid language tag.`,
       hint: 'Use a valid BCP47 language tag (e.g. "fr", "es-MX").',
       i18n: {
-        summaryKey: 'a11ycore_validLang_summary_fail',
-        hintKey: 'a11ycore_validLang_hint_fail',
+        summaryKey: 'validLang_summary_fail',
+        hintKey: 'validLang_hint_fail',
         params: { element: tag, value: raw }
       },
       data: {

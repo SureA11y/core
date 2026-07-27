@@ -1,10 +1,10 @@
 'use strict';
 
 /**
- * @check a11ycore-landmark-contentinfo-is-top-level
+ * @check landmark-contentinfo-is-top-level
  * @atomic true
  * @summary The contentinfo landmark must not be nested inside another landmark
- * @standard the reference engine "Best Practices" (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (a widely-used reference engine's classification; no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
  * @applicability
  *   Applies whenever the page contains at least one contentinfo landmark
  *   (explicit role="contentinfo", or an implicit <footer> that is not
@@ -17,19 +17,19 @@
  *   navigation for assistive technology users.
  * @implementation-notes
  * - Not WCAG-normative — authored as an advisory, cantTell-capped
- *   `type: 'manual'` rule; see a11ycore-landmark-banner-is-top-level's
+ *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent (this rule mirrors
  *   its structure with contentinfo/footer in place of banner/header).
  */
 
-const id = 'a11ycore-landmark-contentinfo-is-top-level';
+const id = 'landmark-contentinfo-is-top-level';
 
 const meta = {
   title: 'Contentinfo landmark must be top-level',
   description: 'Checks that the contentinfo landmark (role="contentinfo" or a non-nested <footer>) is not nested inside another landmark region.',
   i18n: {
-    titleKey: 'a11ycore_landmarkContentinfoIsTopLevel_title',
-    descriptionKey: 'a11ycore_landmarkContentinfoIsTopLevel_description'
+    titleKey: 'landmarkContentinfoIsTopLevel_title',
+    descriptionKey: 'landmarkContentinfoIsTopLevel_description'
   },
   helpUrl: null,
   tags: ['best-practice', 'landmarks', 'structure', 'atomic', 'manual'],
@@ -150,8 +150,8 @@ function runInPage(ctx) {
       summary: 'This contentinfo landmark is nested inside another landmark region.',
       hint: 'Move the contentinfo landmark (footer/role="contentinfo") so it is not contained by another landmark; contentinfo should be a top-level region of the page.',
       i18n: {
-        summaryKey: 'a11ycore_landmarkContentinfoIsTopLevel_summary_cantTell',
-        hintKey: 'a11ycore_landmarkContentinfoIsTopLevel_hint_cantTell',
+        summaryKey: 'landmarkContentinfoIsTopLevel_summary_cantTell',
+        hintKey: 'landmarkContentinfoIsTopLevel_hint_cantTell',
         params: {}
       },
       data: {

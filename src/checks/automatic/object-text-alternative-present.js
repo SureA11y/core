@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-object-text-alternative-present
+ * @check object-text-alternative-present
  * @atomic true
  * @summary Accessible <object> elements must provide a text alternative
  * @standard WCAG 2.2
@@ -18,14 +18,14 @@
  *   - a title attribute (best-effort fallback).
  */
 
-const id = 'a11ycore-object-text-alternative-present';
+const id = 'object-text-alternative-present';
 
 const meta = {
   title: '<object> must provide a text alternative',
   description: 'Checks that <object> elements provide a text alternative via fallback content or an accessible name.',
   i18n: {
-    titleKey: 'a11ycore_object_textAltPresent_title',
-    descriptionKey: 'a11ycore_object_textAltPresent_description'
+    titleKey: 'object_textAltPresent_title',
+    descriptionKey: 'object_textAltPresent_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag111', 'nontext', 'object', 'atomic', 'automatic'],
@@ -160,8 +160,8 @@ function runInPage(ctx) {
       summary: 'Missing text alternative for <object>.',
       hint: 'Provide meaningful fallback content inside <object>, or add an accessible name (aria-label/aria-labelledby).',
       i18n: {
-        summaryKey: 'a11ycore_object_textAltPresent_summary_fail',
-        hintKey: 'a11ycore_object_textAltPresent_hint_fail',
+        summaryKey: 'object_textAltPresent_summary_fail',
+        hintKey: 'object_textAltPresent_hint_fail',
         params: { element: 'object' }
       },
       data: {

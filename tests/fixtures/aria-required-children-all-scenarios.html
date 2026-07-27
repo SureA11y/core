@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>a11ycore-aria-required-children — scenario fixture</title>
+  <title>aria-required-children — scenario fixture</title>
   <style>
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
     h1 { font-size: 20px; margin: 0 0 16px; }
@@ -14,7 +14,7 @@
   </style>
 </head>
 <body>
-  <h1>Scenario fixture: <code>a11ycore-aria-required-children</code> (container roles must own a required child role)</h1>
+  <h1>Scenario fixture: <code>aria-required-children</code> (container roles must own a required child role)</h1>
 
   <p class="note">
     Each target has a stable <code>id</code> of the form <code>arc_case_NN</code>.
@@ -50,6 +50,23 @@
   <div class="case" id="case_05">
     <div class="case-title">05 — NEUTRAL: role has no required-owned entry</div>
     <div role="button" id="arc_case_05"></div>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — NEUTRAL: container has the `hidden` attribute — not currently exposed to the accessibility tree, so an otherwise-empty menu is not flagged (e.g. a closed flyout menu whose items are rendered on open)</div>
+    <div role="menu" hidden id="arc_case_06"></div>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — NEUTRAL: container is inside a closed &lt;dialog&gt; (display:none via the UA stylesheet), so it is not currently exposed to the accessibility tree either</div>
+    <dialog>
+      <ul role="list" id="arc_case_07"></ul>
+    </dialog>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — NEUTRAL: container carries aria-busy="true" — author-signaled transient incompleteness per the WAI-ARIA spec's own required-owned-elements escape hatch</div>
+    <ul role="list" aria-busy="true" id="arc_case_08"></ul>
   </div>
 
   <p class="note">End of fixture.</p>

@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-area-alt-decorative
+ * @check area-alt-decorative
  * @atomic true
  * @summary Manual review: text alternative appropriateness (WCAG 1.1.1)
  * @standard WCAG 2.2
@@ -11,14 +11,14 @@
  *   Human review is required to confirm that the provided text alternative is accurate and appropriate.
  */
 
-const id = "a11ycore-area-alt-decorative";
+const id = "area-alt-decorative";
 
 const meta = {
     title: "<area> with alt=\"\" must be decorative (manual review)",
     description: "Flags <area> elements with empty alt for human review that they are decorative/non-informative.",
     i18n: {
-        titleKey: "a11ycore_area_altDecorative_title",
-        descriptionKey: "a11ycore_area_altDecorative_description"
+        titleKey: "area_altDecorative_title",
+        descriptionKey: "area_altDecorative_description"
     },
     helpUrl: null,
     tags: ["wcag2a", "wcag111", "nontext", "images", "imagemap", "manual", "atomic"],
@@ -220,8 +220,8 @@ function runInPage(ctx) {
             summary: 'Review whether <area> is decorative (alt="").',
             hint: 'Confirm the area does not convey information or function. If it is interactive or meaningful, provide meaningful alt text.',
             i18n: {
-                summaryKey: 'a11ycore_area_altDecorative_summary_cantTell',
-                hintKey: 'a11ycore_area_altDecorative_hint_cantTell',
+                summaryKey: 'area_altDecorative_summary_cantTell',
+                hintKey: 'area_altDecorative_hint_cantTell',
                 params: {element: (el.tagName || '').toLowerCase()}
             },
             data: {

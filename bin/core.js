@@ -2,17 +2,17 @@
 'use strict';
 
 /**
- * a11y-core CLI — a thin wrapper around the library for ad hoc/CI use.
+ * surea11y CLI — a thin wrapper around the library for ad hoc/CI use.
  *
  * This is the one part of the package that depends on jsdom (see
- * package.json's "dependencies" vs the library itself, which has none —
- * `require('a11y-core')` never loads jsdom; only running this CLI does).
+ * package.json's "dependencies" vs the library itself, which has none --
+ * `require('surea11y')` never loads jsdom; only running this CLI does).
  * Static-HTML only: it does not execute page JavaScript, so client-rendered
  * content won't be scanned. For that, use a real browser via Puppeteer/
  * Playwright — see docs/INTEGRATION.md Pattern 2.
  *
  * Usage:
- *   a11y-core scan <file-or-url> [options]
+ *   surea11y scan <file-or-url> [options]
  *
  * See docs/CLI.md for the full option reference.
  */
@@ -31,10 +31,10 @@ process.stdout.on('error', (err) => {
 });
 
 function printHelp() {
-  process.stdout.write(`a11y-core v${pkg.version}
+  process.stdout.write(`surea11y v${pkg.version}
 
 Usage:
-  a11y-core scan <file-or-url> [options]
+  surea11y scan <file-or-url> [options]
 
 Options:
   --json                  Print the raw result object as JSON instead of a summary
@@ -52,9 +52,9 @@ Exit codes:
   2  usage error or the scan itself could not run (bad path/URL, network failure, etc.)
 
 Examples:
-  a11y-core scan ./index.html
-  a11y-core scan https://example.com/ --tags wcag2a,wcag2aa
-  a11y-core scan ./index.html --json > result.json
+  surea11y scan ./index.html
+  surea11y scan https://example.com/ --tags wcag2a,wcag2aa
+  surea11y scan ./index.html --json > result.json
 `);
 }
 
@@ -140,7 +140,7 @@ function printSummary(result) {
     if (Object.prototype.hasOwnProperty.call(byOutcome, r.outcome)) byOutcome[r.outcome] += 1;
   }
 
-  process.stdout.write(`\na11y-core scan: ${result.url || '(no url)'}\n`);
+  process.stdout.write(`\nsurea11y scan: ${result.url || '(no url)'}\n`);
   process.stdout.write(`  pass: ${byOutcome.pass}   fail: ${byOutcome.fail}   cantTell: ${byOutcome.cantTell}   notApplicable: ${byOutcome.notApplicable}\n\n`);
 
   const fails = result.checksResults.filter((r) => r.outcome === 'fail');
@@ -186,7 +186,7 @@ async function runScan(args) {
   try {
     ({ JSDOM } = require('jsdom'));
   } catch {
-    process.stderr.write('Error: the a11y-core CLI requires jsdom. Run `npm install jsdom` (it should already be a dependency of this package — this likely means a broken install).\n');
+    process.stderr.write('Error: the surea11y CLI requires jsdom. Run `npm install jsdom` (it should already be a dependency of this package — this likely means a broken install).\n');
     process.exitCode = 2;
     return;
   }

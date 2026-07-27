@@ -41,7 +41,7 @@ Tests validating **engine behavior** (not accessibility semantics) — including
 
 ## C. Canonical Rule IDs in Tests
 
-- Tests must assert against the engine’s **canonical rule IDs** (e.g., `a11ycore-<rule-id>`).
+- Tests must assert against the engine’s **canonical rule IDs** (e.g., `<rule-id>`).
 - Mixed or legacy prefixes must **not** be hard-coded unless explicitly testing prefix-normalization behavior.
 
 ---

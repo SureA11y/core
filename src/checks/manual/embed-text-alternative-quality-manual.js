@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-embed-text-alternative-quality
+ * @check embed-text-alternative-quality
  * @atomic true
  * @summary Manual review: text alternative appropriateness (WCAG 1.1.1)
  * @standard WCAG 2.2
@@ -11,14 +11,14 @@
  *   Human review is required to confirm that the provided text alternative is accurate and appropriate.
  */
 
-const id = "a11ycore-embed-text-alternative-quality";
+const id = "embed-text-alternative-quality";
 
 const meta = {
     title: "<embed> text alternative must be appropriate (manual review)",
     description: "Flags <embed> elements with a detected name for human review of appropriateness.",
     i18n: {
-        titleKey: "a11ycore_embed_textAltQuality_title",
-        descriptionKey: "a11ycore_embed_textAltQuality_description"
+        titleKey: "embed_textAltQuality_title",
+        descriptionKey: "embed_textAltQuality_description"
     },
     helpUrl: null,
     tags: ["wcag2a", "wcag111", "nontext", "embed", "manual", "atomic"],
@@ -177,8 +177,8 @@ function runInPage(ctx) {
             summary: 'Review text alternative for <embed> for accuracy and appropriateness.',
             hint: 'Confirm the ARIA name or title accurately identifies the embedded content in context.',
             i18n: {
-                summaryKey: 'a11ycore_embed_textAltQuality_summary_cantTell',
-                hintKey: 'a11ycore_embed_textAltQuality_hint_cantTell',
+                summaryKey: 'embed_textAltQuality_summary_cantTell',
+                hintKey: 'embed_textAltQuality_hint_cantTell',
                 params: {element: (el.tagName || '').toLowerCase()}
             },
             data: {

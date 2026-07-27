@@ -1,7 +1,7 @@
 [
   {
     "file": "area-alt-decorative-manual.js",
-    "ruleId": "a11ycore-area-alt-decorative",
+    "ruleId": "area-alt-decorative",
     "title": "<area> with alt=\\",
     "tags": [
       "wcag2a",
@@ -16,7 +16,7 @@
   },
   {
     "file": "area-alt-present.js",
-    "ruleId": "a11ycore-area-alt-present",
+    "ruleId": "area-alt-present",
     "title": "&lt;area&gt; must have an alt attribute",
     "tags": [
       "wcag2a",
@@ -31,7 +31,7 @@
   },
   {
     "file": "area-alt-quality-manual.js",
-    "ruleId": "a11ycore-area-alt-quality",
+    "ruleId": "area-alt-quality",
     "title": "<area> alt text must be appropriate (manual review)",
     "tags": [
       "wcag2a",
@@ -46,7 +46,7 @@
   },
   {
     "file": "canvas-text-alternative-present.js",
-    "ruleId": "a11ycore-canvas-text-alternative-present",
+    "ruleId": "canvas-text-alternative-present",
     "title": "<canvas> must provide a text alternative",
     "tags": [
       "wcag2a",
@@ -60,7 +60,7 @@
   },
   {
     "file": "canvas-text-alternative-quality-manual.js",
-    "ruleId": "a11ycore-canvas-text-alternative-quality",
+    "ruleId": "canvas-text-alternative-quality",
     "title": "<canvas> text alternative must be appropriate (manual review)",
     "tags": [
       "wcag2a",
@@ -74,7 +74,7 @@
   },
   {
     "file": "embed-text-alternative-present.js",
-    "ruleId": "a11ycore-embed-text-alternative-present",
+    "ruleId": "embed-text-alternative-present",
     "title": "<embed> must provide a text alternative",
     "tags": [
       "wcag2a",
@@ -88,7 +88,7 @@
   },
   {
     "file": "embed-text-alternative-quality-manual.js",
-    "ruleId": "a11ycore-embed-text-alternative-quality",
+    "ruleId": "embed-text-alternative-quality",
     "title": "<embed> text alternative must be appropriate (manual review)",
     "tags": [
       "wcag2a",
@@ -102,7 +102,7 @@
   },
   {
     "file": "img-alt-decorative-manual.js",
-    "ruleId": "a11ycore-img-alt-decorative",
+    "ruleId": "img-alt-decorative",
     "title": "<img> with alt=\\",
     "tags": [
       "wcag2a",
@@ -116,7 +116,7 @@
   },
   {
     "file": "img-alt-present.js",
-    "ruleId": "a11ycore-img-alt-present",
+    "ruleId": "img-alt-present",
     "title": "<img> must have an alt attribute",
     "tags": [
       "wcag2a",
@@ -130,7 +130,7 @@
   },
   {
     "file": "img-alt-quality-manual.js",
-    "ruleId": "a11ycore-img-alt-quality",
+    "ruleId": "img-alt-quality",
     "title": "<img> alt text must be appropriate (manual review)",
     "tags": [
       "wcag2a",
@@ -144,7 +144,7 @@
   },
   {
     "file": "input-image-alt-decorative-manual.js",
-    "ruleId": "a11ycore-input-image-alt-decorative",
+    "ruleId": "input-image-alt-decorative",
     "title": "<input type=\\",
     "tags": [
       "wcag2a",
@@ -158,7 +158,7 @@
   },
   {
     "file": "input-image-alt-present.js",
-    "ruleId": "a11ycore-input-image-alt-present",
+    "ruleId": "input-image-alt-present",
     "title": "<input type=",
     "tags": [
       "wcag2a",
@@ -172,7 +172,7 @@
   },
   {
     "file": "input-image-alt-quality-manual.js",
-    "ruleId": "a11ycore-input-image-alt-quality",
+    "ruleId": "input-image-alt-quality",
     "title": "<input type=\\",
     "tags": [
       "wcag2a",
@@ -186,7 +186,7 @@
   },
   {
     "file": "object-text-alternative-present.js",
-    "ruleId": "a11ycore-object-text-alternative-present",
+    "ruleId": "object-text-alternative-present",
     "title": "<object> must provide a text alternative",
     "tags": [
       "wcag2a",
@@ -200,7 +200,7 @@
   },
   {
     "file": "object-text-alternative-quality-manual.js",
-    "ruleId": "a11ycore-object-text-alternative-quality",
+    "ruleId": "object-text-alternative-quality",
     "title": "<object> text alternative must be appropriate (manual review)",
     "tags": [
       "wcag2a",
@@ -214,7 +214,7 @@
   },
   {
     "file": "svg-image-text-alternative-present.js",
-    "ruleId": "a11ycore-svg-image-text-alternative-present",
+    "ruleId": "svg-image-text-alternative-present",
     "title": "SVG <image> must have a text alternative",
     "tags": [
       "wcag2a",
@@ -229,7 +229,7 @@
   },
   {
     "file": "svg-text-alternative-present.js",
-    "ruleId": "a11ycore-svg-text-alternative-present",
+    "ruleId": "svg-text-alternative-present",
     "title": "<svg> must provide a text alternative",
     "tags": [
       "wcag2a",
@@ -244,7 +244,7 @@
   },
   {
     "file": "video-poster-text-alternative-present.js",
-    "ruleId": "a11ycore-video-poster-text-alternative-present",
+    "ruleId": "video-poster-text-alternative-present",
     "title": "<video> poster must have a text alternative",
     "tags": [
       "wcag2a",

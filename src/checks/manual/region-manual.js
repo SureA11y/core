@@ -1,10 +1,10 @@
 'use strict';
 
 /**
- * @check a11ycore-region
+ * @check region
  * @atomic true
  * @summary Page content should be contained within a landmark region
- * @standard the reference engine "Best Practices" (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (a widely-used reference engine's classification; no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
  * @applicability
  *   Applies to direct children of <body> that carry visible text content
  *   and are not themselves a landmark.
@@ -15,25 +15,25 @@
  *   miss content that was never placed inside one.
  * @implementation-notes
  * - Not WCAG-normative — authored as an advisory, cantTell-capped
- *   `type: 'manual'` rule; see a11ycore-landmark-banner-is-top-level's
+ *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent and the landmark-
  *   detection model.
  * - Deliberately scoped to DIRECT children of <body> only (not a full
- *   recursive scan of every text node on the page) — the reference engine's own
- *   region rule is known to be noisy in practice when applied
+ *   recursive scan of every text node on the page) — a widely-used
+ *   reference engine's own region rule is known to be noisy in practice when applied
  *   unconditionally; checking only the top level keeps false positives
  *   low while still catching the common case (a page section authored
  *   entirely outside any landmark).
  */
 
-const id = 'a11ycore-region';
+const id = 'region';
 
 const meta = {
   title: 'Page content should be inside a landmark region',
   description: 'Checks that direct children of <body> with visible text content are contained within a landmark region.',
   i18n: {
-    titleKey: 'a11ycore_region_title',
-    descriptionKey: 'a11ycore_region_description'
+    titleKey: 'region_title',
+    descriptionKey: 'region_description'
   },
   helpUrl: null,
   tags: ['best-practice', 'landmarks', 'structure', 'atomic', 'manual'],
@@ -161,8 +161,8 @@ function runInPage(ctx) {
       summary: 'This content is not contained within a landmark region.',
       hint: 'Move this content inside a landmark region (main, nav, aside, a labeled section, etc.).',
       i18n: {
-        summaryKey: 'a11ycore_region_summary_cantTell',
-        hintKey: 'a11ycore_region_hint_cantTell',
+        summaryKey: 'region_summary_cantTell',
+        hintKey: 'region_hint_cantTell',
         params: { element: tag }
       },
       data: {

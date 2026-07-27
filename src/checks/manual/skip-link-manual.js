@@ -1,10 +1,10 @@
 'use strict';
 
 /**
- * @check a11ycore-skip-link
+ * @check skip-link
  * @atomic true
  * @summary A "skip" link must resolve to a real, focusable target
- * @standard the reference engine "Best Practices" (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (a widely-used reference engine's classification; no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
  * @applicability
  *   Applies to <a href="#fragment"> elements whose accessible name
  *   matches a common "skip to ..." / "jump to ..." authoring convention
@@ -13,7 +13,7 @@
  *   on the page. "jump to" added 2026-07-23 after a real page (Wish.com)
  *   surfaced a skip link reading "Jump to section" with a genuinely
  *   missing target — invisible to the original "skip"-only pattern,
- *   while the reference engine's own (purely positional, not text-based) matching
+ *   while a widely-used reference engine's own (purely positional, not text-based) matching
  *   caught it. Text-pattern matching itself stays deliberate (see
  *   implementation-notes) — this only widens the known-convention list.
  * @expectation
@@ -22,22 +22,22 @@
  *   target does not exist silently does nothing when activated.
  * @implementation-notes
  * - Not WCAG-normative — authored as an advisory, cantTell-capped
- *   `type: 'manual'` rule; see a11ycore-landmark-banner-is-top-level's
+ *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent.
  * - Keyed on the "skip" text-pattern convention rather than positional
  *   heuristics (first link in tab order, etc.), matching the same
  *   deliberate-leniency reasoning documented in
- *   a11ycore-bypass-blocks-present's implementation notes.
+ *   bypass-blocks-present's implementation notes.
  */
 
-const id = 'a11ycore-skip-link';
+const id = 'skip-link';
 
 const meta = {
   title: 'Skip link must have a resolvable target',
   description: 'Checks that a "skip to ..." link\'s href fragment resolves to a real element in the document.',
   i18n: {
-    titleKey: 'a11ycore_skipLink_title',
-    descriptionKey: 'a11ycore_skipLink_description'
+    titleKey: 'skipLink_title',
+    descriptionKey: 'skipLink_description'
   },
   helpUrl: null,
   tags: ['best-practice', 'keyboard', 'navigation', 'atomic', 'manual'],
@@ -128,8 +128,8 @@ function runInPage(ctx) {
       summary: 'This skip link\'s target does not exist.',
       hint: 'Point the skip link\'s href at an id that exists in the document, or add the missing target element.',
       i18n: {
-        summaryKey: 'a11ycore_skipLink_summary_cantTell',
-        hintKey: 'a11ycore_skipLink_hint_cantTell',
+        summaryKey: 'skipLink_summary_cantTell',
+        hintKey: 'skipLink_hint_cantTell',
         params: { href }
       },
       data: {

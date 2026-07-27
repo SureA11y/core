@@ -12,7 +12,7 @@ const {
 
 const { assertRule } = require('../../helpers/assertRule');
 
-const RULE_ID = 'a11ycore-contrast-computable';
+const RULE_ID = 'contrast-computable';
 
 /**
  * JSDOM caveat:
@@ -144,7 +144,7 @@ test(`${RULE_ID}: solid CSS colors and opaque root => pass`, () => {
     const result = run(html);
 
     const rule = assertRule(result, RULE_ID, 'pass', { minOccurrences: 1, maxOccurrences: 1 });
-    assert.strictEqual(rule.occurrences[0].i18n.summaryKey, 'a11ycore_contrastComputable_pass_allComputable');
+    assert.strictEqual(rule.occurrences[0].i18n.summaryKey, 'contrastComputable_pass_allComputable');
     assert.ok(
         Number(rule.occurrences[0].data.details.eligibleTextCount) >= 1,
         'Expected eligibleTextCount >= 1'
@@ -165,7 +165,7 @@ test(`${RULE_ID}: background gradient blocker => cantTell with reasonCode BACKGR
     const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1 });
     const occ = rule.occurrences[0];
     assert.strictEqual(occ.data.details.reasonCode, 'BACKGROUND_IMAGE_OR_GRADIENT');
-    assert.strictEqual(occ.i18n.summaryKey, 'a11ycore_contrastComputable_cantTell_bgGradient');
+    assert.strictEqual(occ.i18n.summaryKey, 'contrastComputable_cantTell_bgGradient');
 });
 
 test(`${RULE_ID}: background-image blocker => cantTell with reasonCode BACKGROUND_IMAGE_OR_GRADIENT`, () => {
@@ -182,7 +182,7 @@ test(`${RULE_ID}: background-image blocker => cantTell with reasonCode BACKGROUN
     const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1 });
     const occ = rule.occurrences[0];
     assert.strictEqual(occ.data.details.reasonCode, 'BACKGROUND_IMAGE_OR_GRADIENT');
-    assert.strictEqual(occ.i18n.summaryKey, 'a11ycore_contrastComputable_cantTell_bgImage');
+    assert.strictEqual(occ.i18n.summaryKey, 'contrastComputable_cantTell_bgImage');
 });
 
 test(`${RULE_ID}: mix-blend-mode blocker => cantTell with reasonCode MIX_BLEND_MODE`, () => {
@@ -201,7 +201,7 @@ test(`${RULE_ID}: mix-blend-mode blocker => cantTell with reasonCode MIX_BLEND_M
     const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1 });
     const occ = rule.occurrences[0];
     assert.strictEqual(occ.data.details.reasonCode, 'MIX_BLEND_MODE');
-    assert.strictEqual(occ.i18n.summaryKey, 'a11ycore_contrastComputable_cantTell_mixBlendMode');
+    assert.strictEqual(occ.i18n.summaryKey, 'contrastComputable_cantTell_mixBlendMode');
 });
 
 test(`${RULE_ID}: filter/backdrop-filter blocker => cantTell with reasonCode BACKGROUND_FILTER_OR_BACKDROP_FILTER`, () => {
@@ -220,7 +220,7 @@ test(`${RULE_ID}: filter/backdrop-filter blocker => cantTell with reasonCode BAC
     const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1 });
     const occ = rule.occurrences[0];
     assert.strictEqual(occ.data.details.reasonCode, 'BACKGROUND_FILTER_OR_BACKDROP_FILTER');
-    assert.strictEqual(occ.i18n.summaryKey, 'a11ycore_contrastComputable_cantTell_filter');
+    assert.strictEqual(occ.i18n.summaryKey, 'contrastComputable_cantTell_filter');
 });
 
 test(`${RULE_ID}: strictConformance + root not opaque => cantTell with reasonCode BACKGROUND_NOT_OPAQUE_AT_ROOT`, () => {
@@ -239,7 +239,7 @@ test(`${RULE_ID}: strictConformance + root not opaque => cantTell with reasonCod
     const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1 });
     const occ = rule.occurrences[0];
     assert.strictEqual(occ.data.details.reasonCode, 'BACKGROUND_NOT_OPAQUE_AT_ROOT');
-    assert.strictEqual(occ.i18n.summaryKey, 'a11ycore_contrastComputable_cantTell_rootNotOpaque');
+    assert.strictEqual(occ.i18n.summaryKey, 'contrastComputable_cantTell_rootNotOpaque');
 });
 
 test(`${RULE_ID}: auditorAssist + root not opaque => pass (rootCanvasFallback applied)`, () => {
@@ -255,7 +255,7 @@ test(`${RULE_ID}: auditorAssist + root not opaque => pass (rootCanvasFallback ap
 
     const rule = assertRule(result, RULE_ID, 'pass', { minOccurrences: 1, maxOccurrences: 1 });
     const occ = rule.occurrences[0];
-    assert.strictEqual(occ.i18n.summaryKey, 'a11ycore_contrastComputable_pass_allComputable');
+    assert.strictEqual(occ.i18n.summaryKey, 'contrastComputable_pass_allComputable');
     assert.ok(Number(occ.data.details.eligibleTextCount) >= 1);
 });
 
@@ -277,7 +277,7 @@ test(`${RULE_ID}: ANCESTOR opacity < 1 blocker => cantTell with reasonCode ANCES
     const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
     const occ = rule.occurrences[0];
     assert.strictEqual(occ.data.details.reasonCode, 'ANCESTOR_OPACITY');
-    assert.strictEqual(occ.i18n.summaryKey, 'a11ycore_contrastComputable_cantTell_notComputable');
+    assert.strictEqual(occ.i18n.summaryKey, 'contrastComputable_cantTell_notComputable');
     assert.ok(hasOccurrenceForId(rule, 'anc_op'));
 });
 
@@ -297,7 +297,7 @@ test(`${RULE_ID}: element's OWN opacity < 1 (no ancestor blocker) => pass (still
     // Own opacity is folded into the foreground via the per-element opacity
     // product; it must NOT be treated as a computability blocker.
     const rule = assertRule(result, RULE_ID, 'pass', { minOccurrences: 1, maxOccurrences: 1 });
-    assert.strictEqual(rule.occurrences[0].i18n.summaryKey, 'a11ycore_contrastComputable_pass_allComputable');
+    assert.strictEqual(rule.occurrences[0].i18n.summaryKey, 'contrastComputable_pass_allComputable');
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/contrast-all-scenarios.html)`, () => {

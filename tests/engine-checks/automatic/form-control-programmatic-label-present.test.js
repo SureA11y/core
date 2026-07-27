@@ -8,7 +8,7 @@ const path = require('node:path');
 const { assertRule } = require('../../helpers/assertRule.js');
 const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 
-const RULE_ID = 'a11ycore-form-control-programmatic-label-present';
+const RULE_ID = 'form-control-programmatic-label-present';
 
 test('notApplicable when there are no target controls', () => {
     const html = '<!doctype html><html><body><p>none</p></body></html>';

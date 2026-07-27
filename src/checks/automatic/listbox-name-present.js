@@ -1,13 +1,13 @@
 'use strict';
 
-const id = 'a11ycore-listbox-name-present';
+const id = 'listbox-name-present';
 
 const meta = {
   title: 'Accessible name is present',
   description: 'Checks that elements expose a non-empty accessible name.',
   i18n: {
-    titleKey: 'a11ycore_listboxNamePresent_title',
-    descriptionKey: 'a11ycore_listboxNamePresent_description'
+    titleKey: 'listboxNamePresent_title',
+    descriptionKey: 'listboxNamePresent_description'
   },
   helpUrl: null,
   tags: ["wcag2a", "wcag412", "forms", "atomic", "automatic", "name", "listbox"],
@@ -212,8 +212,8 @@ function runInPage(ctx) {
       summary: 'This element has no accessible name.',
       hint: 'Provide aria-label or aria-labelledby (preferred), or provide visible text that is not hidden from assistive technologies.',
       i18n: {
-        summaryKey: 'a11ycore_listboxNamePresent_summary_fail',
-        hintKey: 'a11ycore_listboxNamePresent_hint_fail',
+        summaryKey: 'listboxNamePresent_summary_fail',
+        hintKey: 'listboxNamePresent_hint_fail',
         params: { controlType: 'listbox' }
       },
       data: {

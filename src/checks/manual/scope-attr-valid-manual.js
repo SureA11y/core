@@ -1,10 +1,10 @@
 'use strict';
 
 /**
- * @check a11ycore-scope-attr-valid
+ * @check scope-attr-valid
  * @atomic true
  * @summary The scope attribute must have a valid value
- * @standard the reference engine "Best Practices" (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (a widely-used reference engine's classification; no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
  * @applicability
  *   Applies to elements with a non-empty scope attribute.
  * @expectation
@@ -14,18 +14,18 @@
  *   association it was meant to declare.
  * @implementation-notes
  * - Not WCAG-normative — authored as an advisory, cantTell-capped
- *   `type: 'manual'` rule; see a11ycore-landmark-banner-is-top-level's
+ *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent.
  */
 
-const id = 'a11ycore-scope-attr-valid';
+const id = 'scope-attr-valid';
 
 const meta = {
   title: 'scope attribute must have a valid value',
   description: 'Checks that scope="..." is one of row, col, rowgroup, or colgroup.',
   i18n: {
-    titleKey: 'a11ycore_scopeAttrValid_title',
-    descriptionKey: 'a11ycore_scopeAttrValid_description'
+    titleKey: 'scopeAttrValid_title',
+    descriptionKey: 'scopeAttrValid_description'
   },
   helpUrl: null,
   tags: ['best-practice', 'tables', 'structure', 'atomic', 'manual'],
@@ -71,8 +71,8 @@ function runInPage(ctx) {
       summary: 'This scope attribute value is not recognized.',
       hint: 'Use one of row, col, rowgroup, or colgroup for the scope attribute.',
       i18n: {
-        summaryKey: 'a11ycore_scopeAttrValid_summary_cantTell',
-        hintKey: 'a11ycore_scopeAttrValid_hint_cantTell',
+        summaryKey: 'scopeAttrValid_summary_cantTell',
+        hintKey: 'scopeAttrValid_hint_cantTell',
         params: { value: raw }
       },
       data: {

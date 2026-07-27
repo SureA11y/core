@@ -5,7 +5,7 @@
  * -----------------
  * - This script analyzes SOURCE RULE MODULES (pre-build), not the generated core.js.
  * - Therefore, `ruleId` values in this report are rule module ids (kebab-case),
- *   not engine-prefixed runtime ids (e.g. "a11ycore-...").
+ *   not engine-prefixed runtime ids (e.g. "...").
  * - Normative WCAG SC coverage is derived ONLY from meta.normativeMappings (WCAG).
  * - Informative coverage visibility comes from meta.informativeReferences (WCAG, type: "SC").
  * - Facets are NON-NORMATIVE and must never influence outcomes or policy; they are reporting-only.
@@ -29,13 +29,13 @@
  * - FACETS definitions are loaded from the facets file and used to compute per-SC facet coverage.
  *
  * WCAG level/version coverage:
- * - This script also summarizes rule coverage using the reference engine-style WCAG tags:
+ * - This script also summarizes rule coverage using widely-used reference-engine-style WCAG tags:
  *     wcag2a / wcag2aa / wcag2aaa
  *     wcag21a / wcag21aa / wcag21aaa
  *     wcag22a / wcag22aa / wcag22aaa
  * - "Cumulative" semantics are used for level summaries:
  *     AA counts as A+AA, AAA counts as A+AA+AAA
- *   (This matches common expectation in tools like the reference engine.)
+ *   (This matches common expectation in widely-used accessibility-testing tools.)
  */
 
 const fs = require('node:fs');
@@ -282,7 +282,7 @@ function formatAutomationMix(automationCounts) {
  * ========================= */
 
 /**
- * Parse the reference engine-style WCAG tags.
+ * Parse widely-used reference-engine-style WCAG tags.
  * Examples:
  *   wcag2a, wcag2aa, wcag2aaa
  *   wcag21a, wcag21aa, wcag21aaa

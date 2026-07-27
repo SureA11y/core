@@ -8,7 +8,7 @@ const path = require('node:path');
 const { assertRule } = require('../../helpers/assertRule.js');
 const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 
-const RULE_ID = 'a11ycore-aria-allowed-role';
+const RULE_ID = 'aria-allowed-role';
 
 function hasOccurrenceForId(rule, id) {
   return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
@@ -105,7 +105,7 @@ test(`${RULE_ID}: pass when role="link" is set on an <area> without href`, () =>
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail for <area> with href and any override role (the reference engine's allowedRoles is literally false here — no override role is ever permitted, only its own native 'link' role)`, () => {
+test(`${RULE_ID}: fail for <area> with href and any override role (a reference engine's allowedRoles is literally false here — no override role is ever permitted, only its own native 'link' role)`, () => {
   const html = `<!doctype html><html><body><map name="m"><area id="a" href="/x" role="tab" shape="rect" coords="0,0,10,10"></map></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
@@ -230,7 +230,7 @@ test(`${RULE_ID}: fail when an explicit role is set on <html> itself (found on a
   assert.equal(rule.occurrences[0].data.details.element, 'html');
 });
 
-test(`${RULE_ID}: fail — no override role is ever permitted on <picture> (found on a real site — TradingView's homepage, <picture role="presentation"> used for hero illustrations; the reference engine's own element spec sets allowedRoles: false here, same as html/area[href])`, () => {
+test(`${RULE_ID}: fail — no override role is ever permitted on <picture> (found on a real site — TradingView's homepage, <picture role="presentation"> used for hero illustrations; a reference engine's own element spec sets allowedRoles: false here, same as html/area[href])`, () => {
   const html = `<!doctype html><html><body><picture role="presentation"><img src="x.png" alt=""></picture></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
@@ -286,7 +286,7 @@ test(`${RULE_ID}: fail — role="navigation" is not permitted on <header> (found
   assert.ok(hasOccurrenceForId(rule, 'a'));
 });
 
-test(`${RULE_ID}: pass — role="menu" is permitted on <nav> (verified against the reference engine's own allowedRoles array; found on a real site, Vimeo's global nav dropdown panels)`, () => {
+test(`${RULE_ID}: pass — role="menu" is permitted on <nav> (verified against a reference engine's own allowedRoles array; found on a real site, Vimeo's global nav dropdown panels)`, () => {
   const html = `<!doctype html><html><body><nav id="a" role="menu"></nav></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });

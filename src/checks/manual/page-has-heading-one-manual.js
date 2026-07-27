@@ -1,14 +1,14 @@
 'use strict';
 
 /**
- * @check a11ycore-page-has-heading-one
+ * @check page-has-heading-one
  * @atomic true
  * @summary The page should have at least one level-one heading
- * @standard the reference engine "Best Practices" (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (a widely-used reference engine's classification; no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
  * @applicability
  *   Always applicable to any HTML document with a <body> element —
  *   "does the page have an h1" is a whole-page concern, matching
- *   a11ycore-bypass-blocks-present's pattern of evaluating the document
+ *   bypass-blocks-present's pattern of evaluating the document
  *   directly.
  * @expectation
  *   At least one heading with level 1 exists (native <h1>, or
@@ -17,18 +17,18 @@
  *   navigating by heading.
  * @implementation-notes
  * - Not WCAG-normative — authored as an advisory, cantTell-capped
- *   `type: 'manual'` rule; see a11ycore-landmark-banner-is-top-level's
+ *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent.
  */
 
-const id = 'a11ycore-page-has-heading-one';
+const id = 'page-has-heading-one';
 
 const meta = {
   title: 'Page should have a level-one heading',
   description: 'Checks that the page has at least one level-one heading (<h1> or role="heading" with aria-level="1").',
   i18n: {
-    titleKey: 'a11ycore_pageHasHeadingOne_title',
-    descriptionKey: 'a11ycore_pageHasHeadingOne_description'
+    titleKey: 'pageHasHeadingOne_title',
+    descriptionKey: 'pageHasHeadingOne_description'
   },
   helpUrl: null,
   tags: ['best-practice', 'headings', 'structure', 'atomic', 'manual'],
@@ -96,8 +96,8 @@ function runInPage(ctx) {
       summary: 'This page has no level-one heading.',
       hint: 'Add a level-one heading (<h1> or role="heading" aria-level="1") that identifies the page\'s main content.',
       i18n: {
-        summaryKey: 'a11ycore_pageHasHeadingOne_summary_cantTell',
-        hintKey: 'a11ycore_pageHasHeadingOne_hint_cantTell',
+        summaryKey: 'pageHasHeadingOne_summary_cantTell',
+        hintKey: 'pageHasHeadingOne_hint_cantTell',
         params: {}
       },
       data: {

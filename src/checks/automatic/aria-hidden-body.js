@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-aria-hidden-body
+ * @check aria-hidden-body
  * @atomic true
  * @summary The document <body> must not have aria-hidden="true"
  * @standard WCAG 2.2
@@ -9,25 +9,25 @@
  * @applicability
  *   Always applicable to any HTML document with a <body> element,
  *   independent of contextSelector/root scoping — this is a whole-
- *   document concern, matching a11ycore-page-title-present's pattern of
+ *   document concern, matching page-title-present's pattern of
  *   evaluating document.body directly rather than the scoped root.
  * @expectation
  *   <body> does not have aria-hidden="true". Hiding the document body
  *   removes the entire page's content and structure from the
- *   accessibility tree at once — the reference engine tags this under both 1.3.1
+ *   accessibility tree at once — a widely-used reference engine tags this under both 1.3.1
  *   (Info and Relationships: the page's structure becomes entirely
  *   non-determinable) and 4.1.2 (Name, Role, Value: nothing in the
  *   document exposes a role/name/value any longer).
  */
 
-const id = 'a11ycore-aria-hidden-body';
+const id = 'aria-hidden-body';
 
 const meta = {
   title: 'The document <body> must not be aria-hidden',
   description: 'Checks that <body> does not have aria-hidden="true", which would remove the entire page from the accessibility tree.',
   i18n: {
-    titleKey: 'a11ycore_ariaHiddenBody_title',
-    descriptionKey: 'a11ycore_ariaHiddenBody_description'
+    titleKey: 'ariaHiddenBody_title',
+    descriptionKey: 'ariaHiddenBody_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag131', 'wcag412', 'structure', 'atomic', 'automatic'],
@@ -72,8 +72,8 @@ function runInPage(ctx) {
     summary: 'The document body has aria-hidden="true", which hides the entire page from assistive technologies.',
     hint: 'Remove aria-hidden from <body>. Hide specific elements instead, if that was the intent.',
     i18n: {
-      summaryKey: 'a11ycore_ariaHiddenBody_summary_fail',
-      hintKey: 'a11ycore_ariaHiddenBody_hint_fail',
+      summaryKey: 'ariaHiddenBody_summary_fail',
+      hintKey: 'ariaHiddenBody_hint_fail',
       params: {}
     },
     data: {

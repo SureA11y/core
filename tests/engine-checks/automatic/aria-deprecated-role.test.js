@@ -8,7 +8,7 @@ const path = require('node:path');
 const { assertRule } = require('../../helpers/assertRule.js');
 const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 
-const RULE_ID = 'a11ycore-aria-deprecated-role';
+const RULE_ID = 'aria-deprecated-role';
 
 function hasOccurrenceForId(rule, id) {
   return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
@@ -52,8 +52,8 @@ test(`${RULE_ID}: fail when role="generic" is explicitly declared (reserved for 
 
 test(`${RULE_ID}: role="generic" still passes aria-roles-valid (it IS a valid, non-abstract role — just author-prohibited)`, () => {
   const html = `<!doctype html><html><body><div id="a" role="generic"></div></body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: ['a11ycore-aria-roles-valid'] });
-  assertRule(result, 'a11ycore-aria-roles-valid', 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  const result = runa11yCoreOnHtml(html, { runOnly: ['aria-roles-valid'] });
+  assertRule(result, 'aria-roles-valid', 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: i18n default is English`, () => {

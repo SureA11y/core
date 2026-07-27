@@ -6,9 +6,9 @@ const assert = require('node:assert');
 const { createDom, runa11yCoreOnDom } = require('../helpers/runa11yCoreOnHtml');
 
 const RULES = [
-    'a11ycore-contrast-computable',
-    'a11ycore-contrast-minimum',
-    'a11ycore-contrast-enhanced'
+    'contrast-computable',
+    'contrast-minimum',
+    'contrast-enhanced'
 ];
 
 // Reuse the same deterministic patches you already use in the other contrast checks.

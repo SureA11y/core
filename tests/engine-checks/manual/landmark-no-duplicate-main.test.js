@@ -8,7 +8,7 @@ const path = require('node:path');
 const { assertRule } = require('../../helpers/assertRule.js');
 const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 
-const RULE_ID = 'a11ycore-landmark-no-duplicate-main';
+const RULE_ID = 'landmark-no-duplicate-main';
 
 function hasOccurrenceForId(rule, id) {
   return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
@@ -35,7 +35,7 @@ test(`${RULE_ID}: cantTell with one occurrence per main when more than one exist
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'LANDMARK_DUPLICATE_MAIN');
 });
 
-test(`${RULE_ID}: notApplicable when the only "duplicate" main is display:none (a responsive desktop/mobile pattern) — matches the reference engine's own visibility gate (found on a real site, Zoom's homepage)`, () => {
+test(`${RULE_ID}: notApplicable when the only "duplicate" main is display:none (a responsive desktop/mobile pattern) — matches a reference engine's own visibility gate (found on a real site, Zoom's homepage)`, () => {
   const html = `<!doctype html><html><body>
     <main id="a">Visible</main>
     <main id="b" style="display:none">Hidden duplicate</main>

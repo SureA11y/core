@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-td-has-header
+ * @check td-has-header
  * @atomic true
  * @summary Data cells in large tables must have an associated header
  * @standard WCAG 2.2
@@ -31,15 +31,15 @@
  *   `table-headers-attr-valid`'s job.
  */
 
-const id = 'a11ycore-td-has-header';
+const id = 'td-has-header';
 
 const meta = {
   title: 'Data cells in large tables must have an associated header',
   description:
     'Checks that every <td> in a large, simple (no colspan/rowspan) table has an associated header — via a headers attribute, an implicit column <th> above it, or an implicit row <th> to its left.',
   i18n: {
-    titleKey: 'a11ycore_tdHasHeader_title',
-    descriptionKey: 'a11ycore_tdHasHeader_description'
+    titleKey: 'tdHasHeader_title',
+    descriptionKey: 'tdHasHeader_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag131', 'structure', 'atomic', 'automatic'],
@@ -127,8 +127,8 @@ function runInPage(ctx) {
           summary: 'This data cell has no associated header (no headers attribute, no column <th> above it, no row <th> to its left).',
           hint: 'Add a headers attribute referencing the relevant <th> id(s), or restructure the table so this cell has an implicit row/column header.',
           i18n: {
-            summaryKey: 'a11ycore_tdHasHeader_summary_fail',
-            hintKey: 'a11ycore_tdHasHeader_hint_fail',
+            summaryKey: 'tdHasHeader_summary_fail',
+            hintKey: 'tdHasHeader_hint_fail',
             params: { row: String(r), column: String(c) }
           },
           data: {

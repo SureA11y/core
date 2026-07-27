@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-iframe-name-present
+ * @check iframe-name-present
  * @atomic true
  * @summary <iframe>/<frame> elements must have an accessible name
  * @standard WCAG 2.2
@@ -14,21 +14,21 @@
  *   aria-label, or the title attribute. Unlike most interactive elements,
  *   an iframe's name is never derived from its rendered content (the
  *   embedded document is a separate browsing context) — this mirrors
- *   a11ycore-dialog-name-present's "name-from-author-only" reasoning.
+ *   dialog-name-present's "name-from-author-only" reasoning.
  * @implementation-notes
  * - Uses helpers.getAccessibleNameInfo, which already stops at
  *   aria-label/aria-labelledby/label[for]/title without falling back to
  *   subtree text content — the right shape for this element.
  */
 
-const id = 'a11ycore-iframe-name-present';
+const id = 'iframe-name-present';
 
 const meta = {
   title: 'Frames have an accessible name',
   description: 'Checks that <iframe>/<frame> elements expose a non-empty accessible name via aria-label, aria-labelledby, or the title attribute.',
   i18n: {
-    titleKey: 'a11ycore_iframeNamePresent_title',
-    descriptionKey: 'a11ycore_iframeNamePresent_description'
+    titleKey: 'iframeNamePresent_title',
+    descriptionKey: 'iframeNamePresent_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag412', 'structure', 'atomic', 'automatic', 'name', 'iframe'],
@@ -79,8 +79,8 @@ function runInPage(ctx) {
       summary: 'This frame has no accessible name.',
       hint: 'Add a title attribute (or aria-label/aria-labelledby) describing the frame’s content or purpose.',
       i18n: {
-        summaryKey: 'a11ycore_iframeNamePresent_summary_fail',
-        hintKey: 'a11ycore_iframeNamePresent_hint_fail',
+        summaryKey: 'iframeNamePresent_summary_fail',
+        hintKey: 'iframeNamePresent_hint_fail',
         params: { element: tag }
       },
       data: {

@@ -11,14 +11,14 @@
  * - Eligibility is based on helpers.isAccTreeEligible(node, ctx) per engine checks.
  */
 
-const id = 'a11ycore-aria-role-name-present';
+const id = 'aria-role-name-present';
 
 const meta = {
   title: 'ARIA widget/container roles have an accessible name',
   description: 'Checks that selected ARIA widget/container roles expose a non-empty accessible name.',
   i18n: {
-    titleKey: 'a11ycore_ariaRoleNamePresent_title',
-    descriptionKey: 'a11ycore_ariaRoleNamePresent_description'
+    titleKey: 'ariaRoleNamePresent_title',
+    descriptionKey: 'ariaRoleNamePresent_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag412', 'navigation', 'atomic', 'automatic', 'name'],
@@ -166,8 +166,8 @@ function runInPage(ctx) {
       summary: 'This element has no accessible name.',
       hint: 'Provide aria-label or aria-labelledby (preferred), or a non-empty title attribute.',
       i18n: {
-        summaryKey: 'a11ycore_ariaRoleNamePresent_summary_fail',
-        hintKey: 'a11ycore_ariaRoleNamePresent_hint_fail',
+        summaryKey: 'ariaRoleNamePresent_summary_fail',
+        hintKey: 'ariaRoleNamePresent_hint_fail',
         params: { role }
       },
       data: {

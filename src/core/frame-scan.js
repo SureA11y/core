@@ -2,13 +2,13 @@
 
 /**
  * Cross-frame orchestration for the "plain script injection" consumption
- * mode (a11y-core loaded directly into a page with no automation driver --
+ * mode (surea11y loaded directly into a page with no automation driver --
  * see docs/INTEGRATION.md's "Browser extension context" section). A
  * Playwright-driven scan doesn't need any of this (see
- * a11y-core-playwright's ROADMAP.md gap #1 -- CDP-level frame access is
+ * surea11y-playwright's ROADMAP.md gap #1 -- CDP-level frame access is
  * unconditional, strictly better than what a cooperative protocol like this
  * one can achieve). This exists for when there is no automation driver, the
- * same situation the reference engine itself is built around.
+ * same situation a widely-used reference engine itself is built around.
  *
  * Inlined into generated core.js (via scripts/build-core.js), wrapped in its
  * OWN private IIFE together with its own local copies of CHECK_DEFS/
@@ -68,9 +68,9 @@ function getFrameElementUrl(el) {
  * Scans the current frame, then attempts to reach every direct child
  * <iframe>/<frame> within the same scan scope via the frame RPC protocol
  * (src/core/frame-messaging.js). A child that doesn't respond (no
- * cooperating a11y-core loaded and enabled there via
+ * cooperating surea11y loaded and enabled there via
  * a11yCoreEnableFrameResponder() -- the common case for most third-party
- * embeds, and the same real limitation the reference engine itself has for
+ * embeds, and the same real limitation a widely-used reference engine itself has for
  * non-cooperating frames) is reported as { url, error } rather than
  * aborting the scan, matching the non-fatal-per-frame philosophy already
  * established for the Playwright binding's .frames(true). A child that
@@ -119,7 +119,7 @@ function runa11yCoreAcrossFrames(pageUrl, contextSelector, engineOptions, runOnl
             if (!reachable) {
                 return {
                     url: url,
-                    error: 'no a11y-core frame responder detected (that frame never called a11yCoreEnableFrameResponder(), or has not finished loading yet)'
+                    error: 'no surea11y frame responder detected (that frame never called a11yCoreEnableFrameResponder(), or has not finished loading yet)'
                 };
             }
             return sendFrameRunCommand(
@@ -143,10 +143,10 @@ function runa11yCoreAcrossFrames(pageUrl, contextSelector, engineOptions, runOnl
 /**
  * Opt-in: makes the CURRENT window reachable by a parent frame's
  * runa11yCoreAcrossFrames() call. A page calls this once (e.g. right after
- * loading a11y-core) to become scannable from above. Deliberately a
+ * loading surea11y) to become scannable from above. Deliberately a
  * separate, explicit call rather than an automatic side effect of loading
- * a11y-core's code -- unlike the reference engine, whose mere presence as a loaded
- * <script> makes it listen automatically. a11y-core's distribution model
+ * surea11y's code -- unlike a widely-used reference engine, whose mere
+ * presence as a loaded <script> makes it listen automatically. surea11y's distribution model
  * (a function you call, not a script tag with load-time side effects)
  * doesn't have an equivalent "just including it" moment, and an explicit
  * opt-in is a clearer consent point besides -- it means every Node/jsdom
@@ -154,10 +154,10 @@ function runa11yCoreAcrossFrames(pageUrl, contextSelector, engineOptions, runOnl
  * `window.addEventListener` they didn't ask for.
  *
  * The incoming run command's own engineOptions/runOnly are always used
- * as-is (matching the reference engine's own behavior: the parent's request carries the
- * options, the child just executes with them, no local override) --
- * there's no origin/identity check on the sender beyond the namespaced
- * message envelope itself, matching the reference engine's own permissiveness here
+ * as-is (matching a widely-used reference engine's own behavior: the parent's
+ * request carries the options, the child just executes with them, no local
+ * override) -- there's no origin/identity check on the sender beyond the
+ * namespaced message envelope itself, matching that reference engine's own permissiveness here
  * (running a read-only scan and replying with DOM-derived results isn't a
  * privileged operation; the DOM content involved is no more sensitive than
  * what's already rendered on the page).

@@ -7,7 +7,7 @@ const { runa11yCoreOnHtml } = require('../helpers/runDomRulesOnHtml.js');
 
 // engineOptions.customRules: same module shape as an internal rule file
 // ({ id, meta, runInPage, applicability?, data? }), registered per-call (not a
-// mutable global registry like the reference engine's configure() -- matches a11y-core's
+// mutable global registry like some reference engines' configure() -- matches surea11y's
 // existing "fresh engineOptions per call" design). runInPage/applicability may
 // be a real function (same-realm callers) or a function-source string
 // (required for cross-realm callers, e.g. Playwright's page.evaluate, whose
@@ -112,21 +112,67 @@ test('customRules: an invalid entry (unresolvable runInPage) is silently skipped
   assert.ok(result.checksResults.length > 100);
 });
 
-test('customRules: a custom rule id colliding with a built-in one overrides it for that scan (the reference engine configure()-like semantics)', () => {
+test('customRules: a custom rule id colliding with a built-in one overrides it for that scan (reference-engine configure()-like semantics)', () => {
   const result = runa11yCoreOnHtml(HTML, {
     engineOptions: {
       customRules: [{
-        id: 'a11ycore-img-alt-present',
+        id: 'img-alt-present',
         meta: { title: 'Overridden' },
         runInPage() { return { outcome: 'pass', occurrences: [] }; }
       }]
     }
   });
 
-  const matches = result.checksResults.filter((x) => x.ruleId === 'a11ycore-img-alt-present');
+  const matches = result.checksResults.filter((x) => x.ruleId === 'img-alt-present');
   assert.strictEqual(matches.length, 1, 'override replaces, does not duplicate, the built-in entry');
   assert.strictEqual(matches[0].outcome, 'pass');
   assert.strictEqual(matches[0].title, 'Overridden');
+});
+
+test('customRules: an id collision with a built-in rule is surfaced via overriddenBuiltinIds and a console.warn, whether intentional or not', () => {
+  const originalWarn = console.warn;
+  const warnings = [];
+  console.warn = (...args) => { warnings.push(args.join(' ')); };
+
+  let result;
+  try {
+    result = runa11yCoreOnHtml(HTML, {
+      engineOptions: {
+        customRules: [{
+          id: 'img-alt-present',
+          runInPage() { return { outcome: 'pass', occurrences: [] }; }
+        }]
+      }
+    });
+  } finally {
+    console.warn = originalWarn;
+  }
+
+  assert.deepStrictEqual(result.overriddenBuiltinIds, ['img-alt-present']);
+  assert.ok(warnings.some((w) => w.includes('img-alt-present')), 'console.warn should name the overridden rule id');
+});
+
+test('customRules: a non-colliding custom rule id leaves overriddenBuiltinIds empty and warns nothing', () => {
+  const originalWarn = console.warn;
+  const warnings = [];
+  console.warn = (...args) => { warnings.push(args.join(' ')); };
+
+  let result;
+  try {
+    result = runa11yCoreOnHtml(HTML, {
+      engineOptions: {
+        customRules: [{
+          id: 'my-brand-new-custom-rule',
+          runInPage() { return { outcome: 'pass', occurrences: [] }; }
+        }]
+      }
+    });
+  } finally {
+    console.warn = originalWarn;
+  }
+
+  assert.deepStrictEqual(result.overriddenBuiltinIds, []);
+  assert.strictEqual(warnings.length, 0);
 });
 
 test('customRules: meta gets the same defaulting as a build-time rule module (severity/confidence/tags/type)', () => {

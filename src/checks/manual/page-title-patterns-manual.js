@@ -1,6 +1,6 @@
 'use strict';
 
-const id = 'a11ycore-page-title-patterns';
+const id = 'page-title-patterns';
 
 const meta = {
   title: 'Page title patterns that may indicate low descriptiveness',
@@ -8,8 +8,8 @@ const meta = {
     'Flags page titles that are likely too generic or templated as review signals (WCAG 2.2 SC 2.4.2). ' +
     'This rule is conservative and does not fail based on patterns alone.',
   i18n: {
-    titleKey: 'a11ycore_pageTitlePatterns_title',
-    descriptionKey: 'a11ycore_pageTitlePatterns_description'
+    titleKey: 'pageTitlePatterns_title',
+    descriptionKey: 'pageTitlePatterns_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag242', 'titles', 'atomic', 'navigation', 'manual'],
@@ -113,8 +113,8 @@ function runInPage(ctx) {
             : '';
 
         const summaryKey = dupGroups.length
-            ? 'a11ycore_pageTitlePatterns_summary_cantTell_duplicateAcrossPages'
-            : 'a11ycore_pageTitlePatterns_summary_cantTell_templatedAcrossPages';
+            ? 'pageTitlePatterns_summary_cantTell_duplicateAcrossPages'
+            : 'pageTitlePatterns_summary_cantTell_templatedAcrossPages';
 
         const i18nParams = dupGroups.length
             ? {
@@ -135,7 +135,7 @@ function runInPage(ctx) {
           hint: 'Ensure each page title is sufficiently descriptive and helps users distinguish pages (avoid identical or overly templated titles across many pages).',
           i18n: {
             summaryKey,
-            hintKey: 'a11ycore_pageTitlePatterns_hint_cantTell',
+            hintKey: 'pageTitlePatterns_hint_cantTell',
             params: i18nParams
           },
           data: {
@@ -212,10 +212,10 @@ function runInPage(ctx) {
 
     const summaryKey =
         reasonCode === 'genericTitle'
-            ? 'a11ycore_pageTitlePatterns_summary_cantTell_generic'
+            ? 'pageTitlePatterns_summary_cantTell_generic'
             : (reasonCode === 'veryShortTitle'
-                ? 'a11ycore_pageTitlePatterns_summary_cantTell_veryShort'
-                : 'a11ycore_pageTitlePatterns_summary_cantTell_templateLike');
+                ? 'pageTitlePatterns_summary_cantTell_veryShort'
+                : 'pageTitlePatterns_summary_cantTell_templateLike');
     const occBase = {
       selector: 'head > title',
       html: '',
@@ -225,7 +225,7 @@ function runInPage(ctx) {
           'Use a more specific title that identifies the page topic or purpose (for example, include the section name or task).',
       i18n: {
         summaryKey,
-        hintKey: 'a11ycore_pageTitlePatterns_hint_cantTell',
+        hintKey: 'pageTitlePatterns_hint_cantTell',
         params: {}
       },
       data: {

@@ -6,7 +6,7 @@ const assert = require('node:assert/strict');
 const { runa11yCoreOnHtml } = require('../../helpers/runa11yCoreOnHtml');
 const { assertRule } = require('../../helpers/assertRule');
 
-const RULE_ID = 'a11ycore-media-alternative-transcript-evidence';
+const RULE_ID = 'media-alternative-transcript-evidence';
 
 // Helper to generate deterministic long text (no randomness).
 function longText(minChars) {

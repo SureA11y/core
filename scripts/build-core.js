@@ -969,15 +969,15 @@ ${implEntriesInPage.join(',\n')}
 `.trim();
 
   // Cross-frame scanning for the "plain script injection" consumption mode
-  // (a11y-core loaded directly into a page with no automation driver -- see
+  // (surea11y loaded directly into a page with no automation driver -- see
   // docs/INTEGRATION.md's "Browser extension context" section). Browser-only;
   // not needed for a Playwright-driven scan, which reaches cross-origin
-  // frames unconditionally via CDP already (see a11y-core-playwright's
+  // frames unconditionally via CDP already (see surea11y-playwright's
   // ROADMAP.md gap #1) -- strictly better than what this cooperative
   // postMessage protocol can achieve, which requires the child frame to
   // also call a11yCoreEnableFrameResponder(), the same real limitation
-  // the reference engine's own runPartial/finishRun protocol has for non-cooperating
-  // frames.
+  // a widely-used reference engine's own runPartial/finishRun protocol has
+  // for non-cooperating frames.
   //
   // Wrapped in its own private IIFE with its OWN local copy of
   // CHECK_DEFS/RULE_IMPLS/runnersSharedSource -- mirroring exactly how

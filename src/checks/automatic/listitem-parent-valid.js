@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-listitem-parent-valid
+ * @check listitem-parent-valid
  * @atomic true
  * @summary <li> elements must be contained by a list container
  * @standard WCAG 2.2
@@ -14,7 +14,7 @@
  *   outside a real list container (e.g. as a generic flex/grid item under
  *   a <div>) is not exposed as a list item to assistive technologies.
  * @implementation-notes
- * - Distinct, atomic decision from a11ycore-list-children-valid (the
+ * - Distinct, atomic decision from list-children-valid (the
  *   inverse relationship: does a given list container have valid
  *   children).
  * - Role check is scoped to the parent's first explicit role token only
@@ -28,19 +28,19 @@
  *   despite the <ul> tag — found on a real site, Nike's desktop nav
  *   dropdown (`<ul class="desktop-category" role="menu"><li>...`).
  *   Conversely role="presentation"/"none" on the parent is still a valid
- *   (list-semantics-suppressing) parent, matching the reference engine's own
- *   `listitem` check (`['presentation', 'none', 'list'].includes(parentRole)`,
+ *   (list-semantics-suppressing) parent, matching a widely-used reference
+ *   engine's own `listitem` check (`['presentation', 'none', 'list'].includes(parentRole)`,
  *   confirmed by reading its source directly).
  */
 
-const id = 'a11ycore-listitem-parent-valid';
+const id = 'listitem-parent-valid';
 
 const meta = {
   title: 'List items must be inside a list container',
   description: 'Checks that <li> elements are contained by <ul>, <ol>, or an element with role="list".',
   i18n: {
-    titleKey: 'a11ycore_listitemParentValid_title',
-    descriptionKey: 'a11ycore_listitemParentValid_description'
+    titleKey: 'listitemParentValid_title',
+    descriptionKey: 'listitemParentValid_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag131', 'structure', 'atomic', 'automatic', 'list'],
@@ -96,8 +96,8 @@ function runInPage(ctx) {
       summary: 'This list item is not contained by a list container.',
       hint: 'Place this <li> inside a <ul>/<ol>, or give its parent role="list".',
       i18n: {
-        summaryKey: 'a11ycore_listitemParentValid_summary_fail',
-        hintKey: 'a11ycore_listitemParentValid_hint_fail',
+        summaryKey: 'listitemParentValid_summary_fail',
+        hintKey: 'listitemParentValid_hint_fail',
         params: { parentElement: parentTag }
       },
       data: {

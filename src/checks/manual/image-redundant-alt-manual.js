@@ -1,10 +1,10 @@
 'use strict';
 
 /**
- * @check a11ycore-image-redundant-alt
+ * @check image-redundant-alt
  * @atomic true
  * @summary An image's alt text must not duplicate adjacent visible text
- * @standard the reference engine "Best Practices" (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (a widely-used reference engine's classification; no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
  * @applicability
  *   Applies to <img> elements with non-empty alt text whose immediate
  *   parent element also has other visible text content (i.e. text nodes
@@ -18,7 +18,7 @@
  *   duplicates the link text).
  * @implementation-notes
  * - Not WCAG-normative — authored as an advisory, cantTell-capped
- *   `type: 'manual'` rule; see a11ycore-landmark-banner-is-top-level's
+ *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent.
  * - Deliberately scoped to the immediate parent only (not the whole
  *   ancestor chain or arbitrary siblings), to keep the "redundant"
@@ -26,14 +26,14 @@
  *   text elsewhere on the page that coincidentally matches.
  */
 
-const id = 'a11ycore-image-redundant-alt';
+const id = 'image-redundant-alt';
 
 const meta = {
   title: 'Image alt text must not duplicate adjacent visible text',
   description: 'Checks that an <img> alt text is not identical to other visible text already present in its immediate parent element.',
   i18n: {
-    titleKey: 'a11ycore_imageRedundantAlt_title',
-    descriptionKey: 'a11ycore_imageRedundantAlt_description'
+    titleKey: 'imageRedundantAlt_title',
+    descriptionKey: 'imageRedundantAlt_description'
   },
   helpUrl: null,
   tags: ['best-practice', 'images', 'nontext', 'atomic', 'manual'],
@@ -96,8 +96,8 @@ function runInPage(ctx) {
       summary: 'This image\'s alt text duplicates other visible text right next to it.',
       hint: 'Make the alt text empty (alt="") if the image is purely decorative alongside the text, or remove the redundant duplication.',
       i18n: {
-        summaryKey: 'a11ycore_imageRedundantAlt_summary_cantTell',
-        hintKey: 'a11ycore_imageRedundantAlt_hint_cantTell',
+        summaryKey: 'imageRedundantAlt_summary_cantTell',
+        hintKey: 'imageRedundantAlt_hint_cantTell',
         params: { alt }
       },
       data: {

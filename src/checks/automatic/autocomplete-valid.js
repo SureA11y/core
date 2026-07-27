@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-autocomplete-valid
+ * @check autocomplete-valid
  * @atomic true
  * @summary A non-empty autocomplete attribute must follow the WHATWG autofill grammar
  * @standard WCAG 2.2
@@ -29,14 +29,14 @@
  *   without reimplementing the entire spec.
  */
 
-const id = 'a11ycore-autocomplete-valid';
+const id = 'autocomplete-valid';
 
 const meta = {
   title: 'autocomplete attribute must be a valid autofill value',
   description: 'Checks that a non-empty autocomplete attribute is "on"/"off" or a well-formed autofill detail token list.',
   i18n: {
-    titleKey: 'a11ycore_autocompleteValid_title',
-    descriptionKey: 'a11ycore_autocompleteValid_description'
+    titleKey: 'autocompleteValid_title',
+    descriptionKey: 'autocompleteValid_description'
   },
   helpUrl: null,
   tags: ['wcag21aa', 'wcag135', 'forms', 'atomic', 'automatic'],
@@ -112,8 +112,8 @@ function runInPage(ctx) {
       summary: 'This autocomplete attribute value is not a valid autofill value.',
       hint: 'Use "on"/"off", or a valid autofill token list (e.g. "shipping street-address", "cc-number").',
       i18n: {
-        summaryKey: 'a11ycore_autocompleteValid_summary_fail',
-        hintKey: 'a11ycore_autocompleteValid_hint_fail',
+        summaryKey: 'autocompleteValid_summary_fail',
+        hintKey: 'autocompleteValid_hint_fail',
         params: { element: tag, value: raw }
       },
       data: {

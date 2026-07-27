@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-mouse-only-event-handlers
+ * @check mouse-only-event-handlers
  * @atomic true
  * @summary Pointer-only inline event handlers should have a keyboard-reachable equivalent
  * @standard WCAG 2.2
@@ -27,7 +27,7 @@
  *   a keyboard handler attached elsewhere via `addEventListener` (the
  *   norm in most modern frameworks) is invisible to a static markup
  *   scan and would make a `fail` a false positive. Surfaced by a diff
- *   against HTML_CodeSniffer's WCAG2AA ruleset (see ROADMAP.md's Tier 4
+ *   against a legacy ruleset's WCAG2AA rules (see ROADMAP.md's Tier 4
  *   research notes) — this is a real, well-known WCAG 2.1.1 anti-pattern
  *   (technique G90/F54) that nothing else in this rule set checks.
  * - Deliberately does NOT treat `onclick` as a keyboard-equivalent
@@ -43,15 +43,15 @@
  *   static DOM scan — a documented limitation, not an oversight.
  */
 
-const id = 'a11ycore-mouse-only-event-handlers';
+const id = 'mouse-only-event-handlers';
 
 const meta = {
   title: 'Pointer-only inline event handlers should have a keyboard-reachable equivalent',
   description:
     'Flags elements with an inline pointer-only event handler (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) and no keyboard-reachable equivalent (onkeydown/onkeyup/onkeypress/onfocus/onblur), for manual review.',
   i18n: {
-    titleKey: 'a11ycore_mouseOnlyEventHandlers_title',
-    descriptionKey: 'a11ycore_mouseOnlyEventHandlers_description'
+    titleKey: 'mouseOnlyEventHandlers_title',
+    descriptionKey: 'mouseOnlyEventHandlers_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag211', 'structure', 'atomic', 'manual'],
@@ -109,8 +109,8 @@ function runInPage(ctx) {
       summary: `This element has ${presentMouseAttrs.join(', ')} but no keyboard-reachable equivalent handler.`,
       hint: 'Add onkeydown/onkeyup/onkeypress (or onfocus/onblur for hover-triggered behavior) so this functionality is also reachable by keyboard.',
       i18n: {
-        summaryKey: 'a11ycore_mouseOnlyEventHandlers_summary_cantTell',
-        hintKey: 'a11ycore_mouseOnlyEventHandlers_hint_cantTell',
+        summaryKey: 'mouseOnlyEventHandlers_summary_cantTell',
+        hintKey: 'mouseOnlyEventHandlers_hint_cantTell',
         params: { attrs: presentMouseAttrs.join(', ') }
       },
       data: {

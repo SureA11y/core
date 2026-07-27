@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-svg-image-text-alternative-present
+ * @check svg-image-text-alternative-present
  * @atomic true
  * @summary Accessible SVG <image> elements must provide a text alternative
  * @standard WCAG 2.2
@@ -18,14 +18,14 @@
  *   - an accessible name (aria-label / aria-labelledby / title attribute).
  */
 
-const id = 'a11ycore-svg-image-text-alternative-present';
+const id = 'svg-image-text-alternative-present';
 
 const meta = {
   title: 'SVG <image> must have a text alternative',
   description: 'Checks that SVG <image> elements provide a text alternative via <title>/<desc> or an ARIA accessible name.',
   i18n: {
-    titleKey: 'a11ycore_svgImage_textAltPresent_title',
-    descriptionKey: 'a11ycore_svgImage_textAltPresent_description'
+    titleKey: 'svgImage_textAltPresent_title',
+    descriptionKey: 'svgImage_textAltPresent_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag111', 'nontext', 'svg', 'image', 'atomic', 'automatic'],
@@ -196,8 +196,8 @@ function runInPage(ctx) {
       summary: 'Missing text alternative on SVG <image>.',
       hint: 'Add a <title> (and optionally <desc>) inside <image>, or provide aria-label/aria-labelledby.',
       i18n: {
-        summaryKey: 'a11ycore_svgImage_textAltPresent_summary_fail',
-        hintKey: 'a11ycore_svgImage_textAltPresent_hint_fail',
+        summaryKey: 'svgImage_textAltPresent_summary_fail',
+        hintKey: 'svgImage_textAltPresent_hint_fail',
         params: { element: 'image' }
       },
       data: {

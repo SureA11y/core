@@ -1,13 +1,13 @@
 'use strict';
 
-const id = 'a11ycore-tooltip-name-present';
+const id = 'tooltip-name-present';
 
 const meta = {
   title: 'Tooltips have an accessible name',
   description: 'Checks that elements with role="tooltip" expose a non-empty accessible name.',
   i18n: {
-    titleKey: 'a11ycore_tooltipNamePresent_title',
-    descriptionKey: 'a11ycore_tooltipNamePresent_description'
+    titleKey: 'tooltipNamePresent_title',
+    descriptionKey: 'tooltipNamePresent_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag412', 'navigation', 'atomic', 'automatic', 'name'],
@@ -134,8 +134,8 @@ function runInPage(ctx) {
       summary: 'This tooltip has no accessible name.',
       hint: 'Provide tooltip text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.',
       i18n: {
-        summaryKey: 'a11ycore_tooltipNamePresent_summary_fail',
-        hintKey: 'a11ycore_tooltipNamePresent_hint_fail',
+        summaryKey: 'tooltipNamePresent_summary_fail',
+        hintKey: 'tooltipNamePresent_hint_fail',
         params: {}
       },
       data: {

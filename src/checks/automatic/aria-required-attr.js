@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-aria-required-attr
+ * @check aria-required-attr
  * @atomic true
  * @summary Roles with an unambiguous required state/property must carry it
  * @standard WCAG 2.2
@@ -19,25 +19,41 @@
  *   which only lists a required property when the spec is unambiguous and
  *   context-independent — see that file's header for the rationale.
  * - Widened 2026-07-21 to add `meter` (`aria-valuenow`), verified against
- *   the reference engine 4.12.1's own `requiredAttrs` table. Deliberately did NOT add
- *   two other entries from that same the reference engine table: `progressbar`'s
+ *   a widely-used reference engine's own `requiredAttrs` table. Deliberately
+ *   did NOT add two other entries from that same table: `progressbar`'s
  *   `aria-valuenow` (a legitimately indeterminate progressbar omits it —
- *   the reference engine itself excludes progressbar from its own table for this reason)
+ *   that engine itself excludes progressbar from its own table for this reason)
  *   and `combobox`'s `aria-controls` (confirmed via MDN's combobox role
  *   page to be conditional — only required once the popup is actually
  *   displayed, not unconditionally). See src/core/aria-helpers.js's
  *   REQUIRED_PROPS_BY_ROLE comment for the full reasoning.
- * - Not gated on isAccTreeEligible: this is a static markup property.
+ * - Gated on isAccTreeEligible for the element itself: unlike a syntax-
+ *   level check (attribute name/value validity), "does this element
+ *   currently carry its required state attribute" is not fixed once
+ *   written — checkbox/switch/radio's aria-checked and slider/scrollbar's
+ *   aria-valuenow are exactly the kind of live-widget-state attribute
+ *   component libraries set during hydration/mount, at the same moment
+ *   the element becomes exposed. Same false-positive shape as
+ *   aria-required-children; an element that isn't currently exposed to
+ *   the accessibility tree is skipped (notApplicable), not failed.
+ * - Also treats aria-busy="true" as an exemption, same as
+ *   aria-required-children. Note this is an extension by analogy, not a
+ *   literal reading of the spec: WAI-ARIA's aria-busy carve-out text names
+ *   "required owned elements" specifically, not required state attributes.
+ *   The underlying rationale (a widget mid-initialization shouldn't be
+ *   flagged for not yet reflecting state the same initialization step is
+ *   about to set) applies equally here, so the exemption is extended by
+ *   analogy rather than by explicit spec text.
  */
 
-const id = 'a11ycore-aria-required-attr';
+const id = 'aria-required-attr';
 
 const meta = {
   title: 'Roles with a required ARIA state/property must carry it',
   description: 'Checks that elements with an explicit role carry every unambiguous, context-independent required aria-* state/property for that role (e.g. role="checkbox" must have aria-checked).',
   i18n: {
-    titleKey: 'a11ycore_ariaRequiredAttr_title',
-    descriptionKey: 'a11ycore_ariaRequiredAttr_description'
+    titleKey: 'ariaRequiredAttr_title',
+    descriptionKey: 'ariaRequiredAttr_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag412', 'aria', 'structure', 'atomic', 'automatic'],
@@ -61,6 +77,23 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
+  function isEligibleAcc(el) {
+    const fn = helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+    if (!fn) return true;
+    try {
+      const r = fn(el, ctx);
+      if (typeof r === 'boolean') return r;
+      return !!(r && r.eligible);
+    } catch {
+      return true;
+    }
+  }
+
+  function isMarkedBusy(el) {
+    const v = el.getAttribute('aria-busy');
+    return v != null && String(v).trim().toLowerCase() === 'true';
+  }
+
   const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]', safeRoot) : helpers.queryAll('[role]', safeRoot);
 
   const occurrences = [];
@@ -74,6 +107,9 @@ function runInPage(ctx) {
 
     const required = ariaHelpers.getRequiredAttrsForRole(role);
     if (!required.length) continue;
+
+    if (!isEligibleAcc(el)) continue; // not currently exposed to the accessibility tree
+    if (isMarkedBusy(el)) continue; // author has signaled transient incompleteness per WAI-ARIA
 
     applicableCount += 1;
 
@@ -95,8 +131,8 @@ function runInPage(ctx) {
         summary: 'This attribute is required for this element’s role, but is missing.',
         hint: 'Add this attribute with a valid value for this role.',
         i18n: {
-          summaryKey: 'a11ycore_ariaRequiredAttr_summary_fail',
-          hintKey: 'a11ycore_ariaRequiredAttr_hint_fail',
+          summaryKey: 'ariaRequiredAttr_summary_fail',
+          hintKey: 'ariaRequiredAttr_hint_fail',
           params: { attr, role }
         },
         data: {

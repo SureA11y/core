@@ -1,10 +1,10 @@
 # CLI
 
-`a11y-core` ships a small CLI (`bin/a11y-core.js`) for ad hoc scans and CI, on top of the library API described in [`INTEGRATION.md`](./INTEGRATION.md).
+`surea11y` ships a small CLI (`bin/core.js`) for ad hoc scans and CI, on top of the library API described in [`INTEGRATION.md`](./INTEGRATION.md).
 
 ```sh
-npx a11y-core scan ./index.html
-npx a11y-core scan https://example.com/
+npx @surea11y/core scan ./index.html
+npx @surea11y/core scan https://example.com/
 ```
 
 ## What it can and can't scan
@@ -39,11 +39,11 @@ These map directly onto `engineOptions`/`runOnly` (see [`ENGINE_OPTIONS.md`](./E
 ## In CI
 
 ```sh
-npx a11y-core scan ./dist/index.html || exit 1
+npx @surea11y/core scan ./dist/index.html || exit 1
 ```
 
 Or, since the exit code already reflects pass/fail, just let the command's own exit code propagate — most CI systems fail the step automatically on a non-zero exit.
 
 ## A note on dependencies
 
-The CLI is the one part of this package that depends on `jsdom` — `require('a11y-core')` as a library never loads it (see [`SECURITY.md`](../SECURITY.md)). If you only ever use the library API directly against your own DOM (jsdom, a real browser, whatever you already have), you're not paying for `jsdom` a second time.
+The CLI is the one part of this package that depends on `jsdom` — `require('@surea11y/core')` as a library never loads it (see [`SECURITY.md`](../SECURITY.md)). If you only ever use the library API directly against your own DOM (jsdom, a real browser, whatever you already have), you're not paying for `jsdom` a second time.

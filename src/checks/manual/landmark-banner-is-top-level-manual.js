@@ -1,10 +1,10 @@
 'use strict';
 
 /**
- * @check a11ycore-landmark-banner-is-top-level
+ * @check landmark-banner-is-top-level
  * @atomic true
  * @summary The banner landmark must not be nested inside another landmark
- * @standard the reference engine "Best Practices" (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (a widely-used reference engine's classification; no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
  * @applicability
  *   Applies whenever the page contains at least one banner landmark
  *   (explicit role="banner", or an implicit <header> that is not itself
@@ -16,7 +16,7 @@
  *   whole-page banner and confuses landmark-based navigation for
  *   assistive technology users.
  * @implementation-notes
- * - Not WCAG-normative (the reference engine classifies this as "Best Practices," no SC
+ * - Not WCAG-normative (a widely-used reference engine classifies this as "Best Practices," no SC
  *   tag) — authored as an advisory, cantTell-capped `type: 'manual'`
  *   rule per ROADMAP.md Tier 1b and the design doc's policy model
  *   ("Advisory / best-practice rules may exist, but must not produce
@@ -27,18 +27,18 @@
  *   HTML-AAM implicit-role mapping (header→banner, footer→contentinfo,
  *   main→main, nav→navigation, aside→complementary, section/form→
  *   region/form only when accessibly named), not a byte-for-byte port
- *   of the reference engine's internal algorithm — verify against upstream if exact
+ *   of a widely-used reference engine's internal algorithm — verify against upstream if exact
  *   parity is ever required.
  */
 
-const id = 'a11ycore-landmark-banner-is-top-level';
+const id = 'landmark-banner-is-top-level';
 
 const meta = {
   title: 'Banner landmark must be top-level',
   description: 'Checks that the banner landmark (role="banner" or a non-nested <header>) is not nested inside another landmark region.',
   i18n: {
-    titleKey: 'a11ycore_landmarkBannerIsTopLevel_title',
-    descriptionKey: 'a11ycore_landmarkBannerIsTopLevel_description'
+    titleKey: 'landmarkBannerIsTopLevel_title',
+    descriptionKey: 'landmarkBannerIsTopLevel_description'
   },
   helpUrl: null,
   tags: ['best-practice', 'landmarks', 'structure', 'atomic', 'manual'],
@@ -161,8 +161,8 @@ function runInPage(ctx) {
       summary: 'This banner landmark is nested inside another landmark region.',
       hint: 'Move the banner landmark (header/role="banner") so it is not contained by another landmark; a banner should be a top-level region of the page.',
       i18n: {
-        summaryKey: 'a11ycore_landmarkBannerIsTopLevel_summary_cantTell',
-        hintKey: 'a11ycore_landmarkBannerIsTopLevel_hint_cantTell',
+        summaryKey: 'landmarkBannerIsTopLevel_summary_cantTell',
+        hintKey: 'landmarkBannerIsTopLevel_hint_cantTell',
         params: {}
       },
       data: {

@@ -8,7 +8,7 @@ const path = require('node:path');
 const { assertRule } = require('../../helpers/assertRule.js');
 const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 
-const RULE_ID = 'a11ycore-aria-valid-attr-value';
+const RULE_ID = 'aria-valid-attr-value';
 
 function hasOccurrenceForId(rule, id) {
   return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
@@ -95,7 +95,7 @@ test(`${RULE_ID}: fail when idref-list references only a non-existent id`, () =>
   assert.equal(rule.occurrences[0].data.details.valueReason, 'idref-list-none-found');
 });
 
-test(`${RULE_ID}: pass when idref-list is partially dangling (at least one id resolves) — verified 2026-07-21 to be an exact match for the reference engine's own idrefs validation, not a conservative guess`, () => {
+test(`${RULE_ID}: pass when idref-list is partially dangling (at least one id resolves) — verified 2026-07-21 to be an exact match for a reference engine's own idrefs validation, not a conservative guess`, () => {
   const html = `<!doctype html><html><body>
     <span id="lbl">Label</span>
     <div id="a" aria-labelledby="lbl does_not_exist"></div>

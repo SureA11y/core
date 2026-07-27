@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-identical-links-same-purpose
+ * @check identical-links-same-purpose
  * @atomic true
  * @summary Links with the same accessible name should lead to the same destination
  * @standard WCAG 2.2
@@ -28,15 +28,15 @@
  *   same place is not flagged.
  */
 
-const id = 'a11ycore-identical-links-same-purpose';
+const id = 'identical-links-same-purpose';
 
 const meta = {
   title: 'Links with the same accessible name should lead to the same destination',
   description:
     'Flags groups of links that share the same accessible name but resolve to more than one distinct destination, for manual review of whether they serve the same purpose.',
   i18n: {
-    titleKey: 'a11ycore_identicalLinksSamePurpose_title',
-    descriptionKey: 'a11ycore_identicalLinksSamePurpose_description'
+    titleKey: 'identicalLinksSamePurpose_title',
+    descriptionKey: 'identicalLinksSamePurpose_description'
   },
   helpUrl: null,
   tags: ['wcag2aaa', 'wcag249', 'navigation', 'atomic', 'manual'],
@@ -104,8 +104,8 @@ function runInPage(ctx) {
         summary: 'This link shares an accessible name with other links on the page that lead to a different destination.',
         hint: 'Ensure links with the same text serve the same purpose, or make the link text distinct enough to describe each destination.',
         i18n: {
-          summaryKey: 'a11ycore_identicalLinksSamePurpose_summary_cantTell',
-          hintKey: 'a11ycore_identicalLinksSamePurpose_hint_cantTell',
+          summaryKey: 'identicalLinksSamePurpose_summary_cantTell',
+          hintKey: 'identicalLinksSamePurpose_hint_cantTell',
           params: { name, destinationCount: String(distinctHrefs.size) }
         },
         data: {

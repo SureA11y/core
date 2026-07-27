@@ -8,7 +8,7 @@ const path = require('node:path');
 const { assertRule } = require('../../helpers/assertRule.js');
 const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 
-const RULE_ID = 'a11ycore-list-children-valid';
+const RULE_ID = 'list-children-valid';
 
 function hasOccurrenceForId(rule, id) {
   return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
@@ -46,7 +46,7 @@ test(`${RULE_ID}: fail when ul has a non-li direct child`, () => {
   assert.deepStrictEqual(rule.occurrences[0].data.details.invalidChildren, ['div']);
 });
 
-test(`${RULE_ID}: pass when the only invalid-looking direct child is display:none (not exposed to AT, matches the reference engine's own list check — found on a real site, Stanford's main nav)`, () => {
+test(`${RULE_ID}: pass when the only invalid-looking direct child is display:none (not exposed to AT, matches a reference engine's own list check — found on a real site, Stanford's main nav)`, () => {
   const html = `<!doctype html><html><body>
     <ul id="a"><li>Grape</li><span style="display:none">hydration marker</span></ul>
   </body></html>`;

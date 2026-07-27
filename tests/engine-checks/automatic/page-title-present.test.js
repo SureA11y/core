@@ -8,7 +8,7 @@ const path = require('node:path');
 const { assertRule } = require('../../helpers/assertRule.js');
 const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 
-const RULE_ID = 'a11ycore-page-title-present';
+const RULE_ID = 'page-title-present';
 
 function getFirstOccurrence(rule) {
     assert.ok(rule);
@@ -43,7 +43,7 @@ test('fail when <title> is missing entirely', () => {
     const occ = getFirstOccurrence(rule);
     assertOccShape(occ);
 
-    assert.strictEqual(occ.i18n.summaryKey, 'a11ycore_pageTitlePresent_summary_fail_missing');
+    assert.strictEqual(occ.i18n.summaryKey, 'pageTitlePresent_summary_fail_missing');
     assert.strictEqual(occ.data.details.reasonCode, 'missingTitleElement');
     assert.strictEqual(occ.html, '<title>(missing)</title>');
 });
@@ -57,7 +57,7 @@ test('fail when <title></title> is empty', () => {
     const occ = getFirstOccurrence(rule);
     assertOccShape(occ);
 
-    assert.strictEqual(occ.i18n.summaryKey, 'a11ycore_pageTitlePresent_summary_fail_empty');
+    assert.strictEqual(occ.i18n.summaryKey, 'pageTitlePresent_summary_fail_empty');
     assert.strictEqual(occ.data.details.reasonCode, 'emptyTitleText');
 });
 
@@ -70,7 +70,7 @@ test('fail when <title> is whitespace-only', () => {
     const occ = getFirstOccurrence(rule);
     assertOccShape(occ);
 
-    assert.strictEqual(occ.i18n.summaryKey, 'a11ycore_pageTitlePresent_summary_fail_empty');
+    assert.strictEqual(occ.i18n.summaryKey, 'pageTitlePresent_summary_fail_empty');
     assert.strictEqual(occ.data.details.reasonCode, 'emptyTitleText');
 });
 

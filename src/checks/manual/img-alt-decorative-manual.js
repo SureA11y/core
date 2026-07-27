@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-img-alt-decorative
+ * @check img-alt-decorative
  * @atomic true
  * @summary Manual review: text alternative appropriateness (WCAG 1.1.1)
  * @standard WCAG 2.2
@@ -11,14 +11,14 @@
  *   Human review is required to confirm that the provided text alternative is accurate and appropriate.
  */
 
-const id = "a11ycore-img-alt-decorative";
+const id = "img-alt-decorative";
 
 const meta = {
   title: "<img> with alt=\"\" must be decorative (manual review)",
   description: "Flags <img> elements with empty alt for human review that they are purely decorative.",
   i18n: {
-    titleKey: "a11ycore_img_altDecorative_title",
-    descriptionKey: "a11ycore_img_altDecorative_description"
+    titleKey: "img_altDecorative_title",
+    descriptionKey: "img_altDecorative_description"
   },
   helpUrl: null,
   tags: ["wcag2a", "wcag111", "nontext", "images", "manual", "atomic"],
@@ -121,8 +121,8 @@ function runInPage(ctx) {
             summary: 'Review whether <img> is decorative (alt="").',
             hint: 'Confirm the image is purely decorative. If it conveys information or function, provide meaningful alt text.',
             i18n: {
-                summaryKey: 'a11ycore_img_altDecorative_summary_cantTell',
-                hintKey: 'a11ycore_img_altDecorative_hint_cantTell',
+                summaryKey: 'img_altDecorative_summary_cantTell',
+                hintKey: 'img_altDecorative_hint_cantTell',
                 params: { element: 'img' }
             },
             data: {

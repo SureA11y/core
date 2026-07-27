@@ -26,7 +26,7 @@
  *    guessed at.
  *
  * Both scope-limitations are intentional per this engine's "coverage-
- * driven growth, not vibes" principle (see a11y-core-engine.design.md).
+ * driven growth, not vibes" principle (see surea11y-engine.design.md).
  * Expanding either table is safe to do incrementally; narrowing them
  * (turning a supported-but-not-required property into "required", or
  * adding an element to ALLOWED_ROLES_BY_ELEMENT) should be cross-checked
@@ -76,14 +76,14 @@ function createAriaHelpers(opts, shared) {
     }
 
     // Used for <header>/<footer>'s own conditional implicit role: per the
-    // W3C ARIA-in-HTML spec (matching the reference engine's own getElementSpec
-    // "header"/"footer" implicit-role functions, which check
+    // W3C ARIA-in-HTML spec (matching a widely-used reference engine's own
+    // element-spec table for "header"/"footer" implicit-role functions, which check
     // getSectioningContentPlusMainSelector — a fixed HTML content-type list,
     // not a deep accname-style computation), a <header>/<footer> is only a
     // "banner"/"contentinfo" landmark when it is NOT nested inside sectioning
     // content (article/aside/nav/section) or <main>; nested, its implicit
     // role is generic/null instead. Simplified to a tag-name ancestor walk
-    // (skipping the reference engine's additional role=article/complementary/navigation/
+    // (skipping that engine's additional role=article/complementary/navigation/
     // region/main equivalences) — deliberately pragmatic, matching this
     // table's existing precedent (hasAccessibleNameHint above takes the same
     // "close enough, tag-based" approach rather than a full spec re-implementation).
@@ -255,17 +255,18 @@ function createAriaHelpers(opts, shared) {
         heading: ['aria-level'],
         menuitemcheckbox: ['aria-checked'],
         menuitemradio: ['aria-checked'],
-        // Verified 2026-07-21 against the reference engine 4.12.1's own requiredAttrs
-        // table AND cross-checked for the context-dependence this table's
-        // own policy cares about: unlike progressbar (deliberately excluded
-        // here and by the reference engine — an indeterminate progressbar legitimately omits
-        // aria-valuenow) or separator (required only when focusable/acting
-        // as a widget, not for the common plain-divider usage — a genuine
-        // conditional case, deliberately NOT added here for that reason),
-        // meter has no "indeterminate" concept and no focusable/non-
+        // Verified 2026-07-21 against a widely-used reference engine's own
+        // requiredAttrs table AND cross-checked for the context-dependence
+        // this table's own policy cares about: unlike progressbar
+        // (deliberately excluded here and by that engine — an indeterminate
+        // progressbar legitimately omits aria-valuenow) or separator
+        // (required only when focusable/acting as a widget, not for the
+        // common plain-divider usage — a genuine conditional case,
+        // deliberately NOT added here for that reason), meter has no
+        // "indeterminate" concept and no focusable/non-
         // focusable split: it always represents a concrete measurement, so
         // aria-valuenow is unconditionally required. Also investigated
-        // combobox's aria-controls (in the reference engine's table too) and deliberately
+        // combobox's aria-controls (in that engine's table too) and deliberately
         // did NOT add it — confirmed via MDN's own combobox role page that
         // it's only required once the popup is actually displayed
         // (aria-expanded="true"), a real context-dependent case this
@@ -330,7 +331,7 @@ function createAriaHelpers(opts, shared) {
     //    elements whose permitted roles depend on an attribute.
     // -------------------------------------------------------------------
     const ALLOWED_ROLES_BY_ELEMENT = {
-        // Verified against the reference engine 4.12.1's own allowedRoles array for the
+        // Verified against a widely-used reference engine's own allowedRoles table for the
         // 'href' variant of 'a' (2026-07-20 — found via a real page: Blick
         // Art Materials' homepage carousel uses <a href="..." role="group">
         // for its slides, which is not a permitted override; a plain
@@ -342,40 +343,40 @@ function createAriaHelpers(opts, shared) {
         'a[href]': ['button', 'checkbox', 'menuitem', 'menuitemcheckbox', 'menuitemradio',
             'option', 'radio', 'switch', 'tab', 'treeitem', 'doc-backlink', 'doc-biblioref',
             'doc-glossref', 'doc-noteref'],
-        // Verified against the reference engine 4.12.1's own allowedRoles array for
+        // Verified against a widely-used reference engine's own allowedRoles table for
         // 'article' (2026-07-21 — found via a real page: Udacity's
         // homepage carousel, a Swiper.js slider whose 15 slides are each
         // <article role="group">, not a permitted override). Restating
         // the native 'article' role remains permitted via the native-role
         // fallback below regardless of this list.
         article: ['feed', 'presentation', 'none', 'document', 'application', 'main', 'region'],
-        // Verified against the reference engine 4.12.1's own allowedRoles array for the
+        // Verified against a widely-used reference engine's own allowedRoles table for the
         // 'href' variant of 'area' (2026-07-20, found while re-checking the
-        // sibling <a href> bug above): the reference engine sets this to `false`, i.e. NO
+        // sibling <a href> bug above): that engine sets this to `false`, i.e. NO
         // override role is permitted at all on an <area href> — only its
         // native 'link' role, via the native-role fallback below. An empty
         // array (not null) is the correct encoding, same convention already
         // used for 'label[associated]' below.
         'area[href]': [],
-        // Verified against the reference engine 4.12.1 and the W3C ARIA-in-HTML spec
+        // Verified against a widely-used reference engine and the W3C ARIA-in-HTML spec
         // (2026-07-20): <area> without href permits only these two roles
         // ('generic' is also technically allowed but SHOULD NOT be used per
-        // spec, and the reference engine itself excludes it from its allowed-roles list, so
+        // spec, and that engine itself excludes it from its allowed-roles list, so
         // it's left out here too rather than asserted as permitted).
         area: ['button', 'link'],
-        // Verified against the reference engine 4.12.1's own element spec for 'html'
+        // Verified against a widely-used reference engine's own element-spec table for 'html'
         // (2026-07-21, found via a real page: news24.com's South Africa
-        // homepage uses <html role="document">): the reference engine sets this to
+        // homepage uses <html role="document">): that engine sets this to
         // `allowedRoles: false` — no explicit role is ever permitted on
         // <html>, and there's no native role to restate either (no entry in
         // NATIVE_ROLE_BY_ELEMENT_KEY below), so an empty array is correct
         // here, not "unconstrained" (no prior entry meant this element was
         // silently unchecked).
         html: [],
-        // Verified against the reference engine 4.12.1's own element spec for 'picture'
+        // Verified against a widely-used reference engine's own element-spec table for 'picture'
         // (2026-07-23, found via a real page: TradingView's homepage,
         // <picture role="presentation"> used twice for hero illustrations):
-        // the reference engine sets this to `allowedRoles: false` -- no override role is ever
+        // that engine sets this to `allowedRoles: false` -- no override role is ever
         // permitted on <picture> (it has no implicit ARIA role either, so
         // there's no native-role-restatement exception -- an empty array is
         // correct, same convention as 'html'/'area[href]' above).
@@ -389,21 +390,21 @@ function createAriaHelpers(opts, shared) {
         h5: ['tab', 'presentation', 'none'],
         h6: ['tab', 'presentation', 'none'],
         hr: ['none', 'presentation'],
-        // Verified against the reference engine 4.12.1 and the W3C ARIA-in-HTML spec
+        // Verified against a widely-used reference engine and the W3C ARIA-in-HTML spec
         // (2026-07-20 — found via a real page: Stack Overflow's search
-        // filter panel uses <form role="region">, which a11y-core was
+        // filter panel uses <form role="region">, which surea11y was
         // silently not checking at all — no entry meant "unconstrained").
         // 'complementary' is <aside>'s own native role — allowed via the
         // native-role fallback below even though it's not in this list
         // (spec: "also allowed, but NOT RECOMMENDED", same shape as <nav>).
         aside: ['feed', 'none', 'note', 'presentation', 'region', 'search'],
         form: ['form', 'search', 'none', 'presentation'],
-        // Verified against the reference engine 4.12.1's own allowedRoles array for
+        // Verified against a widely-used reference engine's own allowedRoles table for
         // 'header' (2026-07-20): the old code had no entry at all for
         // <header>, meaning "no role constraint" — silently not checking it.
         // Found via a real site: Vimeo's global nav uses
         // <header role="navigation">, invalid regardless of nesting since
-        // "navigation" isn't in the reference engine's allowed array either way. The array
+        // "navigation" isn't in that engine's allowed array either way. The array
         // itself is identical for both keys — what differs by nesting is
         // only the native-role match (see 'header[toplevel]' below and
         // getElementRoleKey's header branch): a top-level <header
@@ -414,12 +415,12 @@ function createAriaHelpers(opts, shared) {
         // existed (same shape as <section>'s named/unnamed split).
         'header[toplevel]': ['group', 'none', 'presentation', 'doc-footnote'],
         header: ['group', 'none', 'presentation', 'doc-footnote'],
-        // Verified against the reference engine 4.12.1 and the W3C ARIA-in-HTML spec
+        // Verified against a widely-used reference engine and the W3C ARIA-in-HTML spec
         // (2026-07-20): a <label> associated with a labelable control
         // permits no explicit role at all (see getElementRoleKey's
         // label[associated] split above).
         'label[associated]': [],
-        // Verified against the reference engine 4.12.1 and the W3C ARIA-in-HTML spec
+        // Verified against a widely-used reference engine and the W3C ARIA-in-HTML spec
         // (2026-07-20): permitted roles depend on whether the img has a
         // non-empty alt (see getElementRoleKey's img[alt]/img split above).
         'img[alt]': ['button', 'checkbox', 'link', 'math', 'menuitem', 'menuitemcheckbox',
@@ -428,20 +429,20 @@ function createAriaHelpers(opts, shared) {
         img: ['presentation', 'none'],
         li: ['menuitem', 'menuitemcheckbox', 'menuitemradio', 'option', 'radio',
             'separator', 'tab', 'treeitem', 'listitem', 'presentation', 'none'],
-        // Verified against the reference engine 4.12.1's own allowedRoles array for
+        // Verified against a widely-used reference engine's own allowedRoles table for
         // 'nav' (2026-07-20, found via a real site — Vimeo's global nav
         // uses <nav role="menu">/<nav aria-label="Menu" role="menu"> for
         // its dropdown panels): the old entry only had presentation/none.
         nav: ['doc-index', 'doc-pagelist', 'doc-toc', 'menu', 'menubar', 'none', 'presentation', 'tablist'],
-        // Verified against the reference engine 4.12.1 (2026-07-20): every other role
+        // Verified against a widely-used reference engine (2026-07-20): every other role
         // tried (presentation/none/img/document/group/figure/region/banner/
         // button/link/main/article/tab/list/table) is disallowed on <video>.
         video: ['application'],
-        // Verified against the reference engine 4.12.1 (2026-07-20): same probe as
+        // Verified against a widely-used reference engine (2026-07-20): same probe as
         // <video>, but img/document are also permitted (an <object> can
         // stand in for an image or a full document, unlike <video>).
         object: ['application', 'img', 'document'],
-        // Verified against the reference engine 4.12.1 and the W3C ARIA-in-HTML spec
+        // Verified against a widely-used reference engine and the W3C ARIA-in-HTML spec
         // (2026-07-20 — see getElementRoleKey's section[named]/section
         // split above): 'region' is only permitted when the section has an
         // accessible name (it's <section>'s own conditional native role in
@@ -458,7 +459,7 @@ function createAriaHelpers(opts, shared) {
         ul: ['group', 'listbox', 'menu', 'menubar', 'radiogroup', 'tablist',
             'toolbar', 'tree', 'presentation', 'none'],
         // role="button" is only permitted when paired with aria-pressed
-        // (verified against the reference engine 4.12.1 and the W3C ARIA-in-HTML spec,
+        // (verified against a widely-used reference engine and the W3C ARIA-in-HTML spec,
         // 2026-07-20 — see getElementRoleKey's checkbox[aria-pressed] split
         // above).
         'input[type=checkbox][aria-pressed]': ['button', 'menuitemcheckbox', 'option', 'switch'],
@@ -478,12 +479,12 @@ function createAriaHelpers(opts, shared) {
         // role itself is always allowed via isRoleAllowedOnElement's
         // native-role fallback, same as every other element in this table.
         'select[multiple]': [],
-        // Verified against the reference engine 4.12.1 and the W3C ARIA-in-HTML spec
+        // Verified against a widely-used reference engine and the W3C ARIA-in-HTML spec
         // (2026-07-20 — found via a real page: Wikipedia's sidebar uses
-        // <table role="navigation">, which a11y-core was incorrectly
+        // <table role="navigation">, which surea11y was incorrectly
         // failing): <table> permits any role. <td>/<th>/<tr> are spec'd as
         // context-dependent (restricted only when the ancestor <table> is
-        // itself exposed with role=table/grid/treegrid) — the reference engine's own
+        // itself exposed with role=table/grid/treegrid) — a widely-used reference engine's own
         // table doesn't implement that conditional either (always
         // unconstrained for these three), so this follows the same
         // deliberate simplification rather than guessing at ancestor-role
@@ -511,7 +512,7 @@ function createAriaHelpers(opts, shared) {
         button: 'button',
         form: 'form',
         // No entry for plain 'header' — a header nested in sectioning
-        // content/<main> has no implicit role to restate (matches the reference engine's
+        // content/<main> has no implicit role to restate (matches that engine's
         // own implicit-role function returning null in that case).
         'header[toplevel]': 'banner',
         h1: 'heading', h2: 'heading', h3: 'heading', h4: 'heading', h5: 'heading', h6: 'heading',
@@ -682,9 +683,9 @@ function createAriaHelpers(opts, shared) {
                 // Only flag when NONE of the referenced ids resolve — a
                 // partially-dangling list (some ids exist, some don't) is
                 // left unflagged. Verified 2026-07-21 directly against
-                // the reference engine 4.12.1's own validateAttrValue (its 'idrefs'
-                // case, node_modules/the reference engine/its source): the reference engine's real check is
-                // `idrefs(vNode, attr).some(node => !!node)` — i.e. the reference engine
+                // a widely-used reference engine's own validateAttrValue (its
+                // 'idrefs' case): that engine's real check is
+                // `idrefs(vNode, attr).some(node => !!node)` — i.e. it
                 // itself only treats an idref-list as invalid when EVERY
                 // token fails to resolve, identical to this behavior. Not a
                 // conservative guess; confirmed to match the reference
@@ -736,11 +737,11 @@ function createAriaHelpers(opts, shared) {
             // ARIA-in-HTML). role="region" restated is only a no-op
             // restatement of the native role — and therefore permitted —
             // when a name is actually present; on an unnamed <section> it's
-            // a real violation (verified against the reference engine 4.12.1's
-            // roleIsAllowed, which checks explicit-role-equals-implicit-role
-            // before its allowedRoles array — <section>'s array itself
-            // doesn't include 'region' at all — and directly via the reference engine's run(),
-            // 2026-07-20). Found via a real page: ESPN's unnamed
+            // a real violation (verified 2026-07-20 against a widely-used
+            // reference engine's roleIsAllowed, which checks
+            // explicit-role-equals-implicit-role before its allowedRoles
+            // array — <section>'s array itself doesn't include 'region' at
+            // all — and directly via that engine's own runtime). Found via a real page: ESPN's unnamed
             // <section role="region" id="global-scoreboard">.
             return hasAccessibleNameHint(el) ? 'section[named]' : 'section';
         }
@@ -750,8 +751,9 @@ function createAriaHelpers(opts, shared) {
             // top-level (not nested inside sectioning content/<main>),
             // generic/null when nested — see hasSectioningAncestor above.
             // role="banner" restated is only a no-op restatement of the
-            // native role (and therefore permitted) at the top level; the reference engine's
-            // own allowedRoles array for <header> doesn't include 'banner'
+            // native role (and therefore permitted) at the top level; a
+            // widely-used reference engine's own allowedRoles array for
+            // <header> doesn't include 'banner'
             // at all (reached only via the native-role-match branch), same
             // shape as <section>'s 'region'.
             return hasSectioningAncestor(el) ? 'header' : 'header[toplevel]';
@@ -761,9 +763,9 @@ function createAriaHelpers(opts, shared) {
             // A <label> permits no explicit role at all when associated with
             // a labelable form control (via `for` or wrapping); otherwise
             // any role is permitted (verified against the W3C ARIA-in-HTML
-            // spec and the reference engine's own table, 2026-07-20 — found via a real
+            // spec and a widely-used reference engine's own table, 2026-07-20 — found via a real
             // page: basecamp.com's nav toggle uses
-            // <label for="..." role="button">, which the reference engine correctly flags).
+            // <label for="..." role="button">, which that reference engine correctly flags).
             // Uses the native `.control` API (resolves both `for` and
             // wrapping association) instead of reimplementing that lookup.
             let associated = false;
@@ -788,13 +790,13 @@ function createAriaHelpers(opts, shared) {
             const type = lower(getAttr(el, 'type') || 'text');
             if (type === 'checkbox') {
                 // role="button" is only permitted on a checkbox when paired
-                // with aria-pressed (verified against the reference engine 4.12.1 and
-                // the W3C ARIA-in-HTML spec, 2026-07-20 — found via a real
+                // with aria-pressed (verified 2026-07-20 against a widely-used
+                // reference engine and the W3C ARIA-in-HTML spec — found via a real
                 // page: Wikipedia's dropdown toggles use
                 // <input type="checkbox" role="button" aria-haspopup="true">
                 // with no aria-pressed, which is not a permitted
                 // combination — this is a real markup issue on their side,
-                // not an a11y-core/the reference engine disagreement).
+                // not a genuine engine disagreement).
                 let hasAriaPressed = false;
                 try {
                     hasAriaPressed = !!(el.hasAttribute && el.hasAttribute('aria-pressed'));

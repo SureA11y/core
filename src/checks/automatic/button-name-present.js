@@ -2,14 +2,14 @@
 
 // NOTE: Repo ruleId contract requires ENGINE_TAG prefix in the rule id.
 // File name intentionally has no prefix, per request.
-const id = 'a11ycore-button-name-present';
+const id = 'button-name-present';
 
 const meta = {
   title: 'Buttons have an accessible name',
   description: 'Checks that buttons expose a non-empty accessible name.',
   i18n: {
-    titleKey: 'a11ycore_buttonNamePresent_title',
-    descriptionKey: 'a11ycore_buttonNamePresent_description'
+    titleKey: 'buttonNamePresent_title',
+    descriptionKey: 'buttonNamePresent_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag412', 'forms', 'atomic', 'automatic', 'buttons', 'name'],
@@ -113,8 +113,8 @@ function runInPage(ctx) {
         summary: 'This button has no accessible name.',
         hint: 'Provide visible button text or a programmatic accessible-name mechanism (for example aria-label) so assistive technologies can identify the button.',
         i18n: {
-          summaryKey: 'a11ycore_buttonNamePresent_summary_fail',
-          hintKey: 'a11ycore_buttonNamePresent_hint_fail',
+          summaryKey: 'buttonNamePresent_summary_fail',
+          hintKey: 'buttonNamePresent_hint_fail',
           params: { element: tag }
         },
         data: {

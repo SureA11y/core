@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-duplicate-id-aria
+ * @check duplicate-id-aria
  * @atomic true
  * @summary Any id referenced by an ARIA ID-reference attribute must be unique in the document
  * @standard WCAG 2.2
@@ -18,21 +18,21 @@
  *   which element the reference resolves to (typically the first, silently
  *   dropping the others).
  * @implementation-notes
- * - Scoped deliberately to ids referenced by ARIA (matching the reference engine's
- *   duplicate-id-aria, not the broader/deprecated page-wide duplicate-id
+ * - Scoped deliberately to ids referenced by ARIA (matching a widely-used
+ *   reference engine's duplicate-id-aria, not the broader/deprecated page-wide duplicate-id
  *   check — see ROADMAP.md's "Skip" list).
  * - Document-wide by design: id uniqueness and ARIA id references are a
  *   whole-document property, not scoped to a sub-root.
  */
 
-const id = 'a11ycore-duplicate-id-aria';
+const id = 'duplicate-id-aria';
 
 const meta = {
   title: 'IDs referenced by ARIA must be unique',
   description: 'Checks that any id value referenced by an ARIA ID-reference attribute (aria-labelledby, aria-describedby, aria-owns, aria-controls, aria-activedescendant, aria-flowto, aria-errormessage, aria-details) is unique in the document.',
   i18n: {
-    titleKey: 'a11ycore_duplicateIdAria_title',
-    descriptionKey: 'a11ycore_duplicateIdAria_description'
+    titleKey: 'duplicateIdAria_title',
+    descriptionKey: 'duplicateIdAria_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag412', 'aria', 'structure', 'atomic', 'automatic'],
@@ -103,8 +103,8 @@ function runInPage(ctx) {
         summary: 'This id is referenced by an ARIA attribute but is used by more than one element.',
         hint: 'Make ids referenced by ARIA attributes unique within the document.',
         i18n: {
-          summaryKey: 'a11ycore_duplicateIdAria_summary_fail',
-          hintKey: 'a11ycore_duplicateIdAria_hint_fail',
+          summaryKey: 'duplicateIdAria_summary_fail',
+          hintKey: 'duplicateIdAria_hint_fail',
           params: { id: refId, duplicateCount: String(els.length) }
         },
         data: {

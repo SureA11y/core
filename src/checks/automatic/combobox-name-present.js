@@ -1,13 +1,13 @@
 'use strict';
 
-const id = 'a11ycore-combobox-name-present';
+const id = 'combobox-name-present';
 
 const meta = {
   title: 'Comboboxes have an accessible name',
   description: 'Checks that elements with role="combobox" expose a non-empty accessible name.',
   i18n: {
-    titleKey: 'a11ycore_comboboxNamePresent_title',
-    descriptionKey: 'a11ycore_comboboxNamePresent_description'
+    titleKey: 'comboboxNamePresent_title',
+    descriptionKey: 'comboboxNamePresent_description'
   },
   helpUrl: null,
   tags: ['wcag2a','wcag412','forms','atomic','automatic','name','combobox'],
@@ -243,8 +243,8 @@ function runInPage(ctx) {
       summary: 'This combobox has no accessible name.',
       hint: 'Provide aria-label or aria-labelledby (preferred), or ensure the element has visible text that is not hidden from assistive technologies.',
       i18n: {
-        summaryKey: 'a11ycore_comboboxNamePresent_summary_fail',
-        hintKey: 'a11ycore_comboboxNamePresent_hint_fail',
+        summaryKey: 'comboboxNamePresent_summary_fail',
+        hintKey: 'comboboxNamePresent_hint_fail',
         params: {}
       },
       data: {

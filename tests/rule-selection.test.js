@@ -342,15 +342,16 @@ test('rule selection: excludes always win (even under includeMode=or)', () => {
   assert.ok(!got.includes(idVictim), 'expected excluded rule to be removed');
 });
 
-test('rule selection: ruleId prefix matching (unprefixed id matches a11ycore- prefixed)', () => {
+test('rule selection: legacy ruleId prefix matching (a11ycore--prefixed id matches the bare canonical ruleId)', () => {
   const ENGINE_TAG = core.ENGINE_TAG || 'a11ycore';
-  const any = core.CHECK_DEFS.find((d) => typeof d.ruleId === 'string' && d.ruleId.startsWith(ENGINE_TAG + '-'));
-  assert.ok(any, `expected at least one ruleId prefixed with ${ENGINE_TAG}-`);
+  const any = core.CHECK_DEFS.find((d) => typeof d.ruleId === 'string' && d.ruleId.length > 0);
+  assert.ok(any, 'expected at least one ruleId');
+  assert.ok(!any.ruleId.startsWith(ENGINE_TAG + '-'), 'canonical ruleId should be bare, not engine-prefixed');
 
-  const unprefixed = any.ruleId.slice((ENGINE_TAG + '-').length);
-  const engineOptions = { rules: { include: `${unprefixed}` } };
+  const legacyPrefixed = `${ENGINE_TAG}-${any.ruleId}`;
+  const engineOptions = { rules: { include: `${legacyPrefixed}` } };
 
-  assertSelection(core, 'unprefixed include matches prefixed ruleId', engineOptions, undefined);
+  assertSelection(core, 'legacy prefixed include matches bare ruleId', engineOptions, undefined);
   const got = gotSelectedRuleIds(core, undefined, engineOptions);
   assert.deepEqual(got, [any.ruleId]);
 });

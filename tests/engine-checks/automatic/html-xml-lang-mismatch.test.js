@@ -8,7 +8,7 @@ const path = require('node:path');
 const { assertRule } = require('../../helpers/assertRule.js');
 const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 
-const RULE_ID = 'a11ycore-html-xml-lang-mismatch';
+const RULE_ID = 'html-xml-lang-mismatch';
 
 test(`${RULE_ID}: notApplicable when only lang is present`, () => {
   const html = `<!doctype html><html lang="en"><body></body></html>`;

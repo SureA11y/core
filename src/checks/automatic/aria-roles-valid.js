@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-aria-roles-valid
+ * @check aria-roles-valid
  * @atomic true
  * @summary An explicit role attribute must resolve to a real, non-abstract ARIA role
  * @standard WCAG 2.2
@@ -21,14 +21,14 @@
  *   element happens to be hidden right now.
  */
 
-const id = 'a11ycore-aria-roles-valid';
+const id = 'aria-roles-valid';
 
 const meta = {
   title: 'role attribute must be a valid, non-abstract ARIA role',
   description: 'Checks that an explicit role="" attribute resolves to a real, non-abstract WAI-ARIA role.',
   i18n: {
-    titleKey: 'a11ycore_ariaRolesValid_title',
-    descriptionKey: 'a11ycore_ariaRolesValid_description'
+    titleKey: 'ariaRolesValid_title',
+    descriptionKey: 'ariaRolesValid_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag412', 'aria', 'structure', 'atomic', 'automatic'],
@@ -85,11 +85,11 @@ function runInPage(ctx) {
         : 'Replace this abstract role with a concrete role appropriate for the widget/structure.',
       i18n: {
         summaryKey: !isKnown
-          ? 'a11ycore_ariaRolesValid_summary_invalid'
-          : 'a11ycore_ariaRolesValid_summary_abstract',
+          ? 'ariaRolesValid_summary_invalid'
+          : 'ariaRolesValid_summary_abstract',
         hintKey: !isKnown
-          ? 'a11ycore_ariaRolesValid_hint_invalid'
-          : 'a11ycore_ariaRolesValid_hint_abstract',
+          ? 'ariaRolesValid_hint_invalid'
+          : 'ariaRolesValid_hint_abstract',
         params: { role }
       },
       data: {

@@ -15,7 +15,7 @@ try {
   // If your repo uses a different layout, update these paths.
 }
 
-const RULE_ID = 'a11ycore-button-name-present';
+const RULE_ID = 'button-name-present';
 
 function hasOccurrenceForId(rule, id) {
   return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));

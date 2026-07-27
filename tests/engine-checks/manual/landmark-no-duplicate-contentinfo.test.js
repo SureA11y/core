@@ -8,7 +8,7 @@ const path = require('node:path');
 const { assertRule } = require('../../helpers/assertRule.js');
 const { runa11yCoreOnHtml, createDom, runa11yCoreOnDom } = require('../../helpers/runDomRulesOnHtml.js');
 
-const RULE_ID = 'a11ycore-landmark-no-duplicate-contentinfo';
+const RULE_ID = 'landmark-no-duplicate-contentinfo';
 
 function hasOccurrenceForId(rule, id) {
   return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
@@ -35,7 +35,7 @@ test(`${RULE_ID}: cantTell with one occurrence per contentinfo when more than on
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'LANDMARK_DUPLICATE_CONTENTINFO');
 });
 
-test(`${RULE_ID}: notApplicable when the only "duplicate" contentinfo is display:none (a responsive desktop/mobile pattern) — matches the reference engine's own visibility gate (same fix applied to the sibling banner/main rules after real hidden-duplicate false positives on Trello and Zoom)`, () => {
+test(`${RULE_ID}: notApplicable when the only "duplicate" contentinfo is display:none (a responsive desktop/mobile pattern) — matches a reference engine's own visibility gate (same fix applied to the sibling banner/main rules after real hidden-duplicate false positives on Trello and Zoom)`, () => {
   const html = `<!doctype html><html><body>
     <footer id="a">Visible</footer>
     <footer id="b" style="display:none">Hidden duplicate</footer>
@@ -44,7 +44,7 @@ test(`${RULE_ID}: notApplicable when the only "duplicate" contentinfo is display
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: cantTell when a second contentinfo landmark lives inside a shadow root (found on a real site — Airtable's homepage, 2026-07-23: a third-party Transcend cookie-consent widget renders its own <footer> inside a shadow root, colliding with the page's own footer; a plain document.querySelectorAll never sees inside shadow roots, so this was a real, confirmed false negative — a11y-core reported no violation at all while the reference engine, running against the real browser DOM, correctly caught it)`, () => {
+test(`${RULE_ID}: cantTell when a second contentinfo landmark lives inside a shadow root (found on a real site — Airtable's homepage, 2026-07-23: a third-party Transcend cookie-consent widget renders its own <footer> inside a shadow root, colliding with the page's own footer; a plain document.querySelectorAll never sees inside shadow roots, so this was a real, confirmed false negative — surea11y reported no violation at all while a widely-used reference engine, running against the real browser DOM, correctly caught it)`, () => {
   const dom = createDom(`<!doctype html><html><body>
     <footer id="a">Page footer</footer>
     <div id="host"></div>

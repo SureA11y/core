@@ -1,13 +1,13 @@
 'use strict';
 
-const id = 'a11ycore-slider-name-present';
+const id = 'slider-name-present';
 
 const meta = {
   title: 'Sliders have an accessible name',
   description: 'Checks that sliders (input[type="range"] and role="slider") expose a non-empty accessible name.',
   i18n: {
-    titleKey: 'a11ycore_sliderNamePresent_title',
-    descriptionKey: 'a11ycore_sliderNamePresent_description'
+    titleKey: 'sliderNamePresent_title',
+    descriptionKey: 'sliderNamePresent_description'
   },
   helpUrl: null,
   tags: ['wcag2a','wcag412','forms','atomic','automatic','name','slider'],
@@ -252,8 +252,8 @@ function runInPage(ctx) {
       summary: 'This slider has no accessible name.',
       hint: 'Provide a label, aria-label, or aria-labelledby so assistive technologies can identify the slider.',
       i18n: {
-        summaryKey: 'a11ycore_sliderNamePresent_summary_fail',
-        hintKey: 'a11ycore_sliderNamePresent_hint_fail',
+        summaryKey: 'sliderNamePresent_summary_fail',
+        hintKey: 'sliderNamePresent_hint_fail',
         params: { kind }
       },
       data: {

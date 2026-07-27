@@ -1,14 +1,14 @@
 'use strict';
 
-const id = 'a11ycore-label-in-name';
+const id = 'label-in-name';
 
 const meta = {
   title: 'Label in Name: accessible name contains visible text',
   description:
       'Checks that when a control has a visible text label, the accessible name (from aria-label/aria-labelledby) contains that visible label text (WCAG 2.5.3).',
   i18n: {
-    titleKey: 'a11ycore_labelInName_title',
-    descriptionKey: 'a11ycore_labelInName_description'
+    titleKey: 'labelInName_title',
+    descriptionKey: 'labelInName_description'
   },
   helpUrl: 'https://www.w3.org/WAI/WCAG22/Understanding/label-in-name.html',
   tags: ['wcag21a', 'wcag253', 'forms', 'atomic', 'automatic'],
@@ -80,7 +80,7 @@ function runInPage(ctx) {
   // pattern, <mat-icon aria-hidden="true">format_color_fill</mat-icon>) is
   // technically DOM-visible pixels, but is never perceived by a sighted or
   // voice-control user as literal readable words the way real visible text
-  // is — the reference engine's own label-content-name-mismatch check reaches the same
+  // is — a widely-used reference engine's own label-content-name-mismatch check reaches the same
   // practical outcome via a canvas-based ligature-detection heuristic
   // (measuring rendered glyph shapes), not replicable here since this rule
   // runs against static markup with no real canvas/font rendering
@@ -295,8 +295,8 @@ function runInPage(ctx) {
         summary: 'Accessible name does not contain the visible label text.',
         hint: 'Ensure the accessible name includes the visible text label (e.g., update aria-label/aria-labelledby to include the visible wording).',
         i18n: {
-          summaryKey: 'a11ycore_labelInName_summary_fail',
-          hintKey: 'a11ycore_labelInName_hint_fail',
+          summaryKey: 'labelInName_summary_fail',
+          hintKey: 'labelInName_hint_fail',
           params: {
             element: getElementDescriptor(el),
             visibleLabel: clipForSummary(visibleLabel),

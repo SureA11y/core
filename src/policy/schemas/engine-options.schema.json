@@ -45,7 +45,7 @@
 
     "rules": {
       "type": "object",
-      "description": "Per-rule configuration. Keys are canonical ruleIds (e.g. 'a11ycore-img-alt-attr-present').",
+      "description": "Per-rule configuration. Keys are canonical ruleIds (e.g. 'img-alt-attr-present').",
       "additionalProperties": {
         "type": "object",
         "additionalProperties": true

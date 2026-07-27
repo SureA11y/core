@@ -8,7 +8,7 @@ const path = require('node:path');
 const { assertRule } = require('../../helpers/assertRule.js');
 const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 
-const RULE_ID = 'a11ycore-meta-viewport-large';
+const RULE_ID = 'meta-viewport-large';
 
 test(`${RULE_ID}: notApplicable when there is no viewport meta tag`, () => {
   const html = `<!doctype html><html><head></head><body></body></html>`;

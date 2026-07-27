@@ -22,7 +22,9 @@ test('CHECK_DEFS contract invariants', () => {
 
   for (const def of core.CHECK_DEFS) {
     assert.equal(typeof def.ruleId, 'string');
-    assert.ok(def.ruleId.startsWith(core.ENGINE_TAG + '-'));
+    assert.ok(def.ruleId.length > 0);
+    assert.ok(!def.ruleId.startsWith(core.ENGINE_TAG + '-'), 'ruleId should be bare, not engine-prefixed');
+    assert.ok(Array.isArray(def.tags) && def.tags.includes(core.ENGINE_TAG), 'every rule should carry the engine tag in meta.tags');
 
     assert.equal(typeof def.title, 'string');
     assert.ok(def.title.trim().length > 0);

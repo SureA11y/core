@@ -8,7 +8,7 @@ const path = require('node:path');
 const { createDom, runa11yCoreOnDom } = require('../../helpers/runa11yCoreOnHtml');
 const { assertRule } = require('../../helpers/assertRule');
 
-const RULE_ID = 'a11ycore-target-size-minimum';
+const RULE_ID = 'target-size-minimum';
 
 /**
  * Patch geometry + hit testing to be deterministic in JSDOM.
@@ -218,8 +218,8 @@ test(`${RULE_ID}: two undersized targets too close => fail (2 occurrences)`, () 
 
   // Deterministic i18n keys
   for (const occ of rule.occurrences) {
-    assert.strictEqual(occ.i18n.summaryKey, 'a11ycore_targetSizeMinimum_summary_fail');
-    assert.strictEqual(occ.i18n.hintKey, 'a11ycore_targetSizeMinimum_hint_fail');
+    assert.strictEqual(occ.i18n.summaryKey, 'targetSizeMinimum_summary_fail');
+    assert.strictEqual(occ.i18n.hintKey, 'targetSizeMinimum_hint_fail');
     assert.ok(occ.data && occ.data.details && occ.data.details.measured);
     assert.ok(occ.data.details.measured.width < 24 || occ.data.details.measured.height < 24);
     assert.strictEqual(occ.data.details.reasonCode, 'undersized-and-too-close');

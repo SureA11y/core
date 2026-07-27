@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-html-xml-lang-mismatch
+ * @check html-xml-lang-mismatch
  * @atomic true
  * @summary The lang and xml:lang attributes on <html> must not disagree
  * @standard WCAG 2.2
@@ -15,7 +15,7 @@
  *   present but declare different languages, assistive technology and
  *   user agents may resolve the page's language inconsistently.
  * @implementation-notes
- * - Distinct, atomic decision from a11ycore-html-lang-attr-present (that
+ * - Distinct, atomic decision from html-lang-attr-present (that
  *   rule checks presence/syntax of lang alone; this rule checks
  *   agreement between lang and xml:lang when both exist).
  * - Compares primary subtags only (not full tag equality), since e.g.
@@ -23,14 +23,14 @@
  *   should not be flagged as disagreeing on language.
  */
 
-const id = 'a11ycore-html-xml-lang-mismatch';
+const id = 'html-xml-lang-mismatch';
 
 const meta = {
   title: 'lang and xml:lang must not disagree',
   description: 'Checks that the <html> element\'s lang and xml:lang attributes declare the same primary language, when both are present.',
   i18n: {
-    titleKey: 'a11ycore_htmlXmlLangMismatch_title',
-    descriptionKey: 'a11ycore_htmlXmlLangMismatch_description'
+    titleKey: 'htmlXmlLangMismatch_title',
+    descriptionKey: 'htmlXmlLangMismatch_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag311', 'structure', 'language', 'atomic', 'automatic'],
@@ -76,8 +76,8 @@ function runInPage(ctx) {
     summary: `The lang ("${lang}") and xml:lang ("${xmlLang}") attributes declare different languages.`,
     hint: 'Make lang and xml:lang declare the same primary language, or remove the deprecated xml:lang attribute.',
     i18n: {
-      summaryKey: 'a11ycore_htmlXmlLangMismatch_summary_fail',
-      hintKey: 'a11ycore_htmlXmlLangMismatch_hint_fail',
+      summaryKey: 'htmlXmlLangMismatch_summary_fail',
+      hintKey: 'htmlXmlLangMismatch_hint_fail',
       params: { lang, xmlLang }
     },
     data: {

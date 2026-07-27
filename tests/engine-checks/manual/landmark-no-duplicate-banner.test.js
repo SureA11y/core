@@ -8,7 +8,7 @@ const path = require('node:path');
 const { assertRule } = require('../../helpers/assertRule.js');
 const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 
-const RULE_ID = 'a11ycore-landmark-no-duplicate-banner';
+const RULE_ID = 'landmark-no-duplicate-banner';
 
 function hasOccurrenceForId(rule, id) {
   return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
@@ -35,7 +35,7 @@ test(`${RULE_ID}: cantTell with one occurrence per banner when more than one exi
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'LANDMARK_DUPLICATE_BANNER');
 });
 
-test(`${RULE_ID}: notApplicable when the only "duplicate" banner is display:none (a responsive desktop/mobile pattern) — matches the reference engine's own visibility gate (found on a real site, Trello's homepage)`, () => {
+test(`${RULE_ID}: notApplicable when the only "duplicate" banner is display:none (a responsive desktop/mobile pattern) — matches a reference engine's own visibility gate (found on a real site, Trello's homepage)`, () => {
   const html = `<!doctype html><html><body>
     <header id="a">Visible</header>
     <header id="b" style="display:none">Hidden duplicate</header>

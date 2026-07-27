@@ -1,24 +1,24 @@
 'use strict';
 
 /**
- * @check a11ycore-landmark-no-duplicate-main
+ * @check landmark-no-duplicate-main
  * @atomic true
  * @summary A page must not have more than one main landmark
- * @standard the reference engine "Best Practices" (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (a widely-used reference engine's classification; no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
  * @applicability
  *   Applies whenever the page contains at least one main landmark
  *   (explicit role="main", or an implicit <main>).
  * @expectation
  *   At most one main landmark exists on the page. Distinct, atomic
- *   decision from a11ycore-landmark-one-main (that rule flags zero
- *   mains too; this one only flags more than one) — matches the reference engine
- *   shipping both as separate rules with some overlap by design.
+ *   decision from landmark-one-main (that rule flags zero
+ *   mains too; this one only flags more than one) — matches a widely-used
+ *   reference engine shipping both as separate rules with some overlap by design.
  * @implementation-notes
  * - Not WCAG-normative — authored as an advisory, cantTell-capped
- *   `type: 'manual'` rule; see a11ycore-landmark-banner-is-top-level's
+ *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent.
  * - Only landmarks actually exposed to assistive technology can collide —
- *   matches the reference engine's own `page-no-duplicate` check (confirmed by reading
+ *   matches a widely-used reference engine's own `page-no-duplicate` check (confirmed by reading
  *   its source directly: `query_selector_all_filter_default(..., elm =>
  *   _isVisibleToScreenReaders(elm))`). Without this, a responsive layout
  *   rendering both a visible and a CSS-hidden duplicate `<main>` (found on
@@ -26,14 +26,14 @@
  *   landmark; the hidden copy is never actually reachable by AT.
  */
 
-const id = 'a11ycore-landmark-no-duplicate-main';
+const id = 'landmark-no-duplicate-main';
 
 const meta = {
   title: 'Page must not have more than one main landmark',
   description: 'Checks that at most one main landmark (role="main" or <main>) exists on the page.',
   i18n: {
-    titleKey: 'a11ycore_landmarkNoDuplicateMain_title',
-    descriptionKey: 'a11ycore_landmarkNoDuplicateMain_description'
+    titleKey: 'landmarkNoDuplicateMain_title',
+    descriptionKey: 'landmarkNoDuplicateMain_description'
   },
   helpUrl: null,
   tags: ['best-practice', 'landmarks', 'structure', 'atomic', 'manual'],
@@ -116,8 +116,8 @@ function runInPage(ctx) {
       summary: 'This page has more than one main landmark.',
       hint: 'Keep only one main landmark (<main>/role="main") per page.',
       i18n: {
-        summaryKey: 'a11ycore_landmarkNoDuplicateMain_summary_cantTell',
-        hintKey: 'a11ycore_landmarkNoDuplicateMain_hint_cantTell',
+        summaryKey: 'landmarkNoDuplicateMain_summary_cantTell',
+        hintKey: 'landmarkNoDuplicateMain_hint_cantTell',
         params: { count: String(mains.length) }
       },
       data: {

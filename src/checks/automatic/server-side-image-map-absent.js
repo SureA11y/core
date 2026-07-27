@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-server-side-image-map-absent
+ * @check server-side-image-map-absent
  * @atomic true
  * @summary <img> must not use a server-side image map (ismap)
  * @standard WCAG 2.2
@@ -16,19 +16,19 @@
  *   users. Client-side image maps (<map>/<area>, each with real href/alt)
  *   are the accessible alternative and are not flagged by this rule.
  * @implementation-notes
- * - Matches the reference engine's server-side-image-map: presence of ismap is itself
+ * - Matches a widely-used reference engine's server-side-image-map: presence of ismap is itself
  *   the violation (there is no automatable way to verify a "usable
  *   alternative" exists elsewhere on the page).
  */
 
-const id = 'a11ycore-server-side-image-map-absent';
+const id = 'server-side-image-map-absent';
 
 const meta = {
   title: 'Images must not use a server-side image map',
   description: 'Checks that <img> elements do not carry the ismap attribute (server-side image maps have no keyboard-operable equivalent).',
   i18n: {
-    titleKey: 'a11ycore_serverSideImageMapAbsent_title',
-    descriptionKey: 'a11ycore_serverSideImageMapAbsent_description'
+    titleKey: 'serverSideImageMapAbsent_title',
+    descriptionKey: 'serverSideImageMapAbsent_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag211', 'structure', 'atomic', 'automatic', 'keyboard'],
@@ -66,8 +66,8 @@ function runInPage(ctx) {
       summary: 'This image uses a server-side image map, which has no keyboard-operable equivalent.',
       hint: 'Replace the server-side image map (ismap) with a client-side image map (<map>/<area>) or separate accessible links/buttons.',
       i18n: {
-        summaryKey: 'a11ycore_serverSideImageMapAbsent_summary_fail',
-        hintKey: 'a11ycore_serverSideImageMapAbsent_hint_fail',
+        summaryKey: 'serverSideImageMapAbsent_summary_fail',
+        hintKey: 'serverSideImageMapAbsent_hint_fail',
         params: {}
       },
       data: {

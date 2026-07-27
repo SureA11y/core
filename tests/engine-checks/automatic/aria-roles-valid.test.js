@@ -8,7 +8,7 @@ const path = require('node:path');
 const { assertRule } = require('../../helpers/assertRule.js');
 const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 
-const RULE_ID = 'a11ycore-aria-roles-valid';
+const RULE_ID = 'aria-roles-valid';
 
 function hasOccurrenceForId(rule, id) {
   return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
@@ -32,7 +32,7 @@ test(`${RULE_ID}: pass when role is a valid concrete role`, () => {
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: pass when role="text" (ARIA 1.2 concrete role, also checked by a11ycore-aria-text)`, () => {
+test(`${RULE_ID}: pass when role="text" (ARIA 1.2 concrete role, also checked by aria-text)`, () => {
   const html = `<!doctype html><html><body><span id="a" role="text">Plain text</span></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });

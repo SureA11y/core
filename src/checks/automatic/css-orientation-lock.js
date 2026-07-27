@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-css-orientation-lock
+ * @check css-orientation-lock
  * @atomic true
  * @summary CSS must not lock the page to a single display orientation via a rotate() hack
  * @standard WCAG 2.2
@@ -20,9 +20,9 @@
  *   display orientation unless that orientation is essential.
  * @implementation-notes
  * - The rotation DEGREE is what makes this the exploit signature, not
- *   merely the presence of a `rotate()` function — verified against
- *   the reference engine 4.12.1's own `css-orientation-lock` check (`cssOrientationLockEvaluate`
- *   in `its source`), which computes the actual rotation angle and only
+ *   merely the presence of a `rotate()` function — verified against a
+ *   widely-used reference engine's own `css-orientation-lock` check
+ *   (`cssOrientationLockEvaluate`), which computes the actual rotation angle and only
  *   flags ~90/~270 degrees, explicitly excluding ~0/~180 (a no-op or a
  *   flip, neither of which changes portrait<->landscape). A prior
  *   version of this rule flagged the bare presence of "rotate(" in an
@@ -32,10 +32,10 @@
  *   block only rotated a small decorative arrow icon 45 degrees, nothing
  *   resembling a page-orientation lock.
  * - Only `rotate`/`rotateZ` (transform functions) and the standalone CSS
- *   `rotate` property are parsed for degrees — matches the reference engine's own two
- *   sources (`style.transform`/`style.rotate`) but, like the reference engine, does not
- *   attempt to decompose `matrix()`/`matrix3d()`/`rotate3d()` into an
- *   equivalent angle (the reference engine does handle those; deliberately deferred here
+ *   `rotate` property are parsed for degrees — matches that reference engine's
+ *   own two sources (`style.transform`/`style.rotate`) but, like that engine,
+ *   does not attempt to decompose `matrix()`/`matrix3d()`/`rotate3d()` into an
+ *   equivalent angle (that engine does handle those; deliberately deferred here
  *   as the same class of "genuinely more complex, lower real-world
  *   value" work already deferred elsewhere in this engine, e.g.
  *   `table-th-has-data-cells`'s narrower positional-header algorithm).
@@ -50,15 +50,15 @@
  *   `meta-viewport-zoom-enabled`).
  */
 
-const id = 'a11ycore-css-orientation-lock';
+const id = 'css-orientation-lock';
 
 const meta = {
   title: 'CSS must not lock the page to a single orientation',
   description:
     'Checks that no @media (orientation: portrait|landscape) rule sets a transform: rotate(...) on the page, a known technique for defeating device orientation.',
   i18n: {
-    titleKey: 'a11ycore_cssOrientationLock_title',
-    descriptionKey: 'a11ycore_cssOrientationLock_description'
+    titleKey: 'cssOrientationLock_title',
+    descriptionKey: 'cssOrientationLock_description'
   },
   helpUrl: null,
   tags: ['wcag21aa', 'wcag134', 'structure', 'atomic', 'automatic'],
@@ -82,7 +82,7 @@ function runInPage(ctx) {
   function trim(v) { return (v == null ? '' : String(v)).trim(); }
 
   // Converts a rotate()/rotateZ() angle argument (with unit) to degrees.
-  // Matches the reference engine's own getAngleInDegrees: only deg/grad/rad/turn are
+  // Matches a widely-used reference engine's own getAngleInDegrees: only deg/grad/rad/turn are
   // recognized; a unitless or unrecognized value contributes 0 (ignored,
   // not treated as a lock -- an unparseable angle isn't a confirmed exploit).
   function angleToDegrees(raw) {
@@ -111,7 +111,7 @@ function runInPage(ctx) {
     return total;
   }
 
-  // Whole-page-orientation-lock detection, matching the reference engine's own degree
+  // Whole-page-orientation-lock detection, matching a widely-used reference engine's own degree
   // math exactly (see @implementation-notes): a rotation near 0 or 180
   // degrees (mod 180) is a no-op or a flip, neither of which changes
   // portrait<->landscape, so it's explicitly NOT a lock; only a rotation
@@ -119,7 +119,7 @@ function runInPage(ctx) {
   function isLockingRotation(styleDecl) {
     if (!styleDecl) return false;
     const transformVal = trim(styleDecl.transform) || trim(styleDecl.getPropertyValue ? styleDecl.getPropertyValue('-webkit-transform') : '');
-    // The standalone CSS `rotate` property (distinct from `transform: rotate()`) -- the reference engine checks this too.
+    // The standalone CSS `rotate` property (distinct from `transform: rotate()`) -- that reference engine checks this too.
     const rotatePropVal = trim(styleDecl.getPropertyValue ? styleDecl.getPropertyValue('rotate') : '');
 
     let degrees = rotateDegreesFromTransform(transformVal);
@@ -191,8 +191,8 @@ function runInPage(ctx) {
     summary: `A "${f.mediaText}" media query rotates "${f.selectorText}", locking the page to one orientation.`,
     hint: 'Remove the rotate() transform from the orientation media query; let the page respond naturally to device orientation instead of forcing a visual rotation.',
     i18n: {
-      summaryKey: 'a11ycore_cssOrientationLock_summary_fail',
-      hintKey: 'a11ycore_cssOrientationLock_hint_fail',
+      summaryKey: 'cssOrientationLock_summary_fail',
+      hintKey: 'cssOrientationLock_hint_fail',
       params: { mediaText: f.mediaText, selectorText: f.selectorText }
     },
     data: {

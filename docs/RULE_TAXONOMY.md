@@ -123,9 +123,9 @@ For image alternatives (WCAG 1.1.1):
 
 | Rule ID | Family | Intent | Type |
 |------|-------|-------|------|
-| a11ycore-img-alt-present | img | present | automatic |
-| a11ycore-img-alt-quality | img | quality | manual |
-| a11ycore-img-alt-decorative | img | decorative | manual |
+| img-alt-present | img | present | automatic |
+| img-alt-quality | img | quality | manual |
+| img-alt-decorative | img | decorative | manual |
 
 Other families follow the same grid where applicable.
 

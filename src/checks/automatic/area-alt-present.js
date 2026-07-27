@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-area-alt-present
+ * @check area-alt-present
  * @atomic true
  * @summary Accessible <area> elements must have an alt attribute
  * @standard WCAG 2.2
@@ -16,14 +16,14 @@
  *   The alt attribute may be empty (alt="").
  */
 
-const id = 'a11ycore-area-alt-present';
+const id = 'area-alt-present';
 
 const meta = {
   title: '&lt;area&gt; must have an alt attribute',
   description: 'Checks that &lt;area&gt; elements provide an alt attribute to support a text alternative mechanism.',
   i18n: {
-    titleKey: 'a11ycore_area_altPresent_title',
-    descriptionKey: 'a11ycore_area_altPresent_description'
+    titleKey: 'area_altPresent_title',
+    descriptionKey: 'area_altPresent_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag111', 'nontext', 'images', 'imagemap', 'atomic', 'automatic'],
@@ -176,8 +176,8 @@ function runInPage(ctx) {
     }
 
     // A non-empty title attribute is HTML-AAM's own next fallback naming
-    // source once alt is entirely absent -- also accepted by the reference engine's
-    // equivalent area-alt rule (non-empty-title, same "any" list as
+    // source once alt is entirely absent -- also accepted by a widely-used
+    // reference engine's equivalent area-alt rule (non-empty-title, same "any" list as
     // non-empty-alt/aria-label/aria-labelledby). See img-alt-present's
     // sibling fix (2026-07-23, AliExpress's title-only logo <img>) for
     // the real page this was found via -- same gap, same fix, different
@@ -194,8 +194,8 @@ function runInPage(ctx) {
       summary: 'Missing alt attribute on &lt;area&gt;.',
       hint: 'Add an alt attribute (use alt="" only for decorative areas).',
       i18n: {
-        summaryKey: 'a11ycore_area_altPresent_summary_fail',
-        hintKey: 'a11ycore_area_altPresent_hint_fail',
+        summaryKey: 'area_altPresent_summary_fail',
+        hintKey: 'area_altPresent_hint_fail',
         params: { element: 'area' }
       },
       data: {

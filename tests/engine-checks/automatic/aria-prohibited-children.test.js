@@ -8,7 +8,7 @@ const path = require('node:path');
 const { assertRule } = require('../../helpers/assertRule.js');
 const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 
-const RULE_ID = 'a11ycore-aria-prohibited-children';
+const RULE_ID = 'aria-prohibited-children';
 
 function hasOccurrenceForId(rule, id) {
   return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
@@ -98,7 +98,7 @@ test(`${RULE_ID}: fail when table directly owns a disallowed role="button"`, () 
   assert.ok(hasOccurrenceForId(rule, 'a'));
 });
 
-test(`${RULE_ID}: fail when a roleless-but-focusable (tabindex) child is owned by a container (widened 2026-07-21 — matches the reference engine's own getOwnedRoles exactly)`, () => {
+test(`${RULE_ID}: fail when a roleless-but-focusable (tabindex) child is owned by a container (widened 2026-07-21 — matches a reference engine's own getOwnedRoles exactly)`, () => {
   const html = `<!doctype html><html><body>
     <ul role="menubar">
       <li role="menuitem">File</li>
@@ -136,6 +136,17 @@ test(`${RULE_ID}: pass when a roleless, non-focusable, non-aria-attributed child
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+test(`${RULE_ID}: notApplicable (not pass) when the container has the hidden attribute — a would-be-disallowed child is not currently exposed to the accessibility tree`, () => {
+  const html = `<!doctype html><html><body>
+    <ul id="a" role="menubar" hidden>
+      <li role="menuitem">File</li>
+      <li role="region">Disallowed, but hidden</li>
+    </ul>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
 test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><body><ul role="menubar"><li id="a" role="region"></li></ul></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
@@ -153,7 +164,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-prohibited-children-all-
   for (const id of ['apc_case_06_child', 'apc_case_07_child', 'apc_case_08_child', 'apc_case_10_child', 'apc_case_11_child']) {
     assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);
   }
-  for (const id of ['apc_case_01', 'apc_case_02', 'apc_case_03', 'apc_case_04', 'apc_case_05', 'apc_case_09']) {
+  for (const id of ['apc_case_01', 'apc_case_02', 'apc_case_03', 'apc_case_04', 'apc_case_05', 'apc_case_09', 'apc_case_13']) {
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
 });

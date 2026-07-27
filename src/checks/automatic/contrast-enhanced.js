@@ -1,14 +1,14 @@
 'use strict';
 
-const id = 'a11ycore-contrast-enhanced';
+const id = 'contrast-enhanced';
 
 const meta = {
     title: 'Text must meet the enhanced color contrast ratio',
     description:
         'Checks that visible text has a contrast ratio of at least 7:1 (normal) or 4.5:1 (large), when contrast is computable from CSS.',
     i18n: {
-        titleKey: 'a11ycore_contrastEnhanced_title',
-        descriptionKey: 'a11ycore_contrastEnhanced_description'
+        titleKey: 'contrastEnhanced_title',
+        descriptionKey: 'contrastEnhanced_description'
     },
     helpUrl: null,
     tags: ['wcag2aaa', 'wcag146', 'contrast', 'color',
@@ -158,7 +158,7 @@ function runInPage(ctx) {
                 hint: '',
                 html: '',
                 i18n: {
-                    summaryKey: 'a11ycore_contrastEnhanced_pass_allAboveThreshold',
+                    summaryKey: 'contrastEnhanced_pass_allAboveThreshold',
                     hintKey: '',
                     params: {
                         eligibleTextCount: String(Number(eligibleCount) || 0),
@@ -197,7 +197,7 @@ function runInPage(ctx) {
                 summary: '',
                 hint: '',
                 i18n: {
-                    summaryKey: 'a11ycore_contrastEnhanced_fail_belowThreshold',
+                    summaryKey: 'contrastEnhanced_fail_belowThreshold',
                     hintKey: '',
                     params: params && typeof params === 'object' ? params : {}
                 },
@@ -446,7 +446,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
                     hint: '',
                     html: '',
                     i18n: {
-                        summaryKey: 'a11ycore_contrastEnhanced_cantTell_engineFailure',
+                        summaryKey: 'contrastEnhanced_cantTell_engineFailure',
                         hintKey: '',
                         params: { reasonCode: 'ENGINE_EXCEPTION' }
                     },
@@ -480,7 +480,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
                     hint: '',
                     html: '',
                     i18n: {
-                        summaryKey: 'a11ycore_contrastEnhanced_notApplicable_noComputableText',
+                        summaryKey: 'contrastEnhanced_notApplicable_noComputableText',
                         hintKey: '',
                         params: { eligibleTextCount: String(eligibleTextCount) }
                     },

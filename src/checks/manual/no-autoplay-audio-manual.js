@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-no-autoplay-audio
+ * @check no-autoplay-audio
  * @atomic true
  * @summary Autoplaying, unmuted <audio>/<video> should provide a pause/stop or volume-control mechanism
  * @standard WCAG 2.2
@@ -34,15 +34,15 @@
  *   here.
  */
 
-const id = 'a11ycore-no-autoplay-audio';
+const id = 'no-autoplay-audio';
 
 const meta = {
   title: 'Autoplaying audio should provide a pause/stop or volume-control mechanism',
   description:
     'Flags <audio>/<video> elements that autoplay unmuted with no native controls attribute, for manual review against the 3-second exemption in WCAG 1.4.2.',
   i18n: {
-    titleKey: 'a11ycore_noAutoplayAudio_title',
-    descriptionKey: 'a11ycore_noAutoplayAudio_description'
+    titleKey: 'noAutoplayAudio_title',
+    descriptionKey: 'noAutoplayAudio_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag142', 'media', 'atomic', 'manual'],
@@ -84,8 +84,8 @@ function runInPage(ctx) {
       summary: 'This element autoplays audio without a native pause/stop or volume-control mechanism.',
       hint: 'If this clip plays for more than 3 seconds, add a `controls` attribute (or an equivalent custom mechanism) so users can pause/stop it or control its volume independently of the system volume.',
       i18n: {
-        summaryKey: 'a11ycore_noAutoplayAudio_summary_cantTell',
-        hintKey: 'a11ycore_noAutoplayAudio_hint_cantTell',
+        summaryKey: 'noAutoplayAudio_summary_cantTell',
+        hintKey: 'noAutoplayAudio_hint_cantTell',
         params: { element: mediaTag }
       },
       data: {

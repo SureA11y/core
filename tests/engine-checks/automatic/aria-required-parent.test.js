@@ -8,7 +8,7 @@ const path = require('node:path');
 const { assertRule } = require('../../helpers/assertRule.js');
 const { runa11yCoreOnHtml, createDom, runa11yCoreOnDom } = require('../../helpers/runDomRulesOnHtml.js');
 
-const RULE_ID = 'a11ycore-aria-required-parent';
+const RULE_ID = 'aria-required-parent';
 
 function hasOccurrenceForId(rule, id) {
   return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
@@ -68,8 +68,8 @@ test(`${RULE_ID}: pass when role="group" is the immediate parent context for men
   // items whose DIRECT parent is a role="group" <ul> (wrapped in a
   // role="presentation" <li> for the section heading), itself owned by the
   // outer role="menu" (72 occurrences on one page) - verified directly
-  // against the real live page's DOM structure and against the reference engine's own
-  // menuitem role descriptor (requiredContext: ['menu','menubar','group']).
+  // against the real live page's DOM structure and against a reference
+  // engine's own menuitem role descriptor (requiredContext: ['menu','menubar','group']).
   const html = `<!doctype html><html><body>
     <ul role="menu"><li role="presentation"><ul role="group"><li id="a" role="menuitem" tabindex="-1">Item</li></ul></li></ul>
   </body></html>`;
@@ -136,6 +136,12 @@ test(`${RULE_ID}: fail when a slotted element's shadow-DOM ancestor still has no
   assert.ok(hasOccurrenceForId(rule, 'a'));
 });
 
+test(`${RULE_ID}: notApplicable when the element has the hidden attribute (not currently exposed to the accessibility tree)`, () => {
+  const html = `<!doctype html><html><body><nav id="a" role="tab" hidden></nav></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
 test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><body><div id="a" role="tab"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
@@ -152,7 +158,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-required-parent-all-scen
 
   assert.ok(hasOccurrenceForId(rule, 'arp_case_04'));
   assert.ok(hasOccurrenceForId(rule, 'arp_case_07'));
-  for (const id of ['arp_case_01', 'arp_case_02', 'arp_case_03', 'arp_case_05', 'arp_case_06', 'arp_case_08', 'arp_case_09']) {
+  for (const id of ['arp_case_01', 'arp_case_02', 'arp_case_03', 'arp_case_05', 'arp_case_06', 'arp_case_08', 'arp_case_09', 'arp_case_10']) {
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
 });

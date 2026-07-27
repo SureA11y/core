@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>a11ycore-aria-prohibited-attr — scenario fixture</title>
+  <title>aria-prohibited-attr — scenario fixture</title>
   <style>
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
     h1 { font-size: 20px; margin: 0 0 16px; }
@@ -14,7 +14,7 @@
   </style>
 </head>
 <body>
-  <h1>Scenario fixture: <code>a11ycore-aria-prohibited-attr</code> (naming attrs must not be used on naming-prohibited roles)</h1>
+  <h1>Scenario fixture: <code>aria-prohibited-attr</code> (naming attrs must not be used on naming-prohibited roles)</h1>
 
   <p class="note">
     Each target has a stable <code>id</code> of the form <code>apa_case_NN</code>.
@@ -58,7 +58,7 @@
   </div>
 
   <div class="case" id="case_08">
-    <div class="case-title">08 — FAIL: aria-label on role="presentation" (widened role, 2026-07-21 — verified directly against the reference engine's own prohibitedAttrs table and the W3C spec's §5.2.8.6 "Roles which cannot be named")</div>
+    <div class="case-title">08 — FAIL: aria-label on role="presentation" (widened role, 2026-07-21 — verified directly against a widely-used reference engine's own prohibitedAttrs table and the W3C spec's §5.2.8.6 "Roles which cannot be named")</div>
     <div role="presentation" aria-label="Something" id="apa_case_08"></div>
   </div>
 

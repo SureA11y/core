@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-definition-list-children-valid
+ * @check definition-list-children-valid
  * @atomic true
  * @summary <dl> must only contain <dt>/<dd> groups (optionally wrapped in one <div>), <script>, <template>, or <style>
  * @standard WCAG 2.2
@@ -18,26 +18,27 @@
  *   violation (see implementation-notes). Any other direct or wrapped child
  *   breaks the description-list semantics assistive technologies rely on.
  * @implementation-notes
- * - Only one level of <div> wrapping is flattened, matching the reference engine's
- *   definition-list algorithm — a <div> nested inside another wrapping
- *   <div> is not flattened further and its contents are reported invalid.
- * - Verified against the reference engine 4.12.1 (2026-07-20): the dt/dd pairing is
+ * - Only one level of <div> wrapping is flattened, matching a widely-used
+ *   reference engine's definition-list algorithm — a <div> nested inside
+ *   another wrapping <div> is not flattened further and its contents are
+ *   reported invalid.
+ * - Verified 2026-07-20 against a widely-used reference engine: the dt/dd pairing is
  *   only required "when not empty". A flattened set with NEITHER dt nor dd
  *   — whether from an empty wrapping <div>, only <script>/<template>/
  *   <style> content, or a genuinely childless <dl> — is not flagged; only
  *   an unbalanced dt/dd pairing is a real structural problem.
- * - Distinct, atomic decision from a11ycore-dlitem-parent-valid (the
+ * - Distinct, atomic decision from dlitem-parent-valid (the
  *   inverse relationship: does a given <dt>/<dd> have a valid parent).
  */
 
-const id = 'a11ycore-definition-list-children-valid';
+const id = 'definition-list-children-valid';
 
 const meta = {
   title: 'Description lists must be structured correctly',
   description: 'Checks that <dl> elements only directly contain <dt>/<dd> groups (optionally wrapped in one <div>), <script>, <template>, or <style>.',
   i18n: {
-    titleKey: 'a11ycore_definitionListChildrenValid_title',
-    descriptionKey: 'a11ycore_definitionListChildrenValid_description'
+    titleKey: 'definitionListChildrenValid_title',
+    descriptionKey: 'definitionListChildrenValid_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag131', 'structure', 'atomic', 'automatic', 'list'],
@@ -94,7 +95,7 @@ function runInPage(ctx) {
       if (!PASSTHROUGH_TAGS.has(tag)) invalidTags.push(tag);
     }
 
-    // Verified against the reference engine 4.12.1's definition-list check (2026-07-20):
+    // Verified 2026-07-20 against a widely-used reference engine's definition-list check:
     // the dt/dd pairing is only required "when not empty" — a <dl> with
     // NEITHER dt nor dd (whether genuinely childless after flattening, only
     // passthrough script/template/style content, or an empty wrapping div)
@@ -122,11 +123,11 @@ function runInPage(ctx) {
       hint,
       i18n: {
         summaryKey: invalidTags.length
-            ? 'a11ycore_definitionListChildrenValid_summary_fail_invalidChild'
-            : 'a11ycore_definitionListChildrenValid_summary_fail_noDtDd',
+            ? 'definitionListChildrenValid_summary_fail_invalidChild'
+            : 'definitionListChildrenValid_summary_fail_noDtDd',
         hintKey: invalidTags.length
-            ? 'a11ycore_definitionListChildrenValid_hint_fail_invalidChild'
-            : 'a11ycore_definitionListChildrenValid_hint_fail_noDtDd',
+            ? 'definitionListChildrenValid_hint_fail_invalidChild'
+            : 'definitionListChildrenValid_hint_fail_noDtDd',
         params: { invalidChildren: invalidTags.join(', ') }
       },
       data: {

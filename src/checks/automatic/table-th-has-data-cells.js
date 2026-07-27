@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-table-th-has-data-cells
+ * @check table-th-has-data-cells
  * @atomic true
  * @summary <th> elements must describe at least one data cell
  * @standard WCAG 2.2
@@ -31,14 +31,14 @@
  * - Not gated on isAccTreeEligible: this is a static markup property.
  */
 
-const id = 'a11ycore-table-th-has-data-cells';
+const id = 'table-th-has-data-cells';
 
 const meta = {
   title: '<th> elements must describe at least one data cell',
   description: 'Checks that a table containing <th> elements also contains at least one <td> data cell for those headers to describe.',
   i18n: {
-    titleKey: 'a11ycore_tableThHasDataCells_title',
-    descriptionKey: 'a11ycore_tableThHasDataCells_description'
+    titleKey: 'tableThHasDataCells_title',
+    descriptionKey: 'tableThHasDataCells_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag131', 'structure', 'atomic', 'automatic', 'table'],
@@ -94,8 +94,8 @@ function runInPage(ctx) {
         summary: 'This table has header cells but no data cells for them to describe.',
         hint: 'Add data cells (<td>) to the table, or remove the header cells if the table has no data.',
         i18n: {
-          summaryKey: 'a11ycore_tableThHasDataCells_summary_fail',
-          hintKey: 'a11ycore_tableThHasDataCells_hint_fail',
+          summaryKey: 'tableThHasDataCells_summary_fail',
+          hintKey: 'tableThHasDataCells_hint_fail',
           params: {}
         },
         data: {

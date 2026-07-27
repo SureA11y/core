@@ -8,7 +8,7 @@ const path = require('node:path');
 const { assertRule } = require('../../helpers/assertRule.js');
 const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 
-const RULE_ID = 'a11ycore-skip-link';
+const RULE_ID = 'skip-link';
 
 function hasOccurrenceForId(rule, id) {
   return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
@@ -34,7 +34,7 @@ test(`${RULE_ID}: cantTell when the skip link target does not exist`, () => {
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'SKIP_LINK_TARGET_MISSING');
 });
 
-test(`${RULE_ID}: cantTell when a "Jump to ..." link (not literally containing "skip") has a missing target (found on a real site — Wish.com's homepage, 2026-07-23: <a href="#jump-menu">Jump to section</a> with no #jump-menu anywhere in the document; the reference engine's own skip-link matching is purely positional, not text-based, so it caught this while the original "skip"-only text pattern here missed it entirely)`, () => {
+test(`${RULE_ID}: cantTell when a "Jump to ..." link (not literally containing "skip") has a missing target (found on a real site — Wish.com's homepage, 2026-07-23: <a href="#jump-menu">Jump to section</a> with no #jump-menu anywhere in the document; a reference engine's own skip-link matching is purely positional, not text-based, so it caught this while the original "skip"-only text pattern here missed it entirely)`, () => {
   const html = `<!doctype html><html><body><a id="a" href="#jump-menu">Jump to section</a></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });

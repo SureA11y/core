@@ -1,10 +1,10 @@
 'use strict';
 
 /**
- * @check a11ycore-empty-heading
+ * @check empty-heading
  * @atomic true
  * @summary Heading elements must not be empty
- * @standard the reference engine "Best Practices" (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (a widely-used reference engine's classification; no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
  * @applicability
  *   Applies to elements with a heading role: native <h1>-<h6>, or any
  *   element with explicit role="heading" (unless overridden by another
@@ -17,10 +17,10 @@
  *   is confusing when navigating by heading.
  * @implementation-notes
  * - Not WCAG-normative — authored as an advisory, cantTell-capped
- *   `type: 'manual'` rule; see a11ycore-landmark-banner-is-top-level's
+ *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent.
  * - This is also the reconciliation point for the "heading-name-present"
- *   gap surfaced by the 2026-07-19 QualWeb ACT-rules research pass (see
+ *   gap surfaced by the 2026-07-19 ACT-rules research pass (see
  *   ROADMAP.md "Tier 5 candidates"): that gap was already closed by this
  *   pre-existing rule under a different name, not a real gap. Fixed two
  *   real false-positive bugs found while confirming that (2026-07-19):
@@ -38,14 +38,14 @@
  *   — instead of maintaining a third, narrower copy of this logic here.
  */
 
-const id = 'a11ycore-empty-heading';
+const id = 'empty-heading';
 
 const meta = {
   title: 'Headings must not be empty',
   description: 'Checks that heading elements (<h1>-<h6> or role="heading") have a non-empty accessible name.',
   i18n: {
-    titleKey: 'a11ycore_emptyHeading_title',
-    descriptionKey: 'a11ycore_emptyHeading_description'
+    titleKey: 'emptyHeading_title',
+    descriptionKey: 'emptyHeading_description'
   },
   helpUrl: null,
   tags: ['best-practice', 'headings', 'structure', 'atomic', 'manual'],
@@ -159,8 +159,8 @@ function runInPage(ctx) {
       summary: 'This heading has no accessible name.',
       hint: 'Add text content (or aria-label/aria-labelledby) to this heading, or remove it if it is not needed.',
       i18n: {
-        summaryKey: 'a11ycore_emptyHeading_summary_cantTell',
-        hintKey: 'a11ycore_emptyHeading_hint_cantTell',
+        summaryKey: 'emptyHeading_summary_cantTell',
+        hintKey: 'emptyHeading_hint_cantTell',
         params: {}
       },
       data: {

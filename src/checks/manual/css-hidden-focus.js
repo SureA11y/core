@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-css-hidden-focus
+ * @check css-hidden-focus
  * @atomic true
  * @summary focusable elements must be visible to sighted keyboard users
  * @standard WCAG 2.2
@@ -18,15 +18,15 @@
  * - The rule uses deterministic heuristics (computed style parsing) and does not rely on layout geometry.
  */
 
-const id = 'a11ycore-css-hidden-focus';
+const id = 'css-hidden-focus';
 
 const meta = {
     title: 'Focusable elements must not be visually hidden',
     description:
         'Checks that keyboard-focusable elements are not visually hidden by CSS techniques that can leave them in the tab order.',
     i18n: {
-        titleKey: 'a11ycore_cssHidden_focus_title',
-        descriptionKey: 'a11ycore_cssHidden_focus_description'
+        titleKey: 'cssHidden_focus_title',
+        descriptionKey: 'cssHidden_focus_description'
     },
     helpUrl: null,
     tags: ['wcag2aa', 'wcag247', 'navigation', 'focus', 'css', 'atomic', 'manual'],
@@ -226,8 +226,8 @@ function runInPage(ctx) {
       summary: `Focusable ${tagName} appears visually hidden (${hintsArr.join(',')}). Verify it becomes visible on keyboard focus.`,
       hint: 'Manually tab to the element and confirm a visible focus indicator and that the element is visible when focused. If it remains hidden while focused, fix CSS/JS so it becomes visible or is removed from the tab order until visible.',
       i18n: {
-        summaryKey: 'a11ycore_cssHidden_focus_summary_cantTell',
-        hintKey: 'a11ycore_cssHidden_focus_hint_cantTell',
+        summaryKey: 'cssHidden_focus_summary_cantTell',
+        hintKey: 'cssHidden_focus_hint_cantTell',
         params: { element: tagName, visibilityHints: hintsArr.join(',') }
       },
       data: {

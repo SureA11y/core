@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-canvas-text-alternative-present
+ * @check canvas-text-alternative-present
  * @atomic true
  * @summary Accessible <canvas> elements must provide a text alternative
  * @standard WCAG 2.2
@@ -14,14 +14,14 @@
  *   Each applicable <canvas> provides a text alternative via fallback content or an accessible name.
  */
 
-const id = 'a11ycore-canvas-text-alternative-present';
+const id = 'canvas-text-alternative-present';
 
 const meta = {
   title: '<canvas> must provide a text alternative',
   description: 'Checks that <canvas> elements provide a text alternative via fallback content or an accessible name.',
   i18n: {
-    titleKey: 'a11ycore_canvas_textAltPresent_title',
-    descriptionKey: 'a11ycore_canvas_textAltPresent_description'
+    titleKey: 'canvas_textAltPresent_title',
+    descriptionKey: 'canvas_textAltPresent_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag111', 'nontext', 'canvas', 'atomic', 'automatic'],
@@ -106,8 +106,8 @@ function runInPage(ctx) {
       summary: 'Missing text alternative for <canvas>.',
       hint: 'Provide fallback text inside <canvas> or an accessible name (e.g., aria-label/aria-labelledby).',
       i18n: {
-        summaryKey: 'a11ycore_canvas_textAltPresent_summary_fail',
-        hintKey: 'a11ycore_canvas_textAltPresent_hint_fail',
+        summaryKey: 'canvas_textAltPresent_summary_fail',
+        hintKey: 'canvas_textAltPresent_hint_fail',
         params: { element: 'canvas' }
       },
       data: {

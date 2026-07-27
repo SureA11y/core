@@ -1,10 +1,10 @@
 'use strict';
 
 /**
- * @check a11ycore-landmark-main-is-top-level
+ * @check landmark-main-is-top-level
  * @atomic true
  * @summary The main landmark must not be nested inside another landmark
- * @standard the reference engine "Best Practices" (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (a widely-used reference engine's classification; no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
  * @applicability
  *   Applies whenever the page contains at least one main landmark
  *   (explicit role="main", or an implicit <main> element).
@@ -15,19 +15,19 @@
  *   for assistive technology users.
  * @implementation-notes
  * - Not WCAG-normative — authored as an advisory, cantTell-capped
- *   `type: 'manual'` rule; see a11ycore-landmark-banner-is-top-level's
+ *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent (this rule mirrors
  *   its structure with main in place of banner/header).
  */
 
-const id = 'a11ycore-landmark-main-is-top-level';
+const id = 'landmark-main-is-top-level';
 
 const meta = {
   title: 'Main landmark must be top-level',
   description: 'Checks that the main landmark (role="main" or <main>) is not nested inside another landmark region.',
   i18n: {
-    titleKey: 'a11ycore_landmarkMainIsTopLevel_title',
-    descriptionKey: 'a11ycore_landmarkMainIsTopLevel_description'
+    titleKey: 'landmarkMainIsTopLevel_title',
+    descriptionKey: 'landmarkMainIsTopLevel_description'
   },
   helpUrl: null,
   tags: ['best-practice', 'landmarks', 'structure', 'atomic', 'manual'],
@@ -148,8 +148,8 @@ function runInPage(ctx) {
       summary: 'This main landmark is nested inside another landmark region.',
       hint: 'Move the main landmark (<main>/role="main") so it is not contained by another landmark; main should be a top-level region of the page.',
       i18n: {
-        summaryKey: 'a11ycore_landmarkMainIsTopLevel_summary_cantTell',
-        hintKey: 'a11ycore_landmarkMainIsTopLevel_hint_cantTell',
+        summaryKey: 'landmarkMainIsTopLevel_summary_cantTell',
+        hintKey: 'landmarkMainIsTopLevel_hint_cantTell',
         params: {}
       },
       data: {

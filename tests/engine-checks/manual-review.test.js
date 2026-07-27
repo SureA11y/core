@@ -7,7 +7,7 @@ const path = require('node:path');
 const { runa11yCoreOnHtml } = require('../helpers/runa11yCoreOnHtml');
 const { assertRule } = require('../helpers/assertRule');
 
-const RULE_ID = 'a11ycore-manual-review';
+const RULE_ID = 'manual-review';
 
 test('manual-review: cantTell with one occurrence bound to html by default', () => {
     const html = `

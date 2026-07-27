@@ -8,7 +8,7 @@ const path = require('node:path');
 const { assertRule } = require('../../helpers/assertRule.js');
 const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 
-const RULE_ID = 'a11ycore-page-title-patterns';
+const RULE_ID = 'page-title-patterns';
 
 function withTitle(title) {
     return `<!doctype html><html lang="en"><head><title>${title}</title></head><body>Hi</body></html>`;
@@ -82,7 +82,7 @@ test('cantTell for a generic title from the GENERIC_TITLES set ("Home")', () => 
     const occ = getFirstOccurrence(rule);
     assertOccShape(occ);
     assert.strictEqual(occ.data.details.reasonCode, 'genericTitle');
-    assert.strictEqual(occ.i18n.summaryKey, 'a11ycore_pageTitlePatterns_summary_cantTell_generic');
+    assert.strictEqual(occ.i18n.summaryKey, 'pageTitlePatterns_summary_cantTell_generic');
 });
 
 test('cantTell for a generic title from the GENERIC_TITLES set ("Untitled")', () => {
@@ -104,7 +104,7 @@ test('cantTell for a very short title (<8 chars) that is not in the generic set'
     const occ = getFirstOccurrence(rule);
     assertOccShape(occ);
     assert.strictEqual(occ.data.details.reasonCode, 'veryShortTitle');
-    assert.strictEqual(occ.i18n.summaryKey, 'a11ycore_pageTitlePatterns_summary_cantTell_veryShort');
+    assert.strictEqual(occ.i18n.summaryKey, 'pageTitlePatterns_summary_cantTell_veryShort');
 });
 
 test('cantTell for a template-like title ("Acme | Home")', () => {
@@ -116,7 +116,7 @@ test('cantTell for a template-like title ("Acme | Home")', () => {
     const occ = getFirstOccurrence(rule);
     assertOccShape(occ);
     assert.strictEqual(occ.data.details.reasonCode, 'templateLikeTitle');
-    assert.strictEqual(occ.i18n.summaryKey, 'a11ycore_pageTitlePatterns_summary_cantTell_templateLike');
+    assert.strictEqual(occ.i18n.summaryKey, 'pageTitlePatterns_summary_cantTell_templateLike');
 });
 
 test('cantTell for a template-like title ("Home - Acme")', () => {
@@ -151,7 +151,7 @@ test('cantTell with reasonCode duplicateTitlesAcrossPages when >=10 pages share 
     const occ = getFirstOccurrence(rule);
     assertOccShape(occ);
     assert.strictEqual(occ.data.details.reasonCode, 'duplicateTitlesAcrossPages');
-    assert.strictEqual(occ.i18n.summaryKey, 'a11ycore_pageTitlePatterns_summary_cantTell_duplicateAcrossPages');
+    assert.strictEqual(occ.i18n.summaryKey, 'pageTitlePatterns_summary_cantTell_duplicateAcrossPages');
     assert.strictEqual(occ.data.details.metrics.pagesAnalyzed, 10);
     assert.strictEqual(occ.data.details.metrics.duplicateGroups, 1);
 });
@@ -166,7 +166,7 @@ test('cantTell with reasonCode templatedTitlesAcrossPages when titles share a lo
     const occ = getFirstOccurrence(rule);
     assertOccShape(occ);
     assert.strictEqual(occ.data.details.reasonCode, 'templatedTitlesAcrossPages');
-    assert.strictEqual(occ.i18n.summaryKey, 'a11ycore_pageTitlePatterns_summary_cantTell_templatedAcrossPages');
+    assert.strictEqual(occ.i18n.summaryKey, 'pageTitlePatterns_summary_cantTell_templatedAcrossPages');
 });
 
 test('notApplicable when >=10 analyzable pages exist but show no duplicate/template signal', () => {

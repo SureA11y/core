@@ -15,7 +15,7 @@ function assertRule(result, ruleId, expectedOutcome, opts = {}) {
 
   const candidates = [ruleId];
 
-  // If caller passed an unprefixed id like "manual-review", also try "a11ycore-manual-review"
+  // If caller passed an unprefixed id like "manual-review", also try "manual-review"
   if (engineTag && !ruleId.startsWith(engineTag + '-')) {
     candidates.push(`${engineTag}-${ruleId}`);
   }

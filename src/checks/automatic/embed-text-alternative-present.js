@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-embed-text-alternative-present
+ * @check embed-text-alternative-present
  * @atomic true
  * @summary Accessible <embed> elements must provide a text alternative
  * @standard WCAG 2.2
@@ -19,14 +19,14 @@
  * Note: <embed> does not support fallback content in HTML, so this rule does not check children.
  */
 
-const id = 'a11ycore-embed-text-alternative-present';
+const id = 'embed-text-alternative-present';
 
 const meta = {
   title: '<embed> must provide a text alternative',
   description: 'Checks that <embed> elements provide a text alternative via an accessible name.',
   i18n: {
-    titleKey: 'a11ycore_embed_textAltPresent_title',
-    descriptionKey: 'a11ycore_embed_textAltPresent_description'
+    titleKey: 'embed_textAltPresent_title',
+    descriptionKey: 'embed_textAltPresent_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag111', 'nontext', 'embed', 'atomic', 'automatic'],
@@ -152,8 +152,8 @@ function runInPage(ctx) {
       summary: 'Missing text alternative for <embed>.',
       hint: 'Add an accessible name to <embed> (aria-label/aria-labelledby).',
       i18n: {
-        summaryKey: 'a11ycore_embed_textAltPresent_summary_fail',
-        hintKey: 'a11ycore_embed_textAltPresent_hint_fail',
+        summaryKey: 'embed_textAltPresent_summary_fail',
+        hintKey: 'embed_textAltPresent_hint_fail',
         params: { element: 'embed' }
       },
       data: {

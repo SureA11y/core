@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-link-name-quality
+ * @check link-name-quality
  * @atomic true
  * @summary Link text should not be a generic, non-descriptive phrase
  * @standard WCAG 2.2
@@ -36,15 +36,15 @@
  *   (img alt / nested role="img" aria-label count toward the name).
  */
 
-const id = 'a11ycore-link-name-quality';
+const id = 'link-name-quality';
 
 const meta = {
   title: 'Link text should be descriptive, not generic',
   description:
     'Flags links whose full accessible name is a known non-descriptive phrase (e.g. "click here", "read more", "more"), for manual review of whether the purpose is clear without additional context.',
   i18n: {
-    titleKey: 'a11ycore_linkNameQuality_title',
-    descriptionKey: 'a11ycore_linkNameQuality_description'
+    titleKey: 'linkNameQuality_title',
+    descriptionKey: 'linkNameQuality_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag244', 'navigation', 'quality', 'atomic', 'manual'],
@@ -118,8 +118,8 @@ function runInPage(ctx) {
       summary: `This link's accessible name ("${rawName.trim()}") is a generic, non-descriptive phrase.`,
       hint: 'Make the link text itself describe its destination/purpose (e.g. "Download the 2026 pricing guide" instead of "Download"), or confirm the surrounding context already makes the purpose clear.',
       i18n: {
-        summaryKey: 'a11ycore_linkNameQuality_summary_cantTell',
-        hintKey: 'a11ycore_linkNameQuality_hint_cantTell',
+        summaryKey: 'linkNameQuality_summary_cantTell',
+        hintKey: 'linkNameQuality_hint_cantTell',
         params: { name: rawName.trim() }
       },
       data: {

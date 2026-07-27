@@ -8,7 +8,7 @@ const path = require('node:path');
 const { assertRule } = require('../../helpers/assertRule.js');
 const { runa11yCoreOnHtml, createDom, runa11yCoreOnDom } = require('../../helpers/runDomRulesOnHtml.js');
 
-const RULE_ID = 'a11ycore-html-lang-attr-present';
+const RULE_ID = 'html-lang-attr-present';
 
 function getFirstOccurrence(rule) {
     assert.ok(rule);
@@ -53,8 +53,8 @@ test('fail when <html> has no lang attribute', () => {
     const occ = getFirstOccurrence(rule);
     assertOccShape(occ);
 
-    assert.strictEqual(occ.i18n.summaryKey, 'a11ycore_html_lang_attr_missing_absent');
-    assert.strictEqual(occ.i18n.hintKey, 'a11ycore_html_lang_attr_hint_missing_absent');
+    assert.strictEqual(occ.i18n.summaryKey, 'html_lang_attr_missing_absent');
+    assert.strictEqual(occ.i18n.hintKey, 'html_lang_attr_hint_missing_absent');
     assert.strictEqual(occ.data.details.reasonCode, 'lang-missing');
 });
 
@@ -67,8 +67,8 @@ test('fail when <html> lang is empty string', () => {
     const occ = getFirstOccurrence(rule);
     assertOccShape(occ);
 
-    assert.strictEqual(occ.i18n.summaryKey, 'a11ycore_html_lang_attr_missing_empty');
-    assert.strictEqual(occ.i18n.hintKey, 'a11ycore_html_lang_attr_hint_missing_empty');
+    assert.strictEqual(occ.i18n.summaryKey, 'html_lang_attr_missing_empty');
+    assert.strictEqual(occ.i18n.hintKey, 'html_lang_attr_hint_missing_empty');
     assert.strictEqual(occ.data.details.reasonCode, 'lang-empty');
 });
 
@@ -81,8 +81,8 @@ test('fail when <html> lang is whitespace-only', () => {
     const occ = getFirstOccurrence(rule);
     assertOccShape(occ);
 
-    assert.strictEqual(occ.i18n.summaryKey, 'a11ycore_html_lang_attr_missing_empty');
-    assert.strictEqual(occ.i18n.hintKey, 'a11ycore_html_lang_attr_hint_missing_empty');
+    assert.strictEqual(occ.i18n.summaryKey, 'html_lang_attr_missing_empty');
+    assert.strictEqual(occ.i18n.hintKey, 'html_lang_attr_hint_missing_empty');
     assert.strictEqual(occ.data.details.reasonCode, 'lang-empty');
 });
 
@@ -95,8 +95,8 @@ test('fail when <html> lang is invalid', () => {
     const occ = getFirstOccurrence(rule);
     assertOccShape(occ);
 
-    assert.strictEqual(occ.i18n.summaryKey, 'a11ycore_html_lang_attr_invalid');
-    assert.strictEqual(occ.i18n.hintKey, 'a11ycore_html_lang_attr_hint_invalid');
+    assert.strictEqual(occ.i18n.summaryKey, 'html_lang_attr_invalid');
+    assert.strictEqual(occ.i18n.hintKey, 'html_lang_attr_hint_invalid');
     assert.strictEqual(occ.data.details.reasonCode, 'lang-invalid-bcp47');
 
     // Param must be present for translation interpolation

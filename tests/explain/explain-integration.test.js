@@ -16,8 +16,8 @@ test('explain: dedupes and explains real engine output end to end', async () => 
     <img src="b.png">
   </body></html>`;
 
-  const result = runa11yCoreOnHtml(html, { runOnly: { includeRuleIds: ['a11ycore-img-alt-present'] } });
-  const check = result.checksResults.find((c) => c.ruleId === 'a11ycore-img-alt-present');
+  const result = runa11yCoreOnHtml(html, { runOnly: { includeRuleIds: ['img-alt-present'] } });
+  const check = result.checksResults.find((c) => c.ruleId === 'img-alt-present');
   assert.strictEqual(check.outcome, 'fail');
   assert.strictEqual(check.occurrences.length, 2);
 
@@ -27,9 +27,9 @@ test('explain: dedupes and explains real engine output end to end', async () => 
   const provider = async (groups) => groups.map((g) => ({ groupKey: g.groupKey, text: `Explanation for ${g.ruleId}` }));
   const augmented = await explain(result, { provider });
 
-  const explainedCheck = augmented.checksResults.find((c) => c.ruleId === 'a11ycore-img-alt-present');
+  const explainedCheck = augmented.checksResults.find((c) => c.ruleId === 'img-alt-present');
   for (const occ of explainedCheck.occurrences) {
-    assert.strictEqual(occ.explanation.text, 'Explanation for a11ycore-img-alt-present');
+    assert.strictEqual(occ.explanation.text, 'Explanation for img-alt-present');
     assert.strictEqual(occ.explanation.advisory, true);
   }
 

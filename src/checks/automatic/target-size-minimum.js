@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-target-size-minimum
+ * @check target-size-minimum
  * @atomic true
  * @summary Pointer-operable targets should be at least 24×24 CSS px (or meet an exception)
  * @standard WCAG 2.2
@@ -24,7 +24,7 @@
  *   the target and the "other" element are never treated as a conflict —
  *   see isRelated — since a nested-interactive shape (a small control inside
  *   its own wrapping link/button) is one visual region, not two independent
- *   targets; that pattern is a11ycore-nested-interactive-controls-absent's
+ *   targets; that pattern is nested-interactive-controls-absent's
  *   concern, not a spacing one.
  * - Inline: a link inside a run of text (isInlineTextExceptionTarget).
  * - User Agent Control: an unstyled native checkbox/radio, detected via
@@ -55,15 +55,15 @@
  * - conservative when exceptions cannot be determined reliably.
  */
 
-const id = 'a11ycore-target-size-minimum';
+const id = 'target-size-minimum';
 
 const meta = {
   title: 'Pointer targets meet minimum size (AA)',
   description:
       'Checks that pointer-operable targets have an effective hit region of at least 24 by 24 CSS pixels, or meet an allowed exception (e.g. sufficient spacing).',
   i18n: {
-    titleKey: 'a11ycore_targetSizeMinimum_title',
-    descriptionKey: 'a11ycore_targetSizeMinimum_description'
+    titleKey: 'targetSizeMinimum_title',
+    descriptionKey: 'targetSizeMinimum_description'
   },
   helpUrl: null,
   tags: ['wcag22aa', 'wcag258', 'navigation', 'operable', 'pointer', 'target-size', 'atomic', 'automatic', 'dom'],
@@ -104,7 +104,7 @@ function runInPage(ctx) {
 
   const { document, helpers, rule } = ctx;
 
-  const RULE_ID = (rule && rule.ruleId) || 'a11ycore-target-size-minimum';
+  const RULE_ID = (rule && rule.ruleId) || 'target-size-minimum';
   const MIN = 24;
   const RADIUS = MIN / 2;
 
@@ -333,7 +333,7 @@ function runInPage(ctx) {
   // placed targets — the spacing exception's "does the circle intersect
   // ANOTHER target" language is about separate targets, not an element and
   // its own container. (Nested interactive controls are their own,
-  // separately-flagged anti-pattern — a11ycore-nested-interactive-controls-
+  // separately-flagged anti-pattern — nested-interactive-controls-
   // absent — not a target-size spacing concern.)
   function isRelated(a, b) {
     try {
@@ -565,8 +565,8 @@ function runInPage(ctx) {
         summary: 'Target is too small and too close to another target.',
         hint: 'Increase target size to at least 24 by 24 CSS pixels, or add sufficient spacing.',
         i18n: {
-          summaryKey: 'a11ycore_targetSizeMinimum_summary_fail',
-          hintKey: 'a11ycore_targetSizeMinimum_hint_fail',
+          summaryKey: 'targetSizeMinimum_summary_fail',
+          hintKey: 'targetSizeMinimum_hint_fail',
           params: {}
         },
         data: {

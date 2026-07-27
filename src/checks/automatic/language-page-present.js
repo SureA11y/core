@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-html-lang-attr-present
+ * @check html-lang-attr-present
  * @atomic true
  * @summary The default language of the page must be programmatically declared
  * @standard WCAG 2.2
@@ -31,14 +31,14 @@
  *   Changes of language within the page are covered by SC 3.1.2.
  */
 
-const id = 'a11ycore-html-lang-attr-present';
+const id = 'html-lang-attr-present';
 
 const meta = {
     title: 'Page language is declared',
     description: 'Checks that the default language of the page is programmatically declared.',
     i18n: {
-        titleKey: 'a11ycore_html_lang_attr_title',
-        descriptionKey: 'a11ycore_html_lang_attr_description'
+        titleKey: 'html_lang_attr_title',
+        descriptionKey: 'html_lang_attr_description'
     },
     helpUrl: null,
     tags: ['wcag2a', 'wcag311', 'structure', 'language', 'automatic', 'atomic'],
@@ -111,8 +111,8 @@ function runInPage(ctx) {
             outcome: 'fail',
             severity: rule.defaultSeverity,
             occurrences: pushFail(
-                'a11ycore_html_lang_attr_missing_absent',
-                'a11ycore_html_lang_attr_hint_missing_absent',
+                'html_lang_attr_missing_absent',
+                'html_lang_attr_hint_missing_absent',
                 {},
                 { reasonCode: 'lang-missing', location: 'html' }
             )
@@ -125,8 +125,8 @@ function runInPage(ctx) {
             outcome: 'fail',
             severity: rule.defaultSeverity,
             occurrences: pushFail(
-                'a11ycore_html_lang_attr_missing_empty',
-                'a11ycore_html_lang_attr_hint_missing_empty',
+                'html_lang_attr_missing_empty',
+                'html_lang_attr_hint_missing_empty',
                 {},
                 { reasonCode: 'lang-empty', location: 'html' }
             )
@@ -140,8 +140,8 @@ function runInPage(ctx) {
             outcome: 'fail',
             severity: rule.defaultSeverity,
             occurrences: pushFail(
-                'a11ycore_html_lang_attr_invalid',
-                'a11ycore_html_lang_attr_hint_invalid',
+                'html_lang_attr_invalid',
+                'html_lang_attr_hint_invalid',
                 { lang },
                 { reasonCode: 'lang-invalid-bcp47', lang }
             )

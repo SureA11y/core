@@ -1,13 +1,13 @@
 'use strict';
 
-const id = 'a11ycore-treeitem-name-present';
+const id = 'treeitem-name-present';
 
 const meta = {
   title: 'Accessible name is present',
   description: 'Checks that elements expose a non-empty accessible name.',
   i18n: {
-    titleKey: 'a11ycore_treeitemNamePresent_title',
-    descriptionKey: 'a11ycore_treeitemNamePresent_description'
+    titleKey: 'treeitemNamePresent_title',
+    descriptionKey: 'treeitemNamePresent_description'
   },
   helpUrl: null,
   tags: ["wcag2a", "wcag412", "navigation", "atomic", "automatic", "name", "treeitem"],
@@ -133,8 +133,8 @@ function runInPage(ctx) {
       summary: 'This element has no accessible name.',
       hint: 'Provide aria-label or aria-labelledby (preferred), or provide visible text that is not hidden from assistive technologies.',
       i18n: {
-        summaryKey: 'a11ycore_treeitemNamePresent_summary_fail',
-        hintKey: 'a11ycore_treeitemNamePresent_hint_fail',
+        summaryKey: 'treeitemNamePresent_summary_fail',
+        hintKey: 'treeitemNamePresent_hint_fail',
         params: { controlType: 'treeitem' }
       },
       data: {

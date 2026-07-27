@@ -55,23 +55,23 @@ test('runOnly.tags filters atomic rules by WCAG version (2.1 vs 2.2 vs baseline)
 
     const runOnlyWcag21aa = runa11yCoreOnHtml(html, { runOnly: { tags: ['wcag21aa'] } });
     const ids21 = runOnlyWcag21aa.checksResults.map((r) => r.ruleId);
-    assert.ok(ids21.includes('a11ycore-autocomplete-valid'));
-    assert.ok(ids21.includes('a11ycore-avoid-inline-spacing'));
-    assert.ok(ids21.includes('a11ycore-css-orientation-lock'));
-    assert.ok(!ids21.includes('a11ycore-target-size-minimum'), 'wcag22aa-only rule must not match a wcag21aa filter');
-    assert.ok(!ids21.includes('a11ycore-contrast-minimum'), 'baseline wcag2aa rule must not match a wcag21aa filter');
+    assert.ok(ids21.includes('autocomplete-valid'));
+    assert.ok(ids21.includes('avoid-inline-spacing'));
+    assert.ok(ids21.includes('css-orientation-lock'));
+    assert.ok(!ids21.includes('target-size-minimum'), 'wcag22aa-only rule must not match a wcag21aa filter');
+    assert.ok(!ids21.includes('contrast-minimum'), 'baseline wcag2aa rule must not match a wcag21aa filter');
 
     const runOnlyWcag22aa = runa11yCoreOnHtml(html, { runOnly: { tags: ['wcag22aa'] } });
     const ids22 = runOnlyWcag22aa.checksResults.map((r) => r.ruleId);
-    assert.ok(ids22.includes('a11ycore-target-size-minimum'));
-    assert.ok(!ids22.includes('a11ycore-autocomplete-valid'), 'wcag21aa-only rule must not match a wcag22aa filter');
-    assert.ok(!ids22.includes('a11ycore-contrast-minimum'), 'baseline wcag2aa rule must not match a wcag22aa filter');
+    assert.ok(ids22.includes('target-size-minimum'));
+    assert.ok(!ids22.includes('autocomplete-valid'), 'wcag21aa-only rule must not match a wcag22aa filter');
+    assert.ok(!ids22.includes('contrast-minimum'), 'baseline wcag2aa rule must not match a wcag22aa filter');
 
     const runOnlyBaseline = runa11yCoreOnHtml(html, { runOnly: { tags: ['wcag2aa'] } });
     const idsBaseline = runOnlyBaseline.checksResults.map((r) => r.ruleId);
-    assert.ok(idsBaseline.includes('a11ycore-contrast-minimum'));
-    assert.ok(!idsBaseline.includes('a11ycore-autocomplete-valid'), 'wcag21aa rule must not match a baseline-only filter');
-    assert.ok(!idsBaseline.includes('a11ycore-target-size-minimum'), 'wcag22aa rule must not match a baseline-only filter');
+    assert.ok(idsBaseline.includes('contrast-minimum'));
+    assert.ok(!idsBaseline.includes('autocomplete-valid'), 'wcag21aa rule must not match a baseline-only filter');
+    assert.ok(!idsBaseline.includes('target-size-minimum'), 'wcag22aa rule must not match a baseline-only filter');
 });
 
 // Behavioral: the same version-aware filtering must apply to composite (WCAG-SC rollup) results,
@@ -82,17 +82,17 @@ test('runOnly.tags filters composite (rulesResults) entries by WCAG version', ()
 
     const runOnlyWcag21a = runa11yCoreOnHtml(html, { runOnly: { tags: ['wcag21a'] } });
     const composite21 = runOnlyWcag21a.rulesResults.map((r) => r.ruleId);
-    assert.ok(composite21.includes('a11ycore-wcag-2.5.3-label-in-name'), '2.1-origin, level-A composite must match a wcag21a filter');
+    assert.ok(composite21.includes('wcag-2.5.3-label-in-name'), '2.1-origin, level-A composite must match a wcag21a filter');
     assert.ok(
-        !composite21.includes('a11ycore-wcag-2.4.1-bypass-blocks'),
+        !composite21.includes('wcag-2.4.1-bypass-blocks'),
         'baseline (WCAG 2.0), level-A composite must not match a wcag21a-only filter'
     );
 
     const runOnlyBaseline = runa11yCoreOnHtml(html, { runOnly: { tags: ['wcag2a'] } });
     const compositeBaseline = runOnlyBaseline.rulesResults.map((r) => r.ruleId);
-    assert.ok(compositeBaseline.includes('a11ycore-wcag-2.4.1-bypass-blocks'), 'baseline, level-A composite must match a wcag2a filter');
+    assert.ok(compositeBaseline.includes('wcag-2.4.1-bypass-blocks'), 'baseline, level-A composite must match a wcag2a filter');
     assert.ok(
-        !compositeBaseline.includes('a11ycore-wcag-2.5.3-label-in-name'),
+        !compositeBaseline.includes('wcag-2.5.3-label-in-name'),
         '2.1-origin composite must not match a baseline-only wcag2a filter'
     );
 });

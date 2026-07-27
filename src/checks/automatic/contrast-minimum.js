@@ -1,14 +1,14 @@
 'use strict';
 
-const id = 'a11ycore-contrast-minimum';
+const id = 'contrast-minimum';
 
 const meta = {
     title: 'Text must meet the minimum color contrast ratio',
     description:
         'Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3:1 (large), when contrast is computable from CSS.',
     i18n: {
-        titleKey: 'a11ycore_contrastMinimum_title',
-        descriptionKey: 'a11ycore_contrastMinimum_description'
+        titleKey: 'contrastMinimum_title',
+        descriptionKey: 'contrastMinimum_description'
     },
     helpUrl: null,
     tags: ['wcag2aa', 'wcag143', 'contrast', 'color',
@@ -155,7 +155,7 @@ function runInPage(ctx) {
                 hint: '',
                 html: '',
                 i18n: {
-                    summaryKey: 'a11ycore_contrastMinimum_pass_allAboveThreshold',
+                    summaryKey: 'contrastMinimum_pass_allAboveThreshold',
                     hintKey: '',
                     params: {
                         eligibleTextCount: String(Number(eligibleCount) || 0),
@@ -194,7 +194,7 @@ function runInPage(ctx) {
                 summary: '',
                 hint: '',
                 i18n: {
-                    summaryKey: 'a11ycore_contrastMinimum_fail_belowThreshold',
+                    summaryKey: 'contrastMinimum_fail_belowThreshold',
                     hintKey: '',
                     params: params && typeof params === 'object' ? params : {}
                 },
@@ -439,7 +439,7 @@ function runInPage(ctx) {
                         hint: '',
                         html: '',
                         i18n: {
-                            summaryKey: 'a11ycore_contrastMinimum_cantTell_engineFailure',
+                            summaryKey: 'contrastMinimum_cantTell_engineFailure',
                             hintKey: '',
                             params: {reasonCode: 'ENGINE_EXCEPTION'}
                         },
@@ -475,7 +475,7 @@ function runInPage(ctx) {
                     hint: '',
                     html: '',
                     i18n: {
-                        summaryKey: 'a11ycore_contrastMinimum_notApplicable_noComputableText',
+                        summaryKey: 'contrastMinimum_notApplicable_noComputableText',
                         hintKey: '',
                         params: {eligibleTextCount: String(eligibleTextCount)}
                     },

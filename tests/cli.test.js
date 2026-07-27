@@ -7,7 +7,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
-const CLI = path.join(__dirname, '..', 'bin', 'a11y-core.js');
+const CLI = path.join(__dirname, '..', 'bin', 'core.js');
 
 function run(args, opts = {}) {
   try {
@@ -21,7 +21,7 @@ function run(args, opts = {}) {
 
 let tmpDir;
 test.before(() => {
-  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'a11ycore-cli-test-'));
+  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cli-test-'));
 });
 test.after(() => {
   fs.rmSync(tmpDir, { recursive: true, force: true });
@@ -31,7 +31,7 @@ test('CLI: --help exits 0 and prints usage', () => {
   const { stdout, status } = run(['--help']);
   assert.equal(status, 0);
   assert.match(stdout, /Usage:/);
-  assert.match(stdout, /a11y-core scan/);
+  assert.match(stdout, /surea11y scan/);
 });
 
 test('CLI: no arguments exits 2 (usage error) and still prints help', () => {
@@ -59,7 +59,7 @@ test('CLI: scan exits 1 and reports fail occurrences for a page with real violat
 
   const { stdout, status } = run(['scan', file]);
   assert.equal(status, 1);
-  assert.match(stdout, /a11ycore-img-alt-present/);
+  assert.match(stdout, /img-alt-present/);
   assert.match(stdout, /FAIL/);
 });
 
@@ -81,7 +81,7 @@ test('CLI: --json prints a parseable result with the expected top-level shape', 
   const result = JSON.parse(stdout);
   assert.ok(Array.isArray(result.checksResults));
   assert.equal(result.engine.tag, 'a11ycore');
-  const imgRule = result.checksResults.find((r) => r.ruleId === 'a11ycore-img-alt-present');
+  const imgRule = result.checksResults.find((r) => r.ruleId === 'img-alt-present');
   assert.equal(imgRule.outcome, 'fail');
 });
 
@@ -89,12 +89,12 @@ test('CLI: --rules scopes the scan to only the requested rule IDs', () => {
   const file = path.join(tmpDir, 'rules-filter.html');
   fs.writeFileSync(file, '<!doctype html><html lang="en"><head><title>T</title></head><body><img src="x.png"><button></button></body></html>');
 
-  const { stdout, status } = run(['scan', file, '--json', '--rules', 'a11ycore-img-alt-present']);
+  const { stdout, status } = run(['scan', file, '--json', '--rules', 'img-alt-present']);
   assert.equal(status, 1);
 
   const result = JSON.parse(stdout);
   assert.equal(result.checksResults.length, 1);
-  assert.equal(result.checksResults[0].ruleId, 'a11ycore-img-alt-present');
+  assert.equal(result.checksResults[0].ruleId, 'img-alt-present');
 });
 
 test('CLI: unknown command exits 2', () => {

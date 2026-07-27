@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-aria-hidden-focus
+ * @check aria-hidden-focus
  * @atomic true
  * @summary aria-hidden elements must not be focusable or contain focusable elements
  * @standard WCAG 2.2
@@ -12,22 +12,22 @@
  *   No element with aria-hidden="true" may itself be focusable, and no focusable element
  *   may exist within an aria-hidden="true" subtree.
  *
- * Notes on parity with the reference engine aria-hidden-focus:
+ * Notes on parity with a widely-used reference engine's aria-hidden-focus check:
  * - Focusability is computed via ctx.helpers.getFocusableInfo (native + tabindex + contenteditable).
  * - Elements that are not rendered (e.g., display:none, visibility:hidden, [hidden]) are excluded.
  * - Elements hidden via CSS in ways that still allow keyboard focus (e.g., opacity:0, off-screen, clip)
  *   remain in-scope and will be flagged when focusable.
  */
 
-const id = 'a11ycore-aria-hidden-focus';
+const id = 'aria-hidden-focus';
 
 const meta = {
   title: 'ARIA hidden elements must not be focusable',
   description:
     'Checks that aria-hidden="true" elements are not focusable and do not contain focusable descendants.',
   i18n: {
-    titleKey: 'a11ycore_ariaHidden_focus_title',
-    descriptionKey: 'a11ycore_ariaHidden_focus_description'
+    titleKey: 'ariaHidden_focus_title',
+    descriptionKey: 'ariaHidden_focus_description'
   },
   helpUrl: null,
   // NOTE: taxonomy contract requires exactly one content category tag.
@@ -223,7 +223,7 @@ function runInPage(ctx) {
     // An explicit negative tabindex removes the element from the keyboard
     // tab sequence entirely, regardless of tag — the standard, WAI-
     // recommended technique for safely hiding focusable content behind
-    // aria-hidden (verified against the reference engine's own aria-hidden-focus check,
+    // aria-hidden (verified against a widely-used reference engine's own aria-hidden-focus check,
     // which requires tabbability — not raw focusability — via its
     // `focusable-not-tabbable` sub-check; confirmed via a real page:
     // Wikipedia's sticky header uses <button tabindex="-1">/<a tabindex="-1">
@@ -336,7 +336,7 @@ function runInPage(ctx) {
   }
 
   // 2) Find focusable candidates once (performance) and bucket those inside aria-hidden.
-  // Keep selector fairly small to avoid huge candidate sets while still covering the reference engine cases.
+  // Keep selector fairly small to avoid huge candidate sets while still covering the reference-engine cases.
   const focusableCandidates = qAll(
     'a[href],area[href],button,input,select,textarea,summary,iframe,audio[controls],video[controls],[tabindex],[contenteditable]'
   );
@@ -428,9 +428,9 @@ function runInPage(ctx) {
 
     const summaryKey = selfFocusable
       ? (descendantFocusable > 0
-          ? 'a11ycore_ariaHidden_focus_summary_fail_self_and_desc'
-          : 'a11ycore_ariaHidden_focus_summary_fail_self')
-      : 'a11ycore_ariaHidden_focus_summary_fail_desc';
+          ? 'ariaHidden_focus_summary_fail_self_and_desc'
+          : 'ariaHidden_focus_summary_fail_self')
+      : 'ariaHidden_focus_summary_fail_desc';
 
     const reasonCode = selfFocusable
       ? (descendantFocusable > 0 ? 'ariaHiddenSelfAndDescendantsFocusable' : 'ariaHiddenSelfFocusable')
@@ -447,7 +447,7 @@ function runInPage(ctx) {
       hint: 'Remove focusability from descendants or remove aria-hidden; ensure focus and accessibility trees stay aligned.',
       i18n: {
         summaryKey,
-        hintKey: 'a11ycore_ariaHidden_focus_hint_fail',
+        hintKey: 'ariaHidden_focus_hint_fail',
         params: {
           element: tagName,
           focusableCount: String(totalFocusable),

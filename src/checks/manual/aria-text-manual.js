@@ -1,10 +1,10 @@
 'use strict';
 
 /**
- * @check a11ycore-aria-text
+ * @check aria-text
  * @atomic true
  * @summary role="text" elements should have no focusable descendants
- * @standard the reference engine "Best Practices" (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (a widely-used reference engine's classification; no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
  * @applicability
  *   Elements with an explicit `role="text"`.
  * @expectation
@@ -15,7 +15,7 @@
  *   focusable content — a focusable descendant inside a "this is just
  *   text" region is unreachable or confusing for keyboard/AT users.
  * @implementation-notes
- * - Not WCAG-normative by the reference engine's own classification — authored as an
+ * - Not WCAG-normative by a widely-used reference engine's own classification — authored as an
  *   advisory, cantTell-capped `type: 'manual'` rule, matching the Tier 1b
  *   precedent (see `landmark-unique`'s header comment for the shared
  *   rationale).
@@ -25,14 +25,14 @@
  *   focusability computation (disabled state, visibility, etc.).
  */
 
-const id = 'a11ycore-aria-text';
+const id = 'aria-text';
 
 const meta = {
   title: 'role="text" elements should have no focusable descendants',
   description: 'Checks that elements with role="text" contain no focusable descendant (link, button, form control, tabindex, iframe, or contenteditable).',
   i18n: {
-    titleKey: 'a11ycore_ariaText_title',
-    descriptionKey: 'a11ycore_ariaText_description'
+    titleKey: 'ariaText_title',
+    descriptionKey: 'ariaText_description'
   },
   helpUrl: null,
   tags: ['best-practice', 'aria', 'structure', 'atomic', 'manual'],
@@ -79,8 +79,8 @@ function runInPage(ctx) {
       summary: 'This role="text" element contains a focusable descendant.',
       hint: 'Remove role="text" (or remove the focusable descendant) — a "plain text" region should not contain focusable content.',
       i18n: {
-        summaryKey: 'a11ycore_ariaText_summary_cantTell',
-        hintKey: 'a11ycore_ariaText_hint_cantTell',
+        summaryKey: 'ariaText_summary_cantTell',
+        hintKey: 'ariaText_hint_cantTell',
         params: {}
       },
       data: {

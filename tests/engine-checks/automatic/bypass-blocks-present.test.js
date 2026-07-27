@@ -8,7 +8,7 @@ const path = require('node:path');
 const { assertRule } = require('../../helpers/assertRule.js');
 const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 
-const RULE_ID = 'a11ycore-bypass-blocks-present';
+const RULE_ID = 'bypass-blocks-present';
 
 test(`${RULE_ID}: pass when a <main> landmark is present`, () => {
   const html = `<!doctype html><html><body><nav>Nav</nav><main>Content</main></body></html>`;

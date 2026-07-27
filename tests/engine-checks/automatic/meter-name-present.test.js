@@ -8,7 +8,7 @@ const path = require('node:path');
 const { assertRule } = require('../../helpers/assertRule.js');
 const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 
-const RULE_ID = 'a11ycore-meter-name-present';
+const RULE_ID = 'meter-name-present';
 
 function hasOccurrenceForId(rule, id) {
   return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
@@ -33,7 +33,7 @@ test(`${RULE_ID}: fail when meter has no accessible name`, () => {
   assert.equal(rule.occurrences[0].data.details.controlType, 'meter');
 });
 
-test(`${RULE_ID}: fail when meter has visible text content but no aria-label/aria-labelledby/title (role="meter" is name-from-author-only per WAI-ARIA — verified against the reference engine's own aria-meter-name check, which has no content-based naming method at all)`, () => {
+test(`${RULE_ID}: fail when meter has visible text content but no aria-label/aria-labelledby/title (role="meter" is name-from-author-only per WAI-ARIA — verified against a widely-used reference engine's own aria-meter-name check, which has no content-based naming method at all)`, () => {
   const html = `<!doctype html><html><body><div id="a" role="meter" aria-valuenow="80">80% full</div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });

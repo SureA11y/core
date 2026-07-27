@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-link-in-text-block
+ * @check link-in-text-block
  * @atomic true
  * @summary Links surrounded by text must be distinguishable from that text by non-color means
  * @standard WCAG 2.2
@@ -44,15 +44,15 @@
  *   matches the common real-world shape of this issue (prose links).
  */
 
-const id = 'a11ycore-link-in-text-block';
+const id = 'link-in-text-block';
 
 const meta = {
   title: 'Links in text blocks must be distinguishable from surrounding text without relying on color alone',
   description:
     'Checks that a link inside a run of text is visually distinguishable from the surrounding text by underline, a font-weight/style difference, or a sufficient (>=3:1) color-contrast difference — not by color alone.',
   i18n: {
-    titleKey: 'a11ycore_linkInTextBlock_title',
-    descriptionKey: 'a11ycore_linkInTextBlock_description'
+    titleKey: 'linkInTextBlock_title',
+    descriptionKey: 'linkInTextBlock_description'
   },
   helpUrl: null,
   tags: ['wcag2a', 'wcag141', 'navigation', 'color', 'links', 'contrast', 'atomic', 'automatic', 'dom'],
@@ -191,8 +191,8 @@ function runInPage(ctx) {
       summary: 'This link in a block of text relies on color alone to be distinguished from the surrounding text.',
       hint: 'Add an underline, a font-weight/style difference, or increase the color contrast between the link and surrounding text to at least 3:1.',
       i18n: {
-        summaryKey: 'a11ycore_linkInTextBlock_summary_fail',
-        hintKey: 'a11ycore_linkInTextBlock_hint_fail',
+        summaryKey: 'linkInTextBlock_summary_fail',
+        hintKey: 'linkInTextBlock_hint_fail',
         params: { element: tag, ratio: String(ratioStr), threshold: '3' }
       },
       data: {

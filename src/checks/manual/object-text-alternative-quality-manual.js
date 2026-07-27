@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @check a11ycore-object-text-alternative-quality
+ * @check object-text-alternative-quality
  * @atomic true
  * @summary Manual review: text alternative appropriateness (WCAG 1.1.1)
  * @standard WCAG 2.2
@@ -11,14 +11,14 @@
  *   Human review is required to confirm that the provided text alternative is accurate and appropriate.
  */
 
-const id = "a11ycore-object-text-alternative-quality";
+const id = "object-text-alternative-quality";
 
 const meta = {
     title: "<object> text alternative must be appropriate (manual review)",
     description: "Flags <object> elements with detected fallback or name for human review of equivalence and appropriateness.",
     i18n: {
-        titleKey: "a11ycore_object_textAltQuality_title",
-        descriptionKey: "a11ycore_object_textAltQuality_description"
+        titleKey: "object_textAltQuality_title",
+        descriptionKey: "object_textAltQuality_description"
     },
     helpUrl: null,
     tags: ["wcag2a", "wcag111", "nontext", "object", "manual", "atomic"],
@@ -167,8 +167,8 @@ function runInPage(ctx) {
             summary: 'Review text alternative for <object> for equivalence and appropriateness.',
             hint: 'Confirm the fallback content or ARIA name provides an equivalent alternative for the embedded content.',
             i18n: {
-                summaryKey: 'a11ycore_object_textAltQuality_summary_cantTell',
-                hintKey: 'a11ycore_object_textAltQuality_hint_cantTell',
+                summaryKey: 'object_textAltQuality_summary_cantTell',
+                hintKey: 'object_textAltQuality_hint_cantTell',
                 params: { element: 'object' }
             },
             data: {
