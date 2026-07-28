@@ -242,6 +242,15 @@ function runCore(pageUrl, contextSelector, engineOptions, runOnly, CHECK_DEFS, R
                 ? engineOptionsResolved.rules[defResolved.ruleId]
                 : null;
 
+        // Rule-scoped excludeSelectors (engineOptions.rules[ruleId].excludeSelectors)
+        // apply on top of the global excludeSelectors for exactly this rule's
+        // applicability check + run, then are cleared once this rule is done.
+        // Safe because rule execution below is synchronous and one rule at a
+        // time -- sharedHelpers is reused across all rules in this loop.
+        if (typeof sharedHelpers.__setActiveRuleExcludeSelectors === 'function') {
+            sharedHelpers.__setActiveRuleExcludeSelectors(ruleConfig && ruleConfig.excludeSelectors);
+        }
+
         const ctx = {
             document,
             window,
@@ -310,6 +319,14 @@ function runCore(pageUrl, contextSelector, engineOptions, runOnly, CHECK_DEFS, R
         }
         checksResults.push(normalizeRuleResult(defResolved, result, SCHEMA_VERSION, policy, sharedHelpers));
         if (ruleTimings) ruleTimings[defResolved.ruleId] = (ruleTimings[defResolved.ruleId] || 0) + (nowMs() - t0);
+    }
+
+    // Composite rollups below carry no occurrences/nodes of their own, so
+    // they never exercise rule-scoped excludes -- but clear the "active
+    // rule" state on sharedHelpers regardless, so nothing after this point
+    // (composite aggregation, perf stats) can observe a stale rule's excludes.
+    if (typeof sharedHelpers.__setActiveRuleExcludeSelectors === 'function') {
+        sharedHelpers.__setActiveRuleExcludeSelectors(null);
     }
 
     // =========================

@@ -117,14 +117,35 @@ function createDomHelpers(opts) {
     const includeShadowDom = !(opts && opts.includeShadowDom === false);
     const excludeSelectors = Array.isArray(opts && opts.excludeSelectors) ? opts.excludeSelectors : [];
 
+    // Rule-scoped excludes (engineOptions.rules[ruleId].excludeSelectors), set
+    // by dom-runner.js immediately before invoking each rule's applicability/
+    // run function via __setActiveRuleExcludeSelectors(). Safe as mutable
+    // closure state because rule execution is synchronous and single-rule-
+    // at-a-time: exactly one rule's excludes are ever "active" at once.
+    var __activeRuleExcludeSelectors = [];
+
+    function __getEffectiveExcludeSelectors() {
+        return __activeRuleExcludeSelectors.length
+            ? excludeSelectors.concat(__activeRuleExcludeSelectors)
+            : excludeSelectors;
+    }
+
+    function __setActiveRuleExcludeSelectors(list) {
+        __activeRuleExcludeSelectors = normalizeSelectorList(list);
+    }
+
     // Selector-related caches (selector uniqueness index, per-element built
-    // selector strings) depend on includeShadowDom/excludeSelectors, since
-    // those change which elements are considered when checking uniqueness.
-    // The underlying storage is shared across createDomHelpers() calls on
-    // the same window/document (see __domSharedCache below), so a run with
-    // different options must not read/write another run's cached selectors.
-    // This key partitions those caches per effective option set.
-    const __selectorOptsKey = (includeShadowDom ? 'sd1' : 'sd0') + '|' + excludeSelectors.slice().sort().join(',');
+    // selector strings) depend on includeShadowDom/the effective exclude
+    // list, since those change which elements are considered when checking
+    // uniqueness. The underlying storage is shared across createDomHelpers()
+    // calls on the same window/document (see __domSharedCache below), so a
+    // run -- or a rule with its own rule-scoped excludes -- must not
+    // read/write another run/rule's cached selectors. This key partitions
+    // those caches per effective option set; recomputed per call (not a
+    // constant) since the effective list changes as the active rule changes.
+    function __getSelectorOptsKey() {
+        return (includeShadowDom ? 'sd1' : 'sd0') + '|' + __getEffectiveExcludeSelectors().slice().sort().join(',');
+    }
 
     // -------------------------------------------------------------------------
     // Per-run shared caches (DOM helpers)
@@ -886,9 +907,10 @@ function createDomHelpers(opts) {
 
 
     function isExcluded(el) {
-        if (!excludeSelectors.length || !el || !el.closest) return false;
+        const eff = __getEffectiveExcludeSelectors();
+        if (!eff.length || !el || !el.closest) return false;
         try {
-            return excludeSelectors.some((sel) => !!el.closest(sel));
+            return eff.some((sel) => !!el.closest(sel));
         } catch {
             return false;
         }
@@ -983,8 +1005,10 @@ function createDomHelpers(opts) {
             if (!scope || !scope.querySelectorAll) return [];
 
             // Cache shadow root discovery per root to avoid repeated querySelectorAll('*') walks.
-            // IMPORTANT: do not cache when excludeSelectors is non-empty (different helpers may differ).
-            if (!excludeSelectors.length && __shadowRootsByRoot) {
+            // IMPORTANT: do not cache when the effective exclude list (global
+            // ∪ active rule-scoped excludes) is non-empty -- different rules
+            // may have different effective lists and must not share results.
+            if (!__getEffectiveExcludeSelectors().length && __shadowRootsByRoot) {
                 try {
                     const cached = __shadowRootsByRoot.get(scope);
                     if (cached) {
@@ -1059,7 +1083,7 @@ function createDomHelpers(opts) {
 
     function queryAllSmart(sel) {
         const list = includeShadowDom ? queryAllDeep(sel) : queryAll(sel);
-        return excludeSelectors.length ? list.filter((el) => !isExcluded(el)) : list;
+        return __getEffectiveExcludeSelectors().length ? list.filter((el) => !isExcluded(el)) : list;
     }
 
     // -------------------------------------------------------------------------
@@ -1093,10 +1117,11 @@ function createDomHelpers(opts) {
     function __getSelectorCacheForOpts() {
         if (!__selectorCache) return null;
         try {
-            let wm = __selectorCache.get(__selectorOptsKey);
+            const key = __getSelectorOptsKey();
+            let wm = __selectorCache.get(key);
             if (!(wm instanceof WeakMap)) {
                 wm = new WeakMap();
-                __selectorCache.set(__selectorOptsKey, wm);
+                __selectorCache.set(key, wm);
             }
             return wm;
         } catch {
@@ -3507,7 +3532,8 @@ function createDomHelpers(opts) {
             return createSelectorUniqIndex();
         }
 
-        const cached = perScope.get(__selectorOptsKey);
+        const key = __getSelectorOptsKey();
+        const cached = perScope.get(key);
         if (cached) {
             __perfInc('uniqIndex.hit');
             return cached;
@@ -3516,7 +3542,7 @@ function createDomHelpers(opts) {
         __perfInc('uniqIndex.miss');
         const idx = createSelectorUniqIndex();
         try {
-            perScope.set(__selectorOptsKey, idx);
+            perScope.set(key, idx);
         } catch { /* ignore */
         }
         __perfInc('uniqIndex.build');
@@ -4025,6 +4051,12 @@ function createDomHelpers(opts) {
         isExcluded,
         isAccTreeEligible,
         isDomVisibleEligible,
+
+        // Engine-internal: sets which rule's rule-scoped excludeSelectors
+        // (engineOptions.rules[ruleId].excludeSelectors) are currently in
+        // effect. Called by dom-runner.js before each rule invocation, not
+        // intended for use by rule implementations.
+        __setActiveRuleExcludeSelectors,
 
         // Eligibility info wrapper
         getEligibilityInfo,

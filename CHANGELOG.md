@@ -4,7 +4,10 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-07-28
+
 ### Added
+- `engineOptions.rules[ruleId].excludeSelectors`: rule-scoped exclusions, narrowing candidates for exactly one rule on top of (never instead of) the existing global `excludeSelectors`. Resolves the class of false positive where one rule misfires on a component (e.g. Angular Material's `mat-select` tripping `aria-required-children`) while every other rule still needs to see it. Filtering happens upstream of each rule's own outcome decision, so no rule files changed. See `docs/ENGINE_OPTIONS.md`'s "Rule-scoped `excludeSelectors`" section.
 - Completed French (`fr`) localization: translated the 313 remaining `src/i18n/fr.js` keys, bringing French to full parity with English (600/600 keys, up from 287/600). Verified against a live scan (`locale: 'fr'`) and confirmed no key/placeholder mismatches against `src/i18n/en.js`. Landmark terminology uses "point de repère" per MDN's French ARIA documentation.
 
 ### Fixed

@@ -95,7 +95,9 @@ const engineOptions = {
   },
 
   rules: {
-    'some-rule-id': { /* per-rule config, currently unused — see note */ }
+    'some-rule-id': {
+      excludeSelectors: ['.some-noisy-widget']  // narrows candidates for THIS rule only — see note
+    }
   },
 
   probes: { /* optional host-supplied evidence, see note */ },
@@ -113,17 +115,43 @@ const engineOptions = {
 |---|---|
 | `locale` | Any string; resolution is per-string with graceful fallback (requested locale → `en` → the rule's literal English fallback text), so a partially-translated locale never produces missing text. See [`I18N.md`](./I18N.md) for current locale coverage. |
 | `includeShadowDom` | Default `true`: rules using `helpers.queryAllSmart` traverse into open shadow roots. Set `false` to scan only the light DOM. Closed shadow roots are never reachable either way (no DOM API exposes them). |
-| `excludeSelectors` | Elements matching any of these selectors (and their descendants) are skipped entirely — useful for cookie banners, third-party embeds, or known-noisy widgets you don't control. |
+| `excludeSelectors` | Elements matching any of these selectors (and their descendants) are skipped entirely, for **every** rule — useful for cookie banners, third-party embeds, or known-noisy widgets you don't control. To exclude something from just one specific rule instead, use `rules[ruleId].excludeSelectors` below. |
 | `timestamp` | Passed straight through to the result's top-level `timestamp` field; the engine does not generate one itself (deterministic-by-design). |
 | `contrast.mode` | `strictConformance` (default): contrast rules stay silent (`notApplicable`/skip) whenever the true rendered background isn't confidently computable, to protect against false `fail`s. `auditorAssist`: trades some of that safety margin for more findings, intended for a human auditor who will double-check flagged cases, not for unattended CI gating. |
 | `contrast.rootCanvasFallback` | The assumed page background color when it's not computable at all — only matters in `auditorAssist` mode. |
 | `visibilityMode` | Controls how strict the three contrast rules (`contrast-minimum`, `contrast-enhanced`, `contrast-computable`) are about deciding a text node is actually eligible to check. **Not read by any other rule.** `'styleOnly'` (default): eligibility is CSS-only — `display`, `visibility`, `opacity`, ancestor-hiding, etc. `'styleAndGeometry'`: adds real layout checks (`getClientRects()`/`getBoundingClientRect()`) on top of that — text with no client rects, or zero width/height, is excluded too. Reach for `'styleAndGeometry'` when running under a real browser/Playwright-Puppeteer (`runa11yCoreInPage`) and you want contrast findings to reflect actual rendered layout rather than just computed style; under plain jsdom (`runDomRulesInPage`) there's no real layout engine, so `'styleAndGeometry'` mostly just adds `getBoundingClientRect()` zero-size checks, not true clipping/overflow detection — see [`LIMITATIONS.md`](./LIMITATIONS.md). |
 | `policyContract` / `policy` | See [`POLICY.md`](./POLICY.md) — controls which outcomes/confidence values are allowed and whether manual rules' would-be `fail`s get coerced to `cantTell`. |
 | `output.includeSelector` / `.includeHtml` | Only affects the small number of rules (currently 4 of 125) that rely on the engine's automatic selector/HTML fill-in rather than building their own — most rules set `selector`/`html` themselves inside `runInPage` and are unaffected by this option. Not a reliable way to strip selectors/HTML from all output. |
-| `rules[ruleId]` | Passed through to that rule as `ctx.config`. The plumbing exists end-to-end, but **no shipped rule currently reads `ctx.config`** — this is infrastructure for future per-rule configurability, not a lever that changes any of today's 123 rules' behavior. |
+| `rules[ruleId]` | Passed through to that rule as `ctx.config`, and — for `excludeSelectors` specifically — read by the engine itself before the rule ever runs. See "Rule-scoped `excludeSelectors`" below. Any other key is passthrough only: **no shipped rule currently reads `ctx.config`** for anything besides `excludeSelectors`. |
 | `probes` | An optional, JSON-safe evidence object your host application can supply (depth- and size-capped by the engine before rules see it, via `ctx.inputs.probes`) — for future rules that might accept externally-supplied signals (e.g. real layout measurements a static DOM scan can't compute itself). Not consumed by any current rule. |
 | `perfStats` / `profileRules` | Debug-only. `perfStats: true` returns internal counters on the result's `perfStats` field; `profileRules: true` additionally adds a per-rule timing breakdown. Shape is not part of the stable output contract — don't build on it. |
 | `pingWaitTime` / `frameWaitTime` | Only read by `runa11yCoreAcrossFrames` (see [`INTEGRATION.md`](./INTEGRATION.md#cross-frame-scanning-including-cross-origin)) — how long to wait for a child frame to answer a ping (default `500`ms) and a full run request (default `60000`ms) before treating it as unreachable. Ignored by `runDomRulesInPage`/`runa11yCoreInPage`. |
+
+### Rule-scoped `excludeSelectors`
+
+The top-level `excludeSelectors` applies to *every* rule — there's no way to exclude an element from just one rule while still running every other rule against it. `rules[ruleId].excludeSelectors` fills that gap: it narrows candidates for **that one rule only**, on top of (never instead of) the global list.
+
+```js
+const engineOptions = {
+  excludeSelectors: ['#cookie-banner'],   // applies to every rule, as always
+  rules: {
+    'aria-required-children': {
+      excludeSelectors: ['mat-select', 'mat-stepper', 'mat-horizontal-stepper', 'mat-vertical-stepper']
+    },
+    'aria-allowed-attr': {
+      excludeSelectors: ['mat-progress-spinner']
+    }
+  }
+};
+```
+
+Why you'd want this: Angular Material's `<mat-select>` builds its internal ARIA structure in a way that trips a false positive on `aria-required-children` specifically, even though the component is otherwise fine. With only the global `excludeSelectors`, the only way to silence that false positive is `excludeSelectors: ['mat-select']` — which also hides `mat-select` from *every other rule*, including `color-contrast` and `aria-allowed-attr`, silently dropping real coverage those checks never had a problem with. The example above keeps `mat-select` fully visible to every rule except the one that misfires on it.
+
+Effective exclusions for a given rule are the **union** of the global list and that rule's own list — an element matching either is dropped from that rule's candidates. A rule whose only would-be-failing elements are all excluded this way reports `outcome: 'pass'` or `'notApplicable'` (matching that rule's own no-candidates convention), with `occurrences: []` — never `outcome: 'fail'` with an empty `occurrences` array, since that exact shape is reserved elsewhere in the schema to mean "this rule threw" (see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md)).
+
+Accepts the same forms as the global option: an array (`['mat-select', 'mat-stepper']`) or a comma-separated string (`'mat-select, mat-stepper'`).
+
+> If you're using a binding package (`@surea11y/binding-base` and its Playwright/Puppeteer wrappers), check that binding's own README for whether its `.exclude()` builder method has a rule-scoped form yet — this is an `engineOptions` shape documented here at the engine level; not every binding has picked it up.
 
 ## Recipes — composing options for real scenarios
 

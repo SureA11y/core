@@ -29,7 +29,7 @@ By design, this engine never enumerates the elements a rule *passed* — only th
 Two common causes, in order of likelihood:
 
 1. **The element is excluded from the accessibility tree** — `aria-hidden="true"`, `display: none`, `visibility: hidden`, `hidden`, or an `inert` ancestor. Most rules deliberately skip content that's already invisible to assistive technology (checking a hidden element would be meaningless, and could produce a misleading `fail` on content no user encounters). Some rules explicitly opt out of this gating when it wouldn't make sense to (e.g. `no-autoplay-audio` — hidden audio still plays sound) — check the specific rule's file header comment (`@applicability`) in `src/checks/`.
-2. **`excludeSelectors`** — if you've configured this (directly or inherited from a shared config), confirm the element in question isn't matched by it.
+2. **`excludeSelectors`** — if you've configured this (directly or inherited from a shared config), confirm the element in question isn't matched by it. Remember this can also be scoped to a single rule via `engineOptions.rules[ruleId].excludeSelectors` (see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#rule-scoped-excludeselectors)) — if a rule you expect to fire keeps coming back `notApplicable`/`pass` for one element only, check whether that rule specifically has its own exclude list configured, not just the global one.
 
 ## "Does a clean scan (`pass` everywhere) mean the page is WCAG conformant?"
 
