@@ -22,12 +22,7 @@
  * - SUPPORTED_ATTRS_BY_ROLE widened 2026-07-21 (7 new roles), cross-checked
  *   against a widely-used reference engine's own per-role `allowedAttrs`
  *   table AND verified each addition is an unambiguous, well-established ARIA
- *   fact rather than a blind import — that engine's own table has ~68 roles,
- *   far more than were reconciled here; this pass deliberately took only the
- *   additions with clear, specific supported attributes (not just the
- *   near-universal, thin `aria-expanded` that engine allows on most roles), and
- *   left the rest for a dedicated future full-reconciliation pass rather
- *   than rushing all 68 through at lower confidence:
+ *   fact rather than a blind import:
  *   - `searchbox`: identical to the already-covered `textbox` (ARIA
  *     explicitly defines searchbox as textbox's subclass, same supported
  *     set).
@@ -47,6 +42,34 @@
  *   - `menu`/`menubar`/`toolbar`: activedescendant/orientation — standard
  *     composite-widget properties, same family as the already-covered
  *     `tablist`.
+ * - SUPPORTED_ATTRS_BY_ROLE full-reconciliation pass 2026-07-28: the
+ *   2026-07-21 pass deliberately deferred ~61 roles where the reference
+ *   engine (the reference engine) allows `aria-expanded`, treating it as too thin/
+ *   near-universal to import blindly. Checked against `aria-query`
+ *   (tracks the published WAI-ARIA 1.2 Recommendation, 6 June 2023 — the
+ *   latest actually-published version, as opposed to the in-progress 1.3
+ *   Editor's Draft) instead of the reference engine directly, because the reference engine's own
+ *   source comments (`// Spec difference: Aria-expanded removed in 1.2`)
+ *   show that most of its `aria-expanded` allowances are deliberate
+ *   ARIA-1.1 legacy/AT-compat carryovers the reference engine keeps on purpose, not
+ *   current-spec facts — importing them wholesale would have re-added
+ *   exactly the kind of unverified allowance the 07-21 pass was avoiding.
+ *   `aria-query`'s per-role tables (with superclass inheritance resolved,
+ *   e.g. `aria-activedescendant` via the abstract `composite` role) gave a
+ *   spec-grounded diff instead. Net changes from that diff:
+ *   - `aria-expanded` added to: checkbox, columnheader, gridcell, listbox,
+ *     menuitemcheckbox, menuitemradio, row, rowheader, switch, tab —
+ *     confirmed present in current spec for these roles specifically
+ *     (unlike e.g. `listitem`, `dialog`, `alertdialog`, `heading`, which
+ *     the spec does NOT list it for — those stay excluded).
+ *   - `aria-activedescendant` added to: combobox, grid, listbox,
+ *     radiogroup, row, spinbutton, tablist, treegrid (inherited from the
+ *     abstract `composite` role for any composite/managed-focus widget).
+ *   - `aria-readonly`/`aria-required` added to: switch, menuitemcheckbox,
+ *     menuitemradio. `aria-posinset`/`aria-setsize` added to: tab, radio,
+ *     menuitemcheckbox, menuitemradio. `aria-level` added to: tablist.
+ *   - `tree`'s `aria-readonly` removed: not in aria-query's resolved
+ *     props for `tree` (was an unverified carryover, not spec-backed).
  * - Not gated on isAccTreeEligible: this is a static markup property.
  */
 
@@ -101,39 +124,39 @@ function runInPage(ctx) {
   // role/attribute pairings from the WAI-ARIA role definitions are listed.
   const SUPPORTED_ATTRS_BY_ROLE = {
     alertdialog: ['aria-modal'],
-    checkbox: ['aria-checked', 'aria-readonly', 'aria-required'],
-    columnheader: ['aria-sort', 'aria-colindex', 'aria-colspan', 'aria-readonly', 'aria-required', 'aria-rowindex', 'aria-rowspan', 'aria-selected'],
-    combobox: ['aria-expanded', 'aria-autocomplete', 'aria-readonly', 'aria-required'],
+    checkbox: ['aria-checked', 'aria-readonly', 'aria-required', 'aria-expanded'],
+    columnheader: ['aria-sort', 'aria-colindex', 'aria-colspan', 'aria-readonly', 'aria-required', 'aria-rowindex', 'aria-rowspan', 'aria-selected', 'aria-expanded'],
+    combobox: ['aria-expanded', 'aria-autocomplete', 'aria-readonly', 'aria-required', 'aria-activedescendant'],
     dialog: ['aria-modal'],
-    grid: ['aria-multiselectable', 'aria-readonly', 'aria-colcount', 'aria-rowcount'],
-    gridcell: ['aria-selected', 'aria-readonly', 'aria-required', 'aria-colindex', 'aria-colspan', 'aria-rowindex', 'aria-rowspan'],
+    grid: ['aria-multiselectable', 'aria-readonly', 'aria-colcount', 'aria-rowcount', 'aria-activedescendant'],
+    gridcell: ['aria-selected', 'aria-readonly', 'aria-required', 'aria-colindex', 'aria-colspan', 'aria-rowindex', 'aria-rowspan', 'aria-expanded'],
     heading: ['aria-level'],
-    listbox: ['aria-multiselectable', 'aria-readonly', 'aria-required', 'aria-orientation'],
+    listbox: ['aria-multiselectable', 'aria-readonly', 'aria-required', 'aria-orientation', 'aria-expanded', 'aria-activedescendant'],
     listitem: ['aria-level', 'aria-posinset', 'aria-setsize'],
     menu: ['aria-activedescendant', 'aria-orientation'],
     menubar: ['aria-activedescendant', 'aria-orientation'],
-    menuitemcheckbox: ['aria-checked'],
-    menuitemradio: ['aria-checked'],
+    menuitemcheckbox: ['aria-checked', 'aria-expanded', 'aria-readonly', 'aria-required', 'aria-posinset', 'aria-setsize'],
+    menuitemradio: ['aria-checked', 'aria-expanded', 'aria-readonly', 'aria-required', 'aria-posinset', 'aria-setsize'],
     meter: ['aria-valuenow', 'aria-valuemin', 'aria-valuemax', 'aria-valuetext'],
     option: ['aria-selected', 'aria-checked', 'aria-posinset', 'aria-setsize'],
     progressbar: ['aria-valuenow', 'aria-valuemin', 'aria-valuemax', 'aria-valuetext'],
-    radio: ['aria-checked'],
-    radiogroup: ['aria-readonly', 'aria-required', 'aria-orientation'],
-    row: ['aria-selected', 'aria-level', 'aria-posinset', 'aria-setsize', 'aria-colindex', 'aria-rowindex'],
-    rowheader: ['aria-sort', 'aria-colindex', 'aria-colspan', 'aria-readonly', 'aria-required', 'aria-rowindex', 'aria-rowspan', 'aria-selected'],
+    radio: ['aria-checked', 'aria-posinset', 'aria-setsize'],
+    radiogroup: ['aria-readonly', 'aria-required', 'aria-orientation', 'aria-activedescendant'],
+    row: ['aria-selected', 'aria-level', 'aria-posinset', 'aria-setsize', 'aria-colindex', 'aria-rowindex', 'aria-expanded', 'aria-activedescendant'],
+    rowheader: ['aria-sort', 'aria-colindex', 'aria-colspan', 'aria-readonly', 'aria-required', 'aria-rowindex', 'aria-rowspan', 'aria-selected', 'aria-expanded'],
     scrollbar: ['aria-valuenow', 'aria-valuemin', 'aria-valuemax', 'aria-valuetext', 'aria-orientation', 'aria-controls'],
     searchbox: ['aria-activedescendant', 'aria-autocomplete', 'aria-multiline', 'aria-placeholder', 'aria-readonly', 'aria-required'],
     separator: ['aria-valuenow', 'aria-valuemin', 'aria-valuemax', 'aria-valuetext', 'aria-orientation'],
     slider: ['aria-valuenow', 'aria-valuemin', 'aria-valuemax', 'aria-valuetext', 'aria-orientation', 'aria-readonly'],
-    spinbutton: ['aria-valuenow', 'aria-valuemin', 'aria-valuemax', 'aria-valuetext', 'aria-readonly', 'aria-required'],
-    switch: ['aria-checked'],
-    tab: ['aria-selected'],
+    spinbutton: ['aria-valuenow', 'aria-valuemin', 'aria-valuemax', 'aria-valuetext', 'aria-readonly', 'aria-required', 'aria-activedescendant'],
+    switch: ['aria-checked', 'aria-expanded', 'aria-readonly', 'aria-required'],
+    tab: ['aria-selected', 'aria-expanded', 'aria-posinset', 'aria-setsize'],
     table: ['aria-colcount', 'aria-rowcount'],
-    tablist: ['aria-multiselectable', 'aria-orientation'],
+    tablist: ['aria-multiselectable', 'aria-orientation', 'aria-level', 'aria-activedescendant'],
     textbox: ['aria-activedescendant', 'aria-autocomplete', 'aria-multiline', 'aria-placeholder', 'aria-readonly', 'aria-required'],
     toolbar: ['aria-activedescendant', 'aria-orientation'],
-    tree: ['aria-multiselectable', 'aria-readonly', 'aria-required', 'aria-orientation'],
-    treegrid: ['aria-multiselectable', 'aria-readonly', 'aria-required', 'aria-orientation', 'aria-colcount', 'aria-rowcount'],
+    tree: ['aria-multiselectable', 'aria-required', 'aria-orientation', 'aria-activedescendant'],
+    treegrid: ['aria-multiselectable', 'aria-readonly', 'aria-required', 'aria-orientation', 'aria-colcount', 'aria-rowcount', 'aria-activedescendant'],
     treeitem: ['aria-checked', 'aria-selected', 'aria-expanded', 'aria-level', 'aria-posinset', 'aria-setsize']
   };
 

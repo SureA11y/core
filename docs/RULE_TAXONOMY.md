@@ -12,7 +12,7 @@ Encoded by: `meta.type`
 
 - `automatic`
     - Rule makes a **normative decision**
-    - Allowed outcomes: `pass`, `fail`, `notApplicable`
+    - Allowed outcomes: `pass`, `fail`, `notApplicable`, and `cantTell` as a defensive fallback only (e.g. an internal-failure safety net, or a computability gate a rule can't resolve — see `contrast-minimum.js`/`contrast-enhanced.js`/`contrast-computable.js`/`target-size-minimum.js`), never as its primary intended path
 - `manual`
     - Rule signals **human review required**
     - Allowed outcomes: `cantTell`, `notApplicable`
@@ -24,7 +24,7 @@ Manual rules MUST NOT make normative failure decisions.
 ### 1.2 Intent
 Encoded by: **rule id suffix**
 
-Current intents:
+Illustrative intents (from the image-alternatives family used as the running example in §2, not an exhaustive list — the ruleset's 125 rules use dozens of distinct suffixes; `docs/RULE_CATALOG.md` is the generated, always-current list):
 
 - `present`
     - Verifies that a required **mechanism exists**
@@ -43,7 +43,7 @@ Intent determines whether a rule can be automatic.
 ### 1.3 Target Family
 Encoded by: **rule id prefix**
 
-Current families include:
+Illustrative families, from the image-alternatives cluster (WCAG 1.1.1) used as the running example in §2 — not an exhaustive list. The ruleset's 125 rules span dozens of families (`aria-*`, `contrast-*`, `dialog-*`, `iframe-*`, `label-*`, `link-*`, `list-*`, `landmark-*`, and more); see `docs/RULE_CATALOG.md` for the generated, always-current list:
 
 - `img`
 - `area`
@@ -67,12 +67,13 @@ Rules MUST NOT mix families.
 ### 1.4 Target Set (Tree Scope)
 Encoded by: `data.visibilityFilter.targetSet`
 
-Current value used by this ruleset:
-- `acc` (accessibility tree)
+Values used by this ruleset:
+- `acc` (accessibility tree) — most rules
+- `dom` (raw DOM/CSS visibility, no accessibility-tree computation) — e.g. `label-in-name.js`
 
-Rules explicitly log eligibility against the accessibility tree using:
-- `helpers.isAccTreeEligible`
-- `helpers.getEligibilityInfo(..., { targetSet: "acc" })`
+Rules log eligibility against whichever tree scope they target using:
+- `helpers.isAccTreeEligible` / `helpers.isDomVisibleEligible`
+- `helpers.getEligibilityInfo(..., { targetSet: "acc" | "dom" })`
 
 This is a semantic constraint, not logging noise.
 

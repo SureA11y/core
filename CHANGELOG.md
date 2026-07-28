@@ -4,9 +4,26 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ## [Unreleased]
 
+### Added
+- Completed French (`fr`) localization: translated the 313 remaining `src/i18n/fr.js` keys, bringing French to full parity with English (600/600 keys, up from 287/600). Verified against a live scan (`locale: 'fr'`) and confirmed no key/placeholder mismatches against `src/i18n/en.js`. Landmark terminology uses "point de repère" per MDN's French ARIA documentation.
+
+### Fixed
+- `docs/RULE_TAXONOMY.md`: automatic rules' allowed outcomes was missing `cantTell` (4 rules use it as a defensive fallback); the "current intents"/"current families" lists were stale and read as exhaustive when the ruleset actually spans 54 suffixes/68 prefixes — reframed as illustrative with a pointer to the generated `RULE_CATALOG.md`; `data.visibilityFilter.targetSet` was missing the `'dom'` value (only `'acc'` was listed).
+- `docs/OUTPUT_SCHEMA.md`: the `visibilityFilter` type was missing its always-present `eligible` field; the worked example's `structuralPath` values for the button/img pair were swapped; removed a citation to a note in `RULE_AUTHORING.md` that doesn't exist there.
+- `docs/I18N.md`: stale key counts (`en` listed as 590, actual 600; `fr` coverage listed as ~49%, actual ~48% at the time) — now updated to reflect full parity.
+
+## [1.0.1] - 2026-07-28
+
 ### Changed
 - Trimmed the published npm package: rule-authoring scaffolding (`docs/RULE_TEMPLATE.*`, `docs/RULE_TEST_TEMPLATE.md`, `docs/RULE_TEST_AUTHORING.md`, `docs/TEST_OUTCOME_STABILITY.md`) and the not-yet-documented `src/explain` module no longer ship in the tarball — both stay in the git repo for contributors.
 - README rewritten for clarity: corrected the install command and `require()` examples to the actual package name (`@surea11y/core`), and updated the rule count to 125.
+- `docs/ENGINE_OPTIONS.md`: documented the previously-undocumented `visibilityMode` option (`'styleOnly'`/`'styleAndGeometry'`, scoped to the three contrast rules), and added a "Recipes" section with composed, runnable examples for common scenarios (CI gating, auditor-mode contrast passes, scoped re-scans, reproducible snapshots, custom rules).
+
+### Fixed
+- `aria-allowed-attr`'s `SUPPORTED_ATTRS_BY_ROLE` table reconciled against the published WAI-ARIA 1.2 Recommendation (via `aria-query`, not the reference engine's table — the reference engine's own source comments confirm many of its `aria-expanded` allowances are deliberate ARIA 1.1 legacy carryovers, not current-spec facts). Added `aria-expanded` to 10 roles (checkbox, columnheader, gridcell, listbox, menuitemcheckbox, menuitemradio, row, rowheader, switch, tab) and `aria-activedescendant` to 8 composite-widget roles (combobox, grid, listbox, radiogroup, row, spinbutton, tablist, treegrid), plus smaller posinset/setsize/readonly/required/level gaps; removed `tree`'s unverified `aria-readonly`. `listitem` was already correct and is unchanged.
+- README: a "Real browser execution" code sample passed four positional arguments to `page.evaluate()` and claimed it worked with "any" automation framework — Playwright's `page.evaluate()` only accepts one argument alongside the function and throws on this exact pattern. Now shown as Puppeteer-specific, with a pointer to `INTEGRATION.md`'s wrapper for Playwright.
+- README: the JSON output example referenced a nonexistent rule id (`link-name-quality`); corrected to the real id, `link-name-quality-manual`.
+- README: Quick Start code samples labeled the runner's four positional arguments as `url, ruleFilter, options, policy`; corrected to the actual names (`pageUrl, contextSelector, engineOptions, runOnly`) used consistently elsewhere in the docs.
 
 ## [1.1.1] - 2026-07-24
 

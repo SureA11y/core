@@ -111,6 +111,72 @@ test(`${RULE_ID}: pass when role="menu"/"menubar"/"toolbar" have activedescendan
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+test(`${RULE_ID}: pass when aria-expanded is present on roles confirmed by aria-query/ARIA 1.2 (widened 2026-07-28)`, () => {
+  const html = `<!doctype html><html><body>
+    <div id="a" role="checkbox" aria-checked="true" aria-expanded="false"></div>
+    <div id="b" role="columnheader" aria-sort="ascending" aria-expanded="true"></div>
+    <div id="c" role="rowheader" aria-sort="ascending" aria-expanded="true"></div>
+    <div id="d" role="gridcell" aria-expanded="true"></div>
+    <div id="e" role="listbox" aria-expanded="true"></div>
+    <div id="f" role="menuitemcheckbox" aria-checked="true" aria-expanded="true"></div>
+    <div id="g" role="menuitemradio" aria-checked="true" aria-expanded="true"></div>
+    <div id="h" role="row" aria-expanded="true"></div>
+    <div id="i" role="switch" aria-checked="true" aria-expanded="true"></div>
+    <div id="j" role="tab" aria-expanded="true"></div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: fail when aria-expanded is present on roles the spec does NOT list it for (listitem, dialog, alertdialog, heading)`, () => {
+  const html = `<!doctype html><html><body>
+    <div id="a" role="listitem" aria-expanded="true"></div>
+    <div id="b" role="dialog" aria-modal="true" aria-expanded="true"></div>
+    <div id="c" role="alertdialog" aria-modal="true" aria-expanded="true"></div>
+    <div id="d" role="heading" aria-level="2" aria-expanded="true"></div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 4, maxOccurrences: 4 });
+  for (const id of ['a', 'b', 'c', 'd']) {
+    assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);
+  }
+});
+
+test(`${RULE_ID}: pass when aria-activedescendant is present on composite-widget roles (widened 2026-07-28, inherited from the abstract "composite" role)`, () => {
+  const html = `<!doctype html><html><body>
+    <div id="a" role="combobox" aria-expanded="true" aria-activedescendant="x"></div>
+    <div id="b" role="grid" aria-activedescendant="x"></div>
+    <div id="c" role="listbox" aria-activedescendant="x"></div>
+    <div id="d" role="radiogroup" aria-activedescendant="x"></div>
+    <div id="e" role="row" aria-activedescendant="x"></div>
+    <div id="f" role="spinbutton" aria-valuenow="1" aria-activedescendant="x"></div>
+    <div id="g" role="tablist" aria-activedescendant="x"></div>
+    <div id="h" role="treegrid" aria-activedescendant="x"></div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: pass for the remaining 2026-07-28 additions (posinset/setsize/readonly/required/level)`, () => {
+  const html = `<!doctype html><html><body>
+    <div id="a" role="radio" aria-checked="true" aria-posinset="1" aria-setsize="3"></div>
+    <div id="b" role="tab" aria-posinset="1" aria-setsize="3"></div>
+    <div id="c" role="switch" aria-checked="true" aria-readonly="true" aria-required="true"></div>
+    <div id="d" role="menuitemcheckbox" aria-checked="true" aria-readonly="true" aria-required="true" aria-posinset="1" aria-setsize="2"></div>
+    <div id="e" role="tablist" aria-level="1"></div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: fail when aria-readonly is present on role="tree" (removed 2026-07-28 — not in aria-query's resolved props for tree)`, () => {
+  const html = `<!doctype html><html><body><div id="a" role="tree" aria-readonly="true"></div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.equal(rule.occurrences[0].data.details.attr, 'aria-readonly');
+  assert.equal(rule.occurrences[0].data.details.role, 'tree');
+});
+
 test(`${RULE_ID}: fail when aria-modal is present on a role that doesn't support it (role="checkbox")`, () => {
   const html = `<!doctype html><html><body><div id="a" role="checkbox" aria-checked="true" aria-modal="true"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });

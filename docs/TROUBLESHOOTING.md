@@ -39,9 +39,9 @@ No — see [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md). A `pass` means every 
 
 Treat it as "needs a human to look" — it's neither pass nor fail by design. Most teams log `cantTell` findings without failing CI on them, since failing a build on something the engine explicitly couldn't determine tends to train people to ignore the gate. See [`POLICY.md`](./POLICY.md) if you want to reshape this behavior (e.g. via a custom policy contract), and [`INTEGRATION.md`](./INTEGRATION.md#ci-gating-a-build-on-the-result) for a concrete CI-gating example.
 
-## "Why is French only partially translated?"
+## "What happens if a locale is only partially translated?"
 
-It genuinely is — see [`I18N.md`](./I18N.md) for the exact current coverage. Missing keys fall back to English per-string (never a blank or broken result), so a partial locale degrades gracefully rather than failing outright.
+Missing keys fall back to English per-string (never a blank or broken result), so a partial locale degrades gracefully rather than failing outright — see [`I18N.md`](./I18N.md) for the mechanism and current coverage. Both shipped locales (`en`, `fr`) are at full parity as of this writing, but that's not guaranteed to stay true automatically: adding a new rule adds a new key to `en.js`, and unless the same key is added to `fr.js` (or any other locale file you maintain), that string falls back to English until it is.
 
 ## "`runDomRulesInPage` vs `runa11yCoreInPage` — which one do I want?"
 

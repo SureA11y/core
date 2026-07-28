@@ -82,6 +82,7 @@ const engineOptions = {
     mode: 'strictConformance',     // 'strictConformance' (default) | 'auditorAssist'
     rootCanvasFallback: '#ffffff'  // background assumed when the true root background isn't computable
   },
+  visibilityMode: 'styleOnly',     // 'styleOnly' (default) | 'styleAndGeometry' — see below; scoped to the contrast rules only
 
   policyContract: 'a11y',          // 'a11y' (default) | 'generic' | inline contract object — see POLICY.md
   policy: {                        // optional overrides on top of policyContract
@@ -116,12 +117,76 @@ const engineOptions = {
 | `timestamp` | Passed straight through to the result's top-level `timestamp` field; the engine does not generate one itself (deterministic-by-design). |
 | `contrast.mode` | `strictConformance` (default): contrast rules stay silent (`notApplicable`/skip) whenever the true rendered background isn't confidently computable, to protect against false `fail`s. `auditorAssist`: trades some of that safety margin for more findings, intended for a human auditor who will double-check flagged cases, not for unattended CI gating. |
 | `contrast.rootCanvasFallback` | The assumed page background color when it's not computable at all — only matters in `auditorAssist` mode. |
+| `visibilityMode` | Controls how strict the three contrast rules (`contrast-minimum`, `contrast-enhanced`, `contrast-computable`) are about deciding a text node is actually eligible to check. **Not read by any other rule.** `'styleOnly'` (default): eligibility is CSS-only — `display`, `visibility`, `opacity`, ancestor-hiding, etc. `'styleAndGeometry'`: adds real layout checks (`getClientRects()`/`getBoundingClientRect()`) on top of that — text with no client rects, or zero width/height, is excluded too. Reach for `'styleAndGeometry'` when running under a real browser/Playwright-Puppeteer (`runa11yCoreInPage`) and you want contrast findings to reflect actual rendered layout rather than just computed style; under plain jsdom (`runDomRulesInPage`) there's no real layout engine, so `'styleAndGeometry'` mostly just adds `getBoundingClientRect()` zero-size checks, not true clipping/overflow detection — see [`LIMITATIONS.md`](./LIMITATIONS.md). |
 | `policyContract` / `policy` | See [`POLICY.md`](./POLICY.md) — controls which outcomes/confidence values are allowed and whether manual rules' would-be `fail`s get coerced to `cantTell`. |
-| `output.includeSelector` / `.includeHtml` | Only affects the small number of rules (currently 4 of 123) that rely on the engine's automatic selector/HTML fill-in rather than building their own — most rules set `selector`/`html` themselves inside `runInPage` and are unaffected by this option. Not a reliable way to strip selectors/HTML from all output. |
+| `output.includeSelector` / `.includeHtml` | Only affects the small number of rules (currently 4 of 125) that rely on the engine's automatic selector/HTML fill-in rather than building their own — most rules set `selector`/`html` themselves inside `runInPage` and are unaffected by this option. Not a reliable way to strip selectors/HTML from all output. |
 | `rules[ruleId]` | Passed through to that rule as `ctx.config`. The plumbing exists end-to-end, but **no shipped rule currently reads `ctx.config`** — this is infrastructure for future per-rule configurability, not a lever that changes any of today's 123 rules' behavior. |
 | `probes` | An optional, JSON-safe evidence object your host application can supply (depth- and size-capped by the engine before rules see it, via `ctx.inputs.probes`) — for future rules that might accept externally-supplied signals (e.g. real layout measurements a static DOM scan can't compute itself). Not consumed by any current rule. |
 | `perfStats` / `profileRules` | Debug-only. `perfStats: true` returns internal counters on the result's `perfStats` field; `profileRules: true` additionally adds a per-rule timing breakdown. Shape is not part of the stable output contract — don't build on it. |
 | `pingWaitTime` / `frameWaitTime` | Only read by `runa11yCoreAcrossFrames` (see [`INTEGRATION.md`](./INTEGRATION.md#cross-frame-scanning-including-cross-origin)) — how long to wait for a child frame to answer a ping (default `500`ms) and a full run request (default `60000`ms) before treating it as unreachable. Ignored by `runDomRulesInPage`/`runa11yCoreInPage`. |
+
+## Recipes — composing options for real scenarios
+
+The reference above documents each option in isolation. These combine several at once, for scenarios you're likely to actually hit.
+
+**CI gate: WCAG 2.2 AA only, ignore a third-party widget you don't control**
+
+```js
+runDomRulesInPage(url, null, {
+  excludeSelectors: ['#cookie-banner', '.intercom-launcher'],
+  tags: { include: 'wcag2a,wcag2aa,wcag21a,wcag21aa,wcag22a,wcag22aa' }
+}, null);
+```
+
+**Human auditor doing a deep contrast pass in a real browser** — trade some false-positive protection for more findings, and check real layout (not just computed style) since a real page is being driven. Shown with Puppeteer's `page.evaluate` (accepts multiple args); if you're on Playwright, wrap the four positional args into a single object first — see [`INTEGRATION.md`](./INTEGRATION.md):
+
+```js
+const result = await page.evaluate(runa11yCoreInPage, url, null, {
+  contrast: { mode: 'auditorAssist' },
+  visibilityMode: 'styleAndGeometry'
+}, null);
+```
+
+**Scoped re-scan of one region after a UI change, skipping shadow DOM** — useful in a component-level test where you only care about the widget you just changed:
+
+```js
+runDomRulesInPage(url, '#checkout-form', {
+  includeShadowDom: false
+}, { includeRuleIds: ['form-control-programmatic-label-present', 'button-name-present'] });
+```
+
+**Reproducible output for snapshot testing** — pin a `timestamp` so two runs of the same HTML produce byte-identical JSON, and request the debug timing breakdown:
+
+```js
+runDomRulesInPage(url, null, {
+  timestamp: '2026-01-01T00:00:00Z',
+  perfStats: true,
+  profileRules: true
+}, null);
+```
+
+**A custom, org-specific rule alongside the built-ins**, only for this one call:
+
+```js
+runDomRulesInPage(url, null, {
+  customRules: [{
+    id: 'org-no-inline-onclick',
+    meta: { title: 'No inline onclick handlers', defaultSeverity: 'moderate' },
+    runInPage(ctx) {
+      const els = ctx.helpers.queryAll('[onclick]');
+      const occurrences = els.map((el) => ({
+        selector: ctx.helpers.buildSelector(el),
+        html: el.outerHTML,
+        summary: 'Inline onclick handler found.',
+        hint: 'Move event handling into an external script.'
+      }));
+      return { ruleId: ctx.rule.ruleId, outcome: occurrences.length ? 'fail' : 'pass', severity: 'moderate', occurrences };
+    }
+  }]
+}, null);
+```
+
+See the option-by-option table above for anything not shown here, and the `customRules` section immediately below for the full descriptor contract.
 
 ## `customRules` — runtime-registered rules (equivalent to the rule/check registration pattern used by other engines)
 

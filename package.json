@@ -1,10 +1,10 @@
 {
   "name": "@surea11y/core",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Lightweight DOM rules accessibility core with modular rules.",
   "main": "src/index.js",
   "bin": {
-    "surea11y": "./bin/core.js"
+    "surea11y": "bin/core.js"
   },
   "author": "Jorge Rumoroso",
   "license": "MIT",

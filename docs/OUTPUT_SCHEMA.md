@@ -103,7 +103,7 @@ Notes:
 
 ## An occurrence (`occurrences[i]`)
 
-Only present when `outcome` is `fail` or `cantTell` (a `pass`/`notApplicable` result has `occurrences: []` — this engine does not enumerate the elements it passed, only the ones it flagged; see the note in `docs/RULE_AUTHORING.md` on why "silence" from a `pass` rule is not the same as an enumerated list of passing elements).
+Only present when `outcome` is `fail` or `cantTell` (a `pass`/`notApplicable` result has `occurrences: []` — this engine does not enumerate the elements it passed, only the ones it flagged).
 
 ```ts
 {
@@ -114,7 +114,7 @@ Only present when `outcome` is `fail` or `cantTell` (a `pass`/`notApplicable` re
   hint: string,
   i18n: { summaryKey: string, hintKey: string, params: object } | null,
   data: {
-    visibilityFilter?: { targetSet: string, accEligible: boolean | null, reasons: string[] },
+    visibilityFilter?: { eligible: boolean, targetSet: string, accEligible: boolean | null, reasons: string[] },
     details?: object   // rule-specific, non-normative — see below
   }
 }
@@ -128,7 +128,7 @@ Only present when `outcome` is `fail` or `cantTell` (a `pass`/`notApplicable` re
 | `summary` | Human-readable, already localized ("This button has no accessible name."). |
 | `hint` | Human-readable remediation guidance, already localized. |
 | `i18n` | The raw translation keys behind `summary`/`hint`, if you want to re-render them in a different locale yourself without re-running the scan. `null` if the occurrence didn't use key-based i18n. |
-| `data.visibilityFilter` | Present on most occurrences: why the engine considered this element eligible for accessibility-tree evaluation (or not). `reasons` is a list of machine-readable exclusion codes when `accEligible: false`. |
+| `data.visibilityFilter` | Present on most occurrences: why the engine considered this element eligible (or not) under whichever eligibility model the rule used. `eligible` is that result; `targetSet` says which model produced it (`'dom'`: raw DOM/CSS visibility — most rules; `'acc'`: accessibility-tree eligibility). `accEligible` mirrors `eligible` only when `targetSet` is `'acc'`, otherwise `null` — don't read it as a second, independent signal. `reasons` is a list of machine-readable exclusion codes when `eligible: false`. |
 | `data.details` | Rule-specific structured data (e.g. `reasonCode`, computed metrics, resolved references) — **non-normative**: useful for building richer UI or debugging, but never changes what `outcome`/`severity` mean. Shape varies per rule; treat as best-effort extra context, not a stable contract. |
 
 ## A composite result (`rulesResults[i]`)
@@ -202,7 +202,7 @@ const result = runDomRulesInPage(
         {
           "selector": "html > body > button",
           "html": "<button></button>",
-          "structuralPath": [1, 0],
+          "structuralPath": [1, 1],
           "summary": "This button has no accessible name.",
           "hint": "Provide visible button text or a programmatic accessible-name mechanism (for example aria-label) so assistive technologies can identify the button.",
           "data": {
@@ -222,7 +222,7 @@ const result = runDomRulesInPage(
         {
           "selector": "html > body > img",
           "html": "<img src=\"logo.png\">",
-          "structuralPath": [1, 1],
+          "structuralPath": [1, 0],
           "summary": "Missing alt attribute on <img>.",
           "hint": "Add an alt attribute (use alt=\"\" only for decorative images)."
         }
