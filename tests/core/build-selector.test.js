@@ -4,13 +4,23 @@ const test = require('node:test');
 const assert = require('node:assert');
 const { JSDOM } = require('jsdom');
 
-const { createDomHelpers } = require('../../src/core/dom-helpers.js');
+const { createDomHelpers, resolveContextRoots } = require('../../src/core/dom-helpers.js');
 
 function helpersFor(html) {
   const dom = new JSDOM(html, { pretendToBeVisual: true });
   const { window } = dom;
   const { document } = window;
   return { helpers: createDomHelpers({ window, document, root: document }), document };
+}
+
+// Multi-region contextSelector support: `root` is an array of matched roots,
+// as dom-runner.js passes it (see resolveContextRoots's return value).
+function helpersForMultiRoot(html, contextSelector) {
+  const dom = new JSDOM(html, { pretendToBeVisual: true });
+  const { window } = dom;
+  const { document } = window;
+  const { roots } = resolveContextRoots(document, contextSelector);
+  return { helpers: createDomHelpers({ window, document, root: roots }), document, roots };
 }
 
 // Regression test for a bug where buildSelector's ancestor-anchoring
@@ -120,6 +130,47 @@ test('buildSelector: a hyphen-then-digit-leading id (e.g. "-1foo") resolves uniq
   const matches = document.querySelectorAll(selector);
   assert.equal(matches.length, 1, `selector "${selector}" should resolve to exactly one element`);
   assert.equal(matches[0], target);
+});
+
+// Regression test for a bug where, under a multi-region contextSelector
+// scan (resolveContextRoots matching more than one element), the
+// ancestor-climbing loop stopped as soon as it reached ANY matched root
+// instead of only stopping when there was a single, unambiguous root. Two
+// structurally-identical regions (e.g. two ".widget" wrappers with the same
+// internal markup) then produced the *same* selector string for their
+// respective buttons, since the climb stopped at the same relative depth in
+// each region — resolving to multiple elements instead of one, and pointing
+// at the wrong element for at least one occurrence. The fix keeps climbing
+// past a matched root when more than one root is in play, all the way to
+// the true (singular) document root, same as the no-contextSelector path.
+test('buildSelector: multi-region contextSelector does not collide selectors across structurally-identical regions', () => {
+  const html = `<!doctype html><html><body>
+    <div class="wrapA">
+      <section><div><div class="widget"><button>A1</button></div></div></section>
+      <section><div><div class="widget"><button>A2</button></div></div></section>
+    </div>
+    <div class="wrapB">
+      <section><div><div class="widget"><button>B1</button></div></div></section>
+      <section><div><div class="widget"><button>B2</button></div></div></section>
+    </div>
+  </body></html>`;
+
+  const { helpers, document, roots } = helpersForMultiRoot(html, '.widget');
+  assert.equal(roots.length, 4, 'contextSelector should match all four .widget regions');
+
+  const buttons = Array.from(document.querySelectorAll('button'));
+  assert.equal(buttons.length, 4);
+
+  const seenSelectors = new Set();
+  for (const target of buttons) {
+    const selector = helpers.buildSelector(target);
+    assert.ok(!seenSelectors.has(selector), `selector "${selector}" was reused across two different buttons`);
+    seenSelectors.add(selector);
+
+    const matches = document.querySelectorAll(selector);
+    assert.equal(matches.length, 1, `selector "${selector}" should resolve to exactly one element`);
+    assert.equal(matches[0], target);
+  }
 });
 
 test('buildSelector: every generated selector across many repeated sibling groups resolves uniquely', () => {

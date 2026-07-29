@@ -14537,6 +14537,36 @@ const createDomHelpers = (function createDomHelpers(opts) {
             let node = el;
             let safety = 0;
 
+            // Only apply the "stop climbing once we reach a contextSelector-
+            // matched root" shortcut when there's a single (or no) matched
+            // root -- resolveContextRoots() falls back to `[documentElement]`
+            // when no contextSelector is given, so this is the overwhelmingly
+            // common case and behaves exactly as before.
+            //
+            // With MULTIPLE matched roots (multi-region contextSelector
+            // scans), stopping there without recording anything about which
+            // root produced an ambiguous, non-unique selector string for two
+            // structurally-identical regions -- a real, confirmed bug (found
+            // 2026-07-29 via the cross-engine comparisons project): two
+            // wrapper <div>s, each containing two identical ".widget"
+            // sections scanned via `contextSelector: '.widget'`, produced the
+            // *same* selector string ("section:nth-of-type(1) > div > div >
+            // button") for the equivalent button in each wrapper --
+            // resolving to 2 elements instead of 1 when queried, and pointing
+            // at the wrong one for at least one of the two occurrences. The
+            // existing `el.matches(candidate)` safety check below couldn't
+            // catch this: it only verifies THIS element matches the string,
+            // never that the string is unique document-wide.
+            //
+            // Fix: when multiple roots are in play, don't stop early --
+            // keep climbing (same as the always-correct no-contextSelector
+            // path) until finding a genuinely unique anchor or reaching the
+            // true document root, which is always singular. That restores
+            // the invariant the final safety-check comment below relies on,
+            // rather than needing a separate (more expensive) document-wide
+            // uniqueness re-check.
+            const stopAtMatchedRoot = roots.length <= 1;
+
             while (node && node.nodeType === 1 && safety++ < 20) {
                 let anchor = null;
 
@@ -14576,7 +14606,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
                     parts.unshift(nthOfType(node));
                 }
 
-                if (!node.parentElement || roots.includes(node)) break;
+                if (!node.parentElement || (stopAtMatchedRoot && roots.includes(node))) break;
                 node = node.parentElement;
             }
 
@@ -14595,7 +14625,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
             // position relative to its own parent via `>` (child, not
             // descendant) combinators, so a correctly-matching chain can
             // only resolve to one element short of a malformed document
-            // (e.g. two <html> roots). Re-deriving that guarantee via a
+            // (e.g. two <html> roots) -- true as long as the walk above
+            // never stops short of a genuinely unique anchor/root, which is
+            // exactly what `stopAtMatchedRoot` now guarantees (see its own
+            // comment above; a multi-root contextSelector scan stopping
+            // early used to violate this invariant silently). Re-deriving
+            // that guarantee via a
             // document-wide :nth-of-type scan was measured to cost O(total
             // same-tag siblings) per call — pathological on pages with many
             // flat, unidentified siblings (e.g. hundreds of unlabeled
@@ -46678,6 +46713,36 @@ const createDomHelpers = (function createDomHelpers(opts) {
             let node = el;
             let safety = 0;
 
+            // Only apply the "stop climbing once we reach a contextSelector-
+            // matched root" shortcut when there's a single (or no) matched
+            // root -- resolveContextRoots() falls back to `[documentElement]`
+            // when no contextSelector is given, so this is the overwhelmingly
+            // common case and behaves exactly as before.
+            //
+            // With MULTIPLE matched roots (multi-region contextSelector
+            // scans), stopping there without recording anything about which
+            // root produced an ambiguous, non-unique selector string for two
+            // structurally-identical regions -- a real, confirmed bug (found
+            // 2026-07-29 via the cross-engine comparisons project): two
+            // wrapper <div>s, each containing two identical ".widget"
+            // sections scanned via `contextSelector: '.widget'`, produced the
+            // *same* selector string ("section:nth-of-type(1) > div > div >
+            // button") for the equivalent button in each wrapper --
+            // resolving to 2 elements instead of 1 when queried, and pointing
+            // at the wrong one for at least one of the two occurrences. The
+            // existing `el.matches(candidate)` safety check below couldn't
+            // catch this: it only verifies THIS element matches the string,
+            // never that the string is unique document-wide.
+            //
+            // Fix: when multiple roots are in play, don't stop early --
+            // keep climbing (same as the always-correct no-contextSelector
+            // path) until finding a genuinely unique anchor or reaching the
+            // true document root, which is always singular. That restores
+            // the invariant the final safety-check comment below relies on,
+            // rather than needing a separate (more expensive) document-wide
+            // uniqueness re-check.
+            const stopAtMatchedRoot = roots.length <= 1;
+
             while (node && node.nodeType === 1 && safety++ < 20) {
                 let anchor = null;
 
@@ -46717,7 +46782,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
                     parts.unshift(nthOfType(node));
                 }
 
-                if (!node.parentElement || roots.includes(node)) break;
+                if (!node.parentElement || (stopAtMatchedRoot && roots.includes(node))) break;
                 node = node.parentElement;
             }
 
@@ -46736,7 +46801,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
             // position relative to its own parent via `>` (child, not
             // descendant) combinators, so a correctly-matching chain can
             // only resolve to one element short of a malformed document
-            // (e.g. two <html> roots). Re-deriving that guarantee via a
+            // (e.g. two <html> roots) -- true as long as the walk above
+            // never stops short of a genuinely unique anchor/root, which is
+            // exactly what `stopAtMatchedRoot` now guarantees (see its own
+            // comment above; a multi-root contextSelector scan stopping
+            // early used to violate this invariant silently). Re-deriving
+            // that guarantee via a
             // document-wide :nth-of-type scan was measured to cost O(total
             // same-tag siblings) per call — pathological on pages with many
             // flat, unidentified siblings (e.g. hundreds of unlabeled
@@ -78774,6 +78844,36 @@ const createDomHelpers = (function createDomHelpers(opts) {
             let node = el;
             let safety = 0;
 
+            // Only apply the "stop climbing once we reach a contextSelector-
+            // matched root" shortcut when there's a single (or no) matched
+            // root -- resolveContextRoots() falls back to `[documentElement]`
+            // when no contextSelector is given, so this is the overwhelmingly
+            // common case and behaves exactly as before.
+            //
+            // With MULTIPLE matched roots (multi-region contextSelector
+            // scans), stopping there without recording anything about which
+            // root produced an ambiguous, non-unique selector string for two
+            // structurally-identical regions -- a real, confirmed bug (found
+            // 2026-07-29 via the cross-engine comparisons project): two
+            // wrapper <div>s, each containing two identical ".widget"
+            // sections scanned via `contextSelector: '.widget'`, produced the
+            // *same* selector string ("section:nth-of-type(1) > div > div >
+            // button") for the equivalent button in each wrapper --
+            // resolving to 2 elements instead of 1 when queried, and pointing
+            // at the wrong one for at least one of the two occurrences. The
+            // existing `el.matches(candidate)` safety check below couldn't
+            // catch this: it only verifies THIS element matches the string,
+            // never that the string is unique document-wide.
+            //
+            // Fix: when multiple roots are in play, don't stop early --
+            // keep climbing (same as the always-correct no-contextSelector
+            // path) until finding a genuinely unique anchor or reaching the
+            // true document root, which is always singular. That restores
+            // the invariant the final safety-check comment below relies on,
+            // rather than needing a separate (more expensive) document-wide
+            // uniqueness re-check.
+            const stopAtMatchedRoot = roots.length <= 1;
+
             while (node && node.nodeType === 1 && safety++ < 20) {
                 let anchor = null;
 
@@ -78813,7 +78913,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
                     parts.unshift(nthOfType(node));
                 }
 
-                if (!node.parentElement || roots.includes(node)) break;
+                if (!node.parentElement || (stopAtMatchedRoot && roots.includes(node))) break;
                 node = node.parentElement;
             }
 
@@ -78832,7 +78932,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
             // position relative to its own parent via `>` (child, not
             // descendant) combinators, so a correctly-matching chain can
             // only resolve to one element short of a malformed document
-            // (e.g. two <html> roots). Re-deriving that guarantee via a
+            // (e.g. two <html> roots) -- true as long as the walk above
+            // never stops short of a genuinely unique anchor/root, which is
+            // exactly what `stopAtMatchedRoot` now guarantees (see its own
+            // comment above; a multi-root contextSelector scan stopping
+            // early used to violate this invariant silently). Re-deriving
+            // that guarantee via a
             // document-wide :nth-of-type scan was measured to cost O(total
             // same-tag siblings) per call — pathological on pages with many
             // flat, unidentified siblings (e.g. hundreds of unlabeled
