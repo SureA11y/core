@@ -4,6 +4,9 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ## [Unreleased]
 
+### Fixed
+- `createDomHelpers()`'s element-keyed caches (`outerHtmlCache`, `selectorCache`, etc.) were persisted on `window.__a11ycoreSharedCache` and only initialized once per `window`/`document`, not once per run. A window/document reused across separate `runDomRulesInPage()`/`runa11yCoreInPage()` calls — e.g. Jest's `jsdom` environment, which creates one `window` per test file — could read back a previous run's stale cached value for an element that persists by reference across runs (like `document.body`) while its content changed via an in-place mutation (`innerHTML = ...`) in between. Rule pass/fail outcomes were always computed correctly against the live DOM; only cached diagnostic data such as `occurrences[].html` (via `bypass-blocks-present`, reported in #2) could go stale. `runCore()` (`src/core/dom-runner.js`) now resets `window.__a11ycoreSharedCache` at the start of every run, keeping the intended within-a-run sharing while preventing leakage across runs.
+
 ## [1.1.1] - 2026-07-29
 
 ### Changed

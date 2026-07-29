@@ -15175,6 +15175,21 @@ const runCore = (function runCore(pageUrl, contextSelector, engineOptions, runOn
             ? engineOptionsResolved.timestamp.trim()
             : null;
 
+    // createDomHelpers()/createContrastHelpers() persist their element-keyed
+    // caches (outerHtmlCache, selectorCache, etc.) on window.__a11ycoreSharedCache
+    // so multiple helper instances created *within this run* can share them
+    // deterministically. But a window/document is frequently reused across
+    // SEPARATE runs -- e.g. Jest's jsdom environment creates one window per
+    // test file, and mutating document.body between it() blocks is standard.
+    // Those caches are keyed by element reference, not content, so a run that
+    // reuses an already-cached element (document.body never changes identity)
+    // would otherwise read stale data cached by an earlier, unrelated run on
+    // the same window. Clearing at the start of every run keeps sharing scoped
+    // to "this run" as intended, without leaking across runs.
+    try {
+        if (window && window.__a11ycoreSharedCache) window.__a11ycoreSharedCache = {};
+    } catch {}
+
     const sharedHelpers = createDomHelpers({
         document,
         window,
@@ -47301,6 +47316,21 @@ const runCore = (function runCore(pageUrl, contextSelector, engineOptions, runOn
             ? engineOptionsResolved.timestamp.trim()
             : null;
 
+    // createDomHelpers()/createContrastHelpers() persist their element-keyed
+    // caches (outerHtmlCache, selectorCache, etc.) on window.__a11ycoreSharedCache
+    // so multiple helper instances created *within this run* can share them
+    // deterministically. But a window/document is frequently reused across
+    // SEPARATE runs -- e.g. Jest's jsdom environment creates one window per
+    // test file, and mutating document.body between it() blocks is standard.
+    // Those caches are keyed by element reference, not content, so a run that
+    // reuses an already-cached element (document.body never changes identity)
+    // would otherwise read stale data cached by an earlier, unrelated run on
+    // the same window. Clearing at the start of every run keeps sharing scoped
+    // to "this run" as intended, without leaking across runs.
+    try {
+        if (window && window.__a11ycoreSharedCache) window.__a11ycoreSharedCache = {};
+    } catch {}
+
     const sharedHelpers = createDomHelpers({
         document,
         window,
@@ -79381,6 +79411,21 @@ const runCore = (function runCore(pageUrl, contextSelector, engineOptions, runOn
         (engineOptionsResolved && typeof engineOptionsResolved.timestamp === 'string' && engineOptionsResolved.timestamp.trim())
             ? engineOptionsResolved.timestamp.trim()
             : null;
+
+    // createDomHelpers()/createContrastHelpers() persist their element-keyed
+    // caches (outerHtmlCache, selectorCache, etc.) on window.__a11ycoreSharedCache
+    // so multiple helper instances created *within this run* can share them
+    // deterministically. But a window/document is frequently reused across
+    // SEPARATE runs -- e.g. Jest's jsdom environment creates one window per
+    // test file, and mutating document.body between it() blocks is standard.
+    // Those caches are keyed by element reference, not content, so a run that
+    // reuses an already-cached element (document.body never changes identity)
+    // would otherwise read stale data cached by an earlier, unrelated run on
+    // the same window. Clearing at the start of every run keeps sharing scoped
+    // to "this run" as intended, without leaking across runs.
+    try {
+        if (window && window.__a11ycoreSharedCache) window.__a11ycoreSharedCache = {};
+    } catch {}
 
     const sharedHelpers = createDomHelpers({
         document,
