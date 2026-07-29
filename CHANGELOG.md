@@ -4,6 +4,14 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-07-29
+
+### Changed
+- **`engineOptions.includeHiddenElements` (default `false`)**: helper-driven rules now skip elements hidden by `display:none` (on the element or any ancestor), `visibility:hidden`/`collapse`, the `[hidden]` attribute, closed `<details>`, and other structurally-non-rendered content by default, matching the visibility-aware behavior of other established engines. Filtering happens upstream in the shared `queryAllSmart` helper, before a rule's own pass/fail logic runs, so it's a candidate-list exclusion, not a post-hoc annotation. Set `engineOptions.includeHiddenElements: true` to restore the previous behavior and evaluate hidden/collapsed subtrees anyway (e.g. to catch a markup defect, like a broken ARIA ID reference, before a `<dialog>` ever opens). 10 rule files whose own logic intentionally doesn't call the underlying eligibility check directly (static-markup-validity rules such as `aria-valid-attr`, `aria-valid-attr-value`, `aria-allowed-attr`, `aria-allowed-role`, `aria-prohibited-attr`, `table-headers-attr-valid`, `table-th-has-data-cells`, `deprecated-elements-not-used`, `iframe-title-unique`, `aria-checked-state-mismatch-manual`) still inherit this filtering through `queryAllSmart`; their doc comments were updated to say so. See `docs/ENGINE_OPTIONS.md` and `docs/LIMITATIONS.md`.
+
+### Fixed
+- `docs/LIMITATIONS.md`: the `<dialog>`/UA-stylesheet-hidden-content note was stale — it claimed static-markup-validity checks still evaluate hidden content, which this release's default change makes no longer true. Corrected to describe the current default and how to opt back in.
+
 ## [1.1.0] - 2026-07-28
 
 ### Added
@@ -28,7 +36,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 - README: the JSON output example referenced a nonexistent rule id (`link-name-quality`); corrected to the real id, `link-name-quality-manual`.
 - README: Quick Start code samples labeled the runner's four positional arguments as `url, ruleFilter, options, policy`; corrected to the actual names (`pageUrl, contextSelector, engineOptions, runOnly`) used consistently elsewhere in the docs.
 
-## [1.1.1] - 2026-07-24
+## [1.0.0] - 2026-07-26
 
 ### Added
 - 125 rules (77 automatic/`fail`-capable, 48 manual/advisory) — see `docs/RULE_CATALOG.md` for the full list.
@@ -61,7 +69,7 @@ See `docs/LIMITATIONS.md` — structural (keyboard-trap detection, reflow-at-zoo
 
 ---
 
-## How to add an entry
+# How to add an entry
 
 When you ship a change worth calling out to consumers (not every commit):
 1. Add a bullet under `[Unreleased]`, in the right subsection (`Added`, `Changed`, `Fixed`, `Deprecated`, `Removed`, `Security`) — create the subsection if it doesn't exist yet for this cycle.
