@@ -72,6 +72,7 @@ runDomRulesInPage(url, null, {
 ```js
 const engineOptions = {
   locale: 'en',                    // default 'en'; falls back to 'en' per-string if a key is missing in the requested locale
+  includeHiddenElements: false,    // default false — set true to evaluate hidden/collapsed subtrees too
   includeShadowDom: true,          // default true — opt OUT with `false` to skip open shadow roots
   excludeSelectors: ['#cookie-banner', '.third-party-widget'],  // array or comma-separated string
   timestamp: '2026-07-20T12:00:00Z',  // optional — engine has no built-in clock, see OUTPUT_SCHEMA.md
@@ -114,6 +115,7 @@ const engineOptions = {
 | Option | Meaning |
 |---|---|
 | `locale` | Any string; resolution is per-string with graceful fallback (requested locale → `en` → the rule's literal English fallback text), so a partially-translated locale never produces missing text. See [`I18N.md`](./I18N.md) for current locale coverage. |
+| `includeHiddenElements` | Default `false`: helper queries exclude elements hidden by structural/CSS mechanisms such as `display:none`, `[hidden]`, closed `<details>`, and hidden rendering-only host elements (with descendants excluded too). Set `true` to include those hidden/collapsed subtrees in evaluation (legacy/static-markup behavior). |
 | `includeShadowDom` | Default `true`: rules using `helpers.queryAllSmart` traverse into open shadow roots. Set `false` to scan only the light DOM. Closed shadow roots are never reachable either way (no DOM API exposes them). |
 | `excludeSelectors` | Elements matching any of these selectors (and their descendants) are skipped entirely, for **every** rule — useful for cookie banners, third-party embeds, or known-noisy widgets you don't control. To exclude something from just one specific rule instead, use `rules[ruleId].excludeSelectors` below. |
 | `timestamp` | Passed straight through to the result's top-level `timestamp` field; the engine does not generate one itself (deterministic-by-design). |

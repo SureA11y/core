@@ -48,6 +48,34 @@ test(`${RULE_ID}: fail when aria-* attribute is not permitted for the role`, () 
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'ARIA_ATTR_NOT_ALLOWED');
 });
 
+test(`${RULE_ID}: notApplicable when invalid aria-* is inside display:none subtree (default hidden filtering)`, () => {
+  const html = `<!doctype html><html><body style="display:none"><div id="a" role="checkbox" aria-valuenow="1"></div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: notApplicable when invalid aria-* is inside [hidden] subtree (default hidden filtering)`, () => {
+  const html = `<!doctype html><html><body><section hidden><div id="a" role="checkbox" aria-valuenow="1"></div></section></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: notApplicable when invalid aria-* is inside closed details content (default hidden filtering)`, () => {
+  const html = `<!doctype html><html><body><details><summary>More</summary><div id="a" role="checkbox" aria-valuenow="1"></div></details></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: hidden filtering can be disabled with engineOptions.includeHiddenElements=true`, () => {
+  const html = `<!doctype html><html><body style="display:none"><div id="a" role="checkbox" aria-valuenow="1"></div></body></html>`;
+  const result = runa11yCoreOnHtml(html, {
+    runOnly: [RULE_ID],
+    engineOptions: { includeHiddenElements: true }
+  });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+});
+
 test(`${RULE_ID}: notApplicable when role has an unknown/invalid role token`, () => {
   const html = `<!doctype html><html><body><div id="a" role="buton" aria-label="Hello"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });

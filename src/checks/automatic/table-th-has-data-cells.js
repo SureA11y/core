@@ -28,7 +28,9 @@
  *   if some particular <th> in it doesn't actually describe any cell
  *   (false negative, not a false positive — acceptable under this
  *   engine's philosophy).
- * - Not gated on isAccTreeEligible: this is a static markup property.
+ * - Not rule-gated on isAccTreeEligible: this remains a static-markup
+ *   property, while engine-level hidden-subtree filtering still applies
+ *   unless engineOptions.includeHiddenElements is true.
  */
 
 const id = 'table-th-has-data-cells';

@@ -55,7 +55,9 @@
  *   `definition_role` page even demonstrates `aria-labelledby` usage on
  *   it directly. A real, confirmed documentation bug on MDN's side, not
  *   a gap here.
- * - Not gated on isAccTreeEligible: this is a static markup property.
+ * - Not rule-gated on isAccTreeEligible: this remains a static-markup
+ *   property, while engine-level hidden-subtree filtering still applies
+ *   unless engineOptions.includeHiddenElements is true.
  */
 
 const id = 'aria-prohibited-attr';

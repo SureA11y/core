@@ -10967,6 +10967,10 @@ const createDomHelpers = (function createDomHelpers(opts) {
     })();
     // Default on: opt OUT with `includeShadowDom: false`, not opt in.
     const includeShadowDom = !(opts && opts.includeShadowDom === false);
+    // Default off: by default, helper queries skip structurally/CSS-hidden
+    // subtrees (display:none, [hidden], closed <details>, etc.). Callers can
+    // opt out with includeHiddenElements:true.
+    const includeHiddenElements = !!(opts && opts.includeHiddenElements === true);
     const excludeSelectors = Array.isArray(opts && opts.excludeSelectors) ? opts.excludeSelectors : [];
 
     // Rule-scoped excludes (engineOptions.rules[ruleId].excludeSelectors), set
@@ -11933,8 +11937,37 @@ const createDomHelpers = (function createDomHelpers(opts) {
         return results;
     }
 
+    const HARD_HIDDEN_REASONS = new Set([
+        'displayNone',
+        'hiddenAttr',
+        'detailsClosed',
+        'templateContent',
+        'nonRenderedElement',
+        'inputHidden',
+        'visibilityHidden'
+    ]);
+
     function queryAllSmart(sel) {
-        const list = includeShadowDom ? queryAllDeep(sel) : queryAll(sel);
+        let list = includeShadowDom ? queryAllDeep(sel) : queryAll(sel);
+
+        // Global hidden-content policy: skip nodes that are fully excluded from
+        // rendered visibility by default (unless includeHiddenElements:true).
+        if (!includeHiddenElements) {
+            list = list.filter((el) => {
+                try {
+                    const vis = isAccTreeEligible(el);
+                    if (!vis || vis.eligible !== false) return true;
+                    const reasons = Array.isArray(vis.reasons) ? vis.reasons : [];
+                    for (const r of reasons) {
+                        if (HARD_HIDDEN_REASONS.has(r)) return false;
+                    }
+                    return true;
+                } catch {
+                    return true;
+                }
+            });
+        }
+
         return __getEffectiveExcludeSelectors().length ? list.filter((el) => !isExcluded(el)) : list;
     }
 
@@ -15129,6 +15162,9 @@ const runCore = (function runCore(pageUrl, contextSelector, engineOptions, runOn
 
     // Default on: opt OUT with `includeShadowDom: false`, not opt in.
     const includeShadowDom = !(engineOptionsResolved && engineOptionsResolved.includeShadowDom === false);
+    // Default off: hidden/collapsed content is excluded from rule evaluation
+    // unless the caller explicitly opts in.
+    const includeHiddenElements = !!(engineOptionsResolved && engineOptionsResolved.includeHiddenElements === true);
     const excludeSelectors = normalizeSelectorList(engineOptionsResolved && engineOptionsResolved.excludeSelectors);
 
     const url = pageUrl || (document.location && document.location.href) || null;
@@ -15144,6 +15180,7 @@ const runCore = (function runCore(pageUrl, contextSelector, engineOptions, runOn
         window,
         root: roots,
         includeShadowDom,
+        includeHiddenElements,
         excludeSelectors,
         // Optional perf counters (bench/debug only). Deterministic and per-run.
         perfStats: !!(engineOptionsResolved && engineOptionsResolved.perfStats)
@@ -43056,6 +43093,10 @@ const createDomHelpers = (function createDomHelpers(opts) {
     })();
     // Default on: opt OUT with `includeShadowDom: false`, not opt in.
     const includeShadowDom = !(opts && opts.includeShadowDom === false);
+    // Default off: by default, helper queries skip structurally/CSS-hidden
+    // subtrees (display:none, [hidden], closed <details>, etc.). Callers can
+    // opt out with includeHiddenElements:true.
+    const includeHiddenElements = !!(opts && opts.includeHiddenElements === true);
     const excludeSelectors = Array.isArray(opts && opts.excludeSelectors) ? opts.excludeSelectors : [];
 
     // Rule-scoped excludes (engineOptions.rules[ruleId].excludeSelectors), set
@@ -44022,8 +44063,37 @@ const createDomHelpers = (function createDomHelpers(opts) {
         return results;
     }
 
+    const HARD_HIDDEN_REASONS = new Set([
+        'displayNone',
+        'hiddenAttr',
+        'detailsClosed',
+        'templateContent',
+        'nonRenderedElement',
+        'inputHidden',
+        'visibilityHidden'
+    ]);
+
     function queryAllSmart(sel) {
-        const list = includeShadowDom ? queryAllDeep(sel) : queryAll(sel);
+        let list = includeShadowDom ? queryAllDeep(sel) : queryAll(sel);
+
+        // Global hidden-content policy: skip nodes that are fully excluded from
+        // rendered visibility by default (unless includeHiddenElements:true).
+        if (!includeHiddenElements) {
+            list = list.filter((el) => {
+                try {
+                    const vis = isAccTreeEligible(el);
+                    if (!vis || vis.eligible !== false) return true;
+                    const reasons = Array.isArray(vis.reasons) ? vis.reasons : [];
+                    for (const r of reasons) {
+                        if (HARD_HIDDEN_REASONS.has(r)) return false;
+                    }
+                    return true;
+                } catch {
+                    return true;
+                }
+            });
+        }
+
         return __getEffectiveExcludeSelectors().length ? list.filter((el) => !isExcluded(el)) : list;
     }
 
@@ -47218,6 +47288,9 @@ const runCore = (function runCore(pageUrl, contextSelector, engineOptions, runOn
 
     // Default on: opt OUT with `includeShadowDom: false`, not opt in.
     const includeShadowDom = !(engineOptionsResolved && engineOptionsResolved.includeShadowDom === false);
+    // Default off: hidden/collapsed content is excluded from rule evaluation
+    // unless the caller explicitly opts in.
+    const includeHiddenElements = !!(engineOptionsResolved && engineOptionsResolved.includeHiddenElements === true);
     const excludeSelectors = normalizeSelectorList(engineOptionsResolved && engineOptionsResolved.excludeSelectors);
 
     const url = pageUrl || (document.location && document.location.href) || null;
@@ -47233,6 +47306,7 @@ const runCore = (function runCore(pageUrl, contextSelector, engineOptions, runOn
         window,
         root: roots,
         includeShadowDom,
+        includeHiddenElements,
         excludeSelectors,
         // Optional perf counters (bench/debug only). Deterministic and per-run.
         perfStats: !!(engineOptionsResolved && engineOptionsResolved.perfStats)
@@ -75100,6 +75174,10 @@ const createDomHelpers = (function createDomHelpers(opts) {
     })();
     // Default on: opt OUT with `includeShadowDom: false`, not opt in.
     const includeShadowDom = !(opts && opts.includeShadowDom === false);
+    // Default off: by default, helper queries skip structurally/CSS-hidden
+    // subtrees (display:none, [hidden], closed <details>, etc.). Callers can
+    // opt out with includeHiddenElements:true.
+    const includeHiddenElements = !!(opts && opts.includeHiddenElements === true);
     const excludeSelectors = Array.isArray(opts && opts.excludeSelectors) ? opts.excludeSelectors : [];
 
     // Rule-scoped excludes (engineOptions.rules[ruleId].excludeSelectors), set
@@ -76066,8 +76144,37 @@ const createDomHelpers = (function createDomHelpers(opts) {
         return results;
     }
 
+    const HARD_HIDDEN_REASONS = new Set([
+        'displayNone',
+        'hiddenAttr',
+        'detailsClosed',
+        'templateContent',
+        'nonRenderedElement',
+        'inputHidden',
+        'visibilityHidden'
+    ]);
+
     function queryAllSmart(sel) {
-        const list = includeShadowDom ? queryAllDeep(sel) : queryAll(sel);
+        let list = includeShadowDom ? queryAllDeep(sel) : queryAll(sel);
+
+        // Global hidden-content policy: skip nodes that are fully excluded from
+        // rendered visibility by default (unless includeHiddenElements:true).
+        if (!includeHiddenElements) {
+            list = list.filter((el) => {
+                try {
+                    const vis = isAccTreeEligible(el);
+                    if (!vis || vis.eligible !== false) return true;
+                    const reasons = Array.isArray(vis.reasons) ? vis.reasons : [];
+                    for (const r of reasons) {
+                        if (HARD_HIDDEN_REASONS.has(r)) return false;
+                    }
+                    return true;
+                } catch {
+                    return true;
+                }
+            });
+        }
+
         return __getEffectiveExcludeSelectors().length ? list.filter((el) => !isExcluded(el)) : list;
     }
 
@@ -79262,6 +79369,9 @@ const runCore = (function runCore(pageUrl, contextSelector, engineOptions, runOn
 
     // Default on: opt OUT with `includeShadowDom: false`, not opt in.
     const includeShadowDom = !(engineOptionsResolved && engineOptionsResolved.includeShadowDom === false);
+    // Default off: hidden/collapsed content is excluded from rule evaluation
+    // unless the caller explicitly opts in.
+    const includeHiddenElements = !!(engineOptionsResolved && engineOptionsResolved.includeHiddenElements === true);
     const excludeSelectors = normalizeSelectorList(engineOptionsResolved && engineOptionsResolved.excludeSelectors);
 
     const url = pageUrl || (document.location && document.location.href) || null;
@@ -79277,6 +79387,7 @@ const runCore = (function runCore(pageUrl, contextSelector, engineOptions, runOn
         window,
         root: roots,
         includeShadowDom,
+        includeHiddenElements,
         excludeSelectors,
         // Optional perf counters (bench/debug only). Deterministic and per-run.
         perfStats: !!(engineOptionsResolved && engineOptionsResolved.perfStats)

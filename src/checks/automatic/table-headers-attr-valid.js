@@ -16,7 +16,9 @@
  * - One occurrence per offending cell (not per bad token), listing every
  *   invalid reference — matches a widely-used reference engine's
  *   td-headers-attr reporting granularity.
- * - Not gated on isAccTreeEligible: this is a static markup property.
+ * - Not rule-gated on isAccTreeEligible: this remains a static-markup
+ *   property, while engine-level hidden-subtree filtering still applies
+ *   unless engineOptions.includeHiddenElements is true.
  */
 
 const id = 'table-headers-attr-valid';

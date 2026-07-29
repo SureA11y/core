@@ -70,7 +70,9 @@
  *     menuitemcheckbox, menuitemradio. `aria-level` added to: tablist.
  *   - `tree`'s `aria-readonly` removed: not in aria-query's resolved
  *     props for `tree` (was an unverified carryover, not spec-backed).
- * - Not gated on isAccTreeEligible: this is a static markup property.
+ * - Not rule-gated on isAccTreeEligible: this remains a static-markup
+ *   property, while engine-level hidden-subtree filtering still applies
+ *   unless engineOptions.includeHiddenElements is true.
  */
 
 const id = 'aria-allowed-attr';

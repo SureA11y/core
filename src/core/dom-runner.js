@@ -48,6 +48,9 @@ function runCore(pageUrl, contextSelector, engineOptions, runOnly, CHECK_DEFS, R
 
     // Default on: opt OUT with `includeShadowDom: false`, not opt in.
     const includeShadowDom = !(engineOptionsResolved && engineOptionsResolved.includeShadowDom === false);
+    // Default off: hidden/collapsed content is excluded from rule evaluation
+    // unless the caller explicitly opts in.
+    const includeHiddenElements = !!(engineOptionsResolved && engineOptionsResolved.includeHiddenElements === true);
     const excludeSelectors = normalizeSelectorList(engineOptionsResolved && engineOptionsResolved.excludeSelectors);
 
     const url = pageUrl || (document.location && document.location.href) || null;
@@ -63,6 +66,7 @@ function runCore(pageUrl, contextSelector, engineOptions, runOnly, CHECK_DEFS, R
         window,
         root: roots,
         includeShadowDom,
+        includeHiddenElements,
         excludeSelectors,
         // Optional perf counters (bench/debug only). Deterministic and per-run.
         perfStats: !!(engineOptionsResolved && engineOptionsResolved.perfStats)

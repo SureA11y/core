@@ -18,7 +18,9 @@
  * - Deliberately scoped to elements present in ALLOWED_ROLES_BY_ELEMENT;
  *   elements without an asserted constraint are treated as "no constraint"
  *   (not flagged) rather than guessed at — see that table's header comment.
- * - Not gated on isAccTreeEligible: this is a static markup property.
+ * - Not rule-gated on isAccTreeEligible: this remains a static-markup
+ *   property, while engine-level hidden-subtree filtering still applies
+ *   unless engineOptions.includeHiddenElements is true.
  */
 
 const id = 'aria-allowed-role';

@@ -42,8 +42,10 @@
  * - Any `aria-checked` value other than "true"/"false"/"mixed" (checkbox)
  *   or "true"/"false" (radio) is treated as equivalent to "false" — also
  *   matches that reference engine's own normalization exactly.
- * - Not gated on isAccTreeEligible: whether the accessible state matches
- *   is a markup-correctness property independent of current visibility.
+ * - Not rule-gated on isAccTreeEligible: whether the accessible state
+ *   matches is still a markup-correctness property, while engine-level
+ *   hidden-subtree filtering applies unless engineOptions.includeHiddenElements
+ *   is true.
  */
 
 const id = 'aria-checked-state-mismatch';

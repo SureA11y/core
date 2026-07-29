@@ -166,6 +166,23 @@ test(`${RULE_ID}: excludes a candidate whose closer ancestor is opacity:0 but a 
       </div>
     </body></html>`;
     const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: includeHiddenElements=true restores legacy behavior for display:none ancestor case (pass)`, () => {
+    const html = `<!doctype html><html><body>
+      <div style="display:none">
+        <div aria-hidden="true">
+          <div style="opacity:0">
+            <a href="#x">Nested link</a>
+          </div>
+        </div>
+      </div>
+    </body></html>`;
+    const result = runa11yCoreOnHtml(html, {
+        runOnly: [RULE_ID],
+        engineOptions: { includeHiddenElements: true }
+    });
     assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 

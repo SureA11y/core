@@ -17,7 +17,9 @@
  *   ID reference (list) that resolves to an existing element in the
  *   document.
  * @implementation-notes
- * - Not gated on isAccTreeEligible: this is a static markup property.
+ * - Not rule-gated on isAccTreeEligible: this remains a static-markup
+ *   property, while engine-level hidden-subtree filtering still applies
+ *   unless engineOptions.includeHiddenElements is true.
  * - ID-reference resolution (added 2026-07-20, see aria-helpers.js's
  *   idExists) only flags idref-list attributes (aria-labelledby,
  *   aria-describedby, aria-controls, aria-owns, etc.) when NONE of the

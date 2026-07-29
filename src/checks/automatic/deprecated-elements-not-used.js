@@ -17,10 +17,12 @@
  *   rule has no partial-pass case, matching a widely-used reference engine's `blink`/`marquee`
  *   rules (which report only when the element is found).
  * @implementation-notes
- * - Not gated on isAccTreeEligible: presence in markup is itself the
+ * - Not rule-gated on isAccTreeEligible: presence in markup is itself the
  *   violation, independent of visibility (moving/blinking content inside a
  *   hidden ancestor could still become visible later without a code
  *   change, so hiding it today does not remove the underlying defect).
+ *   Engine-level hidden-subtree filtering still applies unless
+ *   engineOptions.includeHiddenElements is true.
  */
 
 const id = 'deprecated-elements-not-used';

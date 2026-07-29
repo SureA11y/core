@@ -19,8 +19,9 @@
  * - Compares the title ATTRIBUTE specifically, not the full computed
  *   accessible name (aria-label could legitimately differ in wording even
  *   when title happens to collide) — matches a widely-used reference engine's frame-title-unique.
- * - Not gated on isAccTreeEligible: a duplicate title is a static markup
- *   property independent of the frame's current visibility.
+ * - Not rule-gated on isAccTreeEligible: duplicate titles are a static
+ *   markup property. Engine-level hidden-subtree filtering still applies
+ *   unless engineOptions.includeHiddenElements is true.
  */
 
 const id = 'iframe-title-unique';
