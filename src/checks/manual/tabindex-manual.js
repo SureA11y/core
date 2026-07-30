@@ -40,14 +40,9 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
-  let nodes = [];
-  try {
-    nodes = document.querySelectorAll('[tabindex]');
-  } catch {
-    nodes = [];
-  }
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[tabindex]') : helpers.queryAll('[tabindex]');
 
   const occurrences = [];
   let applicableCount = 0;

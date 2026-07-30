@@ -57,3 +57,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/tabindex-all-scenarios.html)`
   assert.ok(!hasOccurrenceForId(rule, 'ti_case_01'));
   assert.ok(!hasOccurrenceForId(rule, 'ti_case_02'));
 });
+
+test(`tabindex: respects contextSelector scoping (regression -- used to bypass helpers.queryAllSmart and always scan the whole document)`, () => {
+  const html = `<!doctype html><html><body><div id="target"><p>Just some unrelated text.</p></div><div id="a" tabindex="3">x</div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: ['tabindex'], contextSelector: '#target' });
+  assertRule(result, 'tabindex', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});

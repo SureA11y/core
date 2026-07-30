@@ -112,12 +112,7 @@ function runInPage(ctx) {
     return normalizeWs(el.getAttribute && el.getAttribute('title'));
   }
 
-  let nodes = [];
-  try {
-    nodes = document.querySelectorAll('h1, h2, h3, h4, h5, h6, [role]');
-  } catch {
-    nodes = [];
-  }
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('h1, h2, h3, h4, h5, h6, [role]') : helpers.queryAll('h1, h2, h3, h4, h5, h6, [role]');
 
   const occurrences = [];
   let applicableCount = 0;

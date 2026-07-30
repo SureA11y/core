@@ -94,15 +94,11 @@ function runInPage(ctx) {
     return '';
   }
 
-  let nodes = [];
-  try {
-    // Matches a widely-used reference engine's own empty-table-header selector exactly: a <th> with
-    // no conflicting explicit role, plus any element carrying an explicit
-    // columnheader/rowheader role (native or not).
-    nodes = document.querySelectorAll('th:not([role]), [role="columnheader"], [role="rowheader"]');
-  } catch {
-    nodes = [];
-  }
+  // Matches a widely-used reference engine's own empty-table-header selector exactly: a <th> with
+  // no conflicting explicit role, plus any element carrying an explicit
+  // columnheader/rowheader role (native or not).
+  const selector = 'th:not([role]), [role="columnheader"], [role="rowheader"]';
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
   const occurrences = [];
   let applicableCount = 0;

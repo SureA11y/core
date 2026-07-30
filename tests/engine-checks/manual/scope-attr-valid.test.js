@@ -50,3 +50,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/scope-attr-valid-all-scenario
   assert.ok(hasOccurrenceForId(rule, 'sav_case_02'));
   assert.ok(!hasOccurrenceForId(rule, 'sav_case_01'));
 });
+
+test(`scope-attr-valid: respects contextSelector scoping (regression -- used to bypass helpers.queryAllSmart and always scan the whole document)`, () => {
+  const html = `<!doctype html><html><body><div id="target"><p>Just some unrelated text.</p></div><table><tr><th id="a" scope="column">Name</th></tr></table></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: ['scope-attr-valid'], contextSelector: '#target' });
+  assertRule(result, 'scope-attr-valid', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});

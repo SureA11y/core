@@ -108,3 +108,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/empty-table-header-all-scenar
   assert.ok(!hasOccurrenceForId(rule, 'eth_case_01'));
   assert.ok(!hasOccurrenceForId(rule, 'eth_case_06'));
 });
+
+test(`empty-table-header: respects contextSelector scoping (regression -- used to bypass helpers.queryAllSmart and always scan the whole document)`, () => {
+  const html = `<!doctype html><html><body><div id="target"><p>Just some unrelated text.</p></div><table><tr><th id="a"></th></tr></table></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: ['empty-table-header'], contextSelector: '#target' });
+  assertRule(result, 'empty-table-header', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});

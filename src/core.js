@@ -29679,12 +29679,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     return normalizeWs(el.getAttribute && el.getAttribute('title'));
   }
 
-  let nodes = [];
-  try {
-    nodes = document.querySelectorAll('h1, h2, h3, h4, h5, h6, [role]');
-  } catch {
-    nodes = [];
-  }
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('h1, h2, h3, h4, h5, h6, [role]') : helpers.queryAll('h1, h2, h3, h4, h5, h6, [role]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -29777,15 +29772,11 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     return '';
   }
 
-  let nodes = [];
-  try {
-    // Matches a widely-used reference engine's own empty-table-header selector exactly: a <th> with
-    // no conflicting explicit role, plus any element carrying an explicit
-    // columnheader/rowheader role (native or not).
-    nodes = document.querySelectorAll('th:not([role]), [role="columnheader"], [role="rowheader"]');
-  } catch {
-    nodes = [];
-  }
+  // Matches a widely-used reference engine's own empty-table-header selector exactly: a <th> with
+  // no conflicting explicit role, plus any element carrying an explicit
+  // columnheader/rowheader role (native or not).
+  const selector = 'th:not([role]), [role="columnheader"], [role="rowheader"]';
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
   const occurrences = [];
   let applicableCount = 0;
@@ -30586,12 +30577,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     return m ? parseInt(m[1], 10) : 0;
   }
 
-  let nodes = [];
-  try {
-    nodes = document.querySelectorAll('h1, h2, h3, h4, h5, h6, [role]');
-  } catch {
-    nodes = [];
-  }
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('h1, h2, h3, h4, h5, h6, [role]') : helpers.queryAll('h1, h2, h3, h4, h5, h6, [role]');
 
   const headings = [];
   const seen = new Set();
@@ -36519,16 +36505,11 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences };
 }), applicability: null },
     "scope-attr-valid": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const VALID_SCOPES = new Set(['row', 'col', 'rowgroup', 'colgroup']);
 
-  let nodes = [];
-  try {
-    nodes = document.querySelectorAll('[scope]');
-  } catch {
-    nodes = [];
-  }
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[scope]') : helpers.queryAll('[scope]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -38430,14 +38411,9 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "tabindex": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
-  let nodes = [];
-  try {
-    nodes = document.querySelectorAll('[tabindex]');
-  } catch {
-    nodes = [];
-  }
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[tabindex]') : helpers.queryAll('[tabindex]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -62400,12 +62376,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     return normalizeWs(el.getAttribute && el.getAttribute('title'));
   }
 
-  let nodes = [];
-  try {
-    nodes = document.querySelectorAll('h1, h2, h3, h4, h5, h6, [role]');
-  } catch {
-    nodes = [];
-  }
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('h1, h2, h3, h4, h5, h6, [role]') : helpers.queryAll('h1, h2, h3, h4, h5, h6, [role]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -62498,15 +62469,11 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     return '';
   }
 
-  let nodes = [];
-  try {
-    // Matches a widely-used reference engine's own empty-table-header selector exactly: a <th> with
-    // no conflicting explicit role, plus any element carrying an explicit
-    // columnheader/rowheader role (native or not).
-    nodes = document.querySelectorAll('th:not([role]), [role="columnheader"], [role="rowheader"]');
-  } catch {
-    nodes = [];
-  }
+  // Matches a widely-used reference engine's own empty-table-header selector exactly: a <th> with
+  // no conflicting explicit role, plus any element carrying an explicit
+  // columnheader/rowheader role (native or not).
+  const selector = 'th:not([role]), [role="columnheader"], [role="rowheader"]';
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
   const occurrences = [];
   let applicableCount = 0;
@@ -63307,12 +63274,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     return m ? parseInt(m[1], 10) : 0;
   }
 
-  let nodes = [];
-  try {
-    nodes = document.querySelectorAll('h1, h2, h3, h4, h5, h6, [role]');
-  } catch {
-    nodes = [];
-  }
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('h1, h2, h3, h4, h5, h6, [role]') : helpers.queryAll('h1, h2, h3, h4, h5, h6, [role]');
 
   const headings = [];
   const seen = new Set();
@@ -69240,16 +69202,11 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences };
 }), applicability: null },
     "scope-attr-valid": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const VALID_SCOPES = new Set(['row', 'col', 'rowgroup', 'colgroup']);
 
-  let nodes = [];
-  try {
-    nodes = document.querySelectorAll('[scope]');
-  } catch {
-    nodes = [];
-  }
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[scope]') : helpers.queryAll('[scope]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -71151,14 +71108,9 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "tabindex": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
-  let nodes = [];
-  try {
-    nodes = document.querySelectorAll('[tabindex]');
-  } catch {
-    nodes = [];
-  }
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[tabindex]') : helpers.queryAll('[tabindex]');
 
   const occurrences = [];
   let applicableCount = 0;

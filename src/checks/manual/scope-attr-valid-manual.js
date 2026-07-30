@@ -39,16 +39,11 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const VALID_SCOPES = new Set(['row', 'col', 'rowgroup', 'colgroup']);
 
-  let nodes = [];
-  try {
-    nodes = document.querySelectorAll('[scope]');
-  } catch {
-    nodes = [];
-  }
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[scope]') : helpers.queryAll('[scope]');
 
   const occurrences = [];
   let applicableCount = 0;

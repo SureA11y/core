@@ -56,3 +56,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/heading-order-all-scenarios.h
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'ho_case_01'));
 });
+
+test(`heading-order: respects contextSelector scoping (regression -- used to bypass helpers.queryAllSmart and always scan the whole document)`, () => {
+  const html = `<!doctype html><html><body><div id="target"><p>Just some unrelated text.</p></div><h1>A</h1><h3 id="a">B</h3></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: ['heading-order'], contextSelector: '#target' });
+  assertRule(result, 'heading-order', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
