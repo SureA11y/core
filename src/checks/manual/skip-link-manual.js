@@ -3,7 +3,7 @@
 /**
  * @check skip-link
  * @atomic true
- * @summary A "skip" link must resolve to a real, focusable target
+ * @summary A "skip" link must resolve to a real, usable target
  * @standard Best Practices (a widely-used reference engine's classification; no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
  * @applicability
  *   Applies to <a href="#fragment"> elements whose accessible name
@@ -18,8 +18,11 @@
  *   implementation-notes) — this only widens the known-convention list.
  * @expectation
  *   The link's fragment resolves to a real element in the document
- *   (via a matching id, or a legacy <a name="...">). A skip link whose
- *   target does not exist silently does nothing when activated.
+ *   (via a matching id, or a legacy <a name="...">), and that target is
+ *   currently usable (not hidden from the accessibility tree; and, when
+ *   browser geometry is available, not zero-area/no-rects). A skip link
+ *   whose target is missing or effectively unusable does not provide a
+ *   reliable bypass destination.
  * @implementation-notes
  * - Not WCAG-normative — authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
@@ -33,8 +36,8 @@
 const id = 'skip-link';
 
 const meta = {
-  title: 'Skip link must have a resolvable target',
-  description: 'Checks that a "skip to ..." link\'s href fragment resolves to a real element in the document.',
+  title: 'Skip link must have a resolvable, usable target',
+  description: 'Checks that a "skip to ..." link\'s href fragment resolves to a real, currently usable element in the document.',
   i18n: {
     titleKey: 'skipLink_title',
     descriptionKey: 'skipLink_description'
@@ -79,6 +82,30 @@ function runInPage(ctx) {
     return normalizeWs(el.textContent);
   }
 
+  function hasReliableGeometrySupport() {
+    const probe = document.documentElement || document.body || null;
+    if (!probe || !probe.getClientRects || !probe.getBoundingClientRect) return false;
+    try {
+      const rects = probe.getClientRects();
+      const rectCount = rects ? rects.length : 0;
+      const r = probe.getBoundingClientRect();
+      const w = r && Number.isFinite(r.width) ? r.width : 0;
+      const h = r && Number.isFinite(r.height) ? r.height : 0;
+      return rectCount > 0 && (w > 0 || h > 0);
+    } catch {
+      return false;
+    }
+  }
+
+  function toEligibility(info) {
+    return {
+      eligible: !!(info && info.eligible),
+      reasons: info && Array.isArray(info.reasons) ? info.reasons.slice(0) : []
+    };
+  }
+
+  const geometrySupported = hasReliableGeometrySupport();
+
   const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('a[href]', safeRoot) : helpers.queryAll('a[href]', safeRoot);
 
   const occurrences = [];
@@ -117,7 +144,63 @@ function runInPage(ctx) {
       }
     }
 
-    if (target) continue;
+    if (target) {
+      const accEligibility = toEligibility(
+        helpers.getEligibilityInfo
+          ? helpers.getEligibilityInfo(target, ctx, { targetSet: 'acc' })
+          : (helpers.isAccTreeEligible ? helpers.isAccTreeEligible(target, ctx) : { eligible: true, reasons: [] })
+      );
+
+      let geometryEligibility = null;
+      let geometryReasonCode = null;
+      if (geometrySupported && helpers.isDomVisibleEligible) {
+        geometryEligibility = toEligibility(
+          helpers.isDomVisibleEligible(target, ctx, { visibilityMode: 'styleAndGeometry', ignoreOpacity: true })
+        );
+        if (!geometryEligibility.eligible && geometryEligibility.reasons.includes('noClientRects')) {
+          geometryReasonCode = 'NO_CLIENT_RECTS';
+        } else if (!geometryEligibility.eligible && geometryEligibility.reasons.includes('zeroArea')) {
+          geometryReasonCode = 'ZERO_AREA_TARGET';
+        }
+      }
+
+      const unusableByAcc = !accEligibility.eligible;
+      const unusableByGeometry = !!geometryReasonCode;
+      if (!unusableByAcc && !unusableByGeometry) continue;
+
+      const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
+      const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+
+      occurrences.push({
+        selector: stableSelector,
+        html,
+        summary: 'This skip link points to a target that exists but is not currently usable.',
+        hint: 'Point this skip link to a target that is exposed and usable as a navigation destination.',
+        i18n: {
+          summaryKey: 'skipLink_summary_unusableTarget_cantTell',
+          hintKey: 'skipLink_hint_unusableTarget_cantTell',
+          params: { href }
+        },
+        data: {
+          details: {
+            reasonCode: 'SKIP_LINK_TARGET_UNUSABLE',
+            href,
+            unusableReasonCode: unusableByAcc ? 'ACC_TREE_INELIGIBLE' : geometryReasonCode,
+            targetSelector: helpers.buildSelector ? helpers.buildSelector(target) : null,
+            geometryCheckEnabled: geometrySupported
+          },
+          visibilityFilter: {
+            targetSet: 'acc',
+            accEligible: accEligibility.eligible,
+            reasons: accEligibility.reasons
+          },
+          targetGeometry: geometryEligibility
+            ? { eligible: geometryEligibility.eligible, reasons: geometryEligibility.reasons }
+            : { eligible: null, reasons: [] }
+        }
+      });
+      continue;
+    }
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
     const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');

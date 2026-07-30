@@ -807,10 +807,12 @@ module.exports = {
     "region_summary_cantTell": "This content is not contained within a landmark region.",
     "region_hint_cantTell": "Move this content inside a landmark region (main, nav, aside, a labeled section, etc.).",
 
-    "skipLink_title": "Skip link must have a resolvable target",
-    "skipLink_description": "Checks that a \"skip to ...\" link's href fragment resolves to a real element in the document.",
+    "skipLink_title": "Skip link must have a resolvable, usable target",
+    "skipLink_description": "Checks that a \"skip to ...\" link's href fragment resolves to a real, currently usable element in the document.",
     "skipLink_summary_cantTell": "This skip link's target does not exist.",
     "skipLink_hint_cantTell": "Point the skip link's href at an id that exists in the document, or add the missing target element.",
+    "skipLink_summary_unusableTarget_cantTell": "This skip link points to a target that exists but is not currently usable.",
+    "skipLink_hint_unusableTarget_cantTell": "Point this skip link to a target that is exposed and usable as a navigation destination.",
 
     "autocompleteValid_title": "autocomplete attribute must be a valid autofill value",
     "autocompleteValid_description": "Checks that a non-empty autocomplete attribute is \"on\"/\"off\" or a well-formed autofill detail token list.",

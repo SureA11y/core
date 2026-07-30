@@ -5316,8 +5316,8 @@ const CHECK_DEFS = [
   },
   {
     "ruleId": "skip-link",
-    "title": "Skip link must have a resolvable target",
-    "description": "Checks that a \"skip to ...\" link's href fragment resolves to a real element in the document.",
+    "title": "Skip link must have a resolvable, usable target",
+    "description": "Checks that a \"skip to ...\" link's href fragment resolves to a real, currently usable element in the document.",
     "i18n": {
       "titleKey": "skipLink_title",
       "descriptionKey": "skipLink_description"
@@ -7556,10 +7556,12 @@ const I18N = {
     "region_description": "Checks that direct children of <body> with visible text content are contained within a landmark region.",
     "region_summary_cantTell": "This content is not contained within a landmark region.",
     "region_hint_cantTell": "Move this content inside a landmark region (main, nav, aside, a labeled section, etc.).",
-    "skipLink_title": "Skip link must have a resolvable target",
-    "skipLink_description": "Checks that a \"skip to ...\" link's href fragment resolves to a real element in the document.",
+    "skipLink_title": "Skip link must have a resolvable, usable target",
+    "skipLink_description": "Checks that a \"skip to ...\" link's href fragment resolves to a real, currently usable element in the document.",
     "skipLink_summary_cantTell": "This skip link's target does not exist.",
     "skipLink_hint_cantTell": "Point the skip link's href at an id that exists in the document, or add the missing target element.",
+    "skipLink_summary_unusableTarget_cantTell": "This skip link points to a target that exists but is not currently usable.",
+    "skipLink_hint_unusableTarget_cantTell": "Point this skip link to a target that is exposed and usable as a navigation destination.",
     "autocompleteValid_title": "autocomplete attribute must be a valid autofill value",
     "autocompleteValid_description": "Checks that a non-empty autocomplete attribute is \"on\"/\"off\" or a well-formed autofill detail token list.",
     "autocompleteValid_summary_fail": "This autocomplete attribute value is not a valid autofill value.",
@@ -8158,10 +8160,12 @@ const I18N = {
     "region_description": "Vérifie que les enfants directs de <body> ayant un contenu textuel visible sont contenus dans un point de repère.",
     "region_summary_cantTell": "Ce contenu n’est contenu dans aucun point de repère.",
     "region_hint_cantTell": "Déplacez ce contenu à l’intérieur d’un point de repère (main, nav, aside, une section nommée, etc.).",
-    "skipLink_title": "Un lien d’évitement doit avoir une cible qui se résout",
-    "skipLink_description": "Vérifie que le fragment href d’un lien « aller au... » se résout vers un élément réel du document.",
+    "skipLink_title": "Un lien d’évitement doit avoir une cible qui se résout et qui est utilisable",
+    "skipLink_description": "Vérifie que le fragment href d’un lien « aller au... » se résout vers un élément réel et actuellement utilisable du document.",
     "skipLink_summary_cantTell": "La cible de ce lien d’évitement n’existe pas.",
     "skipLink_hint_cantTell": "Faites pointer le href du lien d’évitement vers un id qui existe dans le document, ou ajoutez l’élément cible manquant.",
+    "skipLink_summary_unusableTarget_cantTell": "Ce lien d’évitement pointe vers une cible qui existe mais qui n’est pas actuellement utilisable.",
+    "skipLink_hint_unusableTarget_cantTell": "Faites pointer ce lien d’évitement vers une cible exposée et utilisable comme destination de navigation.",
     "autocompleteValid_title": "L’attribut autocomplete doit être une valeur d’auto-remplissage valide",
     "autocompleteValid_description": "Vérifie qu’un attribut autocomplete non vide vaut « on »/« off » ou une liste de jetons d’auto-remplissage bien formée.",
     "autocompleteValid_summary_fail": "Cette valeur d’attribut autocomplete n’est pas une valeur d’auto-remplissage valide.",
@@ -21352,8 +21356,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "skip-link",
-    "title": "Skip link must have a resolvable target",
-    "description": "Checks that a \"skip to ...\" link's href fragment resolves to a real element in the document.",
+    "title": "Skip link must have a resolvable, usable target",
+    "description": "Checks that a \"skip to ...\" link's href fragment resolves to a real, currently usable element in the document.",
     "i18n": {
       "titleKey": "skipLink_title",
       "descriptionKey": "skipLink_description"
@@ -36254,6 +36258,30 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     return normalizeWs(el.textContent);
   }
 
+  function hasReliableGeometrySupport() {
+    const probe = document.documentElement || document.body || null;
+    if (!probe || !probe.getClientRects || !probe.getBoundingClientRect) return false;
+    try {
+      const rects = probe.getClientRects();
+      const rectCount = rects ? rects.length : 0;
+      const r = probe.getBoundingClientRect();
+      const w = r && Number.isFinite(r.width) ? r.width : 0;
+      const h = r && Number.isFinite(r.height) ? r.height : 0;
+      return rectCount > 0 && (w > 0 || h > 0);
+    } catch {
+      return false;
+    }
+  }
+
+  function toEligibility(info) {
+    return {
+      eligible: !!(info && info.eligible),
+      reasons: info && Array.isArray(info.reasons) ? info.reasons.slice(0) : []
+    };
+  }
+
+  const geometrySupported = hasReliableGeometrySupport();
+
   const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('a[href]', safeRoot) : helpers.queryAll('a[href]', safeRoot);
 
   const occurrences = [];
@@ -36292,7 +36320,63 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
       }
     }
 
-    if (target) continue;
+    if (target) {
+      const accEligibility = toEligibility(
+        helpers.getEligibilityInfo
+          ? helpers.getEligibilityInfo(target, ctx, { targetSet: 'acc' })
+          : (helpers.isAccTreeEligible ? helpers.isAccTreeEligible(target, ctx) : { eligible: true, reasons: [] })
+      );
+
+      let geometryEligibility = null;
+      let geometryReasonCode = null;
+      if (geometrySupported && helpers.isDomVisibleEligible) {
+        geometryEligibility = toEligibility(
+          helpers.isDomVisibleEligible(target, ctx, { visibilityMode: 'styleAndGeometry', ignoreOpacity: true })
+        );
+        if (!geometryEligibility.eligible && geometryEligibility.reasons.includes('noClientRects')) {
+          geometryReasonCode = 'NO_CLIENT_RECTS';
+        } else if (!geometryEligibility.eligible && geometryEligibility.reasons.includes('zeroArea')) {
+          geometryReasonCode = 'ZERO_AREA_TARGET';
+        }
+      }
+
+      const unusableByAcc = !accEligibility.eligible;
+      const unusableByGeometry = !!geometryReasonCode;
+      if (!unusableByAcc && !unusableByGeometry) continue;
+
+      const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
+      const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+
+      occurrences.push({
+        selector: stableSelector,
+        html,
+        summary: 'This skip link points to a target that exists but is not currently usable.',
+        hint: 'Point this skip link to a target that is exposed and usable as a navigation destination.',
+        i18n: {
+          summaryKey: 'skipLink_summary_unusableTarget_cantTell',
+          hintKey: 'skipLink_hint_unusableTarget_cantTell',
+          params: { href }
+        },
+        data: {
+          details: {
+            reasonCode: 'SKIP_LINK_TARGET_UNUSABLE',
+            href,
+            unusableReasonCode: unusableByAcc ? 'ACC_TREE_INELIGIBLE' : geometryReasonCode,
+            targetSelector: helpers.buildSelector ? helpers.buildSelector(target) : null,
+            geometryCheckEnabled: geometrySupported
+          },
+          visibilityFilter: {
+            targetSet: 'acc',
+            accEligible: accEligibility.eligible,
+            reasons: accEligibility.reasons
+          },
+          targetGeometry: geometryEligibility
+            ? { eligible: geometryEligibility.eligible, reasons: geometryEligibility.reasons }
+            : { eligible: null, reasons: [] }
+        }
+      });
+      continue;
+    }
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
     const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
@@ -39814,10 +39898,12 @@ const I18N = {
     "region_description": "Checks that direct children of <body> with visible text content are contained within a landmark region.",
     "region_summary_cantTell": "This content is not contained within a landmark region.",
     "region_hint_cantTell": "Move this content inside a landmark region (main, nav, aside, a labeled section, etc.).",
-    "skipLink_title": "Skip link must have a resolvable target",
-    "skipLink_description": "Checks that a \"skip to ...\" link's href fragment resolves to a real element in the document.",
+    "skipLink_title": "Skip link must have a resolvable, usable target",
+    "skipLink_description": "Checks that a \"skip to ...\" link's href fragment resolves to a real, currently usable element in the document.",
     "skipLink_summary_cantTell": "This skip link's target does not exist.",
     "skipLink_hint_cantTell": "Point the skip link's href at an id that exists in the document, or add the missing target element.",
+    "skipLink_summary_unusableTarget_cantTell": "This skip link points to a target that exists but is not currently usable.",
+    "skipLink_hint_unusableTarget_cantTell": "Point this skip link to a target that is exposed and usable as a navigation destination.",
     "autocompleteValid_title": "autocomplete attribute must be a valid autofill value",
     "autocompleteValid_description": "Checks that a non-empty autocomplete attribute is \"on\"/\"off\" or a well-formed autofill detail token list.",
     "autocompleteValid_summary_fail": "This autocomplete attribute value is not a valid autofill value.",
@@ -40416,10 +40502,12 @@ const I18N = {
     "region_description": "Vérifie que les enfants directs de <body> ayant un contenu textuel visible sont contenus dans un point de repère.",
     "region_summary_cantTell": "Ce contenu n’est contenu dans aucun point de repère.",
     "region_hint_cantTell": "Déplacez ce contenu à l’intérieur d’un point de repère (main, nav, aside, une section nommée, etc.).",
-    "skipLink_title": "Un lien d’évitement doit avoir une cible qui se résout",
-    "skipLink_description": "Vérifie que le fragment href d’un lien « aller au... » se résout vers un élément réel du document.",
+    "skipLink_title": "Un lien d’évitement doit avoir une cible qui se résout et qui est utilisable",
+    "skipLink_description": "Vérifie que le fragment href d’un lien « aller au... » se résout vers un élément réel et actuellement utilisable du document.",
     "skipLink_summary_cantTell": "La cible de ce lien d’évitement n’existe pas.",
     "skipLink_hint_cantTell": "Faites pointer le href du lien d’évitement vers un id qui existe dans le document, ou ajoutez l’élément cible manquant.",
+    "skipLink_summary_unusableTarget_cantTell": "Ce lien d’évitement pointe vers une cible qui existe mais qui n’est pas actuellement utilisable.",
+    "skipLink_hint_unusableTarget_cantTell": "Faites pointer ce lien d’évitement vers une cible exposée et utilisable comme destination de navigation.",
     "autocompleteValid_title": "L’attribut autocomplete doit être une valeur d’auto-remplissage valide",
     "autocompleteValid_description": "Vérifie qu’un attribut autocomplete non vide vaut « on »/« off » ou une liste de jetons d’auto-remplissage bien formée.",
     "autocompleteValid_summary_fail": "Cette valeur d’attribut autocomplete n’est pas une valeur d’auto-remplissage valide.",
@@ -53570,8 +53658,8 @@ const __a11yCoreCrossFrameApi = (function () {
   },
   {
     "ruleId": "skip-link",
-    "title": "Skip link must have a resolvable target",
-    "description": "Checks that a \"skip to ...\" link's href fragment resolves to a real element in the document.",
+    "title": "Skip link must have a resolvable, usable target",
+    "description": "Checks that a \"skip to ...\" link's href fragment resolves to a real, currently usable element in the document.",
     "i18n": {
       "titleKey": "skipLink_title",
       "descriptionKey": "skipLink_description"
@@ -68467,6 +68555,30 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     return normalizeWs(el.textContent);
   }
 
+  function hasReliableGeometrySupport() {
+    const probe = document.documentElement || document.body || null;
+    if (!probe || !probe.getClientRects || !probe.getBoundingClientRect) return false;
+    try {
+      const rects = probe.getClientRects();
+      const rectCount = rects ? rects.length : 0;
+      const r = probe.getBoundingClientRect();
+      const w = r && Number.isFinite(r.width) ? r.width : 0;
+      const h = r && Number.isFinite(r.height) ? r.height : 0;
+      return rectCount > 0 && (w > 0 || h > 0);
+    } catch {
+      return false;
+    }
+  }
+
+  function toEligibility(info) {
+    return {
+      eligible: !!(info && info.eligible),
+      reasons: info && Array.isArray(info.reasons) ? info.reasons.slice(0) : []
+    };
+  }
+
+  const geometrySupported = hasReliableGeometrySupport();
+
   const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('a[href]', safeRoot) : helpers.queryAll('a[href]', safeRoot);
 
   const occurrences = [];
@@ -68505,7 +68617,63 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
       }
     }
 
-    if (target) continue;
+    if (target) {
+      const accEligibility = toEligibility(
+        helpers.getEligibilityInfo
+          ? helpers.getEligibilityInfo(target, ctx, { targetSet: 'acc' })
+          : (helpers.isAccTreeEligible ? helpers.isAccTreeEligible(target, ctx) : { eligible: true, reasons: [] })
+      );
+
+      let geometryEligibility = null;
+      let geometryReasonCode = null;
+      if (geometrySupported && helpers.isDomVisibleEligible) {
+        geometryEligibility = toEligibility(
+          helpers.isDomVisibleEligible(target, ctx, { visibilityMode: 'styleAndGeometry', ignoreOpacity: true })
+        );
+        if (!geometryEligibility.eligible && geometryEligibility.reasons.includes('noClientRects')) {
+          geometryReasonCode = 'NO_CLIENT_RECTS';
+        } else if (!geometryEligibility.eligible && geometryEligibility.reasons.includes('zeroArea')) {
+          geometryReasonCode = 'ZERO_AREA_TARGET';
+        }
+      }
+
+      const unusableByAcc = !accEligibility.eligible;
+      const unusableByGeometry = !!geometryReasonCode;
+      if (!unusableByAcc && !unusableByGeometry) continue;
+
+      const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
+      const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+
+      occurrences.push({
+        selector: stableSelector,
+        html,
+        summary: 'This skip link points to a target that exists but is not currently usable.',
+        hint: 'Point this skip link to a target that is exposed and usable as a navigation destination.',
+        i18n: {
+          summaryKey: 'skipLink_summary_unusableTarget_cantTell',
+          hintKey: 'skipLink_hint_unusableTarget_cantTell',
+          params: { href }
+        },
+        data: {
+          details: {
+            reasonCode: 'SKIP_LINK_TARGET_UNUSABLE',
+            href,
+            unusableReasonCode: unusableByAcc ? 'ACC_TREE_INELIGIBLE' : geometryReasonCode,
+            targetSelector: helpers.buildSelector ? helpers.buildSelector(target) : null,
+            geometryCheckEnabled: geometrySupported
+          },
+          visibilityFilter: {
+            targetSet: 'acc',
+            accEligible: accEligibility.eligible,
+            reasons: accEligibility.reasons
+          },
+          targetGeometry: geometryEligibility
+            ? { eligible: geometryEligibility.eligible, reasons: geometryEligibility.reasons }
+            : { eligible: null, reasons: [] }
+        }
+      });
+      continue;
+    }
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
     const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
@@ -72027,10 +72195,12 @@ const I18N = {
     "region_description": "Checks that direct children of <body> with visible text content are contained within a landmark region.",
     "region_summary_cantTell": "This content is not contained within a landmark region.",
     "region_hint_cantTell": "Move this content inside a landmark region (main, nav, aside, a labeled section, etc.).",
-    "skipLink_title": "Skip link must have a resolvable target",
-    "skipLink_description": "Checks that a \"skip to ...\" link's href fragment resolves to a real element in the document.",
+    "skipLink_title": "Skip link must have a resolvable, usable target",
+    "skipLink_description": "Checks that a \"skip to ...\" link's href fragment resolves to a real, currently usable element in the document.",
     "skipLink_summary_cantTell": "This skip link's target does not exist.",
     "skipLink_hint_cantTell": "Point the skip link's href at an id that exists in the document, or add the missing target element.",
+    "skipLink_summary_unusableTarget_cantTell": "This skip link points to a target that exists but is not currently usable.",
+    "skipLink_hint_unusableTarget_cantTell": "Point this skip link to a target that is exposed and usable as a navigation destination.",
     "autocompleteValid_title": "autocomplete attribute must be a valid autofill value",
     "autocompleteValid_description": "Checks that a non-empty autocomplete attribute is \"on\"/\"off\" or a well-formed autofill detail token list.",
     "autocompleteValid_summary_fail": "This autocomplete attribute value is not a valid autofill value.",
@@ -72629,10 +72799,12 @@ const I18N = {
     "region_description": "Vérifie que les enfants directs de <body> ayant un contenu textuel visible sont contenus dans un point de repère.",
     "region_summary_cantTell": "Ce contenu n’est contenu dans aucun point de repère.",
     "region_hint_cantTell": "Déplacez ce contenu à l’intérieur d’un point de repère (main, nav, aside, une section nommée, etc.).",
-    "skipLink_title": "Un lien d’évitement doit avoir une cible qui se résout",
-    "skipLink_description": "Vérifie que le fragment href d’un lien « aller au... » se résout vers un élément réel du document.",
+    "skipLink_title": "Un lien d’évitement doit avoir une cible qui se résout et qui est utilisable",
+    "skipLink_description": "Vérifie que le fragment href d’un lien « aller au... » se résout vers un élément réel et actuellement utilisable du document.",
     "skipLink_summary_cantTell": "La cible de ce lien d’évitement n’existe pas.",
     "skipLink_hint_cantTell": "Faites pointer le href du lien d’évitement vers un id qui existe dans le document, ou ajoutez l’élément cible manquant.",
+    "skipLink_summary_unusableTarget_cantTell": "Ce lien d’évitement pointe vers une cible qui existe mais qui n’est pas actuellement utilisable.",
+    "skipLink_hint_unusableTarget_cantTell": "Faites pointer ce lien d’évitement vers une cible exposée et utilisable comme destination de navigation.",
     "autocompleteValid_title": "L’attribut autocomplete doit être une valeur d’auto-remplissage valide",
     "autocompleteValid_description": "Vérifie qu’un attribut autocomplete non vide vaut « on »/« off » ou une liste de jetons d’auto-remplissage bien formée.",
     "autocompleteValid_summary_fail": "Cette valeur d’attribut autocomplete n’est pas une valeur d’auto-remplissage valide.",
