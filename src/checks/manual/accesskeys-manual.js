@@ -40,14 +40,9 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
-
-  let nodes = [];
-  try {
-    nodes = document.querySelectorAll('[accesskey]');
-  } catch {
-    nodes = [];
-  }
+  const { document, root, helpers, rule } = ctx;
+  const safeRoot = root || document;
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[accesskey]', safeRoot) : helpers.queryAll('[accesskey]', safeRoot);
 
   const groups = new Map(); // normalized key -> elements[]
   for (const el of nodes) {

@@ -35,6 +35,23 @@ test(`${RULE_ID}: cantTell with one occurrence per element sharing an accesskey`
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'ACCESSKEY_DUPLICATE');
 });
 
+test(`${RULE_ID}: notApplicable when duplicate accesskeys differ only by a hidden copy (default hidden filtering)`, () => {
+  const html = `<!doctype html><html><body><a href="/1" id="visible" accesskey="f">Search</a><nav style="display:none"><a href="/2" id="hidden" accesskey="f">Search hidden copy</a></nav></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: cantTell when includeHiddenElements=true and duplicate accesskeys include hidden copy`, () => {
+  const html = `<!doctype html><html><body><a href="/1" id="visible" accesskey="f">Search</a><nav style="display:none"><a href="/2" id="hidden" accesskey="f">Search hidden copy</a></nav></body></html>`;
+  const result = runa11yCoreOnHtml(html, {
+    runOnly: [RULE_ID],
+    engineOptions: { includeHiddenElements: true }
+  });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
+  assert.ok(hasOccurrenceForId(rule, 'visible'));
+  assert.ok(hasOccurrenceForId(rule, 'hidden'));
+});
+
 test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><body><a href="/1" id="a" accesskey="s">1</a><a href="/2" id="b" accesskey="s">2</a></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
@@ -51,4 +68,6 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/accesskeys-all-scenarios.html
   assert.ok(hasOccurrenceForId(rule, 'ak_case_02a'));
   assert.ok(hasOccurrenceForId(rule, 'ak_case_02b'));
   assert.ok(!hasOccurrenceForId(rule, 'ak_case_01a'));
+  assert.ok(!hasOccurrenceForId(rule, 'ak_case_03a'));
+  assert.ok(!hasOccurrenceForId(rule, 'ak_case_03b'));
 });
