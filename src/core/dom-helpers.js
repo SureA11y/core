@@ -1092,7 +1092,8 @@ function createDomHelpers(opts) {
         'templateContent',
         'nonRenderedElement',
         'inputHidden',
-        'visibilityHidden'
+        'visibilityHidden',
+        'contentVisibilityHidden'
     ]);
 
     function queryAllSmart(sel) {
@@ -1108,6 +1109,23 @@ function createDomHelpers(opts) {
                     const reasons = Array.isArray(vis.reasons) ? vis.reasons : [];
                     for (const r of reasons) {
                         if (HARD_HIDDEN_REASONS.has(r)) return false;
+                    }
+
+                    // `isAccTreeEligible` can short-circuit on an inert ancestor
+                    // before it reaches an outer hard-hidden ancestor (e.g.
+                    // display:none wrapper). In that case the node is still
+                    // structurally hidden and should be excluded by the default
+                    // hidden-content policy.
+                    if (reasons.includes('inert')) {
+                        const domVis = isDomVisibleEligible(el, null, {
+                            visibilityMode: 'styleOnly',
+                            disableGeometry: true,
+                            ignoreOpacity: true
+                        });
+                        const domReasons = Array.isArray(domVis && domVis.reasons) ? domVis.reasons : [];
+                        for (const r of domReasons) {
+                            if (HARD_HIDDEN_REASONS.has(r)) return false;
+                        }
                     }
                     return true;
                 } catch {

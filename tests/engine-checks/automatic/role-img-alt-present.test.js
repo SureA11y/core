@@ -325,34 +325,34 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/role-img-alt-present-all-scen
     }
 });
 
-/* ---------------- i18n checks (enable once you add strings to dictionaries) ---------------- */
-
-// If you haven't added these keys to en/fr dictionaries yet, keep these skipped.
-// Once added, flip test.skip -> test and assert exact stable strings.
-
-test.skip(`${RULE_ID}: i18n (en) title/description/occ strings are stable`, () => {
+test(`${RULE_ID}: i18n (en) title/description/occ strings are stable`, () => {
     const html = `<!doctype html><html><body><span id="x" role="img"></span></body></html>`;
     const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions: { locale: 'en' } });
     const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
 
-    // TODO: replace with exact expected strings once you add them to en.js
-    assert.ok(typeof rule.title === 'string' && rule.title.length > 0);
-    assert.ok(typeof rule.description === 'string' && rule.description.length > 0);
+    assert.equal(rule.title, '[role="img"] must have an accessible text alternative');
+    assert.equal(rule.description, 'Checks that elements with role="img" provide an accessible text alternative using aria-label, aria-labelledby, or a title attribute.');
 
     const occ = rule.occurrences[0];
-    assert.ok(typeof occ.summary === 'string' && occ.summary.length > 0);
-    assert.ok(typeof occ.hint === 'string' && occ.hint.length > 0);
+    assert.equal(occ.summary, 'The element with role="img" does not have an accessible text alternative.');
+    assert.equal(occ.hint, 'Provide a text alternative using aria-label, or aria-labelledby that references non-empty text.');
 
-    assert.ok(occ.i18n && typeof occ.i18n.summaryKey === 'string');
-    assert.ok(occ.i18n && typeof occ.i18n.hintKey === 'string');
+    assert.equal(occ.i18n && occ.i18n.summaryKey, 'roleImg_textAlternativePresent_summary_fail');
+    assert.equal(occ.i18n && occ.i18n.hintKey, 'roleImg_textAlternativePresent_hint_fail');
 });
 
-test.skip(`${RULE_ID}: i18n (fr) falls back/uses fr strings once defined`, () => {
+test(`${RULE_ID}: i18n (fr) falls back/uses fr strings once defined`, () => {
     const html = `<!doctype html><html><body><span id="x" role="img"></span></body></html>`;
     const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions: { locale: 'fr' } });
     const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
 
-    // TODO: assert exact FR translations once added
-    assert.ok(typeof rule.title === 'string' && rule.title.length > 0);
-    assert.ok(typeof rule.description === 'string' && rule.description.length > 0);
+    assert.equal(rule.title, 'Les éléments avec role="img" doivent avoir une alternative textuelle accessible');
+    assert.equal(rule.description, 'Vérifie que les éléments ayant le rôle "img" fournissent une alternative textuelle accessible via aria-label ou aria-labelledby.');
+
+    const occ = rule.occurrences[0];
+    assert.equal(occ.summary, 'L’élément avec le rôle "img" ne possède pas d’alternative textuelle accessible.');
+    assert.equal(occ.hint, 'Fournissez une alternative textuelle à l’aide de aria-label ou de aria-labelledby pointant vers un texte non vide.');
+
+    assert.equal(occ.i18n && occ.i18n.summaryKey, 'roleImg_textAlternativePresent_summary_fail');
+    assert.equal(occ.i18n && occ.i18n.hintKey, 'roleImg_textAlternativePresent_hint_fail');
 });

@@ -263,3 +263,34 @@ test('dom helpers shadow DOM: queryAllSmart includes shadow roots only when incl
   assert.equal(withShadowBtns.some((el) => el && el.id === 'shadowBtn'), true, 'shadow button should be found when includeShadowDom=true');
   assert.equal(withShadowBtns.some((el) => el && el.id === 'light'), true, 'light DOM button should still be found');
 });
+
+test('dom helpers hidden policy: queryAllSmart excludes hard-hidden nodes even when acc eligibility short-circuits as inert', () => {
+  const dom = new JSDOM(
+    `<!doctype html><html><body>
+      <div id="hiddenRoot" style="display:none">
+        <div inert>
+          <div id="hiddenItem" role="listitem" aria-expanded="false"></div>
+        </div>
+      </div>
+    </body></html>`,
+    { pretendToBeVisual: true }
+  );
+
+  const { window } = dom;
+  const { document } = window;
+
+  const hiddenItem = document.getElementById('hiddenItem');
+  assert.ok(hiddenItem);
+
+  const helpers = createDomHelpers({ window, document, root: document });
+  const acc = helpers.isAccTreeEligible(hiddenItem);
+  assert.equal(acc.eligible, false);
+  assert.ok(acc.reasons.includes('inert'), 'fixture should reproduce inert-first eligibility classification');
+
+  const filtered = helpers.queryAllSmart('[role="listitem"][aria-expanded]');
+  assert.equal(filtered.length, 0, 'default hidden policy should exclude the hard-hidden node');
+
+  const helpersIncludeHidden = createDomHelpers({ window, document, root: document, includeHiddenElements: true });
+  const included = helpersIncludeHidden.queryAllSmart('[role="listitem"][aria-expanded]');
+  assert.equal(included.length, 1, 'includeHiddenElements:true should include hidden nodes');
+});
