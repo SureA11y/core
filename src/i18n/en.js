@@ -581,6 +581,8 @@ module.exports = {
     "ariaProhibitedChildren_hint_fail": "Remove or change this role so it matches one of the container's allowed owned roles ({{allowedRoles}}), or move this element outside the {{containerRole}} container.",
     "ariaProhibitedChildren_summary_fail_roleless": "This element has no explicit role but carries {{attr}}, making it a real accessible-tree node that is not an allowed owned child of the enclosing role=\"{{containerRole}}\" container.",
     "ariaProhibitedChildren_hint_fail_roleless": "Remove {{attr}} (or the role=\"{{containerRole}}\" container ownership), or give this element role=\"presentation\"/\"none\" if it isn't meant to be its own accessible-tree node.",
+    "ariaProhibitedChildren_summary_fail_native_focusable": "This element has no explicit role but is natively focusable, making it a real accessible-tree node that is not an allowed owned child of the enclosing role=\"{{containerRole}}\" container.",
+    "ariaProhibitedChildren_hint_fail_native_focusable": "Give this element role=\"presentation\"/\"none\", remove its native focusability (e.g. drop the href/tabindex-granting attribute), or move it outside the {{containerRole}} container.",
 
     "ariaRequiredParent_title": "Roles requiring a specific context role must be in that context",
     "ariaRequiredParent_description": "Checks that roles with a documented \"required context role\" entry (listitem, option, tab, treeitem, row, cell, ...) have an ancestor or aria-owns owner with an acceptable context role.",

@@ -7625,6 +7625,8 @@ const I18N = {
     "ariaProhibitedChildren_hint_fail": "Remove or change this role so it matches one of the container's allowed owned roles ({{allowedRoles}}), or move this element outside the {{containerRole}} container.",
     "ariaProhibitedChildren_summary_fail_roleless": "This element has no explicit role but carries {{attr}}, making it a real accessible-tree node that is not an allowed owned child of the enclosing role=\"{{containerRole}}\" container.",
     "ariaProhibitedChildren_hint_fail_roleless": "Remove {{attr}} (or the role=\"{{containerRole}}\" container ownership), or give this element role=\"presentation\"/\"none\" if it isn't meant to be its own accessible-tree node.",
+    "ariaProhibitedChildren_summary_fail_native_focusable": "This element has no explicit role but is natively focusable, making it a real accessible-tree node that is not an allowed owned child of the enclosing role=\"{{containerRole}}\" container.",
+    "ariaProhibitedChildren_hint_fail_native_focusable": "Give this element role=\"presentation\"/\"none\", remove its native focusability (e.g. drop the href/tabindex-granting attribute), or move it outside the {{containerRole}} container.",
     "ariaRequiredParent_title": "Roles requiring a specific context role must be in that context",
     "ariaRequiredParent_description": "Checks that roles with a documented \"required context role\" entry (listitem, option, tab, treeitem, row, cell, ...) have an ancestor or aria-owns owner with an acceptable context role.",
     "ariaRequiredParent_summary_fail": "role=\"{{role}}\" requires a context role of one of: {{requiredRoles}}, which was not found.",
@@ -8229,6 +8231,8 @@ const I18N = {
     "ariaProhibitedChildren_hint_fail": "Retirez ou modifiez ce rôle afin qu’il corresponde à l’un des rôles possédés autorisés du conteneur ({{allowedRoles}}), ou déplacez cet élément hors du conteneur {{containerRole}}.",
     "ariaProhibitedChildren_summary_fail_roleless": "Cet élément n’a pas de rôle explicite mais porte {{attr}}, ce qui en fait un véritable nœud de l’arbre d’accessibilité qui n’est pas un enfant possédé autorisé du conteneur englobant role=\"{{containerRole}}\".",
     "ariaProhibitedChildren_hint_fail_roleless": "Retirez {{attr}} (ou la relation de possession avec le conteneur role=\"{{containerRole}}\"), ou attribuez à cet élément role=\"presentation\"/\"none\" s’il n’est pas censé constituer son propre nœud dans l’arbre d’accessibilité.",
+    "ariaProhibitedChildren_summary_fail_native_focusable": "Cet élément n’a pas de rôle explicite mais est nativement focalisable, ce qui en fait un véritable nœud de l’arbre d’accessibilité qui n’est pas un enfant possédé autorisé du conteneur englobant role=\"{{containerRole}}\".",
+    "ariaProhibitedChildren_hint_fail_native_focusable": "Attribuez à cet élément role=\"presentation\"/\"none\", retirez sa focalisabilité native (par ex. supprimez l’attribut href/tabindex à l’origine), ou déplacez-le hors du conteneur {{containerRole}}.",
     "ariaRequiredParent_title": "Les rôles exigeant un rôle de contexte spécifique doivent se trouver dans ce contexte",
     "ariaRequiredParent_description": "Vérifie que les rôles disposant d’une entrée documentée « rôle de contexte requis » (listitem, option, tab, treeitem, row, cell, ...) ont un ancêtre, ou un propriétaire aria-owns, ayant un rôle de contexte acceptable.",
     "ariaRequiredParent_summary_fail": "role=\"{{role}}\" exige un rôle de contexte parmi : {{requiredRoles}}, qui n’a pas été trouvé.",
@@ -25210,15 +25214,21 @@ if (isAccTreeEligible) {
 
       if (!kidRole && !isPresentational) {
         const globalAttr = getGlobalAriaAttr(kid);
-        let focusable = false;
+        let mechanism = 'none';
         try {
           const fi = helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo(kid, ctx) : null;
-          focusable = !!(fi && fi.focusable);
+          mechanism = (fi && fi.focusable && fi.mechanism) || 'none';
         } catch {
-          focusable = false;
+          mechanism = 'none';
         }
-        if (globalAttr || focusable) {
-          out.push({ el: kid, role: null, attr: globalAttr || 'tabindex' });
+        if (globalAttr || mechanism !== 'none') {
+          // `mechanism` distinguishes an actual tabindex="" attribute from
+          // native focusability (e.g. <a href>, <button>, <input>) — these
+          // are different facts and must not be reported as the same
+          // "carries tabindex" claim (a native anchor with no tabindex
+          // attribute at all is not "carrying tabindex").
+          const attr = globalAttr || (mechanism === 'tabindex' ? 'tabindex' : 'nativeFocusable');
+          out.push({ el: kid, role: null, attr });
           continue; // real accessible-tree node: stop here, do not recurse further
         }
       }
@@ -25265,12 +25275,28 @@ if (isAccTreeEligible) {
       const containerSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
 
       const isRoleless = !entry.role;
-      const summary = isRoleless
-        ? `This element has no explicit role but carries ${entry.attr}, making it a real accessible-tree node that is not an allowed owned child of the enclosing role="${role}" container.`
-        : `This element has role="${entry.role}", which is not an allowed owned child of the enclosing role="${role}" container.`;
-      const hint = isRoleless
-        ? `Remove ${entry.attr} (or the role="${role}" container ownership), or give this element role="presentation"/"none" if it isn't meant to be its own accessible-tree node.`
-        : `Remove or change this role so it matches one of the container's allowed owned roles (${requiredOwned.join(', ')}), or move this element outside the ${role} container.`;
+      const isNativeFocusable = entry.attr === 'nativeFocusable';
+
+      let summary;
+      let hint;
+      let summaryKey;
+      let hintKey;
+      if (isNativeFocusable) {
+        summary = `This element has no explicit role but is natively focusable, making it a real accessible-tree node that is not an allowed owned child of the enclosing role="${role}" container.`;
+        hint = `Give this element role="presentation"/"none", remove its native focusability (e.g. drop the href/tabindex-granting attribute), or move it outside the ${role} container.`;
+        summaryKey = 'ariaProhibitedChildren_summary_fail_native_focusable';
+        hintKey = 'ariaProhibitedChildren_hint_fail_native_focusable';
+      } else if (isRoleless) {
+        summary = `This element has no explicit role but carries ${entry.attr}, making it a real accessible-tree node that is not an allowed owned child of the enclosing role="${role}" container.`;
+        hint = `Remove ${entry.attr} (or the role="${role}" container ownership), or give this element role="presentation"/"none" if it isn't meant to be its own accessible-tree node.`;
+        summaryKey = 'ariaProhibitedChildren_summary_fail_roleless';
+        hintKey = 'ariaProhibitedChildren_hint_fail_roleless';
+      } else {
+        summary = `This element has role="${entry.role}", which is not an allowed owned child of the enclosing role="${role}" container.`;
+        hint = `Remove or change this role so it matches one of the container's allowed owned roles (${requiredOwned.join(', ')}), or move this element outside the ${role} container.`;
+        summaryKey = 'ariaProhibitedChildren_summary_fail';
+        hintKey = 'ariaProhibitedChildren_hint_fail';
+      }
 
       occurrences.push({
         selector: stableSelector,
@@ -25278,8 +25304,8 @@ if (isAccTreeEligible) {
         summary,
         hint,
         i18n: {
-          summaryKey: isRoleless ? 'ariaProhibitedChildren_summary_fail_roleless' : 'ariaProhibitedChildren_summary_fail',
-          hintKey: isRoleless ? 'ariaProhibitedChildren_hint_fail_roleless' : 'ariaProhibitedChildren_hint_fail',
+          summaryKey,
+          hintKey,
           params: isRoleless
             ? { attr: entry.attr, containerRole: role }
             : { childRole: entry.role, containerRole: role, allowedRoles: requiredOwned.join(', ') }
@@ -40367,6 +40393,8 @@ const I18N = {
     "ariaProhibitedChildren_hint_fail": "Remove or change this role so it matches one of the container's allowed owned roles ({{allowedRoles}}), or move this element outside the {{containerRole}} container.",
     "ariaProhibitedChildren_summary_fail_roleless": "This element has no explicit role but carries {{attr}}, making it a real accessible-tree node that is not an allowed owned child of the enclosing role=\"{{containerRole}}\" container.",
     "ariaProhibitedChildren_hint_fail_roleless": "Remove {{attr}} (or the role=\"{{containerRole}}\" container ownership), or give this element role=\"presentation\"/\"none\" if it isn't meant to be its own accessible-tree node.",
+    "ariaProhibitedChildren_summary_fail_native_focusable": "This element has no explicit role but is natively focusable, making it a real accessible-tree node that is not an allowed owned child of the enclosing role=\"{{containerRole}}\" container.",
+    "ariaProhibitedChildren_hint_fail_native_focusable": "Give this element role=\"presentation\"/\"none\", remove its native focusability (e.g. drop the href/tabindex-granting attribute), or move it outside the {{containerRole}} container.",
     "ariaRequiredParent_title": "Roles requiring a specific context role must be in that context",
     "ariaRequiredParent_description": "Checks that roles with a documented \"required context role\" entry (listitem, option, tab, treeitem, row, cell, ...) have an ancestor or aria-owns owner with an acceptable context role.",
     "ariaRequiredParent_summary_fail": "role=\"{{role}}\" requires a context role of one of: {{requiredRoles}}, which was not found.",
@@ -40971,6 +40999,8 @@ const I18N = {
     "ariaProhibitedChildren_hint_fail": "Retirez ou modifiez ce rôle afin qu’il corresponde à l’un des rôles possédés autorisés du conteneur ({{allowedRoles}}), ou déplacez cet élément hors du conteneur {{containerRole}}.",
     "ariaProhibitedChildren_summary_fail_roleless": "Cet élément n’a pas de rôle explicite mais porte {{attr}}, ce qui en fait un véritable nœud de l’arbre d’accessibilité qui n’est pas un enfant possédé autorisé du conteneur englobant role=\"{{containerRole}}\".",
     "ariaProhibitedChildren_hint_fail_roleless": "Retirez {{attr}} (ou la relation de possession avec le conteneur role=\"{{containerRole}}\"), ou attribuez à cet élément role=\"presentation\"/\"none\" s’il n’est pas censé constituer son propre nœud dans l’arbre d’accessibilité.",
+    "ariaProhibitedChildren_summary_fail_native_focusable": "Cet élément n’a pas de rôle explicite mais est nativement focalisable, ce qui en fait un véritable nœud de l’arbre d’accessibilité qui n’est pas un enfant possédé autorisé du conteneur englobant role=\"{{containerRole}}\".",
+    "ariaProhibitedChildren_hint_fail_native_focusable": "Attribuez à cet élément role=\"presentation\"/\"none\", retirez sa focalisabilité native (par ex. supprimez l’attribut href/tabindex à l’origine), ou déplacez-le hors du conteneur {{containerRole}}.",
     "ariaRequiredParent_title": "Les rôles exigeant un rôle de contexte spécifique doivent se trouver dans ce contexte",
     "ariaRequiredParent_description": "Vérifie que les rôles disposant d’une entrée documentée « rôle de contexte requis » (listitem, option, tab, treeitem, row, cell, ...) ont un ancêtre, ou un propriétaire aria-owns, ayant un rôle de contexte acceptable.",
     "ariaRequiredParent_summary_fail": "role=\"{{role}}\" exige un rôle de contexte parmi : {{requiredRoles}}, qui n’a pas été trouvé.",
@@ -57907,15 +57937,21 @@ if (isAccTreeEligible) {
 
       if (!kidRole && !isPresentational) {
         const globalAttr = getGlobalAriaAttr(kid);
-        let focusable = false;
+        let mechanism = 'none';
         try {
           const fi = helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo(kid, ctx) : null;
-          focusable = !!(fi && fi.focusable);
+          mechanism = (fi && fi.focusable && fi.mechanism) || 'none';
         } catch {
-          focusable = false;
+          mechanism = 'none';
         }
-        if (globalAttr || focusable) {
-          out.push({ el: kid, role: null, attr: globalAttr || 'tabindex' });
+        if (globalAttr || mechanism !== 'none') {
+          // `mechanism` distinguishes an actual tabindex="" attribute from
+          // native focusability (e.g. <a href>, <button>, <input>) — these
+          // are different facts and must not be reported as the same
+          // "carries tabindex" claim (a native anchor with no tabindex
+          // attribute at all is not "carrying tabindex").
+          const attr = globalAttr || (mechanism === 'tabindex' ? 'tabindex' : 'nativeFocusable');
+          out.push({ el: kid, role: null, attr });
           continue; // real accessible-tree node: stop here, do not recurse further
         }
       }
@@ -57962,12 +57998,28 @@ if (isAccTreeEligible) {
       const containerSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
 
       const isRoleless = !entry.role;
-      const summary = isRoleless
-        ? `This element has no explicit role but carries ${entry.attr}, making it a real accessible-tree node that is not an allowed owned child of the enclosing role="${role}" container.`
-        : `This element has role="${entry.role}", which is not an allowed owned child of the enclosing role="${role}" container.`;
-      const hint = isRoleless
-        ? `Remove ${entry.attr} (or the role="${role}" container ownership), or give this element role="presentation"/"none" if it isn't meant to be its own accessible-tree node.`
-        : `Remove or change this role so it matches one of the container's allowed owned roles (${requiredOwned.join(', ')}), or move this element outside the ${role} container.`;
+      const isNativeFocusable = entry.attr === 'nativeFocusable';
+
+      let summary;
+      let hint;
+      let summaryKey;
+      let hintKey;
+      if (isNativeFocusable) {
+        summary = `This element has no explicit role but is natively focusable, making it a real accessible-tree node that is not an allowed owned child of the enclosing role="${role}" container.`;
+        hint = `Give this element role="presentation"/"none", remove its native focusability (e.g. drop the href/tabindex-granting attribute), or move it outside the ${role} container.`;
+        summaryKey = 'ariaProhibitedChildren_summary_fail_native_focusable';
+        hintKey = 'ariaProhibitedChildren_hint_fail_native_focusable';
+      } else if (isRoleless) {
+        summary = `This element has no explicit role but carries ${entry.attr}, making it a real accessible-tree node that is not an allowed owned child of the enclosing role="${role}" container.`;
+        hint = `Remove ${entry.attr} (or the role="${role}" container ownership), or give this element role="presentation"/"none" if it isn't meant to be its own accessible-tree node.`;
+        summaryKey = 'ariaProhibitedChildren_summary_fail_roleless';
+        hintKey = 'ariaProhibitedChildren_hint_fail_roleless';
+      } else {
+        summary = `This element has role="${entry.role}", which is not an allowed owned child of the enclosing role="${role}" container.`;
+        hint = `Remove or change this role so it matches one of the container's allowed owned roles (${requiredOwned.join(', ')}), or move this element outside the ${role} container.`;
+        summaryKey = 'ariaProhibitedChildren_summary_fail';
+        hintKey = 'ariaProhibitedChildren_hint_fail';
+      }
 
       occurrences.push({
         selector: stableSelector,
@@ -57975,8 +58027,8 @@ if (isAccTreeEligible) {
         summary,
         hint,
         i18n: {
-          summaryKey: isRoleless ? 'ariaProhibitedChildren_summary_fail_roleless' : 'ariaProhibitedChildren_summary_fail',
-          hintKey: isRoleless ? 'ariaProhibitedChildren_hint_fail_roleless' : 'ariaProhibitedChildren_hint_fail',
+          summaryKey,
+          hintKey,
           params: isRoleless
             ? { attr: entry.attr, containerRole: role }
             : { childRole: entry.role, containerRole: role, allowedRoles: requiredOwned.join(', ') }
@@ -73064,6 +73116,8 @@ const I18N = {
     "ariaProhibitedChildren_hint_fail": "Remove or change this role so it matches one of the container's allowed owned roles ({{allowedRoles}}), or move this element outside the {{containerRole}} container.",
     "ariaProhibitedChildren_summary_fail_roleless": "This element has no explicit role but carries {{attr}}, making it a real accessible-tree node that is not an allowed owned child of the enclosing role=\"{{containerRole}}\" container.",
     "ariaProhibitedChildren_hint_fail_roleless": "Remove {{attr}} (or the role=\"{{containerRole}}\" container ownership), or give this element role=\"presentation\"/\"none\" if it isn't meant to be its own accessible-tree node.",
+    "ariaProhibitedChildren_summary_fail_native_focusable": "This element has no explicit role but is natively focusable, making it a real accessible-tree node that is not an allowed owned child of the enclosing role=\"{{containerRole}}\" container.",
+    "ariaProhibitedChildren_hint_fail_native_focusable": "Give this element role=\"presentation\"/\"none\", remove its native focusability (e.g. drop the href/tabindex-granting attribute), or move it outside the {{containerRole}} container.",
     "ariaRequiredParent_title": "Roles requiring a specific context role must be in that context",
     "ariaRequiredParent_description": "Checks that roles with a documented \"required context role\" entry (listitem, option, tab, treeitem, row, cell, ...) have an ancestor or aria-owns owner with an acceptable context role.",
     "ariaRequiredParent_summary_fail": "role=\"{{role}}\" requires a context role of one of: {{requiredRoles}}, which was not found.",
@@ -73668,6 +73722,8 @@ const I18N = {
     "ariaProhibitedChildren_hint_fail": "Retirez ou modifiez ce rôle afin qu’il corresponde à l’un des rôles possédés autorisés du conteneur ({{allowedRoles}}), ou déplacez cet élément hors du conteneur {{containerRole}}.",
     "ariaProhibitedChildren_summary_fail_roleless": "Cet élément n’a pas de rôle explicite mais porte {{attr}}, ce qui en fait un véritable nœud de l’arbre d’accessibilité qui n’est pas un enfant possédé autorisé du conteneur englobant role=\"{{containerRole}}\".",
     "ariaProhibitedChildren_hint_fail_roleless": "Retirez {{attr}} (ou la relation de possession avec le conteneur role=\"{{containerRole}}\"), ou attribuez à cet élément role=\"presentation\"/\"none\" s’il n’est pas censé constituer son propre nœud dans l’arbre d’accessibilité.",
+    "ariaProhibitedChildren_summary_fail_native_focusable": "Cet élément n’a pas de rôle explicite mais est nativement focalisable, ce qui en fait un véritable nœud de l’arbre d’accessibilité qui n’est pas un enfant possédé autorisé du conteneur englobant role=\"{{containerRole}}\".",
+    "ariaProhibitedChildren_hint_fail_native_focusable": "Attribuez à cet élément role=\"presentation\"/\"none\", retirez sa focalisabilité native (par ex. supprimez l’attribut href/tabindex à l’origine), ou déplacez-le hors du conteneur {{containerRole}}.",
     "ariaRequiredParent_title": "Les rôles exigeant un rôle de contexte spécifique doivent se trouver dans ce contexte",
     "ariaRequiredParent_description": "Vérifie que les rôles disposant d’une entrée documentée « rôle de contexte requis » (listitem, option, tab, treeitem, row, cell, ...) ont un ancêtre, ou un propriétaire aria-owns, ayant un rôle de contexte acceptable.",
     "ariaRequiredParent_summary_fail": "role=\"{{role}}\" exige un rôle de contexte parmi : {{requiredRoles}}, qui n’a pas été trouvé.",

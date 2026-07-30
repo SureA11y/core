@@ -112,6 +112,22 @@ test(`${RULE_ID}: fail when a roleless-but-focusable (tabindex) child is owned b
   assert.equal(rule.occurrences[0].data.details.attr, 'tabindex');
 });
 
+test(`${RULE_ID}: fail when a roleless-but-natively-focusable (e.g. <a href>, no tabindex attribute) child is owned by a container — must not be misreported as "carries tabindex"`, () => {
+  const html = `<!doctype html><html><body>
+    <ul role="list">
+      <li role="listitem">Item</li>
+      <li><a id="a" href="#">Roleless but natively focusable</a></li>
+    </ul>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+  assert.equal(rule.occurrences[0].data.details.reasonCode, 'ARIA_PROHIBITED_CHILD_ROLELESS');
+  assert.equal(rule.occurrences[0].data.details.attr, 'nativeFocusable');
+  assert.ok(!/carries tabindex/.test(rule.occurrences[0].summary));
+  assert.ok(/natively focusable/.test(rule.occurrences[0].summary));
+});
+
 test(`${RULE_ID}: fail when a roleless-but-globally-aria-attributed (aria-label) child is owned by a container`, () => {
   const html = `<!doctype html><html><body>
     <ul role="menubar">
@@ -159,9 +175,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-prohibited-children-all-
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 5, maxOccurrences: 5 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 6, maxOccurrences: 6 });
 
-  for (const id of ['apc_case_06_child', 'apc_case_07_child', 'apc_case_08_child', 'apc_case_10_child', 'apc_case_11_child']) {
+  for (const id of ['apc_case_06_child', 'apc_case_07_child', 'apc_case_08_child', 'apc_case_10_child', 'apc_case_11_child', 'apc_case_12_child']) {
     assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);
   }
   for (const id of ['apc_case_01', 'apc_case_02', 'apc_case_03', 'apc_case_04', 'apc_case_05', 'apc_case_09', 'apc_case_13']) {

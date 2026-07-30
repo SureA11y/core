@@ -52,6 +52,15 @@
  *   focusability) are static, declarative markup facts with no live-DOM/
  *   hydration risk, unlike e.g. `aria-checked-state-mismatch`'s DOM-
  *   property comparison.
+ * - Fixed 2026-07-30: a roleless-but-focusable descendant's message and
+ *   `data.details.attr` used to always claim "carries tabindex" even when
+ *   the element had no tabindex attribute at all and was only focusable
+ *   natively (e.g. an <a href> link). `helpers.getFocusableInfo`'s
+ *   `mechanism` field ('tabindex' | 'native' | ...) is now used to tell
+ *   the two apart, with a distinct `nativeFocusable` attr/message for the
+ *   native case. Found via a real Angular app: a routerLink <a> inside a
+ *   role="list" was reported as "carries tabindex" though the rendered
+ *   markup had no such attribute.
  * - Recursion stops at the first non-transparent role boundary, same as
  *   that reference engine: a nested container with its own real role (e.g. a
  *   <div role="listbox"> inside a menubar) is evaluated as ITS OWN
@@ -164,15 +173,21 @@ function runInPage(ctx) {
 
       if (!kidRole && !isPresentational) {
         const globalAttr = getGlobalAriaAttr(kid);
-        let focusable = false;
+        let mechanism = 'none';
         try {
           const fi = helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo(kid, ctx) : null;
-          focusable = !!(fi && fi.focusable);
+          mechanism = (fi && fi.focusable && fi.mechanism) || 'none';
         } catch {
-          focusable = false;
+          mechanism = 'none';
         }
-        if (globalAttr || focusable) {
-          out.push({ el: kid, role: null, attr: globalAttr || 'tabindex' });
+        if (globalAttr || mechanism !== 'none') {
+          // `mechanism` distinguishes an actual tabindex="" attribute from
+          // native focusability (e.g. <a href>, <button>, <input>) — these
+          // are different facts and must not be reported as the same
+          // "carries tabindex" claim (a native anchor with no tabindex
+          // attribute at all is not "carrying tabindex").
+          const attr = globalAttr || (mechanism === 'tabindex' ? 'tabindex' : 'nativeFocusable');
+          out.push({ el: kid, role: null, attr });
           continue; // real accessible-tree node: stop here, do not recurse further
         }
       }
@@ -219,12 +234,28 @@ function runInPage(ctx) {
       const containerSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
 
       const isRoleless = !entry.role;
-      const summary = isRoleless
-        ? `This element has no explicit role but carries ${entry.attr}, making it a real accessible-tree node that is not an allowed owned child of the enclosing role="${role}" container.`
-        : `This element has role="${entry.role}", which is not an allowed owned child of the enclosing role="${role}" container.`;
-      const hint = isRoleless
-        ? `Remove ${entry.attr} (or the role="${role}" container ownership), or give this element role="presentation"/"none" if it isn't meant to be its own accessible-tree node.`
-        : `Remove or change this role so it matches one of the container's allowed owned roles (${requiredOwned.join(', ')}), or move this element outside the ${role} container.`;
+      const isNativeFocusable = entry.attr === 'nativeFocusable';
+
+      let summary;
+      let hint;
+      let summaryKey;
+      let hintKey;
+      if (isNativeFocusable) {
+        summary = `This element has no explicit role but is natively focusable, making it a real accessible-tree node that is not an allowed owned child of the enclosing role="${role}" container.`;
+        hint = `Give this element role="presentation"/"none", remove its native focusability (e.g. drop the href/tabindex-granting attribute), or move it outside the ${role} container.`;
+        summaryKey = 'ariaProhibitedChildren_summary_fail_native_focusable';
+        hintKey = 'ariaProhibitedChildren_hint_fail_native_focusable';
+      } else if (isRoleless) {
+        summary = `This element has no explicit role but carries ${entry.attr}, making it a real accessible-tree node that is not an allowed owned child of the enclosing role="${role}" container.`;
+        hint = `Remove ${entry.attr} (or the role="${role}" container ownership), or give this element role="presentation"/"none" if it isn't meant to be its own accessible-tree node.`;
+        summaryKey = 'ariaProhibitedChildren_summary_fail_roleless';
+        hintKey = 'ariaProhibitedChildren_hint_fail_roleless';
+      } else {
+        summary = `This element has role="${entry.role}", which is not an allowed owned child of the enclosing role="${role}" container.`;
+        hint = `Remove or change this role so it matches one of the container's allowed owned roles (${requiredOwned.join(', ')}), or move this element outside the ${role} container.`;
+        summaryKey = 'ariaProhibitedChildren_summary_fail';
+        hintKey = 'ariaProhibitedChildren_hint_fail';
+      }
 
       occurrences.push({
         selector: stableSelector,
@@ -232,8 +263,8 @@ function runInPage(ctx) {
         summary,
         hint,
         i18n: {
-          summaryKey: isRoleless ? 'ariaProhibitedChildren_summary_fail_roleless' : 'ariaProhibitedChildren_summary_fail',
-          hintKey: isRoleless ? 'ariaProhibitedChildren_hint_fail_roleless' : 'ariaProhibitedChildren_hint_fail',
+          summaryKey,
+          hintKey,
           params: isRoleless
             ? { attr: entry.attr, containerRole: role }
             : { childRole: entry.role, containerRole: role, allowedRoles: requiredOwned.join(', ') }
