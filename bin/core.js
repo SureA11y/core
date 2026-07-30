@@ -21,6 +21,7 @@ const fs = require('fs');
 const path = require('path');
 
 const pkg = require('../package.json');
+const { buildBaselineEntries, matchBaseline } = require('../src/baseline.js');
 
 // Piping output to `head`/`less`/etc. closes stdout early — without this,
 // the next write throws an unhandled EPIPE and crashes with a raw stack
@@ -43,18 +44,24 @@ Options:
   --exclude-rules <ids>   Comma-separated rule IDs to exclude
   --tags <tags>           Comma-separated tags to run (e.g. wcag2a,wcag2aa)
   --context <selector>    CSS selector to scope the scan to a subtree
+  --write-baseline <path> Write every current "fail" occurrence to <path>; never fails the build
+  --baseline <path>       Gate only on occurrences not already recorded in <path>
   -h, --help              Show this help
   -v, --version           Show the installed version
 
 Exit codes:
-  0  scan completed, no "fail" outcomes
-  1  scan completed, at least one "fail" outcome
+  0  scan completed, no "fail" outcomes (or no *new* ones, with --baseline)
+  1  scan completed, at least one "fail" outcome (or *new* one, with --baseline)
   2  usage error or the scan itself could not run (bad path/URL, network failure, etc.)
 
 Examples:
   surea11y scan ./index.html
   surea11y scan https://example.com/ --tags wcag2a,wcag2aa
   surea11y scan ./index.html --json > result.json
+  surea11y scan ./index.html --write-baseline baseline.json
+  surea11y scan ./index.html --baseline baseline.json
+
+See docs/BASELINE.md for the baseline/allowlist mechanism.
 `);
 }
 
@@ -80,6 +87,12 @@ function parseArgs(argv) {
         break;
       case '--context':
         out.context = argv[++i];
+        break;
+      case '--baseline':
+        out.baseline = argv[++i];
+        break;
+      case '--write-baseline':
+        out.writeBaseline = argv[++i];
         break;
       case '-h':
       case '--help':
@@ -134,7 +147,7 @@ function buildEngineOptions(args) {
   return engineOptions;
 }
 
-function printSummary(result) {
+function printSummary(result, baselineMatch) {
   const byOutcome = { pass: 0, fail: 0, cantTell: 0, notApplicable: 0 };
   for (const r of result.checksResults) {
     if (Object.prototype.hasOwnProperty.call(byOutcome, r.outcome)) byOutcome[r.outcome] += 1;
@@ -163,6 +176,42 @@ function printSummary(result) {
   if (cantTells.length) {
     process.stdout.write(`cantTell — needs human review (${cantTells.length} rule(s)): ${cantTells.map((r) => r.ruleId).join(', ')}\n\n`);
   }
+
+  if (baselineMatch) {
+    process.stdout.write(`baseline: ${baselineMatch.knownCount} known, ${baselineMatch.newCount} new, ${baselineMatch.staleCount} stale (no longer detected)\n`);
+    if (baselineMatch.newCount) {
+      process.stdout.write(`\nNEW (not in baseline, ${baselineMatch.newCount} occurrence(s)):\n`);
+      for (const occ of baselineMatch.newOccurrences.slice(0, 5)) {
+        process.stdout.write(`  - ${occ.ruleId}: ${occ.selector || '(no selector)'}\n    ${occ.summary}\n`);
+      }
+      if (baselineMatch.newOccurrences.length > 5) {
+        process.stdout.write(`  ... and ${baselineMatch.newOccurrences.length - 5} more\n`);
+      }
+    }
+    process.stdout.write('\n');
+  }
+}
+
+function loadBaselineFile(baselinePath) {
+  let raw;
+  try {
+    raw = fs.readFileSync(baselinePath, 'utf8');
+  } catch (err) {
+    throw new Error(`Could not read baseline file "${baselinePath}": ${formatError(err)}. Run with --write-baseline ${baselinePath} first to create one.`);
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (err) {
+    throw new Error(`Baseline file "${baselinePath}" is not valid JSON: ${formatError(err)}`);
+  }
+
+  if (!parsed || parsed.version !== 1 || !Array.isArray(parsed.entries)) {
+    throw new Error(`Baseline file "${baselinePath}" is not a supported baseline (expected { version: 1, entries: [...] }). Regenerate it with --write-baseline.`);
+  }
+
+  return parsed;
 }
 
 async function runScan(args) {
@@ -171,6 +220,23 @@ async function runScan(args) {
     process.stderr.write('Error: scan requires a file path or URL. See --help.\n');
     process.exitCode = 2;
     return;
+  }
+
+  if (args.baseline && args.writeBaseline) {
+    process.stderr.write('Error: --baseline and --write-baseline cannot be used together in the same run. See --help.\n');
+    process.exitCode = 2;
+    return;
+  }
+
+  let baselineFile = null;
+  if (args.baseline) {
+    try {
+      baselineFile = loadBaselineFile(args.baseline);
+    } catch (err) {
+      process.stderr.write(`Error: ${formatError(err)}\n`);
+      process.exitCode = 2;
+      return;
+    }
   }
 
   let html, url;
@@ -202,6 +268,33 @@ async function runScan(args) {
     result = runDomRulesInPage(url, args.context || null, buildEngineOptions(args), null);
   } finally {
     dom.window.close();
+  }
+
+  if (args.writeBaseline) {
+    const entries = buildBaselineEntries(result);
+    const payload = { version: 1, generatedAt: new Date().toISOString(), entries };
+    fs.writeFileSync(args.writeBaseline, JSON.stringify(payload, null, 2) + '\n');
+
+    if (args.json) {
+      process.stdout.write(JSON.stringify({ ...result, baseline: { mode: 'write', path: args.writeBaseline, entries: entries.length } }, null, 2) + '\n');
+    } else {
+      printSummary(result);
+    }
+    process.stderr.write(`Wrote ${entries.length} occurrence(s) to baseline: ${args.writeBaseline}\n`);
+    process.exitCode = 0;
+    return;
+  }
+
+  if (baselineFile) {
+    const match = matchBaseline(result, baselineFile.entries);
+
+    if (args.json) {
+      process.stdout.write(JSON.stringify({ ...result, baseline: { mode: 'check', ...match } }, null, 2) + '\n');
+    } else {
+      printSummary(result, match);
+    }
+    process.exitCode = match.newCount > 0 ? 1 : 0;
+    return;
   }
 
   if (args.json) {

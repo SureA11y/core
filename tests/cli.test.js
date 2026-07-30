@@ -32,6 +32,8 @@ test('CLI: --help exits 0 and prints usage', () => {
   assert.equal(status, 0);
   assert.match(stdout, /Usage:/);
   assert.match(stdout, /surea11y scan/);
+  assert.match(stdout, /--write-baseline/);
+  assert.match(stdout, /--baseline/);
 });
 
 test('CLI: no arguments exits 2 (usage error) and still prints help', () => {
@@ -101,4 +103,117 @@ test('CLI: unknown command exits 2', () => {
   const { status, stderr } = run(['not-a-real-command']);
   assert.equal(status, 2);
   assert.match(stderr, /unknown command/);
+});
+
+test('CLI: --write-baseline writes a well-formed baseline file and exits 0 despite a fail', () => {
+  const file = path.join(tmpDir, 'baseline-write.html');
+  fs.writeFileSync(file, '<!doctype html><html lang="en"><head><title>T</title></head><body><img src="x.png"></body></html>');
+  const baselinePath = path.join(tmpDir, 'baseline-write.json');
+
+  const { status } = run(['scan', file, '--rules', 'img-alt-present', '--write-baseline', baselinePath]);
+  assert.equal(status, 0);
+
+  const baseline = JSON.parse(fs.readFileSync(baselinePath, 'utf8'));
+  assert.equal(baseline.version, 1);
+  assert.equal(baseline.entries.length, 1);
+  assert.equal(baseline.entries[0].ruleId, 'img-alt-present');
+  assert.match(baseline.entries[0].html, /<img/);
+});
+
+test('CLI: --baseline against an unchanged page treats every occurrence as known and exits 0', () => {
+  const file = path.join(tmpDir, 'baseline-known.html');
+  fs.writeFileSync(file, '<!doctype html><html lang="en"><head><title>T</title></head><body><img src="x.png"></body></html>');
+  const baselinePath = path.join(tmpDir, 'baseline-known.json');
+
+  run(['scan', file, '--rules', 'img-alt-present', '--write-baseline', baselinePath]);
+  const { status, stdout } = run(['scan', file, '--rules', 'img-alt-present', '--baseline', baselinePath]);
+
+  assert.equal(status, 0);
+  assert.match(stdout, /baseline: 1 known, 0 new/);
+});
+
+test('CLI: --baseline exits 1 when a new violation appears that is not in the baseline', () => {
+  const file = path.join(tmpDir, 'baseline-new.html');
+  fs.writeFileSync(file, '<!doctype html><html lang="en"><head><title>T</title></head><body><img src="x.png"></body></html>');
+  const baselinePath = path.join(tmpDir, 'baseline-new.json');
+  run(['scan', file, '--rules', 'img-alt-present', '--write-baseline', baselinePath]);
+
+  // Add a second, genuinely new violation (different src => different html snippet).
+  fs.writeFileSync(file, '<!doctype html><html lang="en"><head><title>T</title></head><body><img src="x.png"><img src="y.png"></body></html>');
+  const { status, stdout } = run(['scan', file, '--rules', 'img-alt-present', '--baseline', baselinePath]);
+
+  assert.equal(status, 1);
+  assert.match(stdout, /baseline: 1 known, 1 new/);
+  assert.match(stdout, /NEW \(not in baseline/);
+});
+
+test('CLI: --baseline pointing at a missing file exits 2 with a clear error', () => {
+  const file = path.join(tmpDir, 'baseline-missing.html');
+  fs.writeFileSync(file, '<!doctype html><html lang="en"><head><title>T</title></head><body><img src="x.png"></body></html>');
+
+  const { status, stderr } = run(['scan', file, '--baseline', path.join(tmpDir, 'does-not-exist.json')]);
+  assert.equal(status, 2);
+  assert.match(stderr, /Could not read baseline file/);
+});
+
+test('CLI: --baseline pointing at a file with invalid JSON exits 2 with a clear error', () => {
+  const file = path.join(tmpDir, 'baseline-badjson.html');
+  fs.writeFileSync(file, '<!doctype html><html lang="en"><head><title>T</title></head><body><img src="x.png"></body></html>');
+  const baselinePath = path.join(tmpDir, 'baseline-badjson.json');
+  fs.writeFileSync(baselinePath, '{ not valid json');
+
+  const { status, stderr } = run(['scan', file, '--baseline', baselinePath]);
+  assert.equal(status, 2);
+  assert.match(stderr, /not valid JSON/);
+});
+
+test('CLI: --baseline pointing at a file with an unsupported/missing version exits 2 with a clear error', () => {
+  const file = path.join(tmpDir, 'baseline-badversion.html');
+  fs.writeFileSync(file, '<!doctype html><html lang="en"><head><title>T</title></head><body><img src="x.png"></body></html>');
+  const baselinePath = path.join(tmpDir, 'baseline-badversion.json');
+  fs.writeFileSync(baselinePath, JSON.stringify({ entries: [] })); // no version field
+
+  const { status, stderr } = run(['scan', file, '--baseline', baselinePath]);
+  assert.equal(status, 2);
+  assert.match(stderr, /not a supported baseline/);
+});
+
+test('CLI: --baseline and --write-baseline together exits 2', () => {
+  const file = path.join(tmpDir, 'baseline-combo.html');
+  fs.writeFileSync(file, '<!doctype html><html lang="en"><head><title>T</title></head><body><img src="x.png"></body></html>');
+
+  const { status, stderr } = run(['scan', file, '--baseline', 'a.json', '--write-baseline', 'b.json']);
+  assert.equal(status, 2);
+  assert.match(stderr, /cannot be used together/);
+});
+
+test('CLI: --json + --write-baseline augments the printed result with a write-mode baseline block', () => {
+  const file = path.join(tmpDir, 'baseline-write-json.html');
+  fs.writeFileSync(file, '<!doctype html><html lang="en"><head><title>T</title></head><body><img src="x.png"></body></html>');
+  const baselinePath = path.join(tmpDir, 'baseline-write-json.json');
+
+  const { stdout, status } = run(['scan', file, '--rules', 'img-alt-present', '--write-baseline', baselinePath, '--json']);
+  assert.equal(status, 0);
+
+  const result = JSON.parse(stdout);
+  assert.ok(Array.isArray(result.checksResults));
+  assert.equal(result.baseline.mode, 'write');
+  assert.equal(result.baseline.path, baselinePath);
+  assert.equal(result.baseline.entries, 1);
+});
+
+test('CLI: --json + --baseline augments the printed result with a baseline block', () => {
+  const file = path.join(tmpDir, 'baseline-json.html');
+  fs.writeFileSync(file, '<!doctype html><html lang="en"><head><title>T</title></head><body><img src="x.png"></body></html>');
+  const baselinePath = path.join(tmpDir, 'baseline-json.json');
+  run(['scan', file, '--rules', 'img-alt-present', '--write-baseline', baselinePath]);
+
+  const { stdout, status } = run(['scan', file, '--rules', 'img-alt-present', '--baseline', baselinePath, '--json']);
+  assert.equal(status, 0);
+
+  const result = JSON.parse(stdout);
+  assert.ok(Array.isArray(result.checksResults));
+  assert.equal(result.baseline.mode, 'check');
+  assert.equal(result.baseline.knownCount, 1);
+  assert.equal(result.baseline.newCount, 0);
 });

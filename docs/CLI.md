@@ -21,6 +21,8 @@ The CLI reads **static HTML only** — a local file, or the raw response of an H
 | `--exclude-rules <ids>` | Comma-separated rule IDs — never run these. |
 | `--tags <tags>` | Comma-separated tags — e.g. `--tags wcag2a,wcag2aa` to target a conformance level (see [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md)). |
 | `--context <selector>` | Scope the scan to one CSS-selected subtree. |
+| `--write-baseline <path>` | Write every current `fail` occurrence to `<path>`; never fails the build. See [`BASELINE.md`](./BASELINE.md). |
+| `--baseline <path>` | Gate only on occurrences not already recorded in `<path>`. See [`BASELINE.md`](./BASELINE.md). |
 | `-h`, `--help` | Show usage. |
 | `-v`, `--version` | Show the installed version. |
 
@@ -35,6 +37,19 @@ These map directly onto `engineOptions`/`runOnly` (see [`ENGINE_OPTIONS.md`](./E
 | `2` | Usage error, or the scan itself couldn't run (bad path/URL, network failure, missing `jsdom`). |
 
 `cantTell` outcomes never affect the exit code — they're printed as a "needs human review" summary, consistent with the manual/`cantTell` mental model in [`TROUBLESHOOTING.md`](./TROUBLESHOOTING.md#should-i-treat-canttell-as-a-failure). If you need `cantTell`-aware gating, use `--json` and inspect `checksResults` yourself, or call the library directly (see [`INTEGRATION.md`](./INTEGRATION.md#ci-gating-a-build-on-the-result)).
+
+With `--baseline`, exit code `1` means at least one *new* (not-yet-baselined) `fail` occurrence, not any `fail` occurrence — see [`BASELINE.md`](./BASELINE.md).
+
+## Baseline / allowlist
+
+For an existing, imperfect site, gating on every `fail` on day one is often an adoption blocker. `--write-baseline`/`--baseline` let you accept the current state once and gate CI only on genuinely new violations from then on:
+
+```sh
+surea11y scan ./dist/index.html --write-baseline baseline.json   # once, commit the file
+surea11y scan ./dist/index.html --baseline baseline.json         # in CI, from then on
+```
+
+See [`BASELINE.md`](./BASELINE.md) for the matching semantics, file format, and known limitations.
 
 ## In CI
 

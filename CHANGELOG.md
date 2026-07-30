@@ -4,6 +4,9 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ## [Unreleased]
 
+### Added
+- CLI baseline/allowlist mechanism: `surea11y scan --write-baseline <path>` records every current `fail` occurrence (never fails the build); `surea11y scan --baseline <path>` then gates only on occurrences not already recorded there. Matching identity is `ruleId` + `reasonCode` + the occurrence's `html` snippet (deliberately not `selector`/`structuralPath`, both of which are position-derived and can shift when unrelated markup changes elsewhere on the page) — multiset-matched, so repeated identical violations are counted correctly rather than all matching one baseline entry. The underlying `buildBaselineEntries`/`matchBaseline` functions (`src/baseline.js`) are also usable directly by library consumers, not just the CLI. See `docs/BASELINE.md` for the full design, file format, and known limitations (a flagged element with dynamic content in its own markup won't match itself across scans).
+
 ## [1.1.2] - 2026-07-30
 
 ### Fixed

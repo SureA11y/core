@@ -271,6 +271,7 @@ and progressively explore more advanced features.
 |---|---|
 | `docs/OUTPUT_SCHEMA.md` | Complete description of every field returned by the engine. |
 | `docs/CLI.md` | CLI commands, options, exit codes and examples. |
+| `docs/BASELINE.md` | CI baseline/allowlist: gate builds only on new violations. |
 | `docs/ENGINE_OPTIONS.md` | Configuration, filtering, policies and localization. |
 | `docs/INTEGRATION.md` | Using surea11y with jsdom, Playwright, Puppeteer, Selenium, Cypress and other drivers. |
 | `docs/BINDING_AUTHORS_GUIDE.md` | Building new framework integrations on top of the engine. |
