@@ -209,6 +209,26 @@ test(`${RULE_ID}: fail when an icon-only button has no wrapping <label> and no o
   assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
+test(`${RULE_ID}: fail when role overrides <button> to a value-role and only content is present (Spotify "sort by" control — role="combobox" content is the selected VALUE, not a name)`, () => {
+  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  const html = `<!doctype html><html><body>
+    <button class="LQ6y2jhZZtMS7xCr" type="button" role="combobox"
+            aria-controls="sortboxlist-1" aria-expanded="false" aria-haspopup="true">
+      <span data-sortbox-label="true">List</span>
+      <svg aria-hidden="true"></svg>
+    </button>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+});
+
+test(`${RULE_ID}: pass when role overrides <button> to a value-role but aria-label is present`, () => {
+  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  const html = `<!doctype html><html><body><button role="combobox" aria-label="Sort order">List</button></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
 test(`${RULE_ID}: fixture coverage (tests/fixtures/button-name-present-all-scenarios.html)`, () => {
   const fixturePath = path.join(__dirname, '../..', 'fixtures', 'button-name-present-all-scenarios.html');
   const html = fs.readFileSync(fixturePath, 'utf8');
@@ -216,17 +236,18 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/button-name-present-all-scena
   if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 13, maxOccurrences: 13 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 15, maxOccurrences: 15 });
 
   const expectedFailIds = [
     'btn_case_01', 'btn_case_06', 'btn_case_07', 'btn_case_08', 'btn_case_10', 'btn_case_12',
     'btn_case_14', 'btn_case_16', 'btn_case_17', 'btn_case_19', 'btn_case_19b', 'btn_case_23',
-    'btn_case_26'
+    'btn_case_26', 'btn_case_28', 'btn_case_30'
   ];
 
   const expectedNoOccIds = [
     'btn_case_02', 'btn_case_03', 'btn_case_04', 'btn_case_05', 'btn_case_09', 'btn_case_11', 'btn_case_13', 'btn_case_15',
-    'btn_case_18b', 'btn_case_18c', 'btn_case_18d', 'btn_case_18e', 'btn_case_18f', 'btn_case_18g', 'btn_case_27'
+    'btn_case_18b', 'btn_case_18c', 'btn_case_18d', 'btn_case_18e', 'btn_case_18f', 'btn_case_18g', 'btn_case_27',
+    'btn_case_29'
   ];
 
   for (const id of expectedFailIds) {

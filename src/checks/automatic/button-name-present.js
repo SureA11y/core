@@ -75,6 +75,7 @@ function runInPage(ctx) {
 
     const tag = (el.tagName || '').toLowerCase();
     const role = el.getAttribute ? el.getAttribute('role') : null;
+    const roleNorm = normalizeWs(role).toLowerCase();
 
     const nameInfo = helpers.getAccessibleNameInfo ? helpers.getAccessibleNameInfo(el, ctx) : null;
 
@@ -90,7 +91,17 @@ function runInPage(ctx) {
       inputValueName = getInputButtonValueName(el);
     }
 
-    const isContentNameCandidate = tag === 'button' || role === 'button';
+    // A native <button> (or [role="button"]) whose role has been overridden to
+    // one of these roles is no longer semantically a button — per the WAI-ARIA
+    // Accessible Name and Description Computation spec these roles are
+    // name-from-author-only, and their rendered content represents a VALUE,
+    // not a NAME (mirrors the reference engine's controlValueRoles, verified against its
+    // source). Found on a real page (Spotify's "sort by" control): a
+    // <button role="combobox">List</button> where "List" is the combobox's
+    // currently selected value, not a label for what the combobox is —
+    // crediting it as the accessible name masked a real missing-name bug.
+    const VALUE_ROLES = ['textbox', 'progressbar', 'scrollbar', 'slider', 'spinbutton', 'combobox', 'listbox'];
+    const isContentNameCandidate = (tag === 'button' || role === 'button') && !VALUE_ROLES.includes(roleNorm);
     const contentName =
       (!trustedProgrammaticName && !inputValueName && isContentNameCandidate)
         ? getConservativeSubtreeText(el)

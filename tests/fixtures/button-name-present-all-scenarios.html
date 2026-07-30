@@ -193,6 +193,23 @@
     <label><div>Display Mature Content</div><button id="btn_case_27" aria-pressed="false"><span></span></button></label>
   </div>
 
+  <h2>G. role override to a value-role (content is a VALUE, not a NAME)</h2>
+
+  <div class="case" id="case_28">
+    <div class="case-title">28 — FAIL: native &lt;button role="combobox"&gt;, no programmatic name — content ("List") is the combobox's selected VALUE, not its name, so it must not be credited (found on a real site — Spotify's "sort by" control)</div>
+    <button type="button" role="combobox" aria-expanded="false" id="btn_case_28"><span>List</span></button>
+  </div>
+
+  <div class="case" id="case_29">
+    <div class="case-title">29 — PASS: &lt;button role="combobox"&gt; with aria-label — programmatic name still works normally for a value-role override</div>
+    <button type="button" role="combobox" aria-expanded="false" aria-label="Sort order" id="btn_case_29"><span>List</span></button>
+  </div>
+
+  <div class="case" id="case_30">
+    <div class="case-title">30 — FAIL: native &lt;button role="listbox"&gt;, no programmatic name — same value-role class as case 28, different role</div>
+    <button type="button" role="listbox" id="btn_case_30"><span>Item</span></button>
+  </div>
+
   <p class="note">End of fixture.</p>
 </body>
 </html>

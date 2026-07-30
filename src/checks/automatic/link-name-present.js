@@ -59,7 +59,20 @@ function runInPage(ctx) {
     const nameInfo = helpers.getAccessibleNameInfo ? helpers.getAccessibleNameInfo(el, ctx) : null;
     const programmaticName = (nameInfo && typeof nameInfo.value === 'string') ? nameInfo.value : '';
 
-    const contentName = programmaticName.trim().length === 0 ? getConservativeSubtreeText(el) : '';
+    // A native <a href>/<area href> (or [role="link"]) whose role has been
+    // overridden to one of these roles is no longer semantically a link —
+    // per the WAI-ARIA Accessible Name and Description Computation spec
+    // these roles are name-from-author-only, and their rendered content
+    // represents a VALUE, not a NAME (mirrors the reference engine's controlValueRoles,
+    // verified against its source; see button-name-present.js's identical
+    // fix for a real-world example — <button role="combobox">List</button> —
+    // of the same class of bug on a different host tag).
+    const role = el.getAttribute ? el.getAttribute('role') : null;
+    const roleNorm = String(role || '').replace(/\s+/g, ' ').trim().toLowerCase();
+    const VALUE_ROLES = ['textbox', 'progressbar', 'scrollbar', 'slider', 'spinbutton', 'combobox', 'listbox'];
+    const isContentNameCandidate = !VALUE_ROLES.includes(roleNorm);
+
+    const contentName = (programmaticName.trim().length === 0 && isContentNameCandidate) ? getConservativeSubtreeText(el) : '';
     const finalName = (programmaticName.trim().length ? programmaticName : contentName).trim();
 
     if (finalName.length === 0) {

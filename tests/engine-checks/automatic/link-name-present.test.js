@@ -135,6 +135,20 @@ test(`${RULE_ID}: named via light-DOM text distributed into an unnamed shadow-DO
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+test(`${RULE_ID}: fail when role overrides <a href> to a value-role and only content is present (same class of bug as button-name-present's Spotify finding, different host tag)`, () => {
+  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  const html = `<!doctype html><html><body><a href="/x" role="combobox">List</a></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+});
+
+test(`${RULE_ID}: pass when role overrides <a href> to a value-role but aria-label is present`, () => {
+  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  const html = `<!doctype html><html><body><a href="/x" role="combobox" aria-label="Sort order">List</a></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
 test(`${RULE_ID}: fixture coverage (tests/fixtures/link-name-present-all-scenarios.html)`, () => {
   const fixturePath = path.join(__dirname, '../..', 'fixtures', 'link-name-present-all-scenarios.html');
   const html = fs.readFileSync(fixturePath, 'utf8');
@@ -142,16 +156,17 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/link-name-present-all-scenari
   if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 9, maxOccurrences: 9 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 10, maxOccurrences: 10 });
 
   const expectedFailIds = [
-    'link_case_01', 'link_case_08b', 'link_case_09', 'link_case_10', 'link_case_11', 'link_case_13', 'link_case_15c', 'link_case_16', 'link_case_20'
+    'link_case_01', 'link_case_08b', 'link_case_09', 'link_case_10', 'link_case_11', 'link_case_13', 'link_case_15c', 'link_case_16', 'link_case_20',
+    'link_case_24'
   ];
 
   const expectedNoOccIds = [
     'link_case_02', 'link_case_03', 'link_case_04', 'link_case_05', 'link_case_06', 'link_case_12', 'link_case_14',
     'link_case_15b', 'link_case_15d', 'link_case_15e', 'link_case_15f', 'link_case_15g', 'link_case_15h',
-    'link_case_21', 'link_case_22', 'link_case_23'
+    'link_case_21', 'link_case_22', 'link_case_23', 'link_case_25'
   ];
 
   for (const id of expectedFailIds) {
