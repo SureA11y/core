@@ -19,6 +19,18 @@
  * - Not WCAG-normative — authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent.
+ * - Filters candidates through `isAccTreeEligible` (hidden/aria-hidden/
+ *   display:none/inert elements don't count as "the page has a heading
+ *   one"), matching `landmark-one-main`'s own precedent. Found via a real
+ *   page (CDC's flu page, 2026-07-30): its only `<h1>` sits inside a
+ *   `display:none` ancestor — genuinely unreachable by sighted and screen
+ *   reader users alike — and a raw `document.querySelectorAll` credited it
+ *   anyway, reporting `notApplicable` where the reference engine correctly fails. This
+ *   does NOT regress purely-visually-clipped-but-AT-exposed headings (e.g.
+ *   eBay's homepage `<h1>` hidden via clip-path/off-screen positioning,
+ *   `visibility:visible`, no `aria-hidden`) — `isAccTreeEligible` only
+ *   excludes elements actually removed from the accessibility tree, not
+ *   ones merely clipped from the visual viewport.
  */
 
 const id = 'page-has-heading-one';
@@ -70,14 +82,31 @@ function runInPage(ctx) {
     return tag === 'h1';
   }
 
+  const isAccTreeEligible = helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+
+  function isExposedToAt(el) {
+    if (!isAccTreeEligible) return true;
+    try {
+      const r = isAccTreeEligible(el, ctx);
+      if (typeof r === 'boolean') return r;
+      return !!(r && r.eligible);
+    } catch {
+      return true;
+    }
+  }
+
+  // queryAllSmart (shadow-DOM-aware) instead of plain document.querySelectorAll -- see
+  // landmark-one-main-manual.js's identical precedent.
   let nodes = [];
   try {
-    nodes = document.querySelectorAll('h1, [role]');
+    nodes = helpers && typeof helpers.queryAllSmart === 'function'
+      ? helpers.queryAllSmart('h1, [role]')
+      : document.querySelectorAll('h1, [role]');
   } catch {
     nodes = [];
   }
 
-  const hasH1 = Array.from(nodes).some((el) => el && isLevelOneHeading(el));
+  const hasH1 = Array.from(nodes).some((el) => el && isLevelOneHeading(el) && isExposedToAt(el));
 
   if (hasH1) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };

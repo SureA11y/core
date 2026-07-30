@@ -26047,12 +26047,41 @@ if (isAccTreeEligible) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  function hasMainLandmark() {
+  const isAccTreeEligible = helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+
+  function isExposedToAt(el) {
+    if (!isAccTreeEligible) return true;
     try {
-      return !!document.querySelector('main, [role="main"]');
+      const r = isAccTreeEligible(el, ctx);
+      if (typeof r === 'boolean') return r;
+      return !!(r && r.eligible);
     } catch {
-      return false;
+      return true;
     }
+  }
+
+  function queryAll(selector) {
+    try {
+      return helpers && typeof helpers.queryAllSmart === 'function'
+        ? helpers.queryAllSmart(selector)
+        : document.querySelectorAll(selector);
+    } catch {
+      return [];
+    }
+  }
+
+  // Filters through isAccTreeEligible (hidden/aria-hidden/display:none/inert
+  // don't count as "a bypass mechanism is present") -- see page-has-heading-
+  // one-manual.js's identical fix for the real-world trigger (CDC's flu
+  // page, 2026-07-30: its only <h1> sits inside a display:none ancestor,
+  // unreachable by sighted and screen reader users alike). A fully
+  // non-rendered <main>/heading was previously credited here too, wrongly
+  // returning `pass` for a page with zero actual bypass mechanisms.
+  function hasMainLandmark() {
+    for (const el of queryAll('main, [role="main"]')) {
+      if (el && isExposedToAt(el)) return true;
+    }
+    return false;
   }
 
   function hasWorkingAnchorLink() {
@@ -26094,11 +26123,10 @@ if (isAccTreeEligible) {
   }
 
   function hasHeading() {
-    try {
-      return !!document.querySelector('h1, h2, h3, h4, h5, h6, [role="heading"]');
-    } catch {
-      return false;
+    for (const el of queryAll('h1, h2, h3, h4, h5, h6, [role="heading"]')) {
+      if (el && isExposedToAt(el)) return true;
     }
+    return false;
   }
 
   const mainLandmark = hasMainLandmark();
@@ -34922,14 +34950,31 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     return tag === 'h1';
   }
 
+  const isAccTreeEligible = helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+
+  function isExposedToAt(el) {
+    if (!isAccTreeEligible) return true;
+    try {
+      const r = isAccTreeEligible(el, ctx);
+      if (typeof r === 'boolean') return r;
+      return !!(r && r.eligible);
+    } catch {
+      return true;
+    }
+  }
+
+  // queryAllSmart (shadow-DOM-aware) instead of plain document.querySelectorAll -- see
+  // landmark-one-main-manual.js's identical precedent.
   let nodes = [];
   try {
-    nodes = document.querySelectorAll('h1, [role]');
+    nodes = helpers && typeof helpers.queryAllSmart === 'function'
+      ? helpers.queryAllSmart('h1, [role]')
+      : document.querySelectorAll('h1, [role]');
   } catch {
     nodes = [];
   }
 
-  const hasH1 = Array.from(nodes).some((el) => el && isLevelOneHeading(el));
+  const hasH1 = Array.from(nodes).some((el) => el && isLevelOneHeading(el) && isExposedToAt(el));
 
   if (hasH1) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
@@ -58202,12 +58247,41 @@ if (isAccTreeEligible) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  function hasMainLandmark() {
+  const isAccTreeEligible = helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+
+  function isExposedToAt(el) {
+    if (!isAccTreeEligible) return true;
     try {
-      return !!document.querySelector('main, [role="main"]');
+      const r = isAccTreeEligible(el, ctx);
+      if (typeof r === 'boolean') return r;
+      return !!(r && r.eligible);
     } catch {
-      return false;
+      return true;
     }
+  }
+
+  function queryAll(selector) {
+    try {
+      return helpers && typeof helpers.queryAllSmart === 'function'
+        ? helpers.queryAllSmart(selector)
+        : document.querySelectorAll(selector);
+    } catch {
+      return [];
+    }
+  }
+
+  // Filters through isAccTreeEligible (hidden/aria-hidden/display:none/inert
+  // don't count as "a bypass mechanism is present") -- see page-has-heading-
+  // one-manual.js's identical fix for the real-world trigger (CDC's flu
+  // page, 2026-07-30: its only <h1> sits inside a display:none ancestor,
+  // unreachable by sighted and screen reader users alike). A fully
+  // non-rendered <main>/heading was previously credited here too, wrongly
+  // returning `pass` for a page with zero actual bypass mechanisms.
+  function hasMainLandmark() {
+    for (const el of queryAll('main, [role="main"]')) {
+      if (el && isExposedToAt(el)) return true;
+    }
+    return false;
   }
 
   function hasWorkingAnchorLink() {
@@ -58249,11 +58323,10 @@ if (isAccTreeEligible) {
   }
 
   function hasHeading() {
-    try {
-      return !!document.querySelector('h1, h2, h3, h4, h5, h6, [role="heading"]');
-    } catch {
-      return false;
+    for (const el of queryAll('h1, h2, h3, h4, h5, h6, [role="heading"]')) {
+      if (el && isExposedToAt(el)) return true;
     }
+    return false;
   }
 
   const mainLandmark = hasMainLandmark();
@@ -67077,14 +67150,31 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     return tag === 'h1';
   }
 
+  const isAccTreeEligible = helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+
+  function isExposedToAt(el) {
+    if (!isAccTreeEligible) return true;
+    try {
+      const r = isAccTreeEligible(el, ctx);
+      if (typeof r === 'boolean') return r;
+      return !!(r && r.eligible);
+    } catch {
+      return true;
+    }
+  }
+
+  // queryAllSmart (shadow-DOM-aware) instead of plain document.querySelectorAll -- see
+  // landmark-one-main-manual.js's identical precedent.
   let nodes = [];
   try {
-    nodes = document.querySelectorAll('h1, [role]');
+    nodes = helpers && typeof helpers.queryAllSmart === 'function'
+      ? helpers.queryAllSmart('h1, [role]')
+      : document.querySelectorAll('h1, [role]');
   } catch {
     nodes = [];
   }
 
-  const hasH1 = Array.from(nodes).some((el) => el && isLevelOneHeading(el));
+  const hasH1 = Array.from(nodes).some((el) => el && isLevelOneHeading(el) && isExposedToAt(el));
 
   if (hasH1) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };

@@ -46,6 +46,24 @@ test(`${RULE_ID}: fail when an anchor link's target does not resolve and there i
   assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
+test(`${RULE_ID}: fail when the only <main> sits inside a display:none ancestor (same non-rendered-content gap as page-has-heading-one's CDC finding)`, () => {
+  const html = `<!doctype html><html><body><nav>Nav</nav><div style="display:none"><main>Content</main></div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+});
+
+test(`${RULE_ID}: fail when the only heading sits inside a display:none ancestor and no other mechanism exists`, () => {
+  const html = `<!doctype html><html><body><nav>Nav</nav><div style="display:none"><h1>Title</h1></div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+});
+
+test(`${RULE_ID}: pass when the only <main> is visually clipped off-screen but remains in the accessibility tree (must NOT regress)`, () => {
+  const html = `<!doctype html><html><body><nav>Nav</nav><main style="position:absolute;clip-path:inset(50%);visibility:visible">Content</main></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
 test(`${RULE_ID}: fail when no landmark, anchor link, or heading exists`, () => {
   const html = `<!doctype html><html><body><nav>Nav</nav><div>Content</div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
