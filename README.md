@@ -273,6 +273,7 @@ and progressively explore more advanced features.
 | `docs/API_STABILITY.md` | Semver guarantees on the result shape, and the rule-ID deprecation policy. |
 | `docs/CLI.md` | CLI commands, options, exit codes and examples. |
 | `docs/BASELINE.md` | CI baseline/allowlist: gate builds only on new violations. |
+| `docs/REPORT.md` | Self-contained HTML report: browsable summary, WCAG rollup, filterable occurrence table. |
 | `docs/ENGINE_OPTIONS.md` | Configuration, filtering, policies and localization. |
 | `docs/INTEGRATION.md` | Using surea11y with jsdom, Playwright, Puppeteer, Selenium, Cypress and other drivers. |
 | `docs/BINDING_AUTHORS_GUIDE.md` | Building new framework integrations on top of the engine. |

@@ -23,6 +23,7 @@ The CLI reads **static HTML only** — a local file, or the raw response of an H
 | `--context <selector>` | Scope the scan to one CSS-selected subtree. |
 | `--write-baseline <path>` | Write every current `fail` occurrence to `<path>`; never fails the build. See [`BASELINE.md`](./BASELINE.md). |
 | `--baseline <path>` | Gate only on occurrences not already recorded in `<path>`. See [`BASELINE.md`](./BASELINE.md). |
+| `--html <path>` | Write a self-contained, browsable HTML report to `<path>`. See [`REPORT.md`](./REPORT.md). |
 | `-h`, `--help` | Show usage. |
 | `-v`, `--version` | Show the installed version. |
 
@@ -50,6 +51,16 @@ surea11y scan ./dist/index.html --baseline baseline.json         # in CI, from t
 ```
 
 See [`BASELINE.md`](./BASELINE.md) for the matching semantics, file format, and known limitations.
+
+## HTML report
+
+For a browsable view of a scan's results — hero summary, WCAG rollup grouped by conformance level, and a searchable/filterable occurrence table — rather than raw JSON or a terminal summary:
+
+```sh
+surea11y scan ./dist/index.html --html report.html
+```
+
+Open `report.html` directly from disk; no server, no external assets. Works alongside any other output mode. See [`REPORT.md`](./REPORT.md).
 
 ## In CI
 

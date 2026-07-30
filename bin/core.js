@@ -22,6 +22,7 @@ const path = require('path');
 
 const pkg = require('../package.json');
 const { buildBaselineEntries, matchBaseline } = require('../src/baseline.js');
+const { renderHtmlReport } = require('../src/report.js');
 
 // Piping output to `head`/`less`/etc. closes stdout early — without this,
 // the next write throws an unhandled EPIPE and crashes with a raw stack
@@ -46,6 +47,7 @@ Options:
   --context <selector>    CSS selector to scope the scan to a subtree
   --write-baseline <path> Write every current "fail" occurrence to <path>; never fails the build
   --baseline <path>       Gate only on occurrences not already recorded in <path>
+  --html <path>           Write a self-contained, browsable HTML report to <path>
   -h, --help              Show this help
   -v, --version           Show the installed version
 
@@ -60,8 +62,9 @@ Examples:
   surea11y scan ./index.html --json > result.json
   surea11y scan ./index.html --write-baseline baseline.json
   surea11y scan ./index.html --baseline baseline.json
+  surea11y scan ./index.html --html report.html
 
-See docs/BASELINE.md for the baseline/allowlist mechanism.
+See docs/BASELINE.md for the baseline/allowlist mechanism, docs/REPORT.md for the HTML report.
 `);
 }
 
@@ -93,6 +96,9 @@ function parseArgs(argv) {
         break;
       case '--write-baseline':
         out.writeBaseline = argv[++i];
+        break;
+      case '--html':
+        out.html = argv[++i];
         break;
       case '-h':
       case '--help':
@@ -268,6 +274,11 @@ async function runScan(args) {
     result = runDomRulesInPage(url, args.context || null, buildEngineOptions(args), null);
   } finally {
     dom.window.close();
+  }
+
+  if (args.html) {
+    fs.writeFileSync(args.html, renderHtmlReport(result, { title: `surea11y scan report — ${target}` }));
+    process.stderr.write(`Wrote HTML report to: ${args.html}\n`);
   }
 
   if (args.writeBaseline) {

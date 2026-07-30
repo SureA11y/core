@@ -217,3 +217,31 @@ test('CLI: --json + --baseline augments the printed result with a baseline block
   assert.equal(result.baseline.knownCount, 1);
   assert.equal(result.baseline.newCount, 0);
 });
+
+test('CLI: --html writes a self-contained HTML report to the given path', () => {
+  const file = path.join(tmpDir, 'report-source.html');
+  fs.writeFileSync(file, '<!doctype html><html lang="en"><head><title>T</title></head><body><img src="x.png"></body></html>');
+  const reportPath = path.join(tmpDir, 'report-output.html');
+
+  const { status, stderr } = run(['scan', file, '--rules', 'img-alt-present', '--html', reportPath]);
+  assert.equal(status, 1); // --html doesn't change gating: the scan still has a real fail
+  assert.match(stderr, /Wrote HTML report to/);
+
+  const report = fs.readFileSync(reportPath, 'utf8');
+  assert.match(report, /^<!doctype html>/);
+  assert.match(report, /img-alt-present/);
+  assert.doesNotMatch(report, /\ssrc=["']https?:/);
+});
+
+test('CLI: --html works alongside --json (both artifacts produced from the same scan)', () => {
+  const file = path.join(tmpDir, 'report-both.html');
+  fs.writeFileSync(file, '<!doctype html><html lang="en"><head><title>T</title></head><body><img src="x.png"></body></html>');
+  const reportPath = path.join(tmpDir, 'report-both-output.html');
+
+  const { stdout, status } = run(['scan', file, '--rules', 'img-alt-present', '--html', reportPath, '--json']);
+  assert.equal(status, 1);
+
+  const result = JSON.parse(stdout);
+  assert.ok(Array.isArray(result.checksResults));
+  assert.ok(fs.existsSync(reportPath));
+});
