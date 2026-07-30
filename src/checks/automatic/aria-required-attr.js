@@ -69,8 +69,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
   if (!ariaHelpers) {
@@ -94,7 +93,7 @@ function runInPage(ctx) {
     return v != null && String(v).trim().toLowerCase() === 'true';
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]', safeRoot) : helpers.queryAll('[role]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]') : helpers.queryAll('[role]');
 
   const occurrences = [];
   let applicableCount = 0;

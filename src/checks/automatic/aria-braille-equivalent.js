@@ -52,8 +52,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   function trim(v) { return (v == null ? '' : String(v)).trim(); }
 
@@ -74,8 +73,8 @@ function runInPage(ctx) {
   }
 
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('[aria-braillelabel], [aria-brailleroledescription]', safeRoot)
-    : helpers.queryAll('[aria-braillelabel], [aria-brailleroledescription]', safeRoot);
+    ? helpers.queryAllSmart('[aria-braillelabel], [aria-brailleroledescription]')
+    : helpers.queryAll('[aria-braillelabel], [aria-brailleroledescription]');
 
   const occurrences = [];
   let applicableCount = 0;

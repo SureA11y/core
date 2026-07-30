@@ -27,8 +27,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const occurrences = [];
   let applicableCount = 0;

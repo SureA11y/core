@@ -66,8 +66,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
   if (!ariaHelpers) {
@@ -153,7 +152,7 @@ function runInPage(ctx) {
     const idTok = elId && String(elId).trim();
     if (!idTok) return false;
 
-    const owners = helpers.queryAllSmart ? helpers.queryAllSmart('[aria-owns]', safeRoot) : helpers.queryAll('[aria-owns]', safeRoot);
+    const owners = helpers.queryAllSmart ? helpers.queryAllSmart('[aria-owns]') : helpers.queryAll('[aria-owns]');
     for (const owner of owners) {
       if (!owner || !owner.getAttribute) continue;
       const ownsAttr = owner.getAttribute('aria-owns') || '';
@@ -166,7 +165,7 @@ function runInPage(ctx) {
     return false;
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]', safeRoot) : helpers.queryAll('[role]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]') : helpers.queryAll('[role]');
 
   const occurrences = [];
   let applicableCount = 0;

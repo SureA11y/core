@@ -80,8 +80,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
   if (!ariaHelpers) {
@@ -112,7 +111,7 @@ function runInPage(ctx) {
   // ("runInPage MUST be self-contained").
   const CANDIDATE_SELECTOR = '[role], li, option, tr, td, th, thead, tbody, tfoot, ul, ol, table, select, input[type="radio"]';
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]', safeRoot) : helpers.queryAll('[role]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]') : helpers.queryAll('[role]');
 
   const occurrences = [];
   let applicableCount = 0;

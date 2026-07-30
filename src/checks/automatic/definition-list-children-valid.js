@@ -54,14 +54,13 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   // Declared inside runInPage — see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
   const PASSTHROUGH_TAGS = new Set(['dt', 'dd', 'script', 'template', 'style']);
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('dl', safeRoot) : helpers.queryAll('dl', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('dl') : helpers.queryAll('dl');
 
   const occurrences = [];
   let applicableCount = 0;

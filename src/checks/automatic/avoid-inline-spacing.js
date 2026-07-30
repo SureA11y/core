@@ -46,12 +46,11 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const SPACING_PROPS = ['line-height', 'letter-spacing', 'word-spacing'];
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[style]', safeRoot) : helpers.queryAll('[style]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[style]') : helpers.queryAll('[style]');
 
   const occurrences = [];
   let applicableCount = 0;

@@ -56,10 +56,9 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('li', safeRoot) : helpers.queryAll('li', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('li') : helpers.queryAll('li');
 
   const occurrences = [];
   let applicableCount = 0;

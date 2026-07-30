@@ -47,8 +47,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   function normalizeWs(s) {
     return String(s || '').replace(/\s+/g, ' ').trim();
@@ -67,7 +66,7 @@ function runInPage(ctx) {
     return normalizeWs(text);
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('img[alt]', safeRoot) : helpers.queryAll('img[alt]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('img[alt]') : helpers.queryAll('img[alt]');
 
   const occurrences = [];
   let applicableCount = 0;

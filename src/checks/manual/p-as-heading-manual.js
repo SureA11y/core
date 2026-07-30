@@ -53,8 +53,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const MAX_HEADING_LIKE_CHARS = 120;
   const MIN_FONT_SIZE_PX = 18;
@@ -106,7 +105,7 @@ function runInPage(ctx) {
     return Number.isFinite(px) ? px : 0;
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('p', safeRoot) : helpers.queryAll('p', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('p') : helpers.queryAll('p');
 
   const occurrences = [];
   let applicableCount = 0;

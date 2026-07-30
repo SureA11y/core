@@ -67,8 +67,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const MOUSE_ONLY_ATTRS = [
     'onmouseover', 'onmouseout', 'onmousedown', 'onmouseup',
@@ -79,7 +78,7 @@ function runInPage(ctx) {
   function trim(v) { return (v == null ? '' : String(v)).trim(); }
 
   const selector = MOUSE_ONLY_ATTRS.map((a) => `[${a}]`).join(', ');
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
   const occurrences = [];
   let applicableCount = 0;

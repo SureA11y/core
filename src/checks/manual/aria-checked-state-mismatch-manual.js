@@ -71,14 +71,13 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   function trim(v) { return (v == null ? '' : String(v)).trim(); }
 
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('input[type="checkbox"][aria-checked], input[type="radio"][aria-checked]', safeRoot)
-    : helpers.queryAll('input[type="checkbox"][aria-checked], input[type="radio"][aria-checked]', safeRoot);
+    ? helpers.queryAllSmart('input[type="checkbox"][aria-checked], input[type="radio"][aria-checked]')
+    : helpers.queryAll('input[type="checkbox"][aria-checked], input[type="radio"][aria-checked]');
 
   const occurrences = [];
   let applicableCount = 0;

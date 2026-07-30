@@ -54,8 +54,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   function normalizeWs(s) {
     return String(s || '').replace(/\s+/g, ' ').trim();
@@ -106,7 +105,7 @@ function runInPage(ctx) {
 
   const geometrySupported = hasReliableGeometrySupport();
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('a[href]', safeRoot) : helpers.queryAll('a[href]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('a[href]') : helpers.queryAll('a[href]');
 
   const occurrences = [];
   let applicableCount = 0;

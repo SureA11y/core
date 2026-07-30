@@ -58,10 +58,9 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('audio[autoplay], video[autoplay]', safeRoot) : helpers.queryAll('audio[autoplay], video[autoplay]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('audio[autoplay], video[autoplay]') : helpers.queryAll('audio[autoplay], video[autoplay]');
 
   const occurrences = [];
   let applicableCount = 0;

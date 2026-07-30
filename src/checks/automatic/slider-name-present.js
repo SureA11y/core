@@ -23,11 +23,10 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
+  const { document, helpers, rule } = ctx;
   const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
       ? helpers.getEligibilityInfo
       : null;
-  const safeRoot = root || document;
 
 
   function normalizeWs(s) {
@@ -159,7 +158,7 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   const selector = 'input[type="range"], [role="slider"]';
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
 
   // Precompute label[for] map for native range inputs.

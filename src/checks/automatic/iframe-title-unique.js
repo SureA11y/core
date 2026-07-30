@@ -47,10 +47,9 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('iframe, frame', safeRoot) : helpers.queryAll('iframe, frame', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('iframe, frame') : helpers.queryAll('iframe, frame');
 
   const groups = new Map(); // trimmed title -> elements[]
   let applicableCount = 0;

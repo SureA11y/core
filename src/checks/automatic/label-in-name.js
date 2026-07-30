@@ -30,8 +30,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const occurrences = [];
   let applicableCount = 0;
@@ -40,7 +39,7 @@ function runInPage(ctx) {
   // NOTE: aria-hidden is intentionally NOT excluded here; it does not affect visual rendering.
   const selector = ':is(button, a[href], summary, input:not([type="hidden"]), textarea, select, [role="button"], [role="link"], [role="checkbox"], [role="radio"], [role="switch"], [role="searchbox"], [role="tab"], [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="option"], [role="treeitem"], [role="gridcell"]):not([hidden]):not([disabled]):not([aria-disabled="true"]):is([aria-label], [aria-labelledby])';
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
   function norm(s) {
     const v = (s == null ? '' : String(s));
@@ -178,11 +177,11 @@ function runInPage(ctx) {
     }
 
     // Fallback: label[for=id]. Uses `document` directly rather than
-    // ctx.root/safeRoot -- label[for] association is a document-wide
-    // relationship (IDs are document-unique), not bounded by whatever
-    // contextSelector region happens to be scanned, and ctx.root is an
-    // array (multi-region contextSelector support), not a single element
-    // with its own .querySelector to call directly.
+    // ctx.root -- label[for] association is a document-wide relationship
+    // (IDs are document-unique), not bounded by whatever contextSelector
+    // region happens to be scanned, and ctx.root is an array (multi-region
+    // contextSelector support), not a single element with its own
+    // .querySelector to call directly.
     try {
       const idAttribute = control && control.getAttribute ? (control.getAttribute('id') || '') : '';
       const key = String(idAttribute || '').trim();

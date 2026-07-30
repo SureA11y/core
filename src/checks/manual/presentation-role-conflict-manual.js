@@ -73,8 +73,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   // The full set of ARIA attributes marked `global: true` per the WAI-ARIA
   // spec (confirmed against a widely-used reference engine's own
@@ -91,8 +90,8 @@ function runInPage(ctx) {
   const getFocusableInfo = helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
 
   const nodes = helpers.queryAllSmart
-      ? helpers.queryAllSmart('[role="presentation"], [role="none"], img[alt=""]', safeRoot)
-      : helpers.queryAll('[role="presentation"], [role="none"], img[alt=""]', safeRoot);
+      ? helpers.queryAllSmart('[role="presentation"], [role="none"], img[alt=""]')
+      : helpers.queryAll('[role="presentation"], [role="none"], img[alt=""]');
 
   const occurrences = [];
   let applicableCount = 0;

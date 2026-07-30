@@ -46,13 +46,12 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const FOCUSABLE_DESCENDANT_SELECTOR =
     'a[href], button, input, select, textarea, [tabindex], iframe, [contenteditable]:not([contenteditable="false"])';
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role="text"]', safeRoot) : helpers.queryAll('[role="text"]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role="text"]') : helpers.queryAll('[role="text"]');
 
   const occurrences = [];
   let applicableCount = 0;

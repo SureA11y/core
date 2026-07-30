@@ -55,8 +55,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   function hasFocusableCandidate(doc) {
     if (!doc || !doc.querySelectorAll) return false;
@@ -88,7 +87,7 @@ function runInPage(ctx) {
     return !Number.isNaN(n) && n < 0;
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('iframe, frame', safeRoot) : helpers.queryAll('iframe, frame', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('iframe, frame') : helpers.queryAll('iframe, frame');
 
   const occurrences = [];
   let applicableCount = 0;

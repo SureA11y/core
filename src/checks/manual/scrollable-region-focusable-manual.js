@@ -64,8 +64,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   function safeComputedStyle(el) {
     try {
@@ -110,7 +109,7 @@ function runInPage(ctx) {
   }
 
   const CANDIDATE_SELECTOR = 'div, section, article, aside, main, nav, pre, table, blockquote, ul, ol, textarea';
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(CANDIDATE_SELECTOR, safeRoot) : helpers.queryAll(CANDIDATE_SELECTOR, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(CANDIDATE_SELECTOR) : helpers.queryAll(CANDIDATE_SELECTOR);
 
   const occurrences = [];
   let applicableCount = 0;

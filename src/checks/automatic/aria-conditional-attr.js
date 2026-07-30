@@ -53,16 +53,15 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   function trim(v) { return (v == null ? '' : String(v)).trim(); }
 
   const TRUTHY_INVALID_VALUES = new Set(['true', 'grammar', 'spelling']);
 
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('[aria-errormessage]', safeRoot)
-    : helpers.queryAll('[aria-errormessage]', safeRoot);
+    ? helpers.queryAllSmart('[aria-errormessage]')
+    : helpers.queryAll('[aria-errormessage]');
 
   const occurrences = [];
   let applicableCount = 0;

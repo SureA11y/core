@@ -17,6 +17,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Changed
 - Test coverage tightened for this release cycle: re-enabled and stabilized the previously skipped `role-img-text-alternative-present` i18n assertions (EN/FR exact strings and keys), and added regression coverage for the inert + outer hard-hidden filtering path in `queryAllSmart`.
+- Removed a dead `root`/`safeRoot` second argument passed to `helpers.queryAllSmart`/`helpers.queryAll` across 67 rule files: both helpers only ever accepted a single selector argument and scope internally via the run's resolved `contextSelector` roots, so the extra argument was silently ignored in every call. No behavior change — `ctx.root` was always identical to the roots already baked into `helpers` at run start. Also fixed `docs/RULE_TEMPLATE.md`, the copy/paste template most likely responsible for the pattern spreading, which declared `safeRoot` but never even referenced it.
 
 ## [1.1.1] - 2026-07-29
 

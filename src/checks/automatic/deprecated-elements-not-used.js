@@ -48,10 +48,9 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('blink, marquee', safeRoot) : helpers.queryAll('blink, marquee', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('blink, marquee') : helpers.queryAll('blink, marquee');
 
   const occurrences = [];
   let applicableCount = 0;

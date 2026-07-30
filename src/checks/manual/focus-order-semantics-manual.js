@@ -48,8 +48,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const NON_INTERACTIVE_ROLES = new Set([
     'generic', 'group', 'text', 'presentation', 'none', 'img', 'heading',
@@ -59,7 +58,7 @@ function runInPage(ctx) {
     'definition', 'paragraph', 'caption', 'status', 'alert', 'log', 'tooltip'
   ]);
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[tabindex][role]', safeRoot) : helpers.queryAll('[tabindex][role]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[tabindex][role]') : helpers.queryAll('[tabindex][role]');
 
   const occurrences = [];
   let applicableCount = 0;

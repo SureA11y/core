@@ -52,8 +52,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   // Declared inside runInPage — see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
@@ -88,7 +87,7 @@ function runInPage(ctx) {
     return FIELD_NAMES.has(remaining[0]);
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('input, select, textarea', safeRoot) : helpers.queryAll('input, select, textarea', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('input, select, textarea') : helpers.queryAll('input, select, textarea');
 
   const occurrences = [];
   let applicableCount = 0;

@@ -23,11 +23,10 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
+  const { document, helpers, rule } = ctx;
   const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
       ? helpers.getEligibilityInfo
       : null;
-  const safeRoot = root || document;
 
 
   function normalizeWs(s) {
@@ -159,7 +158,7 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   const selector = '[role="combobox"]';
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
   // Precompute label[for] map for combobox elements that are labelable
   // native form controls (e.g. <input role="combobox">).

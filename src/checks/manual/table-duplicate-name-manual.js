@@ -43,14 +43,13 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   function normalizeWs(s) {
     return String(s || '').replace(/\s+/g, ' ').trim();
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('table[summary]', safeRoot) : helpers.queryAll('table[summary]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('table[summary]') : helpers.queryAll('table[summary]');
 
   const occurrences = [];
   let applicableCount = 0;

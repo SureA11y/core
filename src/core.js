@@ -22948,9 +22948,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const RULE_IMPLS = {
     "accesskeys": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[accesskey]', safeRoot) : helpers.queryAll('[accesskey]', safeRoot);
+  const { document, helpers, rule } = ctx;
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[accesskey]') : helpers.queryAll('[accesskey]');
 
   const groups = new Map(); // normalized key -> elements[]
   for (const el of nodes) {
@@ -23541,8 +23540,7 @@ if (isAccTreeEligible) {
     return { ruleId: rule.ruleId, outcome: 'cantTell', severity: 'minor', occurrences };
 }), applicability: null },
     "aria-allowed-attr": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
   if (!ariaHelpers) {
@@ -23606,7 +23604,7 @@ if (isAccTreeEligible) {
   };
 
   const globalSet = new Set(GLOBAL_ATTRS);
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]', safeRoot) : helpers.queryAll('[role]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]') : helpers.queryAll('[role]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -23671,15 +23669,14 @@ if (isAccTreeEligible) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-allowed-role": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
   if (!ariaHelpers) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]', safeRoot) : helpers.queryAll('[role]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]') : helpers.queryAll('[role]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -23726,8 +23723,7 @@ if (isAccTreeEligible) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-braille-equivalent": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   function trim(v) { return (v == null ? '' : String(v)).trim(); }
 
@@ -23748,8 +23744,8 @@ if (isAccTreeEligible) {
   }
 
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('[aria-braillelabel], [aria-brailleroledescription]', safeRoot)
-    : helpers.queryAll('[aria-braillelabel], [aria-brailleroledescription]', safeRoot);
+    ? helpers.queryAllSmart('[aria-braillelabel], [aria-brailleroledescription]')
+    : helpers.queryAll('[aria-braillelabel], [aria-brailleroledescription]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -23810,14 +23806,13 @@ if (isAccTreeEligible) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-checked-state-mismatch": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   function trim(v) { return (v == null ? '' : String(v)).trim(); }
 
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('input[type="checkbox"][aria-checked], input[type="radio"][aria-checked]', safeRoot)
-    : helpers.queryAll('input[type="checkbox"][aria-checked], input[type="radio"][aria-checked]', safeRoot);
+    ? helpers.queryAllSmart('input[type="checkbox"][aria-checked], input[type="radio"][aria-checked]')
+    : helpers.queryAll('input[type="checkbox"][aria-checked], input[type="radio"][aria-checked]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -23879,16 +23874,15 @@ if (isAccTreeEligible) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-conditional-attr": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   function trim(v) { return (v == null ? '' : String(v)).trim(); }
 
   const TRUTHY_INVALID_VALUES = new Set(['true', 'grammar', 'spelling']);
 
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('[aria-errormessage]', safeRoot)
-    : helpers.queryAll('[aria-errormessage]', safeRoot);
+    ? helpers.queryAllSmart('[aria-errormessage]')
+    : helpers.queryAll('[aria-errormessage]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -23933,15 +23927,14 @@ if (isAccTreeEligible) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-deprecated-role": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
   if (!ariaHelpers) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]', safeRoot) : helpers.queryAll('[role]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]') : helpers.queryAll('[role]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -24453,8 +24446,7 @@ if (isAccTreeEligible) {
   return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences };
 }), applicability: null },
     "aria-prohibited-attr": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
   if (!ariaHelpers) {
@@ -24474,7 +24466,7 @@ if (isAccTreeEligible) {
 
   const PROHIBITED_NAMING_ATTRS = ['aria-label', 'aria-labelledby'];
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]', safeRoot) : helpers.queryAll('[role]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]') : helpers.queryAll('[role]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -24525,8 +24517,7 @@ if (isAccTreeEligible) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-prohibited-children": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
   if (!ariaHelpers) {
@@ -24615,7 +24606,7 @@ if (isAccTreeEligible) {
     }
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]', safeRoot) : helpers.queryAll('[role]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]') : helpers.queryAll('[role]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -24687,8 +24678,7 @@ if (isAccTreeEligible) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-required-attr": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
   if (!ariaHelpers) {
@@ -24712,7 +24702,7 @@ if (isAccTreeEligible) {
     return v != null && String(v).trim().toLowerCase() === 'true';
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]', safeRoot) : helpers.queryAll('[role]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]') : helpers.queryAll('[role]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -24769,8 +24759,7 @@ if (isAccTreeEligible) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-required-children": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
   if (!ariaHelpers) {
@@ -24801,7 +24790,7 @@ if (isAccTreeEligible) {
   // ("runInPage MUST be self-contained").
   const CANDIDATE_SELECTOR = '[role], li, option, tr, td, th, thead, tbody, tfoot, ul, ol, table, select, input[type="radio"]';
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]', safeRoot) : helpers.queryAll('[role]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]') : helpers.queryAll('[role]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -24960,8 +24949,7 @@ if (isAccTreeEligible) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-required-parent": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
   if (!ariaHelpers) {
@@ -25047,7 +25035,7 @@ if (isAccTreeEligible) {
     const idTok = elId && String(elId).trim();
     if (!idTok) return false;
 
-    const owners = helpers.queryAllSmart ? helpers.queryAllSmart('[aria-owns]', safeRoot) : helpers.queryAll('[aria-owns]', safeRoot);
+    const owners = helpers.queryAllSmart ? helpers.queryAllSmart('[aria-owns]') : helpers.queryAll('[aria-owns]');
     for (const owner of owners) {
       if (!owner || !owner.getAttribute) continue;
       const ownsAttr = owner.getAttribute('aria-owns') || '';
@@ -25060,7 +25048,7 @@ if (isAccTreeEligible) {
     return false;
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]', safeRoot) : helpers.queryAll('[role]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]') : helpers.queryAll('[role]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -25273,15 +25261,14 @@ if (isAccTreeEligible) {
   return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences };
 }), applicability: null },
     "aria-roles-valid": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
   if (!ariaHelpers) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]', safeRoot) : helpers.queryAll('[role]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]') : helpers.queryAll('[role]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -25336,13 +25323,12 @@ if (isAccTreeEligible) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-text": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const FOCUSABLE_DESCENDANT_SELECTOR =
     'a[href], button, input, select, textarea, [tabindex], iframe, [contenteditable]:not([contenteditable="false"])';
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role="text"]', safeRoot) : helpers.queryAll('[role="text"]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role="text"]') : helpers.queryAll('[role="text"]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -25396,15 +25382,14 @@ if (isAccTreeEligible) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-valid-attr": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
   if (!ariaHelpers) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('*', safeRoot) : helpers.queryAll('*', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('*') : helpers.queryAll('*');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -25458,15 +25443,14 @@ if (isAccTreeEligible) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-valid-attr-value": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
   if (!ariaHelpers) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('*', safeRoot) : helpers.queryAll('*', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('*') : helpers.queryAll('*');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -25523,8 +25507,7 @@ if (isAccTreeEligible) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "autocomplete-valid": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   // Declared inside runInPage — see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
@@ -25559,7 +25542,7 @@ if (isAccTreeEligible) {
     return FIELD_NAMES.has(remaining[0]);
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('input, select, textarea', safeRoot) : helpers.queryAll('input, select, textarea', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('input, select, textarea') : helpers.queryAll('input, select, textarea');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -25602,12 +25585,11 @@ if (isAccTreeEligible) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "avoid-inline-spacing": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const SPACING_PROPS = ['line-height', 'letter-spacing', 'word-spacing'];
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[style]', safeRoot) : helpers.queryAll('[style]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[style]') : helpers.queryAll('[style]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -25660,11 +25642,10 @@ if (isAccTreeEligible) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "binary-control-name-present": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
+  const { document, helpers, rule } = ctx;
   const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
       ? helpers.getEligibilityInfo
       : null;
-  const safeRoot = root || document;
 
 
   function normalizeWs(s) {
@@ -25796,7 +25777,7 @@ if (isAccTreeEligible) {
   let applicableCount = 0;
 
   const selector = 'input[type="checkbox"], input[type="radio"], [role="checkbox"], [role="radio"], [role="switch"]';
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
 
   // Precompute label[for] associations once for speed/determinism.
@@ -25928,8 +25909,7 @@ if (isAccTreeEligible) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "button-name-present": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const occurrences = [];
   let applicableCount = 0;
@@ -25966,7 +25946,7 @@ if (isAccTreeEligible) {
   }
 
   const selector = 'button, input[type="button"], input[type="submit"], input[type="reset"], [role="button"]';
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
   for (const el of nodes) {
     // isAccTreeEligible returns { eligible, reasons }, not a boolean.
@@ -26401,11 +26381,10 @@ if (isAccTreeEligible) {
     return { ruleId: rule.ruleId, outcome: 'cantTell', severity: 'minor', occurrences };
 }), applicability: null },
     "combobox-name-present": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
+  const { document, helpers, rule } = ctx;
   const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
       ? helpers.getEligibilityInfo
       : null;
-  const safeRoot = root || document;
 
 
   function normalizeWs(s) {
@@ -26537,7 +26516,7 @@ if (isAccTreeEligible) {
   let applicableCount = 0;
 
   const selector = '[role="combobox"]';
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
   // Precompute label[for] map for combobox elements that are labelable
   // native form controls (e.g. <input role="combobox">).
@@ -28264,14 +28243,13 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'serious', occurrences };
 }), applicability: null },
     "definition-list-children-valid": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   // Declared inside runInPage — see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
   const PASSTHROUGH_TAGS = new Set(['dt', 'dd', 'script', 'template', 'style']);
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('dl', safeRoot) : helpers.queryAll('dl', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('dl') : helpers.queryAll('dl');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -28355,10 +28333,9 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "deprecated-elements-not-used": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('blink, marquee', safeRoot) : helpers.queryAll('blink, marquee', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('blink, marquee') : helpers.queryAll('blink, marquee');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -28397,11 +28374,10 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "dialog-name-present": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
+  const { document, helpers, rule } = ctx;
   const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
       ? helpers.getEligibilityInfo
       : null;
-  const safeRoot = root || document;
 
 
   function normalizeWs(s) {
@@ -28515,7 +28491,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   let applicableCount = 0;
 
   const selector = '[role="dialog"],[role="alertdialog"]';
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
 
   function evaluate(el) {
@@ -28580,10 +28556,9 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "dlitem-parent-valid": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('dt, dd', safeRoot) : helpers.queryAll('dt, dd', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('dt, dd') : helpers.queryAll('dt, dd');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -29235,8 +29210,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "focus-order-semantics": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const NON_INTERACTIVE_ROLES = new Set([
     'generic', 'group', 'text', 'presentation', 'none', 'img', 'heading',
@@ -29246,7 +29220,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     'definition', 'paragraph', 'caption', 'status', 'alert', 'log', 'tooltip'
   ]);
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[tabindex][role]', safeRoot) : helpers.queryAll('[tabindex][role]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[tabindex][role]') : helpers.queryAll('[tabindex][role]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -29887,11 +29861,10 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [], data: { details: { metrics } } };
 }), applicability: null },
     "form-control-single-label": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const selector = 'input:not([type="hidden"]):not([type="submit"]):not([type="reset"]):not([type="button"]):not([type="image"]),select,textarea';
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
   // Build a for-value -> label[] map once (avoids per-control dynamic
   // attribute-selector construction / CSS.escape, which is not guaranteed
@@ -30169,14 +30142,13 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'serious', occurrences };
 }), applicability: null },
     "identical-links-same-purpose": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   function normName(s) {
     return (s == null ? '' : String(s)).replace(/\s+/g, ' ').trim().toLowerCase();
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('a[href]', safeRoot) : helpers.queryAll('a[href]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('a[href]') : helpers.queryAll('a[href]');
 
   const groups = new Map(); // normName -> [{ el, href }]
   let applicableCount = 0;
@@ -30256,8 +30228,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "iframe-focusable-content": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   function hasFocusableCandidate(doc) {
     if (!doc || !doc.querySelectorAll) return false;
@@ -30289,7 +30260,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     return !Number.isNaN(n) && n < 0;
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('iframe, frame', safeRoot) : helpers.queryAll('iframe, frame', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('iframe, frame') : helpers.queryAll('iframe, frame');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -30339,10 +30310,9 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "iframe-name-present": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('iframe, frame', safeRoot) : helpers.queryAll('iframe, frame', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('iframe, frame') : helpers.queryAll('iframe, frame');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -30394,10 +30364,9 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "iframe-title-unique": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('iframe, frame', safeRoot) : helpers.queryAll('iframe, frame', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('iframe, frame') : helpers.queryAll('iframe, frame');
 
   const groups = new Map(); // trimmed title -> elements[]
   let applicableCount = 0;
@@ -30452,8 +30421,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "image-redundant-alt": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   function normalizeWs(s) {
     return String(s || '').replace(/\s+/g, ' ').trim();
@@ -30472,7 +30440,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     return normalizeWs(text);
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('img[alt]', safeRoot) : helpers.queryAll('img[alt]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('img[alt]') : helpers.queryAll('img[alt]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -31260,8 +31228,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     return { ruleId: rule.ruleId, outcome: 'cantTell', severity: 'minor', occurrences };
 }), applicability: null },
     "label-in-name": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const occurrences = [];
   let applicableCount = 0;
@@ -31270,7 +31237,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   // NOTE: aria-hidden is intentionally NOT excluded here; it does not affect visual rendering.
   const selector = ':is(button, a[href], summary, input:not([type="hidden"]), textarea, select, [role="button"], [role="link"], [role="checkbox"], [role="radio"], [role="switch"], [role="searchbox"], [role="tab"], [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="option"], [role="treeitem"], [role="gridcell"]):not([hidden]):not([disabled]):not([aria-disabled="true"]):is([aria-label], [aria-labelledby])';
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
   function norm(s) {
     const v = (s == null ? '' : String(s));
@@ -31408,11 +31375,11 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     }
 
     // Fallback: label[for=id]. Uses `document` directly rather than
-    // ctx.root/safeRoot -- label[for] association is a document-wide
-    // relationship (IDs are document-unique), not bounded by whatever
-    // contextSelector region happens to be scanned, and ctx.root is an
-    // array (multi-region contextSelector support), not a single element
-    // with its own .querySelector to call directly.
+    // ctx.root -- label[for] association is a document-wide relationship
+    // (IDs are document-unique), not bounded by whatever contextSelector
+    // region happens to be scanned, and ctx.root is an array (multi-region
+    // contextSelector support), not a single element with its own
+    // .querySelector to call directly.
     try {
       const idAttribute = control && control.getAttribute ? (control.getAttribute('id') || '') : '';
       const key = String(idAttribute || '').trim();
@@ -31553,11 +31520,10 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "label-title-only": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const selector = 'input:not([type="hidden"]):not([type="submit"]):not([type="reset"]):not([type="button"]):not([type="image"]),select,textarea';
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
   const labelsByFor = new Map();
   const allLabels = document.getElementsByTagName ? document.getElementsByTagName('label') : [];
@@ -32604,8 +32570,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'cantTell', severity: rule.defaultSeverity || 'minor', occurrences };
 }), applicability: null },
     "link-in-text-block": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule, engineOptions } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule, engineOptions } = ctx;
 
   function safeComputedStyle(el) {
     try {
@@ -32651,7 +32616,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   const c = helpers && helpers.contrast ? helpers.contrast : null;
 
   const selector = 'a[href]';
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
   const occurrences = [];
   let applicableCount = 0;
@@ -32751,8 +32716,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "link-name-present": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const occurrences = [];
   let applicableCount = 0;
@@ -32773,7 +32737,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   }
 
   const selector = 'a[href], area[href], [role="link"]';
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
   for (const el of nodes) {
     // isAccTreeEligible returns { eligible, reasons }, not a boolean.
@@ -32851,8 +32815,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "link-name-quality": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const GENERIC_LINK_TEXT = new Set([
     'click here', 'here', 'click', 'more', 'more info', 'more information',
@@ -32871,7 +32834,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   }
 
   const selector = 'a[href]';
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
   const occurrences = [];
   let applicableCount = 0;
@@ -32931,14 +32894,13 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "list-children-valid": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   // Declared inside runInPage — see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
   const ALLOWED_CHILD_TAGS = new Set(['li', 'script', 'template']);
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('ul, ol', safeRoot) : helpers.queryAll('ul, ol', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('ul, ol') : helpers.queryAll('ul, ol');
 
   const isAccTreeEligible = helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
 
@@ -33009,11 +32971,10 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "listbox-name-present": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
+  const { document, helpers, rule } = ctx;
   const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
       ? helpers.getEligibilityInfo
       : null;
-  const safeRoot = root || document;
 
 
   function normalizeWs(s) {
@@ -33118,7 +33079,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   let applicableCount = 0;
 
   const selector = "[role=\"listbox\"]";
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
   // Precompute label[for] map for listbox elements that are labelable
   // native form controls (e.g. <select multiple role="listbox">).
@@ -33219,10 +33180,9 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "listitem-parent-valid": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('li', safeRoot) : helpers.queryAll('li', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('li') : helpers.queryAll('li');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -33651,11 +33611,10 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "menuitem-name-present": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
+  const { document, helpers, rule } = ctx;
   const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
       ? helpers.getEligibilityInfo
       : null;
-  const safeRoot = root || document;
 
 
   function normalizeWs(s) {
@@ -33761,7 +33720,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   let applicableCount = 0;
 
   const selector = '[role="menuitem"],[role="menuitemcheckbox"],[role="menuitemradio"]';
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
 
   function evaluate(el) {
@@ -34067,11 +34026,10 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "meter-name-present": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
+  const { document, helpers, rule } = ctx;
   const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
       ? helpers.getEligibilityInfo
       : null;
-  const safeRoot = root || document;
 
 
   function normalizeWs(s) {
@@ -34135,7 +34093,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   let applicableCount = 0;
 
   const selector = '[role="meter"]';
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
 
   function evaluate(el) {
@@ -34201,8 +34159,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "mouse-only-event-handlers": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const MOUSE_ONLY_ATTRS = [
     'onmouseover', 'onmouseout', 'onmousedown', 'onmouseup',
@@ -34213,7 +34170,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   function trim(v) { return (v == null ? '' : String(v)).trim(); }
 
   const selector = MOUSE_ONLY_ATTRS.map((a) => `[${a}]`).join(', ');
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
   const occurrences = [];
   let applicableCount = 0;
@@ -34265,8 +34222,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "nested-interactive-controls-absent": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   // Declared inside runInPage — see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
@@ -34295,7 +34251,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     '[role="treeitem"]'
   ].join(', ');
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(INTERACTIVE_SELECTOR, safeRoot) : helpers.queryAll(INTERACTIVE_SELECTOR, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(INTERACTIVE_SELECTOR) : helpers.queryAll(INTERACTIVE_SELECTOR);
 
   const occurrences = [];
   let applicableCount = 0;
@@ -34344,10 +34300,9 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "no-autoplay-audio": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('audio[autoplay], video[autoplay]', safeRoot) : helpers.queryAll('audio[autoplay], video[autoplay]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('audio[autoplay], video[autoplay]') : helpers.queryAll('audio[autoplay], video[autoplay]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -34701,11 +34656,10 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     return {ruleId: rule.ruleId, outcome: 'cantTell', severity: 'minor', occurrences};
 }), applicability: null },
     "option-name-present": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
+  const { document, helpers, rule } = ctx;
   const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
       ? helpers.getEligibilityInfo
       : null;
-  const safeRoot = root || document;
 
 
   function normalizeWs(s) {
@@ -34769,7 +34723,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   let applicableCount = 0;
 
   const selector = "[role=\"option\"]";
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
 
   function hasName(el) {
@@ -34832,8 +34786,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "p-as-heading": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const MAX_HEADING_LIKE_CHARS = 120;
   const MIN_FONT_SIZE_PX = 18;
@@ -34885,7 +34838,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     return Number.isFinite(px) ? px : 0;
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('p', safeRoot) : helpers.queryAll('p', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('p') : helpers.queryAll('p');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -35315,8 +35268,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "presentation-role-conflict": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   // The full set of ARIA attributes marked `global: true` per the WAI-ARIA
   // spec (confirmed against a widely-used reference engine's own
@@ -35333,8 +35285,8 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   const getFocusableInfo = helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
 
   const nodes = helpers.queryAllSmart
-      ? helpers.queryAllSmart('[role="presentation"], [role="none"], img[alt=""]', safeRoot)
-      : helpers.queryAll('[role="presentation"], [role="none"], img[alt=""]', safeRoot);
+      ? helpers.queryAllSmart('[role="presentation"], [role="none"], img[alt=""]')
+      : helpers.queryAll('[role="presentation"], [role="none"], img[alt=""]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -35398,11 +35350,10 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "progressbar-name-present": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
+  const { document, helpers, rule } = ctx;
   const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
       ? helpers.getEligibilityInfo
       : null;
-  const safeRoot = root || document;
 
 
   function normalizeWs(s) {
@@ -35466,7 +35417,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   let applicableCount = 0;
 
   const selector = '[role="progressbar"]';
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
 
   function evaluate(el) {
@@ -35878,8 +35829,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "scrollable-region-focusable": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   function safeComputedStyle(el) {
     try {
@@ -35924,7 +35874,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   }
 
   const CANDIDATE_SELECTOR = 'div, section, article, aside, main, nav, pre, table, blockquote, ul, ol, textarea';
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(CANDIDATE_SELECTOR, safeRoot) : helpers.queryAll(CANDIDATE_SELECTOR, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(CANDIDATE_SELECTOR) : helpers.queryAll(CANDIDATE_SELECTOR);
 
   const occurrences = [];
   let applicableCount = 0;
@@ -35979,11 +35929,10 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "searchbox-name-present": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
+  const { document, helpers, rule } = ctx;
   const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
       ? helpers.getEligibilityInfo
       : null;
-  const safeRoot = root || document;
 
 
   function normalizeWs(s) {
@@ -36088,7 +36037,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   let applicableCount = 0;
 
   const selector = "[role=\"searchbox\"]";
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
   // Precompute label[for] map for searchbox elements that are labelable
   // native form controls (e.g. <input role="searchbox">).
@@ -36189,10 +36138,9 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "server-side-image-map-absent": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('img[ismap]', safeRoot) : helpers.queryAll('img[ismap]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('img[ismap]') : helpers.queryAll('img[ismap]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -36230,8 +36178,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "skip-link": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   function normalizeWs(s) {
     return String(s || '').replace(/\s+/g, ' ').trim();
@@ -36282,7 +36229,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
 
   const geometrySupported = hasReliableGeometrySupport();
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('a[href]', safeRoot) : helpers.queryAll('a[href]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('a[href]') : helpers.queryAll('a[href]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -36406,11 +36353,10 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "slider-name-present": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
+  const { document, helpers, rule } = ctx;
   const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
       ? helpers.getEligibilityInfo
       : null;
-  const safeRoot = root || document;
 
 
   function normalizeWs(s) {
@@ -36542,7 +36488,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   let applicableCount = 0;
 
   const selector = 'input[type="range"], [role="slider"]';
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
 
   // Precompute label[for] map for native range inputs.
@@ -36656,11 +36602,10 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "spinbutton-name-present": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
+  const { document, helpers, rule } = ctx;
   const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
       ? helpers.getEligibilityInfo
       : null;
-  const safeRoot = root || document;
 
 
   function normalizeWs(s) {
@@ -36765,7 +36710,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   let applicableCount = 0;
 
   const selector = "[role=\"spinbutton\"]";
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
   // Precompute label[for] map for spinbutton elements that are labelable
   // native form controls (e.g. <input role="spinbutton">).
@@ -36866,11 +36811,10 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "summary-name-present": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
+  const { document, helpers, rule } = ctx;
   const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
       ? helpers.getEligibilityInfo
       : null;
-  const safeRoot = root || document;
 
 
   function normalizeWs(s) {
@@ -36933,7 +36877,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   const occurrences = [];
   let applicableCount = 0;
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('summary', safeRoot) : helpers.queryAll('summary', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('summary') : helpers.queryAll('summary');
 
   function evaluate(el) {
     const ariaLabel = getAttr(el, 'aria-label');
@@ -37572,11 +37516,10 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     return {ruleId: rule.ruleId, outcome: 'cantTell', severity: 'minor', occurrences};
 }), applicability: null },
     "tab-name-present": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
+  const { document, helpers, rule } = ctx;
   const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
       ? helpers.getEligibilityInfo
       : null;
-  const safeRoot = root || document;
 
 
   function normalizeWs(s) {
@@ -37682,7 +37625,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   let applicableCount = 0;
 
   const selector = '[role="tab"]';
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
 
   function evaluate(el) {
@@ -37797,14 +37740,13 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "table-duplicate-name": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   function normalizeWs(s) {
     return String(s || '').replace(/\s+/g, ' ').trim();
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('table[summary]', safeRoot) : helpers.queryAll('table[summary]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('table[summary]') : helpers.queryAll('table[summary]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -37850,12 +37792,11 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "table-fake-caption": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   function trim(v) { return (v == null ? '' : String(v)).trim(); }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('table', safeRoot) : helpers.queryAll('table', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('table') : helpers.queryAll('table');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -37918,10 +37859,9 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "table-headers-attr-valid": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('td[headers], th[headers]', safeRoot) : helpers.queryAll('td[headers], th[headers]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('td[headers], th[headers]') : helpers.queryAll('td[headers], th[headers]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -37995,10 +37935,9 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "table-th-has-data-cells": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
-  const tables = helpers.queryAllSmart ? helpers.queryAllSmart('table', safeRoot) : helpers.queryAll('table', safeRoot);
+  const tables = helpers.queryAllSmart ? helpers.queryAllSmart('table') : helpers.queryAll('table');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -38557,14 +38496,13 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: RULE_ID, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "td-has-header": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const MIN_SIZE = 4;
 
   function trim(v) { return (v == null ? '' : String(v)).trim(); }
 
-  const tables = helpers.queryAllSmart ? helpers.queryAllSmart('table', safeRoot) : helpers.queryAll('table', safeRoot);
+  const tables = helpers.queryAllSmart ? helpers.queryAllSmart('table') : helpers.queryAll('table');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -38650,11 +38588,10 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "textbox-name-present": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
+  const { document, helpers, rule } = ctx;
   const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
       ? helpers.getEligibilityInfo
       : null;
-  const safeRoot = root || document;
 
 
   function normalizeWs(s) {
@@ -38759,7 +38696,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   let applicableCount = 0;
 
   const selector = "[role=\"textbox\"]";
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
   // Precompute label[for] map for textbox elements that are labelable
   // native form controls (e.g. <input role="textbox">).
@@ -38860,11 +38797,10 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "tooltip-name-present": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
+  const { document, helpers, rule } = ctx;
   const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
       ? helpers.getEligibilityInfo
       : null;
-  const safeRoot = root || document;
 
 
   function normalizeWs(s) {
@@ -38928,7 +38864,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   let applicableCount = 0;
 
   const selector = '[role="tooltip"]';
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
 
   function evaluate(el) {
@@ -38992,11 +38928,10 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "treeitem-name-present": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
+  const { document, helpers, rule } = ctx;
   const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
       ? helpers.getEligibilityInfo
       : null;
-  const safeRoot = root || document;
 
 
   function normalizeWs(s) {
@@ -39060,7 +38995,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   let applicableCount = 0;
 
   const selector = "[role=\"treeitem\"]";
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
 
   function hasName(el) {
@@ -39123,12 +39058,11 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "valid-lang": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const BCP47_RE = /^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{2,8})*$/;
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[lang]', safeRoot) : helpers.queryAll('[lang]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[lang]') : helpers.queryAll('[lang]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -39173,10 +39107,9 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "video-caption": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('video', safeRoot) : helpers.queryAll('video', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('video') : helpers.queryAll('video');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -55245,9 +55178,8 @@ const __a11yCoreCrossFrameApi = (function () {
 ];
   const RULE_IMPLS = {
     "accesskeys": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[accesskey]', safeRoot) : helpers.queryAll('[accesskey]', safeRoot);
+  const { document, helpers, rule } = ctx;
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[accesskey]') : helpers.queryAll('[accesskey]');
 
   const groups = new Map(); // normalized key -> elements[]
   for (const el of nodes) {
@@ -55838,8 +55770,7 @@ if (isAccTreeEligible) {
     return { ruleId: rule.ruleId, outcome: 'cantTell', severity: 'minor', occurrences };
 }), applicability: null },
     "aria-allowed-attr": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
   if (!ariaHelpers) {
@@ -55903,7 +55834,7 @@ if (isAccTreeEligible) {
   };
 
   const globalSet = new Set(GLOBAL_ATTRS);
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]', safeRoot) : helpers.queryAll('[role]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]') : helpers.queryAll('[role]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -55968,15 +55899,14 @@ if (isAccTreeEligible) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-allowed-role": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
   if (!ariaHelpers) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]', safeRoot) : helpers.queryAll('[role]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]') : helpers.queryAll('[role]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -56023,8 +55953,7 @@ if (isAccTreeEligible) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-braille-equivalent": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   function trim(v) { return (v == null ? '' : String(v)).trim(); }
 
@@ -56045,8 +55974,8 @@ if (isAccTreeEligible) {
   }
 
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('[aria-braillelabel], [aria-brailleroledescription]', safeRoot)
-    : helpers.queryAll('[aria-braillelabel], [aria-brailleroledescription]', safeRoot);
+    ? helpers.queryAllSmart('[aria-braillelabel], [aria-brailleroledescription]')
+    : helpers.queryAll('[aria-braillelabel], [aria-brailleroledescription]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -56107,14 +56036,13 @@ if (isAccTreeEligible) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-checked-state-mismatch": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   function trim(v) { return (v == null ? '' : String(v)).trim(); }
 
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('input[type="checkbox"][aria-checked], input[type="radio"][aria-checked]', safeRoot)
-    : helpers.queryAll('input[type="checkbox"][aria-checked], input[type="radio"][aria-checked]', safeRoot);
+    ? helpers.queryAllSmart('input[type="checkbox"][aria-checked], input[type="radio"][aria-checked]')
+    : helpers.queryAll('input[type="checkbox"][aria-checked], input[type="radio"][aria-checked]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -56176,16 +56104,15 @@ if (isAccTreeEligible) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-conditional-attr": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   function trim(v) { return (v == null ? '' : String(v)).trim(); }
 
   const TRUTHY_INVALID_VALUES = new Set(['true', 'grammar', 'spelling']);
 
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('[aria-errormessage]', safeRoot)
-    : helpers.queryAll('[aria-errormessage]', safeRoot);
+    ? helpers.queryAllSmart('[aria-errormessage]')
+    : helpers.queryAll('[aria-errormessage]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -56230,15 +56157,14 @@ if (isAccTreeEligible) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-deprecated-role": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
   if (!ariaHelpers) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]', safeRoot) : helpers.queryAll('[role]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]') : helpers.queryAll('[role]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -56750,8 +56676,7 @@ if (isAccTreeEligible) {
   return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences };
 }), applicability: null },
     "aria-prohibited-attr": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
   if (!ariaHelpers) {
@@ -56771,7 +56696,7 @@ if (isAccTreeEligible) {
 
   const PROHIBITED_NAMING_ATTRS = ['aria-label', 'aria-labelledby'];
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]', safeRoot) : helpers.queryAll('[role]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]') : helpers.queryAll('[role]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -56822,8 +56747,7 @@ if (isAccTreeEligible) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-prohibited-children": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
   if (!ariaHelpers) {
@@ -56912,7 +56836,7 @@ if (isAccTreeEligible) {
     }
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]', safeRoot) : helpers.queryAll('[role]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]') : helpers.queryAll('[role]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -56984,8 +56908,7 @@ if (isAccTreeEligible) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-required-attr": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
   if (!ariaHelpers) {
@@ -57009,7 +56932,7 @@ if (isAccTreeEligible) {
     return v != null && String(v).trim().toLowerCase() === 'true';
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]', safeRoot) : helpers.queryAll('[role]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]') : helpers.queryAll('[role]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -57066,8 +56989,7 @@ if (isAccTreeEligible) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-required-children": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
   if (!ariaHelpers) {
@@ -57098,7 +57020,7 @@ if (isAccTreeEligible) {
   // ("runInPage MUST be self-contained").
   const CANDIDATE_SELECTOR = '[role], li, option, tr, td, th, thead, tbody, tfoot, ul, ol, table, select, input[type="radio"]';
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]', safeRoot) : helpers.queryAll('[role]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]') : helpers.queryAll('[role]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -57257,8 +57179,7 @@ if (isAccTreeEligible) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-required-parent": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
   if (!ariaHelpers) {
@@ -57344,7 +57265,7 @@ if (isAccTreeEligible) {
     const idTok = elId && String(elId).trim();
     if (!idTok) return false;
 
-    const owners = helpers.queryAllSmart ? helpers.queryAllSmart('[aria-owns]', safeRoot) : helpers.queryAll('[aria-owns]', safeRoot);
+    const owners = helpers.queryAllSmart ? helpers.queryAllSmart('[aria-owns]') : helpers.queryAll('[aria-owns]');
     for (const owner of owners) {
       if (!owner || !owner.getAttribute) continue;
       const ownsAttr = owner.getAttribute('aria-owns') || '';
@@ -57357,7 +57278,7 @@ if (isAccTreeEligible) {
     return false;
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]', safeRoot) : helpers.queryAll('[role]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]') : helpers.queryAll('[role]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -57570,15 +57491,14 @@ if (isAccTreeEligible) {
   return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences };
 }), applicability: null },
     "aria-roles-valid": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
   if (!ariaHelpers) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]', safeRoot) : helpers.queryAll('[role]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]') : helpers.queryAll('[role]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -57633,13 +57553,12 @@ if (isAccTreeEligible) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-text": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const FOCUSABLE_DESCENDANT_SELECTOR =
     'a[href], button, input, select, textarea, [tabindex], iframe, [contenteditable]:not([contenteditable="false"])';
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role="text"]', safeRoot) : helpers.queryAll('[role="text"]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role="text"]') : helpers.queryAll('[role="text"]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -57693,15 +57612,14 @@ if (isAccTreeEligible) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-valid-attr": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
   if (!ariaHelpers) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('*', safeRoot) : helpers.queryAll('*', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('*') : helpers.queryAll('*');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -57755,15 +57673,14 @@ if (isAccTreeEligible) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-valid-attr-value": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
   if (!ariaHelpers) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('*', safeRoot) : helpers.queryAll('*', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('*') : helpers.queryAll('*');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -57820,8 +57737,7 @@ if (isAccTreeEligible) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "autocomplete-valid": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   // Declared inside runInPage — see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
@@ -57856,7 +57772,7 @@ if (isAccTreeEligible) {
     return FIELD_NAMES.has(remaining[0]);
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('input, select, textarea', safeRoot) : helpers.queryAll('input, select, textarea', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('input, select, textarea') : helpers.queryAll('input, select, textarea');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -57899,12 +57815,11 @@ if (isAccTreeEligible) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "avoid-inline-spacing": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const SPACING_PROPS = ['line-height', 'letter-spacing', 'word-spacing'];
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[style]', safeRoot) : helpers.queryAll('[style]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[style]') : helpers.queryAll('[style]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -57957,11 +57872,10 @@ if (isAccTreeEligible) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "binary-control-name-present": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
+  const { document, helpers, rule } = ctx;
   const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
       ? helpers.getEligibilityInfo
       : null;
-  const safeRoot = root || document;
 
 
   function normalizeWs(s) {
@@ -58093,7 +58007,7 @@ if (isAccTreeEligible) {
   let applicableCount = 0;
 
   const selector = 'input[type="checkbox"], input[type="radio"], [role="checkbox"], [role="radio"], [role="switch"]';
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
 
   // Precompute label[for] associations once for speed/determinism.
@@ -58225,8 +58139,7 @@ if (isAccTreeEligible) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "button-name-present": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const occurrences = [];
   let applicableCount = 0;
@@ -58263,7 +58176,7 @@ if (isAccTreeEligible) {
   }
 
   const selector = 'button, input[type="button"], input[type="submit"], input[type="reset"], [role="button"]';
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
   for (const el of nodes) {
     // isAccTreeEligible returns { eligible, reasons }, not a boolean.
@@ -58698,11 +58611,10 @@ if (isAccTreeEligible) {
     return { ruleId: rule.ruleId, outcome: 'cantTell', severity: 'minor', occurrences };
 }), applicability: null },
     "combobox-name-present": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
+  const { document, helpers, rule } = ctx;
   const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
       ? helpers.getEligibilityInfo
       : null;
-  const safeRoot = root || document;
 
 
   function normalizeWs(s) {
@@ -58834,7 +58746,7 @@ if (isAccTreeEligible) {
   let applicableCount = 0;
 
   const selector = '[role="combobox"]';
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
   // Precompute label[for] map for combobox elements that are labelable
   // native form controls (e.g. <input role="combobox">).
@@ -60561,14 +60473,13 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'serious', occurrences };
 }), applicability: null },
     "definition-list-children-valid": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   // Declared inside runInPage — see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
   const PASSTHROUGH_TAGS = new Set(['dt', 'dd', 'script', 'template', 'style']);
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('dl', safeRoot) : helpers.queryAll('dl', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('dl') : helpers.queryAll('dl');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -60652,10 +60563,9 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "deprecated-elements-not-used": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('blink, marquee', safeRoot) : helpers.queryAll('blink, marquee', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('blink, marquee') : helpers.queryAll('blink, marquee');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -60694,11 +60604,10 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "dialog-name-present": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
+  const { document, helpers, rule } = ctx;
   const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
       ? helpers.getEligibilityInfo
       : null;
-  const safeRoot = root || document;
 
 
   function normalizeWs(s) {
@@ -60812,7 +60721,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   let applicableCount = 0;
 
   const selector = '[role="dialog"],[role="alertdialog"]';
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
 
   function evaluate(el) {
@@ -60877,10 +60786,9 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "dlitem-parent-valid": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('dt, dd', safeRoot) : helpers.queryAll('dt, dd', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('dt, dd') : helpers.queryAll('dt, dd');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -61532,8 +61440,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "focus-order-semantics": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const NON_INTERACTIVE_ROLES = new Set([
     'generic', 'group', 'text', 'presentation', 'none', 'img', 'heading',
@@ -61543,7 +61450,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     'definition', 'paragraph', 'caption', 'status', 'alert', 'log', 'tooltip'
   ]);
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[tabindex][role]', safeRoot) : helpers.queryAll('[tabindex][role]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[tabindex][role]') : helpers.queryAll('[tabindex][role]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -62184,11 +62091,10 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [], data: { details: { metrics } } };
 }), applicability: null },
     "form-control-single-label": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const selector = 'input:not([type="hidden"]):not([type="submit"]):not([type="reset"]):not([type="button"]):not([type="image"]),select,textarea';
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
   // Build a for-value -> label[] map once (avoids per-control dynamic
   // attribute-selector construction / CSS.escape, which is not guaranteed
@@ -62466,14 +62372,13 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'serious', occurrences };
 }), applicability: null },
     "identical-links-same-purpose": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   function normName(s) {
     return (s == null ? '' : String(s)).replace(/\s+/g, ' ').trim().toLowerCase();
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('a[href]', safeRoot) : helpers.queryAll('a[href]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('a[href]') : helpers.queryAll('a[href]');
 
   const groups = new Map(); // normName -> [{ el, href }]
   let applicableCount = 0;
@@ -62553,8 +62458,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "iframe-focusable-content": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   function hasFocusableCandidate(doc) {
     if (!doc || !doc.querySelectorAll) return false;
@@ -62586,7 +62490,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     return !Number.isNaN(n) && n < 0;
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('iframe, frame', safeRoot) : helpers.queryAll('iframe, frame', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('iframe, frame') : helpers.queryAll('iframe, frame');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -62636,10 +62540,9 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "iframe-name-present": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('iframe, frame', safeRoot) : helpers.queryAll('iframe, frame', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('iframe, frame') : helpers.queryAll('iframe, frame');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -62691,10 +62594,9 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "iframe-title-unique": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('iframe, frame', safeRoot) : helpers.queryAll('iframe, frame', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('iframe, frame') : helpers.queryAll('iframe, frame');
 
   const groups = new Map(); // trimmed title -> elements[]
   let applicableCount = 0;
@@ -62749,8 +62651,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "image-redundant-alt": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   function normalizeWs(s) {
     return String(s || '').replace(/\s+/g, ' ').trim();
@@ -62769,7 +62670,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     return normalizeWs(text);
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('img[alt]', safeRoot) : helpers.queryAll('img[alt]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('img[alt]') : helpers.queryAll('img[alt]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -63557,8 +63458,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     return { ruleId: rule.ruleId, outcome: 'cantTell', severity: 'minor', occurrences };
 }), applicability: null },
     "label-in-name": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const occurrences = [];
   let applicableCount = 0;
@@ -63567,7 +63467,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   // NOTE: aria-hidden is intentionally NOT excluded here; it does not affect visual rendering.
   const selector = ':is(button, a[href], summary, input:not([type="hidden"]), textarea, select, [role="button"], [role="link"], [role="checkbox"], [role="radio"], [role="switch"], [role="searchbox"], [role="tab"], [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="option"], [role="treeitem"], [role="gridcell"]):not([hidden]):not([disabled]):not([aria-disabled="true"]):is([aria-label], [aria-labelledby])';
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
   function norm(s) {
     const v = (s == null ? '' : String(s));
@@ -63705,11 +63605,11 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     }
 
     // Fallback: label[for=id]. Uses `document` directly rather than
-    // ctx.root/safeRoot -- label[for] association is a document-wide
-    // relationship (IDs are document-unique), not bounded by whatever
-    // contextSelector region happens to be scanned, and ctx.root is an
-    // array (multi-region contextSelector support), not a single element
-    // with its own .querySelector to call directly.
+    // ctx.root -- label[for] association is a document-wide relationship
+    // (IDs are document-unique), not bounded by whatever contextSelector
+    // region happens to be scanned, and ctx.root is an array (multi-region
+    // contextSelector support), not a single element with its own
+    // .querySelector to call directly.
     try {
       const idAttribute = control && control.getAttribute ? (control.getAttribute('id') || '') : '';
       const key = String(idAttribute || '').trim();
@@ -63850,11 +63750,10 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "label-title-only": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const selector = 'input:not([type="hidden"]):not([type="submit"]):not([type="reset"]):not([type="button"]):not([type="image"]),select,textarea';
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
   const labelsByFor = new Map();
   const allLabels = document.getElementsByTagName ? document.getElementsByTagName('label') : [];
@@ -64901,8 +64800,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'cantTell', severity: rule.defaultSeverity || 'minor', occurrences };
 }), applicability: null },
     "link-in-text-block": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule, engineOptions } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule, engineOptions } = ctx;
 
   function safeComputedStyle(el) {
     try {
@@ -64948,7 +64846,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   const c = helpers && helpers.contrast ? helpers.contrast : null;
 
   const selector = 'a[href]';
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
   const occurrences = [];
   let applicableCount = 0;
@@ -65048,8 +64946,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "link-name-present": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const occurrences = [];
   let applicableCount = 0;
@@ -65070,7 +64967,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   }
 
   const selector = 'a[href], area[href], [role="link"]';
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
   for (const el of nodes) {
     // isAccTreeEligible returns { eligible, reasons }, not a boolean.
@@ -65148,8 +65045,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "link-name-quality": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const GENERIC_LINK_TEXT = new Set([
     'click here', 'here', 'click', 'more', 'more info', 'more information',
@@ -65168,7 +65064,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   }
 
   const selector = 'a[href]';
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
   const occurrences = [];
   let applicableCount = 0;
@@ -65228,14 +65124,13 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "list-children-valid": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   // Declared inside runInPage — see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
   const ALLOWED_CHILD_TAGS = new Set(['li', 'script', 'template']);
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('ul, ol', safeRoot) : helpers.queryAll('ul, ol', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('ul, ol') : helpers.queryAll('ul, ol');
 
   const isAccTreeEligible = helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
 
@@ -65306,11 +65201,10 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "listbox-name-present": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
+  const { document, helpers, rule } = ctx;
   const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
       ? helpers.getEligibilityInfo
       : null;
-  const safeRoot = root || document;
 
 
   function normalizeWs(s) {
@@ -65415,7 +65309,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   let applicableCount = 0;
 
   const selector = "[role=\"listbox\"]";
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
   // Precompute label[for] map for listbox elements that are labelable
   // native form controls (e.g. <select multiple role="listbox">).
@@ -65516,10 +65410,9 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "listitem-parent-valid": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('li', safeRoot) : helpers.queryAll('li', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('li') : helpers.queryAll('li');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -65948,11 +65841,10 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "menuitem-name-present": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
+  const { document, helpers, rule } = ctx;
   const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
       ? helpers.getEligibilityInfo
       : null;
-  const safeRoot = root || document;
 
 
   function normalizeWs(s) {
@@ -66058,7 +65950,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   let applicableCount = 0;
 
   const selector = '[role="menuitem"],[role="menuitemcheckbox"],[role="menuitemradio"]';
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
 
   function evaluate(el) {
@@ -66364,11 +66256,10 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "meter-name-present": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
+  const { document, helpers, rule } = ctx;
   const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
       ? helpers.getEligibilityInfo
       : null;
-  const safeRoot = root || document;
 
 
   function normalizeWs(s) {
@@ -66432,7 +66323,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   let applicableCount = 0;
 
   const selector = '[role="meter"]';
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
 
   function evaluate(el) {
@@ -66498,8 +66389,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "mouse-only-event-handlers": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const MOUSE_ONLY_ATTRS = [
     'onmouseover', 'onmouseout', 'onmousedown', 'onmouseup',
@@ -66510,7 +66400,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   function trim(v) { return (v == null ? '' : String(v)).trim(); }
 
   const selector = MOUSE_ONLY_ATTRS.map((a) => `[${a}]`).join(', ');
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
   const occurrences = [];
   let applicableCount = 0;
@@ -66562,8 +66452,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "nested-interactive-controls-absent": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   // Declared inside runInPage — see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
@@ -66592,7 +66481,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     '[role="treeitem"]'
   ].join(', ');
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(INTERACTIVE_SELECTOR, safeRoot) : helpers.queryAll(INTERACTIVE_SELECTOR, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(INTERACTIVE_SELECTOR) : helpers.queryAll(INTERACTIVE_SELECTOR);
 
   const occurrences = [];
   let applicableCount = 0;
@@ -66641,10 +66530,9 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "no-autoplay-audio": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('audio[autoplay], video[autoplay]', safeRoot) : helpers.queryAll('audio[autoplay], video[autoplay]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('audio[autoplay], video[autoplay]') : helpers.queryAll('audio[autoplay], video[autoplay]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -66998,11 +66886,10 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     return {ruleId: rule.ruleId, outcome: 'cantTell', severity: 'minor', occurrences};
 }), applicability: null },
     "option-name-present": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
+  const { document, helpers, rule } = ctx;
   const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
       ? helpers.getEligibilityInfo
       : null;
-  const safeRoot = root || document;
 
 
   function normalizeWs(s) {
@@ -67066,7 +66953,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   let applicableCount = 0;
 
   const selector = "[role=\"option\"]";
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
 
   function hasName(el) {
@@ -67129,8 +67016,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "p-as-heading": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const MAX_HEADING_LIKE_CHARS = 120;
   const MIN_FONT_SIZE_PX = 18;
@@ -67182,7 +67068,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     return Number.isFinite(px) ? px : 0;
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('p', safeRoot) : helpers.queryAll('p', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('p') : helpers.queryAll('p');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -67612,8 +67498,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "presentation-role-conflict": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   // The full set of ARIA attributes marked `global: true` per the WAI-ARIA
   // spec (confirmed against a widely-used reference engine's own
@@ -67630,8 +67515,8 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   const getFocusableInfo = helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
 
   const nodes = helpers.queryAllSmart
-      ? helpers.queryAllSmart('[role="presentation"], [role="none"], img[alt=""]', safeRoot)
-      : helpers.queryAll('[role="presentation"], [role="none"], img[alt=""]', safeRoot);
+      ? helpers.queryAllSmart('[role="presentation"], [role="none"], img[alt=""]')
+      : helpers.queryAll('[role="presentation"], [role="none"], img[alt=""]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -67695,11 +67580,10 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "progressbar-name-present": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
+  const { document, helpers, rule } = ctx;
   const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
       ? helpers.getEligibilityInfo
       : null;
-  const safeRoot = root || document;
 
 
   function normalizeWs(s) {
@@ -67763,7 +67647,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   let applicableCount = 0;
 
   const selector = '[role="progressbar"]';
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
 
   function evaluate(el) {
@@ -68175,8 +68059,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "scrollable-region-focusable": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   function safeComputedStyle(el) {
     try {
@@ -68221,7 +68104,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   }
 
   const CANDIDATE_SELECTOR = 'div, section, article, aside, main, nav, pre, table, blockquote, ul, ol, textarea';
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(CANDIDATE_SELECTOR, safeRoot) : helpers.queryAll(CANDIDATE_SELECTOR, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(CANDIDATE_SELECTOR) : helpers.queryAll(CANDIDATE_SELECTOR);
 
   const occurrences = [];
   let applicableCount = 0;
@@ -68276,11 +68159,10 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "searchbox-name-present": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
+  const { document, helpers, rule } = ctx;
   const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
       ? helpers.getEligibilityInfo
       : null;
-  const safeRoot = root || document;
 
 
   function normalizeWs(s) {
@@ -68385,7 +68267,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   let applicableCount = 0;
 
   const selector = "[role=\"searchbox\"]";
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
   // Precompute label[for] map for searchbox elements that are labelable
   // native form controls (e.g. <input role="searchbox">).
@@ -68486,10 +68368,9 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "server-side-image-map-absent": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('img[ismap]', safeRoot) : helpers.queryAll('img[ismap]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('img[ismap]') : helpers.queryAll('img[ismap]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -68527,8 +68408,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "skip-link": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   function normalizeWs(s) {
     return String(s || '').replace(/\s+/g, ' ').trim();
@@ -68579,7 +68459,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
 
   const geometrySupported = hasReliableGeometrySupport();
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('a[href]', safeRoot) : helpers.queryAll('a[href]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('a[href]') : helpers.queryAll('a[href]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -68703,11 +68583,10 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "slider-name-present": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
+  const { document, helpers, rule } = ctx;
   const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
       ? helpers.getEligibilityInfo
       : null;
-  const safeRoot = root || document;
 
 
   function normalizeWs(s) {
@@ -68839,7 +68718,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   let applicableCount = 0;
 
   const selector = 'input[type="range"], [role="slider"]';
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
 
   // Precompute label[for] map for native range inputs.
@@ -68953,11 +68832,10 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "spinbutton-name-present": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
+  const { document, helpers, rule } = ctx;
   const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
       ? helpers.getEligibilityInfo
       : null;
-  const safeRoot = root || document;
 
 
   function normalizeWs(s) {
@@ -69062,7 +68940,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   let applicableCount = 0;
 
   const selector = "[role=\"spinbutton\"]";
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
   // Precompute label[for] map for spinbutton elements that are labelable
   // native form controls (e.g. <input role="spinbutton">).
@@ -69163,11 +69041,10 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "summary-name-present": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
+  const { document, helpers, rule } = ctx;
   const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
       ? helpers.getEligibilityInfo
       : null;
-  const safeRoot = root || document;
 
 
   function normalizeWs(s) {
@@ -69230,7 +69107,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   const occurrences = [];
   let applicableCount = 0;
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('summary', safeRoot) : helpers.queryAll('summary', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('summary') : helpers.queryAll('summary');
 
   function evaluate(el) {
     const ariaLabel = getAttr(el, 'aria-label');
@@ -69869,11 +69746,10 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     return {ruleId: rule.ruleId, outcome: 'cantTell', severity: 'minor', occurrences};
 }), applicability: null },
     "tab-name-present": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
+  const { document, helpers, rule } = ctx;
   const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
       ? helpers.getEligibilityInfo
       : null;
-  const safeRoot = root || document;
 
 
   function normalizeWs(s) {
@@ -69979,7 +69855,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   let applicableCount = 0;
 
   const selector = '[role="tab"]';
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
 
   function evaluate(el) {
@@ -70094,14 +69970,13 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "table-duplicate-name": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   function normalizeWs(s) {
     return String(s || '').replace(/\s+/g, ' ').trim();
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('table[summary]', safeRoot) : helpers.queryAll('table[summary]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('table[summary]') : helpers.queryAll('table[summary]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -70147,12 +70022,11 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "table-fake-caption": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   function trim(v) { return (v == null ? '' : String(v)).trim(); }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('table', safeRoot) : helpers.queryAll('table', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('table') : helpers.queryAll('table');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -70215,10 +70089,9 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "table-headers-attr-valid": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('td[headers], th[headers]', safeRoot) : helpers.queryAll('td[headers], th[headers]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('td[headers], th[headers]') : helpers.queryAll('td[headers], th[headers]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -70292,10 +70165,9 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "table-th-has-data-cells": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
-  const tables = helpers.queryAllSmart ? helpers.queryAllSmart('table', safeRoot) : helpers.queryAll('table', safeRoot);
+  const tables = helpers.queryAllSmart ? helpers.queryAllSmart('table') : helpers.queryAll('table');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -70854,14 +70726,13 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: RULE_ID, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "td-has-header": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const MIN_SIZE = 4;
 
   function trim(v) { return (v == null ? '' : String(v)).trim(); }
 
-  const tables = helpers.queryAllSmart ? helpers.queryAllSmart('table', safeRoot) : helpers.queryAll('table', safeRoot);
+  const tables = helpers.queryAllSmart ? helpers.queryAllSmart('table') : helpers.queryAll('table');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -70947,11 +70818,10 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "textbox-name-present": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
+  const { document, helpers, rule } = ctx;
   const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
       ? helpers.getEligibilityInfo
       : null;
-  const safeRoot = root || document;
 
 
   function normalizeWs(s) {
@@ -71056,7 +70926,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   let applicableCount = 0;
 
   const selector = "[role=\"textbox\"]";
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
   // Precompute label[for] map for textbox elements that are labelable
   // native form controls (e.g. <input role="textbox">).
@@ -71157,11 +71027,10 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "tooltip-name-present": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
+  const { document, helpers, rule } = ctx;
   const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
       ? helpers.getEligibilityInfo
       : null;
-  const safeRoot = root || document;
 
 
   function normalizeWs(s) {
@@ -71225,7 +71094,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   let applicableCount = 0;
 
   const selector = '[role="tooltip"]';
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
 
   function evaluate(el) {
@@ -71289,11 +71158,10 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "treeitem-name-present": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
+  const { document, helpers, rule } = ctx;
   const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
       ? helpers.getEligibilityInfo
       : null;
-  const safeRoot = root || document;
 
 
   function normalizeWs(s) {
@@ -71357,7 +71225,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   let applicableCount = 0;
 
   const selector = "[role=\"treeitem\"]";
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
 
   function hasName(el) {
@@ -71420,12 +71288,11 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "valid-lang": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const BCP47_RE = /^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{2,8})*$/;
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[lang]', safeRoot) : helpers.queryAll('[lang]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[lang]') : helpers.queryAll('[lang]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -71470,10 +71337,9 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "video-caption": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('video', safeRoot) : helpers.queryAll('video', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('video') : helpers.queryAll('video');
 
   const occurrences = [];
   let applicableCount = 0;

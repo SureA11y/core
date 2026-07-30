@@ -71,14 +71,13 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   // Declared inside runInPage — see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
   const ALLOWED_CHILD_TAGS = new Set(['li', 'script', 'template']);
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('ul, ol', safeRoot) : helpers.queryAll('ul, ol', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('ul, ol') : helpers.queryAll('ul, ol');
 
   const isAccTreeEligible = helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
 

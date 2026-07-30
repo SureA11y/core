@@ -47,12 +47,11 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const BCP47_RE = /^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{2,8})*$/;
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[lang]', safeRoot) : helpers.queryAll('[lang]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[lang]') : helpers.queryAll('[lang]');
 
   const occurrences = [];
   let applicableCount = 0;

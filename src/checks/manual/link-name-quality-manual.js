@@ -60,8 +60,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const GENERIC_LINK_TEXT = new Set([
     'click here', 'here', 'click', 'more', 'more info', 'more information',
@@ -80,7 +79,7 @@ function runInPage(ctx) {
   }
 
   const selector = 'a[href]';
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
   const occurrences = [];
   let applicableCount = 0;

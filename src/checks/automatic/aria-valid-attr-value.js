@@ -57,15 +57,14 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
   if (!ariaHelpers) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('*', safeRoot) : helpers.queryAll('*', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('*') : helpers.queryAll('*');
 
   const occurrences = [];
   let applicableCount = 0;

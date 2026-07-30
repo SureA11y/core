@@ -23,11 +23,10 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
+  const { document, helpers, rule } = ctx;
   const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
       ? helpers.getEligibilityInfo
       : null;
-  const safeRoot = root || document;
 
 
   function normalizeWs(s) {
@@ -90,7 +89,7 @@ function runInPage(ctx) {
   const occurrences = [];
   let applicableCount = 0;
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('summary', safeRoot) : helpers.queryAll('summary', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('summary') : helpers.queryAll('summary');
 
   function evaluate(el) {
     const ariaLabel = getAttr(el, 'aria-label');

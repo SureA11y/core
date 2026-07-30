@@ -68,8 +68,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, root, helpers, rule, engineOptions } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule, engineOptions } = ctx;
 
   function safeComputedStyle(el) {
     try {
@@ -115,7 +114,7 @@ function runInPage(ctx) {
   const c = helpers && helpers.contrast ? helpers.contrast : null;
 
   const selector = 'a[href]';
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector, safeRoot) : helpers.queryAll(selector, safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
   const occurrences = [];
   let applicableCount = 0;

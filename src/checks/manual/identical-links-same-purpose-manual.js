@@ -52,14 +52,13 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
   function normName(s) {
     return (s == null ? '' : String(s)).replace(/\s+/g, ' ').trim().toLowerCase();
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('a[href]', safeRoot) : helpers.queryAll('a[href]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('a[href]') : helpers.queryAll('a[href]');
 
   const groups = new Map(); // normName -> [{ el, href }]
   let applicableCount = 0;

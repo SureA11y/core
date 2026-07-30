@@ -44,10 +44,9 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
+  const { document, helpers, rule } = ctx;
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('img[ismap]', safeRoot) : helpers.queryAll('img[ismap]', safeRoot);
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('img[ismap]') : helpers.queryAll('img[ismap]');
 
   const occurrences = [];
   let applicableCount = 0;
