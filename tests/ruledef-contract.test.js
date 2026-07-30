@@ -60,6 +60,20 @@ test('CHECK_DEFS contract invariants', () => {
     assert.equal(typeof def.normative, 'boolean');
     assert.equal(typeof def.atomic, 'boolean');
 
+    // Deprecation contract (docs/API_STABILITY.md) -- every rule carries
+    // these, whether or not it's actually deprecated.
+    assert.equal(typeof def.deprecated, 'boolean');
+    if (def.deprecated) {
+      assert.ok(def.deprecation && typeof def.deprecation === 'object', `${def.ruleId}: deprecated rules must carry meta.deprecation`);
+      assert.equal(typeof def.deprecation.reason, 'string');
+      assert.ok(def.deprecation.reason.length > 0, `${def.ruleId}: deprecation.reason must be non-empty`);
+      assert.equal(typeof def.deprecation.sinceVersion, 'string');
+      assert.ok(def.deprecation.sinceVersion.length > 0, `${def.ruleId}: deprecation.sinceVersion must be non-empty`);
+      assert.ok(def.deprecation.replacedBy === null || typeof def.deprecation.replacedBy === 'string');
+    } else {
+      assert.equal(def.deprecation, null, `${def.ruleId}: non-deprecated rules must have deprecation:null`);
+    }
+
     assert.ok(def.category === null || typeof def.category === 'string');
     assert.ok(def.standard === null || typeof def.standard === 'string');
 
@@ -92,4 +106,6 @@ test('getChecksCatalog includes contract fields', () => {
   assert.equal(typeof first.ruleVersion, 'string');
   assert.equal(typeof first.normative, 'boolean');
   assert.equal(typeof first.atomic, 'boolean');
+  assert.equal(typeof first.deprecated, 'boolean');
+  assert.equal(first.deprecation, null, 'no shipped rule is deprecated yet');
 });

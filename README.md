@@ -270,6 +270,7 @@ and progressively explore more advanced features.
 | Document | Description |
 |---|---|
 | `docs/OUTPUT_SCHEMA.md` | Complete description of every field returned by the engine. |
+| `docs/API_STABILITY.md` | Semver guarantees on the result shape, and the rule-ID deprecation policy. |
 | `docs/CLI.md` | CLI commands, options, exit codes and examples. |
 | `docs/BASELINE.md` | CI baseline/allowlist: gate builds only on new violations. |
 | `docs/ENGINE_OPTIONS.md` | Configuration, filtering, policies and localization. |

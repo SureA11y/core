@@ -144,6 +144,23 @@ Each atomic rule declares which “facet(s)” of an SC it covers.
 
 Keep facet naming consistent across a family.
 
+#### `meta.deprecated` / `meta.deprecation`
+Optional — how to retire a rule ID without breaking downstream consumers. See [`API_STABILITY.md`](./API_STABILITY.md) for the full policy (a deprecated rule keeps running normally; this is a catalog-level migration signal, not an automatic exclusion). Shape:
+
+```js
+const meta = {
+  // ...
+  deprecated: true,
+  deprecation: {
+    replacedBy: 'new-rule-id', // or null
+    reason: 'Why this rule is being retired.',
+    sinceVersion: '1.2.0'
+  }
+};
+```
+
+`deprecated: true` without both `deprecation.reason` and `.sinceVersion` throws at build time (`normalizeRuleMeta`, `src/core/rule-meta.js`).
+
 ---
 
 ## 5) i18n in occurrences (repo reality)

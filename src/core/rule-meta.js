@@ -80,6 +80,23 @@ function normalizeRuleMeta(ruleId, id, meta, engineTag) {
   const normative = (typeof m.normative === 'boolean') ? m.normative : true;
   const atomic = (typeof m.atomic === 'boolean') ? m.atomic : true;
 
+  // Deprecation signal for the rule catalog (see docs/API_STABILITY.md).
+  // Purely informational -- a deprecated rule still runs and produces
+  // results completely normally; this is a catalog-level migration signal
+  // for integrators, not an automatic exclusion.
+  const deprecated = (typeof m.deprecated === 'boolean') ? m.deprecated : false;
+  const deprecation = (deprecated && m.deprecation && typeof m.deprecation === 'object' && !Array.isArray(m.deprecation))
+      ? {
+          replacedBy: (typeof m.deprecation.replacedBy === 'string' && m.deprecation.replacedBy.trim()) ? m.deprecation.replacedBy.trim() : null,
+          reason: (typeof m.deprecation.reason === 'string') ? m.deprecation.reason.trim() : '',
+          sinceVersion: (typeof m.deprecation.sinceVersion === 'string') ? m.deprecation.sinceVersion.trim() : ''
+        }
+      : null;
+
+  if (deprecated && (!deprecation || !deprecation.reason || !deprecation.sinceVersion)) {
+    throw new Error(`Rule ${ruleId}: meta.deprecated:true requires meta.deprecation.reason and meta.deprecation.sinceVersion`);
+  }
+
   const category = (typeof m.category === 'string' && m.category.trim()) ? m.category.trim() : null;
   const standard = (typeof m.standard === 'string' && m.standard.trim()) ? m.standard.trim() : null;
 
@@ -127,6 +144,8 @@ function normalizeRuleMeta(ruleId, id, meta, engineTag) {
     ruleVersion,
     normative,
     atomic,
+    deprecated,
+    deprecation,
     category,
     standard,
     applicability,
