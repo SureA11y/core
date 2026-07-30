@@ -58,3 +58,15 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/landmark-one-main-all-scenari
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'LANDMARK_MAIN_MISSING');
 });
+
+test(`landmark-one-main: notApplicable when contextSelector scopes narrower than the whole document (fragment-scan applicability)`, () => {
+  const html = `<!doctype html><html><body><nav>Nav only</nav></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: ['landmark-one-main'], contextSelector: 'body' });
+  assertRule(result, 'landmark-one-main', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`landmark-one-main: notApplicable when engineOptions.fragment is true, even unscoped`, () => {
+  const html = `<!doctype html><html><body><nav>Nav only</nav></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: ['landmark-one-main'], engineOptions: { fragment: true } });
+  assertRule(result, 'landmark-one-main', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});

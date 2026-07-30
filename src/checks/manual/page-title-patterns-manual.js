@@ -24,6 +24,14 @@ const meta = {
   coverage: { facetsBySc: { '2.4.2': ['page-title-patterns'] } }
 };
 
+// This check is inherently whole-document (does the PAGE have this
+// property?), not evaluable per-subtree -- notApplicable when contextSelector
+// scoped this run narrower than the whole document, or when
+// engineOptions.fragment:true was set (see helpers.isWholeDocumentScope).
+function applicability(ctx) {
+  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+}
+
 function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
   const probes = ctx && ctx.inputs && ctx.inputs.probes && typeof ctx.inputs.probes === 'object'
@@ -259,4 +267,4 @@ function runInPage(ctx) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }
 
-module.exports = { id, meta, runInPage };
+module.exports = { id, meta, runInPage, applicability };

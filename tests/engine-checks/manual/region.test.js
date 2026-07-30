@@ -49,3 +49,15 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/region-all-scenarios.html)`, 
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'rg_case_01'));
 });
+
+test(`region: notApplicable when contextSelector scopes narrower than the whole document (fragment-scan applicability)`, () => {
+  const html = `<!doctype html><html><body><main>Content</main><p id="a">Stray</p></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: ['region'], contextSelector: 'body' });
+  assertRule(result, 'region', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`region: notApplicable when engineOptions.fragment is true, even unscoped`, () => {
+  const html = `<!doctype html><html><body><main>Content</main><p id="a">Stray</p></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: ['region'], engineOptions: { fragment: true } });
+  assertRule(result, 'region', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});

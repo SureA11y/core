@@ -57,3 +57,15 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/meta-viewport-zoom-enabled-al
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(rule.occurrences[0].data.details.reasons.some((r) => r.includes('user-scalable')));
 });
+
+test(`meta-viewport-zoom-enabled: notApplicable when contextSelector scopes narrower than the whole document (fragment-scan applicability)`, () => {
+  const html = `<!doctype html><html><head><meta name="viewport" content="width=device-width, user-scalable=no"></head><body></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: ['meta-viewport-zoom-enabled'], contextSelector: 'body' });
+  assertRule(result, 'meta-viewport-zoom-enabled', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`meta-viewport-zoom-enabled: notApplicable when engineOptions.fragment is true, even unscoped`, () => {
+  const html = `<!doctype html><html><head><meta name="viewport" content="width=device-width, user-scalable=no"></head><body></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: ['meta-viewport-zoom-enabled'], engineOptions: { fragment: true } });
+  assertRule(result, 'meta-viewport-zoom-enabled', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});

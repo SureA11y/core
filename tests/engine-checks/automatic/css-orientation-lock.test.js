@@ -85,3 +85,15 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/css-orientation-lock-all-scen
 
   assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
 });
+
+test(`css-orientation-lock: notApplicable when contextSelector scopes narrower than the whole document (fragment-scan applicability)`, () => {
+  const html = `<!doctype html><html><head><style>@media (orientation: landscape) { html { transform: rotate(90deg); } }</style></head><body></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: ['css-orientation-lock'], contextSelector: 'body' });
+  assertRule(result, 'css-orientation-lock', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`css-orientation-lock: notApplicable when engineOptions.fragment is true, even unscoped`, () => {
+  const html = `<!doctype html><html><head><style>@media (orientation: landscape) { html { transform: rotate(90deg); } }</style></head><body></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: ['css-orientation-lock'], engineOptions: { fragment: true } });
+  assertRule(result, 'css-orientation-lock', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});

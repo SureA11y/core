@@ -54,3 +54,15 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-hidden-body-all-scenario
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'ARIA_HIDDEN_BODY');
 });
+
+test(`aria-hidden-body: notApplicable when contextSelector scopes narrower than the whole document (fragment-scan applicability)`, () => {
+  const html = `<!doctype html><html><body aria-hidden="true"><p>content</p></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: ['aria-hidden-body'], contextSelector: 'body' });
+  assertRule(result, 'aria-hidden-body', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`aria-hidden-body: notApplicable when engineOptions.fragment is true, even unscoped`, () => {
+  const html = `<!doctype html><html><body aria-hidden="true"><p>content</p></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: ['aria-hidden-body'], engineOptions: { fragment: true } });
+  assertRule(result, 'aria-hidden-body', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});

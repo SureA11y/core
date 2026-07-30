@@ -43,7 +43,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { document, root, helpers, rule } = ctx;
 
   function normalizeWs(s) {
     return String(s || '').replace(/\s+/g, ' ').trim();
@@ -116,9 +116,13 @@ function runInPage(ctx) {
   }
 
   function hasLandmarkAncestor(el) {
+    const scopeRoots = Array.isArray(root) ? root : (root ? [root] : []);
     let p = el.parentElement;
     while (p) {
       if (getLandmarkRole(p)) return true;
+      // Don't climb past the scanned scope -- see aria-helpers.js's
+      // hasLandmarkScopingAncestor for the same fix and rationale.
+      if (scopeRoots.includes(p)) break;
       p = p.parentElement;
     }
     return false;

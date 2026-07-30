@@ -120,6 +120,11 @@ function createDomHelpers(opts) {
     // opt out with includeHiddenElements:true.
     const includeHiddenElements = !!(opts && opts.includeHiddenElements === true);
     const excludeSelectors = Array.isArray(opts && opts.excludeSelectors) ? opts.excludeSelectors : [];
+    // Default off: explicit opt-in for "this scan target was never meant to
+    // represent a real page" (e.g. a raw component fragment parsed on its
+    // own), regardless of whether document.documentElement happens to be in
+    // scope. See isWholeDocumentScope() below.
+    const fragment = !!(opts && opts.fragment === true);
 
     // Rule-scoped excludes (engineOptions.rules[ruleId].excludeSelectors), set
     // by dom-runner.js immediately before invoking each rule's applicability/
@@ -4122,6 +4127,22 @@ function createDomHelpers(opts) {
         {trim}
     );
 
+    // For rules whose check is inherently about the WHOLE page (does the
+    // page have a title? a declared language? a way to skip repeated
+    // blocks?) rather than about elements found within a scanned subtree --
+    // these can't be answered correctly by scoping via queryAllSmart/ctx.root
+    // the way per-element checks can, since a subtree that never had (and
+    // was never meant to have) e.g. its own <title> shouldn't be faulted for
+    // lacking one. `false` when `fragment:true` was explicitly set, or when
+    // `contextSelector` scoped this run narrower than the whole document
+    // (roots doesn't include document.documentElement); `true` in the
+    // default/unscoped case, so this is a no-op for the overwhelming
+    // majority of existing (whole-page) scans.
+    function isWholeDocumentScope() {
+        if (fragment) return false;
+        return roots.includes(document.documentElement);
+    }
+
     return {
         // Existing query/snippet utilities
         queryAll,
@@ -4137,6 +4158,7 @@ function createDomHelpers(opts) {
         isExcluded,
         isAccTreeEligible,
         isDomVisibleEligible,
+        isWholeDocumentScope,
 
         // Engine-internal: sets which rule's rule-scoped excludeSelectors
         // (engineOptions.rules[ruleId].excludeSelectors) are currently in

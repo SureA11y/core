@@ -48,6 +48,14 @@ const meta = {
   }
 };
 
+// This check is inherently whole-document (does the PAGE have this
+// property?), not evaluable per-subtree -- notApplicable when contextSelector
+// scoped this run narrower than the whole document, or when
+// engineOptions.fragment:true was set (see helpers.isWholeDocumentScope).
+function applicability(ctx) {
+  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+}
+
 function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
@@ -84,4 +92,4 @@ function runInPage(ctx) {
   return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'critical', occurrences };
 }
 
-module.exports = { id, meta, runInPage };
+module.exports = { id, meta, runInPage, applicability };

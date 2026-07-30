@@ -52,6 +52,9 @@ function runCore(pageUrl, contextSelector, engineOptions, runOnly, CHECK_DEFS, R
     // unless the caller explicitly opts in.
     const includeHiddenElements = !!(engineOptionsResolved && engineOptionsResolved.includeHiddenElements === true);
     const excludeSelectors = normalizeSelectorList(engineOptionsResolved && engineOptionsResolved.excludeSelectors);
+    // Default off: explicit opt-in for "this scan target was never meant to
+    // represent a real page" -- see helpers.isWholeDocumentScope().
+    const fragment = !!(engineOptionsResolved && engineOptionsResolved.fragment === true);
 
     const url = pageUrl || (document.location && document.location.href) || null;
     const title = document.title || null;
@@ -83,6 +86,7 @@ function runCore(pageUrl, contextSelector, engineOptions, runOnly, CHECK_DEFS, R
         includeShadowDom,
         includeHiddenElements,
         excludeSelectors,
+        fragment,
         // Optional perf counters (bench/debug only). Deterministic and per-run.
         perfStats: !!(engineOptionsResolved && engineOptionsResolved.perfStats)
     });

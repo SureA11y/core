@@ -99,3 +99,15 @@ test('pass when <title> is non-empty but ends up outside <head> (in <body>)', ()
     const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
     assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
+
+test(`page-title-present: notApplicable when contextSelector scopes narrower than the whole document (fragment-scan applicability)`, () => {
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"></head><body>Hi</body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: ['page-title-present'], contextSelector: 'body' });
+  assertRule(result, 'page-title-present', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`page-title-present: notApplicable when engineOptions.fragment is true, even unscoped`, () => {
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"></head><body>Hi</body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: ['page-title-present'], engineOptions: { fragment: true } });
+  assertRule(result, 'page-title-present', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});

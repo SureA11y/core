@@ -75,3 +75,15 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/page-has-heading-one-all-scen
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'HEADING_ONE_MISSING');
 });
+
+test(`page-has-heading-one: notApplicable when contextSelector scopes narrower than the whole document (fragment-scan applicability)`, () => {
+  const html = `<!doctype html><html><body><h2>Section</h2></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: ['page-has-heading-one'], contextSelector: 'body' });
+  assertRule(result, 'page-has-heading-one', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`page-has-heading-one: notApplicable when engineOptions.fragment is true, even unscoped`, () => {
+  const html = `<!doctype html><html><body><h2>Section</h2></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: ['page-has-heading-one'], engineOptions: { fragment: true } });
+  assertRule(result, 'page-has-heading-one', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});

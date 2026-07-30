@@ -86,3 +86,15 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/bypass-blocks-present-all-sce
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'BYPASS_MECHANISM_ABSENT');
 });
+
+test(`bypass-blocks-present: notApplicable when contextSelector scopes narrower than the whole document (fragment-scan applicability)`, () => {
+  const html = `<!doctype html><html><body><a href="#missing">Skip</a><nav>Nav</nav><div>Content</div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: ['bypass-blocks-present'], contextSelector: 'body' });
+  assertRule(result, 'bypass-blocks-present', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`bypass-blocks-present: notApplicable when engineOptions.fragment is true, even unscoped`, () => {
+  const html = `<!doctype html><html><body><a href="#missing">Skip</a><nav>Nav</nav><div>Content</div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: ['bypass-blocks-present'], engineOptions: { fragment: true } });
+  assertRule(result, 'bypass-blocks-present', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});

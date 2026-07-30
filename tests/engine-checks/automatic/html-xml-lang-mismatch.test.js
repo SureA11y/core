@@ -44,3 +44,15 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/html-xml-lang-mismatch-all-sc
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'HTML_XML_LANG_MISMATCH');
 });
+
+test(`html-xml-lang-mismatch: notApplicable when contextSelector scopes narrower than the whole document (fragment-scan applicability)`, () => {
+  const html = `<!doctype html><html lang="en" xml:lang="fr"><body></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: ['html-xml-lang-mismatch'], contextSelector: 'body' });
+  assertRule(result, 'html-xml-lang-mismatch', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`html-xml-lang-mismatch: notApplicable when engineOptions.fragment is true, even unscoped`, () => {
+  const html = `<!doctype html><html lang="en" xml:lang="fr"><body></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: ['html-xml-lang-mismatch'], engineOptions: { fragment: true } });
+  assertRule(result, 'html-xml-lang-mismatch', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});

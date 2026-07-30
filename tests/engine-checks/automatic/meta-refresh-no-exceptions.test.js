@@ -56,3 +56,15 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/meta-refresh-no-exceptions-al
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'META_REFRESH_PRESENT');
 });
+
+test(`meta-refresh-no-exceptions: notApplicable when contextSelector scopes narrower than the whole document (fragment-scan applicability)`, () => {
+  const html = `<!doctype html><html><head><meta http-equiv="refresh" content="0;url=https://example.com"></head><body></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: ['meta-refresh-no-exceptions'], contextSelector: 'body' });
+  assertRule(result, 'meta-refresh-no-exceptions', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`meta-refresh-no-exceptions: notApplicable when engineOptions.fragment is true, even unscoped`, () => {
+  const html = `<!doctype html><html><head><meta http-equiv="refresh" content="0;url=https://example.com"></head><body></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: ['meta-refresh-no-exceptions'], engineOptions: { fragment: true } });
+  assertRule(result, 'meta-refresh-no-exceptions', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});

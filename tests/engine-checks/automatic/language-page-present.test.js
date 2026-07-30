@@ -145,3 +145,15 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/language-page-present-all-sce
     const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
     assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'lang-invalid-bcp47');
 });
+
+test(`html-lang-attr-present: notApplicable when contextSelector scopes narrower than the whole document (fragment-scan applicability)`, () => {
+  const html = `<!doctype html><html><head><title>x</title></head><body>Hi</body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: ['html-lang-attr-present'], contextSelector: 'body' });
+  assertRule(result, 'html-lang-attr-present', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`html-lang-attr-present: notApplicable when engineOptions.fragment is true, even unscoped`, () => {
+  const html = `<!doctype html><html><head><title>x</title></head><body>Hi</body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: ['html-lang-attr-present'], engineOptions: { fragment: true } });
+  assertRule(result, 'html-lang-attr-present', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});

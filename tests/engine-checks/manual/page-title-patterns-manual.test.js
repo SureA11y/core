@@ -199,3 +199,15 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/page-title-patterns-all-scena
     const occ = getFirstOccurrence(rule);
     assert.strictEqual(occ.data.details.reasonCode, 'genericTitle');
 });
+
+test(`page-title-patterns: notApplicable when contextSelector scopes narrower than the whole document (fragment-scan applicability)`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>Untitled</title></head><body>Hi</body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: ['page-title-patterns'], contextSelector: 'body' });
+  assertRule(result, 'page-title-patterns', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`page-title-patterns: notApplicable when engineOptions.fragment is true, even unscoped`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>Untitled</title></head><body>Hi</body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: ['page-title-patterns'], engineOptions: { fragment: true } });
+  assertRule(result, 'page-title-patterns', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});

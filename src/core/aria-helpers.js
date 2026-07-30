@@ -38,6 +38,16 @@ function createAriaHelpers(opts, shared) {
     const trim = (shared && shared.trim) || ((v) => (v == null ? '' : String(v)).trim());
     const lower = (v) => trim(v).toLowerCase();
     const ariaDocument = opts && opts.document;
+    // Same normalization as createDomHelpers's `roots` (src/core/dom-helpers.js)
+    // -- opts.root accepts a single element or an array (multi-region
+    // contextSelector support). Used to bound hasLandmarkScopingAncestor's
+    // ancestor walk to the scanned scope; see that function below.
+    const ariaRoots = (() => {
+        const r = opts && opts.root;
+        if (Array.isArray(r)) return r.filter((x) => x && typeof x === 'object');
+        if (r && typeof r === 'object') return [r];
+        return [];
+    })();
 
     // Existence check for a single ID token — never throws, returns false
     // (not "unknown") when the document isn't available so callers degrade
@@ -135,6 +145,10 @@ function createAriaHelpers(opts, shared) {
         let guard = 0;
         while (cur && guard++ < 200) {
             if (isLandmarkScopingAncestorElement(cur, includeMain)) return true;
+            // Don't climb past the scanned scope -- a contextSelector-scoped
+            // (or fragment) scan should never let ancestry OUTSIDE the
+            // analyzed subtree affect a role computed WITHIN it.
+            if (ariaRoots.includes(cur)) break;
             cur = cur.parentElement;
         }
         return false;

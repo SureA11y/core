@@ -325,6 +325,20 @@ why:
   outcome is demonstrable per fixture file. Pick the most illustrative FAIL case; note
   that PASS/other branches are covered by the rule's inline unit tests instead of
   minting near-duplicate fixture files.
+
+  This category isn't just a fixture-authoring convention — it now backs a real
+  behavioral contract. These 14 rules (`page-title-present`, `html-lang-attr-present`,
+  `html-xml-lang-mismatch`, `aria-hidden-body`, `css-orientation-lock`,
+  `meta-refresh-no-exceptions`, `meta-refresh-timing-absent`, `meta-viewport-zoom-enabled`,
+  `meta-viewport-large`, `page-title-patterns`, `region`, `bypass-blocks-present`,
+  `landmark-one-main`, `page-has-heading-one`) each export an `applicability(ctx)`
+  gating on `helpers.isWholeDocumentScope()` (`src/core/dom-helpers.js`) — `notApplicable`
+  when `contextSelector` scoped the run narrower than the whole document, or when
+  `engineOptions.fragment: true` was set (see `ENGINE_OPTIONS.md`). A scoped subtree
+  or a bare component fragment was never expected to carry its own `<title>`/`<html lang>`/
+  page-wide landmark structure, so flagging its absence there is a false positive, not a
+  real finding. If you add a new rule to this category, add the same `applicability`
+  export rather than letting it silently evaluate document-wide facts regardless of scope.
 - **Runtime-mutation-only branches** (e.g. `iframe-focusable-content`'s FAIL branch,
   which requires mutating `iframe.contentDocument` after parse — jsdom does not
   populate `srcdoc` synchronously): cover every branch that IS expressible statically;

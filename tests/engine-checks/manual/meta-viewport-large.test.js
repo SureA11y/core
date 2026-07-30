@@ -44,3 +44,15 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/meta-viewport-large-all-scena
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'VIEWPORT_ZOOM_BELOW_500');
 });
+
+test(`meta-viewport-large: notApplicable when contextSelector scopes narrower than the whole document (fragment-scan applicability)`, () => {
+  const html = `<!doctype html><html><head><meta name="viewport" content="maximum-scale=3"></head><body></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: ['meta-viewport-large'], contextSelector: 'body' });
+  assertRule(result, 'meta-viewport-large', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`meta-viewport-large: notApplicable when engineOptions.fragment is true, even unscoped`, () => {
+  const html = `<!doctype html><html><head><meta name="viewport" content="maximum-scale=3"></head><body></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: ['meta-viewport-large'], engineOptions: { fragment: true } });
+  assertRule(result, 'meta-viewport-large', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});

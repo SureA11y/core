@@ -10033,6 +10033,16 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     const trim = (shared && shared.trim) || ((v) => (v == null ? '' : String(v)).trim());
     const lower = (v) => trim(v).toLowerCase();
     const ariaDocument = opts && opts.document;
+    // Same normalization as createDomHelpers's `roots` (src/core/dom-helpers.js)
+    // -- opts.root accepts a single element or an array (multi-region
+    // contextSelector support). Used to bound hasLandmarkScopingAncestor's
+    // ancestor walk to the scanned scope; see that function below.
+    const ariaRoots = (() => {
+        const r = opts && opts.root;
+        if (Array.isArray(r)) return r.filter((x) => x && typeof x === 'object');
+        if (r && typeof r === 'object') return [r];
+        return [];
+    })();
 
     // Existence check for a single ID token — never throws, returns false
     // (not "unknown") when the document isn't available so callers degrade
@@ -10130,6 +10140,10 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
         let guard = 0;
         while (cur && guard++ < 200) {
             if (isLandmarkScopingAncestorElement(cur, includeMain)) return true;
+            // Don't climb past the scanned scope -- a contextSelector-scoped
+            // (or fragment) scan should never let ancestry OUTSIDE the
+            // analyzed subtree affect a role computed WITHIN it.
+            if (ariaRoots.includes(cur)) break;
             cur = cur.parentElement;
         }
         return false;
@@ -11026,6 +11040,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // opt out with includeHiddenElements:true.
     const includeHiddenElements = !!(opts && opts.includeHiddenElements === true);
     const excludeSelectors = Array.isArray(opts && opts.excludeSelectors) ? opts.excludeSelectors : [];
+    // Default off: explicit opt-in for "this scan target was never meant to
+    // represent a real page" (e.g. a raw component fragment parsed on its
+    // own), regardless of whether document.documentElement happens to be in
+    // scope. See isWholeDocumentScope() below.
+    const fragment = !!(opts && opts.fragment === true);
 
     // Rule-scoped excludes (engineOptions.rules[ruleId].excludeSelectors), set
     // by dom-runner.js immediately before invoking each rule's applicability/
@@ -15028,6 +15047,22 @@ const createDomHelpers = (function createDomHelpers(opts) {
         {trim}
     );
 
+    // For rules whose check is inherently about the WHOLE page (does the
+    // page have a title? a declared language? a way to skip repeated
+    // blocks?) rather than about elements found within a scanned subtree --
+    // these can't be answered correctly by scoping via queryAllSmart/ctx.root
+    // the way per-element checks can, since a subtree that never had (and
+    // was never meant to have) e.g. its own <title> shouldn't be faulted for
+    // lacking one. `false` when `fragment:true` was explicitly set, or when
+    // `contextSelector` scoped this run narrower than the whole document
+    // (roots doesn't include document.documentElement); `true` in the
+    // default/unscoped case, so this is a no-op for the overwhelming
+    // majority of existing (whole-page) scans.
+    function isWholeDocumentScope() {
+        if (fragment) return false;
+        return roots.includes(document.documentElement);
+    }
+
     return {
         // Existing query/snippet utilities
         queryAll,
@@ -15043,6 +15078,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
         isExcluded,
         isAccTreeEligible,
         isDomVisibleEligible,
+        isWholeDocumentScope,
 
         // Engine-internal: sets which rule's rule-scoped excludeSelectors
         // (engineOptions.rules[ruleId].excludeSelectors) are currently in
@@ -15283,6 +15319,9 @@ const runCore = (function runCore(pageUrl, contextSelector, engineOptions, runOn
     // unless the caller explicitly opts in.
     const includeHiddenElements = !!(engineOptionsResolved && engineOptionsResolved.includeHiddenElements === true);
     const excludeSelectors = normalizeSelectorList(engineOptionsResolved && engineOptionsResolved.excludeSelectors);
+    // Default off: explicit opt-in for "this scan target was never meant to
+    // represent a real page" -- see helpers.isWholeDocumentScope().
+    const fragment = !!(engineOptionsResolved && engineOptionsResolved.fragment === true);
 
     const url = pageUrl || (document.location && document.location.href) || null;
     const title = document.title || null;
@@ -15314,6 +15353,7 @@ const runCore = (function runCore(pageUrl, contextSelector, engineOptions, runOn
         includeShadowDom,
         includeHiddenElements,
         excludeSelectors,
+        fragment,
         // Optional perf counters (bench/debug only). Deterministic and per-run.
         perfStats: !!(engineOptionsResolved && engineOptionsResolved.perfStats)
     });
@@ -24077,7 +24117,9 @@ if (isAccTreeEligible) {
   }];
 
   return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'critical', occurrences };
-}), applicability: null },
+}), applicability: (function applicability(ctx) {
+  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+}) },
     "aria-hidden-focus": { run: (function runInPage(ctx) {
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
@@ -26214,7 +26256,9 @@ if (isAccTreeEligible) {
   }];
 
   return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'serious', occurrences };
-}), applicability: null },
+}), applicability: (function applicability(ctx) {
+  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+}) },
     "canvas-text-alternative-present": { run: (function runInPage(ctx) {
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
@@ -28301,7 +28345,9 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   }));
 
   return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'serious', occurrences };
-}), applicability: null },
+}), applicability: (function applicability(ctx) {
+  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+}) },
     "definition-list-children-valid": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
@@ -30158,7 +30204,9 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
         severity: 'minor',
         occurrences: []
     };
-}), applicability: null },
+}), applicability: (function applicability(ctx) {
+  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+}) },
     "html-xml-lang-mismatch": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
@@ -30200,7 +30248,9 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   }];
 
   return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'serious', occurrences };
-}), applicability: null },
+}), applicability: (function applicability(ctx) {
+  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+}) },
     "identical-links-same-purpose": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
@@ -31646,7 +31696,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "landmark-banner-is-top-level": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { document, root, helpers, rule } = ctx;
 
   // Declared inside runInPage — see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
@@ -31721,9 +31771,13 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   }
 
   function hasLandmarkAncestor(el) {
+    const scopeRoots = Array.isArray(root) ? root : (root ? [root] : []);
     let p = el.parentElement;
     while (p) {
       if (getLandmarkRole(p)) return true;
+      // Don't climb past the scanned scope -- see aria-helpers.js's
+      // hasLandmarkScopingAncestor for the same fix and rationale.
+      if (scopeRoots.includes(p)) break;
       p = p.parentElement;
     }
     return false;
@@ -31783,7 +31837,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "landmark-contentinfo-is-top-level": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { document, root, helpers, rule } = ctx;
 
   function normalizeWs(s) {
     return String(s || '').replace(/\s+/g, ' ').trim();
@@ -31856,9 +31910,13 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   }
 
   function hasLandmarkAncestor(el) {
+    const scopeRoots = Array.isArray(root) ? root : (root ? [root] : []);
     let p = el.parentElement;
     while (p) {
       if (getLandmarkRole(p)) return true;
+      // Don't climb past the scanned scope -- see aria-helpers.js's
+      // hasLandmarkScopingAncestor for the same fix and rationale.
+      if (scopeRoots.includes(p)) break;
       p = p.parentElement;
     }
     return false;
@@ -31918,7 +31976,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "landmark-main-is-top-level": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { document, root, helpers, rule } = ctx;
 
   function normalizeWs(s) {
     return String(s || '').replace(/\s+/g, ' ').trim();
@@ -31991,9 +32049,13 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   }
 
   function hasLandmarkAncestor(el) {
+    const scopeRoots = Array.isArray(root) ? root : (root ? [root] : []);
     let p = el.parentElement;
     while (p) {
       if (getLandmarkRole(p)) return true;
+      // Don't climb past the scanned scope -- see aria-helpers.js's
+      // hasLandmarkScopingAncestor for the same fix and rationale.
+      if (scopeRoots.includes(p)) break;
       p = p.parentElement;
     }
     return false;
@@ -32487,7 +32549,9 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
       }
     }]
   };
-}), applicability: null },
+}), applicability: (function applicability(ctx) {
+  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+}) },
     "landmark-unique": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
@@ -33948,7 +34012,9 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'moderate', occurrences };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
-}), applicability: null },
+}), applicability: (function applicability(ctx) {
+  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+}) },
     "meta-refresh-timing-absent": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
@@ -34002,7 +34068,9 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'serious', occurrences };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
-}), applicability: null },
+}), applicability: (function applicability(ctx) {
+  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+}) },
     "meta-viewport-large": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
@@ -34074,7 +34142,9 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     return { ruleId: rule.ruleId, outcome: 'cantTell', severity: rule.defaultSeverity || 'minor', occurrences };
   }
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
-}), applicability: null },
+}), applicability: (function applicability(ctx) {
+  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+}) },
     "meta-viewport-zoom-enabled": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
@@ -34146,7 +34216,9 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'serious', occurrences };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
-}), applicability: null },
+}), applicability: (function applicability(ctx) {
+  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+}) },
     "meter-name-present": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
   const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
@@ -35094,7 +35166,9 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
       }
     }]
   };
-}), applicability: null },
+}), applicability: (function applicability(ctx) {
+  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+}) },
     "page-title-patterns": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
   const probes = ctx && ctx.inputs && ctx.inputs.probes && typeof ctx.inputs.probes === 'object'
@@ -35328,7 +35402,9 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   }
 
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
-}), applicability: null },
+}), applicability: (function applicability(ctx) {
+  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+}) },
     "page-title-present": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
@@ -35388,7 +35464,9 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
-}), applicability: null },
+}), applicability: (function applicability(ctx) {
+  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+}) },
     "presentation-role-conflict": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
@@ -35753,7 +35831,9 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     return { ruleId: rule.ruleId, outcome: 'cantTell', severity: rule.defaultSeverity || 'minor', occurrences };
   }
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
-}), applicability: null },
+}), applicability: (function applicability(ctx) {
+  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+}) },
     "role-img-text-alternative-present": { run: (function runInPage(ctx) {
     const { root, helpers, rule } = ctx;
     const safeRoot = root || document;
@@ -42442,6 +42522,16 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     const trim = (shared && shared.trim) || ((v) => (v == null ? '' : String(v)).trim());
     const lower = (v) => trim(v).toLowerCase();
     const ariaDocument = opts && opts.document;
+    // Same normalization as createDomHelpers's `roots` (src/core/dom-helpers.js)
+    // -- opts.root accepts a single element or an array (multi-region
+    // contextSelector support). Used to bound hasLandmarkScopingAncestor's
+    // ancestor walk to the scanned scope; see that function below.
+    const ariaRoots = (() => {
+        const r = opts && opts.root;
+        if (Array.isArray(r)) return r.filter((x) => x && typeof x === 'object');
+        if (r && typeof r === 'object') return [r];
+        return [];
+    })();
 
     // Existence check for a single ID token — never throws, returns false
     // (not "unknown") when the document isn't available so callers degrade
@@ -42539,6 +42629,10 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
         let guard = 0;
         while (cur && guard++ < 200) {
             if (isLandmarkScopingAncestorElement(cur, includeMain)) return true;
+            // Don't climb past the scanned scope -- a contextSelector-scoped
+            // (or fragment) scan should never let ancestry OUTSIDE the
+            // analyzed subtree affect a role computed WITHIN it.
+            if (ariaRoots.includes(cur)) break;
             cur = cur.parentElement;
         }
         return false;
@@ -43435,6 +43529,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // opt out with includeHiddenElements:true.
     const includeHiddenElements = !!(opts && opts.includeHiddenElements === true);
     const excludeSelectors = Array.isArray(opts && opts.excludeSelectors) ? opts.excludeSelectors : [];
+    // Default off: explicit opt-in for "this scan target was never meant to
+    // represent a real page" (e.g. a raw component fragment parsed on its
+    // own), regardless of whether document.documentElement happens to be in
+    // scope. See isWholeDocumentScope() below.
+    const fragment = !!(opts && opts.fragment === true);
 
     // Rule-scoped excludes (engineOptions.rules[ruleId].excludeSelectors), set
     // by dom-runner.js immediately before invoking each rule's applicability/
@@ -47437,6 +47536,22 @@ const createDomHelpers = (function createDomHelpers(opts) {
         {trim}
     );
 
+    // For rules whose check is inherently about the WHOLE page (does the
+    // page have a title? a declared language? a way to skip repeated
+    // blocks?) rather than about elements found within a scanned subtree --
+    // these can't be answered correctly by scoping via queryAllSmart/ctx.root
+    // the way per-element checks can, since a subtree that never had (and
+    // was never meant to have) e.g. its own <title> shouldn't be faulted for
+    // lacking one. `false` when `fragment:true` was explicitly set, or when
+    // `contextSelector` scoped this run narrower than the whole document
+    // (roots doesn't include document.documentElement); `true` in the
+    // default/unscoped case, so this is a no-op for the overwhelming
+    // majority of existing (whole-page) scans.
+    function isWholeDocumentScope() {
+        if (fragment) return false;
+        return roots.includes(document.documentElement);
+    }
+
     return {
         // Existing query/snippet utilities
         queryAll,
@@ -47452,6 +47567,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
         isExcluded,
         isAccTreeEligible,
         isDomVisibleEligible,
+        isWholeDocumentScope,
 
         // Engine-internal: sets which rule's rule-scoped excludeSelectors
         // (engineOptions.rules[ruleId].excludeSelectors) are currently in
@@ -47692,6 +47808,9 @@ const runCore = (function runCore(pageUrl, contextSelector, engineOptions, runOn
     // unless the caller explicitly opts in.
     const includeHiddenElements = !!(engineOptionsResolved && engineOptionsResolved.includeHiddenElements === true);
     const excludeSelectors = normalizeSelectorList(engineOptionsResolved && engineOptionsResolved.excludeSelectors);
+    // Default off: explicit opt-in for "this scan target was never meant to
+    // represent a real page" -- see helpers.isWholeDocumentScope().
+    const fragment = !!(engineOptionsResolved && engineOptionsResolved.fragment === true);
 
     const url = pageUrl || (document.location && document.location.href) || null;
     const title = document.title || null;
@@ -47723,6 +47842,7 @@ const runCore = (function runCore(pageUrl, contextSelector, engineOptions, runOn
         includeShadowDom,
         includeHiddenElements,
         excludeSelectors,
+        fragment,
         // Optional perf counters (bench/debug only). Deterministic and per-run.
         perfStats: !!(engineOptionsResolved && engineOptionsResolved.perfStats)
     });
@@ -56441,7 +56561,9 @@ if (isAccTreeEligible) {
   }];
 
   return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'critical', occurrences };
-}), applicability: null },
+}), applicability: (function applicability(ctx) {
+  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+}) },
     "aria-hidden-focus": { run: (function runInPage(ctx) {
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
@@ -58578,7 +58700,9 @@ if (isAccTreeEligible) {
   }];
 
   return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'serious', occurrences };
-}), applicability: null },
+}), applicability: (function applicability(ctx) {
+  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+}) },
     "canvas-text-alternative-present": { run: (function runInPage(ctx) {
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
@@ -60665,7 +60789,9 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   }));
 
   return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'serious', occurrences };
-}), applicability: null },
+}), applicability: (function applicability(ctx) {
+  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+}) },
     "definition-list-children-valid": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
@@ -62522,7 +62648,9 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
         severity: 'minor',
         occurrences: []
     };
-}), applicability: null },
+}), applicability: (function applicability(ctx) {
+  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+}) },
     "html-xml-lang-mismatch": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
@@ -62564,7 +62692,9 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   }];
 
   return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'serious', occurrences };
-}), applicability: null },
+}), applicability: (function applicability(ctx) {
+  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+}) },
     "identical-links-same-purpose": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
@@ -64010,7 +64140,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "landmark-banner-is-top-level": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { document, root, helpers, rule } = ctx;
 
   // Declared inside runInPage — see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
@@ -64085,9 +64215,13 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   }
 
   function hasLandmarkAncestor(el) {
+    const scopeRoots = Array.isArray(root) ? root : (root ? [root] : []);
     let p = el.parentElement;
     while (p) {
       if (getLandmarkRole(p)) return true;
+      // Don't climb past the scanned scope -- see aria-helpers.js's
+      // hasLandmarkScopingAncestor for the same fix and rationale.
+      if (scopeRoots.includes(p)) break;
       p = p.parentElement;
     }
     return false;
@@ -64147,7 +64281,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "landmark-contentinfo-is-top-level": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { document, root, helpers, rule } = ctx;
 
   function normalizeWs(s) {
     return String(s || '').replace(/\s+/g, ' ').trim();
@@ -64220,9 +64354,13 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   }
 
   function hasLandmarkAncestor(el) {
+    const scopeRoots = Array.isArray(root) ? root : (root ? [root] : []);
     let p = el.parentElement;
     while (p) {
       if (getLandmarkRole(p)) return true;
+      // Don't climb past the scanned scope -- see aria-helpers.js's
+      // hasLandmarkScopingAncestor for the same fix and rationale.
+      if (scopeRoots.includes(p)) break;
       p = p.parentElement;
     }
     return false;
@@ -64282,7 +64420,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "landmark-main-is-top-level": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { document, root, helpers, rule } = ctx;
 
   function normalizeWs(s) {
     return String(s || '').replace(/\s+/g, ' ').trim();
@@ -64355,9 +64493,13 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   }
 
   function hasLandmarkAncestor(el) {
+    const scopeRoots = Array.isArray(root) ? root : (root ? [root] : []);
     let p = el.parentElement;
     while (p) {
       if (getLandmarkRole(p)) return true;
+      // Don't climb past the scanned scope -- see aria-helpers.js's
+      // hasLandmarkScopingAncestor for the same fix and rationale.
+      if (scopeRoots.includes(p)) break;
       p = p.parentElement;
     }
     return false;
@@ -64851,7 +64993,9 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
       }
     }]
   };
-}), applicability: null },
+}), applicability: (function applicability(ctx) {
+  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+}) },
     "landmark-unique": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
@@ -66312,7 +66456,9 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'moderate', occurrences };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
-}), applicability: null },
+}), applicability: (function applicability(ctx) {
+  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+}) },
     "meta-refresh-timing-absent": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
@@ -66366,7 +66512,9 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'serious', occurrences };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
-}), applicability: null },
+}), applicability: (function applicability(ctx) {
+  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+}) },
     "meta-viewport-large": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
@@ -66438,7 +66586,9 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     return { ruleId: rule.ruleId, outcome: 'cantTell', severity: rule.defaultSeverity || 'minor', occurrences };
   }
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
-}), applicability: null },
+}), applicability: (function applicability(ctx) {
+  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+}) },
     "meta-viewport-zoom-enabled": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
@@ -66510,7 +66660,9 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'serious', occurrences };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
-}), applicability: null },
+}), applicability: (function applicability(ctx) {
+  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+}) },
     "meter-name-present": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
   const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
@@ -67458,7 +67610,9 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
       }
     }]
   };
-}), applicability: null },
+}), applicability: (function applicability(ctx) {
+  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+}) },
     "page-title-patterns": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
   const probes = ctx && ctx.inputs && ctx.inputs.probes && typeof ctx.inputs.probes === 'object'
@@ -67692,7 +67846,9 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   }
 
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
-}), applicability: null },
+}), applicability: (function applicability(ctx) {
+  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+}) },
     "page-title-present": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
@@ -67752,7 +67908,9 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
-}), applicability: null },
+}), applicability: (function applicability(ctx) {
+  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+}) },
     "presentation-role-conflict": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
@@ -68117,7 +68275,9 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     return { ruleId: rule.ruleId, outcome: 'cantTell', severity: rule.defaultSeverity || 'minor', occurrences };
   }
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
-}), applicability: null },
+}), applicability: (function applicability(ctx) {
+  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+}) },
     "role-img-text-alternative-present": { run: (function runInPage(ctx) {
     const { root, helpers, rule } = ctx;
     const safeRoot = root || document;
@@ -74806,6 +74966,16 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     const trim = (shared && shared.trim) || ((v) => (v == null ? '' : String(v)).trim());
     const lower = (v) => trim(v).toLowerCase();
     const ariaDocument = opts && opts.document;
+    // Same normalization as createDomHelpers's `roots` (src/core/dom-helpers.js)
+    // -- opts.root accepts a single element or an array (multi-region
+    // contextSelector support). Used to bound hasLandmarkScopingAncestor's
+    // ancestor walk to the scanned scope; see that function below.
+    const ariaRoots = (() => {
+        const r = opts && opts.root;
+        if (Array.isArray(r)) return r.filter((x) => x && typeof x === 'object');
+        if (r && typeof r === 'object') return [r];
+        return [];
+    })();
 
     // Existence check for a single ID token — never throws, returns false
     // (not "unknown") when the document isn't available so callers degrade
@@ -74903,6 +75073,10 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
         let guard = 0;
         while (cur && guard++ < 200) {
             if (isLandmarkScopingAncestorElement(cur, includeMain)) return true;
+            // Don't climb past the scanned scope -- a contextSelector-scoped
+            // (or fragment) scan should never let ancestry OUTSIDE the
+            // analyzed subtree affect a role computed WITHIN it.
+            if (ariaRoots.includes(cur)) break;
             cur = cur.parentElement;
         }
         return false;
@@ -75799,6 +75973,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // opt out with includeHiddenElements:true.
     const includeHiddenElements = !!(opts && opts.includeHiddenElements === true);
     const excludeSelectors = Array.isArray(opts && opts.excludeSelectors) ? opts.excludeSelectors : [];
+    // Default off: explicit opt-in for "this scan target was never meant to
+    // represent a real page" (e.g. a raw component fragment parsed on its
+    // own), regardless of whether document.documentElement happens to be in
+    // scope. See isWholeDocumentScope() below.
+    const fragment = !!(opts && opts.fragment === true);
 
     // Rule-scoped excludes (engineOptions.rules[ruleId].excludeSelectors), set
     // by dom-runner.js immediately before invoking each rule's applicability/
@@ -79801,6 +79980,22 @@ const createDomHelpers = (function createDomHelpers(opts) {
         {trim}
     );
 
+    // For rules whose check is inherently about the WHOLE page (does the
+    // page have a title? a declared language? a way to skip repeated
+    // blocks?) rather than about elements found within a scanned subtree --
+    // these can't be answered correctly by scoping via queryAllSmart/ctx.root
+    // the way per-element checks can, since a subtree that never had (and
+    // was never meant to have) e.g. its own <title> shouldn't be faulted for
+    // lacking one. `false` when `fragment:true` was explicitly set, or when
+    // `contextSelector` scoped this run narrower than the whole document
+    // (roots doesn't include document.documentElement); `true` in the
+    // default/unscoped case, so this is a no-op for the overwhelming
+    // majority of existing (whole-page) scans.
+    function isWholeDocumentScope() {
+        if (fragment) return false;
+        return roots.includes(document.documentElement);
+    }
+
     return {
         // Existing query/snippet utilities
         queryAll,
@@ -79816,6 +80011,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
         isExcluded,
         isAccTreeEligible,
         isDomVisibleEligible,
+        isWholeDocumentScope,
 
         // Engine-internal: sets which rule's rule-scoped excludeSelectors
         // (engineOptions.rules[ruleId].excludeSelectors) are currently in
@@ -80056,6 +80252,9 @@ const runCore = (function runCore(pageUrl, contextSelector, engineOptions, runOn
     // unless the caller explicitly opts in.
     const includeHiddenElements = !!(engineOptionsResolved && engineOptionsResolved.includeHiddenElements === true);
     const excludeSelectors = normalizeSelectorList(engineOptionsResolved && engineOptionsResolved.excludeSelectors);
+    // Default off: explicit opt-in for "this scan target was never meant to
+    // represent a real page" -- see helpers.isWholeDocumentScope().
+    const fragment = !!(engineOptionsResolved && engineOptionsResolved.fragment === true);
 
     const url = pageUrl || (document.location && document.location.href) || null;
     const title = document.title || null;
@@ -80087,6 +80286,7 @@ const runCore = (function runCore(pageUrl, contextSelector, engineOptions, runOn
         includeShadowDom,
         includeHiddenElements,
         excludeSelectors,
+        fragment,
         // Optional perf counters (bench/debug only). Deterministic and per-run.
         perfStats: !!(engineOptionsResolved && engineOptionsResolved.perfStats)
     });
