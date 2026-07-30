@@ -75,46 +75,48 @@ function runInPage(ctx) {
     return raw.split(/\s+/)[0].toLowerCase();
   }
 
-  // Two distinct ancestor sets, verified 2026-07-20 against a widely-used
-  // reference engine's own implicit-role functions directly rather than
-  // assumed from one shared list: <header>/<footer> use "sectioning content
-  // PLUS <main>" (that engine's getSectioningContentPlusMainSelector) to decide
-  // banner/contentinfo suppression, but <aside> uses PLAIN sectioning
-  // content only (article/aside/nav/section — NOT main) to decide
-  // complementary suppression. The old single SECTIONING_ANCESTORS set
-  // (which included 'main') was correct for header/footer but wrong for
-  // aside — found via a real page: Know Your Meme's two unnamed
-  // <aside class="extra-large-only"> elements are direct children of
-  // <main>, which incorrectly suppressed their implicit "complementary"
-  // role entirely, hiding a real duplicate-landmark violation that
-  // reference engine correctly flags.
-  const SECTIONING_ANCESTORS_PLUS_MAIN = new Set(['article', 'aside', 'main', 'nav', 'section']);
-  const SECTIONING_ANCESTORS = new Set(['article', 'aside', 'nav', 'section']);
-
-  function hasSectioningAncestorFrom(el, set) {
-    let p = el.parentElement;
-    while (p) {
-      const tag = p.tagName ? p.tagName.toLowerCase() : '';
-      if (set.has(tag)) return true;
-      p = p.parentElement;
-    }
-    return false;
+  // Delegates to the shared helpers.hasLandmarkScopingAncestor (role-aware:
+  // an ancestor's bare TAG only counts when it carries no role attribute at
+  // all; an explicit role="dialog"-style override no longer suppresses —
+  // see that function's header comment in src/core/aria-helpers.js) rather
+  // than the two local tag-only Sets this file used to carry. Two distinct
+  // ancestor scopes, verified 2026-07-20 against a widely-used reference
+  // engine's own implicit-role functions directly rather than assumed from
+  // one shared list: <header>/<footer> use "sectioning content PLUS <main>"
+  // (includeMain: true) to decide banner/contentinfo suppression, but
+  // <aside> uses PLAIN sectioning content only — NOT main (includeMain:
+  // false) — to decide complementary suppression. The old single
+  // SECTIONING_ANCESTORS set (which included 'main') was correct for
+  // header/footer but wrong for aside — found via a real page: Know Your
+  // Meme's two unnamed <aside class="extra-large-only"> elements are direct
+  // children of <main>, which incorrectly suppressed their implicit
+  // "complementary" role entirely, hiding a real duplicate-landmark
+  // violation that reference engine correctly flags. The tag-only
+  // (non-role-aware) half of this bug was separately found and fixed
+  // 2026-07-30 via the cross-engine comparisons project, on
+  // handsontable.com's docs-assistant side panel: an <aside role="dialog">
+  // containing its own <header> — role="dialog" isn't one of the four
+  // scoping roles, so the nested <header> keeps "banner" per spec, but a
+  // tag-only check unconditionally suppressed it just because the ancestor
+  // TAG was <aside>.
+  function hasSectioningAncestor(el, includeMain) {
+    return helpers && typeof helpers.hasLandmarkScopingAncestor === 'function'
+      ? helpers.hasLandmarkScopingAncestor(el, { includeMain })
+      : false;
   }
 
   function getImplicitLandmarkRole(el) {
     const tag = el.tagName ? el.tagName.toLowerCase() : '';
-    if (tag === 'header') return hasSectioningAncestorFrom(el, SECTIONING_ANCESTORS_PLUS_MAIN) ? '' : 'banner';
-    if (tag === 'footer') return hasSectioningAncestorFrom(el, SECTIONING_ANCESTORS_PLUS_MAIN) ? '' : 'contentinfo';
+    if (tag === 'header') return hasSectioningAncestor(el, true) ? '' : 'banner';
+    if (tag === 'footer') return hasSectioningAncestor(el, true) ? '' : 'contentinfo';
     if (tag === 'main') return 'main';
     if (tag === 'nav') return 'navigation';
     if (tag === 'aside') {
       // Per a widely-used reference engine's own `aside` implicit-role function: suppressed by a
       // sectioning-content ancestor ONLY when the <aside> also has no
       // accessible name — a named <aside> is never suppressed, even when
-      // nested. Not yet evidenced by a real page in this corpus, but
-      // implemented to match the verified source exactly rather than
-      // leaving a known partial fix in place.
-      if (!hasSectioningAncestorFrom(el, SECTIONING_ANCESTORS)) return 'complementary';
+      // nested.
+      if (!hasSectioningAncestor(el, false)) return 'complementary';
       return getAccessibleLandmarkName(el) ? 'complementary' : '';
     }
     if (tag === 'section') return getAccessibleLandmarkName(el) ? 'region' : '';

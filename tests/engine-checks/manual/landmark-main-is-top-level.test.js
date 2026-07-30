@@ -34,6 +34,15 @@ test(`${RULE_ID}: cantTell when main is nested inside another landmark`, () => {
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'LANDMARK_MAIN_NOT_TOP_LEVEL');
 });
 
+test(`${RULE_ID}: cantTell when main is nested inside a <header> whose own implicit banner role is only correctly recognized because its <aside role="dialog"> ancestor's role has been overridden away from a landmark-scoping role — before this fix, the ancestor <header> was incorrectly not recognized as a landmark at all, so this nesting went entirely undetected (mirrors a real bug found on handsontable.com's docs-assistant side panel)`, () => {
+  const html = `<!doctype html><html><body>
+    <aside role="dialog" aria-label="Assistant panel"><header><main id="a">Nested</main></header></aside>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+});
+
 test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><body><div role="navigation"><main id="a">Nested</main></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });

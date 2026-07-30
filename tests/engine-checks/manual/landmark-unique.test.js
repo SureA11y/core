@@ -72,6 +72,26 @@ test(`${RULE_ID}: cantTell when two unnamed <aside> elements are direct children
   assert.ok(hasOccurrenceForId(rule, 'b'));
 });
 
+test(`${RULE_ID}: cantTell when a <header> nested inside an ancestor whose role has been overridden away from a landmark-scoping role (<aside role="dialog">, not one of article/complementary/navigation/region) still keeps its implicit banner role and collides with a top-level header (found on a real site — handsontable.com's docs-assistant side panel)`, () => {
+  const html = `<!doctype html><html><body>
+    <header id="a">Site header</header>
+    <aside role="dialog" aria-label="Assistant panel"><header id="b">Panel header</header></aside>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+  assert.ok(hasOccurrenceForId(rule, 'b'));
+});
+
+test(`${RULE_ID}: notApplicable when a <header> is nested inside a plain (no role override) <aside> — the ancestor's bare tag still suppresses banner exactly as before, only an explicit role override on the ancestor changes the outcome`, () => {
+  const html = `<!doctype html><html><body>
+    <header id="a">Site header</header>
+    <aside aria-label="Related"><header id="b">Not a landmark</header></aside>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
 test(`${RULE_ID}: notApplicable when a NAMED <aside> is nested inside real sectioning content (an <article>) — a reference engine's own aside() function only suppresses when both nested AND unnamed`, () => {
   const html = `<!doctype html><html><body>
     <article><aside aria-label="Related" id="a">Related content</aside></article>

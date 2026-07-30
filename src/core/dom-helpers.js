@@ -4161,6 +4161,16 @@ function createDomHelpers(opts) {
         // see getLandmarkNameInfo's own header comment for why this replaced 7 duplicated copies)
         getLandmarkNameInfo,
 
+        // "Does this element have a landmark-scoping ancestor" (role-aware
+        // sectioning-content/<main> check backing <header>/<footer>/<aside>'s
+        // conditional implicit roles) -- re-exported from aria helpers at
+        // this top level, matching getLandmarkNameInfo just above, so the
+        // manual landmark-check files that used to each carry their own
+        // (buggy, tag-only) copy can call helpers.hasLandmarkScopingAncestor
+        // directly. See aria.hasLandmarkScopingAncestor's own header comment
+        // in src/core/aria-helpers.js for the full algorithm and rationale.
+        hasLandmarkScopingAncestor: aria.hasLandmarkScopingAncestor,
+
         // Name / description
         getAccessibleNameInfo,
         getAccessibleDescriptionInfo,

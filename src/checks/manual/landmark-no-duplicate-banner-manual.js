@@ -79,25 +79,37 @@ function runInPage(ctx) {
     return raw.split(/\s+/)[0].toLowerCase();
   }
 
-  const SECTIONING_ANCESTORS = new Set(['article', 'aside', 'main', 'nav', 'section']);
-
-  function isSuppressedBySectioningAncestor(el) {
-    let p = el.parentElement;
-    while (p) {
-      const tag = p.tagName ? p.tagName.toLowerCase() : '';
-      if (SECTIONING_ANCESTORS.has(tag)) return true;
-      p = p.parentElement;
-    }
-    return false;
+  // Delegates to the shared helpers.hasLandmarkScopingAncestor for the
+  // question "does this element sit inside a sectioning-content/<main>
+  // ancestor that suppresses its conditional implicit role" — role-aware
+  // (an ancestor's bare TAG only counts when it carries no role attribute
+  // at all; an explicit role="dialog"-style override no longer suppresses)
+  // rather than a local tag-only copy. See that function's header comment
+  // in src/core/aria-helpers.js for the full algorithm and the real page
+  // (handsontable.com's docs-assistant side panel, an
+  // <aside role="dialog"> containing its own <header>) that surfaced this
+  // rule's own former tag-only copy as a false negative.
+  function hasSectioningAncestor(el, includeMain) {
+    return helpers && typeof helpers.hasLandmarkScopingAncestor === 'function'
+      ? helpers.hasLandmarkScopingAncestor(el, { includeMain })
+      : false;
   }
 
   function getImplicitLandmarkRole(el) {
     const tag = el.tagName ? el.tagName.toLowerCase() : '';
-    if (tag === 'header') return isSuppressedBySectioningAncestor(el) ? '' : 'banner';
-    if (tag === 'footer') return isSuppressedBySectioningAncestor(el) ? '' : 'contentinfo';
+    if (tag === 'header') return hasSectioningAncestor(el, true) ? '' : 'banner';
+    if (tag === 'footer') return hasSectioningAncestor(el, true) ? '' : 'contentinfo';
     if (tag === 'main') return 'main';
     if (tag === 'nav') return 'navigation';
-    if (tag === 'aside') return isSuppressedBySectioningAncestor(el) ? '' : 'complementary';
+    if (tag === 'aside') {
+      // A named <aside> is never suppressed, even when nested — matches
+      // landmark-unique's own verified-against-reference-engine precedent
+      // (that engine's real `aside` implicit-role function keeps
+      // "complementary" when the element has an accessible name, even
+      // inside sectioning content); propagated here for consistency.
+      if (!hasSectioningAncestor(el, false)) return 'complementary';
+      return getAccessibleLandmarkName(el) ? 'complementary' : '';
+    }
     if (tag === 'section') return getAccessibleLandmarkName(el) ? 'region' : '';
     if (tag === 'form') return getAccessibleLandmarkName(el) ? 'form' : '';
     return '';

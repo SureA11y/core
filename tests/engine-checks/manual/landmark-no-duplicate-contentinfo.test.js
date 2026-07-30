@@ -35,6 +35,26 @@ test(`${RULE_ID}: cantTell with one occurrence per contentinfo when more than on
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'LANDMARK_DUPLICATE_CONTENTINFO');
 });
 
+test(`${RULE_ID}: cantTell when a <footer> nested inside an ancestor whose role has been overridden away from a landmark-scoping role (<aside role="dialog">) still keeps its implicit contentinfo role and collides with a top-level footer (mirrors a real bug found on handsontable.com's docs-assistant side panel, banner/<header> variant)`, () => {
+  const html = `<!doctype html><html><body>
+    <footer id="a">Site footer</footer>
+    <aside role="dialog" aria-label="Assistant panel"><footer id="b">Panel footer</footer></aside>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+  assert.ok(hasOccurrenceForId(rule, 'b'));
+});
+
+test(`${RULE_ID}: notApplicable when a <footer> is nested inside a plain (no role override) <aside> — the ancestor's bare tag still suppresses contentinfo exactly as before, only an explicit role override on the ancestor changes the outcome`, () => {
+  const html = `<!doctype html><html><body>
+    <footer id="a">Site footer</footer>
+    <aside aria-label="Related"><footer id="b">Not a landmark</footer></aside>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
 test(`${RULE_ID}: notApplicable when the only "duplicate" contentinfo is display:none (a responsive desktop/mobile pattern) — matches a reference engine's own visibility gate (same fix applied to the sibling banner/main rules after real hidden-duplicate false positives on Trello and Zoom)`, () => {
   const html = `<!doctype html><html><body>
     <footer id="a">Visible</footer>

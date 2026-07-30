@@ -32,6 +32,21 @@ test(`${RULE_ID}: notApplicable when a <header> is nested inside <main> (loses i
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+test(`${RULE_ID}: cantTell when a <header> nested inside an ancestor whose role has been overridden away from a landmark-scoping role (<aside role="dialog">) still keeps its implicit banner role, and is correctly flagged non-top-level when that ancestor is itself nested inside a real landmark (found on a real site — handsontable.com's docs-assistant side panel; the outer wrapper uses role="search" rather than <nav> deliberately, so this test isolates the <aside role="dialog"> fix from an unrelated, already-suppressing <nav> ancestor)`, () => {
+  const html = `<!doctype html><html><body>
+    <div role="search" aria-label="Docs assistant"><aside role="dialog" aria-label="Assistant panel"><header id="a">Panel header</header></aside></div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+});
+
+test(`${RULE_ID}: notApplicable when a <header> is nested inside a plain (no role override) <aside> — loses its implicit banner role entirely, same as nesting inside <main>`, () => {
+  const html = `<!doctype html><html><body><aside aria-label="Related"><header>inner</header></aside></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
 test(`${RULE_ID}: cantTell when an explicit role="banner" is nested inside another landmark`, () => {
   const html = `<!doctype html><html><body><div role="navigation"><div role="banner" id="a">Nested</div></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
