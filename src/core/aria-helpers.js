@@ -921,9 +921,24 @@ function createAriaHelpers(opts, shared) {
     // otherwise falls back to the small NATIVE_CONTAINMENT_ROLE_BY_ELEMENT
     // map above. Not a general-purpose implicit-role resolver — scoped
     // deliberately narrow, see the table's header comment.
+    //
+    // The explicit role must be a real, valid concrete ARIA role to count:
+    // an invalid/unrecognized role="" token (e.g. a library's own
+    // non-standard "columngroup") is ignored by real browsers/AT (they fall
+    // back to the implicit role, same as any other unrecognized enumerated
+    // attribute value) — a widely-used reference engine's own explicit-role
+    // resolution validates the same way. Without this, a bogus role token
+    // wrongly "blocks" the ancestor/descendant containment-role search
+    // instead of being transparent to it. Found on tabulator.info's
+    // column-grouping example: role="columnheader" cells sit inside a
+    // role="columngroup" wrapper div (not a real ARIA role) that itself
+    // sits inside the actual role="row" ancestor — the reference engine
+    // correctly skips the fake role and finds "row"; this helper previously
+    // stopped at "columngroup" and reported a false required-context
+    // failure.
     function getContainmentRole(el) {
         const explicit = getExplicitRole(el);
-        if (explicit) return explicit;
+        if (explicit && isValidConcreteRole(explicit)) return explicit;
 
         if (!isElement(el)) return '';
         const tag = lower(el.tagName || '');

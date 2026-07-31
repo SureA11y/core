@@ -93,6 +93,22 @@ test(`${RULE_ID}: pass when the only intervening ancestor is transparent (role="
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+test(`${RULE_ID}: pass when an intervening ancestor has an invalid/unrecognized role token (not a real ARIA role) — transparent to the search, same as no role at all`, () => {
+  // Regression for a real false positive found via a live-DOM cross-engine
+  // run 2026-07-31: tabulator.info's column-grouping example has
+  // role="columnheader" cells whose immediate role-bearing ancestor is
+  // role="columngroup" (not a real ARIA role — Tabulator's own invention),
+  // itself inside the real role="row" ancestor. A reference engine's own
+  // explicit-role resolution validates role="" tokens against its known
+  // role list and falls back past invalid ones, finding "row"; this rule
+  // previously stopped the search at the bogus "columngroup" token instead.
+  const html = `<!doctype html><html><body>
+    <div role="grid"><div role="row"><div role="columngroup"><div id="a" role="columnheader">Progress</div></div></div></div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
 test(`${RULE_ID}: fail when no acceptable ancestor/owner context role exists`, () => {
   const html = `<!doctype html><html><body><nav id="a" role="tab"></nav></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
@@ -158,7 +174,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-required-parent-all-scen
 
   assert.ok(hasOccurrenceForId(rule, 'arp_case_04'));
   assert.ok(hasOccurrenceForId(rule, 'arp_case_07'));
-  for (const id of ['arp_case_01', 'arp_case_02', 'arp_case_03', 'arp_case_05', 'arp_case_06', 'arp_case_08', 'arp_case_09', 'arp_case_10']) {
+  for (const id of ['arp_case_01', 'arp_case_02', 'arp_case_03', 'arp_case_05', 'arp_case_06', 'arp_case_08', 'arp_case_09', 'arp_case_10', 'arp_case_11']) {
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
 });
