@@ -1,6 +1,6 @@
 # WCAG Coverage Report
 
-Generated: 2026-07-23T11:13:59.723Z
+Generated: 2026-07-31T16:50:37.502Z
 
 Rules directory: `src/checks`
 Facets: `src/coverage/wcag-facets.js`
@@ -616,7 +616,7 @@ Automation mix: **full 39, partial 0, manual 2**.
 | presentation-role-conflict | manual | Presentational role must not conflict with a global ARIA attribute or focusability | src/checks/manual/presentation-role-conflict-manual.js |  |  |
 | region | manual | Page content should be inside a landmark region | src/checks/manual/region-manual.js |  |  |
 | scope-attr-valid | manual | scope attribute must have a valid value | src/checks/manual/scope-attr-valid-manual.js |  |  |
-| skip-link | manual | Skip link must have a resolvable target | src/checks/manual/skip-link-manual.js |  |  |
+| skip-link | manual | Skip link must have a resolvable, usable target | src/checks/manual/skip-link-manual.js |  |  |
 | tabindex | manual | tabindex should not be greater than 0 | src/checks/manual/tabindex-manual.js |  |  |
 | table-duplicate-name | manual | Table caption must not duplicate its summary attribute | src/checks/manual/table-duplicate-name-manual.js |  |  |
 
@@ -1202,7 +1202,7 @@ Automation mix: **full 39, partial 0, manual 2**.
 | presentation-role-conflict | manual | Presentational role must not conflict with a global ARIA attribute or focusability | src/checks/manual/presentation-role-conflict-manual.js |  |  |
 | region | manual | Page content should be inside a landmark region | src/checks/manual/region-manual.js |  |  |
 | scope-attr-valid | manual | scope attribute must have a valid value | src/checks/manual/scope-attr-valid-manual.js |  |  |
-| skip-link | manual | Skip link must have a resolvable target | src/checks/manual/skip-link-manual.js |  |  |
+| skip-link | manual | Skip link must have a resolvable, usable target | src/checks/manual/skip-link-manual.js |  |  |
 | tabindex | manual | tabindex should not be greater than 0 | src/checks/manual/tabindex-manual.js |  |  |
 | table-duplicate-name | manual | Table caption must not duplicate its summary attribute | src/checks/manual/table-duplicate-name-manual.js |  |  |
 

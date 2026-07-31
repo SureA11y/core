@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-24T14:32:29.015Z",
+  "generatedAt": "2026-07-31T16:50:37.704Z",
   "summary": {
     "total": 125,
     "withFixture": 125,
@@ -15,12 +15,12 @@
       "testFile": "tests/engine-checks/manual/accesskeys.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/accesskeys-all-scenarios.html",
-      "totalCases": 2,
+      "totalCases": 3,
       "caseCounts": {
         "PASS": 0,
         "FAIL": 0,
         "CANTTELL": 1,
-        "OTHER": 1
+        "OTHER": 2
       }
     },
     {
@@ -244,12 +244,12 @@
       "testFile": "tests/engine-checks/automatic/aria-prohibited-attr.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/aria-prohibited-attr-all-scenarios.html",
-      "totalCases": 9,
+      "totalCases": 15,
       "caseCounts": {
         "PASS": 2,
-        "FAIL": 6,
+        "FAIL": 9,
         "CANTTELL": 0,
-        "OTHER": 1
+        "OTHER": 4
       }
     },
     {
@@ -263,12 +263,12 @@
       "testFile": "tests/engine-checks/automatic/aria-prohibited-children.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/aria-prohibited-children-all-scenarios.html",
-      "totalCases": 11,
+      "totalCases": 14,
       "caseCounts": {
-        "PASS": 5,
-        "FAIL": 5,
+        "PASS": 6,
+        "FAIL": 6,
         "CANTTELL": 0,
-        "OTHER": 1
+        "OTHER": 2
       }
     },
     {
@@ -282,12 +282,12 @@
       "testFile": "tests/engine-checks/automatic/aria-required-attr.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/aria-required-attr-all-scenarios.html",
-      "totalCases": 12,
+      "totalCases": 14,
       "caseCounts": {
         "PASS": 4,
         "FAIL": 4,
         "CANTTELL": 0,
-        "OTHER": 4
+        "OTHER": 6
       }
     },
     {
@@ -301,12 +301,12 @@
       "testFile": "tests/engine-checks/automatic/aria-required-children.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/aria-required-children-all-scenarios.html",
-      "totalCases": 5,
+      "totalCases": 8,
       "caseCounts": {
         "PASS": 3,
         "FAIL": 1,
         "CANTTELL": 0,
-        "OTHER": 1
+        "OTHER": 4
       }
     },
     {
@@ -320,12 +320,12 @@
       "testFile": "tests/engine-checks/automatic/aria-required-parent.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/aria-required-parent-all-scenarios.html",
-      "totalCases": 9,
+      "totalCases": 11,
       "caseCounts": {
-        "PASS": 5,
+        "PASS": 6,
         "FAIL": 2,
         "CANTTELL": 0,
-        "OTHER": 2
+        "OTHER": 3
       }
     },
     {
@@ -489,10 +489,10 @@
       "testFile": "tests/engine-checks/automatic/button-name-present.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/button-name-present-all-scenarios.html",
-      "totalCases": 21,
+      "totalCases": 24,
       "caseCounts": {
-        "PASS": 8,
-        "FAIL": 10,
+        "PASS": 9,
+        "FAIL": 12,
         "CANTTELL": 0,
         "OTHER": 3
       }
@@ -904,9 +904,9 @@
       "testFile": "tests/engine-checks/automatic/form-control-single-label.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/form-control-single-label-all-scenarios.html",
-      "totalCases": 6,
+      "totalCases": 7,
       "caseCounts": {
-        "PASS": 3,
+        "PASS": 4,
         "FAIL": 2,
         "CANTTELL": 0,
         "OTHER": 1
@@ -1376,10 +1376,10 @@
       "testFile": "tests/engine-checks/automatic/link-name-present.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/link-name-present-all-scenarios.html",
-      "totalCases": 17,
+      "totalCases": 19,
       "caseCounts": {
-        "PASS": 10,
-        "FAIL": 5,
+        "PASS": 11,
+        "FAIL": 6,
         "CANTTELL": 0,
         "OTHER": 2
       }
@@ -1946,18 +1946,18 @@
     },
     {
       "ruleId": "skip-link",
-      "title": "Skip link must have a resolvable target",
+      "title": "Skip link must have a resolvable, usable target",
       "type": "manual",
       "wcagSc": [],
       "ruleFile": "src/checks/manual/skip-link-manual.js",
       "testFile": "tests/engine-checks/manual/skip-link.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/skip-link-all-scenarios.html",
-      "totalCases": 5,
+      "totalCases": 6,
       "caseCounts": {
         "PASS": 0,
         "FAIL": 0,
-        "CANTTELL": 2,
+        "CANTTELL": 3,
         "OTHER": 3
       }
     },

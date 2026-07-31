@@ -329,7 +329,15 @@ test(`${RULE_ID}: conflict inside svg => cantTell (essential/equivalent uncertai
     </svg>
   </body></html>`;
   const result = run(html);
-  assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 0, maxOccurrences: 0 });
+  // Fixed 2026-07-31: this uncertain-tier finding used to be recorded only
+  // as a page-level boolean with no occurrence at all — unrecoverable from
+  // the result the moment it was combined with a real page. Now it's a
+  // real occurrence, same as a fail-tier finding would be. Both A and B
+  // reciprocally conflict and are each inside the <svg>, so both occur.
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
+  for (const occ of rule.occurrences) {
+    assert.strictEqual(occ.data.details.reasonCode, 'undersized-plausibly-essential');
+  }
 });
 
 test(`${RULE_ID}: undersized target flush against an adequately-sized neighbor => fail (widened geometry check)`, () => {
@@ -363,7 +371,28 @@ test(`${RULE_ID}: ambiguous near-threshold perimeter sampling => cantTell (not a
     <button id="big" data-rect="25,10,30,30">Big</button>
   </body></html>`;
   const result = run(html);
-  assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 0, maxOccurrences: 0 });
+  // Fixed 2026-07-31: same gap as the svg case above — this ambiguous-tier
+  // finding used to have no occurrence at all, just a boolean flag.
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'undersized-ambiguous-spacing');
+});
+
+test(`${RULE_ID}: a page with both a confident fail AND an uncertain/essential-exempt conflict reports BOTH under a 'fail' outcome, not just the confident one (fixed 2026-07-31 — see helpers.resolveTieredOutcome)`, () => {
+  const html = `<!doctype html><html><body>
+    <button id="a" data-rect="10,80,10,10">A</button>
+    <button id="b" data-rect="25,80,10,10">B</button>
+    <svg>
+      <button id="c" data-rect="10,10,10,10">C</button>
+      <button id="d" data-rect="25,10,10,10">D</button>
+    </svg>
+  </body></html>`;
+  const result = run(html);
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 4, maxOccurrences: 4 });
+  const reasonCodes = rule.occurrences.map((o) => o.data.details.reasonCode).sort();
+  assert.deepStrictEqual(reasonCodes, [
+    'undersized-and-too-close', 'undersized-and-too-close',
+    'undersized-plausibly-essential', 'undersized-plausibly-essential'
+  ]);
 });
 
 test(`${RULE_ID}: nested interactive controls (small control inside its own wrapping link) => pass`, () => {
@@ -433,7 +462,12 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/target-size-all-scenarios.htm
 
   const result = run(html);
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 13, maxOccurrences: 13 });
+  // 15, not 13: fixed 2026-07-31 — canttell_svg_a/canttell_svg_b are
+  // cantTell-tier (essential/equivalent uncertainty) occurrences that used
+  // to be silently discarded whenever the overall outcome was 'fail'
+  // (see helpers.resolveTieredOutcome's header comment); they're now
+  // correctly merged into the result alongside the confident fails.
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 15, maxOccurrences: 15 });
 
   function hasOccurrenceForId(id) {
     return rule.occurrences.some((o) => typeof o.selector === 'string' && new RegExp(`#${id}\\b`).test(o.selector));
@@ -452,7 +486,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/target-size-all-scenarios.htm
     'fail_geo_a',
     'fail_geo_b',
     'fail_styled_checkbox_1',
-    'fail_styled_checkbox_2'
+    'fail_styled_checkbox_2',
+    'canttell_svg_a', // essential/equivalent uncertainty inside svg — now merged into the 'fail' result (fixed 2026-07-31)
+    'canttell_svg_b'
   ];
 
   const expectedNoOccIds = [
@@ -476,8 +512,6 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/target-size-all-scenarios.htm
     'excluded_disabled',
     'excluded_aria_disabled',
     'pass_lone_small',
-    'canttell_svg_a', // essential/equivalent uncertainty inside svg => not reported as an occurrence
-    'canttell_svg_b',
     'pass_nested_outer_link', // ancestor/descendant relationship excluded from spacing conflicts
     'pass_nested_inner_button',
     'pass_ua_checkbox_1', // User Agent Control exception: unstyled native checkbox/radio

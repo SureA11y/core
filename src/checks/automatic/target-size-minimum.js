@@ -528,8 +528,8 @@ function runInPage(ctx) {
     }
   }
 
-  const occurrences = [];
-  let hasUncertainConflicts = false;
+  const failOccurrences = [];
+  const cantTellOccurrences = [];
 
   for (const it of undersized) {
     // Inline-text exception: do not fail purely on size/spacing for inline links in text.
@@ -548,18 +548,62 @@ function runInPage(ctx) {
     const info = hasSpacingConflict(it);
 
     if (!info.conflict && info.confident === false) {
-      // Ambiguous perimeter-sampling result near the decision threshold.
-      hasUncertainConflicts = true;
+      // Ambiguous perimeter-sampling result near the decision threshold —
+      // previously recorded only as a page-level boolean with no per-target
+      // occurrence at all, so this specific target was unrecoverable from
+      // the result once any other target on the page had a confident
+      // fail (see helpers.resolveTieredOutcome's header comment). Now
+      // reported as its own cantTell-tier occurrence instead.
+      cantTellOccurrences.push({
+        selector: buildSelector(it.el),
+        html: htmlSnippet(it.el),
+        summary: 'Target may be too small and too close to another target, but the overlap is near the detection threshold and could not be confidently measured.',
+        hint: 'Manually verify the effective spacing between this target and its neighbor; increase target size or spacing if the overlap is real.',
+        i18n: {
+          summaryKey: 'targetSizeMinimum_summary_cantTell_ambiguousSpacing',
+          hintKey: 'targetSizeMinimum_hint_cantTell_ambiguousSpacing',
+          params: {}
+        },
+        data: {
+          details: {
+            measured: { width: it.rect.width, height: it.rect.height },
+            reasonCode: 'undersized-ambiguous-spacing',
+            conflictHitCount: info.hitCount,
+            conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null
+          }
+        }
+      });
       continue;
     }
 
     if (info.conflict) {
       if (isPlausiblyEssentialOrEquivalent(it.el)) {
-        hasUncertainConflicts = true;
+        // Confident spacing conflict, but the target may be exempt as part
+        // of an essential graphic/image-map region — same "previously
+        // unrecoverable" gap as above, now reported instead of dropped.
+        cantTellOccurrences.push({
+          selector: buildSelector(it.el),
+          html: htmlSnippet(it.el),
+          summary: 'Target is too small and too close to another target, but may be exempt as part of an essential graphic or image-map region.',
+          hint: 'Verify whether this target’s size is genuinely essential to its function (e.g. part of an SVG/canvas/image map); if not, increase target size or spacing.',
+          i18n: {
+            summaryKey: 'targetSizeMinimum_summary_cantTell_plausiblyEssential',
+            hintKey: 'targetSizeMinimum_hint_cantTell_plausiblyEssential',
+            params: {}
+          },
+          data: {
+            details: {
+              measured: { width: it.rect.width, height: it.rect.height },
+              reasonCode: 'undersized-plausibly-essential',
+              conflictHitCount: info.hitCount,
+              conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null
+            }
+          }
+        });
         continue;
       }
 
-      occurrences.push({
+      failOccurrences.push({
         selector: buildSelector(it.el),
         html: htmlSnippet(it.el),
         summary: 'Target is too small and too close to another target.',
@@ -581,21 +625,28 @@ function runInPage(ctx) {
     }
   }
 
-  if (occurrences.length > 0) {
+  // See helpers.resolveTieredOutcome's own header comment (src/core/dom-helpers.js):
+  // a fail-tier finding never silently discards cantTell-tier findings from
+  // the same run — both are returned together when the outcome is 'fail'.
+  if (helpers && helpers.resolveTieredOutcome) {
+    const resolved = helpers.resolveTieredOutcome(failOccurrences, cantTellOccurrences, (rule && rule.defaultSeverity) || 'minor');
+    return { ruleId: RULE_ID, ...resolved };
+  }
+  if (failOccurrences.length > 0) {
     return {
       ruleId: RULE_ID,
       outcome: 'fail',
       severity: (rule && rule.defaultSeverity) || 'minor',
-      occurrences
+      occurrences: failOccurrences.concat(cantTellOccurrences)
     };
   }
 
-  if (hasUncertainConflicts) {
+  if (cantTellOccurrences.length > 0) {
     return {
       ruleId: RULE_ID,
       outcome: 'cantTell',
       severity: 'minor',
-      occurrences: []
+      occurrences: cantTellOccurrences
     };
   }
 

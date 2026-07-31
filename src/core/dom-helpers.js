@@ -4087,6 +4087,44 @@ function createDomHelpers(opts) {
         return o;
     }
 
+    // Resolves the final {outcome, severity, occurrences} for a rule that
+    // collects two independent confidence tiers during one run — some
+    // findings are confident enough for a hard `fail`, others only warrant
+    // `cantTell` (e.g. "this needs human review"). The naive approach
+    // (`if (failOccurrences.length) return fail(failOccurrences); else if
+    // (cantTellOccurrences.length) return cantTell(cantTellOccurrences);`)
+    // silently drops every cantTell-tier finding whenever at least one
+    // fail-tier finding also exists on the same page — a real information
+    // loss for a real scan, not just a test artifact: a page with one
+    // confident violation and five "needs review" ones would report only
+    // the one. Found via aria-prohibited-attr's roleless-naming widening
+    // (2026-07-31), then confirmed as the same architectural gap in
+    // aria-hidden-focus's runtime-redirect downgrade (same day) via an
+    // explicit audit of every automatic rule for this exact two-bucket
+    // shape.
+    // The correct behavior when a fail-tier finding exists: the overall
+    // outcome is still `fail` (a real, confident violation must still gate
+    // CI), but BOTH buckets' occurrences are returned together, not just
+    // the fail ones — each occurrence already carries its own
+    // distinguishing `data.details.reasonCode`/summary/hint, so nothing
+    // about which findings were confident vs. which need review is lost;
+    // only the single aggregate outcome label stays singular, which was
+    // already this engine's accepted one-outcome-per-rule-run schema
+    // constraint (changing that is a separate, much larger, cross-cutting
+    // decision spanning report.js/baseline.js/explain.js/WCAG rollups —
+    // out of scope for this helper).
+    function resolveTieredOutcome(failOccurrences, cantTellOccurrences, severity) {
+        const fails = Array.isArray(failOccurrences) ? failOccurrences : [];
+        const cantTells = Array.isArray(cantTellOccurrences) ? cantTellOccurrences : [];
+        if (fails.length) {
+            return { outcome: 'fail', severity, occurrences: fails.concat(cantTells) };
+        }
+        if (cantTells.length) {
+            return { outcome: 'cantTell', severity, occurrences: cantTells };
+        }
+        return { outcome: 'pass', severity: 'minor', occurrences: [] };
+    }
+
     let __contrastSharedCache = {};
     try {
         // In Node/JSDOM checks, the harness sets global.window/global.document.
@@ -4222,6 +4260,7 @@ function createDomHelpers(opts) {
         resetPerfStats,
 
         reportOccurrence,
+        resolveTieredOutcome,
 
         contrast,
         aria

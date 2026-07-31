@@ -1,7 +1,7 @@
 {
   "rulesDir": "src/checks",
   "facetsFile": "src/coverage/wcag-facets.js",
-  "generatedAt": "2026-07-23T11:13:59.723Z",
+  "generatedAt": "2026-07-31T16:50:37.502Z",
   "summary": {
     "totalRules": 125,
     "wcagTagCoverage": {
@@ -3909,55 +3909,6 @@
       }
     },
     {
-      "file": "src/checks/manual/media-transcript-present-manual.js",
-      "ruleId": "media-alternative-transcript-evidence",
-      "wcagScNormative": [
-        "1.2.1"
-      ],
-      "wcagScAll": [
-        "1.2.1"
-      ],
-      "wcagScInformative": [],
-      "type": "manual",
-      "title": "Time-based media: transcript / media alternative evidence",
-      "tags": [
-        "wcag2a",
-        "wcag121",
-        "timebasedmedia",
-        "media",
-        "atomic",
-        "manual"
-      ],
-      "wcagTagSignals": {
-        "parsed": [
-          {
-            "tag": "wcag2a",
-            "version": "2.0",
-            "level": "A"
-          }
-        ],
-        "versions": [
-          "2.0"
-        ],
-        "cumulativeLevelsByVersion": {
-          "2.0": [
-            "A"
-          ]
-        },
-        "cumulativeLevelsAny": [
-          "A"
-        ]
-      },
-      "error": null,
-      "coverage": {
-        "facetsBySc": {
-          "1.2.1": [
-            "transcript-evidence"
-          ]
-        }
-      }
-    },
-    {
       "file": "src/checks/manual/accesskeys-manual.js",
       "ruleId": "accesskeys",
       "wcagScNormative": [],
@@ -4988,6 +4939,55 @@
       }
     },
     {
+      "file": "src/checks/manual/media-transcript-present-manual.js",
+      "ruleId": "media-alternative-transcript-evidence",
+      "wcagScNormative": [
+        "1.2.1"
+      ],
+      "wcagScAll": [
+        "1.2.1"
+      ],
+      "wcagScInformative": [],
+      "type": "manual",
+      "title": "Time-based media: transcript / media alternative evidence",
+      "tags": [
+        "wcag2a",
+        "wcag121",
+        "timebasedmedia",
+        "media",
+        "atomic",
+        "manual"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2a",
+            "version": "2.0",
+            "level": "A"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "1.2.1": [
+            "transcript-evidence"
+          ]
+        }
+      }
+    },
+    {
       "file": "src/checks/manual/meta-viewport-large-manual.js",
       "ruleId": "meta-viewport-large",
       "wcagScNormative": [],
@@ -5419,7 +5419,7 @@
       "wcagScAll": [],
       "wcagScInformative": [],
       "type": "manual",
-      "title": "Skip link must have a resolvable target",
+      "title": "Skip link must have a resolvable, usable target",
       "tags": [
         "best-practice",
         "keyboard",

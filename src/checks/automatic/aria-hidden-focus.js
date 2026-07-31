@@ -684,8 +684,15 @@ function runInPage(ctx) {
     else failOccurrences.push(occurrence);
   }
 
+  // See helpers.resolveTieredOutcome's own header comment (src/core/dom-helpers.js):
+  // a fail-tier finding never silently discards cantTell-tier findings from
+  // the same run — both are returned together when the outcome is 'fail'.
+  if (helpers.resolveTieredOutcome) {
+    const resolved = helpers.resolveTieredOutcome(failOccurrences, uncertainOccurrences, rule.defaultSeverity || 'minor');
+    return { ruleId: rule.ruleId, ...resolved };
+  }
   if (failOccurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences: failOccurrences };
+    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences: failOccurrences.concat(uncertainOccurrences) };
   }
 
   if (uncertainOccurrences.length) {

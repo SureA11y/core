@@ -352,6 +352,10 @@ module.exports = {
 
     "targetSizeMinimum_summary_fail": "One or more pointer targets are smaller than 24×24 CSS px and are too close to another target.",
     "targetSizeMinimum_hint_fail": "Increase the target size to at least 24×24 CSS px or add sufficient spacing from neighboring targets.",
+    "targetSizeMinimum_summary_cantTell_ambiguousSpacing": "Target may be too small and too close to another target, but the overlap is near the detection threshold and could not be confidently measured.",
+    "targetSizeMinimum_hint_cantTell_ambiguousSpacing": "Manually verify the effective spacing between this target and its neighbor; increase target size or spacing if the overlap is real.",
+    "targetSizeMinimum_summary_cantTell_plausiblyEssential": "Target is too small and too close to another target, but may be exempt as part of an essential graphic or image-map region.",
+    "targetSizeMinimum_hint_cantTell_plausiblyEssential": "Verify whether this target’s size is genuinely essential to its function (e.g. part of an SVG/canvas/image map); if not, increase target size or spacing.",
 
     "targetSizeMinimum_notApplicable_noTargets": "No pointer-operable targets were eligible for evaluation.",
     "targetSizeMinimum_pass_allOk": "All eligible pointer targets meet the minimum size or a permitted exception.",
@@ -563,6 +567,10 @@ module.exports = {
     "ariaProhibitedAttr_description": "Checks that aria-label/aria-labelledby are not present on WAI-ARIA roles whose specification explicitly prohibits ARIA naming (e.g. generic, emphasis, strong, paragraph).",
     "ariaProhibitedAttr_summary_fail": "{{attr}} is prohibited on role=\"{{role}}\".",
     "ariaProhibitedAttr_hint_fail": "Remove this attribute; this role must not carry an accessible name.",
+    "ariaProhibitedAttr_summary_fail_roleless": "This {{element}} has no role and no other accessible-name source, so {{attr}} is not reliably exposed to assistive technology.",
+    "ariaProhibitedAttr_hint_fail_roleless": "Give this element a role that supports an accessible name (e.g. role=\"img\"/\"button\"), or remove this attribute if it serves no purpose without one.",
+    "ariaProhibitedAttr_summary_cantTell_roleless": "This {{element}} has no role, so {{attr}} may not be exposed as its accessible name by assistive technology — but the element's own content already provides one.",
+    "ariaProhibitedAttr_hint_cantTell_roleless": "Verify whether the existing text content already serves as this element's label; if so the naming attribute is redundant, otherwise give the element a role that supports naming (e.g. role=\"img\").",
 
     "ariaRequiredAttr_title": "Roles with a required ARIA state/property must carry it",
     "ariaRequiredAttr_description": "Checks that elements with an explicit role carry every unambiguous, context-independent required aria-* state/property for that role (e.g. role=\"checkbox\" must have aria-checked).",

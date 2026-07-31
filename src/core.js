@@ -7486,6 +7486,10 @@ const I18N = {
     "targetSizeMinimum_description": "Checks that pointer-operable targets have an effective hit region of at least 24 by 24 CSS pixels, or meet an allowed exception (e.g. sufficient spacing).",
     "targetSizeMinimum_summary_fail": "One or more pointer targets are smaller than 24×24 CSS px and are too close to another target.",
     "targetSizeMinimum_hint_fail": "Increase the target size to at least 24×24 CSS px or add sufficient spacing from neighboring targets.",
+    "targetSizeMinimum_summary_cantTell_ambiguousSpacing": "Target may be too small and too close to another target, but the overlap is near the detection threshold and could not be confidently measured.",
+    "targetSizeMinimum_hint_cantTell_ambiguousSpacing": "Manually verify the effective spacing between this target and its neighbor; increase target size or spacing if the overlap is real.",
+    "targetSizeMinimum_summary_cantTell_plausiblyEssential": "Target is too small and too close to another target, but may be exempt as part of an essential graphic or image-map region.",
+    "targetSizeMinimum_hint_cantTell_plausiblyEssential": "Verify whether this target’s size is genuinely essential to its function (e.g. part of an SVG/canvas/image map); if not, increase target size or spacing.",
     "targetSizeMinimum_notApplicable_noTargets": "No pointer-operable targets were eligible for evaluation.",
     "targetSizeMinimum_pass_allOk": "All eligible pointer targets meet the minimum size or a permitted exception.",
     "ariaHidden_focus_title": "ARIA hidden elements must not be focusable",
@@ -7609,6 +7613,10 @@ const I18N = {
     "ariaProhibitedAttr_description": "Checks that aria-label/aria-labelledby are not present on WAI-ARIA roles whose specification explicitly prohibits ARIA naming (e.g. generic, emphasis, strong, paragraph).",
     "ariaProhibitedAttr_summary_fail": "{{attr}} is prohibited on role=\"{{role}}\".",
     "ariaProhibitedAttr_hint_fail": "Remove this attribute; this role must not carry an accessible name.",
+    "ariaProhibitedAttr_summary_fail_roleless": "This {{element}} has no role and no other accessible-name source, so {{attr}} is not reliably exposed to assistive technology.",
+    "ariaProhibitedAttr_hint_fail_roleless": "Give this element a role that supports an accessible name (e.g. role=\"img\"/\"button\"), or remove this attribute if it serves no purpose without one.",
+    "ariaProhibitedAttr_summary_cantTell_roleless": "This {{element}} has no role, so {{attr}} may not be exposed as its accessible name by assistive technology — but the element's own content already provides one.",
+    "ariaProhibitedAttr_hint_cantTell_roleless": "Verify whether the existing text content already serves as this element's label; if so the naming attribute is redundant, otherwise give the element a role that supports naming (e.g. role=\"img\").",
     "ariaRequiredAttr_title": "Roles with a required ARIA state/property must carry it",
     "ariaRequiredAttr_description": "Checks that elements with an explicit role carry every unambiguous, context-independent required aria-* state/property for that role (e.g. role=\"checkbox\" must have aria-checked).",
     "ariaRequiredAttr_summary_fail": "{{attr}} is required for role=\"{{role}}\", but is missing.",
@@ -8094,6 +8102,10 @@ const I18N = {
     "targetSizeMinimum_description": "Vérifie que les cibles activables au pointeur ont une zone cliquable effective d’au moins 24×24 pixels CSS, ou respectent une exception autorisée (par ex. un espacement suffisant).",
     "targetSizeMinimum_summary_fail": "La cible est plus petite que 24×24 px CSS et est trop proche d’une autre cible.",
     "targetSizeMinimum_hint_fail": "Augmentez la taille de la cible à au moins 24×24 px CSS, ou ajoutez un espacement suffisant par rapport aux cibles voisines.",
+    "targetSizeMinimum_summary_cantTell_ambiguousSpacing": "La cible est peut-être trop petite et trop proche d’une autre cible, mais le chevauchement est proche du seuil de détection et n’a pas pu être mesuré avec certitude.",
+    "targetSizeMinimum_hint_cantTell_ambiguousSpacing": "Vérifiez manuellement l’espacement effectif entre cette cible et sa voisine ; augmentez la taille de la cible ou l’espacement si le chevauchement est réel.",
+    "targetSizeMinimum_summary_cantTell_plausiblyEssential": "La cible est trop petite et trop proche d’une autre cible, mais pourrait être exemptée en tant qu’élément essentiel d’une zone graphique ou d’une image cliquable.",
+    "targetSizeMinimum_hint_cantTell_plausiblyEssential": "Vérifiez si la taille de cette cible est réellement essentielle à sa fonction (par ex. partie d’un SVG/canvas/plan d’image) ; sinon, augmentez la taille de la cible ou l’espacement.",
     "targetSizeMinimum_notApplicable_noTargets": "Aucune cible activable par pointeur n’était éligible à l’évaluation.",
     "targetSizeMinimum_pass_allOk": "Toutes les cibles activables par pointeur respectent la taille minimale ou une exception autorisée.",
     "ariaHidden_focus_title": "Les éléments aria-hidden ne doivent pas être focalisables",
@@ -8217,6 +8229,10 @@ const I18N = {
     "ariaProhibitedAttr_description": "Vérifie que aria-label/aria-labelledby ne sont pas présents sur des rôles WAI-ARIA dont la spécification interdit explicitement le nommage ARIA (ex. generic, emphasis, strong, paragraph).",
     "ariaProhibitedAttr_summary_fail": "{{attr}} est interdit sur role=\"{{role}}\".",
     "ariaProhibitedAttr_hint_fail": "Retirez cet attribut ; ce rôle ne doit pas porter de nom accessible.",
+    "ariaProhibitedAttr_summary_fail_roleless": "Cet élément {{element}} n'a aucun rôle ni autre source de nom accessible, donc {{attr}} n'est pas exposé de façon fiable aux technologies d'assistance.",
+    "ariaProhibitedAttr_hint_fail_roleless": "Donnez à cet élément un rôle prenant en charge un nom accessible (par ex. role=\"img\"/\"button\"), ou retirez cet attribut s'il ne sert à rien sans rôle.",
+    "ariaProhibitedAttr_summary_cantTell_roleless": "Cet élément {{element}} n'a aucun rôle, donc {{attr}} pourrait ne pas être exposé comme nom accessible par les technologies d'assistance — mais le contenu de l'élément en fournit déjà un.",
+    "ariaProhibitedAttr_hint_cantTell_roleless": "Vérifiez si le contenu textuel existant sert déjà de libellé à cet élément ; si oui, l'attribut de nommage est redondant, sinon donnez à l'élément un rôle prenant en charge le nommage (par ex. role=\"img\").",
     "ariaRequiredAttr_title": "Les rôles avec un état/une propriété ARIA requis doivent le porter",
     "ariaRequiredAttr_description": "Vérifie que les éléments ayant un rôle explicite portent chaque état/propriété aria-* requis, non ambigu et indépendant du contexte, pour ce rôle (ex. role=\"checkbox\" doit avoir aria-checked).",
     "ariaRequiredAttr_summary_fail": "{{attr}} est requis pour role=\"{{role}}\", mais est absent.",
@@ -11229,6 +11245,15 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
         getRequiredContextRoles,
         isRoleAllowedOnElement,
         getContainmentRole,
+
+        // An element's own native/implicit ARIA-in-HTML role (see
+        // NATIVE_ROLE_BY_ELEMENT_KEY above) — previously internal-only
+        // (used by isRoleAllowedOnElement), now also re-exported for
+        // aria-prohibited-attr's roleless-element branch, which needs to
+        // tell "no role at all" (e.g. a bare <span>/<div>) apart from "has
+        // a real implicit role" (e.g. <button>, <a href>) without
+        // over-flagging the latter.
+        getNativeRoleForElement,
 
         // Shared "does this element have a landmark-scoping ancestor"
         // primitive — see its own header comment above. Re-exported at
@@ -15284,6 +15309,44 @@ const createDomHelpers = (function createDomHelpers(opts) {
         return o;
     }
 
+    // Resolves the final {outcome, severity, occurrences} for a rule that
+    // collects two independent confidence tiers during one run — some
+    // findings are confident enough for a hard `fail`, others only warrant
+    // `cantTell` (e.g. "this needs human review"). The naive approach
+    // (`if (failOccurrences.length) return fail(failOccurrences); else if
+    // (cantTellOccurrences.length) return cantTell(cantTellOccurrences);`)
+    // silently drops every cantTell-tier finding whenever at least one
+    // fail-tier finding also exists on the same page — a real information
+    // loss for a real scan, not just a test artifact: a page with one
+    // confident violation and five "needs review" ones would report only
+    // the one. Found via aria-prohibited-attr's roleless-naming widening
+    // (2026-07-31), then confirmed as the same architectural gap in
+    // aria-hidden-focus's runtime-redirect downgrade (same day) via an
+    // explicit audit of every automatic rule for this exact two-bucket
+    // shape.
+    // The correct behavior when a fail-tier finding exists: the overall
+    // outcome is still `fail` (a real, confident violation must still gate
+    // CI), but BOTH buckets' occurrences are returned together, not just
+    // the fail ones — each occurrence already carries its own
+    // distinguishing `data.details.reasonCode`/summary/hint, so nothing
+    // about which findings were confident vs. which need review is lost;
+    // only the single aggregate outcome label stays singular, which was
+    // already this engine's accepted one-outcome-per-rule-run schema
+    // constraint (changing that is a separate, much larger, cross-cutting
+    // decision spanning report.js/baseline.js/explain.js/WCAG rollups —
+    // out of scope for this helper).
+    function resolveTieredOutcome(failOccurrences, cantTellOccurrences, severity) {
+        const fails = Array.isArray(failOccurrences) ? failOccurrences : [];
+        const cantTells = Array.isArray(cantTellOccurrences) ? cantTellOccurrences : [];
+        if (fails.length) {
+            return { outcome: 'fail', severity, occurrences: fails.concat(cantTells) };
+        }
+        if (cantTells.length) {
+            return { outcome: 'cantTell', severity, occurrences: cantTells };
+        }
+        return { outcome: 'pass', severity: 'minor', occurrences: [] };
+    }
+
     let __contrastSharedCache = {};
     try {
         // In Node/JSDOM checks, the harness sets global.window/global.document.
@@ -15419,6 +15482,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
         resetPerfStats,
 
         reportOccurrence,
+        resolveTieredOutcome,
 
         contrast,
         aria
@@ -25305,8 +25369,15 @@ if (isAccTreeEligible) {
     else failOccurrences.push(occurrence);
   }
 
+  // See helpers.resolveTieredOutcome's own header comment (src/core/dom-helpers.js):
+  // a fail-tier finding never silently discards cantTell-tier findings from
+  // the same run — both are returned together when the outcome is 'fail'.
+  if (helpers.resolveTieredOutcome) {
+    const resolved = helpers.resolveTieredOutcome(failOccurrences, uncertainOccurrences, rule.defaultSeverity || 'minor');
+    return { ruleId: rule.ruleId, ...resolved };
+  }
   if (failOccurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences: failOccurrences };
+    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences: failOccurrences.concat(uncertainOccurrences) };
   }
 
   if (uncertainOccurrences.length) {
@@ -25336,12 +25407,15 @@ if (isAccTreeEligible) {
 
   const PROHIBITED_NAMING_ATTRS = ['aria-label', 'aria-labelledby'];
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]') : helpers.queryAll('[role]');
-
-  const occurrences = [];
+  const failOccurrences = [];
+  const cantTellOccurrences = [];
   let applicableCount = 0;
 
-  for (const el of nodes) {
+  // --- Tier 1: explicit, valid role from the naming-prohibited set ---
+
+  const roleNodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]') : helpers.queryAll('[role]');
+
+  for (const el of roleNodes) {
     if (!el || !el.getAttribute) continue;
 
     const role = ariaHelpers.getExplicitRole(el);
@@ -25361,7 +25435,7 @@ if (isAccTreeEligible) {
     const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
 
     for (const attr of present) {
-      occurrences.push({
+      failOccurrences.push({
         selector: stableSelector,
         html,
         summary: 'This attribute is prohibited on this element’s role.',
@@ -25378,11 +25452,136 @@ if (isAccTreeEligible) {
     }
   }
 
+  // --- Tier 2: no role at all (see header comment for the full rationale
+  // and how ROLELESS_NATIVE_TAGS/WIDGET_TYPE_ROLES were derived) ---
+
+  // Small, curated set of native tags empirically verified (against a
+  // widely-used reference engine's own getRole() at runtime, not guessed)
+  // to carry no explicit or implicit ARIA role. Deliberately excludes
+  // <section>/<form>/<a> — all conditionally roleless too, but already
+  // handled with more nuance elsewhere in this engine (see header comment).
+  const ROLELESS_NATIVE_TAGS = new Set([
+    'p', 'b', 'i', 'em', 'strong', 'span', 'div', 'code', 'mark', 'time',
+    'ins', 'del', 'small', 'sub', 'sup', 'abbr', 'cite', 'q', 'kbd', 'samp',
+    'var', 'address', 'blockquote', 'pre', 'figcaption', 'picture',
+    'template', 'hgroup', 'wbr', 'br', 'legend'
+  ]);
+
+  // WAI-ARIA roles a widely-used reference engine's own role table types as
+  // "widget" (verified directly against its source, not the six-category
+  // WAI-ARIA taxonomy — this engine's algorithm branches on its own `type`
+  // field, so parity means matching that field exactly).
+  const WIDGET_TYPE_ROLES = new Set([
+    'alert', 'alertdialog', 'button', 'checkbox', 'combobox', 'dialog',
+    'gridcell', 'link', 'listbox', 'log', 'marquee', 'menuitem',
+    'menuitemcheckbox', 'menuitemradio', 'option', 'progressbar', 'radio',
+    'scrollbar', 'searchbox', 'slider', 'spinbutton', 'status', 'switch',
+    'tab', 'tabpanel', 'textbox', 'timer', 'treeitem'
+  ]);
+
+  const getComposedParent = helpers && typeof helpers.composedParent === 'function'
+    ? helpers.composedParent
+    : function (n) { return n && n.parentElement ? n.parentElement : null; };
+
+  // Nearest ancestor's real role (explicit-if-valid, else native/implicit),
+  // skipping roleless/presentation/none ancestors — used only to check
+  // whether that role is a "widget"-type one (the roleless-branch
+  // exemption). Not the same helper as aria-required-parent's containment
+  // walk: this one also accepts non-required-context roles.
+  function getNearestAncestorRole(el) {
+    let cur = getComposedParent(el);
+    let guard = 0;
+    while (cur && guard++ < 200) {
+      if (cur.nodeType !== 1) { cur = getComposedParent(cur); continue; }
+      const explicit = ariaHelpers.getExplicitRole(cur);
+      const role = (explicit && ariaHelpers.isValidConcreteRole(explicit)) ? explicit : ariaHelpers.getNativeRoleForElement(cur);
+      if (!role || role === 'presentation' || role === 'none') { cur = getComposedParent(cur); continue; }
+      return role;
+    }
+    return '';
+  }
+
+  const namingSelector = '[aria-label],[aria-labelledby]';
+  const namingNodes = helpers.queryAllSmart ? helpers.queryAllSmart(namingSelector) : helpers.queryAll(namingSelector);
+
+  for (const el of namingNodes) {
+    if (!el || !el.getAttribute) continue;
+
+    const tag = String(el.tagName || '').toLowerCase();
+    if (!ROLELESS_NATIVE_TAGS.has(tag)) continue;
+    const explicitRole = ariaHelpers.getExplicitRole(el);
+    if (explicitRole && ariaHelpers.isValidConcreteRole(explicitRole)) continue; // has a real, recognized role — Tier 1's concern (if in ROLES_PROHIBITING_NAME) or a role this rule has no opinion on. An INVALID role token (e.g. a typo) is ignored per spec, same as no role attribute at all, and must still fall through to this branch.
+    if (ariaHelpers.getNativeRoleForElement(el)) continue; // has a real implicit role after all — not this branch's concern
+
+    const present = [];
+    for (const attr of PROHIBITED_NAMING_ATTRS) {
+      const v = el.getAttribute(attr);
+      if (v != null && String(v).trim() !== '') present.push(attr);
+    }
+    if (!present.length) continue;
+
+    applicableCount += 1;
+
+    const ancestorRole = getNearestAncestorRole(el);
+    if (ancestorRole && WIDGET_TYPE_ROLES.has(ancestorRole)) continue; // roleless helper node inside a real widget — not flagged
+
+    const nameInfo = helpers.getContentNameInfo ? helpers.getContentNameInfo(el, ctx) : null;
+    const hasContentFallback = !!(nameInfo && nameInfo.present && String(nameInfo.value || '').trim() !== '');
+
+    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+
+    for (const attr of present) {
+      if (hasContentFallback) {
+        cantTellOccurrences.push({
+          selector: stableSelector,
+          html,
+          summary: `This ${tag} has no role, so ${attr} may not be exposed as its accessible name by assistive technology — but the element's own content already provides one.`,
+          hint: 'Verify whether the existing text content already serves as this element’s label; if so the naming attribute is redundant, otherwise give the element a role that supports naming (e.g. role="img").',
+          i18n: {
+            summaryKey: 'ariaProhibitedAttr_summary_cantTell_roleless',
+            hintKey: 'ariaProhibitedAttr_hint_cantTell_roleless',
+            params: { attr, element: tag }
+          },
+          data: {
+            details: { reasonCode: 'ARIA_ATTR_PROHIBITED_ROLELESS_NEEDS_REVIEW', attr, role: null, element: tag }
+          }
+        });
+      } else {
+        failOccurrences.push({
+          selector: stableSelector,
+          html,
+          summary: `This ${tag} has no role and no other accessible-name source, so ${attr} is not reliably exposed to assistive technology.`,
+          hint: 'Give this element a role that supports an accessible name (e.g. role="img"/"button"), or remove this attribute if it serves no purpose without one.',
+          i18n: {
+            summaryKey: 'ariaProhibitedAttr_summary_fail_roleless',
+            hintKey: 'ariaProhibitedAttr_hint_fail_roleless',
+            params: { attr, element: tag }
+          },
+          data: {
+            details: { reasonCode: 'ARIA_ATTR_PROHIBITED_ROLELESS', attr, role: null, element: tag }
+          }
+        });
+      }
+    }
+  }
+
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'moderate', occurrences };
+
+  // See helpers.resolveTieredOutcome's own header comment (src/core/dom-helpers.js):
+  // a fail-tier finding never silently discards cantTell-tier findings from
+  // the same run — both are returned together when the outcome is 'fail'.
+  if (helpers.resolveTieredOutcome) {
+    const resolved = helpers.resolveTieredOutcome(failOccurrences, cantTellOccurrences, rule.defaultSeverity || 'moderate');
+    return { ruleId: rule.ruleId, ...resolved };
+  }
+  if (failOccurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'moderate', occurrences: failOccurrences.concat(cantTellOccurrences) };
+  }
+  if (cantTellOccurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'cantTell', severity: rule.defaultSeverity || 'moderate', occurrences: cantTellOccurrences };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
@@ -39418,8 +39617,8 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     }
   }
 
-  const occurrences = [];
-  let hasUncertainConflicts = false;
+  const failOccurrences = [];
+  const cantTellOccurrences = [];
 
   for (const it of undersized) {
     // Inline-text exception: do not fail purely on size/spacing for inline links in text.
@@ -39438,18 +39637,62 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     const info = hasSpacingConflict(it);
 
     if (!info.conflict && info.confident === false) {
-      // Ambiguous perimeter-sampling result near the decision threshold.
-      hasUncertainConflicts = true;
+      // Ambiguous perimeter-sampling result near the decision threshold —
+      // previously recorded only as a page-level boolean with no per-target
+      // occurrence at all, so this specific target was unrecoverable from
+      // the result once any other target on the page had a confident
+      // fail (see helpers.resolveTieredOutcome's header comment). Now
+      // reported as its own cantTell-tier occurrence instead.
+      cantTellOccurrences.push({
+        selector: buildSelector(it.el),
+        html: htmlSnippet(it.el),
+        summary: 'Target may be too small and too close to another target, but the overlap is near the detection threshold and could not be confidently measured.',
+        hint: 'Manually verify the effective spacing between this target and its neighbor; increase target size or spacing if the overlap is real.',
+        i18n: {
+          summaryKey: 'targetSizeMinimum_summary_cantTell_ambiguousSpacing',
+          hintKey: 'targetSizeMinimum_hint_cantTell_ambiguousSpacing',
+          params: {}
+        },
+        data: {
+          details: {
+            measured: { width: it.rect.width, height: it.rect.height },
+            reasonCode: 'undersized-ambiguous-spacing',
+            conflictHitCount: info.hitCount,
+            conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null
+          }
+        }
+      });
       continue;
     }
 
     if (info.conflict) {
       if (isPlausiblyEssentialOrEquivalent(it.el)) {
-        hasUncertainConflicts = true;
+        // Confident spacing conflict, but the target may be exempt as part
+        // of an essential graphic/image-map region — same "previously
+        // unrecoverable" gap as above, now reported instead of dropped.
+        cantTellOccurrences.push({
+          selector: buildSelector(it.el),
+          html: htmlSnippet(it.el),
+          summary: 'Target is too small and too close to another target, but may be exempt as part of an essential graphic or image-map region.',
+          hint: 'Verify whether this target’s size is genuinely essential to its function (e.g. part of an SVG/canvas/image map); if not, increase target size or spacing.',
+          i18n: {
+            summaryKey: 'targetSizeMinimum_summary_cantTell_plausiblyEssential',
+            hintKey: 'targetSizeMinimum_hint_cantTell_plausiblyEssential',
+            params: {}
+          },
+          data: {
+            details: {
+              measured: { width: it.rect.width, height: it.rect.height },
+              reasonCode: 'undersized-plausibly-essential',
+              conflictHitCount: info.hitCount,
+              conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null
+            }
+          }
+        });
         continue;
       }
 
-      occurrences.push({
+      failOccurrences.push({
         selector: buildSelector(it.el),
         html: htmlSnippet(it.el),
         summary: 'Target is too small and too close to another target.',
@@ -39471,21 +39714,28 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     }
   }
 
-  if (occurrences.length > 0) {
+  // See helpers.resolveTieredOutcome's own header comment (src/core/dom-helpers.js):
+  // a fail-tier finding never silently discards cantTell-tier findings from
+  // the same run — both are returned together when the outcome is 'fail'.
+  if (helpers && helpers.resolveTieredOutcome) {
+    const resolved = helpers.resolveTieredOutcome(failOccurrences, cantTellOccurrences, (rule && rule.defaultSeverity) || 'minor');
+    return { ruleId: RULE_ID, ...resolved };
+  }
+  if (failOccurrences.length > 0) {
     return {
       ruleId: RULE_ID,
       outcome: 'fail',
       severity: (rule && rule.defaultSeverity) || 'minor',
-      occurrences
+      occurrences: failOccurrences.concat(cantTellOccurrences)
     };
   }
 
-  if (hasUncertainConflicts) {
+  if (cantTellOccurrences.length > 0) {
     return {
       ruleId: RULE_ID,
       outcome: 'cantTell',
       severity: 'minor',
-      occurrences: []
+      occurrences: cantTellOccurrences
     };
   }
 
@@ -40507,6 +40757,10 @@ const I18N = {
     "targetSizeMinimum_description": "Checks that pointer-operable targets have an effective hit region of at least 24 by 24 CSS pixels, or meet an allowed exception (e.g. sufficient spacing).",
     "targetSizeMinimum_summary_fail": "One or more pointer targets are smaller than 24×24 CSS px and are too close to another target.",
     "targetSizeMinimum_hint_fail": "Increase the target size to at least 24×24 CSS px or add sufficient spacing from neighboring targets.",
+    "targetSizeMinimum_summary_cantTell_ambiguousSpacing": "Target may be too small and too close to another target, but the overlap is near the detection threshold and could not be confidently measured.",
+    "targetSizeMinimum_hint_cantTell_ambiguousSpacing": "Manually verify the effective spacing between this target and its neighbor; increase target size or spacing if the overlap is real.",
+    "targetSizeMinimum_summary_cantTell_plausiblyEssential": "Target is too small and too close to another target, but may be exempt as part of an essential graphic or image-map region.",
+    "targetSizeMinimum_hint_cantTell_plausiblyEssential": "Verify whether this target’s size is genuinely essential to its function (e.g. part of an SVG/canvas/image map); if not, increase target size or spacing.",
     "targetSizeMinimum_notApplicable_noTargets": "No pointer-operable targets were eligible for evaluation.",
     "targetSizeMinimum_pass_allOk": "All eligible pointer targets meet the minimum size or a permitted exception.",
     "ariaHidden_focus_title": "ARIA hidden elements must not be focusable",
@@ -40630,6 +40884,10 @@ const I18N = {
     "ariaProhibitedAttr_description": "Checks that aria-label/aria-labelledby are not present on WAI-ARIA roles whose specification explicitly prohibits ARIA naming (e.g. generic, emphasis, strong, paragraph).",
     "ariaProhibitedAttr_summary_fail": "{{attr}} is prohibited on role=\"{{role}}\".",
     "ariaProhibitedAttr_hint_fail": "Remove this attribute; this role must not carry an accessible name.",
+    "ariaProhibitedAttr_summary_fail_roleless": "This {{element}} has no role and no other accessible-name source, so {{attr}} is not reliably exposed to assistive technology.",
+    "ariaProhibitedAttr_hint_fail_roleless": "Give this element a role that supports an accessible name (e.g. role=\"img\"/\"button\"), or remove this attribute if it serves no purpose without one.",
+    "ariaProhibitedAttr_summary_cantTell_roleless": "This {{element}} has no role, so {{attr}} may not be exposed as its accessible name by assistive technology — but the element's own content already provides one.",
+    "ariaProhibitedAttr_hint_cantTell_roleless": "Verify whether the existing text content already serves as this element's label; if so the naming attribute is redundant, otherwise give the element a role that supports naming (e.g. role=\"img\").",
     "ariaRequiredAttr_title": "Roles with a required ARIA state/property must carry it",
     "ariaRequiredAttr_description": "Checks that elements with an explicit role carry every unambiguous, context-independent required aria-* state/property for that role (e.g. role=\"checkbox\" must have aria-checked).",
     "ariaRequiredAttr_summary_fail": "{{attr}} is required for role=\"{{role}}\", but is missing.",
@@ -41115,6 +41373,10 @@ const I18N = {
     "targetSizeMinimum_description": "Vérifie que les cibles activables au pointeur ont une zone cliquable effective d’au moins 24×24 pixels CSS, ou respectent une exception autorisée (par ex. un espacement suffisant).",
     "targetSizeMinimum_summary_fail": "La cible est plus petite que 24×24 px CSS et est trop proche d’une autre cible.",
     "targetSizeMinimum_hint_fail": "Augmentez la taille de la cible à au moins 24×24 px CSS, ou ajoutez un espacement suffisant par rapport aux cibles voisines.",
+    "targetSizeMinimum_summary_cantTell_ambiguousSpacing": "La cible est peut-être trop petite et trop proche d’une autre cible, mais le chevauchement est proche du seuil de détection et n’a pas pu être mesuré avec certitude.",
+    "targetSizeMinimum_hint_cantTell_ambiguousSpacing": "Vérifiez manuellement l’espacement effectif entre cette cible et sa voisine ; augmentez la taille de la cible ou l’espacement si le chevauchement est réel.",
+    "targetSizeMinimum_summary_cantTell_plausiblyEssential": "La cible est trop petite et trop proche d’une autre cible, mais pourrait être exemptée en tant qu’élément essentiel d’une zone graphique ou d’une image cliquable.",
+    "targetSizeMinimum_hint_cantTell_plausiblyEssential": "Vérifiez si la taille de cette cible est réellement essentielle à sa fonction (par ex. partie d’un SVG/canvas/plan d’image) ; sinon, augmentez la taille de la cible ou l’espacement.",
     "targetSizeMinimum_notApplicable_noTargets": "Aucune cible activable par pointeur n’était éligible à l’évaluation.",
     "targetSizeMinimum_pass_allOk": "Toutes les cibles activables par pointeur respectent la taille minimale ou une exception autorisée.",
     "ariaHidden_focus_title": "Les éléments aria-hidden ne doivent pas être focalisables",
@@ -41238,6 +41500,10 @@ const I18N = {
     "ariaProhibitedAttr_description": "Vérifie que aria-label/aria-labelledby ne sont pas présents sur des rôles WAI-ARIA dont la spécification interdit explicitement le nommage ARIA (ex. generic, emphasis, strong, paragraph).",
     "ariaProhibitedAttr_summary_fail": "{{attr}} est interdit sur role=\"{{role}}\".",
     "ariaProhibitedAttr_hint_fail": "Retirez cet attribut ; ce rôle ne doit pas porter de nom accessible.",
+    "ariaProhibitedAttr_summary_fail_roleless": "Cet élément {{element}} n'a aucun rôle ni autre source de nom accessible, donc {{attr}} n'est pas exposé de façon fiable aux technologies d'assistance.",
+    "ariaProhibitedAttr_hint_fail_roleless": "Donnez à cet élément un rôle prenant en charge un nom accessible (par ex. role=\"img\"/\"button\"), ou retirez cet attribut s'il ne sert à rien sans rôle.",
+    "ariaProhibitedAttr_summary_cantTell_roleless": "Cet élément {{element}} n'a aucun rôle, donc {{attr}} pourrait ne pas être exposé comme nom accessible par les technologies d'assistance — mais le contenu de l'élément en fournit déjà un.",
+    "ariaProhibitedAttr_hint_cantTell_roleless": "Vérifiez si le contenu textuel existant sert déjà de libellé à cet élément ; si oui, l'attribut de nommage est redondant, sinon donnez à l'élément un rôle prenant en charge le nommage (par ex. role=\"img\").",
     "ariaRequiredAttr_title": "Les rôles avec un état/une propriété ARIA requis doivent le porter",
     "ariaRequiredAttr_description": "Vérifie que les éléments ayant un rôle explicite portent chaque état/propriété aria-* requis, non ambigu et indépendant du contexte, pour ce rôle (ex. role=\"checkbox\" doit avoir aria-checked).",
     "ariaRequiredAttr_summary_fail": "{{attr}} est requis pour role=\"{{role}}\", mais est absent.",
@@ -44250,6 +44516,15 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
         getRequiredContextRoles,
         isRoleAllowedOnElement,
         getContainmentRole,
+
+        // An element's own native/implicit ARIA-in-HTML role (see
+        // NATIVE_ROLE_BY_ELEMENT_KEY above) — previously internal-only
+        // (used by isRoleAllowedOnElement), now also re-exported for
+        // aria-prohibited-attr's roleless-element branch, which needs to
+        // tell "no role at all" (e.g. a bare <span>/<div>) apart from "has
+        // a real implicit role" (e.g. <button>, <a href>) without
+        // over-flagging the latter.
+        getNativeRoleForElement,
 
         // Shared "does this element have a landmark-scoping ancestor"
         // primitive — see its own header comment above. Re-exported at
@@ -48305,6 +48580,44 @@ const createDomHelpers = (function createDomHelpers(opts) {
         return o;
     }
 
+    // Resolves the final {outcome, severity, occurrences} for a rule that
+    // collects two independent confidence tiers during one run — some
+    // findings are confident enough for a hard `fail`, others only warrant
+    // `cantTell` (e.g. "this needs human review"). The naive approach
+    // (`if (failOccurrences.length) return fail(failOccurrences); else if
+    // (cantTellOccurrences.length) return cantTell(cantTellOccurrences);`)
+    // silently drops every cantTell-tier finding whenever at least one
+    // fail-tier finding also exists on the same page — a real information
+    // loss for a real scan, not just a test artifact: a page with one
+    // confident violation and five "needs review" ones would report only
+    // the one. Found via aria-prohibited-attr's roleless-naming widening
+    // (2026-07-31), then confirmed as the same architectural gap in
+    // aria-hidden-focus's runtime-redirect downgrade (same day) via an
+    // explicit audit of every automatic rule for this exact two-bucket
+    // shape.
+    // The correct behavior when a fail-tier finding exists: the overall
+    // outcome is still `fail` (a real, confident violation must still gate
+    // CI), but BOTH buckets' occurrences are returned together, not just
+    // the fail ones — each occurrence already carries its own
+    // distinguishing `data.details.reasonCode`/summary/hint, so nothing
+    // about which findings were confident vs. which need review is lost;
+    // only the single aggregate outcome label stays singular, which was
+    // already this engine's accepted one-outcome-per-rule-run schema
+    // constraint (changing that is a separate, much larger, cross-cutting
+    // decision spanning report.js/baseline.js/explain.js/WCAG rollups —
+    // out of scope for this helper).
+    function resolveTieredOutcome(failOccurrences, cantTellOccurrences, severity) {
+        const fails = Array.isArray(failOccurrences) ? failOccurrences : [];
+        const cantTells = Array.isArray(cantTellOccurrences) ? cantTellOccurrences : [];
+        if (fails.length) {
+            return { outcome: 'fail', severity, occurrences: fails.concat(cantTells) };
+        }
+        if (cantTells.length) {
+            return { outcome: 'cantTell', severity, occurrences: cantTells };
+        }
+        return { outcome: 'pass', severity: 'minor', occurrences: [] };
+    }
+
     let __contrastSharedCache = {};
     try {
         // In Node/JSDOM checks, the harness sets global.window/global.document.
@@ -48440,6 +48753,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
         resetPerfStats,
 
         reportOccurrence,
+        resolveTieredOutcome,
 
         contrast,
         aria
@@ -58281,8 +58595,15 @@ if (isAccTreeEligible) {
     else failOccurrences.push(occurrence);
   }
 
+  // See helpers.resolveTieredOutcome's own header comment (src/core/dom-helpers.js):
+  // a fail-tier finding never silently discards cantTell-tier findings from
+  // the same run — both are returned together when the outcome is 'fail'.
+  if (helpers.resolveTieredOutcome) {
+    const resolved = helpers.resolveTieredOutcome(failOccurrences, uncertainOccurrences, rule.defaultSeverity || 'minor');
+    return { ruleId: rule.ruleId, ...resolved };
+  }
   if (failOccurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences: failOccurrences };
+    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences: failOccurrences.concat(uncertainOccurrences) };
   }
 
   if (uncertainOccurrences.length) {
@@ -58312,12 +58633,15 @@ if (isAccTreeEligible) {
 
   const PROHIBITED_NAMING_ATTRS = ['aria-label', 'aria-labelledby'];
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]') : helpers.queryAll('[role]');
-
-  const occurrences = [];
+  const failOccurrences = [];
+  const cantTellOccurrences = [];
   let applicableCount = 0;
 
-  for (const el of nodes) {
+  // --- Tier 1: explicit, valid role from the naming-prohibited set ---
+
+  const roleNodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]') : helpers.queryAll('[role]');
+
+  for (const el of roleNodes) {
     if (!el || !el.getAttribute) continue;
 
     const role = ariaHelpers.getExplicitRole(el);
@@ -58337,7 +58661,7 @@ if (isAccTreeEligible) {
     const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
 
     for (const attr of present) {
-      occurrences.push({
+      failOccurrences.push({
         selector: stableSelector,
         html,
         summary: 'This attribute is prohibited on this element’s role.',
@@ -58354,11 +58678,136 @@ if (isAccTreeEligible) {
     }
   }
 
+  // --- Tier 2: no role at all (see header comment for the full rationale
+  // and how ROLELESS_NATIVE_TAGS/WIDGET_TYPE_ROLES were derived) ---
+
+  // Small, curated set of native tags empirically verified (against a
+  // widely-used reference engine's own getRole() at runtime, not guessed)
+  // to carry no explicit or implicit ARIA role. Deliberately excludes
+  // <section>/<form>/<a> — all conditionally roleless too, but already
+  // handled with more nuance elsewhere in this engine (see header comment).
+  const ROLELESS_NATIVE_TAGS = new Set([
+    'p', 'b', 'i', 'em', 'strong', 'span', 'div', 'code', 'mark', 'time',
+    'ins', 'del', 'small', 'sub', 'sup', 'abbr', 'cite', 'q', 'kbd', 'samp',
+    'var', 'address', 'blockquote', 'pre', 'figcaption', 'picture',
+    'template', 'hgroup', 'wbr', 'br', 'legend'
+  ]);
+
+  // WAI-ARIA roles a widely-used reference engine's own role table types as
+  // "widget" (verified directly against its source, not the six-category
+  // WAI-ARIA taxonomy — this engine's algorithm branches on its own `type`
+  // field, so parity means matching that field exactly).
+  const WIDGET_TYPE_ROLES = new Set([
+    'alert', 'alertdialog', 'button', 'checkbox', 'combobox', 'dialog',
+    'gridcell', 'link', 'listbox', 'log', 'marquee', 'menuitem',
+    'menuitemcheckbox', 'menuitemradio', 'option', 'progressbar', 'radio',
+    'scrollbar', 'searchbox', 'slider', 'spinbutton', 'status', 'switch',
+    'tab', 'tabpanel', 'textbox', 'timer', 'treeitem'
+  ]);
+
+  const getComposedParent = helpers && typeof helpers.composedParent === 'function'
+    ? helpers.composedParent
+    : function (n) { return n && n.parentElement ? n.parentElement : null; };
+
+  // Nearest ancestor's real role (explicit-if-valid, else native/implicit),
+  // skipping roleless/presentation/none ancestors — used only to check
+  // whether that role is a "widget"-type one (the roleless-branch
+  // exemption). Not the same helper as aria-required-parent's containment
+  // walk: this one also accepts non-required-context roles.
+  function getNearestAncestorRole(el) {
+    let cur = getComposedParent(el);
+    let guard = 0;
+    while (cur && guard++ < 200) {
+      if (cur.nodeType !== 1) { cur = getComposedParent(cur); continue; }
+      const explicit = ariaHelpers.getExplicitRole(cur);
+      const role = (explicit && ariaHelpers.isValidConcreteRole(explicit)) ? explicit : ariaHelpers.getNativeRoleForElement(cur);
+      if (!role || role === 'presentation' || role === 'none') { cur = getComposedParent(cur); continue; }
+      return role;
+    }
+    return '';
+  }
+
+  const namingSelector = '[aria-label],[aria-labelledby]';
+  const namingNodes = helpers.queryAllSmart ? helpers.queryAllSmart(namingSelector) : helpers.queryAll(namingSelector);
+
+  for (const el of namingNodes) {
+    if (!el || !el.getAttribute) continue;
+
+    const tag = String(el.tagName || '').toLowerCase();
+    if (!ROLELESS_NATIVE_TAGS.has(tag)) continue;
+    const explicitRole = ariaHelpers.getExplicitRole(el);
+    if (explicitRole && ariaHelpers.isValidConcreteRole(explicitRole)) continue; // has a real, recognized role — Tier 1's concern (if in ROLES_PROHIBITING_NAME) or a role this rule has no opinion on. An INVALID role token (e.g. a typo) is ignored per spec, same as no role attribute at all, and must still fall through to this branch.
+    if (ariaHelpers.getNativeRoleForElement(el)) continue; // has a real implicit role after all — not this branch's concern
+
+    const present = [];
+    for (const attr of PROHIBITED_NAMING_ATTRS) {
+      const v = el.getAttribute(attr);
+      if (v != null && String(v).trim() !== '') present.push(attr);
+    }
+    if (!present.length) continue;
+
+    applicableCount += 1;
+
+    const ancestorRole = getNearestAncestorRole(el);
+    if (ancestorRole && WIDGET_TYPE_ROLES.has(ancestorRole)) continue; // roleless helper node inside a real widget — not flagged
+
+    const nameInfo = helpers.getContentNameInfo ? helpers.getContentNameInfo(el, ctx) : null;
+    const hasContentFallback = !!(nameInfo && nameInfo.present && String(nameInfo.value || '').trim() !== '');
+
+    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+
+    for (const attr of present) {
+      if (hasContentFallback) {
+        cantTellOccurrences.push({
+          selector: stableSelector,
+          html,
+          summary: `This ${tag} has no role, so ${attr} may not be exposed as its accessible name by assistive technology — but the element's own content already provides one.`,
+          hint: 'Verify whether the existing text content already serves as this element’s label; if so the naming attribute is redundant, otherwise give the element a role that supports naming (e.g. role="img").',
+          i18n: {
+            summaryKey: 'ariaProhibitedAttr_summary_cantTell_roleless',
+            hintKey: 'ariaProhibitedAttr_hint_cantTell_roleless',
+            params: { attr, element: tag }
+          },
+          data: {
+            details: { reasonCode: 'ARIA_ATTR_PROHIBITED_ROLELESS_NEEDS_REVIEW', attr, role: null, element: tag }
+          }
+        });
+      } else {
+        failOccurrences.push({
+          selector: stableSelector,
+          html,
+          summary: `This ${tag} has no role and no other accessible-name source, so ${attr} is not reliably exposed to assistive technology.`,
+          hint: 'Give this element a role that supports an accessible name (e.g. role="img"/"button"), or remove this attribute if it serves no purpose without one.',
+          i18n: {
+            summaryKey: 'ariaProhibitedAttr_summary_fail_roleless',
+            hintKey: 'ariaProhibitedAttr_hint_fail_roleless',
+            params: { attr, element: tag }
+          },
+          data: {
+            details: { reasonCode: 'ARIA_ATTR_PROHIBITED_ROLELESS', attr, role: null, element: tag }
+          }
+        });
+      }
+    }
+  }
+
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'moderate', occurrences };
+
+  // See helpers.resolveTieredOutcome's own header comment (src/core/dom-helpers.js):
+  // a fail-tier finding never silently discards cantTell-tier findings from
+  // the same run — both are returned together when the outcome is 'fail'.
+  if (helpers.resolveTieredOutcome) {
+    const resolved = helpers.resolveTieredOutcome(failOccurrences, cantTellOccurrences, rule.defaultSeverity || 'moderate');
+    return { ruleId: rule.ruleId, ...resolved };
+  }
+  if (failOccurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'moderate', occurrences: failOccurrences.concat(cantTellOccurrences) };
+  }
+  if (cantTellOccurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'cantTell', severity: rule.defaultSeverity || 'moderate', occurrences: cantTellOccurrences };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
@@ -72394,8 +72843,8 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     }
   }
 
-  const occurrences = [];
-  let hasUncertainConflicts = false;
+  const failOccurrences = [];
+  const cantTellOccurrences = [];
 
   for (const it of undersized) {
     // Inline-text exception: do not fail purely on size/spacing for inline links in text.
@@ -72414,18 +72863,62 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     const info = hasSpacingConflict(it);
 
     if (!info.conflict && info.confident === false) {
-      // Ambiguous perimeter-sampling result near the decision threshold.
-      hasUncertainConflicts = true;
+      // Ambiguous perimeter-sampling result near the decision threshold —
+      // previously recorded only as a page-level boolean with no per-target
+      // occurrence at all, so this specific target was unrecoverable from
+      // the result once any other target on the page had a confident
+      // fail (see helpers.resolveTieredOutcome's header comment). Now
+      // reported as its own cantTell-tier occurrence instead.
+      cantTellOccurrences.push({
+        selector: buildSelector(it.el),
+        html: htmlSnippet(it.el),
+        summary: 'Target may be too small and too close to another target, but the overlap is near the detection threshold and could not be confidently measured.',
+        hint: 'Manually verify the effective spacing between this target and its neighbor; increase target size or spacing if the overlap is real.',
+        i18n: {
+          summaryKey: 'targetSizeMinimum_summary_cantTell_ambiguousSpacing',
+          hintKey: 'targetSizeMinimum_hint_cantTell_ambiguousSpacing',
+          params: {}
+        },
+        data: {
+          details: {
+            measured: { width: it.rect.width, height: it.rect.height },
+            reasonCode: 'undersized-ambiguous-spacing',
+            conflictHitCount: info.hitCount,
+            conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null
+          }
+        }
+      });
       continue;
     }
 
     if (info.conflict) {
       if (isPlausiblyEssentialOrEquivalent(it.el)) {
-        hasUncertainConflicts = true;
+        // Confident spacing conflict, but the target may be exempt as part
+        // of an essential graphic/image-map region — same "previously
+        // unrecoverable" gap as above, now reported instead of dropped.
+        cantTellOccurrences.push({
+          selector: buildSelector(it.el),
+          html: htmlSnippet(it.el),
+          summary: 'Target is too small and too close to another target, but may be exempt as part of an essential graphic or image-map region.',
+          hint: 'Verify whether this target’s size is genuinely essential to its function (e.g. part of an SVG/canvas/image map); if not, increase target size or spacing.',
+          i18n: {
+            summaryKey: 'targetSizeMinimum_summary_cantTell_plausiblyEssential',
+            hintKey: 'targetSizeMinimum_hint_cantTell_plausiblyEssential',
+            params: {}
+          },
+          data: {
+            details: {
+              measured: { width: it.rect.width, height: it.rect.height },
+              reasonCode: 'undersized-plausibly-essential',
+              conflictHitCount: info.hitCount,
+              conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null
+            }
+          }
+        });
         continue;
       }
 
-      occurrences.push({
+      failOccurrences.push({
         selector: buildSelector(it.el),
         html: htmlSnippet(it.el),
         summary: 'Target is too small and too close to another target.',
@@ -72447,21 +72940,28 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     }
   }
 
-  if (occurrences.length > 0) {
+  // See helpers.resolveTieredOutcome's own header comment (src/core/dom-helpers.js):
+  // a fail-tier finding never silently discards cantTell-tier findings from
+  // the same run — both are returned together when the outcome is 'fail'.
+  if (helpers && helpers.resolveTieredOutcome) {
+    const resolved = helpers.resolveTieredOutcome(failOccurrences, cantTellOccurrences, (rule && rule.defaultSeverity) || 'minor');
+    return { ruleId: RULE_ID, ...resolved };
+  }
+  if (failOccurrences.length > 0) {
     return {
       ruleId: RULE_ID,
       outcome: 'fail',
       severity: (rule && rule.defaultSeverity) || 'minor',
-      occurrences
+      occurrences: failOccurrences.concat(cantTellOccurrences)
     };
   }
 
-  if (hasUncertainConflicts) {
+  if (cantTellOccurrences.length > 0) {
     return {
       ruleId: RULE_ID,
       outcome: 'cantTell',
       severity: 'minor',
-      occurrences: []
+      occurrences: cantTellOccurrences
     };
   }
 
@@ -73483,6 +73983,10 @@ const I18N = {
     "targetSizeMinimum_description": "Checks that pointer-operable targets have an effective hit region of at least 24 by 24 CSS pixels, or meet an allowed exception (e.g. sufficient spacing).",
     "targetSizeMinimum_summary_fail": "One or more pointer targets are smaller than 24×24 CSS px and are too close to another target.",
     "targetSizeMinimum_hint_fail": "Increase the target size to at least 24×24 CSS px or add sufficient spacing from neighboring targets.",
+    "targetSizeMinimum_summary_cantTell_ambiguousSpacing": "Target may be too small and too close to another target, but the overlap is near the detection threshold and could not be confidently measured.",
+    "targetSizeMinimum_hint_cantTell_ambiguousSpacing": "Manually verify the effective spacing between this target and its neighbor; increase target size or spacing if the overlap is real.",
+    "targetSizeMinimum_summary_cantTell_plausiblyEssential": "Target is too small and too close to another target, but may be exempt as part of an essential graphic or image-map region.",
+    "targetSizeMinimum_hint_cantTell_plausiblyEssential": "Verify whether this target’s size is genuinely essential to its function (e.g. part of an SVG/canvas/image map); if not, increase target size or spacing.",
     "targetSizeMinimum_notApplicable_noTargets": "No pointer-operable targets were eligible for evaluation.",
     "targetSizeMinimum_pass_allOk": "All eligible pointer targets meet the minimum size or a permitted exception.",
     "ariaHidden_focus_title": "ARIA hidden elements must not be focusable",
@@ -73606,6 +74110,10 @@ const I18N = {
     "ariaProhibitedAttr_description": "Checks that aria-label/aria-labelledby are not present on WAI-ARIA roles whose specification explicitly prohibits ARIA naming (e.g. generic, emphasis, strong, paragraph).",
     "ariaProhibitedAttr_summary_fail": "{{attr}} is prohibited on role=\"{{role}}\".",
     "ariaProhibitedAttr_hint_fail": "Remove this attribute; this role must not carry an accessible name.",
+    "ariaProhibitedAttr_summary_fail_roleless": "This {{element}} has no role and no other accessible-name source, so {{attr}} is not reliably exposed to assistive technology.",
+    "ariaProhibitedAttr_hint_fail_roleless": "Give this element a role that supports an accessible name (e.g. role=\"img\"/\"button\"), or remove this attribute if it serves no purpose without one.",
+    "ariaProhibitedAttr_summary_cantTell_roleless": "This {{element}} has no role, so {{attr}} may not be exposed as its accessible name by assistive technology — but the element's own content already provides one.",
+    "ariaProhibitedAttr_hint_cantTell_roleless": "Verify whether the existing text content already serves as this element's label; if so the naming attribute is redundant, otherwise give the element a role that supports naming (e.g. role=\"img\").",
     "ariaRequiredAttr_title": "Roles with a required ARIA state/property must carry it",
     "ariaRequiredAttr_description": "Checks that elements with an explicit role carry every unambiguous, context-independent required aria-* state/property for that role (e.g. role=\"checkbox\" must have aria-checked).",
     "ariaRequiredAttr_summary_fail": "{{attr}} is required for role=\"{{role}}\", but is missing.",
@@ -74091,6 +74599,10 @@ const I18N = {
     "targetSizeMinimum_description": "Vérifie que les cibles activables au pointeur ont une zone cliquable effective d’au moins 24×24 pixels CSS, ou respectent une exception autorisée (par ex. un espacement suffisant).",
     "targetSizeMinimum_summary_fail": "La cible est plus petite que 24×24 px CSS et est trop proche d’une autre cible.",
     "targetSizeMinimum_hint_fail": "Augmentez la taille de la cible à au moins 24×24 px CSS, ou ajoutez un espacement suffisant par rapport aux cibles voisines.",
+    "targetSizeMinimum_summary_cantTell_ambiguousSpacing": "La cible est peut-être trop petite et trop proche d’une autre cible, mais le chevauchement est proche du seuil de détection et n’a pas pu être mesuré avec certitude.",
+    "targetSizeMinimum_hint_cantTell_ambiguousSpacing": "Vérifiez manuellement l’espacement effectif entre cette cible et sa voisine ; augmentez la taille de la cible ou l’espacement si le chevauchement est réel.",
+    "targetSizeMinimum_summary_cantTell_plausiblyEssential": "La cible est trop petite et trop proche d’une autre cible, mais pourrait être exemptée en tant qu’élément essentiel d’une zone graphique ou d’une image cliquable.",
+    "targetSizeMinimum_hint_cantTell_plausiblyEssential": "Vérifiez si la taille de cette cible est réellement essentielle à sa fonction (par ex. partie d’un SVG/canvas/plan d’image) ; sinon, augmentez la taille de la cible ou l’espacement.",
     "targetSizeMinimum_notApplicable_noTargets": "Aucune cible activable par pointeur n’était éligible à l’évaluation.",
     "targetSizeMinimum_pass_allOk": "Toutes les cibles activables par pointeur respectent la taille minimale ou une exception autorisée.",
     "ariaHidden_focus_title": "Les éléments aria-hidden ne doivent pas être focalisables",
@@ -74214,6 +74726,10 @@ const I18N = {
     "ariaProhibitedAttr_description": "Vérifie que aria-label/aria-labelledby ne sont pas présents sur des rôles WAI-ARIA dont la spécification interdit explicitement le nommage ARIA (ex. generic, emphasis, strong, paragraph).",
     "ariaProhibitedAttr_summary_fail": "{{attr}} est interdit sur role=\"{{role}}\".",
     "ariaProhibitedAttr_hint_fail": "Retirez cet attribut ; ce rôle ne doit pas porter de nom accessible.",
+    "ariaProhibitedAttr_summary_fail_roleless": "Cet élément {{element}} n'a aucun rôle ni autre source de nom accessible, donc {{attr}} n'est pas exposé de façon fiable aux technologies d'assistance.",
+    "ariaProhibitedAttr_hint_fail_roleless": "Donnez à cet élément un rôle prenant en charge un nom accessible (par ex. role=\"img\"/\"button\"), ou retirez cet attribut s'il ne sert à rien sans rôle.",
+    "ariaProhibitedAttr_summary_cantTell_roleless": "Cet élément {{element}} n'a aucun rôle, donc {{attr}} pourrait ne pas être exposé comme nom accessible par les technologies d'assistance — mais le contenu de l'élément en fournit déjà un.",
+    "ariaProhibitedAttr_hint_cantTell_roleless": "Vérifiez si le contenu textuel existant sert déjà de libellé à cet élément ; si oui, l'attribut de nommage est redondant, sinon donnez à l'élément un rôle prenant en charge le nommage (par ex. role=\"img\").",
     "ariaRequiredAttr_title": "Les rôles avec un état/une propriété ARIA requis doivent le porter",
     "ariaRequiredAttr_description": "Vérifie que les éléments ayant un rôle explicite portent chaque état/propriété aria-* requis, non ambigu et indépendant du contexte, pour ce rôle (ex. role=\"checkbox\" doit avoir aria-checked).",
     "ariaRequiredAttr_summary_fail": "{{attr}} est requis pour role=\"{{role}}\", mais est absent.",
@@ -77226,6 +77742,15 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
         getRequiredContextRoles,
         isRoleAllowedOnElement,
         getContainmentRole,
+
+        // An element's own native/implicit ARIA-in-HTML role (see
+        // NATIVE_ROLE_BY_ELEMENT_KEY above) — previously internal-only
+        // (used by isRoleAllowedOnElement), now also re-exported for
+        // aria-prohibited-attr's roleless-element branch, which needs to
+        // tell "no role at all" (e.g. a bare <span>/<div>) apart from "has
+        // a real implicit role" (e.g. <button>, <a href>) without
+        // over-flagging the latter.
+        getNativeRoleForElement,
 
         // Shared "does this element have a landmark-scoping ancestor"
         // primitive — see its own header comment above. Re-exported at
@@ -81281,6 +81806,44 @@ const createDomHelpers = (function createDomHelpers(opts) {
         return o;
     }
 
+    // Resolves the final {outcome, severity, occurrences} for a rule that
+    // collects two independent confidence tiers during one run — some
+    // findings are confident enough for a hard `fail`, others only warrant
+    // `cantTell` (e.g. "this needs human review"). The naive approach
+    // (`if (failOccurrences.length) return fail(failOccurrences); else if
+    // (cantTellOccurrences.length) return cantTell(cantTellOccurrences);`)
+    // silently drops every cantTell-tier finding whenever at least one
+    // fail-tier finding also exists on the same page — a real information
+    // loss for a real scan, not just a test artifact: a page with one
+    // confident violation and five "needs review" ones would report only
+    // the one. Found via aria-prohibited-attr's roleless-naming widening
+    // (2026-07-31), then confirmed as the same architectural gap in
+    // aria-hidden-focus's runtime-redirect downgrade (same day) via an
+    // explicit audit of every automatic rule for this exact two-bucket
+    // shape.
+    // The correct behavior when a fail-tier finding exists: the overall
+    // outcome is still `fail` (a real, confident violation must still gate
+    // CI), but BOTH buckets' occurrences are returned together, not just
+    // the fail ones — each occurrence already carries its own
+    // distinguishing `data.details.reasonCode`/summary/hint, so nothing
+    // about which findings were confident vs. which need review is lost;
+    // only the single aggregate outcome label stays singular, which was
+    // already this engine's accepted one-outcome-per-rule-run schema
+    // constraint (changing that is a separate, much larger, cross-cutting
+    // decision spanning report.js/baseline.js/explain.js/WCAG rollups —
+    // out of scope for this helper).
+    function resolveTieredOutcome(failOccurrences, cantTellOccurrences, severity) {
+        const fails = Array.isArray(failOccurrences) ? failOccurrences : [];
+        const cantTells = Array.isArray(cantTellOccurrences) ? cantTellOccurrences : [];
+        if (fails.length) {
+            return { outcome: 'fail', severity, occurrences: fails.concat(cantTells) };
+        }
+        if (cantTells.length) {
+            return { outcome: 'cantTell', severity, occurrences: cantTells };
+        }
+        return { outcome: 'pass', severity: 'minor', occurrences: [] };
+    }
+
     let __contrastSharedCache = {};
     try {
         // In Node/JSDOM checks, the harness sets global.window/global.document.
@@ -81416,6 +81979,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
         resetPerfStats,
 
         reportOccurrence,
+        resolveTieredOutcome,
 
         contrast,
         aria

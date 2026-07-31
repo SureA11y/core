@@ -1,6 +1,6 @@
 # Fixture Index
 
-Generated: 2026-07-24T14:32:29.015Z
+Generated: 2026-07-31T16:50:37.704Z
 
 Every implemented rule should have a `tests/fixtures/<slug>-all-scenarios.html` scenario page (numbered `case_NN` blocks, each marked PASS/FAIL/CANTTELL in its `.case-title`) and a "fixture coverage" test in its `tests/engine-checks/**/<rule>.test.js` asserting the exact expected ids. See `docs/RULE_AUTHORING.md`.
 
@@ -16,7 +16,7 @@ None — every rule has a fixture.
 
 | Rule ID | Type | Fixture | Cases | PASS | FAIL | CANTTELL | OTHER |
 |---|---|---|---:|---:|---:|---:|---:|
-| accesskeys | manual | `tests/fixtures/accesskeys-all-scenarios.html` | 2 | 0 | 0 | 1 | 1 |
+| accesskeys | manual | `tests/fixtures/accesskeys-all-scenarios.html` | 3 | 0 | 0 | 1 | 2 |
 | area-alt-decorative | manual | `tests/fixtures/area-alt-decorative-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
 | area-alt-present | automatic | `tests/fixtures/area-alt-present-all-scenarios.html` | 23 | 5 | 8 | 0 | 10 |
 | area-alt-quality | manual | `tests/fixtures/area-alt-quality-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
@@ -28,11 +28,11 @@ None — every rule has a fixture.
 | aria-deprecated-role | automatic | `tests/fixtures/aria-deprecated-role-all-scenarios.html` | 4 | 1 | 2 | 0 | 1 |
 | aria-hidden-body | automatic | `tests/fixtures/aria-hidden-body-all-scenarios.html` | 1 | 0 | 1 | 0 | 0 |
 | aria-hidden-focus | automatic | `tests/fixtures/aria-hidden-focus-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
-| aria-prohibited-attr | automatic | `tests/fixtures/aria-prohibited-attr-all-scenarios.html` | 9 | 2 | 6 | 0 | 1 |
-| aria-prohibited-children | automatic | `tests/fixtures/aria-prohibited-children-all-scenarios.html` | 11 | 5 | 5 | 0 | 1 |
-| aria-required-attr | automatic | `tests/fixtures/aria-required-attr-all-scenarios.html` | 12 | 4 | 4 | 0 | 4 |
-| aria-required-children | automatic | `tests/fixtures/aria-required-children-all-scenarios.html` | 5 | 3 | 1 | 0 | 1 |
-| aria-required-parent | automatic | `tests/fixtures/aria-required-parent-all-scenarios.html` | 9 | 5 | 2 | 0 | 2 |
+| aria-prohibited-attr | automatic | `tests/fixtures/aria-prohibited-attr-all-scenarios.html` | 15 | 2 | 9 | 0 | 4 |
+| aria-prohibited-children | automatic | `tests/fixtures/aria-prohibited-children-all-scenarios.html` | 14 | 6 | 6 | 0 | 2 |
+| aria-required-attr | automatic | `tests/fixtures/aria-required-attr-all-scenarios.html` | 14 | 4 | 4 | 0 | 6 |
+| aria-required-children | automatic | `tests/fixtures/aria-required-children-all-scenarios.html` | 8 | 3 | 1 | 0 | 4 |
+| aria-required-parent | automatic | `tests/fixtures/aria-required-parent-all-scenarios.html` | 11 | 6 | 2 | 0 | 3 |
 | aria-role-name-present | automatic | `tests/fixtures/aria-role-name-present-all-scenarios.html` | 31 | 11 | 12 | 0 | 8 |
 | aria-roles-valid | automatic | `tests/fixtures/aria-roles-valid-all-scenarios.html` | 6 | 3 | 2 | 0 | 1 |
 | aria-text | manual | `tests/fixtures/aria-text-all-scenarios.html` | 4 | 0 | 0 | 2 | 2 |
@@ -41,7 +41,7 @@ None — every rule has a fixture.
 | autocomplete-valid | automatic | `tests/fixtures/autocomplete-valid-all-scenarios.html` | 7 | 4 | 2 | 0 | 1 |
 | avoid-inline-spacing | automatic | `tests/fixtures/avoid-inline-spacing-all-scenarios.html` | 3 | 1 | 2 | 0 | 0 |
 | binary-control-name-present | automatic | `tests/fixtures/binary-control-name-present-all-scenarios.html` | 25 | 11 | 6 | 0 | 8 |
-| button-name-present | automatic | `tests/fixtures/button-name-present-all-scenarios.html` | 21 | 8 | 10 | 0 | 3 |
+| button-name-present | automatic | `tests/fixtures/button-name-present-all-scenarios.html` | 24 | 9 | 12 | 0 | 3 |
 | bypass-blocks-present | automatic | `tests/fixtures/bypass-blocks-present-all-scenarios.html` | 1 | 0 | 1 | 0 | 0 |
 | canvas-text-alternative-present | automatic | `tests/fixtures/canvas-text-alternative-present-all-scenarios.html` | 25 | 9 | 9 | 0 | 7 |
 | canvas-text-alternative-quality | manual | `tests/fixtures/canvas-text-alternative-quality-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
@@ -63,7 +63,7 @@ None — every rule has a fixture.
 | focus-order-semantics | manual | `tests/fixtures/focus-order-semantics-all-scenarios.html` | 5 | 0 | 0 | 2 | 3 |
 | form-control-programmatic-label-present | automatic | `tests/fixtures/form-control-programmatic-label-all-scenarios.html` | 41 | 15 | 12 | 0 | 14 |
 | form-control-programmatic-label-quality | manual | `tests/fixtures/form-control-programmatic-label-quality-manual-all-scenarios.html` | 14 | 0 | 0 | 0 | 14 |
-| form-control-single-label | automatic | `tests/fixtures/form-control-single-label-all-scenarios.html` | 6 | 3 | 2 | 0 | 1 |
+| form-control-single-label | automatic | `tests/fixtures/form-control-single-label-all-scenarios.html` | 7 | 4 | 2 | 0 | 1 |
 | heading-order | manual | `tests/fixtures/heading-order-all-scenarios.html` | 1 | 0 | 0 | 1 | 0 |
 | html-lang-attr-present | automatic | `tests/fixtures/language-page-present-all-scenarios.html` | 1 | 0 | 1 | 0 | 0 |
 | html-xml-lang-mismatch | automatic | `tests/fixtures/html-xml-lang-mismatch-all-scenarios.html` | 1 | 0 | 1 | 0 | 0 |
@@ -89,7 +89,7 @@ None — every rule has a fixture.
 | landmark-one-main | manual | `tests/fixtures/landmark-one-main-all-scenarios.html` | 1 | 0 | 0 | 1 | 0 |
 | landmark-unique | manual | `tests/fixtures/landmark-unique-all-scenarios.html` | 12 | 0 | 0 | 6 | 6 |
 | link-in-text-block | automatic | `tests/fixtures/link-in-text-block-all-scenarios.html` | 7 | 4 | 1 | 0 | 2 |
-| link-name-present | automatic | `tests/fixtures/link-name-present-all-scenarios.html` | 17 | 10 | 5 | 0 | 2 |
+| link-name-present | automatic | `tests/fixtures/link-name-present-all-scenarios.html` | 19 | 11 | 6 | 0 | 2 |
 | link-name-quality | manual | `tests/fixtures/link-name-quality-all-scenarios.html` | 7 | 0 | 0 | 4 | 3 |
 | list-children-valid | automatic | `tests/fixtures/list-children-valid-all-scenarios.html` | 14 | 8 | 5 | 0 | 1 |
 | listbox-name-present | automatic | `tests/fixtures/listbox-name-present-all-scenarios.html` | 21 | 5 | 5 | 0 | 11 |
@@ -120,7 +120,7 @@ None — every rule has a fixture.
 | scrollable-region-focusable | manual | `tests/fixtures/scrollable-region-focusable-all-scenarios.html` | 5 | 0 | 0 | 2 | 3 |
 | searchbox-name-present | automatic | `tests/fixtures/searchbox-name-present-all-scenarios.html` | 21 | 5 | 5 | 0 | 11 |
 | server-side-image-map-absent | automatic | `tests/fixtures/server-side-image-map-absent-all-scenarios.html` | 3 | 0 | 1 | 0 | 2 |
-| skip-link | manual | `tests/fixtures/skip-link-all-scenarios.html` | 5 | 0 | 0 | 2 | 3 |
+| skip-link | manual | `tests/fixtures/skip-link-all-scenarios.html` | 6 | 0 | 0 | 3 | 3 |
 | slider-name-present | automatic | `tests/fixtures/slider-name-present-all-scenarios.html` | 21 | 8 | 5 | 0 | 8 |
 | spinbutton-name-present | automatic | `tests/fixtures/spinbutton-name-present-all-scenarios.html` | 21 | 5 | 5 | 0 | 11 |
 | summary-name-present | automatic | `tests/fixtures/summary-name-present-all-scenarios.html` | 6 | 4 | 2 | 0 | 0 |

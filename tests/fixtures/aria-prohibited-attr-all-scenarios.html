@@ -75,6 +75,50 @@
     <div role="button" aria-label="Submit" id="apa_case_06"></div>
   </div>
 
+  <h2>D. Roleless elements (widened 2026-07-31 — no explicit or implicit role at all)</h2>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — FAIL: aria-label on a roleless span with no content fallback (the emoji-mart case)</div>
+    <span id="apa_case_10" aria-label="party_parrot" class="emoji-mart-emoji-custom"></span>
+  </div>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — FAIL: aria-labelledby on a roleless div with no content fallback</div>
+    <span id="apa_case_11_lbl">Label</span>
+    <div id="apa_case_11" aria-labelledby="apa_case_11_lbl"></div>
+  </div>
+
+  <div class="case" id="case_12">
+    <div class="case-title">12 — NEUTRAL: aria-label on a tag with a real native role (bare &lt;button&gt;, no explicit role) — not this branch's concern</div>
+    <button id="apa_case_12" aria-label="Close"></button>
+  </div>
+
+  <div class="case" id="case_13">
+    <div class="case-title">13 — NEUTRAL: roleless tag not in the curated list (&lt;section&gt;, handled elsewhere in this engine)</div>
+    <section id="apa_case_13" aria-label="Widget region"></section>
+  </div>
+
+  <div class="case" id="case_14">
+    <div class="case-title">14 — NEUTRAL: roleless span with aria-label inside a widget-type ancestor role (exempted)</div>
+    <div role="slider" aria-valuenow="5">
+      <span id="apa_case_14" aria-label="thumb"></span>
+    </div>
+  </div>
+
+  <div class="case" id="case_16">
+    <div class="case-title">16 — FAIL: aria-label on a span carrying an INVALID role="" token (not a recognized ARIA role), no content fallback — must fall through to this branch instead of being skipped as "has a real role" (fixed 2026-07-31; identical markup with the role attribute removed entirely already correctly failed as case 10 does)</div>
+    <span id="apa_case_16" role="totally-bogus-not-a-real-role" aria-label="icon-only" class="icon-x"></span>
+  </div>
+
+  <p class="note">
+    Case 15 (roleless element whose content already provides a fallback name — reported as
+    <code>cantTell</code>, not <code>fail</code>) is intentionally NOT included in this
+    fixture: this file's overall outcome is <code>fail</code> (several cases above), and a
+    <code>fail</code> outcome only reports its fail-bucket occurrences, so a cantTell-only
+    case here would silently disappear from this file's own occurrence count. See the
+    dedicated inline-HTML test in <code>aria-prohibited-attr.test.js</code> instead.
+  </p>
+
   <p class="note">End of fixture.</p>
 </body>
 </html>

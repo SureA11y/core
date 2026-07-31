@@ -134,7 +134,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | `region` | Page content should be inside a landmark region | — | — | medium | minor |
 | `scope-attr-valid` | scope attribute must have a valid value | — | — | medium | minor |
 | `scrollable-region-focusable` | Scrollable regions with no focusable content should be keyboard-focusable | 2.1.1, 2.1.3 | AAA | low | moderate |
-| `skip-link` | Skip link must have a resolvable target | — | — | medium | minor |
+| `skip-link` | Skip link must have a resolvable, usable target | — | — | medium | minor |
 | `svg-text-alternative-quality` | &lt;svg&gt; text alternative must be appropriate (manual review) | 1.1.1 | A | medium | minor |
 | `tabindex` | tabindex should not be greater than 0 | — | — | medium | minor |
 | `table-duplicate-name` | Table caption must not duplicate its summary attribute | — | — | medium | minor |

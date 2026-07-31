@@ -973,6 +973,15 @@ function createAriaHelpers(opts, shared) {
         isRoleAllowedOnElement,
         getContainmentRole,
 
+        // An element's own native/implicit ARIA-in-HTML role (see
+        // NATIVE_ROLE_BY_ELEMENT_KEY above) — previously internal-only
+        // (used by isRoleAllowedOnElement), now also re-exported for
+        // aria-prohibited-attr's roleless-element branch, which needs to
+        // tell "no role at all" (e.g. a bare <span>/<div>) apart from "has
+        // a real implicit role" (e.g. <button>, <a href>) without
+        // over-flagging the latter.
+        getNativeRoleForElement,
+
         // Shared "does this element have a landmark-scoping ancestor"
         // primitive — see its own header comment above. Re-exported at
         // helpers' top level too (src/core/dom-helpers.js), matching
