@@ -25201,6 +25201,11 @@ if (isAccTreeEligible) {
   // entry with role: null, which can never satisfy a required-role set)
   // when it carries a global aria-* attribute or is focusable — matches
   // a widely-used reference engine's own getOwnedRoles exactly (see header comment).
+  // kidRole comes from getContainmentRole, not getExplicitRole (see header
+  // comment's 2026-07-31 fix): "roleless" here means neither an explicit
+  // role="" NOR one of the native containment tags (li, tr, td, ...), so a
+  // bare <li>/<tr>/... is a real listitem/row boundary, not a transparent
+  // wrapper the walk should pass through.
   function collectOwnedRoles(el, requiredSet, out, depth) {
     if (depth > MAX_DEPTH) return;
     const kids = el.children ? Array.prototype.slice.call(el.children) : [];
@@ -25208,7 +25213,7 @@ if (isAccTreeEligible) {
       if (!kid || kid.nodeType !== 1) continue;
       if (!isEligibleAcc(kid)) continue;
 
-      const kidRole = ariaHelpers.getExplicitRole(kid);
+      const kidRole = ariaHelpers.getContainmentRole(kid);
       const isPresentational = kidRole === 'presentation' || kidRole === 'none';
       const isTransparentGroup = (kidRole === 'group' || kidRole === 'rowgroup') && requiredSet.has(kidRole);
 
@@ -57924,6 +57929,11 @@ if (isAccTreeEligible) {
   // entry with role: null, which can never satisfy a required-role set)
   // when it carries a global aria-* attribute or is focusable — matches
   // a widely-used reference engine's own getOwnedRoles exactly (see header comment).
+  // kidRole comes from getContainmentRole, not getExplicitRole (see header
+  // comment's 2026-07-31 fix): "roleless" here means neither an explicit
+  // role="" NOR one of the native containment tags (li, tr, td, ...), so a
+  // bare <li>/<tr>/... is a real listitem/row boundary, not a transparent
+  // wrapper the walk should pass through.
   function collectOwnedRoles(el, requiredSet, out, depth) {
     if (depth > MAX_DEPTH) return;
     const kids = el.children ? Array.prototype.slice.call(el.children) : [];
@@ -57931,7 +57941,7 @@ if (isAccTreeEligible) {
       if (!kid || kid.nodeType !== 1) continue;
       if (!isEligibleAcc(kid)) continue;
 
-      const kidRole = ariaHelpers.getExplicitRole(kid);
+      const kidRole = ariaHelpers.getContainmentRole(kid);
       const isPresentational = kidRole === 'presentation' || kidRole === 'none';
       const isTransparentGroup = (kidRole === 'group' || kidRole === 'rowgroup') && requiredSet.has(kidRole);
 

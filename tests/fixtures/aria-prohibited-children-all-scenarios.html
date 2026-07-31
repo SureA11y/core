@@ -60,6 +60,21 @@
     </ul>
   </div>
 
+  <div class="case" id="case_15">
+    <div class="case-title">15 — PASS: a bare &lt;li&gt; (no role="" attribute) several DOM levels above a natively-focusable &lt;a&gt; is itself the real owned child (implicit listitem role), so the walk stops there instead of recursing through it and misreporting the &lt;a&gt; — matches aria-required-children's own native-tag fallback for this exact CSS-reset pattern (fixed 2026-07-31; found via a real Angular app)</div>
+    <ul role="list" id="apc_case_15">
+      <li>
+        <avq-card>
+          <div class="avq-card-body">
+            <avq-card-actions>
+              <a id="apc_case_15_child" routerlink="/x" href="#/x">Explore</a>
+            </avq-card-actions>
+          </div>
+        </avq-card>
+      </li>
+    </ul>
+  </div>
+
   <h2>B. Invalid</h2>
 
   <div class="case" id="case_06">
@@ -73,10 +88,10 @@
   </div>
 
   <div class="case" id="case_07">
-    <div class="case-title">07 — FAIL: a container role is directly owned by another container role not in its allowed set (listbox nested directly in menubar)</div>
+    <div class="case-title">07 — FAIL: a container role is directly owned by another container role not in its allowed set (listbox nested directly in menubar, through a role="none" transparent wrapper)</div>
     <ul role="menubar" id="apc_case_07">
       <li role="menuitem">File</li>
-      <li><div id="apc_case_07_child" role="listbox"><div role="option">x</div></div></li>
+      <li role="none"><div id="apc_case_07_child" role="listbox"><div role="option">x</div></div></li>
     </ul>
   </div>
 
@@ -90,27 +105,28 @@
 
   <div class="case" id="case_10">
     <div class="case-title">10 — FAIL: a roleless-but-focusable (tabindex) child is a real accessible-tree node, not a transparent wrapper (widened 2026-07-21 — matches a widely-used reference engine's own getOwnedRoles exactly)</div>
-    <ul role="menubar" id="apc_case_10">
-      <li role="menuitem">File</li>
-      <li id="apc_case_10_child" tabindex="0">Roleless but focusable</li>
-    </ul>
+    <div role="menubar" id="apc_case_10">
+      <div role="menuitem">File</div>
+      <div id="apc_case_10_child" tabindex="0">Roleless but focusable</div>
+    </div>
   </div>
 
   <div class="case" id="case_11">
     <div class="case-title">11 — FAIL: a roleless-but-globally-aria-attributed (aria-label) child is a real accessible-tree node, not a transparent wrapper</div>
-    <ul role="menubar" id="apc_case_11">
-      <li role="menuitem">File</li>
-      <li id="apc_case_11_child" aria-label="Roleless but named">Something</li>
-    </ul>
+    <div role="menubar" id="apc_case_11">
+      <div role="menuitem">File</div>
+      <div id="apc_case_11_child" aria-label="Roleless but named">Something</div>
+    </div>
   </div>
 
   <div class="case" id="case_12">
     <div class="case-title">12 — FAIL: a roleless-but-natively-focusable child (an &lt;a href&gt; with no tabindex attribute) is a real accessible-tree node, not a transparent wrapper — distinct from case 10's explicit tabindex="" attribute</div>
     <ul role="list" id="apc_case_12">
       <li role="listitem">Item</li>
-      <li><a id="apc_case_12_child" href="#">Roleless but natively focusable</a></li>
+      <li role="none"><a id="apc_case_12_child" href="#">Roleless but natively focusable</a></li>
     </ul>
   </div>
+
 
   <h2>C. Not applicable (skipped, not counted)</h2>
 

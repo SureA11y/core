@@ -67,6 +67,27 @@
  *   owned-role entry against the outer container (and, separately, gets
  *   its own applicability pass as a container in the same rule run) —
  *   its descendants are never misattributed to the outer container.
+ * - Fixed 2026-07-31: child-role resolution used `ariaHelpers.getExplicitRole`
+ *   (explicit role="" attribute only), unlike aria-required-children's
+ *   descendant matching which uses `ariaHelpers.getContainmentRole` (explicit
+ *   role, falling back to the native-tag map — li/tr/td/th/tbody/ul/ol/
+ *   table/select/input[type=radio] — see that helper's own header comment).
+ *   A bare `<li>` with no role="" attribute — the common CSS-reset
+ *   workaround `<ul role="list"><li>...</li></ul>` that getContainmentRole
+ *   exists specifically to handle — was therefore read as roleless here,
+ *   making it structurally transparent: the walk recursed straight through
+ *   the listitem boundary into its subtree and could report a focusable
+ *   descendant several levels down as a disallowed owned child of the list,
+ *   instead of stopping at the (implicit) listitem the way
+ *   aria-required-children already does. Switched to getContainmentRole so
+ *   both rules resolve an owned child's role identically. This is a general
+ *   fix, not list/listitem-specific: it applies to every container role in
+ *   REQUIRED_OWNED_ROLES whose native-tag counterpart the child map covers
+ *   (e.g. a bare `<tr>`/`<td>` under a role="table"/"grid"/"row" container
+ *   with no explicit role="" was subject to the same flattening bug). Found
+ *   via a real Angular Material-style component library: an `<a routerlink>`
+ *   several DOM levels inside a bare `<li>` under `<ul role="list">` was
+ *   reported as an unallowed owned child of the list.
  * - Gated on isAccTreeEligible for the container itself, matching the fix
  *   applied to aria-required-children (see that rule's header): the
  *   original "not gated" note here just cited that rule's reasoning
@@ -160,6 +181,11 @@ function runInPage(ctx) {
   // entry with role: null, which can never satisfy a required-role set)
   // when it carries a global aria-* attribute or is focusable — matches
   // a widely-used reference engine's own getOwnedRoles exactly (see header comment).
+  // kidRole comes from getContainmentRole, not getExplicitRole (see header
+  // comment's 2026-07-31 fix): "roleless" here means neither an explicit
+  // role="" NOR one of the native containment tags (li, tr, td, ...), so a
+  // bare <li>/<tr>/... is a real listitem/row boundary, not a transparent
+  // wrapper the walk should pass through.
   function collectOwnedRoles(el, requiredSet, out, depth) {
     if (depth > MAX_DEPTH) return;
     const kids = el.children ? Array.prototype.slice.call(el.children) : [];
@@ -167,7 +193,7 @@ function runInPage(ctx) {
       if (!kid || kid.nodeType !== 1) continue;
       if (!isEligibleAcc(kid)) continue;
 
-      const kidRole = ariaHelpers.getExplicitRole(kid);
+      const kidRole = ariaHelpers.getContainmentRole(kid);
       const isPresentational = kidRole === 'presentation' || kidRole === 'none';
       const isTransparentGroup = (kidRole === 'group' || kidRole === 'rowgroup') && requiredSet.has(kidRole);
 
