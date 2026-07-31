@@ -21,6 +21,12 @@
  *   decision from form-control-programmatic-label-present (that
  *   rule checks a label exists at all; this one checks there is at most
  *   one).
+ * - A label that isn't accessibility-tree-eligible (display:none,
+ *   aria-hidden, etc.) is excluded before counting: it can't contribute to
+ *   the control's accessible name, so it can't create the ambiguity this
+ *   rule exists to catch. Matches the reference engine's own
+ *   multiple-label check, which filters hidden labels the same way before
+ *   deciding whether there's more than one.
  */
 
 const id = 'form-control-single-label';
@@ -47,6 +53,10 @@ const meta = {
 
 function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
+
+  const isAccTreeEligible = helpers && typeof helpers.isAccTreeEligible === 'function'
+    ? helpers.isAccTreeEligible
+    : null;
 
   const selector = 'input:not([type="hidden"]):not([type="submit"]):not([type="reset"]):not([type="button"]):not([type="image"]),select,textarea';
   const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
@@ -82,7 +92,14 @@ function runInPage(ctx) {
       for (const lab of labelsByFor.get(controlId)) labels.add(lab);
     }
 
-    if (labels.size <= 1) continue;
+    const eligibleLabels = isAccTreeEligible
+      ? new Set([...labels].filter((lab) => {
+          const elig = isAccTreeEligible(lab);
+          return !elig || elig.eligible !== false;
+        }))
+      : labels;
+
+    if (eligibleLabels.size <= 1) continue;
 
     const tag = el.tagName.toLowerCase();
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
@@ -96,10 +113,10 @@ function runInPage(ctx) {
       i18n: {
         summaryKey: 'formControlSingleLabel_summary_fail',
         hintKey: 'formControlSingleLabel_hint_fail',
-        params: { element: tag, labelCount: String(labels.size) }
+        params: { element: tag, labelCount: String(eligibleLabels.size) }
       },
       data: {
-        details: { reasonCode: 'FORM_FIELD_MULTIPLE_LABELS', element: tag, labelCount: labels.size }
+        details: { reasonCode: 'FORM_FIELD_MULTIPLE_LABELS', element: tag, labelCount: eligibleLabels.size }
       }
     });
   }

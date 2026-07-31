@@ -30518,6 +30518,10 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     "form-control-single-label": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
+  const isAccTreeEligible = helpers && typeof helpers.isAccTreeEligible === 'function'
+    ? helpers.isAccTreeEligible
+    : null;
+
   const selector = 'input:not([type="hidden"]):not([type="submit"]):not([type="reset"]):not([type="button"]):not([type="image"]),select,textarea';
   const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
@@ -30552,7 +30556,14 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
       for (const lab of labelsByFor.get(controlId)) labels.add(lab);
     }
 
-    if (labels.size <= 1) continue;
+    const eligibleLabels = isAccTreeEligible
+      ? new Set([...labels].filter((lab) => {
+          const elig = isAccTreeEligible(lab);
+          return !elig || elig.eligible !== false;
+        }))
+      : labels;
+
+    if (eligibleLabels.size <= 1) continue;
 
     const tag = el.tagName.toLowerCase();
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
@@ -30566,10 +30577,10 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
       i18n: {
         summaryKey: 'formControlSingleLabel_summary_fail',
         hintKey: 'formControlSingleLabel_hint_fail',
-        params: { element: tag, labelCount: String(labels.size) }
+        params: { element: tag, labelCount: String(eligibleLabels.size) }
       },
       data: {
-        details: { reasonCode: 'FORM_FIELD_MULTIPLE_LABELS', element: tag, labelCount: labels.size }
+        details: { reasonCode: 'FORM_FIELD_MULTIPLE_LABELS', element: tag, labelCount: eligibleLabels.size }
       }
     });
   }
@@ -63246,6 +63257,10 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     "form-control-single-label": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
+  const isAccTreeEligible = helpers && typeof helpers.isAccTreeEligible === 'function'
+    ? helpers.isAccTreeEligible
+    : null;
+
   const selector = 'input:not([type="hidden"]):not([type="submit"]):not([type="reset"]):not([type="button"]):not([type="image"]),select,textarea';
   const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
 
@@ -63280,7 +63295,14 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
       for (const lab of labelsByFor.get(controlId)) labels.add(lab);
     }
 
-    if (labels.size <= 1) continue;
+    const eligibleLabels = isAccTreeEligible
+      ? new Set([...labels].filter((lab) => {
+          const elig = isAccTreeEligible(lab);
+          return !elig || elig.eligible !== false;
+        }))
+      : labels;
+
+    if (eligibleLabels.size <= 1) continue;
 
     const tag = el.tagName.toLowerCase();
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
@@ -63294,10 +63316,10 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
       i18n: {
         summaryKey: 'formControlSingleLabel_summary_fail',
         hintKey: 'formControlSingleLabel_hint_fail',
-        params: { element: tag, labelCount: String(labels.size) }
+        params: { element: tag, labelCount: String(eligibleLabels.size) }
       },
       data: {
-        details: { reasonCode: 'FORM_FIELD_MULTIPLE_LABELS', element: tag, labelCount: labels.size }
+        details: { reasonCode: 'FORM_FIELD_MULTIPLE_LABELS', element: tag, labelCount: eligibleLabels.size }
       }
     });
   }
