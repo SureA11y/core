@@ -371,6 +371,10 @@ module.exports = {
 
   "ariaHidden_focus_hint_fail":
       "Supprimez la focalisation des descendants ou retirez aria-hidden ; assurez la cohérence entre l’ordre de focus et l’arbre d’accessibilité.",
+  "ariaHidden_focus_summary_cantTell_redirect":
+      "L’élément aria-hidden {{element}} reçoit le focus mais le focus est immédiatement déplacé vers un autre élément. Vérifiez le comportement de sentinelle/piège de focus.",
+  "ariaHidden_focus_hint_cantTell_redirect":
+      "Vérifiez qu’il s’agit d’un transfert intentionnel de sentinelle/piège de focus et que les utilisateurs clavier ne restent jamais sur une cible de focus masquée.",
 
 // --- css-hidden-focus
   "cssHidden_focus_title": "Les éléments focalisables ne doivent pas être masqués visuellement",

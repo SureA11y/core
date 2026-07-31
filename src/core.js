@@ -7494,6 +7494,8 @@ const I18N = {
     "ariaHidden_focus_summary_fail_self": "aria-hidden {{element}} is focusable ({{focusableCount}} focusable element(s)).",
     "ariaHidden_focus_summary_fail_self_and_desc": "aria-hidden {{element}} is focusable and contains {{descendantFocusableCount}} focusable descendant(s) ({{focusableCount}} focusable element(s) total).",
     "ariaHidden_focus_hint_fail": "Remove focusability from descendants or remove aria-hidden; ensure focus and accessibility trees stay aligned.",
+    "ariaHidden_focus_summary_cantTell_redirect": "aria-hidden {{element}} received focus but focus moved immediately to another element. Verify sentinel/focus-trap behavior.",
+    "ariaHidden_focus_hint_cantTell_redirect": "Verify this is an intentional focus sentinel/focus-trap handoff and that keyboard users never remain on hidden focus targets.",
     "cssHidden_focus_title": "Focusable elements must not be visually hidden",
     "cssHidden_focus_description": "Checks that keyboard-focusable elements are not visually hidden by CSS techniques that can leave them in the tab order.",
     "cssHidden_focus_summary_cantTell": "Focusable {{element}} is visually hidden ({{visibilityHints}}).",
@@ -8100,6 +8102,8 @@ const I18N = {
     "ariaHidden_focus_summary_fail_self": "L’élément aria-hidden {{element}} est focalisable ({{focusableCount}} élément(s) focalisable(s)).",
     "ariaHidden_focus_summary_fail_self_and_desc": "L’élément aria-hidden {{element}} est focalisable et contient {{descendantFocusableCount}} descendant(s) focalisable(s) ({{focusableCount}} élément(s) focalisable(s) au total).",
     "ariaHidden_focus_hint_fail": "Supprimez la focalisation des descendants ou retirez aria-hidden ; assurez la cohérence entre l’ordre de focus et l’arbre d’accessibilité.",
+    "ariaHidden_focus_summary_cantTell_redirect": "L’élément aria-hidden {{element}} reçoit le focus mais le focus est immédiatement déplacé vers un autre élément. Vérifiez le comportement de sentinelle/piège de focus.",
+    "ariaHidden_focus_hint_cantTell_redirect": "Vérifiez qu’il s’agit d’un transfert intentionnel de sentinelle/piège de focus et que les utilisateurs clavier ne restent jamais sur une cible de focus masquée.",
     "cssHidden_focus_title": "Les éléments focalisables ne doivent pas être masqués visuellement",
     "cssHidden_focus_description": "Vérifie que les éléments focalisables au clavier ne sont pas masqués visuellement par des techniques CSS pouvant les laisser dans l’ordre de tabulation.",
     "cssHidden_focus_summary_cantTell": "L’élément focalisable {{element}} est masqué visuellement ({{visibilityHints}}).",
@@ -24715,6 +24719,199 @@ if (isAccTreeEligible) {
     return null;
   }
 
+  function isWithinComposedSubtree(node, ancestor) {
+    let cur = node;
+    let guard = 0;
+    while (cur && guard++ < 400) {
+      if (cur === ancestor) return true;
+      cur = composedParent(cur);
+    }
+    return false;
+  }
+
+  function getDeepActiveElement() {
+    let cur = document && document.activeElement ? document.activeElement : null;
+    let guard = 0;
+    while (cur && cur.shadowRoot && cur.shadowRoot.activeElement && guard++ < 20) {
+      cur = cur.shadowRoot.activeElement;
+    }
+    return cur;
+  }
+
+  function focusElementSafe(el) {
+    if (!el || typeof el.focus !== 'function') return false;
+    try {
+      el.focus({ preventScroll: true });
+      return true;
+    } catch {
+      try {
+        el.focus();
+        return true;
+      } catch {
+        return false;
+      }
+    }
+  }
+
+  function buildNodeRef(node, rootEl) {
+    if (!node) return null;
+    const tag = (() => { try { return lower(node.tagName || ''); } catch { return ''; } })();
+    const idVal = (() => {
+      try { return trim(node.getAttribute && node.getAttribute('id')); } catch { return '';
+      }
+    })();
+    return {
+      tag: tag || null,
+      id: idVal || null,
+      withinRoot: !!(rootEl && isWithinComposedSubtree(node, rootEl))
+    };
+  }
+
+  function runFocusObservationWindow(fn) {
+    const w = (document && document.defaultView) ? document.defaultView : (typeof window !== 'undefined' ? window : null);
+    if (!w || typeof fn !== 'function') return;
+
+    const originalSetTimeout = (typeof w.setTimeout === 'function') ? w.setTimeout.bind(w) : null;
+    const originalRequestAnimationFrame = (typeof w.requestAnimationFrame === 'function') ? w.requestAnimationFrame.bind(w) : null;
+    const originalQueueMicrotask = (typeof w.queueMicrotask === 'function') ? w.queueMicrotask.bind(w) : null;
+
+    const queuedMicrotasks = [];
+    const queuedRaf = [];
+    const queuedTimers = [];
+    let fakeTimerId = 1;
+
+    const patchedSetTimeout = function (cb, delay) {
+      const d = Number.isFinite(Number(delay)) ? Number(delay) : 0;
+      if (typeof cb === 'function' && d <= 200) {
+        const args = [];
+        for (let i = 2; i < arguments.length; i++) args.push(arguments[i]);
+        queuedTimers.push({ delay: d, cb: () => cb.apply(w, args) });
+        return fakeTimerId++;
+      }
+      if (originalSetTimeout) return originalSetTimeout.apply(w, arguments);
+      return fakeTimerId++;
+    };
+
+    const patchedRaf = function (cb) {
+      if (typeof cb === 'function') {
+        queuedRaf.push(cb);
+        return fakeTimerId++;
+      }
+      if (originalRequestAnimationFrame) return originalRequestAnimationFrame.apply(w, arguments);
+      return fakeTimerId++;
+    };
+
+    const patchedQueueMicrotask = function (cb) {
+      if (typeof cb === 'function') queuedMicrotasks.push(cb);
+    };
+
+    try {
+      if (originalSetTimeout) w.setTimeout = patchedSetTimeout;
+      if (originalRequestAnimationFrame) w.requestAnimationFrame = patchedRaf;
+      if (originalQueueMicrotask) w.queueMicrotask = patchedQueueMicrotask;
+      fn();
+
+      // Deterministic mini-window: microtasks -> rAF -> short timers (<=200ms).
+      let guard = 0;
+      while ((queuedMicrotasks.length || queuedRaf.length || queuedTimers.length) && guard++ < 100) {
+        while (queuedMicrotasks.length) {
+          const mt = queuedMicrotasks.shift();
+          try { mt(); } catch {}
+        }
+        while (queuedRaf.length) {
+          const rf = queuedRaf.shift();
+          try { rf(16); } catch {}
+        }
+        if (queuedTimers.length) {
+          queuedTimers.sort((a, b) => a.delay - b.delay);
+          const tt = queuedTimers.shift();
+          try { tt.cb(); } catch {}
+        }
+      }
+    } finally {
+      if (originalSetTimeout) w.setTimeout = originalSetTimeout;
+      if (originalRequestAnimationFrame) w.requestAnimationFrame = originalRequestAnimationFrame;
+      if (originalQueueMicrotask) w.queueMicrotask = originalQueueMicrotask;
+    }
+  }
+
+  function probeImmediateFocusRedirect(entry) {
+    // Conservative downgrade gate:
+    // - only probe simple single-offender roots
+    // - only downgrade when focus moves immediately OUTSIDE the aria-hidden subtree
+    if (!entry || entry.count !== 1 || !entry.probeCandidates || !entry.probeCandidates.length) return null;
+    const candidate = entry.probeCandidates[0];
+    if (!candidate) return null;
+
+    let focusedByEvent = false;
+    const onFocusCapture = () => { focusedByEvent = true; };
+    try {
+      candidate.addEventListener('focus', onFocusCapture, true);
+    } catch {
+      // ignore
+    }
+
+    const focusTrace = [];
+    const onFocusInCapture = (ev) => {
+      const n = ev && ev.target ? ev.target : null;
+      const ref = buildNodeRef(n, entry.rootEl);
+      if (ref) focusTrace.push(ref);
+    };
+    try {
+      document.addEventListener('focusin', onFocusInCapture, true);
+    } catch {
+      // ignore
+    }
+
+    const before = getDeepActiveElement();
+    const beforeRef = buildNodeRef(before, entry.rootEl);
+    if (beforeRef) focusTrace.push(beforeRef);
+
+    let focused = false;
+    runFocusObservationWindow(() => {
+      focused = focusElementSafe(candidate);
+    });
+
+    try {
+      document.removeEventListener('focusin', onFocusInCapture, true);
+    } catch {
+      // ignore
+    }
+
+    try {
+      candidate.removeEventListener('focus', onFocusCapture, true);
+    } catch {
+      // ignore
+    }
+    if (!focused || !focusedByEvent) return null;
+
+    const after = getDeepActiveElement();
+    const afterRef = buildNodeRef(after, entry.rootEl);
+    if (afterRef) focusTrace.push(afterRef);
+
+    // Best-effort restore to reduce side effects across checks.
+    if (before && before !== after) {
+      focusElementSafe(before);
+    }
+
+    if (!after || after === candidate) return null;
+    if (isWithinComposedSubtree(after, entry.rootEl)) return null;
+
+    const redirectedTag = (() => {
+      try { return lower(after.tagName || ''); } catch { return ''; }
+    })();
+    const redirectedId = (() => {
+      try { return trim(after.getAttribute && after.getAttribute('id')); } catch { return ''; }
+    })();
+
+    return {
+      redirected: true,
+      redirectedToTag: redirectedTag || null,
+      redirectedToId: redirectedId || null,
+      focusTrace
+    };
+  }
+
   // Lightweight "invisible but still focusable" hints.
   // Only computed for a capped set of offenders per aria-hidden root.
   function getVisibilityHints(el) {
@@ -24943,8 +25140,9 @@ if (isAccTreeEligible) {
     'a[href],area[href],button,input,select,textarea,summary,iframe,audio[controls],video[controls],[tabindex],[contenteditable]'
   );
 
-  const bucket = new Map(); // ariaHiddenRoot -> { rootEl, count, offenders: [], hints:Set, rootIsFocusable }
+  const bucket = new Map(); // ariaHiddenRoot -> { rootEl, count, offenders: [], hints:Set, rootIsFocusable, probeCandidates: [] }
   const maxOffendersPerRoot = 5;
+  const maxProbeCandidatesPerRoot = 3;
 
   for (let i = 0; i < focusableCandidates.length; i++) {
     const el = focusableCandidates[i];
@@ -24967,10 +25165,11 @@ if (isAccTreeEligible) {
 
     let entry = bucket.get(rootEl);
     if (!entry) {
-      entry = { rootEl, count: 0, offenders: [], hints: new Set(), rootIsFocusable: false };
+      entry = { rootEl, count: 0, offenders: [], hints: new Set(), rootIsFocusable: false, probeCandidates: [] };
       bucket.set(rootEl, entry);
     }
     entry.count += 1;
+    if (entry.probeCandidates.length < maxProbeCandidatesPerRoot) entry.probeCandidates.push(el);
 
     // Capture a small, deterministic offender summary + visibility hints.
     if (entry.offenders.length < maxOffendersPerRoot) {
@@ -25008,7 +25207,8 @@ if (isAccTreeEligible) {
   }
 
   // 3) Report one occurrence per aria-hidden root that contains focusable content.
-  const occurrences = [];
+  const failOccurrences = [];
+  const uncertainOccurrences = [];
   for (const [, entry] of bucket) {
     const el = entry.rootEl;
 
@@ -25044,21 +25244,30 @@ if (isAccTreeEligible) {
           : `aria-hidden ${tagName} is focusable (${totalFocusable} focusable element(s)).`)
       : `aria-hidden ${tagName} contains ${totalFocusable} focusable element(s).`;
 
+    const runtimeProbe = probeImmediateFocusRedirect(entry);
+    const downgradedToCantTell = !!(runtimeProbe && runtimeProbe.redirected);
+
+    const cantTellSummary = `aria-hidden ${tagName} received focus but focus moved immediately to another element. Verify sentinel/focus-trap behavior.`;
+
     const baseOccurrence = {
-      summary: summaryText,
-      hint: 'Remove focusability from descendants or remove aria-hidden; ensure focus and accessibility trees stay aligned.',
+      summary: downgradedToCantTell ? cantTellSummary : summaryText,
+      hint: downgradedToCantTell
+        ? 'Verify this is an intentional focus sentinel/focus-trap handoff and that keyboard users never remain on hidden focus targets.'
+        : 'Remove focusability from descendants or remove aria-hidden; ensure focus and accessibility trees stay aligned.',
       i18n: {
-        summaryKey,
-        hintKey: 'ariaHidden_focus_hint_fail',
+        summaryKey: downgradedToCantTell ? 'ariaHidden_focus_summary_cantTell_redirect' : summaryKey,
+        hintKey: downgradedToCantTell ? 'ariaHidden_focus_hint_cantTell_redirect' : 'ariaHidden_focus_hint_fail',
         params: {
           element: tagName,
           focusableCount: String(totalFocusable),
-          descendantFocusableCount: String(descendantFocusable)
+          descendantFocusableCount: String(descendantFocusable),
+          redirectedToTag: runtimeProbe && runtimeProbe.redirectedToTag ? runtimeProbe.redirectedToTag : '',
+          redirectedToId: runtimeProbe && runtimeProbe.redirectedToId ? runtimeProbe.redirectedToId : ''
         }
       },
       data: {
         details: {
-          reasonCode,
+          reasonCode: downgradedToCantTell ? 'ariaHiddenFocusable_runtimeRedirect_needsReview' : reasonCode,
           metrics: {
             focusableTotal: totalFocusable,
             focusableDescendants: descendantFocusable,
@@ -25066,17 +25275,30 @@ if (isAccTreeEligible) {
             offendersCaptured: entry.offenders.length,
             visibilityHints: hintsArr.slice(0)
           },
+          runtimeProbe: runtimeProbe || null,
           offenders: entry.offenders.slice(0)
         },
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
       }
     };
 
-    if (reportOccurrence) occurrences.push(reportOccurrence(el, baseOccurrence));
-    else occurrences.push({ __node: el, selector: '', html: '', ...baseOccurrence });
+    const occurrence = reportOccurrence
+      ? reportOccurrence(el, baseOccurrence)
+      : { __node: el, selector: '', html: '', ...baseOccurrence };
+
+    if (downgradedToCantTell) uncertainOccurrences.push(occurrence);
+    else failOccurrences.push(occurrence);
   }
 
-  return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences };
+  if (failOccurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences: failOccurrences };
+  }
+
+  if (uncertainOccurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'cantTell', severity: rule.defaultSeverity || 'minor', occurrences: uncertainOccurrences };
+  }
+
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-prohibited-attr": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
@@ -40278,6 +40500,8 @@ const I18N = {
     "ariaHidden_focus_summary_fail_self": "aria-hidden {{element}} is focusable ({{focusableCount}} focusable element(s)).",
     "ariaHidden_focus_summary_fail_self_and_desc": "aria-hidden {{element}} is focusable and contains {{descendantFocusableCount}} focusable descendant(s) ({{focusableCount}} focusable element(s) total).",
     "ariaHidden_focus_hint_fail": "Remove focusability from descendants or remove aria-hidden; ensure focus and accessibility trees stay aligned.",
+    "ariaHidden_focus_summary_cantTell_redirect": "aria-hidden {{element}} received focus but focus moved immediately to another element. Verify sentinel/focus-trap behavior.",
+    "ariaHidden_focus_hint_cantTell_redirect": "Verify this is an intentional focus sentinel/focus-trap handoff and that keyboard users never remain on hidden focus targets.",
     "cssHidden_focus_title": "Focusable elements must not be visually hidden",
     "cssHidden_focus_description": "Checks that keyboard-focusable elements are not visually hidden by CSS techniques that can leave them in the tab order.",
     "cssHidden_focus_summary_cantTell": "Focusable {{element}} is visually hidden ({{visibilityHints}}).",
@@ -40884,6 +41108,8 @@ const I18N = {
     "ariaHidden_focus_summary_fail_self": "L’élément aria-hidden {{element}} est focalisable ({{focusableCount}} élément(s) focalisable(s)).",
     "ariaHidden_focus_summary_fail_self_and_desc": "L’élément aria-hidden {{element}} est focalisable et contient {{descendantFocusableCount}} descendant(s) focalisable(s) ({{focusableCount}} élément(s) focalisable(s) au total).",
     "ariaHidden_focus_hint_fail": "Supprimez la focalisation des descendants ou retirez aria-hidden ; assurez la cohérence entre l’ordre de focus et l’arbre d’accessibilité.",
+    "ariaHidden_focus_summary_cantTell_redirect": "L’élément aria-hidden {{element}} reçoit le focus mais le focus est immédiatement déplacé vers un autre élément. Vérifiez le comportement de sentinelle/piège de focus.",
+    "ariaHidden_focus_hint_cantTell_redirect": "Vérifiez qu’il s’agit d’un transfert intentionnel de sentinelle/piège de focus et que les utilisateurs clavier ne restent jamais sur une cible de focus masquée.",
     "cssHidden_focus_title": "Les éléments focalisables ne doivent pas être masqués visuellement",
     "cssHidden_focus_description": "Vérifie que les éléments focalisables au clavier ne sont pas masqués visuellement par des techniques CSS pouvant les laisser dans l’ordre de tabulation.",
     "cssHidden_focus_summary_cantTell": "L’élément focalisable {{element}} est masqué visuellement ({{visibilityHints}}).",
@@ -57454,6 +57680,199 @@ if (isAccTreeEligible) {
     return null;
   }
 
+  function isWithinComposedSubtree(node, ancestor) {
+    let cur = node;
+    let guard = 0;
+    while (cur && guard++ < 400) {
+      if (cur === ancestor) return true;
+      cur = composedParent(cur);
+    }
+    return false;
+  }
+
+  function getDeepActiveElement() {
+    let cur = document && document.activeElement ? document.activeElement : null;
+    let guard = 0;
+    while (cur && cur.shadowRoot && cur.shadowRoot.activeElement && guard++ < 20) {
+      cur = cur.shadowRoot.activeElement;
+    }
+    return cur;
+  }
+
+  function focusElementSafe(el) {
+    if (!el || typeof el.focus !== 'function') return false;
+    try {
+      el.focus({ preventScroll: true });
+      return true;
+    } catch {
+      try {
+        el.focus();
+        return true;
+      } catch {
+        return false;
+      }
+    }
+  }
+
+  function buildNodeRef(node, rootEl) {
+    if (!node) return null;
+    const tag = (() => { try { return lower(node.tagName || ''); } catch { return ''; } })();
+    const idVal = (() => {
+      try { return trim(node.getAttribute && node.getAttribute('id')); } catch { return '';
+      }
+    })();
+    return {
+      tag: tag || null,
+      id: idVal || null,
+      withinRoot: !!(rootEl && isWithinComposedSubtree(node, rootEl))
+    };
+  }
+
+  function runFocusObservationWindow(fn) {
+    const w = (document && document.defaultView) ? document.defaultView : (typeof window !== 'undefined' ? window : null);
+    if (!w || typeof fn !== 'function') return;
+
+    const originalSetTimeout = (typeof w.setTimeout === 'function') ? w.setTimeout.bind(w) : null;
+    const originalRequestAnimationFrame = (typeof w.requestAnimationFrame === 'function') ? w.requestAnimationFrame.bind(w) : null;
+    const originalQueueMicrotask = (typeof w.queueMicrotask === 'function') ? w.queueMicrotask.bind(w) : null;
+
+    const queuedMicrotasks = [];
+    const queuedRaf = [];
+    const queuedTimers = [];
+    let fakeTimerId = 1;
+
+    const patchedSetTimeout = function (cb, delay) {
+      const d = Number.isFinite(Number(delay)) ? Number(delay) : 0;
+      if (typeof cb === 'function' && d <= 200) {
+        const args = [];
+        for (let i = 2; i < arguments.length; i++) args.push(arguments[i]);
+        queuedTimers.push({ delay: d, cb: () => cb.apply(w, args) });
+        return fakeTimerId++;
+      }
+      if (originalSetTimeout) return originalSetTimeout.apply(w, arguments);
+      return fakeTimerId++;
+    };
+
+    const patchedRaf = function (cb) {
+      if (typeof cb === 'function') {
+        queuedRaf.push(cb);
+        return fakeTimerId++;
+      }
+      if (originalRequestAnimationFrame) return originalRequestAnimationFrame.apply(w, arguments);
+      return fakeTimerId++;
+    };
+
+    const patchedQueueMicrotask = function (cb) {
+      if (typeof cb === 'function') queuedMicrotasks.push(cb);
+    };
+
+    try {
+      if (originalSetTimeout) w.setTimeout = patchedSetTimeout;
+      if (originalRequestAnimationFrame) w.requestAnimationFrame = patchedRaf;
+      if (originalQueueMicrotask) w.queueMicrotask = patchedQueueMicrotask;
+      fn();
+
+      // Deterministic mini-window: microtasks -> rAF -> short timers (<=200ms).
+      let guard = 0;
+      while ((queuedMicrotasks.length || queuedRaf.length || queuedTimers.length) && guard++ < 100) {
+        while (queuedMicrotasks.length) {
+          const mt = queuedMicrotasks.shift();
+          try { mt(); } catch {}
+        }
+        while (queuedRaf.length) {
+          const rf = queuedRaf.shift();
+          try { rf(16); } catch {}
+        }
+        if (queuedTimers.length) {
+          queuedTimers.sort((a, b) => a.delay - b.delay);
+          const tt = queuedTimers.shift();
+          try { tt.cb(); } catch {}
+        }
+      }
+    } finally {
+      if (originalSetTimeout) w.setTimeout = originalSetTimeout;
+      if (originalRequestAnimationFrame) w.requestAnimationFrame = originalRequestAnimationFrame;
+      if (originalQueueMicrotask) w.queueMicrotask = originalQueueMicrotask;
+    }
+  }
+
+  function probeImmediateFocusRedirect(entry) {
+    // Conservative downgrade gate:
+    // - only probe simple single-offender roots
+    // - only downgrade when focus moves immediately OUTSIDE the aria-hidden subtree
+    if (!entry || entry.count !== 1 || !entry.probeCandidates || !entry.probeCandidates.length) return null;
+    const candidate = entry.probeCandidates[0];
+    if (!candidate) return null;
+
+    let focusedByEvent = false;
+    const onFocusCapture = () => { focusedByEvent = true; };
+    try {
+      candidate.addEventListener('focus', onFocusCapture, true);
+    } catch {
+      // ignore
+    }
+
+    const focusTrace = [];
+    const onFocusInCapture = (ev) => {
+      const n = ev && ev.target ? ev.target : null;
+      const ref = buildNodeRef(n, entry.rootEl);
+      if (ref) focusTrace.push(ref);
+    };
+    try {
+      document.addEventListener('focusin', onFocusInCapture, true);
+    } catch {
+      // ignore
+    }
+
+    const before = getDeepActiveElement();
+    const beforeRef = buildNodeRef(before, entry.rootEl);
+    if (beforeRef) focusTrace.push(beforeRef);
+
+    let focused = false;
+    runFocusObservationWindow(() => {
+      focused = focusElementSafe(candidate);
+    });
+
+    try {
+      document.removeEventListener('focusin', onFocusInCapture, true);
+    } catch {
+      // ignore
+    }
+
+    try {
+      candidate.removeEventListener('focus', onFocusCapture, true);
+    } catch {
+      // ignore
+    }
+    if (!focused || !focusedByEvent) return null;
+
+    const after = getDeepActiveElement();
+    const afterRef = buildNodeRef(after, entry.rootEl);
+    if (afterRef) focusTrace.push(afterRef);
+
+    // Best-effort restore to reduce side effects across checks.
+    if (before && before !== after) {
+      focusElementSafe(before);
+    }
+
+    if (!after || after === candidate) return null;
+    if (isWithinComposedSubtree(after, entry.rootEl)) return null;
+
+    const redirectedTag = (() => {
+      try { return lower(after.tagName || ''); } catch { return ''; }
+    })();
+    const redirectedId = (() => {
+      try { return trim(after.getAttribute && after.getAttribute('id')); } catch { return ''; }
+    })();
+
+    return {
+      redirected: true,
+      redirectedToTag: redirectedTag || null,
+      redirectedToId: redirectedId || null,
+      focusTrace
+    };
+  }
+
   // Lightweight "invisible but still focusable" hints.
   // Only computed for a capped set of offenders per aria-hidden root.
   function getVisibilityHints(el) {
@@ -57682,8 +58101,9 @@ if (isAccTreeEligible) {
     'a[href],area[href],button,input,select,textarea,summary,iframe,audio[controls],video[controls],[tabindex],[contenteditable]'
   );
 
-  const bucket = new Map(); // ariaHiddenRoot -> { rootEl, count, offenders: [], hints:Set, rootIsFocusable }
+  const bucket = new Map(); // ariaHiddenRoot -> { rootEl, count, offenders: [], hints:Set, rootIsFocusable, probeCandidates: [] }
   const maxOffendersPerRoot = 5;
+  const maxProbeCandidatesPerRoot = 3;
 
   for (let i = 0; i < focusableCandidates.length; i++) {
     const el = focusableCandidates[i];
@@ -57706,10 +58126,11 @@ if (isAccTreeEligible) {
 
     let entry = bucket.get(rootEl);
     if (!entry) {
-      entry = { rootEl, count: 0, offenders: [], hints: new Set(), rootIsFocusable: false };
+      entry = { rootEl, count: 0, offenders: [], hints: new Set(), rootIsFocusable: false, probeCandidates: [] };
       bucket.set(rootEl, entry);
     }
     entry.count += 1;
+    if (entry.probeCandidates.length < maxProbeCandidatesPerRoot) entry.probeCandidates.push(el);
 
     // Capture a small, deterministic offender summary + visibility hints.
     if (entry.offenders.length < maxOffendersPerRoot) {
@@ -57747,7 +58168,8 @@ if (isAccTreeEligible) {
   }
 
   // 3) Report one occurrence per aria-hidden root that contains focusable content.
-  const occurrences = [];
+  const failOccurrences = [];
+  const uncertainOccurrences = [];
   for (const [, entry] of bucket) {
     const el = entry.rootEl;
 
@@ -57783,21 +58205,30 @@ if (isAccTreeEligible) {
           : `aria-hidden ${tagName} is focusable (${totalFocusable} focusable element(s)).`)
       : `aria-hidden ${tagName} contains ${totalFocusable} focusable element(s).`;
 
+    const runtimeProbe = probeImmediateFocusRedirect(entry);
+    const downgradedToCantTell = !!(runtimeProbe && runtimeProbe.redirected);
+
+    const cantTellSummary = `aria-hidden ${tagName} received focus but focus moved immediately to another element. Verify sentinel/focus-trap behavior.`;
+
     const baseOccurrence = {
-      summary: summaryText,
-      hint: 'Remove focusability from descendants or remove aria-hidden; ensure focus and accessibility trees stay aligned.',
+      summary: downgradedToCantTell ? cantTellSummary : summaryText,
+      hint: downgradedToCantTell
+        ? 'Verify this is an intentional focus sentinel/focus-trap handoff and that keyboard users never remain on hidden focus targets.'
+        : 'Remove focusability from descendants or remove aria-hidden; ensure focus and accessibility trees stay aligned.',
       i18n: {
-        summaryKey,
-        hintKey: 'ariaHidden_focus_hint_fail',
+        summaryKey: downgradedToCantTell ? 'ariaHidden_focus_summary_cantTell_redirect' : summaryKey,
+        hintKey: downgradedToCantTell ? 'ariaHidden_focus_hint_cantTell_redirect' : 'ariaHidden_focus_hint_fail',
         params: {
           element: tagName,
           focusableCount: String(totalFocusable),
-          descendantFocusableCount: String(descendantFocusable)
+          descendantFocusableCount: String(descendantFocusable),
+          redirectedToTag: runtimeProbe && runtimeProbe.redirectedToTag ? runtimeProbe.redirectedToTag : '',
+          redirectedToId: runtimeProbe && runtimeProbe.redirectedToId ? runtimeProbe.redirectedToId : ''
         }
       },
       data: {
         details: {
-          reasonCode,
+          reasonCode: downgradedToCantTell ? 'ariaHiddenFocusable_runtimeRedirect_needsReview' : reasonCode,
           metrics: {
             focusableTotal: totalFocusable,
             focusableDescendants: descendantFocusable,
@@ -57805,17 +58236,30 @@ if (isAccTreeEligible) {
             offendersCaptured: entry.offenders.length,
             visibilityHints: hintsArr.slice(0)
           },
+          runtimeProbe: runtimeProbe || null,
           offenders: entry.offenders.slice(0)
         },
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
       }
     };
 
-    if (reportOccurrence) occurrences.push(reportOccurrence(el, baseOccurrence));
-    else occurrences.push({ __node: el, selector: '', html: '', ...baseOccurrence });
+    const occurrence = reportOccurrence
+      ? reportOccurrence(el, baseOccurrence)
+      : { __node: el, selector: '', html: '', ...baseOccurrence };
+
+    if (downgradedToCantTell) uncertainOccurrences.push(occurrence);
+    else failOccurrences.push(occurrence);
   }
 
-  return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences };
+  if (failOccurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences: failOccurrences };
+  }
+
+  if (uncertainOccurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'cantTell', severity: rule.defaultSeverity || 'minor', occurrences: uncertainOccurrences };
+  }
+
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-prohibited-attr": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
@@ -73017,6 +73461,8 @@ const I18N = {
     "ariaHidden_focus_summary_fail_self": "aria-hidden {{element}} is focusable ({{focusableCount}} focusable element(s)).",
     "ariaHidden_focus_summary_fail_self_and_desc": "aria-hidden {{element}} is focusable and contains {{descendantFocusableCount}} focusable descendant(s) ({{focusableCount}} focusable element(s) total).",
     "ariaHidden_focus_hint_fail": "Remove focusability from descendants or remove aria-hidden; ensure focus and accessibility trees stay aligned.",
+    "ariaHidden_focus_summary_cantTell_redirect": "aria-hidden {{element}} received focus but focus moved immediately to another element. Verify sentinel/focus-trap behavior.",
+    "ariaHidden_focus_hint_cantTell_redirect": "Verify this is an intentional focus sentinel/focus-trap handoff and that keyboard users never remain on hidden focus targets.",
     "cssHidden_focus_title": "Focusable elements must not be visually hidden",
     "cssHidden_focus_description": "Checks that keyboard-focusable elements are not visually hidden by CSS techniques that can leave them in the tab order.",
     "cssHidden_focus_summary_cantTell": "Focusable {{element}} is visually hidden ({{visibilityHints}}).",
@@ -73623,6 +74069,8 @@ const I18N = {
     "ariaHidden_focus_summary_fail_self": "L’élément aria-hidden {{element}} est focalisable ({{focusableCount}} élément(s) focalisable(s)).",
     "ariaHidden_focus_summary_fail_self_and_desc": "L’élément aria-hidden {{element}} est focalisable et contient {{descendantFocusableCount}} descendant(s) focalisable(s) ({{focusableCount}} élément(s) focalisable(s) au total).",
     "ariaHidden_focus_hint_fail": "Supprimez la focalisation des descendants ou retirez aria-hidden ; assurez la cohérence entre l’ordre de focus et l’arbre d’accessibilité.",
+    "ariaHidden_focus_summary_cantTell_redirect": "L’élément aria-hidden {{element}} reçoit le focus mais le focus est immédiatement déplacé vers un autre élément. Vérifiez le comportement de sentinelle/piège de focus.",
+    "ariaHidden_focus_hint_cantTell_redirect": "Vérifiez qu’il s’agit d’un transfert intentionnel de sentinelle/piège de focus et que les utilisateurs clavier ne restent jamais sur une cible de focus masquée.",
     "cssHidden_focus_title": "Les éléments focalisables ne doivent pas être masqués visuellement",
     "cssHidden_focus_description": "Vérifie que les éléments focalisables au clavier ne sont pas masqués visuellement par des techniques CSS pouvant les laisser dans l’ordre de tabulation.",
     "cssHidden_focus_summary_cantTell": "L’élément focalisable {{element}} est masqué visuellement ({{visibilityHints}}).",

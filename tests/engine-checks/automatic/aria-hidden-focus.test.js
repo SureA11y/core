@@ -43,6 +43,51 @@ test(`${RULE_ID}: fail when aria-hidden element itself is focusable (tabindex=0)
     assert.strictEqual(rule.occurrences[0].summary, 'aria-hidden div is focusable (1 focusable element(s)).');
 });
 
+test(`${RULE_ID}: cantTell when a single aria-hidden focusable behaves as a focus sentinel (immediate runtime redirect)`, () => {
+    const dom = createDom(`<!doctype html><html><body>
+      <div id="ah_sentinel" aria-hidden="true" tabindex="0">Focus sentinel</div>
+      <input id="target_after" type="text" />
+    </body></html>`);
+
+    const doc = dom.window.document;
+    const sentinel = doc.getElementById('ah_sentinel');
+    const target = doc.getElementById('target_after');
+    sentinel.addEventListener('focus', () => target.focus());
+
+    const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID] });
+    const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+
+    assert.ok(hasOccurrenceForId(rule, 'ah_sentinel'));
+    assert.strictEqual(
+        rule.occurrences[0].summary,
+        'aria-hidden div received focus but focus moved immediately to another element. Verify sentinel/focus-trap behavior.'
+    );
+    assert.strictEqual(
+        rule.occurrences[0].data.details.reasonCode,
+        'ariaHiddenFocusable_runtimeRedirect_needsReview'
+    );
+    assert.strictEqual(rule.occurrences[0].data.details.runtimeProbe.redirectedToId, 'target_after');
+});
+
+test(`${RULE_ID}: cantTell when redirect is scheduled shortly after focus (setTimeout)`, () => {
+    const dom = createDom(`<!doctype html><html><body>
+      <div id="ah_sentinel_async" aria-hidden="true" tabindex="0">Focus sentinel async</div>
+      <input id="target_after_async" type="text" />
+    </body></html>`);
+
+    const doc = dom.window.document;
+    const sentinel = doc.getElementById('ah_sentinel_async');
+    const target = doc.getElementById('target_after_async');
+    sentinel.addEventListener('focus', () => {
+        dom.window.setTimeout(() => target.focus(), 0);
+    });
+
+    const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID] });
+    const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+    assert.ok(hasOccurrenceForId(rule, 'ah_sentinel_async'));
+    assert.strictEqual(rule.occurrences[0].data.details.runtimeProbe.redirectedToId, 'target_after_async');
+});
+
 test(`${RULE_ID}: fail when aria-hidden native control itself is focusable (button)`, () => {
     const html = `<!doctype html><html><body>
       <button id="ah_btn" aria-hidden="true">Hidden button</button>

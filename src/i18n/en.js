@@ -370,6 +370,10 @@ module.exports = {
 
     "ariaHidden_focus_hint_fail":
         "Remove focusability from descendants or remove aria-hidden; ensure focus and accessibility trees stay aligned.",
+    "ariaHidden_focus_summary_cantTell_redirect":
+        "aria-hidden {{element}} received focus but focus moved immediately to another element. Verify sentinel/focus-trap behavior.",
+    "ariaHidden_focus_hint_cantTell_redirect":
+        "Verify this is an intentional focus sentinel/focus-trap handoff and that keyboard users never remain on hidden focus targets.",
 
 // --- css-hidden-focus
     "cssHidden_focus_title": "Focusable elements must not be visually hidden",
