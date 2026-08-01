@@ -274,6 +274,8 @@ and progressively explore more advanced features.
 | `docs/CLI.md` | CLI commands, options, exit codes and examples. |
 | `docs/BASELINE.md` | CI baseline/allowlist: gate builds only on new violations. |
 | `docs/REPORT.md` | Self-contained HTML report: browsable summary, WCAG rollup, filterable occurrence table. |
+| `docs/SARIF.md` | SARIF 2.1.0 report for GitHub Code Scanning and other SARIF dashboards. |
+| `docs/CI_INTEGRATIONS.md` | GitHub Actions and Bitbucket Pipelines templates wrapping the CLI. |
 | `docs/ENGINE_OPTIONS.md` | Configuration, filtering, policies and localization. |
 | `docs/INTEGRATION.md` | Using surea11y with jsdom, Playwright, Puppeteer, Selenium, Cypress and other drivers. |
 | `docs/BINDING_AUTHORS_GUIDE.md` | Building new framework integrations on top of the engine. |

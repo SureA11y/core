@@ -23,6 +23,7 @@ const path = require('path');
 const pkg = require('../package.json');
 const { buildBaselineEntries, matchBaseline } = require('../src/baseline.js');
 const { renderHtmlReport } = require('../src/report.js');
+const { renderSarifReport } = require('../src/sarif.js');
 
 // Piping output to `head`/`less`/etc. closes stdout early — without this,
 // the next write throws an unhandled EPIPE and crashes with a raw stack
@@ -48,6 +49,7 @@ Options:
   --write-baseline <path> Write every current "fail" occurrence to <path>; never fails the build
   --baseline <path>       Gate only on occurrences not already recorded in <path>
   --html <path>           Write a self-contained, browsable HTML report to <path>
+  --sarif <path>          Write a SARIF 2.1.0 report to <path> (for GitHub Code Scanning etc.)
   -h, --help              Show this help
   -v, --version           Show the installed version
 
@@ -63,8 +65,9 @@ Examples:
   surea11y scan ./index.html --write-baseline baseline.json
   surea11y scan ./index.html --baseline baseline.json
   surea11y scan ./index.html --html report.html
+  surea11y scan ./index.html --baseline baseline.json --sarif results.sarif
 
-See docs/BASELINE.md for the baseline/allowlist mechanism, docs/REPORT.md for the HTML report.
+See docs/BASELINE.md for the baseline/allowlist mechanism, docs/REPORT.md for the HTML report, docs/SARIF.md for the SARIF report.
 `);
 }
 
@@ -99,6 +102,9 @@ function parseArgs(argv) {
         break;
       case '--html':
         out.html = argv[++i];
+        break;
+      case '--sarif':
+        out.sarif = argv[++i];
         break;
       case '-h':
       case '--help':
@@ -279,6 +285,15 @@ async function runScan(args) {
   if (args.html) {
     fs.writeFileSync(args.html, renderHtmlReport(result, { title: `surea11y scan report — ${target}` }));
     process.stderr.write(`Wrote HTML report to: ${args.html}\n`);
+  }
+
+  if (args.sarif) {
+    fs.writeFileSync(args.sarif, renderSarifReport(result, {
+      toolVersion: pkg.version,
+      informationUri: (pkg.homepage || '').replace(/#.*$/, ''),
+      baselineEntries: baselineFile ? baselineFile.entries : undefined
+    }));
+    process.stderr.write(`Wrote SARIF report to: ${args.sarif}\n`);
   }
 
   if (args.writeBaseline) {

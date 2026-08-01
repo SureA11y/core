@@ -245,3 +245,48 @@ test('CLI: --html works alongside --json (both artifacts produced from the same 
   assert.ok(Array.isArray(result.checksResults));
   assert.ok(fs.existsSync(reportPath));
 });
+
+test('CLI: --sarif writes a well-formed SARIF 2.1.0 log with an "error"-level result', () => {
+  const file = path.join(tmpDir, 'sarif-source.html');
+  fs.writeFileSync(file, '<!doctype html><html lang="en"><head><title>T</title></head><body><img src="x.png"></body></html>');
+  const sarifPath = path.join(tmpDir, 'sarif-output.sarif');
+
+  const { status, stderr } = run(['scan', file, '--rules', 'img-alt-present', '--sarif', sarifPath]);
+  assert.equal(status, 1); // --sarif doesn't change gating: the scan still has a real fail
+  assert.match(stderr, /Wrote SARIF report to/);
+
+  const sarif = JSON.parse(fs.readFileSync(sarifPath, 'utf8'));
+  assert.equal(sarif.version, '2.1.0');
+  assert.equal(sarif.runs[0].tool.driver.name, 'surea11y');
+  assert.equal(sarif.runs[0].results[0].ruleId, 'img-alt-present');
+  assert.equal(sarif.runs[0].results[0].level, 'error');
+});
+
+test('CLI: --sarif combined with --baseline omits already-known fail occurrences', () => {
+  const file = path.join(tmpDir, 'sarif-baseline.html');
+  fs.writeFileSync(file, '<!doctype html><html lang="en"><head><title>T</title></head><body><img src="x.png"></body></html>');
+  const baselinePath = path.join(tmpDir, 'sarif-baseline.json');
+  const sarifPath = path.join(tmpDir, 'sarif-baseline.sarif');
+
+  run(['scan', file, '--rules', 'img-alt-present', '--write-baseline', baselinePath]);
+  const { status } = run(['scan', file, '--rules', 'img-alt-present', '--baseline', baselinePath, '--sarif', sarifPath]);
+  assert.equal(status, 0); // known, not new -- baseline gating still passes
+
+  const sarif = JSON.parse(fs.readFileSync(sarifPath, 'utf8'));
+  assert.equal(sarif.runs[0].results.length, 0);
+});
+
+test('CLI: --sarif works alongside --html and --json (all three artifacts from the same scan)', () => {
+  const file = path.join(tmpDir, 'sarif-multi.html');
+  fs.writeFileSync(file, '<!doctype html><html lang="en"><head><title>T</title></head><body><img src="x.png"></body></html>');
+  const sarifPath = path.join(tmpDir, 'sarif-multi.sarif');
+  const reportPath = path.join(tmpDir, 'sarif-multi.html.report');
+
+  const { stdout, status } = run(['scan', file, '--rules', 'img-alt-present', '--sarif', sarifPath, '--html', reportPath, '--json']);
+  assert.equal(status, 1);
+
+  const result = JSON.parse(stdout);
+  assert.ok(Array.isArray(result.checksResults));
+  assert.ok(fs.existsSync(sarifPath));
+  assert.ok(fs.existsSync(reportPath));
+});

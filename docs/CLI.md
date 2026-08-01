@@ -24,6 +24,7 @@ The CLI reads **static HTML only** — a local file, or the raw response of an H
 | `--write-baseline <path>` | Write every current `fail` occurrence to `<path>`; never fails the build. See [`BASELINE.md`](./BASELINE.md). |
 | `--baseline <path>` | Gate only on occurrences not already recorded in `<path>`. See [`BASELINE.md`](./BASELINE.md). |
 | `--html <path>` | Write a self-contained, browsable HTML report to `<path>`. See [`REPORT.md`](./REPORT.md). |
+| `--sarif <path>` | Write a SARIF 2.1.0 report to `<path>` (e.g. for GitHub Code Scanning). See [`SARIF.md`](./SARIF.md). |
 | `-h`, `--help` | Show usage. |
 | `-v`, `--version` | Show the installed version. |
 
@@ -62,13 +63,23 @@ surea11y scan ./dist/index.html --html report.html
 
 Open `report.html` directly from disk; no server, no external assets. Works alongside any other output mode. See [`REPORT.md`](./REPORT.md).
 
+## SARIF report
+
+For GitHub Code Scanning or another SARIF-consuming dashboard:
+
+```sh
+surea11y scan ./dist/index.html --sarif results.sarif
+```
+
+Works alongside any other output mode, and alongside `--baseline` (already-known `fail` occurrences are omitted from the SARIF output rather than re-reported). See [`SARIF.md`](./SARIF.md).
+
 ## In CI
 
 ```sh
 npx @surea11y/core scan ./dist/index.html || exit 1
 ```
 
-Or, since the exit code already reflects pass/fail, just let the command's own exit code propagate — most CI systems fail the step automatically on a non-zero exit.
+Or, since the exit code already reflects pass/fail, just let the command's own exit code propagate — most CI systems fail the step automatically on a non-zero exit. See [`CI_INTEGRATIONS.md`](./CI_INTEGRATIONS.md) for ready-to-paste GitHub Actions and Bitbucket Pipelines templates, including a SARIF-upload example.
 
 ## A note on dependencies
 
