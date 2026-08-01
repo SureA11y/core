@@ -29399,6 +29399,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
       if (tag === 'dd') { hasDd = true; continue; }
       if (!PASSTHROUGH_TAGS.has(tag)) invalidTags.push(tag);
     }
+    const dedupedInvalidTags = [...new Set(invalidTags)];
 
     // Verified 2026-07-20 against a widely-used reference engine's definition-list check:
     // the dt/dd pairing is only required "when not empty" — a <dl> with
@@ -29433,7 +29434,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
         hintKey: invalidTags.length
             ? 'definitionListChildrenValid_hint_fail_invalidChild'
             : 'definitionListChildrenValid_hint_fail_noDtDd',
-        params: { invalidChildren: invalidTags.join(', ') }
+        params: { invalidChildren: dedupedInvalidTags.join(', ') }
       },
       data: {
         details: { reasonCode, invalidChildren: invalidTags }
@@ -35144,7 +35145,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     }
     if (!nested.length) continue;
 
-    const nestedTags = [...new Set(nested.map((n) => (n && n.tagName ? n.tagName.toLowerCase() : 'unknown')))];
+    const nestedTags = nested.map((n) => (n && n.tagName ? n.tagName.toLowerCase() : 'unknown'));
 
     const tag = el.tagName.toLowerCase();
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
@@ -68099,7 +68100,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     }
     if (!nested.length) continue;
 
-    const nestedTags = [...new Set(nested.map((n) => (n && n.tagName ? n.tagName.toLowerCase() : 'unknown')))];
+    const nestedTags = nested.map((n) => (n && n.tagName ? n.tagName.toLowerCase() : 'unknown'));
 
     const tag = el.tagName.toLowerCase();
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';

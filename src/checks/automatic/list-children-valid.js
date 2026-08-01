@@ -119,6 +119,8 @@ function runInPage(ctx) {
 
     if (!invalidTags.length) continue;
 
+    const dedupedInvalidTags = [...new Set(invalidTags)];
+
     const tag = el.tagName.toLowerCase();
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
     const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
@@ -131,7 +133,7 @@ function runInPage(ctx) {
       i18n: {
         summaryKey: 'listChildrenValid_summary_fail',
         hintKey: 'listChildrenValid_hint_fail',
-        params: { element: tag, invalidChildren: invalidTags.join(', ') }
+        params: { element: tag, invalidChildren: dedupedInvalidTags.join(', ') }
       },
       data: {
         details: { reasonCode: 'LIST_INVALID_CHILD', element: tag, invalidChildren: invalidTags }

@@ -100,7 +100,8 @@ function runInPage(ctx) {
     }
     if (!nested.length) continue;
 
-    const nestedTags = [...new Set(nested.map((n) => (n && n.tagName ? n.tagName.toLowerCase() : 'unknown')))];
+    const nestedTags = nested.map((n) => (n && n.tagName ? n.tagName.toLowerCase() : 'unknown'));
+    const dedupedNestedTags = [...new Set(nested.map((n) => (n && n.tagName ? n.tagName.toLowerCase() : 'unknown')))];
 
     const tag = el.tagName.toLowerCase();
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
@@ -114,7 +115,7 @@ function runInPage(ctx) {
       i18n: {
         summaryKey: 'nestedInteractiveControlsAbsent_summary_fail',
         hintKey: 'nestedInteractiveControlsAbsent_hint_fail',
-        params: { element: tag, nestedElements: nestedTags.join(', ') }
+        params: { element: tag, nestedElements: dedupedNestedTags.join(', ') }
       },
       data: {
         details: { reasonCode: 'NESTED_INTERACTIVE_CONTROL', element: tag, nestedElements: nestedTags }

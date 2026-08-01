@@ -91,6 +91,8 @@ function runInPage(ctx) {
 
     if (!invalid.length) continue;
 
+    const dedupedInvalidIds = [...new Set(invalid.map((i) => i.id))];
+
     const tag = el.tagName.toLowerCase();
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
     const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
@@ -103,7 +105,7 @@ function runInPage(ctx) {
       i18n: {
         summaryKey: 'tableHeadersAttrValid_summary_fail',
         hintKey: 'tableHeadersAttrValid_hint_fail',
-        params: { element: tag, invalidIds: invalid.map((i) => i.id).join(', ') }
+        params: { element: tag, invalidIds: dedupedInvalidIds.join(', ') }
       },
       data: {
         details: { reasonCode: 'TABLE_HEADERS_ATTR_INVALID', element: tag, invalid }

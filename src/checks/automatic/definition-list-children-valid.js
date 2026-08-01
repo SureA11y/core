@@ -93,6 +93,7 @@ function runInPage(ctx) {
       if (tag === 'dd') { hasDd = true; continue; }
       if (!PASSTHROUGH_TAGS.has(tag)) invalidTags.push(tag);
     }
+    const dedupedInvalidTags = [...new Set(invalidTags)];
 
     // Verified 2026-07-20 against a widely-used reference engine's definition-list check:
     // the dt/dd pairing is only required "when not empty" — a <dl> with
@@ -127,7 +128,7 @@ function runInPage(ctx) {
         hintKey: invalidTags.length
             ? 'definitionListChildrenValid_hint_fail_invalidChild'
             : 'definitionListChildrenValid_hint_fail_noDtDd',
-        params: { invalidChildren: invalidTags.join(', ') }
+        params: { invalidChildren: dedupedInvalidTags.join(', ') }
       },
       data: {
         details: { reasonCode, invalidChildren: invalidTags }
