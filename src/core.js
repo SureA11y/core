@@ -30542,12 +30542,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
 
     const getFocusableInfo = helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
-    const getAriaLabelInfo = helpers && typeof helpers.getAriaLabelInfo === 'function' ? helpers.getAriaLabelInfo : null;
-    const getAriaLabelledByInfo = helpers && typeof helpers.getAriaLabelledByInfo === 'function' ? helpers.getAriaLabelledByInfo : null;
 
-    const getAttributeInfo = helpers && typeof helpers.getAttributeInfo === 'function' ? helpers.getAttributeInfo : null;
-
-    // Optional helper; we validate/normalize if present.
     const getLabelMethod = helpers && typeof helpers.getLabelMethod === 'function' ? helpers.getLabelMethod : null;
 
     const trim = (v) => (v == null ? '' : String(v)).trim();
@@ -30578,96 +30573,22 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
         }
     }
 
-    function isFocusable(el) {
-        if (!getFocusableInfo) return false;
-        try {
-            const fi = getFocusableInfo(el, ctx);
-            return !!(fi && fi.focusable);
-        } catch {
-            return false;
-        }
-    }
-
-    function getNonEmptyAttr(el, name) {
-        if (!getAttributeInfo) return '';
-        try {
-            const info = getAttributeInfo(el, name);
-            return info && info.present ? trim(info.value) : '';
-        } catch {
-            return '';
-        }
-    }
-
-    function hasLabelAssociation(el) {
-        // 1) Native labels API
-        try {
-            if (el && 'labels' in el && el.labels && el.labels.length) return true;
-        } catch {}
-
-        // 2) Wrapped by <label>
-        try {
-            if (el && el.closest) {
-                const wrap = el.closest('label');
-                if (wrap) return true;
-            }
-        } catch {}
-
-        // 3) <label for="id">
-        try {
-            const idAttr = el && el.getAttribute ? trim(el.getAttribute('id')) : '';
-            if (!idAttr || !document || !document.querySelector) return false;
-
-            const esc = idAttr.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-            const sel = `label[for="${esc}"]`;
-            return !!document.querySelector(sel);
-        } catch {
-            return false;
-        }
-    }
-
-    function computeLabelMethodFallback(el) {
-        // Deterministic priority order:
-        // label > aria-labelledby > aria-label > title > placeholder
-        if (hasLabelAssociation(el)) return { method: 'label', value: '' };
-
-        if (getAriaLabelledByInfo) {
-            try {
-                const info = getAriaLabelledByInfo(el, ctx, { maxRefs: 8 });
-                const v = info && info.present ? trim(info.value) : '';
-                if (v) return { method: 'aria-labelledby', value: v };
-            } catch {}
-        }
-
-        if (getAriaLabelInfo) {
-            try {
-                const info = getAriaLabelInfo(el, ctx);
-                const v = info && info.present ? trim(info.value) : '';
-                if (v) return { method: 'aria-label', value: v };
-            } catch {}
-        }
-
-        const titleV = getNonEmptyAttr(el, 'title');
-        if (titleV) return { method: 'title', value: titleV };
-
-        const phV = getNonEmptyAttr(el, 'placeholder');
-        if (phV) return { method: 'placeholder', value: phV };
-
-        return { method: 'none', value: '' };
-    }
-
+    // getLabelMethod is provided by the shared dom-helpers bundle that
+    // dom-runner.js always constructs for every rule execution (built-in or
+    // custom) — see createDomHelpers's own getLabelMethod, which implements
+    // this exact <label>/aria-labelledby/aria-label/title/placeholder
+    // priority order. No local reimplementation is needed as a fallback.
     function getLabelMethodSafe(el) {
-        if (getLabelMethod) {
-            try {
-                const r = getLabelMethod(el, ctx);
-                const m = r && typeof r.method === 'string' ? r.method : 'none';
-                const v = r && r.value != null ? trim(r.value) : '';
-                if (!Object.prototype.hasOwnProperty.call(metrics.byMethod, m)) return { method: 'none', value: '' };
-                return { method: m, value: v };
-            } catch {
-                // fall through
-            }
+        if (!getLabelMethod) return { method: 'none', value: '' };
+        try {
+            const r = getLabelMethod(el, ctx);
+            const m = r && typeof r.method === 'string' ? r.method : 'none';
+            const v = r && r.value != null ? trim(r.value) : '';
+            if (!Object.prototype.hasOwnProperty.call(metrics.byMethod, m)) return { method: 'none', value: '' };
+            return { method: m, value: v };
+        } catch {
+            return { method: 'none', value: '' };
         }
-        return computeLabelMethodFallback(el);
     }
 
     // Native controls only (same as your current rule)
@@ -63592,12 +63513,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
 
     const getFocusableInfo = helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
-    const getAriaLabelInfo = helpers && typeof helpers.getAriaLabelInfo === 'function' ? helpers.getAriaLabelInfo : null;
-    const getAriaLabelledByInfo = helpers && typeof helpers.getAriaLabelledByInfo === 'function' ? helpers.getAriaLabelledByInfo : null;
 
-    const getAttributeInfo = helpers && typeof helpers.getAttributeInfo === 'function' ? helpers.getAttributeInfo : null;
-
-    // Optional helper; we validate/normalize if present.
     const getLabelMethod = helpers && typeof helpers.getLabelMethod === 'function' ? helpers.getLabelMethod : null;
 
     const trim = (v) => (v == null ? '' : String(v)).trim();
@@ -63628,96 +63544,22 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
         }
     }
 
-    function isFocusable(el) {
-        if (!getFocusableInfo) return false;
-        try {
-            const fi = getFocusableInfo(el, ctx);
-            return !!(fi && fi.focusable);
-        } catch {
-            return false;
-        }
-    }
-
-    function getNonEmptyAttr(el, name) {
-        if (!getAttributeInfo) return '';
-        try {
-            const info = getAttributeInfo(el, name);
-            return info && info.present ? trim(info.value) : '';
-        } catch {
-            return '';
-        }
-    }
-
-    function hasLabelAssociation(el) {
-        // 1) Native labels API
-        try {
-            if (el && 'labels' in el && el.labels && el.labels.length) return true;
-        } catch {}
-
-        // 2) Wrapped by <label>
-        try {
-            if (el && el.closest) {
-                const wrap = el.closest('label');
-                if (wrap) return true;
-            }
-        } catch {}
-
-        // 3) <label for="id">
-        try {
-            const idAttr = el && el.getAttribute ? trim(el.getAttribute('id')) : '';
-            if (!idAttr || !document || !document.querySelector) return false;
-
-            const esc = idAttr.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-            const sel = `label[for="${esc}"]`;
-            return !!document.querySelector(sel);
-        } catch {
-            return false;
-        }
-    }
-
-    function computeLabelMethodFallback(el) {
-        // Deterministic priority order:
-        // label > aria-labelledby > aria-label > title > placeholder
-        if (hasLabelAssociation(el)) return { method: 'label', value: '' };
-
-        if (getAriaLabelledByInfo) {
-            try {
-                const info = getAriaLabelledByInfo(el, ctx, { maxRefs: 8 });
-                const v = info && info.present ? trim(info.value) : '';
-                if (v) return { method: 'aria-labelledby', value: v };
-            } catch {}
-        }
-
-        if (getAriaLabelInfo) {
-            try {
-                const info = getAriaLabelInfo(el, ctx);
-                const v = info && info.present ? trim(info.value) : '';
-                if (v) return { method: 'aria-label', value: v };
-            } catch {}
-        }
-
-        const titleV = getNonEmptyAttr(el, 'title');
-        if (titleV) return { method: 'title', value: titleV };
-
-        const phV = getNonEmptyAttr(el, 'placeholder');
-        if (phV) return { method: 'placeholder', value: phV };
-
-        return { method: 'none', value: '' };
-    }
-
+    // getLabelMethod is provided by the shared dom-helpers bundle that
+    // dom-runner.js always constructs for every rule execution (built-in or
+    // custom) — see createDomHelpers's own getLabelMethod, which implements
+    // this exact <label>/aria-labelledby/aria-label/title/placeholder
+    // priority order. No local reimplementation is needed as a fallback.
     function getLabelMethodSafe(el) {
-        if (getLabelMethod) {
-            try {
-                const r = getLabelMethod(el, ctx);
-                const m = r && typeof r.method === 'string' ? r.method : 'none';
-                const v = r && r.value != null ? trim(r.value) : '';
-                if (!Object.prototype.hasOwnProperty.call(metrics.byMethod, m)) return { method: 'none', value: '' };
-                return { method: m, value: v };
-            } catch {
-                // fall through
-            }
+        if (!getLabelMethod) return { method: 'none', value: '' };
+        try {
+            const r = getLabelMethod(el, ctx);
+            const m = r && typeof r.method === 'string' ? r.method : 'none';
+            const v = r && r.value != null ? trim(r.value) : '';
+            if (!Object.prototype.hasOwnProperty.call(metrics.byMethod, m)) return { method: 'none', value: '' };
+            return { method: m, value: v };
+        } catch {
+            return { method: 'none', value: '' };
         }
-        return computeLabelMethodFallback(el);
     }
 
     // Native controls only (same as your current rule)
