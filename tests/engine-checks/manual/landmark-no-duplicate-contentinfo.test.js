@@ -7,11 +7,26 @@ const path = require('node:path');
 
 const { assertRule } = require('../../helpers/assertRule.js');
 const { runa11yCoreOnHtml, createDom, runa11yCoreOnDom } = require('../../helpers/runDomRulesOnHtml.js');
+const { runDomRulesInPage } = require('../../../src/index.js');
 
 const RULE_ID = 'landmark-no-duplicate-contentinfo';
 
 function hasOccurrenceForId(rule, id) {
   return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
+}
+
+// Same gap as landmark-no-duplicate-banner's identical structure: everything
+// above runs through runa11yCoreOnHtml/runa11yCoreOnDom (toString-embedded),
+// uncounted by Node's --experimental-test-coverage, and the generic parity
+// harness's fixture only has two plain <footer>s. Exercise the real gaps via
+// runDomRulesInPage.
+function runNode(html) {
+  createDom(html);
+  return runDomRulesInPage('https://example.test/', null, {}, { includeRuleIds: [RULE_ID] });
+}
+
+function ruleFrom(result) {
+  return result.checksResults.find((r) => r.ruleId === RULE_ID);
 }
 
 test(`${RULE_ID}: notApplicable when no contentinfo is present`, () => {
@@ -92,4 +107,59 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/landmark-no-duplicate-content
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
   assert.ok(hasOccurrenceForId(rule, 'ndc_case_01a'));
   assert.ok(hasOccurrenceForId(rule, 'ndc_case_01b'));
+});
+
+test(`${RULE_ID} (node runtime): explicit role="contentinfo" duplicates are detected the same as implicit <footer>`, () => {
+  const html = `<!doctype html><html><body><div id="a" role="contentinfo">A</div><div id="b" role="contentinfo">B</div></body></html>`;
+  const result = runNode(html);
+  const rule = ruleFrom(result);
+  assert.ok(rule);
+  assert.strictEqual(rule.outcome, 'cantTell');
+  assert.strictEqual(rule.occurrences.length, 2);
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+  assert.ok(hasOccurrenceForId(rule, 'b'));
+});
+
+test(`${RULE_ID} (node runtime): other landmark tags/roles (header, main, nav, named aside/section/form) are never mistaken for a contentinfo`, () => {
+  const html = `<!doctype html><html><body>
+    <footer id="a">First</footer>
+    <footer id="b">Second</footer>
+    <header>Site header</header>
+    <main>Content</main>
+    <nav>Nav</nav>
+    <aside aria-label="Related">Aside</aside>
+    <section aria-label="Named section">Section</section>
+    <form aria-label="Named form">Form</form>
+  </body></html>`;
+  const result = runNode(html);
+  const rule = ruleFrom(result);
+  assert.ok(rule);
+  assert.strictEqual(rule.outcome, 'cantTell');
+  assert.strictEqual(rule.occurrences.length, 2);
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+  assert.ok(hasOccurrenceForId(rule, 'b'));
+});
+
+test(`${RULE_ID} (node runtime): a <footer> nested inside a role-overridden ancestor still collides`, () => {
+  const html = `<!doctype html><html><body>
+    <footer id="a">Site footer</footer>
+    <aside role="dialog" aria-label="Assistant panel"><footer id="b">Panel footer</footer></aside>
+  </body></html>`;
+  const result = runNode(html);
+  const rule = ruleFrom(result);
+  assert.ok(rule);
+  assert.strictEqual(rule.outcome, 'cantTell');
+  assert.strictEqual(rule.occurrences.length, 2);
+});
+
+test(`${RULE_ID} (node runtime): a display:none duplicate footer is excluded (not exposed to AT)`, () => {
+  const html = `<!doctype html><html><body>
+    <footer id="a">Visible</footer>
+    <footer id="b" style="display:none">Hidden duplicate</footer>
+  </body></html>`;
+  const result = runNode(html);
+  const rule = ruleFrom(result);
+  assert.ok(rule);
+  assert.strictEqual(rule.outcome, 'notApplicable');
+  assert.strictEqual(rule.occurrences.length, 0);
 });
