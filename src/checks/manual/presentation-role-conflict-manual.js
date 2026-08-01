@@ -43,10 +43,14 @@
  *   native implicit role to suppress in the first place (e.g.
  *   `<div role="presentation" aria-hidden="true">` — a <div> has no native
  *   role, so there's nothing for the presentational role to "conflict"
- *   with per that engine's own scope decision). Replicating that would require a
- *   full native-implicit-role table and isn't evidenced by any real false
- *   positive in this corpus yet — surea11y stays broader/more cautious
- *   here rather than narrower, which is the safer direction to diverge in.
+ *   with per that engine's own scope decision). surea11y stays
+ *   broader/more cautious here rather than narrower, which is the safer
+ *   direction to diverge in, and no real false positive from staying
+ *   broad has surfaced in any corpus round to date.
+ * - The native-implicit-role table needed to replicate that gate (if this
+ *   scope decision is ever revisited) has since been produced — see
+ *   ROADMAP.md §7 item 9 (2026-07-31) for the full table and the open
+ *   maintainer decision; not implemented here pending that call.
  * - Focusability is computed via helpers.getFocusableInfo (native +
  *   tabindex), same helper aria-hidden-focus already relies on — a
  *   `:disabled` or otherwise non-focusable element is not flagged.
