@@ -817,7 +817,7 @@ module.exports = {
     "presentationRoleConflict_hint_cantTell": "Remove the conflicting naming attribute(s) and/or focusability (tabindex/native) if the element should stay presentational, or remove role=\"presentation\"/\"none\" if it should be exposed to assistive technology.",
 
     "region_title": "Page content should be inside a landmark region",
-    "region_description": "Checks that direct children of <body> with visible text content are contained within a landmark region.",
+    "region_description": "Checks that content under <body> is contained within a landmark region.",
     "region_summary_cantTell": "This content is not contained within a landmark region.",
     "region_hint_cantTell": "Move this content inside a landmark region (main, nav, aside, a labeled section, etc.).",
 

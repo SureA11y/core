@@ -760,7 +760,7 @@ module.exports = {
   "presentationRoleConflict_summary_cantTell": "Cet élément role=\"{{role}}\" a aussi une condition conflictuelle ({{attrs}}), qui restaure son rôle implicite et annule l’intention présentationnelle.",
   "presentationRoleConflict_hint_cantTell": "Retirez le(s) attribut(s) de nommage conflictuel(s) et/ou la focalisabilité (tabindex/native) si l’élément doit rester présentationnel, ou retirez role=\"presentation\"/\"none\" s’il doit être exposé aux technologies d’assistance.",
   "region_title": "Le contenu de la page devrait se trouver à l’intérieur d’un point de repère",
-  "region_description": "Vérifie que les enfants directs de <body> ayant un contenu textuel visible sont contenus dans un point de repère.",
+  "region_description": "Vérifie que le contenu sous <body> est contenu dans un point de repère.",
   "region_summary_cantTell": "Ce contenu n’est contenu dans aucun point de repère.",
   "region_hint_cantTell": "Déplacez ce contenu à l’intérieur d’un point de repère (main, nav, aside, une section nommée, etc.).",
   "skipLink_title": "Un lien d’évitement doit avoir une cible qui se résout et qui est utilisable",
