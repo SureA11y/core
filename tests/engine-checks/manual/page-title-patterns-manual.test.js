@@ -190,6 +190,47 @@ test('falls back to single-page heuristics when fewer than 10 analyzable pages a
     assert.strictEqual(occ.data.details.reasonCode, 'genericTitle');
 });
 
+// The cross-page probe branches above only ever run through runa11yCoreOnHtml
+// (runa11yCoreInPage's self-contained, toString()-embedded copy -- see
+// tests/node-runtime-parity.test.js's header comment for why that means
+// Node's coverage tool can't attribute their execution back to this file).
+// engineOptions.probes isn't something the generic parity harness supplies
+// (it just loads each rule's plain fixture file), so this rule's biggest
+// branch -- cross-page duplicate/template detection -- needs its own
+// Node/require-entry-point pass, same pattern as target-size-minimum's.
+test(`${RULE_ID}: runDomRulesInPage (Node/require entry point) agrees with runa11yCoreInPage across the cross-page probe branches`, () => {
+    const { runDomRulesInPage } = require('../../../src/index.js');
+    const { JSDOM } = require('jsdom');
+
+    const scenarios = [
+        { html: withTitle('Acme Corporation'), probes: { 'crawl.pageTitles': { pages: pagesOf(10, { duplicateTitle: 'Acme Corporation' }) } } },
+        { html: withTitle('Acme Corporation - Section 0'), probes: { 'crawl.pageTitles': { pages: pagesOf(10, { templatePrefix: 'Acme Corporation' }) } } },
+        { html: withTitle('Distinct Fully Unique Title'), probes: { 'crawl.pageTitles': { pages: pagesOf(10) } } },
+        { html: withTitle('Home'), probes: { 'crawl.pageTitles': { pages: pagesOf(5, { duplicateTitle: 'Acme Corporation' }) } } }
+    ];
+
+    for (const { html, probes } of scenarios) {
+        const viaInPage = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions: { probes } });
+
+        const dom = new JSDOM(html, { url: 'https://example.test/', pretendToBeVisual: true });
+        global.window = dom.window;
+        global.document = dom.window.document;
+        let viaNodeRuntime;
+        try {
+            viaNodeRuntime = runDomRulesInPage('https://example.test/', null, { probes }, [RULE_ID]);
+        } finally {
+            dom.window.close();
+        }
+
+        const inPageCheck = viaInPage.checksResults.find((r) => r.ruleId === RULE_ID);
+        const nodeCheck = viaNodeRuntime.checksResults.find((r) => r.ruleId === RULE_ID);
+
+        assert.ok(inPageCheck && nodeCheck, 'expected a checksResults entry from both entry points');
+        assert.strictEqual(nodeCheck.outcome, inPageCheck.outcome);
+        assert.strictEqual(nodeCheck.occurrences.length, inPageCheck.occurrences.length);
+    }
+});
+
 test(`${RULE_ID}: fixture coverage (tests/fixtures/page-title-patterns-all-scenarios.html)`, () => {
     const fixturePath = path.join(__dirname, '../..', 'fixtures', 'page-title-patterns-all-scenarios.html');
     const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');

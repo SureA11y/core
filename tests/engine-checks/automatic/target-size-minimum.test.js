@@ -526,3 +526,30 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/target-size-all-scenarios.htm
     assert.ok(!hasOccurrenceForId(id), `Did not expect occurrence for id="${id}"`);
   }
 });
+
+// This rule's geometry (getBoundingClientRect/elementFromPoint) only becomes
+// deterministic in jsdom via patchTargetSizeEnv above, which the generic
+// tests/node-runtime-parity.test.js harness doesn't apply (it loads every
+// rule's fixture through a plain, unpatched JSDOM) -- so that harness alone
+// can't exercise this rule's real measurement/spacing logic through the
+// Node/require entry point. Doing it here, once, with the same patching the
+// rest of this file already relies on.
+test(`${RULE_ID}: runDomRulesInPage (Node/require entry point) agrees with runa11yCoreInPage on the full fixture`, () => {
+  const { runDomRulesInPage } = require('../../../src/index.js');
+
+  const fixturePath = path.join(__dirname, '../..', 'fixtures', 'target-size-all-scenarios.html');
+  const html = fs.readFileSync(fixturePath, 'utf8');
+
+  const viaInPage = run(html);
+
+  const dom = createDom(html);
+  patchTargetSizeEnv(dom);
+  const viaNodeRuntime = runDomRulesInPage('https://example.test/', null, { rules: [RULE_ID] }, null);
+
+  const inPageCheck = viaInPage.checksResults.find((r) => r.ruleId === RULE_ID);
+  const nodeCheck = viaNodeRuntime.checksResults.find((r) => r.ruleId === RULE_ID);
+
+  assert.ok(inPageCheck && nodeCheck, 'expected a checksResults entry from both entry points');
+  assert.strictEqual(nodeCheck.outcome, inPageCheck.outcome);
+  assert.strictEqual(nodeCheck.occurrences.length, inPageCheck.occurrences.length);
+});
