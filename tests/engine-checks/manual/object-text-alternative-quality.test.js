@@ -6,9 +6,21 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const { assertRule } = require('../../helpers/assertRule.js');
-const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
+const { runa11yCoreOnHtml, createDom } = require('../../helpers/runDomRulesOnHtml.js');
+const { runDomRulesInPage } = require('../../../src/index.js');
 
 const RULE_ID = "object-text-alternative-quality";
+
+// The fixture never uses role="presentation"/"none", so
+// isRolePresentationExcluded's focusable-vs-not-focusable branches never run
+// through runa11yCoreOnHtml (toString-embedded, uncounted by Node's
+// --experimental-test-coverage per tests/node-runtime-parity.test.js's header
+// comment) nor through the fixture's single runDomRulesInPage pass -- same
+// gap as svg-text-alternative-quality's identical helper.
+function runNode(html) {
+  createDom(html);
+  return runDomRulesInPage('https://example.test/', null, {}, { includeRuleIds: [RULE_ID] });
+}
 
 function hasOccurrenceForId(rule, id) {
   return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
@@ -67,4 +79,31 @@ test(`${RULE_ID}: i18n (fr) rule title/description are localized`, () => {
   const occ = rule.occurrences[0];
   assert.strictEqual(occ.summary, "V\u00e9rifiez l\u2019alternative textuelle de <object> (\u00e9quivalence et pertinence).");
   assert.strictEqual(occ.hint, "Confirmez que le contenu de secours ou le nom ARIA fournit une alternative \u00e9quivalente au contenu embarqu\u00e9.");
+});
+
+test(`${RULE_ID} (node runtime): non-focusable role="presentation" object is excluded, even with an aria-label`, () => {
+  const html = `<!doctype html><html><body><object id="o1" data="x.svg" role="presentation" aria-label="Decorative"></object></body></html>`;
+  const result = runNode(html);
+  const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
+  assert.ok(rule);
+  assert.strictEqual(rule.outcome, 'notApplicable');
+  assert.strictEqual(rule.occurrences.length, 0);
+});
+
+test(`${RULE_ID} (node runtime): non-focusable role="none" object is excluded, same as role="presentation"`, () => {
+  const html = `<!doctype html><html><body><object id="o2" data="x.svg" role="none" aria-label="Decorative"></object></body></html>`;
+  const result = runNode(html);
+  const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
+  assert.ok(rule);
+  assert.strictEqual(rule.outcome, 'notApplicable');
+  assert.strictEqual(rule.occurrences.length, 0);
+});
+
+test(`${RULE_ID} (node runtime): a focusable role="presentation" object is NOT excluded (mirrors img-alt-present policy)`, () => {
+  const html = `<!doctype html><html><body><object id="o3" data="x.svg" role="presentation" tabindex="0" aria-label="Focusable object"></object></body></html>`;
+  const result = runNode(html);
+  const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
+  assert.ok(rule);
+  assert.strictEqual(rule.outcome, 'cantTell');
+  assert.strictEqual(rule.occurrences.length, 1);
 });
