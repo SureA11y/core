@@ -1,20 +1,13 @@
 'use strict';
 
 /**
- * Optimized, regression-safe rewrite of:
- * form-control-programmatic-label-present
- *
- * Goals:
- * - Preserve semantics, schema, determinism, and no-throw behavior.
- * - Reduce per-element DOM queries and avoid unnecessary helper calls.
- *
- * Key safety points:
- * - Control discovery goes through helpers.queryAllSmart/queryAll (multi-root
- *   and shadow-DOM aware), not a direct root/safeRoot DOM query -- ctx.root
- *   is an array (multi-region contextSelector support), not a single element.
- * - label[for] association uses a single precomputed Set of `for` values (document-wide, like original).
- * - getFocusableInfo is only invoked when role is presentational and thus relevant.
- * - aria-labelledby / aria-label helper resolution is only invoked when the attribute is present.
+ * Control discovery goes through helpers.queryAllSmart/queryAll (multi-root
+ * and shadow-DOM aware), not a direct root/safeRoot DOM query -- ctx.root
+ * is an array (multi-region contextSelector support), not a single element.
+ * Label-method resolution (label/aria-labelledby/aria-label/title/
+ * placeholder priority) delegates entirely to the shared dom-helpers
+ * bundle's getLabelMethod, which dom-runner.js always provides to every
+ * rule execution -- see getLabelMethodSafe below.
  *
  * WCAG mapping: matches technique H44 ("Using label elements to associate
  * text labels with form controls"), which WCAG's own Techniques document
@@ -64,42 +57,7 @@ function runInPage(ctx) {
   const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
 
   const getFocusableInfo = helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
-  const getAriaLabelInfo = helpers && typeof helpers.getAriaLabelInfo === 'function' ? helpers.getAriaLabelInfo : null;
-  const getAriaLabelledByInfo =
-    helpers && typeof helpers.getAriaLabelledByInfo === 'function' ? helpers.getAriaLabelledByInfo : null;
-
-  const getAttributeInfo = helpers && typeof helpers.getAttributeInfo === 'function' ? helpers.getAttributeInfo : null;
   const getLabelMethod = helpers && typeof helpers.getLabelMethod === 'function' ? helpers.getLabelMethod : null;
-  const getContentNameInfo = helpers && typeof helpers.getContentNameInfo === 'function' ? helpers.getContentNameInfo : null;
-  const getAriaNameInfo = helpers && typeof helpers.getAriaNameInfo === 'function' ? helpers.getAriaNameInfo : null;
-
-  // A <label> counts as an association if it contributes a name either via
-  // its own aria-label/aria-labelledby (checked first, same ARIA-over-
-  // content precedence any element's accessible name gives — verified
-  // against a real page: <label aria-label="Toggle Navigation"><svg
-  // aria-hidden="true">...</svg></label> names its control "Toggle
-  // Navigation" even though the label's only child content is aria-hidden)
-  // or, failing that, non-empty ACCESSIBLE content (getContentNameInfo
-  // already excludes aria-hidden/display:none/inert descendants — a label
-  // whose only text is aria-hidden gives the control no real accessible
-  // name even though the structural association exists). See
-  // dom-helpers.js's labelContributesAccessibleName for the primary
-  // (shared-helper) path; this is the fallback-only mirror.
-  function labelHasAccessibleContent(labelEl) {
-    if (getAriaNameInfo) {
-      try {
-        const aria = getAriaNameInfo(labelEl, ctx);
-        if (aria && aria.present && trim(aria.value)) return true;
-      } catch {}
-    }
-    if (!getContentNameInfo) return true; // conservative: don't newly fail without the helper
-    try {
-      const info = getContentNameInfo(labelEl, ctx);
-      return !!(info && info.present && trim(info.value));
-    } catch {
-      return true;
-    }
-  }
 
   const trim = (v) => (v == null ? '' : String(v)).trim();
 
@@ -118,35 +76,6 @@ function runInPage(ctx) {
     return 'none';
   }
 
-  function getNonEmptyAttrViaHelper(el, name) {
-    if (!getAttributeInfo) return '';
-    try {
-      const info = getAttributeInfo(el, name);
-      return info && info.present ? trim(info.value) : '';
-    } catch {
-      return '';
-    }
-  }
-
-  // Build a document-wide Map of label[for] value -> label element once
-  // (O(#labels) instead of O(#controls) selector queries). Keeps the
-  // element reference (not just a presence flag) so hasLabelAssociation can
-  // check the label's actual accessible content.
-  const labelForMap = new Map();
-  try {
-    if (document && typeof document.getElementsByTagName === 'function') {
-      const labels = document.getElementsByTagName('label');
-      for (let i = 0; i < labels.length; i++) {
-        const lab = labels[i];
-        if (!lab || !lab.getAttribute) continue;
-        const f = trim(lab.getAttribute('for'));
-        if (f && !labelForMap.has(f)) labelForMap.set(f, lab);
-      }
-    }
-  } catch {
-    // no-throw
-  }
-
   function isEligibleAcc(el) {
     if (!isAccTreeEligible) return true;
     try {
@@ -158,110 +87,22 @@ function runInPage(ctx) {
     }
   }
 
-  function hasLabelAssociation(el) {
-    // 1) Native labels API — resolves both wrapping <label> and
-    // <label for="id"> as real elements in one call.
-    try {
-      if (el && 'labels' in el && el.labels && el.labels.length) {
-        return Array.prototype.some.call(el.labels, labelHasAccessibleContent);
-      }
-    } catch {}
-
-    // 2) Wrapped by <label>
-    try {
-      if (el && el.closest) {
-        const wrap = el.closest('label');
-        if (wrap) return labelHasAccessibleContent(wrap);
-      }
-    } catch {}
-
-    // 3) <label for="id">
-    try {
-      const idAttr = el && el.getAttribute ? trim(el.getAttribute('id')) : '';
-      if (!idAttr) return false;
-      const lab = labelForMap.get(idAttr);
-      return !!lab && labelHasAccessibleContent(lab);
-    } catch {
-      return false;
-    }
-  }
-
-  function computeLabelMethodFallback(el) {
-    // Deterministic priority order
-    if (hasLabelAssociation(el)) return { method: 'label', value: '' };
-
-    // Only resolve aria-labelledby if attribute exists
-    let raw = '';
-    try {
-      raw = el && el.getAttribute ? trim(el.getAttribute('aria-labelledby')) : '';
-    } catch {
-      raw = '';
-    }
-    if (raw && getAriaLabelledByInfo) {
-      try {
-        const info = getAriaLabelledByInfo(el, ctx, { maxRefs: 8 });
-        const v = info && info.present ? trim(info.value) : '';
-        if (v) return { method: 'aria-labelledby', value: v };
-      } catch {}
-    }
-
-    // Only resolve aria-label if attribute exists
-    raw = '';
-    try {
-      raw = el && el.getAttribute ? trim(el.getAttribute('aria-label')) : '';
-    } catch {
-      raw = '';
-    }
-    if (raw && getAriaLabelInfo) {
-      try {
-        const info = getAriaLabelInfo(el, ctx);
-        const v = info && info.present ? trim(info.value) : '';
-        if (v) return { method: 'aria-label', value: v };
-      } catch {}
-    }
-
-    // title / placeholder
-    const titleV = getNonEmptyAttrViaHelper(el, 'title') || (() => {
-      try { return trim(el.getAttribute('title')); } catch { return ''; }
-    })();
-    if (titleV) return { method: 'title', value: titleV };
-
-    // `placeholder` is only a valid name/hint source for text-entry input
-    // types and <textarea> — not checkbox/radio/range/color/date/... or
-    // <select>, which browsers/AT never read a placeholder from.
-    const isPlaceholderCapable = (() => {
-      try {
-        const tag = (el.tagName || '').toLowerCase();
-        if (tag === 'textarea') return true;
-        if (tag !== 'input') return false;
-        const type = trim(el.getAttribute('type') || 'text').toLowerCase() || 'text';
-        return ['text', 'search', 'tel', 'url', 'email', 'password', 'number'].includes(type);
-      } catch {
-        return false;
-      }
-    })();
-
-    const phV = isPlaceholderCapable && (getNonEmptyAttrViaHelper(el, 'placeholder') || (() => {
-      try { return trim(el.getAttribute('placeholder')); } catch { return ''; }
-    })());
-    if (phV) return { method: 'placeholder', value: phV };
-
-    return { method: 'none', value: '' };
-  }
-
+  // getLabelMethod is provided by the shared dom-helpers bundle that
+  // dom-runner.js always constructs for every rule execution (built-in or
+  // custom) — see createDomHelpers's own getLabelMethod, which implements
+  // this exact <label>/aria-labelledby/aria-label/title/placeholder
+  // priority order. No local reimplementation is needed as a fallback.
   function getLabelMethodSafe(el) {
-    if (getLabelMethod) {
-      try {
-        const r = getLabelMethod(el, ctx);
-        const m = r && typeof r.method === 'string' ? r.method : 'none';
-        const v = r && r.value != null ? trim(r.value) : '';
-        if (!Object.prototype.hasOwnProperty.call(metrics.byMethod, m)) return { method: 'none', value: '' };
-        return { method: m, value: v };
-      } catch {
-        // fall through
-      }
+    if (!getLabelMethod) return { method: 'none', value: '' };
+    try {
+      const r = getLabelMethod(el, ctx);
+      const m = r && typeof r.method === 'string' ? r.method : 'none';
+      const v = r && r.value != null ? trim(r.value) : '';
+      if (!Object.prototype.hasOwnProperty.call(metrics.byMethod, m)) return { method: 'none', value: '' };
+      return { method: m, value: v };
+    } catch {
+      return { method: 'none', value: '' };
     }
-    return computeLabelMethodFallback(el);
   }
 
   // Collect candidate nodes via the shared queryAllSmart/queryAll helpers
