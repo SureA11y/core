@@ -34307,10 +34307,6 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     return !!(info && info.eligible);
   }
 
-  function safeSelector(node) {
-    return helpers.buildSelector ? helpers.buildSelector(node) : 'html';
-  }
-
   // Evidence object includes strength, so the rule can treat "unverified external link" as insufficient proof.
   function evidenceNone() {
     return {
@@ -67276,10 +67272,6 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   function isEligible(node) {
     const info = getEligibility(node);
     return !!(info && info.eligible);
-  }
-
-  function safeSelector(node) {
-    return helpers.buildSelector ? helpers.buildSelector(node) : 'html';
   }
 
   // Evidence object includes strength, so the rule can treat "unverified external link" as insufficient proof.

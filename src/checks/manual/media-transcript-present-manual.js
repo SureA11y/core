@@ -125,10 +125,6 @@ function runInPage(ctx) {
     return !!(info && info.eligible);
   }
 
-  function safeSelector(node) {
-    return helpers.buildSelector ? helpers.buildSelector(node) : 'html';
-  }
-
   // Evidence object includes strength, so the rule can treat "unverified external link" as insufficient proof.
   function evidenceNone() {
     return {
