@@ -7,8 +7,25 @@ const path = require('node:path');
 
 const { assertRule } = require('../../helpers/assertRule.js');
 const { runa11yCoreOnHtml, createDom, runa11yCoreOnDom } = require('../../helpers/runDomRulesOnHtml.js');
+const { runDomRulesInPage } = require('../../../src/index.js');
 
 const RULE_ID = 'html-lang-attr-present';
+
+// Every scenario above runs through runa11yCoreOnHtml/runa11yCoreOnDom
+// (toString-embedded), which Node's --experimental-test-coverage can't
+// attribute back to this file (see tests/node-runtime-parity.test.js's
+// header comment). The fixture the generic harness runs through the real
+// entry point only exercises the invalid-lang FAIL branch, so
+// lang-missing/lang-empty/pass/non-<html>-root never ran through it.
+// Exercise them here via runDomRulesInPage.
+function runNode(html) {
+  createDom(html);
+  return runDomRulesInPage('https://example.test/', null, {}, { includeRuleIds: [RULE_ID] });
+}
+
+function ruleFrom(result) {
+  return result.checksResults.find((r) => r.ruleId === RULE_ID);
+}
 
 function getFirstOccurrence(rule) {
     assert.ok(rule);
@@ -156,4 +173,52 @@ test(`html-lang-attr-present: notApplicable when engineOptions.fragment is true,
   const html = `<!doctype html><html><head><title>x</title></head><body>Hi</body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: ['html-lang-attr-present'], engineOptions: { fragment: true } });
   assertRule(result, 'html-lang-attr-present', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID} (node runtime): fail when <html> has no lang attribute`, () => {
+  const html = '<!doctype html><html><head><title>x</title></head><body>Hi</body></html>';
+  const rule = ruleFrom(runNode(html));
+  assert.ok(rule);
+  assert.strictEqual(rule.outcome, 'fail');
+  assert.strictEqual(rule.occurrences.length, 1);
+  assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'lang-missing');
+});
+
+test(`${RULE_ID} (node runtime): fail when <html> lang is empty string`, () => {
+  const html = '<!doctype html><html lang=""><head><title>x</title></head><body>Hi</body></html>';
+  const rule = ruleFrom(runNode(html));
+  assert.ok(rule);
+  assert.strictEqual(rule.outcome, 'fail');
+  assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'lang-empty');
+});
+
+test(`${RULE_ID} (node runtime): fail when <html> lang is invalid BCP47`, () => {
+  const html = '<!doctype html><html lang="english"><head><title>x</title></head><body>Hi</body></html>';
+  const rule = ruleFrom(runNode(html));
+  assert.ok(rule);
+  assert.strictEqual(rule.outcome, 'fail');
+  assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'lang-invalid-bcp47');
+  assert.strictEqual(rule.occurrences[0].i18n.params.lang, 'english');
+});
+
+test(`${RULE_ID} (node runtime): notApplicable when document root is not <html> (XML document)`, () => {
+  const dom = createDom('<svg xmlns="http://www.w3.org/2000/svg"></svg>', {
+    url: 'https://example.test/',
+    contentType: 'application/xml'
+  });
+  const result = runDomRulesInPage('https://example.test/', null, {}, { includeRuleIds: [RULE_ID] });
+  const rule = ruleFrom(result);
+  assert.ok(rule);
+  assert.strictEqual(rule.outcome, 'notApplicable');
+  assert.strictEqual(rule.occurrences.length, 0);
+});
+
+test(`${RULE_ID} (node runtime): pass when <html> lang is a valid tag (en, fr-CH)`, () => {
+  for (const lang of ['en', 'fr-CH']) {
+    const html = `<!doctype html><html lang="${lang}"><head><title>x</title></head><body>Hi</body></html>`;
+    const rule = ruleFrom(runNode(html));
+    assert.ok(rule);
+    assert.strictEqual(rule.outcome, 'pass', `expected pass for lang="${lang}"`);
+    assert.strictEqual(rule.occurrences.length, 0);
+  }
 });
