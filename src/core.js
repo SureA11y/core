@@ -10241,6 +10241,33 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
         let cur = el;
         let guard = 0;
+        // Once a closer ancestor's own background-color is confirmed fully
+        // opaque (and that ancestor is itself free of blend-mode/filter),
+        // it visually PAINTS OVER anything farther out -- a
+        // background-image/gradient beyond that point can no longer affect
+        // what's actually rendered behind el's text, so continuing to flag
+        // it as a computability blocker is a false "not computable".
+        // Confirmed via a minimal repro: solid black text on a
+        // fully-opaque white <div>, itself sitting on a <body> with a
+        // background-image, was reported cantTell even though the image is
+        // 100% visually irrelevant to that text's rendered background —
+        // and BACKGROUND_IMAGE_OR_GRADIENT was the dominant real-world
+        // computability blocker (100% of cantTell occurrences sampled on
+        // nasa.gov and en.wikipedia.org, 2026-08-01), so this single-layer
+        // "solid card/nav/modal over a page-level hero image" pattern is
+        // common enough to matter.
+        //
+        // This does NOT extend to mix-blend-mode/filter/backdrop-filter or
+        // an ancestor's `opacity` — those are compositing-GROUP operations
+        // applied to that ancestor's entire rendered subtree (including any
+        // "opaque" layer inside it) before blending against whatever is
+        // further out, so a closer opaque paint layer does not shield
+        // against them the way it shields against a plain background-image.
+        // Applying the same short-circuit there would risk a confidently
+        // wrong pass — deliberately NOT done, matching this engine's
+        // no-false-positives bar.
+        let paintOccluded = false;
+
         while (cur && guard++ < 200) {
             if (cur.nodeType !== 1) { cur = composedParent(cur); continue; }
             const cs = __contrastComputedStyle(cur);
@@ -10270,7 +10297,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
                 return out;
             }
 
-            if (__hasBackgroundImageOrGradientEl(cur, cs)) {
+            if (!paintOccluded && __hasBackgroundImageOrGradientEl(cur, cs)) {
                 const bgImg = (cs && cs.backgroundImage) || '';
                 const out = {
                     ok: false,
@@ -10312,6 +10339,17 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
                     try { if (el) __computabilityBlockerCache.set(el, out); } catch (_e) {}
                     return out;
                 }
+            }
+
+            // `cur` cleared every check above (no blend-mode/filter/
+            // background-image/gradient of its own, and no reduced
+            // opacity) -- if its own background-color also happens to be
+            // fully opaque, it paints over everything farther out, so
+            // suppress BACKGROUND_IMAGE_OR_GRADIENT for any ancestor beyond
+            // this point (see the paintOccluded comment above the loop).
+            if (!paintOccluded) {
+                const ownBg = parseCssColorToRgba(cs && cs.backgroundColor);
+                if (ownBg && clamp01(ownBg.a) >= 1) paintOccluded = true;
             }
 
             cur = composedParent(cur);
@@ -43647,6 +43685,33 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
         let cur = el;
         let guard = 0;
+        // Once a closer ancestor's own background-color is confirmed fully
+        // opaque (and that ancestor is itself free of blend-mode/filter),
+        // it visually PAINTS OVER anything farther out -- a
+        // background-image/gradient beyond that point can no longer affect
+        // what's actually rendered behind el's text, so continuing to flag
+        // it as a computability blocker is a false "not computable".
+        // Confirmed via a minimal repro: solid black text on a
+        // fully-opaque white <div>, itself sitting on a <body> with a
+        // background-image, was reported cantTell even though the image is
+        // 100% visually irrelevant to that text's rendered background —
+        // and BACKGROUND_IMAGE_OR_GRADIENT was the dominant real-world
+        // computability blocker (100% of cantTell occurrences sampled on
+        // nasa.gov and en.wikipedia.org, 2026-08-01), so this single-layer
+        // "solid card/nav/modal over a page-level hero image" pattern is
+        // common enough to matter.
+        //
+        // This does NOT extend to mix-blend-mode/filter/backdrop-filter or
+        // an ancestor's `opacity` — those are compositing-GROUP operations
+        // applied to that ancestor's entire rendered subtree (including any
+        // "opaque" layer inside it) before blending against whatever is
+        // further out, so a closer opaque paint layer does not shield
+        // against them the way it shields against a plain background-image.
+        // Applying the same short-circuit there would risk a confidently
+        // wrong pass — deliberately NOT done, matching this engine's
+        // no-false-positives bar.
+        let paintOccluded = false;
+
         while (cur && guard++ < 200) {
             if (cur.nodeType !== 1) { cur = composedParent(cur); continue; }
             const cs = __contrastComputedStyle(cur);
@@ -43676,7 +43741,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
                 return out;
             }
 
-            if (__hasBackgroundImageOrGradientEl(cur, cs)) {
+            if (!paintOccluded && __hasBackgroundImageOrGradientEl(cur, cs)) {
                 const bgImg = (cs && cs.backgroundImage) || '';
                 const out = {
                     ok: false,
@@ -43718,6 +43783,17 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
                     try { if (el) __computabilityBlockerCache.set(el, out); } catch (_e) {}
                     return out;
                 }
+            }
+
+            // `cur` cleared every check above (no blend-mode/filter/
+            // background-image/gradient of its own, and no reduced
+            // opacity) -- if its own background-color also happens to be
+            // fully opaque, it paints over everything farther out, so
+            // suppress BACKGROUND_IMAGE_OR_GRADIENT for any ancestor beyond
+            // this point (see the paintOccluded comment above the loop).
+            if (!paintOccluded) {
+                const ownBg = parseCssColorToRgba(cs && cs.backgroundColor);
+                if (ownBg && clamp01(ownBg.a) >= 1) paintOccluded = true;
             }
 
             cur = composedParent(cur);
@@ -77008,6 +77084,33 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
         let cur = el;
         let guard = 0;
+        // Once a closer ancestor's own background-color is confirmed fully
+        // opaque (and that ancestor is itself free of blend-mode/filter),
+        // it visually PAINTS OVER anything farther out -- a
+        // background-image/gradient beyond that point can no longer affect
+        // what's actually rendered behind el's text, so continuing to flag
+        // it as a computability blocker is a false "not computable".
+        // Confirmed via a minimal repro: solid black text on a
+        // fully-opaque white <div>, itself sitting on a <body> with a
+        // background-image, was reported cantTell even though the image is
+        // 100% visually irrelevant to that text's rendered background —
+        // and BACKGROUND_IMAGE_OR_GRADIENT was the dominant real-world
+        // computability blocker (100% of cantTell occurrences sampled on
+        // nasa.gov and en.wikipedia.org, 2026-08-01), so this single-layer
+        // "solid card/nav/modal over a page-level hero image" pattern is
+        // common enough to matter.
+        //
+        // This does NOT extend to mix-blend-mode/filter/backdrop-filter or
+        // an ancestor's `opacity` — those are compositing-GROUP operations
+        // applied to that ancestor's entire rendered subtree (including any
+        // "opaque" layer inside it) before blending against whatever is
+        // further out, so a closer opaque paint layer does not shield
+        // against them the way it shields against a plain background-image.
+        // Applying the same short-circuit there would risk a confidently
+        // wrong pass — deliberately NOT done, matching this engine's
+        // no-false-positives bar.
+        let paintOccluded = false;
+
         while (cur && guard++ < 200) {
             if (cur.nodeType !== 1) { cur = composedParent(cur); continue; }
             const cs = __contrastComputedStyle(cur);
@@ -77037,7 +77140,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
                 return out;
             }
 
-            if (__hasBackgroundImageOrGradientEl(cur, cs)) {
+            if (!paintOccluded && __hasBackgroundImageOrGradientEl(cur, cs)) {
                 const bgImg = (cs && cs.backgroundImage) || '';
                 const out = {
                     ok: false,
@@ -77079,6 +77182,17 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
                     try { if (el) __computabilityBlockerCache.set(el, out); } catch (_e) {}
                     return out;
                 }
+            }
+
+            // `cur` cleared every check above (no blend-mode/filter/
+            // background-image/gradient of its own, and no reduced
+            // opacity) -- if its own background-color also happens to be
+            // fully opaque, it paints over everything farther out, so
+            // suppress BACKGROUND_IMAGE_OR_GRADIENT for any ancestor beyond
+            // this point (see the paintOccluded comment above the loop).
+            if (!paintOccluded) {
+                const ownBg = parseCssColorToRgba(cs && cs.backgroundColor);
+                if (ownBg && clamp01(ownBg.a) >= 1) paintOccluded = true;
             }
 
             cur = composedParent(cur);
