@@ -27552,24 +27552,6 @@ if (isAccTreeEligible) {
     } catch { return ''; }
   }
 
-  function hasAttr(el, name) {
-    try { return !!(el && el.hasAttribute && el.hasAttribute(name)); } catch { return false; }
-  }
-
-  function isExplicitProgrammatic(el) {
-    // Programmatic name mechanisms we treat as authoritative (presence-only):
-    // - aria-label (non-empty)
-    // - aria-labelledby (non-empty)
-    // - title (non-empty) [weak but allowed for presence]
-    const al = getAttr(el, 'aria-label');
-    if (al) return true;
-    const alb = getAttr(el, 'aria-labelledby');
-    if (alb) return true;
-    const t = getAttr(el, 'title');
-    if (t) return true;
-    return false;
-  }
-
   function buildLabelForMap(doc) {
     const map = new Map(); // id -> label element (first)
     try {
@@ -27642,15 +27624,6 @@ if (isAccTreeEligible) {
       } catch {}
     }
     return '';
-  }
-
-  function getInputValueName(el) {
-    try {
-      const type = getAttr(el, 'type').toLowerCase();
-      if (type !== 'button' && type !== 'submit' && type !== 'reset') return '';
-      const v = getAttr(el, 'value');
-      return v;
-    } catch { return ''; }
   }
 
   function isEligibleAcc(helpers, el, ctx) {
@@ -34827,39 +34800,6 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     } catch { return ''; }
   }
 
-  function hasAttr(el, name) {
-    try { return !!(el && el.hasAttribute && el.hasAttribute(name)); } catch { return false; }
-  }
-
-  function isExplicitProgrammatic(el) {
-    // Programmatic name mechanisms we treat as authoritative (presence-only):
-    // - aria-label (non-empty)
-    // - aria-labelledby (non-empty)
-    // - title (non-empty) [weak but allowed for presence]
-    const al = getAttr(el, 'aria-label');
-    if (al) return true;
-    const alb = getAttr(el, 'aria-labelledby');
-    if (alb) return true;
-    const t = getAttr(el, 'title');
-    if (t) return true;
-    return false;
-  }
-
-  function buildLabelForMap(doc) {
-    const map = new Map(); // id -> label element (first)
-    try {
-      const labels = doc && doc.getElementsByTagName ? doc.getElementsByTagName('label') : [];
-      for (let i = 0; i < labels.length; i += 1) {
-        const lab = labels[i];
-        if (!lab || !lab.getAttribute) continue;
-        const f = normalizeWs(lab.getAttribute('for'));
-        if (!f) continue;
-        if (!map.has(f)) map.set(f, lab);
-      }
-    } catch {}
-    return map;
-  }
-
   function getConservativeSubtreeText(document, container) {
     // "Name from content" — recurses into descendants and uses each one's
     // own accessible name (img alt, aria-label/aria-labelledby, title) when
@@ -34891,15 +34831,6 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
       } catch {}
     }
     return '';
-  }
-
-  function getInputValueName(el) {
-    try {
-      const type = getAttr(el, 'type').toLowerCase();
-      if (type !== 'button' && type !== 'submit' && type !== 'reset') return '';
-      const v = getAttr(el, 'value');
-      return v;
-    } catch { return ''; }
   }
 
   function isEligibleAcc(helpers, el, ctx) {
@@ -35248,22 +35179,6 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
       if (!el || !el.getAttribute) return '';
       return normalizeWs(el.getAttribute(name));
     } catch { return ''; }
-  }
-
-  function getConservativeSubtreeText(document, container) {
-    // "Name from content" — recurses into descendants and uses each one's
-    // own accessible name (img alt, aria-label/aria-labelledby, title) when
-    // it has one, not just literal text nodes. See getContentNameInfo's
-    // header comment in src/core/dom-helpers.js for the full rationale
-    // (this replaced a text-node-only TreeWalker that missed the common
-    // "<a><img alt='...'></a>" logo-link / "<button><img alt='...'></button>"
-    // icon-button pattern).
-    if (helpers.getContentNameInfo) {
-      const info = helpers.getContentNameInfo(container, ctx);
-      return info && info.present ? info.value : '';
-    }
-    const t = (container && container.textContent) ? String(container.textContent) : '';
-    return t.replace(/\s+/g, ' ').trim();
   }
 
   function resolveAriaLabelledbyText(document, el, maxRefs) {
@@ -36580,22 +36495,6 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     } catch { return ''; }
   }
 
-  function getConservativeSubtreeText(document, container) {
-    // "Name from content" — recurses into descendants and uses each one's
-    // own accessible name (img alt, aria-label/aria-labelledby, title) when
-    // it has one, not just literal text nodes. See getContentNameInfo's
-    // header comment in src/core/dom-helpers.js for the full rationale
-    // (this replaced a text-node-only TreeWalker that missed the common
-    // "<a><img alt='...'></a>" logo-link / "<button><img alt='...'></button>"
-    // icon-button pattern).
-    if (helpers.getContentNameInfo) {
-      const info = helpers.getContentNameInfo(container, ctx);
-      return info && info.present ? info.value : '';
-    }
-    const t = (container && container.textContent) ? String(container.textContent) : '';
-    return t.replace(/\s+/g, ' ').trim();
-  }
-
   function resolveAriaLabelledbyText(document, el, maxRefs) {
     const raw = getAttr(el, 'aria-labelledby');
     if (!raw) return '';
@@ -37716,24 +37615,6 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     } catch { return ''; }
   }
 
-  function hasAttr(el, name) {
-    try { return !!(el && el.hasAttribute && el.hasAttribute(name)); } catch { return false; }
-  }
-
-  function isExplicitProgrammatic(el) {
-    // Programmatic name mechanisms we treat as authoritative (presence-only):
-    // - aria-label (non-empty)
-    // - aria-labelledby (non-empty)
-    // - title (non-empty) [weak but allowed for presence]
-    const al = getAttr(el, 'aria-label');
-    if (al) return true;
-    const alb = getAttr(el, 'aria-labelledby');
-    if (alb) return true;
-    const t = getAttr(el, 'title');
-    if (t) return true;
-    return false;
-  }
-
   function buildLabelForMap(doc) {
     const map = new Map(); // id -> label element (first)
     try {
@@ -37806,15 +37687,6 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
       } catch {}
     }
     return '';
-  }
-
-  function getInputValueName(el) {
-    try {
-      const type = getAttr(el, 'type').toLowerCase();
-      if (type !== 'button' && type !== 'submit' && type !== 'reset') return '';
-      const v = getAttr(el, 'value');
-      return v;
-    } catch { return ''; }
   }
 
   function isEligibleAcc(helpers, el, ctx) {
@@ -38879,39 +38751,6 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     } catch { return ''; }
   }
 
-  function hasAttr(el, name) {
-    try { return !!(el && el.hasAttribute && el.hasAttribute(name)); } catch { return false; }
-  }
-
-  function isExplicitProgrammatic(el) {
-    // Programmatic name mechanisms we treat as authoritative (presence-only):
-    // - aria-label (non-empty)
-    // - aria-labelledby (non-empty)
-    // - title (non-empty) [weak but allowed for presence]
-    const al = getAttr(el, 'aria-label');
-    if (al) return true;
-    const alb = getAttr(el, 'aria-labelledby');
-    if (alb) return true;
-    const t = getAttr(el, 'title');
-    if (t) return true;
-    return false;
-  }
-
-  function buildLabelForMap(doc) {
-    const map = new Map(); // id -> label element (first)
-    try {
-      const labels = doc && doc.getElementsByTagName ? doc.getElementsByTagName('label') : [];
-      for (let i = 0; i < labels.length; i += 1) {
-        const lab = labels[i];
-        if (!lab || !lab.getAttribute) continue;
-        const f = normalizeWs(lab.getAttribute('for'));
-        if (!f) continue;
-        if (!map.has(f)) map.set(f, lab);
-      }
-    } catch {}
-    return map;
-  }
-
   function getConservativeSubtreeText(document, container) {
     // "Name from content" — recurses into descendants and uses each one's
     // own accessible name (img alt, aria-label/aria-labelledby, title) when
@@ -38943,15 +38782,6 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
       } catch {}
     }
     return '';
-  }
-
-  function getInputValueName(el) {
-    try {
-      const type = getAttr(el, 'type').toLowerCase();
-      if (type !== 'button' && type !== 'submit' && type !== 'reset') return '';
-      const v = getAttr(el, 'value');
-      return v;
-    } catch { return ''; }
   }
 
   function isEligibleAcc(helpers, el, ctx) {
@@ -60924,24 +60754,6 @@ if (isAccTreeEligible) {
     } catch { return ''; }
   }
 
-  function hasAttr(el, name) {
-    try { return !!(el && el.hasAttribute && el.hasAttribute(name)); } catch { return false; }
-  }
-
-  function isExplicitProgrammatic(el) {
-    // Programmatic name mechanisms we treat as authoritative (presence-only):
-    // - aria-label (non-empty)
-    // - aria-labelledby (non-empty)
-    // - title (non-empty) [weak but allowed for presence]
-    const al = getAttr(el, 'aria-label');
-    if (al) return true;
-    const alb = getAttr(el, 'aria-labelledby');
-    if (alb) return true;
-    const t = getAttr(el, 'title');
-    if (t) return true;
-    return false;
-  }
-
   function buildLabelForMap(doc) {
     const map = new Map(); // id -> label element (first)
     try {
@@ -61014,15 +60826,6 @@ if (isAccTreeEligible) {
       } catch {}
     }
     return '';
-  }
-
-  function getInputValueName(el) {
-    try {
-      const type = getAttr(el, 'type').toLowerCase();
-      if (type !== 'button' && type !== 'submit' && type !== 'reset') return '';
-      const v = getAttr(el, 'value');
-      return v;
-    } catch { return ''; }
   }
 
   function isEligibleAcc(helpers, el, ctx) {
@@ -68199,39 +68002,6 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     } catch { return ''; }
   }
 
-  function hasAttr(el, name) {
-    try { return !!(el && el.hasAttribute && el.hasAttribute(name)); } catch { return false; }
-  }
-
-  function isExplicitProgrammatic(el) {
-    // Programmatic name mechanisms we treat as authoritative (presence-only):
-    // - aria-label (non-empty)
-    // - aria-labelledby (non-empty)
-    // - title (non-empty) [weak but allowed for presence]
-    const al = getAttr(el, 'aria-label');
-    if (al) return true;
-    const alb = getAttr(el, 'aria-labelledby');
-    if (alb) return true;
-    const t = getAttr(el, 'title');
-    if (t) return true;
-    return false;
-  }
-
-  function buildLabelForMap(doc) {
-    const map = new Map(); // id -> label element (first)
-    try {
-      const labels = doc && doc.getElementsByTagName ? doc.getElementsByTagName('label') : [];
-      for (let i = 0; i < labels.length; i += 1) {
-        const lab = labels[i];
-        if (!lab || !lab.getAttribute) continue;
-        const f = normalizeWs(lab.getAttribute('for'));
-        if (!f) continue;
-        if (!map.has(f)) map.set(f, lab);
-      }
-    } catch {}
-    return map;
-  }
-
   function getConservativeSubtreeText(document, container) {
     // "Name from content" — recurses into descendants and uses each one's
     // own accessible name (img alt, aria-label/aria-labelledby, title) when
@@ -68263,15 +68033,6 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
       } catch {}
     }
     return '';
-  }
-
-  function getInputValueName(el) {
-    try {
-      const type = getAttr(el, 'type').toLowerCase();
-      if (type !== 'button' && type !== 'submit' && type !== 'reset') return '';
-      const v = getAttr(el, 'value');
-      return v;
-    } catch { return ''; }
   }
 
   function isEligibleAcc(helpers, el, ctx) {
@@ -68620,22 +68381,6 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
       if (!el || !el.getAttribute) return '';
       return normalizeWs(el.getAttribute(name));
     } catch { return ''; }
-  }
-
-  function getConservativeSubtreeText(document, container) {
-    // "Name from content" — recurses into descendants and uses each one's
-    // own accessible name (img alt, aria-label/aria-labelledby, title) when
-    // it has one, not just literal text nodes. See getContentNameInfo's
-    // header comment in src/core/dom-helpers.js for the full rationale
-    // (this replaced a text-node-only TreeWalker that missed the common
-    // "<a><img alt='...'></a>" logo-link / "<button><img alt='...'></button>"
-    // icon-button pattern).
-    if (helpers.getContentNameInfo) {
-      const info = helpers.getContentNameInfo(container, ctx);
-      return info && info.present ? info.value : '';
-    }
-    const t = (container && container.textContent) ? String(container.textContent) : '';
-    return t.replace(/\s+/g, ' ').trim();
   }
 
   function resolveAriaLabelledbyText(document, el, maxRefs) {
@@ -69952,22 +69697,6 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     } catch { return ''; }
   }
 
-  function getConservativeSubtreeText(document, container) {
-    // "Name from content" — recurses into descendants and uses each one's
-    // own accessible name (img alt, aria-label/aria-labelledby, title) when
-    // it has one, not just literal text nodes. See getContentNameInfo's
-    // header comment in src/core/dom-helpers.js for the full rationale
-    // (this replaced a text-node-only TreeWalker that missed the common
-    // "<a><img alt='...'></a>" logo-link / "<button><img alt='...'></button>"
-    // icon-button pattern).
-    if (helpers.getContentNameInfo) {
-      const info = helpers.getContentNameInfo(container, ctx);
-      return info && info.present ? info.value : '';
-    }
-    const t = (container && container.textContent) ? String(container.textContent) : '';
-    return t.replace(/\s+/g, ' ').trim();
-  }
-
   function resolveAriaLabelledbyText(document, el, maxRefs) {
     const raw = getAttr(el, 'aria-labelledby');
     if (!raw) return '';
@@ -71088,24 +70817,6 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     } catch { return ''; }
   }
 
-  function hasAttr(el, name) {
-    try { return !!(el && el.hasAttribute && el.hasAttribute(name)); } catch { return false; }
-  }
-
-  function isExplicitProgrammatic(el) {
-    // Programmatic name mechanisms we treat as authoritative (presence-only):
-    // - aria-label (non-empty)
-    // - aria-labelledby (non-empty)
-    // - title (non-empty) [weak but allowed for presence]
-    const al = getAttr(el, 'aria-label');
-    if (al) return true;
-    const alb = getAttr(el, 'aria-labelledby');
-    if (alb) return true;
-    const t = getAttr(el, 'title');
-    if (t) return true;
-    return false;
-  }
-
   function buildLabelForMap(doc) {
     const map = new Map(); // id -> label element (first)
     try {
@@ -71178,15 +70889,6 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
       } catch {}
     }
     return '';
-  }
-
-  function getInputValueName(el) {
-    try {
-      const type = getAttr(el, 'type').toLowerCase();
-      if (type !== 'button' && type !== 'submit' && type !== 'reset') return '';
-      const v = getAttr(el, 'value');
-      return v;
-    } catch { return ''; }
   }
 
   function isEligibleAcc(helpers, el, ctx) {
@@ -72251,39 +71953,6 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     } catch { return ''; }
   }
 
-  function hasAttr(el, name) {
-    try { return !!(el && el.hasAttribute && el.hasAttribute(name)); } catch { return false; }
-  }
-
-  function isExplicitProgrammatic(el) {
-    // Programmatic name mechanisms we treat as authoritative (presence-only):
-    // - aria-label (non-empty)
-    // - aria-labelledby (non-empty)
-    // - title (non-empty) [weak but allowed for presence]
-    const al = getAttr(el, 'aria-label');
-    if (al) return true;
-    const alb = getAttr(el, 'aria-labelledby');
-    if (alb) return true;
-    const t = getAttr(el, 'title');
-    if (t) return true;
-    return false;
-  }
-
-  function buildLabelForMap(doc) {
-    const map = new Map(); // id -> label element (first)
-    try {
-      const labels = doc && doc.getElementsByTagName ? doc.getElementsByTagName('label') : [];
-      for (let i = 0; i < labels.length; i += 1) {
-        const lab = labels[i];
-        if (!lab || !lab.getAttribute) continue;
-        const f = normalizeWs(lab.getAttribute('for'));
-        if (!f) continue;
-        if (!map.has(f)) map.set(f, lab);
-      }
-    } catch {}
-    return map;
-  }
-
   function getConservativeSubtreeText(document, container) {
     // "Name from content" — recurses into descendants and uses each one's
     // own accessible name (img alt, aria-label/aria-labelledby, title) when
@@ -72315,15 +71984,6 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
       } catch {}
     }
     return '';
-  }
-
-  function getInputValueName(el) {
-    try {
-      const type = getAttr(el, 'type').toLowerCase();
-      if (type !== 'button' && type !== 'submit' && type !== 'reset') return '';
-      const v = getAttr(el, 'value');
-      return v;
-    } catch { return ''; }
   }
 
   function isEligibleAcc(helpers, el, ctx) {

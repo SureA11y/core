@@ -40,22 +40,6 @@ function runInPage(ctx) {
     } catch { return ''; }
   }
 
-  function getConservativeSubtreeText(document, container) {
-    // "Name from content" — recurses into descendants and uses each one's
-    // own accessible name (img alt, aria-label/aria-labelledby, title) when
-    // it has one, not just literal text nodes. See getContentNameInfo's
-    // header comment in src/core/dom-helpers.js for the full rationale
-    // (this replaced a text-node-only TreeWalker that missed the common
-    // "<a><img alt='...'></a>" logo-link / "<button><img alt='...'></button>"
-    // icon-button pattern).
-    if (helpers.getContentNameInfo) {
-      const info = helpers.getContentNameInfo(container, ctx);
-      return info && info.present ? info.value : '';
-    }
-    const t = (container && container.textContent) ? String(container.textContent) : '';
-    return t.replace(/\s+/g, ' ').trim();
-  }
-
   function resolveAriaLabelledbyText(document, el, maxRefs) {
     const raw = getAttr(el, 'aria-labelledby');
     if (!raw) return '';
