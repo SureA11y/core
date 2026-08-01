@@ -96,24 +96,6 @@ function runInPage(ctx) {
         }
     }
 
-    function getReferencingImgForArea(areaEl) {
-        try {
-            if (!areaEl || !areaEl.closest) return null;
-            const map = areaEl.closest('map');
-            if (!map) return null;
-            const mapName = getMapName(map);
-            if (!mapName) return null;
-
-            const imgs = Array.from(document.querySelectorAll('img[usemap]'));
-            for (const img of imgs) {
-                const u = normUsemap(img.getAttribute('usemap'));
-                if (u && u === mapName) return img; // deterministic: first match in doc order
-            }
-        } catch {
-        }
-        return null;
-    }
-
     const getFocusableInfo = helpers && typeof helpers.getFocusableInfo === 'function'
         ? helpers.getFocusableInfo
         : null;
