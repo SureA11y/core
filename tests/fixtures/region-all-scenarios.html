@@ -15,12 +15,14 @@
     <h1>Main content</h1>
     <div class="case-title">01 — CANTTELL: a sibling paragraph is a direct child of body, outside any landmark</div>
     <p class="note">
-      This rule is deliberately scoped to direct children of &lt;body&gt; only (see the
-      rule's implementation notes on why a full recursive scan would be too noisy). The
-      PASS case (all top-level body content already inside a landmark) is covered by the
-      inline unit tests in this rule's <code>.test.js</code> file. Note this explanatory
-      text is intentionally placed inside &lt;main&gt; so it does not itself become a
-      second violation in this fixture.
+      This rule recursively walks the whole document looking for content outside any
+      landmark, collapsing contiguous unplaced content into one occurrence per real gap
+      (see the rule's implementation notes for the full algorithm and why direct-children-
+      only was replaced). The PASS case (all content already inside a landmark) and the
+      SPA-single-root-div / button / dialog / live-region / svg / skip-link exemption
+      cases are covered by the inline unit tests in this rule's <code>.test.js</code>
+      file. Note this explanatory text is intentionally placed inside &lt;main&gt; so it
+      does not itself become a second violation in this fixture.
     </p>
   </main>
   <p id="rg_case_01">Stray content that landed outside every landmark region.</p>

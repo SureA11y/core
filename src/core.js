@@ -5215,7 +5215,7 @@ const CHECK_DEFS = [
   {
     "ruleId": "region",
     "title": "Page content should be inside a landmark region",
-    "description": "Checks that direct children of <body> with visible text content are contained within a landmark region.",
+    "description": "Checks that content under <body> is contained within a landmark region.",
     "i18n": {
       "titleKey": "region_title",
       "descriptionKey": "region_description"
@@ -21764,7 +21764,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "ruleId": "region",
     "title": "Page content should be inside a landmark region",
-    "description": "Checks that direct children of <body> with visible text content are contained within a landmark region.",
+    "description": "Checks that content under <body> is contained within a landmark region.",
     "i18n": {
       "titleKey": "region_title",
       "descriptionKey": "region_description"
@@ -29536,55 +29536,6 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     } catch { return ''; }
   }
 
-  function hasAttr(el, name) {
-    try { return !!(el && el.hasAttribute && el.hasAttribute(name)); } catch { return false; }
-  }
-
-  function isExplicitProgrammatic(el) {
-    // Programmatic name mechanisms we treat as authoritative (presence-only):
-    // - aria-label (non-empty)
-    // - aria-labelledby (non-empty)
-    // - title (non-empty) [weak but allowed for presence]
-    const al = getAttr(el, 'aria-label');
-    if (al) return true;
-    const alb = getAttr(el, 'aria-labelledby');
-    if (alb) return true;
-    const t = getAttr(el, 'title');
-    if (t) return true;
-    return false;
-  }
-
-  function buildLabelForMap(doc) {
-    const map = new Map(); // id -> label element (first)
-    try {
-      const labels = doc && doc.getElementsByTagName ? doc.getElementsByTagName('label') : [];
-      for (let i = 0; i < labels.length; i += 1) {
-        const lab = labels[i];
-        if (!lab || !lab.getAttribute) continue;
-        const f = normalizeWs(lab.getAttribute('for'));
-        if (!f) continue;
-        if (!map.has(f)) map.set(f, lab);
-      }
-    } catch {}
-    return map;
-  }
-
-  function getConservativeSubtreeText(document, container) {
-    // "Name from content" — recurses into descendants and uses each one's
-    // own accessible name (img alt, aria-label/aria-labelledby, title) when
-    // it has one, not just literal text nodes. See getContentNameInfo's
-    // header comment in src/core/dom-helpers.js for the full rationale
-    // (this replaced a text-node-only TreeWalker that missed the common
-    // "<a><img alt='...'></a>" logo-link / "<button><img alt='...'></button>"
-    // icon-button pattern).
-    if (helpers.getContentNameInfo) {
-      const info = helpers.getContentNameInfo(container, ctx);
-      return info && info.present ? info.value : '';
-    }
-    const t = (container && container.textContent) ? String(container.textContent) : '';
-    return t.replace(/\s+/g, ' ').trim();
-  }
-
   function resolveAriaLabelledbyText(document, el, maxRefs) {
     const raw = getAttr(el, 'aria-labelledby');
     if (!raw) return '';
@@ -29608,15 +29559,6 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
       } catch {}
     }
     return '';
-  }
-
-  function getInputValueName(el) {
-    try {
-      const type = getAttr(el, 'type').toLowerCase();
-      if (type !== 'button' && type !== 'submit' && type !== 'reset') return '';
-      const v = getAttr(el, 'value');
-      return v;
-    } catch { return ''; }
   }
 
   function isEligibleAcc(helpers, el, ctx) {
@@ -36759,6 +36701,10 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     return String(s || '').replace(/\s+/g, ' ').trim();
   }
 
+  function lower(s) {
+    return String(s || '').toLowerCase();
+  }
+
   // Delegates to the shared helpers.getLandmarkNameInfo (aria-label -> aria-labelledby, via the
   // target's own accessible name, not raw textContent -> title attribute fallback) rather than a
   // local copy -- see that function's header comment in src/core/dom-helpers.js for the real bug
@@ -36777,7 +36723,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   function getExplicitRoleToken(el) {
     const raw = normalizeWs(el.getAttribute && el.getAttribute('role'));
     if (!raw) return '';
-    return raw.split(/\s+/)[0].toLowerCase();
+    return lower(raw.split(/\s+/)[0]);
   }
 
   // Delegates to the shared helpers.hasLandmarkScopingAncestor for the
@@ -36797,7 +36743,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   }
 
   function getImplicitLandmarkRole(el) {
-    const tag = el.tagName ? el.tagName.toLowerCase() : '';
+    const tag = el.tagName ? lower(el.tagName) : '';
     if (tag === 'header') return hasSectioningAncestor(el, true) ? '' : 'banner';
     if (tag === 'footer') return hasSectioningAncestor(el, true) ? '' : 'contentinfo';
     if (tag === 'main') return 'main';
@@ -36827,48 +36773,171 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
 
   const SKIP_TAGS = new Set(['script', 'style', 'template', 'noscript', 'link', 'meta', 'title']);
 
-  function isIneligible(el) {
-    if (el.getAttribute && el.getAttribute('aria-hidden') === 'true') return true;
-    if (el.hasAttribute && el.hasAttribute('hidden')) return true;
+  // Roles/attributes that make an element its own self-contained
+  // announced area — not literally a WAI-ARIA landmark, but not "content
+  // that needs a landmark" either. Same live-region role list a widely-used
+  // reference engine's own region rule stops recursion at.
+  const LIVE_REGION_ROLES = new Set(['alert', 'status', 'log', 'marquee', 'timer']);
+
+  function isAriaLive(el) {
+    const v = lower(normalizeWs(el.getAttribute && el.getAttribute('aria-live')));
+    return v === 'polite' || v === 'assertive';
+  }
+
+  function isDialogLike(el) {
+    const tag = el.tagName ? lower(el.tagName) : '';
+    if (tag === 'dialog') return true;
+    const role = getExplicitRoleToken(el);
+    return role === 'dialog' || role === 'alertdialog';
+  }
+
+  function isButtonLike(el) {
+    const role = getExplicitRoleToken(el);
+    if (role) return role === 'button';
+    const tag = el.tagName ? lower(el.tagName) : '';
+    if (tag === 'button' || tag === 'summary') return true;
+    if (tag === 'input') {
+      const type = lower(normalizeWs(el.getAttribute && el.getAttribute('type')));
+      return type === 'button' || type === 'submit' || type === 'reset' || type === 'image';
+    }
     return false;
   }
 
-  function getConservativeSubtreeText(container) {
-    const SHOW_TEXT = 4;
+  // A "skip to content" link is deliberately placed outside the main
+  // content flow at the very top of the page — exempting it (when its
+  // fragment actually resolves to a real target, not a dead "#"
+  // placeholder) avoids flagging a helpful, common accessibility pattern
+  // as the very thing this rule is meant to catch.
+  function isResolvableSkipLink(el) {
+    const tag = el.tagName ? lower(el.tagName) : '';
+    if (tag !== 'a') return false;
+    const href = el.getAttribute && el.getAttribute('href');
+    if (!href || href.charAt(0) !== '#' || href.length < 2) return false;
     try {
-      const walker = document.createTreeWalker(container, SHOW_TEXT, null);
-      const parts = [];
-      let n = walker.nextNode();
-      while (n) {
-        const raw = normalizeWs(n.nodeValue || '');
-        if (raw) parts.push(raw);
-        n = walker.nextNode();
-      }
-      return normalizeWs(parts.join(' '));
+      return !!(document.getElementById && document.getElementById(href.slice(1)));
     } catch {
-      return normalizeWs(container.textContent);
+      return false;
     }
   }
 
-  const occurrences = [];
-  let applicableCount = 0;
+  function isStopper(el) {
+    if (isLandmark(el)) return true;
+    if (isAriaLive(el)) return true;
+    const role = getExplicitRoleToken(el);
+    if (role && LIVE_REGION_ROLES.has(role)) return true;
+    if (isDialogLike(el)) return true;
+    if (isButtonLike(el)) return true;
+    const tag = el.tagName ? lower(el.tagName) : '';
+    if (tag === 'svg' || tag === 'iframe' || tag === 'frame') return true;
+    if (isResolvableSkipLink(el)) return true;
+    return false;
+  }
 
-  for (const el of body.children || []) {
-    if (!el || !el.tagName) continue;
-    const tag = el.tagName.toLowerCase();
-    if (SKIP_TAGS.has(tag)) continue;
-    if (isIneligible(el)) continue;
-    if (isLandmark(el)) continue;
+  const VISUAL_CONTENT_TAGS = new Set(['img', 'video', 'audio', 'canvas', 'object', 'embed']);
 
-    const text = getConservativeSubtreeText(el);
-    if (!text) continue;
+  // Non-recursive "does THIS element, on its own, carry content" check —
+  // deliberately mirrors only the direct-content half of getContentNameInfo/
+  // a widely-used reference engine's own has-content check, not a full
+  // name-from-content recursion: the whole point is to keep recursing
+  // through plain wrapper elements (a framework's root mount <div> included)
+  // until reaching the actual content-bearing node, rather than a coarse
+  // ancestor swallowing everything beneath it into one report.
+  function hasOwnContent(el) {
+    const kids = el.childNodes || [];
+    for (let i = 0; i < kids.length; i++) {
+      const k = kids[i];
+      if (k.nodeType === 3 && normalizeWs(k.nodeValue)) return true;
+    }
+    const tag = el.tagName ? lower(el.tagName) : '';
+    if (VISUAL_CONTENT_TAGS.has(tag)) return true;
+    if (tag === 'input' && lower(normalizeWs(el.getAttribute && el.getAttribute('type'))) !== 'hidden') return true;
+    if (normalizeWs(el.getAttribute && el.getAttribute('aria-label'))) return true;
+    return false;
+  }
 
-    applicableCount += 1;
+  // Defensive guard against pathological pages (mirrors the maxContentNodes
+  // pattern in src/core/dom-helpers.js's getContentNameInfo) -- a full-body
+  // structural walk visits more nodes than a single element's name
+  // computation, hence the larger budget.
+  const MAX_VISITED_NODES = 20000;
+  let visited = 0;
+  let truncated = false;
 
+  const leaves = [];
+  const stopperFlagged = new WeakSet();
+
+  function markFlaggedUpToBody(el) {
+    let cur = el;
+    while (cur) {
+      if (stopperFlagged.has(cur)) break; // everything above is already marked
+      stopperFlagged.add(cur);
+      if (cur === body) break;
+      cur = cur.parentElement;
+    }
+  }
+
+  function walk(el) {
+    if (truncated || !el || el.nodeType !== 1) return;
+    visited += 1;
+    if (visited > MAX_VISITED_NODES) {
+      truncated = true;
+      return;
+    }
+
+    const tag = el.tagName ? lower(el.tagName) : '';
+    if (SKIP_TAGS.has(tag)) return;
+
+    const eligRes = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el) : { eligible: true };
+    if (!(eligRes && eligRes.eligible)) {
+      markFlaggedUpToBody(el);
+      return;
+    }
+
+    if (isStopper(el)) {
+      markFlaggedUpToBody(el);
+      if (tag === 'iframe' || tag === 'frame') leaves.push(el);
+      return;
+    }
+
+    if (hasOwnContent(el)) {
+      leaves.push(el);
+      return;
+    }
+
+    const kids = el.children || [];
+    for (let i = 0; i < kids.length; i++) {
+      walk(kids[i]);
+      if (truncated) return;
+    }
+  }
+
+  for (const child of body.children || []) walk(child);
+
+  // Collapse each candidate leaf upward through parents that have no OTHER
+  // stopper anywhere in their subtree, so contiguous unplaced content
+  // merges into ONE occurrence per real gap instead of one per text node --
+  // this collapsing, not the old direct-children-only scope, is what keeps
+  // ordinary pages (landmarked content mixed with a little stray content)
+  // from producing noisy, one-per-leaf reports.
+  const collapsed = [];
+  const seen = new Set();
+  for (const leaf of leaves) {
+    let cur = leaf;
+    while (cur.parentElement && cur.parentElement !== body && !stopperFlagged.has(cur.parentElement)) {
+      cur = cur.parentElement;
+    }
+    if (!seen.has(cur)) {
+      seen.add(cur);
+      collapsed.push(cur);
+    }
+  }
+
+  const occurrences = collapsed.map((el) => {
+    const tag = el.tagName ? lower(el.tagName) : '';
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
     const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
 
-    occurrences.push({
+    return {
       selector: stableSelector,
       html,
       summary: 'This content is not contained within a landmark region.',
@@ -36881,16 +36950,13 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
       data: {
         details: { reasonCode: 'CONTENT_OUTSIDE_LANDMARK', element: tag }
       }
-    });
-  }
+    };
+  });
 
-  if (applicableCount === 0) {
+  if (occurrences.length === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'cantTell', severity: rule.defaultSeverity || 'minor', occurrences };
-  }
-  return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  return { ruleId: rule.ruleId, outcome: 'cantTell', severity: rule.defaultSeverity || 'minor', occurrences };
 }), applicability: (function applicability(ctx) {
   return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
 }) },
@@ -55064,7 +55130,7 @@ const __a11yCoreCrossFrameApi = (function () {
   {
     "ruleId": "region",
     "title": "Page content should be inside a landmark region",
-    "description": "Checks that direct children of <body> with visible text content are contained within a landmark region.",
+    "description": "Checks that content under <body> is contained within a landmark region.",
     "i18n": {
       "titleKey": "region_title",
       "descriptionKey": "region_description"
@@ -62831,55 +62897,6 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     } catch { return ''; }
   }
 
-  function hasAttr(el, name) {
-    try { return !!(el && el.hasAttribute && el.hasAttribute(name)); } catch { return false; }
-  }
-
-  function isExplicitProgrammatic(el) {
-    // Programmatic name mechanisms we treat as authoritative (presence-only):
-    // - aria-label (non-empty)
-    // - aria-labelledby (non-empty)
-    // - title (non-empty) [weak but allowed for presence]
-    const al = getAttr(el, 'aria-label');
-    if (al) return true;
-    const alb = getAttr(el, 'aria-labelledby');
-    if (alb) return true;
-    const t = getAttr(el, 'title');
-    if (t) return true;
-    return false;
-  }
-
-  function buildLabelForMap(doc) {
-    const map = new Map(); // id -> label element (first)
-    try {
-      const labels = doc && doc.getElementsByTagName ? doc.getElementsByTagName('label') : [];
-      for (let i = 0; i < labels.length; i += 1) {
-        const lab = labels[i];
-        if (!lab || !lab.getAttribute) continue;
-        const f = normalizeWs(lab.getAttribute('for'));
-        if (!f) continue;
-        if (!map.has(f)) map.set(f, lab);
-      }
-    } catch {}
-    return map;
-  }
-
-  function getConservativeSubtreeText(document, container) {
-    // "Name from content" — recurses into descendants and uses each one's
-    // own accessible name (img alt, aria-label/aria-labelledby, title) when
-    // it has one, not just literal text nodes. See getContentNameInfo's
-    // header comment in src/core/dom-helpers.js for the full rationale
-    // (this replaced a text-node-only TreeWalker that missed the common
-    // "<a><img alt='...'></a>" logo-link / "<button><img alt='...'></button>"
-    // icon-button pattern).
-    if (helpers.getContentNameInfo) {
-      const info = helpers.getContentNameInfo(container, ctx);
-      return info && info.present ? info.value : '';
-    }
-    const t = (container && container.textContent) ? String(container.textContent) : '';
-    return t.replace(/\s+/g, ' ').trim();
-  }
-
   function resolveAriaLabelledbyText(document, el, maxRefs) {
     const raw = getAttr(el, 'aria-labelledby');
     if (!raw) return '';
@@ -62903,15 +62920,6 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
       } catch {}
     }
     return '';
-  }
-
-  function getInputValueName(el) {
-    try {
-      const type = getAttr(el, 'type').toLowerCase();
-      if (type !== 'button' && type !== 'submit' && type !== 'reset') return '';
-      const v = getAttr(el, 'value');
-      return v;
-    } catch { return ''; }
   }
 
   function isEligibleAcc(helpers, el, ctx) {
@@ -70054,6 +70062,10 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     return String(s || '').replace(/\s+/g, ' ').trim();
   }
 
+  function lower(s) {
+    return String(s || '').toLowerCase();
+  }
+
   // Delegates to the shared helpers.getLandmarkNameInfo (aria-label -> aria-labelledby, via the
   // target's own accessible name, not raw textContent -> title attribute fallback) rather than a
   // local copy -- see that function's header comment in src/core/dom-helpers.js for the real bug
@@ -70072,7 +70084,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   function getExplicitRoleToken(el) {
     const raw = normalizeWs(el.getAttribute && el.getAttribute('role'));
     if (!raw) return '';
-    return raw.split(/\s+/)[0].toLowerCase();
+    return lower(raw.split(/\s+/)[0]);
   }
 
   // Delegates to the shared helpers.hasLandmarkScopingAncestor for the
@@ -70092,7 +70104,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   }
 
   function getImplicitLandmarkRole(el) {
-    const tag = el.tagName ? el.tagName.toLowerCase() : '';
+    const tag = el.tagName ? lower(el.tagName) : '';
     if (tag === 'header') return hasSectioningAncestor(el, true) ? '' : 'banner';
     if (tag === 'footer') return hasSectioningAncestor(el, true) ? '' : 'contentinfo';
     if (tag === 'main') return 'main';
@@ -70122,48 +70134,171 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
 
   const SKIP_TAGS = new Set(['script', 'style', 'template', 'noscript', 'link', 'meta', 'title']);
 
-  function isIneligible(el) {
-    if (el.getAttribute && el.getAttribute('aria-hidden') === 'true') return true;
-    if (el.hasAttribute && el.hasAttribute('hidden')) return true;
+  // Roles/attributes that make an element its own self-contained
+  // announced area — not literally a WAI-ARIA landmark, but not "content
+  // that needs a landmark" either. Same live-region role list a widely-used
+  // reference engine's own region rule stops recursion at.
+  const LIVE_REGION_ROLES = new Set(['alert', 'status', 'log', 'marquee', 'timer']);
+
+  function isAriaLive(el) {
+    const v = lower(normalizeWs(el.getAttribute && el.getAttribute('aria-live')));
+    return v === 'polite' || v === 'assertive';
+  }
+
+  function isDialogLike(el) {
+    const tag = el.tagName ? lower(el.tagName) : '';
+    if (tag === 'dialog') return true;
+    const role = getExplicitRoleToken(el);
+    return role === 'dialog' || role === 'alertdialog';
+  }
+
+  function isButtonLike(el) {
+    const role = getExplicitRoleToken(el);
+    if (role) return role === 'button';
+    const tag = el.tagName ? lower(el.tagName) : '';
+    if (tag === 'button' || tag === 'summary') return true;
+    if (tag === 'input') {
+      const type = lower(normalizeWs(el.getAttribute && el.getAttribute('type')));
+      return type === 'button' || type === 'submit' || type === 'reset' || type === 'image';
+    }
     return false;
   }
 
-  function getConservativeSubtreeText(container) {
-    const SHOW_TEXT = 4;
+  // A "skip to content" link is deliberately placed outside the main
+  // content flow at the very top of the page — exempting it (when its
+  // fragment actually resolves to a real target, not a dead "#"
+  // placeholder) avoids flagging a helpful, common accessibility pattern
+  // as the very thing this rule is meant to catch.
+  function isResolvableSkipLink(el) {
+    const tag = el.tagName ? lower(el.tagName) : '';
+    if (tag !== 'a') return false;
+    const href = el.getAttribute && el.getAttribute('href');
+    if (!href || href.charAt(0) !== '#' || href.length < 2) return false;
     try {
-      const walker = document.createTreeWalker(container, SHOW_TEXT, null);
-      const parts = [];
-      let n = walker.nextNode();
-      while (n) {
-        const raw = normalizeWs(n.nodeValue || '');
-        if (raw) parts.push(raw);
-        n = walker.nextNode();
-      }
-      return normalizeWs(parts.join(' '));
+      return !!(document.getElementById && document.getElementById(href.slice(1)));
     } catch {
-      return normalizeWs(container.textContent);
+      return false;
     }
   }
 
-  const occurrences = [];
-  let applicableCount = 0;
+  function isStopper(el) {
+    if (isLandmark(el)) return true;
+    if (isAriaLive(el)) return true;
+    const role = getExplicitRoleToken(el);
+    if (role && LIVE_REGION_ROLES.has(role)) return true;
+    if (isDialogLike(el)) return true;
+    if (isButtonLike(el)) return true;
+    const tag = el.tagName ? lower(el.tagName) : '';
+    if (tag === 'svg' || tag === 'iframe' || tag === 'frame') return true;
+    if (isResolvableSkipLink(el)) return true;
+    return false;
+  }
 
-  for (const el of body.children || []) {
-    if (!el || !el.tagName) continue;
-    const tag = el.tagName.toLowerCase();
-    if (SKIP_TAGS.has(tag)) continue;
-    if (isIneligible(el)) continue;
-    if (isLandmark(el)) continue;
+  const VISUAL_CONTENT_TAGS = new Set(['img', 'video', 'audio', 'canvas', 'object', 'embed']);
 
-    const text = getConservativeSubtreeText(el);
-    if (!text) continue;
+  // Non-recursive "does THIS element, on its own, carry content" check —
+  // deliberately mirrors only the direct-content half of getContentNameInfo/
+  // a widely-used reference engine's own has-content check, not a full
+  // name-from-content recursion: the whole point is to keep recursing
+  // through plain wrapper elements (a framework's root mount <div> included)
+  // until reaching the actual content-bearing node, rather than a coarse
+  // ancestor swallowing everything beneath it into one report.
+  function hasOwnContent(el) {
+    const kids = el.childNodes || [];
+    for (let i = 0; i < kids.length; i++) {
+      const k = kids[i];
+      if (k.nodeType === 3 && normalizeWs(k.nodeValue)) return true;
+    }
+    const tag = el.tagName ? lower(el.tagName) : '';
+    if (VISUAL_CONTENT_TAGS.has(tag)) return true;
+    if (tag === 'input' && lower(normalizeWs(el.getAttribute && el.getAttribute('type'))) !== 'hidden') return true;
+    if (normalizeWs(el.getAttribute && el.getAttribute('aria-label'))) return true;
+    return false;
+  }
 
-    applicableCount += 1;
+  // Defensive guard against pathological pages (mirrors the maxContentNodes
+  // pattern in src/core/dom-helpers.js's getContentNameInfo) -- a full-body
+  // structural walk visits more nodes than a single element's name
+  // computation, hence the larger budget.
+  const MAX_VISITED_NODES = 20000;
+  let visited = 0;
+  let truncated = false;
 
+  const leaves = [];
+  const stopperFlagged = new WeakSet();
+
+  function markFlaggedUpToBody(el) {
+    let cur = el;
+    while (cur) {
+      if (stopperFlagged.has(cur)) break; // everything above is already marked
+      stopperFlagged.add(cur);
+      if (cur === body) break;
+      cur = cur.parentElement;
+    }
+  }
+
+  function walk(el) {
+    if (truncated || !el || el.nodeType !== 1) return;
+    visited += 1;
+    if (visited > MAX_VISITED_NODES) {
+      truncated = true;
+      return;
+    }
+
+    const tag = el.tagName ? lower(el.tagName) : '';
+    if (SKIP_TAGS.has(tag)) return;
+
+    const eligRes = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el) : { eligible: true };
+    if (!(eligRes && eligRes.eligible)) {
+      markFlaggedUpToBody(el);
+      return;
+    }
+
+    if (isStopper(el)) {
+      markFlaggedUpToBody(el);
+      if (tag === 'iframe' || tag === 'frame') leaves.push(el);
+      return;
+    }
+
+    if (hasOwnContent(el)) {
+      leaves.push(el);
+      return;
+    }
+
+    const kids = el.children || [];
+    for (let i = 0; i < kids.length; i++) {
+      walk(kids[i]);
+      if (truncated) return;
+    }
+  }
+
+  for (const child of body.children || []) walk(child);
+
+  // Collapse each candidate leaf upward through parents that have no OTHER
+  // stopper anywhere in their subtree, so contiguous unplaced content
+  // merges into ONE occurrence per real gap instead of one per text node --
+  // this collapsing, not the old direct-children-only scope, is what keeps
+  // ordinary pages (landmarked content mixed with a little stray content)
+  // from producing noisy, one-per-leaf reports.
+  const collapsed = [];
+  const seen = new Set();
+  for (const leaf of leaves) {
+    let cur = leaf;
+    while (cur.parentElement && cur.parentElement !== body && !stopperFlagged.has(cur.parentElement)) {
+      cur = cur.parentElement;
+    }
+    if (!seen.has(cur)) {
+      seen.add(cur);
+      collapsed.push(cur);
+    }
+  }
+
+  const occurrences = collapsed.map((el) => {
+    const tag = el.tagName ? lower(el.tagName) : '';
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
     const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
 
-    occurrences.push({
+    return {
       selector: stableSelector,
       html,
       summary: 'This content is not contained within a landmark region.',
@@ -70176,16 +70311,13 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
       data: {
         details: { reasonCode: 'CONTENT_OUTSIDE_LANDMARK', element: tag }
       }
-    });
-  }
+    };
+  });
 
-  if (applicableCount === 0) {
+  if (occurrences.length === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'cantTell', severity: rule.defaultSeverity || 'minor', occurrences };
-  }
-  return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  return { ruleId: rule.ruleId, outcome: 'cantTell', severity: rule.defaultSeverity || 'minor', occurrences };
 }), applicability: (function applicability(ctx) {
   return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
 }) },
