@@ -30,5 +30,11 @@ if (files.length === 0) {
   process.exit(1);
 }
 
-const result = spawnSync(process.execPath, ['--test', ...files], { stdio: 'inherit' });
+// Any CLI args this script itself receives (e.g. from `npm run test:coverage`)
+// are forwarded as Node flags ahead of `--test` -- lets one file collector
+// back both the plain `npm test` and the coverage-instrumented variant
+// without duplicating the collection logic.
+const nodeFlags = process.argv.slice(2);
+
+const result = spawnSync(process.execPath, [...nodeFlags, '--test', ...files], { stdio: 'inherit' });
 process.exit(result.status === null ? 1 : result.status);

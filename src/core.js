@@ -9526,6 +9526,51 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
                 }
             }
 
+            // <input type="submit"|"button"|"reset">'s visible label is
+            // rendered from its `value` attribute, not a DOM text node, so
+            // it's structurally invisible to the SHOW_TEXT walk above (void
+            // elements can't have text-node children at all). Found
+            // 2026-08-01 via a live cross-engine comparison against the reference engine's
+            // color-contrast: these inputs were silently skipped by both
+            // contrast-minimum and contrast-enhanced regardless of contrast
+            // mode, confirmed on a real page (progressive.com's
+            // `<input type="submit" value="Get a quote">`, a genuine
+            // AAA-level failure the reference engine caught and surea11y never even
+            // considered a candidate). Same eligibility gates as the real
+            // text-node path above, applied to the input element itself.
+            const visitedValueInputs = new Set();
+            for (const walkRoot of walkRoots) {
+                let candidates;
+                try {
+                    candidates = walkRoot.querySelectorAll('input[type="submit" i], input[type="button" i], input[type="reset" i]');
+                } catch {
+                    continue;
+                }
+                for (const el of candidates) {
+                    if (visitedValueInputs.has(el)) continue;
+                    visitedValueInputs.add(el);
+
+                    const value = el.getAttribute ? el.getAttribute('value') : el.value;
+                    if (!isNonEmptyText(value)) continue;
+
+                    try {
+                        if (helpers && typeof helpers.isExcluded === 'function' && helpers.isExcluded(el)) continue;
+                    } catch {}
+                    if (!isVisibleEligible(el)) continue;
+                    if (isInactive(el)) continue;
+
+                    eligibleTextCount++;
+
+                    const prev = elToCount.get(el);
+                    if (prev === undefined) {
+                        elToCount.set(el, 1);
+                        elements.push(el);
+                    } else {
+                        elToCount.set(el, prev + 1);
+                    }
+                }
+            }
+
             const out = Object.freeze({
                 eligibleTextCount,
                 visibilityMode,
@@ -42797,6 +42842,51 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
                 }
             }
 
+            // <input type="submit"|"button"|"reset">'s visible label is
+            // rendered from its `value` attribute, not a DOM text node, so
+            // it's structurally invisible to the SHOW_TEXT walk above (void
+            // elements can't have text-node children at all). Found
+            // 2026-08-01 via a live cross-engine comparison against the reference engine's
+            // color-contrast: these inputs were silently skipped by both
+            // contrast-minimum and contrast-enhanced regardless of contrast
+            // mode, confirmed on a real page (progressive.com's
+            // `<input type="submit" value="Get a quote">`, a genuine
+            // AAA-level failure the reference engine caught and surea11y never even
+            // considered a candidate). Same eligibility gates as the real
+            // text-node path above, applied to the input element itself.
+            const visitedValueInputs = new Set();
+            for (const walkRoot of walkRoots) {
+                let candidates;
+                try {
+                    candidates = walkRoot.querySelectorAll('input[type="submit" i], input[type="button" i], input[type="reset" i]');
+                } catch {
+                    continue;
+                }
+                for (const el of candidates) {
+                    if (visitedValueInputs.has(el)) continue;
+                    visitedValueInputs.add(el);
+
+                    const value = el.getAttribute ? el.getAttribute('value') : el.value;
+                    if (!isNonEmptyText(value)) continue;
+
+                    try {
+                        if (helpers && typeof helpers.isExcluded === 'function' && helpers.isExcluded(el)) continue;
+                    } catch {}
+                    if (!isVisibleEligible(el)) continue;
+                    if (isInactive(el)) continue;
+
+                    eligibleTextCount++;
+
+                    const prev = elToCount.get(el);
+                    if (prev === undefined) {
+                        elToCount.set(el, 1);
+                        elements.push(el);
+                    } else {
+                        elToCount.set(el, prev + 1);
+                    }
+                }
+            }
+
             const out = Object.freeze({
                 eligibleTextCount,
                 visibilityMode,
@@ -76005,6 +76095,51 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
                     if (!el) continue;
                     // Respect subtree exclusions from engineOptions.excludeSelectors
+                    try {
+                        if (helpers && typeof helpers.isExcluded === 'function' && helpers.isExcluded(el)) continue;
+                    } catch {}
+                    if (!isVisibleEligible(el)) continue;
+                    if (isInactive(el)) continue;
+
+                    eligibleTextCount++;
+
+                    const prev = elToCount.get(el);
+                    if (prev === undefined) {
+                        elToCount.set(el, 1);
+                        elements.push(el);
+                    } else {
+                        elToCount.set(el, prev + 1);
+                    }
+                }
+            }
+
+            // <input type="submit"|"button"|"reset">'s visible label is
+            // rendered from its `value` attribute, not a DOM text node, so
+            // it's structurally invisible to the SHOW_TEXT walk above (void
+            // elements can't have text-node children at all). Found
+            // 2026-08-01 via a live cross-engine comparison against the reference engine's
+            // color-contrast: these inputs were silently skipped by both
+            // contrast-minimum and contrast-enhanced regardless of contrast
+            // mode, confirmed on a real page (progressive.com's
+            // `<input type="submit" value="Get a quote">`, a genuine
+            // AAA-level failure the reference engine caught and surea11y never even
+            // considered a candidate). Same eligibility gates as the real
+            // text-node path above, applied to the input element itself.
+            const visitedValueInputs = new Set();
+            for (const walkRoot of walkRoots) {
+                let candidates;
+                try {
+                    candidates = walkRoot.querySelectorAll('input[type="submit" i], input[type="button" i], input[type="reset" i]');
+                } catch {
+                    continue;
+                }
+                for (const el of candidates) {
+                    if (visitedValueInputs.has(el)) continue;
+                    visitedValueInputs.add(el);
+
+                    const value = el.getAttribute ? el.getAttribute('value') : el.value;
+                    if (!isNonEmptyText(value)) continue;
+
                     try {
                         if (helpers && typeof helpers.isExcluded === 'function' && helpers.isExcluded(el)) continue;
                     } catch {}

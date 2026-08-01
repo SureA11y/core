@@ -433,6 +433,30 @@
 </section>
 
 <!-- ========================================================= -->
+<!-- 32) <input type="submit"/"button"> visible label comes from the
+     `value` attribute, not a DOM text node (void element, can't have
+     text-node children) — must still be evaluated. -->
+<!-- ========================================================= -->
+<section class="case bgWhite" id="case-value-input-submit">
+  <p class="label">&lt;input type="submit"&gt; (should be evaluated via its value attribute)</p>
+  <input type="submit" id="eligible_submit_input_fail" style="color:#999999; background:#ffffff;" value="Eligible: submit input, should be evaluated.">
+</section>
+
+<section class="case bgWhite" id="case-value-input-button">
+  <p class="label">&lt;input type="button"&gt; (should be evaluated via its value attribute)</p>
+  <input type="button" id="eligible_button_input_fail" style="color:#999999; background:#ffffff;" value="Eligible: button input, should be evaluated.">
+</section>
+
+<!-- ========================================================= -->
+<!-- 33) <input type="submit" disabled> — same inactive-UI-component
+     exception as a disabled <button> (case 27 above). -->
+<!-- ========================================================= -->
+<section class="case bgWhite" id="case-value-input-disabled">
+  <p class="label">&lt;input type="submit" disabled&gt; (should be excluded)</p>
+  <input type="submit" id="excluded_disabled_submit_input_fail" style="color:#999999; background:#ffffff;" value="Should be excluded (disabled submit input)." disabled>
+</section>
+
+<!-- ========================================================= -->
 <!-- 26) Whitespace-only text node (ignored by rule traversal) -->
 <!-- ========================================================= -->
 <section class="case bgWhite" id="case-whitespace-only">

@@ -22,6 +22,7 @@ After adding/changing a rule:
 npm run build              # regenerate src/core.js
 npm test                   # full suite must be green
 npm run coverage           # if the rule touches WCAG facet coverage
+npm run test:coverage      # code line/branch coverage (Node's built-in test runner) -- not the same thing as `coverage` above
 npm run fixtures:index     # if you added/changed a fixture
 npm run docs:rule-catalog  # regenerate docs/RULE_CATALOG.md
 ```

@@ -441,7 +441,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/contrast-all-scenarios.html)`
 
     const result = run(html);
 
-    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 13, maxOccurrences: 13 });
+    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 15, maxOccurrences: 15 });
 
     const expectedFailIds = [
         'aa_fail_light_gray_on_white',
@@ -456,7 +456,12 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/contrast-all-scenarios.html)`
         'eligible_offscreen_fail',
         'eligible_sr_only_fail',
         'eligible_zero_size_text',
-        'eligible_enabled_button_fail'
+        'eligible_enabled_button_fail',
+        // <input type="submit"|"button">'s visible label comes from the
+        // value attribute, not a DOM text node — must still be evaluated
+        // (see contrast-helpers.js's getTextScan).
+        'eligible_submit_input_fail',
+        'eligible_button_input_fail'
     ];
 
     const expectedNoOccIds = [
@@ -480,7 +485,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/contrast-all-scenarios.html)`
         'excluded_disabled_button_fail', // inactive UI component (WCAG 1.4.3/1.4.6 Incidental exception)
         'excluded_disabled_button_nested_fail',
         'excluded_disabled_fieldset_fail',
-        'excluded_aria_disabled_fail'
+        'excluded_aria_disabled_fail',
+        'excluded_disabled_submit_input_fail' // same inactive-UI-component exception, on a value-text input
     ];
 
     for (const id of expectedFailIds) {

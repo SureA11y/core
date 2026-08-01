@@ -39,6 +39,7 @@
     "build": "node scripts/build-core.js",
     "pretest": "playwright install chromium",
     "test": "npm run build && node scripts/run-tests.js",
+    "test:coverage": "npm run build && node scripts/run-tests.js --experimental-test-coverage --test-coverage-include=src/**/*.js --test-coverage-include=bin/**/*.js",
     "test:contrast-helpers": "node tests/contrast-helpers.test.js",
     "helpers-perf-bench": "node --expose-gc scripts/dom-helpers-perf-bench.js",
     "engine-perf-bench": "node --expose-gc scripts/engine-perf-bench.js  --profileRules=true --iters=25 --top=15",
