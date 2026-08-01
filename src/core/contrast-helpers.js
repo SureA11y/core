@@ -529,7 +529,13 @@ function createContrastHelpers(opts, shared) {
         s = s.replace(/\(\s+/g, '(');
         s = s.replace(/\s+\)/g, ')');
         s = s.replace(/\s*\/\s*/g, '/');
-        s = s.replace(/\s*%\s*/g, '%');
+        // Only strip whitespace BEFORE a '%' (e.g. "50 %" -> "50%"). Stripping
+        // trailing whitespace too (the original /\s*%\s*/ pattern) ate the
+        // space that separates adjacent percentage-suffixed channels in the
+        // modern space-separated syntax (e.g. "rgb(100% 0% 0%)" collapsed to
+        // "rgb(100%0%0%)", one fused token instead of three), silently
+        // breaking that whole syntax variant.
+        s = s.replace(/\s*%/g, '%');
         return s;
     }
 
