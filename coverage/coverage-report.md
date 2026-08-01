@@ -1,6 +1,6 @@
 # WCAG Coverage Report
 
-Generated: 2026-07-31T16:50:37.502Z
+Generated: 2026-08-01T17:06:32.877Z
 
 Rules directory: `src/checks`
 Facets: `src/coverage/wcag-facets.js`

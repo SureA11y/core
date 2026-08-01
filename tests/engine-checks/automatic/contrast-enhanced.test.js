@@ -9,6 +9,7 @@ const {
     createDom,
     runa11yCoreOnDom
 } = require('../../helpers/runa11yCoreOnHtml');
+const { runDomRulesInPage } = require('../../../src/index.js');
 
 const { assertRule } = require('../../helpers/assertRule');
 
@@ -104,6 +105,23 @@ function run(html, engineOptions = {}) {
             ...engineOptions
         }
     });
+}
+
+// Same gap as contrast-minimum's identical structure: every scenario above
+// runs through runa11yCoreOnDom (toString-embedded), uncounted by Node's
+// --experimental-test-coverage, and this rule's real analysis logic needs
+// the patchGeometry/patchComputedStyleDefaults patches the generic parity
+// harness doesn't apply. Reusing them with runDomRulesInPage directly here.
+function runNode(html, engineOptions = {}) {
+    const dom = createDom(html);
+    patchGeometry(dom);
+    patchComputedStyleDefaults(dom);
+
+    return runDomRulesInPage('https://example.test/', null, { rules: [RULE_ID], ...engineOptions }, null);
+}
+
+function ruleFrom(result) {
+    return result.checksResults.find((r) => r.ruleId === RULE_ID);
 }
 
 test(`${RULE_ID}: no visible eligible text => notApplicable`, () => {
@@ -468,6 +486,97 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/contrast-all-scenarios.html)`
             `Did not expect occurrence for id="${id}"`
         );
     }
+});
+
+test(`${RULE_ID} (node runtime): fixture coverage (tests/fixtures/contrast-all-scenarios.html)`, () => {
+    const fixturePath = path.join(__dirname, '../..', 'fixtures', 'contrast-all-scenarios.html');
+    const html = fs.readFileSync(fixturePath, 'utf8');
+
+    const result = runNode(html);
+    const rule = ruleFrom(result);
+    assert.ok(rule);
+    assert.strictEqual(rule.outcome, 'fail');
+    assert.strictEqual(rule.occurrences.length, 16);
+
+    const expectedFailIds = [
+        'aa_pass_aaa_fail_gray_on_white',
+        'aa_fail_light_gray_on_white',
+        'large_text_light_gray_on_white',
+        'bold_large_text_light_gray_on_white',
+        'fg_alpha_black_50_on_white',
+        'own_opacity_still_computable',
+        'excluded_inert_fail',
+        'excluded_aria_hidden_fail',
+        'eligible_aria_hidden_tabbable_fail',
+        'excluded_aria_hidden_prog_focus',
+        'eligible_offscreen_fail',
+        'eligible_sr_only_fail',
+        'eligible_zero_size_text',
+        'eligible_enabled_button_fail',
+        'eligible_submit_input_fail',
+        'eligible_button_input_fail'
+    ];
+    const expectedNoOccIds = [
+        'pass_black_on_white',
+        'bg_alpha_white_50_black_text',
+        'bg_alpha_80_over_gray_black_text',
+        'blocker_gradient_bg',
+        'blocker_image_bg',
+        'blocker_mix_blend_mode',
+        'blocker_filter',
+        'blocker_backdrop_filter',
+        'blocker_ancestor_opacity',
+        'excluded_disabled_button_fail',
+        'excluded_disabled_submit_input_fail'
+    ];
+
+    for (const id of expectedFailIds) {
+        assert.ok(
+            rule.occurrences.some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)),
+            `Expected occurrence for id="${id}"`
+        );
+    }
+    for (const id of expectedNoOccIds) {
+        assert.ok(
+            !rule.occurrences.some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)),
+            `Did not expect occurrence for id="${id}"`
+        );
+    }
+});
+
+test(`${RULE_ID} (node runtime): auditorAssist + root not opaque => pass using rootCanvasFallback`, () => {
+    const html = `
+<!doctype html>
+<html><head><style>
+  html, body { background: transparent; }
+</style></head>
+<body>
+  <p style="color: #595959">Hello</p>
+</body></html>`;
+
+    const result = runNode(html, { contrast: { mode: 'auditorAssist', rootCanvasFallback: '#ffffff' } });
+    const rule = ruleFrom(result);
+    assert.ok(rule);
+    assert.strictEqual(rule.outcome, 'pass');
+    assert.ok(rule.occurrences.length >= 1);
+    assert.strictEqual(rule.occurrences[0].i18n.summaryKey, 'contrastEnhanced_pass_allAboveThreshold');
+});
+
+test(`${RULE_ID} (node runtime): no visible eligible text => notApplicable`, () => {
+    const html = `
+<!doctype html>
+<html><head><style>
+  html, body { background: #fff; }
+</style></head>
+<body>
+  <div>    </div>
+</body></html>`;
+
+    const result = runNode(html);
+    const rule = ruleFrom(result);
+    assert.ok(rule);
+    assert.strictEqual(rule.outcome, 'notApplicable');
+    assert.strictEqual(rule.occurrences.length, 0);
 });
 
 // Optional determinism smoke check
