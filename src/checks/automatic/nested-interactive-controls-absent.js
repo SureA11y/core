@@ -100,7 +100,7 @@ function runInPage(ctx) {
     }
     if (!nested.length) continue;
 
-    const nestedTags = nested.map((n) => (n && n.tagName ? n.tagName.toLowerCase() : 'unknown'));
+    const nestedTags = [...new Set(nested.map((n) => (n && n.tagName ? n.tagName.toLowerCase() : 'unknown')))];
 
     const tag = el.tagName.toLowerCase();
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
