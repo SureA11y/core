@@ -6,9 +6,34 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const { assertRule } = require('../../helpers/assertRule.js');
-const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
+const { runa11yCoreOnHtml, createDom } = require('../../helpers/runDomRulesOnHtml.js');
+const { runDomRulesInPage } = require('../../../src/index.js');
 
 const RULE_ID = 'landmark-one-main';
+
+// The rest of this file drives every scenario through runa11yCoreOnHtml (the
+// toString-embedded in-page runner), which Node's --experimental-test-coverage
+// can't attribute back to this file (see tests/node-runtime-parity.test.js's
+// header comment). That generic harness runs this rule's own
+// "-all-scenarios.html" fixture through the real require()-based entry point
+// once, but that fixture's only landmark-shaped element is a <nav> (no
+// main/[role]), so it never exercises isMainLandmark/getExplicitRoleToken/
+// isExposedToAt. Re-running a few scenarios above through runDomRulesInPage
+// directly closes that gap, same pattern as page-has-heading-one's own fix.
+function assertNodeRule(html, expectedOutcome, occCounts) {
+  createDom(html);
+  const result = runDomRulesInPage('https://example.test/', null, {}, { includeRuleIds: [RULE_ID] });
+  const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
+  assert.ok(rule, `expected a checksResults entry for ${RULE_ID}`);
+  assert.strictEqual(rule.outcome, expectedOutcome);
+  if (occCounts && typeof occCounts.minOccurrences === 'number') {
+    assert.ok(rule.occurrences.length >= occCounts.minOccurrences);
+  }
+  if (occCounts && typeof occCounts.maxOccurrences === 'number') {
+    assert.ok(rule.occurrences.length <= occCounts.maxOccurrences);
+  }
+  return rule;
+}
 
 test(`${RULE_ID}: notApplicable when there is exactly one main`, () => {
   const html = `<!doctype html><html><body><main>Content</main></body></html>`;
@@ -69,4 +94,29 @@ test(`landmark-one-main: notApplicable when engineOptions.fragment is true, even
   const html = `<!doctype html><html><body><nav>Nav only</nav></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: ['landmark-one-main'], engineOptions: { fragment: true } });
   assertRule(result, 'landmark-one-main', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID} (node runtime): notApplicable when there is exactly one <main>`, () => {
+  const html = `<!doctype html><html><body><main>Content</main></body></html>`;
+  assertNodeRule(html, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID} (node runtime): notApplicable when there is one role="main"`, () => {
+  const html = `<!doctype html><html><body><div role="main">Content</div></body></html>`;
+  assertNodeRule(html, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID} (node runtime): notApplicable when more than one main exists (out of this rule's scope)`, () => {
+  const html = `<!doctype html><html><body><main id="a">A</main><main id="b">B</main></body></html>`;
+  assertNodeRule(html, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID} (node runtime): cantTell when a non-main role is present (explicit role short-circuits the <main> tag fallback)`, () => {
+  const html = `<!doctype html><html><body><div role="navigation">Nav</div></body></html>`;
+  assertNodeRule(html, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+});
+
+test(`${RULE_ID} (node runtime): cantTell when the only main is hidden from the accessibility tree`, () => {
+  const html = `<!doctype html><html><body><main aria-hidden="true">Hidden</main></body></html>`;
+  assertNodeRule(html, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
 });
