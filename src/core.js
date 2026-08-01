@@ -26838,24 +26838,6 @@ if (isAccTreeEligible) {
     } catch { return ''; }
   }
 
-  function hasAttr(el, name) {
-    try { return !!(el && el.hasAttribute && el.hasAttribute(name)); } catch { return false; }
-  }
-
-  function isExplicitProgrammatic(el) {
-    // Programmatic name mechanisms we treat as authoritative (presence-only):
-    // - aria-label (non-empty)
-    // - aria-labelledby (non-empty)
-    // - title (non-empty) [weak but allowed for presence]
-    const al = getAttr(el, 'aria-label');
-    if (al) return true;
-    const alb = getAttr(el, 'aria-labelledby');
-    if (alb) return true;
-    const t = getAttr(el, 'title');
-    if (t) return true;
-    return false;
-  }
-
   function buildLabelForMap(doc) {
     const map = new Map(); // id -> label element (first)
     try {
@@ -26928,15 +26910,6 @@ if (isAccTreeEligible) {
       } catch {}
     }
     return '';
-  }
-
-  function getInputValueName(el) {
-    try {
-      const type = getAttr(el, 'type').toLowerCase();
-      if (type !== 'button' && type !== 'submit' && type !== 'reset') return '';
-      const v = getAttr(el, 'value');
-      return v;
-    } catch { return ''; }
   }
 
   function isEligibleAcc(helpers, el, ctx) {
@@ -60237,24 +60210,6 @@ if (isAccTreeEligible) {
     } catch { return ''; }
   }
 
-  function hasAttr(el, name) {
-    try { return !!(el && el.hasAttribute && el.hasAttribute(name)); } catch { return false; }
-  }
-
-  function isExplicitProgrammatic(el) {
-    // Programmatic name mechanisms we treat as authoritative (presence-only):
-    // - aria-label (non-empty)
-    // - aria-labelledby (non-empty)
-    // - title (non-empty) [weak but allowed for presence]
-    const al = getAttr(el, 'aria-label');
-    if (al) return true;
-    const alb = getAttr(el, 'aria-labelledby');
-    if (alb) return true;
-    const t = getAttr(el, 'title');
-    if (t) return true;
-    return false;
-  }
-
   function buildLabelForMap(doc) {
     const map = new Map(); // id -> label element (first)
     try {
@@ -60327,15 +60282,6 @@ if (isAccTreeEligible) {
       } catch {}
     }
     return '';
-  }
-
-  function getInputValueName(el) {
-    try {
-      const type = getAttr(el, 'type').toLowerCase();
-      if (type !== 'button' && type !== 'submit' && type !== 'reset') return '';
-      const v = getAttr(el, 'value');
-      return v;
-    } catch { return ''; }
   }
 
   function isEligibleAcc(helpers, el, ctx) {
