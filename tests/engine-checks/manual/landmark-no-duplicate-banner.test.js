@@ -6,12 +6,30 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const { assertRule } = require('../../helpers/assertRule.js');
-const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
+const { runa11yCoreOnHtml, createDom } = require('../../helpers/runDomRulesOnHtml.js');
+const { runDomRulesInPage } = require('../../../src/index.js');
 
 const RULE_ID = 'landmark-no-duplicate-banner';
 
 function hasOccurrenceForId(rule, id) {
   return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
+}
+
+// Every scenario above is real, verified behavior -- but all of it runs
+// through runa11yCoreOnHtml (toString-embedded), which Node's
+// --experimental-test-coverage can't attribute back to this file (see
+// tests/node-runtime-parity.test.js's header comment). The fixture the
+// generic harness runs through the real entry point only has two plain
+// <header>s, so getImplicitLandmarkRole's footer/main/nav/aside/section/form
+// branches, the explicit-role path, and getAccessibleLandmarkName never ran
+// through it either. Exercise the real gaps here via runDomRulesInPage.
+function runNode(html) {
+  createDom(html);
+  return runDomRulesInPage('https://example.test/', null, {}, { includeRuleIds: [RULE_ID] });
+}
+
+function ruleFrom(result) {
+  return result.checksResults.find((r) => r.ruleId === RULE_ID);
 }
 
 test(`${RULE_ID}: notApplicable when no banner is present`, () => {
@@ -79,4 +97,59 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/landmark-no-duplicate-banner-
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
   assert.ok(hasOccurrenceForId(rule, 'ndb_case_01a'));
   assert.ok(hasOccurrenceForId(rule, 'ndb_case_01b'));
+});
+
+test(`${RULE_ID} (node runtime): explicit role="banner" duplicates are detected the same as implicit <header>`, () => {
+  const html = `<!doctype html><html><body><div id="a" role="banner">A</div><div id="b" role="banner">B</div></body></html>`;
+  const result = runNode(html);
+  const rule = ruleFrom(result);
+  assert.ok(rule);
+  assert.strictEqual(rule.outcome, 'cantTell');
+  assert.strictEqual(rule.occurrences.length, 2);
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+  assert.ok(hasOccurrenceForId(rule, 'b'));
+});
+
+test(`${RULE_ID} (node runtime): other landmark tags/roles (footer, main, nav, named aside/section/form) are never mistaken for a banner`, () => {
+  const html = `<!doctype html><html><body>
+    <header id="a">First</header>
+    <header id="b">Second</header>
+    <footer>Site footer</footer>
+    <main>Content</main>
+    <nav>Nav</nav>
+    <aside aria-label="Related">Aside</aside>
+    <section aria-label="Named section">Section</section>
+    <form aria-label="Named form">Form</form>
+  </body></html>`;
+  const result = runNode(html);
+  const rule = ruleFrom(result);
+  assert.ok(rule);
+  assert.strictEqual(rule.outcome, 'cantTell');
+  assert.strictEqual(rule.occurrences.length, 2);
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+  assert.ok(hasOccurrenceForId(rule, 'b'));
+});
+
+test(`${RULE_ID} (node runtime): a <header> nested inside a role-overridden ancestor still collides (handsontable.com pattern)`, () => {
+  const html = `<!doctype html><html><body>
+    <header id="a">Site header</header>
+    <aside role="dialog" aria-label="Assistant panel"><header id="b">Panel header</header></aside>
+  </body></html>`;
+  const result = runNode(html);
+  const rule = ruleFrom(result);
+  assert.ok(rule);
+  assert.strictEqual(rule.outcome, 'cantTell');
+  assert.strictEqual(rule.occurrences.length, 2);
+});
+
+test(`${RULE_ID} (node runtime): a display:none duplicate header is excluded (not exposed to AT)`, () => {
+  const html = `<!doctype html><html><body>
+    <header id="a">Visible</header>
+    <header id="b" style="display:none">Hidden duplicate</header>
+  </body></html>`;
+  const result = runNode(html);
+  const rule = ruleFrom(result);
+  assert.ok(rule);
+  assert.strictEqual(rule.outcome, 'notApplicable');
+  assert.strictEqual(rule.occurrences.length, 0);
 });
