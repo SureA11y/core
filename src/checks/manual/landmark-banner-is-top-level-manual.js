@@ -6,12 +6,11 @@
  * @summary The banner landmark must not be nested inside another landmark
  * @standard Best Practices (a widely-used reference engine's classification; no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
  * @applicability
- *   Applies whenever the page contains at least one banner landmark
- *   (explicit role="banner", or an implicit <header> that is not itself
- *   nested inside <article>/<aside>/<main>/<nav>/<section> — see
- *   implementation notes).
+ *   Applies whenever the page contains at least one banner candidate:
+ *   explicit role="banner", OR a <header> with NO role attribute at all
+ *   (regardless of nesting — see implementation notes' 2026-08-01 fix).
  * @expectation
- *   No banner landmark has an ancestor that is itself any landmark
+ *   No banner candidate has an ancestor that is itself any landmark
  *   region. A banner nested inside another landmark is not a top-level,
  *   whole-page banner and confuses landmark-based navigation for
  *   assistive technology users.
@@ -29,6 +28,27 @@
  *   region/form only when accessibly named), not a byte-for-byte port
  *   of a widely-used reference engine's internal algorithm — verify against upstream if exact
  *   parity is ever required.
+ * - **Fixed 2026-08-01, a self-defeating applicability bug found via the
+ *   cross-engine comparisons project (verified live on TurboTax's real
+ *   homepage, `<header>` nested inside a `<div id="main" role="main">`
+ *   two levels up):** candidate selection used to run the *same*
+ *   HTML-AAM sectioning-ancestor suppression used for the violation
+ *   check itself (`getImplicitLandmarkRole`'s `hasSectioningAncestor`
+ *   gate) — so the moment a `<header>` was nested inside another
+ *   landmark, that same nesting made it stop counting as a banner
+ *   candidate in the first place, and the rule could never flag the one
+ *   case it exists to catch. A widely-used reference engine's own
+ *   `landmark-banner-is-top-level` avoids this: its selector
+ *   (`header:not([role]), [role=banner]`) is unconditional — it doesn't
+ *   care whether the header *currently* carries the banner role, only
+ *   whether it's a `<header>`/`role="banner"` with a landmark ancestor
+ *   above it (verified by reading that engine's real
+ *   `landmark-is-top-level-evaluate` source, not guessed). Candidate
+ *   selection (`isBannerCandidate` below) now matches that unconditional
+ *   selector shape; the ancestor walk (`hasLandmarkAncestor`) still uses
+ *   the full suppression-aware `getLandmarkRole` for each ancestor,
+ *   which is correct and unchanged — an ancestor genuinely needs its own
+ *   real role to count as blocking.
  */
 
 const id = 'landmark-banner-is-top-level';
@@ -126,6 +146,18 @@ function runInPage(ctx) {
     return getImplicitLandmarkRole(el);
   }
 
+  // Candidate selection is deliberately NOT the same as getLandmarkRole()
+  // === 'banner' — see the 2026-08-01 fix note above. A <header> is a
+  // candidate purely by tag + absence of any role attribute, independent
+  // of whether sectioning-ancestor nesting would currently suppress its
+  // implicit role; an explicit role="banner" is always a candidate too.
+  function isBannerCandidate(el) {
+    if (!el || !el.getAttribute) return false;
+    const explicit = getExplicitRoleToken(el);
+    if (explicit) return explicit === 'banner';
+    return !!(el.tagName && el.tagName.toLowerCase() === 'header');
+  }
+
   function hasLandmarkAncestor(el) {
     const scopeRoots = Array.isArray(root) ? root : (root ? [root] : []);
     let p = el.parentElement;
@@ -157,7 +189,7 @@ function runInPage(ctx) {
   for (const el of nodes) {
     if (!el || seen.has(el)) continue;
     seen.add(el);
-    if (getLandmarkRole(el) === 'banner') banners.push(el);
+    if (isBannerCandidate(el)) banners.push(el);
   }
 
   if (banners.length === 0) {

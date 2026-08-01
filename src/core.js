@@ -32806,6 +32806,18 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     return getImplicitLandmarkRole(el);
   }
 
+  // Candidate selection is deliberately NOT the same as getLandmarkRole()
+  // === 'banner' — see the 2026-08-01 fix note above. A <header> is a
+  // candidate purely by tag + absence of any role attribute, independent
+  // of whether sectioning-ancestor nesting would currently suppress its
+  // implicit role; an explicit role="banner" is always a candidate too.
+  function isBannerCandidate(el) {
+    if (!el || !el.getAttribute) return false;
+    const explicit = getExplicitRoleToken(el);
+    if (explicit) return explicit === 'banner';
+    return !!(el.tagName && el.tagName.toLowerCase() === 'header');
+  }
+
   function hasLandmarkAncestor(el) {
     const scopeRoots = Array.isArray(root) ? root : (root ? [root] : []);
     let p = el.parentElement;
@@ -32837,7 +32849,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   for (const el of nodes) {
     if (!el || seen.has(el)) continue;
     seen.add(el);
-    if (getLandmarkRole(el) === 'banner') banners.push(el);
+    if (isBannerCandidate(el)) banners.push(el);
   }
 
   if (banners.length === 0) {
@@ -32945,6 +32957,18 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     return getImplicitLandmarkRole(el);
   }
 
+  // Candidate selection is deliberately NOT the same as getLandmarkRole()
+  // === 'contentinfo' — see the 2026-08-01 fix note above. A <footer> is
+  // a candidate purely by tag + absence of any role attribute, independent
+  // of whether sectioning-ancestor nesting would currently suppress its
+  // implicit role; an explicit role="contentinfo" is always a candidate too.
+  function isContentinfoCandidate(el) {
+    if (!el || !el.getAttribute) return false;
+    const explicit = getExplicitRoleToken(el);
+    if (explicit) return explicit === 'contentinfo';
+    return !!(el.tagName && el.tagName.toLowerCase() === 'footer');
+  }
+
   function hasLandmarkAncestor(el) {
     const scopeRoots = Array.isArray(root) ? root : (root ? [root] : []);
     let p = el.parentElement;
@@ -32976,7 +33000,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   for (const el of nodes) {
     if (!el || seen.has(el)) continue;
     seen.add(el);
-    if (getLandmarkRole(el) === 'contentinfo') contentinfos.push(el);
+    if (isContentinfoCandidate(el)) contentinfos.push(el);
   }
 
   if (contentinfos.length === 0) {
@@ -66077,6 +66101,18 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     return getImplicitLandmarkRole(el);
   }
 
+  // Candidate selection is deliberately NOT the same as getLandmarkRole()
+  // === 'banner' — see the 2026-08-01 fix note above. A <header> is a
+  // candidate purely by tag + absence of any role attribute, independent
+  // of whether sectioning-ancestor nesting would currently suppress its
+  // implicit role; an explicit role="banner" is always a candidate too.
+  function isBannerCandidate(el) {
+    if (!el || !el.getAttribute) return false;
+    const explicit = getExplicitRoleToken(el);
+    if (explicit) return explicit === 'banner';
+    return !!(el.tagName && el.tagName.toLowerCase() === 'header');
+  }
+
   function hasLandmarkAncestor(el) {
     const scopeRoots = Array.isArray(root) ? root : (root ? [root] : []);
     let p = el.parentElement;
@@ -66108,7 +66144,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   for (const el of nodes) {
     if (!el || seen.has(el)) continue;
     seen.add(el);
-    if (getLandmarkRole(el) === 'banner') banners.push(el);
+    if (isBannerCandidate(el)) banners.push(el);
   }
 
   if (banners.length === 0) {
@@ -66216,6 +66252,18 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     return getImplicitLandmarkRole(el);
   }
 
+  // Candidate selection is deliberately NOT the same as getLandmarkRole()
+  // === 'contentinfo' — see the 2026-08-01 fix note above. A <footer> is
+  // a candidate purely by tag + absence of any role attribute, independent
+  // of whether sectioning-ancestor nesting would currently suppress its
+  // implicit role; an explicit role="contentinfo" is always a candidate too.
+  function isContentinfoCandidate(el) {
+    if (!el || !el.getAttribute) return false;
+    const explicit = getExplicitRoleToken(el);
+    if (explicit) return explicit === 'contentinfo';
+    return !!(el.tagName && el.tagName.toLowerCase() === 'footer');
+  }
+
   function hasLandmarkAncestor(el) {
     const scopeRoots = Array.isArray(root) ? root : (root ? [root] : []);
     let p = el.parentElement;
@@ -66247,7 +66295,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   for (const el of nodes) {
     if (!el || seen.has(el)) continue;
     seen.add(el);
-    if (getLandmarkRole(el) === 'contentinfo') contentinfos.push(el);
+    if (isContentinfoCandidate(el)) contentinfos.push(el);
   }
 
   if (contentinfos.length === 0) {

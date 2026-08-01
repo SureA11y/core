@@ -36,13 +36,20 @@
     </div>
   </div>
 
+  <div class="case" id="case_03">
+    <div class="case-title">03 — CANTTELL (fixed 2026-08-01): footer nested inside &lt;main&gt; — candidate selection no longer reuses the suppression that makes a nested footer lose its own implicit contentinfo role; see landmark-banner-is-top-level's file header comment for the shared root cause and TurboTax evidence</div>
+    <main>
+      <footer id="lctl_case_03">Nested inside main, now correctly flagged</footer>
+    </main>
+  </div>
+
   <h2>C. Not applicable (skipped, not counted)</h2>
 
-  <div class="case" id="case_03">
-    <div class="case-title">03 — NEUTRAL: footer nested inside main loses implicit contentinfo role entirely</div>
-    <main>
-      <footer id="lctl_case_03">Not a contentinfo at all here</footer>
-    </main>
+  <div class="case" id="case_04">
+    <div class="case-title">04 — NEUTRAL: footer nested inside an UNNAMED section — an unnamed &lt;section&gt; has no implicit role at all (unlike a top-level &lt;aside&gt;, which is unconditionally complementary), so there is genuinely no landmark ancestor here</div>
+    <section>
+      <footer id="lctl_case_04">No landmark ancestor above this footer</footer>
+    </section>
   </div>
 
   <p class="note">End of fixture.</p>

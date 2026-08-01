@@ -6,12 +6,12 @@
  * @summary The contentinfo landmark must not be nested inside another landmark
  * @standard Best Practices (a widely-used reference engine's classification; no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
  * @applicability
- *   Applies whenever the page contains at least one contentinfo landmark
- *   (explicit role="contentinfo", or an implicit <footer> that is not
- *   itself nested inside <article>/<aside>/<main>/<nav>/<section> — see
- *   implementation notes).
+ *   Applies whenever the page contains at least one contentinfo
+ *   candidate: explicit role="contentinfo", OR a <footer> with NO role
+ *   attribute at all (regardless of nesting — see implementation notes'
+ *   2026-08-01 fix).
  * @expectation
- *   No contentinfo landmark has an ancestor that is itself any landmark
+ *   No contentinfo candidate has an ancestor that is itself any landmark
  *   region. A contentinfo nested inside another landmark is not a
  *   top-level, whole-page footer region and confuses landmark-based
  *   navigation for assistive technology users.
@@ -20,6 +20,13 @@
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent (this rule mirrors
  *   its structure with contentinfo/footer in place of banner/header).
+ * - **Fixed 2026-08-01, same self-defeating applicability bug as
+ *   landmark-banner-is-top-level (see that file's header comment for the
+ *   full root cause and the TurboTax evidence) — candidate selection
+ *   (`isContentinfoCandidate` below) now matches a widely-used reference
+ *   engine's unconditional `footer:not([role]), [role=contentinfo]`
+ *   selector shape instead of reusing the sectioning-ancestor
+ *   suppression that the violation check itself depends on.
  */
 
 const id = 'landmark-contentinfo-is-top-level';
@@ -115,6 +122,18 @@ function runInPage(ctx) {
     return getImplicitLandmarkRole(el);
   }
 
+  // Candidate selection is deliberately NOT the same as getLandmarkRole()
+  // === 'contentinfo' — see the 2026-08-01 fix note above. A <footer> is
+  // a candidate purely by tag + absence of any role attribute, independent
+  // of whether sectioning-ancestor nesting would currently suppress its
+  // implicit role; an explicit role="contentinfo" is always a candidate too.
+  function isContentinfoCandidate(el) {
+    if (!el || !el.getAttribute) return false;
+    const explicit = getExplicitRoleToken(el);
+    if (explicit) return explicit === 'contentinfo';
+    return !!(el.tagName && el.tagName.toLowerCase() === 'footer');
+  }
+
   function hasLandmarkAncestor(el) {
     const scopeRoots = Array.isArray(root) ? root : (root ? [root] : []);
     let p = el.parentElement;
@@ -146,7 +165,7 @@ function runInPage(ctx) {
   for (const el of nodes) {
     if (!el || seen.has(el)) continue;
     seen.add(el);
-    if (getLandmarkRole(el) === 'contentinfo') contentinfos.push(el);
+    if (isContentinfoCandidate(el)) contentinfos.push(el);
   }
 
   if (contentinfos.length === 0) {

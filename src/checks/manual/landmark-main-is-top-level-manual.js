@@ -18,6 +18,13 @@
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent (this rule mirrors
  *   its structure with main in place of banner/header).
+ * - Did NOT need the 2026-08-01 fix applied to
+ *   landmark-banner-is-top-level/landmark-contentinfo-is-top-level (see
+ *   that file's header comment): `<main>`'s implicit role is
+ *   unconditional per HTML-AAM — unlike `<header>`/`<footer>`, nesting
+ *   never suppresses it — so `getImplicitLandmarkRole`'s `main` branch
+ *   was never subject to the same self-defeating candidate-selection
+ *   bug. Confirmed by inspection, not just by absence of a bug report.
  */
 
 const id = 'landmark-main-is-top-level';

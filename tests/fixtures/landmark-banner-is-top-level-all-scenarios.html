@@ -36,13 +36,20 @@
     </div>
   </div>
 
+  <div class="case" id="case_03">
+    <div class="case-title">03 — CANTTELL (fixed 2026-08-01): header nested inside &lt;main&gt; — candidate selection no longer reuses the suppression that makes a nested header lose its own implicit banner role; a widely-used reference engine's own selector is unconditional and catches exactly this (verified live on TurboTax's real homepage)</div>
+    <main>
+      <header id="lbtl_case_03">Nested inside main, now correctly flagged</header>
+    </main>
+  </div>
+
   <h2>C. Not applicable (skipped, not counted)</h2>
 
-  <div class="case" id="case_03">
-    <div class="case-title">03 — NEUTRAL: header nested inside main loses implicit banner role entirely (not this rule's concern)</div>
-    <main>
-      <header id="lbtl_case_03">Not a banner at all here</header>
-    </main>
+  <div class="case" id="case_04">
+    <div class="case-title">04 — NEUTRAL: header nested inside an UNNAMED section — an unnamed &lt;section&gt; has no implicit role at all (unlike a top-level &lt;aside&gt;, which is unconditionally complementary), so there is genuinely no landmark ancestor here</div>
+    <section>
+      <header id="lbtl_case_04">No landmark ancestor above this header</header>
+    </section>
   </div>
 
   <p class="note">End of fixture.</p>
