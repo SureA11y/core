@@ -62,8 +62,7 @@ function runInPage(ctx) {
     // overridden to one of these roles is no longer semantically a link —
     // per the WAI-ARIA Accessible Name and Description Computation spec
     // these roles are name-from-author-only, and their rendered content
-    // represents a VALUE, not a NAME (mirrors the reference engine's controlValueRoles,
-    // verified against its source; see button-name-present.js's identical
+    // represents a VALUE, not a NAME (see button-name-present.js's identical
     // fix for a real-world example — <button role="combobox">List</button> —
     // of the same class of bug on a different host tag).
     const role = el.getAttribute ? el.getAttribute('role') : null;

@@ -4,20 +4,13 @@
  * Renders one scan result into a single, self-contained HTML report (no
  * external CSS/JS/fonts -- opens straight from disk, no server, no network).
  *
- * Structurally adapted from the sibling cross-engine-diff project's own HTML
- * report tool (~/dev/surea11y/comparisons/cross-engine/render-html-report.js)
- * -- that tool's shell (self-contained single file, hero bar + legend,
- * grouped "worth reviewing" cards with an overflow cap, collapsible
- * "full technical data" with a scorecard + searchable/filterable/paginated
- * table, dark-mode CSS) is generic and reusable; everything here is written
- * fresh for a single-engine scan result, not copied, since that tool's own
- * organizing principle (a 7-way "does surea11y vs the reference engine agree" taxonomy)
- * has no single-engine analog.
+ * Self-contained single file: hero bar + legend, grouped "worth reviewing"
+ * cards with an overflow cap, collapsible "full technical data" with a
+ * scorecard + searchable/filterable/paginated table, dark-mode CSS.
  */
 
-// Same 4-status vocabulary/palette as the reference tool (the dataviz
-// skill's validated status palette) -- maps 1:1 onto this engine's own
-// 4 outcomes, so no new palette is needed.
+// Uses the dataviz skill's validated status palette, mapped 1:1 onto this
+// engine's own 4 outcomes.
 const STATUS = {
   good: { color: '#0ca30c', bg: '#e9f7e9', icon: '✓' },
   serious: { color: '#c1502e', bg: '#fdece5', icon: '⚠' },
@@ -26,8 +19,7 @@ const STATUS = {
 };
 
 // fail first: a QA tester scanning a report wants violations up front,
-// matching the reference engine-html-reporter/accessibility-insights-report's own convention
-// of leading with violations, not passes.
+// not passes.
 const OUTCOME_ORDER = ['fail', 'cantTell', 'pass', 'notApplicable'];
 const OUTCOME_INFO = {
   fail: { label: 'Fail', status: 'serious', defaultOn: true },

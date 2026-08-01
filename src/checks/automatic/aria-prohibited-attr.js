@@ -65,53 +65,42 @@
  *   unless engineOptions.includeHiddenElements is true.
  * - Widened 2026-07-31 to add a second, independent branch covering
  *   naming attributes on ROLELESS elements (no explicit role="", no
- *   implicit/native role either) — found via the cross-engine comparisons
- *   project on the emoji-mart demo page (missive.github.io/emoji-mart):
- *   hundreds of `<span aria-label="party_parrot" class="emoji-mart-emoji...">`
- *   tiles, plain roleless spans, which a widely-used reference engine's own
- *   `aria-prohibited-attr` correctly flags (verified directly against its
- *   source, `listProhibitedAttrs` in the reference engine's its source: a roleless element
- *   — `standards.ariaRoles[role]` not found — has aria-label/aria-labelledby
- *   prohibited unless its tag is on a small allow-list or its closest real
- *   ancestor role is a "widget"-type role) but this rule previously ignored
- *   entirely, since its own Tier-1 branch only ever looked at the EXPLICIT
- *   role="" attribute, never at "no role at all."
- *   Empirically re-derived (not guessed) which native tags genuinely carry
- *   no role at all, by calling that reference engine's own
- *   `commons.aria.getRole(el, {chromium: true})` directly against a live
- *   Chromium page for every candidate tag — several surprised: common
- *   text-level tags like `<p>`, `<strong>`, `<em>`, `<code>`, `<mark>`,
- *   `<time>` have NO implicit-role entry in that engine's own tables either
- *   (its `prohibitedAttrs` table for those role NAMES only ever matters for
- *   an EXPLICIT `role="paragraph"`/`role="strong"`/etc. restatement, a rare
+ *   implicit/native role either) — found on the emoji-mart demo page
+ *   (missive.github.io/emoji-mart): hundreds of
+ *   `<span aria-label="party_parrot" class="emoji-mart-emoji...">` tiles,
+ *   plain roleless spans with no other accessible-name source, which this
+ *   rule previously ignored entirely, since its own Tier-1 branch only ever
+ *   looked at the EXPLICIT role="" attribute, never at "no role at all."
+ *   Empirically determined (not guessed) which native tags genuinely carry
+ *   no role at all, by resolving each candidate tag's role against a live
+ *   Chromium page — several surprises: common text-level tags like `<p>`,
+ *   `<strong>`, `<em>`, `<code>`, `<mark>`, `<time>` have no implicit role
+ *   at all (their prohibited-attrs entries only ever matter for an
+ *   EXPLICIT `role="paragraph"`/`role="strong"`/etc. restatement, a rare
  *   case — the native tag itself resolves to role `null`, same as a bare
  *   `<div>`/`<span>`, and falls into this same roleless branch). See
- *   ROLELESS_NATIVE_TAGS below for the resulting curated list — kept
- *   deliberately smaller than that reference engine's own effective set:
- *   `<section>`/`<form>`/`<a>` are excluded even though they can also
- *   resolve to no role, because their native role is conditional
- *   (name-dependent/href-dependent) and already has dedicated, more nuanced
- *   handling elsewhere in this engine (`getElementRoleKey`'s
- *   `section`/`section[named]`/`header`/`header[toplevel]` branches) that
- *   this rule doesn't attempt to duplicate.
- *   Two confidence tiers, mirroring that reference engine's own split
- *   instead of a flat fail: if the element's subtree ALREADY produces a
- *   non-empty accessible name from its content (computed the same way
- *   link-name-present/button-name-present do, via `helpers.getContentNameInfo`),
- *   the naming attribute might just be a redundant/intentional override —
- *   reported as `cantTell`, not a hard fail. Only a roleless element with
- *   NO other accessible-name source at all (the emoji-mart case: an
- *   icon-only span, background-image styled, no text anywhere in its
- *   subtree) is a confident, deterministic `fail` — nothing else could ever
- *   expose this element's name, and no role exists to make it a
- *   Name/Role/Value candidate in the first place.
+ *   ROLELESS_NATIVE_TAGS below for the resulting curated list —
+ *   deliberately conservative: `<section>`/`<form>`/`<a>` are excluded
+ *   even though they can also resolve to no role, because their native
+ *   role is conditional (name-dependent/href-dependent) and already has
+ *   dedicated, more nuanced handling elsewhere in this engine
+ *   (`getElementRoleKey`'s `section`/`section[named]`/`header`/
+ *   `header[toplevel]` branches) that this rule doesn't attempt to
+ *   duplicate.
+ *   Two confidence tiers instead of a flat fail: if the element's subtree
+ *   ALREADY produces a non-empty accessible name from its content
+ *   (computed the same way link-name-present/button-name-present do, via
+ *   `helpers.getContentNameInfo`), the naming attribute might just be a
+ *   redundant/intentional override — reported as `cantTell`, not a hard
+ *   fail. Only a roleless element with NO other accessible-name source at
+ *   all (the emoji-mart case: an icon-only span, background-image styled,
+ *   no text anywhere in its subtree) is a confident, deterministic `fail`
+ *   — nothing else could ever expose this element's name, and no role
+ *   exists to make it a Name/Role/Value candidate in the first place.
  *   The widget-ancestor exemption (skip when the closest real ancestor role
  *   is a "widget"-type role) avoids over-flagging roleless helper
  *   spans/divs used as internal decoration inside a custom composite
- *   widget — mirrors that reference engine's own `getClosestAncestorRoleType
- *   === 'widget'` check exactly (role-type set below also verified directly
- *   against its source, not the six-category WAI-ARIA taxonomy, since the reference engine's
- *   own internal `type` field is what its actual algorithm branches on).
+ *   widget.
  * - Fixed 2026-07-31 (same day as introduced): the Tier-2 "already has a
  *   role, not this branch's concern" guard checked only whether `role=""`
  *   was present (`getExplicitRole`), not whether the value was a real,

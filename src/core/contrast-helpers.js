@@ -368,13 +368,12 @@ function createContrastHelpers(opts, shared) {
             // rendered from its `value` attribute, not a DOM text node, so
             // it's structurally invisible to the SHOW_TEXT walk above (void
             // elements can't have text-node children at all). Found
-            // 2026-08-01 via a live cross-engine comparison against the reference engine's
-            // color-contrast: these inputs were silently skipped by both
+            // 2026-08-01: these inputs were silently skipped by both
             // contrast-minimum and contrast-enhanced regardless of contrast
             // mode, confirmed on a real page (progressive.com's
             // `<input type="submit" value="Get a quote">`, a genuine
-            // AAA-level failure the reference engine caught and surea11y never even
-            // considered a candidate). Same eligibility gates as the real
+            // AAA-level failure surea11y never even considered a
+            // candidate). Same eligibility gates as the real
             // text-node path above, applied to the input element itself.
             const visitedValueInputs = new Set();
             for (const walkRoot of walkRoots) {

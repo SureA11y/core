@@ -95,7 +95,7 @@ test(`${RULE_ID}: notApplicable when a single SPA-style root div's content is en
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: a floating button outside any landmark is exempt (deliberate, the reference engine-aligned scope choice)`, () => {
+test(`${RULE_ID}: a floating button outside any landmark is exempt (deliberate scope choice)`, () => {
   const html = `<!doctype html><html><body><main>Content</main><button>Back to top</button></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });

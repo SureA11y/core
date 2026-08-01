@@ -25,7 +25,7 @@
  *   page (CDC's flu page, 2026-07-30): its only `<h1>` sits inside a
  *   `display:none` ancestor — genuinely unreachable by sighted and screen
  *   reader users alike — and a raw `document.querySelectorAll` credited it
- *   anyway, reporting `notApplicable` where the reference engine correctly fails. This
+ *   anyway, incorrectly reporting `notApplicable`. This
  *   does NOT regress purely-visually-clipped-but-AT-exposed headings (e.g.
  *   eBay's homepage `<h1>` hidden via clip-path/off-screen positioning,
  *   `visibility:visible`, no `aria-hidden`) — `isAccTreeEligible` only

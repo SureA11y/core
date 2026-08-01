@@ -94,8 +94,7 @@ function runInPage(ctx) {
     // one of these roles is no longer semantically a button — per the WAI-ARIA
     // Accessible Name and Description Computation spec these roles are
     // name-from-author-only, and their rendered content represents a VALUE,
-    // not a NAME (mirrors the reference engine's controlValueRoles, verified against its
-    // source). Found on a real page (Spotify's "sort by" control): a
+    // not a NAME. Found on a real page (Spotify's "sort by" control): a
     // <button role="combobox">List</button> where "List" is the combobox's
     // currently selected value, not a label for what the combobox is —
     // crediting it as the accessible name masked a real missing-name bug.

@@ -22,22 +22,16 @@
  *   detection model.
  * - Recursive tree walk, not a direct-<body>-children-only scan (that was
  *   this check's original scope, replaced 2026-08-01). The direct-children
- *   scope was originally chosen to keep this check quiet — a widely-used
- *   reference engine's own region rule is known to be noisy when applied
- *   unconditionally — but it turned out to be nearly inert on the single
- *   most common real-world page shape: a modern framework's single root
- *   mount div (`<body><div id="root">...everything...</div></body>`,
- *   confirmed present as the ONLY direct <body> child on 37 of ~90 pages in
- *   the cross-engine comparisons project's real-world corpus). On that
- *   shape, the old scan had at most one candidate for the entire page and
- *   either missed every real gap inside it or collapsed the whole page
- *   into one undifferentiated report.
- * - The walk itself borrows the *shape* of that reference engine's own
- *   algorithm (verified by reading its real source,
- *   `findRegionlessElms`/`getRegionlessNodes` in the reference engine), reimplemented
- *   against this engine's own (already more spec-correct in places — see
- *   hasLandmarkScopingAncestor's header comment) helpers rather than
- *   ported line-for-line:
+ *   scope was originally chosen to keep this check quiet, but it turned out
+ *   to be nearly inert on the single most common real-world page shape: a
+ *   modern framework's single root mount div
+ *   (`<body><div id="root">...everything...</div></body>`, confirmed
+ *   present as the ONLY direct <body> child on 37 of ~90 pages in a
+ *   real-world corpus). On that shape, the old scan had at most one
+ *   candidate for the entire page and either missed every real gap inside
+ *   it or collapsed the whole page into one undifferentiated report.
+ * - Algorithm, using this engine's own (already more spec-correct in
+ *   places — see hasLandmarkScopingAncestor's header comment) helpers:
  *     1. Depth-first walk from <body>'s children.
  *     2. At each node: if it's ineligible for the accessibility tree
  *        (helpers.isAccTreeEligible), OR is itself a "stopper" (landmark,
@@ -60,15 +54,14 @@
  *   the walk from being noisy on ordinary pages that mix landmarked and
  *   stray content, not the old direct-children-only restriction.
  * - "Stopper" exemptions (button, dialog, <svg>, resolvable skip-links)
- *   are a deliberate, the reference engine-aligned scope choice, not an oversight: these
+ *   are a deliberate scope choice, not an oversight: these
  *   are extremely common real-world patterns (floating action buttons,
  *   modal dialogs, decorative/icon SVGs, "skip to content" links) that
  *   aren't the kind of "content organization" gap this rule exists to
  *   catch, and flagging them would reintroduce the false-positive noise
  *   the original narrow scope was trying to avoid.
  * - The "own content" check for aria-label deliberately does NOT resolve
- *   aria-labelledby (unlike the reference engine's equivalent) — a known,
- *   narrow scope gap (an element named only via aria-labelledby, with no
+ *   aria-labelledby — a known, narrow scope gap (an element named only via aria-labelledby, with no
  *   own text/aria-label, and no other content anywhere in its subtree,
  *   could be silently skipped) accepted to avoid a full accessible-name
  *   computation (recursive itself) inside an already-recursive structural

@@ -9530,13 +9530,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             // rendered from its `value` attribute, not a DOM text node, so
             // it's structurally invisible to the SHOW_TEXT walk above (void
             // elements can't have text-node children at all). Found
-            // 2026-08-01 via a live cross-engine comparison against the reference engine's
-            // color-contrast: these inputs were silently skipped by both
+            // 2026-08-01: these inputs were silently skipped by both
             // contrast-minimum and contrast-enhanced regardless of contrast
             // mode, confirmed on a real page (progressive.com's
             // `<input type="submit" value="Get a quote">`, a genuine
-            // AAA-level failure the reference engine caught and surea11y never even
-            // considered a candidate). Same eligibility gates as the real
+            // AAA-level failure surea11y never even considered a
+            // candidate). Same eligibility gates as the real
             // text-node path above, applied to the input element itself.
             const visitedValueInputs = new Set();
             for (const walkRoot of walkRoots) {
@@ -27118,8 +27117,7 @@ if (isAccTreeEligible) {
     // one of these roles is no longer semantically a button — per the WAI-ARIA
     // Accessible Name and Description Computation spec these roles are
     // name-from-author-only, and their rendered content represents a VALUE,
-    // not a NAME (mirrors the reference engine's controlValueRoles, verified against its
-    // source). Found on a real page (Spotify's "sort by" control): a
+    // not a NAME. Found on a real page (Spotify's "sort by" control): a
     // <button role="combobox">List</button> where "List" is the combobox's
     // currently selected value, not a label for what the combobox is —
     // crediting it as the accessible name masked a real missing-name bug.
@@ -33684,8 +33682,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     // overridden to one of these roles is no longer semantically a link —
     // per the WAI-ARIA Accessible Name and Description Computation spec
     // these roles are name-from-author-only, and their rendered content
-    // represents a VALUE, not a NAME (mirrors the reference engine's controlValueRoles,
-    // verified against its source; see button-name-present.js's identical
+    // represents a VALUE, not a NAME (see button-name-present.js's identical
     // fix for a real-world example — <button role="combobox">List</button> —
     // of the same class of bug on a different host tag).
     const role = el.getAttribute ? el.getAttribute('role') : null;
@@ -33872,6 +33869,8 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
 
     if (!invalidTags.length) continue;
 
+    const dedupedInvalidTags = [...new Set(invalidTags)];
+
     const tag = el.tagName.toLowerCase();
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
     const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
@@ -33884,7 +33883,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
       i18n: {
         summaryKey: 'listChildrenValid_summary_fail',
         hintKey: 'listChildrenValid_hint_fail',
-        params: { element: tag, invalidChildren: invalidTags.join(', ') }
+        params: { element: tag, invalidChildren: dedupedInvalidTags.join(', ') }
       },
       data: {
         details: { reasonCode: 'LIST_INVALID_CHILD', element: tag, invalidChildren: invalidTags }
@@ -35146,6 +35145,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     if (!nested.length) continue;
 
     const nestedTags = nested.map((n) => (n && n.tagName ? n.tagName.toLowerCase() : 'unknown'));
+    const dedupedNestedTags = [...new Set(nested.map((n) => (n && n.tagName ? n.tagName.toLowerCase() : 'unknown')))];
 
     const tag = el.tagName.toLowerCase();
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
@@ -35159,7 +35159,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
       i18n: {
         summaryKey: 'nestedInteractiveControlsAbsent_summary_fail',
         hintKey: 'nestedInteractiveControlsAbsent_hint_fail',
-        params: { element: tag, nestedElements: nestedTags.join(', ') }
+        params: { element: tag, nestedElements: dedupedNestedTags.join(', ') }
       },
       data: {
         details: { reasonCode: 'NESTED_INTERACTIVE_CONTROL', element: tag, nestedElements: nestedTags }
@@ -38831,6 +38831,8 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
 
     if (!invalid.length) continue;
 
+    const dedupedInvalidIds = [...new Set(invalid.map((i) => i.id))];
+
     const tag = el.tagName.toLowerCase();
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
     const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
@@ -38843,7 +38845,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
       i18n: {
         summaryKey: 'tableHeadersAttrValid_summary_fail',
         hintKey: 'tableHeadersAttrValid_hint_fail',
-        params: { element: tag, invalidIds: invalid.map((i) => i.id).join(', ') }
+        params: { element: tag, invalidIds: dedupedInvalidIds.join(', ') }
       },
       data: {
         details: { reasonCode: 'TABLE_HEADERS_ATTR_INVALID', element: tag, invalid }
@@ -42531,13 +42533,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             // rendered from its `value` attribute, not a DOM text node, so
             // it's structurally invisible to the SHOW_TEXT walk above (void
             // elements can't have text-node children at all). Found
-            // 2026-08-01 via a live cross-engine comparison against the reference engine's
-            // color-contrast: these inputs were silently skipped by both
+            // 2026-08-01: these inputs were silently skipped by both
             // contrast-minimum and contrast-enhanced regardless of contrast
             // mode, confirmed on a real page (progressive.com's
             // `<input type="submit" value="Get a quote">`, a genuine
-            // AAA-level failure the reference engine caught and surea11y never even
-            // considered a candidate). Same eligibility gates as the real
+            // AAA-level failure surea11y never even considered a
+            // candidate). Same eligibility gates as the real
             // text-node path above, applied to the input element itself.
             const visitedValueInputs = new Set();
             for (const walkRoot of walkRoots) {
@@ -60074,8 +60075,7 @@ if (isAccTreeEligible) {
     // one of these roles is no longer semantically a button — per the WAI-ARIA
     // Accessible Name and Description Computation spec these roles are
     // name-from-author-only, and their rendered content represents a VALUE,
-    // not a NAME (mirrors the reference engine's controlValueRoles, verified against its
-    // source). Found on a real page (Spotify's "sort by" control): a
+    // not a NAME. Found on a real page (Spotify's "sort by" control): a
     // <button role="combobox">List</button> where "List" is the combobox's
     // currently selected value, not a label for what the combobox is —
     // crediting it as the accessible name masked a real missing-name bug.
@@ -62355,6 +62355,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
       if (tag === 'dd') { hasDd = true; continue; }
       if (!PASSTHROUGH_TAGS.has(tag)) invalidTags.push(tag);
     }
+    const dedupedInvalidTags = [...new Set(invalidTags)];
 
     // Verified 2026-07-20 against a widely-used reference engine's definition-list check:
     // the dt/dd pairing is only required "when not empty" — a <dl> with
@@ -62389,7 +62390,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
         hintKey: invalidTags.length
             ? 'definitionListChildrenValid_hint_fail_invalidChild'
             : 'definitionListChildrenValid_hint_fail_noDtDd',
-        params: { invalidChildren: invalidTags.join(', ') }
+        params: { invalidChildren: dedupedInvalidTags.join(', ') }
       },
       data: {
         details: { reasonCode, invalidChildren: invalidTags }
@@ -66639,8 +66640,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     // overridden to one of these roles is no longer semantically a link —
     // per the WAI-ARIA Accessible Name and Description Computation spec
     // these roles are name-from-author-only, and their rendered content
-    // represents a VALUE, not a NAME (mirrors the reference engine's controlValueRoles,
-    // verified against its source; see button-name-present.js's identical
+    // represents a VALUE, not a NAME (see button-name-present.js's identical
     // fix for a real-world example — <button role="combobox">List</button> —
     // of the same class of bug on a different host tag).
     const role = el.getAttribute ? el.getAttribute('role') : null;
@@ -66827,6 +66827,8 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
 
     if (!invalidTags.length) continue;
 
+    const dedupedInvalidTags = [...new Set(invalidTags)];
+
     const tag = el.tagName.toLowerCase();
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
     const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
@@ -66839,7 +66841,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
       i18n: {
         summaryKey: 'listChildrenValid_summary_fail',
         hintKey: 'listChildrenValid_hint_fail',
-        params: { element: tag, invalidChildren: invalidTags.join(', ') }
+        params: { element: tag, invalidChildren: dedupedInvalidTags.join(', ') }
       },
       data: {
         details: { reasonCode: 'LIST_INVALID_CHILD', element: tag, invalidChildren: invalidTags }
@@ -68101,6 +68103,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
     if (!nested.length) continue;
 
     const nestedTags = nested.map((n) => (n && n.tagName ? n.tagName.toLowerCase() : 'unknown'));
+    const dedupedNestedTags = [...new Set(nested.map((n) => (n && n.tagName ? n.tagName.toLowerCase() : 'unknown')))];
 
     const tag = el.tagName.toLowerCase();
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
@@ -68114,7 +68117,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
       i18n: {
         summaryKey: 'nestedInteractiveControlsAbsent_summary_fail',
         hintKey: 'nestedInteractiveControlsAbsent_hint_fail',
-        params: { element: tag, nestedElements: nestedTags.join(', ') }
+        params: { element: tag, nestedElements: dedupedNestedTags.join(', ') }
       },
       data: {
         details: { reasonCode: 'NESTED_INTERACTIVE_CONTROL', element: tag, nestedElements: nestedTags }
@@ -71786,6 +71789,8 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
 
     if (!invalid.length) continue;
 
+    const dedupedInvalidIds = [...new Set(invalid.map((i) => i.id))];
+
     const tag = el.tagName.toLowerCase();
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
     const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
@@ -71798,7 +71803,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
       i18n: {
         summaryKey: 'tableHeadersAttrValid_summary_fail',
         hintKey: 'tableHeadersAttrValid_hint_fail',
-        params: { element: tag, invalidIds: invalid.map((i) => i.id).join(', ') }
+        params: { element: tag, invalidIds: dedupedInvalidIds.join(', ') }
       },
       data: {
         details: { reasonCode: 'TABLE_HEADERS_ATTR_INVALID', element: tag, invalid }
@@ -75486,13 +75491,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             // rendered from its `value` attribute, not a DOM text node, so
             // it's structurally invisible to the SHOW_TEXT walk above (void
             // elements can't have text-node children at all). Found
-            // 2026-08-01 via a live cross-engine comparison against the reference engine's
-            // color-contrast: these inputs were silently skipped by both
+            // 2026-08-01: these inputs were silently skipped by both
             // contrast-minimum and contrast-enhanced regardless of contrast
             // mode, confirmed on a real page (progressive.com's
             // `<input type="submit" value="Get a quote">`, a genuine
-            // AAA-level failure the reference engine caught and surea11y never even
-            // considered a candidate). Same eligibility gates as the real
+            // AAA-level failure surea11y never even considered a
+            // candidate). Same eligibility gates as the real
             // text-node path above, applied to the input element itself.
             const visitedValueInputs = new Set();
             for (const walkRoot of walkRoots) {

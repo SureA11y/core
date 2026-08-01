@@ -43,15 +43,15 @@
  *     composite-widget properties, same family as the already-covered
  *     `tablist`.
  * - SUPPORTED_ATTRS_BY_ROLE full-reconciliation pass 2026-07-28: the
- *   2026-07-21 pass deliberately deferred ~61 roles where the reference
- *   engine (the reference engine) allows `aria-expanded`, treating it as too thin/
+ *   2026-07-21 pass deliberately deferred ~61 roles where a widely-used
+ *   reference engine allows `aria-expanded`, treating it as too thin/
  *   near-universal to import blindly. Checked against `aria-query`
  *   (tracks the published WAI-ARIA 1.2 Recommendation, 6 June 2023 — the
  *   latest actually-published version, as opposed to the in-progress 1.3
- *   Editor's Draft) instead of the reference engine directly, because the reference engine's own
+ *   Editor's Draft) instead of that reference engine directly, because its own
  *   source comments (`// Spec difference: Aria-expanded removed in 1.2`)
  *   show that most of its `aria-expanded` allowances are deliberate
- *   ARIA-1.1 legacy/AT-compat carryovers the reference engine keeps on purpose, not
+ *   ARIA-1.1 legacy/AT-compat carryovers it keeps on purpose, not
  *   current-spec facts — importing them wholesale would have re-added
  *   exactly the kind of unverified allowance the 07-21 pass was avoiding.
  *   `aria-query`'s per-role tables (with superclass inheritance resolved,
