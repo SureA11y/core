@@ -27,6 +27,8 @@ npm run fixtures:index     # if you added/changed a fixture
 npm run docs:rule-catalog  # regenerate docs/RULE_CATALOG.md
 ```
 
+Note on coverage: `tests/node-runtime-parity.test.js` runs every rule's own fixture through `runDomRulesInPage` (the Node/require-based entry point), separately from the `runa11yCoreInPage` self-contained-bundle path nearly every other test uses (see that file's own header comment for why both exist and why coverage needs both) — don't remove it thinking it's a duplicate of the per-rule fixture-coverage test.
+
 ## Fixing a bug
 
 Prefer finding the root cause over a narrow patch — this codebase's own convention is to verify against a primary source (the WAI-ARIA spec, HTML-AAM, direct probing of real browser/AT behavior) before changing rule logic, not to guess. If a false positive or false negative is confirmed, add a fixture case and a regression test that would have caught it.
