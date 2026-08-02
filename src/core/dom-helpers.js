@@ -3771,11 +3771,29 @@ function createDomHelpers(opts) {
       const idx = getUniqIndex();
       const tag = (el.tagName || '').toLowerCase();
 
+      // NOTE: every anchor builder below keys its uniqueness-index lookup on
+      // the *trimmed* attribute value (matching how the index itself was
+      // built in createSelectorUniqIndex, so whitespace-only differences
+      // don't spuriously count as "different" values) but embeds the *raw,
+      // untrimmed* attribute value in the actual CSS selector string. A CSS
+      // attribute selector (`[attr="..."]`) requires an exact match against
+      // the real DOM attribute -- trimming the embedded value while the
+      // real attribute keeps its whitespace produces a selector that can
+      // never match. Found 2026-08-02 via the cross-engine comparisons
+      // project on Slack's real homepage: several `role="region"` promo
+      // cards have a templated `aria-label` ending in a trailing ", " (a
+      // string-concatenation artifact, not a typo), which made every one of
+      // these anchor builders silently construct a non-matching selector,
+      // falling through to the document-wide non-unique `buildSimpleSelector`
+      // tag-only fallback (e.g. plain "header") for elements that actually
+      // had a perfectly good, unique aria-label anchor available -- and any
+      // downstream consumer re-resolving that bare-tag selector via
+      // `querySelector` (this comparisons project's own tooling included)
+      // silently gets the *wrong* element instead of an error.
       const uniqueIdSel = () => {
         const elementId = el.getAttribute('id');
         if (!elementId || !elementId.trim()) return null;
-        const v = elementId.trim();
-        if (idx && (idx.idCount.get(v) || 0) === 1) return '#' + cssEscape(v);
+        if (idx && (idx.idCount.get(elementId.trim()) || 0) === 1) return '#' + cssEscape(elementId);
         return null;
       };
 
@@ -3785,7 +3803,7 @@ function createDomHelpers(opts) {
           if (!v || !v.trim()) continue;
           const key = a + '=' + v.trim();
           if (idx && (idx.testIdCount.get(key) || 0) === 1) {
-            return '[' + a + '="' + escapeAttrValue(v.trim()) + '"]';
+            return '[' + a + '="' + escapeAttrValue(v) + '"]';
           }
         }
         return null;
@@ -3796,7 +3814,7 @@ function createDomHelpers(opts) {
         if (!v || !v.trim() || !tag) return null;
         const key = tag + '|' + v.trim();
         if (idx && (idx.nameCount.get(key) || 0) === 1)
-          return tag + '[name="' + escapeAttrValue(v.trim()) + '"]';
+          return tag + '[name="' + escapeAttrValue(v) + '"]';
         return null;
       };
 
@@ -3805,7 +3823,7 @@ function createDomHelpers(opts) {
         if (!v || !v.trim() || !tag) return null;
         const key = tag + '|' + v.trim();
         if (idx && (idx.ariaLabelCount.get(key) || 0) === 1)
-          return tag + '[aria-label="' + escapeAttrValue(v.trim()) + '"]';
+          return tag + '[aria-label="' + escapeAttrValue(v) + '"]';
         return null;
       };
 
@@ -3817,9 +3835,9 @@ function createDomHelpers(opts) {
         if (idx && (idx.roleAriaLabelCount.get(key) || 0) === 1) {
           return (
             '[role="' +
-            escapeAttrValue(role.trim()) +
+            escapeAttrValue(role) +
             '"][aria-label="' +
-            escapeAttrValue(aria.trim()) +
+            escapeAttrValue(aria) +
             '"]'
           );
         }
@@ -3907,14 +3925,16 @@ function createDomHelpers(opts) {
 
         if (node !== el) {
           const t = (node.tagName || '').toLowerCase();
+          // Same trimmed-key-lookup / raw-value-embed split as the direct
+          // anchor builders above -- see this function's header comment.
           const id = node.getAttribute('id');
           if (id && id.trim() && idx && (idx.idCount.get(id.trim()) || 0) === 1)
-            anchor = '#' + cssEscape(id.trim());
+            anchor = '#' + cssEscape(id);
           if (!anchor) {
             for (const a of ['data-testid', 'data-test', 'data-cy', 'data-qa']) {
               const v = node.getAttribute(a);
               if (v && v.trim() && idx && (idx.testIdCount.get(a + '=' + v.trim()) || 0) === 1) {
-                anchor = '[' + a + '="' + escapeAttrValue(v.trim()) + '"]';
+                anchor = '[' + a + '="' + escapeAttrValue(v) + '"]';
                 break;
               }
             }
@@ -3928,7 +3948,7 @@ function createDomHelpers(opts) {
               idx &&
               (idx.nameCount.get(t + '|' + name.trim()) || 0) === 1
             ) {
-              anchor = t + '[name="' + escapeAttrValue(name.trim()) + '"]';
+              anchor = t + '[name="' + escapeAttrValue(name) + '"]';
             }
           }
           if (!anchor) {
@@ -3940,7 +3960,7 @@ function createDomHelpers(opts) {
               idx &&
               (idx.ariaLabelCount.get(t + '|' + aria.trim()) || 0) === 1
             ) {
-              anchor = t + '[aria-label="' + escapeAttrValue(aria.trim()) + '"]';
+              anchor = t + '[aria-label="' + escapeAttrValue(aria) + '"]';
             }
           }
         }

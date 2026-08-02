@@ -176,6 +176,76 @@ test('buildSelector: multi-region contextSelector does not collide selectors acr
   }
 });
 
+// Regression test for a bug where every anchor builder (id/data-testid/
+// name/aria-label, both the direct-element case and the ancestor-climbing
+// case) keyed its uniqueness-index lookup on the *trimmed* attribute value
+// but then embedded that same *trimmed* value into the actual CSS selector
+// string. A CSS attribute selector requires an exact match against the
+// real (untrimmed) DOM attribute, so whenever the real attribute had
+// leading/trailing whitespace, the built selector could never match its
+// own element — el.matches(candidate) correctly returned false, and the
+// element fell through to buildSimpleSelector's bare-tag-name fallback.
+// Found 2026-08-02 via the cross-engine comparisons project on Slack's
+// real homepage: several role="region" promo cards have a templated
+// aria-label ending in a trailing ", " (string-concatenation artifact),
+// which degraded 7 otherwise-uniquely-anchorable elements to the bare
+// selector "header" — a selector that resolves to the *first* <header> on
+// the whole page (the real site banner), not any of the 7 actual elements.
+test('buildSelector: an aria-label anchor with leading/trailing whitespace on the target itself resolves uniquely', () => {
+  const { helpers, document } = helpersFor(`<!doctype html><html><body>
+    <button aria-label=" Save draft ">Save</button>
+    <button aria-label="Discard">Discard</button>
+  </body></html>`);
+
+  const target = document.querySelector('button[aria-label=" Save draft "]');
+  const selector = helpers.buildSelector(target);
+
+  assert.notEqual(selector, 'button', 'must not degrade to the bare, non-unique tag-name fallback');
+  const matches = document.querySelectorAll(selector);
+  assert.equal(matches.length, 1, `selector "${selector}" should resolve to exactly one element`);
+  assert.equal(matches[0], target);
+});
+
+test('buildSelector: an aria-label anchor with leading/trailing whitespace on an ANCESTOR resolves uniquely (the Slack promo-card shape)', () => {
+  const { helpers, document } = helpersFor(`<!doctype html><html><body>
+    <div aria-label="New Feature, Partner Apps MCP Connect your tools., ">
+      <figure><img alt=""></figure>
+      <header><h3>Partner Apps MCP</h3></header>
+    </div>
+    <div aria-label="New Feature, Slackbot Memory remembers context., ">
+      <figure><img alt=""></figure>
+      <header><h3>Slackbot Memory</h3></header>
+    </div>
+  </body></html>`);
+
+  const headers = Array.from(document.querySelectorAll('header'));
+  assert.equal(headers.length, 2);
+
+  const seenSelectors = new Set();
+  for (const target of headers) {
+    const selector = helpers.buildSelector(target);
+    assert.notEqual(selector, 'header', 'must not degrade to the bare, non-unique tag-name fallback');
+    assert.ok(!seenSelectors.has(selector), `selector "${selector}" was reused across two different headers`);
+    seenSelectors.add(selector);
+
+    const matches = document.querySelectorAll(selector);
+    assert.equal(matches.length, 1, `selector "${selector}" should resolve to exactly one element`);
+    assert.equal(matches[0], target);
+  }
+});
+
+test('buildSelector: an id with leading/trailing whitespace resolves uniquely via the direct id anchor', () => {
+  const { helpers, document } = helpersFor(`<!doctype html><html><body>
+    <div id=" padded-id "><span id="inner">content</span></div>
+  </body></html>`);
+
+  const target = document.querySelector('[id=" padded-id "]');
+  const selector = helpers.buildSelector(target);
+  const matches = document.querySelectorAll(selector);
+  assert.equal(matches.length, 1, `selector "${selector}" should resolve to exactly one element`);
+  assert.equal(matches[0], target);
+});
+
 test('buildSelector: every generated selector across many repeated sibling groups resolves uniquely', () => {
   // A denser version of the same shape (many repeated <section> groups with
   // no identifying attributes anywhere), exercising every sibling position.
