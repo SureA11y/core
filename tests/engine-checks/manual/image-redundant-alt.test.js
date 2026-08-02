@@ -58,3 +58,14 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/image-redundant-alt-all-scena
   assert.ok(!hasOccurrenceForId(rule, 'ira_case_01'));
   assert.ok(!hasOccurrenceForId(rule, 'ira_case_03'));
 });
+
+// Regression coverage for a bug found while extending direct coverage of
+// this rule: an aria-hidden sibling is never actually announced to
+// assistive technology, so its text can't cause the "same words twice"
+// double-announcement this rule exists to catch. Counting it anyway
+// flagged a redundancy that doesn't exist in what AT users actually hear.
+test(`${RULE_ID}: an aria-hidden sibling's matching text is not flagged (it's never announced to AT, so there's no real double-announcement)`, () => {
+  const html = `<!doctype html><html><body><a href="/"><img src="home.png" alt="Home"><span aria-hidden="true">Home</span></a></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});

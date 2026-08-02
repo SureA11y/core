@@ -57,12 +57,32 @@ function runInPage(ctx) {
   }
 
   function getOwnTextExcludingImg(parent, imgEl) {
+    const isAccTreeEligible =
+      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+
     let text = '';
     for (const child of parent.childNodes || []) {
       if (child === imgEl) continue;
       if (child.nodeType === 3) {
         text += ' ' + (child.nodeValue || '');
       } else if (child.nodeType === 1 && child !== imgEl) {
+        // An aria-hidden sibling is never actually announced to assistive
+        // technology, so its text can't cause the "same words twice"
+        // double-announcement this rule exists to catch -- counting it
+        // anyway flags a redundancy that doesn't exist in what AT users
+        // actually hear. Found while extending direct coverage of this
+        // rule and noticing every other rule in the catalog performs this
+        // check.
+        if (isAccTreeEligible) {
+          const elig = (() => {
+            try {
+              return isAccTreeEligible(child, ctx);
+            } catch {
+              return { eligible: true, reasons: [] };
+            }
+          })();
+          if (elig && elig.eligible === false) continue;
+        }
         text += ' ' + (child.textContent || '');
       }
     }
