@@ -14198,6 +14198,23 @@ const createDomHelpers = (function createDomHelpers(opts) {
       effOpts = Object.assign({}, opts, { includeHidden: hidden });
     }
 
+    // Share this call's own `visited` guard with getTextFromIdRefs/
+    // getTextFromIdRefsIdrefEligible (both otherwise always start a brand
+    // new Set of their own), so the native-<label> lookup below can't
+    // re-enter a cycle undetected: a label whose content contains a
+    // descendant aria-labelledby'd back to the very control it labels
+    // (e.g. <label id="lbl">Custom <span aria-labelledby="x">t</span>
+    // label<input id="x"></label>) resolves that descendant via
+    // getAriaLabelledByInfo -> getTextFromIdRefs -> (fresh Set, `el` not
+    // yet in it) -> back into this function for the SAME `el` -- which,
+    // without this shared reference, doesn't see `el` already in
+    // `visited` and re-walks the whole label again, only bounded by the
+    // blunt depth counter (so it terminates, but on 40x-duplicated
+    // garbage instead of the correct, once-through text). Real regression
+    // introduced by adding the native-label lookup below; caught while
+    // extending this suite immediately after.
+    effOpts = Object.assign({}, effOpts, { __idrefVisited: visited });
+
     __nameComputationDepth += 1;
     try {
       // aria-labelledby outranks aria-label per the accname spec (2A before
@@ -14267,7 +14284,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
   function getTextFromIdRefs(idrefString, _ctx, opts) {
     const r = resolveIdRefs(idrefString, _ctx, opts);
     const texts = [];
-    const visited = new Set();
+    // Reuse an in-flight cycle guard when one was threaded in via
+    // opts.__idrefVisited (see computeIdRefTargetTextAlternative's own
+    // comment on why this matters) rather than always starting fresh --
+    // a fresh Set here can't see a target already being resolved higher
+    // up the SAME chain, letting a cycle slip past this function's own
+    // guard undetected.
+    const visited = opts && opts.__idrefVisited instanceof Set ? opts.__idrefVisited : new Set();
     for (const el of r.refs) {
       try {
         const t = computeIdRefTargetTextAlternative(el, visited, _ctx, opts);
@@ -14297,7 +14320,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     const texts = [];
     const excluded = []; // [{ id, reasons }]
-    const visited = new Set();
+    // Same shared-cycle-guard reuse as getTextFromIdRefs above.
+    const visited = opts && opts.__idrefVisited instanceof Set ? opts.__idrefVisited : new Set();
     for (const el of r.refs) {
       const elig = isIdRefEligibleTarget(el);
       if (!elig.eligible) {
@@ -14474,8 +14498,19 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // handled explicit for="" and this button has no id to begin with.
     try {
       if (el.labels && el.labels.length) {
+        // Seed the IDREF cycle guard with `el` itself before walking its
+        // own label: a label whose content contains a descendant
+        // aria-labelledby'd back to `el` (the very control being named --
+        // self-contradictory, but not invalid markup) would otherwise
+        // resolve that descendant via a brand-new getTextFromIdRefs Set
+        // that has no idea `el`'s own name is already mid-computation,
+        // round-tripping back through this exact label once before the
+        // (correctly guarded) inner resolution stops it -- doubling every
+        // part of the label's text. See computeIdRefTargetTextAlternative's
+        // own __idrefVisited comment for the general mechanism this reuses.
+        const labelOpts = Object.assign({}, opts, { __idrefVisited: new Set([el]) });
         for (const labelEl of Array.from(el.labels)) {
-          const info = getLabelSubtreeNameInfo(labelEl, el, _ctx, opts);
+          const info = getLabelSubtreeNameInfo(labelEl, el, _ctx, labelOpts);
           if (info.present && info.value) {
             const out = { present: true, value: info.value, mechanism: 'label', flags };
             try {
@@ -50295,6 +50330,23 @@ const createDomHelpers = (function createDomHelpers(opts) {
       effOpts = Object.assign({}, opts, { includeHidden: hidden });
     }
 
+    // Share this call's own `visited` guard with getTextFromIdRefs/
+    // getTextFromIdRefsIdrefEligible (both otherwise always start a brand
+    // new Set of their own), so the native-<label> lookup below can't
+    // re-enter a cycle undetected: a label whose content contains a
+    // descendant aria-labelledby'd back to the very control it labels
+    // (e.g. <label id="lbl">Custom <span aria-labelledby="x">t</span>
+    // label<input id="x"></label>) resolves that descendant via
+    // getAriaLabelledByInfo -> getTextFromIdRefs -> (fresh Set, `el` not
+    // yet in it) -> back into this function for the SAME `el` -- which,
+    // without this shared reference, doesn't see `el` already in
+    // `visited` and re-walks the whole label again, only bounded by the
+    // blunt depth counter (so it terminates, but on 40x-duplicated
+    // garbage instead of the correct, once-through text). Real regression
+    // introduced by adding the native-label lookup below; caught while
+    // extending this suite immediately after.
+    effOpts = Object.assign({}, effOpts, { __idrefVisited: visited });
+
     __nameComputationDepth += 1;
     try {
       // aria-labelledby outranks aria-label per the accname spec (2A before
@@ -50364,7 +50416,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
   function getTextFromIdRefs(idrefString, _ctx, opts) {
     const r = resolveIdRefs(idrefString, _ctx, opts);
     const texts = [];
-    const visited = new Set();
+    // Reuse an in-flight cycle guard when one was threaded in via
+    // opts.__idrefVisited (see computeIdRefTargetTextAlternative's own
+    // comment on why this matters) rather than always starting fresh --
+    // a fresh Set here can't see a target already being resolved higher
+    // up the SAME chain, letting a cycle slip past this function's own
+    // guard undetected.
+    const visited = opts && opts.__idrefVisited instanceof Set ? opts.__idrefVisited : new Set();
     for (const el of r.refs) {
       try {
         const t = computeIdRefTargetTextAlternative(el, visited, _ctx, opts);
@@ -50394,7 +50452,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     const texts = [];
     const excluded = []; // [{ id, reasons }]
-    const visited = new Set();
+    // Same shared-cycle-guard reuse as getTextFromIdRefs above.
+    const visited = opts && opts.__idrefVisited instanceof Set ? opts.__idrefVisited : new Set();
     for (const el of r.refs) {
       const elig = isIdRefEligibleTarget(el);
       if (!elig.eligible) {
@@ -50571,8 +50630,19 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // handled explicit for="" and this button has no id to begin with.
     try {
       if (el.labels && el.labels.length) {
+        // Seed the IDREF cycle guard with `el` itself before walking its
+        // own label: a label whose content contains a descendant
+        // aria-labelledby'd back to `el` (the very control being named --
+        // self-contradictory, but not invalid markup) would otherwise
+        // resolve that descendant via a brand-new getTextFromIdRefs Set
+        // that has no idea `el`'s own name is already mid-computation,
+        // round-tripping back through this exact label once before the
+        // (correctly guarded) inner resolution stops it -- doubling every
+        // part of the label's text. See computeIdRefTargetTextAlternative's
+        // own __idrefVisited comment for the general mechanism this reuses.
+        const labelOpts = Object.assign({}, opts, { __idrefVisited: new Set([el]) });
         for (const labelEl of Array.from(el.labels)) {
-          const info = getLabelSubtreeNameInfo(labelEl, el, _ctx, opts);
+          const info = getLabelSubtreeNameInfo(labelEl, el, _ctx, labelOpts);
           if (info.present && info.value) {
             const out = { present: true, value: info.value, mechanism: 'label', flags };
             try {
@@ -86347,6 +86417,23 @@ const createDomHelpers = (function createDomHelpers(opts) {
       effOpts = Object.assign({}, opts, { includeHidden: hidden });
     }
 
+    // Share this call's own `visited` guard with getTextFromIdRefs/
+    // getTextFromIdRefsIdrefEligible (both otherwise always start a brand
+    // new Set of their own), so the native-<label> lookup below can't
+    // re-enter a cycle undetected: a label whose content contains a
+    // descendant aria-labelledby'd back to the very control it labels
+    // (e.g. <label id="lbl">Custom <span aria-labelledby="x">t</span>
+    // label<input id="x"></label>) resolves that descendant via
+    // getAriaLabelledByInfo -> getTextFromIdRefs -> (fresh Set, `el` not
+    // yet in it) -> back into this function for the SAME `el` -- which,
+    // without this shared reference, doesn't see `el` already in
+    // `visited` and re-walks the whole label again, only bounded by the
+    // blunt depth counter (so it terminates, but on 40x-duplicated
+    // garbage instead of the correct, once-through text). Real regression
+    // introduced by adding the native-label lookup below; caught while
+    // extending this suite immediately after.
+    effOpts = Object.assign({}, effOpts, { __idrefVisited: visited });
+
     __nameComputationDepth += 1;
     try {
       // aria-labelledby outranks aria-label per the accname spec (2A before
@@ -86416,7 +86503,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
   function getTextFromIdRefs(idrefString, _ctx, opts) {
     const r = resolveIdRefs(idrefString, _ctx, opts);
     const texts = [];
-    const visited = new Set();
+    // Reuse an in-flight cycle guard when one was threaded in via
+    // opts.__idrefVisited (see computeIdRefTargetTextAlternative's own
+    // comment on why this matters) rather than always starting fresh --
+    // a fresh Set here can't see a target already being resolved higher
+    // up the SAME chain, letting a cycle slip past this function's own
+    // guard undetected.
+    const visited = opts && opts.__idrefVisited instanceof Set ? opts.__idrefVisited : new Set();
     for (const el of r.refs) {
       try {
         const t = computeIdRefTargetTextAlternative(el, visited, _ctx, opts);
@@ -86446,7 +86539,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     const texts = [];
     const excluded = []; // [{ id, reasons }]
-    const visited = new Set();
+    // Same shared-cycle-guard reuse as getTextFromIdRefs above.
+    const visited = opts && opts.__idrefVisited instanceof Set ? opts.__idrefVisited : new Set();
     for (const el of r.refs) {
       const elig = isIdRefEligibleTarget(el);
       if (!elig.eligible) {
@@ -86623,8 +86717,19 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // handled explicit for="" and this button has no id to begin with.
     try {
       if (el.labels && el.labels.length) {
+        // Seed the IDREF cycle guard with `el` itself before walking its
+        // own label: a label whose content contains a descendant
+        // aria-labelledby'd back to `el` (the very control being named --
+        // self-contradictory, but not invalid markup) would otherwise
+        // resolve that descendant via a brand-new getTextFromIdRefs Set
+        // that has no idea `el`'s own name is already mid-computation,
+        // round-tripping back through this exact label once before the
+        // (correctly guarded) inner resolution stops it -- doubling every
+        // part of the label's text. See computeIdRefTargetTextAlternative's
+        // own __idrefVisited comment for the general mechanism this reuses.
+        const labelOpts = Object.assign({}, opts, { __idrefVisited: new Set([el]) });
         for (const labelEl of Array.from(el.labels)) {
-          const info = getLabelSubtreeNameInfo(labelEl, el, _ctx, opts);
+          const info = getLabelSubtreeNameInfo(labelEl, el, _ctx, labelOpts);
           if (info.present && info.value) {
             const out = { present: true, value: info.value, mechanism: 'label', flags };
             try {

@@ -156,6 +156,24 @@ test('getAccessibleNameInfo: native <label for> associates by id even without wr
   assert.equal(info.mechanism, 'label');
 });
 
+// Regression coverage for a cycle found while extending this suite with
+// the computeIdRefTargetTextAlternative native-label fix above: a label
+// whose content contains a descendant aria-labelledby'd back to the very
+// control it labels (self-contradictory markup, but not invalid) used to
+// resolve that descendant by re-entering the SAME label's own text via a
+// brand-new getTextFromIdRefs cycle guard that had no idea the control's
+// name was already mid-computation -- doubling every part of the label's
+// text ("Custom Custom ignored text label label" instead of "Custom
+// ignored text label"). Fixed by seeding getAccessibleNameInfo's own
+// .labels lookup with a cycle guard pre-populated with the element itself.
+test("getAccessibleNameInfo: a label containing a descendant aria-labelledby'd back to the control it labels does not double the label's text", () => {
+  const { helpers, document } = helpersFor(
+    '<label id="lbl">Custom <span aria-labelledby="x">ignored text</span> label<input id="x"></label>'
+  );
+  const info = helpers.getAccessibleNameInfo(byId(document, 'x'), { helpers });
+  assert.equal(info.value, 'Custom ignored text label');
+});
+
 test('getAccessibleNameInfo: an empty wrapping <label> does not produce a name and falls through to title', () => {
   const { helpers, document } = helpersFor('<label><input id="x" title="Fallback title"></label>');
   const info = helpers.getAccessibleNameInfo(byId(document, 'x'), { helpers });
