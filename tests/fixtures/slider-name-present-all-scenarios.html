@@ -147,6 +147,19 @@
     </div>
   </div>
 
+  <h2>Native label association (input[type=range] only -- role="slider" is name-from-author-only and never resolves via &lt;label&gt;, see the "kind" branch in evaluate(); getNativeLabelText's closest('label')/label[for]-map fallback branches are consequently unreachable for THIS rule specifically, unlike its listbox/searchbox/spinbutton/textbox/combobox siblings, since a native-slider is always a real, natively-labelable &lt;input&gt; whose .labels API already resolves both wrapping and for= association)</h2>
+
+  <div class="case" id="case_22">
+    <div class="case-title">22 — PASS: label[for] on a native input[type=range]; the label's own content is empty, so its name falls back to its title attribute</div>
+    <label for="slider_case_22" title="Search"></label>
+    <input type="range" id="slider_case_22">
+  </div>
+
+  <div class="case" id="case_23">
+    <div class="case-title">23 — FAIL: role="slider" (not a native input[type=range]) is name-from-author-only -- a wrapping &lt;label&gt; does NOT give it a name</div>
+    <label>Wrapped label text <div role="slider" tabindex="0" id="slider_case_23"></div></label>
+  </div>
+
   <p class="note">End of fixture.</p>
 </body>
 </html>

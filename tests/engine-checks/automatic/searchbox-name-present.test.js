@@ -67,7 +67,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/searchbox-name-present-all-sc
   ];
 
   const expectedNoOccIds = [
-    'searchbox_case_03', 'searchbox_case_04', 'searchbox_case_05', 'searchbox_case_06', 'searchbox_case_07', 'searchbox_case_11', 'searchbox_case_14', 'searchbox_case_15', 'searchbox_case_16', 'searchbox_case_18', 'searchbox_case_19', 'searchbox_case_20', 'searchbox_case_21'
+    'searchbox_case_03', 'searchbox_case_04', 'searchbox_case_05', 'searchbox_case_06', 'searchbox_case_07', 'searchbox_case_11', 'searchbox_case_14', 'searchbox_case_15', 'searchbox_case_16', 'searchbox_case_18', 'searchbox_case_19', 'searchbox_case_20', 'searchbox_case_21', 'searchbox_case_22', 'searchbox_case_23'
   ];
 
   for (const id of expectedFailIds) {

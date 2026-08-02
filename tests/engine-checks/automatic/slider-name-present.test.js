@@ -76,14 +76,14 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/slider-name-present-all-scena
   if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 7, maxOccurrences: 7 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 8, maxOccurrences: 8 });
 
   const expectedFailIds = [
-    'slider_case_01', 'slider_case_07', 'slider_case_08', 'slider_case_09', 'slider_case_10', 'slider_case_15', 'slider_case_19'
+    'slider_case_01', 'slider_case_07', 'slider_case_08', 'slider_case_09', 'slider_case_10', 'slider_case_15', 'slider_case_19', 'slider_case_23'
   ];
 
   const expectedNoOccIds = [
-    'slider_case_02', 'slider_case_03', 'slider_case_04', 'slider_case_05', 'slider_case_06', 'slider_case_11', 'slider_case_12', 'slider_case_13', 'slider_case_14', 'slider_case_16', 'slider_case_17', 'slider_case_18', 'slider_case_20', 'slider_case_21'
+    'slider_case_02', 'slider_case_03', 'slider_case_04', 'slider_case_05', 'slider_case_06', 'slider_case_11', 'slider_case_12', 'slider_case_13', 'slider_case_14', 'slider_case_16', 'slider_case_17', 'slider_case_18', 'slider_case_20', 'slider_case_21', 'slider_case_22'
   ];
 
   for (const id of expectedFailIds) {

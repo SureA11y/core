@@ -71,7 +71,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/listbox-name-present-all-scen
     'listbox_case_03', 'listbox_case_04', 'listbox_case_05', 'listbox_case_06',
     'listbox_case_07', 'listbox_case_11', 'listbox_case_14', 'listbox_case_15',
     'listbox_case_16', 'listbox_case_18', 'listbox_case_19', 'listbox_case_20',
-    'listbox_case_21'
+    'listbox_case_21', 'listbox_case_22', 'listbox_case_23'
   ];
 
   for (const id of expectedFailIds) {

@@ -77,7 +77,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/textbox-name-present-all-scen
   ];
 
   const expectedNoOccIds = [
-    'textbox_case_03', 'textbox_case_04', 'textbox_case_05', 'textbox_case_06', 'textbox_case_07', 'textbox_case_11', 'textbox_case_14', 'textbox_case_15', 'textbox_case_16', 'textbox_case_18', 'textbox_case_19', 'textbox_case_20', 'textbox_case_21'
+    'textbox_case_03', 'textbox_case_04', 'textbox_case_05', 'textbox_case_06', 'textbox_case_07', 'textbox_case_11', 'textbox_case_14', 'textbox_case_15', 'textbox_case_16', 'textbox_case_18', 'textbox_case_19', 'textbox_case_20', 'textbox_case_21', 'textbox_case_22', 'textbox_case_23'
   ];
 
   for (const id of expectedFailIds) {

@@ -86,7 +86,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/combobox-name-present-all-sce
     'combobox_case_19',
     'combobox_case_20',
     'combobox_case_21',
-    'combobox_case_22'
+    'combobox_case_22',
+    'combobox_case_23',
+    'combobox_case_24'
   ];
 
   for (const id of expectedFailIds) {

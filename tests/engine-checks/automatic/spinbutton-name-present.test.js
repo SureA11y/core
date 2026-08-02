@@ -67,7 +67,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/spinbutton-name-present-all-s
   ];
 
   const expectedNoOccIds = [
-    'spinbutton_case_03', 'spinbutton_case_04', 'spinbutton_case_05', 'spinbutton_case_06', 'spinbutton_case_07', 'spinbutton_case_11', 'spinbutton_case_14', 'spinbutton_case_15', 'spinbutton_case_16', 'spinbutton_case_18', 'spinbutton_case_19', 'spinbutton_case_20', 'spinbutton_case_21'
+    'spinbutton_case_03', 'spinbutton_case_04', 'spinbutton_case_05', 'spinbutton_case_06', 'spinbutton_case_07', 'spinbutton_case_11', 'spinbutton_case_14', 'spinbutton_case_15', 'spinbutton_case_16', 'spinbutton_case_18', 'spinbutton_case_19', 'spinbutton_case_20', 'spinbutton_case_21', 'spinbutton_case_22', 'spinbutton_case_23'
   ];
 
   for (const id of expectedFailIds) {

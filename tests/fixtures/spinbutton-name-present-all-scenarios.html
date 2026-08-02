@@ -150,6 +150,19 @@
     </template>
   </div>
 
+  <h2>F. Native label fallbacks on a non-natively-labelable element (no .labels API)</h2>
+
+  <div class="case" id="case_22">
+    <div class="case-title">22 — PASS: wrapping &lt;label&gt; around a role="spinbutton" element that has no native .labels API (closest('label') fallback)</div>
+    <label>Wrapped label text <div role="spinbutton" tabindex="0" id="spinbutton_case_22"></div></label>
+  </div>
+
+  <div class="case" id="case_23">
+    <div class="case-title">23 — PASS: label[for] on a non-natively-labelable element; the label's own content is empty, so its name falls back to its title attribute</div>
+    <label for="spinbutton_case_23" title="Search"></label>
+    <div role="spinbutton" tabindex="0" id="spinbutton_case_23"></div>
+  </div>
+
   <p class="note">End of fixture.</p>
 </body>
 </html>

@@ -158,6 +158,19 @@
     <div role="listbox" id="combobox_case_22"></div>
   </div>
 
+  <h2>G. Native label fallbacks on a non-natively-labelable element (no .labels API)</h2>
+
+  <div class="case" id="case_23">
+    <div class="case-title">23 — PASS: wrapping &lt;label&gt; around a role="combobox" element that has no native .labels API (closest('label') fallback)</div>
+    <label>Wrapped label text <div role="combobox" tabindex="0" id="combobox_case_23"></div></label>
+  </div>
+
+  <div class="case" id="case_24">
+    <div class="case-title">24 — PASS: label[for] on a non-natively-labelable element; the label's own content is empty, so its name falls back to its title attribute</div>
+    <label for="combobox_case_24" title="Search"></label>
+    <div role="combobox" tabindex="0" id="combobox_case_24"></div>
+  </div>
+
   <p class="note">End of fixture.</p>
 </body>
 </html>
