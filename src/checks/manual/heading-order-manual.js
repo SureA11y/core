@@ -83,6 +83,32 @@ function runInPage(ctx) {
   for (const el of nodes) {
     if (!el || seen.has(el)) continue;
     seen.add(el);
+
+    // queryAllSmart's default hidden-content policy only excludes "hard"
+    // CSS-based hiding (display:none, visibility:hidden, etc.) -- it does
+    // NOT exclude aria-hidden, a softer/semantic removal from the
+    // accessibility tree that still leaves an element visually rendered.
+    // A heading order rule whose whole premise is "the document outline
+    // assistive technology users rely on" (see this rule's own header
+    // comment) must not let an aria-hidden heading participate in that
+    // outline at all: it's invisible to exactly the users this rule
+    // exists to protect. Without this check, an aria-hidden heading was
+    // BOTH wrongly flagged itself (it isn't part of the AT-perceived
+    // outline in the first place) AND could mask a real skip immediately
+    // after it, by wrongly advancing the "highest level reached so far"
+    // tracker on a level no AT user actually encountered. Found while
+    // extending direct coverage of this rule.
+    if (helpers.isAccTreeEligible) {
+      const elig = (() => {
+        try {
+          return helpers.isAccTreeEligible(el, ctx);
+        } catch {
+          return { eligible: true, reasons: [] };
+        }
+      })();
+      if (elig && elig.eligible === false) continue;
+    }
+
     const level = getHeadingLevel(el);
     if (level > 0) headings.push({ el, level });
   }

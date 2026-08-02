@@ -59,6 +59,15 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/heading-order-all-scenarios.h
   assert.ok(hasOccurrenceForId(rule, 'ho_case_01'));
 });
 
+test(`${RULE_ID}: an aria-hidden heading is excluded from the outline (regression -- neither flagged itself nor allowed to mask a real skip after it)`, () => {
+  const html = `<!doctype html><html><body><h1>Title</h1><h3 aria-hidden="true">Hidden from AT</h3><h4 id="a">Visible</h4></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+  assert.equal(rule.occurrences[0].data.details.fromLevel, 1);
+  assert.equal(rule.occurrences[0].data.details.toLevel, 4);
+});
+
 test(`heading-order: respects contextSelector scoping (regression -- used to bypass helpers.queryAllSmart and always scan the whole document)`, () => {
   const html = `<!doctype html><html><body><div id="target"><p>Just some unrelated text.</p></div><h1>A</h1><h3 id="a">B</h3></body></html>`;
   const result = runa11yCoreOnHtml(html, {

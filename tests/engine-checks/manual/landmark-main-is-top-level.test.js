@@ -82,6 +82,21 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/landmark-main-is-top-level-al
   assert.ok(hasOccurrenceForId(rule, 'lmtl_case_02'));
 });
 
+// Regression coverage for a bug found while extending this rule family's
+// direct coverage: an aria-hidden main candidate is removed from the
+// accessibility tree entirely, so it isn't part of the landmark structure
+// assistive technology users navigate at all -- it must not be flagged as
+// "nested inside another landmark" (there's no real landmark there to
+// begin with, from AT's perspective). queryAllSmart's default hidden-
+// content policy only excludes "hard" CSS-based hiding (display:none,
+// etc.), not the softer aria-hidden exclusion, so this rule needed its
+// own explicit check.
+test(`${RULE_ID}: an aria-hidden nested main is not flagged (it isn't part of the AT-perceived landmark structure)`, () => {
+  const html = `<!doctype html><html><body><div role="region" aria-label="x"><main aria-hidden="true">Hidden</main></div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
 test(`${RULE_ID} (node runtime): notApplicable when a top-level explicit role="main" is used instead of <main>`, () => {
   const html = `<!doctype html><html><body><div role="main">Content</div></body></html>`;
   const result = runNode(html);

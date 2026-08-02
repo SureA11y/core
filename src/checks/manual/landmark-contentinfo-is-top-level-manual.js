@@ -178,7 +178,29 @@ function runInPage(ctx) {
   for (const el of nodes) {
     if (!el || seen.has(el)) continue;
     seen.add(el);
-    if (isContentinfoCandidate(el)) contentinfos.push(el);
+    if (!isContentinfoCandidate(el)) continue;
+
+    // An aria-hidden contentinfo candidate is removed from the
+    // accessibility tree entirely -- it isn't part of the landmark
+    // structure assistive technology users navigate at all, so it
+    // shouldn't be flagged as "nested inside another landmark" (there's
+    // no real landmark there to begin with, from AT's perspective).
+    // queryAllSmart's default hidden-content policy only excludes "hard"
+    // CSS-based hiding (display:none, etc.), not the softer aria-hidden
+    // exclusion, so this needs its own check. Found while extending
+    // direct coverage of this rule family.
+    if (helpers && typeof helpers.isAccTreeEligible === 'function') {
+      const elig = (() => {
+        try {
+          return helpers.isAccTreeEligible(el, ctx);
+        } catch {
+          return { eligible: true, reasons: [] };
+        }
+      })();
+      if (elig && elig.eligible === false) continue;
+    }
+
+    contentinfos.push(el);
   }
 
   if (contentinfos.length === 0) {

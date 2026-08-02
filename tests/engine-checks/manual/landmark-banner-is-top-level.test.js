@@ -94,3 +94,18 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/landmark-banner-is-top-level-
   assert.ok(hasOccurrenceForId(rule, 'lbtl_case_02'));
   assert.ok(hasOccurrenceForId(rule, 'lbtl_case_03'));
 });
+
+// Regression coverage for a bug found while extending this rule family's
+// direct coverage: an aria-hidden banner candidate is removed from the
+// accessibility tree entirely, so it isn't part of the landmark structure
+// assistive technology users navigate at all -- it must not be flagged as
+// "nested inside another landmark" (there's no real landmark there to
+// begin with, from AT's perspective). queryAllSmart's default hidden-
+// content policy only excludes "hard" CSS-based hiding (display:none,
+// etc.), not the softer aria-hidden exclusion, so this rule needed its
+// own explicit check.
+test(`${RULE_ID}: an aria-hidden nested header is not flagged (it isn't part of the AT-perceived landmark structure)`, () => {
+  const html = `<!doctype html><html><body><div role="main"><header aria-hidden="true">Hidden</header></div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
