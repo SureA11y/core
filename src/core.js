@@ -31499,19 +31499,6 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   // Helper-safe trim
   const trim = (v) => (v == null ? '' : String(v)).trim();
 
-  // Deterministic tabindex fallback (only used if helper missing)
-  function isFocusableFallback(el) {
-    try {
-      const tabindex = el.getAttribute('tabindex');
-      if (tabindex == null) return false;
-      const s = String(tabindex).trim();
-      if (!s) return false;
-      return !Number.isNaN(Number(s));
-    } catch {
-      return false;
-    }
-  }
-
   for (let i = 0; i < imgLen; i++) {
     const el = imgs[i];
     if (!el || !el.getAttribute) continue;
@@ -31539,16 +31526,12 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
 
     if (role === 'presentation' || role === 'none') {
       let focusable = false;
-      if (getFocusableInfo) {
-        try {
-          const fi = getFocusableInfo(el, ctx);
-          // Preserve existing behavior: prefer fi.focusable; fall back to fi.tabbable if present.
-          focusable = !!(fi && (fi.focusable || fi.tabbable));
-        } catch {
-          focusable = false;
-        }
-      } else {
-        focusable = isFocusableFallback(el);
+      try {
+        const fi = getFocusableInfo(el, ctx);
+        // Preserve existing behavior: prefer fi.focusable; fall back to fi.tabbable if present.
+        focusable = !!(fi && (fi.focusable || fi.tabbable));
+      } catch {
+        focusable = false;
       }
 
       if (!focusable) continue;
@@ -31606,12 +31589,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
       data: { visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] } }
     };
 
-    if (helpers && typeof helpers.reportOccurrence === 'function') {
-      occurrences.push(helpers.reportOccurrence(el, baseOccurrence));
-    } else {
-      // Never compute selector/snippet in the rule.
-      occurrences.push({ __node: el, selector: '', html: '', ...baseOccurrence });
-    }
+    occurrences.push(helpers.reportOccurrence(el, baseOccurrence));
   }
 
   if (applicableCount === 0) {
@@ -64461,19 +64439,6 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
   // Helper-safe trim
   const trim = (v) => (v == null ? '' : String(v)).trim();
 
-  // Deterministic tabindex fallback (only used if helper missing)
-  function isFocusableFallback(el) {
-    try {
-      const tabindex = el.getAttribute('tabindex');
-      if (tabindex == null) return false;
-      const s = String(tabindex).trim();
-      if (!s) return false;
-      return !Number.isNaN(Number(s));
-    } catch {
-      return false;
-    }
-  }
-
   for (let i = 0; i < imgLen; i++) {
     const el = imgs[i];
     if (!el || !el.getAttribute) continue;
@@ -64501,16 +64466,12 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
 
     if (role === 'presentation' || role === 'none') {
       let focusable = false;
-      if (getFocusableInfo) {
-        try {
-          const fi = getFocusableInfo(el, ctx);
-          // Preserve existing behavior: prefer fi.focusable; fall back to fi.tabbable if present.
-          focusable = !!(fi && (fi.focusable || fi.tabbable));
-        } catch {
-          focusable = false;
-        }
-      } else {
-        focusable = isFocusableFallback(el);
+      try {
+        const fi = getFocusableInfo(el, ctx);
+        // Preserve existing behavior: prefer fi.focusable; fall back to fi.tabbable if present.
+        focusable = !!(fi && (fi.focusable || fi.tabbable));
+      } catch {
+        focusable = false;
       }
 
       if (!focusable) continue;
@@ -64568,12 +64529,7 @@ if (scan && scan.elements && Array.isArray(scan.elements)) {
       data: { visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] } }
     };
 
-    if (helpers && typeof helpers.reportOccurrence === 'function') {
-      occurrences.push(helpers.reportOccurrence(el, baseOccurrence));
-    } else {
-      // Never compute selector/snippet in the rule.
-      occurrences.push({ __node: el, selector: '', html: '', ...baseOccurrence });
-    }
+    occurrences.push(helpers.reportOccurrence(el, baseOccurrence));
   }
 
   if (applicableCount === 0) {
