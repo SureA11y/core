@@ -225,5 +225,15 @@
 <input type="checkbox" id="fail_styled_checkbox_1" class="candidate" style="appearance:none; -webkit-appearance:none;" data-rect="10,980,10,10">
 <input type="checkbox" id="fail_styled_checkbox_2" class="candidate" style="appearance:none; -webkit-appearance:none;" data-rect="25,980,10,10">
 
+<!-- CANTTELL: ambiguous near-threshold perimeter sampling. Center-to-center
+     distance to the neighbor is 154px (>= 24, so the fast, unambiguous
+     center-distance check never fires), but the neighbor's near edge still
+     clips exactly 3 of the target's 16 perimeter-sample points -- within
+     the "could be sampling noise" band (>= HIT_THRESHOLD-1, < CONFIDENT_THRESHOLD),
+     not confident enough to fail outright but not spaced enough to
+     confidently pass either. -->
+<button id="canttell_ambiguous_spacing_target" class="candidate" data-rect="91,1111,18,18">Amb</button>
+<button id="ambiguous_spacing_neighbor" class="candidate" data-rect="108,1113,292,14">Neighbor</button>
+
 </body>
 </html>

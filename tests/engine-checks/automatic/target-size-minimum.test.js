@@ -7,150 +7,13 @@ const path = require('node:path');
 
 const { createDom, runa11yCoreOnDom } = require('../../helpers/runa11yCoreOnHtml');
 const { assertRule } = require('../../helpers/assertRule');
+const { patchTargetSizeEnv } = require('../../helpers/patchTargetSizeEnv');
 
 const RULE_ID = 'target-size-minimum';
 
-/**
- * Patch geometry + hit testing to be deterministic in JSDOM.
- * This rule relies on:
- * - getBoundingClientRect/getClientRects
- * - document.elementFromPoint (for sampling/spacing)
- *
- * We provide these via data-rect="x,y,w,h" attributes.
- */
-function patchTargetSizeEnv(dom) {
-  const { window } = dom;
-  const { document } = window;
-
-  // deterministic viewport
-  try {
-    Object.defineProperty(window, 'innerWidth', { value: 1000, configurable: true });
-    Object.defineProperty(window, 'innerHeight', { value: 800, configurable: true });
-  } catch {}
-
-  function parseRectAttr(el) {
-    try {
-      if (!el || el.nodeType !== 1) return null;
-      const raw = el.getAttribute('data-rect');
-      if (!raw) return null;
-      const parts = String(raw).split(',').map((s) => Number(String(s).trim()));
-      if (parts.length !== 4 || parts.some((n) => !Number.isFinite(n))) return null;
-      const [x, y, w, h] = parts;
-      return { x, y, w, h };
-    } catch {
-      return null;
-    }
-  }
-
-  // Patch rect APIs on Element prototype
-  const proto = window.Element && window.Element.prototype;
-  if (proto) {
-    const origBcr = proto.getBoundingClientRect;
-    proto.getBoundingClientRect = function patchedGetBoundingClientRect() {
-      const r = parseRectAttr(this);
-      if (r) {
-        return {
-          x: r.x,
-          y: r.y,
-          left: r.x,
-          top: r.y,
-          width: r.w,
-          height: r.h,
-          right: r.x + r.w,
-          bottom: r.y + r.h
-        };
-      }
-      try {
-        if (typeof origBcr === 'function') return origBcr.call(this);
-      } catch {}
-      return { x: 0, y: 0, left: 0, top: 0, width: 10, height: 10, right: 10, bottom: 10 };
-    };
-
-    const origRects = proto.getClientRects;
-    proto.getClientRects = function patchedGetClientRects() {
-      try {
-        if (this && this.getAttribute && this.getAttribute('data-no-rects') === '1') return [];
-      } catch {}
-
-      const r = parseRectAttr(this);
-      if (r) {
-        if (r.w <= 0 || r.h <= 0) return [];
-        return [
-          {
-            x: r.x,
-            y: r.y,
-            left: r.x,
-            top: r.y,
-            width: r.w,
-            height: r.h,
-            right: r.x + r.w,
-            bottom: r.y + r.h
-          }
-        ];
-      }
-      try {
-        if (typeof origRects === 'function') {
-          const out = origRects.call(this);
-          if (out && out.length) return out;
-        }
-      } catch {}
-      return [{ x: 0, y: 0, left: 0, top: 0, width: 10, height: 10, right: 10, bottom: 10 }];
-    };
-  }
-
-  // elementFromPoint: consider only candidate-ish elements (buttons/links/inputs/etc.)
-  // and return the last element in DOM order that contains the point (topmost approximation).
-  document.elementFromPoint = function patchedElementFromPoint(x, y) {
-    const px = Number(x);
-    const py = Number(y);
-    if (!Number.isFinite(px) || !Number.isFinite(py)) return null;
-
-    // Query broadly: the rule itself will normalize to nearest candidate.
-    const all = Array.from(document.querySelectorAll('[data-rect]'));
-    let hit = null;
-
-    for (const el of all) {
-      const r = parseRectAttr(el);
-      if (!r) continue;
-
-      // Respect basic style suppression for hit testing (display none / visibility hidden)
-      const cs = window.getComputedStyle(el);
-      const disp = cs && cs.display ? String(cs.display) : 'block';
-      const vis = cs && cs.visibility ? String(cs.visibility) : 'visible';
-      const cv = cs && cs.contentVisibility ? String(cs.contentVisibility) : 'visible';
-      if (disp === 'none') continue;
-      if (vis === 'hidden' || vis === 'collapse') continue;
-      if (cv === 'hidden') continue;
-
-      if (px >= r.x && px <= r.x + r.w && py >= r.y && py <= r.y + r.h) {
-        hit = el; // later wins
-      }
-    }
-    return hit;
-  };
-
-  // Patch getComputedStyle defaults for properties used by the rule's reachability filter.
-  const orig = window.getComputedStyle;
-  if (typeof orig === 'function') {
-    window.getComputedStyle = function patchedGetComputedStyle(el) {
-      const cs = orig.call(window, el);
-      return new Proxy(cs, {
-        get(target, prop) {
-          const v = target[prop];
-
-          if (v == null || v === '') {
-            if (prop === 'display') return 'block';
-            if (prop === 'visibility') return 'visible';
-            if (prop === 'contentVisibility') return 'visible';
-            if (prop === 'pointerEvents') return 'auto';
-            if (prop === 'opacity') return '1';
-          }
-          return v;
-        }
-      });
-    };
-  }
-}
+// Deterministic geometry/hit-testing patch (data-rect="x,y,w,h") -- shared
+// with tests/target-size-minimum-node-runtime-parity.test.js, see
+// tests/helpers/patchTargetSizeEnv.js.
 
 function run(html, engineOptions = {}) {
   const dom = createDom(html);
@@ -462,12 +325,14 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/target-size-all-scenarios.htm
 
   const result = run(html);
 
-  // 15, not 13: fixed 2026-07-31 — canttell_svg_a/canttell_svg_b are
+  // 16, not 13: fixed 2026-07-31 — canttell_svg_a/canttell_svg_b are
   // cantTell-tier (essential/equivalent uncertainty) occurrences that used
   // to be silently discarded whenever the overall outcome was 'fail'
   // (see helpers.resolveTieredOutcome's header comment); they're now
-  // correctly merged into the result alongside the confident fails.
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 15, maxOccurrences: 15 });
+  // correctly merged into the result alongside the confident fails. Plus 1
+  // more for canttell_ambiguous_spacing_target (ambiguous-tier perimeter
+  // sampling), same merging.
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 16, maxOccurrences: 16 });
 
   function hasOccurrenceForId(id) {
     return rule.occurrences.some((o) => typeof o.selector === 'string' && new RegExp(`#${id}\\b`).test(o.selector));
@@ -488,7 +353,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/target-size-all-scenarios.htm
     'fail_styled_checkbox_1',
     'fail_styled_checkbox_2',
     'canttell_svg_a', // essential/equivalent uncertainty inside svg — now merged into the 'fail' result (fixed 2026-07-31)
-    'canttell_svg_b'
+    'canttell_svg_b',
+    'canttell_ambiguous_spacing_target' // ambiguous-tier perimeter sampling — same merging
   ];
 
   const expectedNoOccIds = [
@@ -515,7 +381,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/target-size-all-scenarios.htm
     'pass_nested_outer_link', // ancestor/descendant relationship excluded from spacing conflicts
     'pass_nested_inner_button',
     'pass_ua_checkbox_1', // User Agent Control exception: unstyled native checkbox/radio
-    'pass_ua_checkbox_2'
+    'pass_ua_checkbox_2',
+    'ambiguous_spacing_neighbor' // undersized itself, but isolated -- its own perimeter sampling finds nothing nearby
   ];
 
   for (const id of expectedFailIds) {
@@ -525,6 +392,11 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/target-size-all-scenarios.htm
   for (const id of expectedNoOccIds) {
     assert.ok(!hasOccurrenceForId(id), `Did not expect occurrence for id="${id}"`);
   }
+
+  const ambiguousOcc = rule.occurrences.find((o) => typeof o.selector === 'string' && /#canttell_ambiguous_spacing_target\b/.test(o.selector));
+  assert.ok(ambiguousOcc, 'expected an occurrence for canttell_ambiguous_spacing_target');
+  assert.strictEqual(ambiguousOcc.data.details.reasonCode, 'undersized-ambiguous-spacing');
+  assert.strictEqual(ambiguousOcc.data.details.conflictHitCount, 3);
 });
 
 // This rule's geometry (getBoundingClientRect/elementFromPoint) only becomes
