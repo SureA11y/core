@@ -35,7 +35,15 @@ test(`${RULE_ID}: cantTell when at least one applicable element triggers manual 
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 5, maxOccurrences: 5 });
 
   const expected = ['e_q_01', 'e_q_02', 'e_q_05', 'e_q_06', 'e_q_09'];
-  const notExpected = ['e_q_03', 'e_q_04', 'e_q_07', 'e_q_08', 'e_q_10'];
+  // e_q_11's aria-labelledby points at a nonexistent id: not a "detected"
+  // text alternative to review the quality of (its sibling automatic rule,
+  // embed-text-alternative-present, already reports it as a fail -- no
+  // accessible name at all). Regression coverage for a bug found while
+  // diffing this rule against object-/svg-/canvas-text-alternative-quality-
+  // manual, which all correctly require aria-labelledby to resolve to real
+  // text; this rule alone used to treat a merely-present (even broken)
+  // aria-labelledby attribute as "still a mechanism, worth reviewing".
+  const notExpected = ['e_q_03', 'e_q_04', 'e_q_07', 'e_q_08', 'e_q_10', 'e_q_11'];
 
   for (const id of expected) {
     assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);

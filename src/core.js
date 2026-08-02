@@ -31765,23 +31765,30 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     // Only resolve IDREF text if aria-labelledby is present and aria-label is not already sufficient
     let labelledByText = '';
-    let hasLabelledByMechanism = false;
 
-    if (!ariaLabel && ariaLabelledBy) {
-      hasLabelledByMechanism = true;
-
-      if (getTextFromIdRefs) {
-        try {
-          const t = getTextFromIdRefs(ariaLabelledBy, ctx);
-          labelledByText = trim(t && t.text);
-          // If it resolves to empty, still treat as a mechanism present for manual review.
-        } catch {
-          labelledByText = '';
-        }
+    if (!ariaLabel && ariaLabelledBy && getTextFromIdRefs) {
+      try {
+        const t = getTextFromIdRefs(ariaLabelledBy, ctx);
+        labelledByText = trim(t && t.text);
+      } catch {
+        labelledByText = '';
       }
     }
 
-    const hasNameMechanism = !!(ariaLabel || title || hasLabelledByMechanism);
+    // A broken/empty-resolving aria-labelledby (e.g. pointing at a
+    // nonexistent id) is not a "detected" text alternative to review the
+    // QUALITY of -- there's no text here at all, and this element's
+    // sibling automatic rule (embed-text-alternative-present) already
+    // reports it as a fail (no accessible name). Found while extending
+    // coverage of this rule family and diffing it against object-/svg-/
+    // canvas-text-alternative-quality-manual, which all correctly require
+    // aria-labelledby to actually resolve to non-empty text
+    // (hasResolvedLabelledBy) rather than merely being present as an
+    // attribute -- this rule alone treated a present-but-broken
+    // aria-labelledby as "still a mechanism, worth reviewing", producing a
+    // confusing cantTell ("review this text for accuracy") for an element
+    // that has no text alternative whatsoever.
+    const hasNameMechanism = !!(ariaLabel || title || labelledByText);
     if (!hasNameMechanism) continue;
 
     const details = {
@@ -67852,23 +67859,30 @@ const __a11yCoreCrossFrameApi = (function () {
 
     // Only resolve IDREF text if aria-labelledby is present and aria-label is not already sufficient
     let labelledByText = '';
-    let hasLabelledByMechanism = false;
 
-    if (!ariaLabel && ariaLabelledBy) {
-      hasLabelledByMechanism = true;
-
-      if (getTextFromIdRefs) {
-        try {
-          const t = getTextFromIdRefs(ariaLabelledBy, ctx);
-          labelledByText = trim(t && t.text);
-          // If it resolves to empty, still treat as a mechanism present for manual review.
-        } catch {
-          labelledByText = '';
-        }
+    if (!ariaLabel && ariaLabelledBy && getTextFromIdRefs) {
+      try {
+        const t = getTextFromIdRefs(ariaLabelledBy, ctx);
+        labelledByText = trim(t && t.text);
+      } catch {
+        labelledByText = '';
       }
     }
 
-    const hasNameMechanism = !!(ariaLabel || title || hasLabelledByMechanism);
+    // A broken/empty-resolving aria-labelledby (e.g. pointing at a
+    // nonexistent id) is not a "detected" text alternative to review the
+    // QUALITY of -- there's no text here at all, and this element's
+    // sibling automatic rule (embed-text-alternative-present) already
+    // reports it as a fail (no accessible name). Found while extending
+    // coverage of this rule family and diffing it against object-/svg-/
+    // canvas-text-alternative-quality-manual, which all correctly require
+    // aria-labelledby to actually resolve to non-empty text
+    // (hasResolvedLabelledBy) rather than merely being present as an
+    // attribute -- this rule alone treated a present-but-broken
+    // aria-labelledby as "still a mechanism, worth reviewing", producing a
+    // confusing cantTell ("review this text for accuracy") for an element
+    // that has no text alternative whatsoever.
+    const hasNameMechanism = !!(ariaLabel || title || labelledByText);
     if (!hasNameMechanism) continue;
 
     const details = {
