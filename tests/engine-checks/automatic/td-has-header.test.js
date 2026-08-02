@@ -72,6 +72,36 @@ test(`${RULE_ID}: pass when a <td> has an explicit headers attribute referencing
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+// Regression coverage for a bug found while extending direct coverage of
+// this rule: an aria-hidden <th> is removed from the accessibility tree
+// entirely -- a real screen reader never announces it, so it can't
+// actually serve as another cell's row/column header, even though it's
+// still structurally a <th>. A <td> relying solely on such a header was
+// wrongly reported as having one (a false pass on this fail/pass-capable
+// automatic rule).
+test(`${RULE_ID}: an aria-hidden <th> does not count as a header for other cells`, () => {
+  const html = `<!doctype html><html><body><table>
+    <tr><th aria-hidden="true">H1</th><th>H2</th><th>H3</th><th>H4</th></tr>
+    <tr><td>a</td><td>b</td><td>c</td><td>d</td></tr>
+    <tr><td>a</td><td>b</td><td>c</td><td>d</td></tr>
+    <tr><td>a</td><td>b</td><td>c</td><td>d</td></tr>
+  </table></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 3, maxOccurrences: 3 });
+  assert.equal(rule.occurrences[0].data.details.reasonCode, 'TD_NO_ASSOCIATED_HEADER');
+});
+
+test(`${RULE_ID}: an aria-hidden <td> is not flagged (it isn't exposed to AT, so it has no need for a header)`, () => {
+  const html = `<!doctype html><html><body><table>
+    <tr><th>H1</th><th>H2</th><th>H3</th><th>H4</th></tr>
+    <tr><td aria-hidden="true">a</td><td>b</td><td>c</td><td>d</td></tr>
+    <tr><td aria-hidden="true">a</td><td>b</td><td>c</td><td>d</td></tr>
+    <tr><td aria-hidden="true">a</td><td>b</td><td>c</td><td>d</td></tr>
+  </table></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
 test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><body><table>${TABLE_4X4_NO_HEADERS}</table></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });

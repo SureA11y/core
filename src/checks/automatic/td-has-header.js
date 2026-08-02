@@ -69,6 +69,19 @@ function runInPage(ctx) {
     return (v == null ? '' : String(v)).trim();
   }
 
+  const isAccTreeEligible =
+    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+
+  function isEligible(node) {
+    if (!isAccTreeEligible) return true;
+    try {
+      const r = isAccTreeEligible(node, ctx);
+      return !!(r && r.eligible);
+    } catch {
+      return true;
+    }
+  }
+
   const tables = helpers.queryAllSmart ? helpers.queryAllSmart('table') : helpers.queryAll('table');
 
   const occurrences = [];
@@ -95,8 +108,15 @@ function runInPage(ctx) {
 
     applicableCount += 1;
 
+    // An aria-hidden <th> is removed from the accessibility tree entirely
+    // -- a real screen reader never announces it, so it can't actually
+    // serve as another cell's row/column header, even though it's still
+    // structurally a <th>. Found while extending direct coverage of this
+    // rule: without this check, a <td> relying solely on such a header
+    // was wrongly reported as having one (a false `pass` on a
+    // fail/pass-capable automatic rule).
     function isHeaderCell(cell) {
-      return !!(cell && cell.tagName && cell.tagName.toLowerCase() === 'th');
+      return !!(cell && cell.tagName && cell.tagName.toLowerCase() === 'th' && isEligible(cell));
     }
 
     function hasColumnHeaderAbove(r, c) {
@@ -120,6 +140,10 @@ function runInPage(ctx) {
       for (let c = 0; c < cells.length; c++) {
         const cell = cells[c];
         if (!cell || isHeaderCell(cell)) continue;
+
+        // An aria-hidden data cell isn't exposed to AT either, so it has
+        // no need for an accessible header association.
+        if (!isEligible(cell)) continue;
 
         const headersAttr = trim(cell.getAttribute('headers'));
         if (headersAttr) continue;
