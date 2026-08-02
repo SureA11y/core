@@ -165,7 +165,7 @@ function runInPage(ctx) {
 
     const baseOccurrence = {
       summary: 'Missing text alternative for <video> poster.',
-      hint: 'Provide an accessible name (e.g., aria-label/aria-labelledby) for the poster image.',
+      hint: 'Provide an accessible name for the poster image (aria-label/aria-labelledby preferred, or a title attribute as a fallback).',
       i18n: {
         summaryKey: 'videoPoster_textAltPresent_summary_fail',
         hintKey: 'videoPoster_textAltPresent_hint_fail',

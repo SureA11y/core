@@ -143,7 +143,7 @@ test(`${RULE_ID}: i18n (fr) rule title/description are localized`, () => {
   assert.strictEqual(occ.summary, 'Alternative textuelle manquante pour l’image poster de <video>.');
   assert.strictEqual(
     occ.hint,
-    'Fournissez un nom accessible (par ex. aria-label/aria-labelledby) pour l’image poster.'
+    'Fournissez un nom accessible pour l’image poster (aria-label/aria-labelledby de préférence, ou un attribut title comme solution de repli).'
   );
 });
 
@@ -162,7 +162,7 @@ test(`${RULE_ID}: i18n default is English`, () => {
   assert.strictEqual(occ.summary, 'Missing text alternative for <video> poster.');
   assert.strictEqual(
     occ.hint,
-    'Provide an accessible name (e.g., aria-label/aria-labelledby) for the poster image.'
+    'Provide an accessible name for the poster image (aria-label/aria-labelledby preferred, or a title attribute as a fallback).'
   );
 });
 

@@ -149,7 +149,7 @@ test(`${RULE_ID}: i18n (fr) rule title/description are localized`, () => {
   assert.strictEqual(occ.summary, 'Alternative textuelle manquante pour <object>.');
   assert.strictEqual(
     occ.hint,
-    'Fournissez un contenu de repli pertinent dans <object>, ou ajoutez un nom accessible (aria-label/aria-labelledby).'
+    'Fournissez un contenu de repli pertinent dans <object>, ajoutez un nom accessible (aria-label/aria-labelledby), ou utilisez un attribut title comme solution de repli.'
   );
 });
 
@@ -169,7 +169,7 @@ test(`${RULE_ID}: i18n default is English`, () => {
   assert.strictEqual(occ.summary, 'Missing text alternative for <object>.');
   assert.strictEqual(
     occ.hint,
-    'Provide meaningful fallback content inside <object>, or add an accessible name (aria-label/aria-labelledby).'
+    'Provide meaningful fallback content inside <object>, add an accessible name (aria-label/aria-labelledby), or use a title attribute as a best-effort fallback.'
   );
 });
 

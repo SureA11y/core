@@ -150,7 +150,7 @@ function runInPage(ctx) {
 
     const baseOccurrence = {
       summary: 'Missing text alternative for <embed>.',
-      hint: 'Add an accessible name to <embed> (aria-label/aria-labelledby).',
+      hint: 'Add an accessible name to <embed> (aria-label/aria-labelledby preferred, or a title attribute as a best-effort fallback).',
       i18n: {
         summaryKey: 'embed_textAltPresent_summary_fail',
         hintKey: 'embed_textAltPresent_hint_fail',

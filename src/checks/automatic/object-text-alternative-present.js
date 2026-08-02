@@ -158,7 +158,7 @@ function runInPage(ctx) {
 
     const baseOccurrence = {
       summary: 'Missing text alternative for <object>.',
-      hint: 'Provide meaningful fallback content inside <object>, or add an accessible name (aria-label/aria-labelledby).',
+      hint: 'Provide meaningful fallback content inside <object>, add an accessible name (aria-label/aria-labelledby), or use a title attribute as a best-effort fallback.',
       i18n: {
         summaryKey: 'object_textAltPresent_summary_fail',
         hintKey: 'object_textAltPresent_hint_fail',

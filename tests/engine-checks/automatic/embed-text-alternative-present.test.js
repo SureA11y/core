@@ -138,7 +138,7 @@ test(`${RULE_ID}: i18n (fr) rule title/description are localized`, () => {
   assert.strictEqual(occ.summary, 'Alternative textuelle manquante pour <embed>.');
   assert.strictEqual(
     occ.hint,
-    'Ajoutez un nom accessible à <embed> (aria-label/aria-labelledby).'
+    'Ajoutez un nom accessible à <embed> (aria-label/aria-labelledby de préférence, ou un attribut title comme solution de repli).'
   );
 });
 
@@ -158,7 +158,7 @@ test(`${RULE_ID}: i18n default is English`, () => {
   assert.strictEqual(occ.summary, 'Missing text alternative for <embed>.');
   assert.strictEqual(
     occ.hint,
-    'Add an accessible name to <embed> (aria-label/aria-labelledby).'
+    'Add an accessible name to <embed> (aria-label/aria-labelledby preferred, or a title attribute as a best-effort fallback).'
   );
 });
 
