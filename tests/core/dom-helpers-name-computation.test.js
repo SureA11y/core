@@ -492,3 +492,511 @@ test('getEligibilityInfo: default targetSet (no opts) is "dom"', () => {
   assert.equal(info.targetSet, 'dom');
   assert.equal(info.eligible, true);
 });
+
+// ===== getLandmarkNameInfo =====
+// (aria-label -> aria-labelledby -> title, no content fallback -- see this
+// function's own header comment for why landmark roles never derive a name
+// from their rendered content.)
+
+test('getLandmarkNameInfo: a non-element returns present:false with mechanism "unsupported"', () => {
+  const { helpers, document } = helpersFor('<nav id="n"></nav>');
+  const info = helpers.getLandmarkNameInfo(document, {});
+  assert.equal(info.present, false);
+  assert.equal(info.mechanism, 'unsupported');
+  assert.ok(info.flags.includes('notElement'));
+});
+
+test('getLandmarkNameInfo: aria-label names the landmark directly', () => {
+  const { helpers, document } = helpersFor('<nav id="n" aria-label="Primary"></nav>');
+  const info = helpers.getLandmarkNameInfo(byId(document, 'n'), {});
+  assert.equal(info.present, true);
+  assert.equal(info.value, 'Primary');
+  assert.equal(info.mechanism, 'aria-label');
+});
+
+test('getLandmarkNameInfo: title is a legitimate fallback when no ARIA name is present (DuckDuckGo-style distinguishing nav, see header comment)', () => {
+  const { helpers, document } = helpersFor('<nav id="n" title="navigation"></nav>');
+  const info = helpers.getLandmarkNameInfo(byId(document, 'n'), {});
+  assert.equal(info.present, true);
+  assert.equal(info.value, 'navigation');
+  assert.equal(info.mechanism, 'title');
+});
+
+test('getLandmarkNameInfo: no aria and no title yields present:false with no stray flags', () => {
+  const { helpers, document } = helpersFor('<nav id="n"></nav>');
+  const info = helpers.getLandmarkNameInfo(byId(document, 'n'), {});
+  assert.equal(info.present, false);
+  assert.equal(info.mechanism, 'none');
+  assert.deepEqual(info.flags, []);
+});
+
+test('getLandmarkNameInfo: an explicit but empty title="" is flagged "title-empty" rather than silently ignored', () => {
+  const { helpers, document } = helpersFor('<nav id="n" title=""></nav>');
+  const info = helpers.getLandmarkNameInfo(byId(document, 'n'), {});
+  assert.equal(info.present, false);
+  assert.ok(info.flags.includes('title-empty'));
+});
+
+test('getLandmarkNameInfo: rendered content alone (no aria, no title) does not name a landmark -- unlike getContentNameInfo-driven controls', () => {
+  const { helpers, document } = helpersFor('<nav id="n">Some visible nav text</nav>');
+  const info = helpers.getLandmarkNameInfo(byId(document, 'n'), {});
+  assert.equal(info.present, false);
+});
+
+// ===== IDREF id-lookup resilience (safeDocGetById / safeRootQueryById) =====
+//
+// These two lookups exist specifically because a scan can be scoped to a
+// non-document root (contextSelector, shadow-root-like fragments), so an
+// idref target may live outside document.getElementById's reach but still
+// be found via a scoped root.querySelector. Both wrap their DOM calls in
+// try/catch so a hostile/unusual id or a foreign-realm document element
+// never turns a naming lookup into an uncaught exception.
+
+test('safeDocGetById: a getElementById that throws (e.g. a foreign/proxied document) degrades to "missing" instead of propagating the error', () => {
+  const { helpers, document } = helpersFor('<span id="a">Text</span>');
+  // Simulate an environment where document.getElementById is broken/foreign.
+  // In jsdom, querySelector('#id') is itself implemented in terms of
+  // getElementById, so breaking it also removes the root-scoped fallback's
+  // ability to find the element -- the behavior actually under test is
+  // narrower than "still finds it another way": resolveIdRefs must not let
+  // the underlying exception escape, and must report the id as simply
+  // unresolved rather than crashing name computation for the whole page.
+  document.getElementById = () => {
+    throw new Error('simulated foreign-document failure');
+  };
+  let r;
+  assert.doesNotThrow(() => {
+    r = helpers.resolveIdRefs('a', {});
+  });
+  assert.equal(r.refs.length, 0);
+  assert.deepEqual(r.missing, ['a']);
+});
+
+test('safeRootQueryById: resolving the same id again under a different idref string reuses the per-id root-lookup cache', () => {
+  const dom = new JSDOM('<!doctype html><html><body></body></html>', { pretendToBeVisual: true });
+  const { window } = dom;
+  const { document } = window;
+  // A detached fragment (not attached to `document`) means
+  // document.getElementById can never find it -- every lookup must go
+  // through the root-scoped querySelector path (and its cache) instead.
+  // Using two DIFFERENT idref strings (not the same string twice) matters:
+  // resolveIdRefs has its own higher-level cache keyed by the full,
+  // normalized idref string, which would otherwise short-circuit a second
+  // call for the identical string before ever reaching safeRootQueryById's
+  // own per-id cache a second time.
+  const detached = document.createElement('div');
+  detached.innerHTML = '<span id="target">Detached text</span>';
+  const helpers = createDomHelpers({ window, document, root: detached });
+
+  const first = helpers.resolveIdRefs('target', {});
+  const second = helpers.resolveIdRefs('target other', {});
+  assert.equal(first.refs.length, 1);
+  assert.equal(second.refs.length, 1);
+  assert.deepEqual(second.missing, ['other']);
+});
+
+test('safeRootQueryById: an id that is not valid CSS-selector syntax (e.g. leading digit) resolves as missing instead of throwing', () => {
+  const dom = new JSDOM('<!doctype html><html><body></body></html>', { pretendToBeVisual: true });
+  const { window } = dom;
+  const { document } = window;
+  // Detached so document.getElementById can't shortcut around the
+  // querySelector('#1abc') call that would otherwise throw a SyntaxError.
+  const detached = document.createElement('div');
+  detached.innerHTML = '<span id="1abc">Text</span>';
+  const helpers = createDomHelpers({ window, document, root: detached });
+
+  const r = helpers.resolveIdRefs('1abc', {});
+  assert.deepEqual(r.missing, ['1abc']);
+  assert.equal(r.refs.length, 0);
+});
+
+// ===== computeIdRefTargetTextAlternative / __getElementValueLikeName =====
+// (native "name is derived from value/alt" mechanisms, applied when
+// resolving what an aria-labelledby/aria-describedby TARGET itself
+// contributes -- see this function's own header comment.)
+
+test('getTextFromIdRefs: a referenced img target with alt text contributes its alt (value-like name)', () => {
+  const { helpers } = helpersFor(
+    '<div aria-labelledby="photo">desc</div><img id="photo" src="x.png" alt="A cat">'
+  );
+  const t = helpers.getTextFromIdRefs('photo', {});
+  assert.equal(t.text, 'A cat');
+});
+
+test('getTextFromIdRefs: a referenced img target with alt="" contributes nothing (not the img\'s absent title/content)', () => {
+  const { helpers } = helpersFor(
+    '<div aria-labelledby="photo">desc</div><img id="photo" src="x.png" alt="">'
+  );
+  const t = helpers.getTextFromIdRefs('photo', {});
+  assert.equal(t.text, '');
+});
+
+test('getTextFromIdRefs: a referenced input[type=button] target with a value contributes that value', () => {
+  const { helpers } = helpersFor(
+    '<div aria-labelledby="btn">desc</div><input id="btn" type="button" value="Click me">'
+  );
+  const t = helpers.getTextFromIdRefs('btn', {});
+  assert.equal(t.text, 'Click me');
+});
+
+test('getTextFromIdRefs: a referenced input[type=submit] target with no value defaults to "Submit"', () => {
+  const { helpers } = helpersFor(
+    '<div aria-labelledby="sub">desc</div><input id="sub" type="submit">'
+  );
+  const t = helpers.getTextFromIdRefs('sub', {});
+  assert.equal(t.text, 'Submit');
+});
+
+test('getTextFromIdRefs: a referenced input[type=reset] target with no value defaults to "Reset"', () => {
+  const { helpers } = helpersFor(
+    '<div aria-labelledby="res">desc</div><input id="res" type="reset">'
+  );
+  const t = helpers.getTextFromIdRefs('res', {});
+  assert.equal(t.text, 'Reset');
+});
+
+// NOTE on an intentional-looking asymmetry (flagged for human review, not
+// changed): getAccessibleNameInfo does NOT credit this same
+// value-like "Submit"/"Reset" UA-default when computing a plain
+// input[type=submit|reset]'s OWN accessible name (see the
+// "deliberate project policy" test below, backed by
+// tests/fixtures/button-name-present-all-scenarios.html's case_10, which
+// explicitly expects FAIL for a value-less <input type="submit">). Whether
+// computeIdRefTargetTextAlternative crediting the same default when
+// resolving a REFERENCED target is *also* intentional (a referenced
+// target's contribution is arguably a different question than "does this
+// control have an adequate authored name") or a leftover inconsistency is
+// not something this suite can settle with confidence either way, so
+// behavior is left as-is and simply documented here.
+test('getAccessibleNameInfo: an input[type=submit] with no value/aria/label has no accessible name -- deliberate project policy (see button-name-present-all-scenarios.html case_10), not a bug', () => {
+  const { helpers, document } = helpersFor('<input type="submit" id="s">');
+  const info = helpers.getAccessibleNameInfo(byId(document, 's'), { helpers });
+  assert.equal(info.present, false);
+});
+
+// ===== getTextFromIdRefsIdrefEligible / isIdRefEligibleTarget =====
+// IDREF policy: include hidden/aria-hidden/collapsed targets (unlike the
+// general accessible-name computation), but exclude inert or
+// non-composed targets.
+
+test('getTextFromIdRefsIdrefEligible: a fully eligible reference resolves normally with no exclusions', () => {
+  const { helpers } = helpersFor('<span id="a">Hello</span>');
+  const t = helpers.getTextFromIdRefsIdrefEligible('a', {});
+  assert.equal(t.text, 'Hello');
+  assert.deepEqual(t.excluded, []);
+  assert.ok(!t.flags.includes('idref-excluded'));
+});
+
+test('getTextFromIdRefsIdrefEligible: an inert referenced target is excluded from the resolved text and reported separately from a missing id', () => {
+  const { helpers } = helpersFor('<span id="a">Visible</span><span id="b" inert>Blocked</span>');
+  const t = helpers.getTextFromIdRefsIdrefEligible('a b', {});
+  assert.equal(t.text, 'Visible');
+  assert.equal(t.excluded.length, 1);
+  assert.equal(t.excluded[0].id, 'b');
+  assert.ok(t.excluded[0].reasons.includes('inert'));
+  assert.ok(t.flags.includes('idref-excluded'));
+});
+
+test('getTextFromIdRefsIdrefEligible: a referenced target that resolves to empty text is flagged "resolved-empty-text"', () => {
+  const { helpers } = helpersFor('<span id="a"></span>');
+  const t = helpers.getTextFromIdRefsIdrefEligible('a', {});
+  assert.equal(t.text, '');
+  assert.ok(t.flags.includes('resolved-empty-text'));
+});
+
+// ===== getLabelSubtreeNameInfo (via getAccessibleNameInfo's native-<label> path) =====
+// A wrapping <label>'s OWN naming subtree walk: a descendant with its own
+// aria-label/aria-labelledby speaks for itself (its own children are not
+// also walked into), and an image-like descendant contributes its alt --
+// see this function's own header comment for why it deliberately does not
+// call back into getAccessibleNameInfo/getContentNameInfo for descendants.
+
+test("getAccessibleNameInfo: a label's descendant with its own aria-label overrides that descendant's own text, without re-walking into its children", () => {
+  const { helpers, document } = helpersFor(
+    '<label>Text <span aria-label="Override">ignored</span> more<input id="x"></label>'
+  );
+  const info = helpers.getAccessibleNameInfo(byId(document, 'x'), { helpers });
+  assert.equal(info.value, 'Text Override more');
+});
+
+test("getAccessibleNameInfo: a label's descendant with aria-labelledby resolves through the referenced element", () => {
+  const { helpers, document } = helpersFor(
+    '<span id="lblSrc">Real label</span><label>Prefix <b aria-labelledby="lblSrc">ignored content</b> Suffix<input id="y"></label>'
+  );
+  const info = helpers.getAccessibleNameInfo(byId(document, 'y'), { helpers });
+  assert.equal(info.value, 'Prefix Real label Suffix');
+});
+
+test('getAccessibleNameInfo: an image-like descendant inside a label contributes its alt text', () => {
+  const { helpers, document } = helpersFor(
+    '<label><img src="a.png" alt="Photo of cat"><input id="z"></label>'
+  );
+  const info = helpers.getAccessibleNameInfo(byId(document, 'z'), { helpers });
+  assert.equal(info.value, 'Photo of cat');
+});
+
+// ===== getAccessibleNameInfo: diagnostic flags and id-based <label for> fallback =====
+
+test('getAccessibleNameInfo: an aria-labelledby pointing only at a missing id surfaces a diagnostic flag even though no name is found', () => {
+  const { helpers, document } = helpersFor('<div id="d" aria-labelledby="missing"></div>');
+  const info = helpers.getAccessibleNameInfo(byId(document, 'd'), { helpers });
+  assert.equal(info.present, false);
+  assert.ok(info.flags.includes('aria-labelledby-empty-or-unresolvable'));
+});
+
+test('getAccessibleNameInfo: a <label for="..."> names a non-natively-labelable element (e.g. div[role=button]) via the id-based fallback, since it has no .labels API', () => {
+  const { helpers, document } = helpersFor(
+    '<label for="x">Name</label><div id="x" role="button" tabindex="0"></div>'
+  );
+  const info = helpers.getAccessibleNameInfo(byId(document, 'x'), { helpers });
+  assert.equal(info.present, true);
+  assert.equal(info.value, 'Name');
+  assert.equal(info.mechanism, 'label');
+});
+
+test('getAccessibleNameInfo: a <label for="..."> that exists but has empty content falls through rather than producing an empty name', () => {
+  const { helpers, document } = helpersFor(
+    '<label for="y"></label><div id="y" role="button"></div>'
+  );
+  const info = helpers.getAccessibleNameInfo(byId(document, 'y'), { helpers });
+  assert.equal(info.present, false);
+  assert.equal(info.mechanism, 'none');
+});
+
+// ===== getAccessibleNameInfo / getContentNameInfo: shared recursion-depth guard =====
+
+test('getContentNameInfo (via getTextFromIdRefs): an extremely long aria-labelledby chain hits the shared depth guard rather than recursing unbounded', () => {
+  const CHAIN_LENGTH = 40;
+  let html = '';
+  // Each link is deliberately EMPTY (no text of its own) so that once the
+  // depth guard blocks the leaf's content computation, there is no
+  // intermediate link's own rendered text to "rescue" the result on the
+  // way back up -- isolating the guard's effect from ordinary content
+  // fallback behavior.
+  for (let i = 0; i < CHAIN_LENGTH - 1; i++) {
+    html += `<span id="e${i}" aria-labelledby="e${i + 1}"></span>`;
+  }
+  html += `<span id="e${CHAIN_LENGTH - 1}">Leaf text</span>`;
+  const { helpers } = helpersFor(html);
+  const t = helpers.getTextFromIdRefs('e0', {});
+  // The chain is long enough that by the time the final link falls back to
+  // its own content, the shared depth guard has already tripped -- this
+  // must resolve deterministically (not throw, not hang), even though it
+  // means the leaf's real text is unreachable through a chain this long.
+  assert.equal(t.text, '');
+});
+
+// ===== getContentNameInfo: maxContentNodes truncation =====
+
+test('getContentNameInfo: opts.maxContentNodes truncates a pathologically wide content tree and flags "truncated"', () => {
+  let html = '<div id="wrap">';
+  for (let i = 0; i < 20; i++) html += `<span>t${i} </span>`;
+  html += '</div>';
+  const { helpers, document } = helpersFor(html);
+  const info = helpers.getContentNameInfo(
+    byId(document, 'wrap'),
+    { helpers },
+    { maxContentNodes: 5 }
+  );
+  assert.ok(info.flags.includes('truncated'));
+  assert.ok(!info.value.includes('t19'));
+});
+
+// ===== getContentNameInfo: <slot> content in a shadow root =====
+// A <slot>'s own childNodes are its FALLBACK content only -- see this
+// function's own header comment (the Shoelace <sl-button> regression).
+
+test('getContentNameInfo: a <slot> with assigned light-DOM content resolves via assignedNodes, not its own (empty) childNodes', () => {
+  const { helpers, document } = helpersFor('<div id="host">Follow</div>');
+  const host = byId(document, 'host');
+  const shadow = host.attachShadow({ mode: 'open' });
+  shadow.innerHTML = '<button id="btn"><slot></slot></button>';
+  const btn = shadow.querySelector('button');
+  const info = helpers.getContentNameInfo(btn, { helpers });
+  assert.equal(info.value, 'Follow');
+});
+
+test('getContentNameInfo: a <slot> with nothing assigned falls back to its own fallback content', () => {
+  const { helpers, document } = helpersFor('<div id="host"></div>');
+  const host = byId(document, 'host');
+  const shadow = host.attachShadow({ mode: 'open' });
+  shadow.innerHTML = '<button id="btn"><slot>Default label</slot></button>';
+  const btn = shadow.querySelector('button');
+  const info = helpers.getContentNameInfo(btn, { helpers });
+  assert.equal(info.value, 'Default label');
+});
+
+// ===== getTextAlternativeInfo: notElement and canvas edge cases =====
+
+test('getTextAlternativeInfo: a non-element (e.g. document) returns present:false with mechanism "unsupported" and requiredMechanism "unknown"', () => {
+  const { helpers, document } = helpersFor('<div></div>');
+  const info = helpers.getTextAlternativeInfo(document, { helpers });
+  assert.equal(info.present, false);
+  assert.equal(info.mechanism, 'unsupported');
+  assert.equal(info.requiredMechanism, 'unknown');
+  assert.ok(info.flags.includes('notElement'));
+});
+
+test('getTextAlternativeInfo: a canvas with no fallback content or aria falls back to title, flagged "title-used"', () => {
+  const { helpers, document } = helpersFor('<canvas id="c" title="Sales chart"></canvas>');
+  const info = helpers.getTextAlternativeInfo(byId(document, 'c'), { helpers });
+  assert.equal(info.present, true);
+  assert.equal(info.value, 'Sales chart');
+  assert.equal(info.mechanism, 'title');
+  assert.equal(info.requiredMechanism, 'fallback-or-name');
+  assert.ok(info.flags.includes('title-used'));
+});
+
+// ===== __hasMeaningfulCanvasFallbackDescendant (via getTextAlternativeInfo) =====
+// <canvas> fallback content is the element's *children*, not just its
+// rendered textContent -- a documented HTML5 technique is an equivalent
+// <img alt="..."> (or similarly self-describing element) inside <canvas>.
+
+test('getTextAlternativeInfo: a canvas with no direct text but a meaningful img[alt] descendant counts as having fallback content', () => {
+  const { helpers, document } = helpersFor(
+    '<canvas id="c"><img src="chart.png" alt="Bar chart of quarterly sales"></canvas>'
+  );
+  const info = helpers.getTextAlternativeInfo(byId(document, 'c'), { helpers });
+  assert.equal(info.present, true);
+  assert.equal(info.mechanism, 'canvas-fallback');
+});
+
+test('getTextAlternativeInfo: a canvas with a meaningful area[alt] descendant (image-map fallback) counts as having fallback content', () => {
+  const { helpers, document } = helpersFor(
+    '<canvas id="c"><map><area shape="rect" coords="0,0,10,10" alt="Region"></map></canvas>'
+  );
+  const info = helpers.getTextAlternativeInfo(byId(document, 'c'), { helpers });
+  assert.equal(info.present, true);
+  assert.equal(info.mechanism, 'canvas-fallback');
+});
+
+test('getTextAlternativeInfo: a canvas with a descendant carrying aria-label (no text, no alt) counts as having fallback content', () => {
+  const { helpers, document } = helpersFor(
+    '<canvas id="c"><button aria-label="Retry loading chart"></button></canvas>'
+  );
+  const info = helpers.getTextAlternativeInfo(byId(document, 'c'), { helpers });
+  assert.equal(info.present, true);
+  assert.equal(info.mechanism, 'canvas-fallback');
+});
+
+// ===== getLabelMethod / getLabelStrength =====
+// getLabelMethod's own precedence: native <label> association first
+// (hasLabelAssociation), then aria-labelledby, then aria-label, then
+// title, then placeholder (placeholder-capable elements only) -- see
+// getLabelStrength's tiering of the same mechanisms.
+
+test('getLabelMethod: a native <label> association wins, method "label"', () => {
+  const { helpers, document } = helpersFor('<label for="x">Full Name</label><input id="x">');
+  const r = helpers.getLabelMethod(byId(document, 'x'), {});
+  assert.equal(r.method, 'label');
+});
+
+test('getLabelMethod: aria-labelledby is used when there is no label association', () => {
+  const { helpers, document } = helpersFor(
+    '<span id="ref">Search field</span><input id="x" aria-labelledby="ref">'
+  );
+  const r = helpers.getLabelMethod(byId(document, 'x'), {});
+  assert.equal(r.method, 'aria-labelledby');
+  assert.equal(r.value, 'Search field');
+});
+
+test('getLabelMethod: aria-label is used when there is no label or aria-labelledby', () => {
+  const { helpers, document } = helpersFor('<input id="x" aria-label="Search">');
+  const r = helpers.getLabelMethod(byId(document, 'x'), {});
+  assert.equal(r.method, 'aria-label');
+  assert.equal(r.value, 'Search');
+});
+
+test('getLabelMethod: title is the fallback when no label/aria mechanism is present', () => {
+  const { helpers, document } = helpersFor('<input id="x" title="Search">');
+  const r = helpers.getLabelMethod(byId(document, 'x'), {});
+  assert.equal(r.method, 'title');
+  assert.equal(r.value, 'Search');
+});
+
+test('getLabelMethod: placeholder is the last resort, only for placeholder-capable inputs', () => {
+  const { helpers, document } = helpersFor('<input id="x" type="text" placeholder="Search...">');
+  const r = helpers.getLabelMethod(byId(document, 'x'), {});
+  assert.equal(r.method, 'placeholder');
+  assert.equal(r.value, 'Search...');
+});
+
+test('getLabelMethod: placeholder on a non-placeholder-capable input (e.g. checkbox) is not used as a label method', () => {
+  const { helpers, document } = helpersFor('<input id="x" type="checkbox" placeholder="ignored">');
+  const r = helpers.getLabelMethod(byId(document, 'x'), {});
+  assert.equal(r.method, 'none');
+});
+
+test('getLabelMethod: no label/aria/title/placeholder at all yields method "none"', () => {
+  const { helpers, document } = helpersFor('<input id="x">');
+  const r = helpers.getLabelMethod(byId(document, 'x'), {});
+  assert.equal(r.method, 'none');
+  assert.equal(r.value, null);
+});
+
+test('getLabelMethod: a non-element returns method "none" with value null', () => {
+  const { helpers } = helpersFor('<div></div>');
+  const r = helpers.getLabelMethod(null, {});
+  assert.equal(r.method, 'none');
+  assert.equal(r.value, null);
+});
+
+test('getLabelMethod: an explicitly-associated label with no name of its own but its own title still counts as a label association (case_22 regression)', () => {
+  const { helpers, document } = helpersFor('<label for="s" title="Search"></label><input id="s">');
+  const r = helpers.getLabelMethod(byId(document, 's'), {});
+  assert.equal(r.method, 'label');
+});
+
+test('getLabelMethod: repeated calls on the same element reuse the per-run label-association cache and remain consistent', () => {
+  const { helpers, document } = helpersFor('<label for="x">Full Name</label><input id="x">');
+  const el = byId(document, 'x');
+  const first = helpers.getLabelMethod(el, {});
+  const second = helpers.getLabelMethod(el, {});
+  assert.equal(first.method, 'label');
+  assert.equal(second.method, 'label');
+});
+
+test('getLabelStrength: maps each label method to its documented tier', () => {
+  assert.equal(helpersFor('<div></div>').helpers.getLabelStrength('label'), 'strong');
+  const { helpers } = helpersFor('<div></div>');
+  assert.equal(helpers.getLabelStrength('aria-labelledby'), 'strong');
+  assert.equal(helpers.getLabelStrength('aria-label'), 'medium');
+  assert.equal(helpers.getLabelStrength('title'), 'weak');
+  assert.equal(helpers.getLabelStrength('placeholder'), 'weak');
+  assert.equal(helpers.getLabelStrength('none'), 'none');
+  assert.equal(helpers.getLabelStrength('something-unknown'), 'none');
+});
+
+// ===== Defensive resilience: isPlaceholderCapable / labelContributesAccessibleName =====
+// These cover try/catch guards around otherwise-safe DOM reads, exercised
+// by making a specific attribute/property access throw on the exact
+// element under test (simulating a hostile/unusual element implementation)
+// rather than by breaking anything global.
+
+test('getLabelMethod: an input whose getAttribute("type") throws is treated as not placeholder-capable rather than propagating the error', () => {
+  const { helpers, document } = helpersFor('<input id="x" placeholder="Search...">');
+  const el = byId(document, 'x');
+  const originalGetAttribute = el.getAttribute.bind(el);
+  el.getAttribute = (name) => {
+    if (name === 'type') throw new Error('simulated broken getAttribute');
+    return originalGetAttribute(name);
+  };
+  const r = helpers.getLabelMethod(el, {});
+  assert.equal(r.method, 'none');
+});
+
+test('getAccessibleNameInfo (via native <label>): a label whose content-walk throws is still conservatively treated as contributing a name, per labelContributesAccessibleName\'s own "conservative on error" policy', () => {
+  const { helpers, document } = helpersFor('<label id="lbl">Some text<input id="x"></label>');
+  const label = byId(document, 'lbl');
+  Object.defineProperty(label, 'childNodes', {
+    get() {
+      throw new Error('simulated broken childNodes');
+    }
+  });
+  // hasLabelAssociation -> labelContributesAccessibleName(label) hits its
+  // getContentNameInfo(lab) try/catch and, per the documented policy,
+  // returns true (conservative: don't newly fail an association just
+  // because the content walk errored) rather than false.
+  const r = helpers.getLabelMethod(byId(document, 'x'), {});
+  assert.equal(r.method, 'label');
+});
