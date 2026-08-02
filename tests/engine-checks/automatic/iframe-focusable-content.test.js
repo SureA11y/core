@@ -70,6 +70,42 @@ test(`${RULE_ID}: pass when the focusable candidate itself has tabindex="-1"`, (
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+// Regression coverage for a bug found while extending direct coverage of
+// this rule: hasFocusableCandidate never checked whether a candidate was
+// actually rendered (display:none/visibility:hidden/[hidden]) inside the
+// frame's embedded document -- a display:none button was wrongly reported
+// as "still reachable by keyboard" even though it is never rendered or
+// focusable in any real browser.
+test(`${RULE_ID}: pass when the only focusable candidate is display:none`, () => {
+  const dom = createDom(
+    `<!doctype html><html><body><iframe id="a" tabindex="-1"></iframe></body></html>`
+  );
+  dom.window.document.getElementById('a').contentDocument.body.innerHTML =
+    '<button style="display:none">Hidden</button>';
+  const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: pass when the only focusable candidate is hidden via an ancestor's visibility:hidden`, () => {
+  const dom = createDom(
+    `<!doctype html><html><body><iframe id="a" tabindex="-1"></iframe></body></html>`
+  );
+  dom.window.document.getElementById('a').contentDocument.body.innerHTML =
+    '<div style="visibility:hidden"><button>Hidden via ancestor</button></div>';
+  const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: fail when the focusable candidate is aria-hidden but still visually rendered (still reachable by real keyboard tab order)`, () => {
+  const dom = createDom(
+    `<!doctype html><html><body><iframe id="a" tabindex="-1"></iframe></body></html>`
+  );
+  dom.window.document.getElementById('a').contentDocument.body.innerHTML =
+    '<button aria-hidden="true">Still tabbable</button>';
+  const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+});
+
 test(`${RULE_ID}: i18n default is English`, () => {
   const dom = createDom(
     `<!doctype html><html><body><iframe id="a" tabindex="-1"></iframe></body></html>`

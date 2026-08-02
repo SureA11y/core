@@ -33071,6 +33071,36 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "iframe-focusable-content": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
+  // Self-contained rendering check for the embedded document (a distinct
+  // realm — see this rule's own header comment on why the outer
+  // document's shared eligibility helpers can't be reused here).
+  // Deliberately checks only genuine non-rendering (display:none,
+  // visibility:hidden, the hidden attribute) via the ancestor chain, NOT
+  // aria-hidden: aria-hidden alone does not remove an element from a real
+  // browser's native tab order (the same anti-pattern this engine's own
+  // aria-hidden-focus rule exists to catch), so an aria-hidden-but-
+  // visually-rendered focusable element inside the frame is still
+  // genuinely reachable by keyboard and must stay flagged.
+  function isRenderedInDoc(doc, el) {
+    try {
+      const view = doc.defaultView;
+      if (!view || typeof view.getComputedStyle !== 'function') return true;
+      let node = el;
+      while (node && node.nodeType === 1) {
+        if (node.hasAttribute && node.hasAttribute('hidden')) return false;
+        const cs = view.getComputedStyle(node);
+        if (cs) {
+          if (cs.display === 'none') return false;
+          if (cs.visibility === 'hidden' || cs.visibility === 'collapse') return false;
+        }
+        node = node.parentElement;
+      }
+      return true;
+    } catch {
+      return true;
+    }
+  }
+
   function hasFocusableCandidate(doc) {
     if (!doc || !doc.querySelectorAll) return false;
     let els;
@@ -33089,6 +33119,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         const n = Number(String(raw).trim());
         if (!Number.isNaN(n) && n < 0) continue; // explicitly removed from tab order
       }
+      if (!isRenderedInDoc(doc, el)) continue; // display:none/visibility:hidden/[hidden]: never reachable at all
       return true;
     }
     return false;
@@ -69385,6 +69416,36 @@ const __a11yCoreCrossFrameApi = (function () {
     "iframe-focusable-content": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
+  // Self-contained rendering check for the embedded document (a distinct
+  // realm — see this rule's own header comment on why the outer
+  // document's shared eligibility helpers can't be reused here).
+  // Deliberately checks only genuine non-rendering (display:none,
+  // visibility:hidden, the hidden attribute) via the ancestor chain, NOT
+  // aria-hidden: aria-hidden alone does not remove an element from a real
+  // browser's native tab order (the same anti-pattern this engine's own
+  // aria-hidden-focus rule exists to catch), so an aria-hidden-but-
+  // visually-rendered focusable element inside the frame is still
+  // genuinely reachable by keyboard and must stay flagged.
+  function isRenderedInDoc(doc, el) {
+    try {
+      const view = doc.defaultView;
+      if (!view || typeof view.getComputedStyle !== 'function') return true;
+      let node = el;
+      while (node && node.nodeType === 1) {
+        if (node.hasAttribute && node.hasAttribute('hidden')) return false;
+        const cs = view.getComputedStyle(node);
+        if (cs) {
+          if (cs.display === 'none') return false;
+          if (cs.visibility === 'hidden' || cs.visibility === 'collapse') return false;
+        }
+        node = node.parentElement;
+      }
+      return true;
+    } catch {
+      return true;
+    }
+  }
+
   function hasFocusableCandidate(doc) {
     if (!doc || !doc.querySelectorAll) return false;
     let els;
@@ -69403,6 +69464,7 @@ const __a11yCoreCrossFrameApi = (function () {
         const n = Number(String(raw).trim());
         if (!Number.isNaN(n) && n < 0) continue; // explicitly removed from tab order
       }
+      if (!isRenderedInDoc(doc, el)) continue; // display:none/visibility:hidden/[hidden]: never reachable at all
       return true;
     }
     return false;
