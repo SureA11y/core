@@ -11,7 +11,9 @@ const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 const RULE_ID = 'definition-list-children-valid';
 
 function hasOccurrenceForId(rule, id) {
-  return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
+  return (rule.occurrences || []).some(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
 }
 
 test(`${RULE_ID}: notApplicable when no dl is present`, () => {
@@ -80,14 +82,26 @@ test(`${RULE_ID}: i18n default is English`, () => {
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/definition-list-children-valid-all-scenarios.html)`, () => {
-  const fixturePath = path.join(__dirname, '../..', 'fixtures', 'definition-list-children-valid-all-scenarios.html');
+  const fixturePath = path.join(
+    __dirname,
+    '../..',
+    'fixtures',
+    'definition-list-children-valid-all-scenarios.html'
+  );
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 4, maxOccurrences: 4 });
 
   const expectedFailIds = ['dlv_case_03', 'dlv_case_05', 'dlv_case_09', 'dlv_case_10'];
-  const expectedNoOccIds = ['dlv_case_01', 'dlv_case_02', 'dlv_case_04', 'dlv_case_06', 'dlv_case_07', 'dlv_case_08'];
+  const expectedNoOccIds = [
+    'dlv_case_01',
+    'dlv_case_02',
+    'dlv_case_04',
+    'dlv_case_06',
+    'dlv_case_07',
+    'dlv_case_08'
+  ];
 
   for (const id of expectedFailIds) {
     assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);

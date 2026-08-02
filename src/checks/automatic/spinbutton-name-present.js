@@ -10,10 +10,16 @@ const meta = {
     descriptionKey: 'spinbuttonNamePresent_description'
   },
   helpUrl: null,
-  tags: ["wcag2a", "wcag412", "forms", "atomic", "automatic", "name", "spinbutton"],
+  tags: ['wcag2a', 'wcag412', 'forms', 'atomic', 'automatic', 'name', 'spinbutton'],
   wcagSc: ['4.1.2'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '4.1.2', title: 'Name, Role, Value', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '4.1.2',
+      title: 'Name, Role, Value',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'serious',
   category: 'robust',
@@ -24,20 +30,22 @@ const meta = {
 
 function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
-  const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
-      ? helpers.getEligibilityInfo
-      : null;
-
+  const getEligibilityInfo =
+    helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
 
   function normalizeWs(s) {
-    return String(s || '').replace(/\s+/g, ' ').trim();
+    return String(s || '')
+      .replace(/\s+/g, ' ')
+      .trim();
   }
 
   function getAttr(el, name) {
     try {
       if (!el || !el.getAttribute) return '';
       return normalizeWs(el.getAttribute(name));
-    } catch { return ''; }
+    } catch {
+      return '';
+    }
   }
 
   function getConservativeSubtreeText(document, container) {
@@ -52,7 +60,7 @@ function runInPage(ctx) {
       const info = helpers.getContentNameInfo(container, ctx);
       return info && info.present ? info.value : '';
     }
-    const t = (container && container.textContent) ? String(container.textContent) : '';
+    const t = container && container.textContent ? String(container.textContent) : '';
     return t.replace(/\s+/g, ' ').trim();
   }
 
@@ -100,7 +108,8 @@ function runInPage(ctx) {
   }
 
   function isEligibleAcc(helpers, el, ctx) {
-    const fn = helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+    const fn =
+      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -126,12 +135,13 @@ function runInPage(ctx) {
     return map;
   }
 
-
   const occurrences = [];
   let applicableCount = 0;
 
-  const selector = "[role=\"spinbutton\"]";
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
+  const selector = '[role="spinbutton"]';
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart(selector)
+    : helpers.queryAll(selector);
 
   // Precompute label[for] map for spinbutton elements that are labelable
   // native form controls (e.g. <input role="spinbutton">).
@@ -200,16 +210,22 @@ function runInPage(ctx) {
     if (res.ok) continue;
 
     const eligInfo = getEligibilityInfo
-        ? (() => { try { return getEligibilityInfo(el, ctx, { targetSet: 'acc' }); } catch { return null; } })()
-        : null;
+      ? (() => {
+          try {
+            return getEligibilityInfo(el, ctx, { targetSet: 'acc' });
+          } catch {
+            return null;
+          }
+        })()
+      : null;
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
     occurrences.push({
       selector: stableSelector,
       html,
       summary: 'This element has no accessible name.',
-      hint: 'Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this spinbutton\'s accessible name.',
+      hint: "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this spinbutton's accessible name.",
       i18n: {
         summaryKey: 'spinbuttonNamePresent_summary_fail',
         hintKey: 'spinbuttonNamePresent_hint_fail',
@@ -222,12 +238,16 @@ function runInPage(ctx) {
     });
   }
 
-
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'fail',
+      severity: rule.defaultSeverity || 'minor',
+      occurrences
+    };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }

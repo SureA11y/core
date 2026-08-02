@@ -13,7 +13,13 @@ const meta = {
   tags: ['wcag2a', 'wcag412', 'navigation', 'atomic', 'automatic', 'links', 'name'],
   wcagSc: ['4.1.2'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '4.1.2', title: 'Name, Role, Value', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '4.1.2',
+      title: 'Name, Role, Value',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'serious',
   category: 'robust',
@@ -40,23 +46,26 @@ function runInPage(ctx) {
       const info = helpers.getContentNameInfo(container, ctx);
       return info && info.present ? info.value : '';
     }
-    const t = (container && container.textContent) ? String(container.textContent) : '';
+    const t = container && container.textContent ? String(container.textContent) : '';
     return t.replace(/\s+/g, ' ').trim();
   }
 
   const selector = 'a[href], area[href], [role="link"]';
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart(selector)
+    : helpers.queryAll(selector);
 
   for (const el of nodes) {
     // isAccTreeEligible returns { eligible, reasons }, not a boolean.
     const eligResult = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el, ctx) : true;
-    const eligible = typeof eligResult === 'boolean' ? eligResult : !!(eligResult && eligResult.eligible);
+    const eligible =
+      typeof eligResult === 'boolean' ? eligResult : !!(eligResult && eligResult.eligible);
     if (!eligible) continue;
 
     applicableCount += 1;
 
     const nameInfo = helpers.getAccessibleNameInfo ? helpers.getAccessibleNameInfo(el, ctx) : null;
-    const programmaticName = (nameInfo && typeof nameInfo.value === 'string') ? nameInfo.value : '';
+    const programmaticName = nameInfo && typeof nameInfo.value === 'string' ? nameInfo.value : '';
 
     // A native <a href>/<area href> (or [role="link"]) whose role has been
     // overridden to one of these roles is no longer semantically a link —
@@ -66,21 +75,39 @@ function runInPage(ctx) {
     // fix for a real-world example — <button role="combobox">List</button> —
     // of the same class of bug on a different host tag).
     const role = el.getAttribute ? el.getAttribute('role') : null;
-    const roleNorm = String(role || '').replace(/\s+/g, ' ').trim().toLowerCase();
-    const VALUE_ROLES = ['textbox', 'progressbar', 'scrollbar', 'slider', 'spinbutton', 'combobox', 'listbox'];
+    const roleNorm = String(role || '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+    const VALUE_ROLES = [
+      'textbox',
+      'progressbar',
+      'scrollbar',
+      'slider',
+      'spinbutton',
+      'combobox',
+      'listbox'
+    ];
     const isContentNameCandidate = !VALUE_ROLES.includes(roleNorm);
 
-    const contentName = (programmaticName.trim().length === 0 && isContentNameCandidate) ? getConservativeSubtreeText(el) : '';
+    const contentName =
+      programmaticName.trim().length === 0 && isContentNameCandidate
+        ? getConservativeSubtreeText(el)
+        : '';
     const finalName = (programmaticName.trim().length ? programmaticName : contentName).trim();
 
     if (finalName.length === 0) {
       // Only compute the richer eligibility-info payload (used solely for
       // the occurrence's visibilityFilter) once we know an occurrence is
       // actually being built, rather than for every applicable element.
-      const eligInfo = helpers.getEligibilityInfo ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
+      const eligInfo = helpers.getEligibilityInfo
+        ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
+        : null;
 
       const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-      const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+      const html = helpers.getOuterHtmlSnippet
+        ? helpers.getOuterHtmlSnippet(el)
+        : el.outerHTML || '';
       const tag = (el.tagName || '').toLowerCase();
 
       occurrences.push({
@@ -117,7 +144,12 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'fail',
+      severity: rule.defaultSeverity || 'minor',
+      occurrences
+    };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }

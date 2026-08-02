@@ -11,7 +11,9 @@ const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 const RULE_ID = 'presentation-role-conflict';
 
 function hasOccurrenceForId(rule, id) {
-  return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
+  return (rule.occurrences || []).some(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
 }
 
 test(`${RULE_ID}: notApplicable when no role="presentation"/"none" is present`, () => {
@@ -93,16 +95,31 @@ test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><body><div id="a" role="presentation" aria-label="x"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1 });
-  assert.strictEqual(rule.title, 'Presentational role must not conflict with a global ARIA attribute or focusability');
+  assert.strictEqual(
+    rule.title,
+    'Presentational role must not conflict with a global ARIA attribute or focusability'
+  );
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/presentation-role-conflict-all-scenarios.html)`, () => {
-  const fixturePath = path.join(__dirname, '../..', 'fixtures', 'presentation-role-conflict-all-scenarios.html');
+  const fixturePath = path.join(
+    __dirname,
+    '../..',
+    'fixtures',
+    'presentation-role-conflict-all-scenarios.html'
+  );
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 6, maxOccurrences: 6 });
-  for (const id of ['prc_case_02', 'prc_case_03', 'prc_case_04', 'prc_case_05', 'prc_case_07', 'prc_case_10']) {
+  for (const id of [
+    'prc_case_02',
+    'prc_case_03',
+    'prc_case_04',
+    'prc_case_05',
+    'prc_case_07',
+    'prc_case_10'
+  ]) {
     assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);
   }
   for (const id of ['prc_case_01', 'prc_case_06', 'prc_case_08', 'prc_case_09']) {

@@ -41,7 +41,7 @@ test('dom helpers perf: modal dialog query is memoized per document per run (whe
   helpers.isAccTreeEligible(outside);
 
   const stats = helpers.getPerfStats();
-  const c = (stats && stats.counters) ? stats.counters : {};
+  const c = stats && stats.counters ? stats.counters : {};
 
   const miss = c['modalDialogs.miss'] || 0;
   const hit = c['modalDialogs.hit'] || 0;
@@ -97,7 +97,10 @@ test('dom helpers perf: ancestor CSS blocker short-circuits repeated style check
   const inc1 = after1 - before1;
   const inc2 = after2 - before2;
 
-  assert.ok(inc2 < inc1, 'second sibling should require fewer getComputedStyle calls due to ancestor blocker cache');
+  assert.ok(
+    inc2 < inc1,
+    'second sibling should require fewer getComputedStyle calls due to ancestor blocker cache'
+  );
 });
 
 test('dom helpers perf: queryAllDeep caches shadow root discovery when excludeSelectors is empty', () => {
@@ -136,15 +139,25 @@ test('dom helpers perf: queryAllDeep caches shadow root discovery when excludeSe
   const r1 = helpers.queryAllDeep('button');
   const after1 = starScans;
 
-  assert.ok(r1.some((el) => el && el.id === 'shadowBtn'), 'first deep query finds shadow button');
+  assert.ok(
+    r1.some((el) => el && el.id === 'shadowBtn'),
+    'first deep query finds shadow button'
+  );
   assert.ok(after1 > before1, 'first deep query should scan for shadow hosts');
 
   const before2 = starScans;
   const r2 = helpers.queryAllDeep('button');
   const after2 = starScans;
 
-  assert.ok(r2.some((el) => el && el.id === 'shadowBtn'), 'second deep query still finds shadow button');
-  assert.equal(after2, before2, 'second deep query should reuse cached shadow root discovery (no repeated "*" scans)');
+  assert.ok(
+    r2.some((el) => el && el.id === 'shadowBtn'),
+    'second deep query still finds shadow button'
+  );
+  assert.equal(
+    after2,
+    before2,
+    'second deep query should reuse cached shadow root discovery (no repeated "*" scans)'
+  );
 });
 
 test('dom helpers perf: queryAllDeep does NOT cache shadow root discovery when excludeSelectors is non-empty', () => {
@@ -195,5 +208,8 @@ test('dom helpers perf: queryAllDeep does NOT cache shadow root discovery when e
   helpers.queryAllDeep('button');
   const after2 = starScans;
 
-  assert.ok(after2 > before2, 'second deep query should scan again when excludeSelectors is non-empty (no discovery cache)');
+  assert.ok(
+    after2 > before2,
+    'second deep query should scan again when excludeSelectors is non-empty (no discovery cache)'
+  );
 });

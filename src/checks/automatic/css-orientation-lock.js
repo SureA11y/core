@@ -64,7 +64,13 @@ const meta = {
   tags: ['wcag21aa', 'wcag134', 'structure', 'atomic', 'automatic'],
   wcagSc: ['1.3.4'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '1.3.4', title: 'Orientation', conformanceLevel: 'AA' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '1.3.4',
+      title: 'Orientation',
+      conformanceLevel: 'AA'
+    }
   ],
   defaultSeverity: 'serious',
   category: 'perceivable',
@@ -87,7 +93,9 @@ function runInPage(ctx) {
   const CSS_MEDIA_RULE = 4;
   const CSS_STYLE_RULE = 1;
 
-  function trim(v) { return (v == null ? '' : String(v)).trim(); }
+  function trim(v) {
+    return (v == null ? '' : String(v)).trim();
+  }
 
   // Converts a rotate()/rotateZ() angle argument (with unit) to degrees.
   // Matches a widely-used reference engine's own getAngleInDegrees: only deg/grad/rad/turn are
@@ -126,9 +134,13 @@ function runInPage(ctx) {
   // near 90 or 270 degrees (mod 90, once the 0/180 case is excluded) is.
   function isLockingRotation(styleDecl) {
     if (!styleDecl) return false;
-    const transformVal = trim(styleDecl.transform) || trim(styleDecl.getPropertyValue ? styleDecl.getPropertyValue('-webkit-transform') : '');
+    const transformVal =
+      trim(styleDecl.transform) ||
+      trim(styleDecl.getPropertyValue ? styleDecl.getPropertyValue('-webkit-transform') : '');
     // The standalone CSS `rotate` property (distinct from `transform: rotate()`) -- that reference engine checks this too.
-    const rotatePropVal = trim(styleDecl.getPropertyValue ? styleDecl.getPropertyValue('rotate') : '');
+    const rotatePropVal = trim(
+      styleDecl.getPropertyValue ? styleDecl.getPropertyValue('rotate') : ''
+    );
 
     let degrees = rotateDegreesFromTransform(transformVal);
     if (!degrees && rotatePropVal) degrees = angleToDegrees(rotatePropVal);
@@ -189,9 +201,10 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
 
-  const target = document.documentElement || (document.body || null);
+  const target = document.documentElement || document.body || null;
   const stableSelector = helpers.buildSelector && target ? helpers.buildSelector(target) : 'html';
-  const html = helpers.getOuterHtmlSnippet && target ? helpers.getOuterHtmlSnippet(target) : '<html>';
+  const html =
+    helpers.getOuterHtmlSnippet && target ? helpers.getOuterHtmlSnippet(target) : '<html>';
 
   const occurrences = findings.map((f) => ({
     selector: stableSelector,
@@ -204,11 +217,20 @@ function runInPage(ctx) {
       params: { mediaText: f.mediaText, selectorText: f.selectorText }
     },
     data: {
-      details: { reasonCode: 'ORIENTATION_MEDIA_ROTATE_TRANSFORM', mediaText: f.mediaText, selectorText: f.selectorText }
+      details: {
+        reasonCode: 'ORIENTATION_MEDIA_ROTATE_TRANSFORM',
+        mediaText: f.mediaText,
+        selectorText: f.selectorText
+      }
     }
   }));
 
-  return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'serious', occurrences };
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'fail',
+    severity: rule.defaultSeverity || 'serious',
+    occurrences
+  };
 }
 
 module.exports = { id, meta, runInPage, applicability };

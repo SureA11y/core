@@ -31,7 +31,8 @@ const id = 'meta-refresh-timing-absent';
 
 const meta = {
   title: 'Page must not use a timed meta refresh',
-  description: 'Checks that <meta http-equiv="refresh"> does not impose a positive delay of 20 hours or less.',
+  description:
+    'Checks that <meta http-equiv="refresh"> does not impose a positive delay of 20 hours or less.',
   i18n: {
     titleKey: 'metaRefreshTimingAbsent_title',
     descriptionKey: 'metaRefreshTimingAbsent_description'
@@ -40,7 +41,13 @@ const meta = {
   tags: ['wcag2a', 'wcag221', 'structure', 'atomic', 'automatic'],
   wcagSc: ['2.2.1'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '2.2.1', title: 'Timing Adjustable', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '2.2.1',
+      title: 'Timing Adjustable',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'serious',
   category: 'operable',
@@ -63,7 +70,9 @@ function runInPage(ctx) {
   // WCAG 2.2.1 Exception 3: time limits longer than 20 hours are exempt.
   const EXEMPT_DELAY_SECONDS = 20 * 60 * 60;
 
-  const nodes = document.querySelectorAll ? document.querySelectorAll('meta[http-equiv="refresh" i]') : [];
+  const nodes = document.querySelectorAll
+    ? document.querySelectorAll('meta[http-equiv="refresh" i]')
+    : [];
 
   const occurrences = [];
   let applicableCount = 0;
@@ -85,7 +94,7 @@ function runInPage(ctx) {
     if (delay > EXEMPT_DELAY_SECONDS) continue; // WCAG 2.2.1 Exception 3 (>20 hours)
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
     occurrences.push({
       selector: stableSelector,
@@ -107,7 +116,12 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'serious', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'fail',
+      severity: rule.defaultSeverity || 'serious',
+      occurrences
+    };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }

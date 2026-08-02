@@ -12,7 +12,9 @@ const { createContrastHelpers } = require('../src/core/contrast-helpers.js');
 // caching-behavior tests in tests/cache-tests/contrast-helpers-cache.test.js.
 // This file exercises the real branches neither of those cover.
 function makeHelpers(html) {
-  const dom = new JSDOM(`<!doctype html><html><body>${html}</body></html>`, { pretendToBeVisual: true });
+  const dom = new JSDOM(`<!doctype html><html><body>${html}</body></html>`, {
+    pretendToBeVisual: true
+  });
   const { window } = dom;
   const { document } = window;
 
@@ -20,9 +22,13 @@ function makeHelpers(html) {
     __contrastSharedCache: {},
     trim: (v) => (v == null ? '' : String(v)).trim(),
     computedStyle: (el) => {
-      try { return window.getComputedStyle(el); } catch { return {}; }
+      try {
+        return window.getComputedStyle(el);
+      } catch {
+        return {};
+      }
     },
-    composedParent: (n) => (n ? (n.parentNode || (n.assignedSlot ? n.assignedSlot : null)) : null),
+    composedParent: (n) => (n ? n.parentNode || (n.assignedSlot ? n.assignedSlot : null) : null),
     buildSimpleSelector: (el) => {
       if (!el || el.nodeType !== 1) return '';
       if (el.id) return `#${el.id}`;
@@ -73,7 +79,9 @@ test('computeEffectiveForeground: repeat calls for the same element hit the cach
 // -------- computeEffectiveBackground --------
 
 test('computeEffectiveBackground: an opaque ancestor background resolves ok:true with no assumptions', () => {
-  const { document, helpers } = makeHelpers('<div id="a" style="background-color:rgb(255,255,255)"><span id="b">t</span></div>');
+  const { document, helpers } = makeHelpers(
+    '<div id="a" style="background-color:rgb(255,255,255)"><span id="b">t</span></div>'
+  );
   const b = document.getElementById('b');
   const out = helpers.computeEffectiveBackground(b, {});
   assert.strictEqual(out.ok, true);
@@ -124,7 +132,9 @@ test('computeEffectiveBackground: collectStack:true returns a per-ancestor layer
 // -------- getComputabilityBlocker --------
 
 test('getComputabilityBlocker: ok:true (no blocker) for a plain opaque-background element', () => {
-  const { document, helpers } = makeHelpers('<div id="a" style="background-color:white"><span id="b">t</span></div>');
+  const { document, helpers } = makeHelpers(
+    '<div id="a" style="background-color:white"><span id="b">t</span></div>'
+  );
   const b = document.getElementById('b');
   const out = helpers.getComputabilityBlocker(b);
   assert.strictEqual(out.ok, true);
@@ -132,7 +142,9 @@ test('getComputabilityBlocker: ok:true (no blocker) for a plain opaque-backgroun
 });
 
 test('getComputabilityBlocker: mix-blend-mode on an ancestor blocks computability', () => {
-  const { document, helpers } = makeHelpers('<div id="a" style="mix-blend-mode:multiply"><span id="b">t</span></div>');
+  const { document, helpers } = makeHelpers(
+    '<div id="a" style="mix-blend-mode:multiply"><span id="b">t</span></div>'
+  );
   const b = document.getElementById('b');
   const out = helpers.getComputabilityBlocker(b);
   assert.strictEqual(out.ok, false);
@@ -141,7 +153,9 @@ test('getComputabilityBlocker: mix-blend-mode on an ancestor blocks computabilit
 });
 
 test('getComputabilityBlocker: filter on an ancestor blocks computability (reasonCode reflects filter vs backdrop-filter)', () => {
-  const { document, helpers } = makeHelpers('<div id="a" style="filter:blur(2px)"><span id="b">t</span></div>');
+  const { document, helpers } = makeHelpers(
+    '<div id="a" style="filter:blur(2px)"><span id="b">t</span></div>'
+  );
   const b = document.getElementById('b');
   const out = helpers.getComputabilityBlocker(b);
   assert.strictEqual(out.ok, false);
@@ -150,7 +164,9 @@ test('getComputabilityBlocker: filter on an ancestor blocks computability (reaso
 });
 
 test('getComputabilityBlocker: backdrop-filter on an ancestor reports blockerProperty backdrop-filter', () => {
-  const { document, helpers } = makeHelpers('<div id="a" style="backdrop-filter:blur(2px)"><span id="b">t</span></div>');
+  const { document, helpers } = makeHelpers(
+    '<div id="a" style="backdrop-filter:blur(2px)"><span id="b">t</span></div>'
+  );
   const b = document.getElementById('b');
   const out = helpers.getComputabilityBlocker(b);
   assert.strictEqual(out.ok, false);
@@ -159,7 +175,9 @@ test('getComputabilityBlocker: backdrop-filter on an ancestor reports blockerPro
 });
 
 test('getComputabilityBlocker: a background-image/gradient on an ancestor blocks computability, classified by fill type', () => {
-  const { document, helpers } = makeHelpers('<div id="a" style="background-image:url(x.png)"><span id="b">t</span></div>');
+  const { document, helpers } = makeHelpers(
+    '<div id="a" style="background-image:url(x.png)"><span id="b">t</span></div>'
+  );
   const b = document.getElementById('b');
   const out = helpers.getComputabilityBlocker(b);
   assert.strictEqual(out.ok, false);
@@ -168,7 +186,9 @@ test('getComputabilityBlocker: a background-image/gradient on an ancestor blocks
 });
 
 test('getComputabilityBlocker: fractional opacity on an ancestor (not el itself) blocks computability', () => {
-  const { document, helpers } = makeHelpers('<div id="a" style="opacity:0.6"><span id="b">t</span></div>');
+  const { document, helpers } = makeHelpers(
+    '<div id="a" style="opacity:0.6"><span id="b">t</span></div>'
+  );
   const b = document.getElementById('b');
   const out = helpers.getComputabilityBlocker(b);
   assert.strictEqual(out.ok, false);
@@ -177,7 +197,9 @@ test('getComputabilityBlocker: fractional opacity on an ancestor (not el itself)
 });
 
 test("getComputabilityBlocker: el's OWN fractional opacity is not a blocker (only ancestors are)", () => {
-  const { document, helpers } = makeHelpers('<span id="b" style="opacity:0.6;background-color:white">t</span>');
+  const { document, helpers } = makeHelpers(
+    '<span id="b" style="opacity:0.6;background-color:white">t</span>'
+  );
   const b = document.getElementById('b');
   const out = helpers.getComputabilityBlocker(b);
   assert.strictEqual(out.ok, true);
@@ -186,8 +208,8 @@ test("getComputabilityBlocker: el's OWN fractional opacity is not a blocker (onl
 test('getComputabilityBlocker: a closer opaque background-color paint-occludes a farther background-image (not a blocker)', () => {
   const { document, helpers } = makeHelpers(
     '<div id="outer" style="background-image:url(hero.jpg)">' +
-    '<div id="a" style="background-color:white"><span id="b">t</span></div>' +
-    '</div>'
+      '<div id="a" style="background-color:white"><span id="b">t</span></div>' +
+      '</div>'
   );
   const b = document.getElementById('b');
   const out = helpers.getComputabilityBlocker(b);
@@ -197,13 +219,17 @@ test('getComputabilityBlocker: a closer opaque background-color paint-occludes a
 // -------- isInactiveUiComponent --------
 
 test('isInactiveUiComponent: a disabled ancestor button marks nested text as inactive', () => {
-  const { document, helpers } = makeHelpers('<button id="btn" disabled><span id="b">t</span></button>');
+  const { document, helpers } = makeHelpers(
+    '<button id="btn" disabled><span id="b">t</span></button>'
+  );
   const b = document.getElementById('b');
   assert.strictEqual(helpers.isInactiveUiComponent(b), true);
 });
 
 test('isInactiveUiComponent: aria-disabled="true" on an ancestor marks nested text as inactive', () => {
-  const { document, helpers } = makeHelpers('<div id="a" aria-disabled="true"><span id="b">t</span></div>');
+  const { document, helpers } = makeHelpers(
+    '<div id="a" aria-disabled="true"><span id="b">t</span></div>'
+  );
   const b = document.getElementById('b');
   assert.strictEqual(helpers.isInactiveUiComponent(b), true);
 });
@@ -229,18 +255,26 @@ test('getTextScan: counts eligible text nodes and their owning elements', () => 
 });
 
 test('getTextScan: respects helpers.isDomVisibleEligible and helpers.isExcluded', () => {
-  const { document, window, helpers } = makeHelpers('<p id="p1">Visible</p><p id="p2">Excluded</p>');
+  const { document, window, helpers } = makeHelpers(
+    '<p id="p1">Visible</p><p id="p2">Excluded</p>'
+  );
   const excludedEl = document.getElementById('p2');
-  const scan = helpers.getTextScan(ctxFor(document, window), {
-    isDomVisibleEligible: () => true,
-    isExcluded: (el) => el === excludedEl
-  }, {});
+  const scan = helpers.getTextScan(
+    ctxFor(document, window),
+    {
+      isDomVisibleEligible: () => true,
+      isExcluded: (el) => el === excludedEl
+    },
+    {}
+  );
   assert.strictEqual(scan.eligibleTextCount, 1);
   assert.strictEqual(scan.elements[0].el.id, 'p1');
 });
 
 test('getTextScan: excludes text inside an inactive (disabled) UI component', () => {
-  const { document, window, helpers } = makeHelpers('<button disabled>Disabled label</button><p id="p1">Active</p>');
+  const { document, window, helpers } = makeHelpers(
+    '<button disabled>Disabled label</button><p id="p1">Active</p>'
+  );
   const scan = helpers.getTextScan(ctxFor(document, window), {}, {});
   assert.strictEqual(scan.eligibleTextCount, 1);
   assert.strictEqual(scan.elements[0].el.id, 'p1');
@@ -268,7 +302,12 @@ test('getTextScan: results for a given visibilityMode are cached on the shared p
 
 test('getTextScan: visibilityMode can be resolved from ctx.engineOptions instead of the engineOptions argument', () => {
   const { document, window, helpers } = makeHelpers('<p id="p1">Hello</p>');
-  const ctx = { document, window, root: document.body, engineOptions: { visibilityMode: 'styleAndGeometry' } };
+  const ctx = {
+    document,
+    window,
+    root: document.body,
+    engineOptions: { visibilityMode: 'styleAndGeometry' }
+  };
   const scan = helpers.getTextScan(ctx, {}, {});
   assert.strictEqual(scan.visibilityMode, 'styleAndGeometry');
 });

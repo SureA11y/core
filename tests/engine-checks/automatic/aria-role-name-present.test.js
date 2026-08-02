@@ -18,7 +18,9 @@ try {
 const RULE_ID = 'aria-role-name-present';
 
 function hasOccurrenceForId(rule, id) {
-  return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
+  return (rule.occurrences || []).some(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
 }
 
 test('aria-role-name-present: no applicable elements => notApplicable', () => {
@@ -28,7 +30,10 @@ test('aria-role-name-present: no applicable elements => notApplicable', () => {
 </body></html>
   `;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
 
   const result = runa11yCoreOnHtml(html);
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
@@ -41,7 +46,10 @@ test('aria-role-name-present: role=toolbar missing name => fail', () => {
 </body></html>
   `;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
 
   const result = runa11yCoreOnHtml(html);
   assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
@@ -54,7 +62,10 @@ test('aria-role-name-present: role=toolbar aria-label => pass', () => {
 </body></html>
   `;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
 
   const result = runa11yCoreOnHtml(html);
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
@@ -70,7 +81,10 @@ test('aria-role-name-present: role=tablist aria-labelledby => pass', () => {
 </body></html>
   `;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
 
   const result = runa11yCoreOnHtml(html);
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
@@ -83,7 +97,10 @@ test('aria-role-name-present: role=radiogroup empty aria-label => fail', () => {
 </body></html>
   `;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
 
   const result = runa11yCoreOnHtml(html);
   assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
@@ -96,7 +113,10 @@ test('aria-role-name-present: role=tree title => pass', () => {
 </body></html>
   `;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
 
   const result = runa11yCoreOnHtml(html);
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
@@ -111,7 +131,10 @@ test('aria-role-name-present: multiple roles mixed => fail with >=2 occurrences'
 </body></html>
   `;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
 
   const result = runa11yCoreOnHtml(html);
   assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
@@ -125,7 +148,10 @@ test('aria-role-name-present: role=scrollbar labelledby hidden text => pass', ()
 </body></html>
   `;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
 
   const result = runa11yCoreOnHtml(html);
   // Per the Accessible Name and Description Computation spec, a node
@@ -142,7 +168,10 @@ test('aria-role-name-present: role=meter title => fail when no name', () => {
 </body></html>
   `;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
 
   const result = runa11yCoreOnHtml(html);
   // Conservative: hidden label text should not count as name.
@@ -156,7 +185,10 @@ test('aria-role-name-present: role=meter title => pass when name is provided via
 </body></html>
   `;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
 
   const result = runa11yCoreOnHtml(html);
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
@@ -169,7 +201,10 @@ test('aria-role-name-present: role=meter title => fail when title is empty', () 
 </body></html>
   `;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
 
   const result = runa11yCoreOnHtml(html);
   // Conservative: hidden label text should not count as name.
@@ -183,7 +218,10 @@ test('aria-role-name-present: role=meter title => pass when name is provided via
 </body></html>
   `;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
 
   const result = runa11yCoreOnHtml(html);
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
@@ -196,7 +234,10 @@ test('aria-role-name-present: role=meter title => fail when aria-label is empty'
 </body></html>
   `;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
 
   const result = runa11yCoreOnHtml(html);
   // Conservative: hidden label text should not count as name.
@@ -211,7 +252,10 @@ test('aria-role-name-present: role=meter title => pass when name is provided via
 </body></html>
   `;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
 
   const result = runa11yCoreOnHtml(html);
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
@@ -224,7 +268,10 @@ test('aria-role-name-present: role=meter title => fail when aria-labelledby is e
 </body></html>
   `;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
 
   const result = runa11yCoreOnHtml(html);
   // Conservative: hidden label text should not count as name.
@@ -238,13 +285,15 @@ test('aria-role-name-present: role=meter title => fail when aria-labelledby poin
 </body></html>
   `;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
 
   const result = runa11yCoreOnHtml(html);
   // Conservative: hidden label text should not count as name.
   assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
 });
-
 
 test('aria-role-name-present: role=progressbar title => fail when no name', () => {
   const html = `
@@ -253,7 +302,10 @@ test('aria-role-name-present: role=progressbar title => fail when no name', () =
 </body></html>
   `;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
 
   const result = runa11yCoreOnHtml(html);
   // Conservative: hidden label text should not count as name.
@@ -267,7 +319,10 @@ test('aria-role-name-present: role=progressbar title => pass when name is provid
 </body></html>
   `;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
 
   const result = runa11yCoreOnHtml(html);
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
@@ -280,7 +335,10 @@ test('aria-role-name-present: role=progressbar title => fail when title is empty
 </body></html>
   `;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
 
   const result = runa11yCoreOnHtml(html);
   // Conservative: hidden label text should not count as name.
@@ -294,7 +352,10 @@ test('aria-role-name-present: role=progressbar title => pass when name is provid
 </body></html>
   `;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
 
   const result = runa11yCoreOnHtml(html);
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
@@ -307,7 +368,10 @@ test('aria-role-name-present: role=progressbar title => fail when aria-label is 
 </body></html>
   `;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
 
   const result = runa11yCoreOnHtml(html);
   // Conservative: hidden label text should not count as name.
@@ -322,7 +386,10 @@ test('aria-role-name-present: role=progressbar title => pass when name is provid
 </body></html>
   `;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
 
   const result = runa11yCoreOnHtml(html);
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
@@ -335,7 +402,10 @@ test('aria-role-name-present: role=progressbar title => fail when aria-labelledb
 </body></html>
   `;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
 
   const result = runa11yCoreOnHtml(html);
   // Conservative: hidden label text should not count as name.
@@ -349,7 +419,10 @@ test('aria-role-name-present: role=progressbar title => fail when aria-labelledb
 </body></html>
   `;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
 
   const result = runa11yCoreOnHtml(html);
   // Conservative: hidden label text should not count as name.
@@ -357,20 +430,57 @@ test('aria-role-name-present: role=progressbar title => fail when aria-labelledb
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-role-name-present-all-scenarios.html)`, () => {
-  const fixturePath = path.join(__dirname, '../..', 'fixtures', 'aria-role-name-present-all-scenarios.html');
+  const fixturePath = path.join(
+    __dirname,
+    '../..',
+    'fixtures',
+    'aria-role-name-present-all-scenarios.html'
+  );
   const html = fs.readFileSync(fixturePath, 'utf8');
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 14, maxOccurrences: 14 });
 
   const expectedFailIds = [
-    'role_case_01', 'role_case_03', 'role_case_05', 'role_case_07', 'role_case_09', 'role_case_11', 'role_case_13', 'role_case_15', 'role_case_17', 'role_case_19', 'role_case_22', 'role_case_23', 'role_case_25', 'role_case_29'
+    'role_case_01',
+    'role_case_03',
+    'role_case_05',
+    'role_case_07',
+    'role_case_09',
+    'role_case_11',
+    'role_case_13',
+    'role_case_15',
+    'role_case_17',
+    'role_case_19',
+    'role_case_22',
+    'role_case_23',
+    'role_case_25',
+    'role_case_29'
   ];
 
   const expectedNoOccIds = [
-    'role_case_02', 'role_case_04', 'role_case_06', 'role_case_08', 'role_case_10', 'role_case_12', 'role_case_14', 'role_case_16', 'role_case_18', 'role_case_20', 'role_case_21', 'role_case_24', 'role_case_26', 'role_case_27', 'role_case_28', 'role_case_30', 'role_case_31'
+    'role_case_02',
+    'role_case_04',
+    'role_case_06',
+    'role_case_08',
+    'role_case_10',
+    'role_case_12',
+    'role_case_14',
+    'role_case_16',
+    'role_case_18',
+    'role_case_20',
+    'role_case_21',
+    'role_case_24',
+    'role_case_26',
+    'role_case_27',
+    'role_case_28',
+    'role_case_30',
+    'role_case_31'
   ];
 
   for (const id of expectedFailIds) {

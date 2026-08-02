@@ -57,7 +57,13 @@ const meta = {
   tags: ['wcag2a', 'wcag211', 'structure', 'atomic', 'manual'],
   wcagSc: ['2.1.1'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '2.1.1', title: 'Keyboard', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '2.1.1',
+      title: 'Keyboard',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'moderate',
   category: 'operable',
@@ -70,15 +76,25 @@ function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
   const MOUSE_ONLY_ATTRS = [
-    'onmouseover', 'onmouseout', 'onmousedown', 'onmouseup',
-    'ondblclick', 'onmousemove', 'onmouseenter', 'onmouseleave'
+    'onmouseover',
+    'onmouseout',
+    'onmousedown',
+    'onmouseup',
+    'ondblclick',
+    'onmousemove',
+    'onmouseenter',
+    'onmouseleave'
   ];
   const KEYBOARD_EQUIV_ATTRS = ['onkeydown', 'onkeyup', 'onkeypress', 'onfocus', 'onblur'];
 
-  function trim(v) { return (v == null ? '' : String(v)).trim(); }
+  function trim(v) {
+    return (v == null ? '' : String(v)).trim();
+  }
 
   const selector = MOUSE_ONLY_ATTRS.map((a) => `[${a}]`).join(', ');
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart(selector)
+    : helpers.queryAll(selector);
 
   const occurrences = [];
   let applicableCount = 0;
@@ -90,7 +106,8 @@ function runInPage(ctx) {
     if (!presentMouseAttrs.length) continue;
 
     const eligResult = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el, ctx) : true;
-    const eligible = typeof eligResult === 'boolean' ? eligResult : !!(eligResult && eligResult.eligible);
+    const eligible =
+      typeof eligResult === 'boolean' ? eligResult : !!(eligResult && eligResult.eligible);
     if (!eligible) continue;
 
     applicableCount += 1;
@@ -99,8 +116,10 @@ function runInPage(ctx) {
     if (hasKeyboardEquiv) continue;
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
-    const eligInfo = helpers.getEligibilityInfo ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
+    const eligInfo = helpers.getEligibilityInfo
+      ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
+      : null;
 
     occurrences.push({
       selector: stableSelector,
@@ -113,7 +132,10 @@ function runInPage(ctx) {
         params: { attrs: presentMouseAttrs.join(', ') }
       },
       data: {
-        details: { reasonCode: 'MOUSE_ONLY_HANDLER_NO_KEYBOARD_EQUIVALENT', mouseAttrs: presentMouseAttrs },
+        details: {
+          reasonCode: 'MOUSE_ONLY_HANDLER_NO_KEYBOARD_EQUIVALENT',
+          mouseAttrs: presentMouseAttrs
+        },
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
       }
     });
@@ -124,7 +146,12 @@ function runInPage(ctx) {
   }
 
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'cantTell', severity: rule.defaultSeverity || 'moderate', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'moderate',
+      occurrences
+    };
   }
 
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };

@@ -11,7 +11,9 @@ const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 const RULE_ID = 'deprecated-elements-not-used';
 
 function hasOccurrenceForId(rule, id) {
-  return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
+  return (rule.occurrences || []).some(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
 }
 
 test(`${RULE_ID}: notApplicable when neither <blink> nor <marquee> is present`, () => {
@@ -55,11 +57,19 @@ test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><body><blink id="a">flash</blink></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
-  assert.strictEqual(rule.title, 'Obsolete non-stoppable elements (<blink>, <marquee>) must not be used');
+  assert.strictEqual(
+    rule.title,
+    'Obsolete non-stoppable elements (<blink>, <marquee>) must not be used'
+  );
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/deprecated-elements-not-used-all-scenarios.html)`, () => {
-  const fixturePath = path.join(__dirname, '../..', 'fixtures', 'deprecated-elements-not-used-all-scenarios.html');
+  const fixturePath = path.join(
+    __dirname,
+    '../..',
+    'fixtures',
+    'deprecated-elements-not-used-all-scenarios.html'
+  );
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 

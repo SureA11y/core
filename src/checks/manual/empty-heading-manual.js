@@ -42,7 +42,8 @@ const id = 'empty-heading';
 
 const meta = {
   title: 'Headings must not be empty',
-  description: 'Checks that heading elements (<h1>-<h6> or role="heading") have a non-empty accessible name.',
+  description:
+    'Checks that heading elements (<h1>-<h6> or role="heading") have a non-empty accessible name.',
   i18n: {
     titleKey: 'emptyHeading_title',
     descriptionKey: 'emptyHeading_description'
@@ -62,7 +63,9 @@ function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
   function normalizeWs(s) {
-    return String(s || '').replace(/\s+/g, ' ').trim();
+    return String(s || '')
+      .replace(/\s+/g, ' ')
+      .trim();
   }
 
   function getExplicitRoleToken(el) {
@@ -112,13 +115,16 @@ function runInPage(ctx) {
     return normalizeWs(el.getAttribute && el.getAttribute('title'));
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('h1, h2, h3, h4, h5, h6, [role]') : helpers.queryAll('h1, h2, h3, h4, h5, h6, [role]');
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart('h1, h2, h3, h4, h5, h6, [role]')
+    : helpers.queryAll('h1, h2, h3, h4, h5, h6, [role]');
 
   const occurrences = [];
   let applicableCount = 0;
   const seen = new Set();
 
-  const isAccTreeEligible = helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+  const isAccTreeEligible =
+    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
 
   function isEligible(el) {
     if (!isAccTreeEligible) return true;
@@ -143,9 +149,15 @@ function runInPage(ctx) {
     if (name) continue;
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
     const eligInfo = helpers.getEligibilityInfo
-      ? (() => { try { return helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' }); } catch { return null; } })()
+      ? (() => {
+          try {
+            return helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' });
+          } catch {
+            return null;
+          }
+        })()
       : null;
 
     occurrences.push({
@@ -169,7 +181,12 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'cantTell', severity: rule.defaultSeverity || 'minor', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'minor',
+      occurrences
+    };
   }
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }

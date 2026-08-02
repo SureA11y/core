@@ -79,7 +79,12 @@ test(`${RULE_ID}: i18n default is English`, () => {
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/css-orientation-lock-all-scenarios.html)`, () => {
-  const fixturePath = path.join(__dirname, '../..', 'fixtures', 'css-orientation-lock-all-scenarios.html');
+  const fixturePath = path.join(
+    __dirname,
+    '../..',
+    'fixtures',
+    'css-orientation-lock-all-scenarios.html'
+  );
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
@@ -88,12 +93,24 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/css-orientation-lock-all-scen
 
 test(`css-orientation-lock: notApplicable when contextSelector scopes narrower than the whole document (fragment-scan applicability)`, () => {
   const html = `<!doctype html><html><head><style>@media (orientation: landscape) { html { transform: rotate(90deg); } }</style></head><body></body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: ['css-orientation-lock'], contextSelector: 'body' });
-  assertRule(result, 'css-orientation-lock', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  const result = runa11yCoreOnHtml(html, {
+    runOnly: ['css-orientation-lock'],
+    contextSelector: 'body'
+  });
+  assertRule(result, 'css-orientation-lock', 'notApplicable', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
 });
 
 test(`css-orientation-lock: notApplicable when engineOptions.fragment is true, even unscoped`, () => {
   const html = `<!doctype html><html><head><style>@media (orientation: landscape) { html { transform: rotate(90deg); } }</style></head><body></body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: ['css-orientation-lock'], engineOptions: { fragment: true } });
-  assertRule(result, 'css-orientation-lock', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  const result = runa11yCoreOnHtml(html, {
+    runOnly: ['css-orientation-lock'],
+    engineOptions: { fragment: true }
+  });
+  assertRule(result, 'css-orientation-lock', 'notApplicable', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
 });

@@ -28,7 +28,8 @@ const id = 'iframe-title-unique';
 
 const meta = {
   title: 'Frame titles must be unique',
-  description: 'Checks that no two <iframe>/<frame> elements in scope share the same title attribute value.',
+  description:
+    'Checks that no two <iframe>/<frame> elements in scope share the same title attribute value.',
   i18n: {
     titleKey: 'iframeTitleUnique_title',
     descriptionKey: 'iframeTitleUnique_description'
@@ -37,7 +38,13 @@ const meta = {
   tags: ['wcag2a', 'wcag412', 'structure', 'atomic', 'automatic', 'name', 'iframe'],
   wcagSc: ['4.1.2'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '4.1.2', title: 'Name, Role, Value', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '4.1.2',
+      title: 'Name, Role, Value',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'moderate',
   category: 'robust',
@@ -49,7 +56,9 @@ const meta = {
 function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('iframe, frame') : helpers.queryAll('iframe, frame');
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart('iframe, frame')
+    : helpers.queryAll('iframe, frame');
 
   const groups = new Map(); // trimmed title -> elements[]
   let applicableCount = 0;
@@ -79,7 +88,9 @@ function runInPage(ctx) {
     for (const el of els) {
       const tag = el.tagName.toLowerCase();
       const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-      const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+      const html = helpers.getOuterHtmlSnippet
+        ? helpers.getOuterHtmlSnippet(el)
+        : el.outerHTML || '';
 
       occurrences.push({
         selector: stableSelector,
@@ -92,14 +103,24 @@ function runInPage(ctx) {
           params: { element: tag, title }
         },
         data: {
-          details: { reasonCode: 'IFRAME_TITLE_DUPLICATE', element: tag, title, duplicateCount: els.length }
+          details: {
+            reasonCode: 'IFRAME_TITLE_DUPLICATE',
+            element: tag,
+            title,
+            duplicateCount: els.length
+          }
         }
       });
     }
   }
 
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'moderate', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'fail',
+      severity: rule.defaultSeverity || 'moderate',
+      occurrences
+    };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }

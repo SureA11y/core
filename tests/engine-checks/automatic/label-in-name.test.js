@@ -10,7 +10,9 @@ const { assertRule } = require('../../helpers/assertRule');
 const RULE_ID = 'label-in-name';
 
 function hasOccurrenceForId(rule, id) {
-  return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
+  return (rule.occurrences || []).some(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
 }
 
 function findRuleResultDeep(root, ruleId) {
@@ -55,16 +57,11 @@ function getOccurrences(ruleRes) {
 }
 
 function getRuleResult(result, ruleId) {
-  const buckets = [
-    'violations',
-    'passes',
-    'incomplete',
-    'inapplicable'
-  ];
+  const buckets = ['violations', 'passes', 'incomplete', 'inapplicable'];
 
   for (const bucket of buckets) {
     if (Array.isArray(result[bucket])) {
-      const found = result[bucket].find(r => r.ruleId === ruleId || r.id === ruleId);
+      const found = result[bucket].find((r) => r.ruleId === ruleId || r.id === ruleId);
       if (found) return found;
     }
   }
@@ -159,17 +156,35 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/label-in-name-all-scenarios.h
   const fixturePath = path.join(__dirname, '../..', 'fixtures', 'label-in-name-all-scenarios.html');
   const html = fs.readFileSync(fixturePath, 'utf8');
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 5, maxOccurrences: 5 });
 
   const expectedFailIds = [
-    'lin_case_02', 'lin_case_04', 'lin_case_06', 'lin_case_14', 'lin_case_15'
+    'lin_case_02',
+    'lin_case_04',
+    'lin_case_06',
+    'lin_case_14',
+    'lin_case_15'
   ];
 
   const expectedNoOccIds = [
-    'lin_case_01', 'lin_case_03', 'lin_case_05', 'lin_case_07', 'lin_case_08', 'lin_case_09', 'lin_case_10', 'lin_case_11', 'lin_case_12', 'lin_case_13', 'lin_case_16', 'lin_case_17'
+    'lin_case_01',
+    'lin_case_03',
+    'lin_case_05',
+    'lin_case_07',
+    'lin_case_08',
+    'lin_case_09',
+    'lin_case_10',
+    'lin_case_11',
+    'lin_case_12',
+    'lin_case_13',
+    'lin_case_16',
+    'lin_case_17'
   ];
 
   for (const id of expectedFailIds) {

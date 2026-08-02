@@ -18,7 +18,8 @@ const id = 'canvas-text-alternative-present';
 
 const meta = {
   title: '<canvas> must provide a text alternative',
-  description: 'Checks that <canvas> elements provide a text alternative via fallback content or an accessible name.',
+  description:
+    'Checks that <canvas> elements provide a text alternative via fallback content or an accessible name.',
   i18n: {
     titleKey: 'canvas_textAltPresent_title',
     descriptionKey: 'canvas_textAltPresent_description'
@@ -27,7 +28,13 @@ const meta = {
   tags: ['wcag2a', 'wcag111', 'nontext', 'canvas', 'atomic', 'automatic'],
   wcagSc: ['1.1.1'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '1.1.1', title: 'Non-text Content', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '1.1.1',
+      title: 'Non-text Content',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'serious',
   category: 'perceivable',
@@ -44,29 +51,38 @@ function runInPage(ctx) {
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
-  const queryAllSmart = helpers && typeof helpers.queryAllSmart === 'function' ? helpers.queryAllSmart : null;
-  const queryAll = helpers && typeof helpers.queryAll === 'function'
-    ? helpers.queryAll
-    : (sel) => {
-      try { return safeRoot && safeRoot.querySelectorAll ? Array.from(safeRoot.querySelectorAll(sel)) : []; }
-      catch { return []; }
-    };
+  const queryAllSmart =
+    helpers && typeof helpers.queryAllSmart === 'function' ? helpers.queryAllSmart : null;
+  const queryAll =
+    helpers && typeof helpers.queryAll === 'function'
+      ? helpers.queryAll
+      : (sel) => {
+          try {
+            return safeRoot && safeRoot.querySelectorAll
+              ? Array.from(safeRoot.querySelectorAll(sel))
+              : [];
+          } catch {
+            return [];
+          }
+        };
 
-  const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
-    ? helpers.getEligibilityInfo
-    : null;
+  const getEligibilityInfo =
+    helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
 
-  const isAccTreeEligible = helpers && typeof helpers.isAccTreeEligible === 'function'
-    ? helpers.isAccTreeEligible
-    : null;
+  const isAccTreeEligible =
+    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
 
-  const getTextAlternativeInfo = helpers && typeof helpers.getTextAlternativeInfo === 'function'
-    ? helpers.getTextAlternativeInfo
-    : null;
+  const getTextAlternativeInfo =
+    helpers && typeof helpers.getTextAlternativeInfo === 'function'
+      ? helpers.getTextAlternativeInfo
+      : null;
 
   const canvases = (() => {
-    try { return Array.from((queryAllSmart ? queryAllSmart('canvas') : queryAll('canvas')) || []); }
-    catch { return queryAll('canvas'); }
+    try {
+      return Array.from((queryAllSmart ? queryAllSmart('canvas') : queryAll('canvas')) || []);
+    } catch {
+      return queryAll('canvas');
+    }
   })();
 
   if (!canvases.length) {
@@ -82,7 +98,11 @@ function runInPage(ctx) {
     // Applicability: eligible in the accessibility tree (with focusable/IDREF exceptions handled by helper).
     if (isAccTreeEligible) {
       const elig = (() => {
-        try { return isAccTreeEligible(el, ctx); } catch { return { eligible: true, reasons: [] }; }
+        try {
+          return isAccTreeEligible(el, ctx);
+        } catch {
+          return { eligible: true, reasons: [] };
+        }
       })();
       if (elig && elig.eligible === false) continue;
     }
@@ -91,7 +111,13 @@ function runInPage(ctx) {
 
     // Expectation: must provide a text alternative.
     const ti = getTextAlternativeInfo
-      ? (() => { try { return getTextAlternativeInfo(el, ctx); } catch { return null; } })()
+      ? (() => {
+          try {
+            return getTextAlternativeInfo(el, ctx);
+          } catch {
+            return null;
+          }
+        })()
       : null;
 
     const hasTextAlt = !!(ti && ti.present);
@@ -134,7 +160,12 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
 
-  return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences };
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'fail',
+    severity: rule.defaultSeverity || 'minor',
+    occurrences
+  };
 }
 
 module.exports = { id, meta, runInPage };

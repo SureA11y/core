@@ -11,7 +11,9 @@ const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 const RULE_ID = 'region';
 
 function hasOccurrenceForId(rule, id) {
-  return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
+  return (rule.occurrences || []).some(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
 }
 
 test(`${RULE_ID}: notApplicable when all top-level content is inside a landmark`, () => {
@@ -58,7 +60,10 @@ test(`region: notApplicable when contextSelector scopes narrower than the whole 
 
 test(`region: notApplicable when engineOptions.fragment is true, even unscoped`, () => {
   const html = `<!doctype html><html><body><main>Content</main><p id="a">Stray</p></body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: ['region'], engineOptions: { fragment: true } });
+  const result = runa11yCoreOnHtml(html, {
+    runOnly: ['region'],
+    engineOptions: { fragment: true }
+  });
   assertRule(result, 'region', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
@@ -129,7 +134,9 @@ test(`${RULE_ID}: a skip-link-shaped anchor with an unresolvable target is NOT e
   const html = `<!doctype html><html><body><main>Content</main><a href="#nope">Broken anchor text</a></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
-  assert.ok(hasOccurrenceForId(rule, 'nope') || rule.occurrences[0].html.includes('Broken anchor text'));
+  assert.ok(
+    hasOccurrenceForId(rule, 'nope') || rule.occurrences[0].html.includes('Broken anchor text')
+  );
 });
 
 test(`${RULE_ID}: an empty, non-text focus-trap sentinel div (MUI-style <div tabindex="0">) is never flagged (no own content, no false positive)`, () => {

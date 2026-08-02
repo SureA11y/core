@@ -24,8 +24,12 @@ test('coarseStructuralSignature: strips id selectors (per-page unique, not struc
 });
 
 test('coarseStructuralSignature: two structurally-identical repeated widgets produce the same signature', () => {
-  const a = coarseStructuralSignature('main > ul > li:nth-child(1) > a#card-1 > span[role="button"]');
-  const b = coarseStructuralSignature('main > ul > li:nth-child(7) > a#card-7 > span[role="button"]');
+  const a = coarseStructuralSignature(
+    'main > ul > li:nth-child(1) > a#card-1 > span[role="button"]'
+  );
+  const b = coarseStructuralSignature(
+    'main > ul > li:nth-child(7) > a#card-7 > span[role="button"]'
+  );
   assert.strictEqual(a, b);
 });
 

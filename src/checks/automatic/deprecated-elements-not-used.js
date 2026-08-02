@@ -29,7 +29,8 @@ const id = 'deprecated-elements-not-used';
 
 const meta = {
   title: 'Obsolete non-stoppable elements (<blink>, <marquee>) must not be used',
-  description: 'Checks that deprecated, non-standard HTML elements whose blinking/scrolling content cannot be paused, stopped, or hidden by the user (<blink>, <marquee>) are not present.',
+  description:
+    'Checks that deprecated, non-standard HTML elements whose blinking/scrolling content cannot be paused, stopped, or hidden by the user (<blink>, <marquee>) are not present.',
   i18n: {
     titleKey: 'deprecatedElements_title',
     descriptionKey: 'deprecatedElements_description'
@@ -38,7 +39,13 @@ const meta = {
   tags: ['wcag2a', 'wcag222', 'structure', 'atomic', 'automatic'],
   wcagSc: ['2.2.2'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '2.2.2', title: 'Pause, Stop, Hide', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '2.2.2',
+      title: 'Pause, Stop, Hide',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'serious',
   category: 'operable',
@@ -50,7 +57,9 @@ const meta = {
 function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('blink, marquee') : helpers.queryAll('blink, marquee');
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart('blink, marquee')
+    : helpers.queryAll('blink, marquee');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -62,7 +71,7 @@ function runInPage(ctx) {
 
     const tag = el.tagName.toLowerCase();
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
     occurrences.push({
       selector: stableSelector,
@@ -84,7 +93,12 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'serious', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'fail',
+      severity: rule.defaultSeverity || 'serious',
+      occurrences
+    };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }

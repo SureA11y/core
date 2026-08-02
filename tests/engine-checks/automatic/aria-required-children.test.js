@@ -6,12 +6,18 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const { assertRule } = require('../../helpers/assertRule.js');
-const { runa11yCoreOnHtml, createDom, runa11yCoreOnDom } = require('../../helpers/runDomRulesOnHtml.js');
+const {
+  runa11yCoreOnHtml,
+  createDom,
+  runa11yCoreOnDom
+} = require('../../helpers/runDomRulesOnHtml.js');
 
 const RULE_ID = 'aria-required-children';
 
 function hasOccurrenceForId(rule, id) {
-  return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
+  return (rule.occurrences || []).some(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
 }
 
 test(`${RULE_ID}: notApplicable when no role attributes present`, () => {
@@ -71,7 +77,10 @@ test(`${RULE_ID}: pass when the required owned role only exists across a shadow-
   const host = dom.window.document.getElementById('host');
   host.attachShadow({ mode: 'open' }).innerHTML = `<div role="list"><slot name="x"></slot></div>`;
 
-  const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID], engineOptions: { includeShadowDom: true } });
+  const result = runa11yCoreOnDom(dom, {
+    runOnly: [RULE_ID],
+    engineOptions: { includeShadowDom: true }
+  });
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
@@ -83,9 +92,13 @@ test(`${RULE_ID}: fail when a shadow-DOM container has a <slot> but nothing assi
     <div id="host"><span id="a" slot="x">Not a listitem</span></div>
   </body></html>`);
   const host = dom.window.document.getElementById('host');
-  host.attachShadow({ mode: 'open' }).innerHTML = `<div id="list" role="list"><slot name="x"></slot></div>`;
+  host.attachShadow({ mode: 'open' }).innerHTML =
+    `<div id="list" role="list"><slot name="x"></slot></div>`;
 
-  const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID], engineOptions: { includeShadowDom: true } });
+  const result = runa11yCoreOnDom(dom, {
+    runOnly: [RULE_ID],
+    engineOptions: { includeShadowDom: true }
+  });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'list'));
 });
@@ -123,14 +136,27 @@ test(`${RULE_ID}: i18n default is English`, () => {
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-required-children-all-scenarios.html)`, () => {
-  const fixturePath = path.join(__dirname, '../..', 'fixtures', 'aria-required-children-all-scenarios.html');
+  const fixturePath = path.join(
+    __dirname,
+    '../..',
+    'fixtures',
+    'aria-required-children-all-scenarios.html'
+  );
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
 
   assert.ok(hasOccurrenceForId(rule, 'arc_case_04'));
-  for (const id of ['arc_case_01', 'arc_case_02', 'arc_case_03', 'arc_case_05', 'arc_case_06', 'arc_case_07', 'arc_case_08']) {
+  for (const id of [
+    'arc_case_01',
+    'arc_case_02',
+    'arc_case_03',
+    'arc_case_05',
+    'arc_case_06',
+    'arc_case_07',
+    'arc_case_08'
+  ]) {
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
 });

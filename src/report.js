@@ -32,7 +32,10 @@ for (const code of OUTCOME_ORDER) {
 }
 
 function esc(s) {
-  return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  return String(s == null ? '' : s).replace(
+    /[&<>"']/g,
+    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]
+  );
 }
 
 // Neutralizes '<' so embedded JSON can never break out of its <script> tag,
@@ -61,8 +64,7 @@ function renderHeroBar(byOutcome) {
   const total = OUTCOME_ORDER.reduce((sum, c) => sum + byOutcome[c], 0) || 1;
   const applicable = byOutcome.pass + byOutcome.fail + byOutcome.cantTell;
 
-  const segments = OUTCOME_ORDER
-    .filter((c) => byOutcome[c] > 0)
+  const segments = OUTCOME_ORDER.filter((c) => byOutcome[c] > 0)
     .map((c) => {
       const n = byOutcome[c];
       const pct = (n / total) * 100;
@@ -71,17 +73,15 @@ function renderHeroBar(byOutcome) {
     })
     .join('');
 
-  const legend = OUTCOME_ORDER
-    .map((c) => {
-      const n = byOutcome[c];
-      const info = OUTCOME_INFO[c];
-      return `<div class="hero-legend-item">
+  const legend = OUTCOME_ORDER.map((c) => {
+    const n = byOutcome[c];
+    const info = OUTCOME_INFO[c];
+    return `<div class="hero-legend-item">
         <span class="hero-legend-swatch" style="background:${info.color}">${info.icon}</span>
         <span class="hero-legend-label">${esc(info.label)}</span>
         <span class="hero-legend-count">${n.toLocaleString()} (${fmtPct(n, total)})</span>
       </div>`;
-    })
-    .join('\n');
+  }).join('\n');
 
   let headline;
   if (byOutcome.fail > 0) {
@@ -126,7 +126,8 @@ function renderWcagRollup(rulesResults) {
 
   const byLevel = { A: [], AA: [], AAA: [], other: [] };
   for (const r of rulesResults) {
-    const mapping = (r.meta && Array.isArray(r.meta.normativeMappings) && r.meta.normativeMappings[0]) || null;
+    const mapping =
+      (r.meta && Array.isArray(r.meta.normativeMappings) && r.meta.normativeMappings[0]) || null;
     const level = (mapping && mapping.level) || 'other';
     (byLevel[level] || byLevel.other).push({ rule: r, mapping });
   }
@@ -135,7 +136,13 @@ function renderWcagRollup(rulesResults) {
     .filter((level) => byLevel[level].length)
     .map((level) => {
       const rows = byLevel[level]
-        .sort((a, b) => (a.mapping ? a.mapping.requirement : '').localeCompare(b.mapping ? b.mapping.requirement : '', undefined, { numeric: true }))
+        .sort((a, b) =>
+          (a.mapping ? a.mapping.requirement : '').localeCompare(
+            b.mapping ? b.mapping.requirement : '',
+            undefined,
+            { numeric: true }
+          )
+        )
         .map(({ rule, mapping }) => {
           const info = OUTCOME_INFO[rule.outcome] || OUTCOME_INFO.notApplicable;
           const metrics = (rule.data && rule.data.details && rule.data.details.metrics) || {};
@@ -168,8 +175,12 @@ function renderWcagRollup(rulesResults) {
 // the findings table below shows the untruncated value.
 const CARD_SNIPPET_MAX = 220;
 function truncateForCard(s) {
-  const collapsed = String(s || '').replace(/\s+/g, ' ').trim();
-  return collapsed.length > CARD_SNIPPET_MAX ? `${collapsed.slice(0, CARD_SNIPPET_MAX)}…` : collapsed;
+  const collapsed = String(s || '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return collapsed.length > CARD_SNIPPET_MAX
+    ? `${collapsed.slice(0, CARD_SNIPPET_MAX)}…`
+    : collapsed;
 }
 
 // One card per rule (not per occurrence) -- a rule with many occurrences of
@@ -177,7 +188,12 @@ function truncateForCard(s) {
 const MAX_CARDS = 24;
 
 function renderCards(checksResults) {
-  const withIssues = checksResults.filter((r) => (r.outcome === 'fail' || r.outcome === 'cantTell') && Array.isArray(r.occurrences) && r.occurrences.length > 0);
+  const withIssues = checksResults.filter(
+    (r) =>
+      (r.outcome === 'fail' || r.outcome === 'cantTell') &&
+      Array.isArray(r.occurrences) &&
+      r.occurrences.length > 0
+  );
   if (!withIssues.length) {
     return '<p class="note">No fail/cantTell rules with occurrences on this scan.</p>';
   }
@@ -188,15 +204,22 @@ function renderCards(checksResults) {
   });
   const shown = sorted.slice(0, MAX_CARDS);
 
-  const cards = shown.map((r) => {
-    const info = OUTCOME_INFO[r.outcome];
-    const occ = r.occurrences[0];
-    const wcagChips = ((r.meta && r.meta.normativeMappings) || [])
-      .map((m) => `<span class="chip" style="background:${STATUS.neutral.bg};color:${STATUS.neutral.color}">WCAG ${esc(m.requirement)}</span>`)
-      .join('');
-    const countLabel = r.occurrences.length > 1 ? ` <span class="card-count">× ${r.occurrences.length.toLocaleString()}</span>` : '';
+  const cards = shown
+    .map((r) => {
+      const info = OUTCOME_INFO[r.outcome];
+      const occ = r.occurrences[0];
+      const wcagChips = ((r.meta && r.meta.normativeMappings) || [])
+        .map(
+          (m) =>
+            `<span class="chip" style="background:${STATUS.neutral.bg};color:${STATUS.neutral.color}">WCAG ${esc(m.requirement)}</span>`
+        )
+        .join('');
+      const countLabel =
+        r.occurrences.length > 1
+          ? ` <span class="card-count">× ${r.occurrences.length.toLocaleString()}</span>`
+          : '';
 
-    return `<div class="card">
+      return `<div class="card">
       <div class="card-head">
         <span class="hero-legend-swatch" style="background:${info.color}">${info.icon}</span>
         <span class="card-title"><strong>${esc(r.ruleId)}</strong> (${esc(info.label)}, ${esc(r.severity)})${countLabel}</span>
@@ -208,11 +231,13 @@ function renderCards(checksResults) {
         ${r.occurrences.length > 1 ? `<p class="card-note">Selector/summary above are from one representative occurrence — ${r.occurrences.length.toLocaleString()} total on this rule.</p>` : ''}
       </div>
     </div>`;
-  }).join('\n');
+    })
+    .join('\n');
 
-  const overflow = sorted.length > MAX_CARDS
-    ? `<p class="note">Showing the ${MAX_CARDS} highest-priority rules of ${sorted.length.toLocaleString()} with issues — see the full technical data below for the rest.</p>`
-    : '';
+  const overflow =
+    sorted.length > MAX_CARDS
+      ? `<p class="note">Showing the ${MAX_CARDS} highest-priority rules of ${sorted.length.toLocaleString()} with issues — see the full technical data below for the rest.</p>`
+      : '';
 
   return `<div class="cards">${cards}</div>${overflow}`;
 }
@@ -243,7 +268,10 @@ function renderHtmlReport(result, options = {}) {
   const checksResults = Array.isArray(result && result.checksResults) ? result.checksResults : [];
   const rulesResults = Array.isArray(result && result.rulesResults) ? result.rulesResults : [];
   const byOutcome = countByOutcome(checksResults);
-  const generatedAtLabel = new Date().toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'medium' });
+  const generatedAtLabel = new Date().toLocaleString('en-US', {
+    dateStyle: 'medium',
+    timeStyle: 'medium'
+  });
   const title = (options && options.title) || 'surea11y scan report';
 
   const defaultOnList = OUTCOME_ORDER.filter((c) => OUTCOME_INFO[c].defaultOn);

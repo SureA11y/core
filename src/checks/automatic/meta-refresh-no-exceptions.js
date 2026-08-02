@@ -34,7 +34,8 @@ const id = 'meta-refresh-no-exceptions';
 
 const meta = {
   title: 'Page must not use a meta refresh at all (AAA)',
-  description: 'Checks that <meta http-equiv="refresh"> is not present at all, regardless of delay — the stricter AAA-level counterpart of the A-level positive-delay-only check.',
+  description:
+    'Checks that <meta http-equiv="refresh"> is not present at all, regardless of delay — the stricter AAA-level counterpart of the A-level positive-delay-only check.',
   i18n: {
     titleKey: 'metaRefreshNoExceptions_title',
     descriptionKey: 'metaRefreshNoExceptions_description'
@@ -43,8 +44,20 @@ const meta = {
   tags: ['wcag2aaa', 'wcag224', 'wcag325', 'structure', 'atomic', 'automatic'],
   wcagSc: ['2.2.4', '3.2.5'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '2.2.4', title: 'Interruptions', conformanceLevel: 'AAA' },
-    { standard: 'WCAG', version: '2.2', requirement: '3.2.5', title: 'Change on Request', conformanceLevel: 'AAA' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '2.2.4',
+      title: 'Interruptions',
+      conformanceLevel: 'AAA'
+    },
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '3.2.5',
+      title: 'Change on Request',
+      conformanceLevel: 'AAA'
+    }
   ],
   defaultSeverity: 'moderate',
   category: 'operable',
@@ -69,7 +82,9 @@ function applicability(ctx) {
 function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
-  const nodes = document.querySelectorAll ? document.querySelectorAll('meta[http-equiv="refresh" i]') : [];
+  const nodes = document.querySelectorAll
+    ? document.querySelectorAll('meta[http-equiv="refresh" i]')
+    : [];
 
   const occurrences = [];
   let applicableCount = 0;
@@ -83,12 +98,13 @@ function runInPage(ctx) {
     applicableCount += 1;
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
     occurrences.push({
       selector: stableSelector,
       html,
-      summary: 'This page uses a meta refresh, which is an automatic context change not initiated by the user.',
+      summary:
+        'This page uses a meta refresh, which is an automatic context change not initiated by the user.',
       hint: 'Remove the meta refresh; trigger the redirect/refresh only in response to a user action instead.',
       i18n: {
         summaryKey: 'metaRefreshNoExceptions_summary_fail',
@@ -105,7 +121,12 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'moderate', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'fail',
+      severity: rule.defaultSeverity || 'moderate',
+      occurrences
+    };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }

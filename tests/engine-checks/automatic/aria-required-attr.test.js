@@ -11,7 +11,9 @@ const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 const RULE_ID = 'aria-required-attr';
 
 function hasOccurrenceForId(rule, id) {
-  return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
+  return (rule.occurrences || []).some(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
 }
 
 test(`${RULE_ID}: notApplicable when no role attributes present`, () => {
@@ -127,7 +129,12 @@ test(`${RULE_ID}: aria-busy="false" does NOT exempt a missing required attribute
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-required-attr-all-scenarios.html)`, () => {
-  const fixturePath = path.join(__dirname, '../..', 'fixtures', 'aria-required-attr-all-scenarios.html');
+  const fixturePath = path.join(
+    __dirname,
+    '../..',
+    'fixtures',
+    'aria-required-attr-all-scenarios.html'
+  );
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
@@ -135,8 +142,16 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-required-attr-all-scenar
 
   const expectedFailIds = ['ara_case_02', 'ara_case_03', 'ara_case_07', 'ara_case_09'];
   const expectedNoOccIds = [
-    'ara_case_01', 'ara_case_04', 'ara_case_05', 'ara_case_06', 'ara_case_08',
-    'ara_case_10', 'ara_case_11', 'ara_case_12', 'ara_case_13', 'ara_case_14'
+    'ara_case_01',
+    'ara_case_04',
+    'ara_case_05',
+    'ara_case_06',
+    'ara_case_08',
+    'ara_case_10',
+    'ara_case_11',
+    'ara_case_12',
+    'ara_case_13',
+    'ara_case_14'
   ];
 
   for (const id of expectedFailIds) {

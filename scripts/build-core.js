@@ -33,7 +33,11 @@ const path = require('path');
 
 const { POLICY_CONTRACTS } = require('../src/policy/contracts');
 const { resolvePolicy } = require('../src/policy/resolvePolicy');
-const { normalizeSelectorList, resolveContextRoots, createDomHelpers } = require('../src/core/dom-helpers');
+const {
+  normalizeSelectorList,
+  resolveContextRoots,
+  createDomHelpers
+} = require('../src/core/dom-helpers');
 const { runCore } = require('../src/core/dom-runner');
 const { createContrastHelpers } = require('../src/core/contrast-helpers');
 const { createAriaHelpers } = require('../src/core/aria-helpers');
@@ -47,7 +51,12 @@ const {
   sendFrameRunCommand,
   enableFrameRpcResponder
 } = require('../src/core/frame-messaging');
-const { findChildFrameElements, getFrameElementUrl, runa11yCoreAcrossFrames, a11yCoreEnableFrameResponder } = require('../src/core/frame-scan');
+const {
+  findChildFrameElements,
+  getFrameElementUrl,
+  runa11yCoreAcrossFrames,
+  a11yCoreEnableFrameResponder
+} = require('../src/core/frame-scan');
 
 const ENGINE_TAG = 'a11ycore';
 const SCHEMA_VERSION = '1.0.0';
@@ -74,11 +83,12 @@ function localeFromFileName(name) {
 function loadCompositeRulesCatalog() {
   if (!fs.existsSync(COMPOSITE_RULES_FILE)) return [];
 
-  // eslint-disable-next-line global-require, import/no-dynamic-require
   const raw = require(COMPOSITE_RULES_FILE);
 
   if (!Array.isArray(raw)) {
-    throw new Error(`[build-core] ${path.relative(ROOT_DIR, COMPOSITE_RULES_FILE)} must export an array`);
+    throw new Error(
+      `[build-core] ${path.relative(ROOT_DIR, COMPOSITE_RULES_FILE)} must export an array`
+    );
   }
 
   const seen = new Set();
@@ -89,19 +99,23 @@ function loadCompositeRulesCatalog() {
 
     const id = String(entry.id || '').trim();
     const checksIds = Array.isArray(entry.checksIds)
-        ? entry.checksIds.map((s) => String(s).trim()).filter(Boolean)
-        : [];
+      ? entry.checksIds.map((s) => String(s).trim()).filter(Boolean)
+      : [];
 
     if (!id) throw new Error(`[build-core] composite rule entry at index ${idx} is missing "id"`);
     if (seen.has(id)) throw new Error(`[build-core] duplicate composite rule id: ${id}`);
-    if (!checksIds.length) throw new Error(`[build-core] composite rule "${id}" must include at least one testId`);
+    if (!checksIds.length)
+      throw new Error(`[build-core] composite rule "${id}" must include at least one testId`);
 
     seen.add(id);
 
     return {
       id,
       checksIds,
-      meta: (entry.meta && typeof entry.meta === 'object' && !Array.isArray(entry.meta)) ? entry.meta : null
+      meta:
+        entry.meta && typeof entry.meta === 'object' && !Array.isArray(entry.meta)
+          ? entry.meta
+          : null
     };
   });
 }
@@ -117,19 +131,20 @@ function loadAllTranslations() {
     const abs = path.join(I18N_DIR, file);
 
     try {
-      // eslint-disable-next-line global-require, import/no-dynamic-require
       const mod = require(abs);
 
       // Support both module.exports and export default
       const dict =
-          mod && typeof mod === 'object' && mod.default && typeof mod.default === 'object'
-              ? mod.default
-              : mod;
+        mod && typeof mod === 'object' && mod.default && typeof mod.default === 'object'
+          ? mod.default
+          : mod;
 
-      out[locale] = (dict && typeof dict === 'object' && !Array.isArray(dict)) ? dict : {};
+      out[locale] = dict && typeof dict === 'object' && !Array.isArray(dict) ? dict : {};
     } catch (e) {
-      // eslint-disable-next-line no-console
-      console.warn(`[build-core] failed to load i18n file ${file}; skipping`, e && e.message ? e.message : e);
+      console.warn(
+        `[build-core] failed to load i18n file ${file}; skipping`,
+        e && e.message ? e.message : e
+      );
     }
   }
 
@@ -143,12 +158,13 @@ function isRuleFileName(fullPath) {
   // Exclude ONLY the top-level checks index (src/checks/index.*),
   // but allow nested index.js (e.g. src/checks/manual-review/index.js)
   const isTopLevelIndex =
-      path.dirname(fullPath) === RULES_DIR &&
-      (base === 'index.js' || base === 'index.cjs' || base === 'index.mjs');
+    path.dirname(fullPath) === RULES_DIR &&
+    (base === 'index.js' || base === 'index.cjs' || base === 'index.mjs');
 
   if (isTopLevelIndex) return false;
 
-  if (base.endsWith('.test.js') || base.endsWith('.test.cjs') || base.endsWith('.test.mjs')) return false;
+  if (base.endsWith('.test.js') || base.endsWith('.test.cjs') || base.endsWith('.test.mjs'))
+    return false;
 
   return base.endsWith('.js') || base.endsWith('.cjs');
 }
@@ -169,7 +185,6 @@ function listRuleFilesRecursive(dirAbs) {
 
 function safeRequire(file) {
   try {
-    // eslint-disable-next-line global-require, import/no-dynamic-require
     return require(file);
   } catch (err) {
     const e = err instanceof Error ? err : new Error(String(err));
@@ -191,9 +206,9 @@ function unwrapModule(mod) {
   // Helps with transpiled/ESM-interop outputs that put the object under "default".
   if (mod && typeof mod === 'object' && mod.default && typeof mod.default === 'object') {
     const looksLikeRule =
-        typeof mod.id === 'string' || typeof mod.runInPage === 'function'
-            ? true
-            : (typeof mod.default.id === 'string' && typeof mod.default.runInPage === 'function');
+      typeof mod.id === 'string' || typeof mod.runInPage === 'function'
+        ? true
+        : typeof mod.default.id === 'string' && typeof mod.default.runInPage === 'function';
     return looksLikeRule && typeof mod.default.id === 'string' ? mod.default : mod;
   }
   return mod;
@@ -232,17 +247,16 @@ function loadRuleModules() {
       throw new Error(`Rule ${file} must export runInPage(ctx). Found keys: ${describeKeys(mod)}`);
     }
 
-    const meta = (mod.meta && typeof mod.meta === 'object') ? mod.meta : {};
+    const meta = mod.meta && typeof mod.meta === 'object' ? mod.meta : {};
 
     const ruleId = id;
 
     const runFnSource = mod.runInPage.toString();
 
-    const applicabilityFn =
-        (typeof mod.applicability === 'function') ? mod.applicability : null;
+    const applicabilityFn = typeof mod.applicability === 'function' ? mod.applicability : null;
 
     const applicabilityFnSource =
-        (typeof applicabilityFn === 'function') ? applicabilityFn.toString() : null;
+      typeof applicabilityFn === 'function' ? applicabilityFn.toString() : null;
 
     const normalizedMeta = normalizeRuleMeta(ruleId, id, meta, ENGINE_TAG);
 
@@ -259,7 +273,9 @@ function loadRuleModules() {
     });
   }
 
-  mods.sort((a, b) => a.ruleId.localeCompare(b.ruleId, undefined, { numeric: true, sensitivity: 'base' }));
+  mods.sort((a, b) =>
+    a.ruleId.localeCompare(b.ruleId, undefined, { numeric: true, sensitivity: 'base' })
+  );
   return mods;
 }
 
@@ -273,7 +289,9 @@ function assertJsonSerializable(name, value) {
     JSON.stringify(value);
     return value;
   } catch (e) {
-    throw new Error(`${name} must be JSON-serializable. ${e && e.message ? e.message : e}`);
+    throw new Error(`${name} must be JSON-serializable. ${e && e.message ? e.message : e}`, {
+      cause: e
+    });
   }
 }
 
@@ -296,7 +314,7 @@ function generateCore(mods, i18nAll, compositeRulesCatalog) {
     coverage: m.meta.coverage,
 
     // Optional rule metadata payload for apps/AI (JSON-serializable)
-    data: (m.data === undefined ? null : m.data),
+    data: m.data === undefined ? null : m.data,
 
     // contract fields
     ruleInterfaceVersion: m.meta.ruleInterfaceVersion,
@@ -380,7 +398,7 @@ function getLocaleDict(engineOptions) {
     if (!str || !ctx) return str;
 
     // Tokenize: {{...}}
-    const tagRe = /\\{\\{\\s*([#^\/]?)([^}\\s]+)\\s*\\}\\}/g;
+    const tagRe = /\\{\\{\\s*([#^/]?)([^}\\s]+)\\s*\\}\\}/g;
 
     // We render by building an AST-like stack of frames (small + deterministic).
     const root = { type: 'root', key: null, inverted: false, parts: [] };
@@ -1156,7 +1174,7 @@ function main() {
   const out = generateCore(mods, i18nAll, compositeRulesCatalog);
 
   fs.writeFileSync(OUTPUT_FILE, out, 'utf8');
-  // eslint-disable-next-line no-console
+
   console.log(`[build-core] wrote ${path.relative(ROOT_DIR, OUTPUT_FILE)} (${mods.length} rules)`);
 }
 

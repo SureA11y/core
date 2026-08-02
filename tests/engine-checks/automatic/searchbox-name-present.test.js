@@ -15,13 +15,18 @@ try {
 const RULE_ID = 'searchbox-name-present';
 
 function hasOccurrenceForId(rule, id) {
-  return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
+  return (rule.occurrences || []).some(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
 }
 
 test('searchbox-name-present: no applicable => notApplicable', () => {
   const html = `<!doctype html><html><body><div>no searchbox</div></body></html>`;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
   const result = runa11yCoreOnHtml(html);
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
@@ -29,7 +34,10 @@ test('searchbox-name-present: no applicable => notApplicable', () => {
 test('searchbox-name-present: aria-labelledby => pass', () => {
   const html = `<!doctype html><html><body><span id='lbl'>Search</span><div role='searchbox' aria-labelledby='lbl'></div></body></html>`;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
   const result = runa11yCoreOnHtml(html);
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
@@ -37,7 +45,10 @@ test('searchbox-name-present: aria-labelledby => pass', () => {
 test('searchbox-name-present: hidden-only content => fail', () => {
   const html = `<!doctype html><html><body><div role='searchbox'><span aria-hidden='true'>Search</span></div></body></html>`;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
   const result = runa11yCoreOnHtml(html);
   assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
 });
@@ -45,7 +56,10 @@ test('searchbox-name-present: hidden-only content => fail', () => {
 test('searchbox-name-present: fail even with visible text content (role="searchbox" is name-from-author-only) -- the fix-it hint must not claim visible text is a valid remediation', () => {
   const html = `<!doctype html><html><body><div id="a" role='searchbox'>Search</div></body></html>`;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
   const result = runa11yCoreOnHtml(html);
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'a'));
@@ -59,26 +73,58 @@ test('searchbox-name-present: wrapping <label> has its own aria-label even thoug
     <input role="searchbox" id="c" type="text">
   </body></html>`;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
   const result = runa11yCoreOnHtml(html);
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/searchbox-name-present-all-scenarios.html)`, () => {
-  const fixturePath = path.join(__dirname, '../..', 'fixtures', 'searchbox-name-present-all-scenarios.html');
+  const fixturePath = path.join(
+    __dirname,
+    '../..',
+    'fixtures',
+    'searchbox-name-present-all-scenarios.html'
+  );
   const html = fs.readFileSync(fixturePath, 'utf8');
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 8, maxOccurrences: 8 });
 
   const expectedFailIds = [
-    'searchbox_case_01', 'searchbox_case_02', 'searchbox_case_08', 'searchbox_case_09', 'searchbox_case_10', 'searchbox_case_12', 'searchbox_case_13', 'searchbox_case_17'
+    'searchbox_case_01',
+    'searchbox_case_02',
+    'searchbox_case_08',
+    'searchbox_case_09',
+    'searchbox_case_10',
+    'searchbox_case_12',
+    'searchbox_case_13',
+    'searchbox_case_17'
   ];
 
   const expectedNoOccIds = [
-    'searchbox_case_03', 'searchbox_case_04', 'searchbox_case_05', 'searchbox_case_06', 'searchbox_case_07', 'searchbox_case_11', 'searchbox_case_14', 'searchbox_case_15', 'searchbox_case_16', 'searchbox_case_18', 'searchbox_case_19', 'searchbox_case_20', 'searchbox_case_21', 'searchbox_case_22', 'searchbox_case_23'
+    'searchbox_case_03',
+    'searchbox_case_04',
+    'searchbox_case_05',
+    'searchbox_case_06',
+    'searchbox_case_07',
+    'searchbox_case_11',
+    'searchbox_case_14',
+    'searchbox_case_15',
+    'searchbox_case_16',
+    'searchbox_case_18',
+    'searchbox_case_19',
+    'searchbox_case_20',
+    'searchbox_case_21',
+    'searchbox_case_22',
+    'searchbox_case_23'
   ];
 
   for (const id of expectedFailIds) {
@@ -100,12 +146,15 @@ test('searchbox-name-present: aria-labelledby pointing at an <iframe> falls back
   // getTextFromIdRefs helper.
   const html = `<!doctype html><html><body><iframe id='t' title='Settings'></iframe><div role='searchbox' aria-labelledby='t'></div></body></html>`;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
   const result = runa11yCoreOnHtml(html);
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test('searchbox-name-present: label association with empty content falls back to the label\'s own title attribute => pass', () => {
+test("searchbox-name-present: label association with empty content falls back to the label's own title attribute => pass", () => {
   // Regression for the theoretical sibling gap to the <iframe>-title-
   // fallback fix (found via a deliberate audit of every duplicated
   // accessible-name helper across the *-name-present rule family,
@@ -116,7 +165,10 @@ test('searchbox-name-present: label association with empty content falls back to
   // element being asked for its name, regardless of why.
   const html = `<!doctype html><html><body><label for='a' title='Search'></label><div id='a' role='searchbox'></div></body></html>`;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
   const result = runa11yCoreOnHtml(html);
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });

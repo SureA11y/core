@@ -31,7 +31,15 @@ function makeCheckResult(overrides = {}) {
     i18n: null,
     meta: {
       ruleId: 'img-alt-present',
-      normativeMappings: [{ standard: 'WCAG', version: '2.2', requirement: '1.1.1', title: 'Non-text Content', conformanceLevel: 'A' }]
+      normativeMappings: [
+        {
+          standard: 'WCAG',
+          version: '2.2',
+          requirement: '1.1.1',
+          title: 'Non-text Content',
+          conformanceLevel: 'A'
+        }
+      ]
     },
     engineOptions: {},
     schemaVersion: '1.0.0',

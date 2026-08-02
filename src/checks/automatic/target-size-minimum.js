@@ -60,13 +60,23 @@ const id = 'target-size-minimum';
 const meta = {
   title: 'Pointer targets meet minimum size (AA)',
   description:
-      'Checks that pointer-operable targets have an effective hit region of at least 24 by 24 CSS pixels, or meet an allowed exception (e.g. sufficient spacing).',
+    'Checks that pointer-operable targets have an effective hit region of at least 24 by 24 CSS pixels, or meet an allowed exception (e.g. sufficient spacing).',
   i18n: {
     titleKey: 'targetSizeMinimum_title',
     descriptionKey: 'targetSizeMinimum_description'
   },
   helpUrl: null,
-  tags: ['wcag22aa', 'wcag258', 'navigation', 'operable', 'pointer', 'target-size', 'atomic', 'automatic', 'dom'],
+  tags: [
+    'wcag22aa',
+    'wcag258',
+    'navigation',
+    'operable',
+    'pointer',
+    'target-size',
+    'atomic',
+    'automatic',
+    'dom'
+  ],
   wcagSc: ['2.5.8'],
   normativeMappings: [
     {
@@ -115,8 +125,10 @@ function runInPage(ctx) {
   // with its own .querySelectorAll to call directly.
   function qsa(sel) {
     try {
-      if (helpers && typeof helpers.queryAllSmart === 'function') return Array.from(helpers.queryAllSmart(sel) || []);
-      if (helpers && typeof helpers.queryAll === 'function') return Array.from(helpers.queryAll(sel) || []);
+      if (helpers && typeof helpers.queryAllSmart === 'function')
+        return Array.from(helpers.queryAllSmart(sel) || []);
+      if (helpers && typeof helpers.queryAll === 'function')
+        return Array.from(helpers.queryAll(sel) || []);
       return [];
     } catch {
       return [];
@@ -135,10 +147,11 @@ function runInPage(ctx) {
 
   function htmlSnippet(el) {
     try {
-      if (helpers && typeof helpers.getOuterHtmlSnippet === 'function') return helpers.getOuterHtmlSnippet(el);
+      if (helpers && typeof helpers.getOuterHtmlSnippet === 'function')
+        return helpers.getOuterHtmlSnippet(el);
     } catch {}
     try {
-      return (el && el.outerHTML) ? String(el.outerHTML) : '';
+      return el && el.outerHTML ? String(el.outerHTML) : '';
     } catch {}
     return '';
   }
@@ -153,8 +166,14 @@ function runInPage(ctx) {
       if (!el || el.nodeType !== 1) return false;
 
       const tag = (el.tagName || '').toLowerCase();
-      const role = (el.getAttribute && String(el.getAttribute('role') || '').trim().toLowerCase()) || '';
-      const isLinkLike = (tag === 'a' && el.getAttribute && el.getAttribute('href')) || role === 'link';
+      const role =
+        (el.getAttribute &&
+          String(el.getAttribute('role') || '')
+            .trim()
+            .toLowerCase()) ||
+        '';
+      const isLinkLike =
+        (tag === 'a' && el.getAttribute && el.getAttribute('href')) || role === 'link';
       if (!isLinkLike) return false;
 
       const cs = getStyle(el);
@@ -164,11 +183,11 @@ function runInPage(ctx) {
       // Inline exception is for inline text runs; many design systems use inline-block for links,
       // so treat inline-block variants as eligible for this exception.
       const isInline =
-          display === 'inline' ||
-          display === 'inline-block' ||
-          display === 'inline-flex' ||
-          display === 'inline-grid' ||
-          display === 'inline-table';
+        display === 'inline' ||
+        display === 'inline-block' ||
+        display === 'inline-flex' ||
+        display === 'inline-grid' ||
+        display === 'inline-table';
 
       if (!isInline) return false;
 
@@ -182,7 +201,10 @@ function runInPage(ctx) {
       // Fallback: sometimes links are inside spans within a paragraph-like region
       const inlineContainer = closest(el, 'span, em, strong, small, label');
       if (inlineContainer) {
-        const outerTextBlock = closest(inlineContainer, 'p, li, dd, dt, blockquote, figcaption, caption, td, th');
+        const outerTextBlock = closest(
+          inlineContainer,
+          'p, li, dd, dt, blockquote, figcaption, caption, td, th'
+        );
         if (outerTextBlock) return true;
       }
 
@@ -234,7 +256,7 @@ function runInPage(ctx) {
     try {
       if (det.hasAttribute('open')) return false;
 
-      const tag = (el && el.tagName) ? String(el.tagName).toLowerCase() : '';
+      const tag = el && el.tagName ? String(el.tagName).toLowerCase() : '';
       // summary remains operable even when <details> is closed
       if (tag === 'summary') return false;
 
@@ -256,9 +278,9 @@ function runInPage(ctx) {
 
   function getStyle(el) {
     try {
-      return (document && document.defaultView && document.defaultView.getComputedStyle)
-          ? document.defaultView.getComputedStyle(el)
-          : null;
+      return document && document.defaultView && document.defaultView.getComputedStyle
+        ? document.defaultView.getComputedStyle(el)
+        : null;
     } catch {
       return null;
     }
@@ -288,7 +310,11 @@ function runInPage(ctx) {
 
     // aria-disabled elements are typically treated as not operable
     try {
-      const ad = el.getAttribute && String(el.getAttribute('aria-disabled') || '').trim().toLowerCase();
+      const ad =
+        el.getAttribute &&
+        String(el.getAttribute('aria-disabled') || '')
+          .trim()
+          .toLowerCase();
       if (ad === 'true') return false;
     } catch {}
 
@@ -321,7 +347,8 @@ function runInPage(ctx) {
 
   function elementFromPoint(x, y) {
     try {
-      if (document && typeof document.elementFromPoint === 'function') return document.elementFromPoint(x, y);
+      if (document && typeof document.elementFromPoint === 'function')
+        return document.elementFromPoint(x, y);
     } catch {}
     return null;
   }
@@ -347,7 +374,8 @@ function runInPage(ctx) {
     }
   }
 
-  const CANDIDATE_SELECTOR = 'button, summary, a[href], area[href], input, select, textarea, [role="button"], [role="link"]';
+  const CANDIDATE_SELECTOR =
+    'button, summary, a[href], area[href], input, select, textarea, [role="button"], [role="link"]';
 
   // --- candidate collection ---
   const candidates = qsa(CANDIDATE_SELECTOR);
@@ -481,14 +509,20 @@ function runInPage(ctx) {
       const tag = (el.tagName || '').toLowerCase();
       if (tag !== 'input') return false;
 
-      const type = (el.getAttribute && String(el.getAttribute('type') || '').trim().toLowerCase()) || '';
+      const type =
+        (el.getAttribute &&
+          String(el.getAttribute('type') || '')
+            .trim()
+            .toLowerCase()) ||
+        '';
       if (type !== 'checkbox' && type !== 'radio') return false;
 
       const cs = getStyle(el);
       let appearance = '';
       try {
         if (cs && typeof cs.getPropertyValue === 'function') {
-          appearance = cs.getPropertyValue('appearance') || cs.getPropertyValue('-webkit-appearance') || '';
+          appearance =
+            cs.getPropertyValue('appearance') || cs.getPropertyValue('-webkit-appearance') || '';
         } else if (cs) {
           appearance = cs.appearance || cs.webkitAppearance || '';
         }
@@ -557,7 +591,8 @@ function runInPage(ctx) {
       cantTellOccurrences.push({
         selector: buildSelector(it.el),
         html: htmlSnippet(it.el),
-        summary: 'Target may be too small and too close to another target, but the overlap is near the detection threshold and could not be confidently measured.',
+        summary:
+          'Target may be too small and too close to another target, but the overlap is near the detection threshold and could not be confidently measured.',
         hint: 'Manually verify the effective spacing between this target and its neighbor; increase target size or spacing if the overlap is real.',
         i18n: {
           summaryKey: 'targetSizeMinimum_summary_cantTell_ambiguousSpacing',
@@ -584,7 +619,8 @@ function runInPage(ctx) {
         cantTellOccurrences.push({
           selector: buildSelector(it.el),
           html: htmlSnippet(it.el),
-          summary: 'Target is too small and too close to another target, but may be exempt as part of an essential graphic or image-map region.',
+          summary:
+            'Target is too small and too close to another target, but may be exempt as part of an essential graphic or image-map region.',
           hint: 'Verify whether this target’s size is genuinely essential to its function (e.g. part of an SVG/canvas/image map); if not, increase target size or spacing.',
           i18n: {
             summaryKey: 'targetSizeMinimum_summary_cantTell_plausiblyEssential',
@@ -628,7 +664,11 @@ function runInPage(ctx) {
   // See helpers.resolveTieredOutcome's own header comment (src/core/dom-helpers.js):
   // a fail-tier finding never silently discards cantTell-tier findings from
   // the same run — both are returned together when the outcome is 'fail'.
-  const resolved = helpers.resolveTieredOutcome(failOccurrences, cantTellOccurrences, (rule && rule.defaultSeverity) || 'minor');
+  const resolved = helpers.resolveTieredOutcome(
+    failOccurrences,
+    cantTellOccurrences,
+    (rule && rule.defaultSeverity) || 'minor'
+  );
   return { ruleId: RULE_ID, ...resolved };
 }
 

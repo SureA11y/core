@@ -50,7 +50,9 @@ test('runOnly: includeRuleIds allows selecting a single rule', () => {
   // Only the included rule should run
   assertRule(result, 'form-control-programmatic-label-present', 'fail', { minOccurrences: 1 });
 
-  const anyOther = result.checksResults.find((r) => r.ruleId !== 'form-control-programmatic-label-present');
+  const anyOther = result.checksResults.find(
+    (r) => r.ruleId !== 'form-control-programmatic-label-present'
+  );
   assert.ok(!anyOther, 'no other checks should be present when includeRuleIds is set');
 });
 

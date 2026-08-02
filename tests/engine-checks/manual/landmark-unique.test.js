@@ -6,12 +6,18 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const { assertRule } = require('../../helpers/assertRule.js');
-const { runa11yCoreOnHtml, createDom, runa11yCoreOnDom } = require('../../helpers/runDomRulesOnHtml.js');
+const {
+  runa11yCoreOnHtml,
+  createDom,
+  runa11yCoreOnDom
+} = require('../../helpers/runDomRulesOnHtml.js');
 
 const RULE_ID = 'landmark-unique';
 
 function hasOccurrenceForId(rule, id) {
-  return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
+  return (rule.occurrences || []).some(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
 }
 
 test(`${RULE_ID}: notApplicable when no landmark role has more than one instance`, () => {
@@ -145,7 +151,10 @@ test(`${RULE_ID}: cantTell when an unnamed nav inside a shadow root collides wit
   const host = dom.window.document.getElementById('host');
   host.attachShadow({ mode: 'open' }).innerHTML = `<nav id="b">Widget nav</nav>`;
 
-  const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID], engineOptions: { includeShadowDom: true } });
+  const result = runa11yCoreOnDom(dom, {
+    runOnly: [RULE_ID],
+    engineOptions: { includeShadowDom: true }
+  });
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
   assert.ok(hasOccurrenceForId(rule, 'a'));
 });
@@ -182,7 +191,12 @@ test(`${RULE_ID}: cantTell when two navs are named via aria-labelledby pointing 
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/landmark-unique-all-scenarios.html)`, () => {
-  const fixturePath = path.join(__dirname, '../..', 'fixtures', 'landmark-unique-all-scenarios.html');
+  const fixturePath = path.join(
+    __dirname,
+    '../..',
+    'fixtures',
+    'landmark-unique-all-scenarios.html'
+  );
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 

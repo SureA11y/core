@@ -47,7 +47,8 @@
 const id = 'link-in-text-block';
 
 const meta = {
-  title: 'Links in text blocks must be distinguishable from surrounding text without relying on color alone',
+  title:
+    'Links in text blocks must be distinguishable from surrounding text without relying on color alone',
   description:
     'Checks that a link inside a run of text is visually distinguishable from the surrounding text by underline, a font-weight/style difference, or a sufficient (>=3:1) color-contrast difference — not by color alone.',
   i18n: {
@@ -55,10 +56,26 @@ const meta = {
     descriptionKey: 'linkInTextBlock_description'
   },
   helpUrl: null,
-  tags: ['wcag2a', 'wcag141', 'navigation', 'color', 'links', 'contrast', 'atomic', 'automatic', 'dom'],
+  tags: [
+    'wcag2a',
+    'wcag141',
+    'navigation',
+    'color',
+    'links',
+    'contrast',
+    'atomic',
+    'automatic',
+    'dom'
+  ],
   wcagSc: ['1.4.1'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '1.4.1', title: 'Use of Color', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '1.4.1',
+      title: 'Use of Color',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'serious',
   category: 'perceivable',
@@ -77,14 +94,16 @@ function runInPage(ctx) {
         const cs = helpers.computedStyle(el);
         if (cs) return cs;
       }
-      const view = (el.ownerDocument && el.ownerDocument.defaultView) ? el.ownerDocument.defaultView : null;
+      const view =
+        el.ownerDocument && el.ownerDocument.defaultView ? el.ownerDocument.defaultView : null;
       if (view && typeof view.getComputedStyle === 'function') return view.getComputedStyle(el);
     } catch {}
     return null;
   }
 
   function decorationTokens(cs) {
-    const raw = `${(cs && cs.textDecorationLine) || ''} ${(cs && cs.textDecoration) || ''}`.toLowerCase();
+    const raw =
+      `${(cs && cs.textDecorationLine) || ''} ${(cs && cs.textDecoration) || ''}`.toLowerCase();
     return raw.split(/\s+/).filter(Boolean);
   }
 
@@ -102,9 +121,10 @@ function runInPage(ctx) {
     return false;
   }
 
-  const contrastOpts = engineOptions && typeof engineOptions.contrast === 'object' && engineOptions.contrast
-    ? engineOptions.contrast
-    : {};
+  const contrastOpts =
+    engineOptions && typeof engineOptions.contrast === 'object' && engineOptions.contrast
+      ? engineOptions.contrast
+      : {};
   const mode = contrastOpts.mode === 'auditorAssist' ? 'auditorAssist' : 'strictConformance';
   const rootCanvasFallback =
     typeof contrastOpts.rootCanvasFallback === 'string' && contrastOpts.rootCanvasFallback.trim()
@@ -114,7 +134,9 @@ function runInPage(ctx) {
   const c = helpers && helpers.contrast ? helpers.contrast : null;
 
   const selector = 'a[href]';
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart(selector)
+    : helpers.queryAll(selector);
 
   const occurrences = [];
   let applicableCount = 0;
@@ -123,7 +145,8 @@ function runInPage(ctx) {
     if (!el || !el.getAttribute) continue;
 
     const eligResult = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el, ctx) : true;
-    const eligible = typeof eligResult === 'boolean' ? eligResult : !!(eligResult && eligResult.eligible);
+    const eligible =
+      typeof eligResult === 'boolean' ? eligResult : !!(eligResult && eligResult.eligible);
     if (!eligible) continue;
 
     const parent = el.parentElement;
@@ -156,13 +179,22 @@ function runInPage(ctx) {
       if (blocker && blocker.ok === false) {
         // Not confidently computable — skip (benefit of the doubt).
       } else {
-        const bg = c.computeEffectiveBackground(el, { contrast: { mode, rootCanvasFallback }, collectStack: false });
+        const bg = c.computeEffectiveBackground(el, {
+          contrast: { mode, rootCanvasFallback },
+          collectStack: false
+        });
         const fgLink = c.computeEffectiveForeground(el);
         const fgParent = c.computeEffectiveForeground(parent);
 
         if (bg && bg.ok && bg.rgba && fgLink && fgLink.rgba && fgParent && fgParent.rgba) {
-          const fgLinkOpaque = fgLink.rgba.a < 1 ? c.compositeRgba(fgLink.rgba, bg.rgba) : { r: fgLink.rgba.r, g: fgLink.rgba.g, b: fgLink.rgba.b, a: 1 };
-          const fgParentOpaque = fgParent.rgba.a < 1 ? c.compositeRgba(fgParent.rgba, bg.rgba) : { r: fgParent.rgba.r, g: fgParent.rgba.g, b: fgParent.rgba.b, a: 1 };
+          const fgLinkOpaque =
+            fgLink.rgba.a < 1
+              ? c.compositeRgba(fgLink.rgba, bg.rgba)
+              : { r: fgLink.rgba.r, g: fgLink.rgba.g, b: fgLink.rgba.b, a: 1 };
+          const fgParentOpaque =
+            fgParent.rgba.a < 1
+              ? c.compositeRgba(fgParent.rgba, bg.rgba)
+              : { r: fgParent.rgba.r, g: fgParent.rgba.g, b: fgParent.rgba.b, a: 1 };
 
           ratio = c.contrastRatio(fgLinkOpaque, fgParentOpaque);
           fgLinkHex = c.rgbToHex ? c.rgbToHex(fgLinkOpaque) : '';
@@ -178,16 +210,19 @@ function runInPage(ctx) {
 
     if (!flagged) continue;
 
-    const eligInfo = helpers.getEligibilityInfo ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
+    const eligInfo = helpers.getEligibilityInfo
+      ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
+      : null;
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
     const tag = (el.tagName || '').toLowerCase();
     const ratioStr = c.round2 ? c.round2(ratio) : String(ratio);
 
     occurrences.push({
       selector: stableSelector,
       html,
-      summary: 'This link in a block of text relies on color alone to be distinguished from the surrounding text.',
+      summary:
+        'This link in a block of text relies on color alone to be distinguished from the surrounding text.',
       hint: 'Add an underline, a font-weight/style difference, or increase the color contrast between the link and surrounding text to at least 3:1.',
       i18n: {
         summaryKey: 'linkInTextBlock_summary_fail',
@@ -209,7 +244,12 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'serious', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'fail',
+      severity: rule.defaultSeverity || 'serious',
+      occurrences
+    };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }

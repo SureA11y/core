@@ -23,15 +23,23 @@ const FORBIDDEN_OUTCOME_TAGS = ['pass', 'fail', 'canttell', 'notapplicable', 'in
 // origin (bare wcag2 = 2.0 baseline, wcag21/wcag22 = introduced in that version) crossed with
 // its conformance level -- see src/coverage/wcag-version-map.js for which SCs are 2.1/2.2-new.
 const WCAG_LEVEL_TAGS = [
-  'wcag2a', 'wcag2aa', 'wcag2aaa',
-  'wcag21a', 'wcag21aa', 'wcag21aaa',
-  'wcag22a', 'wcag22aa', 'wcag22aaa'
+  'wcag2a',
+  'wcag2aa',
+  'wcag2aaa',
+  'wcag21a',
+  'wcag21aa',
+  'wcag21aaa',
+  'wcag22a',
+  'wcag22aa',
+  'wcag22aaa'
 ];
 
 // Detect if a rule is WCAG-mapped in normative mappings
 function isWcagMapped(ruleDef) {
   const maps = Array.isArray(ruleDef && ruleDef.normativeMappings) ? ruleDef.normativeMappings : [];
-  return maps.some((m) => m && typeof m === 'object' && String(m.standard || '').toUpperCase() === 'WCAG');
+  return maps.some(
+    (m) => m && typeof m === 'object' && String(m.standard || '').toUpperCase() === 'WCAG'
+  );
 }
 
 // Detect SC tags like wcag111, wcag131, wcag243
@@ -57,11 +65,7 @@ test('rule taxonomy: tags are lowercase + workflow tags are well-formed', () => 
 
     // 1) tags must be lowercase (engine already lowercases at build time; enforce anyway)
     for (const t of tags) {
-      assert.strictEqual(
-        t,
-        t.toLowerCase(),
-        `Rule ${def.ruleId}: tag "${t}" must be lowercase`
-      );
+      assert.strictEqual(t, t.toLowerCase(), `Rule ${def.ruleId}: tag "${t}" must be lowercase`);
     }
 
     // 2) must not include outcome tags
@@ -106,7 +110,9 @@ test('rule taxonomy: WCAG-mapped checks must include SC tag + exactly one conten
     );
 
     // 6) WCAG level tags are optional, but if present must be from allow-list
-    const presentLevels = tags.filter((t) => /^wcag2\d[a]{0,2}$/.test(t) || t === 'wcag21' || t === 'wcag22');
+    const presentLevels = tags.filter(
+      (t) => /^wcag2\d[a]{0,2}$/.test(t) || t === 'wcag21' || t === 'wcag22'
+    );
     for (const lvl of presentLevels) {
       assert.ok(
         WCAG_LEVEL_TAGS.includes(lvl),

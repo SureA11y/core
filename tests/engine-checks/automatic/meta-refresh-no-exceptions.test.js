@@ -49,7 +49,12 @@ test(`${RULE_ID}: i18n default is English`, () => {
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/meta-refresh-no-exceptions-all-scenarios.html)`, () => {
-  const fixturePath = path.join(__dirname, '../..', 'fixtures', 'meta-refresh-no-exceptions-all-scenarios.html');
+  const fixturePath = path.join(
+    __dirname,
+    '../..',
+    'fixtures',
+    'meta-refresh-no-exceptions-all-scenarios.html'
+  );
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
@@ -59,12 +64,24 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/meta-refresh-no-exceptions-al
 
 test(`meta-refresh-no-exceptions: notApplicable when contextSelector scopes narrower than the whole document (fragment-scan applicability)`, () => {
   const html = `<!doctype html><html><head><meta http-equiv="refresh" content="0;url=https://example.com"></head><body></body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: ['meta-refresh-no-exceptions'], contextSelector: 'body' });
-  assertRule(result, 'meta-refresh-no-exceptions', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  const result = runa11yCoreOnHtml(html, {
+    runOnly: ['meta-refresh-no-exceptions'],
+    contextSelector: 'body'
+  });
+  assertRule(result, 'meta-refresh-no-exceptions', 'notApplicable', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
 });
 
 test(`meta-refresh-no-exceptions: notApplicable when engineOptions.fragment is true, even unscoped`, () => {
   const html = `<!doctype html><html><head><meta http-equiv="refresh" content="0;url=https://example.com"></head><body></body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: ['meta-refresh-no-exceptions'], engineOptions: { fragment: true } });
-  assertRule(result, 'meta-refresh-no-exceptions', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  const result = runa11yCoreOnHtml(html, {
+    runOnly: ['meta-refresh-no-exceptions'],
+    engineOptions: { fragment: true }
+  });
+  assertRule(result, 'meta-refresh-no-exceptions', 'notApplicable', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
 });

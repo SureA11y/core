@@ -11,7 +11,9 @@ const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 const RULE_ID = 'empty-table-header';
 
 function hasOccurrenceForId(rule, id) {
-  return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
+  return (rule.occurrences || []).some(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
 }
 
 test(`${RULE_ID}: notApplicable when no th is present`, () => {
@@ -96,7 +98,12 @@ test(`${RULE_ID}: i18n default is English`, () => {
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/empty-table-header-all-scenarios.html)`, () => {
-  const fixturePath = path.join(__dirname, '../..', 'fixtures', 'empty-table-header-all-scenarios.html');
+  const fixturePath = path.join(
+    __dirname,
+    '../..',
+    'fixtures',
+    'empty-table-header-all-scenarios.html'
+  );
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
@@ -111,6 +118,12 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/empty-table-header-all-scenar
 
 test(`empty-table-header: respects contextSelector scoping (regression -- used to bypass helpers.queryAllSmart and always scan the whole document)`, () => {
   const html = `<!doctype html><html><body><div id="target"><p>Just some unrelated text.</p></div><table><tr><th id="a"></th></tr></table></body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: ['empty-table-header'], contextSelector: '#target' });
-  assertRule(result, 'empty-table-header', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  const result = runa11yCoreOnHtml(html, {
+    runOnly: ['empty-table-header'],
+    contextSelector: '#target'
+  });
+  assertRule(result, 'empty-table-header', 'notApplicable', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
 });

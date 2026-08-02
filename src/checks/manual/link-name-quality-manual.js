@@ -50,7 +50,13 @@ const meta = {
   tags: ['wcag2a', 'wcag244', 'navigation', 'quality', 'atomic', 'manual'],
   wcagSc: ['2.4.4'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '2.4.4', title: 'Link Purpose (In Context)', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '2.4.4',
+      title: 'Link Purpose (In Context)',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'minor',
   category: 'operable',
@@ -63,10 +69,25 @@ function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
   const GENERIC_LINK_TEXT = new Set([
-    'click here', 'here', 'click', 'more', 'more info', 'more information',
-    'read more', 'learn more', 'continue reading', 'continue', 'details',
-    'more details', 'link', 'this link', 'go', 'download', 'view more',
-    'see more', 'info'
+    'click here',
+    'here',
+    'click',
+    'more',
+    'more info',
+    'more information',
+    'read more',
+    'learn more',
+    'continue reading',
+    'continue',
+    'details',
+    'more details',
+    'link',
+    'this link',
+    'go',
+    'download',
+    'view more',
+    'see more',
+    'info'
   ]);
 
   function normalize(s) {
@@ -79,7 +100,9 @@ function runInPage(ctx) {
   }
 
   const selector = 'a[href]';
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart(selector)
+    : helpers.queryAll(selector);
 
   const occurrences = [];
   let applicableCount = 0;
@@ -88,11 +111,12 @@ function runInPage(ctx) {
     if (!el || !el.getAttribute) continue;
 
     const eligResult = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el, ctx) : true;
-    const eligible = typeof eligResult === 'boolean' ? eligResult : !!(eligResult && eligResult.eligible);
+    const eligible =
+      typeof eligResult === 'boolean' ? eligResult : !!(eligResult && eligResult.eligible);
     if (!eligible) continue;
 
     const nameInfo = helpers.getAccessibleNameInfo ? helpers.getAccessibleNameInfo(el, ctx) : null;
-    const programmaticName = (nameInfo && typeof nameInfo.value === 'string') ? nameInfo.value : '';
+    const programmaticName = nameInfo && typeof nameInfo.value === 'string' ? nameInfo.value : '';
 
     let rawName = programmaticName;
     if (!rawName.trim() && helpers.getContentNameInfo) {
@@ -108,8 +132,10 @@ function runInPage(ctx) {
     if (!GENERIC_LINK_TEXT.has(normalized)) continue;
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
-    const eligInfo = helpers.getEligibilityInfo ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
+    const eligInfo = helpers.getEligibilityInfo
+      ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
+      : null;
 
     occurrences.push({
       selector: stableSelector,
@@ -133,7 +159,12 @@ function runInPage(ctx) {
   }
 
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'cantTell', severity: rule.defaultSeverity || 'minor', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'minor',
+      occurrences
+    };
   }
 
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };

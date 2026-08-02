@@ -14,9 +14,19 @@ const { createContrastHelpers } = require('../src/core/contrast-helpers.js');
 // getTextScan) that need a real document.
 const helpers = createContrastHelpers({}, { trim: (v) => (v == null ? '' : String(v)).trim() });
 const {
-  parseCssColorToRgba, compositeRgba, contrastRatio,
-  pxToPt, fontWeightLabel, round2, rgbaToString, parsePx,
-  normalizeFontWeight, isLargeText, requiredRatio, rgbToHex, toHex2
+  parseCssColorToRgba,
+  compositeRgba,
+  contrastRatio,
+  pxToPt,
+  fontWeightLabel,
+  round2,
+  rgbaToString,
+  parsePx,
+  normalizeFontWeight,
+  isLargeText,
+  requiredRatio,
+  rgbToHex,
+  toHex2
 } = helpers;
 
 function approx(actual, expected, eps = 1e-6) {
@@ -35,8 +45,18 @@ test('parseCssColorToRgba: hex forms (#rgb, #rgba, #rrggbb, #rrggbbaa)', () => {
 
 test('parseCssColorToRgba: rgb()/rgba(), including percentage channels and alpha', () => {
   assert.deepEqual(parseCssColorToRgba('rgb(0, 0, 0)'), { r: 0, g: 0, b: 0, a: 1 });
-  assert.deepEqual(parseCssColorToRgba('rgba(255,255,255,0.5)'), { r: 255, g: 255, b: 255, a: 0.5 });
-  assert.deepEqual(parseCssColorToRgba('rgba( 10 , 20 , 30 , 50% )'), { r: 10, g: 20, b: 30, a: 0.5 });
+  assert.deepEqual(parseCssColorToRgba('rgba(255,255,255,0.5)'), {
+    r: 255,
+    g: 255,
+    b: 255,
+    a: 0.5
+  });
+  assert.deepEqual(parseCssColorToRgba('rgba( 10 , 20 , 30 , 50% )'), {
+    r: 10,
+    g: 20,
+    b: 30,
+    a: 0.5
+  });
   assert.deepEqual(parseCssColorToRgba('rgb(100%, 0%, 0%)'), { r: 255, g: 0, b: 0, a: 1 });
 });
 
@@ -55,14 +75,18 @@ test('parseCssColorToRgba: repeat calls for the same input return equal (cached)
 });
 
 test('compositeRgba: opaque source fully wins; fully transparent source falls through to dest', () => {
-  assert.deepEqual(
-    compositeRgba({ r: 255, g: 0, b: 0, a: 1 }, { r: 0, g: 0, b: 255, a: 1 }),
-    { r: 255, g: 0, b: 0, a: 1 }
-  );
-  assert.deepEqual(
-    compositeRgba({ r: 255, g: 0, b: 0, a: 0 }, { r: 0, g: 0, b: 255, a: 1 }),
-    { r: 0, g: 0, b: 255, a: 1 }
-  );
+  assert.deepEqual(compositeRgba({ r: 255, g: 0, b: 0, a: 1 }, { r: 0, g: 0, b: 255, a: 1 }), {
+    r: 255,
+    g: 0,
+    b: 0,
+    a: 1
+  });
+  assert.deepEqual(compositeRgba({ r: 255, g: 0, b: 0, a: 0 }, { r: 0, g: 0, b: 255, a: 1 }), {
+    r: 0,
+    g: 0,
+    b: 255,
+    a: 1
+  });
 });
 
 test('compositeRgba: partial-alpha source-over blends channels and accumulates alpha', () => {

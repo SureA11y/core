@@ -26,7 +26,8 @@ const id = 'table-duplicate-name';
 
 const meta = {
   title: 'Table caption must not duplicate its summary attribute',
-  description: 'Checks that a <table>\'s <caption> text is not identical to its (deprecated) summary attribute.',
+  description:
+    "Checks that a <table>'s <caption> text is not identical to its (deprecated) summary attribute.",
   i18n: {
     titleKey: 'tableDuplicateName_title',
     descriptionKey: 'tableDuplicateName_description'
@@ -46,10 +47,14 @@ function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
   function normalizeWs(s) {
-    return String(s || '').replace(/\s+/g, ' ').trim();
+    return String(s || '')
+      .replace(/\s+/g, ' ')
+      .trim();
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('table[summary]') : helpers.queryAll('table[summary]');
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart('table[summary]')
+    : helpers.queryAll('table[summary]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -68,12 +73,12 @@ function runInPage(ctx) {
     if (captionText.toLowerCase() !== summary.toLowerCase()) continue;
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
     occurrences.push({
       selector: stableSelector,
       html,
-      summary: 'This table\'s caption duplicates its summary attribute.',
+      summary: "This table's caption duplicates its summary attribute.",
       hint: 'Remove the redundant summary attribute, or make it provide different information than the caption.',
       i18n: {
         summaryKey: 'tableDuplicateName_summary_cantTell',
@@ -90,7 +95,12 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'cantTell', severity: rule.defaultSeverity || 'minor', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'minor',
+      occurrences
+    };
   }
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }

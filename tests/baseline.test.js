@@ -8,7 +8,10 @@ const { makeOccurrence, makeCheckResult, makeScanResult } = require('./explain/f
 
 test('buildBaselineEntries: one entry per fail occurrence', () => {
   const check = makeCheckResult({
-    occurrences: [makeOccurrence({ selector: 'img:nth-child(1)' }), makeOccurrence({ selector: 'img:nth-child(2)' })]
+    occurrences: [
+      makeOccurrence({ selector: 'img:nth-child(1)' }),
+      makeOccurrence({ selector: 'img:nth-child(2)' })
+    ]
   });
   const entries = buildBaselineEntries(makeScanResult([check]));
 
@@ -56,12 +59,22 @@ test('matchBaseline: an occurrence not present in the baseline is new and gates 
 
 test('matchBaseline: multiset matching -- baseline has 1 of a shape, fresh scan has 2 identical occurrences => 1 known + 1 new', () => {
   const check = makeCheckResult({
-    occurrences: [makeOccurrence({ selector: 'main img:nth-child(1)' }), makeOccurrence({ selector: 'main img:nth-child(2)' })]
+    occurrences: [
+      makeOccurrence({ selector: 'main img:nth-child(1)' }),
+      makeOccurrence({ selector: 'main img:nth-child(2)' })
+    ]
   });
   const result = makeScanResult([check]);
 
   // Baseline only recorded ONE of the two identical (same ruleId/reasonCode/html) occurrences.
-  const baseline = [{ ruleId: 'img-alt-present', reasonCode: 'DEFAULT', selector: 'main img:nth-child(1)', html: '<img src="x.png">' }];
+  const baseline = [
+    {
+      ruleId: 'img-alt-present',
+      reasonCode: 'DEFAULT',
+      selector: 'main img:nth-child(1)',
+      html: '<img src="x.png">'
+    }
+  ];
 
   const match = matchBaseline(result, baseline);
 
@@ -71,9 +84,11 @@ test('matchBaseline: multiset matching -- baseline has 1 of a shape, fresh scan 
 });
 
 test('matchBaseline: baseline entries with no matching fresh occurrence are reported as stale, not as a failure', () => {
-  const check = makeCheckResult({ occurrences: [] , outcome: 'notApplicable' });
+  const check = makeCheckResult({ occurrences: [], outcome: 'notApplicable' });
   const result = makeScanResult([check]);
-  const baseline = [{ ruleId: 'img-alt-present', reasonCode: 'DEFAULT', selector: 'img', html: '<img src="x.png">' }];
+  const baseline = [
+    { ruleId: 'img-alt-present', reasonCode: 'DEFAULT', selector: 'img', html: '<img src="x.png">' }
+  ];
 
   const match = matchBaseline(result, baseline);
 
@@ -85,7 +100,9 @@ test('matchBaseline: baseline entries with no matching fresh occurrence are repo
 test('matchBaseline: a different ruleId never matches, even with identical html', () => {
   const check = makeCheckResult({ ruleId: 'other-rule' });
   const result = makeScanResult([check]);
-  const baseline = [{ ruleId: 'img-alt-present', reasonCode: 'DEFAULT', selector: 'img', html: '<img src="x.png">' }];
+  const baseline = [
+    { ruleId: 'img-alt-present', reasonCode: 'DEFAULT', selector: 'img', html: '<img src="x.png">' }
+  ];
 
   const match = matchBaseline(result, baseline);
 
@@ -95,9 +112,13 @@ test('matchBaseline: a different ruleId never matches, even with identical html'
 });
 
 test('matchBaseline: a distinct reasonCode never matches an entry recorded under a different reasonCode', () => {
-  const check = makeCheckResult({ occurrences: [makeOccurrence({ data: { details: { reasonCode: 'CODE_A' } } })] });
+  const check = makeCheckResult({
+    occurrences: [makeOccurrence({ data: { details: { reasonCode: 'CODE_A' } } })]
+  });
   const result = makeScanResult([check]);
-  const baseline = [{ ruleId: 'img-alt-present', reasonCode: 'CODE_B', selector: 'img', html: '<img src="x.png">' }];
+  const baseline = [
+    { ruleId: 'img-alt-present', reasonCode: 'CODE_B', selector: 'img', html: '<img src="x.png">' }
+  ];
 
   const match = matchBaseline(result, baseline);
 
@@ -119,9 +140,18 @@ test('matchBaseline: a changed selector alone does not break the match, as long 
   // Simulates the flagged element having moved position on the page (e.g. an
   // unrelated sibling added/removed elsewhere) -- selector/structuralPath
   // would differ, but identity here is deliberately selector-independent.
-  const check = makeCheckResult({ occurrences: [makeOccurrence({ selector: 'body > main > div:nth-child(7) > img' })] });
+  const check = makeCheckResult({
+    occurrences: [makeOccurrence({ selector: 'body > main > div:nth-child(7) > img' })]
+  });
   const result = makeScanResult([check]);
-  const baseline = [{ ruleId: 'img-alt-present', reasonCode: 'DEFAULT', selector: 'body > main > div:nth-child(2) > img', html: '<img src="x.png">' }];
+  const baseline = [
+    {
+      ruleId: 'img-alt-present',
+      reasonCode: 'DEFAULT',
+      selector: 'body > main > div:nth-child(2) > img',
+      html: '<img src="x.png">'
+    }
+  ];
 
   const match = matchBaseline(result, baseline);
 

@@ -108,7 +108,9 @@ function runInPage(ctx) {
   }
 
   function normalizeWs(s) {
-    return String(s || '').replace(/\s+/g, ' ').trim();
+    return String(s || '')
+      .replace(/\s+/g, ' ')
+      .trim();
   }
 
   function lower(s) {
@@ -172,7 +174,16 @@ function runInPage(ctx) {
     return '';
   }
 
-  const LANDMARK_ROLES = new Set(['banner', 'contentinfo', 'main', 'navigation', 'complementary', 'region', 'form', 'search']);
+  const LANDMARK_ROLES = new Set([
+    'banner',
+    'contentinfo',
+    'main',
+    'navigation',
+    'complementary',
+    'region',
+    'form',
+    'search'
+  ]);
 
   function isLandmark(el) {
     if (!el || !el.getAttribute) return false;
@@ -260,7 +271,11 @@ function runInPage(ctx) {
     }
     const tag = el.tagName ? lower(el.tagName) : '';
     if (VISUAL_CONTENT_TAGS.has(tag)) return true;
-    if (tag === 'input' && lower(normalizeWs(el.getAttribute && el.getAttribute('type'))) !== 'hidden') return true;
+    if (
+      tag === 'input' &&
+      lower(normalizeWs(el.getAttribute && el.getAttribute('type'))) !== 'hidden'
+    )
+      return true;
     if (normalizeWs(el.getAttribute && el.getAttribute('aria-label'))) return true;
     return false;
   }
@@ -333,7 +348,11 @@ function runInPage(ctx) {
   const seen = new Set();
   for (const leaf of leaves) {
     let cur = leaf;
-    while (cur.parentElement && cur.parentElement !== body && !stopperFlagged.has(cur.parentElement)) {
+    while (
+      cur.parentElement &&
+      cur.parentElement !== body &&
+      !stopperFlagged.has(cur.parentElement)
+    ) {
       cur = cur.parentElement;
     }
     if (!seen.has(cur)) {
@@ -345,7 +364,7 @@ function runInPage(ctx) {
   const occurrences = collapsed.map((el) => {
     const tag = el.tagName ? lower(el.tagName) : '';
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
     return {
       selector: stableSelector,
@@ -366,7 +385,12 @@ function runInPage(ctx) {
   if (occurrences.length === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  return { ruleId: rule.ruleId, outcome: 'cantTell', severity: rule.defaultSeverity || 'minor', occurrences };
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'cantTell',
+    severity: rule.defaultSeverity || 'minor',
+    occurrences
+  };
 }
 
 module.exports = { id, meta, runInPage, applicability };

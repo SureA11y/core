@@ -48,8 +48,20 @@ const meta = {
   tags: ['wcag2a', 'wcag2aaa', 'wcag211', 'wcag213', 'structure', 'atomic', 'manual'],
   wcagSc: ['2.1.1', '2.1.3'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '2.1.1', title: 'Keyboard', conformanceLevel: 'A' },
-    { standard: 'WCAG', version: '2.2', requirement: '2.1.3', title: 'Keyboard (No Exception)', conformanceLevel: 'AAA' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '2.1.1',
+      title: 'Keyboard',
+      conformanceLevel: 'A'
+    },
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '2.1.3',
+      title: 'Keyboard (No Exception)',
+      conformanceLevel: 'AAA'
+    }
   ],
   defaultSeverity: 'moderate',
   category: 'operable',
@@ -73,7 +85,8 @@ function runInPage(ctx) {
         const cs = helpers.computedStyle(el);
         if (cs) return cs;
       }
-      const view = (el.ownerDocument && el.ownerDocument.defaultView) ? el.ownerDocument.defaultView : null;
+      const view =
+        el.ownerDocument && el.ownerDocument.defaultView ? el.ownerDocument.defaultView : null;
       if (view && typeof view.getComputedStyle === 'function') return view.getComputedStyle(el);
     } catch {}
     return null;
@@ -81,8 +94,12 @@ function runInPage(ctx) {
 
   function isScrollableOverflow(cs) {
     if (!cs) return false;
-    const x = String(cs.overflowX || '').trim().toLowerCase();
-    const y = String(cs.overflowY || '').trim().toLowerCase();
+    const x = String(cs.overflowX || '')
+      .trim()
+      .toLowerCase();
+    const y = String(cs.overflowY || '')
+      .trim()
+      .toLowerCase();
     return x === 'auto' || x === 'scroll' || y === 'auto' || y === 'scroll';
   }
 
@@ -108,8 +125,11 @@ function runInPage(ctx) {
     }
   }
 
-  const CANDIDATE_SELECTOR = 'div, section, article, aside, main, nav, pre, table, blockquote, ul, ol, textarea';
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(CANDIDATE_SELECTOR) : helpers.queryAll(CANDIDATE_SELECTOR);
+  const CANDIDATE_SELECTOR =
+    'div, section, article, aside, main, nav, pre, table, blockquote, ul, ol, textarea';
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart(CANDIDATE_SELECTOR)
+    : helpers.queryAll(CANDIDATE_SELECTOR);
 
   const occurrences = [];
   let applicableCount = 0;
@@ -127,12 +147,13 @@ function runInPage(ctx) {
 
     const tag = (el.tagName || '').toLowerCase();
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
     const baseOccurrence = {
       selector: stableSelector,
       html,
-      summary: 'This element declares overflow:auto/scroll, has no focusable descendant, and is not itself keyboard-focusable.',
+      summary:
+        'This element declares overflow:auto/scroll, has no focusable descendant, and is not itself keyboard-focusable.',
       hint: 'If this region’s content actually overflows, add tabindex="0" (and a suitable label) so keyboard users can focus it and scroll with the arrow keys.',
       i18n: {
         summaryKey: 'scrollableRegionFocusable_summary_cantTell',
@@ -156,7 +177,12 @@ function runInPage(ctx) {
   }
 
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'cantTell', severity: rule.defaultSeverity || 'moderate', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'moderate',
+      occurrences
+    };
   }
 
   // Manual rules may only emit cantTell/notApplicable (never pass/fail):

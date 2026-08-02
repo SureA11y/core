@@ -28,7 +28,8 @@ const id = 'valid-lang';
 
 const meta = {
   title: 'Element lang attribute must be syntactically valid',
-  description: 'Checks that any element (other than the root <html>) with a non-empty lang attribute uses a syntactically valid language tag.',
+  description:
+    'Checks that any element (other than the root <html>) with a non-empty lang attribute uses a syntactically valid language tag.',
   i18n: {
     titleKey: 'validLang_title',
     descriptionKey: 'validLang_description'
@@ -37,7 +38,13 @@ const meta = {
   tags: ['wcag2aa', 'wcag312', 'structure', 'language', 'atomic', 'automatic'],
   wcagSc: ['3.1.2'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '3.1.2', title: 'Language of Parts', conformanceLevel: 'AA' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '3.1.2',
+      title: 'Language of Parts',
+      conformanceLevel: 'AA'
+    }
   ],
   defaultSeverity: 'moderate',
   category: 'understandable',
@@ -51,7 +58,9 @@ function runInPage(ctx) {
 
   const BCP47_RE = /^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{2,8})*$/;
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[lang]') : helpers.queryAll('[lang]');
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart('[lang]')
+    : helpers.queryAll('[lang]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -69,7 +78,7 @@ function runInPage(ctx) {
 
     const tag = el.tagName.toLowerCase();
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
     occurrences.push({
       selector: stableSelector,
@@ -91,7 +100,12 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'moderate', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'fail',
+      severity: rule.defaultSeverity || 'moderate',
+      occurrences
+    };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }

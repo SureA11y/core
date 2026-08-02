@@ -25,7 +25,8 @@ const id = 'aria-roles-valid';
 
 const meta = {
   title: 'role attribute must be a valid, non-abstract ARIA role',
-  description: 'Checks that an explicit role="" attribute resolves to a real, non-abstract WAI-ARIA role.',
+  description:
+    'Checks that an explicit role="" attribute resolves to a real, non-abstract WAI-ARIA role.',
   i18n: {
     titleKey: 'ariaRolesValid_title',
     descriptionKey: 'ariaRolesValid_description'
@@ -34,7 +35,13 @@ const meta = {
   tags: ['wcag2a', 'wcag412', 'aria', 'structure', 'atomic', 'automatic'],
   wcagSc: ['4.1.2'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '4.1.2', title: 'Name, Role, Value', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '4.1.2',
+      title: 'Name, Role, Value',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'serious',
   category: 'robust',
@@ -51,7 +58,9 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]') : helpers.queryAll('[role]');
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart('[role]')
+    : helpers.queryAll('[role]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -71,7 +80,7 @@ function runInPage(ctx) {
 
     const reasonCode = !isKnown ? 'ARIA_ROLE_INVALID' : 'ARIA_ROLE_ABSTRACT';
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
     occurrences.push({
       selector: stableSelector,
@@ -83,12 +92,8 @@ function runInPage(ctx) {
         ? 'Use a valid ARIA role token, or remove the role attribute if none applies.'
         : 'Replace this abstract role with a concrete role appropriate for the widget/structure.',
       i18n: {
-        summaryKey: !isKnown
-          ? 'ariaRolesValid_summary_invalid'
-          : 'ariaRolesValid_summary_abstract',
-        hintKey: !isKnown
-          ? 'ariaRolesValid_hint_invalid'
-          : 'ariaRolesValid_hint_abstract',
+        summaryKey: !isKnown ? 'ariaRolesValid_summary_invalid' : 'ariaRolesValid_summary_abstract',
+        hintKey: !isKnown ? 'ariaRolesValid_hint_invalid' : 'ariaRolesValid_hint_abstract',
         params: { role }
       },
       data: {
@@ -101,7 +106,12 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'serious', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'fail',
+      severity: rule.defaultSeverity || 'serious',
+      occurrences
+    };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }

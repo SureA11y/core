@@ -53,8 +53,12 @@ test('renderSarifReport: pass/notApplicable checks contribute no results, but st
   assert.deepStrictEqual(ruleIds, ['clean-rule', 'na-rule']);
 });
 
-test('renderSarifReport: fail-first ordering, matching REPORT.md\'s own convention', () => {
-  const cantTellCheck = makeCheckResult({ ruleId: 'manual-rule', outcome: 'cantTell', type: 'manual' });
+test("renderSarifReport: fail-first ordering, matching REPORT.md's own convention", () => {
+  const cantTellCheck = makeCheckResult({
+    ruleId: 'manual-rule',
+    outcome: 'cantTell',
+    type: 'manual'
+  });
   const failCheck = makeCheckResult({ ruleId: 'img-alt-present' });
   const result = makeScanResult([cantTellCheck, failCheck]);
   const sarif = parse(renderSarifReport(result, {}));
@@ -67,7 +71,11 @@ test('renderSarifReport: fail-first ordering, matching REPORT.md\'s own conventi
 
 test('renderSarifReport: tool.driver.rules default level reflects rule type (automatic -> error, manual -> warning)', () => {
   const automaticCheck = makeCheckResult({ ruleId: 'auto-rule', type: 'automatic' });
-  const manualCheck = makeCheckResult({ ruleId: 'manual-rule', outcome: 'cantTell', type: 'manual' });
+  const manualCheck = makeCheckResult({
+    ruleId: 'manual-rule',
+    outcome: 'cantTell',
+    type: 'manual'
+  });
   const result = makeScanResult([automaticCheck, manualCheck]);
   const sarif = parse(renderSarifReport(result, {}));
 
@@ -81,15 +89,23 @@ test('renderSarifReport: partialFingerprints reuse the same ruleId+reasonCode+ht
   const sarif = parse(renderSarifReport(result, {}));
 
   const expected = computeBaselineKey('img-alt-present', 'DEFAULT', '<img src="x.png">');
-  assert.strictEqual(sarif.runs[0].results[0].partialFingerprints['surea11y/violation/v1'], expected);
+  assert.strictEqual(
+    sarif.runs[0].results[0].partialFingerprints['surea11y/violation/v1'],
+    expected
+  );
 });
 
 test('renderSarifReport: occurrence.selector is carried as a logical location', () => {
-  const check = makeCheckResult({ occurrences: [makeOccurrence({ selector: 'main > img:nth-child(2)' })] });
+  const check = makeCheckResult({
+    occurrences: [makeOccurrence({ selector: 'main > img:nth-child(2)' })]
+  });
   const result = makeScanResult([check]);
   const sarif = parse(renderSarifReport(result, {}));
 
-  assert.strictEqual(sarif.runs[0].results[0].locations[0].logicalLocations[0].fullyQualifiedName, 'main > img:nth-child(2)');
+  assert.strictEqual(
+    sarif.runs[0].results[0].locations[0].logicalLocations[0].fullyQualifiedName,
+    'main > img:nth-child(2)'
+  );
 });
 
 test('renderSarifReport: with a baseline, an already-known fail occurrence is omitted entirely (not downgraded)', () => {
@@ -104,10 +120,20 @@ test('renderSarifReport: with a baseline, an already-known fail occurrence is om
 
 test('renderSarifReport: with a baseline, multiset matching still reports the genuinely new occurrence', () => {
   const check = makeCheckResult({
-    occurrences: [makeOccurrence({ selector: 'main img:nth-child(1)' }), makeOccurrence({ selector: 'main img:nth-child(2)' })]
+    occurrences: [
+      makeOccurrence({ selector: 'main img:nth-child(1)' }),
+      makeOccurrence({ selector: 'main img:nth-child(2)' })
+    ]
   });
   const result = makeScanResult([check]);
-  const baselineEntries = [{ ruleId: 'img-alt-present', reasonCode: 'DEFAULT', selector: 'main img:nth-child(1)', html: '<img src="x.png">' }];
+  const baselineEntries = [
+    {
+      ruleId: 'img-alt-present',
+      reasonCode: 'DEFAULT',
+      selector: 'main img:nth-child(1)',
+      html: '<img src="x.png">'
+    }
+  ];
 
   const sarif = parse(renderSarifReport(result, { baselineEntries }));
 
@@ -118,7 +144,9 @@ test('renderSarifReport: a baseline never filters cantTell occurrences', () => {
   const check = makeCheckResult({ ruleId: 'manual-rule', outcome: 'cantTell', type: 'manual' });
   const result = makeScanResult([check]);
   // Even if some entry happened to match by identity, cantTell is out of scope for baseline filtering.
-  const baselineEntries = [{ ruleId: 'manual-rule', reasonCode: 'DEFAULT', selector: 'img', html: '<img src="x.png">' }];
+  const baselineEntries = [
+    { ruleId: 'manual-rule', reasonCode: 'DEFAULT', selector: 'img', html: '<img src="x.png">' }
+  ];
 
   const sarif = parse(renderSarifReport(result, { baselineEntries }));
 
@@ -142,7 +170,10 @@ test('renderSarifReport: a file:// url becomes a cwd-relative artifact location'
 
   const sarif = parse(renderSarifReport(result, {}));
 
-  assert.strictEqual(sarif.runs[0].results[0].locations[0].physicalLocation.artifactLocation.uri, 'fixture.html');
+  assert.strictEqual(
+    sarif.runs[0].results[0].locations[0].physicalLocation.artifactLocation.uri,
+    'fixture.html'
+  );
 });
 
 test('renderSarifReport: an http(s) url is used as-is (no repo-relative path possible)', () => {
@@ -151,7 +182,10 @@ test('renderSarifReport: an http(s) url is used as-is (no repo-relative path pos
 
   const sarif = parse(renderSarifReport(result, {}));
 
-  assert.strictEqual(sarif.runs[0].results[0].locations[0].physicalLocation.artifactLocation.uri, 'https://example.test/page');
+  assert.strictEqual(
+    sarif.runs[0].results[0].locations[0].physicalLocation.artifactLocation.uri,
+    'https://example.test/page'
+  );
 });
 
 test('renderSarifReport: a null url falls back to a placeholder artifact location', () => {
@@ -160,14 +194,20 @@ test('renderSarifReport: a null url falls back to a placeholder artifact locatio
 
   const sarif = parse(renderSarifReport(result, {}));
 
-  assert.strictEqual(sarif.runs[0].results[0].locations[0].physicalLocation.artifactLocation.uri, 'about:blank');
+  assert.strictEqual(
+    sarif.runs[0].results[0].locations[0].physicalLocation.artifactLocation.uri,
+    'about:blank'
+  );
 });
 
 test('renderSarifReport: real scan end-to-end (img-alt-present) produces a well-formed SARIF result', () => {
-  const html = '<!doctype html><html lang="en"><head><title>T</title></head><body><img src="logo.png"></body></html>';
+  const html =
+    '<!doctype html><html lang="en"><head><title>T</title></head><body><img src="logo.png"></body></html>';
   const result = runa11yCoreOnHtml(html, { runOnly: ['img-alt-present'] });
 
-  const sarif = parse(renderSarifReport(result, { toolVersion: '1.2.3', informationUri: 'https://example.test/repo' }));
+  const sarif = parse(
+    renderSarifReport(result, { toolVersion: '1.2.3', informationUri: 'https://example.test/repo' })
+  );
 
   assert.strictEqual(sarif.runs[0].tool.driver.informationUri, 'https://example.test/repo');
   const imgResult = sarif.runs[0].results.find((r) => r.ruleId === 'img-alt-present');

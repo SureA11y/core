@@ -22,7 +22,9 @@ const RULE_ID = 'bypass-blocks-present';
  */
 
 test('regression: bypass-blocks-present does not report stale occurrences[].html across repeated runs on the same window (GH #2)', () => {
-  const dom = createDom('<!doctype html><html lang="en"><head><title>t</title></head><body></body></html>');
+  const dom = createDom(
+    '<!doctype html><html lang="en"><head><title>t</title></head><body></body></html>'
+  );
   const { document } = dom.window;
 
   // Run 1: body has a <main>, so the rule passes.
@@ -58,7 +60,10 @@ test('regression: window.__a11ycoreSharedCache is reset at the start of every ru
     'expected shared dom cache to be populated after run 1'
   );
   const outerHtmlCacheRun1 = window.__a11ycoreSharedCache.dom.outerHtmlCache;
-  assert.ok(outerHtmlCacheRun1 instanceof WeakMap, 'expected outerHtmlCache to be a WeakMap after run 1');
+  assert.ok(
+    outerHtmlCacheRun1 instanceof WeakMap,
+    'expected outerHtmlCache to be a WeakMap after run 1'
+  );
 
   runa11yCoreOnDom(dom, {});
   const outerHtmlCacheRun2 = window.__a11ycoreSharedCache.dom.outerHtmlCache;

@@ -50,7 +50,9 @@ function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
   function normalizeWs(s) {
-    return String(s || '').replace(/\s+/g, ' ').trim();
+    return String(s || '')
+      .replace(/\s+/g, ' ')
+      .trim();
   }
 
   function getExplicitRoleToken(el) {
@@ -65,14 +67,16 @@ function runInPage(ctx) {
       if (explicit !== 'heading') return 0;
       const raw = normalizeWs(el.getAttribute && el.getAttribute('aria-level'));
       const n = parseInt(raw, 10);
-      return (Number.isFinite(n) && n >= 1) ? n : 2;
+      return Number.isFinite(n) && n >= 1 ? n : 2;
     }
     const tag = el.tagName ? el.tagName.toLowerCase() : '';
     const m = /^h([1-6])$/.exec(tag);
     return m ? parseInt(m[1], 10) : 0;
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('h1, h2, h3, h4, h5, h6, [role]') : helpers.queryAll('h1, h2, h3, h4, h5, h6, [role]');
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart('h1, h2, h3, h4, h5, h6, [role]')
+    : helpers.queryAll('h1, h2, h3, h4, h5, h6, [role]');
 
   const headings = [];
   const seen = new Set();
@@ -95,7 +99,9 @@ function runInPage(ctx) {
 
     if (level > highestSoFar + 1) {
       const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-      const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+      const html = helpers.getOuterHtmlSnippet
+        ? helpers.getOuterHtmlSnippet(el)
+        : el.outerHTML || '';
 
       occurrences.push({
         selector: stableSelector,
@@ -108,7 +114,11 @@ function runInPage(ctx) {
           params: { fromLevel: String(highestSoFar), toLevel: String(level) }
         },
         data: {
-          details: { reasonCode: 'HEADING_ORDER_SKIPPED_LEVEL', fromLevel: highestSoFar, toLevel: level }
+          details: {
+            reasonCode: 'HEADING_ORDER_SKIPPED_LEVEL',
+            fromLevel: highestSoFar,
+            toLevel: level
+          }
         }
       });
     }
@@ -117,7 +127,12 @@ function runInPage(ctx) {
   }
 
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'cantTell', severity: rule.defaultSeverity || 'minor', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'minor',
+      occurrences
+    };
   }
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }

@@ -11,7 +11,9 @@ const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 const RULE_ID = 'list-children-valid';
 
 function hasOccurrenceForId(rule, id) {
-  return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
+  return (rule.occurrences || []).some(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
 }
 
 test(`${RULE_ID}: notApplicable when no ul/ol is present`, () => {
@@ -105,16 +107,34 @@ test(`${RULE_ID}: i18n default is English`, () => {
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/list-children-valid-all-scenarios.html)`, () => {
-  const fixturePath = path.join(__dirname, '../..', 'fixtures', 'list-children-valid-all-scenarios.html');
+  const fixturePath = path.join(
+    __dirname,
+    '../..',
+    'fixtures',
+    'list-children-valid-all-scenarios.html'
+  );
   const html = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 5, maxOccurrences: 5 });
 
-  const expectedFailIds = ['lcv_case_04', 'lcv_case_05', 'lcv_case_06', 'lcv_case_12', 'lcv_case_13'];
+  const expectedFailIds = [
+    'lcv_case_04',
+    'lcv_case_05',
+    'lcv_case_06',
+    'lcv_case_12',
+    'lcv_case_13'
+  ];
   const expectedNoOccIds = [
-    'lcv_case_01', 'lcv_case_02', 'lcv_case_03', 'lcv_case_07',
-    'lcv_case_08', 'lcv_case_09', 'lcv_case_10', 'lcv_case_11', 'lcv_case_14'
+    'lcv_case_01',
+    'lcv_case_02',
+    'lcv_case_03',
+    'lcv_case_07',
+    'lcv_case_08',
+    'lcv_case_09',
+    'lcv_case_10',
+    'lcv_case_11',
+    'lcv_case_14'
   ];
 
   for (const id of expectedFailIds) {

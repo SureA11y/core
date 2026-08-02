@@ -32,7 +32,8 @@ const id = 'table-fake-caption';
 
 const meta = {
   title: "A table's first row should not stand in for a real <caption>",
-  description: 'Flags tables with no <caption> whose first row has a single non-empty cell while other rows have multiple cells, for manual review of whether that cell is acting as a fake caption.',
+  description:
+    'Flags tables with no <caption> whose first row has a single non-empty cell while other rows have multiple cells, for manual review of whether that cell is acting as a fake caption.',
   i18n: {
     titleKey: 'tableFakeCaption_title',
     descriptionKey: 'tableFakeCaption_description'
@@ -41,7 +42,13 @@ const meta = {
   tags: ['wcag2a', 'wcag131', 'structure', 'atomic', 'manual'],
   wcagSc: ['1.3.1'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '1.3.1', title: 'Info and Relationships', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '1.3.1',
+      title: 'Info and Relationships',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'minor',
   category: 'perceivable',
@@ -53,7 +60,9 @@ const meta = {
 function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
-  function trim(v) { return (v == null ? '' : String(v)).trim(); }
+  function trim(v) {
+    return (v == null ? '' : String(v)).trim();
+  }
 
   const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('table') : helpers.queryAll('table');
 
@@ -83,12 +92,15 @@ function runInPage(ctx) {
     if (!hasMultiCellRow) continue;
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(table) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(table) : (table.outerHTML || '');
+    const html = helpers.getOuterHtmlSnippet
+      ? helpers.getOuterHtmlSnippet(table)
+      : table.outerHTML || '';
 
     const baseOccurrence = {
       selector: stableSelector,
       html,
-      summary: 'This table has no <caption>, but its first row is a single cell sitting above multi-cell rows — it may be acting as a fake caption.',
+      summary:
+        'This table has no <caption>, but its first row is a single cell sitting above multi-cell rows — it may be acting as a fake caption.',
       hint: 'If this cell is meant to describe the table, use a real <caption> element instead of a lone first-row cell.',
       i18n: {
         summaryKey: 'tableFakeCaption_summary_cantTell',
@@ -112,7 +124,12 @@ function runInPage(ctx) {
   }
 
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'cantTell', severity: rule.defaultSeverity || 'minor', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'minor',
+      occurrences
+    };
   }
 
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };

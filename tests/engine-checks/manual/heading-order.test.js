@@ -11,7 +11,9 @@ const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 const RULE_ID = 'heading-order';
 
 function hasOccurrenceForId(rule, id) {
-  return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
+  return (rule.occurrences || []).some(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
 }
 
 test(`${RULE_ID}: notApplicable when fewer than two headings exist`, () => {
@@ -59,6 +61,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/heading-order-all-scenarios.h
 
 test(`heading-order: respects contextSelector scoping (regression -- used to bypass helpers.queryAllSmart and always scan the whole document)`, () => {
   const html = `<!doctype html><html><body><div id="target"><p>Just some unrelated text.</p></div><h1>A</h1><h3 id="a">B</h3></body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: ['heading-order'], contextSelector: '#target' });
+  const result = runa11yCoreOnHtml(html, {
+    runOnly: ['heading-order'],
+    contextSelector: '#target'
+  });
   assertRule(result, 'heading-order', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });

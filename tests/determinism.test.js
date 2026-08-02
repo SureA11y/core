@@ -15,8 +15,12 @@ test('engine output is deterministic for rule ordering and occurrence ordering',
     </body></html>
   `;
 
-  const a = runa11yCoreOnHtml(html, { engineOptions: { includeShadowDom: false, excludeSelectors: [] } });
-  const b = runa11yCoreOnHtml(html, { engineOptions: { includeShadowDom: false, excludeSelectors: [] } });
+  const a = runa11yCoreOnHtml(html, {
+    engineOptions: { includeShadowDom: false, excludeSelectors: [] }
+  });
+  const b = runa11yCoreOnHtml(html, {
+    engineOptions: { includeShadowDom: false, excludeSelectors: [] }
+  });
 
   // Compare shape deterministically:
   // - checks order
@@ -31,8 +35,12 @@ test('engine output is deterministic for rule ordering and occurrence ordering',
     const rb = b.checksResults[i];
     assert.equal(ra.ruleId, rb.ruleId);
 
-    const occA = (ra.occurrences || []).map((o) => `${o.selector}::${(o.summary || '').slice(0, 40)}`);
-    const occB = (rb.occurrences || []).map((o) => `${o.selector}::${(o.summary || '').slice(0, 40)}`);
+    const occA = (ra.occurrences || []).map(
+      (o) => `${o.selector}::${(o.summary || '').slice(0, 40)}`
+    );
+    const occB = (rb.occurrences || []).map(
+      (o) => `${o.selector}::${(o.summary || '').slice(0, 40)}`
+    );
     assert.deepEqual(occA, occB);
   }
 });

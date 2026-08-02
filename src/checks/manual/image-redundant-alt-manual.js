@@ -30,7 +30,8 @@ const id = 'image-redundant-alt';
 
 const meta = {
   title: 'Image alt text must not duplicate adjacent visible text',
-  description: 'Checks that an <img> alt text is not identical to other visible text already present in its immediate parent element.',
+  description:
+    'Checks that an <img> alt text is not identical to other visible text already present in its immediate parent element.',
   i18n: {
     titleKey: 'imageRedundantAlt_title',
     descriptionKey: 'imageRedundantAlt_description'
@@ -50,7 +51,9 @@ function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
   function normalizeWs(s) {
-    return String(s || '').replace(/\s+/g, ' ').trim();
+    return String(s || '')
+      .replace(/\s+/g, ' ')
+      .trim();
   }
 
   function getOwnTextExcludingImg(parent, imgEl) {
@@ -66,7 +69,9 @@ function runInPage(ctx) {
     return normalizeWs(text);
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('img[alt]') : helpers.queryAll('img[alt]');
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart('img[alt]')
+    : helpers.queryAll('img[alt]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -87,12 +92,12 @@ function runInPage(ctx) {
     if (otherText.toLowerCase() !== alt.toLowerCase()) continue;
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
     occurrences.push({
       selector: stableSelector,
       html,
-      summary: 'This image\'s alt text duplicates other visible text right next to it.',
+      summary: "This image's alt text duplicates other visible text right next to it.",
       hint: 'Make the alt text empty (alt="") if the image is purely decorative alongside the text, or remove the redundant duplication.',
       i18n: {
         summaryKey: 'imageRedundantAlt_summary_cantTell',
@@ -109,7 +114,12 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'cantTell', severity: rule.defaultSeverity || 'minor', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'minor',
+      occurrences
+    };
   }
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }

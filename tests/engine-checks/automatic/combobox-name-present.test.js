@@ -15,13 +15,18 @@ try {
 const RULE_ID = 'combobox-name-present';
 
 function hasOccurrenceForId(rule, id) {
-  return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
+  return (rule.occurrences || []).some(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
 }
 
 test('combobox-name-present: no applicable elements => notApplicable', () => {
   const html = `<!doctype html><html><body><div>no combobox</div></body></html>`;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
   const result = runa11yCoreOnHtml(html);
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
@@ -29,7 +34,10 @@ test('combobox-name-present: no applicable elements => notApplicable', () => {
 test('combobox-name-present: role=combobox with aria-label => pass', () => {
   const html = `<!doctype html><html><body><div role='combobox' tabindex='0' aria-label='Search'></div></body></html>`;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
   const result = runa11yCoreOnHtml(html);
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
@@ -37,7 +45,10 @@ test('combobox-name-present: role=combobox with aria-label => pass', () => {
 test('combobox-name-present: role=combobox with aria-hidden content only => fail', () => {
   const html = `<!doctype html><html><body><div role='combobox' tabindex='0'><span aria-hidden='true'>Search</span></div></body></html>`;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
   const result = runa11yCoreOnHtml(html);
   assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
 });
@@ -45,7 +56,10 @@ test('combobox-name-present: role=combobox with aria-hidden content only => fail
 test('combobox-name-present: fail even with visible text content (role="combobox" is name-from-author-only) -- the fix-it hint must not claim visible text is a valid remediation', () => {
   const html = `<!doctype html><html><body><div id="a" role='combobox' tabindex='0'>Search</div></body></html>`;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
   const result = runa11yCoreOnHtml(html);
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'a'));
@@ -56,7 +70,10 @@ test('combobox-name-present: fail even with visible text content (role="combobox
 test('combobox-name-present: role=combobox with visible content but no author-provided name => fail', () => {
   const html = `<!doctype html><html><body><div role='combobox' tabindex='0'>Search</div></body></html>`;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
   const result = runa11yCoreOnHtml(html);
   // role="combobox" is name-from-author-only per WAI-ARIA: subtree content
   // must NOT be treated as a valid accessible-name source.
@@ -64,10 +81,18 @@ test('combobox-name-present: role=combobox with visible content but no author-pr
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/combobox-name-present-all-scenarios.html)`, () => {
-  const fixturePath = path.join(__dirname, '../..', 'fixtures', 'combobox-name-present-all-scenarios.html');
+  const fixturePath = path.join(
+    __dirname,
+    '../..',
+    'fixtures',
+    'combobox-name-present-all-scenarios.html'
+  );
   const html = fs.readFileSync(fixturePath, 'utf8');
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 8, maxOccurrences: 8 });
@@ -121,12 +146,15 @@ test('combobox-name-present: aria-labelledby pointing at an <iframe> falls back 
   // getTextFromIdRefs helper.
   const html = `<!doctype html><html><body><iframe id='t' title='Settings'></iframe><div role='combobox' aria-labelledby='t'></div></body></html>`;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
   const result = runa11yCoreOnHtml(html);
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test('combobox-name-present: label association with empty content falls back to the label\'s own title attribute => pass', () => {
+test("combobox-name-present: label association with empty content falls back to the label's own title attribute => pass", () => {
   // Regression for the theoretical sibling gap to the <iframe>-title-
   // fallback fix (found via a deliberate audit of every duplicated
   // accessible-name helper across the *-name-present rule family,
@@ -137,7 +165,10 @@ test('combobox-name-present: label association with empty content falls back to 
   // element being asked for its name, regardless of why.
   const html = `<!doctype html><html><body><label for='a' title='Search'></label><div id='a' role='combobox'></div></body></html>`;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
   const result = runa11yCoreOnHtml(html);
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });

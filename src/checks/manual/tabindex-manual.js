@@ -42,7 +42,9 @@ const meta = {
 function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[tabindex]') : helpers.queryAll('[tabindex]');
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart('[tabindex]')
+    : helpers.queryAll('[tabindex]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -59,7 +61,7 @@ function runInPage(ctx) {
     if (n <= 0) continue;
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
     occurrences.push({
       selector: stableSelector,
@@ -81,7 +83,12 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'cantTell', severity: rule.defaultSeverity || 'minor', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'minor',
+      occurrences
+    };
   }
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }

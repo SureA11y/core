@@ -43,7 +43,13 @@ const meta = {
   tags: ['wcag2a', 'wcag412', 'aria', 'structure', 'atomic', 'automatic'],
   wcagSc: ['4.1.2'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '4.1.2', title: 'Name, Role, Value', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '4.1.2',
+      title: 'Name, Role, Value',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'serious',
   category: 'robust',
@@ -55,7 +61,9 @@ const meta = {
 function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
-  function trim(v) { return (v == null ? '' : String(v)).trim(); }
+  function trim(v) {
+    return (v == null ? '' : String(v)).trim();
+  }
 
   const TRUTHY_INVALID_VALUES = new Set(['true', 'grammar', 'spelling']);
 
@@ -78,13 +86,14 @@ function runInPage(ctx) {
     if (TRUTHY_INVALID_VALUES.has(invalidValue)) continue;
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
     const tag = (el.tagName || '').toLowerCase();
 
     occurrences.push({
       selector: stableSelector,
       html,
-      summary: 'This element has aria-errormessage but aria-invalid is missing or "false", so the error message is not exposed.',
+      summary:
+        'This element has aria-errormessage but aria-invalid is missing or "false", so the error message is not exposed.',
       hint: 'Set aria-invalid to "true" (or "grammar"/"spelling") whenever aria-errormessage should be exposed to assistive technology.',
       i18n: {
         summaryKey: 'ariaConditionalAttr_summary_fail',
@@ -92,7 +101,10 @@ function runInPage(ctx) {
         params: { element: tag, ariaInvalid: invalidValue || '(absent)' }
       },
       data: {
-        details: { reasonCode: 'ARIA_ERRORMESSAGE_WITHOUT_TRUTHY_INVALID', ariaInvalid: invalidValue }
+        details: {
+          reasonCode: 'ARIA_ERRORMESSAGE_WITHOUT_TRUTHY_INVALID',
+          ariaInvalid: invalidValue
+        }
       }
     });
   }
@@ -101,7 +113,12 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'serious', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'fail',
+      severity: rule.defaultSeverity || 'serious',
+      occurrences
+    };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }

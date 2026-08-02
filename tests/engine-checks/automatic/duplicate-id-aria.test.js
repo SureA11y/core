@@ -44,7 +44,12 @@ test(`${RULE_ID}: i18n default is English`, () => {
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/duplicate-id-aria-all-scenarios.html)`, () => {
-  const fixturePath = path.join(__dirname, '../..', 'fixtures', 'duplicate-id-aria-all-scenarios.html');
+  const fixturePath = path.join(
+    __dirname,
+    '../..',
+    'fixtures',
+    'duplicate-id-aria-all-scenarios.html'
+  );
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
@@ -54,6 +59,12 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/duplicate-id-aria-all-scenari
   assert.deepStrictEqual(flaggedIds, ['dia_ref_01', 'dia_ref_01', 'dia_ref_02', 'dia_ref_02']);
 
   const flaggedUniqueRefs = new Set(flaggedIds);
-  assert.ok(!flaggedUniqueRefs.has('dia_ref_ok'), 'the unique aria-labelledby target must not be flagged');
-  assert.ok(!flaggedUniqueRefs.has('dia_unreferenced_dup'), 'a duplicated id never referenced by ARIA must not be flagged');
+  assert.ok(
+    !flaggedUniqueRefs.has('dia_ref_ok'),
+    'the unique aria-labelledby target must not be flagged'
+  );
+  assert.ok(
+    !flaggedUniqueRefs.has('dia_unreferenced_dup'),
+    'a duplicated id never referenced by ARIA must not be flagged'
+  );
 });

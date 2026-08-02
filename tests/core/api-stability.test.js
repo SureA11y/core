@@ -10,7 +10,8 @@ const { normalizeRuleMeta } = require('../../src/core/rule-meta.js');
 // document lists as stable/semver-covered -- an accidental removal here
 // fails a test, not just an unenforced doc.
 test('stable result fields are present with the documented types on a real scan', () => {
-  const html = '<!doctype html><html lang="en"><head><title>T</title></head><body><img src="x.png"></body></html>';
+  const html =
+    '<!doctype html><html lang="en"><head><title>T</title></head><body><img src="x.png"></body></html>';
   const result = runa11yCoreOnHtml(html, { runOnly: ['img-alt-present'] });
 
   assert.equal(typeof result.engine.tag, 'string');
@@ -62,20 +63,35 @@ test('normalizeRuleMeta: deprecated:true without deprecation.reason/sinceVersion
     /meta\.deprecated:true requires meta\.deprecation\.reason and meta\.deprecation\.sinceVersion/
   );
   assert.throws(
-    () => normalizeRuleMeta('my-rule', 'my-rule', { title: 'x', deprecated: true, deprecation: { reason: 'x' } }, 'a11ycore'),
+    () =>
+      normalizeRuleMeta(
+        'my-rule',
+        'my-rule',
+        { title: 'x', deprecated: true, deprecation: { reason: 'x' } },
+        'a11ycore'
+      ),
     /requires meta\.deprecation\.reason and meta\.deprecation\.sinceVersion/
   );
 });
 
 test('normalizeRuleMeta: deprecated:true with a complete deprecation object normalizes correctly', () => {
-  const normalized = normalizeRuleMeta('my-rule', 'my-rule', {
-    title: 'x',
-    deprecated: true,
-    deprecation: { replacedBy: 'new-rule', reason: 'Superseded.', sinceVersion: '1.2.0' }
-  }, 'a11ycore');
+  const normalized = normalizeRuleMeta(
+    'my-rule',
+    'my-rule',
+    {
+      title: 'x',
+      deprecated: true,
+      deprecation: { replacedBy: 'new-rule', reason: 'Superseded.', sinceVersion: '1.2.0' }
+    },
+    'a11ycore'
+  );
 
   assert.equal(normalized.deprecated, true);
-  assert.deepStrictEqual(normalized.deprecation, { replacedBy: 'new-rule', reason: 'Superseded.', sinceVersion: '1.2.0' });
+  assert.deepStrictEqual(normalized.deprecation, {
+    replacedBy: 'new-rule',
+    reason: 'Superseded.',
+    sinceVersion: '1.2.0'
+  });
 });
 
 test('normalizeRuleMeta: not deprecated by default, deprecation is null', () => {
@@ -89,18 +105,26 @@ test('a deprecated custom rule still runs and produces a normal result -- deprec
 
   const result = runa11yCoreOnHtml(html, {
     engineOptions: {
-      customRules: [{
-        id: 'my-deprecated-rule',
-        meta: {
-          title: 'My deprecated rule',
-          deprecated: true,
-          deprecation: { replacedBy: 'my-new-rule', reason: 'Superseded by my-new-rule.', sinceVersion: '1.2.0' }
-        },
-        runInPage(ctx) {
-          const el = ctx.document.getElementById('target');
-          return el ? { outcome: 'fail', occurrences: [{ __node: el }] } : { outcome: 'notApplicable', occurrences: [] };
+      customRules: [
+        {
+          id: 'my-deprecated-rule',
+          meta: {
+            title: 'My deprecated rule',
+            deprecated: true,
+            deprecation: {
+              replacedBy: 'my-new-rule',
+              reason: 'Superseded by my-new-rule.',
+              sinceVersion: '1.2.0'
+            }
+          },
+          runInPage(ctx) {
+            const el = ctx.document.getElementById('target');
+            return el
+              ? { outcome: 'fail', occurrences: [{ __node: el }] }
+              : { outcome: 'notApplicable', occurrences: [] };
+          }
         }
-      }]
+      ]
     }
   });
 
@@ -108,5 +132,9 @@ test('a deprecated custom rule still runs and produces a normal result -- deprec
   assert.ok(rule, 'deprecated rule still appears in checksResults and still ran');
   assert.equal(rule.outcome, 'fail');
   assert.equal(rule.meta.deprecated, true);
-  assert.deepStrictEqual(rule.meta.deprecation, { replacedBy: 'my-new-rule', reason: 'Superseded by my-new-rule.', sinceVersion: '1.2.0' });
+  assert.deepStrictEqual(rule.meta.deprecation, {
+    replacedBy: 'my-new-rule',
+    reason: 'Superseded by my-new-rule.',
+    sinceVersion: '1.2.0'
+  });
 });

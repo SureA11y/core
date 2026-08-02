@@ -21,183 +21,206 @@
 const id = 'css-hidden-focus';
 
 const meta = {
-    title: 'Focusable elements must not be visually hidden',
-    description:
-        'Checks that keyboard-focusable elements are not visually hidden by CSS techniques that can leave them in the tab order.',
-    i18n: {
-        titleKey: 'cssHidden_focus_title',
-        descriptionKey: 'cssHidden_focus_description'
-    },
-    helpUrl: null,
-    tags: ['wcag2aa', 'wcag247', 'navigation', 'focus', 'css', 'atomic', 'manual'],
-    wcagSc: ['2.4.7'],
-    normativeMappings: [
-        {standard: 'WCAG', version: '2.2', requirement: '2.4.7', title: 'Focus Visible', conformanceLevel: 'AA'}
-    ],
-    defaultSeverity: 'serious',
-    category: 'operable',
-    type: 'manual',
-    defaultConfidence: 'low',
-    coverage: {
-        facetsBySc: {
-            '2.4.7': ['css-hidden-focusable']
-        }
+  title: 'Focusable elements must not be visually hidden',
+  description:
+    'Checks that keyboard-focusable elements are not visually hidden by CSS techniques that can leave them in the tab order.',
+  i18n: {
+    titleKey: 'cssHidden_focus_title',
+    descriptionKey: 'cssHidden_focus_description'
+  },
+  helpUrl: null,
+  tags: ['wcag2aa', 'wcag247', 'navigation', 'focus', 'css', 'atomic', 'manual'],
+  wcagSc: ['2.4.7'],
+  normativeMappings: [
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '2.4.7',
+      title: 'Focus Visible',
+      conformanceLevel: 'AA'
     }
+  ],
+  defaultSeverity: 'serious',
+  category: 'operable',
+  type: 'manual',
+  defaultConfidence: 'low',
+  coverage: {
+    facetsBySc: {
+      '2.4.7': ['css-hidden-focusable']
+    }
+  }
 };
 
 function runInPage(ctx) {
-    const {document, root, helpers, rule} = ctx;
-    const safeRoot = root || document;
+  const { document, root, helpers, rule } = ctx;
+  const safeRoot = root || document;
 
-    const queryAllSmart = helpers && typeof helpers.queryAllSmart === 'function' ? helpers.queryAllSmart : null;
-    const getFocusableInfo = helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
-    const isDomVisibleEligible = helpers && typeof helpers.isDomVisibleEligible === 'function' ? helpers.isDomVisibleEligible : null;
-    const reportOccurrence = helpers && typeof helpers.reportOccurrence === 'function' ? helpers.reportOccurrence : null;
+  const queryAllSmart =
+    helpers && typeof helpers.queryAllSmart === 'function' ? helpers.queryAllSmart : null;
+  const getFocusableInfo =
+    helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
+  const isDomVisibleEligible =
+    helpers && typeof helpers.isDomVisibleEligible === 'function'
+      ? helpers.isDomVisibleEligible
+      : null;
+  const reportOccurrence =
+    helpers && typeof helpers.reportOccurrence === 'function' ? helpers.reportOccurrence : null;
 
-    const trim = (v) => (v == null ? '' : String(v)).trim();
-    const lower = (v) => trim(v).toLowerCase();
+  const trim = (v) => (v == null ? '' : String(v)).trim();
+  const lower = (v) => trim(v).toLowerCase();
 
-    function qAll(sel) {
-        try {
-            if (queryAllSmart) {
-                const r = queryAllSmart(sel);
-                if (Array.isArray(r)) return r;
-                return Array.from(r || []);
-            }
-        } catch {
-            // fall through
-        }
-        try {
-            if (safeRoot && typeof safeRoot.querySelectorAll === 'function') return Array.from(safeRoot.querySelectorAll(sel));
-        } catch {
-            // fall through
-        }
-        return [];
+  function qAll(sel) {
+    try {
+      if (queryAllSmart) {
+        const r = queryAllSmart(sel);
+        if (Array.isArray(r)) return r;
+        return Array.from(r || []);
+      }
+    } catch {
+      // fall through
     }
-
-    function getComputedStyleSafe(el) {
-        try {
-            const w = (document && document.defaultView) ? document.defaultView : (typeof window !== 'undefined' ? window : null);
-            return w && w.getComputedStyle ? w.getComputedStyle(el) : null;
-        } catch {
-            return null;
-        }
+    try {
+      if (safeRoot && typeof safeRoot.querySelectorAll === 'function')
+        return Array.from(safeRoot.querySelectorAll(sel));
+    } catch {
+      // fall through
     }
+    return [];
+  }
 
-    // Returns deterministic "visually hidden but can remain focusable" hints.
-    function getVisibilityHints(el) {
-        const out = [];
-        if (!el) return out;
-        const cs = getComputedStyleSafe(el);
-
-        // opacity:0
-        try {
-            const rawOp = cs && cs.opacity != null ? String(cs.opacity).trim() : '';
-            const op = rawOp ? Number.parseFloat(rawOp) : 1;
-            if (Number.isFinite(op) && op <= 0.0001) out.push('opacityZero');
-        } catch {
-        }
-
-        // clip / clip-path
-        try {
-            const clip = cs && cs.clip != null ? String(cs.clip).trim() : '';
-            const clipPath = cs && cs.clipPath != null ? String(cs.clipPath).trim() : '';
-            const clipLow = (clip || '').toLowerCase();
-            const clipPathLow = (clipPath || '').toLowerCase();
-
-            if (clipLow && clipLow !== 'auto') {
-                if (clipLow.indexOf('rect(') !== -1 && clipLow.replace(/\s+/g, '').indexOf('rect(0') !== -1) out.push('clipped');
-            }
-            if (clipPathLow && clipPathLow !== 'none') {
-                if (clipPathLow.indexOf('inset(') !== -1 && (clipPathLow.indexOf('100%') !== -1 || clipPathLow.indexOf('50%') !== -1)) {
-                    out.push('clipped');
-                }
-            }
-        } catch {
-        }
-
-        // zero-size + overflow hidden/clip
-        try {
-            const wv = cs && cs.width != null ? String(cs.width).trim() : '';
-            const hv = cs && cs.height != null ? String(cs.height).trim() : '';
-            const ov = cs && cs.overflow != null ? String(cs.overflow).trim().toLowerCase() : '';
-            const isZeroW = wv === '0px' || wv === '0';
-            const isZeroH = hv === '0px' || hv === '0';
-            const hidesOverflow = ov === 'hidden' || ov === 'clip';
-            if ((isZeroW || isZeroH) && hidesOverflow) out.push('zeroSizeOverflowHidden');
-        } catch {
-        }
-
-        // off-screen heuristic (absolute/fixed + left/top <= -5000 OR text-indent <= -5000)
-        try {
-            const pos = cs && cs.position != null ? String(cs.position).trim().toLowerCase() : '';
-            const left = cs && cs.left != null ? String(cs.left).trim().toLowerCase() : '';
-            const top = cs && cs.top != null ? String(cs.top).trim().toLowerCase() : '';
-            const ti = cs && cs.textIndent != null ? String(cs.textIndent).trim().toLowerCase() : '';
-
-            const parsePx = (s) => {
-                if (!s || s === 'auto') return null;
-                const m = String(s).match(/-?\d+(\.\d+)?/);
-                if (!m) return null;
-                const n = Number.parseFloat(m[0]);
-                return Number.isFinite(n) ? n : null;
-            };
-
-            const l = parsePx(left);
-            const t = parsePx(top);
-            const ind = parsePx(ti);
-
-            if (pos === 'absolute' || pos === 'fixed') {
-                if ((l != null && l <= -5000) || (t != null && t <= -5000)) out.push('offscreen');
-            }
-            if (ind != null && ind <= -5000) out.push('offscreen');
-        } catch {
-        }
-
-        // Dedup
-        const seen = new Set();
-        const uniq = [];
-        for (const k of out) {
-            const kk = String(k);
-            if (!seen.has(kk)) {
-                seen.add(kk);
-                uniq.push(kk);
-            }
-        }
-        return uniq;
+  function getComputedStyleSafe(el) {
+    try {
+      const w =
+        document && document.defaultView
+          ? document.defaultView
+          : typeof window !== 'undefined'
+            ? window
+            : null;
+      return w && w.getComputedStyle ? w.getComputedStyle(el) : null;
+    } catch {
+      return null;
     }
+  }
 
-    function getFocusableInfoSafe(el) {
-        if (!getFocusableInfo) return null;
-        try {
-            return getFocusableInfo(el, ctx);
-        } catch {
-            return null;
+  // Returns deterministic "visually hidden but can remain focusable" hints.
+  function getVisibilityHints(el) {
+    const out = [];
+    if (!el) return out;
+    const cs = getComputedStyleSafe(el);
+
+    // opacity:0
+    try {
+      const rawOp = cs && cs.opacity != null ? String(cs.opacity).trim() : '';
+      const op = rawOp ? Number.parseFloat(rawOp) : 1;
+      if (Number.isFinite(op) && op <= 0.0001) out.push('opacityZero');
+    } catch {}
+
+    // clip / clip-path
+    try {
+      const clip = cs && cs.clip != null ? String(cs.clip).trim() : '';
+      const clipPath = cs && cs.clipPath != null ? String(cs.clipPath).trim() : '';
+      const clipLow = (clip || '').toLowerCase();
+      const clipPathLow = (clipPath || '').toLowerCase();
+
+      if (clipLow && clipLow !== 'auto') {
+        if (clipLow.indexOf('rect(') !== -1 && clipLow.replace(/\s+/g, '').indexOf('rect(0') !== -1)
+          out.push('clipped');
+      }
+      if (clipPathLow && clipPathLow !== 'none') {
+        if (
+          clipPathLow.indexOf('inset(') !== -1 &&
+          (clipPathLow.indexOf('100%') !== -1 || clipPathLow.indexOf('50%') !== -1)
+        ) {
+          out.push('clipped');
         }
-    }
+      }
+    } catch {}
 
-    function isTabbable(el, info) {
-        const f = info || getFocusableInfoSafe(el);
-        return !!(f && f.focusable && f.tabbable);
-    }
+    // zero-size + overflow hidden/clip
+    try {
+      const wv = cs && cs.width != null ? String(cs.width).trim() : '';
+      const hv = cs && cs.height != null ? String(cs.height).trim() : '';
+      const ov = cs && cs.overflow != null ? String(cs.overflow).trim().toLowerCase() : '';
+      const isZeroW = wv === '0px' || wv === '0';
+      const isZeroH = hv === '0px' || hv === '0';
+      const hidesOverflow = ov === 'hidden' || ov === 'clip';
+      if ((isZeroW || isZeroH) && hidesOverflow) out.push('zeroSizeOverflowHidden');
+    } catch {}
 
-    // Exclude elements that are not rendered / not in the visual rendering tree.
-    function isRendered(el) {
-        if (!isDomVisibleEligible) return true;
-        try {
-            const vis = isDomVisibleEligible(el, ctx, {visibilityMode: 'styleOnly', disableGeometry: true});
-            if (vis && vis.eligible === false) {
-                const rs = Array.isArray(vis.reasons) ? vis.reasons : [];
-                // We *include* opacityZero in this rule. Everything else is treated as not rendered for this purpose.
-                const nonOpacity = rs.filter((r) => String(r) !== 'opacityZero');
-                if (nonOpacity.length) return false;
-            }
-        } catch {
-            // If in doubt, keep deterministic behavior and consider it rendered.
-        }
-        return true;
+    // off-screen heuristic (absolute/fixed + left/top <= -5000 OR text-indent <= -5000)
+    try {
+      const pos = cs && cs.position != null ? String(cs.position).trim().toLowerCase() : '';
+      const left = cs && cs.left != null ? String(cs.left).trim().toLowerCase() : '';
+      const top = cs && cs.top != null ? String(cs.top).trim().toLowerCase() : '';
+      const ti = cs && cs.textIndent != null ? String(cs.textIndent).trim().toLowerCase() : '';
+
+      const parsePx = (s) => {
+        if (!s || s === 'auto') return null;
+        const m = String(s).match(/-?\d+(\.\d+)?/);
+        if (!m) return null;
+        const n = Number.parseFloat(m[0]);
+        return Number.isFinite(n) ? n : null;
+      };
+
+      const l = parsePx(left);
+      const t = parsePx(top);
+      const ind = parsePx(ti);
+
+      if (pos === 'absolute' || pos === 'fixed') {
+        if ((l != null && l <= -5000) || (t != null && t <= -5000)) out.push('offscreen');
+      }
+      if (ind != null && ind <= -5000) out.push('offscreen');
+    } catch {}
+
+    // Dedup
+    const seen = new Set();
+    const uniq = [];
+    for (const k of out) {
+      const kk = String(k);
+      if (!seen.has(kk)) {
+        seen.add(kk);
+        uniq.push(kk);
+      }
     }
-  const candidates = qAll('a[href],area[href],button,input,select,textarea,summary,[tabindex],[contenteditable]');
+    return uniq;
+  }
+
+  function getFocusableInfoSafe(el) {
+    if (!getFocusableInfo) return null;
+    try {
+      return getFocusableInfo(el, ctx);
+    } catch {
+      return null;
+    }
+  }
+
+  function isTabbable(el, info) {
+    const f = info || getFocusableInfoSafe(el);
+    return !!(f && f.focusable && f.tabbable);
+  }
+
+  // Exclude elements that are not rendered / not in the visual rendering tree.
+  function isRendered(el) {
+    if (!isDomVisibleEligible) return true;
+    try {
+      const vis = isDomVisibleEligible(el, ctx, {
+        visibilityMode: 'styleOnly',
+        disableGeometry: true
+      });
+      if (vis && vis.eligible === false) {
+        const rs = Array.isArray(vis.reasons) ? vis.reasons : [];
+        // We *include* opacityZero in this rule. Everything else is treated as not rendered for this purpose.
+        const nonOpacity = rs.filter((r) => String(r) !== 'opacityZero');
+        if (nonOpacity.length) return false;
+      }
+    } catch {
+      // If in doubt, keep deterministic behavior and consider it rendered.
+    }
+    return true;
+  }
+  const candidates = qAll(
+    'a[href],area[href],button,input,select,textarea,summary,[tabindex],[contenteditable]'
+  );
   if (!candidates.length) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
@@ -216,7 +239,13 @@ function runInPage(ctx) {
     const hints = getVisibilityHints(el);
     if (!hints.length) continue; // <-- applicability gate
 
-    const tagName = (() => { try { return lower(el.tagName || ''); } catch { return ''; } })();
+    const tagName = (() => {
+      try {
+        return lower(el.tagName || '');
+      } catch {
+        return '';
+      }
+    })();
 
     const hintOrder = ['opacityZero', 'offscreen', 'clipped', 'zeroSizeOverflowHidden'];
     const hintsArr = [];
@@ -239,7 +268,9 @@ function runInPage(ctx) {
     };
 
     occurrences.push(
-        reportOccurrence ? reportOccurrence(el, baseOccurrence) : { __node: el, selector: '', html: '', ...baseOccurrence }
+      reportOccurrence
+        ? reportOccurrence(el, baseOccurrence)
+        : { __node: el, selector: '', html: '', ...baseOccurrence }
     );
   }
 
@@ -256,4 +287,4 @@ function runInPage(ctx) {
   };
 }
 
-module.exports = {id, meta, runInPage};
+module.exports = { id, meta, runInPage };

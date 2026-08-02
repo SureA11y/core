@@ -20,8 +20,14 @@ test('buildExplainGroups: two structurally-identical occurrences dedupe into one
 });
 
 test('buildExplainGroups: a different ruleId always produces a distinct group, even with identical selectors', () => {
-  const checkA = makeCheckResult({ ruleId: 'rule-a', occurrences: [makeOccurrence({ selector: 'div > span' })] });
-  const checkB = makeCheckResult({ ruleId: 'rule-b', occurrences: [makeOccurrence({ selector: 'div > span' })] });
+  const checkA = makeCheckResult({
+    ruleId: 'rule-a',
+    occurrences: [makeOccurrence({ selector: 'div > span' })]
+  });
+  const checkB = makeCheckResult({
+    ruleId: 'rule-b',
+    occurrences: [makeOccurrence({ selector: 'div > span' })]
+  });
   const groups = buildExplainGroups(makeScanResult([checkA, checkB]));
 
   assert.strictEqual(groups.length, 2);
@@ -81,6 +87,13 @@ test('buildExplainGroups: does not mutate the input result at all', () => {
 });
 
 test('computeGroupKey: matches the shape documented in the design doc (ruleId|reasonCode|signature)', () => {
-  const key = computeGroupKey('nested-interactive-controls-absent', 'NESTED_INTERACTIVE_CONTROL', 'a > span[role="button"]');
-  assert.strictEqual(key, 'nested-interactive-controls-absent|NESTED_INTERACTIVE_CONTROL|a>span[role="button"]');
+  const key = computeGroupKey(
+    'nested-interactive-controls-absent',
+    'NESTED_INTERACTIVE_CONTROL',
+    'a > span[role="button"]'
+  );
+  assert.strictEqual(
+    key,
+    'nested-interactive-controls-absent|NESTED_INTERACTIVE_CONTROL|a>span[role="button"]'
+  );
 });

@@ -15,13 +15,18 @@ try {
 const RULE_ID = 'spinbutton-name-present';
 
 function hasOccurrenceForId(rule, id) {
-  return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
+  return (rule.occurrences || []).some(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
 }
 
 test('spinbutton-name-present: no applicable => notApplicable', () => {
   const html = `<!doctype html><html><body><div>no spin</div></body></html>`;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
   const result = runa11yCoreOnHtml(html);
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
@@ -29,7 +34,10 @@ test('spinbutton-name-present: no applicable => notApplicable', () => {
 test('spinbutton-name-present: aria-label => pass', () => {
   const html = `<!doctype html><html><body><div role='spinbutton' aria-label='Quantity'></div></body></html>`;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
   const result = runa11yCoreOnHtml(html);
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
@@ -37,7 +45,10 @@ test('spinbutton-name-present: aria-label => pass', () => {
 test('spinbutton-name-present: missing name => fail', () => {
   const html = `<!doctype html><html><body><div role='spinbutton'></div></body></html>`;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
   const result = runa11yCoreOnHtml(html);
   assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
 });
@@ -45,7 +56,10 @@ test('spinbutton-name-present: missing name => fail', () => {
 test('spinbutton-name-present: fail even with visible text content (role="spinbutton" is name-from-author-only) -- the fix-it hint must not claim visible text is a valid remediation', () => {
   const html = `<!doctype html><html><body><div id="a" role='spinbutton'>Quantity</div></body></html>`;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
   const result = runa11yCoreOnHtml(html);
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'a'));
@@ -59,26 +73,58 @@ test('spinbutton-name-present: wrapping <label> has its own aria-label even thou
     <input role="spinbutton" id="c" type="number">
   </body></html>`;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
   const result = runa11yCoreOnHtml(html);
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/spinbutton-name-present-all-scenarios.html)`, () => {
-  const fixturePath = path.join(__dirname, '../..', 'fixtures', 'spinbutton-name-present-all-scenarios.html');
+  const fixturePath = path.join(
+    __dirname,
+    '../..',
+    'fixtures',
+    'spinbutton-name-present-all-scenarios.html'
+  );
   const html = fs.readFileSync(fixturePath, 'utf8');
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 8, maxOccurrences: 8 });
 
   const expectedFailIds = [
-    'spinbutton_case_01', 'spinbutton_case_02', 'spinbutton_case_08', 'spinbutton_case_09', 'spinbutton_case_10', 'spinbutton_case_12', 'spinbutton_case_13', 'spinbutton_case_17'
+    'spinbutton_case_01',
+    'spinbutton_case_02',
+    'spinbutton_case_08',
+    'spinbutton_case_09',
+    'spinbutton_case_10',
+    'spinbutton_case_12',
+    'spinbutton_case_13',
+    'spinbutton_case_17'
   ];
 
   const expectedNoOccIds = [
-    'spinbutton_case_03', 'spinbutton_case_04', 'spinbutton_case_05', 'spinbutton_case_06', 'spinbutton_case_07', 'spinbutton_case_11', 'spinbutton_case_14', 'spinbutton_case_15', 'spinbutton_case_16', 'spinbutton_case_18', 'spinbutton_case_19', 'spinbutton_case_20', 'spinbutton_case_21', 'spinbutton_case_22', 'spinbutton_case_23'
+    'spinbutton_case_03',
+    'spinbutton_case_04',
+    'spinbutton_case_05',
+    'spinbutton_case_06',
+    'spinbutton_case_07',
+    'spinbutton_case_11',
+    'spinbutton_case_14',
+    'spinbutton_case_15',
+    'spinbutton_case_16',
+    'spinbutton_case_18',
+    'spinbutton_case_19',
+    'spinbutton_case_20',
+    'spinbutton_case_21',
+    'spinbutton_case_22',
+    'spinbutton_case_23'
   ];
 
   for (const id of expectedFailIds) {
@@ -100,12 +146,15 @@ test('spinbutton-name-present: aria-labelledby pointing at an <iframe> falls bac
   // getTextFromIdRefs helper.
   const html = `<!doctype html><html><body><iframe id='t' title='Settings'></iframe><div role='spinbutton' aria-labelledby='t'></div></body></html>`;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
   const result = runa11yCoreOnHtml(html);
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test('spinbutton-name-present: label association with empty content falls back to the label\'s own title attribute => pass', () => {
+test("spinbutton-name-present: label association with empty content falls back to the label's own title attribute => pass", () => {
   // Regression for the theoretical sibling gap to the <iframe>-title-
   // fallback fix (found via a deliberate audit of every duplicated
   // accessible-name helper across the *-name-present rule family,
@@ -116,7 +165,10 @@ test('spinbutton-name-present: label association with empty content falls back t
   // element being asked for its name, regardless of why.
   const html = `<!doctype html><html><body><label for='a' title='Search'></label><div id='a' role='spinbutton'></div></body></html>`;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
   const result = runa11yCoreOnHtml(html);
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });

@@ -34,7 +34,8 @@ const id = 'p-as-heading';
 
 const meta = {
   title: 'A <p> styled to look like a heading should probably be a real heading',
-  description: 'Flags short <p> elements whose entire text is bold and rendered at >=18px, for manual review of whether a real heading element should be used instead.',
+  description:
+    'Flags short <p> elements whose entire text is bold and rendered at >=18px, for manual review of whether a real heading element should be used instead.',
   i18n: {
     titleKey: 'pAsHeading_title',
     descriptionKey: 'pAsHeading_description'
@@ -43,7 +44,13 @@ const meta = {
   tags: ['wcag2a', 'wcag131', 'structure', 'atomic', 'manual'],
   wcagSc: ['1.3.1'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '1.3.1', title: 'Info and Relationships', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '1.3.1',
+      title: 'Info and Relationships',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'minor',
   category: 'perceivable',
@@ -58,7 +65,9 @@ function runInPage(ctx) {
   const MAX_HEADING_LIKE_CHARS = 120;
   const MIN_FONT_SIZE_PX = 18;
 
-  function trim(v) { return (v == null ? '' : String(v)).trim(); }
+  function trim(v) {
+    return (v == null ? '' : String(v)).trim();
+  }
 
   function safeComputedStyle(el) {
     try {
@@ -67,7 +76,8 @@ function runInPage(ctx) {
         const cs = helpers.computedStyle(el);
         if (cs) return cs;
       }
-      const view = (el.ownerDocument && el.ownerDocument.defaultView) ? el.ownerDocument.defaultView : null;
+      const view =
+        el.ownerDocument && el.ownerDocument.defaultView ? el.ownerDocument.defaultView : null;
       if (view && typeof view.getComputedStyle === 'function') return view.getComputedStyle(el);
     } catch {}
     return null;
@@ -124,7 +134,7 @@ function runInPage(ctx) {
     if (fontSizePx < MIN_FONT_SIZE_PX) continue;
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
     const baseOccurrence = {
       selector: stableSelector,
@@ -153,7 +163,12 @@ function runInPage(ctx) {
   }
 
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'cantTell', severity: rule.defaultSeverity || 'minor', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'minor',
+      occurrences
+    };
   }
 
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };

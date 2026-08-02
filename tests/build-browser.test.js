@@ -3,7 +3,11 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { extractInPageRunnerSource, readEngineConstants, generateBrowserBundle } = require('../scripts/build-browser.js');
+const {
+  extractInPageRunnerSource,
+  readEngineConstants,
+  generateBrowserBundle
+} = require('../scripts/build-browser.js');
 
 // A minimal, synthetic stand-in for src/core.js's real shape -- exercises
 // the marker-based extraction logic in isolation, without depending on (or
@@ -53,10 +57,21 @@ module.exports = {
 test('extractInPageRunnerSource pulls out exactly the runa11yCoreInPage function body', () => {
   const source = extractInPageRunnerSource(fakeCoreSource());
 
-  assert.match(source, /^function runa11yCoreInPage\(pageUrl, contextSelector, engineOptions, runOnly\) \{/);
+  assert.match(
+    source,
+    /^function runa11yCoreInPage\(pageUrl, contextSelector, engineOptions, runOnly\) \{/
+  );
   assert.match(source, /\}\s*$/);
-  assert.equal(source.includes('runDomRulesInPage'), false, 'must not include the Node-only section before it');
-  assert.equal(source.includes('__a11yCoreCrossFrameApi'), false, 'must not include the cross-frame section after it');
+  assert.equal(
+    source.includes('runDomRulesInPage'),
+    false,
+    'must not include the Node-only section before it'
+  );
+  assert.equal(
+    source.includes('__a11yCoreCrossFrameApi'),
+    false,
+    'must not include the cross-frame section after it'
+  );
   assert.equal(source.includes('SELF-CONTAINED'), false, 'must not include either marker banner');
 });
 

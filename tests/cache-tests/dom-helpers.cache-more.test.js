@@ -30,8 +30,9 @@ test('dom helpers cache: getAccessibleNameInfo does not reuse memoized result ac
   // document.querySelector('label[for]') is no longer reached on this path.
   let labelsGetterCalls = 0;
   const proto = window.HTMLInputElement.prototype;
-  const originalDescriptor = Object.getOwnPropertyDescriptor(proto, 'labels')
-    || Object.getOwnPropertyDescriptor(Object.getPrototypeOf(proto), 'labels');
+  const originalDescriptor =
+    Object.getOwnPropertyDescriptor(proto, 'labels') ||
+    Object.getOwnPropertyDescriptor(Object.getPrototypeOf(proto), 'labels');
   Object.defineProperty(proto, 'labels', {
     configurable: true,
     get() {
@@ -67,7 +68,10 @@ test('dom helpers cache: getAccessibleNameInfo does not reuse memoized result ac
   const after3 = labelsGetterCalls;
 
   assert.deepEqual(r3, r1, 'output may be identical, but cache key must differ');
-  assert.ok(after3 > before3, 'different opts key should cause a fresh lookup (no cross-key reuse)');
+  assert.ok(
+    after3 > before3,
+    'different opts key should cause a fresh lookup (no cross-key reuse)'
+  );
 
   Object.defineProperty(proto, 'labels', originalDescriptor);
 });
@@ -252,16 +256,42 @@ test('dom helpers shadow DOM: queryAllSmart includes shadow roots only when incl
   const shadow = host.attachShadow({ mode: 'open' });
   shadow.innerHTML = '<button id="shadowBtn">Shadow</button>';
 
-  const helpersNoShadow = createDomHelpers({ window, document, root: document, includeShadowDom: false });
-  const helpersWithShadow = createDomHelpers({ window, document, root: document, includeShadowDom: true });
+  const helpersNoShadow = createDomHelpers({
+    window,
+    document,
+    root: document,
+    includeShadowDom: false
+  });
+  const helpersWithShadow = createDomHelpers({
+    window,
+    document,
+    root: document,
+    includeShadowDom: true
+  });
 
   const noShadowBtns = helpersNoShadow.queryAllSmart('button');
-  assert.equal(noShadowBtns.some((el) => el && el.id === 'shadowBtn'), false, 'shadow button should not be found when includeShadowDom=false');
-  assert.equal(noShadowBtns.some((el) => el && el.id === 'light'), true, 'light DOM button should be found');
+  assert.equal(
+    noShadowBtns.some((el) => el && el.id === 'shadowBtn'),
+    false,
+    'shadow button should not be found when includeShadowDom=false'
+  );
+  assert.equal(
+    noShadowBtns.some((el) => el && el.id === 'light'),
+    true,
+    'light DOM button should be found'
+  );
 
   const withShadowBtns = helpersWithShadow.queryAllSmart('button');
-  assert.equal(withShadowBtns.some((el) => el && el.id === 'shadowBtn'), true, 'shadow button should be found when includeShadowDom=true');
-  assert.equal(withShadowBtns.some((el) => el && el.id === 'light'), true, 'light DOM button should still be found');
+  assert.equal(
+    withShadowBtns.some((el) => el && el.id === 'shadowBtn'),
+    true,
+    'shadow button should be found when includeShadowDom=true'
+  );
+  assert.equal(
+    withShadowBtns.some((el) => el && el.id === 'light'),
+    true,
+    'light DOM button should still be found'
+  );
 });
 
 test('dom helpers hidden policy: queryAllSmart excludes hard-hidden nodes even when acc eligibility short-circuits as inert', () => {
@@ -285,12 +315,20 @@ test('dom helpers hidden policy: queryAllSmart excludes hard-hidden nodes even w
   const helpers = createDomHelpers({ window, document, root: document });
   const acc = helpers.isAccTreeEligible(hiddenItem);
   assert.equal(acc.eligible, false);
-  assert.ok(acc.reasons.includes('inert'), 'fixture should reproduce inert-first eligibility classification');
+  assert.ok(
+    acc.reasons.includes('inert'),
+    'fixture should reproduce inert-first eligibility classification'
+  );
 
   const filtered = helpers.queryAllSmart('[role="listitem"][aria-expanded]');
   assert.equal(filtered.length, 0, 'default hidden policy should exclude the hard-hidden node');
 
-  const helpersIncludeHidden = createDomHelpers({ window, document, root: document, includeHiddenElements: true });
+  const helpersIncludeHidden = createDomHelpers({
+    window,
+    document,
+    root: document,
+    includeHiddenElements: true
+  });
   const included = helpersIncludeHidden.queryAllSmart('[role="listitem"][aria-expanded]');
   assert.equal(included.length, 1, 'includeHiddenElements:true should include hidden nodes');
 });

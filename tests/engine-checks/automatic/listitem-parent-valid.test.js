@@ -11,7 +11,9 @@ const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 const RULE_ID = 'listitem-parent-valid';
 
 function hasOccurrenceForId(rule, id) {
-  return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
+  return (rule.occurrences || []).some(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
 }
 
 test(`${RULE_ID}: notApplicable when no li is present`, () => {
@@ -79,14 +81,25 @@ test(`${RULE_ID}: i18n default is English`, () => {
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/listitem-parent-valid-all-scenarios.html)`, () => {
-  const fixturePath = path.join(__dirname, '../..', 'fixtures', 'listitem-parent-valid-all-scenarios.html');
+  const fixturePath = path.join(
+    __dirname,
+    '../..',
+    'fixtures',
+    'listitem-parent-valid-all-scenarios.html'
+  );
   const html = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 4, maxOccurrences: 4 });
 
   const expectedFailIds = ['lpv_case_04', 'lpv_case_05', 'lpv_case_06', 'lpv_case_09'];
-  const expectedNoOccIds = ['lpv_case_01', 'lpv_case_02', 'lpv_case_03', 'lpv_case_07', 'lpv_case_08'];
+  const expectedNoOccIds = [
+    'lpv_case_01',
+    'lpv_case_02',
+    'lpv_case_03',
+    'lpv_case_07',
+    'lpv_case_08'
+  ];
 
   for (const id of expectedFailIds) {
     assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);

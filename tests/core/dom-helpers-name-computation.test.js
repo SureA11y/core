@@ -12,7 +12,9 @@ const { createDomHelpers } = require('../../src/core/dom-helpers.js');
 // these are the shared "kernel" primitives nearly every rule goes through,
 // so a gap here is a gap behind dozens of rules at once.
 function helpersFor(html, opts) {
-  const dom = new JSDOM(`<!doctype html><html><body>${html}</body></html>`, { pretendToBeVisual: true });
+  const dom = new JSDOM(`<!doctype html><html><body>${html}</body></html>`, {
+    pretendToBeVisual: true
+  });
   const { window } = dom;
   const { document } = window;
   const helpers = createDomHelpers(Object.assign({ window, document, root: document }, opts));
@@ -200,7 +202,11 @@ test('getAccessibleDescriptionInfo: title is not used as a description unless op
   const withoutOpt = helpers.getAccessibleDescriptionInfo(byId(document, 'x'), { helpers });
   assert.equal(withoutOpt.present, false);
 
-  const withOpt = helpers.getAccessibleDescriptionInfo(byId(document, 'x'), { helpers }, { allowTitle: true });
+  const withOpt = helpers.getAccessibleDescriptionInfo(
+    byId(document, 'x'),
+    { helpers },
+    { allowTitle: true }
+  );
   assert.equal(withOpt.present, true);
   assert.equal(withOpt.value, 'Tooltip');
   assert.equal(withOpt.mechanism, 'title');
@@ -243,7 +249,9 @@ test('getTextAlternativeInfo: img with no alt attribute at all is NOT present, b
 });
 
 test('getTextAlternativeInfo: canvas with meaningful fallback text content is present with mechanism "canvas-fallback"', () => {
-  const { helpers, document } = helpersFor('<canvas id="c">Your browser does not support canvas</canvas>');
+  const { helpers, document } = helpersFor(
+    '<canvas id="c">Your browser does not support canvas</canvas>'
+  );
   const info = helpers.getTextAlternativeInfo(byId(document, 'c'), { helpers });
   assert.equal(info.present, true);
   assert.equal(info.mechanism, 'canvas-fallback');
@@ -276,7 +284,7 @@ test('getTextAlternativeInfo: an unsupported element (e.g. a plain div) reports 
 
 test('resolveIdRefs: an empty/whitespace-only idref string returns an empty result flagged "empty"', () => {
   const { helpers } = helpersFor('<div></div>');
-  assert.deepEqual(helpers.resolveIdRefs('   ', {}), { refs: [], missing: [], flags: ['empty']});
+  assert.deepEqual(helpers.resolveIdRefs('   ', {}), { refs: [], missing: [], flags: ['empty'] });
 });
 
 test('resolveIdRefs: resolves multiple space-separated ids, tracking missing ones separately from found ones', () => {
@@ -301,7 +309,7 @@ test('resolveIdRefs: opts.maxRefs truncates deterministically and flags "truncat
   assert.ok(r.flags.includes('truncated'));
 });
 
-test('getTextFromIdRefs: joins each referenced element\'s own computed text alternative with a space', () => {
+test("getTextFromIdRefs: joins each referenced element's own computed text alternative with a space", () => {
   const { helpers } = helpersFor(
     '<span id="a">Hello</span><span id="b"><img src="x.png" alt="World"></span>'
   );
@@ -327,7 +335,9 @@ test('getRoleInfo: an explicit role="" attribute always wins over any implicit m
 });
 
 test('getRoleInfo: role="presentation" and role="none" are both flagged "presentation"', () => {
-  const { helpers, document } = helpersFor('<div id="a" role="presentation"></div><div id="b" role="none"></div>');
+  const { helpers, document } = helpersFor(
+    '<div id="a" role="presentation"></div><div id="b" role="none"></div>'
+  );
   assert.ok(helpers.getRoleInfo(byId(document, 'a'), {}).flags.includes('presentation'));
   assert.ok(helpers.getRoleInfo(byId(document, 'b'), {}).flags.includes('presentation'));
 });
@@ -341,8 +351,8 @@ test('getRoleInfo: a role attribute with multiple space-separated tokens is flag
 test('getRoleInfo: implicit role mapping covers common native controls', () => {
   const { helpers, document } = helpersFor(
     '<a id="a" href="/x">L</a><button id="btn"></button><input id="cb" type="checkbox">' +
-    '<input id="rd" type="radio"><input id="rng" type="range">' +
-    '<select id="sel"></select><textarea id="ta"></textarea>'
+      '<input id="rd" type="radio"><input id="rng" type="range">' +
+      '<select id="sel"></select><textarea id="ta"></textarea>'
   );
   assert.equal(helpers.getRoleInfo(byId(document, 'a'), {}).role, 'link');
   assert.equal(helpers.getRoleInfo(byId(document, 'btn'), {}).role, 'button');

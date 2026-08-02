@@ -38,7 +38,8 @@ const id = 'aria-valid-attr-value';
 
 const meta = {
   title: 'aria-* attribute values must match their declared type',
-  description: 'Checks that every recognized aria-* attribute has a value conforming to its WAI-ARIA-declared value type (boolean, tristate, token, integer, number, or ID reference).',
+  description:
+    'Checks that every recognized aria-* attribute has a value conforming to its WAI-ARIA-declared value type (boolean, tristate, token, integer, number, or ID reference).',
   i18n: {
     titleKey: 'ariaValidAttrValue_title',
     descriptionKey: 'ariaValidAttrValue_description'
@@ -47,7 +48,13 @@ const meta = {
   tags: ['wcag2a', 'wcag412', 'aria', 'structure', 'atomic', 'automatic'],
   wcagSc: ['4.1.2'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '4.1.2', title: 'Name, Role, Value', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '4.1.2',
+      title: 'Name, Role, Value',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'serious',
   category: 'robust',
@@ -85,14 +92,18 @@ function runInPage(ctx) {
       const result = ariaHelpers.validateAttrValue(name, rawValue);
       if (!result.valid) {
         if (!invalid) invalid = [];
-        invalid.push({ name, value: rawValue == null ? '' : String(rawValue), reason: result.reason });
+        invalid.push({
+          name,
+          value: rawValue == null ? '' : String(rawValue),
+          reason: result.reason
+        });
       }
     }
 
     if (!invalid || !invalid.length) continue;
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
     for (const item of invalid) {
       occurrences.push({
@@ -106,7 +117,12 @@ function runInPage(ctx) {
           params: { attr: item.name, value: item.value }
         },
         data: {
-          details: { reasonCode: 'ARIA_ATTR_VALUE_INVALID', attr: item.name, value: item.value, valueReason: item.reason }
+          details: {
+            reasonCode: 'ARIA_ATTR_VALUE_INVALID',
+            attr: item.name,
+            value: item.value,
+            valueReason: item.reason
+          }
         }
       });
     }
@@ -116,7 +132,12 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'serious', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'fail',
+      severity: rule.defaultSeverity || 'serious',
+      occurrences
+    };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }

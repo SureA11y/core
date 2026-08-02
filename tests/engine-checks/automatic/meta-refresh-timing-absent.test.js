@@ -63,7 +63,12 @@ test(`${RULE_ID}: i18n default is English`, () => {
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/meta-refresh-timing-absent-all-scenarios.html)`, () => {
-  const fixturePath = path.join(__dirname, '../..', 'fixtures', 'meta-refresh-timing-absent-all-scenarios.html');
+  const fixturePath = path.join(
+    __dirname,
+    '../..',
+    'fixtures',
+    'meta-refresh-timing-absent-all-scenarios.html'
+  );
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
@@ -73,12 +78,24 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/meta-refresh-timing-absent-al
 
 test(`meta-refresh-timing-absent: notApplicable when contextSelector scopes narrower than the whole document (fragment-scan applicability)`, () => {
   const html = `<!doctype html><html><head><meta http-equiv="refresh" content="5;url=https://example.com"></head><body></body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: ['meta-refresh-timing-absent'], contextSelector: 'body' });
-  assertRule(result, 'meta-refresh-timing-absent', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  const result = runa11yCoreOnHtml(html, {
+    runOnly: ['meta-refresh-timing-absent'],
+    contextSelector: 'body'
+  });
+  assertRule(result, 'meta-refresh-timing-absent', 'notApplicable', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
 });
 
 test(`meta-refresh-timing-absent: notApplicable when engineOptions.fragment is true, even unscoped`, () => {
   const html = `<!doctype html><html><head><meta http-equiv="refresh" content="5;url=https://example.com"></head><body></body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: ['meta-refresh-timing-absent'], engineOptions: { fragment: true } });
-  assertRule(result, 'meta-refresh-timing-absent', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  const result = runa11yCoreOnHtml(html, {
+    runOnly: ['meta-refresh-timing-absent'],
+    engineOptions: { fragment: true }
+  });
+  assertRule(result, 'meta-refresh-timing-absent', 'notApplicable', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
 });

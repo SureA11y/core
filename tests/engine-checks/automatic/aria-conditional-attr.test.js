@@ -11,7 +11,9 @@ const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 const RULE_ID = 'aria-conditional-attr';
 
 function hasOccurrenceForId(rule, id) {
-  return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
+  return (rule.occurrences || []).some(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
 }
 
 test(`${RULE_ID}: notApplicable when no element has aria-errormessage`, () => {
@@ -30,7 +32,10 @@ test(`${RULE_ID}: fail when aria-invalid is absent`, () => {
   const html = `<!doctype html><html><body><input aria-errormessage="e"><div id="e">Error</div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
-  assert.equal(rule.occurrences[0].data.details.reasonCode, 'ARIA_ERRORMESSAGE_WITHOUT_TRUTHY_INVALID');
+  assert.equal(
+    rule.occurrences[0].data.details.reasonCode,
+    'ARIA_ERRORMESSAGE_WITHOUT_TRUTHY_INVALID'
+  );
 });
 
 test(`${RULE_ID}: fail when aria-invalid="false"`, () => {
@@ -43,11 +48,19 @@ test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><body><input aria-errormessage="e"><div id="e">Error</div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
-  assert.strictEqual(rule.title, 'aria-errormessage requires aria-invalid to be set to a non-false value');
+  assert.strictEqual(
+    rule.title,
+    'aria-errormessage requires aria-invalid to be set to a non-false value'
+  );
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-conditional-attr-all-scenarios.html)`, () => {
-  const fixturePath = path.join(__dirname, '../..', 'fixtures', 'aria-conditional-attr-all-scenarios.html');
+  const fixturePath = path.join(
+    __dirname,
+    '../..',
+    'fixtures',
+    'aria-conditional-attr-all-scenarios.html'
+  );
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 

@@ -11,7 +11,9 @@ const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 const RULE_ID = 'tooltip-name-present';
 
 function hasOccurrenceForId(rule, id) {
-  return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
+  return (rule.occurrences || []).some(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
 }
 
 test(`${RULE_ID}: notApplicable when no role="tooltip" is present`, () => {
@@ -47,14 +49,25 @@ test(`${RULE_ID}: pass when the tooltip's name comes from a wrapped img alt (nam
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/tooltip-name-present-all-scenarios.html)`, () => {
-  const fixturePath = path.join(__dirname, '../..', 'fixtures', 'tooltip-name-present-all-scenarios.html');
+  const fixturePath = path.join(
+    __dirname,
+    '../..',
+    'fixtures',
+    'tooltip-name-present-all-scenarios.html'
+  );
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
 
   const expectedFailIds = ['tip_case_05', 'tip_case_06'];
-  const expectedNoOccIds = ['tip_case_01', 'tip_case_02', 'tip_case_03', 'tip_case_04', 'tip_case_07'];
+  const expectedNoOccIds = [
+    'tip_case_01',
+    'tip_case_02',
+    'tip_case_03',
+    'tip_case_04',
+    'tip_case_07'
+  ];
 
   for (const id of expectedFailIds) {
     assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);

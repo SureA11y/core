@@ -37,7 +37,8 @@ const id = 'skip-link';
 
 const meta = {
   title: 'Skip link must have a resolvable, usable target',
-  description: 'Checks that a "skip to ..." link\'s href fragment resolves to a real, currently usable element in the document.',
+  description:
+    'Checks that a "skip to ..." link\'s href fragment resolves to a real, currently usable element in the document.',
   i18n: {
     titleKey: 'skipLink_title',
     descriptionKey: 'skipLink_description'
@@ -57,7 +58,9 @@ function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
   function normalizeWs(s) {
-    return String(s || '').replace(/\s+/g, ' ').trim();
+    return String(s || '')
+      .replace(/\s+/g, ' ')
+      .trim();
   }
 
   function getAccessibleNameText(el) {
@@ -105,7 +108,9 @@ function runInPage(ctx) {
 
   const geometrySupported = hasReliableGeometrySupport();
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('a[href]') : helpers.queryAll('a[href]');
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart('a[href]')
+    : helpers.queryAll('a[href]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -147,18 +152,29 @@ function runInPage(ctx) {
       const accEligibility = toEligibility(
         helpers.getEligibilityInfo
           ? helpers.getEligibilityInfo(target, ctx, { targetSet: 'acc' })
-          : (helpers.isAccTreeEligible ? helpers.isAccTreeEligible(target, ctx) : { eligible: true, reasons: [] })
+          : helpers.isAccTreeEligible
+            ? helpers.isAccTreeEligible(target, ctx)
+            : { eligible: true, reasons: [] }
       );
 
       let geometryEligibility = null;
       let geometryReasonCode = null;
       if (geometrySupported && helpers.isDomVisibleEligible) {
         geometryEligibility = toEligibility(
-          helpers.isDomVisibleEligible(target, ctx, { visibilityMode: 'styleAndGeometry', ignoreOpacity: true })
+          helpers.isDomVisibleEligible(target, ctx, {
+            visibilityMode: 'styleAndGeometry',
+            ignoreOpacity: true
+          })
         );
-        if (!geometryEligibility.eligible && geometryEligibility.reasons.includes('noClientRects')) {
+        if (
+          !geometryEligibility.eligible &&
+          geometryEligibility.reasons.includes('noClientRects')
+        ) {
           geometryReasonCode = 'NO_CLIENT_RECTS';
-        } else if (!geometryEligibility.eligible && geometryEligibility.reasons.includes('zeroArea')) {
+        } else if (
+          !geometryEligibility.eligible &&
+          geometryEligibility.reasons.includes('zeroArea')
+        ) {
           geometryReasonCode = 'ZERO_AREA_TARGET';
         }
       }
@@ -168,7 +184,9 @@ function runInPage(ctx) {
       if (!unusableByAcc && !unusableByGeometry) continue;
 
       const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-      const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+      const html = helpers.getOuterHtmlSnippet
+        ? helpers.getOuterHtmlSnippet(el)
+        : el.outerHTML || '';
 
       occurrences.push({
         selector: stableSelector,
@@ -202,13 +220,13 @@ function runInPage(ctx) {
     }
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
     occurrences.push({
       selector: stableSelector,
       html,
-      summary: 'This skip link\'s target does not exist.',
-      hint: 'Point the skip link\'s href at an id that exists in the document, or add the missing target element.',
+      summary: "This skip link's target does not exist.",
+      hint: "Point the skip link's href at an id that exists in the document, or add the missing target element.",
       i18n: {
         summaryKey: 'skipLink_summary_cantTell',
         hintKey: 'skipLink_hint_cantTell',
@@ -224,7 +242,12 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'cantTell', severity: rule.defaultSeverity || 'minor', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'minor',
+      occurrences
+    };
   }
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }

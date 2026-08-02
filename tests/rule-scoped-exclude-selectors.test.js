@@ -60,8 +60,15 @@ test('a rule whose only would-be-failing element is rule-scoped-excluded reports
 
   const rule = result.checksResults.find((r) => r.ruleId.endsWith('aria-required-children'));
   assert.ok(rule, 'aria-required-children should be present in results');
-  assert.notStrictEqual(rule.outcome, 'fail', 'outcome:"fail" + occurrences:[] is reserved for a thrown rule, never this');
-  assert.ok(['pass', 'notApplicable'].includes(rule.outcome), `expected pass/notApplicable, got ${rule.outcome}`);
+  assert.notStrictEqual(
+    rule.outcome,
+    'fail',
+    'outcome:"fail" + occurrences:[] is reserved for a thrown rule, never this'
+  );
+  assert.ok(
+    ['pass', 'notApplicable'].includes(rule.outcome),
+    `expected pass/notApplicable, got ${rule.outcome}`
+  );
   assert.strictEqual(rule.occurrences.length, 0);
 });
 
@@ -84,7 +91,10 @@ test('global excludeSelectors and rule-scoped excludeSelectors combine as a unio
 
   // Both the globally-excluded (#g) and rule-scoped-excluded (#r) images must
   // be dropped -- only #n (excluded by neither) should surface as a failure.
-  const rule = assertRule(result, 'img-alt-present', 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const rule = assertRule(result, 'img-alt-present', 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
   assert.ok(rule.occurrences[0].html.includes('n.png'));
 });
 
@@ -104,7 +114,10 @@ test('rule-scoped excludeSelectors accepts a comma-separated string, same as glo
     }
   });
 
-  const rule = assertRule(result, 'img-alt-present', 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const rule = assertRule(result, 'img-alt-present', 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
   assert.ok(rule.occurrences[0].html.includes('n.png'));
 });
 
@@ -163,7 +176,10 @@ test('rule-scoped excludeSelectors combines correctly with contextSelector', () 
 
   // #outside is dropped by contextSelector; .widget is dropped by the
   // rule-scoped exclude; only #plain should remain as a failure.
-  const rule = assertRule(result, 'img-alt-present', 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const rule = assertRule(result, 'img-alt-present', 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
   assert.ok(rule.occurrences[0].html.includes('y.png'));
 });
 
@@ -210,12 +226,18 @@ test('two rules with their own distinct rule-scoped excludeSelectors do not cros
 
   // aria-required-children: .excl-for-a div is excluded FOR THIS RULE; the
   // .excl-for-b div (excluded only for img-alt-present) must still fail here.
-  const ruleA = assertRule(result, 'aria-required-children', 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const ruleA = assertRule(result, 'aria-required-children', 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
   assert.ok(ruleA.occurrences[0].html.includes('excl-for-b'));
 
   // img-alt-present: .excl-for-b img is excluded FOR THIS RULE; the
   // .excl-for-a img (excluded only for aria-required-children) must still fail here.
-  const ruleB = assertRule(result, 'img-alt-present', 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const ruleB = assertRule(result, 'img-alt-present', 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
   assert.ok(ruleB.occurrences[0].html.includes('excl-for-a'));
 });
 
@@ -247,12 +269,20 @@ test('dom helpers: __setActiveRuleExcludeSelectors adds to (unions with), not re
   const n = document.getElementById('n');
 
   assert.strictEqual(helpers.isExcluded(g), true, 'globally-excluded element stays excluded');
-  assert.strictEqual(helpers.isExcluded(r), false, 'not yet excluded before activating a rule-scoped list');
+  assert.strictEqual(
+    helpers.isExcluded(r),
+    false,
+    'not yet excluded before activating a rule-scoped list'
+  );
   assert.strictEqual(helpers.isExcluded(n), false);
 
   helpers.__setActiveRuleExcludeSelectors(['.r-exclude']);
 
-  assert.strictEqual(helpers.isExcluded(g), true, 'global exclude still applies once a rule-scoped list is active');
+  assert.strictEqual(
+    helpers.isExcluded(g),
+    true,
+    'global exclude still applies once a rule-scoped list is active'
+  );
   assert.strictEqual(helpers.isExcluded(r), true, 'rule-scoped exclude now applies');
   assert.strictEqual(helpers.isExcluded(n), false);
 
@@ -277,7 +307,11 @@ test('dom helpers: __setActiveRuleExcludeSelectors(null) clears rule-scoped excl
   assert.strictEqual(helpers.isExcluded(r), true);
 
   helpers.__setActiveRuleExcludeSelectors(null);
-  assert.strictEqual(helpers.isExcluded(r), false, 'clearing the active rule must fully restore global-only behavior');
+  assert.strictEqual(
+    helpers.isExcluded(r),
+    false,
+    'clearing the active rule must fully restore global-only behavior'
+  );
 });
 
 test('dom helpers: shadow-root discovery cache is bypassed while a rule-scoped exclude is active, even with empty global excludeSelectors', () => {
@@ -313,7 +347,10 @@ test('dom helpers: shadow-root discovery cache is bypassed while a rule-scoped e
   const before2 = starScans;
   helpers.queryAllDeep('button');
   const after2 = starScans;
-  assert.ok(after2 > before2, 'second deep query must scan again -- discovery caching must stay off while a rule-scoped exclude is active');
+  assert.ok(
+    after2 > before2,
+    'second deep query must scan again -- discovery caching must stay off while a rule-scoped exclude is active'
+  );
 });
 
 test('dom helpers: switching the active rule (as dom-runner.js does between rules) never leaks a stale shadow-root cache into the next rule', () => {
@@ -337,11 +374,19 @@ test('dom helpers: switching the active rule (as dom-runner.js does between rule
   // "Rule A" excludes .widget -- must not see the shadow button at all.
   helpers.__setActiveRuleExcludeSelectors(['.widget']);
   const foundByRuleA = helpers.queryAllDeep('button').map((el) => el.id);
-  assert.deepStrictEqual(foundByRuleA, [], 'rule A excludes the shadow host, so it must not see its shadow content');
+  assert.deepStrictEqual(
+    foundByRuleA,
+    [],
+    'rule A excludes the shadow host, so it must not see its shadow content'
+  );
 
   // "Rule B" has no rule-scoped exclude -- must see the shadow button,
   // regardless of whatever shadow-root discovery rule A cached (or didn't).
   helpers.__setActiveRuleExcludeSelectors(null);
   const foundByRuleB = helpers.queryAllDeep('button').map((el) => el.id);
-  assert.deepStrictEqual(foundByRuleB, ['shadowBtn'], 'rule B must independently discover the shadow button -- no leaked cache from rule A');
+  assert.deepStrictEqual(
+    foundByRuleB,
+    ['shadowBtn'],
+    'rule B must independently discover the shadow button -- no leaked cache from rule A'
+  );
 });

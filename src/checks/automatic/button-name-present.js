@@ -15,7 +15,13 @@ const meta = {
   tags: ['wcag2a', 'wcag412', 'forms', 'atomic', 'automatic', 'buttons', 'name'],
   wcagSc: ['4.1.2'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '4.1.2', title: 'Name, Role, Value', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '4.1.2',
+      title: 'Name, Role, Value',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'serious',
   category: 'robust',
@@ -31,7 +37,9 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   function normalizeWs(s) {
-    return String(s || '').replace(/\s+/g, ' ').trim();
+    return String(s || '')
+      .replace(/\s+/g, ' ')
+      .trim();
   }
 
   function getConservativeSubtreeText(container) {
@@ -46,7 +54,7 @@ function runInPage(ctx) {
       const info = helpers.getContentNameInfo(container, ctx);
       return info && info.present ? info.value : '';
     }
-    const t = (container && container.textContent) ? String(container.textContent) : '';
+    const t = container && container.textContent ? String(container.textContent) : '';
     return t.replace(/\s+/g, ' ').trim();
   }
 
@@ -55,19 +63,23 @@ function runInPage(ctx) {
       const type = normalizeWs(el.getAttribute ? el.getAttribute('type') : '').toLowerCase();
       if (type !== 'button' && type !== 'submit' && type !== 'reset') return '';
       const vAttr = el.getAttribute ? el.getAttribute('value') : '';
-      return normalizeWs(vAttr != null ? vAttr : (typeof el.value === 'string' ? el.value : ''));
+      return normalizeWs(vAttr != null ? vAttr : typeof el.value === 'string' ? el.value : '');
     } catch {
       return '';
     }
   }
 
-  const selector = 'button, input[type="button"], input[type="submit"], input[type="reset"], [role="button"]';
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
+  const selector =
+    'button, input[type="button"], input[type="submit"], input[type="reset"], [role="button"]';
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart(selector)
+    : helpers.queryAll(selector);
 
   for (const el of nodes) {
     // isAccTreeEligible returns { eligible, reasons }, not a boolean.
     const eligResult = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el, ctx) : true;
-    const eligible = typeof eligResult === 'boolean' ? eligResult : !!(eligResult && eligResult.eligible);
+    const eligible =
+      typeof eligResult === 'boolean' ? eligResult : !!(eligResult && eligResult.eligible);
     if (!eligible) continue;
 
     applicableCount += 1;
@@ -81,8 +93,9 @@ function runInPage(ctx) {
     // getAccessibleNameInfo only resolves programmatic mechanisms (aria-labelledby,
     // aria-label, native <label> association, title) — it never falls back to
     // subtree content — so it's safe to trust directly whenever present.
-    const trustedProgrammaticName =
-      normalizeWs(nameInfo && nameInfo.present && typeof nameInfo.value === 'string' ? nameInfo.value : '');
+    const trustedProgrammaticName = normalizeWs(
+      nameInfo && nameInfo.present && typeof nameInfo.value === 'string' ? nameInfo.value : ''
+    );
     const explicitProg = !!trustedProgrammaticName;
 
     let inputValueName = '';
@@ -98,10 +111,19 @@ function runInPage(ctx) {
     // <button role="combobox">List</button> where "List" is the combobox's
     // currently selected value, not a label for what the combobox is —
     // crediting it as the accessible name masked a real missing-name bug.
-    const VALUE_ROLES = ['textbox', 'progressbar', 'scrollbar', 'slider', 'spinbutton', 'combobox', 'listbox'];
-    const isContentNameCandidate = (tag === 'button' || role === 'button') && !VALUE_ROLES.includes(roleNorm);
+    const VALUE_ROLES = [
+      'textbox',
+      'progressbar',
+      'scrollbar',
+      'slider',
+      'spinbutton',
+      'combobox',
+      'listbox'
+    ];
+    const isContentNameCandidate =
+      (tag === 'button' || role === 'button') && !VALUE_ROLES.includes(roleNorm);
     const contentName =
-      (!trustedProgrammaticName && !inputValueName && isContentNameCandidate)
+      !trustedProgrammaticName && !inputValueName && isContentNameCandidate
         ? getConservativeSubtreeText(el)
         : '';
 
@@ -111,10 +133,14 @@ function runInPage(ctx) {
       // Only compute the richer eligibility-info payload (used solely for
       // the occurrence's visibilityFilter) once we know an occurrence is
       // actually being built, rather than for every applicable element.
-      const eligInfo = helpers.getEligibilityInfo ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
+      const eligInfo = helpers.getEligibilityInfo
+        ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
+        : null;
 
       const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-      const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+      const html = helpers.getOuterHtmlSnippet
+        ? helpers.getOuterHtmlSnippet(el)
+        : el.outerHTML || '';
 
       occurrences.push({
         selector: stableSelector,
@@ -147,7 +173,12 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'fail',
+      severity: rule.defaultSeverity || 'minor',
+      occurrences
+    };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }

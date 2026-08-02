@@ -72,15 +72,13 @@ function parseArgv(argv) {
  *
  * NOTE: This is not intended to be a perfect "real web page", only a stable stressor.
  */
-function makeBigHtml(
-  {
-    buttons = 3000,
-    inputs = 300,
-    images = 800,
-    headings = 300,
-    variant = 'bigTransparent'
-  } = {}
-) {
+function makeBigHtml({
+  buttons = 3000,
+  inputs = 300,
+  images = 800,
+  headings = 300,
+  variant = 'bigTransparent'
+} = {}) {
   const variantNorm = String(variant || '').trim();
 
   const isContrast =
@@ -116,7 +114,7 @@ function makeBigHtml(
     .join('');
 
   // CSS knobs. Keep deterministic / stable.
-  let css = '';
+  let css;
   let bodyAttrs = '';
   let wrapperOpen = '';
   let wrapperClose = '';
@@ -185,7 +183,7 @@ function topCounters(counters, limit) {
     if (typeof v === 'number' && v) entries.push([k, v]);
   }
   // Deterministic: value desc, key asc
-  entries.sort((a, b) => (b[1] - a[1]) || (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0));
+  entries.sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0));
   const n = Math.max(0, Number(limit) || 0) || 15;
   return entries.slice(0, n).map(([key, value]) => ({ key, value }));
 }
@@ -226,7 +224,7 @@ function runWorkerOnce(payload) {
   try {
     return JSON.parse(txt);
   } catch (e) {
-    throw new Error(`Worker did not return JSON. Got:\n${txt}`);
+    throw new Error(`Worker did not return JSON. Got:\n${txt}`, { cause: e });
   }
 }
 
@@ -239,7 +237,9 @@ function workerMain() {
   const payload = JSON.parse(raw);
 
   function gcIfAvailable() {
-    try { if (typeof global.gc === 'function') global.gc(); } catch (_) {}
+    try {
+      if (typeof global.gc === 'function') global.gc();
+    } catch (_) {}
   }
 
   function hrMs(startNs) {
@@ -278,8 +278,10 @@ function workerMain() {
     if (result.perfStats && result.perfStats.counters) return result.perfStats.counters;
     if (result.helpersStats && result.helpersStats.counters) return result.helpersStats.counters;
     if (result.perf && result.perf.counters) return result.perf.counters;
-    if (result._debug && result._debug.perfStats && result._debug.perfStats.counters) return result._debug.perfStats.counters;
-    if (result.stats && result.stats.perfStats && result.stats.perfStats.counters) return result.stats.perfStats.counters;
+    if (result._debug && result._debug.perfStats && result._debug.perfStats.counters)
+      return result._debug.perfStats.counters;
+    if (result.stats && result.stats.perfStats && result.stats.perfStats.counters)
+      return result.stats.perfStats.counters;
     return null;
   }
 
@@ -325,23 +327,27 @@ function topRuleTimings(ruleTimings, limit) {
     const v = obj[k];
     if (typeof v === 'number' && v > 0) entries.push([k, v]);
   }
-  entries.sort((a, b) => (b[1] - a[1]) || (a[0] < b[0] ? -1 : 1));
+  entries.sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1));
   const n = Math.max(0, Number(limit) || 0) || 15;
-  return entries.slice(0, n).map(([ruleId, ms]) => ({ ruleId, ms: Number(ms.toFixed ? ms.toFixed(2) : ms) }));
+  return entries
+    .slice(0, n)
+    .map(([ruleId, ms]) => ({ ruleId, ms: Number(ms.toFixed ? ms.toFixed(2) : ms) }));
 }
 
 function parentMain() {
   const args = parseArgv(process.argv);
 
-  let htmlLabel = '(generated:big)';
-  let html = null;
+  let htmlLabel;
+  let html;
 
   if (args.html) {
     const p = path.resolve(process.cwd(), args.html);
     html = fs.readFileSync(p, 'utf8');
     htmlLabel = p;
   } else {
-    const gen = String(args.generated || 'big').trim().toLowerCase();
+    const gen = String(args.generated || 'big')
+      .trim()
+      .toLowerCase();
 
     let variant = 'bigTransparent'; // legacy default
     if (gen === 'bigopaque') variant = 'bigOpaque';
@@ -383,11 +389,14 @@ function parentMain() {
     runs.push(r);
     console.log(
       `iter ${i + 1}/${args.iters}: ${r.ms.toFixed(2)}ms, ` +
-      `heapΔ=${fmtMb(r.mem.heapUsedDelta)}, rssΔ=${fmtMb(r.mem.rssDelta)}`
+        `heapΔ=${fmtMb(r.mem.heapUsedDelta)}, rssΔ=${fmtMb(r.mem.rssDelta)}`
     );
   }
 
-  const times = runs.map(r => r.ms).slice().sort((a, b) => a - b);
+  const times = runs
+    .map((r) => r.ms)
+    .slice()
+    .sort((a, b) => a - b);
   const rules = runs[0] ? runs[0].rules : 0;
 
   const avg = times.reduce((a, b) => a + b, 0) / (times.length || 1);
@@ -404,7 +413,9 @@ function parentMain() {
   console.log(`p95: ${p95.toFixed(2)}ms`);
   console.log(`max: ${max.toFixed(2)}ms`);
 
-  const perfCounters = runs.find(r => r && r.perfCounters) ? (runs.find(r => r && r.perfCounters).perfCounters) : null;
+  const perfCounters = runs.find((r) => r && r.perfCounters)
+    ? runs.find((r) => r && r.perfCounters).perfCounters
+    : null;
   if (perfCounters) {
     console.log('\n=== perf counters (one run) ===');
     console.log(`top counters (limit ${args.top}):`, topCounters(perfCounters, args.top));
@@ -413,17 +424,25 @@ function parentMain() {
     console.log('(not available on engine result shape)');
   }
 
-  const one = runs.find(r => r && r.ruleTimings);
+  const one = runs.find((r) => r && r.ruleTimings);
   if (one && one.ruleTimings) {
     console.log('\n=== rule timings (one run) ===');
     console.log(`top rules (limit ${args.top}):`, topRuleTimings(one.ruleTimings, args.top));
   } else {
     console.log('\n=== rule timings ===');
-    console.log('(not available; enable by instrumenting runDomRulesOnHtml and returning ruleTimings)');
+    console.log(
+      '(not available; enable by instrumenting runDomRulesOnHtml and returning ruleTimings)'
+    );
   }
 
-  const heapDeltas = runs.map(r => r.mem.heapUsedDelta).slice().sort((a, b) => a - b);
-  const rssDeltas = runs.map(r => r.mem.rssDelta).slice().sort((a, b) => a - b);
+  const heapDeltas = runs
+    .map((r) => r.mem.heapUsedDelta)
+    .slice()
+    .sort((a, b) => a - b);
+  const rssDeltas = runs
+    .map((r) => r.mem.rssDelta)
+    .slice()
+    .sort((a, b) => a - b);
   const heapP50 = percentile(heapDeltas, 50);
   const rssP50 = percentile(rssDeltas, 50);
 
@@ -432,19 +451,25 @@ function parentMain() {
   console.log(`rss p50Δ:      ${fmtMb(rssP50)}`);
 
   if (!rules) {
-    console.log('\n(note: rule count detected as 0; engine result may not expose checks/results arrays)');
+    console.log(
+      '\n(note: rule count detected as 0; engine result may not expose checks/results arrays)'
+    );
   }
 
   if (!args.html) {
     console.log('\n=== generated fixture variants ===');
-    console.log('Legacy/broad: --generated=bigTransparent (or --generated=big), --generated=bigOpaque');
+    console.log(
+      'Legacy/broad: --generated=bigTransparent (or --generated=big), --generated=bigOpaque'
+    );
     console.log('Contrast-focused: --generated=contrastTransparent, --generated=contrastOpaque');
-    console.log('(Contrast-focused variants reduce <img> count so img-alt-quality does not dominate.)');
+    console.log(
+      '(Contrast-focused variants reduce <img> count so img-alt-quality does not dominate.)'
+    );
   }
 }
 
 function main() {
-  const isWorker = process.argv.some(a => a === '--worker=1');
+  const isWorker = process.argv.some((a) => a === '--worker=1');
   if (isWorker) return workerMain();
   return parentMain();
 }

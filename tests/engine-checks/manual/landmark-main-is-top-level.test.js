@@ -12,7 +12,9 @@ const { runDomRulesInPage } = require('../../../src/index.js');
 const RULE_ID = 'landmark-main-is-top-level';
 
 function hasOccurrenceForId(rule, id) {
-  return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
+  return (rule.occurrences || []).some(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
 }
 
 // Same gap as this rule's landmark-no-duplicate-*/landmark-one-main
@@ -67,7 +69,12 @@ test(`${RULE_ID}: i18n default is English`, () => {
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/landmark-main-is-top-level-all-scenarios.html)`, () => {
-  const fixturePath = path.join(__dirname, '../..', 'fixtures', 'landmark-main-is-top-level-all-scenarios.html');
+  const fixturePath = path.join(
+    __dirname,
+    '../..',
+    'fixtures',
+    'landmark-main-is-top-level-all-scenarios.html'
+  );
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
@@ -129,7 +136,6 @@ test(`${RULE_ID} (node runtime): cantTell when main is nested inside an unnamed 
   assert.strictEqual(rule.occurrences.length, 1);
 });
 
-
 test(`${RULE_ID} (node runtime): a main scoped to the top of a contextSelector-narrowed run does not climb past the scanned scope to find a false ancestor landmark`, () => {
   const html = `<!doctype html><html><body>
     <div role="navigation">
@@ -137,7 +143,12 @@ test(`${RULE_ID} (node runtime): a main scoped to the top of a contextSelector-n
     </div>
   </body></html>`;
   createDom(html);
-  const result = runDomRulesInPage('https://example.test/', '#scope', {}, { includeRuleIds: [RULE_ID] });
+  const result = runDomRulesInPage(
+    'https://example.test/',
+    '#scope',
+    {},
+    { includeRuleIds: [RULE_ID] }
+  );
   const rule = ruleFrom(result);
   assert.ok(rule);
   assert.strictEqual(rule.outcome, 'notApplicable');

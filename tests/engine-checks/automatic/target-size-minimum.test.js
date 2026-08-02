@@ -253,8 +253,10 @@ test(`${RULE_ID}: a page with both a confident fail AND an uncertain/essential-e
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 4, maxOccurrences: 4 });
   const reasonCodes = rule.occurrences.map((o) => o.data.details.reasonCode).sort();
   assert.deepStrictEqual(reasonCodes, [
-    'undersized-and-too-close', 'undersized-and-too-close',
-    'undersized-plausibly-essential', 'undersized-plausibly-essential'
+    'undersized-and-too-close',
+    'undersized-and-too-close',
+    'undersized-plausibly-essential',
+    'undersized-plausibly-essential'
   ]);
 });
 
@@ -335,7 +337,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/target-size-all-scenarios.htm
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 16, maxOccurrences: 16 });
 
   function hasOccurrenceForId(id) {
-    return rule.occurrences.some((o) => typeof o.selector === 'string' && new RegExp(`#${id}\\b`).test(o.selector));
+    return rule.occurrences.some(
+      (o) => typeof o.selector === 'string' && new RegExp(`#${id}\\b`).test(o.selector)
+    );
   }
 
   const expectedFailIds = [
@@ -393,7 +397,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/target-size-all-scenarios.htm
     assert.ok(!hasOccurrenceForId(id), `Did not expect occurrence for id="${id}"`);
   }
 
-  const ambiguousOcc = rule.occurrences.find((o) => typeof o.selector === 'string' && /#canttell_ambiguous_spacing_target\b/.test(o.selector));
+  const ambiguousOcc = rule.occurrences.find(
+    (o) => typeof o.selector === 'string' && /#canttell_ambiguous_spacing_target\b/.test(o.selector)
+  );
   assert.ok(ambiguousOcc, 'expected an occurrence for canttell_ambiguous_spacing_target');
   assert.strictEqual(ambiguousOcc.data.details.reasonCode, 'undersized-ambiguous-spacing');
   assert.strictEqual(ambiguousOcc.data.details.conflictHitCount, 3);
@@ -416,7 +422,12 @@ test(`${RULE_ID}: runDomRulesInPage (Node/require entry point) agrees with runa1
 
   const dom = createDom(html);
   patchTargetSizeEnv(dom);
-  const viaNodeRuntime = runDomRulesInPage('https://example.test/', null, { rules: [RULE_ID] }, null);
+  const viaNodeRuntime = runDomRulesInPage(
+    'https://example.test/',
+    null,
+    { rules: [RULE_ID] },
+    null
+  );
 
   const inPageCheck = viaInPage.checksResults.find((r) => r.ruleId === RULE_ID);
   const nodeCheck = viaNodeRuntime.checksResults.find((r) => r.ruleId === RULE_ID);

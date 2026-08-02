@@ -57,8 +57,8 @@ function mean(values) {
 
 function makeDom(buttonCount) {
   const buttonsHtml = Array.from({ length: buttonCount })
-      .map((_, i) => `<button id="b${i}" aria-label="B${i}">B${i}</button>`)
-      .join('');
+    .map((_, i) => `<button id="b${i}" aria-label="B${i}">B${i}</button>`)
+    .join('');
 
   const html = `<!doctype html>
 <html>
@@ -95,12 +95,11 @@ function benchOnce(helpers, document) {
 function getCounterSnapshot(helpers) {
   try {
     const s = helpers.getPerfStats && helpers.getPerfStats();
-    return (s && s.counters) ? { ...s.counters } : {};
+    return s && s.counters ? { ...s.counters } : {};
   } catch (_) {
     return {};
   }
 }
-
 
 function topCounters(counters, limit) {
   const entries = [];
@@ -109,7 +108,7 @@ function topCounters(counters, limit) {
     if (typeof v === 'number' && v) entries.push([k, v]);
   }
   // Deterministic order: value desc, key asc
-  entries.sort((a, b) => (b[1] - a[1]) || (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0));
+  entries.sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0));
   const out = [];
   const n = Math.max(0, Number(limit) || 0) || 15;
   for (let i = 0; i < entries.length && i < n; i++) {
@@ -186,7 +185,9 @@ function main() {
   }
 
   console.log(`cold: ${summary.cold.ms.toFixed(2)}ms`);
-  console.log(`warm median: ${summary.warm.msMedian.toFixed(2)}ms (mean ${summary.warm.msMean.toFixed(2)}ms, iters ${args.iters})`);
+  console.log(
+    `warm median: ${summary.warm.msMedian.toFixed(2)}ms (mean ${summary.warm.msMean.toFixed(2)}ms, iters ${args.iters})`
+  );
   console.log('warm hit ratios:', {
     selector: summary.warm.hitRatios.selector.toFixed(3),
     outerHtml: summary.warm.hitRatios.outerHtml.toFixed(3),

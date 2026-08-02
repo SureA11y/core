@@ -11,7 +11,9 @@ const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 const RULE_ID = 'aria-allowed-attr';
 
 function hasOccurrenceForId(rule, id) {
-  return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
+  return (rule.occurrences || []).some(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
 }
 
 test(`${RULE_ID}: notApplicable when no role attributes present`, () => {
@@ -220,7 +222,12 @@ test(`${RULE_ID}: i18n default is English`, () => {
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-allowed-attr-all-scenarios.html)`, () => {
-  const fixturePath = path.join(__dirname, '../..', 'fixtures', 'aria-allowed-attr-all-scenarios.html');
+  const fixturePath = path.join(
+    __dirname,
+    '../..',
+    'fixtures',
+    'aria-allowed-attr-all-scenarios.html'
+  );
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
@@ -228,10 +235,20 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-allowed-attr-all-scenari
 
   const expectedFailIds = ['aaa_case_03', 'aaa_case_04', 'aaa_case_13'];
   const expectedNoOccIds = [
-    'aaa_case_01', 'aaa_case_02', 'aaa_case_05', 'aaa_case_06',
-    'aaa_case_07a', 'aaa_case_07b', 'aaa_case_08', 'aaa_case_09',
-    'aaa_case_10a', 'aaa_case_10b', 'aaa_case_11',
-    'aaa_case_12a', 'aaa_case_12b', 'aaa_case_12c'
+    'aaa_case_01',
+    'aaa_case_02',
+    'aaa_case_05',
+    'aaa_case_06',
+    'aaa_case_07a',
+    'aaa_case_07b',
+    'aaa_case_08',
+    'aaa_case_09',
+    'aaa_case_10a',
+    'aaa_case_10b',
+    'aaa_case_11',
+    'aaa_case_12a',
+    'aaa_case_12b',
+    'aaa_case_12c'
   ];
 
   for (const id of expectedFailIds) {

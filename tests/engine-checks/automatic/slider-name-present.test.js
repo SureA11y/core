@@ -15,13 +15,18 @@ try {
 const RULE_ID = 'slider-name-present';
 
 function hasOccurrenceForId(rule, id) {
-  return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
+  return (rule.occurrences || []).some(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
 }
 
 test('slider-name-present: no applicable elements => notApplicable', () => {
   const html = `<!doctype html><html><body><div>no sliders</div></body></html>`;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
   const result = runa11yCoreOnHtml(html);
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
@@ -29,7 +34,10 @@ test('slider-name-present: no applicable elements => notApplicable', () => {
 test('slider-name-present: input range with label => pass', () => {
   const html = `<!doctype html><html><body><label>Volume <input type='range'/></label></body></html>`;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
   const result = runa11yCoreOnHtml(html);
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
@@ -37,7 +45,10 @@ test('slider-name-present: input range with label => pass', () => {
 test('slider-name-present: input range label hidden only => fail', () => {
   const html = `<!doctype html><html><body><label><span aria-hidden='true'>Volume</span><input type='range'/></label></body></html>`;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
   const result = runa11yCoreOnHtml(html);
   assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
 });
@@ -45,7 +56,10 @@ test('slider-name-present: input range label hidden only => fail', () => {
 test('slider-name-present: role=slider with aria-labelledby => pass', () => {
   const html = `<!doctype html><html><body><span id='l'>Brightness</span><div role='slider' aria-labelledby='l'></div></body></html>`;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
   const result = runa11yCoreOnHtml(html);
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
@@ -53,7 +67,10 @@ test('slider-name-present: role=slider with aria-labelledby => pass', () => {
 test('slider-name-present: role=slider missing name => fail', () => {
   const html = `<!doctype html><html><body><div role='slider'></div></body></html>`;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
   const result = runa11yCoreOnHtml(html);
   assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
 });
@@ -64,26 +81,58 @@ test('slider-name-present: wrapping <label> has its own aria-label even though i
     <input role="slider" id="c" type="range">
   </body></html>`;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
   const result = runa11yCoreOnHtml(html);
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/slider-name-present-all-scenarios.html)`, () => {
-  const fixturePath = path.join(__dirname, '../..', 'fixtures', 'slider-name-present-all-scenarios.html');
+  const fixturePath = path.join(
+    __dirname,
+    '../..',
+    'fixtures',
+    'slider-name-present-all-scenarios.html'
+  );
   const html = fs.readFileSync(fixturePath, 'utf8');
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 8, maxOccurrences: 8 });
 
   const expectedFailIds = [
-    'slider_case_01', 'slider_case_07', 'slider_case_08', 'slider_case_09', 'slider_case_10', 'slider_case_15', 'slider_case_19', 'slider_case_23'
+    'slider_case_01',
+    'slider_case_07',
+    'slider_case_08',
+    'slider_case_09',
+    'slider_case_10',
+    'slider_case_15',
+    'slider_case_19',
+    'slider_case_23'
   ];
 
   const expectedNoOccIds = [
-    'slider_case_02', 'slider_case_03', 'slider_case_04', 'slider_case_05', 'slider_case_06', 'slider_case_11', 'slider_case_12', 'slider_case_13', 'slider_case_14', 'slider_case_16', 'slider_case_17', 'slider_case_18', 'slider_case_20', 'slider_case_21', 'slider_case_22'
+    'slider_case_02',
+    'slider_case_03',
+    'slider_case_04',
+    'slider_case_05',
+    'slider_case_06',
+    'slider_case_11',
+    'slider_case_12',
+    'slider_case_13',
+    'slider_case_14',
+    'slider_case_16',
+    'slider_case_17',
+    'slider_case_18',
+    'slider_case_20',
+    'slider_case_21',
+    'slider_case_22'
   ];
 
   for (const id of expectedFailIds) {
@@ -105,12 +154,15 @@ test('slider-name-present: aria-labelledby pointing at an <iframe> falls back to
   // getTextFromIdRefs helper.
   const html = `<!doctype html><html><body><iframe id='t' title='Settings'></iframe><div role='slider' aria-labelledby='t'></div></body></html>`;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
   const result = runa11yCoreOnHtml(html);
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test('slider-name-present: label association with empty content falls back to the label\'s own title attribute => pass', () => {
+test("slider-name-present: label association with empty content falls back to the label's own title attribute => pass", () => {
   // Regression for the theoretical sibling gap to the <iframe>-title-
   // fallback fix (found via a deliberate audit of every duplicated
   // accessible-name helper across the *-name-present rule family,
@@ -125,7 +177,10 @@ test('slider-name-present: label association with empty content falls back to th
   // native label association at all).
   const html = `<!doctype html><html><body><label for='a' title='Search'></label><input id='a' type='range'/></body></html>`;
 
-  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
   const result = runa11yCoreOnHtml(html);
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });

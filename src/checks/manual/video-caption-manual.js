@@ -41,7 +41,13 @@ const meta = {
   tags: ['wcag2a', 'wcag122', 'media', 'timebasedmedia', 'atomic', 'manual'],
   wcagSc: ['1.2.2'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '1.2.2', title: 'Captions (Prerecorded)', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '1.2.2',
+      title: 'Captions (Prerecorded)',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'moderate',
   category: 'perceivable',
@@ -77,7 +83,7 @@ function runInPage(ctx) {
     if (hasCaptionsTrack) continue;
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
     const baseOccurrence = {
       selector: stableSelector,
@@ -106,7 +112,12 @@ function runInPage(ctx) {
   }
 
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'cantTell', severity: rule.defaultSeverity || 'moderate', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'moderate',
+      occurrences
+    };
   }
 
   // Manual rules may only emit cantTell/notApplicable (never pass/fail):

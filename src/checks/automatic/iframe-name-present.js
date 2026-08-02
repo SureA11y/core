@@ -25,7 +25,8 @@ const id = 'iframe-name-present';
 
 const meta = {
   title: 'Frames have an accessible name',
-  description: 'Checks that <iframe>/<frame> elements expose a non-empty accessible name via aria-label, aria-labelledby, or the title attribute.',
+  description:
+    'Checks that <iframe>/<frame> elements expose a non-empty accessible name via aria-label, aria-labelledby, or the title attribute.',
   i18n: {
     titleKey: 'iframeNamePresent_title',
     descriptionKey: 'iframeNamePresent_description'
@@ -34,7 +35,13 @@ const meta = {
   tags: ['wcag2a', 'wcag412', 'structure', 'atomic', 'automatic', 'name', 'iframe'],
   wcagSc: ['4.1.2'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '4.1.2', title: 'Name, Role, Value', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '4.1.2',
+      title: 'Name, Role, Value',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'serious',
   category: 'robust',
@@ -46,7 +53,9 @@ const meta = {
 function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('iframe, frame') : helpers.queryAll('iframe, frame');
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart('iframe, frame')
+    : helpers.queryAll('iframe, frame');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -62,15 +71,23 @@ function runInPage(ctx) {
 
     applicableCount += 1;
 
-    const nameInfo = helpers.getAccessibleNameInfo ? helpers.getAccessibleNameInfo(el, ctx, { maxRefs: 8 }) : null;
+    const nameInfo = helpers.getAccessibleNameInfo
+      ? helpers.getAccessibleNameInfo(el, ctx, { maxRefs: 8 })
+      : null;
     if (nameInfo && nameInfo.present && nameInfo.value) continue;
 
     const eligInfo = helpers.getEligibilityInfo
-      ? (() => { try { return helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' }); } catch { return null; } })()
+      ? (() => {
+          try {
+            return helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' });
+          } catch {
+            return null;
+          }
+        })()
       : null;
     const tag = el.tagName.toLowerCase();
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
     occurrences.push({
       selector: stableSelector,
@@ -93,7 +110,12 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'serious', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'fail',
+      severity: rule.defaultSeverity || 'serious',
+      occurrences
+    };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }

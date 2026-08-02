@@ -115,7 +115,11 @@ test('contextSelector: multi-region contrast scanning does not double-count text
   const rule = result.checksResults.find((r) => r.ruleId === 'contrast-minimum');
   assert.ok(rule, 'contrast-minimum should have run');
   if (rule.outcome === 'fail') {
-    assert.strictEqual(rule.occurrences.length, 1, 'the same paragraph must only be reported once, not once per overlapping region');
+    assert.strictEqual(
+      rule.occurrences.length,
+      1,
+      'the same paragraph must only be reported once, not once per overlapping region'
+    );
   }
 });
 

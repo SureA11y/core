@@ -33,7 +33,8 @@ const id = 'form-control-single-label';
 
 const meta = {
   title: 'Form controls must not have multiple labels',
-  description: 'Checks that a form control is associated with at most one <label> (by wrapping or by label[for]).',
+  description:
+    'Checks that a form control is associated with at most one <label> (by wrapping or by label[for]).',
   i18n: {
     titleKey: 'formControlSingleLabel_title',
     descriptionKey: 'formControlSingleLabel_description'
@@ -42,7 +43,13 @@ const meta = {
   tags: ['wcag2a', 'wcag332', 'forms', 'atomic', 'automatic'],
   wcagSc: ['3.3.2'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '3.3.2', title: 'Labels or Instructions', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '3.3.2',
+      title: 'Labels or Instructions',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'moderate',
   category: 'understandable',
@@ -54,12 +61,14 @@ const meta = {
 function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
-  const isAccTreeEligible = helpers && typeof helpers.isAccTreeEligible === 'function'
-    ? helpers.isAccTreeEligible
-    : null;
+  const isAccTreeEligible =
+    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
 
-  const selector = 'input:not([type="hidden"]):not([type="submit"]):not([type="reset"]):not([type="button"]):not([type="image"]),select,textarea';
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
+  const selector =
+    'input:not([type="hidden"]):not([type="submit"]):not([type="reset"]):not([type="button"]):not([type="image"]),select,textarea';
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart(selector)
+    : helpers.queryAll(selector);
 
   // Build a for-value -> label[] map once (avoids per-control dynamic
   // attribute-selector construction / CSS.escape, which is not guaranteed
@@ -93,17 +102,19 @@ function runInPage(ctx) {
     }
 
     const eligibleLabels = isAccTreeEligible
-      ? new Set([...labels].filter((lab) => {
-          const elig = isAccTreeEligible(lab);
-          return !elig || elig.eligible !== false;
-        }))
+      ? new Set(
+          [...labels].filter((lab) => {
+            const elig = isAccTreeEligible(lab);
+            return !elig || elig.eligible !== false;
+          })
+        )
       : labels;
 
     if (eligibleLabels.size <= 1) continue;
 
     const tag = el.tagName.toLowerCase();
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
     occurrences.push({
       selector: stableSelector,
@@ -116,7 +127,11 @@ function runInPage(ctx) {
         params: { element: tag, labelCount: String(eligibleLabels.size) }
       },
       data: {
-        details: { reasonCode: 'FORM_FIELD_MULTIPLE_LABELS', element: tag, labelCount: eligibleLabels.size }
+        details: {
+          reasonCode: 'FORM_FIELD_MULTIPLE_LABELS',
+          element: tag,
+          labelCount: eligibleLabels.size
+        }
       }
     });
   }
@@ -125,7 +140,12 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'moderate', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'fail',
+      severity: rule.defaultSeverity || 'moderate',
+      occurrences
+    };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }

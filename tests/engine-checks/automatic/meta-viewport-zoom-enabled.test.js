@@ -50,7 +50,12 @@ test(`${RULE_ID}: i18n default is English`, () => {
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/meta-viewport-zoom-enabled-all-scenarios.html)`, () => {
-  const fixturePath = path.join(__dirname, '../..', 'fixtures', 'meta-viewport-zoom-enabled-all-scenarios.html');
+  const fixturePath = path.join(
+    __dirname,
+    '../..',
+    'fixtures',
+    'meta-viewport-zoom-enabled-all-scenarios.html'
+  );
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
@@ -60,12 +65,24 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/meta-viewport-zoom-enabled-al
 
 test(`meta-viewport-zoom-enabled: notApplicable when contextSelector scopes narrower than the whole document (fragment-scan applicability)`, () => {
   const html = `<!doctype html><html><head><meta name="viewport" content="width=device-width, user-scalable=no"></head><body></body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: ['meta-viewport-zoom-enabled'], contextSelector: 'body' });
-  assertRule(result, 'meta-viewport-zoom-enabled', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  const result = runa11yCoreOnHtml(html, {
+    runOnly: ['meta-viewport-zoom-enabled'],
+    contextSelector: 'body'
+  });
+  assertRule(result, 'meta-viewport-zoom-enabled', 'notApplicable', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
 });
 
 test(`meta-viewport-zoom-enabled: notApplicable when engineOptions.fragment is true, even unscoped`, () => {
   const html = `<!doctype html><html><head><meta name="viewport" content="width=device-width, user-scalable=no"></head><body></body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: ['meta-viewport-zoom-enabled'], engineOptions: { fragment: true } });
-  assertRule(result, 'meta-viewport-zoom-enabled', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  const result = runa11yCoreOnHtml(html, {
+    runOnly: ['meta-viewport-zoom-enabled'],
+    engineOptions: { fragment: true }
+  });
+  assertRule(result, 'meta-viewport-zoom-enabled', 'notApplicable', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
 });

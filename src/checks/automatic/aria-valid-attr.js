@@ -27,7 +27,8 @@ const id = 'aria-valid-attr';
 
 const meta = {
   title: 'aria-* attributes must be real, defined ARIA attributes',
-  description: 'Checks that every aria-* attribute name present in the DOM is a real attribute defined by the WAI-ARIA specification.',
+  description:
+    'Checks that every aria-* attribute name present in the DOM is a real attribute defined by the WAI-ARIA specification.',
   i18n: {
     titleKey: 'ariaValidAttr_title',
     descriptionKey: 'ariaValidAttr_description'
@@ -36,7 +37,13 @@ const meta = {
   tags: ['wcag2a', 'wcag412', 'aria', 'structure', 'atomic', 'automatic'],
   wcagSc: ['4.1.2'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '4.1.2', title: 'Name, Role, Value', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '4.1.2',
+      title: 'Name, Role, Value',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'serious',
   category: 'robust',
@@ -78,7 +85,7 @@ function runInPage(ctx) {
     if (!invalidNames || !invalidNames.length) continue;
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
     for (const name of invalidNames) {
       occurrences.push({
@@ -102,7 +109,12 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'serious', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'fail',
+      severity: rule.defaultSeverity || 'serious',
+      occurrences
+    };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }

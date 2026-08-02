@@ -6,12 +6,18 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const { assertRule } = require('../../helpers/assertRule.js');
-const { runa11yCoreOnHtml, createDom, runa11yCoreOnDom } = require('../../helpers/runDomRulesOnHtml.js');
+const {
+  runa11yCoreOnHtml,
+  createDom,
+  runa11yCoreOnDom
+} = require('../../helpers/runDomRulesOnHtml.js');
 
 const RULE_ID = 'aria-required-parent';
 
 function hasOccurrenceForId(rule, id) {
-  return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
+  return (rule.occurrences || []).some(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
 }
 
 test(`${RULE_ID}: notApplicable when no role attributes present`, () => {
@@ -93,6 +99,34 @@ test(`${RULE_ID}: pass when the only intervening ancestor is transparent (role="
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+test(`${RULE_ID}: pass for a multi-level nested treeitem (treeitem > group > treeitem > group > tree) — a normal, arbitrarily-deep ARIA tree`, () => {
+  // Regression for a real false positive found via a live-DOM cross-engine
+  // run 2026-08-02: GitHub's PR "Files changed" file-tree sidebar nests a
+  // sub-tree's <li role="treeitem"> items directly inside their parent
+  // directory treeitem's own <ul role="group"> children container (a
+  // standard ARIA TreeView pattern: tree > treeitem > group > treeitem >
+  // group > treeitem...). hasAcceptableAncestorContext previously treated
+  // the immediate role="group" ancestor as transparent (per
+  // GROUP_TRANSPARENT_FOR_ROLES) and kept walking, but stopped at the next
+  // real ancestor role — a second treeitem — and failed since "treeitem"
+  // wasn't itself in the original acceptable-roles set. A reference
+  // engine's own getMissingContext handles this by pushing the tested
+  // element's own role into the acceptable set at the same point it drops
+  // "group", so a further treeitem ancestor also satisfies the requirement;
+  // this check now mirrors that.
+  const html = `<!doctype html><html><body>
+    <ul role="tree">
+      <li role="treeitem" aria-expanded="true">Outer dir
+        <ul role="group">
+          <li id="a" role="treeitem">Inner file</li>
+        </ul>
+      </li>
+    </ul>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
 test(`${RULE_ID}: pass when an intervening ancestor has an invalid/unrecognized role token (not a real ARIA role) — transparent to the search, same as no role at all`, () => {
   // Regression for a real false positive found via a live-DOM cross-engine
   // run 2026-07-31: tabulator.info's column-grouping example has
@@ -131,9 +165,13 @@ test(`${RULE_ID}: pass when the required-context role only exists across a shado
     <div id="host"><div id="a" role="listitem" slot="descendant">Item</div></div>
   </body></html>`);
   const host = dom.window.document.getElementById('host');
-  host.attachShadow({ mode: 'open' }).innerHTML = `<div role="list"><slot name="descendant"></slot></div>`;
+  host.attachShadow({ mode: 'open' }).innerHTML =
+    `<div role="list"><slot name="descendant"></slot></div>`;
 
-  const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID], engineOptions: { includeShadowDom: true } });
+  const result = runa11yCoreOnDom(dom, {
+    runOnly: [RULE_ID],
+    engineOptions: { includeShadowDom: true }
+  });
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
@@ -147,7 +185,10 @@ test(`${RULE_ID}: fail when a slotted element's shadow-DOM ancestor still has no
   const host = dom.window.document.getElementById('host');
   host.attachShadow({ mode: 'open' }).innerHTML = `<div><slot name="descendant"></slot></div>`;
 
-  const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID], engineOptions: { includeShadowDom: true } });
+  const result = runa11yCoreOnDom(dom, {
+    runOnly: [RULE_ID],
+    engineOptions: { includeShadowDom: true }
+  });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'a'));
 });
@@ -166,7 +207,12 @@ test(`${RULE_ID}: i18n default is English`, () => {
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-required-parent-all-scenarios.html)`, () => {
-  const fixturePath = path.join(__dirname, '../..', 'fixtures', 'aria-required-parent-all-scenarios.html');
+  const fixturePath = path.join(
+    __dirname,
+    '../..',
+    'fixtures',
+    'aria-required-parent-all-scenarios.html'
+  );
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
@@ -174,7 +220,17 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-required-parent-all-scen
 
   assert.ok(hasOccurrenceForId(rule, 'arp_case_04'));
   assert.ok(hasOccurrenceForId(rule, 'arp_case_07'));
-  for (const id of ['arp_case_01', 'arp_case_02', 'arp_case_03', 'arp_case_05', 'arp_case_06', 'arp_case_08', 'arp_case_09', 'arp_case_10', 'arp_case_11']) {
+  for (const id of [
+    'arp_case_01',
+    'arp_case_02',
+    'arp_case_03',
+    'arp_case_05',
+    'arp_case_06',
+    'arp_case_08',
+    'arp_case_09',
+    'arp_case_10',
+    'arp_case_11'
+  ]) {
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
 });

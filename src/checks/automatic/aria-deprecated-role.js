@@ -26,7 +26,8 @@ const id = 'aria-deprecated-role';
 
 const meta = {
   title: 'role attribute must not use a deprecated or author-prohibited ARIA role',
-  description: 'Checks that an explicit role="" attribute does not use a role deprecated by the WAI-ARIA specification, or one reserved for user-agent-internal use only (e.g. role="generic").',
+  description:
+    'Checks that an explicit role="" attribute does not use a role deprecated by the WAI-ARIA specification, or one reserved for user-agent-internal use only (e.g. role="generic").',
   i18n: {
     titleKey: 'ariaDeprecatedRole_title',
     descriptionKey: 'ariaDeprecatedRole_description'
@@ -35,7 +36,13 @@ const meta = {
   tags: ['wcag2a', 'wcag412', 'aria', 'structure', 'atomic', 'automatic'],
   wcagSc: ['4.1.2'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '4.1.2', title: 'Name, Role, Value', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '4.1.2',
+      title: 'Name, Role, Value',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'moderate',
   category: 'robust',
@@ -52,7 +59,9 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]') : helpers.queryAll('[role]');
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart('[role]')
+    : helpers.queryAll('[role]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -72,10 +81,10 @@ function runInPage(ctx) {
     if (!ariaHelpers.isDeprecatedRole(role)) continue;
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
     const guidance = ariaHelpers.getDeprecatedRoleGuidance
-        ? ariaHelpers.getDeprecatedRoleGuidance(role)
-        : 'Replace the deprecated role with its recommended replacement.';
+      ? ariaHelpers.getDeprecatedRoleGuidance(role)
+      : 'Replace the deprecated role with its recommended replacement.';
 
     occurrences.push({
       selector: stableSelector,
@@ -97,7 +106,12 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'moderate', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'fail',
+      severity: rule.defaultSeverity || 'moderate',
+      occurrences
+    };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }

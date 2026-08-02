@@ -10,31 +10,30 @@ const { assertRule } = require('../helpers/assertRule');
 const RULE_ID = 'manual-review';
 
 test('manual-review: cantTell with one occurrence bound to html by default', () => {
-    const html = `
+  const html = `
     <!doctype html>
     <html><body>
       <p>Some content</p>
     </body></html>
   `;
 
-    const result = runa11yCoreOnHtml(html);
+  const result = runa11yCoreOnHtml(html);
 
-    const rule = assertRule(result, 'manual-review', 'cantTell', {
-        minOccurrences: 1,
-        maxOccurrences: 1
-    });
+  const rule = assertRule(result, 'manual-review', 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
 
-    const occ = rule.occurrences[0];
-    assert.strictEqual(occ.selector, 'html');
-    assert.ok(
-        typeof occ.summary === 'string' &&
-        occ.summary.toLowerCase().includes('manual review'),
-        'summary should mention manual review'
-    );
+  const occ = rule.occurrences[0];
+  assert.strictEqual(occ.selector, 'html');
+  assert.ok(
+    typeof occ.summary === 'string' && occ.summary.toLowerCase().includes('manual review'),
+    'summary should mention manual review'
+  );
 });
 
 test('manual-review: uses contextSelector when provided', () => {
-    const html = `
+  const html = `
     <!doctype html>
     <html><body>
       <div id="main">
@@ -43,20 +42,20 @@ test('manual-review: uses contextSelector when provided', () => {
     </body></html>
   `;
 
-    const result = runa11yCoreOnHtml(html, { contextSelector: '#main' });
+  const result = runa11yCoreOnHtml(html, { contextSelector: '#main' });
 
-    const rule = assertRule(result, 'manual-review', 'cantTell', {
-        minOccurrences: 1,
-        maxOccurrences: 1
-    });
+  const rule = assertRule(result, 'manual-review', 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
 
-    const occ = rule.occurrences[0];
-    assert.strictEqual(occ.selector, '#main');
+  const occ = rule.occurrences[0];
+  assert.strictEqual(occ.selector, '#main');
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/manual-review-all-scenarios.html)`, () => {
-    const fixturePath = path.join(__dirname, '..', 'fixtures', 'manual-review-all-scenarios.html');
-    const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
-    const result = runa11yCoreOnHtml(fixtureHtml);
-    assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  const fixturePath = path.join(__dirname, '..', 'fixtures', 'manual-review-all-scenarios.html');
+  const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
+  const result = runa11yCoreOnHtml(fixtureHtml);
+  assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
 });

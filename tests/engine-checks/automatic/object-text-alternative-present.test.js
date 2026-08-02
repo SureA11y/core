@@ -11,7 +11,9 @@ const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 const RULE_ID = 'object-text-alternative-present';
 
 function hasOccurrenceForId(rule, id) {
-  return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
+  return (rule.occurrences || []).some(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
 }
 
 test(`${RULE_ID}: notApplicable when no <object>`, () => {
@@ -81,7 +83,12 @@ test(`${RULE_ID}: role=presentation not focusable is excluded and does not cause
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/object-text-alternative-present-all-scenarios.html)`, () => {
-  const fixturePath = path.join(__dirname, '../..', 'fixtures', 'object-text-alternative-present-all-scenarios.html');
+  const fixturePath = path.join(
+    __dirname,
+    '../..',
+    'fixtures',
+    'object-text-alternative-present-all-scenarios.html'
+  );
   const html = fs.readFileSync(fixturePath, 'utf8');
 
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
@@ -96,7 +103,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/object-text-alternative-prese
     'object_case_11',
     'object_case_12',
     'object_case_17',
-    'object_case_18'  // whitespace-only fallback content does not count
+    'object_case_18' // whitespace-only fallback content does not count
   ];
 
   const expectedNoOccIds = [

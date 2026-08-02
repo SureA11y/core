@@ -11,7 +11,9 @@ const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 const RULE_ID = 'svg-text-alternative-present';
 
 function hasOccurrenceForId(rule, id) {
-  return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
+  return (rule.occurrences || []).some(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
 }
 
 test(`${RULE_ID}: notApplicable when no <svg>`, () => {
@@ -126,7 +128,12 @@ test(`${RULE_ID}: IDREF-referenced (eligible element references aria-hidden svg)
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/svg-text-alternative-present-all-scenarios.html)`, () => {
-  const fixturePath = path.join(__dirname, '../..', 'fixtures', 'svg-text-alternative-present-all-scenarios.html');
+  const fixturePath = path.join(
+    __dirname,
+    '../..',
+    'fixtures',
+    'svg-text-alternative-present-all-scenarios.html'
+  );
   const html = fs.readFileSync(fixturePath, 'utf8');
 
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
@@ -135,17 +142,17 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/svg-text-alternative-present-
 
   const expectedFailIds = [
     'svg_case_01',
-    'svg_case_03',  // <desc> alone never provides a name (SVG-AAM §7.1)
+    'svg_case_03', // <desc> alone never provides a name (SVG-AAM §7.1)
     'svg_case_06',
     'svg_case_07',
     'svg_case_09',
     'svg_case_10',
     'svg_case_12',
     'svg_case_15',
-    'svg_case_21',  // <title> not first child does not count
-    'svg_case_22',  // <desc> as first child still doesn't count as a name
-    'svg_case_23',  // empty <title> + <desc> second: desc still doesn't count as a name
-    'svg_case_24'   // <desc> misplaced (not first, not pair-second) does not count
+    'svg_case_21', // <title> not first child does not count
+    'svg_case_22', // <desc> as first child still doesn't count as a name
+    'svg_case_23', // empty <title> + <desc> second: desc still doesn't count as a name
+    'svg_case_24' // <desc> misplaced (not first, not pair-second) does not count
   ];
 
   const expectedNoOccIds = [

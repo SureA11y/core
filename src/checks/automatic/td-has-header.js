@@ -45,7 +45,13 @@ const meta = {
   tags: ['wcag2a', 'wcag131', 'structure', 'atomic', 'automatic'],
   wcagSc: ['1.3.1'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '1.3.1', title: 'Info and Relationships', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '1.3.1',
+      title: 'Info and Relationships',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'serious',
   category: 'perceivable',
@@ -59,7 +65,9 @@ function runInPage(ctx) {
 
   const MIN_SIZE = 4;
 
-  function trim(v) { return (v == null ? '' : String(v)).trim(); }
+  function trim(v) {
+    return (v == null ? '' : String(v)).trim();
+  }
 
   const tables = helpers.queryAllSmart ? helpers.queryAllSmart('table') : helpers.queryAll('table');
 
@@ -76,11 +84,13 @@ function runInPage(ctx) {
     const maxCols = rowCells.reduce((m, cells) => Math.max(m, cells.length), 0);
     if (maxCols < MIN_SIZE) continue;
 
-    const hasSpan = rowCells.some((cells) => cells.some((c) => {
-      const cs = Number.parseInt(c.getAttribute('colspan') || '1', 10);
-      const rs = Number.parseInt(c.getAttribute('rowspan') || '1', 10);
-      return (Number.isFinite(cs) && cs > 1) || (Number.isFinite(rs) && rs > 1);
-    }));
+    const hasSpan = rowCells.some((cells) =>
+      cells.some((c) => {
+        const cs = Number.parseInt(c.getAttribute('colspan') || '1', 10);
+        const rs = Number.parseInt(c.getAttribute('rowspan') || '1', 10);
+        return (Number.isFinite(cs) && cs > 1) || (Number.isFinite(rs) && rs > 1);
+      })
+    );
     if (hasSpan) continue;
 
     applicableCount += 1;
@@ -118,12 +128,15 @@ function runInPage(ctx) {
         if (hasRowHeaderBefore(r, c)) continue;
 
         const stableSelector = helpers.buildSelector ? helpers.buildSelector(cell) : 'html';
-        const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(cell) : (cell.outerHTML || '');
+        const html = helpers.getOuterHtmlSnippet
+          ? helpers.getOuterHtmlSnippet(cell)
+          : cell.outerHTML || '';
 
         occurrences.push({
           selector: stableSelector,
           html,
-          summary: 'This data cell has no associated header (no headers attribute, no column <th> above it, no row <th> to its left).',
+          summary:
+            'This data cell has no associated header (no headers attribute, no column <th> above it, no row <th> to its left).',
           hint: 'Add a headers attribute referencing the relevant <th> id(s), or restructure the table so this cell has an implicit row/column header.',
           i18n: {
             summaryKey: 'tdHasHeader_summary_fail',
@@ -142,7 +155,12 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'serious', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'fail',
+      severity: rule.defaultSeverity || 'serious',
+      occurrences
+    };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }

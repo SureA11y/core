@@ -32,8 +32,14 @@ test('getExplicitRole: returns the lowercased first token of role=, empty string
 });
 
 test('getAllRoleTokens: returns every lowercased space-separated token', () => {
-  const { helpers, document } = helpersFor('<div id="a" role="Tab Panel  extra"></div><div id="b"></div>');
-  assert.deepEqual(helpers.getAllRoleTokens(document.getElementById('a')), ['tab', 'panel', 'extra']);
+  const { helpers, document } = helpersFor(
+    '<div id="a" role="Tab Panel  extra"></div><div id="b"></div>'
+  );
+  assert.deepEqual(helpers.getAllRoleTokens(document.getElementById('a')), [
+    'tab',
+    'panel',
+    'extra'
+  ]);
   assert.deepEqual(helpers.getAllRoleTokens(document.getElementById('b')), []);
   assert.deepEqual(helpers.getAllRoleTokens(null), []);
 });
@@ -64,7 +70,10 @@ test('getDeprecatedRoleGuidance: role-specific message, generic fallback otherwi
   const { helpers } = helpersFor('<div></div>');
   assert.match(helpers.getDeprecatedRoleGuidance('directory'), /role="list"/);
   assert.match(helpers.getDeprecatedRoleGuidance('GENERIC'), /user-agent-internal/);
-  assert.equal(helpers.getDeprecatedRoleGuidance('not-deprecated'), 'Replace the deprecated role with its recommended replacement.');
+  assert.equal(
+    helpers.getDeprecatedRoleGuidance('not-deprecated'),
+    'Replace the deprecated role with its recommended replacement.'
+  );
 });
 
 // ===== ARIA attribute name/value-type lookups =====
@@ -85,7 +94,10 @@ test('isValidAriaAttrName / getAttrValueType', () => {
 
 test('validateAttrValue: unknown attribute is skipped (always valid)', () => {
   const { helpers } = helpersFor('<div></div>');
-  assert.deepEqual(helpers.validateAttrValue('aria-not-real', 'anything'), { valid: true, reason: 'unknown-attr-skip' });
+  assert.deepEqual(helpers.validateAttrValue('aria-not-real', 'anything'), {
+    valid: true,
+    reason: 'unknown-attr-skip'
+  });
 });
 
 test('validateAttrValue: boolean', () => {
@@ -144,11 +156,20 @@ test('validateAttrValue: token-list', () => {
 
 test('validateAttrValue: idref requires format and existence', () => {
   const { helpers } = helpersFor('<div id="target"></div>');
-  assert.deepEqual(helpers.validateAttrValue('aria-activedescendant', 'target'), { valid: true, reason: '' });
+  assert.deepEqual(helpers.validateAttrValue('aria-activedescendant', 'target'), {
+    valid: true,
+    reason: ''
+  });
   assert.equal(helpers.validateAttrValue('aria-activedescendant', 'target extra').valid, false);
-  assert.equal(helpers.validateAttrValue('aria-activedescendant', 'target extra').reason, 'expected-single-idref');
+  assert.equal(
+    helpers.validateAttrValue('aria-activedescendant', 'target extra').reason,
+    'expected-single-idref'
+  );
   assert.equal(helpers.validateAttrValue('aria-activedescendant', 'missing').valid, false);
-  assert.equal(helpers.validateAttrValue('aria-activedescendant', 'missing').reason, 'idref-not-found');
+  assert.equal(
+    helpers.validateAttrValue('aria-activedescendant', 'missing').reason,
+    'idref-not-found'
+  );
 });
 
 test('validateAttrValue: idref-list is valid when at least one id resolves', () => {
@@ -160,7 +181,10 @@ test('validateAttrValue: idref-list is valid when at least one id resolves', () 
 
 test('validateAttrValue: string type is always valid', () => {
   const { helpers } = helpersFor('<div></div>');
-  assert.deepEqual(helpers.validateAttrValue('aria-label', 'anything at all'), { valid: true, reason: '' });
+  assert.deepEqual(helpers.validateAttrValue('aria-label', 'anything at all'), {
+    valid: true,
+    reason: ''
+  });
 });
 
 // ===== required attrs/owned-roles/context-roles lookups =====
@@ -195,15 +219,33 @@ test('element-role-key conditioning: a/area href', () => {
     '<a id="a1" href="/x"></a><a id="a2"></a><area id="ar1" href="/x"></area><area id="ar2"></area>'
   );
   // a[href]: allowed-roles list applies (button is listed, group is not)
-  assert.equal(helpers.isRoleAllowedOnElement(document.getElementById('a1'), 'button').allowed, true);
-  assert.equal(helpers.isRoleAllowedOnElement(document.getElementById('a1'), 'group').allowed, false);
+  assert.equal(
+    helpers.isRoleAllowedOnElement(document.getElementById('a1'), 'button').allowed,
+    true
+  );
+  assert.equal(
+    helpers.isRoleAllowedOnElement(document.getElementById('a1'), 'group').allowed,
+    false
+  );
   // hrefless <a> has no key at all -- unconstrained
-  assert.equal(helpers.isRoleAllowedOnElement(document.getElementById('a2'), 'group').constrained, false);
+  assert.equal(
+    helpers.isRoleAllowedOnElement(document.getElementById('a2'), 'group').constrained,
+    false
+  );
   // area[href]: empty allowed-roles list, only the native 'link' role is ok
-  assert.equal(helpers.isRoleAllowedOnElement(document.getElementById('ar1'), 'link').allowed, true);
-  assert.equal(helpers.isRoleAllowedOnElement(document.getElementById('ar1'), 'button').allowed, false);
+  assert.equal(
+    helpers.isRoleAllowedOnElement(document.getElementById('ar1'), 'link').allowed,
+    true
+  );
+  assert.equal(
+    helpers.isRoleAllowedOnElement(document.getElementById('ar1'), 'button').allowed,
+    false
+  );
   // hrefless <area>: its own 'area' key permits button/link
-  assert.equal(helpers.isRoleAllowedOnElement(document.getElementById('ar2'), 'button').allowed, true);
+  assert.equal(
+    helpers.isRoleAllowedOnElement(document.getElementById('ar2'), 'button').allowed,
+    true
+  );
 });
 
 test('element-role-key conditioning: section named vs unnamed', () => {
@@ -211,8 +253,14 @@ test('element-role-key conditioning: section named vs unnamed', () => {
     '<section id="named" aria-label="x"></section><section id="unnamed"></section>'
   );
   // 'region' restates the native role only once the section has a name
-  assert.equal(helpers.isRoleAllowedOnElement(document.getElementById('named'), 'region').allowed, true);
-  assert.equal(helpers.isRoleAllowedOnElement(document.getElementById('unnamed'), 'region').allowed, false);
+  assert.equal(
+    helpers.isRoleAllowedOnElement(document.getElementById('named'), 'region').allowed,
+    true
+  );
+  assert.equal(
+    helpers.isRoleAllowedOnElement(document.getElementById('unnamed'), 'region').allowed,
+    false
+  );
 });
 
 test('element-role-key conditioning: header top-level vs nested in sectioning content', () => {
@@ -241,16 +289,28 @@ test('element-role-key conditioning: label associated vs unassociated', () => {
     allowed: false
   });
   // an unassociated <label> has no key at all -- unconstrained
-  assert.equal(helpers.isRoleAllowedOnElement(document.getElementById('free'), 'button').constrained, false);
+  assert.equal(
+    helpers.isRoleAllowedOnElement(document.getElementById('free'), 'button').constrained,
+    false
+  );
 });
 
 test('element-role-key conditioning: img alt', () => {
   const { helpers, document } = helpersFor(
     '<img id="withAlt" alt="desc"><img id="emptyAlt" alt=""><img id="noAlt">'
   );
-  assert.equal(helpers.isRoleAllowedOnElement(document.getElementById('withAlt'), 'button').allowed, true);
-  assert.equal(helpers.isRoleAllowedOnElement(document.getElementById('emptyAlt'), 'button').allowed, false);
-  assert.equal(helpers.isRoleAllowedOnElement(document.getElementById('noAlt'), 'button').allowed, false);
+  assert.equal(
+    helpers.isRoleAllowedOnElement(document.getElementById('withAlt'), 'button').allowed,
+    true
+  );
+  assert.equal(
+    helpers.isRoleAllowedOnElement(document.getElementById('emptyAlt'), 'button').allowed,
+    false
+  );
+  assert.equal(
+    helpers.isRoleAllowedOnElement(document.getElementById('noAlt'), 'button').allowed,
+    false
+  );
 });
 
 test('element-role-key conditioning: input type / checkbox[aria-pressed]', () => {
@@ -258,8 +318,14 @@ test('element-role-key conditioning: input type / checkbox[aria-pressed]', () =>
     '<input id="cb" type="checkbox"><input id="cbPressed" type="checkbox" aria-pressed="false">' +
       '<input id="txt" type="text"><input id="untyped">'
   );
-  assert.equal(helpers.isRoleAllowedOnElement(document.getElementById('cb'), 'button').allowed, false);
-  assert.equal(helpers.isRoleAllowedOnElement(document.getElementById('cbPressed'), 'button').allowed, true);
+  assert.equal(
+    helpers.isRoleAllowedOnElement(document.getElementById('cb'), 'button').allowed,
+    false
+  );
+  assert.equal(
+    helpers.isRoleAllowedOnElement(document.getElementById('cbPressed'), 'button').allowed,
+    true
+  );
   assert.equal(helpers.getNativeRoleForElement(document.getElementById('txt')), 'textbox');
   // no type attribute defaults to type=text
   assert.equal(helpers.getNativeRoleForElement(document.getElementById('untyped')), 'textbox');
@@ -342,7 +408,9 @@ test('getContainmentRole: explicit valid concrete role wins', () => {
 test('getContainmentRole: an invalid/unrecognized explicit role is transparent, falls through to native mapping', () => {
   // Regression for the tabulator.info role="columngroup" false-positive
   // described in this function's own header comment.
-  const { helpers, document } = helpersFor('<table><tbody><tr id="tr" role="columngroup"></tr></tbody></table>');
+  const { helpers, document } = helpersFor(
+    '<table><tbody><tr id="tr" role="columngroup"></tr></tbody></table>'
+  );
   assert.equal(helpers.getContainmentRole(document.getElementById('tr')), 'row');
 });
 
@@ -384,7 +452,9 @@ test('hasLandmarkScopingAncestor: main only counts when includeMain is passed', 
 });
 
 test('hasLandmarkScopingAncestor: does not climb past the scanned root', () => {
-  const dom = new JSDOM('<article><div id="scope"><div id="d"></div></div></article>', { pretendToBeVisual: true });
+  const dom = new JSDOM('<article><div id="scope"><div id="d"></div></div></article>', {
+    pretendToBeVisual: true
+  });
   const { document } = dom.window;
   const shared = { trim: (v) => (v == null ? '' : String(v)).trim() };
   const scope = document.getElementById('scope');

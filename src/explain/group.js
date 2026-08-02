@@ -27,7 +27,9 @@ function buildExplainGroups(result, { redactHtml = false } = {}) {
     for (const occurrence of check.occurrences) {
       if (!occurrence) continue;
 
-      const reasonCode = (occurrence.data && occurrence.data.details && occurrence.data.details.reasonCode) || 'DEFAULT';
+      const reasonCode =
+        (occurrence.data && occurrence.data.details && occurrence.data.details.reasonCode) ||
+        'DEFAULT';
       const groupKey = computeGroupKey(check.ruleId, reasonCode, occurrence.selector);
 
       let group = groupsByKey.get(groupKey);

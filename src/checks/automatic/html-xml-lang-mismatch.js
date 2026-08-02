@@ -27,7 +27,8 @@ const id = 'html-xml-lang-mismatch';
 
 const meta = {
   title: 'lang and xml:lang must not disagree',
-  description: 'Checks that the <html> element\'s lang and xml:lang attributes declare the same primary language, when both are present.',
+  description:
+    "Checks that the <html> element's lang and xml:lang attributes declare the same primary language, when both are present.",
   i18n: {
     titleKey: 'htmlXmlLangMismatch_title',
     descriptionKey: 'htmlXmlLangMismatch_description'
@@ -36,7 +37,13 @@ const meta = {
   tags: ['wcag2a', 'wcag311', 'structure', 'language', 'atomic', 'automatic'],
   wcagSc: ['3.1.1'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '3.1.1', title: 'Language of Page', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '3.1.1',
+      title: 'Language of Page',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'serious',
   category: 'understandable',
@@ -57,7 +64,7 @@ function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
   const html = document && document.documentElement;
-  const tag = (html && html.tagName) ? String(html.tagName).toLowerCase() : '';
+  const tag = html && html.tagName ? String(html.tagName).toLowerCase() : '';
   if (!html || tag !== 'html') {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
@@ -76,24 +83,33 @@ function runInPage(ctx) {
   }
 
   const stableSelector = helpers.buildSelector ? helpers.buildSelector(html) : 'html';
-  const htmlSnippet = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(html) : (html.outerHTML || '').slice(0, 200);
+  const htmlSnippet = helpers.getOuterHtmlSnippet
+    ? helpers.getOuterHtmlSnippet(html)
+    : (html.outerHTML || '').slice(0, 200);
 
-  const occurrences = [{
-    selector: stableSelector,
-    html: htmlSnippet,
-    summary: `The lang ("${lang}") and xml:lang ("${xmlLang}") attributes declare different languages.`,
-    hint: 'Make lang and xml:lang declare the same primary language, or remove the deprecated xml:lang attribute.',
-    i18n: {
-      summaryKey: 'htmlXmlLangMismatch_summary_fail',
-      hintKey: 'htmlXmlLangMismatch_hint_fail',
-      params: { lang, xmlLang }
-    },
-    data: {
-      details: { reasonCode: 'HTML_XML_LANG_MISMATCH', lang, xmlLang }
+  const occurrences = [
+    {
+      selector: stableSelector,
+      html: htmlSnippet,
+      summary: `The lang ("${lang}") and xml:lang ("${xmlLang}") attributes declare different languages.`,
+      hint: 'Make lang and xml:lang declare the same primary language, or remove the deprecated xml:lang attribute.',
+      i18n: {
+        summaryKey: 'htmlXmlLangMismatch_summary_fail',
+        hintKey: 'htmlXmlLangMismatch_hint_fail',
+        params: { lang, xmlLang }
+      },
+      data: {
+        details: { reasonCode: 'HTML_XML_LANG_MISMATCH', lang, xmlLang }
+      }
     }
-  }];
+  ];
 
-  return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'serious', occurrences };
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'fail',
+    severity: rule.defaultSeverity || 'serious',
+    occurrences
+  };
 }
 
 module.exports = { id, meta, runInPage, applicability };

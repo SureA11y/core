@@ -47,7 +47,8 @@ const id = 'aria-required-parent';
 
 const meta = {
   title: 'Roles requiring a specific context role must be in that context',
-  description: 'Checks that roles with a documented "required context role" entry (listitem, option, tab, treeitem, row, cell, ...) have an ancestor or aria-owns owner with an acceptable context role.',
+  description:
+    'Checks that roles with a documented "required context role" entry (listitem, option, tab, treeitem, row, cell, ...) have an ancestor or aria-owns owner with an acceptable context role.',
   i18n: {
     titleKey: 'ariaRequiredParent_title',
     descriptionKey: 'ariaRequiredParent_description'
@@ -56,7 +57,13 @@ const meta = {
   tags: ['wcag2a', 'wcag412', 'aria', 'structure', 'atomic', 'automatic'],
   wcagSc: ['4.1.2'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '4.1.2', title: 'Name, Role, Value', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '4.1.2',
+      title: 'Name, Role, Value',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'moderate',
   category: 'robust',
@@ -74,7 +81,8 @@ function runInPage(ctx) {
   }
 
   function isEligibleAcc(el) {
-    const fn = helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+    const fn =
+      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -120,14 +128,25 @@ function runInPage(ctx) {
   // non-Element node (a ShadowRoot, nodeType 11) when climbing out of a
   // shadow tree that has no further light-DOM parent — skip those and keep
   // climbing rather than treating them as a (roleless) context.
-  const getComposedParent = helpers && typeof helpers.composedParent === 'function'
-    ? helpers.composedParent
-    : function (n) { return n && n.parentElement ? n.parentElement : null; };
+  const getComposedParent =
+    helpers && typeof helpers.composedParent === 'function'
+      ? helpers.composedParent
+      : function (n) {
+          return n && n.parentElement ? n.parentElement : null;
+        };
 
   function hasAcceptableAncestorContext(el, acceptableRoles, ownRole) {
     const allowsGroup = acceptableRoles.has('group');
     let cur = getComposedParent(el);
     let guard = 0;
+    // Mutable working copy: passing a transparent "group" ancestor also
+    // makes the element's OWN role an acceptable context from that point on
+    // (a nested treeitem-under-group-under-treeitem chain is a normal,
+    // arbitrarily-deep ARIA tree/list, not just one level) — mirroring that
+    // reference engine's getMissingContext, which pushes explicitRole into
+    // reqContext at the same point. Cloned lazily so the caller's Set (built
+    // once per element in runInPage) is never mutated.
+    let roles = acceptableRoles;
     while (cur && guard++ < 200) {
       if (cur.nodeType !== 1) {
         cur = getComposedParent(cur);
@@ -139,10 +158,12 @@ function runInPage(ctx) {
         continue;
       }
       if (role === 'group' && allowsGroup && GROUP_TRANSPARENT_FOR_ROLES.has(ownRole)) {
+        if (roles === acceptableRoles) roles = new Set(acceptableRoles);
+        roles.add(ownRole);
         cur = getComposedParent(cur);
         continue;
       }
-      return acceptableRoles.has(role);
+      return roles.has(role);
     }
     return false;
   }
@@ -152,7 +173,9 @@ function runInPage(ctx) {
     const idTok = elId && String(elId).trim();
     if (!idTok) return false;
 
-    const owners = helpers.queryAllSmart ? helpers.queryAllSmart('[aria-owns]') : helpers.queryAll('[aria-owns]');
+    const owners = helpers.queryAllSmart
+      ? helpers.queryAllSmart('[aria-owns]')
+      : helpers.queryAll('[aria-owns]');
     for (const owner of owners) {
       if (!owner || !owner.getAttribute) continue;
       const ownsAttr = owner.getAttribute('aria-owns') || '';
@@ -165,7 +188,9 @@ function runInPage(ctx) {
     return false;
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]') : helpers.queryAll('[role]');
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart('[role]')
+    : helpers.queryAll('[role]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -191,7 +216,7 @@ function runInPage(ctx) {
     if (hasContext) continue;
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
     occurrences.push({
       selector: stableSelector,
@@ -204,7 +229,11 @@ function runInPage(ctx) {
         params: { role, requiredRoles: requiredContext.join(', ') }
       },
       data: {
-        details: { reasonCode: 'ARIA_REQUIRED_PARENT_MISSING', role, requiredContextRoles: requiredContext }
+        details: {
+          reasonCode: 'ARIA_REQUIRED_PARENT_MISSING',
+          role,
+          requiredContextRoles: requiredContext
+        }
       }
     });
   }
@@ -213,7 +242,12 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'moderate', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'fail',
+      severity: rule.defaultSeverity || 'moderate',
+      occurrences
+    };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }

@@ -25,8 +25,9 @@ test('dom helpers cache: getAccessibleNameInfo memoizes label[for] lookup per el
   // document.querySelector('label[for]') is no longer reached on this path.
   let labelsGetterCalls = 0;
   const proto = window.HTMLInputElement.prototype;
-  const originalDescriptor = Object.getOwnPropertyDescriptor(proto, 'labels')
-    || Object.getOwnPropertyDescriptor(Object.getPrototypeOf(proto), 'labels');
+  const originalDescriptor =
+    Object.getOwnPropertyDescriptor(proto, 'labels') ||
+    Object.getOwnPropertyDescriptor(Object.getPrototypeOf(proto), 'labels');
   Object.defineProperty(proto, 'labels', {
     configurable: true,
     get() {
@@ -116,8 +117,9 @@ test('dom helpers cache: getLabelMethod memoizes per element', () => {
   // since querySelector is no longer called on this path.
   let labelsGetterCalls = 0;
   const proto = window.HTMLInputElement.prototype;
-  const originalDescriptor = Object.getOwnPropertyDescriptor(proto, 'labels')
-    || Object.getOwnPropertyDescriptor(Object.getPrototypeOf(proto), 'labels');
+  const originalDescriptor =
+    Object.getOwnPropertyDescriptor(proto, 'labels') ||
+    Object.getOwnPropertyDescriptor(Object.getPrototypeOf(proto), 'labels');
   Object.defineProperty(proto, 'labels', {
     configurable: true,
     get() {

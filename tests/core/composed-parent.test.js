@@ -38,7 +38,11 @@ test('composedParent: assignedSlot wins over parentNode for a connected slotted 
 
   const helpers = createDomHelpers({ window, document, root: document });
   const parent = helpers.composedParent(slotted);
-  assert.strictEqual(parent, slotted.assignedSlot, 'composedParent should follow the slot, not parentNode');
+  assert.strictEqual(
+    parent,
+    slotted.assignedSlot,
+    'composedParent should follow the slot, not parentNode'
+  );
   assert.strictEqual(parent.parentElement && parent.parentElement.id, 'wrap');
 });
 
@@ -55,11 +59,10 @@ test('composedParent: falls back to parentNode for a non-slotted element (no reg
   assert.strictEqual(helpers.composedParent(child), document.getElementById('parent'));
 });
 
-test('composedParent: falls back to the shadow host when a node has no parentNode/assignedSlot (a shadow root\'s own direct child)', () => {
-  const dom = new JSDOM(
-    `<!doctype html><html><body><div id="host"></div></body></html>`,
-    { pretendToBeVisual: true }
-  );
+test("composedParent: falls back to the shadow host when a node has no parentNode/assignedSlot (a shadow root's own direct child)", () => {
+  const dom = new JSDOM(`<!doctype html><html><body><div id="host"></div></body></html>`, {
+    pretendToBeVisual: true
+  });
   const { window } = dom;
   const { document } = window;
   const host = document.getElementById('host');

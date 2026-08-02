@@ -37,7 +37,8 @@ const id = 'listitem-parent-valid';
 
 const meta = {
   title: 'List items must be inside a list container',
-  description: 'Checks that <li> elements are contained by <ul>, <ol>, or an element with role="list".',
+  description:
+    'Checks that <li> elements are contained by <ul>, <ol>, or an element with role="list".',
   i18n: {
     titleKey: 'listitemParentValid_title',
     descriptionKey: 'listitemParentValid_description'
@@ -46,7 +47,13 @@ const meta = {
   tags: ['wcag2a', 'wcag131', 'structure', 'atomic', 'automatic', 'list'],
   wcagSc: ['1.3.1'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '1.3.1', title: 'Info and Relationships', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '1.3.1',
+      title: 'Info and Relationships',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'serious',
   category: 'perceivable',
@@ -87,7 +94,7 @@ function runInPage(ctx) {
     if (valid) continue;
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
     occurrences.push({
       selector: stableSelector,
@@ -109,7 +116,12 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'serious', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'fail',
+      severity: rule.defaultSeverity || 'serious',
+      occurrences
+    };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }

@@ -41,7 +41,9 @@ const path = require('path');
 const { JSDOM } = require('jsdom');
 const { runDomRulesInPage, runa11yCoreInPage } = require('../src/index.js');
 
-const fixturesIndex = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'index.json'), 'utf8'));
+const fixturesIndex = JSON.parse(
+  fs.readFileSync(path.join(__dirname, 'fixtures', 'index.json'), 'utf8')
+);
 
 function runViaEntryPoint(entryPointFn, html, ruleId) {
   const dom = new JSDOM(html, { url: 'https://example.test/', pretendToBeVisual: true });
@@ -67,9 +69,16 @@ for (const row of fixturesIndex.rows) {
     assert.ok(nodeCheck, `runDomRulesInPage produced no checksResults entry for ${row.ruleId}`);
     assert.ok(inPageCheck, `runa11yCoreInPage produced no checksResults entry for ${row.ruleId}`);
     assert.ok(!nodeCheck.error, `${row.ruleId} threw via runDomRulesInPage: ${nodeCheck.error}`);
-    assert.ok(!inPageCheck.error, `${row.ruleId} threw via runa11yCoreInPage: ${inPageCheck.error}`);
+    assert.ok(
+      !inPageCheck.error,
+      `${row.ruleId} threw via runa11yCoreInPage: ${inPageCheck.error}`
+    );
 
-    assert.strictEqual(nodeCheck.outcome, inPageCheck.outcome, `${row.ruleId}: outcome differs between entry points`);
+    assert.strictEqual(
+      nodeCheck.outcome,
+      inPageCheck.outcome,
+      `${row.ruleId}: outcome differs between entry points`
+    );
     assert.strictEqual(
       nodeCheck.occurrences.length,
       inPageCheck.occurrences.length,

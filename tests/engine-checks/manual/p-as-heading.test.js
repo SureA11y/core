@@ -11,7 +11,9 @@ const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 const RULE_ID = 'p-as-heading';
 
 function hasOccurrenceForId(rule, id) {
-  return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
+  return (rule.occurrences || []).some(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
 }
 
 test(`${RULE_ID}: notApplicable when there are no <p> elements`, () => {
@@ -34,7 +36,8 @@ test(`${RULE_ID}: cantTell when the paragraph is bold, heading-sized, and short`
 });
 
 test(`${RULE_ID}: notApplicable when the bold+large paragraph is too long`, () => {
-  const longText = 'This is a very long sentence that goes well beyond one hundred and twenty characters in total length to avoid being heading-like at all costs here.';
+  const longText =
+    'This is a very long sentence that goes well beyond one hundred and twenty characters in total length to avoid being heading-like at all costs here.';
   const html = `<!doctype html><html><head><style>p{font-weight:bold;font-size:22px;}</style></head><body><p>${longText}</p></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
@@ -44,7 +47,10 @@ test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><head><style>p{font-weight:bold;font-size:22px;}</style></head><body><p>Section Title</p></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1 });
-  assert.strictEqual(rule.title, 'A <p> styled to look like a heading should probably be a real heading');
+  assert.strictEqual(
+    rule.title,
+    'A <p> styled to look like a heading should probably be a real heading'
+  );
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/p-as-heading-all-scenarios.html)`, () => {

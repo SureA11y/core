@@ -52,7 +52,8 @@ const id = 'aria-checked-state-mismatch';
 
 const meta = {
   title: 'Native checkbox/radio aria-checked should match its actual state',
-  description: 'Flags a native <input type="checkbox">/<input type="radio"> whose explicit aria-checked value disagrees with its actual checked/indeterminate state, for manual review.',
+  description:
+    'Flags a native <input type="checkbox">/<input type="radio"> whose explicit aria-checked value disagrees with its actual checked/indeterminate state, for manual review.',
   i18n: {
     titleKey: 'ariaCheckedStateMismatch_title',
     descriptionKey: 'ariaCheckedStateMismatch_description'
@@ -61,7 +62,13 @@ const meta = {
   tags: ['wcag2a', 'wcag412', 'aria', 'forms', 'atomic', 'manual'],
   wcagSc: ['4.1.2'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '4.1.2', title: 'Name, Role, Value', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '4.1.2',
+      title: 'Name, Role, Value',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'moderate',
   category: 'robust',
@@ -73,10 +80,14 @@ const meta = {
 function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
-  function trim(v) { return (v == null ? '' : String(v)).trim(); }
+  function trim(v) {
+    return (v == null ? '' : String(v)).trim();
+  }
 
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('input[type="checkbox"][aria-checked], input[type="radio"][aria-checked]')
+    ? helpers.queryAllSmart(
+        'input[type="checkbox"][aria-checked], input[type="radio"][aria-checked]'
+      )
     : helpers.queryAll('input[type="checkbox"][aria-checked], input[type="radio"][aria-checked]');
 
   const occurrences = [];
@@ -97,9 +108,10 @@ function runInPage(ctx) {
 
     let normalizedAriaChecked;
     if (isCheckbox) {
-      normalizedAriaChecked = (rawAriaChecked === 'mixed' || rawAriaChecked === 'true') ? rawAriaChecked : 'false';
+      normalizedAriaChecked =
+        rawAriaChecked === 'mixed' || rawAriaChecked === 'true' ? rawAriaChecked : 'false';
     } else {
-      normalizedAriaChecked = (rawAriaChecked === 'true') ? 'true' : 'false';
+      normalizedAriaChecked = rawAriaChecked === 'true' ? 'true' : 'false';
     }
 
     let actualState;
@@ -112,12 +124,13 @@ function runInPage(ctx) {
     if (normalizedAriaChecked === actualState) continue;
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
     occurrences.push({
       selector: stableSelector,
       html,
-      summary: 'This element’s aria-checked value does not match its actual checked/indeterminate state.',
+      summary:
+        'This element’s aria-checked value does not match its actual checked/indeterminate state.',
       hint: 'Set aria-checked to match the element’s real state, or remove it — a native checkbox/radio already exposes this state without it.',
       i18n: {
         summaryKey: 'ariaCheckedStateMismatch_summary_cantTell',
@@ -125,7 +138,12 @@ function runInPage(ctx) {
         params: { ariaChecked: normalizedAriaChecked, actualState, type }
       },
       data: {
-        details: { reasonCode: 'ARIA_CHECKED_STATE_MISMATCH', ariaChecked: normalizedAriaChecked, actualState, type }
+        details: {
+          reasonCode: 'ARIA_CHECKED_STATE_MISMATCH',
+          ariaChecked: normalizedAriaChecked,
+          actualState,
+          type
+        }
       }
     });
   }
@@ -134,7 +152,12 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'cantTell', severity: rule.defaultSeverity || 'moderate', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'moderate',
+      occurrences
+    };
   }
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }

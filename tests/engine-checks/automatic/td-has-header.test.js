@@ -11,7 +11,9 @@ const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 const RULE_ID = 'td-has-header';
 
 function hasOccurrenceUnderTableId(rule, tableId) {
-  return (rule.occurrences || []).some((o) => typeof o.selector === 'string' && o.selector.includes(`#${tableId}`));
+  return (rule.occurrences || []).some(
+    (o) => typeof o.selector === 'string' && o.selector.includes(`#${tableId}`)
+  );
 }
 
 const TABLE_4X4_NO_HEADERS = `
@@ -91,6 +93,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/td-has-header-all-scenarios.h
     assert.ok(hasOccurrenceUnderTableId(rule, id), `Expected an occurrence under table id="${id}"`);
   }
   for (const id of expectedNoOccIds) {
-    assert.ok(!hasOccurrenceUnderTableId(rule, id), `Did not expect an occurrence under table id="${id}"`);
+    assert.ok(
+      !hasOccurrenceUnderTableId(rule, id),
+      `Did not expect an occurrence under table id="${id}"`
+    );
   }
 });

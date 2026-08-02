@@ -42,7 +42,13 @@ const meta = {
   tags: ['wcag2a', 'wcag412', 'aria', 'structure', 'atomic', 'automatic'],
   wcagSc: ['4.1.2'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '4.1.2', title: 'Name, Role, Value', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '4.1.2',
+      title: 'Name, Role, Value',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'serious',
   category: 'robust',
@@ -54,7 +60,9 @@ const meta = {
 function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
-  function trim(v) { return (v == null ? '' : String(v)).trim(); }
+  function trim(v) {
+    return (v == null ? '' : String(v)).trim();
+  }
 
   function getConservativeSubtreeText(container) {
     // "Name from content" — recurses into descendants and uses each one's
@@ -68,7 +76,7 @@ function runInPage(ctx) {
       const info = helpers.getContentNameInfo(container, ctx);
       return info && info.present ? info.value : '';
     }
-    const t = (container && container.textContent) ? String(container.textContent) : '';
+    const t = container && container.textContent ? String(container.textContent) : '';
     return t.replace(/\s+/g, ' ').trim();
   }
 
@@ -91,21 +99,26 @@ function runInPage(ctx) {
     const missing = [];
 
     if (brailleLabel) {
-      const nameInfo = helpers.getAccessibleNameInfo ? helpers.getAccessibleNameInfo(el, ctx) : null;
-      const programmaticName = trim(nameInfo && typeof nameInfo.value === 'string' ? nameInfo.value : '');
+      const nameInfo = helpers.getAccessibleNameInfo
+        ? helpers.getAccessibleNameInfo(el, ctx)
+        : null;
+      const programmaticName = trim(
+        nameInfo && typeof nameInfo.value === 'string' ? nameInfo.value : ''
+      );
       const name = programmaticName || getConservativeSubtreeText(el);
       if (!name) missing.push({ attr: 'aria-braillelabel', requires: 'an accessible name' });
     }
 
     if (brailleRoleDesc) {
       const roleDesc = trim(el.getAttribute('aria-roledescription'));
-      if (!roleDesc) missing.push({ attr: 'aria-brailleroledescription', requires: 'aria-roledescription' });
+      if (!roleDesc)
+        missing.push({ attr: 'aria-brailleroledescription', requires: 'aria-roledescription' });
     }
 
     if (!missing.length) continue;
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
     const tag = (el.tagName || '').toLowerCase();
 
     for (const m of missing) {
@@ -120,7 +133,11 @@ function runInPage(ctx) {
           params: { element: tag, attr: m.attr, requires: m.requires }
         },
         data: {
-          details: { reasonCode: 'BRAILLE_ATTR_WITHOUT_EQUIVALENT', attr: m.attr, requires: m.requires }
+          details: {
+            reasonCode: 'BRAILLE_ATTR_WITHOUT_EQUIVALENT',
+            attr: m.attr,
+            requires: m.requires
+          }
         }
       });
     }
@@ -130,7 +147,12 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'serious', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'fail',
+      severity: rule.defaultSeverity || 'serious',
+      occurrences
+    };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }

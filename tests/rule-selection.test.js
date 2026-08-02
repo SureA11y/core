@@ -10,7 +10,7 @@ function loadCore() {
   const candidates = [
     path.join(__dirname, '..', 'src', 'core.js'),
     path.join(process.cwd(), 'src', 'core.js'),
-    path.join(process.cwd(), 'dist', 'core.js'),
+    path.join(process.cwd(), 'dist', 'core.js')
   ];
   for (const p of candidates) {
     if (fs.existsSync(p)) return require(p);
@@ -22,7 +22,10 @@ function uniq(arr) {
   const seen = new Set();
   const out = [];
   for (const x of arr) {
-    if (!seen.has(x)) { seen.add(x); out.push(x); }
+    if (!seen.has(x)) {
+      seen.add(x);
+      out.push(x);
+    }
   }
   return out;
 }
@@ -30,12 +33,18 @@ function uniq(arr) {
 function parseCommaString(s, { lower = false } = {}) {
   if (s == null) return [];
   if (Array.isArray(s)) {
-    const vals = s.map(String).map((x) => x.trim()).filter(Boolean);
-    return uniq((lower ? vals.map((x) => x.toLowerCase()) : vals));
+    const vals = s
+      .map(String)
+      .map((x) => x.trim())
+      .filter(Boolean);
+    return uniq(lower ? vals.map((x) => x.toLowerCase()) : vals);
   }
   if (typeof s !== 'string') return [];
-  const vals = s.split(',').map((x) => String(x).trim()).filter(Boolean);
-  return uniq((lower ? vals.map((x) => x.toLowerCase()) : vals));
+  const vals = s
+    .split(',')
+    .map((x) => String(x).trim())
+    .filter(Boolean);
+  return uniq(lower ? vals.map((x) => x.toLowerCase()) : vals);
 }
 
 function normalizeIncludeMode(mode) {
@@ -97,10 +106,10 @@ function referenceSelectedRuleIds(core, engineOptions, runOnly) {
       excludeRuleIds = parseCommaString(runOnly && runOnly.excludeRuleIds, { lower: false });
     }
   } else {
-    const eo = (engineOptions && typeof engineOptions === 'object') ? engineOptions : {};
+    const eo = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
     includeMode = normalizeIncludeMode(eo.includeMode);
-    const rules = (eo.rules && typeof eo.rules === 'object') ? eo.rules : null;
-    const tags = (eo.tags && typeof eo.tags === 'object') ? eo.tags : null;
+    const rules = eo.rules && typeof eo.rules === 'object' ? eo.rules : null;
+    const tags = eo.tags && typeof eo.tags === 'object' ? eo.tags : null;
     includeRuleIds = parseCommaString(rules && rules.include, { lower: false });
     excludeRuleIds = parseCommaString(rules && rules.exclude, { lower: false });
     includeTags = parseCommaString(tags && tags.include, { lower: true });
@@ -187,13 +196,13 @@ function findSharedNonUniversalTag(defs, tagIndex) {
   // so we can pick both a rule-with-tag and a rule-without-tag deterministically.
   const total = defs.length;
   const entries = [...tagIndex.entries()]
-      .filter(([, ids]) => ids.length >= 2 && ids.length < total)
-      .sort((a, b) => {
-        // deterministic: prefer rarer tags first, then lexicographic
-        const da = a[1].length - b[1].length;
-        if (da !== 0) return da;
-        return String(a[0]).localeCompare(String(b[0]));
-      });
+    .filter(([, ids]) => ids.length >= 2 && ids.length < total)
+    .sort((a, b) => {
+      // deterministic: prefer rarer tags first, then lexicographic
+      const da = a[1].length - b[1].length;
+      if (da !== 0) return da;
+      return String(a[0]).localeCompare(String(b[0]));
+    });
   return entries.length ? entries[0] : null;
 }
 
@@ -279,7 +288,9 @@ test('rule selection: includeMode=and (default) => intersection between checks.i
   const [tag, idsWithTag] = picked;
 
   const idWith = idsWithTag[0];
-  const idWithout = defs.find((d) => d.ruleId !== idWith && !(d.tags || []).map((t) => String(t).toLowerCase()).includes(tag))?.ruleId;
+  const idWithout = defs.find(
+    (d) => d.ruleId !== idWith && !(d.tags || []).map((t) => String(t).toLowerCase()).includes(tag)
+  )?.ruleId;
   assert.ok(idWithout, 'expected a rule that does not have the chosen tag');
 
   const engineOptions = {
@@ -305,7 +316,9 @@ test('rule selection: includeMode=or => union between checks.include and tags.in
   const [tag, idsWithTag] = picked;
 
   const idWith = idsWithTag[0];
-  const idWithout = defs.find((d) => d.ruleId !== idWith && !(d.tags || []).map((t) => String(t).toLowerCase()).includes(tag))?.ruleId;
+  const idWithout = defs.find(
+    (d) => d.ruleId !== idWith && !(d.tags || []).map((t) => String(t).toLowerCase()).includes(tag)
+  )?.ruleId;
   assert.ok(idWithout, 'expected a rule that does not have the chosen tag');
 
   const engineOptions = {
@@ -318,7 +331,8 @@ test('rule selection: includeMode=or => union between checks.include and tags.in
   const got = gotSelectedRuleIds(core, undefined, engineOptions);
   // union should include all tag-matching ids + idWithout
   assert.ok(got.includes(idWithout), 'expected explicit included ruleId to be included under OR');
-  for (const id of idsWithTag) assert.ok(got.includes(id), `expected ${id} to be included by tag ${tag}`);
+  for (const id of idsWithTag)
+    assert.ok(got.includes(id), `expected ${id} to be included by tag ${tag}`);
 });
 
 test('rule selection: excludes always win (even under includeMode=or)', () => {
@@ -334,7 +348,7 @@ test('rule selection: excludes always win (even under includeMode=or)', () => {
     includeMode: 'or',
     tags: { include: `${tag}` },
     // exclude the victim explicitly
-    rules: { include: `${idVictim}`, exclude: `${idVictim}` },
+    rules: { include: `${idVictim}`, exclude: `${idVictim}` }
   };
 
   assertSelection(core, 'excludes win under OR', engineOptions, undefined);
@@ -346,7 +360,10 @@ test('rule selection: legacy ruleId prefix matching (a11ycore--prefixed id match
   const ENGINE_TAG = core.ENGINE_TAG || 'a11ycore';
   const any = core.CHECK_DEFS.find((d) => typeof d.ruleId === 'string' && d.ruleId.length > 0);
   assert.ok(any, 'expected at least one ruleId');
-  assert.ok(!any.ruleId.startsWith(ENGINE_TAG + '-'), 'canonical ruleId should be bare, not engine-prefixed');
+  assert.ok(
+    !any.ruleId.startsWith(ENGINE_TAG + '-'),
+    'canonical ruleId should be bare, not engine-prefixed'
+  );
 
   const legacyPrefixed = `${ENGINE_TAG}-${any.ruleId}`;
   const engineOptions = { rules: { include: `${legacyPrefixed}` } };
@@ -410,9 +427,9 @@ test('rule selection: generated combinations against reference selector', () => 
   // Choose deterministic subset of tags:
   // - those shared by >=2 checks (more interesting)
   const sharedTags = [...tagIndex.entries()]
-      .filter(([, ruleIds]) => ruleIds.length >= 2)
-      .map(([t]) => t)
-      .sort();
+    .filter(([, ruleIds]) => ruleIds.length >= 2)
+    .map(([t]) => t)
+    .sort();
 
   const tagsSample = sharedTags.slice(0, Math.min(6, sharedTags.length));
 
@@ -433,22 +450,26 @@ test('rule selection: generated combinations against reference selector', () => 
       cases.push({
         name: `engineOptions includeMode=${mode} rules.include=${incId}`,
         engineOptions: { includeMode: mode, rules: { include: incId } },
-        runOnly: undefined,
+        runOnly: undefined
       });
     }
     for (const incTag of tagsSample) {
       cases.push({
         name: `engineOptions includeMode=${mode} tags.include=${incTag}`,
         engineOptions: { includeMode: mode, tags: { include: incTag } },
-        runOnly: undefined,
+        runOnly: undefined
       });
     }
     for (const incId of idsSample) {
       for (const incTag of tagsSample) {
         cases.push({
           name: `engineOptions includeMode=${mode} rules.include=${incId} + tags.include=${incTag}`,
-          engineOptions: { includeMode: mode, rules: { include: incId }, tags: { include: incTag } },
-          runOnly: undefined,
+          engineOptions: {
+            includeMode: mode,
+            rules: { include: incId },
+            tags: { include: incTag }
+          },
+          runOnly: undefined
         });
       }
     }
@@ -460,7 +481,7 @@ test('rule selection: generated combinations against reference selector', () => 
       cases.push({
         name: `engineOptions rules.include=${incId} rules.exclude=${excId}`,
         engineOptions: { rules: { include: incId, exclude: excId } },
-        runOnly: undefined,
+        runOnly: undefined
       });
     }
   }
@@ -469,7 +490,7 @@ test('rule selection: generated combinations against reference selector', () => 
       cases.push({
         name: `engineOptions tags.include=${incTag} tags.exclude=${excTag}`,
         engineOptions: { tags: { include: incTag, exclude: excTag } },
-        runOnly: undefined,
+        runOnly: undefined
       });
     }
   }
@@ -479,13 +500,17 @@ test('rule selection: generated combinations against reference selector', () => 
     for (const incTag of tagsSample) {
       cases.push({
         name: `runOnly includeRuleIds+tags (and) ${incId}+${incTag}`,
-        engineOptions: { includeMode: 'or', rules: { include: idsSample[0] }, tags: { include: tagsSample[0] } },
-        runOnly: { includeRuleIds: [incId], tags: [incTag] }, // should ignore engineOptions
+        engineOptions: {
+          includeMode: 'or',
+          rules: { include: idsSample[0] },
+          tags: { include: tagsSample[0] }
+        },
+        runOnly: { includeRuleIds: [incId], tags: [incTag] } // should ignore engineOptions
       });
       cases.push({
         name: `runOnly includeMode=or includeRuleIds+tags ${incId}+${incTag}`,
         engineOptions: {},
-        runOnly: { includeMode: 'or', includeRuleIds: [incId], tags: [incTag] },
+        runOnly: { includeMode: 'or', includeRuleIds: [incId], tags: [incTag] }
       });
     }
   }

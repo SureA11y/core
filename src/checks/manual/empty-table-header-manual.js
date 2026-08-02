@@ -46,7 +46,8 @@ const id = 'empty-table-header';
 
 const meta = {
   title: 'Table header cells must not be empty',
-  description: 'Checks that table header cells (<th>, or any element with role="columnheader"/"rowheader") have visible text content — a header named only via aria-label/aria-labelledby is also flagged, since real screen-reader/browser support for that is inconsistent.',
+  description:
+    'Checks that table header cells (<th>, or any element with role="columnheader"/"rowheader") have visible text content — a header named only via aria-label/aria-labelledby is also flagged, since real screen-reader/browser support for that is inconsistent.',
   i18n: {
     titleKey: 'emptyTableHeader_title',
     descriptionKey: 'emptyTableHeader_description'
@@ -66,7 +67,9 @@ function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
   function normalizeWs(s) {
-    return String(s || '').replace(/\s+/g, ' ').trim();
+    return String(s || '')
+      .replace(/\s+/g, ' ')
+      .trim();
   }
 
   function getVisibleText(el) {
@@ -98,7 +101,9 @@ function runInPage(ctx) {
   // no conflicting explicit role, plus any element carrying an explicit
   // columnheader/rowheader role (native or not).
   const selector = 'th:not([role]), [role="columnheader"], [role="rowheader"]';
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart(selector)
+    : helpers.queryAll(selector);
 
   const occurrences = [];
   let applicableCount = 0;
@@ -110,14 +115,15 @@ function runInPage(ctx) {
     if (getVisibleText(el)) continue;
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
     const ariaName = getAriaOnlyName(el);
     if (ariaName) {
       occurrences.push({
         selector: stableSelector,
         html,
-        summary: 'This table header cell has no visible text — its only accessible name comes from aria-label/aria-labelledby, which real screen-reader/browser combinations (e.g. NVDA+Firefox, iOS VoiceOver+Safari) are known to ignore on <th> elements.',
+        summary:
+          'This table header cell has no visible text — its only accessible name comes from aria-label/aria-labelledby, which real screen-reader/browser combinations (e.g. NVDA+Firefox, iOS VoiceOver+Safari) are known to ignore on <th> elements.',
         hint: 'Add visible text content to this header cell (in addition to, or instead of, aria-label/aria-labelledby) — visible text is the only naming mechanism confirmed to work across tested screen readers.',
         i18n: {
           summaryKey: 'emptyTableHeader_summary_cantTell_ariaOnly',
@@ -151,7 +157,12 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'cantTell', severity: rule.defaultSeverity || 'minor', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'minor',
+      occurrences
+    };
   }
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }

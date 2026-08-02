@@ -11,7 +11,9 @@ const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 const RULE_ID = 'canvas-text-alternative-present';
 
 function hasOccurrenceForId(rule, id) {
-  return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
+  return (rule.occurrences || []).some(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
 }
 
 test(`${RULE_ID}: notApplicable when no <canvas>`, () => {
@@ -101,7 +103,12 @@ test(`${RULE_ID}: inert subtree is ineligible and does not cause pass (=> notApp
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/canvas-text-alternative-present-all-scenarios.html)`, () => {
-  const fixturePath = path.join(__dirname, '../..', 'fixtures', 'canvas-text-alternative-present-all-scenarios.html');
+  const fixturePath = path.join(
+    __dirname,
+    '../..',
+    'fixtures',
+    'canvas-text-alternative-present-all-scenarios.html'
+  );
   const html = fs.readFileSync(fixturePath, 'utf8');
 
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
@@ -119,7 +126,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/canvas-text-alternative-prese
     'canvas_case_13',
     'canvas_case_20',
     'canvas_case_21',
-    'canvas_case_23'  // descendant img[alt=""] is empty, not meaningful fallback
+    'canvas_case_23' // descendant img[alt=""] is empty, not meaningful fallback
   ];
 
   const expectedNoOccIds = [
@@ -138,7 +145,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/canvas-text-alternative-prese
     'canvas_case_19', // visibility:hidden ineligible
     'canvas_case_22', // descendant img[alt] non-empty => meaningful fallback
     'canvas_case_24', // descendant area[alt] non-empty => meaningful fallback
-    'canvas_case_25'  // descendant [aria-label] non-empty => meaningful fallback
+    'canvas_case_25' // descendant [aria-label] non-empty => meaningful fallback
   ];
 
   for (const id of expectedFailIds) {
@@ -149,7 +156,10 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/canvas-text-alternative-prese
   }
 
   for (const occ of rule.occurrences) {
-    assert.ok(typeof occ.summary === 'string' && occ.summary.includes('<canvas>'), 'Expected <canvas> in occurrence.summary');
+    assert.ok(
+      typeof occ.summary === 'string' && occ.summary.includes('<canvas>'),
+      'Expected <canvas> in occurrence.summary'
+    );
   }
 });
 

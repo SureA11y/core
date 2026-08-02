@@ -23,7 +23,8 @@ const id = 'dlitem-parent-valid';
 
 const meta = {
   title: 'Description-list items must be inside a description list',
-  description: 'Checks that <dt>/<dd> elements are contained by a <dl>, directly or via one wrapping <div>.',
+  description:
+    'Checks that <dt>/<dd> elements are contained by a <dl>, directly or via one wrapping <div>.',
   i18n: {
     titleKey: 'dlitemParentValid_title',
     descriptionKey: 'dlitemParentValid_description'
@@ -32,7 +33,13 @@ const meta = {
   tags: ['wcag2a', 'wcag131', 'structure', 'atomic', 'automatic', 'list'],
   wcagSc: ['1.3.1'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '1.3.1', title: 'Info and Relationships', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '1.3.1',
+      title: 'Info and Relationships',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'serious',
   category: 'perceivable',
@@ -44,7 +51,9 @@ const meta = {
 function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('dt, dd') : helpers.queryAll('dt, dd');
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart('dt, dd')
+    : helpers.queryAll('dt, dd');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -61,7 +70,8 @@ function runInPage(ctx) {
 
     if (!valid && parentTag === 'div') {
       const grandparent = parent.parentElement;
-      const grandparentTag = grandparent && grandparent.tagName ? grandparent.tagName.toLowerCase() : '';
+      const grandparentTag =
+        grandparent && grandparent.tagName ? grandparent.tagName.toLowerCase() : '';
       valid = grandparentTag === 'dl';
     }
 
@@ -69,7 +79,7 @@ function runInPage(ctx) {
 
     const tag = el.tagName.toLowerCase();
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
     occurrences.push({
       selector: stableSelector,
@@ -91,7 +101,12 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'serious', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'fail',
+      severity: rule.defaultSeverity || 'serious',
+      occurrences
+    };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }

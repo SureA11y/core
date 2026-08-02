@@ -50,7 +50,8 @@ const id = 'aria-required-attr';
 
 const meta = {
   title: 'Roles with a required ARIA state/property must carry it',
-  description: 'Checks that elements with an explicit role carry every unambiguous, context-independent required aria-* state/property for that role (e.g. role="checkbox" must have aria-checked).',
+  description:
+    'Checks that elements with an explicit role carry every unambiguous, context-independent required aria-* state/property for that role (e.g. role="checkbox" must have aria-checked).',
   i18n: {
     titleKey: 'ariaRequiredAttr_title',
     descriptionKey: 'ariaRequiredAttr_description'
@@ -59,7 +60,13 @@ const meta = {
   tags: ['wcag2a', 'wcag412', 'aria', 'structure', 'atomic', 'automatic'],
   wcagSc: ['4.1.2'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '4.1.2', title: 'Name, Role, Value', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '4.1.2',
+      title: 'Name, Role, Value',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'serious',
   category: 'robust',
@@ -77,7 +84,8 @@ function runInPage(ctx) {
   }
 
   function isEligibleAcc(el) {
-    const fn = helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+    const fn =
+      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -93,7 +101,9 @@ function runInPage(ctx) {
     return v != null && String(v).trim().toLowerCase() === 'true';
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]') : helpers.queryAll('[role]');
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart('[role]')
+    : helpers.queryAll('[role]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -121,7 +131,7 @@ function runInPage(ctx) {
     if (!missing.length) continue;
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
     for (const attr of missing) {
       occurrences.push({
@@ -145,7 +155,12 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'serious', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'fail',
+      severity: rule.defaultSeverity || 'serious',
+      occurrences
+    };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }

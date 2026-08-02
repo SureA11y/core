@@ -34,8 +34,10 @@ const ROOT_DIR = path.join(__dirname, '..');
 const CORE_FILE = path.join(ROOT_DIR, 'src', 'core.js');
 const OUTPUT_FILE = path.join(ROOT_DIR, 'surea11y.browser.js');
 
-const IN_PAGE_START_MARKER = 'function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {';
-const CROSS_FRAME_BANNER = '// SELF-CONTAINED cross-frame scanning for the "plain script injection"';
+const IN_PAGE_START_MARKER =
+  'function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {';
+const CROSS_FRAME_BANNER =
+  '// SELF-CONTAINED cross-frame scanning for the "plain script injection"';
 
 function extractInPageRunnerSource(coreSource) {
   const start = coreSource.indexOf(IN_PAGE_START_MARKER);
@@ -44,9 +46,13 @@ function extractInPageRunnerSource(coreSource) {
   if (start === -1 || end === -1 || end <= start) {
     throw new Error(
       'build-browser: could not locate runa11yCoreInPage in src/core.js -- ' +
-      'has scripts/build-core.js\'s generated output shape changed? ' +
-      'Expected to find both a literal "' + IN_PAGE_START_MARKER + '" and a ' +
-      'later "' + CROSS_FRAME_BANNER + '" marker comment.'
+        "has scripts/build-core.js's generated output shape changed? " +
+        'Expected to find both a literal "' +
+        IN_PAGE_START_MARKER +
+        '" and a ' +
+        'later "' +
+        CROSS_FRAME_BANNER +
+        '" marker comment.'
     );
   }
 
@@ -104,7 +110,9 @@ function main() {
 
   fs.writeFileSync(OUTPUT_FILE, bundle, 'utf8');
   // eslint-disable-next-line no-console
-  console.log(`[build-browser] wrote ${path.relative(ROOT_DIR, OUTPUT_FILE)} (${(bundle.length / 1024).toFixed(0)} KB)`);
+  console.log(
+    `[build-browser] wrote ${path.relative(ROOT_DIR, OUTPUT_FILE)} (${(bundle.length / 1024).toFixed(0)} KB)`
+  );
 }
 
 module.exports = { extractInPageRunnerSource, readEngineConstants, generateBrowserBundle };

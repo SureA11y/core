@@ -24,7 +24,8 @@ const id = 'aria-hidden-body';
 
 const meta = {
   title: 'The document <body> must not be aria-hidden',
-  description: 'Checks that <body> does not have aria-hidden="true", which would remove the entire page from the accessibility tree.',
+  description:
+    'Checks that <body> does not have aria-hidden="true", which would remove the entire page from the accessibility tree.',
   i18n: {
     titleKey: 'ariaHiddenBody_title',
     descriptionKey: 'ariaHiddenBody_description'
@@ -33,8 +34,20 @@ const meta = {
   tags: ['wcag2a', 'wcag131', 'wcag412', 'structure', 'atomic', 'automatic'],
   wcagSc: ['1.3.1', '4.1.2'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '1.3.1', title: 'Info and Relationships', conformanceLevel: 'A' },
-    { standard: 'WCAG', version: '2.2', requirement: '4.1.2', title: 'Name, Role, Value', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '1.3.1',
+      title: 'Info and Relationships',
+      conformanceLevel: 'A'
+    },
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '4.1.2',
+      title: 'Name, Role, Value',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'critical',
   category: 'perceivable',
@@ -72,24 +85,34 @@ function runInPage(ctx) {
   }
 
   const stableSelector = helpers.buildSelector ? helpers.buildSelector(body) : 'body';
-  const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(body) : (body.outerHTML || '').slice(0, 200);
+  const html = helpers.getOuterHtmlSnippet
+    ? helpers.getOuterHtmlSnippet(body)
+    : (body.outerHTML || '').slice(0, 200);
 
-  const occurrences = [{
-    selector: stableSelector,
-    html,
-    summary: 'The document body has aria-hidden="true", which hides the entire page from assistive technologies.',
-    hint: 'Remove aria-hidden from <body>. Hide specific elements instead, if that was the intent.',
-    i18n: {
-      summaryKey: 'ariaHiddenBody_summary_fail',
-      hintKey: 'ariaHiddenBody_hint_fail',
-      params: {}
-    },
-    data: {
-      details: { reasonCode: 'ARIA_HIDDEN_BODY' }
+  const occurrences = [
+    {
+      selector: stableSelector,
+      html,
+      summary:
+        'The document body has aria-hidden="true", which hides the entire page from assistive technologies.',
+      hint: 'Remove aria-hidden from <body>. Hide specific elements instead, if that was the intent.',
+      i18n: {
+        summaryKey: 'ariaHiddenBody_summary_fail',
+        hintKey: 'ariaHiddenBody_hint_fail',
+        params: {}
+      },
+      data: {
+        details: { reasonCode: 'ARIA_HIDDEN_BODY' }
+      }
     }
-  }];
+  ];
 
-  return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'critical', occurrences };
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'fail',
+    severity: rule.defaultSeverity || 'critical',
+    occurrences
+  };
 }
 
 module.exports = { id, meta, runInPage, applicability };

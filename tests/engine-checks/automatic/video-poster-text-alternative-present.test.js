@@ -11,7 +11,9 @@ const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 const RULE_ID = 'video-poster-text-alternative-present';
 
 function hasOccurrenceForId(rule, id) {
-  return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
+  return (rule.occurrences || []).some(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
 }
 
 test(`${RULE_ID}: notApplicable when no <video poster>`, () => {
@@ -93,7 +95,12 @@ test(`${RULE_ID}: inert subtree is ineligible and does not cause pass (=> notApp
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/video-poster-text-alternative-present-all-scenarios.html)`, () => {
-  const fixturePath = path.join(__dirname, '../..', 'fixtures', 'video-poster-text-alternative-present-all-scenarios.html');
+  const fixturePath = path.join(
+    __dirname,
+    '../..',
+    'fixtures',
+    'video-poster-text-alternative-present-all-scenarios.html'
+  );
   const html = fs.readFileSync(fixturePath, 'utf8');
 
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
@@ -108,7 +115,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/video-poster-text-alternative
     'video_case_03',
     'video_case_05',
     'video_case_07',
-    'video_case_12'  // IDREF-referenced aria-hidden video is eligible but unnamed
+    'video_case_12' // IDREF-referenced aria-hidden video is eligible but unnamed
   ];
   const expectedNoOccIds = [
     'video_case_02',
@@ -116,15 +123,20 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/video-poster-text-alternative
     'video_case_06',
     'video_case_08',
     'video_case_09',
-    'video_case_10',  // aria-labelledby provides name
-    'video_case_11'   // title attribute provides name
+    'video_case_10', // aria-labelledby provides name
+    'video_case_11' // title attribute provides name
   ];
 
-  for (const id of expectedFailIds) assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);
-  for (const id of expectedNoOccIds) assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
+  for (const id of expectedFailIds)
+    assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);
+  for (const id of expectedNoOccIds)
+    assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
 
   for (const occ of rule.occurrences) {
-    assert.ok(typeof occ.summary === 'string' && occ.summary.includes('<video>'), 'Expected <video> in occurrence.summary');
+    assert.ok(
+      typeof occ.summary === 'string' && occ.summary.includes('<video>'),
+      'Expected <video> in occurrence.summary'
+    );
   }
 });
 
@@ -140,7 +152,10 @@ test(`${RULE_ID}: i18n (fr) rule title/description are localized`, () => {
   );
 
   const occ = rule.occurrences[0];
-  assert.strictEqual(occ.summary, 'Alternative textuelle manquante pour l’image poster de <video>.');
+  assert.strictEqual(
+    occ.summary,
+    'Alternative textuelle manquante pour l’image poster de <video>.'
+  );
   assert.strictEqual(
     occ.hint,
     'Fournissez un nom accessible pour l’image poster (aria-label/aria-labelledby de préférence, ou un attribut title comme solution de repli).'

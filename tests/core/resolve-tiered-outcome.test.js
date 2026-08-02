@@ -61,6 +61,10 @@ test('resolveTieredOutcome: both fail and cantTell occurrences => outcome is fai
 
 test('resolveTieredOutcome: non-array inputs are treated as empty, never throw', () => {
   const helpers = getHelpers();
-  assert.deepStrictEqual(helpers.resolveTieredOutcome(null, undefined, 'minor'), { outcome: 'pass', severity: 'minor', occurrences: [] });
+  assert.deepStrictEqual(helpers.resolveTieredOutcome(null, undefined, 'minor'), {
+    outcome: 'pass',
+    severity: 'minor',
+    occurrences: []
+  });
   assert.doesNotThrow(() => helpers.resolveTieredOutcome(undefined, [{ id: 'c1' }], 'minor'));
 });

@@ -14,14 +14,17 @@
 function normalizeRuleMeta(ruleId, id, meta, engineTag) {
   function normalizeStringArray(value) {
     if (!Array.isArray(value)) return [];
-    return value.map(String).map((s) => s.trim()).filter(Boolean);
+    return value
+      .map(String)
+      .map((s) => s.trim())
+      .filter(Boolean);
   }
 
   function normalizeObjectArray(value) {
     if (!Array.isArray(value)) return [];
     return value
-        .filter((v) => v && typeof v === 'object' && !Array.isArray(v))
-        .map((v) => ({ ...v }));
+      .filter((v) => v && typeof v === 'object' && !Array.isArray(v))
+      .map((v) => ({ ...v }));
   }
 
   function deriveWcagScFromNormativeMappings(normativeMappings) {
@@ -36,15 +39,14 @@ function normalizeRuleMeta(ruleId, id, meta, engineTag) {
     return Array.from(out).sort();
   }
 
-  const m = (meta && typeof meta === 'object') ? meta : {};
+  const m = meta && typeof meta === 'object' ? meta : {};
 
-  const title = (typeof m.title === 'string' && m.title.trim()) ? m.title.trim() : id;
-  const description = (typeof m.description === 'string') ? m.description : '';
-  const helpUrl = (typeof m.helpUrl === 'string') ? m.helpUrl : '';
+  const title = typeof m.title === 'string' && m.title.trim() ? m.title.trim() : id;
+  const description = typeof m.description === 'string' ? m.description : '';
+  const helpUrl = typeof m.helpUrl === 'string' ? m.helpUrl : '';
 
-  const i18n = (m.i18n && typeof m.i18n === 'object' && !Array.isArray(m.i18n))
-      ? { ...m.i18n }
-      : null;
+  const i18n =
+    m.i18n && typeof m.i18n === 'object' && !Array.isArray(m.i18n) ? { ...m.i18n } : null;
 
   const tags = normalizeStringArray(m.tags).map((t) => t.toLowerCase());
   if (!tags.includes(engineTag)) tags.push(engineTag);
@@ -53,62 +55,77 @@ function normalizeRuleMeta(ruleId, id, meta, engineTag) {
   const wcagSc = deriveWcagScFromNormativeMappings(normativeMappings);
   const informativeReferences = normalizeObjectArray(m.informativeReferences);
 
-  const defaultSeverity = (typeof m.defaultSeverity === 'string' && m.defaultSeverity.trim())
+  const defaultSeverity =
+    typeof m.defaultSeverity === 'string' && m.defaultSeverity.trim()
       ? m.defaultSeverity.trim()
       : 'moderate';
 
-  const defaultConfidence = (typeof m.defaultConfidence === 'string' && m.defaultConfidence.trim())
+  const defaultConfidence =
+    typeof m.defaultConfidence === 'string' && m.defaultConfidence.trim()
       ? m.defaultConfidence.trim()
       : 'medium';
 
-  const type = (m.type === 'manual' || m.type === 'automatic')
-      ? m.type
-      : 'automatic';
+  const type = m.type === 'manual' || m.type === 'automatic' ? m.type : 'automatic';
 
-  const coverage = (m.coverage === null || typeof m.coverage === 'string' || typeof m.coverage === 'object')
+  const coverage =
+    m.coverage === null || typeof m.coverage === 'string' || typeof m.coverage === 'object'
       ? m.coverage
       : null;
 
-  const ruleInterfaceVersion = (typeof m.ruleInterfaceVersion === 'string' && m.ruleInterfaceVersion.trim())
+  const ruleInterfaceVersion =
+    typeof m.ruleInterfaceVersion === 'string' && m.ruleInterfaceVersion.trim()
       ? m.ruleInterfaceVersion.trim()
       : '1.0.0';
 
-  const ruleVersion = (typeof m.ruleVersion === 'string' && m.ruleVersion.trim())
-      ? m.ruleVersion.trim()
-      : '0.0.0';
+  const ruleVersion =
+    typeof m.ruleVersion === 'string' && m.ruleVersion.trim() ? m.ruleVersion.trim() : '0.0.0';
 
-  const normative = (typeof m.normative === 'boolean') ? m.normative : true;
-  const atomic = (typeof m.atomic === 'boolean') ? m.atomic : true;
+  const normative = typeof m.normative === 'boolean' ? m.normative : true;
+  const atomic = typeof m.atomic === 'boolean' ? m.atomic : true;
 
   // Deprecation signal for the rule catalog (see docs/API_STABILITY.md).
   // Purely informational -- a deprecated rule still runs and produces
   // results completely normally; this is a catalog-level migration signal
   // for integrators, not an automatic exclusion.
-  const deprecated = (typeof m.deprecated === 'boolean') ? m.deprecated : false;
-  const deprecation = (deprecated && m.deprecation && typeof m.deprecation === 'object' && !Array.isArray(m.deprecation))
+  const deprecated = typeof m.deprecated === 'boolean' ? m.deprecated : false;
+  const deprecation =
+    deprecated &&
+    m.deprecation &&
+    typeof m.deprecation === 'object' &&
+    !Array.isArray(m.deprecation)
       ? {
-          replacedBy: (typeof m.deprecation.replacedBy === 'string' && m.deprecation.replacedBy.trim()) ? m.deprecation.replacedBy.trim() : null,
-          reason: (typeof m.deprecation.reason === 'string') ? m.deprecation.reason.trim() : '',
-          sinceVersion: (typeof m.deprecation.sinceVersion === 'string') ? m.deprecation.sinceVersion.trim() : ''
+          replacedBy:
+            typeof m.deprecation.replacedBy === 'string' && m.deprecation.replacedBy.trim()
+              ? m.deprecation.replacedBy.trim()
+              : null,
+          reason: typeof m.deprecation.reason === 'string' ? m.deprecation.reason.trim() : '',
+          sinceVersion:
+            typeof m.deprecation.sinceVersion === 'string' ? m.deprecation.sinceVersion.trim() : ''
         }
       : null;
 
   if (deprecated && (!deprecation || !deprecation.reason || !deprecation.sinceVersion)) {
-    throw new Error(`Rule ${ruleId}: meta.deprecated:true requires meta.deprecation.reason and meta.deprecation.sinceVersion`);
+    throw new Error(
+      `Rule ${ruleId}: meta.deprecated:true requires meta.deprecation.reason and meta.deprecation.sinceVersion`
+    );
   }
 
-  const category = (typeof m.category === 'string' && m.category.trim()) ? m.category.trim() : null;
-  const standard = (typeof m.standard === 'string' && m.standard.trim()) ? m.standard.trim() : null;
+  const category = typeof m.category === 'string' && m.category.trim() ? m.category.trim() : null;
+  const standard = typeof m.standard === 'string' && m.standard.trim() ? m.standard.trim() : null;
 
-  const applicability = (typeof m.applicability === 'string') ? m.applicability : '';
-  const expectation = (typeof m.expectation === 'string') ? m.expectation : '';
+  const applicability = typeof m.applicability === 'string' ? m.applicability : '';
+  const expectation = typeof m.expectation === 'string' ? m.expectation : '';
 
   const references = Array.isArray(m.references) ? m.references.slice() : [];
-  const requirements = (m.requirements === null || typeof m.requirements === 'string' || typeof m.requirements === 'object')
+  const requirements =
+    m.requirements === null ||
+    typeof m.requirements === 'string' ||
+    typeof m.requirements === 'object'
       ? m.requirements
       : null;
 
-  const mappings = (m.mappings === null || typeof m.mappings === 'string' || typeof m.mappings === 'object')
+  const mappings =
+    m.mappings === null || typeof m.mappings === 'string' || typeof m.mappings === 'object'
       ? m.mappings
       : null;
 
@@ -116,8 +133,13 @@ function normalizeRuleMeta(ruleId, id, meta, engineTag) {
     if (typeof i18n.titleKey !== 'string' || !i18n.titleKey.trim()) {
       throw new Error(`Rule ${ruleId}: meta.i18n.titleKey must be a non-empty string`);
     }
-    if (i18n.descriptionKey != null && (typeof i18n.descriptionKey !== 'string' || !i18n.descriptionKey.trim())) {
-      throw new Error(`Rule ${ruleId}: meta.i18n.descriptionKey must be a non-empty string when provided`);
+    if (
+      i18n.descriptionKey != null &&
+      (typeof i18n.descriptionKey !== 'string' || !i18n.descriptionKey.trim())
+    ) {
+      throw new Error(
+        `Rule ${ruleId}: meta.i18n.descriptionKey must be a non-empty string when provided`
+      );
     }
   }
 

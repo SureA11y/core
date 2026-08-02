@@ -15,7 +15,8 @@ const id = 'aria-role-name-present';
 
 const meta = {
   title: 'ARIA widget/container roles have an accessible name',
-  description: 'Checks that selected ARIA widget/container roles expose a non-empty accessible name.',
+  description:
+    'Checks that selected ARIA widget/container roles expose a non-empty accessible name.',
   i18n: {
     titleKey: 'ariaRoleNamePresent_title',
     descriptionKey: 'ariaRoleNamePresent_description'
@@ -24,7 +25,13 @@ const meta = {
   tags: ['wcag2a', 'wcag412', 'navigation', 'atomic', 'automatic', 'name'],
   wcagSc: ['4.1.2'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '4.1.2', title: 'Name, Role, Value', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '4.1.2',
+      title: 'Name, Role, Value',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'serious',
   category: 'robust',
@@ -41,17 +48,19 @@ function runInPage(ctx) {
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
-  const queryAllSmart = helpers && typeof helpers.queryAllSmart === 'function' ? helpers.queryAllSmart : null;
-  const queryAll = helpers && typeof helpers.queryAll === 'function'
-    ? helpers.queryAll
-    : (sel, rt) => {
-        try {
-          const scope = rt || safeRoot;
-          return scope && scope.querySelectorAll ? Array.from(scope.querySelectorAll(sel)) : [];
-        } catch {
-          return [];
-        }
-      };
+  const queryAllSmart =
+    helpers && typeof helpers.queryAllSmart === 'function' ? helpers.queryAllSmart : null;
+  const queryAll =
+    helpers && typeof helpers.queryAll === 'function'
+      ? helpers.queryAll
+      : (sel, rt) => {
+          try {
+            const scope = rt || safeRoot;
+            return scope && scope.querySelectorAll ? Array.from(scope.querySelectorAll(sel)) : [];
+          } catch {
+            return [];
+          }
+        };
 
   const isAccTreeEligible =
     helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
@@ -60,9 +69,14 @@ function runInPage(ctx) {
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
 
   const getAriaLabelledByInfo =
-    helpers && typeof helpers.getAriaLabelledByInfo === 'function' ? helpers.getAriaLabelledByInfo : null;
+    helpers && typeof helpers.getAriaLabelledByInfo === 'function'
+      ? helpers.getAriaLabelledByInfo
+      : null;
 
-  const normalizeWs = (s) => String(s || '').replace(/\s+/g, ' ').trim();
+  const normalizeWs = (s) =>
+    String(s || '')
+      .replace(/\s+/g, ' ')
+      .trim();
 
   const getAttr = (el, name) => {
     try {
@@ -72,7 +86,6 @@ function runInPage(ctx) {
       return '';
     }
   };
-
 
   // aria-labelledby resolution: delegate to the shared helper (used by
   // button-name-present et al.), which correctly includes hidden/aria-hidden
@@ -120,7 +133,9 @@ function runInPage(ctx) {
 
   const nodes = (() => {
     try {
-      return (queryAllSmart ? queryAllSmart(selector, safeRoot) : queryAll(selector, safeRoot)) || [];
+      return (
+        (queryAllSmart ? queryAllSmart(selector, safeRoot) : queryAll(selector, safeRoot)) || []
+      );
     } catch {
       return queryAll(selector, safeRoot);
     }
@@ -158,9 +173,15 @@ function runInPage(ctx) {
     const ok = !!(ariaLabel || labelled || title);
     if (ok) continue;
 
-    const eligInfo = getEligibilityInfo ? (() => {
-      try { return getEligibilityInfo(el, ctx, { targetSet: 'acc' }); } catch { return null; }
-    })() : null;
+    const eligInfo = getEligibilityInfo
+      ? (() => {
+          try {
+            return getEligibilityInfo(el, ctx, { targetSet: 'acc' });
+          } catch {
+            return null;
+          }
+        })()
+      : null;
 
     const baseOccurrence = {
       summary: 'This element has no accessible name.',
@@ -195,7 +216,12 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
 
-  return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences };
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'fail',
+    severity: rule.defaultSeverity || 'minor',
+    occurrences
+  };
 }
 
 module.exports = { id, meta, runInPage };

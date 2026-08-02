@@ -36,5 +36,7 @@ if (files.length === 0) {
 // without duplicating the collection logic.
 const nodeFlags = process.argv.slice(2);
 
-const result = spawnSync(process.execPath, [...nodeFlags, '--test', ...files], { stdio: 'inherit' });
+const result = spawnSync(process.execPath, [...nodeFlags, '--test', ...files], {
+  stdio: 'inherit'
+});
 process.exit(result.status === null ? 1 : result.status);

@@ -7,7 +7,9 @@ const { JSDOM } = require('jsdom');
 const { createDomHelpers } = require('../../src/core/dom-helpers.js');
 
 function helpersFor(html, opts) {
-  const dom = new JSDOM(`<!doctype html><html><body>${html}</body></html>`, { pretendToBeVisual: true });
+  const dom = new JSDOM(`<!doctype html><html><body>${html}</body></html>`, {
+    pretendToBeVisual: true
+  });
   const { window } = dom;
   const { document } = window;
   const helpers = createDomHelpers(Object.assign({ window, document, root: document }, opts));
@@ -54,7 +56,9 @@ test('isAccTreeEligible: content inside a closed <details> is ineligible; conten
 });
 
 test('isAccTreeEligible: content inside an OPEN <details> is eligible', () => {
-  const { helpers, document } = helpersFor('<details id="d" open><p id="p">visible body</p></details>');
+  const { helpers, document } = helpersFor(
+    '<details id="d" open><p id="p">visible body</p></details>'
+  );
   const r = helpers.isAccTreeEligible(byId(document, 'p'));
   assert.equal(r.eligible, true);
 });
@@ -69,14 +73,16 @@ test('isAccTreeEligible: [inert] on an ancestor blocks descendants', () => {
 test('isAccTreeEligible: inert on an <area> itself, or on its <map>, does not block the area (documented exception)', () => {
   const { helpers, document } = helpersFor(
     '<map name="m" inert><area id="a" inert shape="rect" coords="0,0,10,10" href="/x"></map>' +
-    '<img usemap="#m" src="i.png">'
+      '<img usemap="#m" src="i.png">'
   );
   const r = helpers.isAccTreeEligible(byId(document, 'a'));
   assert.equal(r.eligible, true);
 });
 
 test('isAccTreeEligible: display:none on an ancestor blocks the whole subtree', () => {
-  const { helpers, document } = helpersFor('<div id="wrap" style="display:none"><span id="s">x</span></div>');
+  const { helpers, document } = helpersFor(
+    '<div id="wrap" style="display:none"><span id="s">x</span></div>'
+  );
   const r = helpers.isAccTreeEligible(byId(document, 's'));
   assert.equal(r.eligible, false);
   assert.deepEqual(r.reasons, ['displayNone']);
@@ -166,14 +172,18 @@ test('isDomVisibleEligible: display:none ancestor blocks (styleOnly, the default
 });
 
 test('isDomVisibleEligible: content-visibility:hidden on an ancestor blocks', () => {
-  const { helpers, document } = helpersFor('<div style="content-visibility:hidden"><span id="s">x</span></div>');
+  const { helpers, document } = helpersFor(
+    '<div style="content-visibility:hidden"><span id="s">x</span></div>'
+  );
   const r = helpers.isDomVisibleEligible(byId(document, 's'), {}, {});
   assert.equal(r.eligible, false);
   assert.deepEqual(r.reasons, ['contentVisibilityHidden']);
 });
 
 test('isDomVisibleEligible: visibility:hidden on the node itself blocks, checked before the opacity chain', () => {
-  const { helpers, document } = helpersFor('<span id="s" style="visibility:hidden;opacity:1">x</span>');
+  const { helpers, document } = helpersFor(
+    '<span id="s" style="visibility:hidden;opacity:1">x</span>'
+  );
   const r = helpers.isDomVisibleEligible(byId(document, 's'), {}, {});
   assert.equal(r.eligible, false);
   assert.deepEqual(r.reasons, ['visibilityHidden']);
@@ -188,7 +198,11 @@ test('isDomVisibleEligible: opacity:0 on an ancestor blocks by default (styleOnl
 
 test('isDomVisibleEligible: opts.ignoreOpacity keeps an opacity:0 element in-scope (used by callers like aria-hidden-focus)', () => {
   const { helpers, document } = helpersFor('<div style="opacity:0"><span id="s">x</span></div>');
-  const r = helpers.isDomVisibleEligible(byId(document, 's'), {}, { ignoreOpacity: true, disableGeometry: true });
+  const r = helpers.isDomVisibleEligible(
+    byId(document, 's'),
+    {},
+    { ignoreOpacity: true, disableGeometry: true }
+  );
   assert.equal(r.eligible, true);
 });
 
@@ -202,8 +216,14 @@ test('isDomVisibleEligible: multiplied opacity across ancestors (e.g. 0.5 * 0.5)
 });
 
 test('isDomVisibleEligible: pointer-events:none on an ancestor blocks only in pointer visibilityMode', () => {
-  const { helpers, document } = helpersFor('<div style="pointer-events:none"><span id="s">x</span></div>');
-  const stylePointer = helpers.isDomVisibleEligible(byId(document, 's'), {}, { visibilityMode: 'pointer', disableGeometry: true });
+  const { helpers, document } = helpersFor(
+    '<div style="pointer-events:none"><span id="s">x</span></div>'
+  );
+  const stylePointer = helpers.isDomVisibleEligible(
+    byId(document, 's'),
+    {},
+    { visibilityMode: 'pointer', disableGeometry: true }
+  );
   assert.equal(stylePointer.eligible, false);
   assert.deepEqual(stylePointer.reasons, ['pointerEventsNone']);
 
@@ -212,15 +232,27 @@ test('isDomVisibleEligible: pointer-events:none on an ancestor blocks only in po
 });
 
 test('isDomVisibleEligible: a zero-sized element with no client rects is ineligible in styleAndGeometry mode', () => {
-  const { helpers, document } = helpersFor('<span id="s" style="width:0;height:0;display:inline-block"></span>');
-  const r = helpers.isDomVisibleEligible(byId(document, 's'), {}, { visibilityMode: 'styleAndGeometry' });
+  const { helpers, document } = helpersFor(
+    '<span id="s" style="width:0;height:0;display:inline-block"></span>'
+  );
+  const r = helpers.isDomVisibleEligible(
+    byId(document, 's'),
+    {},
+    { visibilityMode: 'styleAndGeometry' }
+  );
   assert.equal(r.eligible, false);
   assert.ok(r.reasons.includes('noClientRects'));
 });
 
 test('isDomVisibleEligible: geometry checks are skipped entirely with opts.disableGeometry, regardless of visibilityMode', () => {
-  const { helpers, document } = helpersFor('<span id="s" style="width:0;height:0;display:inline-block"></span>');
-  const r = helpers.isDomVisibleEligible(byId(document, 's'), {}, { visibilityMode: 'styleAndGeometry', disableGeometry: true });
+  const { helpers, document } = helpersFor(
+    '<span id="s" style="width:0;height:0;display:inline-block"></span>'
+  );
+  const r = helpers.isDomVisibleEligible(
+    byId(document, 's'),
+    {},
+    { visibilityMode: 'styleAndGeometry', disableGeometry: true }
+  );
   assert.equal(r.eligible, true);
 });
 
@@ -241,7 +273,9 @@ test('getVisibilityHintsInfo: opacity:0 produces the "opacityZero" hint and repo
 });
 
 test('getVisibilityHintsInfo: the classic visually-hidden clip-rect(0,0,0,0) pattern produces the "clipped" hint', () => {
-  const { helpers, document } = helpersFor('<div id="d" style="position:absolute;clip:rect(0,0,0,0)"></div>');
+  const { helpers, document } = helpersFor(
+    '<div id="d" style="position:absolute;clip:rect(0,0,0,0)"></div>'
+  );
   const info = helpers.getVisibilityHintsInfo(byId(document, 'd'), {}, {});
   assert.ok(info.hints.includes('clipped'));
 });
@@ -253,7 +287,9 @@ test('getVisibilityHintsInfo: clip-path:inset(50%) produces the "clipped" hint',
 });
 
 test('getVisibilityHintsInfo: zero width/height combined with overflow:hidden produces "zeroSizeOverflowHidden"', () => {
-  const { helpers, document } = helpersFor('<div id="d" style="width:0px;height:0px;overflow:hidden"></div>');
+  const { helpers, document } = helpersFor(
+    '<div id="d" style="width:0px;height:0px;overflow:hidden"></div>'
+  );
   const info = helpers.getVisibilityHintsInfo(byId(document, 'd'), {}, {});
   assert.ok(info.hints.includes('zeroSizeOverflowHidden'));
 });
@@ -291,7 +327,9 @@ test('getLabelMethod: a structurally-associated <label> whose only content is an
 });
 
 test('getLabelMethod: prefers "label" over aria-label/title/placeholder when a real label association exists', () => {
-  const { helpers, document } = helpersFor('<label for="a">Real label</label><input id="a" aria-label="ARIA" title="T" placeholder="P">');
+  const { helpers, document } = helpersFor(
+    '<label for="a">Real label</label><input id="a" aria-label="ARIA" title="T" placeholder="P">'
+  );
   const m = helpers.getLabelMethod(byId(document, 'a'), {});
   assert.equal(m.method, 'label');
 });
@@ -331,7 +369,7 @@ test('getLabelStrength: strong for label/aria-labelledby, medium for aria-label,
 
 // ===== getOuterHtmlSnippet =====
 
-test('getOuterHtmlSnippet: returns the element\'s outerHTML verbatim when short', () => {
+test("getOuterHtmlSnippet: returns the element's outerHTML verbatim when short", () => {
   const { helpers, document } = helpersFor('<div id="d" class="x">hi</div>');
   const snippet = helpers.getOuterHtmlSnippet(byId(document, 'd'));
   assert.equal(snippet, '<div id="d" class="x">hi</div>');

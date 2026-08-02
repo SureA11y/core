@@ -11,7 +11,9 @@ const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 const RULE_ID = 'aria-allowed-role';
 
 function hasOccurrenceForId(rule, id) {
-  return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
+  return (rule.occurrences || []).some(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
 }
 
 test(`${RULE_ID}: notApplicable when no role attributes present`, () => {
@@ -246,16 +248,68 @@ test(`${RULE_ID}: i18n default is English`, () => {
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-allowed-role-all-scenarios.html)`, () => {
-  const fixturePath = path.join(__dirname, '../..', 'fixtures', 'aria-allowed-role-all-scenarios.html');
+  const fixturePath = path.join(
+    __dirname,
+    '../..',
+    'fixtures',
+    'aria-allowed-role-all-scenarios.html'
+  );
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 18, maxOccurrences: 18 });
 
-  for (const id of ['aar_case_04', 'aar_case_08', 'aar_case_09', 'aar_case_12', 'aar_case_13', 'aar_case_17', 'aar_case_18', 'aar_case_23', 'aar_case_25', 'aar_case_28', 'aar_case_29', 'aar_case_32', 'aar_case_36', 'aar_case_38', 'aar_case_39', 'aar_case_41', 'aar_case_43', 'aar_case_45']) {
+  for (const id of [
+    'aar_case_04',
+    'aar_case_08',
+    'aar_case_09',
+    'aar_case_12',
+    'aar_case_13',
+    'aar_case_17',
+    'aar_case_18',
+    'aar_case_23',
+    'aar_case_25',
+    'aar_case_28',
+    'aar_case_29',
+    'aar_case_32',
+    'aar_case_36',
+    'aar_case_38',
+    'aar_case_39',
+    'aar_case_41',
+    'aar_case_43',
+    'aar_case_45'
+  ]) {
     assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);
   }
-  for (const id of ['aar_case_01', 'aar_case_02', 'aar_case_03', 'aar_case_05', 'aar_case_06', 'aar_case_07', 'aar_case_10', 'aar_case_11', 'aar_case_14', 'aar_case_15', 'aar_case_16', 'aar_case_19', 'aar_case_20', 'aar_case_21', 'aar_case_22', 'aar_case_24', 'aar_case_26', 'aar_case_27', 'aar_case_30', 'aar_case_31', 'aar_case_33', 'aar_case_34', 'aar_case_35', 'aar_case_37', 'aar_case_40', 'aar_case_42', 'aar_case_44']) {
+  for (const id of [
+    'aar_case_01',
+    'aar_case_02',
+    'aar_case_03',
+    'aar_case_05',
+    'aar_case_06',
+    'aar_case_07',
+    'aar_case_10',
+    'aar_case_11',
+    'aar_case_14',
+    'aar_case_15',
+    'aar_case_16',
+    'aar_case_19',
+    'aar_case_20',
+    'aar_case_21',
+    'aar_case_22',
+    'aar_case_24',
+    'aar_case_26',
+    'aar_case_27',
+    'aar_case_30',
+    'aar_case_31',
+    'aar_case_33',
+    'aar_case_34',
+    'aar_case_35',
+    'aar_case_37',
+    'aar_case_40',
+    'aar_case_42',
+    'aar_case_44'
+  ]) {
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
 });

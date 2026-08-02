@@ -121,7 +121,8 @@ const id = 'aria-prohibited-attr';
 
 const meta = {
   title: 'ARIA naming attributes must not be used on roles that prohibit them',
-  description: 'Checks that aria-label/aria-labelledby are not present on WAI-ARIA roles whose specification explicitly prohibits ARIA naming (e.g. generic, emphasis, strong, paragraph).',
+  description:
+    'Checks that aria-label/aria-labelledby are not present on WAI-ARIA roles whose specification explicitly prohibits ARIA naming (e.g. generic, emphasis, strong, paragraph).',
   i18n: {
     titleKey: 'ariaProhibitedAttr_title',
     descriptionKey: 'ariaProhibitedAttr_description'
@@ -130,7 +131,13 @@ const meta = {
   tags: ['wcag2a', 'wcag412', 'aria', 'structure', 'atomic', 'automatic'],
   wcagSc: ['4.1.2'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '4.1.2', title: 'Name, Role, Value', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '4.1.2',
+      title: 'Name, Role, Value',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'moderate',
   category: 'robust',
@@ -153,9 +160,21 @@ function runInPage(ctx) {
   // scope) because the build inlines only this function's own source text
   // — see scripts/build-core.js header ("runInPage MUST be self-contained").
   const ROLES_PROHIBITING_NAME = new Set([
-    'caption', 'code', 'deletion', 'emphasis', 'generic', 'insertion',
-    'mark', 'none', 'paragraph', 'presentation', 'strong', 'subscript',
-    'suggestion', 'superscript', 'time'
+    'caption',
+    'code',
+    'deletion',
+    'emphasis',
+    'generic',
+    'insertion',
+    'mark',
+    'none',
+    'paragraph',
+    'presentation',
+    'strong',
+    'subscript',
+    'suggestion',
+    'superscript',
+    'time'
   ]);
 
   const PROHIBITED_NAMING_ATTRS = ['aria-label', 'aria-labelledby'];
@@ -166,7 +185,9 @@ function runInPage(ctx) {
 
   // --- Tier 1: explicit, valid role from the naming-prohibited set ---
 
-  const roleNodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]') : helpers.queryAll('[role]');
+  const roleNodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart('[role]')
+    : helpers.queryAll('[role]');
 
   for (const el of roleNodes) {
     if (!el || !el.getAttribute) continue;
@@ -185,7 +206,7 @@ function runInPage(ctx) {
     if (!present.length) continue;
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
     for (const attr of present) {
       failOccurrences.push({
@@ -214,10 +235,37 @@ function runInPage(ctx) {
   // <section>/<form>/<a> — all conditionally roleless too, but already
   // handled with more nuance elsewhere in this engine (see header comment).
   const ROLELESS_NATIVE_TAGS = new Set([
-    'p', 'b', 'i', 'em', 'strong', 'span', 'div', 'code', 'mark', 'time',
-    'ins', 'del', 'small', 'sub', 'sup', 'abbr', 'cite', 'q', 'kbd', 'samp',
-    'var', 'address', 'blockquote', 'pre', 'figcaption', 'picture',
-    'template', 'hgroup', 'wbr', 'br', 'legend'
+    'p',
+    'b',
+    'i',
+    'em',
+    'strong',
+    'span',
+    'div',
+    'code',
+    'mark',
+    'time',
+    'ins',
+    'del',
+    'small',
+    'sub',
+    'sup',
+    'abbr',
+    'cite',
+    'q',
+    'kbd',
+    'samp',
+    'var',
+    'address',
+    'blockquote',
+    'pre',
+    'figcaption',
+    'picture',
+    'template',
+    'hgroup',
+    'wbr',
+    'br',
+    'legend'
   ]);
 
   // WAI-ARIA roles a widely-used reference engine's own role table types as
@@ -225,16 +273,42 @@ function runInPage(ctx) {
   // WAI-ARIA taxonomy — this engine's algorithm branches on its own `type`
   // field, so parity means matching that field exactly).
   const WIDGET_TYPE_ROLES = new Set([
-    'alert', 'alertdialog', 'button', 'checkbox', 'combobox', 'dialog',
-    'gridcell', 'link', 'listbox', 'log', 'marquee', 'menuitem',
-    'menuitemcheckbox', 'menuitemradio', 'option', 'progressbar', 'radio',
-    'scrollbar', 'searchbox', 'slider', 'spinbutton', 'status', 'switch',
-    'tab', 'tabpanel', 'textbox', 'timer', 'treeitem'
+    'alert',
+    'alertdialog',
+    'button',
+    'checkbox',
+    'combobox',
+    'dialog',
+    'gridcell',
+    'link',
+    'listbox',
+    'log',
+    'marquee',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'option',
+    'progressbar',
+    'radio',
+    'scrollbar',
+    'searchbox',
+    'slider',
+    'spinbutton',
+    'status',
+    'switch',
+    'tab',
+    'tabpanel',
+    'textbox',
+    'timer',
+    'treeitem'
   ]);
 
-  const getComposedParent = helpers && typeof helpers.composedParent === 'function'
-    ? helpers.composedParent
-    : function (n) { return n && n.parentElement ? n.parentElement : null; };
+  const getComposedParent =
+    helpers && typeof helpers.composedParent === 'function'
+      ? helpers.composedParent
+      : function (n) {
+          return n && n.parentElement ? n.parentElement : null;
+        };
 
   // Nearest ancestor's real role (explicit-if-valid, else native/implicit),
   // skipping roleless/presentation/none ancestors — used only to check
@@ -245,17 +319,28 @@ function runInPage(ctx) {
     let cur = getComposedParent(el);
     let guard = 0;
     while (cur && guard++ < 200) {
-      if (cur.nodeType !== 1) { cur = getComposedParent(cur); continue; }
+      if (cur.nodeType !== 1) {
+        cur = getComposedParent(cur);
+        continue;
+      }
       const explicit = ariaHelpers.getExplicitRole(cur);
-      const role = (explicit && ariaHelpers.isValidConcreteRole(explicit)) ? explicit : ariaHelpers.getNativeRoleForElement(cur);
-      if (!role || role === 'presentation' || role === 'none') { cur = getComposedParent(cur); continue; }
+      const role =
+        explicit && ariaHelpers.isValidConcreteRole(explicit)
+          ? explicit
+          : ariaHelpers.getNativeRoleForElement(cur);
+      if (!role || role === 'presentation' || role === 'none') {
+        cur = getComposedParent(cur);
+        continue;
+      }
       return role;
     }
     return '';
   }
 
   const namingSelector = '[aria-label],[aria-labelledby]';
-  const namingNodes = helpers.queryAllSmart ? helpers.queryAllSmart(namingSelector) : helpers.queryAll(namingSelector);
+  const namingNodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart(namingSelector)
+    : helpers.queryAll(namingSelector);
 
   for (const el of namingNodes) {
     if (!el || !el.getAttribute) continue;
@@ -279,10 +364,14 @@ function runInPage(ctx) {
     if (ancestorRole && WIDGET_TYPE_ROLES.has(ancestorRole)) continue; // roleless helper node inside a real widget — not flagged
 
     const nameInfo = helpers.getContentNameInfo ? helpers.getContentNameInfo(el, ctx) : null;
-    const hasContentFallback = !!(nameInfo && nameInfo.present && String(nameInfo.value || '').trim() !== '');
+    const hasContentFallback = !!(
+      nameInfo &&
+      nameInfo.present &&
+      String(nameInfo.value || '').trim() !== ''
+    );
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
     for (const attr of present) {
       if (hasContentFallback) {
@@ -297,7 +386,12 @@ function runInPage(ctx) {
             params: { attr, element: tag }
           },
           data: {
-            details: { reasonCode: 'ARIA_ATTR_PROHIBITED_ROLELESS_NEEDS_REVIEW', attr, role: null, element: tag }
+            details: {
+              reasonCode: 'ARIA_ATTR_PROHIBITED_ROLELESS_NEEDS_REVIEW',
+              attr,
+              role: null,
+              element: tag
+            }
           }
         });
       } else {
@@ -326,7 +420,11 @@ function runInPage(ctx) {
   // See helpers.resolveTieredOutcome's own header comment (src/core/dom-helpers.js):
   // a fail-tier finding never silently discards cantTell-tier findings from
   // the same run — both are returned together when the outcome is 'fail'.
-  const resolved = helpers.resolveTieredOutcome(failOccurrences, cantTellOccurrences, rule.defaultSeverity || 'moderate');
+  const resolved = helpers.resolveTieredOutcome(
+    failOccurrences,
+    cantTellOccurrences,
+    rule.defaultSeverity || 'moderate'
+  );
   return { ruleId: rule.ruleId, ...resolved };
 }
 

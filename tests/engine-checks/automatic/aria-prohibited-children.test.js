@@ -11,7 +11,9 @@ const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 const RULE_ID = 'aria-prohibited-children';
 
 function hasOccurrenceForId(rule, id) {
-  return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
+  return (rule.occurrences || []).some(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
 }
 
 test(`${RULE_ID}: notApplicable when no role attributes present`, () => {
@@ -264,16 +266,37 @@ test(`${RULE_ID}: i18n default is English`, () => {
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-prohibited-children-all-scenarios.html)`, () => {
-  const fixturePath = path.join(__dirname, '../..', 'fixtures', 'aria-prohibited-children-all-scenarios.html');
+  const fixturePath = path.join(
+    __dirname,
+    '../..',
+    'fixtures',
+    'aria-prohibited-children-all-scenarios.html'
+  );
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 6, maxOccurrences: 6 });
 
-  for (const id of ['apc_case_06_child', 'apc_case_07_child', 'apc_case_08_child', 'apc_case_10_child', 'apc_case_11_child', 'apc_case_12_child']) {
+  for (const id of [
+    'apc_case_06_child',
+    'apc_case_07_child',
+    'apc_case_08_child',
+    'apc_case_10_child',
+    'apc_case_11_child',
+    'apc_case_12_child'
+  ]) {
     assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);
   }
-  for (const id of ['apc_case_01', 'apc_case_02', 'apc_case_03', 'apc_case_04', 'apc_case_05', 'apc_case_09', 'apc_case_13', 'apc_case_15']) {
+  for (const id of [
+    'apc_case_01',
+    'apc_case_02',
+    'apc_case_03',
+    'apc_case_04',
+    'apc_case_05',
+    'apc_case_09',
+    'apc_case_13',
+    'apc_case_15'
+  ]) {
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
 });

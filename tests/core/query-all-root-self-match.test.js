@@ -28,10 +28,16 @@ test('queryAllSmart: matches the root element itself when it satisfies the selec
   const helpers = createDomHelpers({ window, document, root });
 
   const roleMatches = helpers.queryAllSmart('[role]');
-  assert.ok(roleMatches.includes(root), 'root element itself should be included when it has [role]');
+  assert.ok(
+    roleMatches.includes(root),
+    'root element itself should be included when it has [role]'
+  );
 
   const langMatches = helpers.queryAllSmart('[lang]');
-  assert.ok(langMatches.includes(root), 'root element itself should be included when it has [lang]');
+  assert.ok(
+    langMatches.includes(root),
+    'root element itself should be included when it has [lang]'
+  );
 });
 
 test('queryAllSmart: still returns ordinary descendants when root itself does not match', () => {
@@ -48,14 +54,16 @@ test('queryAllSmart: still returns ordinary descendants when root itself does no
   const roleMatches = helpers.queryAllSmart('[role]');
   assert.equal(roleMatches.length, 1);
   assert.equal(roleMatches[0], document.getElementById('d'));
-  assert.ok(!roleMatches.includes(root), 'root itself has no role attribute here, so it should not appear');
+  assert.ok(
+    !roleMatches.includes(root),
+    'root itself has no role attribute here, so it should not appear'
+  );
 });
 
 test('queryAllSmart: does not duplicate the root element in results', () => {
-  const dom = new JSDOM(
-    `<!doctype html><html role="document"><body></body></html>`,
-    { pretendToBeVisual: true }
-  );
+  const dom = new JSDOM(`<!doctype html><html role="document"><body></body></html>`, {
+    pretendToBeVisual: true
+  });
   const { window } = dom;
   const { document } = window;
   const root = document.documentElement;
@@ -83,6 +91,9 @@ test('queryAllSmart: root-self-match honors includeShadowDom too (queryAllDeep p
   const helpers = createDomHelpers({ window, document, root, includeShadowDom: true });
 
   const roleMatches = helpers.queryAllSmart('[role]');
-  assert.ok(roleMatches.includes(root), 'root element itself should still be included in the shadow-DOM-aware path');
+  assert.ok(
+    roleMatches.includes(root),
+    'root element itself should still be included in the shadow-DOM-aware path'
+  );
   assert.ok(roleMatches.includes(innerButton), 'shadow-DOM descendant should still be found');
 });

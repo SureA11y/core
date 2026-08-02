@@ -41,4 +41,8 @@ Prefer finding the root cause over a narrow patch — this codebase's own conven
 
 ## Code style
 
-No enforced linter/formatter is configured yet — match the surrounding file's style (this codebase favors explicit, defensive, no-throw helper functions; see any existing rule in `src/checks/` for the prevailing pattern).
+ESLint and Prettier are enforced in CI (`npm run lint`, `npm run format:check`). Run `npm run format` to auto-format and `npm run lint:fix` to auto-fix what's fixable before opening a PR. Beyond what the tooling enforces, this codebase favors explicit, defensive, no-throw helper functions — see any existing rule in `src/checks/` for the prevailing pattern.
+
+Two things worth knowing about the config (`eslint.config.js`):
+- `no-empty` allows empty `catch {}` blocks — this codebase deliberately swallows errors from optional/defensive helper calls, see `RULE_AUTHORING.md`.
+- `src/core/dom-runner.js` and `src/core/frame-scan.js` reference shared runtime helper names as intentional free variables (they're inlined into `src/core.js` at build time — see each file's own header comment); this is declared via a `/* global ... */` directive at the top of each file, not suppressed globally.

@@ -8,7 +8,8 @@ const { runa11yCoreOnHtml } = require('./helpers/runDomRulesOnHtml.js');
 const { makeOccurrence, makeCheckResult, makeScanResult } = require('./explain/fake-result');
 
 test('renderHtmlReport: self-contained HTML with no external resource references', () => {
-  const html = '<!doctype html><html lang="en"><head><title>T</title></head><body><img src="x.png"></body></html>';
+  const html =
+    '<!doctype html><html lang="en"><head><title>T</title></head><body><img src="x.png"></body></html>';
   const result = runa11yCoreOnHtml(html, {});
   const report = renderHtmlReport(result);
 
@@ -19,7 +20,8 @@ test('renderHtmlReport: self-contained HTML with no external resource references
 });
 
 test('renderHtmlReport: reflects real outcome counts and rule ids from a scan', () => {
-  const html = '<!doctype html><html lang="en"><head><title>T</title></head><body><img src="x.png"></body></html>';
+  const html =
+    '<!doctype html><html lang="en"><head><title>T</title></head><body><img src="x.png"></body></html>';
   const result = runa11yCoreOnHtml(html, { runOnly: ['img-alt-present'] });
   const report = renderHtmlReport(result, { title: 'My Report' });
 
@@ -48,21 +50,26 @@ test('renderHtmlReport: occurrence html/selector containing script-breaking cont
   const report = renderHtmlReport(result);
 
   // Never literally breaks out of the embedded <script type="application/json"> block.
-  assert.doesNotMatch(report, /<script type="application\/json"[^>]*>[^]*<\/script><script>window\.__xss/);
+  assert.doesNotMatch(
+    report,
+    /<script type="application\/json"[^>]*>[^]*<\/script><script>window\.__xss/
+  );
   // The raw unescaped payload should never appear verbatim in the cards' HTML context.
   assert.doesNotMatch(report, /<img src=x onerror=alert\(1\)>/);
   // But the underlying data should still be present, safely encoded, in the embedded JSON.
   assert.match(report, /onerror/);
 });
 
-test('renderHtmlReport: WCAG rollup section reflects a real composite rule\'s contributors/metrics', () => {
-  const html = '<!doctype html><html lang="en"><head><title>T</title></head><body><img src="x.png"></body></html>';
+test("renderHtmlReport: WCAG rollup section reflects a real composite rule's contributors/metrics", () => {
+  const html =
+    '<!doctype html><html lang="en"><head><title>T</title></head><body><img src="x.png"></body></html>';
   const result = runa11yCoreOnHtml(html, {});
   const composite = result.rulesResults.find((r) => r.ruleId === 'wcag-1.1.1-non-text-content');
   assert.ok(composite, 'fixture result includes the expected composite rule');
 
   const report = renderHtmlReport(result);
-  const { failCount, passCount, cantTellCount, notApplicableCount } = composite.data.details.metrics;
+  const { failCount, passCount, cantTellCount, notApplicableCount } =
+    composite.data.details.metrics;
   const expectedBreakdown = `${passCount} pass / ${failCount} fail / ${cantTellCount} needs review / ${notApplicableCount} n/a`;
 
   assert.match(report, /WCAG 1\.1\.1/);

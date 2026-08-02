@@ -30,7 +30,9 @@ function patchTargetSizeEnv(dom) {
       if (!el || el.nodeType !== 1) return null;
       const raw = el.getAttribute('data-rect');
       if (!raw) return null;
-      const parts = String(raw).split(',').map((s) => Number(String(s).trim()));
+      const parts = String(raw)
+        .split(',')
+        .map((s) => Number(String(s).trim()));
       if (parts.length !== 4 || parts.some((n) => !Number.isFinite(n))) return null;
       const [x, y, w, h] = parts;
       return { x, y, w, h };

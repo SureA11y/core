@@ -11,7 +11,9 @@ const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 const RULE_ID = 'aria-braille-equivalent';
 
 function hasOccurrenceForId(rule, id) {
-  return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
+  return (rule.occurrences || []).some(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
 }
 
 test(`${RULE_ID}: notApplicable when no element uses a braille-specific attribute`, () => {
@@ -49,11 +51,19 @@ test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><body><button aria-braillelabel="save"></button></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
-  assert.strictEqual(rule.title, 'aria-braillelabel/aria-brailleroledescription must have a non-braille equivalent');
+  assert.strictEqual(
+    rule.title,
+    'aria-braillelabel/aria-brailleroledescription must have a non-braille equivalent'
+  );
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-braille-equivalent-all-scenarios.html)`, () => {
-  const fixturePath = path.join(__dirname, '../..', 'fixtures', 'aria-braille-equivalent-all-scenarios.html');
+  const fixturePath = path.join(
+    __dirname,
+    '../..',
+    'fixtures',
+    'aria-braille-equivalent-all-scenarios.html'
+  );
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 

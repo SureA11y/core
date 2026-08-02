@@ -164,7 +164,10 @@ test('buildSelector: multi-region contextSelector does not collide selectors acr
   const seenSelectors = new Set();
   for (const target of buttons) {
     const selector = helpers.buildSelector(target);
-    assert.ok(!seenSelectors.has(selector), `selector "${selector}" was reused across two different buttons`);
+    assert.ok(
+      !seenSelectors.has(selector),
+      `selector "${selector}" was reused across two different buttons`
+    );
     seenSelectors.add(selector);
 
     const matches = document.querySelectorAll(selector);
@@ -176,8 +179,13 @@ test('buildSelector: multi-region contextSelector does not collide selectors acr
 test('buildSelector: every generated selector across many repeated sibling groups resolves uniquely', () => {
   // A denser version of the same shape (many repeated <section> groups with
   // no identifying attributes anywhere), exercising every sibling position.
-  const sectionsHtml = Array.from({ length: 8 }, (_, i) => `<section><div class="target">item ${i}</div></section>`).join('\n');
-  const { helpers, document } = helpersFor(`<!doctype html><html><body><div class="grid">${sectionsHtml}</div></body></html>`);
+  const sectionsHtml = Array.from(
+    { length: 8 },
+    (_, i) => `<section><div class="target">item ${i}</div></section>`
+  ).join('\n');
+  const { helpers, document } = helpersFor(
+    `<!doctype html><html><body><div class="grid">${sectionsHtml}</div></body></html>`
+  );
 
   const targets = Array.from(document.querySelectorAll('.target'));
   assert.equal(targets.length, 8);

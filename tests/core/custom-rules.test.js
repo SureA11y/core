@@ -19,14 +19,18 @@ const HTML = `<!doctype html><html><body><div id="target"></div></body></html>`;
 test('customRules: a real function reference runs and produces a normalized fail occurrence', () => {
   const result = runa11yCoreOnHtml(HTML, {
     engineOptions: {
-      customRules: [{
-        id: 'my-custom-rule',
-        meta: { title: 'My custom rule', tags: ['custom'], defaultSeverity: 'serious' },
-        runInPage(ctx) {
-          const el = ctx.document.getElementById('target');
-          return el ? { outcome: 'fail', occurrences: [{ __node: el }] } : { outcome: 'notApplicable', occurrences: [] };
+      customRules: [
+        {
+          id: 'my-custom-rule',
+          meta: { title: 'My custom rule', tags: ['custom'], defaultSeverity: 'serious' },
+          runInPage(ctx) {
+            const el = ctx.document.getElementById('target');
+            return el
+              ? { outcome: 'fail', occurrences: [{ __node: el }] }
+              : { outcome: 'notApplicable', occurrences: [] };
+          }
         }
-      }]
+      ]
     }
   });
 
@@ -39,25 +43,31 @@ test('customRules: a real function reference runs and produces a normalized fail
 });
 
 test('customRules: runInPage/applicability given as function-source strings (the cross-realm shape) work identically', () => {
-  const runInPageSrc = (function (ctx) {
+  const runInPageSrc = function (ctx) {
     const el = ctx.document.getElementById('target');
-    return el ? { outcome: 'fail', occurrences: [{ __node: el }] } : { outcome: 'notApplicable', occurrences: [] };
-  }).toString();
+    return el
+      ? { outcome: 'fail', occurrences: [{ __node: el }] }
+      : { outcome: 'notApplicable', occurrences: [] };
+  }.toString();
 
-  const applicabilitySrc = (function (ctx) {
+  const applicabilitySrc = function (ctx) {
     return !!ctx.document.getElementById('target');
-  }).toString();
+  }.toString();
 
   // Round-trip through JSON to prove these survive an actual serialization
   // boundary, not just "happen to still be a function in the same process".
-  const engineOptions = JSON.parse(JSON.stringify({
-    customRules: [{
-      id: 'string-sourced-rule',
-      meta: { title: 'String-sourced rule', tags: ['custom'] },
-      runInPage: runInPageSrc,
-      applicability: applicabilitySrc
-    }]
-  }));
+  const engineOptions = JSON.parse(
+    JSON.stringify({
+      customRules: [
+        {
+          id: 'string-sourced-rule',
+          meta: { title: 'String-sourced rule', tags: ['custom'] },
+          runInPage: runInPageSrc,
+          applicability: applicabilitySrc
+        }
+      ]
+    })
+  );
 
   const result = runa11yCoreOnHtml(HTML, { engineOptions });
   const r = result.checksResults.find((x) => x.ruleId === 'string-sourced-rule');
@@ -68,12 +78,18 @@ test('customRules: runInPage/applicability given as function-source strings (the
 test('customRules: applicability(ctx) returning false yields notApplicable, matching built-in rule semantics', () => {
   const result = runa11yCoreOnHtml(HTML, {
     engineOptions: {
-      customRules: [{
-        id: 'never-applicable-rule',
-        meta: { title: 'Never applicable' },
-        applicability() { return false; },
-        runInPage() { return { outcome: 'fail', occurrences: [{}] }; }
-      }]
+      customRules: [
+        {
+          id: 'never-applicable-rule',
+          meta: { title: 'Never applicable' },
+          applicability() {
+            return false;
+          },
+          runInPage() {
+            return { outcome: 'fail', occurrences: [{}] };
+          }
+        }
+      ]
     }
   });
 
@@ -84,11 +100,15 @@ test('customRules: applicability(ctx) returning false yields notApplicable, matc
 test('customRules: a throwing runInPage is contained as cantTell, not a crash, same as a built-in rule', () => {
   const result = runa11yCoreOnHtml(HTML, {
     engineOptions: {
-      customRules: [{
-        id: 'throwing-rule',
-        meta: { title: 'Throws' },
-        runInPage() { throw new Error('boom'); }
-      }]
+      customRules: [
+        {
+          id: 'throwing-rule',
+          meta: { title: 'Throws' },
+          runInPage() {
+            throw new Error('boom');
+          }
+        }
+      ]
     }
   });
 
@@ -102,7 +122,11 @@ test('customRules: an invalid entry (unresolvable runInPage) is silently skipped
     engineOptions: {
       customRules: [
         { id: 'bad-rule', runInPage: 'not a function at all' },
-        { runInPage() { return { outcome: 'pass', occurrences: [] }; } } // missing id entirely
+        {
+          runInPage() {
+            return { outcome: 'pass', occurrences: [] };
+          }
+        } // missing id entirely
       ]
     }
   });
@@ -115,16 +139,24 @@ test('customRules: an invalid entry (unresolvable runInPage) is silently skipped
 test('customRules: a custom rule id colliding with a built-in one overrides it for that scan (reference-engine configure()-like semantics)', () => {
   const result = runa11yCoreOnHtml(HTML, {
     engineOptions: {
-      customRules: [{
-        id: 'img-alt-present',
-        meta: { title: 'Overridden' },
-        runInPage() { return { outcome: 'pass', occurrences: [] }; }
-      }]
+      customRules: [
+        {
+          id: 'img-alt-present',
+          meta: { title: 'Overridden' },
+          runInPage() {
+            return { outcome: 'pass', occurrences: [] };
+          }
+        }
+      ]
     }
   });
 
   const matches = result.checksResults.filter((x) => x.ruleId === 'img-alt-present');
-  assert.strictEqual(matches.length, 1, 'override replaces, does not duplicate, the built-in entry');
+  assert.strictEqual(
+    matches.length,
+    1,
+    'override replaces, does not duplicate, the built-in entry'
+  );
   assert.strictEqual(matches[0].outcome, 'pass');
   assert.strictEqual(matches[0].title, 'Overridden');
 });
@@ -132,16 +164,22 @@ test('customRules: a custom rule id colliding with a built-in one overrides it f
 test('customRules: an id collision with a built-in rule is surfaced via overriddenBuiltinIds and a console.warn, whether intentional or not', () => {
   const originalWarn = console.warn;
   const warnings = [];
-  console.warn = (...args) => { warnings.push(args.join(' ')); };
+  console.warn = (...args) => {
+    warnings.push(args.join(' '));
+  };
 
   let result;
   try {
     result = runa11yCoreOnHtml(HTML, {
       engineOptions: {
-        customRules: [{
-          id: 'img-alt-present',
-          runInPage() { return { outcome: 'pass', occurrences: [] }; }
-        }]
+        customRules: [
+          {
+            id: 'img-alt-present',
+            runInPage() {
+              return { outcome: 'pass', occurrences: [] };
+            }
+          }
+        ]
       }
     });
   } finally {
@@ -149,22 +187,31 @@ test('customRules: an id collision with a built-in rule is surfaced via overridd
   }
 
   assert.deepStrictEqual(result.overriddenBuiltinIds, ['img-alt-present']);
-  assert.ok(warnings.some((w) => w.includes('img-alt-present')), 'console.warn should name the overridden rule id');
+  assert.ok(
+    warnings.some((w) => w.includes('img-alt-present')),
+    'console.warn should name the overridden rule id'
+  );
 });
 
 test('customRules: a non-colliding custom rule id leaves overriddenBuiltinIds empty and warns nothing', () => {
   const originalWarn = console.warn;
   const warnings = [];
-  console.warn = (...args) => { warnings.push(args.join(' ')); };
+  console.warn = (...args) => {
+    warnings.push(args.join(' '));
+  };
 
   let result;
   try {
     result = runa11yCoreOnHtml(HTML, {
       engineOptions: {
-        customRules: [{
-          id: 'my-brand-new-custom-rule',
-          runInPage() { return { outcome: 'pass', occurrences: [] }; }
-        }]
+        customRules: [
+          {
+            id: 'my-brand-new-custom-rule',
+            runInPage() {
+              return { outcome: 'pass', occurrences: [] };
+            }
+          }
+        ]
       }
     });
   } finally {
@@ -178,10 +225,14 @@ test('customRules: a non-colliding custom rule id leaves overriddenBuiltinIds em
 test('customRules: meta gets the same defaulting as a build-time rule module (severity/confidence/tags/type)', () => {
   const result = runa11yCoreOnHtml(HTML, {
     engineOptions: {
-      customRules: [{
-        id: 'minimal-meta-rule',
-        runInPage() { return { outcome: 'pass', occurrences: [] }; }
-      }]
+      customRules: [
+        {
+          id: 'minimal-meta-rule',
+          runInPage() {
+            return { outcome: 'pass', occurrences: [] };
+          }
+        }
+      ]
     }
   });
 

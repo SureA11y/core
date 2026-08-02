@@ -29,7 +29,8 @@ const id = 'duplicate-id-aria';
 
 const meta = {
   title: 'IDs referenced by ARIA must be unique',
-  description: 'Checks that any id value referenced by an ARIA ID-reference attribute (aria-labelledby, aria-describedby, aria-owns, aria-controls, aria-activedescendant, aria-flowto, aria-errormessage, aria-details) is unique in the document.',
+  description:
+    'Checks that any id value referenced by an ARIA ID-reference attribute (aria-labelledby, aria-describedby, aria-owns, aria-controls, aria-activedescendant, aria-flowto, aria-errormessage, aria-details) is unique in the document.',
   i18n: {
     titleKey: 'duplicateIdAria_title',
     descriptionKey: 'duplicateIdAria_description'
@@ -38,7 +39,13 @@ const meta = {
   tags: ['wcag2a', 'wcag412', 'aria', 'structure', 'atomic', 'automatic'],
   wcagSc: ['4.1.2'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '4.1.2', title: 'Name, Role, Value', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '4.1.2',
+      title: 'Name, Role, Value',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'serious',
   category: 'robust',
@@ -95,7 +102,9 @@ function runInPage(ctx) {
 
     for (const el of els) {
       const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-      const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+      const html = helpers.getOuterHtmlSnippet
+        ? helpers.getOuterHtmlSnippet(el)
+        : el.outerHTML || '';
 
       occurrences.push({
         selector: stableSelector,
@@ -108,7 +117,11 @@ function runInPage(ctx) {
           params: { id: refId, duplicateCount: String(els.length) }
         },
         data: {
-          details: { reasonCode: 'DUPLICATE_ID_ARIA_REFERENCED', id: refId, duplicateCount: els.length }
+          details: {
+            reasonCode: 'DUPLICATE_ID_ARIA_REFERENCED',
+            id: refId,
+            duplicateCount: els.length
+          }
         }
       });
     }
@@ -118,7 +131,12 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'serious', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'fail',
+      severity: rule.defaultSeverity || 'serious',
+      occurrences
+    };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }

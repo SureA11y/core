@@ -11,7 +11,9 @@ const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 const RULE_ID = 'area-alt-present';
 
 function hasOccurrenceForId(rule, id) {
-  return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
+  return (rule.occurrences || []).some(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
 }
 
 test(`${RULE_ID}: notApplicable when no <area>`, () => {
@@ -88,7 +90,12 @@ test(`${RULE_ID}: used map but ineligible referencing <img> => notApplicable`, (
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/area-alt-present-all-scenarios.html)`, () => {
-  const fixturePath = path.join(__dirname, '../..', 'fixtures', 'area-alt-present-all-scenarios.html');
+  const fixturePath = path.join(
+    __dirname,
+    '../..',
+    'fixtures',
+    'area-alt-present-all-scenarios.html'
+  );
   const html = fs.readFileSync(fixturePath, 'utf8');
 
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
@@ -104,7 +111,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/area-alt-present-all-scenario
     'area_case_14',
     'area_case_15',
     'area_case_16',
-    'area_case_23'   // aria-labelledby dangling IDREF, no alt => fails
+    'area_case_23' // aria-labelledby dangling IDREF, no alt => fails
   ];
 
   const expectedNoOccIds = [
@@ -121,8 +128,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/area-alt-present-all-scenario
     'area_case_18',
     'area_case_19',
     'area_case_20',
-    'area_case_21',  // aria-label satisfies mechanism without alt
-    'area_case_22'   // aria-labelledby resolves non-empty text
+    'area_case_21', // aria-label satisfies mechanism without alt
+    'area_case_22' // aria-labelledby resolves non-empty text
   ];
 
   for (const id of expectedFailIds) {

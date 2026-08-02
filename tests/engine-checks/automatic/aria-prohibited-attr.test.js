@@ -11,7 +11,9 @@ const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 const RULE_ID = 'aria-prohibited-attr';
 
 function hasOccurrenceForId(rule, id) {
-  return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
+  return (rule.occurrences || []).some(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
 }
 
 test(`${RULE_ID}: notApplicable when nothing is present at all (no role, no naming attributes)`, () => {
@@ -118,7 +120,10 @@ test(`${RULE_ID}: cantTell when aria-label is on a roleless span that already ha
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'a'));
-  assert.equal(rule.occurrences[0].data.details.reasonCode, 'ARIA_ATTR_PROHIBITED_ROLELESS_NEEDS_REVIEW');
+  assert.equal(
+    rule.occurrences[0].data.details.reasonCode,
+    'ARIA_ATTR_PROHIBITED_ROLELESS_NEEDS_REVIEW'
+  );
 });
 
 test(`${RULE_ID}: pass (exempted, not notApplicable — the rule did evaluate this candidate) when a roleless span with aria-label sits inside a widget-type role`, () => {
@@ -143,21 +148,43 @@ test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><body><div id="a" role="generic" aria-label="Something"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
-  assert.strictEqual(rule.title, 'ARIA naming attributes must not be used on roles that prohibit them');
+  assert.strictEqual(
+    rule.title,
+    'ARIA naming attributes must not be used on roles that prohibit them'
+  );
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-prohibited-attr-all-scenarios.html)`, () => {
-  const fixturePath = path.join(__dirname, '../..', 'fixtures', 'aria-prohibited-attr-all-scenarios.html');
+  const fixturePath = path.join(
+    __dirname,
+    '../..',
+    'fixtures',
+    'aria-prohibited-attr-all-scenarios.html'
+  );
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 10, maxOccurrences: 10 });
 
   const expectedFailIds = [
-    'apa_case_03', 'apa_case_04', 'apa_case_05', 'apa_case_07', 'apa_case_08', 'apa_case_09',
-    'apa_case_10', 'apa_case_11', 'apa_case_16'
+    'apa_case_03',
+    'apa_case_04',
+    'apa_case_05',
+    'apa_case_07',
+    'apa_case_08',
+    'apa_case_09',
+    'apa_case_10',
+    'apa_case_11',
+    'apa_case_16'
   ];
-  const expectedNoOccIds = ['apa_case_01', 'apa_case_02', 'apa_case_06', 'apa_case_12', 'apa_case_13', 'apa_case_14'];
+  const expectedNoOccIds = [
+    'apa_case_01',
+    'apa_case_02',
+    'apa_case_06',
+    'apa_case_12',
+    'apa_case_13',
+    'apa_case_14'
+  ];
 
   for (const id of expectedFailIds) {
     assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);

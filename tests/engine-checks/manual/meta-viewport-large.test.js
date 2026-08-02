@@ -37,7 +37,12 @@ test(`${RULE_ID}: i18n default is English`, () => {
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/meta-viewport-large-all-scenarios.html)`, () => {
-  const fixturePath = path.join(__dirname, '../..', 'fixtures', 'meta-viewport-large-all-scenarios.html');
+  const fixturePath = path.join(
+    __dirname,
+    '../..',
+    'fixtures',
+    'meta-viewport-large-all-scenarios.html'
+  );
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
@@ -47,12 +52,24 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/meta-viewport-large-all-scena
 
 test(`meta-viewport-large: notApplicable when contextSelector scopes narrower than the whole document (fragment-scan applicability)`, () => {
   const html = `<!doctype html><html><head><meta name="viewport" content="maximum-scale=3"></head><body></body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: ['meta-viewport-large'], contextSelector: 'body' });
-  assertRule(result, 'meta-viewport-large', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  const result = runa11yCoreOnHtml(html, {
+    runOnly: ['meta-viewport-large'],
+    contextSelector: 'body'
+  });
+  assertRule(result, 'meta-viewport-large', 'notApplicable', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
 });
 
 test(`meta-viewport-large: notApplicable when engineOptions.fragment is true, even unscoped`, () => {
   const html = `<!doctype html><html><head><meta name="viewport" content="maximum-scale=3"></head><body></body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: ['meta-viewport-large'], engineOptions: { fragment: true } });
-  assertRule(result, 'meta-viewport-large', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  const result = runa11yCoreOnHtml(html, {
+    runOnly: ['meta-viewport-large'],
+    engineOptions: { fragment: true }
+  });
+  assertRule(result, 'meta-viewport-large', 'notApplicable', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
 });

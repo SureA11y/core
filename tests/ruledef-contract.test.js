@@ -8,7 +8,6 @@ const assert = require('node:assert/strict');
 // accidental rule metadata drift.
 
 test('CHECK_DEFS contract invariants', () => {
-  // eslint-disable-next-line global-require
   const core = require('../src/core');
 
   assert.equal(typeof core.ENGINE_TAG, 'string');
@@ -23,8 +22,14 @@ test('CHECK_DEFS contract invariants', () => {
   for (const def of core.CHECK_DEFS) {
     assert.equal(typeof def.ruleId, 'string');
     assert.ok(def.ruleId.length > 0);
-    assert.ok(!def.ruleId.startsWith(core.ENGINE_TAG + '-'), 'ruleId should be bare, not engine-prefixed');
-    assert.ok(Array.isArray(def.tags) && def.tags.includes(core.ENGINE_TAG), 'every rule should carry the engine tag in meta.tags');
+    assert.ok(
+      !def.ruleId.startsWith(core.ENGINE_TAG + '-'),
+      'ruleId should be bare, not engine-prefixed'
+    );
+    assert.ok(
+      Array.isArray(def.tags) && def.tags.includes(core.ENGINE_TAG),
+      'every rule should carry the engine tag in meta.tags'
+    );
 
     assert.equal(typeof def.title, 'string');
     assert.ok(def.title.trim().length > 0);
@@ -37,9 +42,15 @@ test('CHECK_DEFS contract invariants', () => {
     // Build-time normalization guarantees lowercase
     for (const t of def.tags) assert.equal(String(t), String(t).toLowerCase());
 
-    assert.ok(Array.isArray(def.normativeMappings), `${def.ruleId} normativeMappings must be an array`);
+    assert.ok(
+      Array.isArray(def.normativeMappings),
+      `${def.ruleId} normativeMappings must be an array`
+    );
     for (const m of def.normativeMappings) {
-      assert.ok(m && typeof m === 'object' && !Array.isArray(m), `${def.ruleId} normativeMappings entries must be plain objects`);
+      assert.ok(
+        m && typeof m === 'object' && !Array.isArray(m),
+        `${def.ruleId} normativeMappings entries must be plain objects`
+      );
     }
 
     assert.ok(['automatic', 'manual'].includes(def.type));
@@ -64,14 +75,29 @@ test('CHECK_DEFS contract invariants', () => {
     // these, whether or not it's actually deprecated.
     assert.equal(typeof def.deprecated, 'boolean');
     if (def.deprecated) {
-      assert.ok(def.deprecation && typeof def.deprecation === 'object', `${def.ruleId}: deprecated rules must carry meta.deprecation`);
+      assert.ok(
+        def.deprecation && typeof def.deprecation === 'object',
+        `${def.ruleId}: deprecated rules must carry meta.deprecation`
+      );
       assert.equal(typeof def.deprecation.reason, 'string');
-      assert.ok(def.deprecation.reason.length > 0, `${def.ruleId}: deprecation.reason must be non-empty`);
+      assert.ok(
+        def.deprecation.reason.length > 0,
+        `${def.ruleId}: deprecation.reason must be non-empty`
+      );
       assert.equal(typeof def.deprecation.sinceVersion, 'string');
-      assert.ok(def.deprecation.sinceVersion.length > 0, `${def.ruleId}: deprecation.sinceVersion must be non-empty`);
-      assert.ok(def.deprecation.replacedBy === null || typeof def.deprecation.replacedBy === 'string');
+      assert.ok(
+        def.deprecation.sinceVersion.length > 0,
+        `${def.ruleId}: deprecation.sinceVersion must be non-empty`
+      );
+      assert.ok(
+        def.deprecation.replacedBy === null || typeof def.deprecation.replacedBy === 'string'
+      );
     } else {
-      assert.equal(def.deprecation, null, `${def.ruleId}: non-deprecated rules must have deprecation:null`);
+      assert.equal(
+        def.deprecation,
+        null,
+        `${def.ruleId}: non-deprecated rules must have deprecation:null`
+      );
     }
 
     assert.ok(def.category === null || typeof def.category === 'string');
@@ -82,13 +108,18 @@ test('CHECK_DEFS contract invariants', () => {
 
     assert.ok(Array.isArray(def.references));
 
-    assert.ok(def.requirements === null || typeof def.requirements === 'string' || typeof def.requirements === 'object');
-    assert.ok(def.mappings === null || typeof def.mappings === 'string' || typeof def.mappings === 'object');
+    assert.ok(
+      def.requirements === null ||
+        typeof def.requirements === 'string' ||
+        typeof def.requirements === 'object'
+    );
+    assert.ok(
+      def.mappings === null || typeof def.mappings === 'string' || typeof def.mappings === 'object'
+    );
   }
 });
 
 test('getChecksCatalog includes contract fields', () => {
-  // eslint-disable-next-line global-require
   const core = require('../src/core');
 
   const catalog = core.getChecksCatalog();

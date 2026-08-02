@@ -11,7 +11,9 @@ const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 const RULE_ID = 'aria-checked-state-mismatch';
 
 function hasOccurrenceForId(rule, id) {
-  return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
+  return (rule.occurrences || []).some(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
 }
 
 test(`${RULE_ID}: notApplicable when no checkbox/radio with aria-checked present`, () => {
@@ -74,18 +76,38 @@ test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><body><input type="checkbox" checked aria-checked="false" id="a"></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1 });
-  assert.strictEqual(rule.title, 'Native checkbox/radio aria-checked should match its actual state');
+  assert.strictEqual(
+    rule.title,
+    'Native checkbox/radio aria-checked should match its actual state'
+  );
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-checked-state-mismatch-all-scenarios.html)`, () => {
-  const fixturePath = path.join(__dirname, '../..', 'fixtures', 'aria-checked-state-mismatch-all-scenarios.html');
+  const fixturePath = path.join(
+    __dirname,
+    '../..',
+    'fixtures',
+    'aria-checked-state-mismatch-all-scenarios.html'
+  );
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 5, maxOccurrences: 5 });
 
-  const expectedFailIds = ['acsm_case_04', 'acsm_case_05', 'acsm_case_06', 'acsm_case_07', 'acsm_case_08'];
-  const expectedNoOccIds = ['acsm_case_01', 'acsm_case_02', 'acsm_case_03', 'acsm_case_09', 'acsm_case_10'];
+  const expectedFailIds = [
+    'acsm_case_04',
+    'acsm_case_05',
+    'acsm_case_06',
+    'acsm_case_07',
+    'acsm_case_08'
+  ];
+  const expectedNoOccIds = [
+    'acsm_case_01',
+    'acsm_case_02',
+    'acsm_case_03',
+    'acsm_case_09',
+    'acsm_case_10'
+  ];
 
   for (const id of expectedFailIds) {
     assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);

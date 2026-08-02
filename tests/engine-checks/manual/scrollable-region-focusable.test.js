@@ -11,7 +11,9 @@ const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 const RULE_ID = 'scrollable-region-focusable';
 
 function hasOccurrenceForId(rule, id) {
-  return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
+  return (rule.occurrences || []).some(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
 }
 
 test(`${RULE_ID}: notApplicable when there is no scrollable-overflow candidate`, () => {
@@ -43,11 +45,19 @@ test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><head><style>.s{overflow-y:auto;height:100px;}</style></head><body><div class="s">long content</div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1 });
-  assert.strictEqual(rule.title, 'Scrollable regions with no focusable content should be keyboard-focusable');
+  assert.strictEqual(
+    rule.title,
+    'Scrollable regions with no focusable content should be keyboard-focusable'
+  );
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/scrollable-region-focusable-all-scenarios.html)`, () => {
-  const fixturePath = path.join(__dirname, '../..', 'fixtures', 'scrollable-region-focusable-all-scenarios.html');
+  const fixturePath = path.join(
+    __dirname,
+    '../..',
+    'fixtures',
+    'scrollable-region-focusable-all-scenarios.html'
+  );
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 

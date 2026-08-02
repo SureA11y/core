@@ -31,7 +31,8 @@ const id = 'focus-order-semantics';
 
 const meta = {
   title: 'Elements added to the tab order should have interactive semantics',
-  description: 'Flags elements with tabindex >= 0 whose explicit role is a non-interactive structural/document role (e.g. heading, list, region, presentation), for manual review.',
+  description:
+    'Flags elements with tabindex >= 0 whose explicit role is a non-interactive structural/document role (e.g. heading, list, region, presentation), for manual review.',
   i18n: {
     titleKey: 'focusOrderSemantics_title',
     descriptionKey: 'focusOrderSemantics_description'
@@ -51,14 +52,43 @@ function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
   const NON_INTERACTIVE_ROLES = new Set([
-    'generic', 'group', 'text', 'presentation', 'none', 'img', 'heading',
-    'region', 'article', 'banner', 'contentinfo', 'main', 'navigation',
-    'complementary', 'document', 'note', 'list', 'listitem', 'table',
-    'row', 'cell', 'columnheader', 'rowheader', 'figure', 'term',
-    'definition', 'paragraph', 'caption', 'status', 'alert', 'log', 'tooltip'
+    'generic',
+    'group',
+    'text',
+    'presentation',
+    'none',
+    'img',
+    'heading',
+    'region',
+    'article',
+    'banner',
+    'contentinfo',
+    'main',
+    'navigation',
+    'complementary',
+    'document',
+    'note',
+    'list',
+    'listitem',
+    'table',
+    'row',
+    'cell',
+    'columnheader',
+    'rowheader',
+    'figure',
+    'term',
+    'definition',
+    'paragraph',
+    'caption',
+    'status',
+    'alert',
+    'log',
+    'tooltip'
   ]);
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[tabindex][role]') : helpers.queryAll('[tabindex][role]');
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart('[tabindex][role]')
+    : helpers.queryAll('[tabindex][role]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -78,7 +108,7 @@ function runInPage(ctx) {
     if (!NON_INTERACTIVE_ROLES.has(role)) continue;
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
     const baseOccurrence = {
       selector: stableSelector,
@@ -107,7 +137,12 @@ function runInPage(ctx) {
   }
 
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'cantTell', severity: rule.defaultSeverity || 'minor', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'minor',
+      occurrences
+    };
   }
 
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };

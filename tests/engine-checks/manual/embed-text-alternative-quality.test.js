@@ -8,10 +8,12 @@ const path = require('node:path');
 const { assertRule } = require('../../helpers/assertRule.js');
 const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 
-const RULE_ID = "embed-text-alternative-quality";
+const RULE_ID = 'embed-text-alternative-quality';
 
 function hasOccurrenceForId(rule, id) {
-  return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
+  return (rule.occurrences || []).some(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
 }
 
 test(`${RULE_ID}: notApplicable when no matching elements`, () => {
@@ -21,26 +23,19 @@ test(`${RULE_ID}: notApplicable when no matching elements`, () => {
 });
 
 test(`${RULE_ID}: cantTell when at least one applicable element triggers manual review`, () => {
-  const fixturePath = path.join(__dirname, '../..', 'fixtures', "embed-text-alternative-quality-manual-all-scenarios.html");
+  const fixturePath = path.join(
+    __dirname,
+    '../..',
+    'fixtures',
+    'embed-text-alternative-quality-manual-all-scenarios.html'
+  );
   const html = fs.readFileSync(fixturePath, 'utf8');
 
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 5, maxOccurrences: 5 });
 
-  const expected = [
-  "e_q_01",
-  "e_q_02",
-  "e_q_05",
-  "e_q_06",
-  "e_q_09"
-];
-  const notExpected = [
-  "e_q_03",
-  "e_q_04",
-  "e_q_07",
-  "e_q_08",
-  "e_q_10"
-];
+  const expected = ['e_q_01', 'e_q_02', 'e_q_05', 'e_q_06', 'e_q_09'];
+  const notExpected = ['e_q_03', 'e_q_04', 'e_q_07', 'e_q_08', 'e_q_10'];
 
   for (const id of expected) {
     assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);
@@ -51,7 +46,12 @@ test(`${RULE_ID}: cantTell when at least one applicable element triggers manual 
 });
 
 test(`${RULE_ID}: i18n (fr) rule title/description are localized`, () => {
-  const fixturePath = path.join(__dirname, '../..', 'fixtures', "embed-text-alternative-quality-manual-all-scenarios.html");
+  const fixturePath = path.join(
+    __dirname,
+    '../..',
+    'fixtures',
+    'embed-text-alternative-quality-manual-all-scenarios.html'
+  );
   const html = fs.readFileSync(fixturePath, 'utf8');
 
   const result = runa11yCoreOnHtml(html, {
@@ -61,10 +61,22 @@ test(`${RULE_ID}: i18n (fr) rule title/description are localized`, () => {
 
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1 });
 
-  assert.strictEqual(rule.title, "<embed> : alternative textuelle \u00e0 v\u00e9rifier (revue manuelle)");
-  assert.strictEqual(rule.description, "Signale les \u00e9l\u00e9ments <embed> avec nom d\u00e9tect\u00e9, afin de v\u00e9rifier manuellement sa pertinence.");
+  assert.strictEqual(
+    rule.title,
+    '<embed> : alternative textuelle \u00e0 v\u00e9rifier (revue manuelle)'
+  );
+  assert.strictEqual(
+    rule.description,
+    'Signale les \u00e9l\u00e9ments <embed> avec nom d\u00e9tect\u00e9, afin de v\u00e9rifier manuellement sa pertinence.'
+  );
 
   const occ = rule.occurrences[0];
-  assert.strictEqual(occ.summary, "V\u00e9rifiez l\u2019alternative textuelle de <embed> (exactitude et pertinence).");
-  assert.strictEqual(occ.hint, "Confirmez que le nom ARIA ou l\u2019attribut title identifie correctement le contenu embarqu\u00e9 dans son contexte.");
+  assert.strictEqual(
+    occ.summary,
+    'V\u00e9rifiez l\u2019alternative textuelle de <embed> (exactitude et pertinence).'
+  );
+  assert.strictEqual(
+    occ.hint,
+    'Confirmez que le nom ARIA ou l\u2019attribut title identifie correctement le contenu embarqu\u00e9 dans son contexte.'
+  );
 });

@@ -31,37 +31,41 @@
  * bundle instead.
  */
 
+/* global runCore, resolveContextRoots, resolveEffectiveRunOnly, pingFrame,
+   sendFrameRunCommand, enableFrameRpcResponder, CHECK_DEFS, RULE_IMPLS,
+   ENGINE_TAG, SCHEMA_VERSION, COMPOSITE_RULES */
+
 function findChildFrameElements(roots) {
-    const seen = new Set();
-    const out = [];
-    for (const root of roots) {
-        if (!root || typeof root.querySelectorAll !== 'function') continue;
-        let matches = [];
-        try {
-            matches = root.querySelectorAll('iframe, frame');
-        } catch (e) {
-            matches = [];
-        }
-        for (const el of matches) {
-            if (el && !seen.has(el)) {
-                seen.add(el);
-                out.push(el);
-            }
-        }
+  const seen = new Set();
+  const out = [];
+  for (const root of roots) {
+    if (!root || typeof root.querySelectorAll !== 'function') continue;
+    let matches;
+    try {
+      matches = root.querySelectorAll('iframe, frame');
+    } catch (e) {
+      matches = [];
     }
-    return out;
+    for (const el of matches) {
+      if (el && !seen.has(el)) {
+        seen.add(el);
+        out.push(el);
+      }
+    }
+  }
+  return out;
 }
 
 function getFrameElementUrl(el) {
-    try {
-        if (el.contentWindow && el.contentWindow.location && el.contentWindow.location.href) {
-            return el.contentWindow.location.href;
-        }
-    } catch (e) {
-        // Cross-origin: reading contentWindow.location.href itself throws. Fall
-        // back to the authored src attribute (always readable, any origin).
+  try {
+    if (el.contentWindow && el.contentWindow.location && el.contentWindow.location.href) {
+      return el.contentWindow.location.href;
     }
-    return el.getAttribute ? (el.getAttribute('src') || null) : null;
+  } catch (e) {
+    // Cross-origin: reading contentWindow.location.href itself throws. Fall
+    // back to the authored src attribute (always readable, any origin).
+  }
+  return el.getAttribute ? el.getAttribute('src') || null : null;
 }
 
 /**
@@ -84,60 +88,63 @@ function getFrameElementUrl(el) {
  * @returns {Promise<{ topFrame: object, frames: Array<{url:string|null, topFrame?:object, frames?:Array, error?:string}> }>}
  */
 function runa11yCoreAcrossFrames(pageUrl, contextSelector, engineOptions, runOnly) {
-    const topFrame = runCore(
-        pageUrl,
-        contextSelector,
-        engineOptions,
-        resolveEffectiveRunOnly(engineOptions, runOnly),
-        CHECK_DEFS,
-        RULE_IMPLS,
-        ENGINE_TAG,
-        SCHEMA_VERSION,
-        COMPOSITE_RULES
-    );
+  const topFrame = runCore(
+    pageUrl,
+    contextSelector,
+    engineOptions,
+    resolveEffectiveRunOnly(engineOptions, runOnly),
+    CHECK_DEFS,
+    RULE_IMPLS,
+    ENGINE_TAG,
+    SCHEMA_VERSION,
+    COMPOSITE_RULES
+  );
 
-    const eo = (engineOptions && typeof engineOptions === 'object') ? engineOptions : {};
-    const pingWaitTime = typeof eo.pingWaitTime === 'number' ? eo.pingWaitTime : undefined;
-    const frameWaitTime = typeof eo.frameWaitTime === 'number' ? eo.frameWaitTime : undefined;
+  const eo = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
+  const pingWaitTime = typeof eo.pingWaitTime === 'number' ? eo.pingWaitTime : undefined;
+  const frameWaitTime = typeof eo.frameWaitTime === 'number' ? eo.frameWaitTime : undefined;
 
-    const { roots } = resolveContextRoots(document, contextSelector);
-    const frameElements = findChildFrameElements(roots);
+  const { roots } = resolveContextRoots(document, contextSelector);
+  const frameElements = findChildFrameElements(roots);
 
-    const framePromises = frameElements.map(function (el) {
-        const url = getFrameElementUrl(el);
-        let targetWindow = null;
-        try {
-            targetWindow = el.contentWindow || null;
-        } catch (e) {
-            targetWindow = null;
-        }
-        if (!targetWindow) {
-            return Promise.resolve({ url: url, error: 'frame has no accessible contentWindow' });
-        }
+  const framePromises = frameElements.map(function (el) {
+    const url = getFrameElementUrl(el);
+    let targetWindow = null;
+    try {
+      targetWindow = el.contentWindow || null;
+    } catch (e) {
+      targetWindow = null;
+    }
+    if (!targetWindow) {
+      return Promise.resolve({ url: url, error: 'frame has no accessible contentWindow' });
+    }
 
-        return pingFrame(window, targetWindow, pingWaitTime).then(function (reachable) {
-            if (!reachable) {
-                return {
-                    url: url,
-                    error: 'no surea11y frame responder detected (that frame never called a11yCoreEnableFrameResponder(), or has not finished loading yet)'
-                };
-            }
-            return sendFrameRunCommand(
-                window,
-                targetWindow,
-                { pageUrl: url, contextSelector: null, engineOptions: eo, runOnly: runOnly },
-                frameWaitTime
-            ).then(function (result) {
-                return { url: url, topFrame: result.topFrame, frames: result.frames };
-            }).catch(function (err) {
-                return { url: url, error: String(err && err.message ? err.message : err) };
-            });
+    return pingFrame(window, targetWindow, pingWaitTime).then(function (reachable) {
+      if (!reachable) {
+        return {
+          url: url,
+          error:
+            'no surea11y frame responder detected (that frame never called a11yCoreEnableFrameResponder(), or has not finished loading yet)'
+        };
+      }
+      return sendFrameRunCommand(
+        window,
+        targetWindow,
+        { pageUrl: url, contextSelector: null, engineOptions: eo, runOnly: runOnly },
+        frameWaitTime
+      )
+        .then(function (result) {
+          return { url: url, topFrame: result.topFrame, frames: result.frames };
+        })
+        .catch(function (err) {
+          return { url: url, error: String(err && err.message ? err.message : err) };
         });
     });
+  });
 
-    return Promise.all(framePromises).then(function (frames) {
-        return { topFrame: topFrame, frames: frames };
-    });
+  return Promise.all(framePromises).then(function (frames) {
+    return { topFrame: topFrame, frames: frames };
+  });
 }
 
 /**
@@ -165,14 +172,19 @@ function runa11yCoreAcrossFrames(pageUrl, contextSelector, engineOptions, runOnl
  * @returns {function(): void} disable() -- stops responding to future scans
  */
 function a11yCoreEnableFrameResponder() {
-    return enableFrameRpcResponder(window, function (payload) {
-        return runa11yCoreAcrossFrames(
-            payload ? payload.pageUrl : null,
-            payload ? payload.contextSelector : null,
-            payload ? payload.engineOptions : {},
-            payload ? payload.runOnly : null
-        );
-    });
+  return enableFrameRpcResponder(window, function (payload) {
+    return runa11yCoreAcrossFrames(
+      payload ? payload.pageUrl : null,
+      payload ? payload.contextSelector : null,
+      payload ? payload.engineOptions : {},
+      payload ? payload.runOnly : null
+    );
+  });
 }
 
-module.exports = { findChildFrameElements, getFrameElementUrl, runa11yCoreAcrossFrames, a11yCoreEnableFrameResponder };
+module.exports = {
+  findChildFrameElements,
+  getFrameElementUrl,
+  runa11yCoreAcrossFrames,
+  a11yCoreEnableFrameResponder
+};

@@ -27,7 +27,8 @@ const id = 'avoid-inline-spacing';
 
 const meta = {
   title: 'Inline style must not force text spacing with !important',
-  description: 'Checks that inline style does not set line-height, letter-spacing, or word-spacing with !important, which blocks user text-spacing overrides.',
+  description:
+    'Checks that inline style does not set line-height, letter-spacing, or word-spacing with !important, which blocks user text-spacing overrides.',
   i18n: {
     titleKey: 'avoidInlineSpacing_title',
     descriptionKey: 'avoidInlineSpacing_description'
@@ -36,7 +37,13 @@ const meta = {
   tags: ['wcag21aa', 'wcag1412', 'structure', 'atomic', 'automatic'],
   wcagSc: ['1.4.12'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '1.4.12', title: 'Text Spacing', conformanceLevel: 'AA' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '1.4.12',
+      title: 'Text Spacing',
+      conformanceLevel: 'AA'
+    }
   ],
   defaultSeverity: 'moderate',
   category: 'perceivable',
@@ -50,7 +57,9 @@ function runInPage(ctx) {
 
   const SPACING_PROPS = ['line-height', 'letter-spacing', 'word-spacing'];
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[style]') : helpers.queryAll('[style]');
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart('[style]')
+    : helpers.queryAll('[style]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -76,7 +85,7 @@ function runInPage(ctx) {
 
     const tag = el.tagName.toLowerCase();
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
     occurrences.push({
       selector: stableSelector,
@@ -98,7 +107,12 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'moderate', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'fail',
+      severity: rule.defaultSeverity || 'moderate',
+      occurrences
+    };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }

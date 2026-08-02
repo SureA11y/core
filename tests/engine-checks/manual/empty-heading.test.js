@@ -11,7 +11,9 @@ const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 const RULE_ID = 'empty-heading';
 
 function hasOccurrenceForId(rule, id) {
-  return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
+  return (rule.occurrences || []).some(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
 }
 
 test(`${RULE_ID}: notApplicable when no heading is present`, () => {
@@ -108,13 +110,24 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/empty-heading-all-scenarios.h
   assert.ok(hasOccurrenceForId(rule, 'eh_case_02'));
   assert.ok(hasOccurrenceForId(rule, 'eh_case_08'));
   assert.ok(hasOccurrenceForId(rule, 'eh_case_09'));
-  for (const id of ['eh_case_01', 'eh_case_03', 'eh_case_04', 'eh_case_05', 'eh_case_06', 'eh_case_07', 'eh_case_10']) {
+  for (const id of [
+    'eh_case_01',
+    'eh_case_03',
+    'eh_case_04',
+    'eh_case_05',
+    'eh_case_06',
+    'eh_case_07',
+    'eh_case_10'
+  ]) {
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
 });
 
 test(`empty-heading: respects contextSelector scoping (regression -- used to bypass helpers.queryAllSmart and always scan the whole document)`, () => {
   const html = `<!doctype html><html><body><div id="target"><p>Just some unrelated text.</p></div><h2 id="a"></h2></body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: ['empty-heading'], contextSelector: '#target' });
+  const result = runa11yCoreOnHtml(html, {
+    runOnly: ['empty-heading'],
+    contextSelector: '#target'
+  });
   assertRule(result, 'empty-heading', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });

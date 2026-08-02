@@ -15,7 +15,13 @@ const meta = {
   tags: ['wcag2a', 'wcag242', 'titles', 'atomic', 'navigation', 'manual'],
   wcagSc: ['2.4.2'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '2.4.2', title: 'Page Titled', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '2.4.2',
+      title: 'Page Titled',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'minor',
   category: 'operable',
@@ -34,11 +40,13 @@ function applicability(ctx) {
 
 function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
-  const probes = ctx && ctx.inputs && ctx.inputs.probes && typeof ctx.inputs.probes === 'object'
+  const probes =
+    ctx && ctx.inputs && ctx.inputs.probes && typeof ctx.inputs.probes === 'object'
       ? ctx.inputs.probes
       : null;
 
-  const pageTitlesProbe = probes && probes['crawl.pageTitles'] && typeof probes['crawl.pageTitles'] === 'object'
+  const pageTitlesProbe =
+    probes && probes['crawl.pageTitles'] && typeof probes['crawl.pageTitles'] === 'object'
       ? probes['crawl.pageTitles']
       : null;
 
@@ -53,16 +61,16 @@ function runInPage(ctx) {
   // Cross-page pattern analysis (preferred) if crawl.pageTitles probe is provided
   // =========================
   if (pageTitlesProbe && Array.isArray(pageTitlesProbe.pages)) {
-    const pages = pageTitlesProbe.pages.filter(p => p && typeof p === 'object');
+    const pages = pageTitlesProbe.pages.filter((p) => p && typeof p === 'object');
 
     // Require enough data to avoid noisy conclusions
     const MIN_PAGES = 10;
     const analyzable = pages
-        .map(p => ({
-          url: p.url ? String(p.url) : null,
-          title: typeof p.title === 'string' ? p.title.replace(/\s+/g, ' ').trim() : ''
-        }))
-        .filter(p => p.url && p.title);
+      .map((p) => ({
+        url: p.url ? String(p.url) : null,
+        title: typeof p.title === 'string' ? p.title.replace(/\s+/g, ' ').trim() : ''
+      }))
+      .filter((p) => p.url && p.title);
 
     if (analyzable.length >= MIN_PAGES) {
       // Build normalized title groups (case-insensitive)
@@ -74,11 +82,11 @@ function runInPage(ctx) {
       }
 
       // Duplicate titles across distinct URLs is a strong "review" signal (not a guaranteed failure)
-      const dupGroups = Array.from(groups.values()).filter(g => g.urls.length >= 2);
+      const dupGroups = Array.from(groups.values()).filter((g) => g.urls.length >= 2);
 
       // Boilerplate-ish: detect a long common suffix/prefix across most titles.
       // Keep conservative: only flag if the common part is long and shared by many.
-      const titles = analyzable.map(p => p.title);
+      const titles = analyzable.map((p) => p.title);
       function commonPrefix(a, b) {
         const n = Math.min(a.length, b.length);
         let i = 0;
@@ -103,35 +111,41 @@ function runInPage(ctx) {
       const suffixLen = sharedSuffix.trim().length;
 
       const hasStrongTemplateSignal =
-          (prefixLen >= 12 || suffixLen >= 12) &&
-          (prefixLen >= 12 ? sharedPrefix.trim().length : 0) + (suffixLen >= 12 ? sharedSuffix.trim().length : 0) >= 12;
+        (prefixLen >= 12 || suffixLen >= 12) &&
+        (prefixLen >= 12 ? sharedPrefix.trim().length : 0) +
+          (suffixLen >= 12 ? sharedSuffix.trim().length : 0) >=
+          12;
 
       // If any cross-page signal exists, emit cantTell occurrence(s)
       if (dupGroups.length || hasStrongTemplateSignal) {
         const reasonCode = dupGroups.length
-            ? 'duplicateTitlesAcrossPages'
-            : 'templatedTitlesAcrossPages';
+          ? 'duplicateTitlesAcrossPages'
+          : 'templatedTitlesAcrossPages';
 
         // Deterministic example title for i18n params (lexicographic, case-insensitive)
         const exampleTitle = dupGroups.length
-            ? dupGroups
-            .map(g => String(g.title || '').replace(/\s+/g, ' ').trim())
-            .filter(Boolean)
-            .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))[0] || ''
-            : '';
+          ? dupGroups
+              .map((g) =>
+                String(g.title || '')
+                  .replace(/\s+/g, ' ')
+                  .trim()
+              )
+              .filter(Boolean)
+              .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))[0] || ''
+          : '';
 
         const summaryKey = dupGroups.length
-            ? 'pageTitlePatterns_summary_cantTell_duplicateAcrossPages'
-            : 'pageTitlePatterns_summary_cantTell_templatedAcrossPages';
+          ? 'pageTitlePatterns_summary_cantTell_duplicateAcrossPages'
+          : 'pageTitlePatterns_summary_cantTell_templatedAcrossPages';
 
         const i18nParams = dupGroups.length
-            ? {
+          ? {
               reasonCode,
               pagesAnalyzed: analyzable.length,
               duplicateGroups: dupGroups.length,
               exampleTitle
             }
-            : {
+          : {
               reasonCode,
               pagesAnalyzed: analyzable.length
             };
@@ -139,7 +153,8 @@ function runInPage(ctx) {
         const occBase = {
           selector: 'head > title',
           html: '',
-          summary: 'The set of page titles may not be descriptive enough to distinguish pages by topic or purpose.',
+          summary:
+            'The set of page titles may not be descriptive enough to distinguish pages by topic or purpose.',
           hint: 'Ensure each page title is sufficiently descriptive and helps users distinguish pages (avoid identical or overly templated titles across many pages).',
           i18n: {
             summaryKey,
@@ -152,12 +167,14 @@ function runInPage(ctx) {
               metrics: {
                 pagesAnalyzed: analyzable.length,
                 duplicateGroups: dupGroups.length,
-                largestDuplicateGroupSize: dupGroups.length ? Math.max(...dupGroups.map(g => g.urls.length)) : 0,
+                largestDuplicateGroupSize: dupGroups.length
+                  ? Math.max(...dupGroups.map((g) => g.urls.length))
+                  : 0,
                 sharedPrefix: prefixLen >= 12 ? sharedPrefix.trim() : '',
                 sharedSuffix: suffixLen >= 12 ? sharedSuffix.trim() : ''
               },
               refs: {
-                exampleDuplicateTitles: dupGroups.slice(0, 3).map(g => ({
+                exampleDuplicateTitles: dupGroups.slice(0, 3).map((g) => ({
                   title: g.title,
                   urls: g.urls.slice(0, 5)
                 }))
@@ -173,12 +190,20 @@ function runInPage(ctx) {
           // No node available: keep deterministic fallback snippet (no helper calls).
           occurrences.push({
             ...occBase,
-            html: titleEl && titleEl.outerHTML ? String(titleEl.outerHTML).slice(0, 2000) : '<title>(unknown)</title>'
+            html:
+              titleEl && titleEl.outerHTML
+                ? String(titleEl.outerHTML).slice(0, 2000)
+                : '<title>(unknown)</title>'
           });
         }
 
         // Cross-page analysis is authoritative when present; do not also run single-page heuristics.
-        return { ruleId: rule.ruleId, outcome: 'cantTell', severity: rule.defaultSeverity || 'minor', occurrences };
+        return {
+          ruleId: rule.ruleId,
+          outcome: 'cantTell',
+          severity: rule.defaultSeverity || 'minor',
+          occurrences
+        };
       }
 
       // If we had enough pages and found no review signal, there is nothing
@@ -194,14 +219,7 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  const GENERIC_TITLES = new Set([
-    'home',
-    'homepage',
-    'welcome',
-    'untitled',
-    'page',
-    'document'
-  ]);
+  const GENERIC_TITLES = new Set(['home', 'homepage', 'welcome', 'untitled', 'page', 'document']);
 
   // Conservative signals:
   // - very short title (likely non-descriptive)
@@ -210,27 +228,29 @@ function runInPage(ctx) {
   const isGeneric = GENERIC_TITLES.has(titleLc);
 
   // Template-like: "Brand | Home" or "Home - Brand" where the page-specific part is a generic token.
-  const templateLike = /\b(home|homepage|welcome)\b\s*(\||-|—|:)\s*.+/i.test(titleText) ||
-                       /.+\s*(\||-|—|:)\s*\b(home|homepage|welcome)\b/i.test(titleText);
+  const templateLike =
+    /\b(home|homepage|welcome)\b\s*(\||-|—|:)\s*.+/i.test(titleText) ||
+    /.+\s*(\||-|—|:)\s*\b(home|homepage|welcome)\b/i.test(titleText);
 
   if (isGeneric || isVeryShort || templateLike) {
     const reasonCode = isGeneric
       ? 'genericTitle'
-      : (isVeryShort ? 'veryShortTitle' : 'templateLikeTitle');
+      : isVeryShort
+        ? 'veryShortTitle'
+        : 'templateLikeTitle';
 
     const summaryKey =
-        reasonCode === 'genericTitle'
-            ? 'pageTitlePatterns_summary_cantTell_generic'
-            : (reasonCode === 'veryShortTitle'
-                ? 'pageTitlePatterns_summary_cantTell_veryShort'
-                : 'pageTitlePatterns_summary_cantTell_templateLike');
+      reasonCode === 'genericTitle'
+        ? 'pageTitlePatterns_summary_cantTell_generic'
+        : reasonCode === 'veryShortTitle'
+          ? 'pageTitlePatterns_summary_cantTell_veryShort'
+          : 'pageTitlePatterns_summary_cantTell_templateLike';
     const occBase = {
       selector: 'head > title',
       html: '',
       summary:
-          'The page title may not be descriptive enough to identify the page topic or purpose.',
-      hint:
-          'Use a more specific title that identifies the page topic or purpose (for example, include the section name or task).',
+        'The page title may not be descriptive enough to identify the page topic or purpose.',
+      hint: 'Use a more specific title that identifies the page topic or purpose (for example, include the section name or task).',
       i18n: {
         summaryKey,
         hintKey: 'pageTitlePatterns_hint_cantTell',
@@ -250,7 +270,10 @@ function runInPage(ctx) {
     } else {
       occurrences.push({
         ...occBase,
-        html: titleEl && titleEl.outerHTML ? String(titleEl.outerHTML).slice(0, 2000) : '<title>(unknown)</title>'
+        html:
+          titleEl && titleEl.outerHTML
+            ? String(titleEl.outerHTML).slice(0, 2000)
+            : '<title>(unknown)</title>'
       });
     }
   }
@@ -261,7 +284,12 @@ function runInPage(ctx) {
 
   if (occurrences.length) {
     // Patterns are review signals: cantTell rather than fail.
-    return { ruleId: rule.ruleId, outcome: 'cantTell', severity: rule.defaultSeverity || 'minor', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'minor',
+      occurrences
+    };
   }
 
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };

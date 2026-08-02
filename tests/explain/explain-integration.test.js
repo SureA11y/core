@@ -22,9 +22,14 @@ test('explain: dedupes and explains real engine output end to end', async () => 
   assert.strictEqual(check.occurrences.length, 2);
 
   const groups = buildExplainGroups(result);
-  assert.strictEqual(groups.length, 1, 'two identical missing-alt images dedupe into one real group');
+  assert.strictEqual(
+    groups.length,
+    1,
+    'two identical missing-alt images dedupe into one real group'
+  );
 
-  const provider = async (groups) => groups.map((g) => ({ groupKey: g.groupKey, text: `Explanation for ${g.ruleId}` }));
+  const provider = async (groups) =>
+    groups.map((g) => ({ groupKey: g.groupKey, text: `Explanation for ${g.ruleId}` }));
   const augmented = await explain(result, { provider });
 
   const explainedCheck = augmented.checksResults.find((c) => c.ruleId === 'img-alt-present');

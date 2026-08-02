@@ -35,7 +35,8 @@ const id = 'definition-list-children-valid';
 
 const meta = {
   title: 'Description lists must be structured correctly',
-  description: 'Checks that <dl> elements only directly contain <dt>/<dd> groups (optionally wrapped in one <div>), <script>, <template>, or <style>.',
+  description:
+    'Checks that <dl> elements only directly contain <dt>/<dd> groups (optionally wrapped in one <div>), <script>, <template>, or <style>.',
   i18n: {
     titleKey: 'definitionListChildrenValid_title',
     descriptionKey: 'definitionListChildrenValid_description'
@@ -44,7 +45,13 @@ const meta = {
   tags: ['wcag2a', 'wcag131', 'structure', 'atomic', 'automatic', 'list'],
   wcagSc: ['1.3.1'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '1.3.1', title: 'Info and Relationships', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '1.3.1',
+      title: 'Info and Relationships',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'serious',
   category: 'perceivable',
@@ -89,8 +96,14 @@ function runInPage(ctx) {
     const invalidTags = [];
     for (const node of flattened) {
       const tag = node.tagName.toLowerCase();
-      if (tag === 'dt') { hasDt = true; continue; }
-      if (tag === 'dd') { hasDd = true; continue; }
+      if (tag === 'dt') {
+        hasDt = true;
+        continue;
+      }
+      if (tag === 'dd') {
+        hasDd = true;
+        continue;
+      }
       if (!PASSTHROUGH_TAGS.has(tag)) invalidTags.push(tag);
     }
     const dedupedInvalidTags = [...new Set(invalidTags)];
@@ -102,19 +115,21 @@ function runInPage(ctx) {
     // is vacuously fine, not a violation. Only an UNBALANCED pairing (dt
     // present without any dd, or vice versa) is a real structural problem.
     const reasonCode = invalidTags.length
-        ? 'DL_INVALID_CHILD'
-        : ((hasDt || hasDd) && !(hasDt && hasDd) ? 'DL_NO_DT_DD' : null);
+      ? 'DL_INVALID_CHILD'
+      : (hasDt || hasDd) && !(hasDt && hasDd)
+        ? 'DL_NO_DT_DD'
+        : null;
     if (!reasonCode) continue;
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
     const summary = invalidTags.length
-        ? 'This description list contains a direct or wrapped child that is not part of a dt/dd group.'
-        : 'This description list has no <dt>/<dd> term-definition group.';
+      ? 'This description list contains a direct or wrapped child that is not part of a dt/dd group.'
+      : 'This description list has no <dt>/<dd> term-definition group.';
     const hint = invalidTags.length
-        ? 'Only use <dt>/<dd> (optionally wrapped in one <div>), <script>, <template>, or <style> inside <dl>.'
-        : 'Add at least one <dt>/<dd> pair inside this <dl>.';
+      ? 'Only use <dt>/<dd> (optionally wrapped in one <div>), <script>, <template>, or <style> inside <dl>.'
+      : 'Add at least one <dt>/<dd> pair inside this <dl>.';
 
     occurrences.push({
       selector: stableSelector,
@@ -123,11 +138,11 @@ function runInPage(ctx) {
       hint,
       i18n: {
         summaryKey: invalidTags.length
-            ? 'definitionListChildrenValid_summary_fail_invalidChild'
-            : 'definitionListChildrenValid_summary_fail_noDtDd',
+          ? 'definitionListChildrenValid_summary_fail_invalidChild'
+          : 'definitionListChildrenValid_summary_fail_noDtDd',
         hintKey: invalidTags.length
-            ? 'definitionListChildrenValid_hint_fail_invalidChild'
-            : 'definitionListChildrenValid_hint_fail_noDtDd',
+          ? 'definitionListChildrenValid_hint_fail_invalidChild'
+          : 'definitionListChildrenValid_hint_fail_noDtDd',
         params: { invalidChildren: dedupedInvalidTags.join(', ') }
       },
       data: {
@@ -140,7 +155,12 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'serious', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'fail',
+      severity: rule.defaultSeverity || 'serious',
+      occurrences
+    };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }

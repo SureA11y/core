@@ -11,7 +11,9 @@ const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 const RULE_ID = 'aria-valid-attr-value';
 
 function hasOccurrenceForId(rule, id) {
-  return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
+  return (rule.occurrences || []).some(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
 }
 
 test(`${RULE_ID}: notApplicable when no aria-* attributes present`, () => {
@@ -119,14 +121,36 @@ test(`${RULE_ID}: i18n default is English`, () => {
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-valid-attr-value-all-scenarios.html)`, () => {
-  const fixturePath = path.join(__dirname, '../..', 'fixtures', 'aria-valid-attr-value-all-scenarios.html');
+  const fixturePath = path.join(
+    __dirname,
+    '../..',
+    'fixtures',
+    'aria-valid-attr-value-all-scenarios.html'
+  );
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 7, maxOccurrences: 7 });
 
-  const expectedFailIds = ['avav_case_06', 'avav_case_07', 'avav_case_08', 'avav_case_09', 'avav_case_10', 'avav_case_14', 'avav_case_15'];
-  const expectedNoOccIds = ['avav_case_01', 'avav_case_02', 'avav_case_03', 'avav_case_04', 'avav_case_05', 'avav_case_11', 'avav_case_12', 'avav_case_13'];
+  const expectedFailIds = [
+    'avav_case_06',
+    'avav_case_07',
+    'avav_case_08',
+    'avav_case_09',
+    'avav_case_10',
+    'avav_case_14',
+    'avav_case_15'
+  ];
+  const expectedNoOccIds = [
+    'avav_case_01',
+    'avav_case_02',
+    'avav_case_03',
+    'avav_case_04',
+    'avav_case_05',
+    'avav_case_11',
+    'avav_case_12',
+    'avav_case_13'
+  ];
 
   for (const id of expectedFailIds) {
     assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);

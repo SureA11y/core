@@ -13,7 +13,13 @@ const meta = {
   tags: ['wcag2a', 'wcag242', 'titles', 'atomic', 'navigation', 'automatic'],
   wcagSc: ['2.4.2'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '2.4.2', title: 'Page Titled', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '2.4.2',
+      title: 'Page Titled',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'serious',
   category: 'operable',
@@ -54,13 +60,13 @@ function runInPage(ctx) {
       selector: 'head > title',
       html: '',
       summary: missingTitleEl
-          ? 'The page is missing a <title> element.'
-          : 'The page has an empty <title>.',
+        ? 'The page is missing a <title> element.'
+        : 'The page has an empty <title>.',
       hint: 'Provide a descriptive, non-empty <title> that identifies the page topic or purpose.',
       i18n: {
         summaryKey: missingTitleEl
-            ? 'pageTitlePresent_summary_fail_missing'
-            : 'pageTitlePresent_summary_fail_empty',
+          ? 'pageTitlePresent_summary_fail_missing'
+          : 'pageTitlePresent_summary_fail_empty',
         hintKey: 'pageTitlePresent_hint_fail',
         params: {}
       },
@@ -86,7 +92,12 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'fail',
+      severity: rule.defaultSeverity || 'minor',
+      occurrences
+    };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }

@@ -37,7 +37,12 @@ test(`${RULE_ID}: i18n default is English`, () => {
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/html-xml-lang-mismatch-all-scenarios.html)`, () => {
-  const fixturePath = path.join(__dirname, '../..', 'fixtures', 'html-xml-lang-mismatch-all-scenarios.html');
+  const fixturePath = path.join(
+    __dirname,
+    '../..',
+    'fixtures',
+    'html-xml-lang-mismatch-all-scenarios.html'
+  );
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
@@ -47,12 +52,24 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/html-xml-lang-mismatch-all-sc
 
 test(`html-xml-lang-mismatch: notApplicable when contextSelector scopes narrower than the whole document (fragment-scan applicability)`, () => {
   const html = `<!doctype html><html lang="en" xml:lang="fr"><body></body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: ['html-xml-lang-mismatch'], contextSelector: 'body' });
-  assertRule(result, 'html-xml-lang-mismatch', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  const result = runa11yCoreOnHtml(html, {
+    runOnly: ['html-xml-lang-mismatch'],
+    contextSelector: 'body'
+  });
+  assertRule(result, 'html-xml-lang-mismatch', 'notApplicable', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
 });
 
 test(`html-xml-lang-mismatch: notApplicable when engineOptions.fragment is true, even unscoped`, () => {
   const html = `<!doctype html><html lang="en" xml:lang="fr"><body></body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: ['html-xml-lang-mismatch'], engineOptions: { fragment: true } });
-  assertRule(result, 'html-xml-lang-mismatch', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  const result = runa11yCoreOnHtml(html, {
+    runOnly: ['html-xml-lang-mismatch'],
+    engineOptions: { fragment: true }
+  });
+  assertRule(result, 'html-xml-lang-mismatch', 'notApplicable', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
 });

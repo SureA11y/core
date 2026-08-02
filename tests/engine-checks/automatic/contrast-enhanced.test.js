@@ -5,10 +5,7 @@ const assert = require('node:assert');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const {
-    createDom,
-    runa11yCoreOnDom
-} = require('../../helpers/runa11yCoreOnHtml');
+const { createDom, runa11yCoreOnDom } = require('../../helpers/runa11yCoreOnHtml');
 const { runDomRulesInPage } = require('../../../src/index.js');
 
 const { assertRule } = require('../../helpers/assertRule');
@@ -21,90 +18,90 @@ const RULE_ID = 'contrast-enhanced';
  * - getComputedStyle may return "" for properties we rely on.
  */
 function patchGeometry(dom) {
-    const { window } = dom;
-    const proto = window.Element && window.Element.prototype;
-    if (!proto) return;
+  const { window } = dom;
+  const proto = window.Element && window.Element.prototype;
+  if (!proto) return;
 
-    if (typeof proto.getClientRects !== 'function') {
-        proto.getClientRects = function getClientRects() {
-            return [{ x: 0, y: 0, width: 10, height: 10, top: 0, left: 0, right: 10, bottom: 10 }];
-        };
-    } else {
-        const orig = proto.getClientRects;
-        proto.getClientRects = function patchedGetClientRects() {
-            try {
-                const r = orig.call(this);
-                if (r && r.length) return r;
-            } catch {}
-            return [{ x: 0, y: 0, width: 10, height: 10, top: 0, left: 0, right: 10, bottom: 10 }];
-        };
-    }
+  if (typeof proto.getClientRects !== 'function') {
+    proto.getClientRects = function getClientRects() {
+      return [{ x: 0, y: 0, width: 10, height: 10, top: 0, left: 0, right: 10, bottom: 10 }];
+    };
+  } else {
+    const orig = proto.getClientRects;
+    proto.getClientRects = function patchedGetClientRects() {
+      try {
+        const r = orig.call(this);
+        if (r && r.length) return r;
+      } catch {}
+      return [{ x: 0, y: 0, width: 10, height: 10, top: 0, left: 0, right: 10, bottom: 10 }];
+    };
+  }
 
-    if (typeof proto.getBoundingClientRect !== 'function') {
-        proto.getBoundingClientRect = function getBoundingClientRect() {
-            return { x: 0, y: 0, width: 10, height: 10, top: 0, left: 0, right: 10, bottom: 10 };
-        };
-    } else {
-        const orig = proto.getBoundingClientRect;
-        proto.getBoundingClientRect = function patchedGetBoundingClientRect() {
-            try {
-                const r = orig.call(this);
-                if (r && r.width > 0 && r.height > 0) return r;
-            } catch {}
-            return { x: 0, y: 0, width: 10, height: 10, top: 0, left: 0, right: 10, bottom: 10 };
-        };
-    }
+  if (typeof proto.getBoundingClientRect !== 'function') {
+    proto.getBoundingClientRect = function getBoundingClientRect() {
+      return { x: 0, y: 0, width: 10, height: 10, top: 0, left: 0, right: 10, bottom: 10 };
+    };
+  } else {
+    const orig = proto.getBoundingClientRect;
+    proto.getBoundingClientRect = function patchedGetBoundingClientRect() {
+      try {
+        const r = orig.call(this);
+        if (r && r.width > 0 && r.height > 0) return r;
+      } catch {}
+      return { x: 0, y: 0, width: 10, height: 10, top: 0, left: 0, right: 10, bottom: 10 };
+    };
+  }
 }
 
 function patchComputedStyleDefaults(dom) {
-    const { window } = dom;
-    const orig = window.getComputedStyle;
-    if (typeof orig !== 'function') return;
+  const { window } = dom;
+  const orig = window.getComputedStyle;
+  if (typeof orig !== 'function') return;
 
-    window.getComputedStyle = function patchedGetComputedStyle(el) {
-        const cs = orig.call(window, el);
+  window.getComputedStyle = function patchedGetComputedStyle(el) {
+    const cs = orig.call(window, el);
 
-        return new Proxy(cs, {
-            get(target, prop) {
-                const v = target[prop];
+    return new Proxy(cs, {
+      get(target, prop) {
+        const v = target[prop];
 
-                if (v == null || v === '') {
-                    // Visibility eligibility defaults
-                    if (prop === 'opacity') return '1';
-                    if (prop === 'display') return 'block';
-                    if (prop === 'visibility') return 'visible';
-                    if (prop === 'contentVisibility') return 'visible';
+        if (v == null || v === '') {
+          // Visibility eligibility defaults
+          if (prop === 'opacity') return '1';
+          if (prop === 'display') return 'block';
+          if (prop === 'visibility') return 'visible';
+          if (prop === 'contentVisibility') return 'visible';
 
-                    // Computability blocker defaults
-                    if (prop === 'backgroundImage') return 'none';
-                    if (prop === 'mixBlendMode') return 'normal';
-                    if (prop === 'filter') return 'none';
-                    if (prop === 'backdropFilter') return 'none';
+          // Computability blocker defaults
+          if (prop === 'backgroundImage') return 'none';
+          if (prop === 'mixBlendMode') return 'normal';
+          if (prop === 'filter') return 'none';
+          if (prop === 'backdropFilter') return 'none';
 
-                    // Typography defaults
-                    if (prop === 'fontSize') return '16px';
-                    if (prop === 'fontWeight') return '400';
-                    if (prop === 'color') return 'rgb(0, 0, 0)';
-                    if (prop === 'backgroundColor') return 'rgba(0, 0, 0, 0)';
-                }
+          // Typography defaults
+          if (prop === 'fontSize') return '16px';
+          if (prop === 'fontWeight') return '400';
+          if (prop === 'color') return 'rgb(0, 0, 0)';
+          if (prop === 'backgroundColor') return 'rgba(0, 0, 0, 0)';
+        }
 
-                return v;
-            }
-        });
-    };
+        return v;
+      }
+    });
+  };
 }
 
 function run(html, engineOptions = {}) {
-    const dom = createDom(html);
-    patchGeometry(dom);
-    patchComputedStyleDefaults(dom);
+  const dom = createDom(html);
+  patchGeometry(dom);
+  patchComputedStyleDefaults(dom);
 
-    return runa11yCoreOnDom(dom, {
-        engineOptions: {
-            rules: [RULE_ID],
-            ...engineOptions
-        }
-    });
+  return runa11yCoreOnDom(dom, {
+    engineOptions: {
+      rules: [RULE_ID],
+      ...engineOptions
+    }
+  });
 }
 
 // Same gap as contrast-minimum's identical structure: every scenario above
@@ -113,19 +110,24 @@ function run(html, engineOptions = {}) {
 // the patchGeometry/patchComputedStyleDefaults patches the generic parity
 // harness doesn't apply. Reusing them with runDomRulesInPage directly here.
 function runNode(html, engineOptions = {}) {
-    const dom = createDom(html);
-    patchGeometry(dom);
-    patchComputedStyleDefaults(dom);
+  const dom = createDom(html);
+  patchGeometry(dom);
+  patchComputedStyleDefaults(dom);
 
-    return runDomRulesInPage('https://example.test/', null, { rules: [RULE_ID], ...engineOptions }, null);
+  return runDomRulesInPage(
+    'https://example.test/',
+    null,
+    { rules: [RULE_ID], ...engineOptions },
+    null
+  );
 }
 
 function ruleFrom(result) {
-    return result.checksResults.find((r) => r.ruleId === RULE_ID);
+  return result.checksResults.find((r) => r.ruleId === RULE_ID);
 }
 
 test(`${RULE_ID}: no visible eligible text => notApplicable`, () => {
-    const html = `
+  const html = `
 <!doctype html>
 <html><head><style>
   html, body { background: #fff; }
@@ -134,12 +136,12 @@ test(`${RULE_ID}: no visible eligible text => notApplicable`, () => {
   <div>    </div>
 </body></html>`;
 
-    const result = run(html);
-    assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  const result = run(html);
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: eligible text exists but none computable => notApplicable (noComputableText)`, () => {
-    const html = `
+  const html = `
 <!doctype html>
 <html style="background-color: rgb(255, 255, 255); opacity: 1">
 <head></head>
@@ -148,19 +150,22 @@ test(`${RULE_ID}: eligible text exists but none computable => notApplicable (noC
   <p style="color: rgb(17, 17, 17); background-image: linear-gradient(#fff, #000); opacity: 1">Hello</p>
 </body></html>`;
 
-    const result = run(html);
+  const result = run(html);
 
-    const rule = assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 1, maxOccurrences: 1 });
-    assert.strictEqual(
-        rule.occurrences[0].i18n.summaryKey,
-        'contrastEnhanced_notApplicable_noComputableText'
-    );
-    assert.ok(Number(rule.occurrences[0].data.details.eligibleTextCount) >= 1);
-    assert.strictEqual(Number(rule.occurrences[0].data.details.computableTextCount), 0);
+  const rule = assertRule(result, RULE_ID, 'notApplicable', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  assert.strictEqual(
+    rule.occurrences[0].i18n.summaryKey,
+    'contrastEnhanced_notApplicable_noComputableText'
+  );
+  assert.ok(Number(rule.occurrences[0].data.details.eligibleTextCount) >= 1);
+  assert.strictEqual(Number(rule.occurrences[0].data.details.computableTextCount), 0);
 });
 
 test(`${RULE_ID}: strictConformance + root not opaque => notApplicable (noComputableText)`, () => {
-    const html = `
+  const html = `
 <!doctype html>
 <html><head><style>
   html, body { background: transparent; }
@@ -169,16 +174,24 @@ test(`${RULE_ID}: strictConformance + root not opaque => notApplicable (noComput
   <p style="color: #595959">Hello</p>
 </body></html>`;
 
-    const result = run(html, { contrast: { mode: 'strictConformance', rootCanvasFallback: '#ffffff' } });
+  const result = run(html, {
+    contrast: { mode: 'strictConformance', rootCanvasFallback: '#ffffff' }
+  });
 
-    const rule = assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 1, maxOccurrences: 1 });
-    assert.strictEqual(rule.occurrences[0].i18n.summaryKey, 'contrastEnhanced_notApplicable_noComputableText');
-    assert.ok(Number(rule.occurrences[0].data.details.eligibleTextCount) >= 1);
-    assert.strictEqual(Number(rule.occurrences[0].data.details.computableTextCount), 0);
+  const rule = assertRule(result, RULE_ID, 'notApplicable', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  assert.strictEqual(
+    rule.occurrences[0].i18n.summaryKey,
+    'contrastEnhanced_notApplicable_noComputableText'
+  );
+  assert.ok(Number(rule.occurrences[0].data.details.eligibleTextCount) >= 1);
+  assert.strictEqual(Number(rule.occurrences[0].data.details.computableTextCount), 0);
 });
 
 test(`${RULE_ID}: auditorAssist + root not opaque => pass using rootCanvasFallback`, () => {
-    const html = `
+  const html = `
 <!doctype html>
 <html><head><style>
   html, body { background: transparent; }
@@ -187,14 +200,13 @@ test(`${RULE_ID}: auditorAssist + root not opaque => pass using rootCanvasFallba
   <p style="color: #595959">Hello</p>
 </body></html>`;
 
-    const result = run(html, { contrast: { mode: 'auditorAssist', rootCanvasFallback: '#ffffff' } });
+  const result = run(html, { contrast: { mode: 'auditorAssist', rootCanvasFallback: '#ffffff' } });
 
-    assertRule(result, RULE_ID, 'pass', { minOccurrences: 1 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 1 });
 });
 
-
 test(`${RULE_ID}: computable normal text meets 7:1 => pass`, () => {
-    const html = `
+  const html = `
 <!doctype html>
 <html style="background-color: rgb(255, 255, 255); opacity: 1">
 <head></head>
@@ -205,16 +217,19 @@ test(`${RULE_ID}: computable normal text meets 7:1 => pass`, () => {
   </p>
 </body></html>`;
 
-    const result = run(html);
+  const result = run(html);
 
-    const rule = assertRule(result, RULE_ID, 'pass', { minOccurrences: 1, maxOccurrences: 1 });
-    assert.strictEqual(rule.occurrences[0].i18n.summaryKey, 'contrastEnhanced_pass_allAboveThreshold');
-    assert.ok(Number(rule.occurrences[0].data.details.eligibleTextCount) >= 1);
-    assert.ok(Number(rule.occurrences[0].data.details.computableTextCount) >= 1);
+  const rule = assertRule(result, RULE_ID, 'pass', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.strictEqual(
+    rule.occurrences[0].i18n.summaryKey,
+    'contrastEnhanced_pass_allAboveThreshold'
+  );
+  assert.ok(Number(rule.occurrences[0].data.details.eligibleTextCount) >= 1);
+  assert.ok(Number(rule.occurrences[0].data.details.computableTextCount) >= 1);
 });
 
 test(`${RULE_ID}: computable normal text below 7:1 => fail (BELOW_THRESHOLD)`, () => {
-    const html = `
+  const html = `
 <!doctype html>
 <html style="background-color: rgb(255, 255, 255); opacity: 1">
 <head></head>
@@ -225,32 +240,42 @@ test(`${RULE_ID}: computable normal text below 7:1 => fail (BELOW_THRESHOLD)`, (
   </p>
 </body></html>`;
 
-    const result = run(html);
+  const result = run(html);
 
-    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 50 });
-    const occ = rule.occurrences[0];
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 50 });
+  const occ = rule.occurrences[0];
 
-    // Regression guard: failing occurrences must include HTML snippet + selector (via helpers.reportOccurrence)
-    assert.ok(typeof occ.html === 'string' && occ.html.length > 0, 'expected occ.html to be populated');
-    assert.match(occ.html, /<p\b/i, 'expected snippet to contain the failing <p>');
-    assert.match(occ.html, /id\s*=\s*["']t["']/i, 'expected snippet to include the element id');
+  // Regression guard: failing occurrences must include HTML snippet + selector (via helpers.reportOccurrence)
+  assert.ok(
+    typeof occ.html === 'string' && occ.html.length > 0,
+    'expected occ.html to be populated'
+  );
+  assert.match(occ.html, /<p\b/i, 'expected snippet to contain the failing <p>');
+  assert.match(occ.html, /id\s*=\s*["']t["']/i, 'expected snippet to include the element id');
 
-    assert.ok(typeof occ.selector === 'string' && occ.selector.length > 0, 'expected occ.selector to be populated');
-    assert.match(occ.selector, /#t\b/);
+  assert.ok(
+    typeof occ.selector === 'string' && occ.selector.length > 0,
+    'expected occ.selector to be populated'
+  );
+  assert.match(occ.selector, /#t\b/);
 
-    assert.strictEqual(occ.i18n.summaryKey, 'contrastEnhanced_fail_belowThreshold');
-    assert.strictEqual(occ.data.details.reasonCode, 'BELOW_THRESHOLD');
+  assert.strictEqual(occ.i18n.summaryKey, 'contrastEnhanced_fail_belowThreshold');
+  assert.strictEqual(occ.data.details.reasonCode, 'BELOW_THRESHOLD');
 
-    // Threshold for normal text at AAA is 7
-    assert.strictEqual(occ.i18n.params.threshold, '7');
+  // Threshold for normal text at AAA is 7
+  assert.strictEqual(occ.i18n.params.threshold, '7');
 
-    assert.ok(typeof occ.i18n.params.ratio === 'string' && occ.i18n.params.ratio.length > 0);
-    assert.ok(typeof occ.i18n.params.foreground === 'string' && occ.i18n.params.foreground.startsWith('rgba('));
-    assert.ok(typeof occ.i18n.params.background === 'string' && occ.i18n.params.background.startsWith('rgba('));
+  assert.ok(typeof occ.i18n.params.ratio === 'string' && occ.i18n.params.ratio.length > 0);
+  assert.ok(
+    typeof occ.i18n.params.foreground === 'string' && occ.i18n.params.foreground.startsWith('rgba(')
+  );
+  assert.ok(
+    typeof occ.i18n.params.background === 'string' && occ.i18n.params.background.startsWith('rgba(')
+  );
 });
 
 test(`${RULE_ID}: large text uses 4.5:1 threshold (passes when <7 but >=4.5) => pass`, () => {
-    const html = `
+  const html = `
 <!doctype html>
 <html style="background-color: rgb(255, 255, 255); opacity: 1">
 <head></head>
@@ -261,14 +286,17 @@ test(`${RULE_ID}: large text uses 4.5:1 threshold (passes when <7 but >=4.5) => 
   </p>
 </body></html>`;
 
-    const result = run(html);
+  const result = run(html);
 
-    const rule = assertRule(result, RULE_ID, 'pass', { minOccurrences: 1, maxOccurrences: 1 });
-    assert.strictEqual(rule.occurrences[0].i18n.summaryKey, 'contrastEnhanced_pass_allAboveThreshold');
+  const rule = assertRule(result, RULE_ID, 'pass', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.strictEqual(
+    rule.occurrences[0].i18n.summaryKey,
+    'contrastEnhanced_pass_allAboveThreshold'
+  );
 });
 
 test(`${RULE_ID}: large text below 4.5:1 => fail`, () => {
-    const html = `
+  const html = `
 <!doctype html>
 <html style="background-color: rgb(255, 255, 255); opacity: 1">
 <head></head>
@@ -279,29 +307,35 @@ test(`${RULE_ID}: large text below 4.5:1 => fail`, () => {
   </p>
 </body></html>`;
 
-    const result = run(html);
+  const result = run(html);
 
-    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 50 });
-    const occ = rule.occurrences[0];
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 50 });
+  const occ = rule.occurrences[0];
 
-    // Regression guard: failing occurrences must include HTML snippet + selector (via helpers.reportOccurrence)
-    assert.ok(typeof occ.html === 'string' && occ.html.length > 0, 'expected occ.html to be populated');
-    assert.match(occ.html, /<p\b/i, 'expected snippet to contain the failing <p>');
-    assert.match(occ.html, /id\s*=\s*["']lt["']/i, 'expected snippet to include the element id');
+  // Regression guard: failing occurrences must include HTML snippet + selector (via helpers.reportOccurrence)
+  assert.ok(
+    typeof occ.html === 'string' && occ.html.length > 0,
+    'expected occ.html to be populated'
+  );
+  assert.match(occ.html, /<p\b/i, 'expected snippet to contain the failing <p>');
+  assert.match(occ.html, /id\s*=\s*["']lt["']/i, 'expected snippet to include the element id');
 
-    assert.ok(typeof occ.selector === 'string' && occ.selector.length > 0, 'expected occ.selector to be populated');
-    assert.match(occ.selector, /#lt\b/);
+  assert.ok(
+    typeof occ.selector === 'string' && occ.selector.length > 0,
+    'expected occ.selector to be populated'
+  );
+  assert.match(occ.selector, /#lt\b/);
 
-    assert.strictEqual(occ.i18n.summaryKey, 'contrastEnhanced_fail_belowThreshold');
-    assert.strictEqual(occ.data.details.reasonCode, 'BELOW_THRESHOLD');
+  assert.strictEqual(occ.i18n.summaryKey, 'contrastEnhanced_fail_belowThreshold');
+  assert.strictEqual(occ.data.details.reasonCode, 'BELOW_THRESHOLD');
 
-    // Threshold for large text at AAA is 4.5
-    assert.strictEqual(occ.i18n.params.threshold, '4.5');
-    assert.strictEqual(occ.i18n.params.isLargeText, true);
+  // Threshold for large text at AAA is 4.5
+  assert.strictEqual(occ.i18n.params.threshold, '4.5');
+  assert.strictEqual(occ.i18n.params.isLargeText, true);
 });
 
 test(`${RULE_ID}: dedup failures per element (multiple text nodes in same element) => 1 occurrence`, () => {
-    const html = `
+  const html = `
 <!doctype html>
 <html style="background-color: rgb(255, 255, 255); opacity: 1">
 <head></head>
@@ -311,15 +345,15 @@ test(`${RULE_ID}: dedup failures per element (multiple text nodes in same elemen
   </p>
 </body></html>`;
 
-    const result = run(html);
+  const result = run(html);
 
-    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 50 });
-    assert.strictEqual(rule.occurrences.length, 1);
-    assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'BELOW_THRESHOLD');
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 50 });
+  assert.strictEqual(rule.occurrences.length, 1);
+  assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'BELOW_THRESHOLD');
 });
 
 test(`${RULE_ID}: boundary just above 7:1 (rgb(89,89,89) on white, normal text) => pass`, () => {
-    const html = `
+  const html = `
 <!doctype html>
 <html style="background-color: rgb(255, 255, 255); opacity: 1">
 <head></head>
@@ -329,12 +363,12 @@ test(`${RULE_ID}: boundary just above 7:1 (rgb(89,89,89) on white, normal text) 
   </p>
 </body></html>`;
 
-    const result = run(html);
-    assertRule(result, RULE_ID, 'pass', { minOccurrences: 1, maxOccurrences: 1 });
+  const result = run(html);
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
 test(`${RULE_ID}: boundary just below 7:1 (rgb(90,90,90) on white, normal text) => fail`, () => {
-    const html = `
+  const html = `
 <!doctype html>
 <html style="background-color: rgb(255, 255, 255); opacity: 1">
 <head></head>
@@ -344,13 +378,13 @@ test(`${RULE_ID}: boundary just below 7:1 (rgb(90,90,90) on white, normal text) 
   </p>
 </body></html>`;
 
-    const result = run(html);
-    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
-    assert.strictEqual(rule.occurrences[0].i18n.params.threshold, '7');
+  const result = run(html);
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.strictEqual(rule.occurrences[0].i18n.params.threshold, '7');
 });
 
 test(`${RULE_ID}: boundary just above 4.5:1 for large text (rgb(118,118,118) @ 24px) => pass`, () => {
-    const html = `
+  const html = `
 <!doctype html>
 <html style="background-color: rgb(255, 255, 255); opacity: 1">
 <head></head>
@@ -360,12 +394,12 @@ test(`${RULE_ID}: boundary just above 4.5:1 for large text (rgb(118,118,118) @ 2
   </p>
 </body></html>`;
 
-    const result = run(html);
-    assertRule(result, RULE_ID, 'pass', { minOccurrences: 1, maxOccurrences: 1 });
+  const result = run(html);
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
 test(`${RULE_ID}: boundary just below 4.5:1 for large text (rgb(119,119,119) @ 24px) => fail`, () => {
-    const html = `
+  const html = `
 <!doctype html>
 <html style="background-color: rgb(255, 255, 255); opacity: 1">
 <head></head>
@@ -375,13 +409,13 @@ test(`${RULE_ID}: boundary just below 4.5:1 for large text (rgb(119,119,119) @ 2
   </p>
 </body></html>`;
 
-    const result = run(html);
-    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
-    assert.strictEqual(rule.occurrences[0].i18n.params.threshold, '4.5');
+  const result = run(html);
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.strictEqual(rule.occurrences[0].i18n.params.threshold, '4.5');
 });
 
 test(`${RULE_ID}: ANCESTOR opacity < 1 gates to notApplicable instead of a confidently wrong ratio`, () => {
-    const html = `
+  const html = `
 <!doctype html>
 <html style="background-color: rgb(255, 255, 255); opacity: 1">
 <head></head>
@@ -393,17 +427,20 @@ test(`${RULE_ID}: ANCESTOR opacity < 1 gates to notApplicable instead of a confi
   </div>
 </body></html>`;
 
-    const result = run(html);
-    const rule = assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 1, maxOccurrences: 1 });
-    assert.strictEqual(
-        rule.occurrences[0].i18n.summaryKey,
-        'contrastEnhanced_notApplicable_noComputableText'
-    );
-    assert.strictEqual(Number(rule.occurrences[0].data.details.computableTextCount), 0);
+  const result = run(html);
+  const rule = assertRule(result, RULE_ID, 'notApplicable', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  assert.strictEqual(
+    rule.occurrences[0].i18n.summaryKey,
+    'contrastEnhanced_notApplicable_noComputableText'
+  );
+  assert.strictEqual(Number(rule.occurrences[0].data.details.computableTextCount), 0);
 });
 
 test(`${RULE_ID}: element's OWN opacity < 1 is NOT a computability blocker; ratio is computed (and here fails)`, () => {
-    const html = `
+  const html = `
 <!doctype html>
 <html style="background-color: rgb(255, 255, 255); opacity: 1">
 <head></head>
@@ -413,139 +450,139 @@ test(`${RULE_ID}: element's OWN opacity < 1 is NOT a computability blocker; rati
   </p>
 </body></html>`;
 
-    const result = run(html);
-    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
-    assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'BELOW_THRESHOLD');
-    assert.strictEqual(rule.occurrences[0].i18n.params.ratio, '3.95');
+  const result = run(html);
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'BELOW_THRESHOLD');
+  assert.strictEqual(rule.occurrences[0].i18n.params.ratio, '3.95');
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/contrast-all-scenarios.html)`, () => {
-    const fixturePath = path.join(__dirname, '../..', 'fixtures', 'contrast-all-scenarios.html');
-    const html = fs.readFileSync(fixturePath, 'utf8');
+  const fixturePath = path.join(__dirname, '../..', 'fixtures', 'contrast-all-scenarios.html');
+  const html = fs.readFileSync(fixturePath, 'utf8');
 
-    const result = run(html);
+  const result = run(html);
 
-    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 16, maxOccurrences: 16 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 16, maxOccurrences: 16 });
 
-    const expectedFailIds = [
-        'aa_pass_aaa_fail_gray_on_white', // passes AA, fails AAA
-        'aa_fail_light_gray_on_white',
-        'large_text_light_gray_on_white',
-        'bold_large_text_light_gray_on_white',
-        'fg_alpha_black_50_on_white',
-        'own_opacity_still_computable',
-        'excluded_inert_fail',
-        'excluded_aria_hidden_fail',
-        'eligible_aria_hidden_tabbable_fail',
-        'excluded_aria_hidden_prog_focus',
-        'eligible_offscreen_fail',
-        'eligible_sr_only_fail',
-        'eligible_zero_size_text',
-        'eligible_enabled_button_fail',
-        // <input type="submit"|"button">'s visible label comes from the
-        // value attribute, not a DOM text node — must still be evaluated
-        // (see contrast-helpers.js's getTextScan).
-        'eligible_submit_input_fail',
-        'eligible_button_input_fail'
-    ];
+  const expectedFailIds = [
+    'aa_pass_aaa_fail_gray_on_white', // passes AA, fails AAA
+    'aa_fail_light_gray_on_white',
+    'large_text_light_gray_on_white',
+    'bold_large_text_light_gray_on_white',
+    'fg_alpha_black_50_on_white',
+    'own_opacity_still_computable',
+    'excluded_inert_fail',
+    'excluded_aria_hidden_fail',
+    'eligible_aria_hidden_tabbable_fail',
+    'excluded_aria_hidden_prog_focus',
+    'eligible_offscreen_fail',
+    'eligible_sr_only_fail',
+    'eligible_zero_size_text',
+    'eligible_enabled_button_fail',
+    // <input type="submit"|"button">'s visible label comes from the
+    // value attribute, not a DOM text node — must still be evaluated
+    // (see contrast-helpers.js's getTextScan).
+    'eligible_submit_input_fail',
+    'eligible_button_input_fail'
+  ];
 
-    const expectedNoOccIds = [
-        'pass_black_on_white',
-        'bg_alpha_white_50_black_text',
-        'bg_alpha_80_over_gray_black_text',
-        'excluded_hidden_attr_fail',
-        'excluded_display_none_fail',
-        'excluded_visibility_hidden_fail',
-        'excluded_visibility_collapse_fail',
-        'excluded_details_closed_fail',
-        'excluded_template_fail',
-        'whitespace_only',
-        'blocker_gradient_bg',
-        'blocker_image_bg',
-        'blocker_mix_blend_mode',
-        'blocker_filter',
-        'blocker_backdrop_filter',
-        'blocker_ancestor_opacity',
-        'excluded_disabled_button_fail', // inactive UI component (WCAG 1.4.3/1.4.6 Incidental exception)
-        'excluded_disabled_button_nested_fail',
-        'excluded_disabled_fieldset_fail',
-        'excluded_aria_disabled_fail',
-        'excluded_disabled_submit_input_fail' // same inactive-UI-component exception, on a value-text input
-    ];
+  const expectedNoOccIds = [
+    'pass_black_on_white',
+    'bg_alpha_white_50_black_text',
+    'bg_alpha_80_over_gray_black_text',
+    'excluded_hidden_attr_fail',
+    'excluded_display_none_fail',
+    'excluded_visibility_hidden_fail',
+    'excluded_visibility_collapse_fail',
+    'excluded_details_closed_fail',
+    'excluded_template_fail',
+    'whitespace_only',
+    'blocker_gradient_bg',
+    'blocker_image_bg',
+    'blocker_mix_blend_mode',
+    'blocker_filter',
+    'blocker_backdrop_filter',
+    'blocker_ancestor_opacity',
+    'excluded_disabled_button_fail', // inactive UI component (WCAG 1.4.3/1.4.6 Incidental exception)
+    'excluded_disabled_button_nested_fail',
+    'excluded_disabled_fieldset_fail',
+    'excluded_aria_disabled_fail',
+    'excluded_disabled_submit_input_fail' // same inactive-UI-component exception, on a value-text input
+  ];
 
-    for (const id of expectedFailIds) {
-        assert.ok(
-            rule.occurrences.some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)),
-            `Expected occurrence for id="${id}"`
-        );
-    }
+  for (const id of expectedFailIds) {
+    assert.ok(
+      rule.occurrences.some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)),
+      `Expected occurrence for id="${id}"`
+    );
+  }
 
-    for (const id of expectedNoOccIds) {
-        assert.ok(
-            !rule.occurrences.some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)),
-            `Did not expect occurrence for id="${id}"`
-        );
-    }
+  for (const id of expectedNoOccIds) {
+    assert.ok(
+      !rule.occurrences.some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)),
+      `Did not expect occurrence for id="${id}"`
+    );
+  }
 });
 
 test(`${RULE_ID} (node runtime): fixture coverage (tests/fixtures/contrast-all-scenarios.html)`, () => {
-    const fixturePath = path.join(__dirname, '../..', 'fixtures', 'contrast-all-scenarios.html');
-    const html = fs.readFileSync(fixturePath, 'utf8');
+  const fixturePath = path.join(__dirname, '../..', 'fixtures', 'contrast-all-scenarios.html');
+  const html = fs.readFileSync(fixturePath, 'utf8');
 
-    const result = runNode(html);
-    const rule = ruleFrom(result);
-    assert.ok(rule);
-    assert.strictEqual(rule.outcome, 'fail');
-    assert.strictEqual(rule.occurrences.length, 16);
+  const result = runNode(html);
+  const rule = ruleFrom(result);
+  assert.ok(rule);
+  assert.strictEqual(rule.outcome, 'fail');
+  assert.strictEqual(rule.occurrences.length, 16);
 
-    const expectedFailIds = [
-        'aa_pass_aaa_fail_gray_on_white',
-        'aa_fail_light_gray_on_white',
-        'large_text_light_gray_on_white',
-        'bold_large_text_light_gray_on_white',
-        'fg_alpha_black_50_on_white',
-        'own_opacity_still_computable',
-        'excluded_inert_fail',
-        'excluded_aria_hidden_fail',
-        'eligible_aria_hidden_tabbable_fail',
-        'excluded_aria_hidden_prog_focus',
-        'eligible_offscreen_fail',
-        'eligible_sr_only_fail',
-        'eligible_zero_size_text',
-        'eligible_enabled_button_fail',
-        'eligible_submit_input_fail',
-        'eligible_button_input_fail'
-    ];
-    const expectedNoOccIds = [
-        'pass_black_on_white',
-        'bg_alpha_white_50_black_text',
-        'bg_alpha_80_over_gray_black_text',
-        'blocker_gradient_bg',
-        'blocker_image_bg',
-        'blocker_mix_blend_mode',
-        'blocker_filter',
-        'blocker_backdrop_filter',
-        'blocker_ancestor_opacity',
-        'excluded_disabled_button_fail',
-        'excluded_disabled_submit_input_fail'
-    ];
+  const expectedFailIds = [
+    'aa_pass_aaa_fail_gray_on_white',
+    'aa_fail_light_gray_on_white',
+    'large_text_light_gray_on_white',
+    'bold_large_text_light_gray_on_white',
+    'fg_alpha_black_50_on_white',
+    'own_opacity_still_computable',
+    'excluded_inert_fail',
+    'excluded_aria_hidden_fail',
+    'eligible_aria_hidden_tabbable_fail',
+    'excluded_aria_hidden_prog_focus',
+    'eligible_offscreen_fail',
+    'eligible_sr_only_fail',
+    'eligible_zero_size_text',
+    'eligible_enabled_button_fail',
+    'eligible_submit_input_fail',
+    'eligible_button_input_fail'
+  ];
+  const expectedNoOccIds = [
+    'pass_black_on_white',
+    'bg_alpha_white_50_black_text',
+    'bg_alpha_80_over_gray_black_text',
+    'blocker_gradient_bg',
+    'blocker_image_bg',
+    'blocker_mix_blend_mode',
+    'blocker_filter',
+    'blocker_backdrop_filter',
+    'blocker_ancestor_opacity',
+    'excluded_disabled_button_fail',
+    'excluded_disabled_submit_input_fail'
+  ];
 
-    for (const id of expectedFailIds) {
-        assert.ok(
-            rule.occurrences.some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)),
-            `Expected occurrence for id="${id}"`
-        );
-    }
-    for (const id of expectedNoOccIds) {
-        assert.ok(
-            !rule.occurrences.some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)),
-            `Did not expect occurrence for id="${id}"`
-        );
-    }
+  for (const id of expectedFailIds) {
+    assert.ok(
+      rule.occurrences.some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)),
+      `Expected occurrence for id="${id}"`
+    );
+  }
+  for (const id of expectedNoOccIds) {
+    assert.ok(
+      !rule.occurrences.some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)),
+      `Did not expect occurrence for id="${id}"`
+    );
+  }
 });
 
 test(`${RULE_ID} (node runtime): auditorAssist + root not opaque => pass using rootCanvasFallback`, () => {
-    const html = `
+  const html = `
 <!doctype html>
 <html><head><style>
   html, body { background: transparent; }
@@ -554,16 +591,21 @@ test(`${RULE_ID} (node runtime): auditorAssist + root not opaque => pass using r
   <p style="color: #595959">Hello</p>
 </body></html>`;
 
-    const result = runNode(html, { contrast: { mode: 'auditorAssist', rootCanvasFallback: '#ffffff' } });
-    const rule = ruleFrom(result);
-    assert.ok(rule);
-    assert.strictEqual(rule.outcome, 'pass');
-    assert.ok(rule.occurrences.length >= 1);
-    assert.strictEqual(rule.occurrences[0].i18n.summaryKey, 'contrastEnhanced_pass_allAboveThreshold');
+  const result = runNode(html, {
+    contrast: { mode: 'auditorAssist', rootCanvasFallback: '#ffffff' }
+  });
+  const rule = ruleFrom(result);
+  assert.ok(rule);
+  assert.strictEqual(rule.outcome, 'pass');
+  assert.ok(rule.occurrences.length >= 1);
+  assert.strictEqual(
+    rule.occurrences[0].i18n.summaryKey,
+    'contrastEnhanced_pass_allAboveThreshold'
+  );
 });
 
 test(`${RULE_ID} (node runtime): no visible eligible text => notApplicable`, () => {
-    const html = `
+  const html = `
 <!doctype html>
 <html><head><style>
   html, body { background: #fff; }
@@ -572,11 +614,11 @@ test(`${RULE_ID} (node runtime): no visible eligible text => notApplicable`, () 
   <div>    </div>
 </body></html>`;
 
-    const result = runNode(html);
-    const rule = ruleFrom(result);
-    assert.ok(rule);
-    assert.strictEqual(rule.outcome, 'notApplicable');
-    assert.strictEqual(rule.occurrences.length, 0);
+  const result = runNode(html);
+  const rule = ruleFrom(result);
+  assert.ok(rule);
+  assert.strictEqual(rule.outcome, 'notApplicable');
+  assert.strictEqual(rule.occurrences.length, 0);
 });
 
 // Optional determinism smoke check

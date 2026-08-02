@@ -11,7 +11,9 @@ const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 const RULE_ID = 'svg-image-text-alternative-present';
 
 function hasOccurrenceForId(rule, id) {
-  return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
+  return (rule.occurrences || []).some(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
 }
 
 test(`${RULE_ID}: notApplicable when no SVG <image>`, () => {
@@ -98,7 +100,12 @@ test(`${RULE_ID}: inert subtree is ineligible and does not cause pass (=> notApp
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/svg-image-text-alternative-present-all-scenarios.html)`, () => {
-  const fixturePath = path.join(__dirname, '../..', 'fixtures', 'svg-image-text-alternative-present-all-scenarios.html');
+  const fixturePath = path.join(
+    __dirname,
+    '../..',
+    'fixtures',
+    'svg-image-text-alternative-present-all-scenarios.html'
+  );
   const html = fs.readFileSync(fixturePath, 'utf8');
 
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
@@ -113,7 +120,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/svg-image-text-alternative-pr
     'svgimg_case_10', // <title> not first child does not count
     'svgimg_case_13', // <desc> misplaced does not count
     'svgimg_case_16', // opacity:0 remains eligible
-    'svgimg_case_17'  // offscreen remains eligible
+    'svgimg_case_17' // offscreen remains eligible
   ];
   const expectedNoOccIds = [
     'svgimg_case_02',
@@ -127,14 +134,19 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/svg-image-text-alternative-pr
     'svgimg_case_15', // aria-labelledby counts
     'svgimg_case_18', // display:none ineligible
     'svgimg_case_19', // visibility:hidden ineligible
-    'svgimg_case_20'  // template non-composed ineligible
+    'svgimg_case_20' // template non-composed ineligible
   ];
 
-  for (const id of expectedFailIds) assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);
-  for (const id of expectedNoOccIds) assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
+  for (const id of expectedFailIds)
+    assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);
+  for (const id of expectedNoOccIds)
+    assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
 
   for (const occ of rule.occurrences) {
-    assert.ok(typeof occ.summary === 'string' && occ.summary.includes('<image>'), 'Expected <image> in occurrence.summary');
+    assert.ok(
+      typeof occ.summary === 'string' && occ.summary.includes('<image>'),
+      'Expected <image> in occurrence.summary'
+    );
   }
 });
 

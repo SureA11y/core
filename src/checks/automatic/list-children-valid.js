@@ -52,7 +52,8 @@ const id = 'list-children-valid';
 
 const meta = {
   title: 'Lists must only directly contain list items',
-  description: 'Checks that <ul>/<ol> elements only have <li>, <script>, or <template> as direct children.',
+  description:
+    'Checks that <ul>/<ol> elements only have <li>, <script>, or <template> as direct children.',
   i18n: {
     titleKey: 'listChildrenValid_title',
     descriptionKey: 'listChildrenValid_description'
@@ -61,7 +62,13 @@ const meta = {
   tags: ['wcag2a', 'wcag131', 'structure', 'atomic', 'automatic', 'list'],
   wcagSc: ['1.3.1'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '1.3.1', title: 'Info and Relationships', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '1.3.1',
+      title: 'Info and Relationships',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'serious',
   category: 'perceivable',
@@ -77,9 +84,12 @@ function runInPage(ctx) {
   // ("runInPage MUST be self-contained").
   const ALLOWED_CHILD_TAGS = new Set(['li', 'script', 'template']);
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('ul, ol') : helpers.queryAll('ul, ol');
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart('ul, ol')
+    : helpers.queryAll('ul, ol');
 
-  const isAccTreeEligible = helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+  const isAccTreeEligible =
+    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
 
   function isExposedToAt(el) {
     if (!isAccTreeEligible) return true;
@@ -123,7 +133,7 @@ function runInPage(ctx) {
 
     const tag = el.tagName.toLowerCase();
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
     occurrences.push({
       selector: stableSelector,
@@ -145,7 +155,12 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'serious', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'fail',
+      severity: rule.defaultSeverity || 'serious',
+      occurrences
+    };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }

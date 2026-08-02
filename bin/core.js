@@ -127,7 +127,12 @@ function isUrl(s) {
 
 function formatError(err) {
   const base = err && err.message ? err.message : String(err);
-  const cause = err && err.cause && err.cause.message ? err.cause.message : (err && err.cause ? String(err.cause) : '');
+  const cause =
+    err && err.cause && err.cause.message
+      ? err.cause.message
+      : err && err.cause
+        ? String(err.cause)
+        : '';
   return cause ? `${base}: ${cause}` : base;
 }
 
@@ -166,13 +171,17 @@ function printSummary(result, baselineMatch) {
   }
 
   process.stdout.write(`\nsurea11y scan: ${result.url || '(no url)'}\n`);
-  process.stdout.write(`  pass: ${byOutcome.pass}   fail: ${byOutcome.fail}   cantTell: ${byOutcome.cantTell}   notApplicable: ${byOutcome.notApplicable}\n\n`);
+  process.stdout.write(
+    `  pass: ${byOutcome.pass}   fail: ${byOutcome.fail}   cantTell: ${byOutcome.cantTell}   notApplicable: ${byOutcome.notApplicable}\n\n`
+  );
 
   const fails = result.checksResults.filter((r) => r.outcome === 'fail');
   if (fails.length) {
     process.stdout.write(`FAIL (${fails.length} rule(s)):\n`);
     for (const r of fails) {
-      process.stdout.write(`\n  ${r.ruleId}  (${r.severity}, ${r.occurrences.length} occurrence(s))\n`);
+      process.stdout.write(
+        `\n  ${r.ruleId}  (${r.severity}, ${r.occurrences.length} occurrence(s))\n`
+      );
       for (const occ of r.occurrences.slice(0, 5)) {
         process.stdout.write(`    - ${occ.selector || '(no selector)'}\n      ${occ.summary}\n`);
         if (occ.hint) process.stdout.write(`      hint: ${occ.hint}\n`);
@@ -186,15 +195,21 @@ function printSummary(result, baselineMatch) {
 
   const cantTells = result.checksResults.filter((r) => r.outcome === 'cantTell');
   if (cantTells.length) {
-    process.stdout.write(`cantTell — needs human review (${cantTells.length} rule(s)): ${cantTells.map((r) => r.ruleId).join(', ')}\n\n`);
+    process.stdout.write(
+      `cantTell — needs human review (${cantTells.length} rule(s)): ${cantTells.map((r) => r.ruleId).join(', ')}\n\n`
+    );
   }
 
   if (baselineMatch) {
-    process.stdout.write(`baseline: ${baselineMatch.knownCount} known, ${baselineMatch.newCount} new, ${baselineMatch.staleCount} stale (no longer detected)\n`);
+    process.stdout.write(
+      `baseline: ${baselineMatch.knownCount} known, ${baselineMatch.newCount} new, ${baselineMatch.staleCount} stale (no longer detected)\n`
+    );
     if (baselineMatch.newCount) {
       process.stdout.write(`\nNEW (not in baseline, ${baselineMatch.newCount} occurrence(s)):\n`);
       for (const occ of baselineMatch.newOccurrences.slice(0, 5)) {
-        process.stdout.write(`  - ${occ.ruleId}: ${occ.selector || '(no selector)'}\n    ${occ.summary}\n`);
+        process.stdout.write(
+          `  - ${occ.ruleId}: ${occ.selector || '(no selector)'}\n    ${occ.summary}\n`
+        );
       }
       if (baselineMatch.newOccurrences.length > 5) {
         process.stdout.write(`  ... and ${baselineMatch.newOccurrences.length - 5} more\n`);
@@ -209,18 +224,25 @@ function loadBaselineFile(baselinePath) {
   try {
     raw = fs.readFileSync(baselinePath, 'utf8');
   } catch (err) {
-    throw new Error(`Could not read baseline file "${baselinePath}": ${formatError(err)}. Run with --write-baseline ${baselinePath} first to create one.`);
+    throw new Error(
+      `Could not read baseline file "${baselinePath}": ${formatError(err)}. Run with --write-baseline ${baselinePath} first to create one.`,
+      { cause: err }
+    );
   }
 
   let parsed;
   try {
     parsed = JSON.parse(raw);
   } catch (err) {
-    throw new Error(`Baseline file "${baselinePath}" is not valid JSON: ${formatError(err)}`);
+    throw new Error(`Baseline file "${baselinePath}" is not valid JSON: ${formatError(err)}`, {
+      cause: err
+    });
   }
 
   if (!parsed || parsed.version !== 1 || !Array.isArray(parsed.entries)) {
-    throw new Error(`Baseline file "${baselinePath}" is not a supported baseline (expected { version: 1, entries: [...] }). Regenerate it with --write-baseline.`);
+    throw new Error(
+      `Baseline file "${baselinePath}" is not a supported baseline (expected { version: 1, entries: [...] }). Regenerate it with --write-baseline.`
+    );
   }
 
   return parsed;
@@ -235,7 +257,9 @@ async function runScan(args) {
   }
 
   if (args.baseline && args.writeBaseline) {
-    process.stderr.write('Error: --baseline and --write-baseline cannot be used together in the same run. See --help.\n');
+    process.stderr.write(
+      'Error: --baseline and --write-baseline cannot be used together in the same run. See --help.\n'
+    );
     process.exitCode = 2;
     return;
   }
@@ -264,7 +288,9 @@ async function runScan(args) {
   try {
     ({ JSDOM } = require('jsdom'));
   } catch {
-    process.stderr.write('Error: the surea11y CLI requires jsdom. Run `npm install jsdom` (it should already be a dependency of this package — this likely means a broken install).\n');
+    process.stderr.write(
+      'Error: the surea11y CLI requires jsdom. Run `npm install jsdom` (it should already be a dependency of this package — this likely means a broken install).\n'
+    );
     process.exitCode = 2;
     return;
   }
@@ -283,16 +309,22 @@ async function runScan(args) {
   }
 
   if (args.html) {
-    fs.writeFileSync(args.html, renderHtmlReport(result, { title: `surea11y scan report — ${target}` }));
+    fs.writeFileSync(
+      args.html,
+      renderHtmlReport(result, { title: `surea11y scan report — ${target}` })
+    );
     process.stderr.write(`Wrote HTML report to: ${args.html}\n`);
   }
 
   if (args.sarif) {
-    fs.writeFileSync(args.sarif, renderSarifReport(result, {
-      toolVersion: pkg.version,
-      informationUri: (pkg.homepage || '').replace(/#.*$/, ''),
-      baselineEntries: baselineFile ? baselineFile.entries : undefined
-    }));
+    fs.writeFileSync(
+      args.sarif,
+      renderSarifReport(result, {
+        toolVersion: pkg.version,
+        informationUri: (pkg.homepage || '').replace(/#.*$/, ''),
+        baselineEntries: baselineFile ? baselineFile.entries : undefined
+      })
+    );
     process.stderr.write(`Wrote SARIF report to: ${args.sarif}\n`);
   }
 
@@ -302,11 +334,22 @@ async function runScan(args) {
     fs.writeFileSync(args.writeBaseline, JSON.stringify(payload, null, 2) + '\n');
 
     if (args.json) {
-      process.stdout.write(JSON.stringify({ ...result, baseline: { mode: 'write', path: args.writeBaseline, entries: entries.length } }, null, 2) + '\n');
+      process.stdout.write(
+        JSON.stringify(
+          {
+            ...result,
+            baseline: { mode: 'write', path: args.writeBaseline, entries: entries.length }
+          },
+          null,
+          2
+        ) + '\n'
+      );
     } else {
       printSummary(result);
     }
-    process.stderr.write(`Wrote ${entries.length} occurrence(s) to baseline: ${args.writeBaseline}\n`);
+    process.stderr.write(
+      `Wrote ${entries.length} occurrence(s) to baseline: ${args.writeBaseline}\n`
+    );
     process.exitCode = 0;
     return;
   }
@@ -315,7 +358,9 @@ async function runScan(args) {
     const match = matchBaseline(result, baselineFile.entries);
 
     if (args.json) {
-      process.stdout.write(JSON.stringify({ ...result, baseline: { mode: 'check', ...match } }, null, 2) + '\n');
+      process.stdout.write(
+        JSON.stringify({ ...result, baseline: { mode: 'check', ...match } }, null, 2) + '\n'
+      );
     } else {
       printSummary(result, match);
     }
@@ -348,7 +393,9 @@ async function main() {
 
   const [command, ...rest] = args._;
   if (command !== 'scan') {
-    process.stderr.write(`Error: unknown command "${command}". Only "scan" is supported. See --help.\n`);
+    process.stderr.write(
+      `Error: unknown command "${command}". Only "scan" is supported. See --help.\n`
+    );
     process.exitCode = 2;
     return;
   }

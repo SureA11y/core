@@ -22,7 +22,9 @@ const RULE_ID = 'page-has-heading-one';
 // the scenarios above through runDomRulesInPage directly closes that gap.
 function runNode(html, { contextSelector = null, engineOptions = {} } = {}) {
   createDom(html);
-  return runDomRulesInPage('https://example.test/', contextSelector, engineOptions, { includeRuleIds: [RULE_ID] });
+  return runDomRulesInPage('https://example.test/', contextSelector, engineOptions, {
+    includeRuleIds: [RULE_ID]
+  });
 }
 
 function assertNodeRule(html, opts, expectedOutcome, occCounts) {
@@ -97,7 +99,12 @@ test(`${RULE_ID}: i18n default is English`, () => {
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/page-has-heading-one-all-scenarios.html)`, () => {
-  const fixturePath = path.join(__dirname, '../..', 'fixtures', 'page-has-heading-one-all-scenarios.html');
+  const fixturePath = path.join(
+    __dirname,
+    '../..',
+    'fixtures',
+    'page-has-heading-one-all-scenarios.html'
+  );
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
@@ -107,14 +114,26 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/page-has-heading-one-all-scen
 
 test(`page-has-heading-one: notApplicable when contextSelector scopes narrower than the whole document (fragment-scan applicability)`, () => {
   const html = `<!doctype html><html><body><h2>Section</h2></body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: ['page-has-heading-one'], contextSelector: 'body' });
-  assertRule(result, 'page-has-heading-one', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  const result = runa11yCoreOnHtml(html, {
+    runOnly: ['page-has-heading-one'],
+    contextSelector: 'body'
+  });
+  assertRule(result, 'page-has-heading-one', 'notApplicable', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
 });
 
 test(`page-has-heading-one: notApplicable when engineOptions.fragment is true, even unscoped`, () => {
   const html = `<!doctype html><html><body><h2>Section</h2></body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: ['page-has-heading-one'], engineOptions: { fragment: true } });
-  assertRule(result, 'page-has-heading-one', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  const result = runa11yCoreOnHtml(html, {
+    runOnly: ['page-has-heading-one'],
+    engineOptions: { fragment: true }
+  });
+  assertRule(result, 'page-has-heading-one', 'notApplicable', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
 });
 
 test(`${RULE_ID} (node runtime): notApplicable when the page has an h1`, () => {

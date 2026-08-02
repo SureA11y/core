@@ -43,7 +43,9 @@ function runInPage(ctx) {
 
   const VALID_SCOPES = new Set(['row', 'col', 'rowgroup', 'colgroup']);
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[scope]') : helpers.queryAll('[scope]');
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart('[scope]')
+    : helpers.queryAll('[scope]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -58,7 +60,7 @@ function runInPage(ctx) {
     if (VALID_SCOPES.has(raw.toLowerCase())) continue;
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
     occurrences.push({
       selector: stableSelector,
@@ -80,7 +82,12 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'cantTell', severity: rule.defaultSeverity || 'minor', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'minor',
+      occurrences
+    };
   }
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }

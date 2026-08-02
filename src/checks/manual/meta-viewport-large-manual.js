@@ -27,7 +27,8 @@ const id = 'meta-viewport-large';
 
 const meta = {
   title: 'Viewport meta tag should allow zooming up to 500%',
-  description: 'Checks that <meta name="viewport"> does not set user-scalable=no or maximum-scale below 5 (500%).',
+  description:
+    'Checks that <meta name="viewport"> does not set user-scalable=no or maximum-scale below 5 (500%).',
   i18n: {
     titleKey: 'metaViewportLarge_title',
     descriptionKey: 'metaViewportLarge_description'
@@ -60,13 +61,18 @@ function runInPage(ctx) {
       const eq = pair.indexOf('=');
       if (eq === -1) continue;
       const key = pair.slice(0, eq).trim().toLowerCase();
-      const value = pair.slice(eq + 1).trim().toLowerCase();
+      const value = pair
+        .slice(eq + 1)
+        .trim()
+        .toLowerCase();
       if (key) out[key] = value;
     }
     return out;
   }
 
-  const nodes = document.querySelectorAll ? document.querySelectorAll('meta[name="viewport" i]') : [];
+  const nodes = document.querySelectorAll
+    ? document.querySelectorAll('meta[name="viewport" i]')
+    : [];
 
   const occurrences = [];
   let applicableCount = 0;
@@ -97,7 +103,7 @@ function runInPage(ctx) {
     if (!reasons.length) continue;
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
     occurrences.push({
       selector: stableSelector,
@@ -119,7 +125,12 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'cantTell', severity: rule.defaultSeverity || 'minor', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'minor',
+      occurrences
+    };
   }
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }

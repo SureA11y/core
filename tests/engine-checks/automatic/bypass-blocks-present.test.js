@@ -79,7 +79,12 @@ test(`${RULE_ID}: i18n default is English`, () => {
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/bypass-blocks-present-all-scenarios.html)`, () => {
-  const fixturePath = path.join(__dirname, '../..', 'fixtures', 'bypass-blocks-present-all-scenarios.html');
+  const fixturePath = path.join(
+    __dirname,
+    '../..',
+    'fixtures',
+    'bypass-blocks-present-all-scenarios.html'
+  );
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
@@ -89,12 +94,24 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/bypass-blocks-present-all-sce
 
 test(`bypass-blocks-present: notApplicable when contextSelector scopes narrower than the whole document (fragment-scan applicability)`, () => {
   const html = `<!doctype html><html><body><a href="#missing">Skip</a><nav>Nav</nav><div>Content</div></body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: ['bypass-blocks-present'], contextSelector: 'body' });
-  assertRule(result, 'bypass-blocks-present', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  const result = runa11yCoreOnHtml(html, {
+    runOnly: ['bypass-blocks-present'],
+    contextSelector: 'body'
+  });
+  assertRule(result, 'bypass-blocks-present', 'notApplicable', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
 });
 
 test(`bypass-blocks-present: notApplicable when engineOptions.fragment is true, even unscoped`, () => {
   const html = `<!doctype html><html><body><a href="#missing">Skip</a><nav>Nav</nav><div>Content</div></body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: ['bypass-blocks-present'], engineOptions: { fragment: true } });
-  assertRule(result, 'bypass-blocks-present', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  const result = runa11yCoreOnHtml(html, {
+    runOnly: ['bypass-blocks-present'],
+    engineOptions: { fragment: true }
+  });
+  assertRule(result, 'bypass-blocks-present', 'notApplicable', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
 });

@@ -13,7 +13,10 @@ test('explain: throws synchronously if options.provider is missing or not a func
 });
 
 test('explain: throws synchronously on a malformed result (not a finished scan result)', async () => {
-  await assert.rejects(() => explain({ notAScanResult: true }, { provider: async () => [] }), TypeError);
+  await assert.rejects(
+    () => explain({ notAScanResult: true }, { provider: async () => [] }),
+    TypeError
+  );
 });
 
 test('explain: happy path -- array-of-{groupKey,text} provider output attaches explanation to every occurrence in the group', async () => {
@@ -25,7 +28,8 @@ test('explain: happy path -- array-of-{groupKey,text} provider output attaches e
   });
   const result = makeScanResult([check]);
 
-  const provider = async (groups) => groups.map((g) => ({ groupKey: g.groupKey, text: 'Because AT users need this.' }));
+  const provider = async (groups) =>
+    groups.map((g) => ({ groupKey: g.groupKey, text: 'Because AT users need this.' }));
   const augmented = await explain(result, { provider });
 
   const occs = augmented.checksResults[0].occurrences;
@@ -48,23 +52,33 @@ test('explain: object-map provider output ({ [groupKey]: text }) works identical
   const provider = async (groups) => ({ [groups[0].groupKey]: 'A plain-string explanation.' });
 
   const augmented = await explain(result, { provider });
-  assert.strictEqual(augmented.checksResults[0].occurrences[0].explanation.text, 'A plain-string explanation.');
+  assert.strictEqual(
+    augmented.checksResults[0].occurrences[0].explanation.text,
+    'A plain-string explanation.'
+  );
 });
 
 test('explain: a per-entry provider tag wins over options.providerName, which wins over the "unknown" default', async () => {
   const result = makeScanResult([makeCheckResult({})]);
 
   const withEntryTag = await explain(result, {
-    provider: async (groups) => groups.map((g) => ({ groupKey: g.groupKey, text: 'x', provider: 'claude-sonnet-5' })),
+    provider: async (groups) =>
+      groups.map((g) => ({ groupKey: g.groupKey, text: 'x', provider: 'claude-sonnet-5' })),
     providerName: 'should-be-overridden'
   });
-  assert.strictEqual(withEntryTag.checksResults[0].occurrences[0].explanation.provider, 'claude-sonnet-5');
+  assert.strictEqual(
+    withEntryTag.checksResults[0].occurrences[0].explanation.provider,
+    'claude-sonnet-5'
+  );
 
   const withCallLevelName = await explain(result, {
     provider: async (groups) => groups.map((g) => ({ groupKey: g.groupKey, text: 'x' })),
     providerName: 'my-gemini-adapter'
   });
-  assert.strictEqual(withCallLevelName.checksResults[0].occurrences[0].explanation.provider, 'my-gemini-adapter');
+  assert.strictEqual(
+    withCallLevelName.checksResults[0].occurrences[0].explanation.provider,
+    'my-gemini-adapter'
+  );
 });
 
 test('explain: budget caps the number of groups sent to the provider; ungrouped occurrences get no explanation', async () => {
@@ -116,7 +130,11 @@ test('explain: no fail/cantTell occurrences at all -- provider is never called, 
   const augmented = await explain(result, { provider });
   assert.strictEqual(called, false);
   assert.deepStrictEqual(augmented, result);
-  assert.notStrictEqual(augmented, result, 'still a copy, not the same reference, even when nothing changed');
+  assert.notStrictEqual(
+    augmented,
+    result,
+    'still a copy, not the same reference, even when nothing changed'
+  );
 });
 
 test('explain: a throwing provider degrades invisibly -- no throw, no explanation attached, rest of result intact', async () => {
@@ -160,12 +178,24 @@ test('explain: never mutates the input result -- the original is untouched, only
   const augmented = await explain(result, { provider });
 
   assert.strictEqual(JSON.stringify(result), before, 'input result is byte-for-byte unchanged');
-  assert.ok(augmented.checksResults[0].occurrences[0].explanation, 'the returned copy did get the explanation');
+  assert.ok(
+    augmented.checksResults[0].occurrences[0].explanation,
+    'the returned copy did get the explanation'
+  );
 });
 
 test('explain: is safe against engineOptions.customRules holding a live function reference (structuredClone would throw on this)', async () => {
   const check = makeCheckResult({
-    engineOptions: { customRules: [{ id: 'x', runInPage() { return { outcome: 'pass', occurrences: [] }; } }] }
+    engineOptions: {
+      customRules: [
+        {
+          id: 'x',
+          runInPage() {
+            return { outcome: 'pass', occurrences: [] };
+          }
+        }
+      ]
+    }
   });
   const result = makeScanResult([check]);
 
@@ -173,12 +203,18 @@ test('explain: is safe against engineOptions.customRules holding a live function
   const augmented = await explain(result, { provider });
 
   assert.ok(augmented.checksResults[0].occurrences[0].explanation);
-  assert.strictEqual(typeof augmented.checksResults[0].engineOptions.customRules[0].runInPage, 'function');
+  assert.strictEqual(
+    typeof augmented.checksResults[0].engineOptions.customRules[0].runInPage,
+    'function'
+  );
 });
 
 test('explain: calls the provider exactly once per invocation, batched, regardless of group count (§5 "batch, don\'t loop")', async () => {
   const checks = Array.from({ length: 5 }, (_, i) =>
-    makeCheckResult({ ruleId: `rule-${i}`, occurrences: [makeOccurrence({ selector: `sel-${i}` })] })
+    makeCheckResult({
+      ruleId: `rule-${i}`,
+      occurrences: [makeOccurrence({ selector: `sel-${i}` })]
+    })
   );
   const result = makeScanResult(checks);
 

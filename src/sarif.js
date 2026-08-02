@@ -25,7 +25,8 @@
 const path = require('path');
 const { computeBaselineKey, getReasonCode } = require('./baseline.js');
 
-const SARIF_SCHEMA_URI = 'https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/Schemata/sarif-schema-2.1.0.json';
+const SARIF_SCHEMA_URI =
+  'https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/Schemata/sarif-schema-2.1.0.json';
 const SARIF_VERSION = '2.1.0';
 
 function artifactUriFromResult(result) {
@@ -47,7 +48,11 @@ function buildRemainingBaselineMap(baselineEntries) {
   const remaining = new Map();
   for (const entry of Array.isArray(baselineEntries) ? baselineEntries : []) {
     if (!entry) continue;
-    const key = computeBaselineKey(entry.ruleId, entry.reasonCode || 'DEFAULT', typeof entry.html === 'string' ? entry.html : '');
+    const key = computeBaselineKey(
+      entry.ruleId,
+      entry.reasonCode || 'DEFAULT',
+      typeof entry.html === 'string' ? entry.html : ''
+    );
     remaining.set(key, (remaining.get(key) || 0) + 1);
   }
   return remaining;
@@ -88,7 +93,9 @@ function buildResult(check, occurrence, level, artifactUri) {
     locations: [
       {
         physicalLocation: { artifactLocation: { uri: artifactUri } },
-        ...(occurrence.selector ? { logicalLocations: [{ fullyQualifiedName: occurrence.selector, kind: 'element' }] } : {})
+        ...(occurrence.selector
+          ? { logicalLocations: [{ fullyQualifiedName: occurrence.selector, kind: 'element' }] }
+          : {})
       }
     ],
     partialFingerprints: {

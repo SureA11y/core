@@ -27,79 +27,112 @@
 const FRAME_RPC_CHANNEL = '__frame_rpc_v1__';
 
 function getFrameRpcRegistry(win) {
-    if (!win.__a11yCoreFrameRpc__) {
-        win.__a11yCoreFrameRpc__ = {
-            pending: new Map(),
-            seq: 0,
-            responder: null,
-            listening: false
-        };
-    }
-    return win.__a11yCoreFrameRpc__;
+  if (!win.__a11yCoreFrameRpc__) {
+    win.__a11yCoreFrameRpc__ = {
+      pending: new Map(),
+      seq: 0,
+      responder: null,
+      listening: false
+    };
+  }
+  return win.__a11yCoreFrameRpc__;
 }
 
 function installFrameRpcListener(win, channel) {
-    const registry = getFrameRpcRegistry(win);
-    if (registry.listening) return registry;
+  const registry = getFrameRpcRegistry(win);
+  if (registry.listening) return registry;
 
-    win.addEventListener('message', function a11yCoreFrameRpcListener(event) {
-        const data = event && event.data;
-        if (!data || data.__a11ycore !== true || data.channel !== channel) return;
+  win.addEventListener('message', function a11yCoreFrameRpcListener(event) {
+    const data = event && event.data;
+    if (!data || data.__a11ycore !== true || data.channel !== channel) return;
 
-        if (data.type === 'ping') {
-            try {
-                event.source && event.source.postMessage(
-                    { __a11ycore: true, channel: channel, requestId: data.requestId, type: 'pong' },
-                    '*'
-                );
-            } catch (e) { /* target gone/closed -- nothing to do */ }
-            return;
-        }
+    if (data.type === 'ping') {
+      try {
+        event.source &&
+          event.source.postMessage(
+            { __a11ycore: true, channel: channel, requestId: data.requestId, type: 'pong' },
+            '*'
+          );
+      } catch (e) {
+        /* target gone/closed -- nothing to do */
+      }
+      return;
+    }
 
-        if (data.type === 'run') {
-            const responder = registry.responder;
-            if (typeof responder !== 'function') return; // no responder enabled here: unreachable, same as a widely-used reference engine's own limitation
-            Promise.resolve()
-                .then(function () { return responder(data.payload); })
-                .then(function (result) {
-                    try {
-                        event.source && event.source.postMessage(
-                            { __a11ycore: true, channel: channel, requestId: data.requestId, type: 'result', payload: result },
-                            '*'
-                        );
-                    } catch (e) { /* target gone/closed */ }
-                })
-                .catch(function (err) {
-                    try {
-                        event.source && event.source.postMessage(
-                            { __a11ycore: true, channel: channel, requestId: data.requestId, type: 'error', payload: String(err && err.message ? err.message : err) },
-                            '*'
-                        );
-                    } catch (e) { /* target gone/closed */ }
-                });
-            return;
-        }
+    if (data.type === 'run') {
+      const responder = registry.responder;
+      if (typeof responder !== 'function') return; // no responder enabled here: unreachable, same as a widely-used reference engine's own limitation
+      Promise.resolve()
+        .then(function () {
+          return responder(data.payload);
+        })
+        .then(function (result) {
+          try {
+            event.source &&
+              event.source.postMessage(
+                {
+                  __a11ycore: true,
+                  channel: channel,
+                  requestId: data.requestId,
+                  type: 'result',
+                  payload: result
+                },
+                '*'
+              );
+          } catch (e) {
+            /* target gone/closed */
+          }
+        })
+        .catch(function (err) {
+          try {
+            event.source &&
+              event.source.postMessage(
+                {
+                  __a11ycore: true,
+                  channel: channel,
+                  requestId: data.requestId,
+                  type: 'error',
+                  payload: String(err && err.message ? err.message : err)
+                },
+                '*'
+              );
+          } catch (e) {
+            /* target gone/closed */
+          }
+        });
+      return;
+    }
 
-        // 'pong' | 'result' | 'error' -- resolve whichever pending request this replies to.
-        const pending = registry.pending.get(data.requestId);
-        if (!pending) return;
-        if (data.type === 'pong') {
-            pending.onPong();
-            return;
-        }
-        registry.pending.delete(data.requestId);
-        if (data.type === 'result') pending.resolve(data.payload);
-        else pending.reject(new Error(typeof data.payload === 'string' ? data.payload : 'surea11y frame RPC error'));
-    });
+    // 'pong' | 'result' | 'error' -- resolve whichever pending request this replies to.
+    const pending = registry.pending.get(data.requestId);
+    if (!pending) return;
+    if (data.type === 'pong') {
+      pending.onPong();
+      return;
+    }
+    registry.pending.delete(data.requestId);
+    if (data.type === 'result') pending.resolve(data.payload);
+    else
+      pending.reject(
+        new Error(typeof data.payload === 'string' ? data.payload : 'surea11y frame RPC error')
+      );
+  });
 
-    registry.listening = true;
-    return registry;
+  registry.listening = true;
+  return registry;
 }
 
 function nextFrameRpcRequestId(win) {
-    const registry = getFrameRpcRegistry(win);
-    registry.seq += 1;
-    return 'req_' + Date.now().toString(36) + '_' + registry.seq + '_' + Math.random().toString(36).slice(2, 8);
+  const registry = getFrameRpcRegistry(win);
+  registry.seq += 1;
+  return (
+    'req_' +
+    Date.now().toString(36) +
+    '_' +
+    registry.seq +
+    '_' +
+    Math.random().toString(36).slice(2, 8)
+  );
 }
 
 /**
@@ -110,43 +143,46 @@ function nextFrameRpcRequestId(win) {
  * all), not an error.
  */
 function pingFrame(win, targetWindow, pingWaitTime) {
-    installFrameRpcListener(win, FRAME_RPC_CHANNEL);
-    const registry = getFrameRpcRegistry(win);
-    const requestId = nextFrameRpcRequestId(win);
-    const waitMs = typeof pingWaitTime === 'number' ? pingWaitTime : 500;
+  installFrameRpcListener(win, FRAME_RPC_CHANNEL);
+  const registry = getFrameRpcRegistry(win);
+  const requestId = nextFrameRpcRequestId(win);
+  const waitMs = typeof pingWaitTime === 'number' ? pingWaitTime : 500;
 
-    return new Promise(function (resolve) {
-        let settled = false;
-        const timeout = setTimeout(function () {
-            if (settled) return;
-            settled = true;
-            registry.pending.delete(requestId);
-            resolve(false);
-        }, waitMs);
+  return new Promise(function (resolve) {
+    let settled = false;
+    const timeout = setTimeout(function () {
+      if (settled) return;
+      settled = true;
+      registry.pending.delete(requestId);
+      resolve(false);
+    }, waitMs);
 
-        registry.pending.set(requestId, {
-            onPong: function () {
-                if (settled) return;
-                settled = true;
-                clearTimeout(timeout);
-                registry.pending.delete(requestId);
-                resolve(true);
-            },
-            resolve: function () {},
-            reject: function () {}
-        });
-
-        try {
-            targetWindow.postMessage({ __a11ycore: true, channel: FRAME_RPC_CHANNEL, requestId: requestId, type: 'ping' }, '*');
-        } catch (e) {
-            if (!settled) {
-                settled = true;
-                clearTimeout(timeout);
-                registry.pending.delete(requestId);
-                resolve(false);
-            }
-        }
+    registry.pending.set(requestId, {
+      onPong: function () {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeout);
+        registry.pending.delete(requestId);
+        resolve(true);
+      },
+      resolve: function () {},
+      reject: function () {}
     });
+
+    try {
+      targetWindow.postMessage(
+        { __a11ycore: true, channel: FRAME_RPC_CHANNEL, requestId: requestId, type: 'ping' },
+        '*'
+      );
+    } catch (e) {
+      if (!settled) {
+        settled = true;
+        clearTimeout(timeout);
+        registry.pending.delete(requestId);
+        resolve(false);
+      }
+    }
+  });
 }
 
 /**
@@ -156,31 +192,46 @@ function pingFrame(win, targetWindow, pingWaitTime) {
  * explicit error reply.
  */
 function sendFrameRunCommand(win, targetWindow, payload, frameWaitTime) {
-    installFrameRpcListener(win, FRAME_RPC_CHANNEL);
-    const registry = getFrameRpcRegistry(win);
-    const requestId = nextFrameRpcRequestId(win);
-    const waitMs = typeof frameWaitTime === 'number' ? frameWaitTime : 60000;
+  installFrameRpcListener(win, FRAME_RPC_CHANNEL);
+  const registry = getFrameRpcRegistry(win);
+  const requestId = nextFrameRpcRequestId(win);
+  const waitMs = typeof frameWaitTime === 'number' ? frameWaitTime : 60000;
 
-    return new Promise(function (resolve, reject) {
-        const timeout = setTimeout(function () {
-            registry.pending.delete(requestId);
-            reject(new Error('surea11y frame RPC timed out waiting for a run result'));
-        }, waitMs);
+  return new Promise(function (resolve, reject) {
+    const timeout = setTimeout(function () {
+      registry.pending.delete(requestId);
+      reject(new Error('surea11y frame RPC timed out waiting for a run result'));
+    }, waitMs);
 
-        registry.pending.set(requestId, {
-            onPong: function () {},
-            resolve: function (result) { clearTimeout(timeout); resolve(result); },
-            reject: function (err) { clearTimeout(timeout); reject(err); }
-        });
-
-        try {
-            targetWindow.postMessage({ __a11ycore: true, channel: FRAME_RPC_CHANNEL, requestId: requestId, type: 'run', payload: payload }, '*');
-        } catch (e) {
-            clearTimeout(timeout);
-            registry.pending.delete(requestId);
-            reject(e);
-        }
+    registry.pending.set(requestId, {
+      onPong: function () {},
+      resolve: function (result) {
+        clearTimeout(timeout);
+        resolve(result);
+      },
+      reject: function (err) {
+        clearTimeout(timeout);
+        reject(err);
+      }
     });
+
+    try {
+      targetWindow.postMessage(
+        {
+          __a11ycore: true,
+          channel: FRAME_RPC_CHANNEL,
+          requestId: requestId,
+          type: 'run',
+          payload: payload
+        },
+        '*'
+      );
+    } catch (e) {
+      clearTimeout(timeout);
+      registry.pending.delete(requestId);
+      reject(e);
+    }
+  });
 }
 
 /**
@@ -191,20 +242,20 @@ function sendFrameRunCommand(win, targetWindow, payload, frameWaitTime) {
  * later re-enable doesn't need to re-attach it).
  */
 function enableFrameRpcResponder(win, handler) {
-    installFrameRpcListener(win, FRAME_RPC_CHANNEL);
-    const registry = getFrameRpcRegistry(win);
-    registry.responder = handler;
-    return function disable() {
-        if (registry.responder === handler) registry.responder = null;
-    };
+  installFrameRpcListener(win, FRAME_RPC_CHANNEL);
+  const registry = getFrameRpcRegistry(win);
+  registry.responder = handler;
+  return function disable() {
+    if (registry.responder === handler) registry.responder = null;
+  };
 }
 
 module.exports = {
-    FRAME_RPC_CHANNEL,
-    getFrameRpcRegistry,
-    installFrameRpcListener,
-    nextFrameRpcRequestId,
-    pingFrame,
-    sendFrameRunCommand,
-    enableFrameRpcResponder
+  FRAME_RPC_CHANNEL,
+  getFrameRpcRegistry,
+  installFrameRpcListener,
+  nextFrameRpcRequestId,
+  pingFrame,
+  sendFrameRunCommand,
+  enableFrameRpcResponder
 };

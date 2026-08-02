@@ -22,7 +22,12 @@ const RULE_ID = 'landmark-one-main';
 // directly closes that gap, same pattern as page-has-heading-one's own fix.
 function assertNodeRule(html, expectedOutcome, occCounts) {
   createDom(html);
-  const result = runDomRulesInPage('https://example.test/', null, {}, { includeRuleIds: [RULE_ID] });
+  const result = runDomRulesInPage(
+    'https://example.test/',
+    null,
+    {},
+    { includeRuleIds: [RULE_ID] }
+  );
   const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
   assert.ok(rule, `expected a checksResults entry for ${RULE_ID}`);
   assert.strictEqual(rule.outcome, expectedOutcome);
@@ -76,7 +81,12 @@ test(`${RULE_ID}: i18n default is English`, () => {
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/landmark-one-main-all-scenarios.html)`, () => {
-  const fixturePath = path.join(__dirname, '../..', 'fixtures', 'landmark-one-main-all-scenarios.html');
+  const fixturePath = path.join(
+    __dirname,
+    '../..',
+    'fixtures',
+    'landmark-one-main-all-scenarios.html'
+  );
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
@@ -86,14 +96,26 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/landmark-one-main-all-scenari
 
 test(`landmark-one-main: notApplicable when contextSelector scopes narrower than the whole document (fragment-scan applicability)`, () => {
   const html = `<!doctype html><html><body><nav>Nav only</nav></body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: ['landmark-one-main'], contextSelector: 'body' });
-  assertRule(result, 'landmark-one-main', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  const result = runa11yCoreOnHtml(html, {
+    runOnly: ['landmark-one-main'],
+    contextSelector: 'body'
+  });
+  assertRule(result, 'landmark-one-main', 'notApplicable', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
 });
 
 test(`landmark-one-main: notApplicable when engineOptions.fragment is true, even unscoped`, () => {
   const html = `<!doctype html><html><body><nav>Nav only</nav></body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: ['landmark-one-main'], engineOptions: { fragment: true } });
-  assertRule(result, 'landmark-one-main', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  const result = runa11yCoreOnHtml(html, {
+    runOnly: ['landmark-one-main'],
+    engineOptions: { fragment: true }
+  });
+  assertRule(result, 'landmark-one-main', 'notApplicable', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
 });
 
 test(`${RULE_ID} (node runtime): notApplicable when there is exactly one <main>`, () => {

@@ -22,7 +22,10 @@ const BUNDLE_FILE_URL = pathToFileURL(BUNDLE_PATH).href;
 // an approximation of it. Async because a `src`-loaded script (unlike
 // inline `textContent`) only runs once jsdom has actually fetched it.
 function loadBundleViaScriptTag(html, pageUrl) {
-  const htmlWithScript = html.replace('</body>', `<script src="${BUNDLE_FILE_URL}"></script></body>`);
+  const htmlWithScript = html.replace(
+    '</body>',
+    `<script src="${BUNDLE_FILE_URL}"></script></body>`
+  );
 
   return new Promise((resolve, reject) => {
     const dom = new JSDOM(htmlWithScript, {
@@ -32,7 +35,9 @@ function loadBundleViaScriptTag(html, pageUrl) {
     });
 
     dom.window.addEventListener('load', () => resolve(dom));
-    dom.window.addEventListener('error', (event) => reject(event.error || new Error('window error event')));
+    dom.window.addEventListener('error', (event) =>
+      reject(event.error || new Error('window error event'))
+    );
   });
 }
 
@@ -41,7 +46,11 @@ test('bundle contains no Node-only globals (require/module/exports)', () => {
   // tag with no bundler and no Node runtime underneath it. Any of these
   // would throw ReferenceError in that environment.
   assert.equal(/\brequire\s*\(/.test(bundleSource), false, 'bundle must not call require()');
-  assert.equal(/\bmodule\.exports\b/.test(bundleSource), false, 'bundle must not use module.exports');
+  assert.equal(
+    /\bmodule\.exports\b/.test(bundleSource),
+    false,
+    'bundle must not use module.exports'
+  );
   assert.equal(/\bexports\./.test(bundleSource), false, 'bundle must not use the exports object');
 });
 
@@ -103,7 +112,11 @@ test('the bundle loaded via <script src="..."> honors contextSelector/excludeSel
   const imgAlt = result.checksResults.find((r) => r.ruleId === 'img-alt-present');
   assert.ok(imgAlt);
   assert.equal(imgAlt.outcome, 'fail');
-  assert.equal(imgAlt.occurrences.length, 1, 'contextSelector/excludeSelectors should leave exactly one occurrence');
+  assert.equal(
+    imgAlt.occurrences.length,
+    1,
+    'contextSelector/excludeSelectors should leave exactly one occurrence'
+  );
 
   // runOnly.tags restricted the run to WCAG 2.0 A/AA rules only -- every
   // returned check must actually carry one of those tags (proves the
@@ -118,10 +131,14 @@ test('the bundle loaded via <script src="..."> honors contextSelector/excludeSel
   }
 });
 
-test('the bundle\'s scan result matches the Node-required runa11yCoreInPage for the same page and options', async () => {
-  const html = '<!doctype html><html><head><title>T</title></head><body><img src="x"></body></html>';
+test("the bundle's scan result matches the Node-required runa11yCoreInPage for the same page and options", async () => {
+  const html =
+    '<!doctype html><html><head><title>T</title></head><body><img src="x"></body></html>';
   const url = 'https://example.test/';
-  const engineOptions = { excludeSelectors: ['.does-not-exist'], contrast: { mode: 'auditorAssist' } };
+  const engineOptions = {
+    excludeSelectors: ['.does-not-exist'],
+    contrast: { mode: 'auditorAssist' }
+  };
   const runOnly = { tags: ['wcag2a', 'wcag2aa'] };
 
   const dom = await loadBundleViaScriptTag(html, url);

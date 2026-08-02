@@ -33,7 +33,8 @@ const id = 'autocomplete-valid';
 
 const meta = {
   title: 'autocomplete attribute must be a valid autofill value',
-  description: 'Checks that a non-empty autocomplete attribute is "on"/"off" or a well-formed autofill detail token list.',
+  description:
+    'Checks that a non-empty autocomplete attribute is "on"/"off" or a well-formed autofill detail token list.',
   i18n: {
     titleKey: 'autocompleteValid_title',
     descriptionKey: 'autocompleteValid_description'
@@ -42,7 +43,13 @@ const meta = {
   tags: ['wcag21aa', 'wcag135', 'forms', 'atomic', 'automatic'],
   wcagSc: ['1.3.5'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '1.3.5', title: 'Identify Input Purpose', conformanceLevel: 'AA' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '1.3.5',
+      title: 'Identify Input Purpose',
+      conformanceLevel: 'AA'
+    }
   ],
   defaultSeverity: 'moderate',
   category: 'perceivable',
@@ -57,15 +64,58 @@ function runInPage(ctx) {
   // Declared inside runInPage — see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
   const FIELD_NAMES = new Set([
-    'name', 'honorific-prefix', 'given-name', 'additional-name', 'family-name', 'honorific-suffix',
-    'nickname', 'username', 'new-password', 'current-password', 'one-time-code', 'organization-title',
-    'organization', 'street-address', 'address-line1', 'address-line2', 'address-line3',
-    'address-level4', 'address-level3', 'address-level2', 'address-level1', 'country', 'country-name',
-    'postal-code', 'cc-name', 'cc-given-name', 'cc-additional-name', 'cc-family-name', 'cc-number',
-    'cc-exp', 'cc-exp-month', 'cc-exp-year', 'cc-csc', 'cc-type', 'transaction-currency',
-    'transaction-amount', 'language', 'bday', 'bday-day', 'bday-month', 'bday-year', 'sex',
-    'tel', 'tel-country-code', 'tel-national', 'tel-area-code', 'tel-local', 'tel-extension',
-    'email', 'impp', 'url', 'photo'
+    'name',
+    'honorific-prefix',
+    'given-name',
+    'additional-name',
+    'family-name',
+    'honorific-suffix',
+    'nickname',
+    'username',
+    'new-password',
+    'current-password',
+    'one-time-code',
+    'organization-title',
+    'organization',
+    'street-address',
+    'address-line1',
+    'address-line2',
+    'address-line3',
+    'address-level4',
+    'address-level3',
+    'address-level2',
+    'address-level1',
+    'country',
+    'country-name',
+    'postal-code',
+    'cc-name',
+    'cc-given-name',
+    'cc-additional-name',
+    'cc-family-name',
+    'cc-number',
+    'cc-exp',
+    'cc-exp-month',
+    'cc-exp-year',
+    'cc-csc',
+    'cc-type',
+    'transaction-currency',
+    'transaction-amount',
+    'language',
+    'bday',
+    'bday-day',
+    'bday-month',
+    'bday-year',
+    'sex',
+    'tel',
+    'tel-country-code',
+    'tel-national',
+    'tel-area-code',
+    'tel-local',
+    'tel-extension',
+    'email',
+    'impp',
+    'url',
+    'photo'
   ]);
   const CONTACT_MODALITY = new Set(['home', 'work', 'mobile', 'fax', 'pager', 'impp']);
 
@@ -75,7 +125,8 @@ function runInPage(ctx) {
     if (tokens.length === 1 && (tokens[0] === 'on' || tokens[0] === 'off')) return true;
 
     let i = 0;
-    if (tokens[i] && tokens[i].startsWith('section-') && tokens[i].length > 'section-'.length) i += 1;
+    if (tokens[i] && tokens[i].startsWith('section-') && tokens[i].length > 'section-'.length)
+      i += 1;
     if (tokens[i] === 'shipping' || tokens[i] === 'billing') i += 1;
     if (CONTACT_MODALITY.has(tokens[i])) i += 1;
 
@@ -87,7 +138,9 @@ function runInPage(ctx) {
     return FIELD_NAMES.has(remaining[0]);
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('input, select, textarea') : helpers.queryAll('input, select, textarea');
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart('input, select, textarea')
+    : helpers.queryAll('input, select, textarea');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -103,7 +156,7 @@ function runInPage(ctx) {
 
     const tag = el.tagName.toLowerCase();
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
     occurrences.push({
       selector: stableSelector,
@@ -125,7 +178,12 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'moderate', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'fail',
+      severity: rule.defaultSeverity || 'moderate',
+      occurrences
+    };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }

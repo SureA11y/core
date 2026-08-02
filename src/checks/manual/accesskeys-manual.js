@@ -41,7 +41,9 @@ const meta = {
 
 function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[accesskey]') : helpers.queryAll('[accesskey]');
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart('[accesskey]')
+    : helpers.queryAll('[accesskey]');
 
   const groups = new Map(); // normalized key -> elements[]
   for (const el of nodes) {
@@ -59,12 +61,14 @@ function runInPage(ctx) {
     if (els.length <= 1) continue;
     for (const el of els) {
       const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-      const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+      const html = helpers.getOuterHtmlSnippet
+        ? helpers.getOuterHtmlSnippet(el)
+        : el.outerHTML || '';
 
       occurrences.push({
         selector: stableSelector,
         html,
-        summary: 'This element\'s accesskey is shared with another element on the page.',
+        summary: "This element's accesskey is shared with another element on the page.",
         hint: 'Make each accesskey value unique across the page.',
         i18n: {
           summaryKey: 'accesskeys_summary_cantTell',
@@ -81,7 +85,12 @@ function runInPage(ctx) {
   if (!occurrences.length) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  return { ruleId: rule.ruleId, outcome: 'cantTell', severity: rule.defaultSeverity || 'minor', occurrences };
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'cantTell',
+    severity: rule.defaultSeverity || 'minor',
+    occurrences
+  };
 }
 
 module.exports = { id, meta, runInPage };

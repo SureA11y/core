@@ -20,17 +20,59 @@ const meta = {
   type: 'manual',
   defaultConfidence: 'medium',
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '2.1.1', title: 'Keyboard', conformanceLevel: 'A', url: 'https://www.w3.org/TR/WCAG22/#keyboard' },
-    { standard: 'WCAG', version: '2.2', requirement: '2.4.3', title: 'Focus Order', conformanceLevel: 'A', url: 'https://www.w3.org/TR/WCAG22/#focus-order' },
-    { standard: 'WCAG', version: '2.2', requirement: '2.4.7', title: 'Focus Visible', conformanceLevel: 'AA', url: 'https://www.w3.org/TR/WCAG22/#focus-visible' },
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '2.1.1',
+      title: 'Keyboard',
+      conformanceLevel: 'A',
+      url: 'https://www.w3.org/TR/WCAG22/#keyboard'
+    },
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '2.4.3',
+      title: 'Focus Order',
+      conformanceLevel: 'A',
+      url: 'https://www.w3.org/TR/WCAG22/#focus-order'
+    },
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '2.4.7',
+      title: 'Focus Visible',
+      conformanceLevel: 'AA',
+      url: 'https://www.w3.org/TR/WCAG22/#focus-visible'
+    },
 
     { standard: 'EN 301 549', version: 'V3.2.1', requirement: '9.2.1.1', title: 'Keyboard' },
     { standard: 'EN 301 549', version: 'V3.2.1', requirement: '9.2.4.3', title: 'Focus Order' },
     { standard: 'EN 301 549', version: 'V3.2.1', requirement: '9.2.4.7', title: 'Focus Visible' },
 
-    { standard: 'WCAG', version: '2.2', type: 'Understanding', requirement: '2.1.1', title: 'Understanding Keyboard', url: 'https://www.w3.org/WAI/WCAG22/Understanding/keyboard.html' },
-    { standard: 'WCAG', version: '2.2', type: 'Understanding', requirement: '2.4.3', title: 'Understanding Focus Order', url: 'https://www.w3.org/WAI/WCAG22/Understanding/focus-order.html' },
-    { standard: 'WCAG', version: '2.2', type: 'Understanding', requirement: '2.4.7', title: 'Understanding Focus Visible', url: 'https://www.w3.org/WAI/WCAG22/Understanding/focus-visible.html' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      type: 'Understanding',
+      requirement: '2.1.1',
+      title: 'Understanding Keyboard',
+      url: 'https://www.w3.org/WAI/WCAG22/Understanding/keyboard.html'
+    },
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      type: 'Understanding',
+      requirement: '2.4.3',
+      title: 'Understanding Focus Order',
+      url: 'https://www.w3.org/WAI/WCAG22/Understanding/focus-order.html'
+    },
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      type: 'Understanding',
+      requirement: '2.4.7',
+      title: 'Understanding Focus Visible',
+      url: 'https://www.w3.org/WAI/WCAG22/Understanding/focus-visible.html'
+    }
   ]
 };
 
@@ -43,7 +85,8 @@ const meta = {
 function runInPage(ctx) {
   const { document, root, helpers, rule } = ctx;
 
-  const getOuterHtmlSnippet = helpers && helpers.getOuterHtmlSnippet
+  const getOuterHtmlSnippet =
+    helpers && helpers.getOuterHtmlSnippet
       ? helpers.getOuterHtmlSnippet
       : (el) => (el && el.outerHTML) || '';
 
@@ -66,10 +109,7 @@ function runInPage(ctx) {
   }
 
   const fallbackRoot =
-      rootEl ||
-      document.documentElement ||
-      document.body ||
-      document.querySelector('html');
+    rootEl || document.documentElement || document.body || document.querySelector('html');
 
   const html = getOuterHtmlSnippet(fallbackRoot);
 
@@ -82,7 +122,11 @@ function runInPage(ctx) {
         selector: contextSelector || 'html',
         html,
         summary: 'Manual review required for keyboard navigation and focus order.',
-        i18n: { summaryKey: 'manualReview_summary_cantTell', hintKey: 'manualReview_hint_cantTell', params: {} },
+        i18n: {
+          summaryKey: 'manualReview_summary_cantTell',
+          hintKey: 'manualReview_hint_cantTell',
+          params: {}
+        }
       }
     ]
   };

@@ -60,7 +60,8 @@ const id = 'presentation-role-conflict';
 
 const meta = {
   title: 'Presentational role must not conflict with a global ARIA attribute or focusability',
-  description: 'Checks that role="presentation"/"none" (including an <img alt=""> implicit presentation role) is not combined with a global ARIA attribute (aria-label, aria-hidden, aria-describedby, ...) or focusability (tabindex/native).',
+  description:
+    'Checks that role="presentation"/"none" (including an <img alt=""> implicit presentation role) is not combined with a global ARIA attribute (aria-label, aria-hidden, aria-describedby, ...) or focusability (tabindex/native).',
   i18n: {
     titleKey: 'presentationRoleConflict_title',
     descriptionKey: 'presentationRoleConflict_description'
@@ -84,18 +85,38 @@ function runInPage(ctx) {
   // `standards.ariaAttrs` data at runtime, 2026-07-20) — any of these present on a presentational
   // element restores its implicit role, not just the naming ones.
   const CONFLICTING_ATTRS = [
-    'aria-atomic', 'aria-braillelabel', 'aria-brailleroledescription', 'aria-busy',
-    'aria-controls', 'aria-current', 'aria-describedby', 'aria-description', 'aria-details',
-    'aria-disabled', 'aria-dropeffect', 'aria-errormessage', 'aria-flowto', 'aria-grabbed',
-    'aria-haspopup', 'aria-hidden', 'aria-invalid', 'aria-keyshortcuts', 'aria-label',
-    'aria-labelledby', 'aria-live', 'aria-owns', 'aria-relevant', 'aria-roledescription'
+    'aria-atomic',
+    'aria-braillelabel',
+    'aria-brailleroledescription',
+    'aria-busy',
+    'aria-controls',
+    'aria-current',
+    'aria-describedby',
+    'aria-description',
+    'aria-details',
+    'aria-disabled',
+    'aria-dropeffect',
+    'aria-errormessage',
+    'aria-flowto',
+    'aria-grabbed',
+    'aria-haspopup',
+    'aria-hidden',
+    'aria-invalid',
+    'aria-keyshortcuts',
+    'aria-label',
+    'aria-labelledby',
+    'aria-live',
+    'aria-owns',
+    'aria-relevant',
+    'aria-roledescription'
   ];
 
-  const getFocusableInfo = helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
+  const getFocusableInfo =
+    helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
 
   const nodes = helpers.queryAllSmart
-      ? helpers.queryAllSmart('[role="presentation"], [role="none"], img[alt=""]')
-      : helpers.queryAll('[role="presentation"], [role="none"], img[alt=""]');
+    ? helpers.queryAllSmart('[role="presentation"], [role="none"], img[alt=""]')
+    : helpers.queryAll('[role="presentation"], [role="none"], img[alt=""]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -111,7 +132,9 @@ function runInPage(ctx) {
     // <img alt="" aria-hidden="">, where aria-hidden="" (empty string) is
     // still a specified attribute. A truthy-value check would have missed
     // this even after aria-hidden was added to CONFLICTING_ATTRS above.
-    const present = CONFLICTING_ATTRS.filter((attr) => (el.hasAttribute ? el.hasAttribute(attr) : el.getAttribute(attr) != null));
+    const present = CONFLICTING_ATTRS.filter((attr) =>
+      el.hasAttribute ? el.hasAttribute(attr) : el.getAttribute(attr) != null
+    );
 
     let isFocusable = false;
     if (getFocusableInfo) {
@@ -130,9 +153,12 @@ function runInPage(ctx) {
 
     // No explicit role attribute means this matched via the img[alt=""]
     // implicit-presentation case.
-    const role = String(el.getAttribute('role') || '').trim().toLowerCase() || 'presentation';
+    const role =
+      String(el.getAttribute('role') || '')
+        .trim()
+        .toLowerCase() || 'presentation';
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
     occurrences.push({
       selector: stableSelector,
@@ -145,7 +171,12 @@ function runInPage(ctx) {
         params: { role, attrs: parts.join(', ') }
       },
       data: {
-        details: { reasonCode: 'PRESENTATION_ROLE_CONFLICT', role, conflictingAttrs: present, focusable: isFocusable }
+        details: {
+          reasonCode: 'PRESENTATION_ROLE_CONFLICT',
+          role,
+          conflictingAttrs: present,
+          focusable: isFocusable
+        }
       }
     });
   }
@@ -154,7 +185,12 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'cantTell', severity: rule.defaultSeverity || 'minor', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'minor',
+      occurrences
+    };
   }
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }

@@ -100,7 +100,10 @@ function main() {
   const compositeLines = composites
     .slice()
     .sort((a, b) => a.id.localeCompare(b.id))
-    .map((c) => `| \`${c.id}\` | ${escapePipes(c.meta && c.meta.title)} | ${(c.meta && c.meta.wcagSc || []).join(', ') || '—'} | ${(c.meta && c.meta.level) || '—'} | ${c.checksIds.length} |`);
+    .map(
+      (c) =>
+        `| \`${c.id}\` | ${escapePipes(c.meta && c.meta.title)} | ${((c.meta && c.meta.wcagSc) || []).join(', ') || '—'} | ${(c.meta && c.meta.level) || '—'} | ${c.checksIds.length} |`
+    );
 
   const md = `# Rule catalog
 
@@ -128,7 +131,9 @@ ${compositeLines.join('\n')}
 `;
 
   fs.writeFileSync(outPath, md);
-  console.log(`[generate-rule-catalog] wrote ${outPath} (${rows.length} rules, ${composites.length} composites)`);
+  console.log(
+    `[generate-rule-catalog] wrote ${outPath} (${rows.length} rules, ${composites.length} composites)`
+  );
 }
 
 main();
