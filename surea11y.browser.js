@@ -20454,6 +20454,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     '[role="treeitem"]'
   ].join(', ');
 
+  const isAccTreeEligible =
+    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+
+  function isEligible(node) {
+    if (!isAccTreeEligible) return true;
+    try {
+      const r = isAccTreeEligible(node, ctx);
+      return !!(r && r.eligible);
+    } catch {
+      return true;
+    }
+  }
+
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(INTERACTIVE_SELECTOR)
     : helpers.queryAll(INTERACTIVE_SELECTOR);
@@ -20463,12 +20476,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   for (const el of nodes) {
     if (!el || !el.querySelectorAll) continue;
+    if (!isEligible(el)) continue;
 
     applicableCount += 1;
 
+    // The nested search uses the raw native querySelectorAll (not
+    // helpers.queryAllSmart), so it isn't subject to that helper's
+    // default hidden-content policy at all -- not even hard CSS-based
+    // hiding, let alone aria-hidden. A nested descendant that is never
+    // actually rendered or exposed to AT (display:none, aria-hidden,
+    // etc.) creates no real ambiguity for ANY user, since it isn't there
+    // to be confused with the outer control. Found while extending direct
+    // coverage of this rule.
     let nested;
     try {
-      nested = Array.from(el.querySelectorAll(INTERACTIVE_SELECTOR));
+      nested = Array.from(el.querySelectorAll(INTERACTIVE_SELECTOR)).filter(isEligible);
     } catch {
       nested = [];
     }

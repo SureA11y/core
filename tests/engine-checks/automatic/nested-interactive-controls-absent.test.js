@@ -43,6 +43,25 @@ test(`${RULE_ID}: fail when a link contains a button`, () => {
   assert.ok(hasOccurrenceForId(rule, 'b'));
 });
 
+// Regression coverage for a bug found while extending direct coverage of
+// this rule: the nested-descendant search used the raw native
+// querySelectorAll, not helpers.queryAllSmart, so it wasn't subject to
+// ANY hidden-content filtering at all -- not even hard CSS-based hiding,
+// let alone aria-hidden. A nested descendant that is never actually
+// rendered or exposed to AT creates no real ambiguity for any user, since
+// it isn't there to be confused with the outer control.
+test(`${RULE_ID}: a display:none nested control is not flagged (it is never rendered at all)`, () => {
+  const html = `<!doctype html><html><body><a id="a" href="/x">Text <button style="display:none">nested</button></a></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: an aria-hidden, non-focusable nested control is not flagged (it is not exposed to AT)`, () => {
+  const html = `<!doctype html><html><body><a id="a" href="/x">Text <span role="checkbox" aria-hidden="true">nested</span></a></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
 test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><body><button id="a"><input type="checkbox"></button></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
