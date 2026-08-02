@@ -628,29 +628,8 @@ function runInPage(ctx) {
   // See helpers.resolveTieredOutcome's own header comment (src/core/dom-helpers.js):
   // a fail-tier finding never silently discards cantTell-tier findings from
   // the same run — both are returned together when the outcome is 'fail'.
-  if (helpers && helpers.resolveTieredOutcome) {
-    const resolved = helpers.resolveTieredOutcome(failOccurrences, cantTellOccurrences, (rule && rule.defaultSeverity) || 'minor');
-    return { ruleId: RULE_ID, ...resolved };
-  }
-  if (failOccurrences.length > 0) {
-    return {
-      ruleId: RULE_ID,
-      outcome: 'fail',
-      severity: (rule && rule.defaultSeverity) || 'minor',
-      occurrences: failOccurrences.concat(cantTellOccurrences)
-    };
-  }
-
-  if (cantTellOccurrences.length > 0) {
-    return {
-      ruleId: RULE_ID,
-      outcome: 'cantTell',
-      severity: 'minor',
-      occurrences: cantTellOccurrences
-    };
-  }
-
-  return { ruleId: RULE_ID, outcome: 'pass', severity: 'minor', occurrences: [] };
+  const resolved = helpers.resolveTieredOutcome(failOccurrences, cantTellOccurrences, (rule && rule.defaultSeverity) || 'minor');
+  return { ruleId: RULE_ID, ...resolved };
 }
 
 module.exports = { id, meta, runInPage };

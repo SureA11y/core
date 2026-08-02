@@ -182,5 +182,24 @@
 
 <div id="case_tabindex_negative_self" aria-hidden="true" tabindex="-1">Root itself has negative tabindex</div>
 
+<!-- ========================================================= -->
+<!-- 12) FAIL: visually-hidden-but-focusable CSS patterns (visibilityHints) -->
+<!-- ========================================================= -->
+<div id="case_clip_rect" aria-hidden="true">
+  <a href="#x" style="position:absolute;clip:rect(0,0,0,0)">Clipped link</a>
+</div>
+
+<div id="case_clip_path_inset" aria-hidden="true">
+  <a href="#x" style="clip-path:inset(50%)">Clip-path link</a>
+</div>
+
+<div id="case_zero_size_overflow_hidden" aria-hidden="true">
+  <a href="#x" style="width:0px;height:0px;overflow:hidden;display:inline-block">Zero-size link</a>
+</div>
+
+<div id="case_offscreen_text_indent" aria-hidden="true">
+  <a href="#x" style="text-indent:-9999px">Off-screen link</a>
+</div>
+
 </body>
 </html>

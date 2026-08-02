@@ -327,12 +327,84 @@ test(`${RULE_ID}: disabled form control exception (pass even though disabled but
     assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+// ===== visibilityHints metric (data.details.metrics.visibilityHints) =====
+// getVisibilityHints is a diagnostic-only enrichment (does not affect
+// outcome -- opacity/clip/offscreen focusables are already in-scope and
+// flagged regardless), covering the classic visually-hidden-but-focusable
+// CSS patterns real sites use behind aria-hidden.
+
+test(`${RULE_ID}: visibilityHints includes "clipped" for the classic clip:rect(0,0,0,0) visually-hidden pattern`, () => {
+    const html = `<!doctype html><html><body>
+      <div id="ah_clip" aria-hidden="true">
+        <a id="clip_link" href="#x" style="position:absolute;clip:rect(0,0,0,0)">Visually hidden link</a>
+      </div>
+    </body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+    assert.ok(rule.occurrences[0].data.details.metrics.visibilityHints.includes('clipped'));
+});
+
+test(`${RULE_ID}: visibilityHints includes "clipped" for clip-path:inset(50%)`, () => {
+    const html = `<!doctype html><html><body>
+      <div id="ah_clippath" aria-hidden="true">
+        <a id="clippath_link" href="#x" style="clip-path:inset(50%)">Clipped link</a>
+      </div>
+    </body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+    assert.ok(rule.occurrences[0].data.details.metrics.visibilityHints.includes('clipped'));
+});
+
+test(`${RULE_ID}: visibilityHints includes "zeroSizeOverflowHidden" for a zero-size, overflow:hidden focusable`, () => {
+    const html = `<!doctype html><html><body>
+      <div id="ah_zerosize" aria-hidden="true">
+        <a id="zerosize_link" href="#x" style="width:0px;height:0px;overflow:hidden;display:inline-block">Zero-size link</a>
+      </div>
+    </body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+    assert.ok(rule.occurrences[0].data.details.metrics.visibilityHints.includes('zeroSizeOverflowHidden'));
+});
+
+test(`${RULE_ID}: visibilityHints includes "offscreen" for the classic large-negative-text-indent technique`, () => {
+    const html = `<!doctype html><html><body>
+      <div id="ah_offscreen" aria-hidden="true">
+        <a id="offscreen_link" href="#x" style="text-indent:-9999px">Off-screen link</a>
+      </div>
+    </body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+    assert.ok(rule.occurrences[0].data.details.metrics.visibilityHints.includes('offscreen'));
+});
+
+test(`${RULE_ID}: visibilityHints includes "offscreen" for position:absolute with a large negative left offset`, () => {
+    const html = `<!doctype html><html><body>
+      <div id="ah_offscreen2" aria-hidden="true">
+        <a id="offscreen_link2" href="#x" style="position:absolute;left:-9999px">Off-screen link</a>
+      </div>
+    </body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+    assert.ok(rule.occurrences[0].data.details.metrics.visibilityHints.includes('offscreen'));
+});
+
+test(`${RULE_ID}: visibilityHints is empty for an ordinary visible focusable (no false hints)`, () => {
+    const html = `<!doctype html><html><body>
+      <div id="ah_plain" aria-hidden="true">
+        <a id="plain_link" href="#x">Ordinary link</a>
+      </div>
+    </body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+    assert.deepEqual(rule.occurrences[0].data.details.metrics.visibilityHints, []);
+});
+
 test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-hidden-focus-all-scenarios.html)`, () => {
     const fixturePath = path.join(__dirname, '../..', 'fixtures', 'aria-hidden-focus-all-scenarios.html');
     const html = fs.readFileSync(fixturePath, 'utf8');
 
     const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 16, maxOccurrences: 16 });
+    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 20, maxOccurrences: 20 });
 
     const expectedFailIds = [
         'case_link_href',
@@ -350,7 +422,11 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-hidden-focus-all-scenari
         'case_area_href',
         'case_opacity_zero',
         'case_self_focusable',
-        'case_self_and_descendant'
+        'case_self_and_descendant',
+        'case_clip_rect',
+        'case_clip_path_inset',
+        'case_zero_size_overflow_hidden',
+        'case_offscreen_text_indent'
     ];
 
     const expectedNoOccIds = [
