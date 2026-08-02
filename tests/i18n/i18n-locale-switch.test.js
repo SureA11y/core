@@ -2,89 +2,111 @@
 
 const test = require('node:test');
 const assert = require('node:assert');
+const fs = require('node:fs');
+const path = require('node:path');
 
 const { runa11yCoreOnHtml } = require('../helpers/runa11yCoreOnHtml');
 
-test('i18n: locale switch applies translations when keys exist', () => {
-  const html = `
-    <!doctype html>
-    <html>
-      <head><title>i18n test</title></head>
-      <body>
-        <img src="x.png">
-        <input type="image">
-        <svg role="img"></svg>
-      </body>
-    </html>
-  `;
+const I18N_DIR = path.join(__dirname, '..', '..', 'src', 'i18n');
+const LOCALES = fs
+  .readdirSync(I18N_DIR)
+  .filter((f) => f.endsWith('.js') && f !== 'en.js')
+  .map((f) => f.replace(/\.js$/, ''));
 
-  const en = runa11yCoreOnHtml(html, {
-    engineOptions: { locale: 'en' }
-  });
+const html = `
+  <!doctype html>
+  <html>
+    <head><title>i18n test</title></head>
+    <body>
+      <img src="x.png">
+      <input type="image">
+      <svg role="img"></svg>
+    </body>
+  </html>
+`;
 
-  const fr = runa11yCoreOnHtml(html, {
-    engineOptions: { locale: 'fr' }
-  });
+for (const locale of LOCALES) {
+  test(`i18n: locale switch applies translations when keys exist (${locale})`, () => {
+    const en = runa11yCoreOnHtml(html, {
+      engineOptions: { locale: 'en' }
+    });
 
-  assert.ok(Array.isArray(en.checksResults), 'EN checks array exists');
-  assert.ok(Array.isArray(fr.checksResults), 'FR checks array exists');
-  assert.strictEqual(
-    en.checksResults.length,
-    fr.checksResults.length,
-    'EN and FR return same number of checks'
-  );
+    const translated = runa11yCoreOnHtml(html, {
+      engineOptions: { locale }
+    });
 
-  const enById = new Map(en.checksResults.map((r) => [r.ruleId, r]));
-  const frById = new Map(fr.checksResults.map((r) => [r.ruleId, r]));
+    assert.ok(Array.isArray(en.checksResults), 'EN checks array exists');
+    assert.ok(Array.isArray(translated.checksResults), `${locale} checks array exists`);
+    assert.strictEqual(
+      en.checksResults.length,
+      translated.checksResults.length,
+      `EN and ${locale} return same number of checks`
+    );
 
-  for (const [ruleId, frRule] of frById.entries()) {
-    const enRule = enById.get(ruleId);
-    assert.ok(enRule, `Rule ${ruleId} exists in EN results`);
+    const enById = new Map(en.checksResults.map((r) => [r.ruleId, r]));
+    const translatedById = new Map(translated.checksResults.map((r) => [r.ruleId, r]));
 
-    // ---- Rule-level localization ----
-    if (frRule.i18n) {
-      if (frRule.i18n.titleKey) {
-        assert.strictEqual(typeof frRule.title, 'string', `FR title resolved for ${ruleId}`);
-        assert.ok(frRule.title.length > 0, `FR title non-empty for ${ruleId}`);
-      }
+    for (const [ruleId, translatedRule] of translatedById.entries()) {
+      const enRule = enById.get(ruleId);
+      assert.ok(enRule, `Rule ${ruleId} exists in EN results`);
 
-      if (frRule.i18n.descriptionKey) {
-        assert.strictEqual(
-          typeof frRule.description,
-          'string',
-          `FR description resolved for ${ruleId}`
-        );
-        assert.ok(frRule.description.length > 0, `FR description non-empty for ${ruleId}`);
-      }
-    }
-
-    // ---- Occurrence-level localization ----
-    const frOccs = Array.isArray(frRule.occurrences) ? frRule.occurrences : [];
-    const enOccs = Array.isArray(enRule.occurrences) ? enRule.occurrences : [];
-
-    assert.strictEqual(frOccs.length, enOccs.length, `Same number of occurrences for ${ruleId}`);
-
-    for (let i = 0; i < frOccs.length; i++) {
-      const frOcc = frOccs[i];
-      const enOcc = enOccs[i];
-
-      if (frOcc.i18n) {
-        if (frOcc.i18n.summaryKey) {
+      // ---- Rule-level localization ----
+      if (translatedRule.i18n) {
+        if (translatedRule.i18n.titleKey) {
           assert.strictEqual(
-            typeof frOcc.summary,
+            typeof translatedRule.title,
             'string',
-            `FR summary resolved for ${ruleId} occurrence ${i}`
+            `${locale} title resolved for ${ruleId}`
           );
+          assert.ok(translatedRule.title.length > 0, `${locale} title non-empty for ${ruleId}`);
         }
 
-        if (frOcc.i18n.hintKey) {
+        if (translatedRule.i18n.descriptionKey) {
           assert.strictEqual(
-            typeof frOcc.hint,
+            typeof translatedRule.description,
             'string',
-            `FR hint resolved for ${ruleId} occurrence ${i}`
+            `${locale} description resolved for ${ruleId}`
+          );
+          assert.ok(
+            translatedRule.description.length > 0,
+            `${locale} description non-empty for ${ruleId}`
           );
         }
       }
+
+      // ---- Occurrence-level localization ----
+      const translatedOccs = Array.isArray(translatedRule.occurrences)
+        ? translatedRule.occurrences
+        : [];
+      const enOccs = Array.isArray(enRule.occurrences) ? enRule.occurrences : [];
+
+      assert.strictEqual(
+        translatedOccs.length,
+        enOccs.length,
+        `Same number of occurrences for ${ruleId}`
+      );
+
+      for (let i = 0; i < translatedOccs.length; i++) {
+        const translatedOcc = translatedOccs[i];
+
+        if (translatedOcc.i18n) {
+          if (translatedOcc.i18n.summaryKey) {
+            assert.strictEqual(
+              typeof translatedOcc.summary,
+              'string',
+              `${locale} summary resolved for ${ruleId} occurrence ${i}`
+            );
+          }
+
+          if (translatedOcc.i18n.hintKey) {
+            assert.strictEqual(
+              typeof translatedOcc.hint,
+              'string',
+              `${locale} hint resolved for ${ruleId} occurrence ${i}`
+            );
+          }
+        }
+      }
     }
-  }
-});
+  });
+}

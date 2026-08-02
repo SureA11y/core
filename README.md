@@ -44,7 +44,9 @@ automated quality gates.
 - **Extensible.** Add custom rules, register policies and filter scans
   by rule IDs, tags or WCAG version.
 - **Localized reporting.** Human-readable messages can be translated
-  without affecting machine-readable data.
+  without affecting machine-readable data. Ships with `en`, `fr`, `de`,
+  and `es` today — see [`docs/I18N.md`](./docs/I18N.md) to use one or
+  contribute another.
 
 ---
 

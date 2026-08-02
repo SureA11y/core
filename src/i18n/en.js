@@ -193,7 +193,7 @@ module.exports = {
     'Finds audio and video elements where a transcript or other text alternative is not strongly evidenced in the page content. This rule is conservative and reports cantTell when evidence is missing or cannot be verified.',
 
   mediaTranscriptPresent_summary_cantTell_missing:
-    'La présence d’une transcription ou d’une autre alternative textuelle pour cet élément {{element}} n’est pas clairement démontrée sur la page.',
+    'A transcript or other text alternative for this <{{element}}> is not strongly evidenced on the page.',
 
   mediaTranscriptPresent_hint_cantTell_missing:
     'Provide a clearly identified transcript or other text alternative for prerecorded audio-only or video-only media, for example a visible “Transcript” section or link.',

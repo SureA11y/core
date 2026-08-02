@@ -33,6 +33,10 @@ Note on coverage: `tests/node-runtime-parity.test.js` runs every rule's own fixt
 
 Prefer finding the root cause over a narrow patch — this codebase's own convention is to verify against a primary source (the WAI-ARIA spec, HTML-AAM, direct probing of real browser/AT behavior) before changing rule logic, not to guess. If a false positive or false negative is confirmed, add a fixture case and a regression test that would have caught it.
 
+## Contributing a translation
+
+No code changes needed. Run `npm run i18n:new <locale>` to scaffold `src/i18n/<locale>.js`, fill in the strings, and check progress with `npm run i18n:report`. Full workflow and terminology guidance in [`docs/I18N.md`](./docs/I18N.md#contributing-a-translation).
+
 ## Commit and PR conventions
 
 - Keep commits focused — one logical change per commit, with a message explaining *why*, not just *what* (the diff already shows what).

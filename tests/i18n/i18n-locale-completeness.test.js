@@ -11,7 +11,7 @@ const I18N_DIR = path.join(__dirname, '..', '..', 'src', 'i18n');
 // Keep this list in sync with that table: a locale listed here is asserted
 // to carry every key en.js has, so coverage drift fails the build instead
 // of silently degrading to English per-string.
-const FULLY_TRANSLATED_LOCALES = ['fr'];
+const FULLY_TRANSLATED_LOCALES = ['fr', 'de', 'es'];
 
 function loadLocale(name) {
   return require(path.join(I18N_DIR, `${name}.js`));

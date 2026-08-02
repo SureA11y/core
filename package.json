@@ -56,7 +56,9 @@
     "fixtures:index": "node scripts/generate-fixture-index.js",
     "docs:rule-catalog": "npm run build && node scripts/generate-rule-catalog.js",
     "validate:automatic-rules": "npm run build && node scripts/validate-all-rules.js src/checks/automatic",
-    "validate:manual-rules": "npm run build && node scripts/validate-all-rules.js src/checks/manual"
+    "validate:manual-rules": "npm run build && node scripts/validate-all-rules.js src/checks/manual",
+    "i18n:new": "node scripts/i18n-scaffold.js",
+    "i18n:report": "node scripts/i18n-report.js"
   },
   "dependencies": {
     "jsdom": "^29.1.1"
