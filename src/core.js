@@ -10493,26 +10493,40 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     }
   }
 
-  // Presence-only accessible-name check (aria-label / aria-labelledby),
-  // for the small set of role-permission decisions that are themselves
-  // conditioned on "does this element currently have a name" (e.g.
-  // <section>'s permitted-roles set — see ALLOWED_ROLES_BY_ELEMENT below).
-  // Deliberately mirrors landmark-unique-manual.js's own
-  // getAccessibleLandmarkName (aria-label then aria-labelledby, not
-  // title) rather than a full accname computation, for the same reason
-  // that rule gives: consistency with what actually makes an element a
-  // named landmark per the W3C ARIA-in-HTML spec.
+  // Presence-only accessible-name check (aria-label / aria-labelledby /
+  // title), for the small set of role-permission decisions that are
+  // themselves conditioned on "does this element currently have a name"
+  // (e.g. <section>'s permitted-roles set — see ALLOWED_ROLES_BY_ELEMENT
+  // below). Mirrors dom-helpers.js's getLandmarkNameInfo precedence
+  // (aria-label -> aria-labelledby -> title), the single shared
+  // implementation the 7 manual landmark-check files now delegate to
+  // after their own former "not title" copies were found to miss real
+  // title-named landmarks (see getLandmarkNameInfo's own header comment —
+  // confirmed against a widely-used reference engine and a real page,
+  // DuckDuckGo's <nav title="navigation">). This function used to match
+  // that same stale, pre-fix precedent (aria-label/aria-labelledby only)
+  // and was never updated alongside it: a <section title="...">, named
+  // only via title, was resolved to the plain 'section' role key instead
+  // of 'section[named]' — whose own ALLOWED_ROLES_BY_ELEMENT entry omits
+  // 'region' specifically because a title-named <section> is excluded
+  // from it — so aria-allowed-role wrongly failed an explicit
+  // role="region" restatement on it, even though this same codebase's own
+  // landmark rules already correctly treat that section as a named,
+  // "region"-eligible landmark.
   function hasAccessibleNameHint(el) {
     const al = trim(getAttr(el, 'aria-label'));
     if (al) return true;
     const alb = trim(getAttr(el, 'aria-labelledby'));
-    if (!alb || !ariaDocument || typeof ariaDocument.getElementById !== 'function') return false;
-    for (const refId of alb.split(/\s+/).filter(Boolean)) {
-      try {
-        const ref = ariaDocument.getElementById(refId);
-        if (ref && trim(ref.textContent)) return true;
-      } catch {}
+    if (alb && ariaDocument && typeof ariaDocument.getElementById === 'function') {
+      for (const refId of alb.split(/\s+/).filter(Boolean)) {
+        try {
+          const ref = ariaDocument.getElementById(refId);
+          if (ref && trim(ref.textContent)) return true;
+        } catch {}
+      }
     }
+    const title = trim(getAttr(el, 'title'));
+    if (title) return true;
     return false;
   }
 
@@ -46883,26 +46897,40 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     }
   }
 
-  // Presence-only accessible-name check (aria-label / aria-labelledby),
-  // for the small set of role-permission decisions that are themselves
-  // conditioned on "does this element currently have a name" (e.g.
-  // <section>'s permitted-roles set — see ALLOWED_ROLES_BY_ELEMENT below).
-  // Deliberately mirrors landmark-unique-manual.js's own
-  // getAccessibleLandmarkName (aria-label then aria-labelledby, not
-  // title) rather than a full accname computation, for the same reason
-  // that rule gives: consistency with what actually makes an element a
-  // named landmark per the W3C ARIA-in-HTML spec.
+  // Presence-only accessible-name check (aria-label / aria-labelledby /
+  // title), for the small set of role-permission decisions that are
+  // themselves conditioned on "does this element currently have a name"
+  // (e.g. <section>'s permitted-roles set — see ALLOWED_ROLES_BY_ELEMENT
+  // below). Mirrors dom-helpers.js's getLandmarkNameInfo precedence
+  // (aria-label -> aria-labelledby -> title), the single shared
+  // implementation the 7 manual landmark-check files now delegate to
+  // after their own former "not title" copies were found to miss real
+  // title-named landmarks (see getLandmarkNameInfo's own header comment —
+  // confirmed against a widely-used reference engine and a real page,
+  // DuckDuckGo's <nav title="navigation">). This function used to match
+  // that same stale, pre-fix precedent (aria-label/aria-labelledby only)
+  // and was never updated alongside it: a <section title="...">, named
+  // only via title, was resolved to the plain 'section' role key instead
+  // of 'section[named]' — whose own ALLOWED_ROLES_BY_ELEMENT entry omits
+  // 'region' specifically because a title-named <section> is excluded
+  // from it — so aria-allowed-role wrongly failed an explicit
+  // role="region" restatement on it, even though this same codebase's own
+  // landmark rules already correctly treat that section as a named,
+  // "region"-eligible landmark.
   function hasAccessibleNameHint(el) {
     const al = trim(getAttr(el, 'aria-label'));
     if (al) return true;
     const alb = trim(getAttr(el, 'aria-labelledby'));
-    if (!alb || !ariaDocument || typeof ariaDocument.getElementById !== 'function') return false;
-    for (const refId of alb.split(/\s+/).filter(Boolean)) {
-      try {
-        const ref = ariaDocument.getElementById(refId);
-        if (ref && trim(ref.textContent)) return true;
-      } catch {}
+    if (alb && ariaDocument && typeof ariaDocument.getElementById === 'function') {
+      for (const refId of alb.split(/\s+/).filter(Boolean)) {
+        try {
+          const ref = ariaDocument.getElementById(refId);
+          if (ref && trim(ref.textContent)) return true;
+        } catch {}
+      }
     }
+    const title = trim(getAttr(el, 'title'));
+    if (title) return true;
     return false;
   }
 
@@ -83228,26 +83256,40 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     }
   }
 
-  // Presence-only accessible-name check (aria-label / aria-labelledby),
-  // for the small set of role-permission decisions that are themselves
-  // conditioned on "does this element currently have a name" (e.g.
-  // <section>'s permitted-roles set — see ALLOWED_ROLES_BY_ELEMENT below).
-  // Deliberately mirrors landmark-unique-manual.js's own
-  // getAccessibleLandmarkName (aria-label then aria-labelledby, not
-  // title) rather than a full accname computation, for the same reason
-  // that rule gives: consistency with what actually makes an element a
-  // named landmark per the W3C ARIA-in-HTML spec.
+  // Presence-only accessible-name check (aria-label / aria-labelledby /
+  // title), for the small set of role-permission decisions that are
+  // themselves conditioned on "does this element currently have a name"
+  // (e.g. <section>'s permitted-roles set — see ALLOWED_ROLES_BY_ELEMENT
+  // below). Mirrors dom-helpers.js's getLandmarkNameInfo precedence
+  // (aria-label -> aria-labelledby -> title), the single shared
+  // implementation the 7 manual landmark-check files now delegate to
+  // after their own former "not title" copies were found to miss real
+  // title-named landmarks (see getLandmarkNameInfo's own header comment —
+  // confirmed against a widely-used reference engine and a real page,
+  // DuckDuckGo's <nav title="navigation">). This function used to match
+  // that same stale, pre-fix precedent (aria-label/aria-labelledby only)
+  // and was never updated alongside it: a <section title="...">, named
+  // only via title, was resolved to the plain 'section' role key instead
+  // of 'section[named]' — whose own ALLOWED_ROLES_BY_ELEMENT entry omits
+  // 'region' specifically because a title-named <section> is excluded
+  // from it — so aria-allowed-role wrongly failed an explicit
+  // role="region" restatement on it, even though this same codebase's own
+  // landmark rules already correctly treat that section as a named,
+  // "region"-eligible landmark.
   function hasAccessibleNameHint(el) {
     const al = trim(getAttr(el, 'aria-label'));
     if (al) return true;
     const alb = trim(getAttr(el, 'aria-labelledby'));
-    if (!alb || !ariaDocument || typeof ariaDocument.getElementById !== 'function') return false;
-    for (const refId of alb.split(/\s+/).filter(Boolean)) {
-      try {
-        const ref = ariaDocument.getElementById(refId);
-        if (ref && trim(ref.textContent)) return true;
-      } catch {}
+    if (alb && ariaDocument && typeof ariaDocument.getElementById === 'function') {
+      for (const refId of alb.split(/\s+/).filter(Boolean)) {
+        try {
+          const ref = ariaDocument.getElementById(refId);
+          if (ref && trim(ref.textContent)) return true;
+        } catch {}
+      }
     }
+    const title = trim(getAttr(el, 'title'));
+    if (title) return true;
     return false;
   }
 

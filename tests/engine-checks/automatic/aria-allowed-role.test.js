@@ -218,6 +218,23 @@ test(`${RULE_ID}: pass when role="region" is set on a <section> named via aria-l
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+// Regression coverage for a bug found while extending direct coverage of
+// aria-helpers.js: hasAccessibleNameHint (which decides whether a
+// <section> resolves to the 'section[named]' role key, whose allowed-
+// roles entry is the only one that permits role="region") only checked
+// aria-label/aria-labelledby, not title -- inconsistent with this same
+// engine's own getLandmarkNameInfo (aria-label -> aria-labelledby ->
+// title), which the 7 manual landmark-check rules already correctly
+// delegate to. A <section title="..."> named only via title was wrongly
+// failed for an explicit role="region" restatement, even though this
+// engine's own landmark rules already treat a title-named section as a
+// real, region-eligible landmark.
+test(`${RULE_ID}: pass when role="region" is set on a <section> named only via title`, () => {
+  const html = `<!doctype html><html><body><section role="region" title="Scoreboard" id="a"></section></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
 test(`${RULE_ID}: pass when role="banner" is set on a <section> regardless of naming`, () => {
   const html = `<!doctype html><html><body><section role="banner" id="a"></section></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
