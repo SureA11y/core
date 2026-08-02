@@ -49,7 +49,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const NON_INTERACTIVE_ROLES = new Set([
     'generic',

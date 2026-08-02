@@ -24420,7 +24420,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const RULE_IMPLS = {
     "accesskeys": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('[accesskey]')
     : helpers.queryAll('[accesskey]');
@@ -25075,7 +25075,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'cantTell', severity: 'minor', occurrences };
 }), applicability: null },
     "aria-allowed-attr": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
   if (!ariaHelpers) {
@@ -25357,7 +25357,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-allowed-role": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
   if (!ariaHelpers) {
@@ -25418,7 +25418,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-braille-equivalent": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   function trim(v) {
     return (v == null ? '' : String(v)).trim();
@@ -25517,7 +25517,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-checked-state-mismatch": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   function trim(v) {
     return (v == null ? '' : String(v)).trim();
@@ -25601,7 +25601,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-conditional-attr": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   function trim(v) {
     return (v == null ? '' : String(v)).trim();
@@ -25665,7 +25665,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-deprecated-role": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
   if (!ariaHelpers) {
@@ -26546,7 +26546,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "aria-prohibited-attr": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
   if (!ariaHelpers) {
@@ -26827,7 +26827,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "aria-prohibited-children": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
   if (!ariaHelpers) {
@@ -27047,7 +27047,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-required-attr": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
   if (!ariaHelpers) {
@@ -27136,7 +27136,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-required-children": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
   if (!ariaHelpers) {
@@ -27342,7 +27342,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-required-parent": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
   if (!ariaHelpers) {
@@ -27700,7 +27700,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: null },
     "aria-roles-valid": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
   if (!ariaHelpers) {
@@ -27765,7 +27765,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-text": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const FOCUSABLE_DESCENDANT_SELECTOR =
     'a[href], button, input, select, textarea, [tabindex], iframe, [contenteditable]:not([contenteditable="false"])';
@@ -27831,7 +27831,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-valid-attr": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
   if (!ariaHelpers) {
@@ -27897,7 +27897,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-valid-attr-value": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
   if (!ariaHelpers) {
@@ -27975,7 +27975,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "autocomplete-valid": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   // Declared inside runInPage — see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
@@ -28104,7 +28104,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "avoid-inline-spacing": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const SPACING_PROPS = ['line-height', 'letter-spacing', 'word-spacing'];
 
@@ -28426,7 +28426,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "button-name-present": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const occurrences = [];
   let applicableCount = 0;
@@ -30942,7 +30942,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
 }) },
     "definition-list-children-valid": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   // Declared inside runInPage — see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
@@ -31046,7 +31046,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "deprecated-elements-not-used": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('blink, marquee')
@@ -31231,7 +31231,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "dlitem-parent-valid": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('dt, dd')
@@ -31971,7 +31971,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "focus-order-semantics": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const NON_INTERACTIVE_ROLES = new Set([
     'generic',
@@ -32070,7 +32070,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "form-control-programmatic-label-present": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const isAccTreeEligible =
     helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
@@ -32574,7 +32574,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "heading-order": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   function normalizeWs(s) {
     return String(s || '')
@@ -32811,7 +32811,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
 }) },
     "identical-links-same-purpose": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   function normName(s) {
     return (s == null ? '' : String(s)).replace(/\s+/g, ' ').trim().toLowerCase();
@@ -32913,7 +32913,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "iframe-focusable-content": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   function hasFocusableCandidate(doc) {
     if (!doc || !doc.querySelectorAll) return false;
@@ -33003,7 +33003,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "iframe-name-present": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('iframe, frame')
@@ -33072,7 +33072,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "iframe-title-unique": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('iframe, frame')
@@ -33143,7 +33143,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "image-redundant-alt": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   function normalizeWs(s) {
     return String(s || '')
@@ -35709,7 +35709,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: null },
     "link-in-text-block": { run: (function runInPage(ctx) {
-  const { document, helpers, rule, engineOptions } = ctx;
+  const { helpers, rule, engineOptions } = ctx;
 
   function safeComputedStyle(el) {
     try {
@@ -35878,7 +35878,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "link-name-present": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const occurrences = [];
   let applicableCount = 0;
@@ -36002,7 +36002,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "link-name-quality": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const GENERIC_LINK_TEXT = new Set([
     'click here',
@@ -36106,7 +36106,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "list-children-valid": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   // Declared inside runInPage — see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
@@ -36416,7 +36416,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "listitem-parent-valid": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('li') : helpers.queryAll('li');
 
@@ -37426,7 +37426,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "mouse-only-event-handlers": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const MOUSE_ONLY_ATTRS = [
     'onmouseover',
@@ -37510,7 +37510,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "nested-interactive-controls-absent": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   // Declared inside runInPage — see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
@@ -37602,7 +37602,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "no-autoplay-audio": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('audio[autoplay], video[autoplay]')
@@ -38166,7 +38166,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "p-as-heading": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const MAX_HEADING_LIKE_CHARS = 120;
   const MIN_FONT_SIZE_PX = 18;
@@ -38697,7 +38697,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
 }) },
     "presentation-role-conflict": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   // The full set of ARIA attributes marked `global: true` per the WAI-ARIA
   // spec (confirmed against a widely-used reference engine's own
@@ -39504,7 +39504,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "scrollable-region-focusable": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   function safeComputedStyle(el) {
     try {
@@ -39841,7 +39841,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "server-side-image-map-absent": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('img[ismap]')
@@ -41567,7 +41567,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "table-duplicate-name": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   function normalizeWs(s) {
     return String(s || '')
@@ -41628,7 +41628,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "table-fake-caption": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   function trim(v) {
     return (v == null ? '' : String(v)).trim();
@@ -41790,7 +41790,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "table-th-has-data-cells": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const tables = helpers.queryAllSmart ? helpers.queryAllSmart('table') : helpers.queryAll('table');
 
@@ -42418,7 +42418,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: RULE_ID, ...resolved };
 }), applicability: null },
     "td-has-header": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const MIN_SIZE = 4;
 
@@ -43030,7 +43030,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "valid-lang": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const BCP47_RE = /^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{2,8})*$/;
 
@@ -43086,7 +43086,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "video-caption": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('video') : helpers.queryAll('video');
 
@@ -60421,7 +60421,7 @@ const __a11yCoreCrossFrameApi = (function () {
 ];
   const RULE_IMPLS = {
     "accesskeys": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('[accesskey]')
     : helpers.queryAll('[accesskey]');
@@ -61076,7 +61076,7 @@ const __a11yCoreCrossFrameApi = (function () {
   return { ruleId: rule.ruleId, outcome: 'cantTell', severity: 'minor', occurrences };
 }), applicability: null },
     "aria-allowed-attr": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
   if (!ariaHelpers) {
@@ -61358,7 +61358,7 @@ const __a11yCoreCrossFrameApi = (function () {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-allowed-role": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
   if (!ariaHelpers) {
@@ -61419,7 +61419,7 @@ const __a11yCoreCrossFrameApi = (function () {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-braille-equivalent": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   function trim(v) {
     return (v == null ? '' : String(v)).trim();
@@ -61518,7 +61518,7 @@ const __a11yCoreCrossFrameApi = (function () {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-checked-state-mismatch": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   function trim(v) {
     return (v == null ? '' : String(v)).trim();
@@ -61602,7 +61602,7 @@ const __a11yCoreCrossFrameApi = (function () {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-conditional-attr": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   function trim(v) {
     return (v == null ? '' : String(v)).trim();
@@ -61666,7 +61666,7 @@ const __a11yCoreCrossFrameApi = (function () {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-deprecated-role": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
   if (!ariaHelpers) {
@@ -62547,7 +62547,7 @@ const __a11yCoreCrossFrameApi = (function () {
   return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "aria-prohibited-attr": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
   if (!ariaHelpers) {
@@ -62828,7 +62828,7 @@ const __a11yCoreCrossFrameApi = (function () {
   return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "aria-prohibited-children": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
   if (!ariaHelpers) {
@@ -63048,7 +63048,7 @@ const __a11yCoreCrossFrameApi = (function () {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-required-attr": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
   if (!ariaHelpers) {
@@ -63137,7 +63137,7 @@ const __a11yCoreCrossFrameApi = (function () {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-required-children": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
   if (!ariaHelpers) {
@@ -63343,7 +63343,7 @@ const __a11yCoreCrossFrameApi = (function () {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-required-parent": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
   if (!ariaHelpers) {
@@ -63701,7 +63701,7 @@ const __a11yCoreCrossFrameApi = (function () {
   };
 }), applicability: null },
     "aria-roles-valid": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
   if (!ariaHelpers) {
@@ -63766,7 +63766,7 @@ const __a11yCoreCrossFrameApi = (function () {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-text": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const FOCUSABLE_DESCENDANT_SELECTOR =
     'a[href], button, input, select, textarea, [tabindex], iframe, [contenteditable]:not([contenteditable="false"])';
@@ -63832,7 +63832,7 @@ const __a11yCoreCrossFrameApi = (function () {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-valid-attr": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
   if (!ariaHelpers) {
@@ -63898,7 +63898,7 @@ const __a11yCoreCrossFrameApi = (function () {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-valid-attr-value": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
   if (!ariaHelpers) {
@@ -63976,7 +63976,7 @@ const __a11yCoreCrossFrameApi = (function () {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "autocomplete-valid": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   // Declared inside runInPage — see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
@@ -64105,7 +64105,7 @@ const __a11yCoreCrossFrameApi = (function () {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "avoid-inline-spacing": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const SPACING_PROPS = ['line-height', 'letter-spacing', 'word-spacing'];
 
@@ -64427,7 +64427,7 @@ const __a11yCoreCrossFrameApi = (function () {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "button-name-present": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const occurrences = [];
   let applicableCount = 0;
@@ -66943,7 +66943,7 @@ const __a11yCoreCrossFrameApi = (function () {
   return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
 }) },
     "definition-list-children-valid": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   // Declared inside runInPage — see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
@@ -67047,7 +67047,7 @@ const __a11yCoreCrossFrameApi = (function () {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "deprecated-elements-not-used": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('blink, marquee')
@@ -67232,7 +67232,7 @@ const __a11yCoreCrossFrameApi = (function () {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "dlitem-parent-valid": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('dt, dd')
@@ -67972,7 +67972,7 @@ const __a11yCoreCrossFrameApi = (function () {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "focus-order-semantics": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const NON_INTERACTIVE_ROLES = new Set([
     'generic',
@@ -68071,7 +68071,7 @@ const __a11yCoreCrossFrameApi = (function () {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "form-control-programmatic-label-present": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const isAccTreeEligible =
     helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
@@ -68575,7 +68575,7 @@ const __a11yCoreCrossFrameApi = (function () {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "heading-order": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   function normalizeWs(s) {
     return String(s || '')
@@ -68812,7 +68812,7 @@ const __a11yCoreCrossFrameApi = (function () {
   return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
 }) },
     "identical-links-same-purpose": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   function normName(s) {
     return (s == null ? '' : String(s)).replace(/\s+/g, ' ').trim().toLowerCase();
@@ -68914,7 +68914,7 @@ const __a11yCoreCrossFrameApi = (function () {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "iframe-focusable-content": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   function hasFocusableCandidate(doc) {
     if (!doc || !doc.querySelectorAll) return false;
@@ -69004,7 +69004,7 @@ const __a11yCoreCrossFrameApi = (function () {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "iframe-name-present": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('iframe, frame')
@@ -69073,7 +69073,7 @@ const __a11yCoreCrossFrameApi = (function () {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "iframe-title-unique": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('iframe, frame')
@@ -69144,7 +69144,7 @@ const __a11yCoreCrossFrameApi = (function () {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "image-redundant-alt": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   function normalizeWs(s) {
     return String(s || '')
@@ -71710,7 +71710,7 @@ const __a11yCoreCrossFrameApi = (function () {
   };
 }), applicability: null },
     "link-in-text-block": { run: (function runInPage(ctx) {
-  const { document, helpers, rule, engineOptions } = ctx;
+  const { helpers, rule, engineOptions } = ctx;
 
   function safeComputedStyle(el) {
     try {
@@ -71879,7 +71879,7 @@ const __a11yCoreCrossFrameApi = (function () {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "link-name-present": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const occurrences = [];
   let applicableCount = 0;
@@ -72003,7 +72003,7 @@ const __a11yCoreCrossFrameApi = (function () {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "link-name-quality": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const GENERIC_LINK_TEXT = new Set([
     'click here',
@@ -72107,7 +72107,7 @@ const __a11yCoreCrossFrameApi = (function () {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "list-children-valid": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   // Declared inside runInPage — see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
@@ -72417,7 +72417,7 @@ const __a11yCoreCrossFrameApi = (function () {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "listitem-parent-valid": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('li') : helpers.queryAll('li');
 
@@ -73427,7 +73427,7 @@ const __a11yCoreCrossFrameApi = (function () {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "mouse-only-event-handlers": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const MOUSE_ONLY_ATTRS = [
     'onmouseover',
@@ -73511,7 +73511,7 @@ const __a11yCoreCrossFrameApi = (function () {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "nested-interactive-controls-absent": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   // Declared inside runInPage — see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
@@ -73603,7 +73603,7 @@ const __a11yCoreCrossFrameApi = (function () {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "no-autoplay-audio": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('audio[autoplay], video[autoplay]')
@@ -74167,7 +74167,7 @@ const __a11yCoreCrossFrameApi = (function () {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "p-as-heading": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const MAX_HEADING_LIKE_CHARS = 120;
   const MIN_FONT_SIZE_PX = 18;
@@ -74698,7 +74698,7 @@ const __a11yCoreCrossFrameApi = (function () {
   return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
 }) },
     "presentation-role-conflict": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   // The full set of ARIA attributes marked `global: true` per the WAI-ARIA
   // spec (confirmed against a widely-used reference engine's own
@@ -75505,7 +75505,7 @@ const __a11yCoreCrossFrameApi = (function () {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "scrollable-region-focusable": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   function safeComputedStyle(el) {
     try {
@@ -75842,7 +75842,7 @@ const __a11yCoreCrossFrameApi = (function () {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "server-side-image-map-absent": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('img[ismap]')
@@ -77568,7 +77568,7 @@ const __a11yCoreCrossFrameApi = (function () {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "table-duplicate-name": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   function normalizeWs(s) {
     return String(s || '')
@@ -77629,7 +77629,7 @@ const __a11yCoreCrossFrameApi = (function () {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "table-fake-caption": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   function trim(v) {
     return (v == null ? '' : String(v)).trim();
@@ -77791,7 +77791,7 @@ const __a11yCoreCrossFrameApi = (function () {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "table-th-has-data-cells": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const tables = helpers.queryAllSmart ? helpers.queryAllSmart('table') : helpers.queryAll('table');
 
@@ -78419,7 +78419,7 @@ const __a11yCoreCrossFrameApi = (function () {
   return { ruleId: RULE_ID, ...resolved };
 }), applicability: null },
     "td-has-header": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const MIN_SIZE = 4;
 
@@ -79031,7 +79031,7 @@ const __a11yCoreCrossFrameApi = (function () {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "valid-lang": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const BCP47_RE = /^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{2,8})*$/;
 
@@ -79087,7 +79087,7 @@ const __a11yCoreCrossFrameApi = (function () {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "video-caption": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('video') : helpers.queryAll('video');
 

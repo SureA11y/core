@@ -50,7 +50,7 @@ test('buildStructuralPath: two elements at different positions get different pat
 });
 
 test('buildStructuralPath: falls back to re-resolving via the given selector when no element reference is passed', () => {
-  const { helpers, document } = helpersFor(`<!doctype html><html><body>
+  const { helpers } = helpersFor(`<!doctype html><html><body>
     <div><span id="only"></span></div>
   </body></html>`);
 

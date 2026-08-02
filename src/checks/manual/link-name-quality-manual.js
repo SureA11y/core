@@ -66,7 +66,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const GENERIC_LINK_TEXT = new Set([
     'click here',

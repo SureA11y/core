@@ -51,7 +51,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('img[ismap]')

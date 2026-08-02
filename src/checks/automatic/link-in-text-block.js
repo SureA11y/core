@@ -85,7 +85,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, helpers, rule, engineOptions } = ctx;
+  const { helpers, rule, engineOptions } = ctx;
 
   function safeComputedStyle(el) {
     try {

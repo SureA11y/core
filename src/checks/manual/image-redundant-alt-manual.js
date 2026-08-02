@@ -48,7 +48,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   function normalizeWs(s) {
     return String(s || '')

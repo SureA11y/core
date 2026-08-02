@@ -59,7 +59,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   function trim(v) {
     return (v == null ? '' : String(v)).trim();

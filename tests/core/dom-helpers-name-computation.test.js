@@ -288,7 +288,7 @@ test('resolveIdRefs: an empty/whitespace-only idref string returns an empty resu
 });
 
 test('resolveIdRefs: resolves multiple space-separated ids, tracking missing ones separately from found ones', () => {
-  const { helpers, document } = helpersFor('<span id="a">A</span><span id="c">C</span>');
+  const { helpers } = helpersFor('<span id="a">A</span><span id="c">C</span>');
   const r = helpers.resolveIdRefs('a b c', {});
   assert.equal(r.refs.length, 2);
   assert.deepEqual(r.missing, ['b']);

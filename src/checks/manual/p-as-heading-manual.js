@@ -60,7 +60,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const MAX_HEADING_LIKE_CHARS = 120;
   const MIN_FONT_SIZE_PX = 18;

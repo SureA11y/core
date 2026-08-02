@@ -58,7 +58,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   function normName(s) {
     return (s == null ? '' : String(s)).replace(/\s+/g, ' ').trim().toLowerCase();
