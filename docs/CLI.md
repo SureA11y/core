@@ -21,6 +21,7 @@ The CLI reads **static HTML only** — a local file, or the raw response of an H
 | `--exclude-rules <ids>` | Comma-separated rule IDs — never run these. |
 | `--tags <tags>` | Comma-separated tags — e.g. `--tags wcag2a,wcag2aa` to target a conformance level (see [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md)). |
 | `--context <selector>` | Scope the scan to one CSS-selected subtree. |
+| `--custom-rules <path>` | Load runtime custom rules from a local JS file. Repeatable. See [Custom rules](#custom-rules) below. |
 | `--write-baseline <path>` | Write every current `fail` occurrence to `<path>`; never fails the build. See [`BASELINE.md`](./BASELINE.md). |
 | `--baseline <path>` | Gate only on occurrences not already recorded in `<path>`. See [`BASELINE.md`](./BASELINE.md). |
 | `--html <path>` | Write a self-contained, browsable HTML report to `<path>`. See [`REPORT.md`](./REPORT.md). |
@@ -52,6 +53,47 @@ surea11y scan ./dist/index.html --baseline baseline.json         # in CI, from t
 ```
 
 See [`BASELINE.md`](./BASELINE.md) for the matching semantics, file format, and known limitations.
+
+## Custom rules
+
+For an org-specific check that isn't (and shouldn't be) one of the built-in rules — an internal design-system convention, a company style-guide requirement — `--custom-rules <path>` registers your own rule(s) for that one scan, on top of every built-in rule:
+
+```sh
+surea11y scan ./dist/index.html --custom-rules ./a11y-rules.js
+```
+
+`a11y-rules.js` exports either a single rule descriptor or an array of them, using the same shape as a built-in rule module:
+
+```js
+// a11y-rules.js
+module.exports = [
+  {
+    id: 'org-no-inline-onclick',
+    meta: { title: 'No inline onclick handlers', defaultSeverity: 'moderate' },
+    runInPage(ctx) {
+      const els = ctx.helpers.queryAll('[onclick]');
+      const occurrences = els.map((el) => ({
+        selector: ctx.helpers.buildSelector(el),
+        html: el.outerHTML,
+        summary: 'Inline onclick handler found.',
+        hint: 'Move event handling into an external script.'
+      }));
+      return {
+        ruleId: ctx.rule.ruleId,
+        outcome: occurrences.length ? 'fail' : 'pass',
+        occurrences
+      };
+    }
+  }
+];
+```
+
+- `<path>` is a **local file**, `require()`d directly by the CLI — never a URL. (Unlike the scan target, which does accept a URL: fetching and executing remote code as a rule would be a very different, much riskier trust model than running a file you already have on disk.)
+- Because the CLI runs your rule in the same Node process as the scan, `runInPage`/`applicability` can be plain functions — no `fn.toString()` string-source workaround needed (that's only required for callers, like a browser-automation binding, whose `engineOptions` crosses a serialization boundary). See [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md) for the full descriptor contract (`meta` defaulting, the `ctx` shape, etc.) — it's identical here.
+- Repeat the flag to load rules from more than one file: `--custom-rules ./a.js --custom-rules ./b.js`.
+- A custom rule's `id` colliding with a built-in one **overrides** that built-in for the scan, surfaced via a `console.warn` and the result's top-level `overriddenBuiltinIds` array — see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md).
+- The file itself is validated at load time (must export a descriptor, or array of descriptors, each with a string `id` and a function-or-source-string `runInPage`) — a malformed export exits `2` with a clear error rather than silently scanning with one fewer rule than expected.
+- Works alongside every other flag, including `--rules`/`--exclude-rules`/`--tags` (which can target your custom rule's `id` exactly like a built-in one) and `--baseline`/`--html`/`--sarif`.
 
 ## HTML report
 

@@ -224,8 +224,15 @@ test('buildSelector: an aria-label anchor with leading/trailing whitespace on an
   const seenSelectors = new Set();
   for (const target of headers) {
     const selector = helpers.buildSelector(target);
-    assert.notEqual(selector, 'header', 'must not degrade to the bare, non-unique tag-name fallback');
-    assert.ok(!seenSelectors.has(selector), `selector "${selector}" was reused across two different headers`);
+    assert.notEqual(
+      selector,
+      'header',
+      'must not degrade to the bare, non-unique tag-name fallback'
+    );
+    assert.ok(
+      !seenSelectors.has(selector),
+      `selector "${selector}" was reused across two different headers`
+    );
     seenSelectors.add(selector);
 
     const matches = document.querySelectorAll(selector);

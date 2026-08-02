@@ -38,6 +38,7 @@ test('CLI: --help exits 0 and prints usage', () => {
   assert.match(stdout, /surea11y scan/);
   assert.match(stdout, /--write-baseline/);
   assert.match(stdout, /--baseline/);
+  assert.match(stdout, /--custom-rules/);
 });
 
 test('CLI: no arguments exits 2 (usage error) and still prints help', () => {
@@ -440,4 +441,191 @@ test('CLI: --sarif works alongside --html and --json (all three artifacts from t
   assert.ok(Array.isArray(result.checksResults));
   assert.ok(fs.existsSync(sarifPath));
   assert.ok(fs.existsSync(reportPath));
+});
+
+test('CLI: --custom-rules loads a runtime rule from a file exporting an array of descriptors', () => {
+  const file = path.join(tmpDir, 'custom-rules-array.html');
+  fs.writeFileSync(
+    file,
+    '<!doctype html><html lang="en"><head><title>T</title></head><body><main><button onclick="go()">Go</button></main></body></html>'
+  );
+  const rulesFile = path.join(tmpDir, 'custom-rules-array.js');
+  fs.writeFileSync(
+    rulesFile,
+    `module.exports = [{
+      id: 'org-no-inline-onclick',
+      meta: { title: 'No inline onclick handlers' },
+      runInPage(ctx) {
+        const els = ctx.helpers.queryAll('[onclick]');
+        const occurrences = els.map((el) => ({
+          selector: ctx.helpers.buildSelector(el),
+          html: el.outerHTML,
+          summary: 'Inline onclick handler found.'
+        }));
+        return { ruleId: ctx.rule.ruleId, outcome: occurrences.length ? 'fail' : 'pass', occurrences };
+      }
+    }];`
+  );
+
+  const { stdout, status } = run([
+    'scan',
+    file,
+    '--custom-rules',
+    rulesFile,
+    '--rules',
+    'org-no-inline-onclick',
+    '--json'
+  ]);
+  assert.equal(status, 1);
+
+  const result = JSON.parse(stdout);
+  assert.equal(result.checksResults.length, 1);
+  assert.equal(result.checksResults[0].ruleId, 'org-no-inline-onclick');
+  assert.equal(result.checksResults[0].outcome, 'fail');
+  assert.equal(result.checksResults[0].occurrences[0].selector, 'html > body > main > button');
+});
+
+test('CLI: --custom-rules accepts a file exporting a single descriptor object, not just an array', () => {
+  const file = path.join(tmpDir, 'custom-rules-single.html');
+  fs.writeFileSync(
+    file,
+    '<!doctype html><html lang="en"><head><title>T</title></head><body><main><h1>Hi</h1></main></body></html>'
+  );
+  const rulesFile = path.join(tmpDir, 'custom-rules-single.js');
+  fs.writeFileSync(
+    rulesFile,
+    `module.exports = {
+      id: 'org-always-pass',
+      runInPage(ctx) {
+        return { ruleId: ctx.rule.ruleId, outcome: 'pass', occurrences: [] };
+      }
+    };`
+  );
+
+  const { stdout, status } = run([
+    'scan',
+    file,
+    '--custom-rules',
+    rulesFile,
+    '--rules',
+    'org-always-pass',
+    '--json'
+  ]);
+  assert.equal(status, 0);
+
+  const result = JSON.parse(stdout);
+  assert.equal(result.checksResults.length, 1);
+  assert.equal(result.checksResults[0].ruleId, 'org-always-pass');
+  assert.equal(result.checksResults[0].outcome, 'pass');
+});
+
+test('CLI: --custom-rules is repeatable and merges rules from every file', () => {
+  const file = path.join(tmpDir, 'custom-rules-repeat.html');
+  fs.writeFileSync(
+    file,
+    '<!doctype html><html lang="en"><head><title>T</title></head><body><main><h1>Hi</h1></main></body></html>'
+  );
+  const ruleAFile = path.join(tmpDir, 'custom-rules-repeat-a.js');
+  const ruleBFile = path.join(tmpDir, 'custom-rules-repeat-b.js');
+  fs.writeFileSync(
+    ruleAFile,
+    `module.exports = [{ id: 'org-rule-a', runInPage(ctx) { return { ruleId: ctx.rule.ruleId, outcome: 'pass', occurrences: [] }; } }];`
+  );
+  fs.writeFileSync(
+    ruleBFile,
+    `module.exports = [{ id: 'org-rule-b', runInPage(ctx) { return { ruleId: ctx.rule.ruleId, outcome: 'pass', occurrences: [] }; } }];`
+  );
+
+  const { stdout, status } = run([
+    'scan',
+    file,
+    '--custom-rules',
+    ruleAFile,
+    '--custom-rules',
+    ruleBFile,
+    '--rules',
+    'org-rule-a,org-rule-b',
+    '--json'
+  ]);
+  assert.equal(status, 0);
+
+  const result = JSON.parse(stdout);
+  const ruleIds = result.checksResults.map((r) => r.ruleId).sort();
+  assert.deepEqual(ruleIds, ['org-rule-a', 'org-rule-b']);
+});
+
+test('CLI: --custom-rules colliding with a built-in rule id overrides it, surfaced via overriddenBuiltinIds', () => {
+  const file = path.join(tmpDir, 'custom-rules-override.html');
+  fs.writeFileSync(
+    file,
+    '<!doctype html><html lang="en"><head><title>T</title></head><body><img src="x.png"></body></html>'
+  );
+  const rulesFile = path.join(tmpDir, 'custom-rules-override.js');
+  fs.writeFileSync(
+    rulesFile,
+    `module.exports = [{
+      id: 'img-alt-present',
+      runInPage(ctx) { return { ruleId: ctx.rule.ruleId, outcome: 'pass', occurrences: [] }; }
+    }];`
+  );
+
+  const { stdout, status } = run([
+    'scan',
+    file,
+    '--custom-rules',
+    rulesFile,
+    '--rules',
+    'img-alt-present',
+    '--json'
+  ]);
+  assert.equal(status, 0); // the overriding custom rule always passes, unlike the real built-in rule
+
+  const result = JSON.parse(stdout);
+  assert.deepEqual(result.overriddenBuiltinIds, ['img-alt-present']);
+});
+
+test('CLI: --custom-rules pointing at a missing file exits 2 with a clear error', () => {
+  const file = path.join(tmpDir, 'custom-rules-missing.html');
+  fs.writeFileSync(
+    file,
+    '<!doctype html><html lang="en"><head><title>T</title></head><body><main><h1>Hi</h1></main></body></html>'
+  );
+
+  const { status, stderr } = run([
+    'scan',
+    file,
+    '--custom-rules',
+    path.join(tmpDir, 'does-not-exist.js')
+  ]);
+  assert.equal(status, 2);
+  assert.match(stderr, /Could not load custom rules file/);
+});
+
+test('CLI: --custom-rules pointing at a file with a malformed export exits 2 with a clear error', () => {
+  const file = path.join(tmpDir, 'custom-rules-malformed.html');
+  fs.writeFileSync(
+    file,
+    '<!doctype html><html lang="en"><head><title>T</title></head><body><main><h1>Hi</h1></main></body></html>'
+  );
+  const rulesFile = path.join(tmpDir, 'custom-rules-malformed.js');
+  fs.writeFileSync(rulesFile, 'module.exports = { notAnId: true };');
+
+  const { status, stderr } = run(['scan', file, '--custom-rules', rulesFile]);
+  assert.equal(status, 2);
+  assert.match(stderr, /must export a rule descriptor/);
+});
+
+test('CLI: --custom-rules whose module itself throws on require exits 2 with a clear error', () => {
+  const file = path.join(tmpDir, 'custom-rules-throws.html');
+  fs.writeFileSync(
+    file,
+    '<!doctype html><html lang="en"><head><title>T</title></head><body><main><h1>Hi</h1></main></body></html>'
+  );
+  const rulesFile = path.join(tmpDir, 'custom-rules-throws.js');
+  fs.writeFileSync(rulesFile, "throw new Error('boom during require');");
+
+  const { status, stderr } = run(['scan', file, '--custom-rules', rulesFile]);
+  assert.equal(status, 2);
+  assert.match(stderr, /Could not load custom rules file/);
+  assert.match(stderr, /boom during require/);
 });

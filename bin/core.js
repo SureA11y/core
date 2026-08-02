@@ -46,6 +46,7 @@ Options:
   --exclude-rules <ids>   Comma-separated rule IDs to exclude
   --tags <tags>           Comma-separated tags to run (e.g. wcag2a,wcag2aa)
   --context <selector>    CSS selector to scope the scan to a subtree
+  --custom-rules <path>   Load runtime custom rules from a JS file (repeatable)
   --write-baseline <path> Write every current "fail" occurrence to <path>; never fails the build
   --baseline <path>       Gate only on occurrences not already recorded in <path>
   --html <path>           Write a self-contained, browsable HTML report to <path>
@@ -66,8 +67,10 @@ Examples:
   surea11y scan ./index.html --baseline baseline.json
   surea11y scan ./index.html --html report.html
   surea11y scan ./index.html --baseline baseline.json --sarif results.sarif
+  surea11y scan ./index.html --custom-rules ./a11y-rules.js
 
-See docs/BASELINE.md for the baseline/allowlist mechanism, docs/REPORT.md for the HTML report, docs/SARIF.md for the SARIF report.
+See docs/BASELINE.md for the baseline/allowlist mechanism, docs/REPORT.md for the HTML report,
+docs/SARIF.md for the SARIF report, docs/CLI.md#custom-rules for custom rules.
 `);
 }
 
@@ -93,6 +96,9 @@ function parseArgs(argv) {
         break;
       case '--context':
         out.context = argv[++i];
+        break;
+      case '--custom-rules':
+        (out.customRules = out.customRules || []).push(argv[++i]);
         break;
       case '--baseline':
         out.baseline = argv[++i];
@@ -152,7 +158,7 @@ async function loadHtml(target) {
   return { html: fs.readFileSync(resolved, 'utf8'), url: `file://${resolved}` };
 }
 
-function buildEngineOptions(args) {
+function buildEngineOptions(args, customRules) {
   const engineOptions = {};
   if (args.locale) engineOptions.locale = args.locale;
   if (args.rules || args.excludeRules) {
@@ -161,7 +167,46 @@ function buildEngineOptions(args) {
     if (args.excludeRules) engineOptions.rules.exclude = args.excludeRules;
   }
   if (args.tags) engineOptions.tags = { include: args.tags };
+  if (customRules && customRules.length) engineOptions.customRules = customRules;
   return engineOptions;
+}
+
+// Loads one --custom-rules file. The CLI runs custom rules in the same
+// process/JS realm as the scan itself (unlike a binding whose engineOptions
+// crosses page.evaluate()'s serialization boundary), so a descriptor's
+// runInPage/applicability may be a real function -- see the customRules
+// section of docs/ENGINE_OPTIONS.md for the full descriptor contract this
+// mirrors. Validated up front (not left to the engine's own silent-skip of
+// invalid entries) so a typo in a hand-authored file fails loudly as a usage
+// error instead of quietly producing a scan with one fewer rule than expected.
+function loadCustomRulesFile(customRulesPath) {
+  const resolved = path.resolve(process.cwd(), customRulesPath);
+
+  let loaded;
+  try {
+    loaded = require(resolved);
+  } catch (err) {
+    throw new Error(`Could not load custom rules file "${customRulesPath}": ${formatError(err)}`, {
+      cause: err
+    });
+  }
+
+  const descriptors = Array.isArray(loaded) ? loaded : [loaded];
+
+  for (const d of descriptors) {
+    const hasId = d && typeof d === 'object' && typeof d.id === 'string' && d.id.trim();
+    const hasRunInPage =
+      d &&
+      (typeof d.runInPage === 'function' ||
+        (typeof d.runInPage === 'string' && d.runInPage.trim()));
+    if (!hasId || !hasRunInPage) {
+      throw new Error(
+        `Custom rules file "${customRulesPath}" must export a rule descriptor ({ id, runInPage, ... }) or an array of them. See docs/CLI.md#custom-rules.`
+      );
+    }
+  }
+
+  return descriptors;
 }
 
 function printSummary(result, baselineMatch) {
@@ -275,6 +320,19 @@ async function runScan(args) {
     }
   }
 
+  let customRules = [];
+  if (args.customRules && args.customRules.length) {
+    try {
+      for (const customRulesPath of args.customRules) {
+        customRules = customRules.concat(loadCustomRulesFile(customRulesPath));
+      }
+    } catch (err) {
+      process.stderr.write(`Error: ${formatError(err)}\n`);
+      process.exitCode = 2;
+      return;
+    }
+  }
+
   let html, url;
   try {
     ({ html, url } = await loadHtml(target));
@@ -303,7 +361,12 @@ async function runScan(args) {
 
   let result;
   try {
-    result = runDomRulesInPage(url, args.context || null, buildEngineOptions(args), null);
+    result = runDomRulesInPage(
+      url,
+      args.context || null,
+      buildEngineOptions(args, customRules),
+      null
+    );
   } finally {
     dom.window.close();
   }

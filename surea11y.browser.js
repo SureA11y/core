@@ -34190,7 +34190,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
       const uniqueIdSel = () => {
         const elementId = el.getAttribute('id');
         if (!elementId || !elementId.trim()) return null;
-        if (idx && (idx.idCount.get(elementId.trim()) || 0) === 1) return '#' + cssEscape(elementId);
+        if (idx && (idx.idCount.get(elementId.trim()) || 0) === 1)
+          return '#' + cssEscape(elementId);
         return null;
       };
 
@@ -34231,11 +34232,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
         const key = role.trim() + '|' + aria.trim();
         if (idx && (idx.roleAriaLabelCount.get(key) || 0) === 1) {
           return (
-            '[role="' +
-            escapeAttrValue(role) +
-            '"][aria-label="' +
-            escapeAttrValue(aria) +
-            '"]'
+            '[role="' + escapeAttrValue(role) + '"][aria-label="' + escapeAttrValue(aria) + '"]'
           );
         }
         return null;
