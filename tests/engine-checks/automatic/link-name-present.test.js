@@ -111,6 +111,58 @@ test('link-name-present: named via a child image with alt="" but aria-labelledby
   });
 });
 
+test(`${RULE_ID}: a decorative image (alt="") with only a title on it is still an unnamed link => fail`, () => {
+  // Regression for a bug found while extending direct unit-test coverage of
+  // getContentNameInfo (src/core/dom-helpers.js): image-like descendants
+  // (img/area/input[type=image]) resolved their contribution via the
+  // general getAccessibleNameInfo, which falls back to a title attribute
+  // unconditionally -- so an image explicitly marked decorative via
+  // alt="" (the standard "this conveys nothing" marker) still had its
+  // title text adopted as the link's whole accessible name, silently
+  // hiding a genuinely unnamed link like this logo-only case.
+  const html = `
+<!doctype html><html><body>
+  <a href="/home"><img src="logo.png" alt="" title="Acme homepage"></a>
+</body></html>
+  `;
+
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
+
+  const result = runa11yCoreOnHtml(html);
+  assertRule(result, 'link-name-present', 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+});
+
+test(`${RULE_ID}: an image with a real alt is named from that alt, not an unrelated title tooltip on the same image`, () => {
+  // Same root cause as the alt="" case above, but the more commonly-hit
+  // real-world shape: an icon/logo image with BOTH a correct alt and an
+  // unrelated title (e.g. a tooltip) used to have the title silently win.
+  // This rule only asserts pass/fail (not which text was used), so the
+  // meaningful assertion is that a link with a real, present alt is never
+  // reported as unnamed.
+  const html = `
+<!doctype html><html><body>
+  <a href="/home"><img src="logo.png" alt="Acme homepage" title="Unrelated tooltip"></a>
+</body></html>
+  `;
+
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
+
+  const result = runa11yCoreOnHtml(html);
+  assertRule(result, 'link-name-present', 'pass', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
+});
+
 test(`${RULE_ID}: named via light-DOM text distributed into an unnamed shadow-DOM <slot> => pass`, () => {
   // Regression for a real false positive found via a live-DOM cross-engine
   // run 2026-07-22: Shoelace's <sl-button> renders its shadow-DOM internal

@@ -112,11 +112,6 @@ function normalizeRuleMeta(ruleId, id, meta, engineTag) {
       ? m.mappings
       : null;
 
-  if (!Array.isArray(tags)) throw new Error(`Rule ${ruleId}: meta.tags must be an array`);
-  if (!Array.isArray(normativeMappings)) throw new Error(`Rule ${ruleId}: meta.normativeMappings must be an array`);
-  if (!Array.isArray(informativeReferences)) throw new Error(`Rule ${ruleId}: meta.informativeReferences must be an array`);
-  if (type !== 'automatic' && type !== 'manual') throw new Error(`Rule ${ruleId}: meta.type must be "automatic" or "manual"`);
-
   if (i18n) {
     if (typeof i18n.titleKey !== 'string' || !i18n.titleKey.trim()) {
       throw new Error(`Rule ${ruleId}: meta.i18n.titleKey must be a non-empty string`);

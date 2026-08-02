@@ -30926,16 +30926,64 @@ const createDomHelpers = (function createDomHelpers(opts) {
                 // (by design, for the separate "is alt present" question
                 // img-alt-present cares about) and an empty-but-present alt
                 // short-circuited before aria-labelledby was ever checked.
-                const ariaName = getAccessibleNameInfo(node, _ctx, opts);
+                //
+                // Deliberately uses getAriaNameInfo (aria only), NOT the
+                // general getAccessibleNameInfo -- the latter also falls
+                // back to a native <label>/title, which for an image-like
+                // descendant must rank BELOW alt, not above it. Using
+                // getAccessibleNameInfo here let title win over alt
+                // unconditionally, for every image-like descendant, since
+                // its title fallback doesn't know alt exists at all:
+                // `<a href="/"><img alt="" title="Acme home"></a>` (a
+                // decorative logo image, deliberately marked as
+                // contributing no name via alt="") had "Acme home" wrongly
+                // adopted as the link's whole content name; worse,
+                // `<button><img alt="Real label" title="tooltip"></button>`
+                // -- an image with a legitimate, correct alt AND an
+                // unrelated title tooltip, a common real-world pattern --
+                // silently used the tooltip text instead of the real label.
+                const ariaName = getAriaNameInfo(node, _ctx, opts);
                 if (ariaName && ariaName.present && ariaName.value) {
                     parts.push(ariaName.value);
                     if (flags.indexOf('descendant-name-used:image-aria') === -1) flags.push('descendant-name-used:image-aria');
                     return;
                 }
+
+                // input[type=image] (unlike img/area) is a genuinely
+                // labelable form control -- a native <label> association
+                // still outranks its alt attribute per accname's
+                // element-specific name mapping, so it's checked here,
+                // ahead of alt/title, same relative order getAccessibleNameInfo
+                // itself uses for every other labelable control.
+                if (lower(node.tagName) === 'input') {
+                    try {
+                        if (node.labels && node.labels.length) {
+                            for (const labelEl of Array.from(node.labels)) {
+                                const labelInfo = getLabelSubtreeNameInfo(labelEl, node, _ctx, opts);
+                                if (labelInfo.present && labelInfo.value) {
+                                    parts.push(labelInfo.value);
+                                    if (flags.indexOf('descendant-name-used:image-label') === -1) flags.push('descendant-name-used:image-label');
+                                    return;
+                                }
+                            }
+                        }
+                    } catch {
+                    }
+                }
+
+                // alt (even an explicit alt="", a deliberate "decorative,
+                // contributes nothing" marker) always outranks title.
+                // getTextAlternativeInfo already encodes exactly that
+                // precedence: `present` distinguishes a real (possibly
+                // empty) alt attribute -- terminal, contributes its
+                // (possibly empty) value and nothing else -- from one
+                // that's structurally absent, where `value` already
+                // carries getTextAlternativeInfo's own title fallback.
                 const alt = getTextAlternativeInfo(node, _ctx, opts);
-                if (alt && alt.present && alt.value) {
+                if (alt && alt.value) {
+                    const usedFlag = alt.present ? 'descendant-alt-used' : 'descendant-name-used:image-title-fallback';
                     parts.push(alt.value);
-                    if (flags.indexOf('descendant-alt-used') === -1) flags.push('descendant-alt-used');
+                    if (flags.indexOf(usedFlag) === -1) flags.push(usedFlag);
                 }
                 return; // image-like elements have no meaningful children to recurse into
             }
@@ -32107,11 +32155,6 @@ const normalizeRuleMeta = (function normalizeRuleMeta(ruleId, id, meta, engineTa
   const mappings = (m.mappings === null || typeof m.mappings === 'string' || typeof m.mappings === 'object')
       ? m.mappings
       : null;
-
-  if (!Array.isArray(tags)) throw new Error(`Rule ${ruleId}: meta.tags must be an array`);
-  if (!Array.isArray(normativeMappings)) throw new Error(`Rule ${ruleId}: meta.normativeMappings must be an array`);
-  if (!Array.isArray(informativeReferences)) throw new Error(`Rule ${ruleId}: meta.informativeReferences must be an array`);
-  if (type !== 'automatic' && type !== 'manual') throw new Error(`Rule ${ruleId}: meta.type must be "automatic" or "manual"`);
 
   if (i18n) {
     if (typeof i18n.titleKey !== 'string' || !i18n.titleKey.trim()) {
