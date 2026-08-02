@@ -56,7 +56,7 @@ This is the exact shape of the object returned by `runDomRulesInPage(...)` / `ru
 
 - `topFrame` is exactly the [top-level result](#top-level-result) shape, for the frame the function was called in.
 - `frames` has one entry per direct child `<iframe>`/`<frame>` in the scanned scope. A reachable child (one that called `a11yCoreEnableFrameResponder()`) contributes its own complete `{ url, topFrame, frames }` — including *its own* nested `frames`, recursively, since a further-nested grandchild is only reachable through its immediate parent. An unreachable child (the common case for most third-party embeds — no cooperating responder, or it timed out) contributes `{ url, error }` instead, and does not abort the rest of the scan.
-- This is a **tree, not a flat list** — a deliberate difference from the `surea11y-playwright` binding's `.frames(true)`, which *can* flatten because Playwright's `page.frames()` already gives every frame regardless of nesting depth; a `postMessage` relay has no such global view, so nesting is expressed structurally instead.
+- This is a **tree, not a flat list** — a deliberate difference from the `@surea11y/playwright` binding's `.frames(true)`, which *can* flatten because Playwright's `page.frames()` already gives every frame regardless of nesting depth; a `postMessage` relay has no such global view, so nesting is expressed structurally instead.
 
 ## A check result (`checksResults[i]`)
 

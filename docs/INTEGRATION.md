@@ -91,6 +91,24 @@ const result = await page.evaluate(wrapperFn, {
 
 This is the only pattern that gives every rule real computed layout, so it's the one to reach for if you need `target-size-minimum` or any other geometry-dependent check to actually run instead of reporting `notApplicable`.
 
+## Pattern 3 — a standalone `<script>` tag (no driver, no bundler)
+
+Good for: a manual check against a page open in a real browser, a bookmarklet, or any other context where there's no automation driver and no build step to reach for.
+
+`@surea11y/core` ships `surea11y.browser.js` at the package root, a bundle generated from the same rule sources as `src/core.js`. Loading it directly defines one global, `a11ycore`:
+
+```html
+<script src="node_modules/@surea11y/core/surea11y.browser.js"></script>
+<script>
+  const result = a11ycore.runa11yCoreInPage(location.href, null, {}, null);
+  console.log(result.checksResults.filter((r) => r.outcome === 'fail'));
+</script>
+```
+
+`a11ycore.runa11yCoreInPage` is the exact same function described in Pattern 2 above — the bundle exists only to solve *loading* it without `require`/a module system, not to add a separate API surface. It carries the same self-containment property (own inlined rule catalog, no free variables), which is what makes a plain `<script>` tag sufficient.
+
+Deliberately excluded from this bundle: `runa11yCoreAcrossFrames`/`a11yCoreEnableFrameResponder`. Cross-frame scanning needs the embedded frame to load the engine and opt in too (see "Cross-frame scanning" below) — not a fit for a single dropped-in script tag. Use the npm package directly if you need it.
+
 ## Scoping a scan to part of the page
 
 Pass a CSS selector as the 2nd argument (`contextSelector`) to scan one subtree instead of the whole document — e.g. `runDomRulesInPage(url, '#app', {}, null)` to skip a surrounding CMS chrome you don't control. Pass an array of selectors (or a single comma-separated selector string) to scan multiple, possibly disjoint regions in one run — e.g. `runDomRulesInPage(url, ['#header', '#main'], {}, null)`. See [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md) for the full `contextSelector` reference and for `excludeSelectors`, the complementary "skip specific elements anywhere" option.

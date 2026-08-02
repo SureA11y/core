@@ -978,7 +978,7 @@ ${implEntriesInPage.join(',\n')}
   // (surea11y loaded directly into a page with no automation driver -- see
   // docs/INTEGRATION.md's "Browser extension context" section). Browser-only;
   // not needed for a Playwright-driven scan, which reaches cross-origin
-  // frames unconditionally via CDP already (see surea11y-playwright's
+  // frames unconditionally via CDP already (see @surea11y/playwright's
   // ROADMAP.md gap #1) -- strictly better than what this cooperative
   // postMessage protocol can achieve, which requires the child frame to
   // also call a11yCoreEnableFrameResponder(), the same real limitation

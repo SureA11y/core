@@ -5,7 +5,7 @@
  * mode (surea11y loaded directly into a page with no automation driver --
  * see docs/INTEGRATION.md's "Browser extension context" section). A
  * Playwright-driven scan doesn't need any of this (see
- * surea11y-playwright's ROADMAP.md gap #1 -- CDP-level frame access is
+ * @surea11y/playwright's ROADMAP.md gap #1 -- CDP-level frame access is
  * unconditional, strictly better than what a cooperative protocol like this
  * one can achieve). This exists for when there is no automation driver, the
  * same situation a widely-used reference engine itself is built around.

@@ -11,7 +11,7 @@
  * loaded directly into a page with no automation driver -- see
  * docs/INTEGRATION.md's "Browser extension context" section). A Playwright-
  * driven scan doesn't need any of this: Playwright reaches cross-origin
- * frames unconditionally via CDP (see surea11y-playwright's ROADMAP.md gap
+ * frames unconditionally via CDP (see @surea11y/playwright's ROADMAP.md gap
  * #1), which is strictly better than what a cooperative postMessage protocol
  * can achieve. This exists for when there IS no automation driver.
  *

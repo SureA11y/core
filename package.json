@@ -7,7 +7,7 @@
     "surea11y": "bin/core.js"
   },
   "author": "Jorge Rumoroso",
-  "license": "MIT",
+  "license": "MPL-2.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/rumoroso/surea11y-core.git"
@@ -25,6 +25,7 @@
   "files": [
     "src",
     "bin",
+    "surea11y.browser.js",
     "docs/**/*.md",
     "README.md",
     "LICENSE",
@@ -36,7 +37,7 @@
     "!src/explain"
   ],
   "scripts": {
-    "build": "node scripts/build-core.js",
+    "build": "node scripts/build-core.js && node scripts/build-browser.js",
     "pretest": "playwright install chromium",
     "test": "npm run build && node scripts/run-tests.js",
     "test:coverage": "npm run build && node scripts/run-tests.js --experimental-test-coverage --test-coverage-include=src/**/*.js --test-coverage-include=bin/**/*.js",
@@ -57,6 +58,6 @@
     "jsdom": "^29.1.1"
   },
   "devDependencies": {
-    "playwright": "^1.61.1"
+    "playwright": "^1.62.1"
   }
 }

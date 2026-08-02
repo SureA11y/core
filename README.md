@@ -198,6 +198,66 @@ For complete integration examples, see `docs/INTEGRATION.md`.
 
 ---
 
+#### Standalone browser bundle
+
+For a page that isn't driven by an automation framework at all — a manual
+QA pass, a bookmarklet, a browser extension — the package also ships a
+self-contained bundle that needs no `require`, no bundler, and no build
+step:
+
+```html
+<script src="node_modules/@surea11y/core/surea11y.browser.js"></script>
+<script>
+  const result = a11ycore.runa11yCoreInPage(
+    location.href, // pageUrl
+    null,           // contextSelector
+    {},             // engineOptions
+    null            // runOnly
+  );
+
+  console.log(result.checksResults.filter(r => r.outcome === "fail"));
+</script>
+```
+
+Loading `surea11y.browser.js` defines a single global, `a11ycore`, exposing
+the same `runa11yCoreInPage` function described above — calling it runs a
+real scan against the page it's loaded into and returns the same result
+shape documented in [Understanding the Results](#understanding-the-results).
+
+`contextSelector`, `engineOptions`, and `runOnly` are the same three
+arguments described throughout this README and `docs/ENGINE_OPTIONS.md` —
+nothing about calling the engine changes just because it's loaded this
+way. A scan scoped to one region, filtered to a specific WCAG level, with
+a couple of known-noisy selectors excluded, looks like this:
+
+```html
+<script src="node_modules/@surea11y/core/surea11y.browser.js"></script>
+<script>
+  const result = a11ycore.runa11yCoreInPage(
+    location.href,
+    "#main",                                     // contextSelector: scan only this region
+    {
+      excludeSelectors: ["#cookie-banner", ".intercom-launcher"],
+      contrast: { mode: "auditorAssist" }         // trade some false-positive protection for more findings
+    },
+    { tags: ["wcag2a", "wcag2aa"] }               // runOnly: WCAG 2.0 A/AA rules only
+  );
+
+  console.log(result.checksResults.filter(r => r.outcome === "fail"));
+</script>
+```
+
+This bundle is generated from the same rule sources as the rest of the
+engine (`npm run build` regenerates it alongside `src/core.js`), so its
+behavior never drifts from the library's. It intentionally exposes only
+`runa11yCoreInPage` — cross-frame scanning
+(`runa11yCoreAcrossFrames`/`a11yCoreEnableFrameResponder`) requires the
+embedded frame to also load the engine and opt in, which doesn't fit a
+single dropped-in `<script>` tag; reach for the npm package directly if
+you need that.
+
+---
+
 ## Understanding the Results
 
 Every scan returns a structured JSON document designed for both
@@ -343,6 +403,8 @@ The repository is organised so that the accessibility engine, rule
 implementations and supporting infrastructure remain clearly separated.
 
 ```text
+surea11y.browser.js        # Generated standalone browser bundle
+
 bin/
   core.js                  # CLI entry point
 
@@ -425,9 +487,11 @@ supported versions and the preferred disclosure process.
 
 ## License
 
-This project is released under the MIT License.
+This project is released under the Mozilla Public License 2.0 (MPL-2.0).
 
 See the accompanying `LICENSE` file for the complete license text.
+
+MPL-2.0 is file-level copyleft: it applies to `@surea11y/core`'s own source files, not to code that merely depends on it. A project that installs `@surea11y/core` as a normal package dependency and imports its public API — without copying or modifying this repository's source files — is unaffected by MPL-2.0 and may keep its own license (including a permissive one like MIT).
 
 ---
 
