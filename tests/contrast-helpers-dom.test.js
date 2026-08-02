@@ -76,6 +76,53 @@ test('computeEffectiveForeground: repeat calls for the same element hit the cach
   assert.strictEqual(out1, out2);
 });
 
+// __contrastComputedStyle (internal) is only reachable with a non-element
+// node through computeEffectiveForeground, which calls it with whatever `el`
+// it's given with no nodeType guard of its own (every other call site skips
+// non-element nodes before ever calling it). That lets us exercise its
+// defensive try/catch (an "always no-throw" wrapper around shared.computedStyle)
+// via a purpose-built shared.computedStyle mock rather than jsdom internals.
+test('computeEffectiveForeground: __contrastComputedStyle recovers when computedStyle throws once but succeeds on retry (non-element node)', () => {
+  const dom = new JSDOM('<!doctype html><html><body></body></html>', { pretendToBeVisual: true });
+  const { document } = dom.window;
+  let calls = 0;
+  const shared = {
+    __contrastSharedCache: {},
+    trim: (v) => (v == null ? '' : String(v)).trim(),
+    computedStyle: () => {
+      calls++;
+      if (calls === 1) throw new Error('boom');
+      return { color: 'rgb(1,2,3)' };
+    },
+    composedParent: (n) => (n ? n.parentNode || null : null),
+    buildSimpleSelector: () => ''
+  };
+  const helpers = createContrastHelpers({ window: dom.window, document }, shared);
+  const textNode = document.createTextNode('t'); // nodeType 3: not an element
+  const out = helpers.computeEffectiveForeground(textNode);
+  assert.strictEqual(calls, 2, 'expected the throwing call plus the recovery retry');
+  assert.deepStrictEqual(out.rgba, { r: 1, g: 2, b: 3, a: 1 });
+});
+
+test('computeEffectiveForeground: __contrastComputedStyle degrades to {} when computedStyle always throws (non-element node)', () => {
+  const dom = new JSDOM('<!doctype html><html><body></body></html>', { pretendToBeVisual: true });
+  const { document } = dom.window;
+  const shared = {
+    __contrastSharedCache: {},
+    trim: (v) => (v == null ? '' : String(v)).trim(),
+    computedStyle: () => {
+      throw new Error('boom');
+    },
+    composedParent: (n) => (n ? n.parentNode || null : null),
+    buildSimpleSelector: () => ''
+  };
+  const helpers = createContrastHelpers({ window: dom.window, document }, shared);
+  const textNode = document.createTextNode('t');
+  const out = helpers.computeEffectiveForeground(textNode);
+  assert.strictEqual(out.rgba, null);
+  assert.strictEqual(out.alpha, 0);
+});
+
 // -------- computeEffectiveBackground --------
 
 test('computeEffectiveBackground: an opaque ancestor background resolves ok:true with no assumptions', () => {
@@ -216,6 +263,106 @@ test('getComputabilityBlocker: a closer opaque background-color paint-occludes a
   assert.strictEqual(out.ok, true);
 });
 
+test('getComputabilityBlocker: a very long blocker CSS value is truncated to maxLen with an ellipsis', () => {
+  const longValue = 'blur(2px) '.repeat(20).trim(); // 199 chars, well over the 80-char default
+  const { document, helpers } = makeHelpers(
+    `<div id="a" style="filter:${longValue}"><span id="b">t</span></div>`
+  );
+  const b = document.getElementById('b');
+  const out = helpers.getComputabilityBlocker(b);
+  assert.strictEqual(out.ok, false);
+  assert.strictEqual(out.reasonCode, 'BACKGROUND_FILTER_OR_BACKDROP_FILTER');
+  assert.strictEqual(out.blockerValue.length, 80);
+  assert.ok(out.blockerValue.endsWith('...'), `expected an ellipsis, got ${out.blockerValue}`);
+});
+
+test('getComputabilityBlocker: an unrecognized background-image function (not url()/gradient()/image-set()) classifies as backgroundFillType "unknown"', () => {
+  const { document, window, helpers } = makeHelpers('<div id="a">t</div>');
+  const a = document.getElementById('a');
+  // Real browsers only ever hand computed style strings for background-image
+  // (url()/gradient()/image-set()/none/other CSS <image> functions), so this
+  // mocks getComputedStyle directly rather than relying on what jsdom's CSS
+  // engine happens to accept for exotic functions like paint().
+  const cs = {
+    mixBlendMode: 'normal',
+    filter: 'none',
+    backdropFilter: 'none',
+    opacity: '1',
+    backgroundColor: 'rgba(0, 0, 0, 0)',
+    backgroundImage: 'paint(myPainter)'
+  };
+  Object.defineProperty(window, 'getComputedStyle', {
+    value: (el) => (el === a ? cs : {}),
+    configurable: true
+  });
+  const out = helpers.getComputabilityBlocker(a);
+  assert.strictEqual(out.ok, false);
+  assert.strictEqual(out.reasonCode, 'BACKGROUND_IMAGE_OR_GRADIENT');
+  assert.strictEqual(out.backgroundFillType, 'unknown');
+});
+
+test('getComputabilityBlocker: a backgroundImage value that throws when re-stringified degrades backgroundFillType to "unknown" (classifyBackgroundImageValue fail-safe)', () => {
+  const { document, window, helpers } = makeHelpers('<div id="a">t</div>');
+  const a = document.getElementById('a');
+  // hasBackgroundImageOrGradient stringifies backgroundImage TWICE
+  // (`String(v).trim() && String(v).trim().toLowerCase() !== 'none'`) and
+  // truncateCssValue once more (all three must succeed so the
+  // BACKGROUND_IMAGE_OR_GRADIENT branch is even reached and blockerValue
+  // gets built); this poisons only the FOURTH stringification --
+  // classifyBackgroundImageValue's own -- to isolate its internal catch.
+  let stringifyCalls = 0;
+  const poisoned = {
+    toString() {
+      stringifyCalls++;
+      if (stringifyCalls <= 3) return 'url(evil.png)';
+      throw new Error('poison');
+    }
+  };
+  const cs = {
+    mixBlendMode: 'normal',
+    filter: 'none',
+    backdropFilter: 'none',
+    opacity: '1',
+    backgroundColor: 'rgba(0, 0, 0, 0)',
+    backgroundImage: poisoned
+  };
+  Object.defineProperty(window, 'getComputedStyle', {
+    value: (el) => (el === a ? cs : {}),
+    configurable: true
+  });
+  const out = helpers.getComputabilityBlocker(a);
+  assert.strictEqual(out.ok, false);
+  assert.strictEqual(out.reasonCode, 'BACKGROUND_IMAGE_OR_GRADIENT');
+  assert.strictEqual(out.backgroundFillType, 'unknown');
+  assert.strictEqual(stringifyCalls, 4);
+});
+
+test('getComputabilityBlocker: a buildSimpleSelector that throws degrades blockerSelector to "" instead of crashing', () => {
+  const dom = new JSDOM(
+    '<!doctype html><html><body>' +
+      '<div id="a" style="mix-blend-mode:multiply"><span id="b">t</span></div>' +
+      '</body></html>',
+    { pretendToBeVisual: true }
+  );
+  const { window } = dom;
+  const { document } = window;
+  const shared = {
+    __contrastSharedCache: {},
+    trim: (v) => (v == null ? '' : String(v)).trim(),
+    computedStyle: (el) => window.getComputedStyle(el),
+    composedParent: (n) => (n ? n.parentNode || null : null),
+    buildSimpleSelector: () => {
+      throw new Error('boom');
+    }
+  };
+  const helpers = createContrastHelpers({ window, document }, shared);
+  const b = document.getElementById('b');
+  const out = helpers.getComputabilityBlocker(b);
+  assert.strictEqual(out.ok, false);
+  assert.strictEqual(out.reasonCode, 'MIX_BLEND_MODE');
+  assert.strictEqual(out.blockerSelector, '');
+});
+
 // -------- isInactiveUiComponent --------
 
 test('isInactiveUiComponent: a disabled ancestor button marks nested text as inactive', () => {
@@ -318,4 +465,153 @@ test('getTextScan: returns an empty scan when the document has no createTreeWalk
   const scan = helpers.getTextScan({ document: fakeDoc, window, root: document.body }, {}, {});
   assert.strictEqual(scan.eligibleTextCount, 0);
   assert.deepStrictEqual(scan.elements, []);
+});
+
+// -------- getTextScan: visibilityMode resolution via nested candidate shapes --------
+//
+// __resolveVisibilityMode walks a long list of candidate objects (ctx,
+// ctx.options, ctx.policy, ctx.policyOverrides, the same under opts, plus
+// window/document globals) checking both `candidate.visibilityMode` directly
+// AND `candidate.engineOptions.visibilityMode` / `.options.engineOptions...`
+// / `.policy.engineOptions...` / `.policyOverrides.engineOptions...`. Every
+// ctx-rooted variant of the nested checks is shadowed by an earlier, simpler
+// candidate that already resolves the identical value directly -- so the
+// only way to exercise the nested checks themselves is a shape with no
+// simpler earlier candidate covering it. The raw 3rd argument to getTextScan
+// (`engineOptions`) is the very first candidate checked, with nothing above
+// it, so nesting it multiple levels deep hits each nested check for real.
+test('getTextScan: visibilityMode resolved via a nested {engineOptions:{visibilityMode}} shape on the raw engineOptions argument', () => {
+  const { document, window, helpers } = makeHelpers('<p id="p1">Hello</p>');
+  const scan = helpers.getTextScan(
+    ctxFor(document, window),
+    {},
+    {
+      engineOptions: { visibilityMode: 'styleAndGeometry' }
+    }
+  );
+  assert.strictEqual(scan.visibilityMode, 'styleAndGeometry');
+});
+
+test('getTextScan: visibilityMode resolved via a nested {options:{engineOptions:{visibilityMode}}} shape', () => {
+  const { document, window, helpers } = makeHelpers('<p id="p1">Hello</p>');
+  const scan = helpers.getTextScan(
+    ctxFor(document, window),
+    {},
+    {
+      options: { engineOptions: { visibilityMode: 'styleAndGeometry' } }
+    }
+  );
+  assert.strictEqual(scan.visibilityMode, 'styleAndGeometry');
+});
+
+test('getTextScan: visibilityMode resolved via a nested {policy:{engineOptions:{visibilityMode}}} shape', () => {
+  const { document, window, helpers } = makeHelpers('<p id="p1">Hello</p>');
+  const scan = helpers.getTextScan(
+    ctxFor(document, window),
+    {},
+    {
+      policy: { engineOptions: { visibilityMode: 'styleAndGeometry' } }
+    }
+  );
+  assert.strictEqual(scan.visibilityMode, 'styleAndGeometry');
+});
+
+test('getTextScan: visibilityMode resolved via a nested {policyOverrides:{engineOptions:{visibilityMode}}} shape', () => {
+  const { document, window, helpers } = makeHelpers('<p id="p1">Hello</p>');
+  const scan = helpers.getTextScan(
+    ctxFor(document, window),
+    {},
+    {
+      policyOverrides: { engineOptions: { visibilityMode: 'styleAndGeometry' } }
+    }
+  );
+  assert.strictEqual(scan.visibilityMode, 'styleAndGeometry');
+});
+
+test('getTextScan: isDomVisibleEligible returning a non-boolean, non-{eligible} value is coerced via plain truthiness', () => {
+  const { document, window, helpers } = makeHelpers('<p id="p1">Yes</p><p id="p2">No</p>');
+  const p1 = document.getElementById('p1');
+  const scan = helpers.getTextScan(
+    ctxFor(document, window),
+    // Neither a boolean nor an {eligible} object -- falls through to `!!v`.
+    { isDomVisibleEligible: (el) => (el === p1 ? 1 : 0) },
+    {}
+  );
+  assert.strictEqual(scan.eligibleTextCount, 1);
+  assert.strictEqual(scan.elements[0].el.id, 'p1');
+});
+
+test('getTextScan: an isDomVisibleEligible that throws fails closed (treated as ineligible) rather than crashing the scan', () => {
+  const { document, window, helpers } = makeHelpers('<p id="p1">Hello</p>');
+  const scan = helpers.getTextScan(
+    ctxFor(document, window),
+    {
+      isDomVisibleEligible: () => {
+        throw new Error('boom');
+      }
+    },
+    {}
+  );
+  assert.strictEqual(scan.eligibleTextCount, 0);
+});
+
+test('getTextScan: isInactiveUiComponent throwing (e.g. a poisoned parentElement) is treated as active rather than crashing the scan', () => {
+  const { document, window, helpers } = makeHelpers('<p id="p1">Hello</p>');
+  const p1 = document.getElementById('p1');
+  Object.defineProperty(p1, 'parentElement', {
+    get() {
+      throw new Error('boom');
+    },
+    configurable: true
+  });
+  const scan = helpers.getTextScan(ctxFor(document, window), {}, {});
+  assert.strictEqual(scan.eligibleTextCount, 1);
+});
+
+test('getTextScan: a malformed root in ctx.root (not a Node) is skipped gracefully; other roots in the array still scan', () => {
+  const { document, window, helpers } = makeHelpers('<p id="p1">Hello</p>');
+  const badRoot = {}; // not a Node -- both createTreeWalker(badRoot) and badRoot.querySelectorAll throw
+  const scan = helpers.getTextScan(ctxFor(document, window, [document.body, badRoot]), {}, {});
+  assert.strictEqual(scan.eligibleTextCount, 1);
+  assert.strictEqual(scan.elements[0].el.id, 'p1');
+});
+
+test('getTextScan: an element with multiple text-node children (split by a comment) increments textCount instead of double-counting the element', () => {
+  const { document, window, helpers } = makeHelpers('<p id="p1">Hello<!--split-->World</p>');
+  const scan = helpers.getTextScan(ctxFor(document, window), {}, {});
+  assert.strictEqual(scan.eligibleTextCount, 2);
+  assert.strictEqual(scan.elements.length, 1);
+  assert.strictEqual(scan.elements[0].el.id, 'p1');
+  assert.strictEqual(scan.elements[0].textCount, 2);
+});
+
+test('getTextScan: an input[type=submit] with both a value attribute and a (non-standard) text-node child counts both without duplicating the element entry', () => {
+  const { document, window, helpers } = makeHelpers('');
+  const input = document.createElement('input');
+  input.type = 'submit';
+  input.setAttribute('value', 'Go');
+  // Void elements can't get text-node children from HTML *parsing*, but
+  // nothing stops direct DOM manipulation from adding one -- confirmed this
+  // does not throw in jsdom. That makes the same <input> reachable from
+  // BOTH getTextScan loops (the SHOW_TEXT walk and the value-attribute
+  // scan), which is the only way elToCount's "already counted" branch is
+  // reachable for this second loop.
+  input.appendChild(document.createTextNode('extra'));
+  document.body.appendChild(input);
+  const scan = helpers.getTextScan(ctxFor(document, window), {}, {});
+  assert.strictEqual(scan.elements.length, 1);
+  assert.strictEqual(scan.elements[0].el, input);
+  assert.strictEqual(scan.elements[0].textCount, 2);
+  assert.strictEqual(scan.eligibleTextCount, 2);
+});
+
+test('getTextScan: an exception thrown while resolving ctx.root degrades to an empty scan instead of throwing', () => {
+  const { document, window, helpers } = makeHelpers('<p id="p1">Hello</p>');
+  const poisonedRoot = {
+    get nodeType() {
+      throw new Error('boom');
+    }
+  };
+  const scan = helpers.getTextScan({ document, window, root: poisonedRoot }, {}, {});
+  assert.deepStrictEqual(scan, { eligibleTextCount: 0, elements: [], visibilityMode: 'styleOnly' });
 });

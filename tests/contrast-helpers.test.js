@@ -26,7 +26,10 @@ const {
   isLargeText,
   requiredRatio,
   rgbToHex,
-  toHex2
+  toHex2,
+  hasBackgroundImageOrGradient,
+  hasBlendMode,
+  hasFilter
 } = helpers;
 
 function approx(actual, expected, eps = 1e-6) {
@@ -190,4 +193,47 @@ test('rgbToHex/toHex2: formats as lowercase #rrggbb, clamping out-of-range chann
   assert.strictEqual(rgbToHex({ r: -10, g: 300, b: 16 }), '#00ff10');
   assert.strictEqual(rgbToHex(null), '');
   assert.strictEqual(toHex2(5), '05');
+});
+
+test('rgbToHex: a channel that throws when coerced to a number degrades to "" instead of throwing', () => {
+  // rgb.r/g/b are normally plain numbers, but rgbToHex is documented as
+  // "always no-throw" via its own try/catch -- exercise that fallback
+  // directly with a poisoned channel whose numeric coercion throws.
+  const poisoned = {
+    r: {
+      valueOf() {
+        throw new Error('boom');
+      }
+    },
+    g: 0,
+    b: 0
+  };
+  assert.strictEqual(rgbToHex(poisoned), '');
+});
+
+test('hasBackgroundImageOrGradient: a style whose backgroundImage getter throws degrades to false', () => {
+  const style = {
+    get backgroundImage() {
+      throw new Error('boom');
+    }
+  };
+  assert.strictEqual(hasBackgroundImageOrGradient(style), false);
+});
+
+test('hasBlendMode: a style whose mixBlendMode getter throws degrades to false', () => {
+  const style = {
+    get mixBlendMode() {
+      throw new Error('boom');
+    }
+  };
+  assert.strictEqual(hasBlendMode(style), false);
+});
+
+test('hasFilter: a style whose filter getter throws degrades to false', () => {
+  const style = {
+    get filter() {
+      throw new Error('boom');
+    }
+  };
+  assert.strictEqual(hasFilter(style), false);
 });

@@ -64,6 +64,12 @@ test('buildStructuralPath: returns null when neither a node nor a resolvable sel
   assert.strictEqual(helpers.buildStructuralPath(null, '#does-not-exist'), null);
 });
 
+test('buildStructuralPath: a malformed fallback selector does not throw -- resolves to null like any other non-match', () => {
+  const { helpers } = helpersFor(`<!doctype html><html><body><div id="d"></div></body></html>`);
+  assert.doesNotThrow(() => helpers.buildStructuralPath(null, '[[[not-a-selector'));
+  assert.strictEqual(helpers.buildStructuralPath(null, '[[[not-a-selector'), null);
+});
+
 test(`engine integration: every fail/cantTell occurrence carries a structuralPath alongside selector/html`, () => {
   const html = `<!doctype html><html><body><div><section><img src="x.png"></section></div></body></html>`;
   const result = runa11yCoreOnHtml(html, {});

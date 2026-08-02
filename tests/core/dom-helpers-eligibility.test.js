@@ -162,6 +162,78 @@ test('isAccTreeEligible: a non-element (e.g. a text node) is ineligible', () => 
   assert.deepEqual(r.reasons, ['notElement']);
 });
 
+test('isAccTreeEligible: repeated calls on the same node hit the per-scope cache and return an equivalent (but distinct) result object', () => {
+  const { helpers, document } = helpersFor('<div id="d" aria-hidden="true">x</div>');
+  const node = byId(document, 'd');
+  const first = helpers.isAccTreeEligible(node);
+  const second = helpers.isAccTreeEligible(node);
+  assert.deepEqual(first, second);
+  assert.notStrictEqual(
+    first.reasons,
+    second.reasons,
+    'cached reasons array must be cloned, not shared, to prevent caller mutation from corrupting the cache'
+  );
+});
+
+test('isAccTreeEligible: aria-hidden on an <area> that is part of a USED image map (referenced by an <img usemap>) is overridden even without an explicit tabindex', () => {
+  const { helpers, document } = helpersFor(
+    '<map name="m"><area id="a" aria-hidden="true" shape="rect" coords="0,0,10,10" href="/x"></map>' +
+      '<img usemap="#m" src="i.png">'
+  );
+  const r = helpers.isAccTreeEligible(byId(document, 'a'));
+  assert.equal(r.eligible, true);
+  assert.deepEqual(r.reasons, ['ariaHiddenOverriddenTabbable']);
+});
+
+test('isAccTreeEligible: aria-hidden on an <area> whose map is NOT referenced by any <img usemap> is NOT overridden (the map is unused)', () => {
+  const { helpers, document } = helpersFor(
+    '<map name="unused"><area id="a" aria-hidden="true" shape="rect" coords="0,0,10,10" href="/x"></map>'
+  );
+  const r = helpers.isAccTreeEligible(byId(document, 'a'));
+  assert.equal(r.eligible, false);
+  assert.deepEqual(r.reasons, ['ariaHidden']);
+});
+
+test('isAccTreeEligible: aria-hidden on <select>/<textarea> (native form controls) is overridden with no explicit tabindex needed', () => {
+  const { helpers, document } = helpersFor(
+    '<select id="sel" aria-hidden="true"><option>a</option></select>' +
+      '<textarea id="ta" aria-hidden="true"></textarea>'
+  );
+  assert.deepEqual(helpers.isAccTreeEligible(byId(document, 'sel')).reasons, [
+    'ariaHiddenOverriddenTabbable'
+  ]);
+  assert.deepEqual(helpers.isAccTreeEligible(byId(document, 'ta')).reasons, [
+    'ariaHiddenOverriddenTabbable'
+  ]);
+});
+
+test('isAccTreeEligible: aria-hidden on an <a> WITH an href is overridden; on an <a> WITHOUT an href it is NOT (mirrors real tab-order behavior)', () => {
+  const { helpers, document } = helpersFor(
+    '<a id="withHref" aria-hidden="true" href="/x">x</a>' +
+      '<a id="noHref" aria-hidden="true">x</a>'
+  );
+  const withHref = helpers.isAccTreeEligible(byId(document, 'withHref'));
+  assert.equal(withHref.eligible, true);
+  assert.deepEqual(withHref.reasons, ['ariaHiddenOverriddenTabbable']);
+
+  const noHref = helpers.isAccTreeEligible(byId(document, 'noHref'));
+  assert.equal(noHref.eligible, false);
+  assert.deepEqual(noHref.reasons, ['ariaHidden']);
+});
+
+test('isAccTreeEligible: content outside an open, aria-modal dialog is ineligible ("modalInert"); content inside it stays eligible', () => {
+  const { helpers, document } = helpersFor(
+    '<div id="outside">Background</div>' +
+      '<dialog id="dlg" open aria-modal="true"><p id="inside">Dialog content</p></dialog>'
+  );
+  const outside = helpers.isAccTreeEligible(byId(document, 'outside'));
+  assert.equal(outside.eligible, false);
+  assert.deepEqual(outside.reasons, ['modalInert']);
+
+  const inside = helpers.isAccTreeEligible(byId(document, 'inside'));
+  assert.equal(inside.eligible, true);
+});
+
 // ===== isDomVisibleEligible =====
 
 test('isDomVisibleEligible: display:none ancestor blocks (styleOnly, the default mode)', () => {
@@ -263,6 +335,38 @@ test('isDomVisibleEligible: a non-element returns eligible:false, reasons:["notE
   assert.deepEqual(r.reasons, ['notElement']);
 });
 
+test('isDomVisibleEligible: input[type=hidden] as an ANCESTOR (not just the target itself) is a structural blocker', () => {
+  const { helpers, document } = helpersFor('<input id="h" type="hidden">');
+  const hidden = byId(document, 'h');
+  const span = document.createElement('span');
+  span.id = 's';
+  span.textContent = 'nested via DOM API';
+  // <input> can't hold parsed HTML children, but real scripts do append
+  // nodes into it via the DOM API; the structural-blocker walk must still
+  // catch this the same way it does for hiddenAttr/template/script ancestors.
+  hidden.appendChild(span);
+  const r = helpers.isDomVisibleEligible(span, {}, {});
+  assert.equal(r.eligible, false);
+  assert.deepEqual(r.reasons, ['inputHidden']);
+});
+
+test('isDomVisibleEligible: visibility:hidden on an ANCESTOR is recorded but does not short-circuit the walk -- a descendant that overrides back to visible (inheriting "visible" itself) stays eligible', () => {
+  const { helpers, document } = helpersFor(
+    '<div style="visibility:hidden"><div style="visibility:visible"><span id="s">x</span></div></div>'
+  );
+  const r = helpers.isDomVisibleEligible(byId(document, 's'), {}, {});
+  assert.equal(r.eligible, true);
+});
+
+test('isDomVisibleEligible: repeated calls on the same node (same mode) hit the per-scope/per-mode cache and return an equivalent result', () => {
+  const { helpers, document } = helpersFor('<div style="opacity:0"><span id="s">x</span></div>');
+  const node = byId(document, 's');
+  const first = helpers.isDomVisibleEligible(node, {}, {});
+  const second = helpers.isDomVisibleEligible(node, {}, {});
+  assert.deepEqual(first, second);
+  assert.notStrictEqual(first.reasons, second.reasons);
+});
+
 // ===== getVisibilityHintsInfo =====
 
 test('getVisibilityHintsInfo: opacity:0 produces the "opacityZero" hint and reports the numeric opacity metric', () => {
@@ -305,6 +409,121 @@ test('getVisibilityHintsInfo: a non-element returns empty hints/metrics and flag
   const info = helpers.getVisibilityHintsInfo(null, {}, {});
   assert.deepEqual(info.hints, []);
   assert.ok(info.flags.includes('notElement'));
+});
+
+test('getVisibilityHintsInfo: repeated calls on the same element hit the per-element cache and return an equivalent (but distinct) result object', () => {
+  const { helpers, document } = helpersFor('<div id="d" style="opacity:0"></div>');
+  const node = byId(document, 'd');
+  const first = helpers.getVisibilityHintsInfo(node, {}, {});
+  const second = helpers.getVisibilityHintsInfo(node, {}, {});
+  assert.deepEqual(first, second);
+  assert.notStrictEqual(
+    first.hints,
+    second.hints,
+    'cached hints array must be cloned, not shared, to prevent caller mutation from corrupting the cache'
+  );
+});
+
+// ===== getRoleInfo (implicit role mapping not already covered elsewhere) =====
+
+test('getRoleInfo: input[type=button|submit|reset|image] all map to the implicit "button" role', () => {
+  const { helpers, document } = helpersFor(
+    '<input id="b1" type="button"><input id="b2" type="submit">' +
+      '<input id="b3" type="reset"><input id="b4" type="image">'
+  );
+  for (const id of ['b1', 'b2', 'b3', 'b4']) {
+    assert.equal(helpers.getRoleInfo(byId(document, id), {}).role, 'button');
+  }
+});
+
+test('getRoleInfo: a plain text input (default type, and an explicit non-special type like email) maps to the implicit "textbox" role', () => {
+  const { helpers, document } = helpersFor('<input id="a"><input id="b" type="email">');
+  assert.equal(helpers.getRoleInfo(byId(document, 'a'), {}).role, 'textbox');
+  assert.equal(helpers.getRoleInfo(byId(document, 'b'), {}).role, 'textbox');
+});
+
+// ===== getFocusableInfo (native-focusability branches not already covered elsewhere) =====
+
+test('getFocusableInfo: a plain text <input> (default type, no explicit tabindex) is focusable via the native mechanism', () => {
+  const { helpers, document } = helpersFor('<input id="a">');
+  const info = helpers.getFocusableInfo(byId(document, 'a'), {});
+  assert.equal(info.focusable, true);
+  assert.equal(info.tabbable, true);
+  assert.equal(info.mechanism, 'native');
+});
+
+test('getFocusableInfo: contenteditable (no explicit value, and explicitly "true") is natively focusable; contenteditable="false" is not', () => {
+  const { helpers, document } = helpersFor(
+    '<div id="a" contenteditable>x</div>' +
+      '<div id="b" contenteditable="true">x</div>' +
+      '<div id="c" contenteditable="false">x</div>'
+  );
+  assert.equal(helpers.getFocusableInfo(byId(document, 'a'), {}).focusable, true);
+  assert.equal(helpers.getFocusableInfo(byId(document, 'b'), {}).focusable, true);
+  assert.equal(helpers.getFocusableInfo(byId(document, 'c'), {}).focusable, false);
+});
+
+test('getFocusableInfo: repeated calls on the same element hit the per-element focusability cache and return an equivalent result', () => {
+  const { helpers, document } = helpersFor('<button id="b">x</button>');
+  const node = byId(document, 'b');
+  const first = helpers.getFocusableInfo(node, {});
+  const second = helpers.getFocusableInfo(node, {});
+  assert.deepEqual(first, second);
+});
+
+// ===== isExcluded / queryAll: malformed selectors must degrade gracefully =====
+
+test('isExcluded: a malformed exclude selector does not throw and simply fails to match', () => {
+  const { helpers, document } = helpersFor('<div id="d"></div>', {
+    excludeSelectors: ['[[[not-a-selector']
+  });
+  const target = byId(document, 'd');
+  assert.doesNotThrow(() => helpers.isExcluded(target));
+  assert.equal(helpers.isExcluded(target), false);
+});
+
+test('queryAll: a malformed selector does not throw and simply returns no matches', () => {
+  const { helpers } = helpersFor('<div id="d"></div>');
+  assert.doesNotThrow(() => helpers.queryAll('[[[not-a-selector'));
+  assert.deepEqual(helpers.queryAll('[[[not-a-selector'), []);
+});
+
+// ===== queryAllSmart: the "inert" reason is treated differently from hard-hidden reasons =====
+
+test('queryAllSmart: an element that is only [inert] (not display:none/hidden/etc.) still surfaces by default -- inert alone is not a "hard hidden" reason', () => {
+  const { helpers } = helpersFor('<div inert><button id="b">x</button></div>');
+  const found = helpers.queryAllSmart('button').map((el) => el.id);
+  assert.deepEqual(found, ['b']);
+});
+
+test('queryAllSmart: [inert] combined with a display:none ancestor is filtered out (the display:none is a genuine hard-hidden reason)', () => {
+  const { helpers } = helpersFor('<div inert style="display:none"><button id="b">x</button></div>');
+  const found = helpers.queryAllSmart('button').map((el) => el.id);
+  assert.deepEqual(found, []);
+});
+
+// ===== reportOccurrence =====
+
+test('reportOccurrence: merges the given partial occurrence data with the node reference under __node', () => {
+  const { helpers, document } = helpersFor('<div id="d"></div>');
+  const node = byId(document, 'd');
+  const occ = helpers.reportOccurrence(node, { selector: '#d', html: '<div id="d"></div>' });
+  assert.equal(occ.__node, node);
+  assert.equal(occ.selector, '#d');
+  assert.equal(occ.html, '<div id="d"></div>');
+});
+
+test('reportOccurrence: a missing/null partial still produces a valid occurrence shape with __node set', () => {
+  const { helpers, document } = helpersFor('<div id="d"></div>');
+  const node = byId(document, 'd');
+  assert.deepEqual(helpers.reportOccurrence(node, null), { __node: node });
+  assert.deepEqual(helpers.reportOccurrence(node, undefined), { __node: node });
+});
+
+test('reportOccurrence: an array is not treated as a spreadable partial (guards against Array.isArray edge case), and a null node is preserved as null', () => {
+  const { helpers } = helpersFor('<div></div>');
+  const occ = helpers.reportOccurrence(null, [1, 2, 3]);
+  assert.deepEqual(occ, { __node: null });
 });
 
 // ===== getLabelMethod / getLabelStrength =====

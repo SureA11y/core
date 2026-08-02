@@ -199,3 +199,220 @@ test('contrast cache: parseCssColorToRgba normalizes keys so equivalent rgb() st
   assert.equal(counting.setCalls, 1, 'equivalent rgb() strings should populate cache once');
   assert.equal(counting.size, 1, 'cache should contain exactly one entry for rgb(0,0,0)');
 });
+
+// -------- Resilience: shared per-run caches degrading gracefully --------
+//
+// __getSharedWeakMapCache/__getSharedTextScanCache/__getSharedColorParseCache
+// and the small per-element caches built on top of them are documented
+// "always no-throw" -- if the shared cache slot itself is unreadable or
+// broken, helpers must fall back to an uncached (but still correct) local
+// path rather than propagating an exception up to a rule.
+
+test('contrast cache: init-time shared-cache lookups degrade to local caches when shared.__contrastSharedCache access throws', () => {
+  const dom = new JSDOM(
+    `<!doctype html><html><body>
+      <div id="a" style="opacity: 0.5"><span id="b" style="color:red">t</span></div>
+    </body></html>`,
+    { pretendToBeVisual: true }
+  );
+  const { window } = dom;
+  const { document } = window;
+
+  const shared = {
+    trim: (v) => (v == null ? '' : String(v)).trim(),
+    computedStyle: (el) => window.getComputedStyle(el),
+    composedParent: (n) => (n ? n.parentNode || null : null),
+    buildSimpleSelector: (el) => (el && el.id ? `#${el.id}` : '')
+  };
+  // createContrastHelpers reads shared.__contrastSharedCache repeatedly at
+  // init time (once per named cache: __computedStyleCache, __hasBgImgCache,
+  // __hasBlendModeCache, __hasFilterCache, __opacityProductCache,
+  // __effectiveForegroundCache, __effectiveBackgroundCache,
+  // __simpleSelectorCache, __computabilityBlockerCache, plus
+  // __colorParseCache) -- each read throws here, exercising
+  // __getSharedWeakMapCache's and __getSharedColorParseCache's own
+  // catch-and-return-null fallbacks, after which each cache falls back to
+  // a fresh local WeakMap/Map instead.
+  Object.defineProperty(shared, '__contrastSharedCache', {
+    get() {
+      throw new Error('boom');
+    },
+    configurable: true
+  });
+
+  const helpers = createContrastHelpers({ window, document }, shared);
+
+  const parsed = helpers.parseCssColorToRgba('rgb(1,2,3)');
+  assert.deepEqual(parsed, { r: 1, g: 2, b: 3, a: 1 });
+
+  const b = document.getElementById('b');
+  const op = helpers.computeOpacityProduct(b);
+  assert.ok(Math.abs(op - 0.5) < 1e-9, `expected opacity product ~0.5, got ${op}`);
+});
+
+test('contrast cache: __getSharedTextScanCache falls back to plain assignment when Object.defineProperty on the cache slot is rejected', () => {
+  const dom = new JSDOM(`<!doctype html><html><body><p id="p1">Hello</p></body></html>`, {
+    pretendToBeVisual: true
+  });
+  const { window } = dom;
+  const { document } = window;
+
+  const { shared } = makeShared(window);
+  // A defineProperty trap returning false makes Object.defineProperty throw
+  // a TypeError (per the [[DefineOwnProperty]] invariant). Plain property
+  // assignment on a Proxy for a not-yet-existing property normally routes
+  // through that SAME trap in strict mode (assignment creating a new own
+  // property internally calls [[DefineOwnProperty]] on the receiver) --
+  // an explicit `set` trap that writes straight to the underlying target
+  // bypasses that, so only Object.defineProperty is rejected while the
+  // plain-assignment fallback (`sc.__textScanCache = new Map()`) succeeds.
+  const target = {};
+  shared.__contrastSharedCache = new Proxy(target, {
+    defineProperty() {
+      return false;
+    },
+    set(t, prop, value) {
+      t[prop] = value;
+      return true;
+    }
+  });
+
+  const helpers = createContrastHelpers({ window, document }, shared);
+  const scan = helpers.getTextScan({ document, window, root: document.body }, {}, {});
+  assert.strictEqual(scan.eligibleTextCount, 1);
+  assert.ok(
+    shared.__contrastSharedCache.__textScanCache instanceof Map,
+    'expected the plain-assignment fallback to have populated a Map'
+  );
+});
+
+test('contrast cache: __getSharedTextScanCache degrades to no caching (but still correct results) when shared.__contrastSharedCache access throws', () => {
+  const dom = new JSDOM(`<!doctype html><html><body><p id="p1">Hello</p></body></html>`, {
+    pretendToBeVisual: true
+  });
+  const { window } = dom;
+  const { document } = window;
+
+  const shared = {
+    trim: (v) => (v == null ? '' : String(v)).trim(),
+    computedStyle: (el) => window.getComputedStyle(el),
+    composedParent: (n) => (n ? n.parentNode || null : null),
+    buildSimpleSelector: (el) => (el && el.id ? `#${el.id}` : '')
+  };
+  Object.defineProperty(shared, '__contrastSharedCache', {
+    get() {
+      throw new Error('boom');
+    },
+    configurable: true
+  });
+
+  const helpers = createContrastHelpers({ window, document }, shared);
+  const ctx = { document, window, root: document.body };
+  const scan1 = helpers.getTextScan(ctx, {}, {});
+  const scan2 = helpers.getTextScan(ctx, {}, {});
+  assert.strictEqual(scan1.eligibleTextCount, 1);
+  assert.strictEqual(scan2.eligibleTextCount, 1);
+  // Without a working cache, each call recomputes a fresh (but equal)
+  // result object rather than returning the same cached reference (compare
+  // against the "results ... are cached" test in contrast-helpers-dom.test.js,
+  // where scan1 === scan2 when the shared cache works).
+  assert.notStrictEqual(scan1, scan2);
+});
+
+test('contrast cache: computeOpacityProduct fails safe to 1 when its cache is broken', () => {
+  const dom = new JSDOM(
+    `<!doctype html><html><body>
+      <div id="a" style="opacity: 0.5"><span id="b">t</span></div>
+    </body></html>`,
+    { pretendToBeVisual: true }
+  );
+  const { window } = dom;
+  const { document } = window;
+
+  const { shared } = makeShared(window);
+  shared.__contrastSharedCache.__opacityProductCache = {
+    has() {
+      throw new Error('boom');
+    },
+    get() {
+      return undefined;
+    },
+    set() {
+      return this;
+    }
+  };
+
+  const helpers = createContrastHelpers({ window }, shared);
+  const b = document.getElementById('b');
+  const op = helpers.computeOpacityProduct(b);
+  assert.strictEqual(
+    op,
+    1,
+    'a broken opacity-product cache should fail safe to 1 rather than throw'
+  );
+});
+
+function brokenHasCache() {
+  return {
+    has() {
+      throw new Error('boom');
+    },
+    get() {
+      return undefined;
+    },
+    set() {
+      return this;
+    }
+  };
+}
+
+test('contrast cache: getComputabilityBlocker still resolves ok:true for a plain element when __hasBlendModeCache is broken', () => {
+  const dom = new JSDOM(
+    `<!doctype html><html><body><div id="a" style="background-color:white">t</div></body></html>`,
+    { pretendToBeVisual: true }
+  );
+  const { window } = dom;
+  const { document } = window;
+
+  const { shared } = makeShared(window);
+  shared.__contrastSharedCache.__hasBlendModeCache = brokenHasCache();
+
+  const helpers = createContrastHelpers({ window }, shared);
+  const a = document.getElementById('a');
+  const out = helpers.getComputabilityBlocker(a);
+  assert.strictEqual(out.ok, true);
+});
+
+test('contrast cache: getComputabilityBlocker still resolves ok:true for a plain element when __hasFilterCache is broken', () => {
+  const dom = new JSDOM(
+    `<!doctype html><html><body><div id="a" style="background-color:white">t</div></body></html>`,
+    { pretendToBeVisual: true }
+  );
+  const { window } = dom;
+  const { document } = window;
+
+  const { shared } = makeShared(window);
+  shared.__contrastSharedCache.__hasFilterCache = brokenHasCache();
+
+  const helpers = createContrastHelpers({ window }, shared);
+  const a = document.getElementById('a');
+  const out = helpers.getComputabilityBlocker(a);
+  assert.strictEqual(out.ok, true);
+});
+
+test('contrast cache: getComputabilityBlocker still resolves ok:true for a plain element when __hasBgImgCache is broken', () => {
+  const dom = new JSDOM(
+    `<!doctype html><html><body><div id="a" style="background-color:white">t</div></body></html>`,
+    { pretendToBeVisual: true }
+  );
+  const { window } = dom;
+  const { document } = window;
+
+  const { shared } = makeShared(window);
+  shared.__contrastSharedCache.__hasBgImgCache = brokenHasCache();
+
+  const helpers = createContrastHelpers({ window }, shared);
+  const a = document.getElementById('a');
+  const out = helpers.getComputabilityBlocker(a);
+  assert.strictEqual(out.ok, true);
+});

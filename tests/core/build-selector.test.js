@@ -283,6 +283,16 @@ test('buildSimpleSelector: a data-testid with leading/trailing whitespace resolv
   assert.equal(document.querySelector(selector), target);
 });
 
+test('buildSimpleSelector: an element with none of id/data-testid/data-test/data-cy/data-qa/name falls back to the bare tag name', () => {
+  const { helpers, document } = helpersFor(`<!doctype html><html><body>
+    <div class="plain">content</div>
+  </body></html>`);
+
+  const target = document.querySelector('.plain');
+  const selector = helpers.buildSimpleSelector(target, 'div');
+  assert.equal(selector, 'div');
+});
+
 test('buildSimpleSelector: a name attribute with leading/trailing whitespace resolves to the real element', () => {
   const { helpers, document } = helpersFor(`<!doctype html><html><body>
     <input name="field, ">
@@ -291,6 +301,207 @@ test('buildSimpleSelector: a name attribute with leading/trailing whitespace res
   const target = document.querySelector('input');
   const selector = helpers.buildSimpleSelector(target, 'input');
   assert.equal(document.querySelector(selector), target);
+});
+
+// Regression/behavior coverage for buildSelectorUncached's uniqueness-index
+// gate (idx.*Count.get(...) === 1): when an id/data-testid/name/aria-label
+// value is DUPLICATED across the document (a real, if invalid, pattern --
+// duplicate ids in particular are extremely common on real sites despite
+// being non-conformant HTML), that attribute must not be used as a
+// "this uniquely identifies the element" anchor, since it doesn't.
+test('buildSelector: a duplicated id is not used as a unique anchor; the element still resolves via structural fallback', () => {
+  const { helpers, document } = helpersFor(`<!doctype html><html><body>
+    <section><div id="dup">one</div></section>
+    <section><div id="dup">two</div></section>
+  </body></html>`);
+
+  const targets = Array.from(document.querySelectorAll('[id="dup"]'));
+  assert.equal(targets.length, 2);
+
+  for (const target of targets) {
+    const selector = helpers.buildSelector(target);
+    assert.notEqual(selector, '#dup', 'a non-unique id must not be used as the anchor');
+    const matches = document.querySelectorAll(selector);
+    assert.equal(matches.length, 1, `selector "${selector}" should resolve to exactly one element`);
+    assert.equal(matches[0], target);
+  }
+});
+
+test('buildSelector: a duplicated data-testid is not used as a unique anchor', () => {
+  const { helpers, document } = helpersFor(`<!doctype html><html><body>
+    <section><button data-testid="save">A</button></section>
+    <section><button data-testid="save">B</button></section>
+  </body></html>`);
+
+  const targets = Array.from(document.querySelectorAll('[data-testid="save"]'));
+  for (const target of targets) {
+    const selector = helpers.buildSelector(target);
+    assert.notEqual(selector, '[data-testid="save"]');
+    assert.equal(document.querySelectorAll(selector).length, 1);
+    assert.equal(document.querySelector(selector), target);
+  }
+});
+
+test('buildSelector: a duplicated name (e.g. a real radio-button group) is not used as a unique anchor', () => {
+  const { helpers, document } = helpersFor(`<!doctype html><html><body>
+    <fieldset>
+      <input type="radio" name="plan" id="a" value="basic">
+      <input type="radio" name="plan" id="b" value="pro">
+    </fieldset>
+  </body></html>`);
+
+  const a = document.getElementById('a');
+  const b = document.getElementById('b');
+  for (const target of [a, b]) {
+    const selector = helpers.buildSelector(target);
+    assert.notEqual(selector, 'input[name="plan"]');
+    assert.equal(document.querySelectorAll(selector).length, 1);
+    assert.equal(document.querySelector(selector), target);
+  }
+});
+
+test('buildSelector: a duplicated aria-label, and a duplicated role+aria-label pair, are not used as unique anchors', () => {
+  const { helpers, document } = helpersFor(`<!doctype html><html><body>
+    <section><button aria-label="Close">A</button></section>
+    <section><button aria-label="Close">B</button></section>
+    <section><div role="button" aria-label="Menu">C</div></section>
+    <section><div role="button" aria-label="Menu">D</div></section>
+  </body></html>`);
+
+  const seen = new Set();
+  for (const target of document.querySelectorAll(
+    'button[aria-label="Close"], [role="button"][aria-label="Menu"]'
+  )) {
+    const selector = helpers.buildSelector(target);
+    assert.ok(!seen.has(selector), `selector "${selector}" reused across two different elements`);
+    seen.add(selector);
+    assert.equal(document.querySelectorAll(selector).length, 1);
+    assert.equal(document.querySelector(selector), target);
+  }
+});
+
+// nthOfType's forward-scan (used when this node is the FIRST of its tag among
+// siblings) must keep walking past non-matching siblings until it either
+// finds a same-tag sibling further along or runs out -- not stop at the
+// first sibling it looks at.
+test('buildSelector: nthOfType keeps scanning forward past unrelated tags to find a same-tag disambiguating sibling', () => {
+  const { helpers, document } = helpersFor(`<!doctype html><html><body>
+    <div class="wrap">
+      <span>first span</span>
+      <p>unrelated</p>
+      <em>also unrelated</em>
+      <span>second span</span>
+    </div>
+  </body></html>`);
+
+  // Deliberately no id/data-*/name/aria-label anywhere so buildSelectorUncached
+  // is forced all the way down to the nth-of-type structural fallback for the
+  // target itself, exercising nthOfType's own forward-scan loop.
+  const target = document.querySelector('.wrap span');
+  const selector = helpers.buildSelector(target);
+  const matches = document.querySelectorAll(selector);
+  assert.equal(matches.length, 1, `selector "${selector}" should resolve to exactly one element`);
+  assert.equal(matches[0], target);
+});
+
+// The ancestor-climbing loop's own anchor builders (id/data-test*/name/
+// aria-label on an ANCESTOR, not the target itself) exercise the same
+// uniqueness-index lookups as the direct-element anchors above, but via a
+// different code path (used once no direct anchor exists on the target).
+test('buildSelector: climbs to an ancestor uniquely identified by data-test*/name/aria-label when the target itself has no identifying attributes', () => {
+  const { helpers, document } = helpersFor(`<!doctype html><html><body>
+    <section data-test="promo-card"><div><span>content</span></div></section>
+    <section><div><span>other content</span></div></section>
+  </body></html>`);
+
+  const targets = Array.from(document.querySelectorAll('span'));
+  assert.equal(targets.length, 2);
+  const withAnchor = helpers.buildSelector(targets[0]);
+  assert.ok(withAnchor.includes('data-test="promo-card"'));
+  assert.equal(document.querySelector(withAnchor), targets[0]);
+});
+
+test('buildSelector: climbs to an ancestor uniquely identified by its "name" attribute when no closer anchor exists', () => {
+  const { helpers, document } = helpersFor(`<!doctype html><html><body>
+    <fieldset name="billing-group"><div><span>content</span></div></fieldset>
+    <fieldset><div><span>other content</span></div></fieldset>
+  </body></html>`);
+
+  const targets = Array.from(document.querySelectorAll('span'));
+  assert.equal(targets.length, 2);
+  const withAnchor = helpers.buildSelector(targets[0]);
+  assert.ok(withAnchor.includes('fieldset[name="billing-group"]'));
+  assert.equal(document.querySelector(withAnchor), targets[0]);
+});
+
+// A unique data-test/data-cy/data-qa (NOT data-testid, the first attribute
+// tried) used directly as the element's own anchor -- data-testid already has
+// dedicated coverage above (including its duplicate-value case); this covers
+// the rest of the loop over the four supported test-id-style attributes.
+test('buildSelector: a unique data-test attribute (not data-testid) resolves directly as the anchor', () => {
+  const { helpers, document } = helpersFor(`<!doctype html><html><body>
+    <button data-test="submit-order">Go</button>
+    <button>Other</button>
+  </body></html>`);
+
+  const target = document.querySelector('[data-test="submit-order"]');
+  const selector = helpers.buildSelector(target);
+  assert.ok(selector.includes('data-test="submit-order"'));
+  assert.equal(document.querySelector(selector), target);
+});
+
+// uniqueNameSel/uniqueRoleAriaSel's own unique-vs-duplicate branches, on the
+// TARGET element directly (no id anywhere, so id can't short-circuit before
+// these anchors are ever consulted).
+test('buildSelector: a unique "name" attribute (no id anywhere on the element) resolves directly as the anchor', () => {
+  const { helpers, document } = helpersFor(`<!doctype html><html><body>
+    <input name="newsletter-opt-in">
+    <input name="other-field">
+  </body></html>`);
+
+  const target = document.querySelector('input[name="newsletter-opt-in"]');
+  const selector = helpers.buildSelector(target);
+  assert.equal(selector, 'input[name="newsletter-opt-in"]');
+  assert.equal(document.querySelector(selector), target);
+});
+
+test('buildSelector: a duplicated "name" attribute with no id anywhere falls through uniqueNameSel to the next anchor strategy', () => {
+  const { helpers, document } = helpersFor(`<!doctype html><html><body>
+    <input name="dup-field" aria-label="Field A">
+    <input name="dup-field" aria-label="Field B">
+  </body></html>`);
+
+  const a = document.querySelector('[aria-label="Field A"]');
+  const b = document.querySelector('[aria-label="Field B"]');
+  for (const target of [a, b]) {
+    const selector = helpers.buildSelector(target);
+    assert.notEqual(selector, 'input[name="dup-field"]');
+    assert.equal(document.querySelector(selector), target);
+  }
+});
+
+test('buildSelector: a unique role+aria-label pair (no id anywhere) resolves directly via uniqueRoleAriaSel', () => {
+  const { helpers, document } = helpersFor(`<!doctype html><html><body>
+    <div role="tab" aria-label="Overview">A</div>
+    <div role="tab" aria-label="Details">B</div>
+  </body></html>`);
+
+  const target = document.querySelector('[aria-label="Overview"]');
+  const selector = helpers.buildSelector(target);
+  assert.equal(selector, '[role="tab"][aria-label="Overview"]');
+  assert.equal(document.querySelector(selector), target);
+});
+
+test('buildSelector: repeated calls on the same element hit the per-element selector cache and return the identical string', () => {
+  const { helpers, document } = helpersFor(`<!doctype html><html><body>
+    <div id="cached">content</div>
+  </body></html>`);
+
+  const target = document.getElementById('cached');
+  const first = helpers.buildSelector(target);
+  const second = helpers.buildSelector(target);
+  assert.equal(first, second);
+  assert.equal(first, '#cached');
 });
 
 test('buildSelector: every generated selector across many repeated sibling groups resolves uniquely', () => {
