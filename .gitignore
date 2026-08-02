@@ -26,8 +26,6 @@ dist/
 # JetBrains IDE
 .idea/
 
-# Claude ignore file
-.claudeignore
 
 # Unit test reports
 TEST*.xml

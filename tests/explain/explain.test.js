@@ -63,12 +63,12 @@ test('explain: a per-entry provider tag wins over options.providerName, which wi
 
   const withEntryTag = await explain(result, {
     provider: async (groups) =>
-      groups.map((g) => ({ groupKey: g.groupKey, text: 'x', provider: 'claude-sonnet-5' })),
+      groups.map((g) => ({ groupKey: g.groupKey, text: 'x', provider: 'test-provider-a' })),
     providerName: 'should-be-overridden'
   });
   assert.strictEqual(
     withEntryTag.checksResults[0].occurrences[0].explanation.provider,
-    'claude-sonnet-5'
+    'test-provider-a'
   );
 
   const withCallLevelName = await explain(result, {
