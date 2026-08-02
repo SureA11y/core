@@ -1,6 +1,6 @@
 # API stability & versioning
 
-`@surea11y/core` has real downstream consumers today (5 framework bindings — Playwright, Puppeteer, Selenium, WebdriverIO, Cypress — plus a Jest/Vitest matcher package), all pinned to a `^1.1.0`-style semver range. Until now, "what counts as a breaking change" was implicit — discoverable only by reading source, not written down anywhere. This document makes that contract explicit.
+`@surea11y/core` has real downstream consumers today: 5 first-party framework bindings (Playwright, Puppeteer, Selenium, WebdriverIO, Cypress) published to npm, plus a Jest/Vitest matcher (`@surea11y/test-matchers`, `toHaveNoA11yViolations()`) — all pinned to a `^1.1.0`-style semver range. Until now, "what counts as a breaking change" was implicit — discoverable only by reading source, not written down anywhere. This document makes that contract explicit.
 
 ## Stable fields (covered by semver)
 
