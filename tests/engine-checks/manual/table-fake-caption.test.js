@@ -41,6 +41,19 @@ test(`${RULE_ID}: notApplicable when all rows have multiple cells`, () => {
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+// Regression coverage for a bug found while extending direct coverage of
+// this rule: an aria-hidden row isn't part of the AT-perceived table
+// structure at all, so it must not be treated as the table's "first row"
+// for this positional heuristic. A hidden single-cell row above ordinary
+// multi-cell rows was wrongly flagged, even though the real (AT-exposed)
+// first row is an ordinary multi-cell row with no fake-caption shape at
+// all.
+test(`${RULE_ID}: an aria-hidden first row is not treated as the table's first row`, () => {
+  const html = `<!doctype html><html><body><table><tr aria-hidden="true"><td>Hidden</td></tr><tr><td>a</td><td>b</td></tr><tr><td>c</td><td>d</td></tr></table></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
 test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><body><table><tr><td>Title</td></tr><tr><td>a</td><td>b</td></tr></table></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });

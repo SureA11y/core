@@ -41882,6 +41882,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return (v == null ? '' : String(v)).trim();
   }
 
+  const isAccTreeEligible =
+    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+
+  function isEligible(node) {
+    if (!isAccTreeEligible) return true;
+    try {
+      const r = isAccTreeEligible(node, ctx);
+      return !!(r && r.eligible);
+    } catch {
+      return true;
+    }
+  }
+
   const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('table') : helpers.queryAll('table');
 
   const occurrences = [];
@@ -41893,20 +41906,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const hasCaption = !!(table.querySelector && table.querySelector('caption'));
     if (hasCaption) continue;
 
-    const rows = Array.from(table.rows);
+    // An aria-hidden row (or cell) isn't part of the AT-perceived table
+    // structure at all -- it must not be treated as the table's "first
+    // row" (or counted toward a row's cell count) for this positional
+    // heuristic. Found while extending direct coverage of this rule.
+    const rows = Array.from(table.rows).filter(isEligible);
     if (rows.length < 2) continue;
 
     applicableCount += 1;
 
     const firstRow = rows[0];
-    const firstRowCells = Array.from(firstRow.cells || []);
+    const firstRowCells = Array.from(firstRow.cells || []).filter(isEligible);
     if (firstRowCells.length !== 1) continue;
 
     const candidateCell = firstRowCells[0];
     const candidateText = trim(candidateCell.textContent || '');
     if (!candidateText) continue;
 
-    const hasMultiCellRow = rows.slice(1).some((r) => Array.from(r.cells || []).length > 1);
+    const hasMultiCellRow = rows
+      .slice(1)
+      .some((r) => Array.from(r.cells || []).filter(isEligible).length > 1);
     if (!hasMultiCellRow) continue;
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(table) : 'html';
@@ -78131,6 +78150,19 @@ const __a11yCoreCrossFrameApi = (function () {
     return (v == null ? '' : String(v)).trim();
   }
 
+  const isAccTreeEligible =
+    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+
+  function isEligible(node) {
+    if (!isAccTreeEligible) return true;
+    try {
+      const r = isAccTreeEligible(node, ctx);
+      return !!(r && r.eligible);
+    } catch {
+      return true;
+    }
+  }
+
   const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('table') : helpers.queryAll('table');
 
   const occurrences = [];
@@ -78142,20 +78174,26 @@ const __a11yCoreCrossFrameApi = (function () {
     const hasCaption = !!(table.querySelector && table.querySelector('caption'));
     if (hasCaption) continue;
 
-    const rows = Array.from(table.rows);
+    // An aria-hidden row (or cell) isn't part of the AT-perceived table
+    // structure at all -- it must not be treated as the table's "first
+    // row" (or counted toward a row's cell count) for this positional
+    // heuristic. Found while extending direct coverage of this rule.
+    const rows = Array.from(table.rows).filter(isEligible);
     if (rows.length < 2) continue;
 
     applicableCount += 1;
 
     const firstRow = rows[0];
-    const firstRowCells = Array.from(firstRow.cells || []);
+    const firstRowCells = Array.from(firstRow.cells || []).filter(isEligible);
     if (firstRowCells.length !== 1) continue;
 
     const candidateCell = firstRowCells[0];
     const candidateText = trim(candidateCell.textContent || '');
     if (!candidateText) continue;
 
-    const hasMultiCellRow = rows.slice(1).some((r) => Array.from(r.cells || []).length > 1);
+    const hasMultiCellRow = rows
+      .slice(1)
+      .some((r) => Array.from(r.cells || []).filter(isEligible).length > 1);
     if (!hasMultiCellRow) continue;
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(table) : 'html';
