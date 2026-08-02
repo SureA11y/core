@@ -53,7 +53,32 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/label-title-only-all-scenario
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
   assert.ok(hasOccurrenceForId(rule, 'lto_case_02'));
+  assert.ok(hasOccurrenceForId(rule, 'lto_case_04'));
   assert.ok(!hasOccurrenceForId(rule, 'lto_case_01'));
+});
+
+// Regression coverage for a bug found while extending direct coverage of
+// this rule: the previous implementation only checked whether a
+// <label for>/wrapping <label> structurally EXISTED, never whether it
+// actually contributed a name -- an empty <label for="x"></label>
+// exempted the control from this rule even though title was still,
+// functionally, its only real label (the same "structural association
+// alone isn't enough" gap already fixed elsewhere in this engine). Now
+// delegates to helpers.getAccessibleNameInfo and only exempts a control
+// whose resolved accessible-name mechanism is something other than
+// 'title'.
+test(`${RULE_ID}: an empty label[for] does not exempt the control (it contributes no name, so title is still the only functional label)`, () => {
+  const html = `<!doctype html><html><body><label for="a"></label><input id="a" title="Phone"></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+});
+
+test(`${RULE_ID}: an empty wrapping <label> does not exempt the control`, () => {
+  const html = `<!doctype html><html><body><label><input id="a" title="Phone"></label></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
 });

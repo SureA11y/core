@@ -34563,7 +34563,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "label-title-only": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const selector =
     'input:not([type="hidden"]):not([type="submit"]):not([type="reset"]):not([type="button"]):not([type="image"]),select,textarea';
@@ -34571,37 +34571,45 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
 
-  const labelsByFor = new Map();
-  const allLabels = document.getElementsByTagName ? document.getElementsByTagName('label') : [];
-  for (const lab of allLabels) {
-    if (!lab || !lab.getAttribute) continue;
-    const forValue = String(lab.getAttribute('for') || '').trim();
-    if (!forValue) continue;
-    if (!labelsByFor.has(forValue)) labelsByFor.set(forValue, []);
-    labelsByFor.get(forValue).push(lab);
-  }
-
   const occurrences = [];
   let applicableCount = 0;
 
   for (const el of nodes) {
     if (!el || !el.getAttribute) continue;
 
+    if (helpers.isAccTreeEligible) {
+      const elig = (() => {
+        try {
+          return helpers.isAccTreeEligible(el, ctx);
+        } catch {
+          return { eligible: true, reasons: [] };
+        }
+      })();
+      if (elig && elig.eligible === false) continue;
+    }
+
     const title = String(el.getAttribute('title') || '').trim();
     if (!title) continue;
 
     applicableCount += 1;
 
-    const ariaLabel = String(el.getAttribute('aria-label') || '').trim();
-    if (ariaLabel) continue;
-    const ariaLabelledby = String(el.getAttribute('aria-labelledby') || '').trim();
-    if (ariaLabelledby) continue;
-
-    const wrappingLabel = el.closest ? el.closest('label') : null;
-    if (wrappingLabel) continue;
-
-    const controlId = String(el.getAttribute('id') || '').trim();
-    if (controlId && labelsByFor.has(controlId)) continue;
+    // Delegates to the shared helpers.getAccessibleNameInfo (aria ->
+    // native <label> -> title, the same correct precedence every other
+    // name-dependent rule in this engine uses) rather than a local,
+    // hand-rolled "does a <label for>/wrapping <label> exist" check.
+    // Found while extending direct coverage of this rule: the previous
+    // local check only verified a label's STRUCTURAL association
+    // (for="..."/wrapping), never whether it actually contributed a name
+    // -- an empty <label for="x"></label> or an empty wrapping <label>
+    // exempted the control from this rule even though title was still,
+    // functionally, its only real label (the same "structural association
+    // alone isn't enough" gap already fixed elsewhere in this engine, see
+    // dom-helpers.js's hasLabelAssociation/labelContributesAccessibleName).
+    // If the resolved mechanism isn't 'title', some higher-priority
+    // mechanism (aria-label/aria-labelledby/a real contributing label)
+    // already won and this control isn't title-only.
+    const nameInfo = helpers.getAccessibleNameInfo ? helpers.getAccessibleNameInfo(el, ctx) : null;
+    if (!nameInfo || nameInfo.mechanism !== 'title') continue;
 
     const tag = el.tagName.toLowerCase();
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
@@ -70767,7 +70775,7 @@ const __a11yCoreCrossFrameApi = (function () {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "label-title-only": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const selector =
     'input:not([type="hidden"]):not([type="submit"]):not([type="reset"]):not([type="button"]):not([type="image"]),select,textarea';
@@ -70775,37 +70783,45 @@ const __a11yCoreCrossFrameApi = (function () {
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
 
-  const labelsByFor = new Map();
-  const allLabels = document.getElementsByTagName ? document.getElementsByTagName('label') : [];
-  for (const lab of allLabels) {
-    if (!lab || !lab.getAttribute) continue;
-    const forValue = String(lab.getAttribute('for') || '').trim();
-    if (!forValue) continue;
-    if (!labelsByFor.has(forValue)) labelsByFor.set(forValue, []);
-    labelsByFor.get(forValue).push(lab);
-  }
-
   const occurrences = [];
   let applicableCount = 0;
 
   for (const el of nodes) {
     if (!el || !el.getAttribute) continue;
 
+    if (helpers.isAccTreeEligible) {
+      const elig = (() => {
+        try {
+          return helpers.isAccTreeEligible(el, ctx);
+        } catch {
+          return { eligible: true, reasons: [] };
+        }
+      })();
+      if (elig && elig.eligible === false) continue;
+    }
+
     const title = String(el.getAttribute('title') || '').trim();
     if (!title) continue;
 
     applicableCount += 1;
 
-    const ariaLabel = String(el.getAttribute('aria-label') || '').trim();
-    if (ariaLabel) continue;
-    const ariaLabelledby = String(el.getAttribute('aria-labelledby') || '').trim();
-    if (ariaLabelledby) continue;
-
-    const wrappingLabel = el.closest ? el.closest('label') : null;
-    if (wrappingLabel) continue;
-
-    const controlId = String(el.getAttribute('id') || '').trim();
-    if (controlId && labelsByFor.has(controlId)) continue;
+    // Delegates to the shared helpers.getAccessibleNameInfo (aria ->
+    // native <label> -> title, the same correct precedence every other
+    // name-dependent rule in this engine uses) rather than a local,
+    // hand-rolled "does a <label for>/wrapping <label> exist" check.
+    // Found while extending direct coverage of this rule: the previous
+    // local check only verified a label's STRUCTURAL association
+    // (for="..."/wrapping), never whether it actually contributed a name
+    // -- an empty <label for="x"></label> or an empty wrapping <label>
+    // exempted the control from this rule even though title was still,
+    // functionally, its only real label (the same "structural association
+    // alone isn't enough" gap already fixed elsewhere in this engine, see
+    // dom-helpers.js's hasLabelAssociation/labelContributesAccessibleName).
+    // If the resolved mechanism isn't 'title', some higher-priority
+    // mechanism (aria-label/aria-labelledby/a real contributing label)
+    // already won and this control isn't title-only.
+    const nameInfo = helpers.getAccessibleNameInfo ? helpers.getAccessibleNameInfo(el, ctx) : null;
+    if (!nameInfo || nameInfo.mechanism !== 'title') continue;
 
     const tag = el.tagName.toLowerCase();
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
