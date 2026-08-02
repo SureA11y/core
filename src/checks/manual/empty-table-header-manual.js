@@ -72,8 +72,39 @@ function runInPage(ctx) {
       .trim();
   }
 
+  const isAccTreeEligible =
+    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+
+  function isEligible(node) {
+    if (!isAccTreeEligible) return true;
+    try {
+      const r = isAccTreeEligible(node, ctx);
+      return !!(r && r.eligible);
+    } catch {
+      return true;
+    }
+  }
+
+  // Plain el.textContent includes text from aria-hidden descendants, which
+  // a real screen reader never announces -- exactly the AT-announcement
+  // gap this rule's own header comment extensively researched (real
+  // NVDA/VoiceOver/JAWS testing). A <th> whose only text comes from an
+  // aria-hidden descendant (e.g. <th><span aria-hidden="true">Name</span
+  // ></th>) was wrongly treated as having visible text and never flagged,
+  // even though AT announces nothing for it at all. Found while extending
+  // direct coverage of this rule.
   function getVisibleText(el) {
-    return normalizeWs(el.textContent);
+    function walk(node) {
+      if (node.nodeType === 3) return node.nodeValue || '';
+      if (node.nodeType !== 1) return '';
+      if (!isEligible(node)) return '';
+      let text = '';
+      for (const child of node.childNodes || []) text += walk(child);
+      return text;
+    }
+    let text = '';
+    for (const child of el.childNodes || []) text += walk(child);
+    return normalizeWs(text);
   }
 
   function getAriaOnlyName(el) {
@@ -110,6 +141,12 @@ function runInPage(ctx) {
 
   for (const el of nodes) {
     if (!el) continue;
+
+    // A fully aria-hidden header cell isn't part of the AT-perceived
+    // table structure at all -- queryAllSmart's default hidden-content
+    // policy only excludes "hard" CSS-based hiding, not aria-hidden.
+    if (!isEligible(el)) continue;
+
     applicableCount += 1;
 
     if (getVisibleText(el)) continue;

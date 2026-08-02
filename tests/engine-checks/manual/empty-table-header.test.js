@@ -116,6 +116,27 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/empty-table-header-all-scenar
   assert.ok(!hasOccurrenceForId(rule, 'eth_case_06'));
 });
 
+// Regression coverage for a bug found while extending direct coverage of
+// this rule: plain el.textContent includes text from aria-hidden
+// descendants, which a real screen reader never announces -- exactly the
+// AT-announcement gap this rule's own header comment extensively
+// researched. A <th> whose only text comes from an aria-hidden descendant
+// was wrongly treated as having visible text and never flagged, even
+// though AT announces nothing for it at all.
+test(`${RULE_ID}: a th whose only text comes from an aria-hidden descendant is flagged as empty (AT announces nothing for it)`, () => {
+  const html = `<!doctype html><html><body><table><tr><th id="a"><span aria-hidden="true">Name</span></th></tr><tr><td>Alice</td></tr></table></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+  assert.equal(rule.occurrences[0].data.details.reasonCode, 'TABLE_HEADER_EMPTY');
+});
+
+test(`${RULE_ID}: a fully aria-hidden th is not flagged (it isn't part of the AT-perceived table structure)`, () => {
+  const html = `<!doctype html><html><body><table><tr><th id="a" aria-hidden="true">Name</th></tr><tr><td>Alice</td></tr></table></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
 test(`empty-table-header: respects contextSelector scoping (regression -- used to bypass helpers.queryAllSmart and always scan the whole document)`, () => {
   const html = `<!doctype html><html><body><div id="target"><p>Just some unrelated text.</p></div><table><tr><th id="a"></th></tr></table></body></html>`;
   const result = runa11yCoreOnHtml(html, {
