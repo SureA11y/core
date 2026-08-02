@@ -251,6 +251,13 @@ test(`${RULE_ID}: computable normal text below 4.5:1 => fail (BELOW_THRESHOLD)`,
     assert.strictEqual(occ.i18n.summaryKey, 'contrastMinimum_fail_belowThreshold');
     assert.strictEqual(occ.data.details.reasonCode, 'BELOW_THRESHOLD');
 
+    // Regression guard: node metadata belongs under data.details.node (matching
+    // contrast-enhanced.js and every other rule's "extra diagnostic data lives
+    // under data.details" convention), not as a non-standard top-level occ.node
+    // -- contrast-minimum.js was the sole outlier before this was fixed.
+    assert.strictEqual(occ.node, undefined, 'occ.node should not exist as a top-level field');
+    assert.deepStrictEqual(occ.data.details.node, { selector: '#t', tagName: 'p' });
+
     // Threshold for normal text at AA is 4.5
     assert.strictEqual(occ.i18n.params.threshold, '4.5');
 

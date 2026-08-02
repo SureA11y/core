@@ -201,15 +201,16 @@ function runInPage(ctx) {
                 data: { details: det }
             };
 
-            // Optional deterministic node metadata
-            let nodeMeta = null;
+            // Bind the occurrence to an element deterministically, but still let the engine
+            // attach canonical selector + HTML snippet via reportOccurrence when available.
+            let nodeSelector = '';
             try {
                 const elementId = el && typeof el.getAttribute === 'function' ? (el.getAttribute('id') || '') : '';
-                const tagName = el && el.tagName ? String(el.tagName).toLowerCase() : 'element';
-                nodeMeta = { selector: elementId ? `#${elementId}` : '', tagName };
+                if (elementId) nodeSelector = `#${elementId}`;
             } catch {
                 // no-throw
             }
+            const tagName = el && el.tagName ? String(el.tagName).toLowerCase() : 'element';
 
             let occ = { ...occBase };
 
@@ -223,10 +224,11 @@ function runInPage(ctx) {
                 }
             }
 
-            if (nodeMeta) {
-                occ.node = nodeMeta;
-                if (!occ.selector) occ.selector = nodeMeta.selector || '';
-            }
+            occ.selector = occ.selector || nodeSelector || '';
+
+            occ.data = occ.data || {};
+            occ.data.details = occ.data.details || {};
+            occ.data.details.node = { selector: nodeSelector, tagName };
 
             occurrences.push(occ);
         } catch {
