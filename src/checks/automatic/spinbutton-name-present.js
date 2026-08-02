@@ -209,7 +209,7 @@ function runInPage(ctx) {
       selector: stableSelector,
       html,
       summary: 'This element has no accessible name.',
-      hint: 'Provide aria-label or aria-labelledby (preferred), or provide visible text that is not hidden from assistive technologies.',
+      hint: 'Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this spinbutton\'s accessible name.',
       i18n: {
         summaryKey: 'spinbuttonNamePresent_summary_fail',
         hintKey: 'spinbuttonNamePresent_hint_fail',

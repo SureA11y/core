@@ -35,13 +35,20 @@ test('textbox-name-present: aria-label => pass', () => {
 });
 
 test('textbox-name-present: visible content but no author-provided name => fail', () => {
-  const html = `<!doctype html><html><body><div role='textbox' contenteditable='true'>Name</div></body></html>`;
+  const html = `<!doctype html><html><body><div id="a" role='textbox' contenteditable='true'>Name</div></body></html>`;
 
   if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
   const result = runa11yCoreOnHtml(html);
   // role="textbox" is name-from-author-only per WAI-ARIA: subtree content
   // must NOT be treated as a valid accessible-name source.
-  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+
+  // Regression: the fix-it hint must not claim visible text is a valid
+  // remediation, since this exact case (visible text present, "Name")
+  // still correctly fails -- a hint saying otherwise would send authors
+  // down a dead end.
+  assert.doesNotMatch(rule.occurrences[0].hint, /provide visible text|has visible text/i);
+  assert.match(rule.occurrences[0].hint, /aria-label/i);
 });
 
 test('textbox-name-present: hidden-only content => fail', () => {

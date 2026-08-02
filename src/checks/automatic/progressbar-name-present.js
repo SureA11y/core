@@ -122,7 +122,7 @@ function runInPage(ctx) {
       selector: stableSelector,
       html,
       summary: 'This progress bar has no accessible name.',
-      hint: 'Provide progress bar text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.',
+      hint: 'Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this progress bar\'s accessible name.',
       i18n: {
         summaryKey: 'progressbarNamePresent_summary_fail',
         hintKey: 'progressbarNamePresent_hint_fail',

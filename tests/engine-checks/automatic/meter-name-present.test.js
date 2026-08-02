@@ -38,6 +38,13 @@ test(`${RULE_ID}: fail when meter has visible text content but no aria-label/ari
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'a'));
+
+  // Regression: the fix-it hint must not claim visible text is a valid
+  // remediation, since this exact case (visible text present, "80% full")
+  // still correctly fails -- a hint saying otherwise would send authors
+  // down a dead end.
+  assert.doesNotMatch(rule.occurrences[0].hint, /provide (visible text|meter text)/i);
+  assert.match(rule.occurrences[0].hint, /aria-label/i);
 });
 
 test(`${RULE_ID}: i18n default is English`, () => {

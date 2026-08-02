@@ -42,6 +42,17 @@ test('combobox-name-present: role=combobox with aria-hidden content only => fail
   assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
+test('combobox-name-present: fail even with visible text content (role="combobox" is name-from-author-only) -- the fix-it hint must not claim visible text is a valid remediation', () => {
+  const html = `<!doctype html><html><body><div id="a" role='combobox' tabindex='0'>Search</div></body></html>`;
+
+  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  const result = runa11yCoreOnHtml(html);
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+  assert.doesNotMatch(rule.occurrences[0].hint, /provide visible text|has visible text/i);
+  assert.match(rule.occurrences[0].hint, /aria-label/i);
+});
+
 test('combobox-name-present: role=combobox with visible content but no author-provided name => fail', () => {
   const html = `<!doctype html><html><body><div role='combobox' tabindex='0'>Search</div></body></html>`;
 

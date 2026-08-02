@@ -25,6 +25,13 @@ test(`${RULE_ID}: fail when progressbar has visible text content but no aria-lab
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'a'));
+
+  // Regression: the fix-it hint must not claim visible text is a valid
+  // remediation, since this exact case (visible text present, "Loading")
+  // still correctly fails -- a hint saying otherwise would send authors
+  // down a dead end.
+  assert.doesNotMatch(rule.occurrences[0].hint, /provide (visible text|progress bar text)/i);
+  assert.match(rule.occurrences[0].hint, /aria-label/i);
 });
 
 test(`${RULE_ID}: fail when the progressbar's own name is absent but a DESCENDANT has its own unrelated aria-label (content must not be picked up as a fallback name — found on a real site, Instacart's <ul role="progressbar"> loading skeleton, where nested descendants carry aria-label="Loading Box" for a different purpose)`, () => {

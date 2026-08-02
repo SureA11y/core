@@ -117,7 +117,7 @@ function runInPage(ctx) {
       selector: stableSelector,
       html,
       summary: 'This meter has no accessible name.',
-      hint: 'Provide meter text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.',
+      hint: 'Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this meter\'s accessible name.',
       i18n: {
         summaryKey: 'meterNamePresent_summary_fail',
         hintKey: 'meterNamePresent_hint_fail',

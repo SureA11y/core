@@ -213,7 +213,7 @@ function runInPage(ctx) {
       selector: stableSelector,
       html,
       summary: 'This combobox has no accessible name.',
-      hint: 'Provide aria-label or aria-labelledby (preferred), or ensure the element has visible text that is not hidden from assistive technologies.',
+      hint: 'Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this combobox\'s accessible name.',
       i18n: {
         summaryKey: 'comboboxNamePresent_summary_fail',
         hintKey: 'comboboxNamePresent_hint_fail',

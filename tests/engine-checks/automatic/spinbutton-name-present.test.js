@@ -42,6 +42,17 @@ test('spinbutton-name-present: missing name => fail', () => {
   assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
+test('spinbutton-name-present: fail even with visible text content (role="spinbutton" is name-from-author-only) -- the fix-it hint must not claim visible text is a valid remediation', () => {
+  const html = `<!doctype html><html><body><div id="a" role='spinbutton'>Quantity</div></body></html>`;
+
+  if (!runa11yCoreOnHtml || !assertRule) { assert.ok(true); return; }
+  const result = runa11yCoreOnHtml(html);
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+  assert.doesNotMatch(rule.occurrences[0].hint, /provide visible text|has visible text/i);
+  assert.match(rule.occurrences[0].hint, /aria-label/i);
+});
+
 test('spinbutton-name-present: wrapping <label> has its own aria-label even though its only child content is aria-hidden (found on a real site)', () => {
   const html = `<!doctype html><html><body>
     <label aria-label="Toggle Navigation" for="c"><svg aria-hidden="true"><path d="M0 0"/></svg></label>
