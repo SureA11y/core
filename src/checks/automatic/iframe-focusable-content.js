@@ -36,7 +36,8 @@ const id = 'iframe-focusable-content';
 
 const meta = {
   title: 'Frames with tabindex="-1" must not contain focusable content',
-  description: 'Checks that same-origin <iframe>/<frame> elements with tabindex="-1" do not contain focusable content, since browsers do not propagate that restriction into the frame’s embedded document.',
+  description:
+    'Checks that same-origin <iframe>/<frame> elements with tabindex="-1" do not contain focusable content, since browsers do not propagate that restriction into the frame’s embedded document.',
   i18n: {
     titleKey: 'iframeFocusableContent_title',
     descriptionKey: 'iframeFocusableContent_description'
@@ -45,7 +46,13 @@ const meta = {
   tags: ['wcag2a', 'wcag211', 'structure', 'atomic', 'automatic', 'keyboard', 'iframe'],
   wcagSc: ['2.1.1'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '2.1.1', title: 'Keyboard', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '2.1.1',
+      title: 'Keyboard',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'moderate',
   category: 'operable',
@@ -59,11 +66,11 @@ function runInPage(ctx) {
 
   function hasFocusableCandidate(doc) {
     if (!doc || !doc.querySelectorAll) return false;
-    let els = [];
+    let els;
     try {
       els = doc.querySelectorAll(
         'a[href], area[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), ' +
-        'select:not([disabled]), textarea:not([disabled]), iframe, [contenteditable="true"], [tabindex]'
+          'select:not([disabled]), textarea:not([disabled]), iframe, [contenteditable="true"], [tabindex]'
       );
     } catch {
       return false;
@@ -87,7 +94,9 @@ function runInPage(ctx) {
     return !Number.isNaN(n) && n < 0;
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('iframe, frame') : helpers.queryAll('iframe, frame');
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart('iframe, frame')
+    : helpers.queryAll('iframe, frame');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -96,7 +105,7 @@ function runInPage(ctx) {
     if (!el || !el.getAttribute) continue;
     if (!getNegativeTabIndex(el)) continue;
 
-    let contentDoc = null;
+    let contentDoc;
     try {
       contentDoc = el.contentDocument || null;
     } catch {
@@ -110,12 +119,13 @@ function runInPage(ctx) {
 
     const tag = el.tagName.toLowerCase();
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
     occurrences.push({
       selector: stableSelector,
       html,
-      summary: 'This frame has tabindex="-1" but its content contains focusable elements, which remain reachable by keyboard.',
+      summary:
+        'This frame has tabindex="-1" but its content contains focusable elements, which remain reachable by keyboard.',
       hint: 'Remove focusable content from the frame, or remove tabindex="-1" if the frame is meant to be reachable.',
       i18n: {
         summaryKey: 'iframeFocusableContent_summary_fail',
@@ -132,7 +142,12 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'moderate', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'fail',
+      severity: rule.defaultSeverity || 'moderate',
+      occurrences
+    };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }

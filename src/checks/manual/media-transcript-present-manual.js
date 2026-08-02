@@ -99,20 +99,23 @@ function runInPage(ctx) {
   const __eligCache = new WeakMap();
 
   function getEligibility(node) {
-    if (!node || node.nodeType !== 1) return { eligible: true, reasons: [], targetSet: 'acc', accEligible: null };
+    if (!node || node.nodeType !== 1)
+      return { eligible: true, reasons: [], targetSet: 'acc', accEligible: null };
     const cached = __eligCache.get(node);
     if (cached) return cached;
 
-    let info = null;
+    let info;
     try {
-      info = (helpers && typeof helpers.getEligibilityInfo === 'function')
+      info =
+        helpers && typeof helpers.getEligibilityInfo === 'function'
           ? helpers.getEligibilityInfo(node, ctx, { targetSet: 'acc' })
           : null;
     } catch {
       info = null;
     }
 
-    const norm = (info && typeof info === 'object')
+    const norm =
+      info && typeof info === 'object'
         ? info
         : { eligible: true, reasons: [], targetSet: 'acc', accEligible: null };
 
@@ -169,7 +172,9 @@ function runInPage(ctx) {
       if (hasToken || len >= MIN_DESCRIBEDBY_CHARS_WITHOUT_TOKEN) {
         evidence.strength = 'strong';
         evidence.method = 'aria-describedby';
-        evidence.notes.push('media has aria-describedby with explicit or substantial transcript text');
+        evidence.notes.push(
+          'media has aria-describedby with explicit or substantial transcript text'
+        );
         return evidence;
       }
     }
@@ -193,7 +198,9 @@ function runInPage(ctx) {
               evidence.strength = 'strong';
               evidence.method = 'adjacent-heading';
               evidence.transcriptNodeSelector = nodeRef(h);
-              evidence.notes.push('found transcript heading with substantial visible adjacent text');
+              evidence.notes.push(
+                'found transcript heading with substantial visible adjacent text'
+              );
               return evidence;
             }
           }
@@ -211,7 +218,9 @@ function runInPage(ctx) {
       for (const a of links) {
         if (!isEligible(a)) continue;
 
-        const nameInfo = helpers.getAccessibleNameInfo ? helpers.getAccessibleNameInfo(a, ctx) : null;
+        const nameInfo = helpers.getAccessibleNameInfo
+          ? helpers.getAccessibleNameInfo(a, ctx)
+          : null;
         const linkName = nameInfo && nameInfo.value ? nameInfo.value : getNodeText(a);
         if (!containsTranscriptToken(linkName)) continue;
 
@@ -223,7 +232,9 @@ function runInPage(ctx) {
         if (href.startsWith('#')) {
           const targetId = href.slice(1);
           const target = targetId
-            ? (safeRoot.getElementById ? safeRoot.getElementById(targetId) : document.getElementById(targetId))
+            ? safeRoot.getElementById
+              ? safeRoot.getElementById(targetId)
+              : document.getElementById(targetId)
             : null;
 
           if (isElement(target) && isEligible(target)) {
@@ -242,7 +253,9 @@ function runInPage(ctx) {
             if (hasTranscriptHeading && textLen(targetText) >= MIN_TRANSCRIPT_CHARS) {
               evidence.strength = 'strong';
               evidence.method = 'anchor-target';
-              evidence.notes.push('resolved transcript link to an on-page section with transcript heading and substantial text');
+              evidence.notes.push(
+                'resolved transcript link to an on-page section with transcript heading and substantial text'
+              );
               return evidence;
             }
           }
@@ -250,7 +263,9 @@ function runInPage(ctx) {
           // If anchor cannot be verified, treat as weak (still better than nothing, but not proof).
           evidence.strength = 'weak';
           evidence.method = 'anchor-unverified';
-          evidence.notes.push('transcript link found but anchor target could not be verified as a transcript section');
+          evidence.notes.push(
+            'transcript link found but anchor target could not be verified as a transcript section'
+          );
           return evidence;
         }
 
@@ -296,9 +311,8 @@ function runInPage(ctx) {
     if (evidence.strength === 'none') {
       const baseOccurrence = {
         summary:
-            'A transcript or other text alternative for this time-based media is not strongly evidenced on the page.',
-        hint:
-            'Provide a clearly identified transcript or other text alternative for audio-only/video-only prerecorded media (for example, a “Transcript” section or link).',
+          'A transcript or other text alternative for this time-based media is not strongly evidenced on the page.',
+        hint: 'Provide a clearly identified transcript or other text alternative for audio-only/video-only prerecorded media (for example, a “Transcript” section or link).',
         i18n: {
           summaryKey: 'mediaTranscriptPresent_summary_cantTell_missing',
           hintKey: 'mediaTranscriptPresent_hint_cantTell_missing',
@@ -323,12 +337,10 @@ function runInPage(ctx) {
     }
 
     if (evidence.strength === 'weak') {
-
       const baseOccurrence = {
         summary:
-            'A transcript or other text alternative may be available for this time-based media, but it could not be verified from the page content.',
-        hint:
-            'Ensure a clearly identified transcript or other text alternative is available and programmatically or visibly associated with the media on the page.',
+          'A transcript or other text alternative may be available for this time-based media, but it could not be verified from the page content.',
+        hint: 'Ensure a clearly identified transcript or other text alternative is available and programmatically or visibly associated with the media on the page.',
         i18n: {
           summaryKey: 'mediaTranscriptPresent_summary_cantTell_unverified',
           hintKey: 'mediaTranscriptPresent_hint_cantTell_unverified',
@@ -357,7 +369,12 @@ function runInPage(ctx) {
   }
 
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'cantTell', severity: rule.defaultSeverity || 'minor', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'minor',
+      occurrences
+    };
   }
 
   // Manual rules may only emit cantTell/notApplicable (never pass/fail).

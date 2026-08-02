@@ -111,7 +111,8 @@ const id = 'aria-prohibited-children';
 
 const meta = {
   title: 'Container roles must not own a child with a disallowed role',
-  description: 'Checks that every accessible-tree-owned child of a container role (list, listbox, menu, menubar, radiogroup, rowgroup, table, grid, treegrid, tablist, tree, row) has one of that role\'s allowed owned roles — the same set as its required owned roles.',
+  description:
+    "Checks that every accessible-tree-owned child of a container role (list, listbox, menu, menubar, radiogroup, rowgroup, table, grid, treegrid, tablist, tree, row) has one of that role's allowed owned roles — the same set as its required owned roles.",
   i18n: {
     titleKey: 'ariaProhibitedChildren_title',
     descriptionKey: 'ariaProhibitedChildren_description'
@@ -120,7 +121,13 @@ const meta = {
   tags: ['wcag2a', 'wcag412', 'aria', 'structure', 'atomic', 'automatic'],
   wcagSc: ['4.1.2'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '4.1.2', title: 'Name, Role, Value', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '4.1.2',
+      title: 'Name, Role, Value',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'moderate',
   category: 'robust',
@@ -138,7 +145,8 @@ function runInPage(ctx) {
   }
 
   function isEligibleAcc(el) {
-    const fn = helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+    const fn =
+      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -155,12 +163,30 @@ function runInPage(ctx) {
   // roleless descendant carrying any of these is a real accessible-tree
   // node a widely-used reference engine's getOwnedRoles also flags, not a transparent wrapper.
   const GLOBAL_ARIA_ATTRS = [
-    'aria-atomic', 'aria-braillelabel', 'aria-brailleroledescription', 'aria-busy',
-    'aria-controls', 'aria-current', 'aria-describedby', 'aria-description',
-    'aria-details', 'aria-disabled', 'aria-dropeffect', 'aria-errormessage',
-    'aria-flowto', 'aria-grabbed', 'aria-haspopup', 'aria-hidden', 'aria-invalid',
-    'aria-keyshortcuts', 'aria-label', 'aria-labelledby', 'aria-live', 'aria-owns',
-    'aria-relevant', 'aria-roledescription'
+    'aria-atomic',
+    'aria-braillelabel',
+    'aria-brailleroledescription',
+    'aria-busy',
+    'aria-controls',
+    'aria-current',
+    'aria-describedby',
+    'aria-description',
+    'aria-details',
+    'aria-disabled',
+    'aria-dropeffect',
+    'aria-errormessage',
+    'aria-flowto',
+    'aria-grabbed',
+    'aria-haspopup',
+    'aria-hidden',
+    'aria-invalid',
+    'aria-keyshortcuts',
+    'aria-label',
+    'aria-labelledby',
+    'aria-live',
+    'aria-owns',
+    'aria-relevant',
+    'aria-roledescription'
   ];
 
   function getGlobalAriaAttr(el) {
@@ -195,13 +221,17 @@ function runInPage(ctx) {
 
       const kidRole = ariaHelpers.getContainmentRole(kid);
       const isPresentational = kidRole === 'presentation' || kidRole === 'none';
-      const isTransparentGroup = (kidRole === 'group' || kidRole === 'rowgroup') && requiredSet.has(kidRole);
+      const isTransparentGroup =
+        (kidRole === 'group' || kidRole === 'rowgroup') && requiredSet.has(kidRole);
 
       if (!kidRole && !isPresentational) {
         const globalAttr = getGlobalAriaAttr(kid);
-        let mechanism = 'none';
+        let mechanism;
         try {
-          const fi = helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo(kid, ctx) : null;
+          const fi =
+            helpers && typeof helpers.getFocusableInfo === 'function'
+              ? helpers.getFocusableInfo(kid, ctx)
+              : null;
           mechanism = (fi && fi.focusable && fi.mechanism) || 'none';
         } catch {
           mechanism = 'none';
@@ -230,7 +260,9 @@ function runInPage(ctx) {
     }
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]') : helpers.queryAll('[role]');
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart('[role]')
+    : helpers.queryAll('[role]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -256,7 +288,9 @@ function runInPage(ctx) {
       if (entry.role && requiredSet.has(entry.role)) continue;
 
       const stableSelector = helpers.buildSelector ? helpers.buildSelector(entry.el) : 'html';
-      const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(entry.el) : (entry.el.outerHTML || '');
+      const html = helpers.getOuterHtmlSnippet
+        ? helpers.getOuterHtmlSnippet(entry.el)
+        : entry.el.outerHTML || '';
       const containerSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
 
       const isRoleless = !entry.role;
@@ -313,7 +347,12 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'moderate', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'fail',
+      severity: rule.defaultSeverity || 'moderate',
+      occurrences
+    };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }

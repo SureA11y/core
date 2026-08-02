@@ -33,7 +33,8 @@ const id = 'landmark-contentinfo-is-top-level';
 
 const meta = {
   title: 'Contentinfo landmark must be top-level',
-  description: 'Checks that the contentinfo landmark (role="contentinfo" or a non-nested <footer>) is not nested inside another landmark region.',
+  description:
+    'Checks that the contentinfo landmark (role="contentinfo" or a non-nested <footer>) is not nested inside another landmark region.',
   i18n: {
     titleKey: 'landmarkContentinfoIsTopLevel_title',
     descriptionKey: 'landmarkContentinfoIsTopLevel_description'
@@ -53,7 +54,9 @@ function runInPage(ctx) {
   const { document, root, helpers, rule } = ctx;
 
   function normalizeWs(s) {
-    return String(s || '').replace(/\s+/g, ' ').trim();
+    return String(s || '')
+      .replace(/\s+/g, ' ')
+      .trim();
   }
 
   // Delegates to the shared helpers.getLandmarkNameInfo (aria-label -> aria-labelledby, via the
@@ -113,7 +116,16 @@ function runInPage(ctx) {
     return '';
   }
 
-  const LANDMARK_ROLES = new Set(['banner', 'contentinfo', 'main', 'navigation', 'complementary', 'region', 'form', 'search']);
+  const LANDMARK_ROLES = new Set([
+    'banner',
+    'contentinfo',
+    'main',
+    'navigation',
+    'complementary',
+    'region',
+    'form',
+    'search'
+  ]);
 
   function getLandmarkRole(el) {
     if (!el || !el.getAttribute) return '';
@@ -135,7 +147,7 @@ function runInPage(ctx) {
   }
 
   function hasLandmarkAncestor(el) {
-    const scopeRoots = Array.isArray(root) ? root : (root ? [root] : []);
+    const scopeRoots = Array.isArray(root) ? root : root ? [root] : [];
     let p = el.parentElement;
     while (p) {
       if (getLandmarkRole(p)) return true;
@@ -151,11 +163,12 @@ function runInPage(ctx) {
   // landmark-unique-manual.js's header comment for the real page (Airtable, 2026-07-23)
   // that surfaced this gap: a third-party shadow-DOM-hosted widget's own landmark is
   // invisible to a light-DOM-only query.
-  let nodes = [];
+  let nodes;
   try {
-    nodes = helpers && typeof helpers.queryAllSmart === 'function'
-      ? helpers.queryAllSmart('header, footer, main, nav, aside, section, form, [role]')
-      : document.querySelectorAll('header, footer, main, nav, aside, section, form, [role]');
+    nodes =
+      helpers && typeof helpers.queryAllSmart === 'function'
+        ? helpers.queryAllSmart('header, footer, main, nav, aside, section, form, [role]')
+        : document.querySelectorAll('header, footer, main, nav, aside, section, form, [role]');
   } catch {
     nodes = [];
   }
@@ -177,7 +190,7 @@ function runInPage(ctx) {
     if (!hasLandmarkAncestor(el)) continue;
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
     occurrences.push({
       selector: stableSelector,
@@ -196,7 +209,12 @@ function runInPage(ctx) {
   }
 
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'cantTell', severity: rule.defaultSeverity || 'minor', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'minor',
+      occurrences
+    };
   }
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }

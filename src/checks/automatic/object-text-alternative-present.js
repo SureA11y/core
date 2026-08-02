@@ -22,7 +22,8 @@ const id = 'object-text-alternative-present';
 
 const meta = {
   title: '<object> must provide a text alternative',
-  description: 'Checks that <object> elements provide a text alternative via fallback content or an accessible name.',
+  description:
+    'Checks that <object> elements provide a text alternative via fallback content or an accessible name.',
   i18n: {
     titleKey: 'object_textAltPresent_title',
     descriptionKey: 'object_textAltPresent_description'
@@ -31,7 +32,13 @@ const meta = {
   tags: ['wcag2a', 'wcag111', 'nontext', 'object', 'atomic', 'automatic'],
   wcagSc: ['1.1.1'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '1.1.1', title: 'Non-text Content', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '1.1.1',
+      title: 'Non-text Content',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'serious',
   category: 'perceivable',
@@ -44,33 +51,39 @@ function runInPage(ctx) {
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
-  const queryAllSmart = helpers && typeof helpers.queryAllSmart === 'function' ? helpers.queryAllSmart : null;
-  const queryAll = helpers && typeof helpers.queryAll === 'function'
-    ? helpers.queryAll
-    : (sel) => {
-      try { return safeRoot && safeRoot.querySelectorAll ? Array.from(safeRoot.querySelectorAll(sel)) : []; }
-      catch { return []; }
-    };
+  const queryAllSmart =
+    helpers && typeof helpers.queryAllSmart === 'function' ? helpers.queryAllSmart : null;
+  const queryAll =
+    helpers && typeof helpers.queryAll === 'function'
+      ? helpers.queryAll
+      : (sel) => {
+          try {
+            return safeRoot && safeRoot.querySelectorAll
+              ? Array.from(safeRoot.querySelectorAll(sel))
+              : [];
+          } catch {
+            return [];
+          }
+        };
 
-  const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
-    ? helpers.getEligibilityInfo
-    : null;
+  const getEligibilityInfo =
+    helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
 
-  const isAccTreeEligible = helpers && typeof helpers.isAccTreeEligible === 'function'
-    ? helpers.isAccTreeEligible
-    : null;
+  const isAccTreeEligible =
+    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
 
-  const getFocusableInfo = helpers && typeof helpers.getFocusableInfo === 'function'
-    ? helpers.getFocusableInfo
-    : null;
+  const getFocusableInfo =
+    helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
 
-  const getAriaNameInfo = helpers && typeof helpers.getAriaNameInfo === 'function'
-    ? helpers.getAriaNameInfo
-    : null;
+  const getAriaNameInfo =
+    helpers && typeof helpers.getAriaNameInfo === 'function' ? helpers.getAriaNameInfo : null;
 
   const objects = (() => {
-    try { return Array.from((queryAllSmart ? queryAllSmart('object') : queryAll('object')) || []); }
-    catch { return queryAll('object'); }
+    try {
+      return Array.from((queryAllSmart ? queryAllSmart('object') : queryAll('object')) || []);
+    } catch {
+      return queryAll('object');
+    }
   })();
 
   if (!objects.length) {
@@ -88,11 +101,22 @@ function runInPage(ctx) {
     let aria = null;
 
     if (getAriaNameInfo) {
-      aria = (() => { try { return getAriaNameInfo(el, ctx); } catch { return null; } })();
+      aria = (() => {
+        try {
+          return getAriaNameInfo(el, ctx);
+        } catch {
+          return null;
+        }
+      })();
     }
 
     if (aria && aria.present && trim(aria.value)) {
-      return { present: true, value: trim(aria.value), mechanism: aria.mechanism || 'aria', flags: (aria.flags || []).slice(0) };
+      return {
+        present: true,
+        value: trim(aria.value),
+        mechanism: aria.mechanism || 'aria',
+        flags: (aria.flags || []).slice(0)
+      };
     }
 
     const title = trim(el.getAttribute && el.getAttribute('title'));
@@ -123,20 +147,43 @@ function runInPage(ctx) {
     if (!el || !el.getAttribute) continue;
 
     if (isAccTreeEligible) {
-      const elig = (() => { try { return isAccTreeEligible(el, ctx); } catch { return { eligible: true, reasons: [] }; } })();
+      const elig = (() => {
+        try {
+          return isAccTreeEligible(el, ctx);
+        } catch {
+          return { eligible: true, reasons: [] };
+        }
+      })();
       if (elig && elig.eligible === false) continue;
     }
 
     // role presentation/none exclusion only when not focusable
-    const role = (() => { try { return String(el.getAttribute('role') || '').trim().toLowerCase(); } catch { return ''; } })();
+    const role = (() => {
+      try {
+        return String(el.getAttribute('role') || '')
+          .trim()
+          .toLowerCase();
+      } catch {
+        return '';
+      }
+    })();
     if (role === 'presentation' || role === 'none') {
-      let focusable = false;
+      let focusable;
       if (getFocusableInfo) {
-        const fi = (() => { try { return getFocusableInfo(el, ctx); } catch { return null; } })();
+        const fi = (() => {
+          try {
+            return getFocusableInfo(el, ctx);
+          } catch {
+            return null;
+          }
+        })();
         focusable = !!(fi && fi.focusable);
       } else {
         const tabindex = el.getAttribute('tabindex');
-        focusable = tabindex != null && String(tabindex).trim() !== '' && !Number.isNaN(Number(String(tabindex).trim()));
+        focusable =
+          tabindex != null &&
+          String(tabindex).trim() !== '' &&
+          !Number.isNaN(Number(String(tabindex).trim()));
       }
       if (!focusable) continue;
     }
@@ -147,12 +194,12 @@ function runInPage(ctx) {
 
     // Only compute fallback text if there is no name.
     // (textContent can be expensive; avoid when not needed)
-    const fb = name.present ? { present: false, value: '', mechanism: 'fallback', flags: ['skipped-name-present'] }
-        : computeFallbackText(el);
+    const fb = name.present
+      ? { present: false, value: '', mechanism: 'fallback', flags: ['skipped-name-present'] }
+      : computeFallbackText(el);
 
     const hasTextAlt = !!(name.present || fb.present);
     if (hasTextAlt) continue;
-
 
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
@@ -187,7 +234,12 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
 
-  return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences };
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'fail',
+    severity: rule.defaultSeverity || 'minor',
+    occurrences
+  };
 }
 
 module.exports = { id, meta, runInPage };

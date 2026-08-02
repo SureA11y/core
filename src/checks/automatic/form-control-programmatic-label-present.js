@@ -33,9 +33,27 @@ const meta = {
   tags: ['wcag2a', 'wcag131', 'wcag332', 'wcag412', 'forms', 'labels', 'atomic', 'automatic'],
   wcagSc: ['1.3.1', '3.3.2', '4.1.2'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '1.3.1', title: 'Info and Relationships', conformanceLevel: 'A' },
-    { standard: 'WCAG', version: '2.2', requirement: '3.3.2', title: 'Labels or Instructions', conformanceLevel: 'A' },
-    { standard: 'WCAG', version: '2.2', requirement: '4.1.2', title: 'Name, Role, Value', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '1.3.1',
+      title: 'Info and Relationships',
+      conformanceLevel: 'A'
+    },
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '3.3.2',
+      title: 'Labels or Instructions',
+      conformanceLevel: 'A'
+    },
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '4.1.2',
+      title: 'Name, Role, Value',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'serious',
   category: 'robust',
@@ -53,11 +71,15 @@ const meta = {
 function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
-  const isAccTreeEligible = helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
-  const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
+  const isAccTreeEligible =
+    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+  const getEligibilityInfo =
+    helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
 
-  const getFocusableInfo = helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
-  const getLabelMethod = helpers && typeof helpers.getLabelMethod === 'function' ? helpers.getLabelMethod : null;
+  const getFocusableInfo =
+    helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
+  const getLabelMethod =
+    helpers && typeof helpers.getLabelMethod === 'function' ? helpers.getLabelMethod : null;
 
   const trim = (v) => (v == null ? '' : String(v)).trim();
 
@@ -65,7 +87,14 @@ function runInPage(ctx) {
     applicableCount: 0,
     passCount: 0,
     failCount: 0,
-    byMethod: { label: 0, 'aria-labelledby': 0, 'aria-label': 0, title: 0, placeholder: 0, none: 0 },
+    byMethod: {
+      label: 0,
+      'aria-labelledby': 0,
+      'aria-label': 0,
+      title: 0,
+      placeholder: 0,
+      none: 0
+    },
     weakPassCount: 0
   };
 
@@ -98,7 +127,8 @@ function runInPage(ctx) {
       const r = getLabelMethod(el, ctx);
       const m = r && typeof r.method === 'string' ? r.method : 'none';
       const v = r && r.value != null ? trim(r.value) : '';
-      if (!Object.prototype.hasOwnProperty.call(metrics.byMethod, m)) return { method: 'none', value: '' };
+      if (!Object.prototype.hasOwnProperty.call(metrics.byMethod, m))
+        return { method: 'none', value: '' };
       return { method: m, value: v };
     } catch {
       return { method: 'none', value: '' };
@@ -113,17 +143,21 @@ function runInPage(ctx) {
   const nodes = [];
   try {
     const sel = 'input,select,textarea';
-    const candidates = (helpers && typeof helpers.queryAllSmart === 'function')
-      ? helpers.queryAllSmart(sel)
-      : (helpers && typeof helpers.queryAll === 'function' ? helpers.queryAll(sel) : []);
+    const candidates =
+      helpers && typeof helpers.queryAllSmart === 'function'
+        ? helpers.queryAllSmart(sel)
+        : helpers && typeof helpers.queryAll === 'function'
+          ? helpers.queryAll(sel)
+          : [];
 
-    for (const el of (candidates || [])) {
+    for (const el of candidates || []) {
       if (!el || !el.getAttribute) continue;
       const tag = (el.tagName || '').toLowerCase();
       if (tag === 'input') {
         const t = trim(el.getAttribute('type')).toLowerCase();
         // exclude hidden|submit|reset|button|image
-        if (t === 'hidden' || t === 'submit' || t === 'reset' || t === 'button' || t === 'image') continue;
+        if (t === 'hidden' || t === 'submit' || t === 'reset' || t === 'button' || t === 'image')
+          continue;
       }
       nodes.push(el);
     }
@@ -150,7 +184,7 @@ function runInPage(ctx) {
     if (!isEligibleAcc(el)) continue;
 
     // role="presentation"/"none" exclusion only when NOT focusable
-    let role = '';
+    let role;
     try {
       role = trim(el.getAttribute('role')).toLowerCase();
     } catch {
@@ -191,7 +225,15 @@ function runInPage(ctx) {
 
     metrics.failCount += 1;
 
-    const vf = getEligibilityInfo ? (() => { try { return getEligibilityInfo(el, ctx, { targetSet: 'acc' }); } catch { return null; } })() : null;
+    const vf = getEligibilityInfo
+      ? (() => {
+          try {
+            return getEligibilityInfo(el, ctx, { targetSet: 'acc' });
+          } catch {
+            return null;
+          }
+        })()
+      : null;
 
     const baseOccurrence = {
       summary: 'Form control is missing a programmatic label.',

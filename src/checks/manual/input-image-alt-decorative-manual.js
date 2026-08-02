@@ -11,20 +11,27 @@
  *   Human review is required to confirm that the provided text alternative is accurate and appropriate.
  */
 
-const id = "input-image-alt-decorative";
+const id = 'input-image-alt-decorative';
 
 const meta = {
-  title: "<input type=\"image\"> with alt=\"\" must be appropriate (manual review)",
-  description: "Flags <input type=\"image\"> elements with empty alt for human review (usually not appropriate for functional controls).",
+  title: '<input type="image"> with alt="" must be appropriate (manual review)',
+  description:
+    'Flags <input type="image"> elements with empty alt for human review (usually not appropriate for functional controls).',
   i18n: {
-    titleKey: "inputImage_altDecorative_title",
-    descriptionKey: "inputImage_altDecorative_description"
+    titleKey: 'inputImage_altDecorative_title',
+    descriptionKey: 'inputImage_altDecorative_description'
   },
   helpUrl: null,
-  tags: ["wcag2a", "wcag111", "forms", "images", "manual", "atomic"],
+  tags: ['wcag2a', 'wcag111', 'forms', 'images', 'manual', 'atomic'],
   wcagSc: ['1.1.1'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '1.1.1', title: 'Non-text Content', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '1.1.1',
+      title: 'Non-text Content',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'minor',
   category: 'perceivable',
@@ -38,107 +45,133 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const { document, root, helpers, rule } = ctx;
+  const safeRoot = root || document;
 
-    const { document, root, helpers, rule } = ctx;
-    const safeRoot = root || document;
-
-    const queryAllSmart = helpers && typeof helpers.queryAllSmart === 'function' ? helpers.queryAllSmart : null;
-    const queryAll = helpers && typeof helpers.queryAll === 'function'
-        ? helpers.queryAll
-        : (sel) => {
-            try { return safeRoot && safeRoot.querySelectorAll ? Array.from(safeRoot.querySelectorAll(sel)) : []; }
-            catch { return []; }
+  const queryAllSmart =
+    helpers && typeof helpers.queryAllSmart === 'function' ? helpers.queryAllSmart : null;
+  const queryAll =
+    helpers && typeof helpers.queryAll === 'function'
+      ? helpers.queryAll
+      : (sel) => {
+          try {
+            return safeRoot && safeRoot.querySelectorAll
+              ? Array.from(safeRoot.querySelectorAll(sel))
+              : [];
+          } catch {
+            return [];
+          }
         };
 
-    const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
-        ? helpers.getEligibilityInfo
-        : null;
+  const getEligibilityInfo =
+    helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
 
-    const isAccTreeEligible = helpers && typeof helpers.isAccTreeEligible === 'function'
-        ? helpers.isAccTreeEligible
-        : null;
+  const isAccTreeEligible =
+    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
 
-    const getFocusableInfo = helpers && typeof helpers.getFocusableInfo === 'function'
-        ? helpers.getFocusableInfo
-        : null;
+  const getFocusableInfo =
+    helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
 
-    function isRolePresentationExcluded(el) {
-        const role = (() => {
-            try { return String(el.getAttribute('role') || '').trim().toLowerCase(); }
-            catch { return ''; }
-        })();
-        if (role !== 'presentation' && role !== 'none') return false;
-
-        // Exclude only when NOT focusable (mirrors img-alt-present policy)
-        let focusable = false;
-        if (getFocusableInfo) {
-            const fi = (() => { try { return getFocusableInfo(el, ctx); } catch { return null; } })();
-            focusable = !!(fi && fi.focusable);
-        } else {
-            const tabindex = el.getAttribute('tabindex');
-            focusable = tabindex != null && String(tabindex).trim() !== '' && !Number.isNaN(Number(String(tabindex).trim()));
-        }
-        return !focusable;
-    }
-
-
-    const els = (() => {
-        try { return Array.from((queryAllSmart ? queryAllSmart('input[type="image"]') : queryAll('input[type="image"]')) || []); }
-        catch { return queryAll('input[type="image"]'); }
+  function isRolePresentationExcluded(el) {
+    const role = (() => {
+      try {
+        return String(el.getAttribute('role') || '')
+          .trim()
+          .toLowerCase();
+      } catch {
+        return '';
+      }
     })();
+    if (role !== 'presentation' && role !== 'none') return false;
 
-    if (!els.length) {
-        return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
-    }
-
-    const occurrences = [];
-    let applicableCount = 0;
-
-    for (const el of els) {
-        if (!el || !el.getAttribute) continue;
-
-        if (isAccTreeEligible) {
-            const elig = (() => {
-                try { return isAccTreeEligible(el, ctx); } catch { return { eligible: true, reasons: [] }; }
-            })();
-            if (elig && elig.eligible === false) continue;
+    // Exclude only when NOT focusable (mirrors img-alt-present policy)
+    let focusable;
+    if (getFocusableInfo) {
+      const fi = (() => {
+        try {
+          return getFocusableInfo(el, ctx);
+        } catch {
+          return null;
         }
+      })();
+      focusable = !!(fi && fi.focusable);
+    } else {
+      const tabindex = el.getAttribute('tabindex');
+      focusable =
+        tabindex != null &&
+        String(tabindex).trim() !== '' &&
+        !Number.isNaN(Number(String(tabindex).trim()));
+    }
+    return !focusable;
+  }
 
-        if (isRolePresentationExcluded(el)) continue;
+  const els = (() => {
+    try {
+      return Array.from(
+        (queryAllSmart ? queryAllSmart('input[type="image"]') : queryAll('input[type="image"]')) ||
+          []
+      );
+    } catch {
+      return queryAll('input[type="image"]');
+    }
+  })();
 
-        // Rule-specific applicability (only elements that already have a text alternative mechanism)
-        if (!((el.getAttribute('alt') != null && String(el.getAttribute('alt')).trim() === ''))) continue;
+  if (!els.length) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
 
-        applicableCount += 1;
+  const occurrences = [];
+  let applicableCount = 0;
 
-        const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
+  for (const el of els) {
+    if (!el || !el.getAttribute) continue;
 
-        const baseOccurrence = {
-            summary: 'Review <input type="image"> with alt="".',
-            hint: 'This control is typically functional. Confirm it has an equivalent accessible name elsewhere, or provide meaningful alt text.',
-            i18n: {
-                summaryKey: 'inputImage_altDecorative_summary_cantTell',
-                hintKey: 'inputImage_altDecorative_hint_cantTell',
-                params: { element: 'input[type=image]' }
-            },
-            data: {
-                visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
-                details: null
-            }
-        };
-
-        if (helpers && typeof helpers.reportOccurrence === 'function') {
-            occurrences.push(helpers.reportOccurrence(el, baseOccurrence));
-        } else {
-            occurrences.push({ selector: '', html: '', ...baseOccurrence });
+    if (isAccTreeEligible) {
+      const elig = (() => {
+        try {
+          return isAccTreeEligible(el, ctx);
+        } catch {
+          return { eligible: true, reasons: [] };
         }
+      })();
+      if (elig && elig.eligible === false) continue;
     }
 
-    if (applicableCount === 0) {
-        return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
-    }
+    if (isRolePresentationExcluded(el)) continue;
 
-    return { ruleId: rule.ruleId, outcome: 'cantTell', severity: 'minor', occurrences };
+    // Rule-specific applicability (only elements that already have a text alternative mechanism)
+    if (!(el.getAttribute('alt') != null && String(el.getAttribute('alt')).trim() === '')) continue;
+
+    applicableCount += 1;
+
+    const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
+
+    const baseOccurrence = {
+      summary: 'Review <input type="image"> with alt="".',
+      hint: 'This control is typically functional. Confirm it has an equivalent accessible name elsewhere, or provide meaningful alt text.',
+      i18n: {
+        summaryKey: 'inputImage_altDecorative_summary_cantTell',
+        hintKey: 'inputImage_altDecorative_hint_cantTell',
+        params: { element: 'input[type=image]' }
+      },
+      data: {
+        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
+        details: null
+      }
+    };
+
+    if (helpers && typeof helpers.reportOccurrence === 'function') {
+      occurrences.push(helpers.reportOccurrence(el, baseOccurrence));
+    } else {
+      occurrences.push({ selector: '', html: '', ...baseOccurrence });
+    }
+  }
+
+  if (applicableCount === 0) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+
+  return { ruleId: rule.ruleId, outcome: 'cantTell', severity: 'minor', occurrences };
 }
 
 module.exports = { id, meta, runInPage };

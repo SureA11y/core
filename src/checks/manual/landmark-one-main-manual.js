@@ -78,7 +78,7 @@ function runInPage(ctx) {
   }
 
   function getExplicitRoleToken(el) {
-    const raw = (el.getAttribute && el.getAttribute('role') || '').trim();
+    const raw = ((el.getAttribute && el.getAttribute('role')) || '').trim();
     if (!raw) return '';
     return raw.split(/\s+/)[0].toLowerCase();
   }
@@ -91,7 +91,8 @@ function runInPage(ctx) {
     return tag === 'main';
   }
 
-  const isAccTreeEligible = helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+  const isAccTreeEligible =
+    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
 
   function isExposedToAt(el) {
     if (!isAccTreeEligible) return true;
@@ -108,11 +109,12 @@ function runInPage(ctx) {
   // landmark-unique-manual.js's header comment for the real page (Airtable, 2026-07-23)
   // that surfaced this gap: a third-party shadow-DOM-hosted widget's own landmark is
   // invisible to a light-DOM-only query.
-  let nodes = [];
+  let nodes;
   try {
-    nodes = helpers && typeof helpers.queryAllSmart === 'function'
-      ? helpers.queryAllSmart('main, [role]')
-      : document.querySelectorAll('main, [role]');
+    nodes =
+      helpers && typeof helpers.queryAllSmart === 'function'
+        ? helpers.queryAllSmart('main, [role]')
+        : document.querySelectorAll('main, [role]');
   } catch {
     nodes = [];
   }
@@ -133,26 +135,30 @@ function runInPage(ctx) {
   }
 
   const stableSelector = helpers.buildSelector ? helpers.buildSelector(body) : 'body';
-  const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(body) : (body.outerHTML || '').slice(0, 200);
+  const html = helpers.getOuterHtmlSnippet
+    ? helpers.getOuterHtmlSnippet(body)
+    : (body.outerHTML || '').slice(0, 200);
 
   return {
     ruleId: rule.ruleId,
     outcome: 'cantTell',
     severity: rule.defaultSeverity || 'minor',
-    occurrences: [{
-      selector: stableSelector,
-      html,
-      summary: 'This page has no main landmark.',
-      hint: 'Add a main landmark (<main> or role="main") around the page\'s primary content.',
-      i18n: {
-        summaryKey: 'landmarkOneMain_summary_cantTell_missing',
-        hintKey: 'landmarkOneMain_hint_cantTell_missing',
-        params: {}
-      },
-      data: {
-        details: { reasonCode: 'LANDMARK_MAIN_MISSING' }
+    occurrences: [
+      {
+        selector: stableSelector,
+        html,
+        summary: 'This page has no main landmark.',
+        hint: 'Add a main landmark (<main> or role="main") around the page\'s primary content.',
+        i18n: {
+          summaryKey: 'landmarkOneMain_summary_cantTell_missing',
+          hintKey: 'landmarkOneMain_hint_cantTell_missing',
+          params: {}
+        },
+        data: {
+          details: { reasonCode: 'LANDMARK_MAIN_MISSING' }
+        }
       }
-    }]
+    ]
   };
 }
 

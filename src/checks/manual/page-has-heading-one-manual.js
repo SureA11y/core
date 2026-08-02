@@ -37,7 +37,8 @@ const id = 'page-has-heading-one';
 
 const meta = {
   title: 'Page should have a level-one heading',
-  description: 'Checks that the page has at least one level-one heading (<h1> or role="heading" with aria-level="1").',
+  description:
+    'Checks that the page has at least one level-one heading (<h1> or role="heading" with aria-level="1").',
   i18n: {
     titleKey: 'pageHasHeadingOne_title',
     descriptionKey: 'pageHasHeadingOne_description'
@@ -70,7 +71,9 @@ function runInPage(ctx) {
   }
 
   function normalizeWs(s) {
-    return String(s || '').replace(/\s+/g, ' ').trim();
+    return String(s || '')
+      .replace(/\s+/g, ' ')
+      .trim();
   }
 
   function getExplicitRoleToken(el) {
@@ -90,7 +93,8 @@ function runInPage(ctx) {
     return tag === 'h1';
   }
 
-  const isAccTreeEligible = helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+  const isAccTreeEligible =
+    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
 
   function isExposedToAt(el) {
     if (!isAccTreeEligible) return true;
@@ -105,11 +109,12 @@ function runInPage(ctx) {
 
   // queryAllSmart (shadow-DOM-aware) instead of plain document.querySelectorAll -- see
   // landmark-one-main-manual.js's identical precedent.
-  let nodes = [];
+  let nodes;
   try {
-    nodes = helpers && typeof helpers.queryAllSmart === 'function'
-      ? helpers.queryAllSmart('h1, [role]')
-      : document.querySelectorAll('h1, [role]');
+    nodes =
+      helpers && typeof helpers.queryAllSmart === 'function'
+        ? helpers.queryAllSmart('h1, [role]')
+        : document.querySelectorAll('h1, [role]');
   } catch {
     nodes = [];
   }
@@ -121,26 +126,30 @@ function runInPage(ctx) {
   }
 
   const stableSelector = helpers.buildSelector ? helpers.buildSelector(body) : 'body';
-  const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(body) : (body.outerHTML || '').slice(0, 200);
+  const html = helpers.getOuterHtmlSnippet
+    ? helpers.getOuterHtmlSnippet(body)
+    : (body.outerHTML || '').slice(0, 200);
 
   return {
     ruleId: rule.ruleId,
     outcome: 'cantTell',
     severity: rule.defaultSeverity || 'minor',
-    occurrences: [{
-      selector: stableSelector,
-      html,
-      summary: 'This page has no level-one heading.',
-      hint: 'Add a level-one heading (<h1> or role="heading" aria-level="1") that identifies the page\'s main content.',
-      i18n: {
-        summaryKey: 'pageHasHeadingOne_summary_cantTell',
-        hintKey: 'pageHasHeadingOne_hint_cantTell',
-        params: {}
-      },
-      data: {
-        details: { reasonCode: 'HEADING_ONE_MISSING' }
+    occurrences: [
+      {
+        selector: stableSelector,
+        html,
+        summary: 'This page has no level-one heading.',
+        hint: 'Add a level-one heading (<h1> or role="heading" aria-level="1") that identifies the page\'s main content.',
+        i18n: {
+          summaryKey: 'pageHasHeadingOne_summary_cantTell',
+          hintKey: 'pageHasHeadingOne_hint_cantTell',
+          params: {}
+        },
+        data: {
+          details: { reasonCode: 'HEADING_ONE_MISSING' }
+        }
       }
-    }]
+    ]
   };
 }
 

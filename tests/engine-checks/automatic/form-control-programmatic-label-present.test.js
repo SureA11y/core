@@ -71,7 +71,7 @@ test('fail: <label for> whose only text is aria-hidden gives no real accessible 
   assert.ok(hasOccurrenceForId(rule, 'b'));
 });
 
-test('pass: <label for> with empty content falls back to the label\'s own title attribute', () => {
+test("pass: <label for> with empty content falls back to the label's own title attribute", () => {
   // Regression for a real false positive found via a full fixtures
   // cross-engine regression 2026-08-02, on
   // slider-name-present-all-scenarios.html's case_22 (designed for a

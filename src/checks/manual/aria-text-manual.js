@@ -29,7 +29,8 @@ const id = 'aria-text';
 
 const meta = {
   title: 'role="text" elements should have no focusable descendants',
-  description: 'Checks that elements with role="text" contain no focusable descendant (link, button, form control, tabindex, iframe, or contenteditable).',
+  description:
+    'Checks that elements with role="text" contain no focusable descendant (link, button, form control, tabindex, iframe, or contenteditable).',
   i18n: {
     titleKey: 'ariaText_title',
     descriptionKey: 'ariaText_description'
@@ -51,7 +52,9 @@ function runInPage(ctx) {
   const FOCUSABLE_DESCENDANT_SELECTOR =
     'a[href], button, input, select, textarea, [tabindex], iframe, [contenteditable]:not([contenteditable="false"])';
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role="text"]') : helpers.queryAll('[role="text"]');
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart('[role="text"]')
+    : helpers.queryAll('[role="text"]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -61,7 +64,7 @@ function runInPage(ctx) {
 
     applicableCount += 1;
 
-    let focusableDescendant = null;
+    let focusableDescendant;
     try {
       focusableDescendant = el.querySelector(FOCUSABLE_DESCENDANT_SELECTOR);
     } catch {
@@ -70,7 +73,7 @@ function runInPage(ctx) {
     if (!focusableDescendant) continue;
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
     const baseOccurrence = {
       selector: stableSelector,
@@ -99,7 +102,12 @@ function runInPage(ctx) {
   }
 
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'cantTell', severity: rule.defaultSeverity || 'minor', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'minor',
+      occurrences
+    };
   }
 
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };

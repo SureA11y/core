@@ -20,7 +20,8 @@ const id = 'area-alt-present';
 
 const meta = {
   title: '&lt;area&gt; must have an alt attribute',
-  description: 'Checks that &lt;area&gt; elements provide an alt attribute to support a text alternative mechanism.',
+  description:
+    'Checks that &lt;area&gt; elements provide an alt attribute to support a text alternative mechanism.',
   i18n: {
     titleKey: 'area_altPresent_title',
     descriptionKey: 'area_altPresent_description'
@@ -29,7 +30,13 @@ const meta = {
   tags: ['wcag2a', 'wcag111', 'nontext', 'images', 'imagemap', 'atomic', 'automatic'],
   wcagSc: ['1.1.1'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '1.1.1', title: 'Non-text Content', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '1.1.1',
+      title: 'Non-text Content',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'serious',
   category: 'perceivable',
@@ -46,25 +53,29 @@ function runInPage(ctx) {
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
-  const queryAllSmart = helpers && typeof helpers.queryAllSmart === 'function' ? helpers.queryAllSmart : null;
-  const queryAll = helpers && typeof helpers.queryAll === 'function'
+  const queryAllSmart =
+    helpers && typeof helpers.queryAllSmart === 'function' ? helpers.queryAllSmart : null;
+  const queryAll =
+    helpers && typeof helpers.queryAll === 'function'
       ? helpers.queryAll
       : (sel) => {
-        try { return safeRoot && safeRoot.querySelectorAll ? Array.from(safeRoot.querySelectorAll(sel)) : []; }
-        catch { return []; }
-      };
+          try {
+            return safeRoot && safeRoot.querySelectorAll
+              ? Array.from(safeRoot.querySelectorAll(sel))
+              : [];
+          } catch {
+            return [];
+          }
+        };
 
-  const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
-      ? helpers.getEligibilityInfo
-      : null;
+  const getEligibilityInfo =
+    helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
 
-  const isAccTreeEligible = helpers && typeof helpers.isAccTreeEligible === 'function'
-      ? helpers.isAccTreeEligible
-      : null;
+  const isAccTreeEligible =
+    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
 
-  const getAriaNameInfo = helpers && typeof helpers.getAriaNameInfo === 'function'
-      ? helpers.getAriaNameInfo
-      : null;
+  const getAriaNameInfo =
+    helpers && typeof helpers.getAriaNameInfo === 'function' ? helpers.getAriaNameInfo : null;
 
   // --- image-map semantics (rule-local) ---
 
@@ -72,7 +83,7 @@ function runInPage(ctx) {
     try {
       const s = String(val || '').trim();
       if (!s) return '';
-      return (s[0] === '#') ? s.slice(1).trim().toLowerCase() : s.toLowerCase();
+      return s[0] === '#' ? s.slice(1).trim().toLowerCase() : s.toLowerCase();
     } catch {
       return '';
     }
@@ -92,7 +103,8 @@ function runInPage(ctx) {
   const __usemapIndex = (() => {
     const idx = new Map();
     try {
-      const imgs = document && document.querySelectorAll ? document.querySelectorAll('img[usemap]') : [];
+      const imgs =
+        document && document.querySelectorAll ? document.querySelectorAll('img[usemap]') : [];
       for (const img of imgs) {
         if (!img || !img.getAttribute) continue;
         const u = normUsemap(img.getAttribute('usemap'));
@@ -120,8 +132,11 @@ function runInPage(ctx) {
   }
 
   const areas = (() => {
-    try { return Array.from((queryAllSmart ? queryAllSmart('area') : queryAll('area')) || []); }
-    catch { return queryAll('area'); }
+    try {
+      return Array.from((queryAllSmart ? queryAllSmart('area') : queryAll('area')) || []);
+    } catch {
+      return queryAll('area');
+    }
   })();
 
   if (!areas.length) {
@@ -143,7 +158,11 @@ function runInPage(ctx) {
     // This is the "visibility of map/area doesn't matter; the image does" policy.
     if (isAccTreeEligible) {
       const imgElig = (() => {
-        try { return isAccTreeEligible(img, ctx); } catch { return { eligible: true, reasons: [] }; }
+        try {
+          return isAccTreeEligible(img, ctx);
+        } catch {
+          return { eligible: true, reasons: [] };
+        }
       })();
       if (imgElig && imgElig.eligible === false) continue;
     }
@@ -151,7 +170,11 @@ function runInPage(ctx) {
     // 2) The <area> itself must be eligible (aria-hidden/inert exceptions handled by helper).
     if (isAccTreeEligible) {
       const elig = (() => {
-        try { return isAccTreeEligible(el, ctx); } catch { return { eligible: true, reasons: [] }; }
+        try {
+          return isAccTreeEligible(el, ctx);
+        } catch {
+          return { eligible: true, reasons: [] };
+        }
       })();
       if (elig && elig.eligible === false) continue;
     }
@@ -166,7 +189,7 @@ function runInPage(ctx) {
     // text-alternative mechanism for <area> (HTML-AAM accessible name
     // computation includes ARIA naming before falling back to alt).
     if (getAriaNameInfo) {
-      let ariaName = null;
+      let ariaName;
       try {
         ariaName = getAriaNameInfo(el, ctx);
       } catch {
@@ -182,7 +205,13 @@ function runInPage(ctx) {
     // sibling fix (2026-07-23, AliExpress's title-only logo <img>) for
     // the real page this was found via -- same gap, same fix, different
     // element.
-    const titleRaw = (() => { try { return el.getAttribute('title'); } catch { return null; } })();
+    const titleRaw = (() => {
+      try {
+        return el.getAttribute('title');
+      } catch {
+        return null;
+      }
+    })();
     if (titleRaw !== null && String(titleRaw).trim()) continue;
 
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
@@ -219,7 +248,12 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
 
-  return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences };
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'fail',
+    severity: rule.defaultSeverity || 'minor',
+    occurrences
+  };
 }
 
 module.exports = { id, meta, runInPage };

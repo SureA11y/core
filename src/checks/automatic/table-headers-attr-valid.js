@@ -25,7 +25,8 @@ const id = 'table-headers-attr-valid';
 
 const meta = {
   title: 'Table cell "headers" attribute must reference valid header cells',
-  description: 'Checks that each id in a <td>/<th> headers attribute resolves to a <th> element within the same table (not missing, not a non-th element, not itself).',
+  description:
+    'Checks that each id in a <td>/<th> headers attribute resolves to a <th> element within the same table (not missing, not a non-th element, not itself).',
   i18n: {
     titleKey: 'tableHeadersAttrValid_title',
     descriptionKey: 'tableHeadersAttrValid_description'
@@ -34,7 +35,13 @@ const meta = {
   tags: ['wcag2a', 'wcag131', 'structure', 'atomic', 'automatic', 'table'],
   wcagSc: ['1.3.1'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '1.3.1', title: 'Info and Relationships', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '1.3.1',
+      title: 'Info and Relationships',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'serious',
   category: 'perceivable',
@@ -46,7 +53,9 @@ const meta = {
 function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('td[headers], th[headers]') : helpers.queryAll('td[headers], th[headers]');
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart('td[headers], th[headers]')
+    : helpers.queryAll('td[headers], th[headers]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -65,7 +74,7 @@ function runInPage(ctx) {
     const invalid = [];
 
     for (const headerId of ids) {
-      let ref = null;
+      let ref;
       try {
         ref = document.getElementById(headerId);
       } catch {
@@ -95,7 +104,7 @@ function runInPage(ctx) {
 
     const tag = el.tagName.toLowerCase();
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
     occurrences.push({
       selector: stableSelector,
@@ -117,7 +126,12 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'serious', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'fail',
+      severity: rule.defaultSeverity || 'serious',
+      occurrences
+    };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }

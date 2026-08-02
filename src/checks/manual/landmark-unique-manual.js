@@ -31,7 +31,8 @@ const id = 'landmark-unique';
 
 const meta = {
   title: 'Landmarks with the same role must have unique names',
-  description: 'Checks that when two or more landmarks share the same role, each has a distinct accessible name.',
+  description:
+    'Checks that when two or more landmarks share the same role, each has a distinct accessible name.',
   i18n: {
     titleKey: 'landmarkUnique_title',
     descriptionKey: 'landmarkUnique_description'
@@ -51,7 +52,9 @@ function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
   function normalizeWs(s) {
-    return String(s || '').replace(/\s+/g, ' ').trim();
+    return String(s || '')
+      .replace(/\s+/g, ' ')
+      .trim();
   }
 
   // Delegates to the shared helpers.getLandmarkNameInfo (aria-label -> aria-labelledby, via the
@@ -124,7 +127,16 @@ function runInPage(ctx) {
     return '';
   }
 
-  const LANDMARK_ROLES = new Set(['banner', 'contentinfo', 'main', 'navigation', 'complementary', 'region', 'form', 'search']);
+  const LANDMARK_ROLES = new Set([
+    'banner',
+    'contentinfo',
+    'main',
+    'navigation',
+    'complementary',
+    'region',
+    'form',
+    'search'
+  ]);
 
   function getLandmarkRole(el) {
     if (!el || !el.getAttribute) return '';
@@ -152,7 +164,8 @@ function runInPage(ctx) {
     return getImplicitLandmarkRole(el);
   }
 
-  const isAccTreeEligible = helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+  const isAccTreeEligible =
+    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
 
   function isExposedToAt(el) {
     if (!isAccTreeEligible) return true;
@@ -172,11 +185,12 @@ function runInPage(ctx) {
   // own landmark-unique (a real browser DOM, shadow roots included by design) correctly sees as colliding
   // with the page's own unnamed header <nav>/page <footer> -- a real, confirmed surea11y
   // false-negative miss, invisible to plain querySelectorAll's light-DOM-only reach.
-  let nodes = [];
+  let nodes;
   try {
-    nodes = helpers && typeof helpers.queryAllSmart === 'function'
-      ? helpers.queryAllSmart('header, footer, main, nav, aside, section, form, [role]')
-      : document.querySelectorAll('header, footer, main, nav, aside, section, form, [role]');
+    nodes =
+      helpers && typeof helpers.queryAllSmart === 'function'
+        ? helpers.queryAllSmart('header, footer, main, nav, aside, section, form, [role]')
+        : document.querySelectorAll('header, footer, main, nav, aside, section, form, [role]');
   } catch {
     nodes = [];
   }
@@ -221,24 +235,31 @@ function runInPage(ctx) {
 
       for (const { el } of group) {
         const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-        const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+        const html = helpers.getOuterHtmlSnippet
+          ? helpers.getOuterHtmlSnippet(el)
+          : el.outerHTML || '';
 
         occurrences.push({
           selector: stableSelector,
           html,
           summary: normalizedName
-              ? `This ${role} landmark shares its accessible name with another ${role} landmark.`
-              : `This ${role} landmark has no accessible name, and more than one unnamed ${role} landmark exists on this page.`,
+            ? `This ${role} landmark shares its accessible name with another ${role} landmark.`
+            : `This ${role} landmark has no accessible name, and more than one unnamed ${role} landmark exists on this page.`,
           hint: `Give each ${role} landmark a distinct name via aria-label or aria-labelledby.`,
           i18n: {
             summaryKey: normalizedName
-                ? 'landmarkUnique_summary_cantTell_duplicateName'
-                : 'landmarkUnique_summary_cantTell_bothUnnamed',
+              ? 'landmarkUnique_summary_cantTell_duplicateName'
+              : 'landmarkUnique_summary_cantTell_bothUnnamed',
             hintKey: 'landmarkUnique_hint_cantTell',
             params: { role }
           },
           data: {
-            details: { reasonCode: 'LANDMARK_NOT_UNIQUE', role, name: normalizedName, groupSize: group.length }
+            details: {
+              reasonCode: 'LANDMARK_NOT_UNIQUE',
+              role,
+              name: normalizedName,
+              groupSize: group.length
+            }
           }
         });
       }
@@ -248,7 +269,12 @@ function runInPage(ctx) {
   if (!occurrences.length) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  return { ruleId: rule.ruleId, outcome: 'cantTell', severity: rule.defaultSeverity || 'minor', occurrences };
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'cantTell',
+    severity: rule.defaultSeverity || 'minor',
+    occurrences
+  };
 }
 
 module.exports = { id, meta, runInPage };

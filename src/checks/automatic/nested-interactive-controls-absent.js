@@ -34,7 +34,8 @@ const id = 'nested-interactive-controls-absent';
 
 const meta = {
   title: 'Interactive controls must not be nested',
-  description: 'Checks that an interactive control (link, button, form control, or ARIA widget role) does not contain another interactive control.',
+  description:
+    'Checks that an interactive control (link, button, form control, or ARIA widget role) does not contain another interactive control.',
   i18n: {
     titleKey: 'nestedInteractiveControlsAbsent_title',
     descriptionKey: 'nestedInteractiveControlsAbsent_description'
@@ -43,7 +44,13 @@ const meta = {
   tags: ['wcag2a', 'wcag412', 'structure', 'atomic', 'automatic'],
   wcagSc: ['4.1.2'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '4.1.2', title: 'Name, Role, Value', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '4.1.2',
+      title: 'Name, Role, Value',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'serious',
   category: 'robust',
@@ -82,7 +89,9 @@ function runInPage(ctx) {
     '[role="treeitem"]'
   ].join(', ');
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(INTERACTIVE_SELECTOR) : helpers.queryAll(INTERACTIVE_SELECTOR);
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart(INTERACTIVE_SELECTOR)
+    : helpers.queryAll(INTERACTIVE_SELECTOR);
 
   const occurrences = [];
   let applicableCount = 0;
@@ -92,7 +101,7 @@ function runInPage(ctx) {
 
     applicableCount += 1;
 
-    let nested = [];
+    let nested;
     try {
       nested = Array.from(el.querySelectorAll(INTERACTIVE_SELECTOR));
     } catch {
@@ -101,11 +110,13 @@ function runInPage(ctx) {
     if (!nested.length) continue;
 
     const nestedTags = nested.map((n) => (n && n.tagName ? n.tagName.toLowerCase() : 'unknown'));
-    const dedupedNestedTags = [...new Set(nested.map((n) => (n && n.tagName ? n.tagName.toLowerCase() : 'unknown')))];
+    const dedupedNestedTags = [
+      ...new Set(nested.map((n) => (n && n.tagName ? n.tagName.toLowerCase() : 'unknown')))
+    ];
 
     const tag = el.tagName.toLowerCase();
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
     occurrences.push({
       selector: stableSelector,
@@ -118,7 +129,11 @@ function runInPage(ctx) {
         params: { element: tag, nestedElements: dedupedNestedTags.join(', ') }
       },
       data: {
-        details: { reasonCode: 'NESTED_INTERACTIVE_CONTROL', element: tag, nestedElements: nestedTags }
+        details: {
+          reasonCode: 'NESTED_INTERACTIVE_CONTROL',
+          element: tag,
+          nestedElements: nestedTags
+        }
       }
     });
   }
@@ -127,7 +142,12 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'serious', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'fail',
+      severity: rule.defaultSeverity || 'serious',
+      occurrences
+    };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }

@@ -35,8 +35,20 @@ const meta = {
   tags: ['wcag2a', 'wcag2aa', 'wcag412', 'structure', 'aria', 'focus', 'atomic', 'automatic'],
   wcagSc: ['4.1.2'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '2.4.7', title: 'Focus Visible', conformanceLevel: 'AA' },
-    { standard: 'WCAG', version: '2.2', requirement: '4.1.2', title: 'Name, Role, Value', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '2.4.7',
+      title: 'Focus Visible',
+      conformanceLevel: 'AA'
+    },
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '4.1.2',
+      title: 'Name, Role, Value',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'serious',
   category: 'robust',
@@ -53,19 +65,24 @@ function runInPage(ctx) {
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
-  const queryAllSmart = helpers && typeof helpers.queryAllSmart === 'function' ? helpers.queryAllSmart : null;
+  const queryAllSmart =
+    helpers && typeof helpers.queryAllSmart === 'function' ? helpers.queryAllSmart : null;
 
-  const getFocusableInfo = helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
+  const getFocusableInfo =
+    helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
 
   // Used only to exclude non-rendered elements; we explicitly DO NOT exclude opacity:0.
-  const isDomVisibleEligible = helpers && typeof helpers.isDomVisibleEligible === 'function' ? helpers.isDomVisibleEligible : null;
+  const isDomVisibleEligible =
+    helpers && typeof helpers.isDomVisibleEligible === 'function'
+      ? helpers.isDomVisibleEligible
+      : null;
 
-  const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
+  const getEligibilityInfo =
+    helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
 
   // Prefer helper occurrence wrapper so the engine can attach selector/snippet later.
-  const reportOccurrence = helpers && typeof helpers.reportOccurrence === 'function'
-    ? helpers.reportOccurrence
-    : null;
+  const reportOccurrence =
+    helpers && typeof helpers.reportOccurrence === 'function' ? helpers.reportOccurrence : null;
 
   const trim = (v) => (v == null ? '' : String(v)).trim();
   const lower = (v) => trim(v).toLowerCase();
@@ -81,7 +98,8 @@ function runInPage(ctx) {
       // fall through
     }
     try {
-      if (safeRoot && typeof safeRoot.querySelectorAll === 'function') return Array.from(safeRoot.querySelectorAll(sel));
+      if (safeRoot && typeof safeRoot.querySelectorAll === 'function')
+        return Array.from(safeRoot.querySelectorAll(sel));
     } catch {
       // fall through
     }
@@ -92,9 +110,12 @@ function runInPage(ctx) {
   // host) — shared with every other rule via ctx.helpers.composedParent
   // (src/core/dom-helpers.js), not reimplemented here, so a fix to the one
   // canonical definition can't drift out of sync with this rule's copy.
-  const composedParent = helpers && typeof helpers.composedParent === 'function'
-    ? helpers.composedParent
-    : function (n) { return n && n.parentElement ? n.parentElement : null; };
+  const composedParent =
+    helpers && typeof helpers.composedParent === 'function'
+      ? helpers.composedParent
+      : function (n) {
+          return n && n.parentElement ? n.parentElement : null;
+        };
 
   function closestAriaHiddenTrue(node) {
     let cur = node;
@@ -149,9 +170,18 @@ function runInPage(ctx) {
 
   function buildNodeRef(node, rootEl) {
     if (!node) return null;
-    const tag = (() => { try { return lower(node.tagName || ''); } catch { return ''; } })();
+    const tag = (() => {
+      try {
+        return lower(node.tagName || '');
+      } catch {
+        return '';
+      }
+    })();
     const idVal = (() => {
-      try { return trim(node.getAttribute && node.getAttribute('id')); } catch { return '';
+      try {
+        return trim(node.getAttribute && node.getAttribute('id'));
+      } catch {
+        return '';
       }
     })();
     return {
@@ -162,12 +192,19 @@ function runInPage(ctx) {
   }
 
   function runFocusObservationWindow(fn) {
-    const w = (document && document.defaultView) ? document.defaultView : (typeof window !== 'undefined' ? window : null);
+    const w =
+      document && document.defaultView
+        ? document.defaultView
+        : typeof window !== 'undefined'
+          ? window
+          : null;
     if (!w || typeof fn !== 'function') return;
 
-    const originalSetTimeout = (typeof w.setTimeout === 'function') ? w.setTimeout.bind(w) : null;
-    const originalRequestAnimationFrame = (typeof w.requestAnimationFrame === 'function') ? w.requestAnimationFrame.bind(w) : null;
-    const originalQueueMicrotask = (typeof w.queueMicrotask === 'function') ? w.queueMicrotask.bind(w) : null;
+    const originalSetTimeout = typeof w.setTimeout === 'function' ? w.setTimeout.bind(w) : null;
+    const originalRequestAnimationFrame =
+      typeof w.requestAnimationFrame === 'function' ? w.requestAnimationFrame.bind(w) : null;
+    const originalQueueMicrotask =
+      typeof w.queueMicrotask === 'function' ? w.queueMicrotask.bind(w) : null;
 
     const queuedMicrotasks = [];
     const queuedRaf = [];
@@ -207,19 +244,28 @@ function runInPage(ctx) {
 
       // Deterministic mini-window: microtasks -> rAF -> short timers (<=200ms).
       let guard = 0;
-      while ((queuedMicrotasks.length || queuedRaf.length || queuedTimers.length) && guard++ < 100) {
+      while (
+        (queuedMicrotasks.length || queuedRaf.length || queuedTimers.length) &&
+        guard++ < 100
+      ) {
         while (queuedMicrotasks.length) {
           const mt = queuedMicrotasks.shift();
-          try { mt(); } catch {}
+          try {
+            mt();
+          } catch {}
         }
         while (queuedRaf.length) {
           const rf = queuedRaf.shift();
-          try { rf(16); } catch {}
+          try {
+            rf(16);
+          } catch {}
         }
         if (queuedTimers.length) {
           queuedTimers.sort((a, b) => a.delay - b.delay);
           const tt = queuedTimers.shift();
-          try { tt.cb(); } catch {}
+          try {
+            tt.cb();
+          } catch {}
         }
       }
     } finally {
@@ -233,12 +279,15 @@ function runInPage(ctx) {
     // Conservative downgrade gate:
     // - only probe simple single-offender roots
     // - only downgrade when focus moves immediately OUTSIDE the aria-hidden subtree
-    if (!entry || entry.count !== 1 || !entry.probeCandidates || !entry.probeCandidates.length) return null;
+    if (!entry || entry.count !== 1 || !entry.probeCandidates || !entry.probeCandidates.length)
+      return null;
     const candidate = entry.probeCandidates[0];
     if (!candidate) return null;
 
     let focusedByEvent = false;
-    const onFocusCapture = () => { focusedByEvent = true; };
+    const onFocusCapture = () => {
+      focusedByEvent = true;
+    };
     try {
       candidate.addEventListener('focus', onFocusCapture, true);
     } catch {
@@ -292,10 +341,18 @@ function runInPage(ctx) {
     if (isWithinComposedSubtree(after, entry.rootEl)) return null;
 
     const redirectedTag = (() => {
-      try { return lower(after.tagName || ''); } catch { return ''; }
+      try {
+        return lower(after.tagName || '');
+      } catch {
+        return '';
+      }
     })();
     const redirectedId = (() => {
-      try { return trim(after.getAttribute && after.getAttribute('id')); } catch { return ''; }
+      try {
+        return trim(after.getAttribute && after.getAttribute('id'));
+      } catch {
+        return '';
+      }
     })();
 
     return {
@@ -312,9 +369,14 @@ function runInPage(ctx) {
     const out = [];
     if (!el) return out;
 
-    let cs = null;
+    let cs;
     try {
-      const w = (document && document.defaultView) ? document.defaultView : (typeof window !== 'undefined' ? window : null);
+      const w =
+        document && document.defaultView
+          ? document.defaultView
+          : typeof window !== 'undefined'
+            ? window
+            : null;
       cs = w && w.getComputedStyle ? w.getComputedStyle(el) : null;
     } catch {
       cs = null;
@@ -339,11 +401,15 @@ function runInPage(ctx) {
       // Common visually-hidden patterns
       if (clipLow && clipLow !== 'auto') {
         // Examples: rect(0px, 0px, 0px, 0px) / rect(0,0,0,0)
-        if (clipLow.indexOf('rect(') !== -1 && clipLow.replace(/\s+/g, '').indexOf('rect(0') !== -1) out.push('clipped');
+        if (clipLow.indexOf('rect(') !== -1 && clipLow.replace(/\s+/g, '').indexOf('rect(0') !== -1)
+          out.push('clipped');
       }
       if (clipPathLow && clipPathLow !== 'none') {
         // Examples: inset(100%) / inset(50%)
-        if (clipPathLow.indexOf('inset(') !== -1 && (clipPathLow.indexOf('100%') !== -1 || clipPathLow.indexOf('50%') !== -1)) {
+        if (
+          clipPathLow.indexOf('inset(') !== -1 &&
+          (clipPathLow.indexOf('100%') !== -1 || clipPathLow.indexOf('50%') !== -1)
+        ) {
           out.push('clipped');
         }
       }
@@ -398,7 +464,10 @@ function runInPage(ctx) {
     const uniq = [];
     for (const k of out) {
       const kk = String(k);
-      if (!seen.has(kk)) { seen.add(kk); uniq.push(kk); }
+      if (!seen.has(kk)) {
+        seen.add(kk);
+        uniq.push(kk);
+      }
     }
     return uniq;
   }
@@ -425,7 +494,11 @@ function runInPage(ctx) {
     // programmatically focusable (script could call .focus()), but that's
     // not what "no focusable content behind aria-hidden" cares about.
     const explicitTabindex = trim(el.getAttribute('tabindex'));
-    if (explicitTabindex !== '' && !Number.isNaN(Number(explicitTabindex)) && Number(explicitTabindex) < 0) {
+    if (
+      explicitTabindex !== '' &&
+      !Number.isNaN(Number(explicitTabindex)) &&
+      Number(explicitTabindex) < 0
+    ) {
       return false;
     }
 
@@ -433,7 +506,11 @@ function runInPage(ctx) {
     // Prefer helper for broad coverage, but do not let aria-hidden flip focusable->false.
     let helperInfo = null;
     if (getFocusableInfo) {
-      try { helperInfo = getFocusableInfo(el, ctx); } catch { helperInfo = null; }
+      try {
+        helperInfo = getFocusableInfo(el, ctx);
+      } catch {
+        helperInfo = null;
+      }
     }
 
     // Local fallback that does NOT care about aria-hidden
@@ -450,7 +527,11 @@ function runInPage(ctx) {
       fallbackFocusable = type !== 'hidden';
     } else if (tag === 'iframe') {
       fallbackFocusable = true;
-    } else if ((tag === 'audio' || tag === 'video') && el.hasAttribute && el.hasAttribute('controls')) {
+    } else if (
+      (tag === 'audio' || tag === 'video') &&
+      el.hasAttribute &&
+      el.hasAttribute('controls')
+    ) {
       fallbackFocusable = true;
     } else if (el.hasAttribute && el.hasAttribute('contenteditable')) {
       // contenteditable="false" explicitly disables the editing host and
@@ -475,7 +556,10 @@ function runInPage(ctx) {
     // IMPORTANT: Do NOT exclude opacity-based invisibility; opacity:0 remains in-scope.
     if (isDomVisibleEligible) {
       try {
-        const vis = isDomVisibleEligible(el, ctx, { visibilityMode: 'styleOnly', disableGeometry: true });
+        const vis = isDomVisibleEligible(el, ctx, {
+          visibilityMode: 'styleOnly',
+          disableGeometry: true
+        });
         if (vis && vis.eligible === false) {
           const rs = Array.isArray(vis.reasons) ? vis.reasons : [];
           const nonOpacity = rs.filter((r) => String(r) !== 'opacityZero');
@@ -512,8 +596,16 @@ function runInPage(ctx) {
     }
     try {
       const tag = lower(el.tagName || '');
-      if ((tag === 'button' || tag === 'input' || tag === 'select' || tag === 'textarea' || tag === 'option' || tag === 'optgroup') &&
-          el.hasAttribute && el.hasAttribute('disabled')) {
+      if (
+        (tag === 'button' ||
+          tag === 'input' ||
+          tag === 'select' ||
+          tag === 'textarea' ||
+          tag === 'option' ||
+          tag === 'optgroup') &&
+        el.hasAttribute &&
+        el.hasAttribute('disabled')
+      ) {
         return true;
       }
     } catch {
@@ -559,7 +651,14 @@ function runInPage(ctx) {
 
     let entry = bucket.get(rootEl);
     if (!entry) {
-      entry = { rootEl, count: 0, offenders: [], hints: new Set(), rootIsFocusable: false, probeCandidates: [] };
+      entry = {
+        rootEl,
+        count: 0,
+        offenders: [],
+        hints: new Set(),
+        rootIsFocusable: false,
+        probeCandidates: []
+      };
       bucket.set(rootEl, entry);
     }
     entry.count += 1;
@@ -567,15 +666,31 @@ function runInPage(ctx) {
 
     // Capture a small, deterministic offender summary + visibility hints.
     if (entry.offenders.length < maxOffendersPerRoot) {
-      let tag = '';
-      let ti = null;
-      let href = null;
-      let type = null;
+      let tag;
+      let ti;
+      let href;
+      let type;
 
-      try { tag = lower(el.tagName || ''); } catch { tag = ''; }
-      try { ti = el.getAttribute('tabindex'); } catch { ti = null; }
-      try { href = (tag === 'a' || tag === 'area') ? trim(el.getAttribute('href')) : null; } catch { href = null; }
-      try { type = tag === 'input' ? lower(el.getAttribute('type') || '') : null; } catch { type = null; }
+      try {
+        tag = lower(el.tagName || '');
+      } catch {
+        tag = '';
+      }
+      try {
+        ti = el.getAttribute('tabindex');
+      } catch {
+        ti = null;
+      }
+      try {
+        href = tag === 'a' || tag === 'area' ? trim(el.getAttribute('href')) : null;
+      } catch {
+        href = null;
+      }
+      try {
+        type = tag === 'input' ? lower(el.getAttribute('type') || '') : null;
+      } catch {
+        type = null;
+      }
 
       const hints = getVisibilityHints(el);
       for (const h of hints) entry.hints.add(h);
@@ -607,7 +722,13 @@ function runInPage(ctx) {
     const el = entry.rootEl;
 
     const eligInfo = getEligibilityInfo
-      ? (() => { try { return getEligibilityInfo(el, ctx, { targetSet: 'acc' }); } catch { return null; } })()
+      ? (() => {
+          try {
+            return getEligibilityInfo(el, ctx, { targetSet: 'acc' });
+          } catch {
+            return null;
+          }
+        })()
       : null;
 
     // stable visibility hint ordering
@@ -615,7 +736,13 @@ function runInPage(ctx) {
     const hintsArr = [];
     for (const k of hintOrder) if (entry.hints.has(k)) hintsArr.push(k);
 
-    const tagName = (() => { try { return lower(el.tagName || ''); } catch { return ''; } })();
+    const tagName = (() => {
+      try {
+        return lower(el.tagName || '');
+      } catch {
+        return '';
+      }
+    })();
 
     // Split counts deterministically
     const selfFocusable = !!entry.rootIsFocusable;
@@ -623,19 +750,21 @@ function runInPage(ctx) {
     const descendantFocusable = selfFocusable ? Math.max(0, totalFocusable - 1) : totalFocusable;
 
     const summaryKey = selfFocusable
-      ? (descendantFocusable > 0
-          ? 'ariaHidden_focus_summary_fail_self_and_desc'
-          : 'ariaHidden_focus_summary_fail_self')
+      ? descendantFocusable > 0
+        ? 'ariaHidden_focus_summary_fail_self_and_desc'
+        : 'ariaHidden_focus_summary_fail_self'
       : 'ariaHidden_focus_summary_fail_desc';
 
     const reasonCode = selfFocusable
-      ? (descendantFocusable > 0 ? 'ariaHiddenSelfAndDescendantsFocusable' : 'ariaHiddenSelfFocusable')
+      ? descendantFocusable > 0
+        ? 'ariaHiddenSelfAndDescendantsFocusable'
+        : 'ariaHiddenSelfFocusable'
       : 'ariaHiddenContainsFocusable';
 
     const summaryText = selfFocusable
-      ? (descendantFocusable > 0
-          ? `aria-hidden ${tagName} is focusable and contains ${descendantFocusable} focusable descendant(s) (${totalFocusable} focusable element(s) total).`
-          : `aria-hidden ${tagName} is focusable (${totalFocusable} focusable element(s)).`)
+      ? descendantFocusable > 0
+        ? `aria-hidden ${tagName} is focusable and contains ${descendantFocusable} focusable descendant(s) (${totalFocusable} focusable element(s) total).`
+        : `aria-hidden ${tagName} is focusable (${totalFocusable} focusable element(s)).`
       : `aria-hidden ${tagName} contains ${totalFocusable} focusable element(s).`;
 
     const runtimeProbe = probeImmediateFocusRedirect(entry);
@@ -649,19 +778,27 @@ function runInPage(ctx) {
         ? 'Verify this is an intentional focus sentinel/focus-trap handoff and that keyboard users never remain on hidden focus targets.'
         : 'Remove focusability from descendants or remove aria-hidden; ensure focus and accessibility trees stay aligned.',
       i18n: {
-        summaryKey: downgradedToCantTell ? 'ariaHidden_focus_summary_cantTell_redirect' : summaryKey,
-        hintKey: downgradedToCantTell ? 'ariaHidden_focus_hint_cantTell_redirect' : 'ariaHidden_focus_hint_fail',
+        summaryKey: downgradedToCantTell
+          ? 'ariaHidden_focus_summary_cantTell_redirect'
+          : summaryKey,
+        hintKey: downgradedToCantTell
+          ? 'ariaHidden_focus_hint_cantTell_redirect'
+          : 'ariaHidden_focus_hint_fail',
         params: {
           element: tagName,
           focusableCount: String(totalFocusable),
           descendantFocusableCount: String(descendantFocusable),
-          redirectedToTag: runtimeProbe && runtimeProbe.redirectedToTag ? runtimeProbe.redirectedToTag : '',
-          redirectedToId: runtimeProbe && runtimeProbe.redirectedToId ? runtimeProbe.redirectedToId : ''
+          redirectedToTag:
+            runtimeProbe && runtimeProbe.redirectedToTag ? runtimeProbe.redirectedToTag : '',
+          redirectedToId:
+            runtimeProbe && runtimeProbe.redirectedToId ? runtimeProbe.redirectedToId : ''
         }
       },
       data: {
         details: {
-          reasonCode: downgradedToCantTell ? 'ariaHiddenFocusable_runtimeRedirect_needsReview' : reasonCode,
+          reasonCode: downgradedToCantTell
+            ? 'ariaHiddenFocusable_runtimeRedirect_needsReview'
+            : reasonCode,
           metrics: {
             focusableTotal: totalFocusable,
             focusableDescendants: descendantFocusable,
@@ -687,7 +824,11 @@ function runInPage(ctx) {
   // See helpers.resolveTieredOutcome's own header comment (src/core/dom-helpers.js):
   // a fail-tier finding never silently discards cantTell-tier findings from
   // the same run — both are returned together when the outcome is 'fail'.
-  const resolved = helpers.resolveTieredOutcome(failOccurrences, uncertainOccurrences, rule.defaultSeverity || 'minor');
+  const resolved = helpers.resolveTieredOutcome(
+    failOccurrences,
+    uncertainOccurrences,
+    rule.defaultSeverity || 'minor'
+  );
   return { ruleId: rule.ruleId, ...resolved };
 }
 

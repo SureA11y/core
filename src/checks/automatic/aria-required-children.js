@@ -61,7 +61,8 @@ const id = 'aria-required-children';
 
 const meta = {
   title: 'Container roles must own at least one required child role',
-  description: 'Checks that container roles with a documented "required owned elements" entry (list, listbox, menu, radiogroup, table, grid, tablist, tree, row, ...) contain at least one descendant or aria-owns-referenced element with an acceptable owned role.',
+  description:
+    'Checks that container roles with a documented "required owned elements" entry (list, listbox, menu, radiogroup, table, grid, tablist, tree, row, ...) contain at least one descendant or aria-owns-referenced element with an acceptable owned role.',
   i18n: {
     titleKey: 'ariaRequiredChildren_title',
     descriptionKey: 'ariaRequiredChildren_description'
@@ -70,7 +71,13 @@ const meta = {
   tags: ['wcag2a', 'wcag412', 'aria', 'structure', 'atomic', 'automatic'],
   wcagSc: ['4.1.2'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '4.1.2', title: 'Name, Role, Value', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '4.1.2',
+      title: 'Name, Role, Value',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'moderate',
   category: 'robust',
@@ -88,7 +95,8 @@ function runInPage(ctx) {
   }
 
   function isEligibleAcc(el) {
-    const fn = helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+    const fn =
+      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -109,9 +117,12 @@ function runInPage(ctx) {
   // (kept in sync with aria-helpers.js NATIVE_CONTAINMENT_ROLE_BY_ELEMENT).
   // Declared inside runInPage — see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
-  const CANDIDATE_SELECTOR = '[role], li, option, tr, td, th, thead, tbody, tfoot, ul, ol, table, select, input[type="radio"]';
+  const CANDIDATE_SELECTOR =
+    '[role], li, option, tr, td, th, thead, tbody, tfoot, ul, ol, table, select, input[type="radio"]';
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[role]') : helpers.queryAll('[role]');
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart('[role]')
+    : helpers.queryAll('[role]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -139,8 +150,11 @@ function runInPage(ctx) {
       if (out.length >= limit) return;
       if (seen.has(child)) continue;
 
-      if ((child.tagName || '').toLowerCase() === 'slot' && typeof child.assignedElements === 'function') {
-        let assigned = [];
+      if (
+        (child.tagName || '').toLowerCase() === 'slot' &&
+        typeof child.assignedElements === 'function'
+      ) {
+        let assigned;
         try {
           assigned = child.assignedElements({ flatten: true }) || [];
         } catch {
@@ -184,7 +198,7 @@ function runInPage(ctx) {
     // selector, exactly as before this fix — covers the overwhelming
     // majority of containers (no shadow DOM involved at all) with zero
     // added cost.
-    let descendants = [];
+    let descendants;
     try {
       descendants = el.querySelectorAll(CANDIDATE_SELECTOR);
     } catch {
@@ -202,7 +216,7 @@ function runInPage(ctx) {
     // <slot> somewhere in the subtree to expand — bounds the extra cost to
     // exactly the containers that could possibly need it.
     if (!found) {
-      let hasSlot = false;
+      let hasSlot;
       try {
         hasSlot = !!el.querySelector('slot');
       } catch {
@@ -243,7 +257,7 @@ function runInPage(ctx) {
     if (found) continue;
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
     occurrences.push({
       selector: stableSelector,
@@ -256,7 +270,11 @@ function runInPage(ctx) {
         params: { role, requiredRoles: requiredOwned.join(', ') }
       },
       data: {
-        details: { reasonCode: 'ARIA_REQUIRED_CHILD_MISSING', role, requiredOwnedRoles: requiredOwned }
+        details: {
+          reasonCode: 'ARIA_REQUIRED_CHILD_MISSING',
+          role,
+          requiredOwnedRoles: requiredOwned
+        }
       }
     });
   }
@@ -265,7 +283,12 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'moderate', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'fail',
+      severity: rule.defaultSeverity || 'moderate',
+      occurrences
+    };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }

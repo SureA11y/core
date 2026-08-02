@@ -35,7 +35,8 @@ const id = 'landmark-no-duplicate-banner';
 
 const meta = {
   title: 'Page must not have more than one banner landmark',
-  description: 'Checks that at most one banner landmark (role="banner" or a non-nested <header>) exists on the page.',
+  description:
+    'Checks that at most one banner landmark (role="banner" or a non-nested <header>) exists on the page.',
   i18n: {
     titleKey: 'landmarkNoDuplicateBanner_title',
     descriptionKey: 'landmarkNoDuplicateBanner_description'
@@ -55,7 +56,9 @@ function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
   function normalizeWs(s) {
-    return String(s || '').replace(/\s+/g, ' ').trim();
+    return String(s || '')
+      .replace(/\s+/g, ' ')
+      .trim();
   }
 
   // Delegates to the shared helpers.getLandmarkNameInfo (aria-label -> aria-labelledby, via the
@@ -115,7 +118,16 @@ function runInPage(ctx) {
     return '';
   }
 
-  const LANDMARK_ROLES = new Set(['banner', 'contentinfo', 'main', 'navigation', 'complementary', 'region', 'form', 'search']);
+  const LANDMARK_ROLES = new Set([
+    'banner',
+    'contentinfo',
+    'main',
+    'navigation',
+    'complementary',
+    'region',
+    'form',
+    'search'
+  ]);
 
   function getLandmarkRole(el) {
     if (!el || !el.getAttribute) return '';
@@ -128,16 +140,18 @@ function runInPage(ctx) {
   // landmark-unique-manual.js's header comment for the real page (Airtable, 2026-07-23)
   // that surfaced this gap: a third-party shadow-DOM-hosted widget's own landmark is
   // invisible to a light-DOM-only query.
-  let nodes = [];
+  let nodes;
   try {
-    nodes = helpers && typeof helpers.queryAllSmart === 'function'
-      ? helpers.queryAllSmart('header, footer, main, nav, aside, section, form, [role]')
-      : document.querySelectorAll('header, footer, main, nav, aside, section, form, [role]');
+    nodes =
+      helpers && typeof helpers.queryAllSmart === 'function'
+        ? helpers.queryAllSmart('header, footer, main, nav, aside, section, form, [role]')
+        : document.querySelectorAll('header, footer, main, nav, aside, section, form, [role]');
   } catch {
     nodes = [];
   }
 
-  const isAccTreeEligible = helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+  const isAccTreeEligible =
+    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
 
   function isExposedToAt(el) {
     if (!isAccTreeEligible) return true;
@@ -165,7 +179,7 @@ function runInPage(ctx) {
 
   const occurrences = banners.map((el) => {
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
     return {
       selector: stableSelector,
@@ -183,7 +197,12 @@ function runInPage(ctx) {
     };
   });
 
-  return { ruleId: rule.ruleId, outcome: 'cantTell', severity: rule.defaultSeverity || 'minor', occurrences };
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'cantTell',
+    severity: rule.defaultSeverity || 'minor',
+    occurrences
+  };
 }
 
 module.exports = { id, meta, runInPage };

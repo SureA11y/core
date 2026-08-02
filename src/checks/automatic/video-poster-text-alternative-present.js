@@ -37,7 +37,13 @@ const meta = {
   tags: ['wcag2a', 'wcag111', 'media', 'video', 'atomic', 'automatic'],
   wcagSc: ['1.1.1'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '1.1.1', title: 'Non-text Content', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '1.1.1',
+      title: 'Non-text Content',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'serious',
   category: 'perceivable',
@@ -54,32 +60,28 @@ function runInPage(ctx) {
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
-  const reportOccurrence = helpers && typeof helpers.reportOccurrence === 'function'
-      ? helpers.reportOccurrence
-      : null;
+  const reportOccurrence =
+    helpers && typeof helpers.reportOccurrence === 'function' ? helpers.reportOccurrence : null;
 
-  const queryAllSmart = helpers && typeof helpers.queryAllSmart === 'function' ? helpers.queryAllSmart : null;
-  const queryAll = helpers && typeof helpers.queryAll === 'function'
-      ? helpers.queryAll
-      : null;
+  const queryAllSmart =
+    helpers && typeof helpers.queryAllSmart === 'function' ? helpers.queryAllSmart : null;
+  const queryAll = helpers && typeof helpers.queryAll === 'function' ? helpers.queryAll : null;
 
-  const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
-    ? helpers.getEligibilityInfo
-    : null;
+  const getEligibilityInfo =
+    helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
 
-  const isAccTreeEligible = helpers && typeof helpers.isAccTreeEligible === 'function'
-    ? helpers.isAccTreeEligible
-    : null;
+  const isAccTreeEligible =
+    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
 
-  const isFocusableInfo = helpers && typeof helpers.getFocusableInfo === 'function'
-    ? helpers.getFocusableInfo
-    : null;
+  const isFocusableInfo =
+    helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
 
-  const getAriaNameInfo = helpers && typeof helpers.getAriaNameInfo === 'function'
-    ? helpers.getAriaNameInfo
-    : null;
+  const getAriaNameInfo =
+    helpers && typeof helpers.getAriaNameInfo === 'function' ? helpers.getAriaNameInfo : null;
 
-  function trim(v) { return (v == null ? '' : String(v)).trim(); }
+  function trim(v) {
+    return (v == null ? '' : String(v)).trim();
+  }
 
   function computeNameInfo(el) {
     // <video> is not a labelable element (no browser computes an accessible
@@ -89,11 +91,22 @@ function runInPage(ctx) {
     let aria = null;
 
     if (getAriaNameInfo) {
-      aria = (() => { try { return getAriaNameInfo(el, ctx); } catch { return null; } })();
+      aria = (() => {
+        try {
+          return getAriaNameInfo(el, ctx);
+        } catch {
+          return null;
+        }
+      })();
     }
 
     if (aria && aria.present && trim(aria.value)) {
-      return { present: true, value: trim(aria.value), mechanism: aria.mechanism || 'aria', flags: (aria.flags || []).slice(0) };
+      return {
+        present: true,
+        value: trim(aria.value),
+        mechanism: aria.mechanism || 'aria',
+        flags: (aria.flags || []).slice(0)
+      };
     }
 
     const title = trim(el.getAttribute && el.getAttribute('title'));
@@ -113,14 +126,22 @@ function runInPage(ctx) {
     try {
       if (queryAllSmart) return Array.from(queryAllSmart('video') || []);
       if (queryAll) return Array.from(queryAll('video') || []);
-      return safeRoot && safeRoot.querySelectorAll ? Array.from(safeRoot.querySelectorAll('video')) : [];
+      return safeRoot && safeRoot.querySelectorAll
+        ? Array.from(safeRoot.querySelectorAll('video'))
+        : [];
     } catch {
-      try { return safeRoot && safeRoot.querySelectorAll ? Array.from(safeRoot.querySelectorAll('video')) : []; }
-      catch { return []; }
+      try {
+        return safeRoot && safeRoot.querySelectorAll
+          ? Array.from(safeRoot.querySelectorAll('video'))
+          : [];
+      } catch {
+        return [];
+      }
     }
   })();
 
-  if (!videos.length) return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  if (!videos.length)
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 
   const occurrences = [];
   let applicableCount = 0;
@@ -134,7 +155,11 @@ function runInPage(ctx) {
     // Eligibility: only elements exposed to AT (with helper exceptions)
     if (isAccTreeEligible) {
       const elig = (() => {
-        try { return isAccTreeEligible(el, ctx); } catch { return { eligible: true, reasons: [] }; }
+        try {
+          return isAccTreeEligible(el, ctx);
+        } catch {
+          return { eligible: true, reasons: [] };
+        }
       })();
       if (elig && elig.eligible === false) continue;
     }
@@ -142,13 +167,20 @@ function runInPage(ctx) {
     // Role presentation/none excluded ONLY if not focusable (mirrors img behavior)
     const role = trim(el.getAttribute('role')).toLowerCase();
     if (role === 'presentation' || role === 'none') {
-      let focusable = false;
+      let focusable;
       if (isFocusableInfo) {
-        const fi = (() => { try { return isFocusableInfo(el, ctx); } catch { return null; } })();
+        const fi = (() => {
+          try {
+            return isFocusableInfo(el, ctx);
+          } catch {
+            return null;
+          }
+        })();
         focusable = !!(fi && fi.focusable);
       } else {
         const tabindex = el.getAttribute('tabindex');
-        focusable = tabindex != null && trim(tabindex) !== '' && !Number.isNaN(Number(trim(tabindex)));
+        focusable =
+          tabindex != null && trim(tabindex) !== '' && !Number.isNaN(Number(trim(tabindex)));
       }
       if (!focusable) continue;
     }
@@ -160,7 +192,11 @@ function runInPage(ctx) {
 
     let eligInfo = null;
     if (getEligibilityInfo) {
-      try { eligInfo = getEligibilityInfo(el, ctx, { targetSet: 'acc' }); } catch { eligInfo = null; }
+      try {
+        eligInfo = getEligibilityInfo(el, ctx, { targetSet: 'acc' });
+      } catch {
+        eligInfo = null;
+      }
     }
 
     const baseOccurrence = {
@@ -185,9 +221,16 @@ function runInPage(ctx) {
     }
   }
 
-  if (applicableCount === 0) return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
-  if (!occurrences.length) return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
-  return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences };
+  if (applicableCount === 0)
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  if (!occurrences.length)
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'fail',
+    severity: rule.defaultSeverity || 'minor',
+    occurrences
+  };
 }
 
 module.exports = { id, meta, runInPage };

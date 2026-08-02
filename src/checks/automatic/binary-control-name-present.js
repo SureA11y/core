@@ -4,40 +4,61 @@ const id = 'binary-control-name-present';
 
 const meta = {
   title: 'Binary controls have an accessible name',
-  description: 'Checks that checkbox, radio, and switch controls expose a non-empty accessible name.',
+  description:
+    'Checks that checkbox, radio, and switch controls expose a non-empty accessible name.',
   i18n: {
     titleKey: 'binaryControlNamePresent_title',
     descriptionKey: 'binaryControlNamePresent_description'
   },
   helpUrl: null,
-  tags: ['wcag2a','wcag412','forms','atomic','automatic','name','checkbox','radio','switch'],
+  tags: [
+    'wcag2a',
+    'wcag412',
+    'forms',
+    'atomic',
+    'automatic',
+    'name',
+    'checkbox',
+    'radio',
+    'switch'
+  ],
   wcagSc: ['4.1.2'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '4.1.2', title: 'Name, Role, Value', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '4.1.2',
+      title: 'Name, Role, Value',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'serious',
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '4.1.2': ['checkbox-name-present','radio-name-present','switch-name-present'] } }
+  coverage: {
+    facetsBySc: { '4.1.2': ['checkbox-name-present', 'radio-name-present', 'switch-name-present'] }
+  }
 };
 
 function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
-  const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
-      ? helpers.getEligibilityInfo
-      : null;
-
+  const getEligibilityInfo =
+    helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
 
   function normalizeWs(s) {
-    return String(s || '').replace(/\s+/g, ' ').trim();
+    return String(s || '')
+      .replace(/\s+/g, ' ')
+      .trim();
   }
 
   function getAttr(el, name) {
     try {
       if (!el || !el.getAttribute) return '';
       return normalizeWs(el.getAttribute(name));
-    } catch { return ''; }
+    } catch {
+      return '';
+    }
   }
 
   function buildLabelForMap(doc) {
@@ -67,7 +88,7 @@ function runInPage(ctx) {
       const info = helpers.getContentNameInfo(container, ctx);
       return info && info.present ? info.value : '';
     }
-    const t = (container && container.textContent) ? String(container.textContent) : '';
+    const t = container && container.textContent ? String(container.textContent) : '';
     return t.replace(/\s+/g, ' ').trim();
   }
 
@@ -115,7 +136,8 @@ function runInPage(ctx) {
   }
 
   function isEligibleAcc(helpers, el, ctx) {
-    const fn = helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+    const fn =
+      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -126,13 +148,14 @@ function runInPage(ctx) {
     }
   }
 
-
   const occurrences = [];
   let applicableCount = 0;
 
-  const selector = 'input[type="checkbox"], input[type="radio"], [role="checkbox"], [role="radio"], [role="switch"]';
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
-
+  const selector =
+    'input[type="checkbox"], input[type="radio"], [role="checkbox"], [role="radio"], [role="switch"]';
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart(selector)
+    : helpers.queryAll(selector);
 
   // Precompute label[for] associations once for speed/determinism.
   const labelForMap = buildLabelForMap(document);
@@ -196,7 +219,11 @@ function runInPage(ctx) {
     }
 
     // ARIA roles (checkbox/radio/switch) can use content as name
-    if (controlType === 'switch' || controlType === 'aria-checkbox' || controlType === 'aria-radio') {
+    if (
+      controlType === 'switch' ||
+      controlType === 'aria-checkbox' ||
+      controlType === 'aria-radio'
+    ) {
       const t = getConservativeSubtreeText(document, el);
       if (t) return { ok: true, method: 'content' };
     }
@@ -213,7 +240,7 @@ function runInPage(ctx) {
     const type = getAttr(el, 'type').toLowerCase();
     const role = getAttr(el, 'role').toLowerCase();
 
-    let controlType = '';
+    let controlType;
     if (tag === 'input' && type === 'checkbox') controlType = 'checkbox';
     else if (tag === 'input' && type === 'radio') controlType = 'radio';
     else if (role === 'checkbox') controlType = 'aria-checkbox';
@@ -227,10 +254,16 @@ function runInPage(ctx) {
     if (res.ok) continue;
 
     const eligInfo = getEligibilityInfo
-        ? (() => { try { return getEligibilityInfo(el, ctx, { targetSet: 'acc' }); } catch { return null; } })()
-        : null;
+      ? (() => {
+          try {
+            return getEligibilityInfo(el, ctx, { targetSet: 'acc' });
+          } catch {
+            return null;
+          }
+        })()
+      : null;
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
     occurrences.push({
       selector: stableSelector,
@@ -253,12 +286,16 @@ function runInPage(ctx) {
     });
   }
 
-
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'fail',
+      severity: rule.defaultSeverity || 'minor',
+      occurrences
+    };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }

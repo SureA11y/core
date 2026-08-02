@@ -5,7 +5,7 @@ const id = 'label-in-name';
 const meta = {
   title: 'Label in Name: accessible name contains visible text',
   description:
-      'Checks that when a control has a visible text label, the accessible name (from aria-label/aria-labelledby) contains that visible label text (WCAG 2.5.3).',
+    'Checks that when a control has a visible text label, the accessible name (from aria-label/aria-labelledby) contains that visible label text (WCAG 2.5.3).',
   i18n: {
     titleKey: 'labelInName_title',
     descriptionKey: 'labelInName_description'
@@ -37,20 +37,27 @@ function runInPage(ctx) {
 
   // Applicability: focus/activation controls with explicit ARIA naming.
   // NOTE: aria-hidden is intentionally NOT excluded here; it does not affect visual rendering.
-  const selector = ':is(button, a[href], summary, input:not([type="hidden"]), textarea, select, [role="button"], [role="link"], [role="checkbox"], [role="radio"], [role="switch"], [role="searchbox"], [role="tab"], [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="option"], [role="treeitem"], [role="gridcell"]):not([hidden]):not([disabled]):not([aria-disabled="true"]):is([aria-label], [aria-labelledby])';
+  const selector =
+    ':is(button, a[href], summary, input:not([type="hidden"]), textarea, select, [role="button"], [role="link"], [role="checkbox"], [role="radio"], [role="switch"], [role="searchbox"], [role="tab"], [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="option"], [role="treeitem"], [role="gridcell"]):not([hidden]):not([disabled]):not([aria-disabled="true"]):is([aria-label], [aria-labelledby])';
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector);
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart(selector)
+    : helpers.queryAll(selector);
 
   function norm(s) {
-    const v = (s == null ? '' : String(s));
+    const v = s == null ? '' : String(s);
     // deterministic normalization: trim + collapse whitespace + case-fold
     return v.replace(/\s+/g, ' ').trim().toLowerCase();
   }
 
   function getElementDescriptor(el) {
-    const tag = (el && el.tagName ? String(el.tagName).toLowerCase() : 'element');
-    let role = '';
-    try { role = el && el.getAttribute ? (el.getAttribute('role') || '') : ''; } catch { role = ''; }
+    const tag = el && el.tagName ? String(el.tagName).toLowerCase() : 'element';
+    let role;
+    try {
+      role = el && el.getAttribute ? el.getAttribute('role') || '' : '';
+    } catch {
+      role = '';
+    }
     const r = String(role || '').trim();
     return r ? `${tag}[role="${r}"]` : tag;
   }
@@ -62,14 +69,23 @@ function runInPage(ctx) {
   }
 
   function isNonRenderedTag(el) {
-    const tn = (el && el.tagName ? String(el.tagName).toLowerCase() : '');
-    return tn === 'script' || tn === 'style' || tn === 'template' || tn === 'noscript' || tn === 'meta' || tn === 'link';
+    const tn = el && el.tagName ? String(el.tagName).toLowerCase() : '';
+    return (
+      tn === 'script' ||
+      tn === 'style' ||
+      tn === 'template' ||
+      tn === 'noscript' ||
+      tn === 'meta' ||
+      tn === 'link'
+    );
   }
 
   function isDomVisible(el) {
     if (!el) return false;
-    if (helpers.isDomVisibleEligible) return !!helpers.isDomVisibleEligible(el, ctx, { targetSet: 'dom' }).eligible;
-    if (helpers.getEligibilityInfo) return !!helpers.getEligibilityInfo(el, ctx, { targetSet: 'dom' }).eligible;
+    if (helpers.isDomVisibleEligible)
+      return !!helpers.isDomVisibleEligible(el, ctx, { targetSet: 'dom' }).eligible;
+    if (helpers.getEligibilityInfo)
+      return !!helpers.getEligibilityInfo(el, ctx, { targetSet: 'dom' }).eligible;
     return true;
   }
 
@@ -90,7 +106,8 @@ function runInPage(ctx) {
   // aria-hidden icon rendering literally as "format_color_fill").
   function isAccEligible(el) {
     if (!el) return false;
-    const fn = helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+    const fn =
+      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
     if (!fn) return isDomVisible(el);
     try {
       const r = fn(el, ctx);
@@ -118,7 +135,7 @@ function runInPage(ctx) {
     if (!isDomVisible(container)) return '';
 
     // TreeWalker is deterministic in document order.
-    let walker = null;
+    let walker;
     try {
       walker = document.createTreeWalker(container, SHOW_TEXT, null);
     } catch {
@@ -134,7 +151,7 @@ function runInPage(ctx) {
     }
 
     const parts = [];
-    let n = null;
+    let n;
     // eslint-disable-next-line no-cond-assign
     while ((n = walker.nextNode())) {
       try {
@@ -183,7 +200,7 @@ function runInPage(ctx) {
     // contextSelector support), not a single element with its own
     // .querySelector to call directly.
     try {
-      const idAttribute = control && control.getAttribute ? (control.getAttribute('id') || '') : '';
+      const idAttribute = control && control.getAttribute ? control.getAttribute('id') || '' : '';
       const key = String(idAttribute || '').trim();
       if (key && document && document.querySelector) {
         const l = document.querySelector('label[for="' + CSS.escape(key) + '"]');
@@ -215,10 +232,10 @@ function runInPage(ctx) {
     // 1) <label> association for form controls
     // 2) visible text inside the element
     // 3) visible text from aria-labelledby referenced elements
-    let text = '';
+    let text;
     let source = 'none';
 
-    const tn = (el && el.tagName ? String(el.tagName).toLowerCase() : '');
+    const tn = el && el.tagName ? String(el.tagName).toLowerCase() : '';
 
     // 1) Label association (native form controls)
     const isFormControl = tn === 'input' || tn === 'select' || tn === 'textarea';
@@ -244,7 +261,7 @@ function runInPage(ctx) {
       if (idrefs && helpers.resolveIdRefs) {
         const r = helpers.resolveIdRefs(idrefs, ctx, { maxRefs: 8 });
         const parts = [];
-        for (const ref of (r && Array.isArray(r.refs) ? r.refs : [])) {
+        for (const ref of r && Array.isArray(r.refs) ? r.refs : []) {
           if (!ref || !ref.tagName) continue;
           if (!isDomVisible(ref)) continue;
           const t = collectVisibleTextUnder(ref);
@@ -275,7 +292,9 @@ function runInPage(ctx) {
 
     let acc = { present: false, value: '', mechanism: 'none', flags: [] };
     try {
-      acc = helpers.getAccessibleNameInfo ? helpers.getAccessibleNameInfo(el, ctx, { maxRefs: 8 }) : acc;
+      acc = helpers.getAccessibleNameInfo
+        ? helpers.getAccessibleNameInfo(el, ctx, { maxRefs: 8 })
+        : acc;
     } catch {
       acc = { present: false, value: '', mechanism: 'none', flags: ['exception'] };
     }
@@ -286,7 +305,9 @@ function runInPage(ctx) {
 
     if (!contains) {
       const selectorOut = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-      const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+      const html = helpers.getOuterHtmlSnippet
+        ? helpers.getOuterHtmlSnippet(el)
+        : el.outerHTML || '';
 
       occurrences.push({
         selector: selectorOut,
@@ -317,8 +338,15 @@ function runInPage(ctx) {
     }
   }
 
-  if (applicableCount === 0) return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
-  if (occurrences.length) return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences };
+  if (applicableCount === 0)
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  if (occurrences.length)
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'fail',
+      severity: rule.defaultSeverity || 'minor',
+      occurrences
+    };
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }
 

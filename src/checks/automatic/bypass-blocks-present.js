@@ -49,7 +49,8 @@ const id = 'bypass-blocks-present';
 
 const meta = {
   title: 'Page must provide a way to bypass repeated blocks',
-  description: 'Checks that the page has at least one recognized WCAG 2.4.1 bypass-blocks mechanism: a main landmark, a working same-page anchor link, or a heading.',
+  description:
+    'Checks that the page has at least one recognized WCAG 2.4.1 bypass-blocks mechanism: a main landmark, a working same-page anchor link, or a heading.',
   i18n: {
     titleKey: 'bypassBlocksPresent_title',
     descriptionKey: 'bypassBlocksPresent_description'
@@ -58,7 +59,13 @@ const meta = {
   tags: ['wcag2a', 'wcag241', 'navigation', 'atomic', 'automatic'],
   wcagSc: ['2.4.1'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '2.4.1', title: 'Bypass Blocks', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '2.4.1',
+      title: 'Bypass Blocks',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'serious',
   category: 'operable',
@@ -83,7 +90,8 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  const isAccTreeEligible = helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+  const isAccTreeEligible =
+    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
 
   function isExposedToAt(el) {
     if (!isAccTreeEligible) return true;
@@ -121,7 +129,7 @@ function runInPage(ctx) {
   }
 
   function hasWorkingAnchorLink() {
-    let links = [];
+    let links;
     try {
       links = document.querySelectorAll('a[href]');
     } catch {
@@ -140,7 +148,7 @@ function runInPage(ctx) {
       fragment = fragment.trim();
       if (!fragment) continue;
 
-      let target = null;
+      let target;
       try {
         target = document.getElementById(fragment);
       } catch {
@@ -167,32 +175,41 @@ function runInPage(ctx) {
 
   const mainLandmark = hasMainLandmark();
   const anchorLink = mainLandmark ? false : hasWorkingAnchorLink();
-  const heading = (mainLandmark || anchorLink) ? false : hasHeading();
+  const heading = mainLandmark || anchorLink ? false : hasHeading();
 
   if (mainLandmark || anchorLink || heading) {
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
 
   const stableSelector = helpers.buildSelector ? helpers.buildSelector(body) : 'body';
-  const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(body) : (body.outerHTML || '').slice(0, 200);
+  const html = helpers.getOuterHtmlSnippet
+    ? helpers.getOuterHtmlSnippet(body)
+    : (body.outerHTML || '').slice(0, 200);
 
-  const occurrences = [{
-    selector: stableSelector,
-    html,
-    summary: 'This page has no recognized way to bypass repeated blocks of content.',
-    hint: 'Add a main landmark (<main> or role="main"), a working "skip to content" link, or heading elements that assistive technology can use to jump past repeated content.',
-    i18n: {
-      summaryKey: 'bypassBlocksPresent_summary_fail',
-      hintKey: 'bypassBlocksPresent_hint_fail',
-      params: {}
-    },
-    data: {
-      details: { reasonCode: 'BYPASS_MECHANISM_ABSENT' },
-      visibilityFilter: { targetSet: 'acc', accEligible: null, reasons: [] }
+  const occurrences = [
+    {
+      selector: stableSelector,
+      html,
+      summary: 'This page has no recognized way to bypass repeated blocks of content.',
+      hint: 'Add a main landmark (<main> or role="main"), a working "skip to content" link, or heading elements that assistive technology can use to jump past repeated content.',
+      i18n: {
+        summaryKey: 'bypassBlocksPresent_summary_fail',
+        hintKey: 'bypassBlocksPresent_hint_fail',
+        params: {}
+      },
+      data: {
+        details: { reasonCode: 'BYPASS_MECHANISM_ABSENT' },
+        visibilityFilter: { targetSet: 'acc', accEligible: null, reasons: [] }
+      }
     }
-  }];
+  ];
 
-  return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'serious', occurrences };
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'fail',
+    severity: rule.defaultSeverity || 'serious',
+    occurrences
+  };
 }
 
 module.exports = { id, meta, runInPage, applicability };

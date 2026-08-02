@@ -42,7 +42,13 @@ const meta = {
   tags: ['wcag2aaa', 'wcag249', 'navigation', 'atomic', 'manual'],
   wcagSc: ['2.4.9'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '2.4.9', title: 'Link Purpose (Link Only)', conformanceLevel: 'AAA' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '2.4.9',
+      title: 'Link Purpose (Link Only)',
+      conformanceLevel: 'AAA'
+    }
   ],
   defaultSeverity: 'minor',
   category: 'operable',
@@ -58,7 +64,9 @@ function runInPage(ctx) {
     return (s == null ? '' : String(s)).replace(/\s+/g, ' ').trim().toLowerCase();
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('a[href]') : helpers.queryAll('a[href]');
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart('a[href]')
+    : helpers.queryAll('a[href]');
 
   const groups = new Map(); // normName -> [{ el, href }]
   let applicableCount = 0;
@@ -67,18 +75,24 @@ function runInPage(ctx) {
     if (!el || !el.getAttribute) continue;
 
     const eligResult = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el, ctx) : true;
-    const eligible = typeof eligResult === 'boolean' ? eligResult : !!(eligResult && eligResult.eligible);
+    const eligible =
+      typeof eligResult === 'boolean' ? eligResult : !!(eligResult && eligResult.eligible);
     if (!eligible) continue;
 
     const nameInfo = helpers.getAccessibleNameInfo ? helpers.getAccessibleNameInfo(el, ctx) : null;
-    const rawName = (nameInfo && typeof nameInfo.value === 'string' && nameInfo.value.trim())
-      ? nameInfo.value
-      : (el.textContent || '');
+    const rawName =
+      nameInfo && typeof nameInfo.value === 'string' && nameInfo.value.trim()
+        ? nameInfo.value
+        : el.textContent || '';
     const name = normName(rawName);
     if (!name) continue;
 
-    let href = '';
-    try { href = String(el.href || ''); } catch { href = ''; }
+    let href;
+    try {
+      href = String(el.href || '');
+    } catch {
+      href = '';
+    }
     if (!href) continue;
 
     applicableCount += 1;
@@ -95,12 +109,15 @@ function runInPage(ctx) {
 
     for (const { el, href } of entries) {
       const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-      const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : (el.outerHTML || '');
+      const html = helpers.getOuterHtmlSnippet
+        ? helpers.getOuterHtmlSnippet(el)
+        : el.outerHTML || '';
 
       const baseOccurrence = {
         selector: stableSelector,
         html,
-        summary: 'This link shares an accessible name with other links on the page that lead to a different destination.',
+        summary:
+          'This link shares an accessible name with other links on the page that lead to a different destination.',
         hint: 'Ensure links with the same text serve the same purpose, or make the link text distinct enough to describe each destination.',
         i18n: {
           summaryKey: 'identicalLinksSamePurpose_summary_cantTell',
@@ -130,7 +147,12 @@ function runInPage(ctx) {
   }
 
   if (occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'cantTell', severity: rule.defaultSeverity || 'minor', occurrences };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'minor',
+      occurrences
+    };
   }
 
   // Manual rules may only emit cantTell/notApplicable (never pass/fail):

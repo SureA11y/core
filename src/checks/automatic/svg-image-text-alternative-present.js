@@ -22,7 +22,8 @@ const id = 'svg-image-text-alternative-present';
 
 const meta = {
   title: 'SVG <image> must have a text alternative',
-  description: 'Checks that SVG <image> elements provide a text alternative via <title>/<desc> or an ARIA accessible name.',
+  description:
+    'Checks that SVG <image> elements provide a text alternative via <title>/<desc> or an ARIA accessible name.',
   i18n: {
     titleKey: 'svgImage_textAltPresent_title',
     descriptionKey: 'svgImage_textAltPresent_description'
@@ -31,7 +32,13 @@ const meta = {
   tags: ['wcag2a', 'wcag111', 'nontext', 'svg', 'image', 'atomic', 'automatic'],
   wcagSc: ['1.1.1'],
   normativeMappings: [
-    { standard: 'WCAG', version: '2.2', requirement: '1.1.1', title: 'Non-text Content', conformanceLevel: 'A' }
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '1.1.1',
+      title: 'Non-text Content',
+      conformanceLevel: 'A'
+    }
   ],
   defaultSeverity: 'serious',
   category: 'perceivable',
@@ -48,31 +55,38 @@ function runInPage(ctx) {
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
-  const queryAllSmart = helpers && typeof helpers.queryAllSmart === 'function' ? helpers.queryAllSmart : null;
-  const queryAll = helpers && typeof helpers.queryAll === 'function'
-    ? helpers.queryAll
-    : (sel) => {
-        try { return safeRoot && safeRoot.querySelectorAll ? Array.from(safeRoot.querySelectorAll(sel)) : []; }
-        catch { return []; }
-      };
+  const queryAllSmart =
+    helpers && typeof helpers.queryAllSmart === 'function' ? helpers.queryAllSmart : null;
+  const queryAll =
+    helpers && typeof helpers.queryAll === 'function'
+      ? helpers.queryAll
+      : (sel) => {
+          try {
+            return safeRoot && safeRoot.querySelectorAll
+              ? Array.from(safeRoot.querySelectorAll(sel))
+              : [];
+          } catch {
+            return [];
+          }
+        };
 
-  const getEligibilityInfo = helpers && typeof helpers.getEligibilityInfo === 'function'
-    ? helpers.getEligibilityInfo
-    : null;
+  const getEligibilityInfo =
+    helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
 
-  const isAccTreeEligible = helpers && typeof helpers.isAccTreeEligible === 'function'
-    ? helpers.isAccTreeEligible
-    : null;
+  const isAccTreeEligible =
+    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
 
-  const isFocusableInfo = helpers && typeof helpers.getFocusableInfo === 'function'
-    ? helpers.getFocusableInfo
-    : null;
+  const isFocusableInfo =
+    helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
 
-  const getAccessibleNameInfo = helpers && typeof helpers.getAccessibleNameInfo === 'function'
-    ? helpers.getAccessibleNameInfo
-    : null;
+  const getAccessibleNameInfo =
+    helpers && typeof helpers.getAccessibleNameInfo === 'function'
+      ? helpers.getAccessibleNameInfo
+      : null;
 
-  function trim(v) { return (v == null ? '' : String(v)).trim(); }
+  function trim(v) {
+    return (v == null ? '' : String(v)).trim();
+  }
 
   // Per SVG accessible-name conventions, only a <title> that is literally
   // the first child element is used by assistive technologies as the
@@ -116,16 +130,27 @@ function runInPage(ctx) {
   }
 
   const rawImages = (() => {
-    try { return Array.from((queryAllSmart ? queryAllSmart('image') : queryAll('image')) || []); }
-    catch { return queryAll('svg image'); }
+    try {
+      return Array.from((queryAllSmart ? queryAllSmart('image') : queryAll('image')) || []);
+    } catch {
+      return queryAll('svg image');
+    }
   })();
 
   const images = rawImages.filter((el) => {
-    try { return el && (el.namespaceURI === 'http://www.w3.org/2000/svg') && (String(el.localName).toLowerCase() === 'image'); }
-    catch { return false; }
+    try {
+      return (
+        el &&
+        el.namespaceURI === 'http://www.w3.org/2000/svg' &&
+        String(el.localName).toLowerCase() === 'image'
+      );
+    } catch {
+      return false;
+    }
   });
 
-  if (!images.length) return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  if (!images.length)
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 
   const occurrences = [];
   let applicableCount = 0;
@@ -135,20 +160,31 @@ function runInPage(ctx) {
 
     if (isAccTreeEligible) {
       const elig = (() => {
-        try { return isAccTreeEligible(el, ctx); } catch { return { eligible: true, reasons: [] }; }
+        try {
+          return isAccTreeEligible(el, ctx);
+        } catch {
+          return { eligible: true, reasons: [] };
+        }
       })();
       if (elig && elig.eligible === false) continue;
     }
 
     const role = trim(el.getAttribute('role')).toLowerCase();
     if (role === 'presentation' || role === 'none') {
-      let focusable = false;
+      let focusable;
       if (isFocusableInfo) {
-        const fi = (() => { try { return isFocusableInfo(el, ctx); } catch { return null; } })();
+        const fi = (() => {
+          try {
+            return isFocusableInfo(el, ctx);
+          } catch {
+            return null;
+          }
+        })();
         focusable = !!(fi && fi.focusable);
       } else {
         const tabindex = el.getAttribute('tabindex');
-        focusable = tabindex != null && trim(tabindex) !== '' && !Number.isNaN(Number(trim(tabindex)));
+        focusable =
+          tabindex != null && trim(tabindex) !== '' && !Number.isNaN(Number(trim(tabindex)));
       }
       if (!focusable) continue;
     }
@@ -162,25 +198,49 @@ function runInPage(ctx) {
     if (desc) continue;
 
     // Only now check “accessible name” (but scoped to allowed mechanisms)
-    const ariaLabelRaw = (() => { try { return el.getAttribute('aria-label'); } catch { return null; } })();
-    const ariaLabelledbyRaw = (() => { try { return el.getAttribute('aria-labelledby'); } catch { return null; } })();
-    const titleAttrRaw = (() => { try { return el.getAttribute('title'); } catch { return null; } })();
+    const ariaLabelRaw = (() => {
+      try {
+        return el.getAttribute('aria-label');
+      } catch {
+        return null;
+      }
+    })();
+    const ariaLabelledbyRaw = (() => {
+      try {
+        return el.getAttribute('aria-labelledby');
+      } catch {
+        return null;
+      }
+    })();
+    const titleAttrRaw = (() => {
+      try {
+        return el.getAttribute('title');
+      } catch {
+        return null;
+      }
+    })();
 
     const ariaLabel = trim(ariaLabelRaw);
     const ariaLabelledby = trim(ariaLabelledbyRaw);
     const titleAttr = trim(titleAttrRaw);
 
     const hasMechanism =
-        (ariaLabelRaw !== null && ariaLabel.length > 0) ||
-        (ariaLabelledbyRaw !== null && ariaLabelledby.length > 0) ||
-        (titleAttrRaw !== null && titleAttr.length > 0);
+      (ariaLabelRaw !== null && ariaLabel.length > 0) ||
+      (ariaLabelledbyRaw !== null && ariaLabelledby.length > 0) ||
+      (titleAttrRaw !== null && titleAttr.length > 0);
 
-    let nameInfo = null;
+    let nameInfo;
     let hasName = false;
 
     if (hasMechanism) {
       if (getAccessibleNameInfo) {
-        nameInfo = (() => { try { return getAccessibleNameInfo(el, ctx); } catch { return null; } })();
+        nameInfo = (() => {
+          try {
+            return getAccessibleNameInfo(el, ctx);
+          } catch {
+            return null;
+          }
+        })();
         hasName = !!(nameInfo && nameInfo.present && trim(nameInfo.value));
       } else {
         // Without helper, accept presence of non-empty allowed attributes
@@ -212,9 +272,16 @@ function runInPage(ctx) {
     }
   }
 
-  if (applicableCount === 0) return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
-  if (!occurrences.length) return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
-  return { ruleId: rule.ruleId, outcome: 'fail', severity: rule.defaultSeverity || 'minor', occurrences };
+  if (applicableCount === 0)
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  if (!occurrences.length)
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'fail',
+    severity: rule.defaultSeverity || 'minor',
+    occurrences
+  };
 }
 
 module.exports = { id, meta, runInPage };
