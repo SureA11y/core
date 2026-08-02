@@ -32999,9 +32999,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     __nameComputationDepth += 1;
     try {
-      const ariaLabel = trim(getAttr(el, 'aria-label'));
-      if (ariaLabel) return ariaLabel;
-
+      // aria-labelledby outranks aria-label per the accname spec (2A before
+      // 2B) -- matches getAriaNameInfo's own precedence. Checking these in
+      // the opposite order (as this function used to) let a target's own
+      // stale/decorative aria-label win over a real, more specific
+      // aria-labelledby chain on that same target.
       const labelledBy = trim(getAttr(el, 'aria-labelledby'));
       if (labelledBy) {
         const parts = labelledBy.split(/\s+/).filter(Boolean);
@@ -33016,6 +33018,34 @@ const createDomHelpers = (function createDomHelpers(opts) {
         }
         const joined = trim(texts.join(' '));
         if (joined) return joined;
+      }
+
+      const ariaLabel = trim(getAttr(el, 'aria-label'));
+      if (ariaLabel) return ariaLabel;
+
+      // Native <label> association, same two-step lookup (.labels API,
+      // then id-based `label[for]` fallback) and same priority slot
+      // (before value-like/content) as getAccessibleNameInfo's own
+      // resolution of a standalone element -- found while extending this
+      // suite: an aria-labelledby TARGET that is itself a labeled form
+      // control (e.g. an <input id="cb"> named by <label for="cb">, with
+      // no aria-label/aria-labelledby of its own) resolved to empty text
+      // instead of the label, since this function never consulted
+      // .labels/id-based label lookup at all -- unlike getAccessibleNameInfo,
+      // whose own priority this function otherwise exists to mirror for a
+      // referenced target.
+      try {
+        if (el.labels && el.labels.length) {
+          for (const labelEl of Array.from(el.labels)) {
+            const info = getLabelSubtreeNameInfo(labelEl, el, _ctx, effOpts);
+            if (info.present && info.value) return info.value;
+          }
+        }
+      } catch {}
+      const elId = trim(getAttr(el, 'id'));
+      if (elId) {
+        const entry = __lookupLabelForId(elId, __getNameOptsKey(effOpts));
+        if (entry && entry.exists && entry.text) return entry.text;
       }
 
       const valueLike = __getElementValueLikeName(el);
@@ -34100,16 +34130,20 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
       const escapeAttrValue = __escapeAttrValue;
 
+      // Same trimmed-check / raw-value-embed split as buildSelectorUncached's
+      // anchor builders (see that function's header comment): a CSS
+      // attribute/ID selector must match the DOM attribute's real,
+      // untrimmed value exactly, so only the truthiness check may trim.
       const elementId = el.getAttribute && el.getAttribute('id');
-      if (elementId && elementId.trim()) return '#' + cssEscapeIdent(elementId.trim());
+      if (elementId && elementId.trim()) return '#' + cssEscapeIdent(elementId);
 
       for (const a of ['data-testid', 'data-test', 'data-cy', 'data-qa']) {
         const v = el.getAttribute && el.getAttribute(a);
-        if (v && v.trim()) return '[' + a + '="' + escapeAttrValue(v.trim()) + '"]';
+        if (v && v.trim()) return '[' + a + '="' + escapeAttrValue(v) + '"]';
       }
 
       const name = el.getAttribute && el.getAttribute('name');
-      if (name && name.trim()) return tag + '[name="' + escapeAttrValue(name.trim()) + '"]';
+      if (name && name.trim()) return tag + '[name="' + escapeAttrValue(name) + '"]';
 
       return tag;
     } catch {

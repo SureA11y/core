@@ -282,6 +282,38 @@ test('getTextAlternativeInfo: an unsupported element (e.g. a plain div) reports 
 
 // ===== resolveIdRefs / getTextFromIdRefs =====
 
+// Regression coverage for two bugs found while extending this suite in
+// computeIdRefTargetTextAlternative (the function that resolves what an
+// aria-labelledby/aria-describedby TARGET itself contributes -- re-applying
+// name computation to that target, not just reading its raw textContent):
+//
+// 1) It checked the target's own aria-label BEFORE its own aria-labelledby,
+//    backwards from the accname spec (2A labelledby, then 2B label) and from
+//    this same file's getAriaNameInfo, which gets the order right. A target
+//    with both attributes (aria-label stale/decorative, aria-labelledby
+//    pointing to the real, current name) resolved to the wrong, stale text.
+// 2) It never consulted a native <label> association at all, so a target
+//    that is itself a labeled form control (e.g. an <input> named via
+//    <label for="...">, with no aria-label/aria-labelledby of its own)
+//    resolved to empty text instead of the label -- unlike
+//    getAccessibleNameInfo, whose own label-before-value/content priority
+//    this function otherwise exists to mirror for a referenced target.
+test("getTextFromIdRefs: a referenced target's own aria-labelledby outranks its own aria-label", () => {
+  const { helpers } = helpersFor(
+    '<span id="c">Right</span><div id="b" aria-label="Wrong" aria-labelledby="c">content</div>'
+  );
+  const t = helpers.getTextFromIdRefs('b', {});
+  assert.equal(t.text, 'Right');
+});
+
+test('getTextFromIdRefs: a referenced target with no aria-label/aria-labelledby resolves via its own native <label>', () => {
+  const { helpers } = helpersFor(
+    '<label for="cb">Accept terms</label><input type="checkbox" id="cb">'
+  );
+  const t = helpers.getTextFromIdRefs('cb', {});
+  assert.equal(t.text, 'Accept terms');
+});
+
 test('resolveIdRefs: an empty/whitespace-only idref string returns an empty result flagged "empty"', () => {
   const { helpers } = helpersFor('<div></div>');
   assert.deepEqual(helpers.resolveIdRefs('   ', {}), { refs: [], missing: [], flags: ['empty'] });

@@ -253,6 +253,46 @@ test('buildSelector: an id with leading/trailing whitespace resolves uniquely vi
   assert.equal(matches[0], target);
 });
 
+// Regression coverage for the same raw-vs-trimmed class of bug the tests
+// above cover for buildSelectorUncached's anchor builders, found while
+// extending this suite: buildSimpleSelector (the final bare-tag/attribute
+// fallback used once every other anchor strategy fails) independently
+// re-implemented id/data-testid/name anchoring and embedded the *trimmed*
+// attribute value in the selector string while only checking (not using)
+// the trimmed value for id/data-testid — so an element whose id, testid, or
+// name attribute had leading/trailing whitespace got a selector that could
+// never match it, silently pointing at nothing (or the wrong element) for
+// any caller that re-resolves the string via querySelector.
+test('buildSimpleSelector: an id with leading/trailing whitespace resolves to the real element', () => {
+  const { helpers, document } = helpersFor(`<!doctype html><html><body>
+    <div id=" padded-id ">content</div>
+  </body></html>`);
+
+  const target = document.querySelector('[id=" padded-id "]');
+  const selector = helpers.buildSimpleSelector(target, 'div');
+  assert.equal(document.querySelector(selector), target);
+});
+
+test('buildSimpleSelector: a data-testid with leading/trailing whitespace resolves to the real element', () => {
+  const { helpers, document } = helpersFor(`<!doctype html><html><body>
+    <div data-testid=" promo, ">content</div>
+  </body></html>`);
+
+  const target = document.querySelector('[data-testid]');
+  const selector = helpers.buildSimpleSelector(target, 'div');
+  assert.equal(document.querySelector(selector), target);
+});
+
+test('buildSimpleSelector: a name attribute with leading/trailing whitespace resolves to the real element', () => {
+  const { helpers, document } = helpersFor(`<!doctype html><html><body>
+    <input name="field, ">
+  </body></html>`);
+
+  const target = document.querySelector('input');
+  const selector = helpers.buildSimpleSelector(target, 'input');
+  assert.equal(document.querySelector(selector), target);
+});
+
 test('buildSelector: every generated selector across many repeated sibling groups resolves uniquely', () => {
   // A denser version of the same shape (many repeated <section> groups with
   // no identifying attributes anywhere), exercising every sibling position.
