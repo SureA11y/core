@@ -165,6 +165,34 @@ test(`${RULE_ID}: notApplicable when aria-label is on a roleless tag not in the 
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+test(`${RULE_ID}: fail when aria-label is on a roleless autonomous custom element with no content fallback (added 2026-08-03 — the rottentomatoes.com <play-button> case)`, () => {
+  const html = `<!doctype html><html><body><play-button id="a" aria-label="Play The Odyssey trailer"></play-button></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+  assert.equal(rule.occurrences[0].data.details.attr, 'aria-label');
+  assert.equal(rule.occurrences[0].data.details.reasonCode, 'ARIA_ATTR_PROHIBITED_ROLELESS');
+});
+
+test(`${RULE_ID}: cantTell when aria-labelledby is on a roleless autonomous custom element that already has content-derived text`, () => {
+  const html = `<!doctype html><html><body><span id="lbl">Guides</span><app-carousel id="a" aria-labelledby="lbl">Some visible content</app-carousel></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+});
+
+test(`${RULE_ID}: notApplicable when aria-label is on a custom element that also has an explicit, real role (e.g. role="button" on the custom tag)`, () => {
+  const html = `<!doctype html><html><body><play-button id="a" role="button" aria-label="Play"></play-button></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: notApplicable for a spec-reserved hyphenated (non-custom-element) tag like <missing-glyph> — not misclassified as an autonomous custom element`, () => {
+  const html = `<!doctype html><html><body><missing-glyph id="a" aria-label="Fallback glyph"></missing-glyph></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
 test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><body><div id="a" role="generic" aria-label="Something"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });

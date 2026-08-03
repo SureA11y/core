@@ -14,8 +14,10 @@
  *   paragraph, presentation, strong, subscript, suggestion, superscript,
  *   time), and (b) a small, curated set of native HTML tags verified to
  *   carry no explicit or implicit ARIA role at all (see ROLELESS_NATIVE_TAGS
- *   below) — in both cases, only elements that also carry aria-label or
- *   aria-labelledby.
+ *   below), OR any autonomous custom element (a hyphenated, author-defined
+ *   tag per the Custom Elements spec — added 2026-08-03, see
+ *   isRolelessCustomElementTag below) — in both cases, only elements that
+ *   also carry aria-label or aria-labelledby.
  * @expectation
  *   Prohibited attributes must not be present on (a); for (b), the naming
  *   attribute is at best unreliable (nothing accessible-name-aware to hang
@@ -338,6 +340,40 @@ function runInPage(ctx) {
     return '';
   }
 
+  // A small, spec-reserved set of hyphenated tag names that are NOT
+  // autonomous custom elements despite containing a hyphen (legacy SVG/
+  // MathML tags predating the Custom Elements spec) — see
+  // https://html.spec.whatwg.org/#valid-custom-element-name's own
+  // exclusion list. Excluded so this doesn't misclassify them as
+  // always-roleless the same way a real custom element is.
+  const RESERVED_HYPHENATED_TAGS = new Set([
+    'annotation-xml',
+    'color-profile',
+    'font-face',
+    'font-face-src',
+    'font-face-uri',
+    'font-face-format',
+    'font-face-name',
+    'missing-glyph'
+  ]);
+
+  // An autonomous custom element (author-defined tag, always containing a
+  // hyphen per the Custom Elements spec's naming grammar) has no implicit
+  // ARIA role at all -- unlike native tags, there is no conditional-role
+  // nuance to worry about here (a native <a>/<section>/<form> can gain an
+  // implicit role depending on other attributes, which is exactly why
+  // ROLELESS_NATIVE_TAGS is a hand-verified allowlist rather than a
+  // blanket rule; a custom element has no such spec-defined conditional
+  // role logic whatsoever). Added 2026-08-03 after finding real custom
+  // elements carrying aria-label with no other name source were silently
+  // skipped by this branch entirely, since it only ever checked the fixed
+  // native-tag allowlist below -- e.g. rottentomatoes.com's
+  // `<play-button aria-label="Play ...">` (106 occurrences on one page)
+  // and Angular Material's `<app-carousel aria-label="...">`.
+  function isRolelessCustomElementTag(tag) {
+    return tag.includes('-') && !RESERVED_HYPHENATED_TAGS.has(tag);
+  }
+
   const namingSelector = '[aria-label],[aria-labelledby]';
   const namingNodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(namingSelector)
@@ -347,7 +383,7 @@ function runInPage(ctx) {
     if (!el || !el.getAttribute) continue;
 
     const tag = String(el.tagName || '').toLowerCase();
-    if (!ROLELESS_NATIVE_TAGS.has(tag)) continue;
+    if (!ROLELESS_NATIVE_TAGS.has(tag) && !isRolelessCustomElementTag(tag)) continue;
     const explicitRole = ariaHelpers.getExplicitRole(el);
     if (explicitRole && ariaHelpers.isValidConcreteRole(explicitRole)) continue; // has a real, recognized role — Tier 1's concern (if in ROLES_PROHIBITING_NAME) or a role this rule has no opinion on. An INVALID role token (e.g. a typo) is ignored per spec, same as no role attribute at all, and must still fall through to this branch.
     if (ariaHelpers.getNativeRoleForElement(el)) continue; // has a real implicit role after all — not this branch's concern
