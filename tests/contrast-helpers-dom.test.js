@@ -263,6 +263,43 @@ test('getComputabilityBlocker: a closer opaque background-color paint-occludes a
   assert.strictEqual(out.ok, true);
 });
 
+test('getComputabilityBlocker: a closer opaque background-color paint-occludes a farther backdrop-filter (not a blocker)', () => {
+  const { document, helpers } = makeHelpers(
+    '<div id="outer" style="backdrop-filter:blur(10px)">' +
+      '<div id="a" style="background-color:white"><span id="b">t</span></div>' +
+      '</div>'
+  );
+  const b = document.getElementById('b');
+  const out = helpers.getComputabilityBlocker(b);
+  assert.strictEqual(out.ok, true);
+});
+
+test('getComputabilityBlocker: a SEMI-TRANSPARENT intervening background does NOT occlude a farther backdrop-filter', () => {
+  const { document, helpers } = makeHelpers(
+    '<div id="outer" style="backdrop-filter:blur(10px)">' +
+      '<div id="a" style="background-color:rgba(255,255,255,0.5)"><span id="b">t</span></div>' +
+      '</div>'
+  );
+  const b = document.getElementById('b');
+  const out = helpers.getComputabilityBlocker(b);
+  assert.strictEqual(out.ok, false);
+  assert.strictEqual(out.reasonCode, 'BACKGROUND_FILTER_OR_BACKDROP_FILTER');
+  assert.strictEqual(out.blockerProperty, 'backdrop-filter');
+});
+
+test('getComputabilityBlocker: an opaque intervening layer does NOT occlude a farther plain `filter` (compositing-group operation, unlike backdrop-filter)', () => {
+  const { document, helpers } = makeHelpers(
+    '<div id="outer" style="filter:blur(10px)">' +
+      '<div id="a" style="background-color:white"><span id="b">t</span></div>' +
+      '</div>'
+  );
+  const b = document.getElementById('b');
+  const out = helpers.getComputabilityBlocker(b);
+  assert.strictEqual(out.ok, false);
+  assert.strictEqual(out.reasonCode, 'BACKGROUND_FILTER_OR_BACKDROP_FILTER');
+  assert.strictEqual(out.blockerProperty, 'filter');
+});
+
 test('getComputabilityBlocker: a very long blocker CSS value is truncated to maxLen with an ellipsis', () => {
   const longValue = 'blur(2px) '.repeat(20).trim(); // 199 chars, well over the 80-char default
   const { document, helpers } = makeHelpers(

@@ -235,6 +235,64 @@ test(`${RULE_ID}: a SEMI-TRANSPARENT intervening background does NOT occlude an 
   assert.ok(hasOccurrenceForId(rule, 'semi_transparent'));
 });
 
+test(`${RULE_ID}: backdrop-filter on an OUTER ancestor is occluded by a closer, fully-opaque solid background => pass (computable)`, () => {
+  const html = `
+<!doctype html>
+<html style="background-color: rgb(255, 255, 255); opacity: 1">
+<head></head>
+<body style="backdrop-filter: blur(10px); opacity: 1">
+  <div style="background-color: rgb(255, 255, 255); opacity: 1">
+    <p id="occluded" style="color: rgb(0, 0, 0); opacity: 1">Sits on a fully opaque white div; the body's backdrop-filter behind it is irrelevant.</p>
+  </div>
+</body></html>`;
+
+  const result = run(html);
+
+  const rule = assertRule(result, RULE_ID, 'pass', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.strictEqual(rule.occurrences[0].i18n.summaryKey, 'contrastComputable_pass_allComputable');
+});
+
+test(`${RULE_ID}: backdrop-filter blocker with NO opaque intervening layer still blocks => cantTell (regression guard)`, () => {
+  const html = `
+<!doctype html>
+<html style="background-color: rgb(255, 255, 255); opacity: 1">
+<head></head>
+<body style="backdrop-filter: blur(10px); opacity: 1">
+  <p id="not_occluded" style="color: rgb(0, 0, 0); opacity: 1">Sits directly under the body's backdrop-filter, no opaque layer in between.</p>
+</body></html>`;
+
+  const result = run(html);
+
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.strictEqual(
+    rule.occurrences[0].data.details.reasonCode,
+    'BACKGROUND_FILTER_OR_BACKDROP_FILTER'
+  );
+  assert.ok(hasOccurrenceForId(rule, 'not_occluded'));
+});
+
+test(`${RULE_ID}: an opaque intervening layer does NOT occlude an OUTER ancestor's plain \`filter\` (compositing-group operation, unlike backdrop-filter) => cantTell`, () => {
+  const html = `
+<!doctype html>
+<html style="background-color: rgb(255, 255, 255); opacity: 1">
+<head></head>
+<body style="filter: blur(10px); opacity: 1">
+  <div style="background-color: rgb(255, 255, 255); opacity: 1">
+    <p id="opaque_then_filter" style="color: rgb(0, 0, 0); opacity: 1">Opaque white div, but wrapped in an ancestor with plain filter.</p>
+  </div>
+</body></html>`;
+
+  const result = run(html);
+
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.strictEqual(
+    rule.occurrences[0].data.details.reasonCode,
+    'BACKGROUND_FILTER_OR_BACKDROP_FILTER'
+  );
+  assert.strictEqual(rule.occurrences[0].data.details.blockerProperty, 'filter');
+  assert.ok(hasOccurrenceForId(rule, 'opaque_then_filter'));
+});
+
 test(`${RULE_ID}: an opaque intervening layer does NOT occlude an OUTER ancestor's opacity<1 (compositing-group operation, not paint) => cantTell ANCESTOR_OPACITY`, () => {
   const html = `
 <!doctype html>

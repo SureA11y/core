@@ -1134,15 +1134,29 @@ function createContrastHelpers(opts, shared) {
     // "solid card/nav/modal over a page-level hero image" pattern is
     // common enough to matter.
     //
-    // This does NOT extend to mix-blend-mode/filter/backdrop-filter or
-    // an ancestor's `opacity` — those are compositing-GROUP operations
-    // applied to that ancestor's entire rendered subtree (including any
-    // "opaque" layer inside it) before blending against whatever is
-    // further out, so a closer opaque paint layer does not shield
-    // against them the way it shields against a plain background-image.
-    // Applying the same short-circuit there would risk a confidently
-    // wrong pass — deliberately NOT done, matching this engine's
-    // no-false-positives bar.
+    // This does NOT extend to mix-blend-mode/filter or an ancestor's
+    // `opacity` — those are compositing-GROUP operations applied to that
+    // ancestor's entire rendered subtree (including any "opaque" layer
+    // inside it) before blending against whatever is further out, so a
+    // closer opaque paint layer does not shield against them the way it
+    // shields against a plain background-image. Applying the same
+    // short-circuit there would risk a confidently wrong pass —
+    // deliberately NOT done, matching this engine's no-false-positives
+    // bar.
+    //
+    // `backdrop-filter` IS extended (2026-08-03), because it is the
+    // opposite kind of operation: it samples/filters whatever is already
+    // rendered BEHIND the element (earlier in paint order), not the
+    // element's own subtree, so a closer-to-el fully-opaque
+    // background-color paints OVER the filtered result at el's screen
+    // position and hides it completely — the same physical occlusion
+    // background-image gets, just sourced from "behind" instead of
+    // "this element's own background image". Confirmed with a live
+    // Chromium repro (not just spec-reading): a `backdrop-filter:
+    // blur()` ancestor containing an inner fully-opaque
+    // `background-color` div renders that div pixel-flat, with zero
+    // blur bleed-through, while sibling content without that opaque
+    // layer shows the blurred backdrop clearly.
     let paintOccluded = false;
 
     while (cur && guard++ < 200) {
@@ -1171,20 +1185,28 @@ function createContrastHelpers(opts, shared) {
 
       if (__hasFilterEl(cur, cs)) {
         const isFilter = cs && cs.filter && String(cs.filter).trim().toLowerCase() !== 'none';
-        const out = {
-          ok: false,
-          reasonCode: 'BACKGROUND_FILTER_OR_BACKDROP_FILTER',
-          blockerSelector: __getSimpleSelectorCached(
-            cur,
-            (cur.tagName || '').toLowerCase() || 'html'
-          ),
-          blockerProperty: isFilter ? 'filter' : 'backdrop-filter',
-          blockerValue: truncateCssValue((isFilter ? cs.filter : cs.backdropFilter) || '', 80)
-        };
-        try {
-          if (el) __computabilityBlockerCache.set(el, out);
-        } catch (_e) {}
-        return out;
+        // __hasFilterEl's OR means: if it's not plain `filter`, it must be
+        // `backdrop-filter` that's set. Unlike `filter` (unconditional
+        // blocker, see the paintOccluded comment above the loop),
+        // backdrop-filter is skipped once a closer opaque layer already
+        // occludes it -- it can't affect what's actually rendered at el's
+        // position anymore, so continue the walk rather than reporting it.
+        if (!(paintOccluded && !isFilter)) {
+          const out = {
+            ok: false,
+            reasonCode: 'BACKGROUND_FILTER_OR_BACKDROP_FILTER',
+            blockerSelector: __getSimpleSelectorCached(
+              cur,
+              (cur.tagName || '').toLowerCase() || 'html'
+            ),
+            blockerProperty: isFilter ? 'filter' : 'backdrop-filter',
+            blockerValue: truncateCssValue((isFilter ? cs.filter : cs.backdropFilter) || '', 80)
+          };
+          try {
+            if (el) __computabilityBlockerCache.set(el, out);
+          } catch (_e) {}
+          return out;
+        }
       }
 
       if (!paintOccluded && __hasBackgroundImageOrGradientEl(cur, cs)) {
