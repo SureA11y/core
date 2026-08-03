@@ -65,8 +65,10 @@ function getOccurrenceOutcome(ruleResult, occurrence) {
         ? occurrence.outcome
         : null);
   if (occurrenceOutcome) return occurrenceOutcome;
-  return ruleResult &&
-    (ruleResult.outcome === 'fail' || ruleResult.outcome === 'cantTell' ? ruleResult.outcome : null);
+  return (
+    ruleResult &&
+    (ruleResult.outcome === 'fail' || ruleResult.outcome === 'cantTell' ? ruleResult.outcome : null)
+  );
 }
 
 function getCardOutcome(ruleResult) {
@@ -242,7 +244,8 @@ function renderCards(checksResults) {
         if (outcome === 'fail' || outcome === 'cantTell') occurrenceCounts[outcome] += 1;
       }
       const representative =
-        r.occurrences.find((occ) => getOccurrenceOutcome(r, occ) === cardOutcome) || r.occurrences[0];
+        r.occurrences.find((occ) => getOccurrenceOutcome(r, occ) === cardOutcome) ||
+        r.occurrences[0];
       const wcagChips = ((r.meta && r.meta.normativeMappings) || [])
         .map(
           (m) =>

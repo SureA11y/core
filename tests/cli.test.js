@@ -109,7 +109,10 @@ test('CLI: mixed-tier occurrences in a fail rule are not all printed as fail in 
     'org-mixed-tier'
   ]);
   assert.equal(status, 1);
-  assert.match(stdout, /org-mixed-tier\s+\(.*1 fail occurrence\(s\), 1 needs-review occurrence\(s\)\)/);
+  assert.match(
+    stdout,
+    /org-mixed-tier\s+\(.*1 fail occurrence\(s\), 1 needs-review occurrence\(s\)\)/
+  );
   assert.match(stdout, /FAIL_ONLY_SUMMARY/);
   assert.doesNotMatch(stdout, /CANTTELL_ONLY_SUMMARY/);
   assert.match(stdout, /cantTell — needs human review \(1 rule\(s\)\): org-mixed-tier/);

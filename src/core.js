@@ -34560,11 +34560,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function runFocusObservationWindow(win, fn) {
     if (!win || typeof fn !== 'function') return;
-    const originalSetTimeout = typeof win.setTimeout === 'function' ? win.setTimeout.bind(win) : null;
+    const originalSetTimeout =
+      typeof win.setTimeout === 'function' ? win.setTimeout.bind(win) : null;
     const originalRequestAnimationFrame =
-      typeof win.requestAnimationFrame === 'function'
-        ? win.requestAnimationFrame.bind(win)
-        : null;
+      typeof win.requestAnimationFrame === 'function' ? win.requestAnimationFrame.bind(win) : null;
     const originalQueueMicrotask =
       typeof win.queueMicrotask === 'function' ? win.queueMicrotask.bind(win) : null;
 
@@ -34706,9 +34705,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const afterInner = getDeepActiveElement(embeddedDoc);
     const afterOuter = getDeepActiveElement(document);
     const sawRedirectedInnerTrace = innerFocusTrace.some((n) => n && n !== candidate);
-    const sawRedirectedOuterTrace = outerFocusTrace.some((n) => n && n !== frameEl && n !== candidate);
-    const redirectedWithinFrame = !!(afterInner && afterInner !== candidate) || sawRedirectedInnerTrace;
-    const redirectedOutOfFrame = !!(afterOuter && afterOuter !== frameEl) || sawRedirectedOuterTrace;
+    const sawRedirectedOuterTrace = outerFocusTrace.some(
+      (n) => n && n !== frameEl && n !== candidate
+    );
+    const redirectedWithinFrame =
+      !!(afterInner && afterInner !== candidate) || sawRedirectedInnerTrace;
+    const redirectedOutOfFrame =
+      !!(afterOuter && afterOuter !== frameEl) || sawRedirectedOuterTrace;
     const sawCandidateFocus = focusedByEvent || innerFocusTrace.some((n) => n === candidate);
 
     if (beforeInner && beforeInner !== afterInner) focusElementSafe(beforeInner);
@@ -34760,7 +34763,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
     const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
     const shouldProbe = candidates.length === 1;
-    const runtimeProbe = shouldProbe ? probeImmediateFocusRedirect(el, contentDoc, candidates[0]) : null;
+    const runtimeProbe = shouldProbe
+      ? probeImmediateFocusRedirect(el, contentDoc, candidates[0])
+      : null;
 
     if (runtimeProbe && runtimeProbe.redirected) {
       cantTellOccurrences.push({
@@ -72545,11 +72550,10 @@ const __a11yCoreCrossFrameApi = (function () {
 
   function runFocusObservationWindow(win, fn) {
     if (!win || typeof fn !== 'function') return;
-    const originalSetTimeout = typeof win.setTimeout === 'function' ? win.setTimeout.bind(win) : null;
+    const originalSetTimeout =
+      typeof win.setTimeout === 'function' ? win.setTimeout.bind(win) : null;
     const originalRequestAnimationFrame =
-      typeof win.requestAnimationFrame === 'function'
-        ? win.requestAnimationFrame.bind(win)
-        : null;
+      typeof win.requestAnimationFrame === 'function' ? win.requestAnimationFrame.bind(win) : null;
     const originalQueueMicrotask =
       typeof win.queueMicrotask === 'function' ? win.queueMicrotask.bind(win) : null;
 
@@ -72691,9 +72695,13 @@ const __a11yCoreCrossFrameApi = (function () {
     const afterInner = getDeepActiveElement(embeddedDoc);
     const afterOuter = getDeepActiveElement(document);
     const sawRedirectedInnerTrace = innerFocusTrace.some((n) => n && n !== candidate);
-    const sawRedirectedOuterTrace = outerFocusTrace.some((n) => n && n !== frameEl && n !== candidate);
-    const redirectedWithinFrame = !!(afterInner && afterInner !== candidate) || sawRedirectedInnerTrace;
-    const redirectedOutOfFrame = !!(afterOuter && afterOuter !== frameEl) || sawRedirectedOuterTrace;
+    const sawRedirectedOuterTrace = outerFocusTrace.some(
+      (n) => n && n !== frameEl && n !== candidate
+    );
+    const redirectedWithinFrame =
+      !!(afterInner && afterInner !== candidate) || sawRedirectedInnerTrace;
+    const redirectedOutOfFrame =
+      !!(afterOuter && afterOuter !== frameEl) || sawRedirectedOuterTrace;
     const sawCandidateFocus = focusedByEvent || innerFocusTrace.some((n) => n === candidate);
 
     if (beforeInner && beforeInner !== afterInner) focusElementSafe(beforeInner);
@@ -72745,7 +72753,9 @@ const __a11yCoreCrossFrameApi = (function () {
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
     const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
     const shouldProbe = candidates.length === 1;
-    const runtimeProbe = shouldProbe ? probeImmediateFocusRedirect(el, contentDoc, candidates[0]) : null;
+    const runtimeProbe = shouldProbe
+      ? probeImmediateFocusRedirect(el, contentDoc, candidates[0])
+      : null;
 
     if (runtimeProbe && runtimeProbe.redirected) {
       cantTellOccurrences.push({

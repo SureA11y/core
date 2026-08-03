@@ -266,8 +266,5 @@ test('renderSarifReport: aria-prohibited-attr mixed-tier occurrences produce bot
   const results = sarif.runs[0].results.filter((r) => r.ruleId === 'aria-prohibited-attr');
 
   assert.strictEqual(results.length, 2);
-  assert.deepStrictEqual(
-    results.map((r) => r.level).sort(),
-    ['error', 'warning']
-  );
+  assert.deepStrictEqual(results.map((r) => r.level).sort(), ['error', 'warning']);
 });

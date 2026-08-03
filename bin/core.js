@@ -219,8 +219,12 @@ function printSummary(result, baselineMatch) {
           ? occurrence.outcome
           : null);
     if (occurrenceOutcome) return occurrenceOutcome;
-    return ruleResult &&
-      (ruleResult.outcome === 'fail' || ruleResult.outcome === 'cantTell' ? ruleResult.outcome : null);
+    return (
+      ruleResult &&
+      (ruleResult.outcome === 'fail' || ruleResult.outcome === 'cantTell'
+        ? ruleResult.outcome
+        : null)
+    );
   }
 
   const byOutcome = { pass: 0, fail: 0, cantTell: 0, notApplicable: 0 };

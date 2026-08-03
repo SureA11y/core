@@ -6,7 +6,11 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const { assertRule } = require('../../helpers/assertRule.js');
-const { createDom, runa11yCoreOnDom, runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
+const {
+  createDom,
+  runa11yCoreOnDom,
+  runa11yCoreOnHtml
+} = require('../../helpers/runDomRulesOnHtml.js');
 
 const RULE_ID = 'css-hidden-focus';
 
@@ -90,10 +94,7 @@ test(`${RULE_ID}: redirecting hidden focus target remains cantTell and reports r
     (o) => typeof o.html === 'string' && o.html.includes('id="sentinel"')
   );
   assert.ok(occ, 'expected occurrence for sentinel');
-  assert.strictEqual(
-    occ.data.details.reasonCode,
-    'cssHiddenTabbable_runtimeRedirect_needsReview'
-  );
+  assert.strictEqual(occ.data.details.reasonCode, 'cssHiddenTabbable_runtimeRedirect_needsReview');
   assert.strictEqual(occ.data.details.runtimeProbe.redirected, true);
 });
 
