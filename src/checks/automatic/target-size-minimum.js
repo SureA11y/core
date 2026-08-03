@@ -591,6 +591,7 @@ function runInPage(ctx) {
       cantTellOccurrences.push({
         selector: buildSelector(it.el),
         html: htmlSnippet(it.el),
+        occurrenceOutcome: 'cantTell',
         summary:
           'Target may be too small and too close to another target, but the overlap is near the detection threshold and could not be confidently measured.',
         hint: 'Manually verify the effective spacing between this target and its neighbor; increase target size or spacing if the overlap is real.',
@@ -619,6 +620,7 @@ function runInPage(ctx) {
         cantTellOccurrences.push({
           selector: buildSelector(it.el),
           html: htmlSnippet(it.el),
+          occurrenceOutcome: 'cantTell',
           summary:
             'Target is too small and too close to another target, but may be exempt as part of an essential graphic or image-map region.',
           hint: 'Verify whether this target’s size is genuinely essential to its function (e.g. part of an SVG/canvas/image map); if not, increase target size or spacing.',
@@ -642,6 +644,7 @@ function runInPage(ctx) {
       failOccurrences.push({
         selector: buildSelector(it.el),
         html: htmlSnippet(it.el),
+        occurrenceOutcome: 'fail',
         summary: 'Target is too small and too close to another target.',
         hint: 'Increase target size to at least 24 by 24 CSS pixels, or add sufficient spacing.',
         i18n: {

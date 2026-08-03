@@ -73,6 +73,64 @@ test('CLI: scan exits 1 and reports fail occurrences for a page with real violat
   assert.match(stdout, /FAIL/);
 });
 
+test('CLI: mixed-tier occurrences in a fail rule are not all printed as fail in the summary', () => {
+  const file = path.join(tmpDir, 'mixed-tier-summary.html');
+  fs.writeFileSync(
+    file,
+    '<!doctype html><html lang="en"><head><title>T</title></head><body><main><button id="x">X</button></main></body></html>'
+  );
+  const rulesFile = path.join(tmpDir, 'custom-rules-mixed-tier.js');
+  fs.writeFileSync(
+    rulesFile,
+    `module.exports = [{
+      id: 'org-mixed-tier',
+      runInPage(ctx) {
+        const el = ctx.document.getElementById('x');
+        const selector = ctx.helpers.buildSelector(el);
+        const html = el.outerHTML;
+        return {
+          ruleId: ctx.rule.ruleId,
+          outcome: 'fail',
+          occurrences: [
+            { selector, html, summary: 'FAIL_ONLY_SUMMARY', occurrenceOutcome: 'fail' },
+            { selector, html, summary: 'CANTTELL_ONLY_SUMMARY', occurrenceOutcome: 'cantTell' }
+          ]
+        };
+      }
+    }];`
+  );
+
+  const { stdout, status } = run([
+    'scan',
+    file,
+    '--custom-rules',
+    rulesFile,
+    '--rules',
+    'org-mixed-tier'
+  ]);
+  assert.equal(status, 1);
+  assert.match(stdout, /org-mixed-tier\s+\(.*1 fail occurrence\(s\), 1 needs-review occurrence\(s\)\)/);
+  assert.match(stdout, /FAIL_ONLY_SUMMARY/);
+  assert.doesNotMatch(stdout, /CANTTELL_ONLY_SUMMARY/);
+  assert.match(stdout, /cantTell — needs human review \(1 rule\(s\)\): org-mixed-tier/);
+});
+
+test('CLI: aria-prohibited-attr mixed fail+cantTell page shows separated tier counts in summary output', () => {
+  const file = path.join(tmpDir, 'aria-prohibited-attr-mixed.html');
+  fs.writeFileSync(
+    file,
+    '<!doctype html><html lang="en"><head><title>T</title></head><body><span id="roleless_canttell" aria-label="Custom label">Visible text</span><span id="roleless_fail" aria-label="icon-only"></span></body></html>'
+  );
+
+  const { stdout, status } = run(['scan', file, '--rules', 'aria-prohibited-attr']);
+  assert.equal(status, 1);
+  assert.match(
+    stdout,
+    /aria-prohibited-attr\s+\(.*1 fail occurrence\(s\), 1 needs-review occurrence\(s\)\)/
+  );
+  assert.match(stdout, /cantTell — needs human review \(1 rule\(s\)\): aria-prohibited-attr/);
+});
+
 test('CLI: scan exits 0 for a page with no fail outcomes', () => {
   const file = path.join(tmpDir, 'clean.html');
   fs.writeFileSync(

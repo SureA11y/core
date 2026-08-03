@@ -39,6 +39,23 @@ test('renderHtmlReport: a rule with zero occurrences produces no card', () => {
   assert.match(report, /No fail\/cantTell rules with occurrences/);
 });
 
+test('renderHtmlReport: mixed fail-rule occurrences preserve per-occurrence outcome in technical-data rows', () => {
+  const check = makeCheckResult({
+    ruleId: 'mixed-rule',
+    outcome: 'fail',
+    occurrences: [
+      makeOccurrence({ selector: 'img.fail', occurrenceOutcome: 'fail' }),
+      makeOccurrence({ selector: 'img.canttell', occurrenceOutcome: 'cantTell' })
+    ]
+  });
+  const result = makeScanResult([check]);
+  const report = renderHtmlReport(result);
+
+  assert.match(report, /"selector":"img\.fail"/);
+  assert.match(report, /"selector":"img\.canttell"/);
+  assert.match(report, /"outcome":"cantTell"/);
+});
+
 test('renderHtmlReport: occurrence html/selector containing script-breaking content is safely escaped, never executes or breaks out of embedded JSON', () => {
   const maliciousOccurrence = makeOccurrence({
     selector: '<img src=x onerror=alert(1)>',

@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const { assertRule } = require('../../helpers/assertRule.js');
-const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
+const { createDom, runa11yCoreOnDom, runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 
 const RULE_ID = 'css-hidden-focus';
 
@@ -72,6 +72,29 @@ test(`${RULE_ID}: cantTell when multiple visibility hints apply (opacity:0 + off
     rule.occurrences[0].data.details.metrics.visibilityHints.join(','),
     'opacityZero,offscreen'
   );
+});
+
+test(`${RULE_ID}: redirecting hidden focus target remains cantTell and reports runtime redirect details`, () => {
+  const dom = createDom(`<!doctype html><html><body>
+      <button id="sentinel" style="opacity:0">Sentinel</button>
+      <button id="target">Target</button>
+    </body></html>`);
+  dom.window.document.getElementById('sentinel').addEventListener('focus', () => {
+    dom.window.setTimeout(() => {
+      dom.window.document.getElementById('target').focus();
+    }, 0);
+  });
+  const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1 });
+  const occ = rule.occurrences.find(
+    (o) => typeof o.html === 'string' && o.html.includes('id="sentinel"')
+  );
+  assert.ok(occ, 'expected occurrence for sentinel');
+  assert.strictEqual(
+    occ.data.details.reasonCode,
+    'cssHiddenTabbable_runtimeRedirect_needsReview'
+  );
+  assert.strictEqual(occ.data.details.runtimeProbe.redirected, true);
 });
 
 test(`${RULE_ID}: excludes candidates that are opacity:0 AND visibility:hidden together (notApplicable — visibility:hidden wins; found on a real site, Getty's global nav dropdowns)`, () => {

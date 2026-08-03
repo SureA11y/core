@@ -9244,6 +9244,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       hint: downgradedToCantTell
         ? 'Verify this is an intentional focus sentinel/focus-trap handoff and that keyboard users never remain on hidden focus targets.'
         : 'Remove focusability from descendants or remove aria-hidden; ensure focus and accessibility trees stay aligned.',
+      occurrenceOutcome: downgradedToCantTell ? 'cantTell' : 'fail',
       i18n: {
         summaryKey: downgradedToCantTell
           ? 'ariaHidden_focus_summary_cantTell_redirect'
@@ -9364,6 +9365,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       failOccurrences.push({
         selector: stableSelector,
         html,
+        occurrenceOutcome: 'fail',
         summary: 'This attribute is prohibited on this element’s role.',
         hint: 'Remove this attribute; this role must not carry an accessible name.',
         i18n: {
@@ -9530,6 +9532,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         cantTellOccurrences.push({
           selector: stableSelector,
           html,
+          occurrenceOutcome: 'cantTell',
           summary: `This ${tag} has no role, so ${attr} may not be exposed as its accessible name by assistive technology — but the element's own content already provides one.`,
           hint: 'Verify whether the existing text content already serves as this element’s label; if so the naming attribute is redundant, otherwise give the element a role that supports naming (e.g. role="img").',
           i18n: {
@@ -9550,6 +9553,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         failOccurrences.push({
           selector: stableSelector,
           html,
+          occurrenceOutcome: 'fail',
           summary: `This ${tag} has no role and no other accessible-name source, so ${attr} is not reliably exposed to assistive technology.`,
           hint: 'Give this element a role that supports an accessible name (e.g. role="img"/"button"), or remove this attribute if it serves no purpose without one.',
           i18n: {
@@ -13455,6 +13459,163 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  function getDeepActiveElement(docRef) {
+    let cur = docRef && docRef.activeElement ? docRef.activeElement : null;
+    let guard = 0;
+    while (cur && cur.shadowRoot && cur.shadowRoot.activeElement && guard++ < 20) {
+      cur = cur.shadowRoot.activeElement;
+    }
+    return cur;
+  }
+
+  function focusElementSafe(el) {
+    if (!el || typeof el.focus !== 'function') return false;
+    try {
+      el.focus({ preventScroll: true });
+      return true;
+    } catch {
+      try {
+        el.focus();
+        return true;
+      } catch {
+        return false;
+      }
+    }
+  }
+
+  function runFocusObservationWindow(docRef, fn) {
+    const w =
+      docRef && docRef.defaultView
+        ? docRef.defaultView
+        : typeof window !== 'undefined'
+          ? window
+          : null;
+    if (!w || typeof fn !== 'function') return;
+
+    const originalSetTimeout = typeof w.setTimeout === 'function' ? w.setTimeout.bind(w) : null;
+    const originalRequestAnimationFrame =
+      typeof w.requestAnimationFrame === 'function' ? w.requestAnimationFrame.bind(w) : null;
+    const originalQueueMicrotask =
+      typeof w.queueMicrotask === 'function' ? w.queueMicrotask.bind(w) : null;
+
+    const queuedMicrotasks = [];
+    const queuedRaf = [];
+    const queuedTimers = [];
+    let fakeTimerId = 1;
+
+    const patchedSetTimeout = function (cb, delay) {
+      const d = Number.isFinite(Number(delay)) ? Number(delay) : 0;
+      if (typeof cb === 'function' && d <= 200) {
+        const args = [];
+        for (let i = 2; i < arguments.length; i++) args.push(arguments[i]);
+        queuedTimers.push({ delay: d, cb: () => cb.apply(w, args) });
+        return fakeTimerId++;
+      }
+      if (originalSetTimeout) return originalSetTimeout.apply(w, arguments);
+      return fakeTimerId++;
+    };
+
+    const patchedRaf = function (cb) {
+      if (typeof cb === 'function') {
+        queuedRaf.push(cb);
+        return fakeTimerId++;
+      }
+      if (originalRequestAnimationFrame) return originalRequestAnimationFrame.apply(w, arguments);
+      return fakeTimerId++;
+    };
+
+    const patchedQueueMicrotask = function (cb) {
+      if (typeof cb === 'function') queuedMicrotasks.push(cb);
+    };
+
+    try {
+      if (originalSetTimeout) w.setTimeout = patchedSetTimeout;
+      if (originalRequestAnimationFrame) w.requestAnimationFrame = patchedRaf;
+      if (originalQueueMicrotask) w.queueMicrotask = patchedQueueMicrotask;
+      fn();
+
+      let guard = 0;
+      while (
+        (queuedMicrotasks.length || queuedRaf.length || queuedTimers.length) &&
+        guard++ < 100
+      ) {
+        while (queuedMicrotasks.length) {
+          const mt = queuedMicrotasks.shift();
+          try {
+            mt();
+          } catch {}
+        }
+        while (queuedRaf.length) {
+          const rf = queuedRaf.shift();
+          try {
+            rf(16);
+          } catch {}
+        }
+        if (queuedTimers.length) {
+          queuedTimers.sort((a, b) => a.delay - b.delay);
+          const tt = queuedTimers.shift();
+          try {
+            tt.cb();
+          } catch {}
+        }
+      }
+    } finally {
+      if (originalSetTimeout) w.setTimeout = originalSetTimeout;
+      if (originalRequestAnimationFrame) w.requestAnimationFrame = originalRequestAnimationFrame;
+      if (originalQueueMicrotask) w.queueMicrotask = originalQueueMicrotask;
+    }
+  }
+
+  function probeImmediateFocusRedirect(candidate) {
+    if (!candidate || typeof candidate.addEventListener !== 'function') return null;
+
+    let focusedByEvent = false;
+    const onFocusCapture = () => {
+      focusedByEvent = true;
+    };
+    try {
+      candidate.addEventListener('focus', onFocusCapture, true);
+    } catch {}
+
+    const before = getDeepActiveElement(document);
+    let focused = false;
+    runFocusObservationWindow(document, () => {
+      focused = focusElementSafe(candidate);
+    });
+
+    try {
+      candidate.removeEventListener('focus', onFocusCapture, true);
+    } catch {}
+    if (!focused || !focusedByEvent) return null;
+
+    const after = getDeepActiveElement(document);
+
+    if (before && before !== after) {
+      focusElementSafe(before);
+    }
+
+    if (!after || after === candidate) return null;
+    const redirectedTag = (() => {
+      try {
+        return lower(after.tagName || '');
+      } catch {
+        return '';
+      }
+    })();
+    const redirectedId = (() => {
+      try {
+        return trim(after.getAttribute && after.getAttribute('id'));
+      } catch {
+        return '';
+      }
+    })();
+    return {
+      redirected: true,
+      redirectedToTag: redirectedTag || null,
+      redirectedToId: redirectedId || null
+    };
+  }
+
   function isTabbable(el, info) {
     const f = info || getFocusableInfoSafe(el);
     return !!(f && f.focusable && f.tabbable);
@@ -13487,6 +13648,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   const occurrences = [];
+  const maxRuntimeProbeCount = 3;
+  let runtimeProbeCount = 0;
 
   for (const el of candidates) {
     if (!el || !el.getAttribute) continue;
@@ -13512,18 +13675,32 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const hintsArr = [];
     for (const k of hintOrder) if (hints.includes(k)) hintsArr.push(k);
 
+    const runtimeProbe =
+      runtimeProbeCount < maxRuntimeProbeCount ? probeImmediateFocusRedirect(el) : null;
+    if (runtimeProbeCount < maxRuntimeProbeCount) runtimeProbeCount += 1;
+    const downgradedToRedirectReview = !!(runtimeProbe && runtimeProbe.redirected);
+
     const baseOccurrence = {
-      summary: `Focusable ${tagName} appears visually hidden (${hintsArr.join(',')}). Verify it becomes visible on keyboard focus.`,
-      hint: 'Manually tab to the element and confirm a visible focus indicator and that the element is visible when focused. If it remains hidden while focused, fix CSS/JS so it becomes visible or is removed from the tab order until visible.',
-      i18n: {
-        summaryKey: 'cssHidden_focus_summary_cantTell',
-        hintKey: 'cssHidden_focus_hint_cantTell',
-        params: { element: tagName, visibilityHints: hintsArr.join(',') }
-      },
+      summary: downgradedToRedirectReview
+        ? `Focusable ${tagName} appears visually hidden but focus moved immediately to another element. Verify sentinel/focus-trap behavior.`
+        : `Focusable ${tagName} appears visually hidden (${hintsArr.join(',')}). Verify it becomes visible on keyboard focus.`,
+      hint: downgradedToRedirectReview
+        ? 'Verify this is an intentional focus sentinel/focus-trap handoff and that keyboard users never remain on visually hidden focus targets.'
+        : 'Manually tab to the element and confirm a visible focus indicator and that the element is visible when focused. If it remains hidden while focused, fix CSS/JS so it becomes visible or is removed from the tab order until visible.',
+      i18n: downgradedToRedirectReview
+        ? null
+        : {
+            summaryKey: 'cssHidden_focus_summary_cantTell',
+            hintKey: 'cssHidden_focus_hint_cantTell',
+            params: { element: tagName, visibilityHints: hintsArr.join(',') }
+          },
       data: {
         details: {
-          reasonCode: 'cssHiddenTabbable_needsFocusStateVerification',
-          metrics: { visibilityHints: hintsArr.slice(0) }
+          reasonCode: downgradedToRedirectReview
+            ? 'cssHiddenTabbable_runtimeRedirect_needsReview'
+            : 'cssHiddenTabbable_needsFocusStateVerification',
+          metrics: { visibilityHints: hintsArr.slice(0) },
+          runtimeProbe: runtimeProbe || null
         }
       }
     };
@@ -15736,7 +15913,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "iframe-focusable-content": { run: (function runInPage(ctx) {
-  const { helpers, rule } = ctx;
+  const { helpers, rule, document } = ctx;
 
   // Self-contained rendering check for the embedded document (a distinct
   // realm — see this rule's own header comment on why the outer
@@ -15768,8 +15945,110 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
-  function hasFocusableCandidate(doc) {
-    if (!doc || !doc.querySelectorAll) return false;
+  function getDeepActiveElement(docRef) {
+    let cur = docRef && docRef.activeElement ? docRef.activeElement : null;
+    let guard = 0;
+    while (cur && cur.shadowRoot && cur.shadowRoot.activeElement && guard++ < 20) {
+      cur = cur.shadowRoot.activeElement;
+    }
+    return cur;
+  }
+
+  function focusElementSafe(el) {
+    if (!el || typeof el.focus !== 'function') return false;
+    try {
+      el.focus({ preventScroll: true });
+      return true;
+    } catch {
+      try {
+        el.focus();
+        return true;
+      } catch {
+        return false;
+      }
+    }
+  }
+
+  function runFocusObservationWindow(win, fn) {
+    if (!win || typeof fn !== 'function') return;
+    const originalSetTimeout = typeof win.setTimeout === 'function' ? win.setTimeout.bind(win) : null;
+    const originalRequestAnimationFrame =
+      typeof win.requestAnimationFrame === 'function'
+        ? win.requestAnimationFrame.bind(win)
+        : null;
+    const originalQueueMicrotask =
+      typeof win.queueMicrotask === 'function' ? win.queueMicrotask.bind(win) : null;
+
+    const queuedMicrotasks = [];
+    const queuedRaf = [];
+    const queuedTimers = [];
+    let fakeTimerId = 1;
+
+    const patchedSetTimeout = function (cb, delay) {
+      const d = Number.isFinite(Number(delay)) ? Number(delay) : 0;
+      if (typeof cb === 'function' && d <= 200) {
+        const args = [];
+        for (let i = 2; i < arguments.length; i++) args.push(arguments[i]);
+        queuedTimers.push({ delay: d, cb: () => cb.apply(win, args) });
+        return fakeTimerId++;
+      }
+      if (originalSetTimeout) return originalSetTimeout.apply(win, arguments);
+      return fakeTimerId++;
+    };
+
+    const patchedRaf = function (cb) {
+      if (typeof cb === 'function') {
+        queuedRaf.push(cb);
+        return fakeTimerId++;
+      }
+      if (originalRequestAnimationFrame) return originalRequestAnimationFrame.apply(win, arguments);
+      return fakeTimerId++;
+    };
+
+    const patchedQueueMicrotask = function (cb) {
+      if (typeof cb === 'function') queuedMicrotasks.push(cb);
+    };
+
+    try {
+      if (originalSetTimeout) win.setTimeout = patchedSetTimeout;
+      if (originalRequestAnimationFrame) win.requestAnimationFrame = patchedRaf;
+      if (originalQueueMicrotask) win.queueMicrotask = patchedQueueMicrotask;
+      fn();
+
+      let guard = 0;
+      while (
+        (queuedMicrotasks.length || queuedRaf.length || queuedTimers.length) &&
+        guard++ < 100
+      ) {
+        while (queuedMicrotasks.length) {
+          const mt = queuedMicrotasks.shift();
+          try {
+            mt();
+          } catch {}
+        }
+        while (queuedRaf.length) {
+          const rf = queuedRaf.shift();
+          try {
+            rf(16);
+          } catch {}
+        }
+        if (queuedTimers.length) {
+          queuedTimers.sort((a, b) => a.delay - b.delay);
+          const tt = queuedTimers.shift();
+          try {
+            tt.cb();
+          } catch {}
+        }
+      }
+    } finally {
+      if (originalSetTimeout) win.setTimeout = originalSetTimeout;
+      if (originalRequestAnimationFrame) win.requestAnimationFrame = originalRequestAnimationFrame;
+      if (originalQueueMicrotask) win.queueMicrotask = originalQueueMicrotask;
+    }
+  }
+
+  function getFocusableCandidates(doc) {
+    if (!doc || !doc.querySelectorAll) return [];
     let els;
     try {
       els = doc.querySelectorAll(
@@ -15777,8 +16056,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           'select:not([disabled]), textarea:not([disabled]), iframe, [contenteditable="true"], [tabindex]'
       );
     } catch {
-      return false;
+      return [];
     }
+    const candidates = [];
     for (const el of els) {
       if (!el || !el.getAttribute) continue;
       const raw = el.getAttribute('tabindex');
@@ -15787,9 +16067,72 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         if (!Number.isNaN(n) && n < 0) continue; // explicitly removed from tab order
       }
       if (!isRenderedInDoc(doc, el)) continue; // display:none/visibility:hidden/[hidden]: never reachable at all
-      return true;
+      candidates.push(el);
     }
-    return false;
+    return candidates;
+  }
+
+  function probeImmediateFocusRedirect(frameEl, embeddedDoc, candidate) {
+    if (!frameEl || !embeddedDoc || !candidate) return null;
+    const embeddedWindow = embeddedDoc.defaultView;
+    if (!embeddedWindow) return null;
+
+    let focusedByEvent = false;
+    const onFocusCapture = () => {
+      focusedByEvent = true;
+    };
+    try {
+      candidate.addEventListener('focus', onFocusCapture, true);
+    } catch {}
+
+    const innerFocusTrace = [];
+    const outerFocusTrace = [];
+    const onInnerFocusIn = (ev) => {
+      if (ev && ev.target) innerFocusTrace.push(ev.target);
+    };
+    const onOuterFocusIn = (ev) => {
+      if (ev && ev.target) outerFocusTrace.push(ev.target);
+    };
+    try {
+      embeddedDoc.addEventListener('focusin', onInnerFocusIn, true);
+      document.addEventListener('focusin', onOuterFocusIn, true);
+    } catch {}
+
+    const beforeInner = getDeepActiveElement(embeddedDoc);
+    const beforeOuter = getDeepActiveElement(document);
+    let focused = false;
+    runFocusObservationWindow(embeddedWindow, () => {
+      focused = focusElementSafe(candidate);
+    });
+    try {
+      embeddedDoc.removeEventListener('focusin', onInnerFocusIn, true);
+      document.removeEventListener('focusin', onOuterFocusIn, true);
+    } catch {}
+    try {
+      candidate.removeEventListener('focus', onFocusCapture, true);
+    } catch {}
+
+    if (!focused) return null;
+
+    const afterInner = getDeepActiveElement(embeddedDoc);
+    const afterOuter = getDeepActiveElement(document);
+    const sawRedirectedInnerTrace = innerFocusTrace.some((n) => n && n !== candidate);
+    const sawRedirectedOuterTrace = outerFocusTrace.some((n) => n && n !== frameEl && n !== candidate);
+    const redirectedWithinFrame = !!(afterInner && afterInner !== candidate) || sawRedirectedInnerTrace;
+    const redirectedOutOfFrame = !!(afterOuter && afterOuter !== frameEl) || sawRedirectedOuterTrace;
+    const sawCandidateFocus = focusedByEvent || innerFocusTrace.some((n) => n === candidate);
+
+    if (beforeInner && beforeInner !== afterInner) focusElementSafe(beforeInner);
+    if (beforeOuter && beforeOuter !== afterOuter) focusElementSafe(beforeOuter);
+
+    if (!sawCandidateFocus) return null;
+    if (!redirectedWithinFrame && !redirectedOutOfFrame) return null;
+
+    return {
+      redirected: true,
+      redirectedWithinFrame,
+      redirectedOutOfFrame
+    };
   }
 
   function getNegativeTabIndex(el) {
@@ -15803,7 +16146,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     ? helpers.queryAllSmart('iframe, frame')
     : helpers.queryAll('iframe, frame');
 
-  const occurrences = [];
+  const failOccurrences = [];
+  const cantTellOccurrences = [];
   let applicableCount = 0;
 
   for (const el of nodes) {
@@ -15820,13 +16164,35 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     applicableCount += 1;
 
-    if (!hasFocusableCandidate(contentDoc)) continue;
+    const candidates = getFocusableCandidates(contentDoc);
+    if (!candidates.length) continue;
 
     const tag = el.tagName.toLowerCase();
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
     const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
+    const shouldProbe = candidates.length === 1;
+    const runtimeProbe = shouldProbe ? probeImmediateFocusRedirect(el, contentDoc, candidates[0]) : null;
 
-    occurrences.push({
+    if (runtimeProbe && runtimeProbe.redirected) {
+      cantTellOccurrences.push({
+        selector: stableSelector,
+        html,
+        summary:
+          'This frame has tabindex="-1" and a focusable candidate, but focus moves immediately to another target. Verify keyboard reachability in a real browser.',
+        hint: 'If this is an intentional focus handoff, ensure keyboard users cannot remain on hidden/intermediate frame content.',
+        i18n: null,
+        data: {
+          details: {
+            reasonCode: 'IFRAME_TABINDEX_NEGATIVE_CONTENT_RUNTIME_REDIRECT',
+            element: tag,
+            runtimeProbe
+          }
+        }
+      });
+      continue;
+    }
+
+    failOccurrences.push({
       selector: stableSelector,
       html,
       summary:
@@ -15846,12 +16212,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
+  const tiered = helpers.resolveTieredOutcome
+    ? helpers.resolveTieredOutcome(
+        failOccurrences,
+        cantTellOccurrences,
+        rule.defaultSeverity || 'moderate'
+      )
+    : null;
+  if (tiered && tiered.outcome !== 'pass') {
+    return {
+      ruleId: rule.ruleId,
+      outcome: tiered.outcome,
+      severity: rule.defaultSeverity || 'moderate',
+      occurrences: tiered.occurrences
+    };
+  }
+  if (!helpers.resolveTieredOutcome && failOccurrences.length) {
     return {
       ruleId: rule.ruleId,
       outcome: 'fail',
       severity: rule.defaultSeverity || 'moderate',
-      occurrences
+      occurrences: failOccurrences
     };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
@@ -25324,6 +25705,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       cantTellOccurrences.push({
         selector: buildSelector(it.el),
         html: htmlSnippet(it.el),
+        occurrenceOutcome: 'cantTell',
         summary:
           'Target may be too small and too close to another target, but the overlap is near the detection threshold and could not be confidently measured.',
         hint: 'Manually verify the effective spacing between this target and its neighbor; increase target size or spacing if the overlap is real.',
@@ -25352,6 +25734,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         cantTellOccurrences.push({
           selector: buildSelector(it.el),
           html: htmlSnippet(it.el),
+          occurrenceOutcome: 'cantTell',
           summary:
             'Target is too small and too close to another target, but may be exempt as part of an essential graphic or image-map region.',
           hint: 'Verify whether this target’s size is genuinely essential to its function (e.g. part of an SVG/canvas/image map); if not, increase target size or spacing.',
@@ -25375,6 +25758,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       failOccurrences.push({
         selector: buildSelector(it.el),
         html: htmlSnippet(it.el),
+        occurrenceOutcome: 'fail',
         summary: 'Target is too small and too close to another target.',
         hint: 'Increase target size to at least 24 by 24 CSS pixels, or add sufficient spacing.',
         i18n: {
@@ -36302,13 +36686,23 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // decision spanning report.js/baseline.js/explain.js/WCAG rollups —
   // out of scope for this helper).
   function resolveTieredOutcome(failOccurrences, cantTellOccurrences, severity) {
+    function withOccurrenceTier(items, tier) {
+      return items.map((occ) => {
+        if (!occ || typeof occ !== 'object' || Array.isArray(occ)) return occ;
+        if (occ.occurrenceOutcome === 'fail' || occ.occurrenceOutcome === 'cantTell') return occ;
+        return { ...occ, occurrenceOutcome: tier };
+      });
+    }
+
     const fails = Array.isArray(failOccurrences) ? failOccurrences : [];
     const cantTells = Array.isArray(cantTellOccurrences) ? cantTellOccurrences : [];
+    const failTier = withOccurrenceTier(fails, 'fail');
+    const cantTellTier = withOccurrenceTier(cantTells, 'cantTell');
     if (fails.length) {
-      return { outcome: 'fail', severity, occurrences: fails.concat(cantTells) };
+      return { outcome: 'fail', severity, occurrences: failTier.concat(cantTellTier) };
     }
     if (cantTells.length) {
-      return { outcome: 'cantTell', severity, occurrences: cantTells };
+      return { outcome: 'cantTell', severity, occurrences: cantTellTier };
     }
     return { outcome: 'pass', severity: 'minor', occurrences: [] };
   }

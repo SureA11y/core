@@ -258,6 +258,8 @@ test(`${RULE_ID}: a page with both a confident fail AND an uncertain/essential-e
     'undersized-plausibly-essential',
     'undersized-plausibly-essential'
   ]);
+  const outcomeTiers = rule.occurrences.map((o) => o.occurrenceOutcome).sort();
+  assert.deepStrictEqual(outcomeTiers, ['cantTell', 'cantTell', 'fail', 'fail']);
 });
 
 test(`${RULE_ID}: nested interactive controls (small control inside its own wrapping link) => pass`, () => {

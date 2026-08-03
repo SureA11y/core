@@ -4401,13 +4401,23 @@ function createDomHelpers(opts) {
   // decision spanning report.js/baseline.js/explain.js/WCAG rollups —
   // out of scope for this helper).
   function resolveTieredOutcome(failOccurrences, cantTellOccurrences, severity) {
+    function withOccurrenceTier(items, tier) {
+      return items.map((occ) => {
+        if (!occ || typeof occ !== 'object' || Array.isArray(occ)) return occ;
+        if (occ.occurrenceOutcome === 'fail' || occ.occurrenceOutcome === 'cantTell') return occ;
+        return { ...occ, occurrenceOutcome: tier };
+      });
+    }
+
     const fails = Array.isArray(failOccurrences) ? failOccurrences : [];
     const cantTells = Array.isArray(cantTellOccurrences) ? cantTellOccurrences : [];
+    const failTier = withOccurrenceTier(fails, 'fail');
+    const cantTellTier = withOccurrenceTier(cantTells, 'cantTell');
     if (fails.length) {
-      return { outcome: 'fail', severity, occurrences: fails.concat(cantTells) };
+      return { outcome: 'fail', severity, occurrences: failTier.concat(cantTellTier) };
     }
     if (cantTells.length) {
-      return { outcome: 'cantTell', severity, occurrences: cantTells };
+      return { outcome: 'cantTell', severity, occurrences: cantTellTier };
     }
     return { outcome: 'pass', severity: 'minor', occurrences: [] };
   }

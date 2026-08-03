@@ -16,6 +16,12 @@ function hasOccurrenceForId(rule, id) {
   );
 }
 
+function getOccurrenceForId(rule, id) {
+  return (rule.occurrences || []).find(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
+}
+
 test(`${RULE_ID}: notApplicable when nothing is present at all (no role, no naming attributes)`, () => {
   const html = `<!doctype html><html><body><div id="a"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
@@ -124,6 +130,21 @@ test(`${RULE_ID}: cantTell when aria-label is on a roleless span that already ha
     rule.occurrences[0].data.details.reasonCode,
     'ARIA_ATTR_PROHIBITED_ROLELESS_NEEDS_REVIEW'
   );
+});
+
+test(`${RULE_ID}: mixed fail + cantTell occurrences on one page preserve per-occurrence outcome tier`, () => {
+  const html = `<!doctype html><html><body>
+    <span id="roleless_canttell" aria-label="Custom label">Visible text</span>
+    <span id="roleless_fail" aria-label="icon-only"></span>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  const cantTellOccurrence = getOccurrenceForId(rule, 'roleless_canttell');
+  const failOccurrence = getOccurrenceForId(rule, 'roleless_fail');
+  assert.ok(cantTellOccurrence);
+  assert.ok(failOccurrence);
+  assert.strictEqual(cantTellOccurrence.occurrenceOutcome, 'cantTell');
+  assert.strictEqual(failOccurrence.occurrenceOutcome, 'fail');
 });
 
 test(`${RULE_ID}: pass (exempted, not notApplicable — the rule did evaluate this candidate) when a roleless span with aria-label sits inside a widget-type role`, () => {

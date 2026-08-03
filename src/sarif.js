@@ -110,6 +110,18 @@ function buildResult(check, occurrence, level, artifactUri) {
   };
 }
 
+function getOccurrenceOutcome(check, occurrence) {
+  const occurrenceOutcome =
+    occurrence &&
+    (occurrence.occurrenceOutcome === 'fail' || occurrence.occurrenceOutcome === 'cantTell'
+      ? occurrence.occurrenceOutcome
+      : occurrence.outcome === 'fail' || occurrence.outcome === 'cantTell'
+        ? occurrence.outcome
+        : null);
+  if (occurrenceOutcome) return occurrenceOutcome;
+  return check && (check.outcome === 'fail' || check.outcome === 'cantTell') ? check.outcome : null;
+}
+
 function renderSarifReport(result, options = {}) {
   const { toolVersion, informationUri, baselineEntries } = options;
   const artifactUri = artifactUriFromResult(result);
@@ -133,7 +145,8 @@ function renderSarifReport(result, options = {}) {
     for (const occurrence of check.occurrences) {
       if (!occurrence) continue;
 
-      if (check.outcome === 'fail') {
+      const occurrenceOutcome = getOccurrenceOutcome(check, occurrence);
+      if (occurrenceOutcome === 'fail') {
         const reasonCode = getReasonCode(occurrence);
         const html = typeof occurrence.html === 'string' ? occurrence.html : '';
         const key = computeBaselineKey(check.ruleId, reasonCode, html);
@@ -143,7 +156,7 @@ function renderSarifReport(result, options = {}) {
           continue; // already known via the baseline -- omit, don't re-gate
         }
         failResults.push(buildResult(check, occurrence, 'error', artifactUri));
-      } else {
+      } else if (occurrenceOutcome === 'cantTell') {
         cantTellResults.push(buildResult(check, occurrence, 'warning', artifactUri));
       }
     }

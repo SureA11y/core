@@ -62,7 +62,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { helpers, rule } = ctx;
+  const { helpers, rule, document } = ctx;
 
   // Self-contained rendering check for the embedded document (a distinct
   // realm — see this rule's own header comment on why the outer
@@ -94,8 +94,110 @@ function runInPage(ctx) {
     }
   }
 
-  function hasFocusableCandidate(doc) {
-    if (!doc || !doc.querySelectorAll) return false;
+  function getDeepActiveElement(docRef) {
+    let cur = docRef && docRef.activeElement ? docRef.activeElement : null;
+    let guard = 0;
+    while (cur && cur.shadowRoot && cur.shadowRoot.activeElement && guard++ < 20) {
+      cur = cur.shadowRoot.activeElement;
+    }
+    return cur;
+  }
+
+  function focusElementSafe(el) {
+    if (!el || typeof el.focus !== 'function') return false;
+    try {
+      el.focus({ preventScroll: true });
+      return true;
+    } catch {
+      try {
+        el.focus();
+        return true;
+      } catch {
+        return false;
+      }
+    }
+  }
+
+  function runFocusObservationWindow(win, fn) {
+    if (!win || typeof fn !== 'function') return;
+    const originalSetTimeout = typeof win.setTimeout === 'function' ? win.setTimeout.bind(win) : null;
+    const originalRequestAnimationFrame =
+      typeof win.requestAnimationFrame === 'function'
+        ? win.requestAnimationFrame.bind(win)
+        : null;
+    const originalQueueMicrotask =
+      typeof win.queueMicrotask === 'function' ? win.queueMicrotask.bind(win) : null;
+
+    const queuedMicrotasks = [];
+    const queuedRaf = [];
+    const queuedTimers = [];
+    let fakeTimerId = 1;
+
+    const patchedSetTimeout = function (cb, delay) {
+      const d = Number.isFinite(Number(delay)) ? Number(delay) : 0;
+      if (typeof cb === 'function' && d <= 200) {
+        const args = [];
+        for (let i = 2; i < arguments.length; i++) args.push(arguments[i]);
+        queuedTimers.push({ delay: d, cb: () => cb.apply(win, args) });
+        return fakeTimerId++;
+      }
+      if (originalSetTimeout) return originalSetTimeout.apply(win, arguments);
+      return fakeTimerId++;
+    };
+
+    const patchedRaf = function (cb) {
+      if (typeof cb === 'function') {
+        queuedRaf.push(cb);
+        return fakeTimerId++;
+      }
+      if (originalRequestAnimationFrame) return originalRequestAnimationFrame.apply(win, arguments);
+      return fakeTimerId++;
+    };
+
+    const patchedQueueMicrotask = function (cb) {
+      if (typeof cb === 'function') queuedMicrotasks.push(cb);
+    };
+
+    try {
+      if (originalSetTimeout) win.setTimeout = patchedSetTimeout;
+      if (originalRequestAnimationFrame) win.requestAnimationFrame = patchedRaf;
+      if (originalQueueMicrotask) win.queueMicrotask = patchedQueueMicrotask;
+      fn();
+
+      let guard = 0;
+      while (
+        (queuedMicrotasks.length || queuedRaf.length || queuedTimers.length) &&
+        guard++ < 100
+      ) {
+        while (queuedMicrotasks.length) {
+          const mt = queuedMicrotasks.shift();
+          try {
+            mt();
+          } catch {}
+        }
+        while (queuedRaf.length) {
+          const rf = queuedRaf.shift();
+          try {
+            rf(16);
+          } catch {}
+        }
+        if (queuedTimers.length) {
+          queuedTimers.sort((a, b) => a.delay - b.delay);
+          const tt = queuedTimers.shift();
+          try {
+            tt.cb();
+          } catch {}
+        }
+      }
+    } finally {
+      if (originalSetTimeout) win.setTimeout = originalSetTimeout;
+      if (originalRequestAnimationFrame) win.requestAnimationFrame = originalRequestAnimationFrame;
+      if (originalQueueMicrotask) win.queueMicrotask = originalQueueMicrotask;
+    }
+  }
+
+  function getFocusableCandidates(doc) {
+    if (!doc || !doc.querySelectorAll) return [];
     let els;
     try {
       els = doc.querySelectorAll(
@@ -103,8 +205,9 @@ function runInPage(ctx) {
           'select:not([disabled]), textarea:not([disabled]), iframe, [contenteditable="true"], [tabindex]'
       );
     } catch {
-      return false;
+      return [];
     }
+    const candidates = [];
     for (const el of els) {
       if (!el || !el.getAttribute) continue;
       const raw = el.getAttribute('tabindex');
@@ -113,9 +216,72 @@ function runInPage(ctx) {
         if (!Number.isNaN(n) && n < 0) continue; // explicitly removed from tab order
       }
       if (!isRenderedInDoc(doc, el)) continue; // display:none/visibility:hidden/[hidden]: never reachable at all
-      return true;
+      candidates.push(el);
     }
-    return false;
+    return candidates;
+  }
+
+  function probeImmediateFocusRedirect(frameEl, embeddedDoc, candidate) {
+    if (!frameEl || !embeddedDoc || !candidate) return null;
+    const embeddedWindow = embeddedDoc.defaultView;
+    if (!embeddedWindow) return null;
+
+    let focusedByEvent = false;
+    const onFocusCapture = () => {
+      focusedByEvent = true;
+    };
+    try {
+      candidate.addEventListener('focus', onFocusCapture, true);
+    } catch {}
+
+    const innerFocusTrace = [];
+    const outerFocusTrace = [];
+    const onInnerFocusIn = (ev) => {
+      if (ev && ev.target) innerFocusTrace.push(ev.target);
+    };
+    const onOuterFocusIn = (ev) => {
+      if (ev && ev.target) outerFocusTrace.push(ev.target);
+    };
+    try {
+      embeddedDoc.addEventListener('focusin', onInnerFocusIn, true);
+      document.addEventListener('focusin', onOuterFocusIn, true);
+    } catch {}
+
+    const beforeInner = getDeepActiveElement(embeddedDoc);
+    const beforeOuter = getDeepActiveElement(document);
+    let focused = false;
+    runFocusObservationWindow(embeddedWindow, () => {
+      focused = focusElementSafe(candidate);
+    });
+    try {
+      embeddedDoc.removeEventListener('focusin', onInnerFocusIn, true);
+      document.removeEventListener('focusin', onOuterFocusIn, true);
+    } catch {}
+    try {
+      candidate.removeEventListener('focus', onFocusCapture, true);
+    } catch {}
+
+    if (!focused) return null;
+
+    const afterInner = getDeepActiveElement(embeddedDoc);
+    const afterOuter = getDeepActiveElement(document);
+    const sawRedirectedInnerTrace = innerFocusTrace.some((n) => n && n !== candidate);
+    const sawRedirectedOuterTrace = outerFocusTrace.some((n) => n && n !== frameEl && n !== candidate);
+    const redirectedWithinFrame = !!(afterInner && afterInner !== candidate) || sawRedirectedInnerTrace;
+    const redirectedOutOfFrame = !!(afterOuter && afterOuter !== frameEl) || sawRedirectedOuterTrace;
+    const sawCandidateFocus = focusedByEvent || innerFocusTrace.some((n) => n === candidate);
+
+    if (beforeInner && beforeInner !== afterInner) focusElementSafe(beforeInner);
+    if (beforeOuter && beforeOuter !== afterOuter) focusElementSafe(beforeOuter);
+
+    if (!sawCandidateFocus) return null;
+    if (!redirectedWithinFrame && !redirectedOutOfFrame) return null;
+
+    return {
+      redirected: true,
+      redirectedWithinFrame,
+      redirectedOutOfFrame
+    };
   }
 
   function getNegativeTabIndex(el) {
@@ -129,7 +295,8 @@ function runInPage(ctx) {
     ? helpers.queryAllSmart('iframe, frame')
     : helpers.queryAll('iframe, frame');
 
-  const occurrences = [];
+  const failOccurrences = [];
+  const cantTellOccurrences = [];
   let applicableCount = 0;
 
   for (const el of nodes) {
@@ -146,13 +313,35 @@ function runInPage(ctx) {
 
     applicableCount += 1;
 
-    if (!hasFocusableCandidate(contentDoc)) continue;
+    const candidates = getFocusableCandidates(contentDoc);
+    if (!candidates.length) continue;
 
     const tag = el.tagName.toLowerCase();
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
     const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
+    const shouldProbe = candidates.length === 1;
+    const runtimeProbe = shouldProbe ? probeImmediateFocusRedirect(el, contentDoc, candidates[0]) : null;
 
-    occurrences.push({
+    if (runtimeProbe && runtimeProbe.redirected) {
+      cantTellOccurrences.push({
+        selector: stableSelector,
+        html,
+        summary:
+          'This frame has tabindex="-1" and a focusable candidate, but focus moves immediately to another target. Verify keyboard reachability in a real browser.',
+        hint: 'If this is an intentional focus handoff, ensure keyboard users cannot remain on hidden/intermediate frame content.',
+        i18n: null,
+        data: {
+          details: {
+            reasonCode: 'IFRAME_TABINDEX_NEGATIVE_CONTENT_RUNTIME_REDIRECT',
+            element: tag,
+            runtimeProbe
+          }
+        }
+      });
+      continue;
+    }
+
+    failOccurrences.push({
       selector: stableSelector,
       html,
       summary:
@@ -172,12 +361,27 @@ function runInPage(ctx) {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
+  const tiered = helpers.resolveTieredOutcome
+    ? helpers.resolveTieredOutcome(
+        failOccurrences,
+        cantTellOccurrences,
+        rule.defaultSeverity || 'moderate'
+      )
+    : null;
+  if (tiered && tiered.outcome !== 'pass') {
+    return {
+      ruleId: rule.ruleId,
+      outcome: tiered.outcome,
+      severity: rule.defaultSeverity || 'moderate',
+      occurrences: tiered.occurrences
+    };
+  }
+  if (!helpers.resolveTieredOutcome && failOccurrences.length) {
     return {
       ruleId: rule.ruleId,
       outcome: 'fail',
       severity: rule.defaultSeverity || 'moderate',
-      occurrences
+      occurrences: failOccurrences
     };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };

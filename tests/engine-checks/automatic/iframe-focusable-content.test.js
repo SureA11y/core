@@ -60,6 +60,65 @@ test(`${RULE_ID}: fail when the negative-tabindex frame's content contains a foc
   );
 });
 
+test(`${RULE_ID}: cantTell when the only focusable candidate immediately redirects focus`, () => {
+  const dom = createDom(
+    `<!doctype html><html><body>
+      <iframe id="a" tabindex="-1"></iframe>
+      <button id="outer-target">Outer target</button>
+    </body></html>`
+  );
+  const contentDoc = dom.window.document.getElementById('a').contentDocument;
+  contentDoc.body.innerHTML = '<button id="sentinel">Sentinel</button>';
+  contentDoc.getElementById('sentinel').addEventListener('focus', () => {
+    contentDoc.defaultView.setTimeout(() => {
+      dom.window.document.getElementById('outer-target').focus();
+    }, 0);
+  });
+
+  const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+  assert.strictEqual(
+    rule.occurrences[0].data.details.reasonCode,
+    'IFRAME_TABINDEX_NEGATIVE_CONTENT_RUNTIME_REDIRECT'
+  );
+  assert.strictEqual(rule.occurrences[0].occurrenceOutcome, 'cantTell');
+});
+
+test(`${RULE_ID}: mixed fail and cantTell stay split at occurrence level`, () => {
+  const dom = createDom(
+    `<!doctype html><html><body>
+      <iframe id="fail-frame" tabindex="-1"></iframe>
+      <iframe id="redirect-frame" tabindex="-1"></iframe>
+      <button id="outer-target">Outer target</button>
+    </body></html>`
+  );
+  const failDoc = dom.window.document.getElementById('fail-frame').contentDocument;
+  failDoc.body.innerHTML = '<button>Focusable</button>';
+
+  const redirectDoc = dom.window.document.getElementById('redirect-frame').contentDocument;
+  redirectDoc.body.innerHTML = '<button id="sentinel">Sentinel</button>';
+  redirectDoc.getElementById('sentinel').addEventListener('focus', () => {
+    redirectDoc.defaultView.setTimeout(() => {
+      dom.window.document.getElementById('outer-target').focus();
+    }, 0);
+  });
+
+  const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+
+  const failOccurrence = rule.occurrences.find((o) => o.selector.includes('#fail-frame'));
+  const cantTellOccurrence = rule.occurrences.find((o) => o.selector.includes('#redirect-frame'));
+  assert.ok(failOccurrence, 'Expected fail occurrence for fail-frame');
+  assert.ok(cantTellOccurrence, 'Expected cantTell occurrence for redirect-frame');
+  assert.strictEqual(failOccurrence.occurrenceOutcome, 'fail');
+  assert.strictEqual(cantTellOccurrence.occurrenceOutcome, 'cantTell');
+  assert.strictEqual(
+    cantTellOccurrence.data.details.reasonCode,
+    'IFRAME_TABINDEX_NEGATIVE_CONTENT_RUNTIME_REDIRECT'
+  );
+});
+
 test(`${RULE_ID}: pass when the focusable candidate itself has tabindex="-1"`, () => {
   const dom = createDom(
     `<!doctype html><html><body><iframe id="a" tabindex="-1"></iframe></body></html>`

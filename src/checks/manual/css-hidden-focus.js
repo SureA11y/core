@@ -194,6 +194,163 @@ function runInPage(ctx) {
     }
   }
 
+  function getDeepActiveElement(docRef) {
+    let cur = docRef && docRef.activeElement ? docRef.activeElement : null;
+    let guard = 0;
+    while (cur && cur.shadowRoot && cur.shadowRoot.activeElement && guard++ < 20) {
+      cur = cur.shadowRoot.activeElement;
+    }
+    return cur;
+  }
+
+  function focusElementSafe(el) {
+    if (!el || typeof el.focus !== 'function') return false;
+    try {
+      el.focus({ preventScroll: true });
+      return true;
+    } catch {
+      try {
+        el.focus();
+        return true;
+      } catch {
+        return false;
+      }
+    }
+  }
+
+  function runFocusObservationWindow(docRef, fn) {
+    const w =
+      docRef && docRef.defaultView
+        ? docRef.defaultView
+        : typeof window !== 'undefined'
+          ? window
+          : null;
+    if (!w || typeof fn !== 'function') return;
+
+    const originalSetTimeout = typeof w.setTimeout === 'function' ? w.setTimeout.bind(w) : null;
+    const originalRequestAnimationFrame =
+      typeof w.requestAnimationFrame === 'function' ? w.requestAnimationFrame.bind(w) : null;
+    const originalQueueMicrotask =
+      typeof w.queueMicrotask === 'function' ? w.queueMicrotask.bind(w) : null;
+
+    const queuedMicrotasks = [];
+    const queuedRaf = [];
+    const queuedTimers = [];
+    let fakeTimerId = 1;
+
+    const patchedSetTimeout = function (cb, delay) {
+      const d = Number.isFinite(Number(delay)) ? Number(delay) : 0;
+      if (typeof cb === 'function' && d <= 200) {
+        const args = [];
+        for (let i = 2; i < arguments.length; i++) args.push(arguments[i]);
+        queuedTimers.push({ delay: d, cb: () => cb.apply(w, args) });
+        return fakeTimerId++;
+      }
+      if (originalSetTimeout) return originalSetTimeout.apply(w, arguments);
+      return fakeTimerId++;
+    };
+
+    const patchedRaf = function (cb) {
+      if (typeof cb === 'function') {
+        queuedRaf.push(cb);
+        return fakeTimerId++;
+      }
+      if (originalRequestAnimationFrame) return originalRequestAnimationFrame.apply(w, arguments);
+      return fakeTimerId++;
+    };
+
+    const patchedQueueMicrotask = function (cb) {
+      if (typeof cb === 'function') queuedMicrotasks.push(cb);
+    };
+
+    try {
+      if (originalSetTimeout) w.setTimeout = patchedSetTimeout;
+      if (originalRequestAnimationFrame) w.requestAnimationFrame = patchedRaf;
+      if (originalQueueMicrotask) w.queueMicrotask = patchedQueueMicrotask;
+      fn();
+
+      let guard = 0;
+      while (
+        (queuedMicrotasks.length || queuedRaf.length || queuedTimers.length) &&
+        guard++ < 100
+      ) {
+        while (queuedMicrotasks.length) {
+          const mt = queuedMicrotasks.shift();
+          try {
+            mt();
+          } catch {}
+        }
+        while (queuedRaf.length) {
+          const rf = queuedRaf.shift();
+          try {
+            rf(16);
+          } catch {}
+        }
+        if (queuedTimers.length) {
+          queuedTimers.sort((a, b) => a.delay - b.delay);
+          const tt = queuedTimers.shift();
+          try {
+            tt.cb();
+          } catch {}
+        }
+      }
+    } finally {
+      if (originalSetTimeout) w.setTimeout = originalSetTimeout;
+      if (originalRequestAnimationFrame) w.requestAnimationFrame = originalRequestAnimationFrame;
+      if (originalQueueMicrotask) w.queueMicrotask = originalQueueMicrotask;
+    }
+  }
+
+  function probeImmediateFocusRedirect(candidate) {
+    if (!candidate || typeof candidate.addEventListener !== 'function') return null;
+
+    let focusedByEvent = false;
+    const onFocusCapture = () => {
+      focusedByEvent = true;
+    };
+    try {
+      candidate.addEventListener('focus', onFocusCapture, true);
+    } catch {}
+
+    const before = getDeepActiveElement(document);
+    let focused = false;
+    runFocusObservationWindow(document, () => {
+      focused = focusElementSafe(candidate);
+    });
+
+    try {
+      candidate.removeEventListener('focus', onFocusCapture, true);
+    } catch {}
+    if (!focused || !focusedByEvent) return null;
+
+    const after = getDeepActiveElement(document);
+
+    if (before && before !== after) {
+      focusElementSafe(before);
+    }
+
+    if (!after || after === candidate) return null;
+    const redirectedTag = (() => {
+      try {
+        return lower(after.tagName || '');
+      } catch {
+        return '';
+      }
+    })();
+    const redirectedId = (() => {
+      try {
+        return trim(after.getAttribute && after.getAttribute('id'));
+      } catch {
+        return '';
+      }
+    })();
+    return {
+      redirected: true,
+      redirectedToTag: redirectedTag || null,
+      redirectedToId: redirectedId || null
+    };
+  }
+
   function isTabbable(el, info) {
     const f = info || getFocusableInfoSafe(el);
     return !!(f && f.focusable && f.tabbable);
@@ -226,6 +383,8 @@ function runInPage(ctx) {
   }
 
   const occurrences = [];
+  const maxRuntimeProbeCount = 3;
+  let runtimeProbeCount = 0;
 
   for (const el of candidates) {
     if (!el || !el.getAttribute) continue;
@@ -251,18 +410,32 @@ function runInPage(ctx) {
     const hintsArr = [];
     for (const k of hintOrder) if (hints.includes(k)) hintsArr.push(k);
 
+    const runtimeProbe =
+      runtimeProbeCount < maxRuntimeProbeCount ? probeImmediateFocusRedirect(el) : null;
+    if (runtimeProbeCount < maxRuntimeProbeCount) runtimeProbeCount += 1;
+    const downgradedToRedirectReview = !!(runtimeProbe && runtimeProbe.redirected);
+
     const baseOccurrence = {
-      summary: `Focusable ${tagName} appears visually hidden (${hintsArr.join(',')}). Verify it becomes visible on keyboard focus.`,
-      hint: 'Manually tab to the element and confirm a visible focus indicator and that the element is visible when focused. If it remains hidden while focused, fix CSS/JS so it becomes visible or is removed from the tab order until visible.',
-      i18n: {
-        summaryKey: 'cssHidden_focus_summary_cantTell',
-        hintKey: 'cssHidden_focus_hint_cantTell',
-        params: { element: tagName, visibilityHints: hintsArr.join(',') }
-      },
+      summary: downgradedToRedirectReview
+        ? `Focusable ${tagName} appears visually hidden but focus moved immediately to another element. Verify sentinel/focus-trap behavior.`
+        : `Focusable ${tagName} appears visually hidden (${hintsArr.join(',')}). Verify it becomes visible on keyboard focus.`,
+      hint: downgradedToRedirectReview
+        ? 'Verify this is an intentional focus sentinel/focus-trap handoff and that keyboard users never remain on visually hidden focus targets.'
+        : 'Manually tab to the element and confirm a visible focus indicator and that the element is visible when focused. If it remains hidden while focused, fix CSS/JS so it becomes visible or is removed from the tab order until visible.',
+      i18n: downgradedToRedirectReview
+        ? null
+        : {
+            summaryKey: 'cssHidden_focus_summary_cantTell',
+            hintKey: 'cssHidden_focus_hint_cantTell',
+            params: { element: tagName, visibilityHints: hintsArr.join(',') }
+          },
       data: {
         details: {
-          reasonCode: 'cssHiddenTabbable_needsFocusStateVerification',
-          metrics: { visibilityHints: hintsArr.slice(0) }
+          reasonCode: downgradedToRedirectReview
+            ? 'cssHiddenTabbable_runtimeRedirect_needsReview'
+            : 'cssHiddenTabbable_needsFocusStateVerification',
+          metrics: { visibilityHints: hintsArr.slice(0) },
+          runtimeProbe: runtimeProbe || null
         }
       }
     };

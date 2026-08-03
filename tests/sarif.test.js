@@ -154,6 +154,46 @@ test('renderSarifReport: a baseline never filters cantTell occurrences', () => {
   assert.strictEqual(sarif.runs[0].results[0].level, 'warning');
 });
 
+test('renderSarifReport: mixed fail-rule occurrences honor per-occurrence outcome (fail=>error, cantTell=>warning)', () => {
+  const check = makeCheckResult({
+    ruleId: 'mixed-rule',
+    outcome: 'fail',
+    occurrences: [
+      makeOccurrence({ selector: 'img.fail', occurrenceOutcome: 'fail' }),
+      makeOccurrence({ selector: 'img.canttell', occurrenceOutcome: 'cantTell' })
+    ]
+  });
+  const result = makeScanResult([check]);
+  const sarif = parse(renderSarifReport(result, {}));
+
+  assert.strictEqual(sarif.runs[0].results.length, 2);
+  assert.deepStrictEqual(
+    sarif.runs[0].results.map((r) => r.level),
+    ['error', 'warning']
+  );
+});
+
+test('renderSarifReport: baseline filtering applies only to fail-tier occurrences in a mixed fail rule', () => {
+  const check = makeCheckResult({
+    ruleId: 'mixed-rule',
+    outcome: 'fail',
+    occurrences: [
+      makeOccurrence({ selector: 'img.fail', occurrenceOutcome: 'fail' }),
+      makeOccurrence({ selector: 'img.canttell', occurrenceOutcome: 'cantTell' })
+    ]
+  });
+  const result = makeScanResult([check]);
+  const baselineEntries = buildBaselineEntries(result);
+  const sarif = parse(renderSarifReport(result, { baselineEntries }));
+
+  assert.strictEqual(sarif.runs[0].results.length, 1);
+  assert.strictEqual(sarif.runs[0].results[0].level, 'warning');
+  assert.strictEqual(
+    sarif.runs[0].results[0].locations[0].logicalLocations[0].fullyQualifiedName,
+    'img.canttell'
+  );
+});
+
 test('renderSarifReport: does not mutate the input result', () => {
   const result = makeScanResult([makeCheckResult({})]);
   const before = JSON.stringify(result);
@@ -214,4 +254,20 @@ test('renderSarifReport: real scan end-to-end (img-alt-present) produces a well-
   assert.ok(imgResult, 'expected an img-alt-present SARIF result');
   assert.strictEqual(imgResult.level, 'error');
   assert.match(imgResult.message.text, /alt/i);
+});
+
+test('renderSarifReport: aria-prohibited-attr mixed-tier occurrences produce both error and warning results', () => {
+  const html = `<!doctype html><html><body>
+    <span id="roleless_canttell" aria-label="Custom label">Visible text</span>
+    <span id="roleless_fail" aria-label="icon-only"></span>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: ['aria-prohibited-attr'] });
+  const sarif = parse(renderSarifReport(result, {}));
+  const results = sarif.runs[0].results.filter((r) => r.ruleId === 'aria-prohibited-attr');
+
+  assert.strictEqual(results.length, 2);
+  assert.deepStrictEqual(
+    results.map((r) => r.level).sort(),
+    ['error', 'warning']
+  );
 });

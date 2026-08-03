@@ -777,6 +777,7 @@ function runInPage(ctx) {
       hint: downgradedToCantTell
         ? 'Verify this is an intentional focus sentinel/focus-trap handoff and that keyboard users never remain on hidden focus targets.'
         : 'Remove focusability from descendants or remove aria-hidden; ensure focus and accessibility trees stay aligned.',
+      occurrenceOutcome: downgradedToCantTell ? 'cantTell' : 'fail',
       i18n: {
         summaryKey: downgradedToCantTell
           ? 'ariaHidden_focus_summary_cantTell_redirect'

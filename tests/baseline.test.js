@@ -5,6 +5,7 @@ const assert = require('node:assert');
 
 const { buildBaselineEntries, matchBaseline, computeBaselineKey } = require('../src/baseline');
 const { makeOccurrence, makeCheckResult, makeScanResult } = require('./explain/fake-result');
+const { runa11yCoreOnHtml } = require('./helpers/runDomRulesOnHtml.js');
 
 test('buildBaselineEntries: one entry per fail occurrence', () => {
   const check = makeCheckResult({
@@ -32,6 +33,19 @@ test('buildBaselineEntries: only fail outcomes contribute entries (pass/notAppli
   assert.strictEqual(entries[0].ruleId, 'img-alt-present');
 });
 
+test('buildBaselineEntries: under a fail rule, only fail-tier occurrences are written (cantTell-tier occurrences are excluded)', () => {
+  const check = makeCheckResult({
+    occurrences: [
+      makeOccurrence({ selector: 'img.fail', occurrenceOutcome: 'fail' }),
+      makeOccurrence({ selector: 'img.canttell', occurrenceOutcome: 'cantTell' })
+    ]
+  });
+  const entries = buildBaselineEntries(makeScanResult([check]));
+
+  assert.strictEqual(entries.length, 1);
+  assert.strictEqual(entries[0].selector, 'img.fail');
+});
+
 test('matchBaseline: an occurrence identical to a baseline entry is known, not new', () => {
   const check = makeCheckResult({});
   const result = makeScanResult([check]);
@@ -43,6 +57,22 @@ test('matchBaseline: an occurrence identical to a baseline entry is known, not n
   assert.strictEqual(match.knownCount, 1);
   assert.strictEqual(match.newCount, 0);
   assert.strictEqual(match.staleCount, 0);
+});
+
+test('matchBaseline: under a fail rule, cantTell-tier occurrences are not counted as fail/new', () => {
+  const check = makeCheckResult({
+    occurrences: [
+      makeOccurrence({ selector: 'img.fail', occurrenceOutcome: 'fail' }),
+      makeOccurrence({ selector: 'img.canttell', occurrenceOutcome: 'cantTell' })
+    ]
+  });
+  const result = makeScanResult([check]);
+
+  const match = matchBaseline(result, []);
+
+  assert.strictEqual(match.totalFail, 1);
+  assert.strictEqual(match.newCount, 1);
+  assert.strictEqual(match.newOccurrences[0].selector, 'img.fail');
 });
 
 test('matchBaseline: an occurrence not present in the baseline is new and gates the build', () => {
@@ -166,4 +196,17 @@ test('computeBaselineKey: same ruleId/reasonCode/html always produces the same k
 
   assert.strictEqual(a, b);
   assert.notStrictEqual(a, c);
+});
+
+test('buildBaselineEntries: aria-prohibited-attr mixed-tier page contributes only its fail-tier occurrence', () => {
+  const html = `<!doctype html><html><body>
+    <span id="roleless_canttell" aria-label="Custom label">Visible text</span>
+    <span id="roleless_fail" aria-label="icon-only"></span>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: ['aria-prohibited-attr'] });
+  const entries = buildBaselineEntries(result).filter((e) => e.ruleId === 'aria-prohibited-attr');
+
+  assert.strictEqual(entries.length, 1);
+  assert.strictEqual(entries[0].ruleId, 'aria-prohibited-attr');
+  assert.match(entries[0].html, /id="roleless_fail"/);
 });

@@ -212,6 +212,7 @@ function runInPage(ctx) {
       failOccurrences.push({
         selector: stableSelector,
         html,
+        occurrenceOutcome: 'fail',
         summary: 'This attribute is prohibited on this element’s role.',
         hint: 'Remove this attribute; this role must not carry an accessible name.',
         i18n: {
@@ -378,6 +379,7 @@ function runInPage(ctx) {
         cantTellOccurrences.push({
           selector: stableSelector,
           html,
+          occurrenceOutcome: 'cantTell',
           summary: `This ${tag} has no role, so ${attr} may not be exposed as its accessible name by assistive technology — but the element's own content already provides one.`,
           hint: 'Verify whether the existing text content already serves as this element’s label; if so the naming attribute is redundant, otherwise give the element a role that supports naming (e.g. role="img").',
           i18n: {
@@ -398,6 +400,7 @@ function runInPage(ctx) {
         failOccurrences.push({
           selector: stableSelector,
           html,
+          occurrenceOutcome: 'fail',
           summary: `This ${tag} has no role and no other accessible-name source, so ${attr} is not reliably exposed to assistive technology.`,
           hint: 'Give this element a role that supports an accessible name (e.g. role="img"/"button"), or remove this attribute if it serves no purpose without one.',
           i18n: {

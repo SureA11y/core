@@ -210,38 +210,75 @@ function loadCustomRulesFile(customRulesPath) {
 }
 
 function printSummary(result, baselineMatch) {
+  function getOccurrenceOutcome(ruleResult, occurrence) {
+    const occurrenceOutcome =
+      occurrence &&
+      (occurrence.occurrenceOutcome === 'fail' || occurrence.occurrenceOutcome === 'cantTell'
+        ? occurrence.occurrenceOutcome
+        : occurrence.outcome === 'fail' || occurrence.outcome === 'cantTell'
+          ? occurrence.outcome
+          : null);
+    if (occurrenceOutcome) return occurrenceOutcome;
+    return ruleResult &&
+      (ruleResult.outcome === 'fail' || ruleResult.outcome === 'cantTell' ? ruleResult.outcome : null);
+  }
+
   const byOutcome = { pass: 0, fail: 0, cantTell: 0, notApplicable: 0 };
   for (const r of result.checksResults) {
     if (Object.prototype.hasOwnProperty.call(byOutcome, r.outcome)) byOutcome[r.outcome] += 1;
+  }
+  const occurrenceTierCounts = { fail: 0, cantTell: 0 };
+  for (const r of result.checksResults) {
+    if (!Array.isArray(r.occurrences)) continue;
+    for (const occ of r.occurrences) {
+      const tier = getOccurrenceOutcome(r, occ);
+      if (tier === 'fail' || tier === 'cantTell') occurrenceTierCounts[tier] += 1;
+    }
   }
 
   process.stdout.write(`\nsurea11y scan: ${result.url || '(no url)'}\n`);
   process.stdout.write(
     `  pass: ${byOutcome.pass}   fail: ${byOutcome.fail}   cantTell: ${byOutcome.cantTell}   notApplicable: ${byOutcome.notApplicable}\n\n`
   );
+  process.stdout.write(
+    `  occurrences by tier: fail: ${occurrenceTierCounts.fail}   cantTell: ${occurrenceTierCounts.cantTell}\n\n`
+  );
 
   const fails = result.checksResults.filter((r) => r.outcome === 'fail');
   if (fails.length) {
     process.stdout.write(`FAIL (${fails.length} rule(s)):\n`);
     for (const r of fails) {
-      process.stdout.write(
-        `\n  ${r.ruleId}  (${r.severity}, ${r.occurrences.length} occurrence(s))\n`
+      const failOccurrences = (r.occurrences || []).filter(
+        (occ) => getOccurrenceOutcome(r, occ) === 'fail'
       );
-      for (const occ of r.occurrences.slice(0, 5)) {
+      const cantTellOccurrences = (r.occurrences || []).filter(
+        (occ) => getOccurrenceOutcome(r, occ) === 'cantTell'
+      );
+      process.stdout.write(
+        `\n  ${r.ruleId}  (${r.severity}, ${failOccurrences.length} fail occurrence(s)${cantTellOccurrences.length ? `, ${cantTellOccurrences.length} needs-review occurrence(s)` : ''})\n`
+      );
+      for (const occ of failOccurrences.slice(0, 5)) {
         process.stdout.write(`    - ${occ.selector || '(no selector)'}\n      ${occ.summary}\n`);
         if (occ.hint) process.stdout.write(`      hint: ${occ.hint}\n`);
       }
-      if (r.occurrences.length > 5) {
-        process.stdout.write(`    ... and ${r.occurrences.length - 5} more\n`);
+      if (failOccurrences.length > 5) {
+        process.stdout.write(`    ... and ${failOccurrences.length - 5} more\n`);
       }
     }
     process.stdout.write('\n');
   }
 
-  const cantTells = result.checksResults.filter((r) => r.outcome === 'cantTell');
+  const cantTellRuleIds = new Set();
+  for (const r of result.checksResults) {
+    if (!Array.isArray(r.occurrences)) continue;
+    if ((r.occurrences || []).some((occ) => getOccurrenceOutcome(r, occ) === 'cantTell')) {
+      cantTellRuleIds.add(r.ruleId);
+    }
+  }
+  const cantTells = Array.from(cantTellRuleIds);
   if (cantTells.length) {
     process.stdout.write(
-      `cantTell — needs human review (${cantTells.length} rule(s)): ${cantTells.map((r) => r.ruleId).join(', ')}\n\n`
+      `cantTell — needs human review (${cantTells.length} rule(s)): ${cantTells.join(', ')}\n\n`
     );
   }
 

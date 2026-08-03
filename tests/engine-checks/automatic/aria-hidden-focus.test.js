@@ -20,6 +20,12 @@ function hasOccurrenceForId(rule, id) {
   );
 }
 
+function getOccurrenceForId(rule, id) {
+  return (rule.occurrences || []).find(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
+}
+
 test(`${RULE_ID}: notApplicable when no aria-hidden="true" elements`, () => {
   const html = `<!doctype html><html><body>
       <div><a href="#x">Link</a></div>
@@ -98,6 +104,29 @@ test(`${RULE_ID}: cantTell when redirect is scheduled shortly after focus (setTi
     rule.occurrences[0].data.details.runtimeProbe.redirectedToId,
     'target_after_async'
   );
+});
+
+test(`${RULE_ID}: mixed independent roots keep per-occurrence outcome differentiation (fail + cantTell in one atomic result)`, () => {
+  const dom = createDom(`<!doctype html><html><body>
+      <div id="ah_hard_fail" aria-hidden="true" tabindex="0">Focusable hidden</div>
+      <div id="ah_sentinel_mixed" aria-hidden="true" tabindex="0">Focus sentinel</div>
+      <input id="target_after_mixed" type="text" />
+    </body></html>`);
+
+  const doc = dom.window.document;
+  const sentinel = doc.getElementById('ah_sentinel_mixed');
+  const target = doc.getElementById('target_after_mixed');
+  sentinel.addEventListener('focus', () => target.focus());
+
+  const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+
+  const failOccurrence = getOccurrenceForId(rule, 'ah_hard_fail');
+  const cantTellOccurrence = getOccurrenceForId(rule, 'ah_sentinel_mixed');
+  assert.ok(failOccurrence);
+  assert.ok(cantTellOccurrence);
+  assert.strictEqual(failOccurrence.occurrenceOutcome, 'fail');
+  assert.strictEqual(cantTellOccurrence.occurrenceOutcome, 'cantTell');
 });
 
 test(`${RULE_ID}: fail when aria-hidden native control itself is focusable (button)`, () => {

@@ -56,6 +56,30 @@ function countByOutcome(checksResults) {
   return counts;
 }
 
+function getOccurrenceOutcome(ruleResult, occurrence) {
+  const occurrenceOutcome =
+    occurrence &&
+    (occurrence.occurrenceOutcome === 'fail' || occurrence.occurrenceOutcome === 'cantTell'
+      ? occurrence.occurrenceOutcome
+      : occurrence.outcome === 'fail' || occurrence.outcome === 'cantTell'
+        ? occurrence.outcome
+        : null);
+  if (occurrenceOutcome) return occurrenceOutcome;
+  return ruleResult &&
+    (ruleResult.outcome === 'fail' || ruleResult.outcome === 'cantTell' ? ruleResult.outcome : null);
+}
+
+function getCardOutcome(ruleResult) {
+  if (!ruleResult || !Array.isArray(ruleResult.occurrences)) return ruleResult.outcome;
+  let hasCantTell = false;
+  for (const occ of ruleResult.occurrences) {
+    const outcome = getOccurrenceOutcome(ruleResult, occ);
+    if (outcome === 'fail') return 'fail';
+    if (outcome === 'cantTell') hasCantTell = true;
+  }
+  return hasCantTell ? 'cantTell' : ruleResult.outcome;
+}
+
 // One plain-language headline + one horizontal stacked bar + a legend with
 // icon+label+count (status color is never the only signal) -- the first
 // thing a reader sees; exhaustive detail lives in the collapsed
@@ -190,33 +214,45 @@ const MAX_CARDS = 24;
 function renderCards(checksResults) {
   const withIssues = checksResults.filter(
     (r) =>
-      (r.outcome === 'fail' || r.outcome === 'cantTell') &&
       Array.isArray(r.occurrences) &&
-      r.occurrences.length > 0
+      r.occurrences.some((occ) => {
+        const outcome = getOccurrenceOutcome(r, occ);
+        return outcome === 'fail' || outcome === 'cantTell';
+      })
   );
   if (!withIssues.length) {
     return '<p class="note">No fail/cantTell rules with occurrences on this scan.</p>';
   }
 
   const sorted = withIssues.slice().sort((a, b) => {
-    if (a.outcome !== b.outcome) return a.outcome === 'fail' ? -1 : 1;
+    const aOutcome = getCardOutcome(a);
+    const bOutcome = getCardOutcome(b);
+    if (aOutcome !== bOutcome) return aOutcome === 'fail' ? -1 : 1;
     return b.occurrences.length - a.occurrences.length;
   });
   const shown = sorted.slice(0, MAX_CARDS);
 
   const cards = shown
     .map((r) => {
-      const info = OUTCOME_INFO[r.outcome];
-      const occ = r.occurrences[0];
+      const cardOutcome = getCardOutcome(r);
+      const info = OUTCOME_INFO[cardOutcome] || OUTCOME_INFO.notApplicable;
+      const occurrenceCounts = { fail: 0, cantTell: 0 };
+      for (const occ of r.occurrences) {
+        const outcome = getOccurrenceOutcome(r, occ);
+        if (outcome === 'fail' || outcome === 'cantTell') occurrenceCounts[outcome] += 1;
+      }
+      const representative =
+        r.occurrences.find((occ) => getOccurrenceOutcome(r, occ) === cardOutcome) || r.occurrences[0];
       const wcagChips = ((r.meta && r.meta.normativeMappings) || [])
         .map(
           (m) =>
             `<span class="chip" style="background:${STATUS.neutral.bg};color:${STATUS.neutral.color}">WCAG ${esc(m.requirement)}</span>`
         )
         .join('');
+      const hasMixedOutcomes = occurrenceCounts.fail > 0 && occurrenceCounts.cantTell > 0;
       const countLabel =
         r.occurrences.length > 1
-          ? ` <span class="card-count">× ${r.occurrences.length.toLocaleString()}</span>`
+          ? ` <span class="card-count">× ${r.occurrences.length.toLocaleString()}${hasMixedOutcomes ? ` (${occurrenceCounts.fail.toLocaleString()} fail / ${occurrenceCounts.cantTell.toLocaleString()} needs review)` : ''}</span>`
           : '';
 
       return `<div class="card">
@@ -226,8 +262,8 @@ function renderCards(checksResults) {
       </div>
       <div class="card-body">
         <div class="card-meta">${wcagChips}</div>
-        <div class="card-selector"><span class="card-selector-label">Selector:</span> <code>${esc(occ.selector || '(none)')}</code></div>
-        <div class="card-snippet">${esc(occ.summary)}${occ.hint ? ` — ${esc(occ.hint)}` : ''}</div>
+        <div class="card-selector"><span class="card-selector-label">Selector:</span> <code>${esc(representative.selector || '(none)')}</code></div>
+        <div class="card-snippet">${esc(representative.summary)}${representative.hint ? ` — ${esc(representative.hint)}` : ''}</div>
         ${r.occurrences.length > 1 ? `<p class="card-note">Selector/summary above are from one representative occurrence — ${r.occurrences.length.toLocaleString()} total on this rule.</p>` : ''}
       </div>
     </div>`;
@@ -250,9 +286,10 @@ function flattenOccurrences(checksResults) {
   for (const r of checksResults) {
     if (!Array.isArray(r.occurrences)) continue;
     for (const occ of r.occurrences) {
+      const occurrenceOutcome = getOccurrenceOutcome(r, occ);
       rows.push({
         ruleId: r.ruleId,
-        outcome: r.outcome,
+        outcome: occurrenceOutcome || r.outcome,
         severity: r.severity,
         selector: occ.selector || '',
         html: occ.html || '',

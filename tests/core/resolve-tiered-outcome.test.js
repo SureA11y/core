@@ -37,7 +37,10 @@ test('resolveTieredOutcome: only cantTell occurrences => cantTell, exactly those
   const result = helpers.resolveTieredOutcome([], cantTells, 'moderate');
   assert.strictEqual(result.outcome, 'cantTell');
   assert.strictEqual(result.severity, 'moderate');
-  assert.deepStrictEqual(result.occurrences, cantTells);
+  assert.deepStrictEqual(result.occurrences, [
+    { id: 'c1', occurrenceOutcome: 'cantTell' },
+    { id: 'c2', occurrenceOutcome: 'cantTell' }
+  ]);
 });
 
 test('resolveTieredOutcome: only fail occurrences => fail, exactly those occurrences', () => {
@@ -45,7 +48,7 @@ test('resolveTieredOutcome: only fail occurrences => fail, exactly those occurre
   const fails = [{ id: 'f1' }];
   const result = helpers.resolveTieredOutcome(fails, [], 'minor');
   assert.strictEqual(result.outcome, 'fail');
-  assert.deepStrictEqual(result.occurrences, fails);
+  assert.deepStrictEqual(result.occurrences, [{ id: 'f1', occurrenceOutcome: 'fail' }]);
 });
 
 test('resolveTieredOutcome: both fail and cantTell occurrences => outcome is fail, but BOTH buckets are present in occurrences (the actual bug being fixed)', () => {
@@ -56,7 +59,22 @@ test('resolveTieredOutcome: both fail and cantTell occurrences => outcome is fai
   assert.strictEqual(result.outcome, 'fail');
   assert.strictEqual(result.severity, 'moderate');
   assert.strictEqual(result.occurrences.length, 3);
-  assert.deepStrictEqual(result.occurrences, [...fails, ...cantTells]);
+  assert.deepStrictEqual(result.occurrences, [
+    { id: 'f1', occurrenceOutcome: 'fail' },
+    { id: 'f2', occurrenceOutcome: 'fail' },
+    { id: 'c1', occurrenceOutcome: 'cantTell' }
+  ]);
+});
+
+test('resolveTieredOutcome: preserves an explicit occurrenceOutcome already set by the rule', () => {
+  const helpers = getHelpers();
+  const fails = [{ id: 'f1', occurrenceOutcome: 'fail' }];
+  const cantTells = [{ id: 'c1', occurrenceOutcome: 'cantTell' }];
+  const result = helpers.resolveTieredOutcome(fails, cantTells, 'moderate');
+  assert.deepStrictEqual(result.occurrences, [
+    { id: 'f1', occurrenceOutcome: 'fail' },
+    { id: 'c1', occurrenceOutcome: 'cantTell' }
+  ]);
 });
 
 test('resolveTieredOutcome: non-array inputs are treated as empty, never throw', () => {
