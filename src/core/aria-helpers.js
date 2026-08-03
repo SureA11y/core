@@ -959,14 +959,31 @@ function createAriaHelpers(opts, shared) {
         return { valid: ok, reason: ok ? '' : 'invalid-token' };
       }
       case 'idref': {
-        const formatOk = v.length > 0 && !/\s/.test(v);
+        // An explicitly-empty value is treated as valid (added
+        // 2026-08-03), not "expected-single-idref" — matches every
+        // idref/idref-list ARIA attribute in a widely-used reference
+        // engine's own standards table, which universally sets
+        // `allowEmpty: true` for this value type (verified: every
+        // aria-activedescendant/aria-controls/aria-describedby/
+        // aria-details/aria-errormessage/aria-flowto/aria-labelledby/
+        // aria-owns entry has it, with zero exceptions found across the
+        // whole file). An empty idref value is a common, deliberate
+        // pattern in templated markup (e.g. React conditionally
+        // rendering `aria-describedby={hasError ? errorId : ''}`) —
+        // treating it as an error was a false positive. Confirmed live:
+        // chase.com's login form ships `aria-describedby=""` on its
+        // username/password inputs unconditionally.
+        if (v.length === 0) return { valid: true, reason: '' };
+        const formatOk = !/\s/.test(v);
         if (!formatOk) return { valid: false, reason: 'expected-single-idref' };
         if (!idExists(v)) return { valid: false, reason: 'idref-not-found' };
         return { valid: true, reason: '' };
       }
       case 'idref-list': {
         const parts = v.split(/\s+/).filter(Boolean);
-        if (!parts.length) return { valid: false, reason: 'empty-idref-list' };
+        // Same allowEmpty rationale as the 'idref' case above — an
+        // empty idref-list value is valid, not "empty-idref-list".
+        if (!parts.length) return { valid: true, reason: '' };
         // Only flag when NONE of the referenced ids resolve — a
         // partially-dangling list (some ids exist, some don't) is
         // left unflagged. Verified 2026-07-21 directly against

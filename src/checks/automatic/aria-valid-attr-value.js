@@ -13,9 +13,9 @@
  * @expectation
  *   Each attribute's value conforms to its WAI-ARIA-declared value type:
  *   boolean ("true"/"false"), tristate ("true"/"false"/"mixed"), a token
- *   from a fixed enumerated set, an integer, a real number, or a non-empty
- *   ID reference (list) that resolves to an existing element in the
- *   document.
+ *   from a fixed enumerated set, an integer, a real number, or an empty
+ *   value or ID reference (list) that resolves to an existing element in
+ *   the document.
  * @implementation-notes
  * - Not rule-gated on isAccTreeEligible: this remains a static-markup
  *   property, while engine-level hidden-subtree filtering still applies
@@ -32,6 +32,15 @@
  *   attributes (aria-activedescendant, aria-errormessage) are flagged
  *   whenever their one id doesn't resolve, also matching that engine's `idref`
  *   case exactly.
+ * - An explicitly-EMPTY idref/idref-list value (e.g. `aria-describedby=""`)
+ *   is valid, not a violation (added 2026-08-03) — matches that same
+ *   reference engine's own standards table, which sets `allowEmpty: true`
+ *   on every idref/idref-list ARIA attribute with zero exceptions (verified
+ *   across its whole bundled source). A common, deliberate pattern in
+ *   templated markup (e.g. React conditionally rendering
+ *   `aria-describedby={hasError ? errorId : ''}`); flagging it was a real
+ *   false positive, confirmed live on chase.com's login form, which ships
+ *   `aria-describedby=""` unconditionally on its username/password inputs.
  */
 
 const id = 'aria-valid-attr-value';

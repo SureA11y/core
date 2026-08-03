@@ -47,6 +47,40 @@ test(`${RULE_ID}: pass when applicable <svg> has aria-labelledby`, () => {
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+test(`${RULE_ID}: fail when applicable <svg role="graphics-symbol"> has no title/desc and no aria name`, () => {
+  const html = `<!doctype html><html><body>
+    <svg id="bad_gs" role="graphics-symbol" xmlns="http://www.w3.org/2000/svg"></svg>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'bad_gs'));
+});
+
+test(`${RULE_ID}: pass when applicable <svg role="graphics-symbol"> has <title> text`, () => {
+  const html = `<!doctype html><html><body>
+    <svg id="ok_gs" role="graphics-symbol" xmlns="http://www.w3.org/2000/svg"><title>Close</title></svg>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: fail when applicable <svg role="graphics-document"> has no title/desc and no aria name`, () => {
+  const html = `<!doctype html><html><body>
+    <svg id="bad_gd" role="graphics-document" xmlns="http://www.w3.org/2000/svg"></svg>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'bad_gd'));
+});
+
+test(`${RULE_ID}: pass when applicable <svg role="graphics-document"> has <title> text`, () => {
+  const html = `<!doctype html><html><body>
+    <svg id="ok_gd" role="graphics-document" xmlns="http://www.w3.org/2000/svg"><title>Chart</title></svg>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
 test(`${RULE_ID}: fail when applicable <svg role="img"> has no title/desc and no aria name`, () => {
   const html = `<!doctype html><html><body>
     <svg id="bad1" role="img" xmlns="http://www.w3.org/2000/svg"></svg>
@@ -138,7 +172,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/svg-text-alternative-present-
 
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 12, maxOccurrences: 12 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 14, maxOccurrences: 14 });
 
   const expectedFailIds = [
     'svg_case_01',
@@ -152,7 +186,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/svg-text-alternative-present-
     'svg_case_21', // <title> not first child does not count
     'svg_case_22', // <desc> as first child still doesn't count as a name
     'svg_case_23', // empty <title> + <desc> second: desc still doesn't count as a name
-    'svg_case_24' // <desc> misplaced (not first, not pair-second) does not count
+    'svg_case_24', // <desc> misplaced (not first, not pair-second) does not count
+    'svg_case_25', // role="graphics-symbol" is applicability intent
+    'svg_case_26' // role="graphics-document" is applicability intent
   ];
 
   const expectedNoOccIds = [

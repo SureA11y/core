@@ -78,10 +78,16 @@ test(`${RULE_ID}: pass for a valid integer aria-level`, () => {
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail for an empty ID-reference-list value`, () => {
+test(`${RULE_ID}: pass for an empty ID-reference-list value (allowEmpty, matches a reference engine's own standards table exactly)`, () => {
   const html = `<!doctype html><html><body><div id="a" aria-labelledby=""></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: pass for an empty single-ID-reference value (allowEmpty)`, () => {
+  const html = `<!doctype html><html><body><div id="a" role="listbox" aria-activedescendant=""></div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: pass for any non-empty string-typed attribute value`, () => {
@@ -130,14 +136,13 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-valid-attr-value-all-sce
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 7, maxOccurrences: 7 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 6, maxOccurrences: 6 });
 
   const expectedFailIds = [
     'avav_case_06',
     'avav_case_07',
     'avav_case_08',
     'avav_case_09',
-    'avav_case_10',
     'avav_case_14',
     'avav_case_15'
   ];
@@ -147,6 +152,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-valid-attr-value-all-sce
     'avav_case_03',
     'avav_case_04',
     'avav_case_05',
+    'avav_case_10',
     'avav_case_11',
     'avav_case_12',
     'avav_case_13'

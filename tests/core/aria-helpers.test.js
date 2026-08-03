@@ -172,11 +172,26 @@ test('validateAttrValue: idref requires format and existence', () => {
   );
 });
 
+test('validateAttrValue: an explicitly-empty idref value is valid (allowEmpty), not "expected-single-idref"', () => {
+  const { helpers } = helpersFor('<div></div>');
+  assert.deepEqual(helpers.validateAttrValue('aria-activedescendant', ''), {
+    valid: true,
+    reason: ''
+  });
+});
+
 test('validateAttrValue: idref-list is valid when at least one id resolves', () => {
   const { helpers } = helpersFor('<div id="a"></div>');
   assert.equal(helpers.validateAttrValue('aria-describedby', 'a missing').valid, true);
   assert.equal(helpers.validateAttrValue('aria-describedby', 'missing1 missing2').valid, false);
-  assert.equal(helpers.validateAttrValue('aria-describedby', '').valid, false);
+});
+
+test('validateAttrValue: an explicitly-empty idref-list value is valid (allowEmpty), not "empty-idref-list"', () => {
+  const { helpers } = helpersFor('<div></div>');
+  assert.deepEqual(helpers.validateAttrValue('aria-describedby', ''), {
+    valid: true,
+    reason: ''
+  });
 });
 
 test('validateAttrValue: string type is always valid', () => {

@@ -9,7 +9,16 @@
  * @applicability
  *   Applies to inline <svg> elements that are exposed to assistive technologies AND appear intended to be conveyed.
  *   "Intended to be conveyed" is approximated deterministically by at least one of:
- *     - role="img"
+ *     - role="img", role="graphics-symbol", or role="graphics-document"
+ *       (added 2026-08-03 — the SVG root element itself carrying one of
+ *       the other two graphics-module roles instead of img; matches a
+ *       widely-used reference engine's svg-img-alt selector exactly,
+ *       `[role="img"], [role="graphics-symbol"], svg[role="graphics-document"]`,
+ *       for the svg-root-element case. Deliberately does NOT extend to
+ *       arbitrary role="graphics-symbol" descendants nested inside an
+ *       <svg> — that engine's selector allows that too, but this check's
+ *       own scope has always been the <svg> root only; a separate,
+ *       broader feature, not attempted here.)
  *     - aria-label / aria-labelledby present
  *     - <title> or <desc> present (desc alone is an applicability signal only — see @expectation)
  *     - focusable/tabbable (e.g., tabindex, native focusability)
@@ -222,7 +231,13 @@ function runInPage(ctx) {
     const descText = titleText ? '' : nonEmptyDescText(el); // avoid second scan if title already passes
     const hasTitleOrDesc = !!(titleText || descText);
 
-    const hasIntent = role === 'img' || hasAriaNamingAttr || hasTitleOrDesc || focusable;
+    const hasIntent =
+      role === 'img' ||
+      role === 'graphics-symbol' ||
+      role === 'graphics-document' ||
+      hasAriaNamingAttr ||
+      hasTitleOrDesc ||
+      focusable;
 
     if (!hasIntent) continue;
 
