@@ -1758,6 +1758,34 @@ function createDomHelpers(opts) {
         /* ignore */
       }
 
+      // `hidden="until-found"` is a distinct state from a plain `hidden`
+      // attribute (HTML spec: the UA stylesheet applies `content-
+      // visibility: hidden` for `until-found`, vs. `display: none` for
+      // any other value/bare `hidden`) -- content-visibility:hidden hides
+      // an element's DESCENDANTS from rendering, not the element itself,
+      // matching a widely-used reference engine's own explicit self-vs-
+      // ancestor split for this exact CSS property (its
+      // contentVisibiltyHidden helper only returns true when checking
+      // *as an ancestor* of another node, never for the element's own
+      // eligibility). Added 2026-08-03: the `struct` lookup above is
+      // deliberately unaware of this distinction (it's cached per-element
+      // and shared across every node that walks through `a` as an
+      // ancestor, where "this ancestor hides its descendants" is always
+      // the right answer for `until-found`) -- this self-only override
+      // corrects it specifically for the case where `a` IS `node` itself,
+      // without touching the cached value other callers (real
+      // descendants of `a`) rely on. Found via a cross-engine comparison
+      // audit: IRS.gov's accordion panels (`<div hidden="until-found"
+      // aria-labelledby="...">`) were silently excluded from every rule,
+      // including ones checking the panel's OWN attributes, even though a
+      // widely-used reference engine correctly still evaluates them.
+      if (struct === 'hiddenAttr' && a === node) {
+        const hiddenVal = String((a.getAttribute && a.getAttribute('hidden')) || '')
+          .trim()
+          .toLowerCase();
+        if (hiddenVal === 'until-found') struct = null;
+      }
+
       if (struct) return __cacheAndReturn({ eligible: false, reasons: [struct] });
     }
     if (inClosedDetailsContent(node))

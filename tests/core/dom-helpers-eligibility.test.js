@@ -29,6 +29,34 @@ test('isAccTreeEligible: [hidden] attribute on an ancestor blocks the whole subt
   assert.deepEqual(r.reasons, ['hiddenAttr']);
 });
 
+test('isAccTreeEligible: hidden="until-found" on the element ITSELF does not block it (content-visibility:hidden hides descendants, not the element carrying it)', () => {
+  const { helpers, document } = helpersFor(
+    '<div id="panel" hidden="until-found" aria-labelledby="btn"></div>'
+  );
+  const r = helpers.isAccTreeEligible(byId(document, 'panel'));
+  assert.equal(r.eligible, true);
+});
+
+test('isAccTreeEligible: hidden="until-found" on an ANCESTOR still blocks a real descendant', () => {
+  const { helpers, document } = helpersFor('<div hidden="until-found"><span id="s">x</span></div>');
+  const r = helpers.isAccTreeEligible(byId(document, 's'));
+  assert.equal(r.eligible, false);
+  assert.deepEqual(r.reasons, ['hiddenAttr']);
+});
+
+test('isAccTreeEligible: a plain [hidden] attribute (not "until-found") on the element itself still blocks it, unlike until-found', () => {
+  const { helpers, document } = helpersFor('<div id="panel" hidden aria-labelledby="btn"></div>');
+  const r = helpers.isAccTreeEligible(byId(document, 'panel'));
+  assert.equal(r.eligible, false);
+  assert.deepEqual(r.reasons, ['hiddenAttr']);
+});
+
+test('isAccTreeEligible: hidden="UNTIL-FOUND" (case-insensitive) on the element itself does not block it', () => {
+  const { helpers, document } = helpersFor('<div id="panel" hidden="UNTIL-FOUND"></div>');
+  const r = helpers.isAccTreeEligible(byId(document, 'panel'));
+  assert.equal(r.eligible, true);
+});
+
 test('isAccTreeEligible: a <template> element itself is never eligible (its content lives in a detached DocumentFragment)', () => {
   const { helpers, document } = helpersFor('<template id="t"><span>x</span></template>');
   const r = helpers.isAccTreeEligible(byId(document, 't'));

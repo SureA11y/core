@@ -193,6 +193,25 @@ test(`${RULE_ID}: notApplicable for a spec-reserved hyphenated (non-custom-eleme
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+test(`${RULE_ID}: a roleless element with hidden="until-found" is still evaluated for its own aria-labelledby, unlike a plain [hidden] (added 2026-08-03 — the irs.gov accordion-panel case)`, () => {
+  const html = `<!doctype html><html><body>
+    <button id="btn_panel">Question</button>
+    <div id="panel" hidden="until-found" aria-labelledby="btn_panel">Some real answer content here.</div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'panel'));
+});
+
+test(`${RULE_ID}: notApplicable when the SAME roleless element instead has a plain [hidden] attribute (not "until-found") — the panel itself stays excluded`, () => {
+  const html = `<!doctype html><html><body>
+    <button id="btn_panel">Question</button>
+    <div id="panel" hidden aria-labelledby="btn_panel">Some real answer content here.</div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
 test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><body><div id="a" role="generic" aria-label="Something"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
