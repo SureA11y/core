@@ -22139,9 +22139,32 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // <img alt="" aria-hidden="">, where aria-hidden="" (empty string) is
     // still a specified attribute. A truthy-value check would have missed
     // this even after aria-hidden was added to CONFLICTING_ATTRS above.
-    const present = CONFLICTING_ATTRS.filter((attr) =>
+    let present = CONFLICTING_ATTRS.filter((attr) =>
       el.hasAttribute ? el.hasAttribute(attr) : el.getAttribute(attr) != null
     );
+
+    // aria-hidden="true" (the exact, valid truthy value — NOT the empty-string
+    // Slack case above, which never actually hides anything) is a special
+    // case: it removes the element and its subtree from the accessibility
+    // tree unconditionally, independent of role. That makes the "role
+    // restoration" this rule warns about ("...which restores its implicit
+    // role and cancels the presentational intent") factually inert — no AT
+    // will ever expose the restored role OR any of the other conflicting
+    // attributes (aria-label, aria-describedby, ...) present alongside it,
+    // since the whole element stays out of the tree regardless. Confirmed
+    // 2026-08-04 against a real page (aljazeera.com's league-ticker crest
+    // icons, W3C's footer social-media icons, and other sites' <svg
+    // role="presentation" aria-hidden="true"> decorative icons) — this
+    // pattern is extremely common (a defensive belt-and-suspenders
+    // double-hide, not an authoring mistake) and was previously flagged with
+    // a misleading "cancels the presentational intent" message. Focusability
+    // is NOT covered by this exemption — a keyboard user can still tab onto
+    // an aria-hidden="true" focusable element (the aria-hidden-focus
+    // anti-pattern), a real, independent hazard aria-hidden does nothing to
+    // prevent.
+    if (el.getAttribute('aria-hidden') === 'true') {
+      present = [];
+    }
 
     let isFocusable = false;
     if (getFocusableInfo) {

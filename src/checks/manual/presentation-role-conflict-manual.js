@@ -25,6 +25,22 @@
  * - Not WCAG-normative — authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent.
+ * - `aria-hidden="true"` (the exact valid truthy value) on the presentational
+ *   element itself is deliberately EXCLUDED as a trigger, even though it's a
+ *   global ARIA attribute: it removes the element from the accessibility
+ *   tree unconditionally, so the "role restoration" this rule warns about
+ *   never actually reaches assistive tech, making a flag misleading. Any
+ *   OTHER conflicting attribute present alongside `aria-hidden="true"` is
+ *   equally inert for the same reason and is not flagged either. An
+ *   `aria-hidden=""` (empty/invalid value, does NOT hide) still triggers
+ *   normally — see the empty-value case below. Focusability is unaffected by
+ *   this exemption (see the code comment at the check site). Added
+ *   2026-08-04 after finding this rule's own `the reference engine:null` cross-engine slice
+ *   (788 records, ~40% of its INSUFFICIENT_DATA bucket) was almost entirely
+ *   this exact pattern — the reference engine never even considers these elements candidates
+ *   (its default `excludeHidden` gather-time filter drops any
+ *   `aria-hidden="true"` element before the rule's own conflicting-attribute
+ *   check runs), which is what surfaced the message's factual error.
  * - The conflicting-attribute set matches a widely-used reference engine's
  *   own `none: ['is-element-focusable', 'has-global-aria-attribute']` condition
  *   exactly — `has-global-aria-attribute` checks against the full list of
@@ -132,9 +148,32 @@ function runInPage(ctx) {
     // <img alt="" aria-hidden="">, where aria-hidden="" (empty string) is
     // still a specified attribute. A truthy-value check would have missed
     // this even after aria-hidden was added to CONFLICTING_ATTRS above.
-    const present = CONFLICTING_ATTRS.filter((attr) =>
+    let present = CONFLICTING_ATTRS.filter((attr) =>
       el.hasAttribute ? el.hasAttribute(attr) : el.getAttribute(attr) != null
     );
+
+    // aria-hidden="true" (the exact, valid truthy value — NOT the empty-string
+    // Slack case above, which never actually hides anything) is a special
+    // case: it removes the element and its subtree from the accessibility
+    // tree unconditionally, independent of role. That makes the "role
+    // restoration" this rule warns about ("...which restores its implicit
+    // role and cancels the presentational intent") factually inert — no AT
+    // will ever expose the restored role OR any of the other conflicting
+    // attributes (aria-label, aria-describedby, ...) present alongside it,
+    // since the whole element stays out of the tree regardless. Confirmed
+    // 2026-08-04 against a real page (aljazeera.com's league-ticker crest
+    // icons, W3C's footer social-media icons, and other sites' <svg
+    // role="presentation" aria-hidden="true"> decorative icons) — this
+    // pattern is extremely common (a defensive belt-and-suspenders
+    // double-hide, not an authoring mistake) and was previously flagged with
+    // a misleading "cancels the presentational intent" message. Focusability
+    // is NOT covered by this exemption — a keyboard user can still tab onto
+    // an aria-hidden="true" focusable element (the aria-hidden-focus
+    // anti-pattern), a real, independent hazard aria-hidden does nothing to
+    // prevent.
+    if (el.getAttribute('aria-hidden') === 'true') {
+      present = [];
+    }
 
     let isFocusable = false;
     if (getFocusableInfo) {

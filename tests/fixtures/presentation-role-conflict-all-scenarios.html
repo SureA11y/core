@@ -66,6 +66,21 @@
     <div role="presentation" aria-current="page" id="prc_case_10">Content</div>
   </div>
 
+  <div class="case" id="case_11">
+    <div class="case-title">11 — NEUTRAL: role="presentation" combined with aria-hidden="true" (the exact truthy value removes the element from the AT tree unconditionally — the "role restoration" this rule warns about never reaches assistive tech, so flagging it is misleading)</div>
+    <div role="presentation" aria-hidden="true" id="prc_case_11">Decorative</div>
+  </div>
+
+  <div class="case" id="case_12">
+    <div class="case-title">12 — NEUTRAL: &lt;img alt=""&gt; combined with aria-hidden="true" (real-world pattern: a decorative icon double-hidden via empty alt + aria-hidden, extremely common on real sites)</div>
+    <img src="x.png" alt="" aria-hidden="true" id="prc_case_12">
+  </div>
+
+  <div class="case" id="case_13">
+    <div class="case-title">13 — CANTTELL: role="presentation" combined with aria-hidden="true" AND natively focusable — focusability is a real, independent hazard aria-hidden does not neutralize</div>
+    <button role="presentation" aria-hidden="true" id="prc_case_13">Click</button>
+  </div>
+
   <p class="note">End of fixture.</p>
 </body>
 </html>
