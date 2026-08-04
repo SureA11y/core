@@ -14989,7 +14989,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     'none',
     'img',
     'heading',
-    'region',
     'article',
     'banner',
     'contentinfo',

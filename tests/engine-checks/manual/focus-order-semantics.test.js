@@ -41,6 +41,19 @@ test(`${RULE_ID}: cantTell when tabindex="0" has a non-interactive role`, () => 
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'TABBABLE_WITH_NON_INTERACTIVE_ROLE');
 });
 
+test(`${RULE_ID}: notApplicable when tabindex="0" has role="region" (removed 2026-08-04 — a real, WCAG 2.1.1/2.1.3-grounded pattern this engine's own scrollable-region-focusable check exists to recommend; found extremely commonly on real sites via OneTrust's cookie-consent banner)`, () => {
+  const html = `<!doctype html><html><body><div role="region" aria-label="Cookie consent banner" tabindex="0">Accept cookies?</div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: cantTell when tabindex="0" has role="navigation" (only region was removed from the non-interactive-role list, not the whole landmark family — no real corpus evidence yet for navigation)`, () => {
+  const html = `<!doctype html><html><body><div id="a" role="navigation" tabindex="0">Nav</div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+});
+
 test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><body><div role="heading" tabindex="0">heading</div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
@@ -64,7 +77,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/focus-order-semantics-all-sce
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
 
   const expectedFlaggedIds = ['fos_case_01', 'fos_case_02'];
-  const expectedNoOccIds = ['fos_case_03', 'fos_case_04', 'fos_case_05'];
+  const expectedNoOccIds = ['fos_case_03', 'fos_case_04', 'fos_case_05', 'fos_case_06'];
 
   for (const id of expectedFlaggedIds) {
     assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);

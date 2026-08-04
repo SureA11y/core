@@ -25,6 +25,26 @@
  *   `tabindex` and NO role at all are also not flagged: native semantics
  *   or an intentionally generic custom-interactive pattern cannot be
  *   distinguished from markup alone with the same confidence.
+ * - `region` was removed from this list 2026-08-04: a tabbable
+ *   `role="region"` is a real, WCAG 2.1.1/2.1.3-grounded pattern this
+ *   engine's own `scrollable-region-focusable` check exists to
+ *   RECOMMEND (a scrollable landmark with no other focusable content
+ *   needs `tabindex="0"` to be keyboard-reachable at all) — flagging it
+ *   here was internally inconsistent with that sibling check. Also
+ *   independently confirmed against a widely-used reference engine's own
+ *   `focus-order-semantics` rule, whose `valid-scrollable-semantics`
+ *   check explicitly allowlists `region` (along with `navigation`,
+ *   `status`, `tabpanel`) as always valid regardless of actual
+ *   scrollability — not scoped to the scrolling case specifically, since
+ *   a `role="region"` is also commonly made tabbable on its own merits
+ *   (e.g. a cookie-consent banner or notification/toast region a
+ *   keyboard user should be able to reach directly). Found via a real,
+ *   extremely common pattern: OneTrust's cookie-consent banner
+ *   (`<div id="onetrust-banner-sdk" role="region" tabindex="0">`), used
+ *   on a large fraction of real-world sites. Scoped to `region` only
+ *   (not the reference engine's full navigation/status/tabpanel
+ *   allowlist) since that's what real corpus data confirmed — those
+ *   other three roles remain flagged pending their own evidence.
  */
 
 const id = 'focus-order-semantics';
@@ -59,7 +79,6 @@ function runInPage(ctx) {
     'none',
     'img',
     'heading',
-    'region',
     'article',
     'banner',
     'contentinfo',
