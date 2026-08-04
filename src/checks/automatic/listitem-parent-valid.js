@@ -31,6 +31,17 @@
  *   (list-semantics-suppressing) parent, matching a widely-used reference
  *   engine's own `listitem` check (`['presentation', 'none', 'list'].includes(parentRole)`,
  *   confirmed by reading its source directly).
+ * - The SAME "explicit role wins" principle applies to the <li> ELEMENT
+ *   ITSELF, added 2026-08-04: an <li role="tab">/role="menuitem">/
+ *   role="presentation"> etc. is exposed to AT with that role, never
+ *   "listitem" — the whole point of this check (list items need a valid
+ *   list-container parent) doesn't apply when the element isn't claiming
+ *   listitem semantics in the first place. A widely-used reference engine's
+ *   own `listitem` rule structurally excludes any `<li>` with an explicit
+ *   `role` attribute from candidacy at all (`no-role-matches`), confirmed
+ *   by reading its matcher directly — this check now matches that scope.
+ *   `role="listitem"` itself is a no-op restatement (not an override), so
+ *   it still falls through to the normal parent-validity check below.
  */
 
 const id = 'listitem-parent-valid';
@@ -74,6 +85,20 @@ function runInPage(ctx) {
     if (!el) continue;
     const parent = el.parentElement;
     if (!parent) continue;
+
+    // An explicit role on the <li> ITSELF overrides its native "listitem"
+    // role entirely, the same "any explicit role wins over the tag's
+    // native role" principle this check already applies to the PARENT
+    // (see the header comment's Nike example). An <li role="tab">/
+    // role="menuitem">/role="presentation"> etc. is exposed to AT with
+    // THAT role, never "listitem" -- so the "list item needs a valid list
+    // container parent" concern this rule exists for doesn't apply to it
+    // at all; there's no listitem semantics being claimed to validate.
+    // role="listitem" itself is a no-op restatement, not an override, so
+    // it still falls through to the normal parent check below.
+    const ownRoleAttr = el.getAttribute ? String(el.getAttribute('role') || '').trim() : '';
+    const ownExplicitRole = ownRoleAttr ? (ownRoleAttr.split(/\s+/)[0] || '').toLowerCase() : '';
+    if (ownExplicitRole && ownExplicitRole !== 'listitem') continue;
 
     applicableCount += 1;
 

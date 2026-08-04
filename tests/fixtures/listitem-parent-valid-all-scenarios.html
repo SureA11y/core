@@ -70,6 +70,28 @@
     <ul role="menu"><li id="lpv_case_09">Kiwi</li></ul>
   </div>
 
+  <h2>C. The &lt;li&gt; itself has an explicit role (overrides its own native "listitem" role)</h2>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — NEUTRAL: li role="tab" inside an invalid parent — its own explicit role overrides "listitem" entirely, so there's no listitem semantics to validate a parent for (real pattern: tablist widgets built on &lt;li&gt;)</div>
+    <div role="tablist"><li id="lpv_case_10" role="tab">Lemon</li></div>
+  </div>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — NEUTRAL: li role="menuitem" inside an invalid parent (real pattern: menu widgets built on &lt;li&gt;)</div>
+    <div role="menu"><li id="lpv_case_11" role="menuitem">Mango</li></div>
+  </div>
+
+  <div class="case" id="case_12">
+    <div class="case-title">12 — NEUTRAL: li role="presentation" inside an invalid parent (real pattern: HubSpot-generated nav menus)</div>
+    <div><li id="lpv_case_12" role="presentation">Nectarine</li></div>
+  </div>
+
+  <div class="case" id="case_13">
+    <div class="case-title">13 — FAIL: li role="listitem" (a no-op restatement, not an override) inside an invalid parent — still needs a valid list-container parent</div>
+    <div><li id="lpv_case_13" role="listitem">Orange</li></div>
+  </div>
+
   <p class="note">End of fixture.</p>
 </body>
 </html>

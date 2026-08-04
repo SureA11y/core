@@ -38450,6 +38450,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const parent = el.parentElement;
     if (!parent) continue;
 
+    // An explicit role on the <li> ITSELF overrides its native "listitem"
+    // role entirely, the same "any explicit role wins over the tag's
+    // native role" principle this check already applies to the PARENT
+    // (see the header comment's Nike example). An <li role="tab">/
+    // role="menuitem">/role="presentation"> etc. is exposed to AT with
+    // THAT role, never "listitem" -- so the "list item needs a valid list
+    // container parent" concern this rule exists for doesn't apply to it
+    // at all; there's no listitem semantics being claimed to validate.
+    // role="listitem" itself is a no-op restatement, not an override, so
+    // it still falls through to the normal parent check below.
+    const ownRoleAttr = el.getAttribute ? String(el.getAttribute('role') || '').trim() : '';
+    const ownExplicitRole = ownRoleAttr ? (ownRoleAttr.split(/\s+/)[0] || '').toLowerCase() : '';
+    if (ownExplicitRole && ownExplicitRole !== 'listitem') continue;
+
     applicableCount += 1;
 
     const parentTag = parent.tagName ? parent.tagName.toLowerCase() : '';
@@ -76569,6 +76583,20 @@ const __a11yCoreCrossFrameApi = (function () {
     if (!el) continue;
     const parent = el.parentElement;
     if (!parent) continue;
+
+    // An explicit role on the <li> ITSELF overrides its native "listitem"
+    // role entirely, the same "any explicit role wins over the tag's
+    // native role" principle this check already applies to the PARENT
+    // (see the header comment's Nike example). An <li role="tab">/
+    // role="menuitem">/role="presentation"> etc. is exposed to AT with
+    // THAT role, never "listitem" -- so the "list item needs a valid list
+    // container parent" concern this rule exists for doesn't apply to it
+    // at all; there's no listitem semantics being claimed to validate.
+    // role="listitem" itself is a no-op restatement, not an override, so
+    // it still falls through to the normal parent check below.
+    const ownRoleAttr = el.getAttribute ? String(el.getAttribute('role') || '').trim() : '';
+    const ownExplicitRole = ownRoleAttr ? (ownRoleAttr.split(/\s+/)[0] || '').toLowerCase() : '';
+    if (ownExplicitRole && ownExplicitRole !== 'listitem') continue;
 
     applicableCount += 1;
 
