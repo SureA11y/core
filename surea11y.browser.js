@@ -31760,17 +31760,32 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     // there's no native-role-restatement exception -- an empty array is
     // correct, same convention as 'html'/'area[href]' above).
     picture: [],
+    // Extended 2026-08-04 with 'gridcell', 'separator', 'slider', 'treeitem'
+    // -- verified against a widely-used reference engine's own element-spec
+    // table for 'button' (its allowedRoles for the plain, unconditional
+    // <button> entry includes all four; only a differently-keyed, more
+    // conditional variant elsewhere in its table has the narrower 10-role
+    // list this array previously matched, which was the wrong one to
+    // mirror). Found via a real, common pattern: composite-grid widgets
+    // built on <button> for their interactive cells, e.g. MUI's
+    // DatePicker calendar (`<button role="gridcell" data-testid="day">`)
+    // — every day cell in the grid was a false positive before this fix
+    // (92 occurrences on one page alone).
     button: [
       'checkbox',
       'combobox',
+      'gridcell',
       'link',
       'menuitem',
       'menuitemcheckbox',
       'menuitemradio',
       'option',
       'radio',
+      'separator',
+      'slider',
       'switch',
-      'tab'
+      'tab',
+      'treeitem'
     ],
     h1: ['tab', 'presentation', 'none'],
     h2: ['tab', 'presentation', 'none'],

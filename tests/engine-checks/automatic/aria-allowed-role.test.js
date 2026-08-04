@@ -274,7 +274,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-allowed-role-all-scenari
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 18, maxOccurrences: 18 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 19, maxOccurrences: 19 });
 
   for (const id of [
     'aar_case_04',
@@ -294,7 +294,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-allowed-role-all-scenari
     'aar_case_39',
     'aar_case_41',
     'aar_case_43',
-    'aar_case_45'
+    'aar_case_45',
+    'aar_case_50'
   ]) {
     assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);
   }
@@ -325,7 +326,11 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-allowed-role-all-scenari
     'aar_case_37',
     'aar_case_40',
     'aar_case_42',
-    'aar_case_44'
+    'aar_case_44',
+    'aar_case_46',
+    'aar_case_47',
+    'aar_case_48',
+    'aar_case_49'
   ]) {
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
@@ -387,4 +392,35 @@ test(`${RULE_ID}: pass — role="article" (its own native role) is restated on <
   const html = `<!doctype html><html><body><article id="a" role="article"></article></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: pass — role="gridcell" is permitted on <button> (widened 2026-08-04 — found on a real site, MUI's DatePicker calendar, every day cell is a <button role="gridcell">)`, () => {
+  const html = `<!doctype html><html><body><button id="a" role="gridcell">1</button></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: pass — role="separator" is permitted on <button>`, () => {
+  const html = `<!doctype html><html><body><button id="a" role="separator"></button></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: pass — role="slider" is permitted on <button>`, () => {
+  const html = `<!doctype html><html><body><button id="a" role="slider"></button></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: pass — role="treeitem" is permitted on <button>`, () => {
+  const html = `<!doctype html><html><body><button id="a" role="treeitem"></button></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: fail — role="grid" is still not permitted on <button> (only the four widened roles were added, not the whole role vocabulary)`, () => {
+  const html = `<!doctype html><html><body><button id="a" role="grid"></button></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
 });
