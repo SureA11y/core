@@ -20,16 +20,13 @@
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent and the landmark-
  *   detection model.
- * - Recursive tree walk, not a direct-<body>-children-only scan (that was
- *   this check's original scope, replaced 2026-08-01). The direct-children
- *   scope was originally chosen to keep this check quiet, but it turned out
- *   to be nearly inert on the single most common real-world page shape: a
- *   modern framework's single root mount div
- *   (`<body><div id="root">...everything...</div></body>`, confirmed
- *   present as the ONLY direct <body> child on 37 of ~90 pages in a
- *   real-world corpus). On that shape, the old scan had at most one
- *   candidate for the entire page and either missed every real gap inside
- *   it or collapsed the whole page into one undifferentiated report.
+ * - Recursive tree walk, not a direct-<body>-children-only scan: a
+ *   direct-children-only scope is nearly inert on the single most common
+ *   real-world page shape, a modern framework's single root mount div
+ *   (`<body><div id="root">...everything...</div></body>`) — that shape
+ *   gives at most one candidate for the entire page and either misses
+ *   every real gap inside it or collapses the whole page into one
+ *   undifferentiated report.
  * - Algorithm, using this engine's own (already more spec-correct in
  *   places — see hasLandmarkScopingAncestor's header comment) helpers:
  *     1. Depth-first walk from <body>'s children.

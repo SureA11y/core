@@ -20,86 +20,59 @@
  *   owned set. Nothing else is a structurally valid direct child of a
  *   composite/container role.
  * @implementation-notes
- * - A distinct atomic decision from aria-required-children (see
- *   that rule): "does at least one required child exist" vs "is every
- *   owned child one of the allowed roles." A widely-used reference engine
- *   bundles both under one check (`aria-required-children`); this repo's
- *   "one rule = one normative decision" principle splits them, matching
- *   the established pattern elsewhere of surea11y rules mapping
- *   many-to-one against a single check in that reference engine.
- * - The "allowed owned roles" set is exactly REQUIRED_OWNED_ROLES — not
- *   a separately authored, broader list. Verified directly against a
+ * - A distinct atomic decision from aria-required-children (see that
+ *   rule): "does at least one required child exist" vs "is every owned
+ *   child one of the allowed roles." A widely-used reference engine
+ *   bundles both under one check; this repo's "one rule = one normative
+ *   decision" principle splits them.
+ * - The "allowed owned roles" set is exactly REQUIRED_OWNED_ROLES, not a
+ *   separately authored, broader list — verified directly against a
  *   widely-used reference engine's own ariaRequiredChildren/getOwnedRoles
- *   algorithm: an owned element is only considered allowed if its role is
- *   literally in the container's required set; that engine does not
- *   define a superset "allowed but not required" list for this purpose.
- *   Found and verified via a real page (Red Cross's homepage: a
- *   <nav role="region"> nested inside a <ul role="menubar"> through a
- *   role="none" <li> wrapper — a real violation that reference engine
- *   caught that aria-required-children's own scope (documented
- *   there as "can only under-report, never over-report") does not).
- * - Widened 2026-07-21 to also flag a ROLELESS descendant that has any
- *   global WAI-ARIA attribute or is focusable, matching a widely-used
- *   reference engine's own `getOwnedRoles` exactly (verified directly
- *   against its source: `hasGlobalAriaOrFocusable =
- *   !!globalAriaAttr || _isFocusable(vNode)` — such a descendant is
- *   pushed as an owned entry with `role: null`, which can never match a
- *   container's required-owned-roles set, so it's always "unallowed").
- *   Previously left out as riskier to replicate — re-evaluated given
- *   direct access to that engine's exact algorithm (not a guess) plus this
- *   engine's own already-existing, shared `helpers.getFocusableInfo` for
- *   the focusability half. Both signals (global-attribute presence,
- *   focusability) are static, declarative markup facts with no live-DOM/
- *   hydration risk, unlike e.g. `aria-checked-state-mismatch`'s DOM-
- *   property comparison.
- * - Fixed 2026-07-30: a roleless-but-focusable descendant's message and
- *   `data.details.attr` used to always claim "carries tabindex" even when
- *   the element had no tabindex attribute at all and was only focusable
- *   natively (e.g. an <a href> link). `helpers.getFocusableInfo`'s
- *   `mechanism` field ('tabindex' | 'native' | ...) is now used to tell
- *   the two apart, with a distinct `nativeFocusable` attr/message for the
- *   native case. Found via a real Angular app: a routerLink <a> inside a
- *   role="list" was reported as "carries tabindex" though the rendered
- *   markup had no such attribute.
+ *   algorithm, which likewise treats an owned element as allowed only if
+ *   its role is literally in the container's required set.
+ * - A ROLELESS descendant that has any global WAI-ARIA attribute or is
+ *   focusable is also flagged, matching that reference engine's
+ *   `getOwnedRoles` (`hasGlobalAriaOrFocusable = !!globalAriaAttr ||
+ *   _isFocusable(vNode)`): such a descendant is treated as an owned entry
+ *   with `role: null`, which can never match a container's
+ *   required-owned-roles set, so it's always "unallowed". Both signals
+ *   (global-attribute presence, focusability via the shared
+ *   `helpers.getFocusableInfo`) are static, declarative markup facts with
+ *   no live-DOM/hydration risk, unlike e.g.
+ *   `aria-checked-state-mismatch`'s DOM-property comparison.
+ *   `helpers.getFocusableInfo`'s `mechanism` field ('tabindex' | 'native' |
+ *   ...) distinguishes an explicit `tabindex` attribute from native
+ *   focusability (e.g. an `<a href>`), so the reported `data.details.attr`
+ *   and message correctly say `nativeFocusable` rather than claiming a
+ *   tabindex attribute that isn't actually present in the markup.
  * - Recursion stops at the first non-transparent role boundary, same as
- *   that reference engine: a nested container with its own real role (e.g. a
- *   <div role="listbox"> inside a menubar) is evaluated as ITS OWN
- *   owned-role entry against the outer container (and, separately, gets
- *   its own applicability pass as a container in the same rule run) —
- *   its descendants are never misattributed to the outer container.
- * - Fixed 2026-07-31: child-role resolution used `ariaHelpers.getExplicitRole`
- *   (explicit role="" attribute only), unlike aria-required-children's
- *   descendant matching which uses `ariaHelpers.getContainmentRole` (explicit
+ *   that reference engine: a nested container with its own real role
+ *   (e.g. a `<div role="listbox">` inside a menubar) is evaluated as its
+ *   own owned-role entry against the outer container (and, separately,
+ *   gets its own applicability pass as a container in the same rule run)
+ *   — its descendants are never misattributed to the outer container.
+ * - Child-role resolution uses `ariaHelpers.getContainmentRole` (explicit
  *   role, falling back to the native-tag map — li/tr/td/th/tbody/ul/ol/
- *   table/select/input[type=radio] — see that helper's own header comment).
- *   A bare `<li>` with no role="" attribute — the common CSS-reset
- *   workaround `<ul role="list"><li>...</li></ul>` that getContainmentRole
- *   exists specifically to handle — was therefore read as roleless here,
- *   making it structurally transparent: the walk recursed straight through
- *   the listitem boundary into its subtree and could report a focusable
- *   descendant several levels down as a disallowed owned child of the list,
- *   instead of stopping at the (implicit) listitem the way
- *   aria-required-children already does. Switched to getContainmentRole so
- *   both rules resolve an owned child's role identically. This is a general
- *   fix, not list/listitem-specific: it applies to every container role in
- *   REQUIRED_OWNED_ROLES whose native-tag counterpart the child map covers
- *   (e.g. a bare `<tr>`/`<td>` under a role="table"/"grid"/"row" container
- *   with no explicit role="" was subject to the same flattening bug). Found
- *   via a real Angular Material-style component library: an `<a routerlink>`
- *   several DOM levels inside a bare `<li>` under `<ul role="list">` was
- *   reported as an unallowed owned child of the list.
- * - Gated on isAccTreeEligible for the container itself, matching the fix
- *   applied to aria-required-children (see that rule's header): the
- *   original "not gated" note here just cited that rule's reasoning
- *   without re-deriving it, and that reasoning turned out not to hold —
- *   a closed dialog/flyout menu populated on open is a real false-positive
- *   shape. In this rule specifically the descendant-level eligibility gate
- *   already made the container-level gate redundant for correctness (an
- *   ineligible container has no eligible descendants either, so `owned`
- *   ends up empty and nothing fails) — but skipping the container up front
- *   reports `notApplicable` instead of a vacuous `pass`, which is the more
- *   accurate outcome for a container that isn't currently exposed at all,
- *   and avoids walking a subtree whose result is already known.
+ *   table/select/input[type=radio]), the same resolution
+ *   aria-required-children's descendant matching uses — not
+ *   `getExplicitRole`, which only sees an explicit role="" attribute. A
+ *   bare `<li>` with no role="" (the common CSS-reset workaround
+ *   `<ul role="list"><li>...</li></ul>`) must still resolve to the
+ *   implicit listitem role so the walk stops at that boundary instead of
+ *   recursing straight through it into the listitem's own subtree; the
+ *   same applies to every container role in REQUIRED_OWNED_ROLES whose
+ *   native-tag counterpart the child map covers (e.g. a bare
+ *   `<tr>`/`<td>` under a role="table"/"grid"/"row" container).
+ * - Gated on isAccTreeEligible for the container itself, matching
+ *   aria-required-children: a closed dialog/flyout menu populated on open
+ *   is a real false-positive shape otherwise. The descendant-level
+ *   eligibility gate alone would make the container-level gate redundant
+ *   for correctness (an ineligible container has no eligible descendants
+ *   either, so `owned` ends up empty and nothing fails), but skipping the
+ *   container up front reports `notApplicable` instead of a vacuous
+ *   `pass` — the more accurate outcome for a container that isn't
+ *   currently exposed at all — and avoids walking a subtree whose result
+ *   is already known.
  * - No aria-busy exemption here (unlike aria-required-children): the
  *   WAI-ARIA spec's aria-busy escape hatch is specifically about a
  *   container missing its required owned elements while loading, not

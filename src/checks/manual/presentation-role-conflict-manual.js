@@ -25,48 +25,33 @@
  * - Not WCAG-normative — authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent.
- * - `aria-hidden="true"` (the exact valid truthy value) on the presentational
- *   element itself is deliberately EXCLUDED as a trigger, even though it's a
- *   global ARIA attribute: it removes the element from the accessibility
- *   tree unconditionally, so the "role restoration" this rule warns about
- *   never actually reaches assistive tech, making a flag misleading. Any
- *   OTHER conflicting attribute present alongside `aria-hidden="true"` is
- *   equally inert for the same reason and is not flagged either. An
- *   `aria-hidden=""` (empty/invalid value, does NOT hide) still triggers
- *   normally — see the empty-value case below. Focusability is unaffected by
- *   this exemption (see the code comment at the check site). Added
- *   2026-08-04 after finding this rule's own `the reference engine:null` cross-engine slice
- *   (788 records, ~40% of its INSUFFICIENT_DATA bucket) was almost entirely
- *   this exact pattern — the reference engine never even considers these elements candidates
- *   (its default `excludeHidden` gather-time filter drops any
- *   `aria-hidden="true"` element before the rule's own conflicting-attribute
- *   check runs), which is what surfaced the message's factual error.
- * - The conflicting-attribute set matches a widely-used reference engine's
- *   own `none: ['is-element-focusable', 'has-global-aria-attribute']` condition
- *   exactly — `has-global-aria-attribute` checks against the full list of
- *   ARIA attributes marked `global: true` in that engine's own standards data
- *   (confirmed by reading `standards.ariaAttrs` directly at runtime, not
- *   guessed), which is much broader than the 3-attribute naming-only list
- *   this rule originally checked (added 2026-07-20, then widened
- *   2026-07-20 after a real page — Slack's homepage has
- *   `<img alt="" aria-hidden="">`, both gaps at once: the img[alt=''] case
- *   wasn't in the applicability selector at all, and aria-hidden wasn't in
- *   the conflicting-attribute set even if it had been).
+ * - `aria-hidden="true"` (the exact valid truthy value) on the
+ *   presentational element itself is deliberately EXCLUDED as a trigger,
+ *   even though it's a global ARIA attribute: it removes the element from
+ *   the accessibility tree unconditionally, so the "role restoration"
+ *   this rule warns about never actually reaches assistive tech, making a
+ *   flag misleading. Any OTHER conflicting attribute present alongside
+ *   `aria-hidden="true"` is equally inert for the same reason and is not
+ *   flagged either. An `aria-hidden=""` (empty/invalid value, does NOT
+ *   hide) still triggers normally. Focusability is unaffected by this
+ *   exemption (see the code comment at the check site).
+ * - The conflicting-attribute set matches a widely-used reference
+ *   engine's own `none: ['is-element-focusable',
+ *   'has-global-aria-attribute']` condition exactly —
+ *   `has-global-aria-attribute` checks against the full list of ARIA
+ *   attributes marked `global: true` in that engine's own standards data,
+ *   not a narrower naming-only list.
  * - Deliberately NOT replicating that reference engine's
- *   `hasImplicitChromiumRoleMatches` applicability gate, which (per direct
- *   probing of the reference engine's runtime) makes its own check
- *   inapplicable to role="presentation" on elements with no
- *   native implicit role to suppress in the first place (e.g.
- *   `<div role="presentation" aria-hidden="true">` — a <div> has no native
+ *   `hasImplicitChromiumRoleMatches` applicability gate, which makes its
+ *   own check inapplicable to role="presentation" on elements with no
+ *   native implicit role to suppress in the first place (e.g. `<div
+ *   role="presentation" aria-hidden="true">` — a <div> has no native
  *   role, so there's nothing for the presentational role to "conflict"
  *   with per that engine's own scope decision). surea11y stays
  *   broader/more cautious here rather than narrower, which is the safer
- *   direction to diverge in, and no real false positive from staying
- *   broad has surfaced in any corpus round to date.
- * - The native-implicit-role table needed to replicate that gate (if this
- *   scope decision is ever revisited) has since been produced — see
- *   ROADMAP.md §7 item 9 (2026-07-31) for the full table and the open
- *   maintainer decision; not implemented here pending that call.
+ *   direction to diverge in. The native-implicit-role table needed to
+ *   replicate that gate, if this scope decision is ever revisited, is in
+ *   ROADMAP.md §7 item 9.
  * - Focusability is computed via helpers.getFocusableInfo (native +
  *   tabindex), same helper aria-hidden-focus already relies on — a
  *   `:disabled` or otherwise non-focusable element is not flagged.

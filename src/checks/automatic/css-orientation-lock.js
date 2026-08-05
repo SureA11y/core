@@ -20,17 +20,13 @@
  *   display orientation unless that orientation is essential.
  * @implementation-notes
  * - The rotation DEGREE is what makes this the exploit signature, not
- *   merely the presence of a `rotate()` function — verified against a
- *   widely-used reference engine's own `css-orientation-lock` check
- *   (`cssOrientationLockEvaluate`), which computes the actual rotation angle and only
- *   flags ~90/~270 degrees, explicitly excluding ~0/~180 (a no-op or a
- *   flip, neither of which changes portrait<->landscape). A prior
- *   version of this rule flagged the bare presence of "rotate(" in an
- *   orientation-media-query rule regardless of angle — a real, confirmed
- *   false positive found via the live-DOM cross-engine corpus 2026-07-23
- *   on a real page (Times of India) whose `@media (orientation:portrait)`
- *   block only rotated a small decorative arrow icon 45 degrees, nothing
- *   resembling a page-orientation lock.
+ *   merely the presence of a `rotate()` function: a small decorative icon
+ *   rotated 45 degrees inside an orientation media query is not a page
+ *   lock. Matches a widely-used reference engine's own
+ *   `css-orientation-lock` check (`cssOrientationLockEvaluate`), which
+ *   computes the actual rotation angle and only flags ~90/~270 degrees,
+ *   explicitly excluding ~0/~180 (a no-op or a flip, neither of which
+ *   changes portrait<->landscape).
  * - Only `rotate`/`rotateZ` (transform functions) and the standalone CSS
  *   `rotate` property are parsed for degrees — matches that reference engine's
  *   own two sources (`style.transform`/`style.rotate`) but, like that engine,

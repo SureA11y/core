@@ -7,15 +7,15 @@
  * @standard WCAG 2.2
  * @sc 4.1.2
  * @applicability
- *   Applies to (a) elements whose explicit, valid role is one of the small
- *   set of WAI-ARIA 1.2 roles with a documented "Prohibited ARIA States and
- *   Properties" list (pure text-semantics / non-naming structural roles:
- *   caption, code, deletion, emphasis, generic, insertion, mark, none,
- *   paragraph, presentation, strong, subscript, suggestion, superscript,
- *   time), and (b) a small, curated set of native HTML tags verified to
- *   carry no explicit or implicit ARIA role at all (see ROLELESS_NATIVE_TAGS
- *   below), OR any autonomous custom element (a hyphenated, author-defined
- *   tag per the Custom Elements spec — added 2026-08-03, see
+ *   Applies to (a) elements whose explicit, valid role is one of the ARIA
+ *   1.2 roles with a documented "Prohibited ARIA States and Properties"
+ *   list for naming attributes (pure text-semantics / non-naming
+ *   structural roles: caption, code, deletion, emphasis, generic,
+ *   insertion, mark, none, paragraph, presentation, strong, subscript,
+ *   suggestion, superscript, time), and (b) elements with no role at all —
+ *   a curated set of native HTML tags verified to carry no implicit role
+ *   (see ROLELESS_NATIVE_TAGS below), or any autonomous custom element (a
+ *   hyphenated, author-defined tag per the Custom Elements spec; see
  *   isRolelessCustomElementTag below) — in both cases, only elements that
  *   also carry aria-label or aria-labelledby.
  * @expectation
@@ -26,97 +26,58 @@
  *   this produces.
  * @implementation-notes
  * - Deliberately scoped to the single, well-established prohibition class
- *   (naming attributes on pure text-semantics roles) rather than
- *   attempting an exhaustive per-role prohibited-attribute table; see
+ *   (naming attributes on pure text-semantics roles) rather than an
+ *   exhaustive per-role prohibited-attribute table; see
  *   src/core/aria-helpers.js file header for this engine's confidence-
- *   scoping rationale.
- * - Role list widened 2026-07-19 (Tier 4) from 10 to 13 roles, adding
- *   `mark`, `suggestion`, and `time` — the other ARIA 1.2 "HTML-alignment"
- *   text-level roles that share the same documented prohibition as the
- *   original 10. Still deliberately not claiming full parity with a widely-used
- *   reference engine:
- *   only roles/attrs this engine has high confidence in from the spec
- *   text are included, per the file's own "wrong entries cause false-
- *   positive fails" caution.
- * - Widened again 2026-07-21 to add `presentation`/`none`, verified
- *   directly against a widely-used reference engine's own role data table
- *   (both have `prohibitedAttrs: ['aria-label', 'aria-labelledby']`), and
- *   corroborated by the W3C
- *   WAI-ARIA 1.2 spec's own §5.2.8.6 "Roles which cannot be named"
- *   listing `presentation` explicitly (`none` is `presentation`'s
- *   documented 1.2-introduced alias, identical semantics). The
- *   pre-existing `presentation-role-conflict` rule already treats
- *   aria-label/aria-labelledby as conflicting on these two roles, but at
- *   `manual`/cantTell confidence across a ~24-attribute general list —
- *   this addition lets the specific, unambiguous naming-prohibition case
- *   also fire as a hard, WCAG-normative `fail` via this rule, matching
- *   this engine's "one rule = one normative decision" pattern rather than
- *   only ever surfacing it as advisory.
+ *   scoping rationale. The 14-role list is verified directly against a
+ *   widely-used reference engine's own role data table and the W3C
+ *   WAI-ARIA 1.2 spec's §5.2.8.6 "Roles which cannot be named"; only
+ *   roles/attrs with high confidence from the spec text are included,
+ *   since a wrong entry here causes a false-positive fail.
+ * - The pre-existing presentation-role-conflict rule already treats
+ *   aria-label/aria-labelledby as conflicting on presentation/none, but at
+ *   manual/cantTell confidence across a broad attribute list; this rule's
+ *   narrower, unambiguous naming-prohibition case fires as a hard,
+ *   WCAG-normative fail instead, matching this engine's "one rule = one
+ *   normative decision" pattern.
  * - Investigated, but deliberately did NOT add, `definition`/`term`
- *   despite both appearing on MDN's aria-label reference page's
- *   "not supported" list: that MDN list is demonstrably wrong for these
- *   two — a widely-used reference engine's own role data explicitly declares
- *   `nameFrom: ['author']` (`definition`) / `nameFrom: ['author',
- *   'contents']` (`term`), and the W3C spec's own §5.2.8.4 "Roles
- *   Supporting Name From Author" index lists both by name; MDN's
- *   `definition_role` page even demonstrates `aria-labelledby` usage on
- *   it directly. A real, confirmed documentation bug on MDN's side, not
- *   a gap here.
+ *   despite both appearing on MDN's aria-label reference page's "not
+ *   supported" list: that MDN list is wrong for these two — the reference
+ *   engine's own role data explicitly declares `nameFrom: ['author']`
+ *   (`definition`) / `nameFrom: ['author', 'contents']` (`term`), and the
+ *   W3C spec's own §5.2.8.4 "Roles Supporting Name From Author" index
+ *   lists both by name. A confirmed MDN documentation bug, not a gap here.
  * - Not rule-gated on isAccTreeEligible: this remains a static-markup
  *   property, while engine-level hidden-subtree filtering still applies
  *   unless engineOptions.includeHiddenElements is true.
- * - Widened 2026-07-31 to add a second, independent branch covering
- *   naming attributes on ROLELESS elements (no explicit role="", no
- *   implicit/native role either) — found on the emoji-mart demo page
- *   (missive.github.io/emoji-mart): hundreds of
- *   `<span aria-label="party_parrot" class="emoji-mart-emoji...">` tiles,
- *   plain roleless spans with no other accessible-name source, which this
- *   rule previously ignored entirely, since its own Tier-1 branch only ever
- *   looked at the EXPLICIT role="" attribute, never at "no role at all."
- *   Empirically determined (not guessed) which native tags genuinely carry
- *   no role at all, by resolving each candidate tag's role against a live
- *   Chromium page — several surprises: common text-level tags like `<p>`,
- *   `<strong>`, `<em>`, `<code>`, `<mark>`, `<time>` have no implicit role
- *   at all (their prohibited-attrs entries only ever matter for an
- *   EXPLICIT `role="paragraph"`/`role="strong"`/etc. restatement, a rare
- *   case — the native tag itself resolves to role `null`, same as a bare
- *   `<div>`/`<span>`, and falls into this same roleless branch). See
- *   ROLELESS_NATIVE_TAGS below for the resulting curated list —
- *   deliberately conservative: `<section>`/`<form>`/`<a>` are excluded
- *   even though they can also resolve to no role, because their native
- *   role is conditional (name-dependent/href-dependent) and already has
- *   dedicated, more nuanced handling elsewhere in this engine
- *   (`getElementRoleKey`'s `section`/`section[named]`/`header`/
- *   `header[toplevel]` branches) that this rule doesn't attempt to
- *   duplicate.
+ * - Second, independent branch: naming attributes on ROLELESS elements (no
+ *   explicit role="", no implicit/native role either) — e.g. icon-only
+ *   `<span aria-label="...">` tiles with no other accessible-name source.
+ *   ROLELESS_NATIVE_TAGS below is a curated, deliberately conservative
+ *   list of native tags confirmed to carry no implicit role (common
+ *   text-level tags like `<p>`/`<strong>`/`<em>`/`<code>`/`<mark>`/`<time>`
+ *   resolve to role `null`, same as a bare `<div>`/`<span>`);
+ *   `<section>`/`<form>`/`<a>` are excluded even though they can also
+ *   resolve to no role, because their native role is conditional
+ *   (name-dependent/href-dependent) and already has dedicated handling in
+ *   `getElementRoleKey`'s `section`/`section[named]`/`header`/
+ *   `header[toplevel]` branches that this rule doesn't duplicate.
  *   Two confidence tiers instead of a flat fail: if the element's subtree
- *   ALREADY produces a non-empty accessible name from its content
- *   (computed the same way link-name-present/button-name-present do, via
- *   `helpers.getContentNameInfo`), the naming attribute might just be a
- *   redundant/intentional override — reported as `cantTell`, not a hard
- *   fail. Only a roleless element with NO other accessible-name source at
- *   all (the emoji-mart case: an icon-only span, background-image styled,
- *   no text anywhere in its subtree) is a confident, deterministic `fail`
- *   — nothing else could ever expose this element's name, and no role
- *   exists to make it a Name/Role/Value candidate in the first place.
- *   The widget-ancestor exemption (skip when the closest real ancestor role
- *   is a "widget"-type role) avoids over-flagging roleless helper
- *   spans/divs used as internal decoration inside a custom composite
- *   widget.
- * - Fixed 2026-07-31 (same day as introduced): the Tier-2 "already has a
- *   role, not this branch's concern" guard checked only whether `role=""`
- *   was present (`getExplicitRole`), not whether the value was a real,
- *   recognized ARIA role. An invalid/typo'd role token (e.g.
- *   `role="totally-bogus"`) therefore silently suppressed detection of an
- *   otherwise-flaggable roleless naming attribute — identical markup with
- *   the bogus role attribute removed entirely correctly failed, but with
- *   it present the element was skipped as if it had a real role. Per spec
- *   (and per this same file's own `getNearestAncestorRole` helper a few
- *   lines below, which already gets this right), an unrecognized role
- *   token is ignored by the accessibility tree, not honored — the element
- *   is still effectively roleless. Now validates via the existing
- *   `isValidConcreteRole` before treating an explicit role as real,
- *   matching `getNearestAncestorRole`'s own pattern.
+ *   already produces a non-empty accessible name from its content (via
+ *   `helpers.getContentNameInfo`, same as
+ *   link-name-present/button-name-present), the naming attribute might
+ *   just be a redundant/intentional override — reported as `cantTell`, not
+ *   a hard fail. Only a roleless element with no other accessible-name
+ *   source at all is a confident, deterministic `fail`. The
+ *   widget-ancestor exemption (skip when the closest real ancestor role is
+ *   a "widget"-type role) avoids over-flagging roleless helper spans/divs
+ *   used as internal decoration inside a custom composite widget.
+ * - The Tier-2 "already has a role, not this branch's concern" guard
+ *   validates the explicit role via `isValidConcreteRole` before treating
+ *   it as real (matching `getNearestAncestorRole`'s own pattern): an
+ *   unrecognized role token (e.g. `role="totally-bogus"`) is ignored by
+ *   the accessibility tree, not honored, so the element is still
+ *   effectively roleless and must still be checked by this branch.
  */
 
 const id = 'aria-prohibited-attr';

@@ -19,57 +19,26 @@
  *   set already covers implicit-role elements without asserting anything
  *   role-specific; scope kept deliberately narrow to avoid false positives
  *   on implicit-role ARIA-in-HTML edge cases not modeled here.
- * - SUPPORTED_ATTRS_BY_ROLE widened 2026-07-21 (7 new roles), cross-checked
- *   against a widely-used reference engine's own per-role `allowedAttrs`
- *   table AND verified each addition is an unambiguous, well-established ARIA
- *   fact rather than a blind import:
- *   - `searchbox`: identical to the already-covered `textbox` (ARIA
- *     explicitly defines searchbox as textbox's subclass, same supported
- *     set).
- *   - `meter`: valuenow/valuemax/valuemin/valuetext, matching the
- *     already-covered slider/progressbar/scrollbar/spinbutton pattern
- *     (valuenow is also separately *required* on meter — see
- *     `aria-required-attr`'s own 2026-07-21 widening — but the two tables
- *     aren't unioned automatically, so it needs listing in both places).
- *   - `columnheader`/`rowheader`: same table-role family already covered
- *     by `gridcell`/`row` — sort/col-row-index/span are standard WAI-ARIA
- *     grid-model properties.
- *   - `dialog`/`alertdialog`: `aria-modal` — the spec-defining property
- *     that distinguishes a modal from a non-modal dialog; unambiguous.
- *   - `listitem`: level/posinset/setsize — standard flat-representation-
- *     of-hierarchy properties, same family as the already-covered
- *     `treeitem`.
- *   - `menu`/`menubar`/`toolbar`: activedescendant/orientation — standard
- *     composite-widget properties, same family as the already-covered
- *     `tablist`.
- * - SUPPORTED_ATTRS_BY_ROLE full-reconciliation pass 2026-07-28: the
- *   2026-07-21 pass deliberately deferred ~61 roles where a widely-used
- *   reference engine allows `aria-expanded`, treating it as too thin/
- *   near-universal to import blindly. Checked against `aria-query`
- *   (tracks the published WAI-ARIA 1.2 Recommendation, 6 June 2023 — the
- *   latest actually-published version, as opposed to the in-progress 1.3
- *   Editor's Draft) instead of that reference engine directly, because its own
- *   source comments (`// Spec difference: Aria-expanded removed in 1.2`)
- *   show that most of its `aria-expanded` allowances are deliberate
- *   ARIA-1.1 legacy/AT-compat carryovers it keeps on purpose, not
- *   current-spec facts — importing them wholesale would have re-added
- *   exactly the kind of unverified allowance the 07-21 pass was avoiding.
- *   `aria-query`'s per-role tables (with superclass inheritance resolved,
- *   e.g. `aria-activedescendant` via the abstract `composite` role) gave a
- *   spec-grounded diff instead. Net changes from that diff:
- *   - `aria-expanded` added to: checkbox, columnheader, gridcell, listbox,
- *     menuitemcheckbox, menuitemradio, row, rowheader, switch, tab —
- *     confirmed present in current spec for these roles specifically
- *     (unlike e.g. `listitem`, `dialog`, `alertdialog`, `heading`, which
- *     the spec does NOT list it for — those stay excluded).
- *   - `aria-activedescendant` added to: combobox, grid, listbox,
- *     radiogroup, row, spinbutton, tablist, treegrid (inherited from the
- *     abstract `composite` role for any composite/managed-focus widget).
- *   - `aria-readonly`/`aria-required` added to: switch, menuitemcheckbox,
- *     menuitemradio. `aria-posinset`/`aria-setsize` added to: tab, radio,
- *     menuitemcheckbox, menuitemradio. `aria-level` added to: tablist.
- *   - `tree`'s `aria-readonly` removed: not in aria-query's resolved
- *     props for `tree` (was an unverified carryover, not spec-backed).
+ * - SUPPORTED_ATTRS_BY_ROLE combines two verification sources. For
+ *   unambiguous, well-established ARIA facts (subclass relationships like
+ *   `searchbox`==`textbox`; same-family widget properties like
+ *   `columnheader`/`rowheader` sort/col-row-index/span matching
+ *   `gridcell`/`row`; spec-defining properties like `dialog`/`alertdialog`
+ *   `aria-modal`), entries are cross-checked against a widely-used
+ *   reference engine's own per-role `allowedAttrs` table. For
+ *   `aria-expanded` specifically — allowed on ~61 roles in that engine,
+ *   too thin/near-universal to import blindly — entries are instead
+ *   checked against `aria-query` (tracks the published WAI-ARIA 1.2
+ *   Recommendation, 6 June 2023, with superclass inheritance resolved,
+ *   e.g. `aria-activedescendant` via the abstract `composite` role):
+ *   the reference engine's own source comments (`// Spec difference:
+ *   Aria-expanded removed in 1.2`) show most of its `aria-expanded`
+ *   allowances are deliberate ARIA-1.1 legacy/AT-compat carryovers, not
+ *   current-spec facts, so importing them wholesale would reintroduce
+ *   exactly the kind of unverified allowance this table otherwise avoids.
+ *   `meter`'s valuenow/valuemax/valuemin/valuetext is also separately
+ *   *required* (see `aria-required-attr`), but the two tables aren't
+ *   unioned automatically, so it's listed in both places.
  * - Not rule-gated on isAccTreeEligible: this remains a static-markup
  *   property, while engine-level hidden-subtree filtering still applies
  *   unless engineOptions.includeHiddenElements is true.
