@@ -21,16 +21,16 @@
  *   header comment for the shared rationale/precedent.
  * - Filters candidates through `isAccTreeEligible` (hidden/aria-hidden/
  *   display:none/inert elements don't count as "the page has a heading
- *   one"), matching `landmark-one-main`'s own precedent. Found via a real
- *   page (CDC's flu page, 2026-07-30): its only `<h1>` sits inside a
- *   `display:none` ancestor — genuinely unreachable by sighted and screen
- *   reader users alike — and a raw `document.querySelectorAll` credited it
- *   anyway, incorrectly reporting `notApplicable`. This
- *   does NOT regress purely-visually-clipped-but-AT-exposed headings (e.g.
- *   eBay's homepage `<h1>` hidden via clip-path/off-screen positioning,
- *   `visibility:visible`, no `aria-hidden`) — `isAccTreeEligible` only
- *   excludes elements actually removed from the accessibility tree, not
- *   ones merely clipped from the visual viewport.
+ *   one"), matching `landmark-one-main`'s own precedent — a raw
+ *   `document.querySelectorAll` would wrongly credit an `<h1>` that sits
+ *   inside a `display:none` ancestor (e.g. CDC's flu page), genuinely
+ *   unreachable by sighted and screen reader users alike, as satisfying
+ *   this check. This does NOT regress purely-visually-clipped-but-AT-
+ *   exposed headings (e.g. eBay's homepage `<h1>` hidden via
+ *   clip-path/off-screen positioning, `visibility:visible`, no
+ *   `aria-hidden`) — `isAccTreeEligible` only excludes elements actually
+ *   removed from the accessibility tree, not ones merely clipped from the
+ *   visual viewport.
  */
 
 const id = 'page-has-heading-one';

@@ -19,23 +19,21 @@
  * - Not WCAG-normative — authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent.
- * - This is also the reconciliation point for the "heading-name-present"
- *   gap surfaced by the 2026-07-19 ACT-rules research pass (see
- *   ROADMAP.md "Tier 5 candidates"): that gap was already closed by this
- *   pre-existing rule under a different name, not a real gap. Fixed two
- *   real false-positive bugs found while confirming that (2026-07-19):
- *   `title` wasn't accepted as a naming fallback, and hidden/aria-hidden/
- *   display:none headings weren't excluded (not gated on
- *   `isAccTreeEligible`), so an empty heading no AT user could ever
- *   reach was still flagged.
- * - 2026-07-21: the subtree-text walker's own hand-rolled descendant
- *   handling (aria-label/aria-labelledby only) never checked an `<img>`
- *   descendant's `alt` text — found via Party City's
- *   `<h1><a><div><img alt="..."></div></a></h1>` logo header, a false
- *   "empty heading" cantTell. Replaced with the shared, accname-aligned
+ * - This is also the reconciliation point for the ACT-rules
+ *   "heading-name-present" requirement (see ROADMAP.md "Tier 5
+ *   candidates"): already covered by this pre-existing rule under a
+ *   different name, not a separate gap. `title` is accepted as a naming
+ *   fallback, and hidden/aria-hidden/display:none headings are excluded
+ *   (gated on `isAccTreeEligible`), so an empty heading no AT user could
+ *   ever reach is not flagged.
+ * - Descendant name resolution uses the shared, accname-aligned
  *   `helpers.getContentNameInfo` (see dom-helpers.js) — the same "name
- *   from content" implementation the 19 `-name-present` rules already use
- *   — instead of maintaining a third, narrower copy of this logic here.
+ *   from content" implementation the 19 `-name-present` rules already
+ *   use — rather than a narrower hand-rolled walker, so an `<img alt="...">`
+ *   descendant's alt text (e.g. Party City's
+ *   `<h1><a><div><img alt="..."></div></a></h1>` logo header) is correctly
+ *   picked up as the heading's name instead of producing a false "empty
+ *   heading" cantTell.
  */
 
 const id = 'empty-heading';

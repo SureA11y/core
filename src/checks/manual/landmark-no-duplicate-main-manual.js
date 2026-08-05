@@ -70,7 +70,7 @@ function runInPage(ctx) {
   }
 
   // queryAllSmart (shadow-DOM-aware) instead of plain document.querySelectorAll -- see
-  // landmark-unique-manual.js's header comment for the real page (Airtable, 2026-07-23)
+  // landmark-unique-manual.js's header comment for the real page (Airtable)
   // that surfaced this gap: a third-party shadow-DOM-hosted widget's own landmark is
   // invisible to a light-DOM-only query.
   let nodes;

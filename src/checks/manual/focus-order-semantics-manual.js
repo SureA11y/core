@@ -25,13 +25,13 @@
  *   `tabindex` and NO role at all are also not flagged: native semantics
  *   or an intentionally generic custom-interactive pattern cannot be
  *   distinguished from markup alone with the same confidence.
- * - `region` was removed from this list 2026-08-04: a tabbable
- *   `role="region"` is a real, WCAG 2.1.1/2.1.3-grounded pattern this
- *   engine's own `scrollable-region-focusable` check exists to
+ * - `region` is deliberately NOT in the non-interactive role list: a
+ *   tabbable `role="region"` is a real, WCAG 2.1.1/2.1.3-grounded pattern
+ *   this engine's own `scrollable-region-focusable` check exists to
  *   RECOMMEND (a scrollable landmark with no other focusable content
  *   needs `tabindex="0"` to be keyboard-reachable at all) — flagging it
- *   here was internally inconsistent with that sibling check. Also
- *   independently confirmed against a widely-used reference engine's own
+ *   here would be internally inconsistent with that sibling check. This
+ *   also matches a widely-used reference engine's own
  *   `focus-order-semantics` rule, whose `valid-scrollable-semantics`
  *   check explicitly allowlists `region` (along with `navigation`,
  *   `status`, `tabpanel`) as always valid regardless of actual

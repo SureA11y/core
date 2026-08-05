@@ -81,27 +81,25 @@ function runInPage(ctx) {
   // Delegates to the shared helpers.hasLandmarkScopingAncestor (role-aware:
   // an ancestor's bare TAG only counts when it carries no role attribute at
   // all; an explicit role="dialog"-style override no longer suppresses —
-  // see that function's header comment in src/core/aria-helpers.js) rather
-  // than the two local tag-only Sets this file used to carry. Two distinct
-  // ancestor scopes, verified 2026-07-20 against a widely-used reference
-  // engine's own implicit-role functions directly rather than assumed from
-  // one shared list: <header>/<footer> use "sectioning content PLUS <main>"
+  // see that function's header comment in src/core/aria-helpers.js), using
+  // two distinct ancestor scopes matched directly against a widely-used
+  // reference engine's own implicit-role functions rather than one shared
+  // list: <header>/<footer> use "sectioning content PLUS <main>"
   // (includeMain: true) to decide banner/contentinfo suppression, but
   // <aside> uses PLAIN sectioning content only — NOT main (includeMain:
-  // false) — to decide complementary suppression. The old single
-  // SECTIONING_ANCESTORS set (which included 'main') was correct for
-  // header/footer but wrong for aside — found via a real page: Know Your
-  // Meme's two unnamed <aside class="extra-large-only"> elements are direct
-  // children of <main>, which incorrectly suppressed their implicit
+  // false) — to decide complementary suppression. A single shared
+  // sectioning-ancestors set that includes 'main' is correct for
+  // header/footer but wrong for aside: e.g. Know Your Meme's two unnamed
+  // <aside class="extra-large-only"> elements are direct children of
+  // <main>, which would incorrectly suppress their implicit
   // "complementary" role entirely, hiding a real duplicate-landmark
-  // violation that reference engine correctly flags. The tag-only
-  // (non-role-aware) half of this bug was separately found and fixed
-  // 2026-07-30 via the cross-engine comparisons project, on
-  // handsontable.com's docs-assistant side panel: an <aside role="dialog">
-  // containing its own <header> — role="dialog" isn't one of the four
-  // scoping roles, so the nested <header> keeps "banner" per spec, but a
-  // tag-only check unconditionally suppressed it just because the ancestor
-  // TAG was <aside>.
+  // violation that a widely-used reference engine correctly flags. The
+  // role-aware half matters too: e.g. handsontable.com's docs-assistant
+  // side panel has an <aside role="dialog"> containing its own <header> —
+  // role="dialog" isn't one of the four scoping roles, so the nested
+  // <header> keeps "banner" per spec, but a tag-only (non-role-aware)
+  // check would unconditionally suppress it just because the ancestor TAG
+  // was <aside>.
   function hasSectioningAncestor(el, includeMain) {
     return helpers && typeof helpers.hasLandmarkScopingAncestor === 'function'
       ? helpers.hasLandmarkScopingAncestor(el, { includeMain })
@@ -179,7 +177,7 @@ function runInPage(ctx) {
   }
 
   // queryAllSmart (shadow-DOM-aware, includeShadowDom defaults true) instead of a plain
-  // document.querySelectorAll -- a real page (Airtable's homepage, 2026-07-23) has a
+  // document.querySelectorAll -- a real page (Airtable's homepage) has a
   // third-party Transcend cookie-consent widget rendering its own unnamed <nav>/<footer>
   // inside a shadow root (#transcend-shadow-root), which a widely-used reference engine's
   // own landmark-unique (a real browser DOM, shadow roots included by design) correctly sees as colliding

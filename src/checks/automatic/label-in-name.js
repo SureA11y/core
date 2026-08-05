@@ -101,9 +101,9 @@ function runInPage(ctx) {
   // runs against static markup with no real canvas/font rendering
   // available; excluding aria-hidden content is a cheaper, static-markup
   // signal that gets the common case (decorative icon fonts) right without
-  // needing one. Confirmed via a live-DOM cross-engine run 2026-07-21
-  // (Angular Material's theme-picker button, aria-label="Select a theme",
-  // aria-hidden icon rendering literally as "format_color_fill").
+  // needing one (e.g. Angular Material's theme-picker button,
+  // aria-label="Select a theme", with an aria-hidden icon that would
+  // otherwise render literally as "format_color_fill").
   function isAccEligible(el) {
     if (!el) return false;
     const fn =
@@ -122,11 +122,12 @@ function runInPage(ctx) {
   // than referencing the global NodeFilter object directly: runInPage must
   // have zero free vars (see docs/RULE_AUTHORING.md's free-var footgun) and
   // NodeFilter is not itself present in the execution realm this function
-  // actually runs in, unlike window/document. Confirmed 2026-07-21 — this
-  // silently made createTreeWalker throw on every call, falling back to
-  // raw container.textContent (which respects none of isNonRenderedTag/
-  // isDomVisible/isAccEligible below, since that whole per-node loop is
-  // skipped in the fallback path). Same pattern already used correctly in
+  // actually runs in, unlike window/document. Referencing the global
+  // directly would silently make createTreeWalker throw on every call,
+  // falling back to raw container.textContent (which respects none of
+  // isNonRenderedTag/isDomVisible/isAccEligible below, since that whole
+  // per-node loop is skipped in the fallback path). Same pattern already
+  // used correctly in
   // region-manual.js's own createTreeWalker call.
   const SHOW_TEXT = 4;
 

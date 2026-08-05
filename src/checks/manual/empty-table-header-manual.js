@@ -14,14 +14,12 @@
  *   restates role="columnheader"/"rowheader" is still covered via the second
  *   clause, but a <th role="presentation"> (no longer meaningfully a header)
  *   is correctly excluded, and an ARIA-role-only header (e.g. a <div
- *   role="columnheader"> in a role="grid"/role="table" widget) is caught too
- *   — found missing entirely via the cross-engine diff tool 2026-07-23.
+ *   role="columnheader"> in a role="grid"/role="table" widget) is caught too.
  * @expectation
  *   The header cell has visible text content. A <th> named only via
  *   aria-label/aria-labelledby (no visible text) is ALSO flagged, not
- *   treated as equivalent — real screen-reader/browser testing (found via
- *   a live-DOM cross-engine run 2026-07-21, verified against
- *   https://butterpep.com/table-header-naming.html and
+ *   treated as equivalent — real screen-reader/browser testing (verified
+ *   against https://butterpep.com/table-header-naming.html and
  *   https://html5accessibility.com/stuff/2024/05/22/not-so-short-note-on-aria-label-usage-big-table-edition/)
  *   confirms aria-label support on <th> is genuinely inconsistent in
  *   practice: NVDA+Firefox and iOS VoiceOver+Safari ignore it entirely

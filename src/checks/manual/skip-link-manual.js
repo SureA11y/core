@@ -10,11 +10,11 @@
  *   matches a common "skip to ..." / "jump to ..." authoring convention
  *   (case-insensitive "skip" or "jump to" in the name) — the recognizable
  *   pattern for a skip-navigation link, not every same-page anchor link
- *   on the page. "jump to" added 2026-07-23 after a real page (Wish.com)
- *   surfaced a skip link reading "Jump to section" with a genuinely
- *   missing target — invisible to the original "skip"-only pattern,
- *   while a widely-used reference engine's own (purely positional, not text-based) matching
- *   caught it. Text-pattern matching itself stays deliberate (see
+ *   on the page. "jump to" is included alongside "skip" since real skip
+ *   links use both conventions (e.g. Wish.com's "Jump to section" link,
+ *   which a purely positional, non-text-based match — like a widely-used
+ *   reference engine's own — would catch but a "skip"-only text pattern
+ *   would miss). Text-pattern matching itself stays deliberate (see
  *   implementation-notes) — this only widens the known-convention list.
  * @expectation
  *   The link's fragment resolves to a real element in the document

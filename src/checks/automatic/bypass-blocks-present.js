@@ -115,12 +115,13 @@ function runInPage(ctx) {
   }
 
   // Filters through isAccTreeEligible (hidden/aria-hidden/display:none/inert
-  // don't count as "a bypass mechanism is present") -- see page-has-heading-
-  // one-manual.js's identical fix for the real-world trigger (CDC's flu
-  // page, 2026-07-30: its only <h1> sits inside a display:none ancestor,
-  // unreachable by sighted and screen reader users alike). A fully
-  // non-rendered <main>/heading was previously credited here too, wrongly
-  // returning `pass` for a page with zero actual bypass mechanisms.
+  // don't count as "a bypass mechanism is present") -- see
+  // page-has-heading-one-manual.js for the identical real-world trigger
+  // (e.g. CDC's flu page, whose only <h1> sits inside a display:none
+  // ancestor, unreachable by sighted and screen reader users alike). A
+  // fully non-rendered <main>/heading must not be credited here, since
+  // that would wrongly return `pass` for a page with zero actual bypass
+  // mechanisms.
   function hasMainLandmark() {
     for (const el of queryAll('main, [role="main"]')) {
       if (el && isExposedToAt(el)) return true;

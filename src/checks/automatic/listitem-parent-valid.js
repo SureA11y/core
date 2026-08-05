@@ -25,23 +25,23 @@
  *   native role is fully replaced by the explicit one — the same "any
  *   explicit role overrides the element's native role" ARIA principle
  *   applied elsewhere in this engine), so an <li> inside it is invalid
- *   despite the <ul> tag — found on a real site, Nike's desktop nav
- *   dropdown (`<ul class="desktop-category" role="menu"><li>...`).
- *   Conversely role="presentation"/"none" on the parent is still a valid
+ *   despite the <ul> tag (e.g. Nike's desktop nav dropdown: `<ul
+ *   class="desktop-category" role="menu"><li>...`). Conversely
+ *   role="presentation"/"none" on the parent is still a valid
  *   (list-semantics-suppressing) parent, matching a widely-used reference
- *   engine's own `listitem` check (`['presentation', 'none', 'list'].includes(parentRole)`,
- *   confirmed by reading its source directly).
+ *   engine's own `listitem` check
+ *   (`['presentation', 'none', 'list'].includes(parentRole)`).
  * - The SAME "explicit role wins" principle applies to the <li> ELEMENT
- *   ITSELF, added 2026-08-04: an <li role="tab">/role="menuitem">/
- *   role="presentation"> etc. is exposed to AT with that role, never
- *   "listitem" — the whole point of this check (list items need a valid
- *   list-container parent) doesn't apply when the element isn't claiming
- *   listitem semantics in the first place. A widely-used reference engine's
- *   own `listitem` rule structurally excludes any `<li>` with an explicit
- *   `role` attribute from candidacy at all (`no-role-matches`), confirmed
- *   by reading its matcher directly — this check now matches that scope.
- *   `role="listitem"` itself is a no-op restatement (not an override), so
- *   it still falls through to the normal parent-validity check below.
+ *   ITSELF: an <li role="tab">/role="menuitem">/role="presentation"> etc.
+ *   is exposed to AT with that role, never "listitem" — the whole point
+ *   of this check (list items need a valid list-container parent) doesn't
+ *   apply when the element isn't claiming listitem semantics in the first
+ *   place. A widely-used reference engine's own `listitem` rule
+ *   structurally excludes any `<li>` with an explicit `role` attribute
+ *   from candidacy at all (`no-role-matches`), so this check matches that
+ *   scope. `role="listitem"` itself is a no-op restatement (not an
+ *   override), so it still falls through to the normal parent-validity
+ *   check below.
  */
 
 const id = 'listitem-parent-valid';

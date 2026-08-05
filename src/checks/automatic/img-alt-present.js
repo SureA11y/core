@@ -176,11 +176,11 @@ function runInPage(ctx) {
     // source for <img> once alt is entirely absent (not merely alt="",
     // which explicitly marks decorative and stays excluded from this
     // branch since hasAlt already short-circuited above) -- confirmed
-    // against a widely-used reference engine's own image-alt rule, which lists a non-empty
-    // title as one of its "any" satisfying conditions alongside has-alt/
-    // aria-label/aria-labelledby. Found via a real page (AliExpress's
-    // logo, 2026-07-23): <img src="..." title="...">, no alt attribute
-    // at all -- a real false positive, not a missing text alternative.
+    // against a widely-used reference engine's own image-alt rule, which
+    // lists a non-empty title as one of its "any" satisfying conditions
+    // alongside has-alt/aria-label/aria-labelledby (e.g. AliExpress's
+    // logo: `<img src="..." title="...">` with no alt attribute at all --
+    // a real false positive, not a missing text alternative).
     const title = trim(el.getAttribute('title'));
     if (title) continue;
 

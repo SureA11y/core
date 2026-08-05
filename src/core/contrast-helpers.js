@@ -377,13 +377,12 @@ function createContrastHelpers(opts, shared) {
       // <input type="submit"|"button"|"reset">'s visible label is
       // rendered from its `value` attribute, not a DOM text node, so
       // it's structurally invisible to the SHOW_TEXT walk above (void
-      // elements can't have text-node children at all). Found
-      // 2026-08-01: these inputs were silently skipped by both
-      // contrast-minimum and contrast-enhanced regardless of contrast
-      // mode, confirmed on a real page (progressive.com's
-      // `<input type="submit" value="Get a quote">`, a genuine
-      // AAA-level failure surea11y never even considered a
-      // candidate). Same eligibility gates as the real
+      // elements can't have text-node children at all) -- without this,
+      // these inputs would be silently skipped by both contrast-minimum
+      // and contrast-enhanced regardless of contrast mode (e.g.
+      // progressive.com's `<input type="submit" value="Get a quote">`
+      // would never be considered a candidate at all, even for a genuine
+      // AAA-level failure). Same eligibility gates as the real
       // text-node path above, applied to the input element itself.
       const visitedValueInputs = new Set();
       for (const walkRoot of walkRoots) {
@@ -1128,11 +1127,11 @@ function createContrastHelpers(opts, shared) {
     // fully-opaque white <div>, itself sitting on a <body> with a
     // background-image, was reported cantTell even though the image is
     // 100% visually irrelevant to that text's rendered background —
-    // and BACKGROUND_IMAGE_OR_GRADIENT was the dominant real-world
-    // computability blocker (100% of cantTell occurrences sampled on
-    // nasa.gov and en.wikipedia.org, 2026-08-01), so this single-layer
-    // "solid card/nav/modal over a page-level hero image" pattern is
-    // common enough to matter.
+    // and BACKGROUND_IMAGE_OR_GRADIENT is the dominant real-world
+    // computability blocker (e.g. 100% of cantTell occurrences sampled on
+    // nasa.gov and en.wikipedia.org), so this single-layer "solid
+    // card/nav/modal over a page-level hero image" pattern is common
+    // enough to matter.
     //
     // This does NOT extend to mix-blend-mode/filter or an ancestor's
     // `opacity` — those are compositing-GROUP operations applied to that
@@ -1144,7 +1143,7 @@ function createContrastHelpers(opts, shared) {
     // deliberately NOT done, matching this engine's no-false-positives
     // bar.
     //
-    // `backdrop-filter` IS extended (2026-08-03), because it is the
+    // `backdrop-filter` IS extended, because it is the
     // opposite kind of operation: it samples/filters whatever is already
     // rendered BEHIND the element (earlier in paint order), not the
     // element's own subtree, so a closer-to-el fully-opaque

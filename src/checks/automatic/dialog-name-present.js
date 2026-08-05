@@ -55,16 +55,14 @@ function runInPage(ctx) {
     // Resolve via the shared getTextFromIdRefs helper — computes each
     // referenced element's own ACCESSIBLE NAME (aria-label, then
     // aria-labelledby, then a value-like name, then content, then title),
-    // not just its content text. Found via a real page (BBC News' cookie-
-    // consent dialog, 2026-07-22): aria-labelledby pointed at an
-    // <iframe title="SP Consent Message">, whose only name source is its
-    // title attribute (an iframe's content is opaque/cross-origin per
-    // HTML-AAM, so "name from content" is always empty). The previous
-    // version here only ever computed name-from-content of the referenced
-    // node (via getConservativeSubtreeText), silently missing the title
-    // fallback and reporting no accessible name at all — the identical
-    // pattern was hand-copied into 15 other *-name-present rules; all
-    // fixed the same way.
+    // not just its content text. This matters when aria-labelledby points
+    // at an <iframe title="..."> (e.g. BBC News' cookie-consent dialog,
+    // pointing at an `<iframe title="SP Consent Message">`), whose only
+    // name source is its title attribute — an iframe's content is
+    // opaque/cross-origin per HTML-AAM, so "name from content" is always
+    // empty. Computing only name-from-content of the referenced node would
+    // silently miss the title fallback and report no accessible name at
+    // all, the same pattern every other *-name-present rule guards against.
     if (helpers.getTextFromIdRefs) {
       try {
         const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 });

@@ -18,14 +18,14 @@
  * - Deliberately scoped to REQUIRED_PROPS_BY_ROLE in src/core/aria-helpers.js,
  *   which only lists a required property when the spec is unambiguous and
  *   context-independent — see that file's header for the rationale.
- * - Widened 2026-07-21 to add `meter` (`aria-valuenow`), verified against
- *   a widely-used reference engine's own `requiredAttrs` table. Deliberately
- *   did NOT add two other entries from that same table: `progressbar`'s
- *   `aria-valuenow` (a legitimately indeterminate progressbar omits it —
- *   that engine itself excludes progressbar from its own table for this reason)
- *   and `combobox`'s `aria-controls` (confirmed via MDN's combobox role
- *   page to be conditional — only required once the popup is actually
- *   displayed, not unconditionally). See src/core/aria-helpers.js's
+ * - `meter`'s `aria-valuenow` is required, verified against a widely-used
+ *   reference engine's own `requiredAttrs` table. Deliberately NOT
+ *   required: `progressbar`'s `aria-valuenow` (a legitimately
+ *   indeterminate progressbar omits it — that engine itself excludes
+ *   progressbar from its own table for this reason) and `combobox`'s
+ *   `aria-controls` (confirmed via MDN's combobox role page to be
+ *   conditional — only required once the popup is actually displayed, not
+ *   unconditionally). See src/core/aria-helpers.js's
  *   REQUIRED_PROPS_BY_ROLE comment for the full reasoning.
  * - Gated on isAccTreeEligible for the element itself: unlike a syntax-
  *   level check (attribute name/value validity), "does this element

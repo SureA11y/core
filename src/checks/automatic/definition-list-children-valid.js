@@ -22,8 +22,8 @@
  *   reference engine's definition-list algorithm — a <div> nested inside
  *   another wrapping <div> is not flattened further and its contents are
  *   reported invalid.
- * - Verified 2026-07-20 against a widely-used reference engine: the dt/dd pairing is
- *   only required "when not empty". A flattened set with NEITHER dt nor dd
+ * - Matches a widely-used reference engine: the dt/dd pairing is only
+ *   required "when not empty". A flattened set with NEITHER dt nor dd
  *   — whether from an empty wrapping <div>, only <script>/<template>/
  *   <style> content, or a genuinely childless <dl> — is not flagged; only
  *   an unbalanced dt/dd pairing is a real structural problem.
@@ -108,7 +108,7 @@ function runInPage(ctx) {
     }
     const dedupedInvalidTags = [...new Set(invalidTags)];
 
-    // Verified 2026-07-20 against a widely-used reference engine's definition-list check:
+    // Matches a widely-used reference engine's definition-list check:
     // the dt/dd pairing is only required "when not empty" — a <dl> with
     // NEITHER dt nor dd (whether genuinely childless after flattening, only
     // passthrough script/template/style content, or an empty wrapping div)

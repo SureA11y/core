@@ -24,10 +24,10 @@
  * - A <meta> nested inside <noscript> is excluded: it only ever takes
  *   effect when scripting is disabled, which is never the case for any
  *   context capable of running accessibility tooling in the first place
- *   (confirmed 2026-07-21 via a real-world false positive: Slack's
- *   homepage has a <noscript><meta http-equiv="refresh" content="0;
- *   URL=/?nojsmode=1"></noscript> JS-disabled fallback — a widely-used
- *   reference engine's own same-named check correctly doesn't flag it either).
+ *   (e.g. Slack's homepage has a <noscript><meta http-equiv="refresh"
+ *   content="0; URL=/?nojsmode=1"></noscript> JS-disabled fallback — a
+ *   widely-used reference engine's own same-named check correctly doesn't
+ *   flag it either).
  */
 
 const id = 'meta-refresh-no-exceptions';

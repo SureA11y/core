@@ -20,27 +20,25 @@
  * - Not rule-gated on isAccTreeEligible: this remains a static-markup
  *   property, while engine-level hidden-subtree filtering still applies
  *   unless engineOptions.includeHiddenElements is true.
- * - ID-reference resolution (added 2026-07-20, see aria-helpers.js's
- *   idExists) only flags idref-list attributes (aria-labelledby,
- *   aria-describedby, aria-controls, aria-owns, etc.) when NONE of the
- *   space-separated ids resolve — a partially-dangling list (some ids
- *   exist, some don't) is left unflagged. Verified 2026-07-21 directly
- *   against a widely-used reference engine's own `validateAttrValue` source:
- *   this is not a conservative guess, it's an exact match for that engine's
- *   own behavior (`idrefs(vNode, attr).some(node => !!node)` — that engine
- *   itself only invalidates when every token fails to resolve). Single-idref
- *   attributes (aria-activedescendant, aria-errormessage) are flagged
- *   whenever their one id doesn't resolve, also matching that engine's `idref`
- *   case exactly.
- * - An explicitly-EMPTY idref/idref-list value (e.g. `aria-describedby=""`)
- *   is valid, not a violation (added 2026-08-03) — matches that same
+ * - ID-reference resolution (see aria-helpers.js's idExists) only flags
+ *   idref-list attributes (aria-labelledby, aria-describedby,
+ *   aria-controls, aria-owns, etc.) when NONE of the space-separated ids
+ *   resolve — a partially-dangling list (some ids exist, some don't) is
+ *   left unflagged. This exactly matches a widely-used reference engine's
+ *   own `validateAttrValue` source (`idrefs(vNode, attr).some(node =>
+ *   !!node)` — that engine itself only invalidates when every token fails
+ *   to resolve). Single-idref attributes (aria-activedescendant,
+ *   aria-errormessage) are flagged whenever their one id doesn't resolve,
+ *   also matching that engine's `idref` case exactly.
+ * - An explicitly-EMPTY idref/idref-list value (e.g.
+ *   `aria-describedby=""`) is valid, not a violation — matches that same
  *   reference engine's own standards table, which sets `allowEmpty: true`
- *   on every idref/idref-list ARIA attribute with zero exceptions (verified
- *   across its whole bundled source). A common, deliberate pattern in
- *   templated markup (e.g. React conditionally rendering
- *   `aria-describedby={hasError ? errorId : ''}`); flagging it was a real
- *   false positive, confirmed live on chase.com's login form, which ships
- *   `aria-describedby=""` unconditionally on its username/password inputs.
+ *   on every idref/idref-list ARIA attribute with zero exceptions. A
+ *   common, deliberate pattern in templated markup (e.g. React
+ *   conditionally rendering `aria-describedby={hasError ? errorId :
+ *   ''}`); flagging it is a real false positive (e.g. chase.com's login
+ *   form ships `aria-describedby=""` unconditionally on its username/
+ *   password inputs).
  */
 
 const id = 'aria-valid-attr-value';

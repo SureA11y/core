@@ -664,11 +664,12 @@ function createDomHelpers(opts) {
   // landmark-banner/-main/-contentinfo-is-top-level, region), each its own local
   // getAccessibleLandmarkName -- some using getAriaLabelledByInfo's target-name resolution,
   // others a raw ref.textContent copy predating that fix, and NONE checking title at all.
-  // Confirmed via a real page (2026-07-22, live-DOM corpus): DuckDuckGo's homepage has two
-  // <nav>s distinguished only by title="navigation" on one of them -- a widely-used reference
-  // engine's landmark-unique correctly treats them as uniquely named (verified directly against
-  // that engine's own runtime, not assumed), while every one of the 7 local copies saw both as unnamed and flagged a false
-  // duplicate. One shared, correct implementation replaces all 7 copies.
+  // e.g. DuckDuckGo's homepage has two <nav>s distinguished only by
+  // title="navigation" on one of them -- a widely-used reference engine's
+  // landmark-unique correctly treats them as uniquely named, while a
+  // naive copy that doesn't check title sees both as unnamed and flags a
+  // false duplicate. One shared, correct implementation replaces all 7
+  // copies.
   function getLandmarkNameInfo(el, ctx) {
     if (!isElement(el))
       return { present: false, value: '', mechanism: 'unsupported', flags: ['notElement'] };
@@ -1767,18 +1768,18 @@ function createDomHelpers(opts) {
       // ancestor split for this exact CSS property (its
       // contentVisibiltyHidden helper only returns true when checking
       // *as an ancestor* of another node, never for the element's own
-      // eligibility). Added 2026-08-03: the `struct` lookup above is
-      // deliberately unaware of this distinction (it's cached per-element
-      // and shared across every node that walks through `a` as an
-      // ancestor, where "this ancestor hides its descendants" is always
-      // the right answer for `until-found`) -- this self-only override
-      // corrects it specifically for the case where `a` IS `node` itself,
-      // without touching the cached value other callers (real
-      // descendants of `a`) rely on. Found via a cross-engine comparison
-      // audit: IRS.gov's accordion panels (`<div hidden="until-found"
-      // aria-labelledby="...">`) were silently excluded from every rule,
-      // including ones checking the panel's OWN attributes, even though a
-      // widely-used reference engine correctly still evaluates them.
+      // eligibility). The `struct` lookup above is deliberately unaware of
+      // this distinction (it's cached per-element and shared across every
+      // node that walks through `a` as an ancestor, where "this ancestor
+      // hides its descendants" is always the right answer for
+      // `until-found`) -- this self-only override corrects it specifically
+      // for the case where `a` IS `node` itself, without touching the
+      // cached value other callers (real descendants of `a`) rely on.
+      // Without it, e.g. IRS.gov's accordion panels (`<div
+      // hidden="until-found" aria-labelledby="...">`) would be silently
+      // excluded from every rule, including ones checking the panel's OWN
+      // attributes, even though a widely-used reference engine correctly
+      // still evaluates them.
       if (struct === 'hiddenAttr' && a === node) {
         const hiddenVal = String((a.getAttribute && a.getAttribute('hidden')) || '')
           .trim()
@@ -2614,8 +2615,8 @@ function createDomHelpers(opts) {
     // a widely-used reference engine's prepareContext, which only computes context.includeHidden when it's
     // still undefined and never overwrites it on recursive calls, so the whole
     // referenced subtree (nested labelledby chains included) shares one decision. See
-    // getContentNameInfo's collect() for what this bypasses and why (real bug found via
-    // Discord's live-DOM footer nav, 2026-07-23).
+    // getContentNameInfo's collect() for what this bypasses and why (e.g.
+    // Discord's live-DOM footer nav depends on this).
     let effOpts = opts;
     if (!opts || opts.includeHidden === undefined) {
       let hidden;
@@ -2997,10 +2998,9 @@ function createDomHelpers(opts) {
       }
     }
 
-    // POLICY NOTE (2026-07-23, revisit if ever reconsidered): title is accepted here as a
+    // POLICY NOTE (revisit if ever reconsidered): title is accepted here as a
     // last-resort accessible-name source, matching HTML-AAM/accname and a widely-used
-    // reference engine's own behavior (confirmed by reading that engine's source -- several
-    // of its rules explicitly accept a
+    // reference engine's own behavior (several of its rules explicitly accept a
     // non-empty title, e.g. image-alt's non-empty-title check). This is a deliberate,
     // spec-compliant choice, not an oversight -- but title is a genuinely weak mechanism in
     // practice (no touch/mobile exposure, inconsistent screen-reader support, no visible
@@ -3337,10 +3337,9 @@ function createDomHelpers(opts) {
       // this check entirely except for genuinely non-rendered tags. Per the accname
       // spec, a directly-referenced target's own hidden state doesn't block name
       // computation, and per a widely-used reference engine's own
-      // prepareContext/context.includeHidden (verified by reading that engine's source
-      // directly), that bypass covers the target's whole
-      // subtree, not just the target element itself -- confirmed via a real page
-      // (Discord's footer, 2026-07-23): four <nav aria-labelledby="...">, each
+      // prepareContext/context.includeHidden, that bypass covers the
+      // target's whole subtree, not just the target element itself -- e.g.
+      // Discord's footer has four <nav aria-labelledby="...">, each
       // referencing a CSS-hidden (display:none, a responsive/interaction-gated
       // dropdown toggle) heading with genuinely distinct text ("Product"/"Company"/
       // "Resources"/"Policies"). surea11y's own isAccTreeEligible correctly treats
@@ -3876,9 +3875,9 @@ function createDomHelpers(opts) {
       // attribute selector (`[attr="..."]`) requires an exact match against
       // the real DOM attribute -- trimming the embedded value while the
       // real attribute keeps its whitespace produces a selector that can
-      // never match. Found 2026-08-02 via the cross-engine comparisons
-      // project on Slack's real homepage: several `role="region"` promo
-      // cards have a templated `aria-label` ending in a trailing ", " (a
+      // never match -- e.g. on Slack's real homepage, several
+      // `role="region"` promo cards have a templated `aria-label` ending
+      // in a trailing ", " (a
       // string-concatenation artifact, not a typo), which made every one of
       // these anchor builders silently construct a non-matching selector,
       // falling through to the document-wide non-unique `buildSimpleSelector`
@@ -3993,8 +3992,7 @@ function createDomHelpers(opts) {
       // With MULTIPLE matched roots (multi-region contextSelector
       // scans), stopping there without recording anything about which
       // root produced an ambiguous, non-unique selector string for two
-      // structurally-identical regions -- a real, confirmed bug (found
-      // 2026-07-29 via the cross-engine comparisons project): two
+      // structurally-identical regions is a real bug -- e.g. two
       // wrapper <div>s, each containing two identical ".widget"
       // sections scanned via `contextSelector: '.widget'`, produced the
       // *same* selector string ("section:nth-of-type(1) > div > div >
@@ -4257,13 +4255,11 @@ function createDomHelpers(opts) {
     }
     // A <label> with no aria-name and empty own content can still
     // contribute a name via its own title attribute -- accname's title-
-    // fallback step applies to any element, the label itself included.
-    // Found via a full fixtures cross-engine regression 2026-08-02:
-    // slider-name-present-all-scenarios.html's case_22 documents exactly
-    // this (<label for="..." title="Search"></label>, empty content) as an
-    // intentional PASS, and the reference engine's `label` rule agrees -- this helper never
-    // checked the label's own title, so
-    // form-control-programmatic-label-present wrongly failed it.
+    // fallback step applies to any element, the label itself included
+    // (see slider-name-present-all-scenarios.html's case_22:
+    // `<label for="..." title="Search"></label>` with empty content is an
+    // intentional PASS, matching the reference engine's `label` rule -- without this,
+    // form-control-programmatic-label-present would wrongly fail it).
     try {
       return !!getNonEmptyTitle(lab);
     } catch {
@@ -4412,11 +4408,11 @@ function createDomHelpers(opts) {
   // fail-tier finding also exists on the same page — a real information
   // loss for a real scan, not just a test artifact: a page with one
   // confident violation and five "needs review" ones would report only
-  // the one. Found via aria-prohibited-attr's roleless-naming widening
-  // (2026-07-31), then confirmed as the same architectural gap in
-  // aria-hidden-focus's runtime-redirect downgrade (same day) via an
-  // explicit audit of every automatic rule for this exact two-bucket
-  // shape.
+  // the one. This is a recurring shape across automatic rules with a
+  // fail/cantTell split (e.g. aria-prohibited-attr's roleless-naming
+  // branch, aria-hidden-focus's runtime-redirect downgrade), which is why
+  // it's factored into this one shared helper rather than reimplemented
+  // per rule.
   // The correct behavior when a fail-tier finding exists: the overall
   // outcome is still `fail` (a real, confident violation must still gate
   // CI), but BOTH buckets' occurrences are returned together, not just
