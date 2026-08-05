@@ -1,7 +1,7 @@
 {
   "rulesDir": "src/checks",
   "facetsFile": "src/coverage/wcag-facets.js",
-  "generatedAt": "2026-08-01T17:06:32.877Z",
+  "generatedAt": "2026-08-05T03:25:56.740Z",
   "summary": {
     "totalRules": 125,
     "wcagTagCoverage": {

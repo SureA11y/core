@@ -64,6 +64,16 @@ test('isAbstractRole / isDeprecatedRole / isKnownRole / isValidConcreteRole', ()
   assert.equal(helpers.isValidConcreteRole('button'), true);
   assert.equal(helpers.isValidConcreteRole('widget'), false); // abstract, not concrete
   assert.equal(helpers.isValidConcreteRole('not-a-role'), false);
+
+  // WAI-ARIA Graphics Module 1.0 — a separate REC-status module from core
+  // ARIA 1.2, still a real, AT-recognized role token (see aria-helpers.js's
+  // CONCRETE_ROLES comment).
+  assert.equal(helpers.isValidConcreteRole('graphics-document'), true);
+  assert.equal(helpers.isValidConcreteRole('graphics-object'), true);
+  assert.equal(helpers.isValidConcreteRole('graphics-symbol'), true);
+  // Digital Publishing WAI-ARIA is a separate module deliberately NOT added
+  // (no corpus evidence of use) — should still be unknown.
+  assert.equal(helpers.isValidConcreteRole('doc-abstract'), false);
 });
 
 test('getDeprecatedRoleGuidance: role-specific message, generic fallback otherwise', () => {

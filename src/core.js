@@ -11909,9 +11909,27 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   }
 
   // -------------------------------------------------------------------
-  // C) Complete set of concrete (non-abstract) WAI-ARIA 1.2 role tokens.
+  // C) Complete set of concrete (non-abstract) WAI-ARIA 1.2 role tokens,
+  //    plus the WAI-ARIA Graphics Module 1.0 roles (graphics-document/
+  //    graphics-object/graphics-symbol) — a separate W3C Recommendation
+  //    that extends core ARIA (verified 2026-08-05 against
+  //    https://www.w3.org/TR/graphics-aria-1.0/: full REC status, same
+  //    tier as WAI-ARIA 1.2 itself, with a companion Graphics
+  //    Accessibility API Mappings 1.0 REC defining real AT support).
+  //    Without these, aria-roles-valid wrongly reports a real,
+  //    AT-recognized role as "not a recognized ARIA role" — confirmed
+  //    live on behance.net's primary nav (role="graphics-symbol img" on
+  //    visible, non-hidden icon <svg>s) and notion.so's icon set.
+  //    Digital Publishing WAI-ARIA (doc-abstract etc.) is a separate,
+  //    similarly-real module NOT added here — deliberately out of scope
+  //    for this pass; no doc-* usage found anywhere in the live/
+  //    real-world corpus, unlike graphics-* which has confirmed traffic.
   // -------------------------------------------------------------------
   const CONCRETE_ROLES = new Set([
+    // WAI-ARIA Graphics Module 1.0 (see comment above)
+    'graphics-document',
+    'graphics-object',
+    'graphics-symbol',
     // Live region / window roles
     'alert',
     'alertdialog',
@@ -50079,9 +50097,27 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   }
 
   // -------------------------------------------------------------------
-  // C) Complete set of concrete (non-abstract) WAI-ARIA 1.2 role tokens.
+  // C) Complete set of concrete (non-abstract) WAI-ARIA 1.2 role tokens,
+  //    plus the WAI-ARIA Graphics Module 1.0 roles (graphics-document/
+  //    graphics-object/graphics-symbol) — a separate W3C Recommendation
+  //    that extends core ARIA (verified 2026-08-05 against
+  //    https://www.w3.org/TR/graphics-aria-1.0/: full REC status, same
+  //    tier as WAI-ARIA 1.2 itself, with a companion Graphics
+  //    Accessibility API Mappings 1.0 REC defining real AT support).
+  //    Without these, aria-roles-valid wrongly reports a real,
+  //    AT-recognized role as "not a recognized ARIA role" — confirmed
+  //    live on behance.net's primary nav (role="graphics-symbol img" on
+  //    visible, non-hidden icon <svg>s) and notion.so's icon set.
+  //    Digital Publishing WAI-ARIA (doc-abstract etc.) is a separate,
+  //    similarly-real module NOT added here — deliberately out of scope
+  //    for this pass; no doc-* usage found anywhere in the live/
+  //    real-world corpus, unlike graphics-* which has confirmed traffic.
   // -------------------------------------------------------------------
   const CONCRETE_ROLES = new Set([
+    // WAI-ARIA Graphics Module 1.0 (see comment above)
+    'graphics-document',
+    'graphics-object',
+    'graphics-symbol',
     // Live region / window roles
     'alert',
     'alertdialog',
@@ -88204,9 +88240,27 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   }
 
   // -------------------------------------------------------------------
-  // C) Complete set of concrete (non-abstract) WAI-ARIA 1.2 role tokens.
+  // C) Complete set of concrete (non-abstract) WAI-ARIA 1.2 role tokens,
+  //    plus the WAI-ARIA Graphics Module 1.0 roles (graphics-document/
+  //    graphics-object/graphics-symbol) — a separate W3C Recommendation
+  //    that extends core ARIA (verified 2026-08-05 against
+  //    https://www.w3.org/TR/graphics-aria-1.0/: full REC status, same
+  //    tier as WAI-ARIA 1.2 itself, with a companion Graphics
+  //    Accessibility API Mappings 1.0 REC defining real AT support).
+  //    Without these, aria-roles-valid wrongly reports a real,
+  //    AT-recognized role as "not a recognized ARIA role" — confirmed
+  //    live on behance.net's primary nav (role="graphics-symbol img" on
+  //    visible, non-hidden icon <svg>s) and notion.so's icon set.
+  //    Digital Publishing WAI-ARIA (doc-abstract etc.) is a separate,
+  //    similarly-real module NOT added here — deliberately out of scope
+  //    for this pass; no doc-* usage found anywhere in the live/
+  //    real-world corpus, unlike graphics-* which has confirmed traffic.
   // -------------------------------------------------------------------
   const CONCRETE_ROLES = new Set([
+    // WAI-ARIA Graphics Module 1.0 (see comment above)
+    'graphics-document',
+    'graphics-object',
+    'graphics-symbol',
     // Live region / window roles
     'alert',
     'alertdialog',

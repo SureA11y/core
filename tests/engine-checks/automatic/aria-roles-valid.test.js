@@ -46,6 +46,22 @@ test(`${RULE_ID}: pass when first token of a fallback role list is valid`, () =>
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+test(`${RULE_ID}: pass for graphics-document/graphics-object/graphics-symbol (WAI-ARIA Graphics Module 1.0, a separate REC-status module from core ARIA 1.2)`, () => {
+  const html = `<!doctype html><html><body>
+    <svg id="a" role="graphics-symbol" viewBox="0 0 20 20"></svg>
+    <div id="b" role="graphics-object"></div>
+    <div id="c" role="graphics-document"></div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: pass when first token of a fallback role list is graphics-symbol (real-world pattern, behance.net primary nav)`, () => {
+  const html = `<!doctype html><html><body><svg id="a" role="graphics-symbol img" viewBox="0 0 20 20"></svg></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
 test(`${RULE_ID}: fail when role does not exist (typo)`, () => {
   const html = `<!doctype html><html><body><div id="a" role="buton"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
@@ -82,7 +98,13 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-roles-valid-all-scenario
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
 
   const expectedFailIds = ['arv_case_03', 'arv_case_04'];
-  const expectedNoOccIds = ['arv_case_01', 'arv_case_02', 'arv_case_05', 'arv_case_06'];
+  const expectedNoOccIds = [
+    'arv_case_01',
+    'arv_case_02',
+    'arv_case_05',
+    'arv_case_06',
+    'arv_case_07'
+  ];
 
   for (const id of expectedFailIds) {
     assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);
