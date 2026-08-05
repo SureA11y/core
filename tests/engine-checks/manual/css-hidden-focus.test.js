@@ -98,6 +98,121 @@ test(`${RULE_ID}: redirecting hidden focus target remains cantTell and reports r
   assert.strictEqual(occ.data.details.runtimeProbe.redirected, true);
 });
 
+test(`${RULE_ID}: cantTell when focusable element is clipped via clip-path:inset(50%)`, () => {
+  const html = `<!doctype html><html><body>
+      <button id="clippath" style="clip-path: inset(50%);">ClipPath</button>
+    </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'clippath'));
+  assert.ok(rule.occurrences[0].summary.includes('clipped'));
+});
+
+test(`${RULE_ID}: redirect scheduled via requestAnimationFrame is reported as a runtime redirect`, () => {
+  const dom = createDom(`<!doctype html><html><body>
+      <button id="sentinel-raf" style="opacity:0">Sentinel</button>
+      <button id="target-raf">Target</button>
+    </body></html>`);
+  dom.window.document.getElementById('sentinel-raf').addEventListener('focus', () => {
+    dom.window.requestAnimationFrame(() => {
+      dom.window.document.getElementById('target-raf').focus();
+    });
+  });
+  const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1 });
+  const occ = rule.occurrences.find(
+    (o) => typeof o.html === 'string' && o.html.includes('id="sentinel-raf"')
+  );
+  assert.ok(occ);
+  assert.strictEqual(occ.data.details.reasonCode, 'cssHiddenTabbable_runtimeRedirect_needsReview');
+});
+
+test(`${RULE_ID}: redirect scheduled via queueMicrotask is reported as a runtime redirect`, () => {
+  const dom = createDom(`<!doctype html><html><body>
+      <button id="sentinel-mt" style="opacity:0">Sentinel</button>
+      <button id="target-mt">Target</button>
+    </body></html>`);
+  dom.window.document.getElementById('sentinel-mt').addEventListener('focus', () => {
+    dom.window.queueMicrotask(() => {
+      dom.window.document.getElementById('target-mt').focus();
+    });
+  });
+  const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1 });
+  const occ = rule.occurrences.find(
+    (o) => typeof o.html === 'string' && o.html.includes('id="sentinel-mt"')
+  );
+  assert.ok(occ);
+  assert.strictEqual(occ.data.details.reasonCode, 'cssHiddenTabbable_runtimeRedirect_needsReview');
+});
+
+test(`${RULE_ID}: a redirect only happening after a long delay outside the observation window is NOT reported as a runtime redirect`, () => {
+  const dom = createDom(`<!doctype html><html><body>
+      <button id="sentinel-slow" style="opacity:0">Sentinel</button>
+      <button id="target-slow">Target</button>
+    </body></html>`);
+  let timerId;
+  dom.window.document.getElementById('sentinel-slow').addEventListener('focus', () => {
+    timerId = dom.window.setTimeout(() => {
+      dom.window.document.getElementById('target-slow').focus();
+    }, 500);
+  });
+  const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1 });
+  const occ = rule.occurrences.find(
+    (o) => typeof o.html === 'string' && o.html.includes('id="sentinel-slow"')
+  );
+  assert.ok(occ);
+  assert.strictEqual(occ.data.details.reasonCode, 'cssHiddenTabbable_needsFocusStateVerification');
+  assert.strictEqual(occ.data.details.runtimeProbe, null);
+  dom.window.clearTimeout(timerId);
+});
+
+test(`${RULE_ID}: redirect target inside a shadow root is detected (getDeepActiveElement shadow traversal)`, () => {
+  const dom = createDom(`<!doctype html><html><body>
+      <button id="sentinel-shadow" style="opacity:0">Sentinel</button>
+      <div id="shadow-host"></div>
+    </body></html>`);
+  const shadowRoot = dom.window.document
+    .getElementById('shadow-host')
+    .attachShadow({ mode: 'open' });
+  shadowRoot.innerHTML = '<button id="shadow-target">Shadow target</button>';
+  dom.window.document.getElementById('sentinel-shadow').addEventListener('focus', () => {
+    shadowRoot.getElementById('shadow-target').focus();
+  });
+  const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1 });
+  const occ = rule.occurrences.find(
+    (o) => typeof o.html === 'string' && o.html.includes('id="sentinel-shadow"')
+  );
+  assert.ok(occ);
+  assert.strictEqual(occ.data.details.reasonCode, 'cssHiddenTabbable_runtimeRedirect_needsReview');
+  assert.strictEqual(occ.data.details.runtimeProbe.redirectedToTag, 'button');
+});
+
+test(`${RULE_ID}: redirect is still detected when focus({preventScroll}) throws and falls back to plain focus()`, () => {
+  const dom = createDom(`<!doctype html><html><body>
+      <button id="sentinel-fallback" style="opacity:0">Sentinel</button>
+      <button id="target-fallback">Target</button>
+    </body></html>`);
+  const sentinel = dom.window.document.getElementById('sentinel-fallback');
+  const originalFocus = sentinel.focus.bind(sentinel);
+  sentinel.focus = function (opts) {
+    if (opts) throw new Error('preventScroll unsupported in this simulated environment');
+    return originalFocus();
+  };
+  sentinel.addEventListener('focus', () => {
+    dom.window.document.getElementById('target-fallback').focus();
+  });
+  const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1 });
+  const occ = rule.occurrences.find(
+    (o) => typeof o.html === 'string' && o.html.includes('id="sentinel-fallback"')
+  );
+  assert.ok(occ);
+  assert.strictEqual(occ.data.details.runtimeProbe.redirected, true);
+});
+
 test(`${RULE_ID}: excludes candidates that are opacity:0 AND visibility:hidden together (notApplicable — visibility:hidden wins; found on a real site, Getty's global nav dropdowns)`, () => {
   const html = `<!doctype html><html><body>
       <button id="op_vh" style="opacity:0;visibility:hidden">OpVH</button>

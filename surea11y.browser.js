@@ -16250,30 +16250,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  const tiered = helpers.resolveTieredOutcome
-    ? helpers.resolveTieredOutcome(
-        failOccurrences,
-        cantTellOccurrences,
-        rule.defaultSeverity || 'moderate'
-      )
-    : null;
-  if (tiered && tiered.outcome !== 'pass') {
-    return {
-      ruleId: rule.ruleId,
-      outcome: tiered.outcome,
-      severity: rule.defaultSeverity || 'moderate',
-      occurrences: tiered.occurrences
-    };
-  }
-  if (!helpers.resolveTieredOutcome && failOccurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'moderate',
-      occurrences: failOccurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  // helpers.resolveTieredOutcome is unconditionally provided by dom-helpers.js
+  // (see its own header comment) -- no fallback needed, matching the same
+  // cleanup already applied to aria-hidden-focus.js/aria-prohibited-attr.js/
+  // target-size-minimum.js.
+  const resolved = helpers.resolveTieredOutcome(
+    failOccurrences,
+    cantTellOccurrences,
+    rule.defaultSeverity || 'moderate'
+  );
+  return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "iframe-name-present": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;

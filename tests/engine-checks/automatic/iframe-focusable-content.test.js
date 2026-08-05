@@ -176,6 +176,166 @@ test(`${RULE_ID}: i18n default is English`, () => {
   assert.strictEqual(rule.title, 'Frames with tabindex="-1" must not contain focusable content');
 });
 
+test(`${RULE_ID}: pass when the only focusable candidate has the hidden attribute directly`, () => {
+  const dom = createDom(
+    `<!doctype html><html><body><iframe id="a" tabindex="-1"></iframe></body></html>`
+  );
+  dom.window.document.getElementById('a').contentDocument.body.innerHTML =
+    '<button hidden>Hidden via attribute</button>';
+  const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: pass when the only focusable candidate is visibility:collapse`, () => {
+  const dom = createDom(
+    `<!doctype html><html><body><iframe id="a" tabindex="-1"></iframe></body></html>`
+  );
+  dom.window.document.getElementById('a').contentDocument.body.innerHTML =
+    '<button style="visibility:collapse">Collapsed</button>';
+  const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: cantTell when the redirect target is inside a shadow root within the same frame (getDeepActiveElement shadow traversal)`, () => {
+  const dom = createDom(
+    `<!doctype html><html><body><iframe id="a" tabindex="-1"></iframe></body></html>`
+  );
+  const contentDoc = dom.window.document.getElementById('a').contentDocument;
+  contentDoc.body.innerHTML = '<button id="sentinel">Sentinel</button><div id="shadow-host"></div>';
+  const shadowRoot = contentDoc.getElementById('shadow-host').attachShadow({ mode: 'open' });
+  shadowRoot.innerHTML = '<button id="shadow-target">Shadow target</button>';
+  contentDoc.getElementById('sentinel').addEventListener('focus', () => {
+    contentDoc.defaultView.setTimeout(() => {
+      shadowRoot.getElementById('shadow-target').focus();
+    }, 0);
+  });
+
+  const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.strictEqual(
+    rule.occurrences[0].data.details.reasonCode,
+    'IFRAME_TABINDEX_NEGATIVE_CONTENT_RUNTIME_REDIRECT'
+  );
+  assert.strictEqual(rule.occurrences[0].data.details.runtimeProbe.redirectedWithinFrame, true);
+  assert.strictEqual(rule.occurrences[0].data.details.runtimeProbe.redirectedOutOfFrame, false);
+});
+
+test(`${RULE_ID}: cantTell when the redirect is scheduled via requestAnimationFrame`, () => {
+  const dom = createDom(
+    `<!doctype html><html><body>
+      <iframe id="a" tabindex="-1"></iframe>
+      <button id="outer-target">Outer target</button>
+    </body></html>`
+  );
+  const contentDoc = dom.window.document.getElementById('a').contentDocument;
+  contentDoc.body.innerHTML = '<button id="sentinel">Sentinel</button>';
+  contentDoc.getElementById('sentinel').addEventListener('focus', () => {
+    contentDoc.defaultView.requestAnimationFrame(() => {
+      dom.window.document.getElementById('outer-target').focus();
+    });
+  });
+
+  const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.strictEqual(
+    rule.occurrences[0].data.details.reasonCode,
+    'IFRAME_TABINDEX_NEGATIVE_CONTENT_RUNTIME_REDIRECT'
+  );
+});
+
+test(`${RULE_ID}: cantTell when the redirect is scheduled via queueMicrotask`, () => {
+  const dom = createDom(
+    `<!doctype html><html><body>
+      <iframe id="a" tabindex="-1"></iframe>
+      <button id="outer-target">Outer target</button>
+    </body></html>`
+  );
+  const contentDoc = dom.window.document.getElementById('a').contentDocument;
+  contentDoc.body.innerHTML = '<button id="sentinel">Sentinel</button>';
+  contentDoc.getElementById('sentinel').addEventListener('focus', () => {
+    contentDoc.defaultView.queueMicrotask(() => {
+      dom.window.document.getElementById('outer-target').focus();
+    });
+  });
+
+  const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.strictEqual(
+    rule.occurrences[0].data.details.reasonCode,
+    'IFRAME_TABINDEX_NEGATIVE_CONTENT_RUNTIME_REDIRECT'
+  );
+});
+
+test(`${RULE_ID}: fail (not cantTell) when the redirect only happens after a long delay outside the observation window`, () => {
+  const dom = createDom(
+    `<!doctype html><html><body>
+      <iframe id="a" tabindex="-1"></iframe>
+      <button id="outer-target">Outer target</button>
+    </body></html>`
+  );
+  const contentDoc = dom.window.document.getElementById('a').contentDocument;
+  contentDoc.body.innerHTML = '<button id="sentinel">Sentinel</button>';
+  let timerId;
+  contentDoc.getElementById('sentinel').addEventListener('focus', () => {
+    timerId = contentDoc.defaultView.setTimeout(() => {
+      dom.window.document.getElementById('outer-target').focus();
+    }, 500);
+  });
+
+  const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.strictEqual(
+    rule.occurrences[0].data.details.reasonCode,
+    'IFRAME_TABINDEX_NEGATIVE_CONTENT_FOCUSABLE'
+  );
+  contentDoc.defaultView.clearTimeout(timerId);
+});
+
+test(`${RULE_ID}: redirect is still detected when focus({preventScroll}) throws and falls back to plain focus()`, () => {
+  const dom = createDom(
+    `<!doctype html><html><body>
+      <iframe id="a" tabindex="-1"></iframe>
+      <button id="outer-target">Outer target</button>
+    </body></html>`
+  );
+  const contentDoc = dom.window.document.getElementById('a').contentDocument;
+  contentDoc.body.innerHTML = '<button id="sentinel">Sentinel</button>';
+  const sentinel = contentDoc.getElementById('sentinel');
+  const originalFocus = sentinel.focus.bind(sentinel);
+  sentinel.focus = function (opts) {
+    if (opts) throw new Error('preventScroll unsupported in this simulated environment');
+    return originalFocus();
+  };
+  sentinel.addEventListener('focus', () => {
+    contentDoc.defaultView.setTimeout(() => {
+      dom.window.document.getElementById('outer-target').focus();
+    }, 0);
+  });
+
+  const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.strictEqual(rule.occurrences[0].data.details.runtimeProbe.redirected, true);
+});
+
+test(`${RULE_ID}: fail (not cantTell, no crash) when the candidate's focus() always throws`, () => {
+  const dom = createDom(
+    `<!doctype html><html><body><iframe id="a" tabindex="-1"></iframe></body></html>`
+  );
+  const contentDoc = dom.window.document.getElementById('a').contentDocument;
+  contentDoc.body.innerHTML = '<button id="sentinel">Sentinel</button>';
+  const sentinel = contentDoc.getElementById('sentinel');
+  sentinel.focus = function () {
+    throw new Error('focus is never available in this simulated environment');
+  };
+
+  const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.strictEqual(
+    rule.occurrences[0].data.details.reasonCode,
+    'IFRAME_TABINDEX_NEGATIVE_CONTENT_FOCUSABLE'
+  );
+});
+
 test(`${RULE_ID}: fixture coverage (tests/fixtures/iframe-focusable-content-all-scenarios.html)`, () => {
   // Static-HTML-only coverage: the FAIL branch requires mutating
   // iframe.contentDocument after parse (see the fixture's own note and the

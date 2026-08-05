@@ -106,6 +106,135 @@ test(`${RULE_ID}: cantTell when redirect is scheduled shortly after focus (setTi
   );
 });
 
+test(`${RULE_ID}: cantTell when redirect is scheduled via requestAnimationFrame`, () => {
+  const dom = createDom(`<!doctype html><html><body>
+      <div id="ah_sentinel_raf" aria-hidden="true" tabindex="0">Focus sentinel raf</div>
+      <input id="target_after_raf" type="text" />
+    </body></html>`);
+
+  const doc = dom.window.document;
+  const sentinel = doc.getElementById('ah_sentinel_raf');
+  const target = doc.getElementById('target_after_raf');
+  sentinel.addEventListener('focus', () => {
+    dom.window.requestAnimationFrame(() => target.focus());
+  });
+
+  const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.strictEqual(
+    rule.occurrences[0].data.details.runtimeProbe.redirectedToId,
+    'target_after_raf'
+  );
+});
+
+test(`${RULE_ID}: cantTell when redirect is scheduled via queueMicrotask`, () => {
+  const dom = createDom(`<!doctype html><html><body>
+      <div id="ah_sentinel_mt" aria-hidden="true" tabindex="0">Focus sentinel microtask</div>
+      <input id="target_after_mt" type="text" />
+    </body></html>`);
+
+  const doc = dom.window.document;
+  const sentinel = doc.getElementById('ah_sentinel_mt');
+  const target = doc.getElementById('target_after_mt');
+  sentinel.addEventListener('focus', () => {
+    dom.window.queueMicrotask(() => target.focus());
+  });
+
+  const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.strictEqual(
+    rule.occurrences[0].data.details.runtimeProbe.redirectedToId,
+    'target_after_mt'
+  );
+});
+
+test(`${RULE_ID}: fail (not cantTell) when the redirect only happens after a long delay outside the observation window`, () => {
+  const dom = createDom(`<!doctype html><html><body>
+      <div id="ah_sentinel_slow" aria-hidden="true" tabindex="0">Focus sentinel slow</div>
+      <input id="target_after_slow" type="text" />
+    </body></html>`);
+
+  const doc = dom.window.document;
+  const sentinel = doc.getElementById('ah_sentinel_slow');
+  const target = doc.getElementById('target_after_slow');
+  let timerId;
+  sentinel.addEventListener('focus', () => {
+    timerId = dom.window.setTimeout(() => target.focus(), 500);
+  });
+
+  const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'ah_sentinel_slow'));
+  assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'ariaHiddenSelfFocusable');
+  assert.strictEqual(rule.occurrences[0].data.details.runtimeProbe, null);
+  dom.window.clearTimeout(timerId);
+});
+
+test(`${RULE_ID}: stays fail (not downgraded) when focus redirects to another element still inside the same aria-hidden subtree`, () => {
+  const dom = createDom(`<!doctype html><html><body>
+      <div id="ah_root_internal" aria-hidden="true">
+        <button id="ah_only_candidate" tabindex="0">Sentinel</button>
+        <div id="ah_inner_sink" tabindex="-1">Programmatic sink, not a tab-order candidate</div>
+      </div>
+    </body></html>`);
+
+  const doc = dom.window.document;
+  const sentinel = doc.getElementById('ah_only_candidate');
+  const sink = doc.getElementById('ah_inner_sink');
+  sentinel.addEventListener('focus', () => sink.focus());
+
+  const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'ah_root_internal'));
+  assert.strictEqual(rule.occurrences[0].occurrenceOutcome, 'fail');
+  assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'ariaHiddenContainsFocusable');
+  assert.strictEqual(rule.occurrences[0].data.details.runtimeProbe, null);
+});
+
+test(`${RULE_ID}: cantTell when the redirect target is inside a shadow root outside the aria-hidden subtree (getDeepActiveElement shadow traversal)`, () => {
+  const dom = createDom(`<!doctype html><html><body>
+      <div id="ah_shadow_root" aria-hidden="true"><button id="ah_shadow_sentinel" tabindex="0">Sentinel</button></div>
+      <div id="shadow-host"></div>
+    </body></html>`);
+
+  const doc = dom.window.document;
+  const sentinel = doc.getElementById('ah_shadow_sentinel');
+  const shadowRoot = doc.getElementById('shadow-host').attachShadow({ mode: 'open' });
+  shadowRoot.innerHTML = '<button id="shadow-target">Shadow target</button>';
+  sentinel.addEventListener('focus', () => {
+    shadowRoot.getElementById('shadow-target').focus();
+  });
+
+  const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'ah_shadow_root'));
+  assert.strictEqual(rule.occurrences[0].data.details.runtimeProbe.redirectedToTag, 'button');
+});
+
+test(`${RULE_ID}: redirect is still detected when focus({preventScroll}) throws and falls back to plain focus()`, () => {
+  const dom = createDom(`<!doctype html><html><body>
+      <div id="ah_sentinel_fallback" aria-hidden="true" tabindex="0">Focus sentinel fallback</div>
+      <input id="target_after_fallback" type="text" />
+    </body></html>`);
+
+  const doc = dom.window.document;
+  const sentinel = doc.getElementById('ah_sentinel_fallback');
+  const target = doc.getElementById('target_after_fallback');
+  const originalFocus = sentinel.focus.bind(sentinel);
+  sentinel.focus = function (opts) {
+    if (opts) throw new Error('preventScroll unsupported in this simulated environment');
+    return originalFocus();
+  };
+  sentinel.addEventListener('focus', () => target.focus());
+
+  const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.strictEqual(
+    rule.occurrences[0].data.details.runtimeProbe.redirectedToId,
+    'target_after_fallback'
+  );
+});
+
 test(`${RULE_ID}: mixed independent roots keep per-occurrence outcome differentiation (fail + cantTell in one atomic result)`, () => {
   const dom = createDom(`<!doctype html><html><body>
       <div id="ah_hard_fail" aria-hidden="true" tabindex="0">Focusable hidden</div>
