@@ -1,5 +1,11 @@
 # @surea11y/core
 
+[![surea11y core](docs/assets/brand-tag-dark.svg#gh-dark-mode-only)](https://www.npmjs.com/package/@surea11y/core#gh-dark-mode-only)
+[![surea11y core](docs/assets/brand-tag-light.svg#gh-light-mode-only)](https://www.npmjs.com/package/@surea11y/core#gh-light-mode-only)
+[![npm](https://img.shields.io/npm/v/@surea11y/core?style=flat-square&label=npm&labelColor=101413&color=3A4441)](https://www.npmjs.com/package/@surea11y/core)
+[![node](https://img.shields.io/node/v/@surea11y/core?style=flat-square&label=node&labelColor=101413&color=3A4441)](package.json)
+[![license](https://img.shields.io/badge/license-MPL--2.0-3A4441?style=flat-square&labelColor=101413)](LICENSE)
+
 > **Reliable accessibility testing for real web applications.**
 
 surea11y is an accessibility engine designed to help development teams
