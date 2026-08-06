@@ -27,6 +27,16 @@ This list is deliberately not a new, invented guarantee — it codifies what the
 
 `engine.schemaVersion` has been `"1.0.0"` since the engine's first release and has never needed a bump — nothing has changed a stable field's shape yet. Adding the `deprecated`/`deprecation` meta fields described below is purely additive (new optional fields, ignored safely by anything not looking for them), so it does **not** warrant a schema bump either — this is the policy's first real application.
 
+## Release cadence
+
+The version number is the contract — not a measure of how much has changed or how often. surea11y follows semver strictly, so what a bump *means* is fixed regardless of how frequently they happen:
+
+- **Patch (`x.y.Z`)** — rule-correctness fixes and documentation updates. Released promptly, as needed, rather than held back; always safe to adopt within a major line.
+- **Minor (`x.Y.0`)** — additive, backward-compatible work: new rules, new locales, new `engineOptions`, new output formats. Batched into periodic releases rather than shipped one change at a time.
+- **Major (`X.0.0`)** — a breaking change to a stable field (see above). Rare by design; the entire point of the stable-fields list is to keep these infrequent and well-signposted.
+
+Because every `1.x` release is backward-compatible, a consumer pinned to a `^1.y.0` range is never broken by an upgrade within the line — so a steady stream of patch/minor releases reflects active maintenance and prompt fixes, not instability. Frequency of releases is not a signal of churn; a change to a **major** version is.
+
 ## Rule-ID deprecation policy
 
 A rule can be marked deprecated in its own `meta`:

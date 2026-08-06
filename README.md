@@ -487,6 +487,19 @@ supported versions and the preferred disclosure process.
 
 ---
 
+## Versioning & stability
+
+`@surea11y/core` follows [semantic versioning](https://semver.org/). The result
+shape is a written contract — see [`docs/API_STABILITY.md`](docs/API_STABILITY.md)
+for exactly which fields are covered by semver, what triggers a patch/minor/major
+bump, the release cadence, and the rule-ID deprecation policy.
+
+In short: patch and minor releases are always backward-compatible, so a consumer
+pinned to a `^1.y.0` range is never broken by an upgrade within the `1.x` line.
+Correctness fixes ship as patches when ready; feature work is batched into
+periodic minors; breaking changes are reserved for major versions and are rare by
+design.
+
 ## License
 
 This project is released under the Mozilla Public License 2.0 (MPL-2.0).
