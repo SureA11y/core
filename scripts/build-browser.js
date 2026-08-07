@@ -108,7 +108,7 @@ function main() {
   const coreSource = fs.readFileSync(CORE_FILE, 'utf8');
   const bundle = generateBrowserBundle(coreSource);
 
-  fs.writeFileSync(OUTPUT_FILE, bundle, 'utf8');
+  fs.writeFileSync(OUTPUT_FILE, `/* SPDX-License-Identifier: MPL-2.0 */\n\n${bundle}`, 'utf8');
   // eslint-disable-next-line no-console
   console.log(
     `[build-browser] wrote ${path.relative(ROOT_DIR, OUTPUT_FILE)} (${(bundle.length / 1024).toFixed(0)} KB)`
