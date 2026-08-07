@@ -6,34 +6,52 @@
 [![node](https://img.shields.io/node/v/@surea11y/core?style=flat-square&label=node&labelColor=101413&color=3A4441)](package.json)
 [![license](https://img.shields.io/badge/license-MPL--2.0-3A4441?style=flat-square&labelColor=101413)](LICENSE)
 
-> **Reliable accessibility testing for real web applications.**
+> **Accessibility testing that tells you what it can't tell you.**
 
-surea11y is an accessibility engine designed to help development teams
-identify objective accessibility issues early in the software lifecycle.
-It runs against either static HTML or fully rendered browser pages,
-producing deterministic, standards-traceable results that are suitable
-for local development, automated testing and CI/CD pipelines.
+surea11y is an accessibility engine for teams that need to know what automated
+testing *can't* establish. It reports findings, non-findings, and — unusually —
+explicit uncertainty, so results are auditable rather than reassuring.
 
-Unlike browser extensions or cloud-based services, surea11y is a
-library-first project. You install it, run it where your code runs, and
-receive structured results that can be consumed by people, scripts or
-reporting tools.
+*Sure* means certainty about what is known, and honesty about what isn't.
 
-## Why surea11y?
+It runs against either static HTML or fully rendered browser pages, producing
+deterministic, standards-traceable results suitable for local development,
+automated testing and CI/CD pipelines.
 
-Accessibility automation is only valuable if developers can trust its
-results.
+Unlike browser extensions or cloud-based services, surea11y is a library-first
+project. You install it, run it where your code runs, and receive structured
+results that can be consumed by people, scripts or reporting tools.
 
-surea11y is built around a conservative philosophy: **never report
-certainty when certainty cannot be established objectively.**
+## What automated testing can and cannot do
 
-Instead of relying on heuristics that may generate false positives, each
-rule makes a single deterministic decision. If a violation can be
-proven, the outcome is `fail`. If human judgement is required, the
-engine reports `cantTell` instead of guessing.
+Automated tools are commonly reckoned to catch somewhere around a third of WCAG
+issues. The remainder require human judgement. That ceiling is a property of
+static analysis itself, not a gap in any particular tool.
 
-This makes the engine predictable, reproducible and suitable for
-automated quality gates.
+surea11y's answer is to be explicit about which side of that line every result
+falls on. Each rule makes a single deterministic decision:
+
+- **`fail`** — a violation provable from the DOM. Reserved for objective,
+  normative cases.
+- **`pass`** — this rule's specific condition is met. Not a claim that the page
+  is accessible.
+- **`cantTell`** — a human has to decide this, and the result says what was
+  ambiguous.
+- **`notApplicable`** — the rule's precondition isn't present.
+
+`cantTell` is the point of the project. An engine that quietly discards what it
+cannot determine produces a shorter report and a false sense of coverage.
+
+## What this engine does not detect
+
+Keyboard traps, reflow and clipping at 400% zoom, anything that only exists
+after a click or an async load, and judgement calls such as whether a heading is
+meaningful — these lie outside what a static DOM scan can establish. Each is a
+reasoned decision rather than an oversight.
+
+[`docs/LIMITATIONS.md`](./docs/LIMITATIONS.md) lists them in full with the
+reasoning for each. A `pass` from this engine — or from any automated tool — is
+never a substitute for the manual review WCAG itself requires.
 
 ### Key principles
 
