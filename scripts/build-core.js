@@ -1171,7 +1171,7 @@ function main() {
 
   const out = generateCore(mods, i18nAll, compositeRulesCatalog);
 
-  fs.writeFileSync(OUTPUT_FILE, out, 'utf8');
+  fs.writeFileSync(OUTPUT_FILE, `/* SPDX-License-Identifier: MPL-2.0 */\n\n${out}`, 'utf8');
 
   console.log(`[build-core] wrote ${path.relative(ROOT_DIR, OUTPUT_FILE)} (${mods.length} rules)`);
 }

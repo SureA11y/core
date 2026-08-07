@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: MPL-2.0 */
+
 'use strict';
 
 // NOTE: Repo ruleId contract requires ENGINE_TAG prefix in the rule id.

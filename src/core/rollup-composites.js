@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: MPL-2.0 */
+
 'use strict';
 
 const LEVEL_RANK = Object.freeze({ A: 1, AA: 2, AAA: 3 });

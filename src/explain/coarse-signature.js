@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: MPL-2.0 */
+
 'use strict';
 
 // Derives a coarse structural signature from an occurrence's CSS selector, for

@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: MPL-2.0 */
+
 'use strict';
 
 // AI-assisted explanations -- optional, host-only post-processing layer.
