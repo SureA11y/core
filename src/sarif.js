@@ -172,7 +172,7 @@ function renderSarifReport(result, options = {}) {
         tool: {
           driver: {
             name: 'surea11y',
-            informationUri: informationUri || 'https://github.com/rumoroso/surea11y-core',
+            informationUri: informationUri || 'https://github.com/SureA11y/core',
             version: toolVersion || '0.0.0',
             rules
           }

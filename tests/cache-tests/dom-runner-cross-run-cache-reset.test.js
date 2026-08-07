@@ -9,7 +9,7 @@ const { assertRule } = require('../helpers/assertRule.js');
 const RULE_ID = 'bypass-blocks-present';
 
 /**
- * Regression coverage for https://github.com/rumoroso/surea11y-core/issues/2
+ * Regression coverage for https://github.com/SureA11y/core/issues/2
  *
  * createDomHelpers() persists element-keyed caches (outerHtmlCache,
  * selectorCache, etc.) on window.__a11ycoreSharedCache so multiple helper
