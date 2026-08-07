@@ -49,17 +49,3 @@ Thumbs.db
 *.mov
 *.wmv
 
-# Personal/internal working notes (live in ../internal-notes, not this repo)
-ROADMAP.md
-surea11y-engine.design.md
-surea11y-performance-context.md
-engine_selector_snippet_refactor_plan.md
-next-steps.md
-stateful_accessibility_evaluation_concept_note.md
-docs/surea11y-overview.md
-docs/ai-assisted-explanations.design.md
-*.docx
-DHS Trusted Tester Certification*.pdf
-Stateful Accessibility Evaluation*.pdf
-docs/How we approach a WCAG SC in this engine.docx
-
