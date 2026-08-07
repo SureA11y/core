@@ -11,13 +11,9 @@
  *   "Intended to be conveyed" is approximated deterministically by at least one of:
  *     - role="img", role="graphics-symbol", or role="graphics-document"
  *       on the SVG root element itself (the WAI-ARIA Graphics Module
- *       roles, alongside img) — matches a widely-used reference engine's
- *       svg-img-alt selector exactly, `[role="img"],
- *       [role="graphics-symbol"], svg[role="graphics-document"]`, for the
- *       svg-root-element case. Deliberately does NOT extend to arbitrary
- *       role="graphics-symbol" descendants nested inside an <svg> — that
- *       engine's selector allows that too, but this check's own scope has
- *       always been the <svg> root only; a separate, broader feature, not
+ *       roles, alongside img). Deliberately does NOT extend to arbitrary
+ *       role="graphics-symbol" descendants nested inside an <svg> — this
+ *       check's scope is the <svg> root only; a broader feature, not
  *       attempted here.
  *     - aria-label / aria-labelledby present
  *     - <title> or <desc> present (desc alone is an applicability signal only — see @expectation)
@@ -34,7 +30,7 @@
  *   API Mappings spec §7.1, <desc> only ever contributes to the accessible
  *   DESCRIPTION, never the accessible NAME. An <svg> with only a
  *   <desc> and no <title>/ARIA name is still "applicable" (desc signals
- *   authorial intent) but fails, matching a widely-used reference engine's svg-img-alt.
+ *   authorial intent) but fails.
  */
 
 const id = 'svg-text-alternative-present';

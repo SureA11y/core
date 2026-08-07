@@ -39,7 +39,7 @@
   </div>
 
   <div class="case" id="case_08">
-    <div class="case-title">08 — PASS: role="group" is the immediate-parent context for menuitem, between it and its owning menu — found on a real site, Ant Design's sectioned sidebar nav (menu &gt; presentation &gt; group &gt; menuitem), verified against a widely-used reference engine's own menuitem role descriptor (requiredContext: ['menu','menubar','group'])</div>
+    <div class="case-title">08 — PASS: role="group" is the immediate-parent context for menuitem, between it and its owning menu (menu &gt; presentation &gt; group &gt; menuitem)</div>
     <ul role="menu"><li role="presentation"><ul role="group"><li role="menuitem" tabindex="-1" id="arp_case_08">Item</li></ul></li></ul>
   </div>
 
@@ -49,7 +49,7 @@
   </div>
 
   <div class="case" id="case_11">
-    <div class="case-title">11 — PASS: an intervening ancestor with an invalid/unrecognized role="" token (not a real ARIA role) is transparent to the search, same as no role at all — found on tabulator.info's column-grouping example (role="columnheader" inside a non-standard role="columngroup" wrapper, itself inside the real role="row")</div>
+    <div class="case-title">11 — PASS: an intervening ancestor with an invalid/unrecognized role="" token (not a real ARIA role) is transparent to the search, same as no role at all (role="columnheader" inside a non-standard role="columngroup" wrapper, itself inside the real role="row")</div>
     <div role="grid"><div role="row"><div role="columngroup"><div role="columnheader" id="arp_case_11">Progress</div></div></div></div>
   </div>
 
@@ -61,7 +61,7 @@
   </div>
 
   <div class="case" id="case_07">
-    <div class="case-title">07 — FAIL: the required-context role exists further up the tree, but a real intervening ancestor role (a plain &lt;li&gt;'s native "listitem") blocks the search — found on a real site, Le Monde's review-carousel tablist</div>
+    <div class="case-title">07 — FAIL: the required-context role exists further up the tree, but a real intervening ancestor role (a plain &lt;li&gt;'s native "listitem") blocks the search</div>
     <ul role="tablist"><li><button id="arp_case_07" role="tab">t1</button></li></ul>
   </div>
 

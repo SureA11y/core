@@ -42,9 +42,7 @@
  *   widget is missing required owned elements due to script execution or
  *   loading, authors MUST mark a containing element with aria-busy equal
  *   to true." A container carrying aria-busy="true" is skipped the same
- *   way — only the exact string "true" counts (absent/"false" do not),
- *   matching a widely-used reference engine's own aria-required-children
- *   behavior.
+ *   way — only the exact string "true" counts (absent/"false" do not).
  * - Descendant search tries a fast native querySelectorAll(CANDIDATE_
  *   SELECTOR) first (covers the light-DOM-only common case with no added
  *   cost); only when that finds nothing AND the container has a <slot>
@@ -53,8 +51,7 @@
  *   querySelectorAll only sees a <slot>'s unrendered fallback content, never
  *   what's actually distributed into it. Deliberately scoped to slot
  *   expansion only, not a general "also descend into any nested custom
- *   element's own shadow root" walk — no confirmed real-world case needs
- *   that yet.
+ *   element's own shadow root" walk — no known case needs that yet.
  */
 
 const id = 'aria-required-children';
@@ -133,17 +130,15 @@ function runInPage(ctx) {
   // <slot></slot>, with the actual role="listitem" elements living in the
   // light DOM and projected in) would never find them there — same class
   // of bug as aria-required-parent's ancestor search, just in the opposite
-  // (descendant) direction. Found via Adobe Spectrum Web Components'
-  // sp-sidenav-item: its shadow root's role="list" div owns its listitems
-  // only through slot projection.
+  // (descendant) direction.
   //
   // Deliberately scoped to slot expansion only — does NOT separately
   // descend into an unrelated nested custom element's own shadow root
   // (e.g. a <my-widget> child with no <slot> involvement at all). That's a
   // qualitatively different question (does an arbitrary component's own
   // internal structure count as this container's "owned children"?) with
-  // no confirmed real-world case driving it yet; slot projection is the
-  // shape actually observed.
+  // no known case driving it yet; slot projection is the shape that
+  // actually comes up.
   function collectComposedDescendants(node, out, seen, limit) {
     if (!node || !node.children) return;
     for (const child of Array.from(node.children)) {

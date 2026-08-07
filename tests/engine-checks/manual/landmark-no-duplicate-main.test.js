@@ -37,7 +37,7 @@ test(`${RULE_ID}: cantTell with one occurrence per main when more than one exist
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'LANDMARK_DUPLICATE_MAIN');
 });
 
-test(`${RULE_ID}: notApplicable when the only "duplicate" main is display:none (a responsive desktop/mobile pattern) — matches a reference engine's own visibility gate (found on a real site, Zoom's homepage)`, () => {
+test(`${RULE_ID}: notApplicable when the only "duplicate" main is display:none (a responsive desktop/mobile pattern)`, () => {
   const html = `<!doctype html><html><body>
     <main id="a">Visible</main>
     <main id="b" style="display:none">Hidden duplicate</main>

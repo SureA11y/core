@@ -232,20 +232,13 @@ function createDomHelpers(opts) {
     }
   };
   // Spec-accurate CSS.escape() fallback (CSSOM "serialize an identifier"
-  // algorithm) for environments without a native window.CSS.escape — this
-  // is jsdom's actual situation (confirmed: window.CSS.escape is
-  // undefined there), so this fallback is not a rare edge case, it's the
-  // one actually exercised on every selector this engine ever builds.
-  // The previous fallback (a flat "escape any disallowed character"
-  // regex) didn't handle CSS identifiers that START with a digit or a
-  // hyphen+digit — a real pattern on real sites (UUID-style element IDs,
-  // e.g. Nike's homepage: id="13cbc70d-ca70-4938-9150-5abddc780c24").
-  // An unescaped leading digit makes the resulting selector fragment
-  // (e.g. "#13cbc70d-...") invalid CSS, which made buildSelectorUncached's
-  // own el.matches(candidate) verification throw (silently caught),
-  // degrading the selector to buildSimpleSelector's bare-tag-name
-  // fallback — losing all positional/uniqueness information for every
-  // element anchored under that ancestor.
+  // algorithm) for environments without a native window.CSS.escape, such
+  // as jsdom. Must handle CSS identifiers that start with a digit or a
+  // hyphen+digit (e.g. UUID-style element IDs): an unescaped leading digit
+  // makes the selector fragment invalid CSS, so buildSelectorUncached's
+  // el.matches(candidate) verification throws (silently caught) and the
+  // selector degrades to a bare tag name, losing all positional/uniqueness
+  // information.
   function __cssEscapeIdentFallback(value) {
     const string = String(value);
     const length = string.length;
@@ -657,19 +650,14 @@ function createDomHelpers(opts) {
     return { present: false, value: '', mechanism: 'none', flags };
   }
 
-  // Landmark-role naming (nav/main/region/banner/contentinfo/etc.): these roles don't derive
-  // a name from content (unlike a button/link), so per the accname spec their only sources are
-  // aria-label, aria-labelledby, then a title-attribute fallback. Was duplicated ad hoc across 7
-  // landmark rule files (landmark-unique, landmark-no-duplicate-banner/-contentinfo,
-  // landmark-banner/-main/-contentinfo-is-top-level, region), each its own local
-  // getAccessibleLandmarkName -- some using getAriaLabelledByInfo's target-name resolution,
-  // others a raw ref.textContent copy predating that fix, and NONE checking title at all.
-  // e.g. DuckDuckGo's homepage has two <nav>s distinguished only by
-  // title="navigation" on one of them -- a widely-used reference engine's
-  // landmark-unique correctly treats them as uniquely named, while a
-  // naive copy that doesn't check title sees both as unnamed and flags a
-  // false duplicate. One shared, correct implementation replaces all 7
-  // copies.
+  // Landmark-role naming (nav/main/region/banner/contentinfo/etc.): these
+  // roles don't derive a name from content (unlike a button/link), so per
+  // the accname spec their only sources are aria-label, aria-labelledby,
+  // then a title-attribute fallback. Shared by the 7 landmark rule files
+  // (landmark-unique, landmark-no-duplicate-banner/-contentinfo,
+  // landmark-banner/-main/-contentinfo-is-top-level, region); title must
+  // be included, otherwise e.g. two <nav>s distinguished only by
+  // title="navigation" are both seen as unnamed and flagged as duplicates.
   function getLandmarkNameInfo(el, ctx) {
     if (!isElement(el))
       return { present: false, value: '', mechanism: 'unsupported', flags: ['notElement'] };
@@ -965,16 +953,12 @@ function createDomHelpers(opts) {
     for (const r of roots) {
       if (!r) continue;
       // querySelectorAll never returns its own context node, only
-      // descendants — so an attribute/role selector can never match
-      // `r` itself this way. In the default (unscoped) case `r` is
-      // `document.documentElement` (the <html> element), meaning every
-      // rule using this helper was structurally blind to an issue
-      // asserted directly on <html> (e.g. `<html role="...">`,
-      // `[lang]`, any `[aria-*]`) — not a narrow, rule-specific gap.
-      // Found via a real page: news24.com's South Africa homepage,
-      // `<html role="document">`, which a widely-used reference engine correctly flags but
-      // this engine's aria-allowed-role couldn't reach at all, no
-      // matter how correct its ALLOWED_ROLES_BY_ELEMENT entry was.
+      // descendants — so an attribute/role selector can never match `r`
+      // itself this way. In the default (unscoped) case `r` is
+      // `document.documentElement` (the <html> element), so without this
+      // self-match every rule using this helper would be blind to an issue
+      // asserted directly on <html> (e.g. `<html role="...">`, `[lang]`,
+      // any `[aria-*]`).
       if (r.nodeType === 1 && typeof r.matches === 'function' && !seen.has(r)) {
         try {
           if (r.matches(sel)) {
@@ -1761,25 +1745,16 @@ function createDomHelpers(opts) {
 
       // `hidden="until-found"` is a distinct state from a plain `hidden`
       // attribute (HTML spec: the UA stylesheet applies `content-
-      // visibility: hidden` for `until-found`, vs. `display: none` for
-      // any other value/bare `hidden`) -- content-visibility:hidden hides
-      // an element's DESCENDANTS from rendering, not the element itself,
-      // matching a widely-used reference engine's own explicit self-vs-
-      // ancestor split for this exact CSS property (its
-      // contentVisibiltyHidden helper only returns true when checking
-      // *as an ancestor* of another node, never for the element's own
-      // eligibility). The `struct` lookup above is deliberately unaware of
-      // this distinction (it's cached per-element and shared across every
+      // visibility: hidden` for `until-found`, vs. `display: none` for any
+      // other value/bare `hidden`). content-visibility:hidden hides an
+      // element's DESCENDANTS from rendering, not the element itself. The
+      // `struct` lookup above is cached per-element and shared across every
       // node that walks through `a` as an ancestor, where "this ancestor
-      // hides its descendants" is always the right answer for
-      // `until-found`) -- this self-only override corrects it specifically
-      // for the case where `a` IS `node` itself, without touching the
-      // cached value other callers (real descendants of `a`) rely on.
-      // Without it, e.g. IRS.gov's accordion panels (`<div
-      // hidden="until-found" aria-labelledby="...">`) would be silently
-      // excluded from every rule, including ones checking the panel's OWN
-      // attributes, even though a widely-used reference engine correctly
-      // still evaluates them.
+      // hides its descendants" is the right answer for `until-found`; this
+      // self-only override corrects it for the case where `a` IS `node`
+      // itself, without touching the cached value descendants rely on.
+      // Without it, an `until-found` panel would be excluded even from
+      // rules checking its own attributes.
       if (struct === 'hiddenAttr' && a === node) {
         const hiddenVal = String((a.getAttribute && a.getAttribute('hidden')) || '')
           .trim()
@@ -2144,22 +2119,13 @@ function createDomHelpers(opts) {
     // visibility:hidden (invertible) or opacity (never a hard block by
     // this function's own design — see callers like aria-hidden-focus
     // that deliberately keep opacity:0 in-scope). A single interleaved
-    // loop that returns on the FIRST blocking condition found while
-    // walking outward from the target would let a CLOSER ancestor's
-    // opacity:0 short-circuit before a FARTHER ancestor's display:none
-    // is ever reached — silently hiding the stronger, unconditional
-    // block behind the weaker, filterable one. Found via a real site:
-    // BuzzFeed's carousel slides are aria-hidden with opacity:0 (by
-    // design, for a fade transition) AND nested several levels inside a
-    // responsive wrapper that is display:none at the simulated
-    // viewport width — the opacity:0 on the closer ancestor was
-    // masking the display:none on the farther one, wrongly reporting
-    // only 'opacityZero' (which aria-hidden-focus filters out as
-    // still-in-scope) and missing the real, unconditional
-    // non-rendering. Pass 1 here checks every ancestor for a hard
-    // structural CSS block first, with no early exit for opacity; pass
-    // 2 (below) computes the accumulated opacity only once no hard
-    // block was found anywhere in the chain.
+    // loop returning on the FIRST blocking condition would let a closer
+    // ancestor's opacity:0 short-circuit before a farther ancestor's
+    // display:none is reached, hiding the stronger, unconditional block
+    // behind the weaker, filterable one. So pass 1 checks every ancestor
+    // for a hard structural CSS block first, with no early exit for
+    // opacity; pass 2 (below) computes the accumulated opacity only once no
+    // hard block was found anywhere in the chain.
     const __cssInfoByAncestor = new Map();
 
     for (const a of chain) {
@@ -2610,13 +2576,12 @@ function createDomHelpers(opts) {
     visited.add(el);
     if (__nameComputationDepth >= __NAME_COMPUTATION_MAX_DEPTH) return '';
 
-    // Establish opts.includeHidden exactly once per aria-labelledby/aria-describedby
-    // traversal, from the top-level referenced target's own hidden state -- mirrors
-    // a widely-used reference engine's prepareContext, which only computes context.includeHidden when it's
-    // still undefined and never overwrites it on recursive calls, so the whole
-    // referenced subtree (nested labelledby chains included) shares one decision. See
-    // getContentNameInfo's collect() for what this bypasses and why (e.g.
-    // Discord's live-DOM footer nav depends on this).
+    // Establish opts.includeHidden exactly once per aria-labelledby/
+    // aria-describedby traversal, from the top-level referenced target's
+    // own hidden state, and never overwrite it on recursive calls, so the
+    // whole referenced subtree (nested labelledby chains included) shares
+    // one decision. See getContentNameInfo's collect() for what this
+    // bypasses and why.
     let effOpts = opts;
     if (!opts || opts.includeHidden === undefined) {
       let hidden;
@@ -2630,29 +2595,20 @@ function createDomHelpers(opts) {
     }
 
     // Share this call's own `visited` guard with getTextFromIdRefs/
-    // getTextFromIdRefsIdrefEligible (both otherwise always start a brand
-    // new Set of their own), so the native-<label> lookup below can't
-    // re-enter a cycle undetected: a label whose content contains a
-    // descendant aria-labelledby'd back to the very control it labels
-    // (e.g. <label id="lbl">Custom <span aria-labelledby="x">t</span>
-    // label<input id="x"></label>) resolves that descendant via
-    // getAriaLabelledByInfo -> getTextFromIdRefs -> (fresh Set, `el` not
-    // yet in it) -> back into this function for the SAME `el` -- which,
-    // without this shared reference, doesn't see `el` already in
-    // `visited` and re-walks the whole label again, only bounded by the
-    // blunt depth counter (so it terminates, but on 40x-duplicated
-    // garbage instead of the correct, once-through text). Real regression
-    // introduced by adding the native-label lookup below; caught while
-    // extending this suite immediately after.
+    // getTextFromIdRefsIdrefEligible (both otherwise start a fresh Set of
+    // their own), so the native-<label> lookup below can't re-enter a cycle
+    // undetected: a label whose content contains a descendant
+    // aria-labelledby'd back to the very control it labels (e.g.
+    // <label id="lbl">Custom <span aria-labelledby="x">t</span>
+    // label<input id="x"></label>) resolves that descendant back into this
+    // function for the SAME `el`; without the shared guard it re-walks the
+    // whole label, bounded only by the blunt depth counter.
     effOpts = Object.assign({}, effOpts, { __idrefVisited: visited });
 
     __nameComputationDepth += 1;
     try {
       // aria-labelledby outranks aria-label per the accname spec (2A before
-      // 2B) -- matches getAriaNameInfo's own precedence. Checking these in
-      // the opposite order (as this function used to) let a target's own
-      // stale/decorative aria-label win over a real, more specific
-      // aria-labelledby chain on that same target.
+      // 2B), matching getAriaNameInfo's own precedence.
       const labelledBy = trim(getAttr(el, 'aria-labelledby'));
       if (labelledBy) {
         const parts = labelledBy.split(/\s+/).filter(Boolean);
@@ -2675,14 +2631,9 @@ function createDomHelpers(opts) {
       // Native <label> association, same two-step lookup (.labels API,
       // then id-based `label[for]` fallback) and same priority slot
       // (before value-like/content) as getAccessibleNameInfo's own
-      // resolution of a standalone element -- found while extending this
-      // suite: an aria-labelledby TARGET that is itself a labeled form
-      // control (e.g. an <input id="cb"> named by <label for="cb">, with
-      // no aria-label/aria-labelledby of its own) resolved to empty text
-      // instead of the label, since this function never consulted
-      // .labels/id-based label lookup at all -- unlike getAccessibleNameInfo,
-      // whose own priority this function otherwise exists to mirror for a
-      // referenced target.
+      // resolution of a standalone element. Without it, an aria-labelledby
+      // target that is itself a labeled form control (e.g. an <input>
+      // named only by a <label for>) would resolve to empty text.
       try {
         if (el.labels && el.labels.length) {
           for (const labelEl of Array.from(el.labels)) {
@@ -2785,9 +2736,7 @@ function createDomHelpers(opts) {
   // Computes a wrapping/explicit <label>'s own text for the purpose of
   // naming ONE specific control inside it, excluding that control's own
   // subtree (matches HTML-AAM's "label text minus embedded control
-  // content" and a widely-used reference engine's implicit-evaluate/explicit-evaluate, which do
-  // the same exclusion via a startNode/inControlContext flag on their own
-  // subtreeText recursion). Deliberately does NOT call back into
+  // content"). Deliberately does NOT call back into
   // getAccessibleNameInfo/getContentNameInfo for descendants — only img
   // alt (getTextAlternativeInfo), aria-label (getAriaLabelInfo), and
   // aria-labelledby (getAriaLabelledByInfo) on descendants, all of which
@@ -2920,13 +2869,9 @@ function createDomHelpers(opts) {
     // in one call, for any genuinely labelable element (button, input,
     // meter, output, progress, select, textarea — `.labels` is simply
     // absent/undefined on anything else, so this never over-triggers).
-    // Found via a real page: DeviantArt's settings toggles wrap a
-    // description div and an unlabeled icon-only <button aria-pressed>
-    // in one <label> — a spec-valid naming mechanism (HTML lists
-    // <button> as labelable) that a widely-used reference engine's
-    // button-name rule already checks (its implicit-label/explicit-label checks) but this engine
-    // wasn't checking at all, since the id-based lookup below only ever
-    // handled explicit for="" and this button has no id to begin with.
+    // Catches e.g. an unlabeled icon-only <button> wrapped in a <label>,
+    // which the id-based lookup below misses (it only handles explicit
+    // for="" and such a button has no id).
     try {
       if (el.labels && el.labels.length) {
         // Seed the IDREF cycle guard with `el` itself before walking its
@@ -2998,15 +2943,14 @@ function createDomHelpers(opts) {
       }
     }
 
-    // POLICY NOTE (revisit if ever reconsidered): title is accepted here as a
-    // last-resort accessible-name source, matching HTML-AAM/accname and a widely-used
-    // reference engine's own behavior (several of its rules explicitly accept a
-    // non-empty title, e.g. image-alt's non-empty-title check). This is a deliberate,
-    // spec-compliant choice, not an oversight -- but title is a genuinely weak mechanism in
-    // practice (no touch/mobile exposure, inconsistent screen-reader support, no visible
-    // affordance for sighted users), and this is the shared function nearly every
-    // accessible-name-dependent rule in the engine goes through. Kept for spec/reference-engine-parity
-    // rather than removed outright; flagged here so it isn't silently load-bearing.
+    // POLICY NOTE (revisit if ever reconsidered): title is accepted here as
+    // a last-resort accessible-name source, matching HTML-AAM/accname. This
+    // is a deliberate, spec-compliant choice -- but title is a genuinely
+    // weak mechanism in practice (no touch/mobile exposure, inconsistent
+    // screen-reader support, no visible affordance for sighted users), and
+    // this is the shared function nearly every accessible-name-dependent
+    // rule in the engine goes through. Flagged here so it isn't silently
+    // load-bearing.
     const title = trim(getAttr(el, 'title'));
     if (title) {
       flags.push('title-used');
@@ -3281,13 +3225,10 @@ function createDomHelpers(opts) {
   // for each child node, use that CHILD's own accessible name if it has one
   // (aria-label/aria-labelledby/native <label>/title, or `alt` for image-like
   // elements) rather than only concatenating literal text nodes. A naive
-  // TreeWalker(SHOW_TEXT)-only walk (the pattern previously duplicated across
-  // the *-name-present rule family) misses any descendant that gets its name
-  // from an attribute rather than visible text — the single most common
-  // real-world case being `<a href="..."><img alt="Company Name"></a>` (a
-  // logo link) and `<button><span role="img" aria-label="Close"></span></button>`
-  // (an icon-only button). Both were confirmed to false-positive under the
-  // old text-node-only approach before this helper was added.
+  // TreeWalker(SHOW_TEXT)-only walk misses any descendant that gets its
+  // name from an attribute rather than visible text, e.g. a logo link
+  // `<a href="..."><img alt="Company Name"></a>` or an icon-only button
+  // `<button><span role="img" aria-label="Close"></span></button>`.
   function getContentNameInfo(el, _ctx, opts) {
     const flags = [];
     if (!isElement(el))
@@ -3333,23 +3274,14 @@ function createDomHelpers(opts) {
       // isAccTreeEligible, so a hidden descendant never contributes.
       //
       // Exception: opts.includeHidden (set by computeIdRefTargetTextAlternative
-      // when the aria-labelledby/aria-describedby TARGET itself is hidden) skips
-      // this check entirely except for genuinely non-rendered tags. Per the accname
-      // spec, a directly-referenced target's own hidden state doesn't block name
-      // computation, and per a widely-used reference engine's own
-      // prepareContext/context.includeHidden, that bypass covers the
-      // target's whole subtree, not just the target element itself -- e.g.
-      // Discord's footer has four <nav aria-labelledby="...">, each
-      // referencing a CSS-hidden (display:none, a responsive/interaction-gated
-      // dropdown toggle) heading with genuinely distinct text ("Product"/"Company"/
-      // "Resources"/"Policies"). surea11y's own isAccTreeEligible correctly treats
-      // each toggle's hidden text as ineligible on its own terms (nothing wrong with
-      // that check in isolation), but applying it while resolving what a
-      // labelledby-referencing element is NAMED disagreed with that reference engine's real,
-      // spec-aligned "pass" (distinct names) -- surea11y saw all four as unnamed and collapsed them
-      // into one false "not unique" cluster (landmark-unique, and any other
-      // rule resolving an aria-labelledby name through a hidden target, e.g. dialog/
-      // tab/menuitem-name-present).
+      // when the aria-labelledby/aria-describedby TARGET itself is hidden)
+      // skips this check entirely except for genuinely non-rendered tags.
+      // Per the accname spec, a directly-referenced target's own hidden
+      // state doesn't block name computation, and that bypass covers the
+      // target's whole subtree, not just the target element. Without it,
+      // several elements labelled by distinct-but-hidden targets would all
+      // resolve to unnamed and collapse into one false "not unique" cluster
+      // (landmark-unique, dialog/tab/menuitem-name-present, etc.).
       if (opts && opts.includeHidden) {
         const tag = lower(node.tagName);
         if (tag === 'script' || tag === 'style' || tag === 'noscript' || tag === 'template') return;
@@ -3366,30 +3298,15 @@ function createDomHelpers(opts) {
 
       if (isImageLikeNode(node)) {
         // aria-labelledby/aria-label take priority over alt per the
-        // accname spec (HTML-AAM) — checked first. Found via a real
-        // page (eBay's product-card links): an <img alt=""
-        // aria-labelledby="..."> pointing to real product-title text
-        // was contributing nothing to the parent <a>'s content name,
-        // since getTextAlternativeInfo alone only ever looks at alt
-        // (by design, for the separate "is alt present" question
-        // img-alt-present cares about) and an empty-but-present alt
-        // short-circuited before aria-labelledby was ever checked.
+        // accname spec (HTML-AAM), so they're checked first: an
+        // <img alt="" aria-labelledby="..."> must contribute the
+        // referenced text, not nothing, to its parent's content name.
         //
-        // Deliberately uses getAriaNameInfo (aria only), NOT the
-        // general getAccessibleNameInfo -- the latter also falls
-        // back to a native <label>/title, which for an image-like
-        // descendant must rank BELOW alt, not above it. Using
-        // getAccessibleNameInfo here let title win over alt
-        // unconditionally, for every image-like descendant, since
-        // its title fallback doesn't know alt exists at all:
-        // `<a href="/"><img alt="" title="Acme home"></a>` (a
-        // decorative logo image, deliberately marked as
-        // contributing no name via alt="") had "Acme home" wrongly
-        // adopted as the link's whole content name; worse,
-        // `<button><img alt="Real label" title="tooltip"></button>`
-        // -- an image with a legitimate, correct alt AND an
-        // unrelated title tooltip, a common real-world pattern --
-        // silently used the tooltip text instead of the real label.
+        // Deliberately uses getAriaNameInfo (aria only), NOT the general
+        // getAccessibleNameInfo — the latter falls back to a native
+        // <label>/title, which for an image-like descendant must rank
+        // BELOW alt, not above it (otherwise an image's title tooltip would
+        // win over its real alt text).
         const ariaName = getAriaNameInfo(node, _ctx, opts);
         if (ariaName && ariaName.present && ariaName.value) {
           parts.push(ariaName.value);
@@ -3448,16 +3365,10 @@ function createDomHelpers(opts) {
       }
 
       // A <slot>'s own childNodes are its FALLBACK content only —
-      // rendered solely when nothing is assigned to it. When real
-      // content IS distributed into it, that's what's actually
-      // rendered/exposed to the accessibility tree, and it lives
-      // elsewhere in the light DOM, not as this node's children.
-      // Found via a real page (Shoelace's <sl-button>, whose shadow
-      // root renders <a part="base"><slot name="prefix">...
-      // <slot part="label">...<slot name="suffix">...</a> — walking
-      // the slots' own (empty) childNodes found nothing, when the
-      // button's real accessible name ("Follow") was a plain light-DOM
-      // text node assigned to the unnamed middle slot).
+      // rendered solely when nothing is assigned to it. When real content
+      // IS distributed into it, that's what's exposed to the accessibility
+      // tree, and it lives elsewhere in the light DOM, not as this node's
+      // children — so prefer assignedNodes() and fall back to childNodes.
       if (lower(node.tagName) === 'slot' && typeof node.assignedNodes === 'function') {
         let assigned;
         try {
@@ -4233,15 +4144,12 @@ function createDomHelpers(opts) {
   }
 
   // A <label> contributes a name to its associated control either via its
-  // own aria-label/aria-labelledby (checked first, same precedence any
-  // element's accessible name gives ARIA over content — verified against
-  // a real page: <label aria-label="Toggle Navigation"><svg
-  // aria-hidden="true">...</svg></label> names its control "Toggle
-  // Navigation" even though the label's only child content is aria-
-  // hidden) or, failing that, its rendered content (getContentNameInfo,
-  // which already excludes aria-hidden/display:none/inert descendants —
-  // e.g. <label><input><span aria-hidden="true">Accept</span></label>
-  // gives the control no name despite the DOM association existing).
+  // own aria-label/aria-labelledby (checked first, the usual ARIA-over-
+  // content precedence — so <label aria-label="Toggle Navigation"> names
+  // its control even when its only child content is aria-hidden), or,
+  // failing that, its rendered content (getContentNameInfo, which excludes
+  // aria-hidden/display:none/inert descendants — so a label whose only
+  // text is aria-hidden gives the control no name despite the association).
   function labelContributesAccessibleName(lab) {
     try {
       const aria = getAriaNameInfo(lab, null, {});
@@ -4255,11 +4163,10 @@ function createDomHelpers(opts) {
     }
     // A <label> with no aria-name and empty own content can still
     // contribute a name via its own title attribute -- accname's title-
-    // fallback step applies to any element, the label itself included
-    // (see slider-name-present-all-scenarios.html's case_22:
+    // fallback step applies to any element, the label itself included, so
     // `<label for="..." title="Search"></label>` with empty content is an
-    // intentional PASS, matching the reference engine's `label` rule -- without this,
-    // form-control-programmatic-label-present would wrongly fail it).
+    // intentional PASS. Without this, form-control-programmatic-label-present
+    // would wrongly fail it.
     try {
       return !!getNonEmptyTitle(lab);
     } catch {

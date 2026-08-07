@@ -56,7 +56,7 @@ test(`${RULE_ID}: pass when the explicit role is on <a href>'s permitted-roles l
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail when role="group" is set on an <a> with href (found on a real site — Blick Art Materials' homepage carousel; <a href> is NOT unconstrained the way a hrefless <a> is)`, () => {
+test(`${RULE_ID}: fail when role="group" is set on an <a> with href (<a href> is NOT unconstrained the way a hrefless <a> is)`, () => {
   const html = `<!doctype html><html><body><a id="a" href="/x" role="group"></a></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
@@ -107,7 +107,7 @@ test(`${RULE_ID}: pass when role="link" is set on an <area> without href`, () =>
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail for <area> with href and any override role (a reference engine's allowedRoles is literally false here — no override role is ever permitted, only its own native 'link' role)`, () => {
+test(`${RULE_ID}: fail for <area> with href and any override role (no override role is ever permitted, only its own native 'link' role)`, () => {
   const html = `<!doctype html><html><body><map name="m"><area id="a" href="/x" role="tab" shape="rect" coords="0,0,10,10"></map></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
@@ -120,7 +120,7 @@ test(`${RULE_ID}: pass when role="link" (its own native role) is restated on an 
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: pass when any role is set on a <table> (found on a real site — Wikipedia's sidebar uses role="navigation")`, () => {
+test(`${RULE_ID}: pass when any role is set on a <table>`, () => {
   const html = `<!doctype html><html><body><table id="a" role="navigation"><tbody><tr><td>x</td></tr></tbody></table></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
@@ -132,7 +132,7 @@ test(`${RULE_ID}: pass when any role is set on a <tr>/<td>/<th>`, () => {
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail when a <label> associated with a labelable control has an explicit role (found on a real site — basecamp.com's nav toggle)`, () => {
+test(`${RULE_ID}: fail when a <label> associated with a labelable control has an explicit role`, () => {
   const html = `<!doctype html><html><body><label for="c" role="button" id="a">Toggle</label><input id="c" type="checkbox"></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
@@ -145,7 +145,7 @@ test(`${RULE_ID}: notApplicable when a <label> not associated with any labelable
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail when role="button" is set on an <input type="checkbox"> without aria-pressed (found on a real site — Wikipedia's dropdown toggles)`, () => {
+test(`${RULE_ID}: fail when role="button" is set on an <input type="checkbox"> without aria-pressed`, () => {
   const html = `<!doctype html><html><body><input type="checkbox" role="button" aria-haspopup="true" id="a"></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
@@ -164,7 +164,7 @@ test(`${RULE_ID}: pass when role="switch" is set on an <input type="checkbox"> w
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail when role="region" is set on a <form> (found on a real site — Stack Overflow's search filter panel)`, () => {
+test(`${RULE_ID}: fail when role="region" is set on a <form>`, () => {
   const html = `<!doctype html><html><body><form role="region" id="a"></form></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
@@ -177,7 +177,7 @@ test(`${RULE_ID}: pass when role="search" is set on a <form>`, () => {
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail when role="dialog" is set on an <aside> (found on a real site — Stack Overflow's feed-link modal)`, () => {
+test(`${RULE_ID}: fail when role="dialog" is set on an <aside>`, () => {
   const html = `<!doctype html><html><body><aside role="dialog" id="a"></aside></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
@@ -196,7 +196,7 @@ test(`${RULE_ID}: pass when role="complementary" (the native role) is restated o
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail when role="region" is set on a <section> with no accessible name (found on a real site — ESPN's global scoreboard)`, () => {
+test(`${RULE_ID}: fail when role="region" is set on a <section> with no accessible name`, () => {
   const html = `<!doctype html><html><body><section role="region" id="a"></section></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
@@ -241,7 +241,7 @@ test(`${RULE_ID}: pass when role="banner" is set on a <section> regardless of na
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail when an explicit role is set on <html> itself (found on a real site — news24.com's South Africa homepage, <html role="document">; also a regression test for queryAll/queryAllSmart being unable to match the root element itself, only its descendants)`, () => {
+test(`${RULE_ID}: fail when an explicit role is set on <html> itself (regression: queryAll/queryAllSmart could not match the root element itself, only its descendants)`, () => {
   const html = `<!doctype html><html lang="en" role="document"><body><div>content</div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
@@ -249,7 +249,7 @@ test(`${RULE_ID}: fail when an explicit role is set on <html> itself (found on a
   assert.equal(rule.occurrences[0].data.details.element, 'html');
 });
 
-test(`${RULE_ID}: fail — no override role is ever permitted on <picture> (found on a real site — TradingView's homepage, <picture role="presentation"> used for hero illustrations; a reference engine's own element spec sets allowedRoles: false here, same as html/area[href])`, () => {
+test(`${RULE_ID}: fail — no override role is ever permitted on <picture> (same as html/area[href])`, () => {
   const html = `<!doctype html><html><body><picture role="presentation"><img src="x.png" alt=""></picture></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
@@ -336,7 +336,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-allowed-role-all-scenari
   }
 });
 
-test(`${RULE_ID}: pass — role="banner" is permitted on a top-level <header> (restates its own conditional native role; found on a real site, Navy Federal's page header)`, () => {
+test(`${RULE_ID}: pass — role="banner" is permitted on a top-level <header> (restates its own conditional native role)`, () => {
   const html = `<!doctype html><html><body><header id="a" role="banner"></header></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
@@ -355,14 +355,14 @@ test(`${RULE_ID}: pass — role="group" is permitted on <header>`, () => {
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail — role="navigation" is not permitted on <header> (found on a real site, Vimeo's global nav header)`, () => {
+test(`${RULE_ID}: fail — role="navigation" is not permitted on <header>`, () => {
   const html = `<!doctype html><html><body><header id="a" role="navigation"></header></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'a'));
 });
 
-test(`${RULE_ID}: pass — role="menu" is permitted on <nav> (verified against a reference engine's own allowedRoles array; found on a real site, Vimeo's global nav dropdown panels)`, () => {
+test(`${RULE_ID}: pass — role="menu" is permitted on <nav>`, () => {
   const html = `<!doctype html><html><body><nav id="a" role="menu"></nav></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
@@ -374,7 +374,7 @@ test(`${RULE_ID}: pass — role="tablist" is permitted on <nav>`, () => {
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail — role="group" is not permitted on <article> (widened 2026-07-21 — found on a real site, Udacity's homepage Swiper.js carousel, 15 identical <article role="group"> slides)`, () => {
+test(`${RULE_ID}: fail — role="group" is not permitted on <article>`, () => {
   const html = `<!doctype html><html><body><article id="a" role="group"></article></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
@@ -394,7 +394,7 @@ test(`${RULE_ID}: pass — role="article" (its own native role) is restated on <
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: pass — role="gridcell" is permitted on <button> (widened 2026-08-04 — found on a real site, MUI's DatePicker calendar, every day cell is a <button role="gridcell">)`, () => {
+test(`${RULE_ID}: pass — role="gridcell" is permitted on <button>`, () => {
   const html = `<!doctype html><html><body><button id="a" role="gridcell">1</button></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
@@ -418,7 +418,7 @@ test(`${RULE_ID}: pass — role="treeitem" is permitted on <button>`, () => {
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail — role="grid" is still not permitted on <button> (only the four widened roles were added, not the whole role vocabulary)`, () => {
+test(`${RULE_ID}: fail — role="grid" is still not permitted on <button> (only the four newly-allowed roles, not the whole role vocabulary)`, () => {
   const html = `<!doctype html><html><body><button id="a" role="grid"></button></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });

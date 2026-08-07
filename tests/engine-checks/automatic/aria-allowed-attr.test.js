@@ -92,7 +92,7 @@ test(`${RULE_ID}: reports one occurrence per disallowed attribute on the same el
   assert.deepStrictEqual(attrs, ['aria-valuemin', 'aria-valuenow']);
 });
 
-test(`${RULE_ID}: pass when aria-modal is present on role="dialog" (widened 2026-07-21 — verified against a reference engine's own allowedAttrs table)`, () => {
+test(`${RULE_ID}: pass when aria-modal is present on role="dialog"`, () => {
   const html = `<!doctype html><html><body><div id="a" role="dialog" aria-modal="true"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
@@ -110,7 +110,7 @@ test(`${RULE_ID}: pass when role="searchbox" has textbox-family attrs (searchbox
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: pass when role="meter" has aria-valuetext (widened 2026-07-21, pairs with the aria-required-attr valuenow requirement)`, () => {
+test(`${RULE_ID}: pass when role="meter" has aria-valuetext (pairs with the aria-required-attr valuenow requirement)`, () => {
   const html = `<!doctype html><html><body><div id="a" role="meter" aria-valuenow="42" aria-valuetext="42 percent"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
@@ -141,7 +141,7 @@ test(`${RULE_ID}: pass when role="menu"/"menubar"/"toolbar" have activedescendan
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: pass when aria-expanded is present on roles confirmed by aria-query/ARIA 1.2 (widened 2026-07-28)`, () => {
+test(`${RULE_ID}: pass when aria-expanded is present on roles listed by aria-query/ARIA 1.2`, () => {
   const html = `<!doctype html><html><body>
     <div id="a" role="checkbox" aria-checked="true" aria-expanded="false"></div>
     <div id="b" role="columnheader" aria-sort="ascending" aria-expanded="true"></div>
@@ -172,7 +172,7 @@ test(`${RULE_ID}: fail when aria-expanded is present on roles the spec does NOT 
   }
 });
 
-test(`${RULE_ID}: pass when aria-activedescendant is present on composite-widget roles (widened 2026-07-28, inherited from the abstract "composite" role)`, () => {
+test(`${RULE_ID}: pass when aria-activedescendant is present on composite-widget roles (inherited from the abstract "composite" role)`, () => {
   const html = `<!doctype html><html><body>
     <div id="a" role="combobox" aria-expanded="true" aria-activedescendant="x"></div>
     <div id="b" role="grid" aria-activedescendant="x"></div>
@@ -187,7 +187,7 @@ test(`${RULE_ID}: pass when aria-activedescendant is present on composite-widget
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: pass for the remaining 2026-07-28 additions (posinset/setsize/readonly/required/level)`, () => {
+test(`${RULE_ID}: pass for posinset/setsize/readonly/required/level`, () => {
   const html = `<!doctype html><html><body>
     <div id="a" role="radio" aria-checked="true" aria-posinset="1" aria-setsize="3"></div>
     <div id="b" role="tab" aria-posinset="1" aria-setsize="3"></div>
@@ -199,7 +199,7 @@ test(`${RULE_ID}: pass for the remaining 2026-07-28 additions (posinset/setsize/
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail when aria-readonly is present on role="tree" (removed 2026-07-28 — not in aria-query's resolved props for tree)`, () => {
+test(`${RULE_ID}: fail when aria-readonly is present on role="tree" (not in aria-query's resolved props for tree)`, () => {
   const html = `<!doctype html><html><body><div id="a" role="tree" aria-readonly="true"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });

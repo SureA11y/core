@@ -129,11 +129,8 @@ function runInPage(ctx) {
     }
 
     // A non-empty title attribute is HTML-AAM's own next fallback naming
-    // source once alt is entirely absent -- also accepted by a widely-used
-    // reference engine's equivalent input-image-alt rule (non-empty-title,
-    // same "any" list as non-empty-alt/aria-label/aria-labelledby). Same
-    // gap img-alt-present handles for <img title="..."> with no alt (e.g.
-    // AliExpress's title-only logo).
+    // source once alt is entirely absent. Same gap img-alt-present handles
+    // for <img title="..."> with no alt.
     const titleRaw = (() => {
       try {
         return el.getAttribute('title');

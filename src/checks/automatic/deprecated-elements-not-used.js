@@ -14,8 +14,8 @@
  * @expectation
  *   Neither element is present. Since their movement can never be paused,
  *   stopped, or hidden by the user, presence is itself the violation — this
- *   rule has no partial-pass case, matching a widely-used reference engine's `blink`/`marquee`
- *   rules (which report only when the element is found).
+ *   rule has no partial-pass case (it reports only when the element is
+ *   found).
  * @implementation-notes
  * - Not rule-gated on isAccTreeEligible: presence in markup is itself the
  *   violation, independent of visibility (moving/blinking content inside a

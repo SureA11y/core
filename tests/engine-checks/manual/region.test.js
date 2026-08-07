@@ -67,11 +67,9 @@ test(`region: notApplicable when engineOptions.fragment is true, even unscoped`,
   assertRule(result, 'region', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-// --- Recursive walk (2026-08-01): a modern framework's single root mount
-// div is the single most common real-world <body> shape (confirmed present
-// as the ONLY direct <body> child on 37 of ~90 pages in the cross-engine
-// comparisons project's real-world corpus) -- the check must recurse
-// through it rather than treating it as one opaque top-level candidate.
+// --- Recursive walk: a modern framework's single root mount div is a
+// common real-world <body> shape -- the check must recurse through it
+// rather than treating it as one opaque top-level candidate.
 
 test(`${RULE_ID}: recurses through a single SPA-style root wrapper div to find the real landmarks and the real gap`, () => {
   const html = `<!doctype html><html><body><div id="root">

@@ -213,7 +213,7 @@ test(`${RULE_ID}: redirect is still detected when focus({preventScroll}) throws 
   assert.strictEqual(occ.data.details.runtimeProbe.redirected, true);
 });
 
-test(`${RULE_ID}: excludes candidates that are opacity:0 AND visibility:hidden together (notApplicable — visibility:hidden wins; found on a real site, Getty's global nav dropdowns)`, () => {
+test(`${RULE_ID}: excludes candidates that are opacity:0 AND visibility:hidden together (notApplicable — visibility:hidden wins)`, () => {
   const html = `<!doctype html><html><body>
       <button id="op_vh" style="opacity:0;visibility:hidden">OpVH</button>
     </body></html>`;

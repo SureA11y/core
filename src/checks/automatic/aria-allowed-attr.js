@@ -19,23 +19,16 @@
  *   set already covers implicit-role elements without asserting anything
  *   role-specific; scope kept deliberately narrow to avoid false positives
  *   on implicit-role ARIA-in-HTML edge cases not modeled here.
- * - SUPPORTED_ATTRS_BY_ROLE combines two verification sources. For
- *   unambiguous, well-established ARIA facts (subclass relationships like
- *   `searchbox`==`textbox`; same-family widget properties like
- *   `columnheader`/`rowheader` sort/col-row-index/span matching
- *   `gridcell`/`row`; spec-defining properties like `dialog`/`alertdialog`
- *   `aria-modal`), entries are cross-checked against a widely-used
- *   reference engine's own per-role `allowedAttrs` table. For
- *   `aria-expanded` specifically — allowed on ~61 roles in that engine,
- *   too thin/near-universal to import blindly — entries are instead
- *   checked against `aria-query` (tracks the published WAI-ARIA 1.2
- *   Recommendation, 6 June 2023, with superclass inheritance resolved,
- *   e.g. `aria-activedescendant` via the abstract `composite` role):
- *   the reference engine's own source comments (`// Spec difference:
- *   Aria-expanded removed in 1.2`) show most of its `aria-expanded`
- *   allowances are deliberate ARIA-1.1 legacy/AT-compat carryovers, not
- *   current-spec facts, so importing them wholesale would reintroduce
- *   exactly the kind of unverified allowance this table otherwise avoids.
+ * - SUPPORTED_ATTRS_BY_ROLE holds unambiguous, well-established ARIA facts:
+ *   subclass relationships like `searchbox`==`textbox`; same-family widget
+ *   properties like `columnheader`/`rowheader` sort/col-row-index/span
+ *   matching `gridcell`/`row`; spec-defining properties like `dialog`/
+ *   `alertdialog` `aria-modal`. `aria-expanded` entries are checked against
+ *   `aria-query` (which tracks the published WAI-ARIA 1.2 Recommendation,
+ *   with superclass inheritance resolved, e.g. `aria-activedescendant` via
+ *   the abstract `composite` role) rather than imported wholesale, since
+ *   much of the wider ARIA-1.1 `aria-expanded` allowance list is legacy/
+ *   AT-compat carryover, not current-spec fact.
  *   `meter`'s valuenow/valuemax/valuemin/valuetext is also separately
  *   *required* (see `aria-required-attr`), but the two tables aren't
  *   unioned automatically, so it's listed in both places.

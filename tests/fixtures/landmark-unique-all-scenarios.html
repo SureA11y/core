@@ -37,7 +37,7 @@
   </div>
 
   <div class="case" id="case_03">
-    <div class="case-title">03 — NEUTRAL: unnamed &lt;form role="search"&gt; nested inside an unnamed role="search" container is not a second landmark (found on a real site — europa.eu); the &lt;form&gt; only counts as a landmark once it has an accessible name, same as its implicit-role counterpart</div>
+    <div class="case-title">03 — NEUTRAL: unnamed &lt;form role="search"&gt; nested inside an unnamed role="search" container is not a second landmark; the &lt;form&gt; only counts as a landmark once it has an accessible name, same as its implicit-role counterpart</div>
     <div role="search" id="lu_case_03a">
       <form role="search" id="lu_case_03b"><input type="search"></form>
     </div>
@@ -50,7 +50,7 @@
   </div>
 
   <div class="case" id="case_05">
-    <div class="case-title">05 — CANTTELL: two unnamed &lt;aside&gt; elements that are direct children of &lt;main&gt; ARE flagged — &lt;main&gt; is NOT "sectioning content" (only article/aside/nav/section are) and must not suppress &lt;aside&gt;'s implicit complementary role, unlike header/footer's "sectioning content plus main" rule (verified against a widely-used reference engine's own separate implicit-role functions; found on a real site — Know Your Meme's two unnamed sidebar asides, both direct children of &lt;main&gt;)</div>
+    <div class="case-title">05 — CANTTELL: two unnamed &lt;aside&gt; elements that are direct children of &lt;main&gt; ARE flagged — &lt;main&gt; is NOT "sectioning content" (only article/aside/nav/section are) and must not suppress &lt;aside&gt;'s implicit complementary role, unlike header/footer's "sectioning content plus main" rule</div>
     <main id="lu_case_05_main">
       <aside id="lu_case_05a">First sidebar</aside>
       <aside id="lu_case_05b">Second sidebar</aside>
@@ -58,26 +58,26 @@
   </div>
 
   <div class="case" id="case_06">
-    <div class="case-title">06 — NEUTRAL: a NAMED &lt;aside&gt; nested inside real sectioning content (an &lt;article&gt;) is never suppressed — a widely-used reference engine's own aside() function only suppresses when BOTH nested in sectioning content AND unnamed</div>
+    <div class="case-title">06 — NEUTRAL: a NAMED &lt;aside&gt; nested inside real sectioning content (an &lt;article&gt;) is never suppressed — suppression only applies when an aside is BOTH nested in sectioning content AND unnamed</div>
     <article>
       <aside aria-label="Related articles" id="lu_case_06">Related content</aside>
     </article>
   </div>
 
   <div class="case" id="case_07">
-    <div class="case-title">07 — NEUTRAL: two same-named navs where one copy is display:none (a responsive desktop/mobile duplicate pattern) — only landmarks actually exposed to assistive technology can collide, matching a widely-used reference engine's own landmarkUniqueMatches visibility gate (found on real sites — BuzzFeed, Kraken, weather.com, all render both a visible and a CSS-hidden copy of the same named nav)</div>
+    <div class="case-title">07 — NEUTRAL: two same-named navs where one copy is display:none (a responsive desktop/mobile duplicate pattern) — only landmarks actually exposed to assistive technology can collide</div>
     <nav aria-label="Hot Topics" id="lu_case_07a">Visible copy</nav>
     <nav aria-label="Hot Topics" id="lu_case_07b" style="display:none">Hidden mobile copy</nav>
   </div>
 
   <div class="case" id="case_08">
-    <div class="case-title">08 — CANTTELL: two aria-labelledby'd sections resolve to the same name via a NESTED descendant's aria-label, not the labelledby target's own textContent (found on a real site — UOL's homepage, 6 identically-named "Publicidade" ad-slot regions)</div>
+    <div class="case-title">08 — CANTTELL: two aria-labelledby'd sections resolve to the same name via a NESTED descendant's aria-label, not the labelledby target's own textContent</div>
     <section aria-labelledby="lu_case_08_lbl1" id="lu_case_08a"><div id="lu_case_08_lbl1"><div aria-label="Publicidade"></div></div>Content</section>
     <section aria-labelledby="lu_case_08_lbl2" id="lu_case_08b"><div id="lu_case_08_lbl2"><div aria-label="Publicidade"></div></div>Content</section>
   </div>
 
   <div class="case" id="case_09">
-    <div class="case-title">09 — NEUTRAL: two navs distinguished only by a title attribute — title is a real accessible-name fallback source (aria-label &gt; aria-labelledby &gt; title), confirmed directly against a real reference-engine run; found on a real site — DuckDuckGo's homepage, one &lt;nav title="navigation"&gt;, one unnamed</div>
+    <div class="case-title">09 — NEUTRAL: two navs distinguished only by a title attribute — title is a real accessible-name fallback source (aria-label &gt; aria-labelledby &gt; title)</div>
     <nav title="navigation" id="lu_case_09a">Titled nav</nav>
     <nav id="lu_case_09b">Unnamed nav</nav>
   </div>
@@ -89,7 +89,7 @@
   </div>
 
   <div class="case" id="case_11">
-    <div class="case-title">11 — NEUTRAL: two navs named via aria-labelledby pointing at a CSS-hidden (display:none) target with genuinely distinct text — per the accname spec (and confirmed against a widely-used reference engine's own prepareContext/context.includeHidden), a directly-referenced labelledby target's hidden state does not block name computation, and the bypass covers its whole subtree, not just the target element itself (found on a real site — Discord's footer, 2026-07-23: four responsive/interaction-gated dropdown navs, each aria-labelledby'd to a display:none toggle heading with distinct text)</div>
+    <div class="case-title">11 — NEUTRAL: two navs named via aria-labelledby pointing at a CSS-hidden (display:none) target with genuinely distinct text — per the accname spec, a directly-referenced labelledby target's hidden state does not block name computation, and the bypass covers its whole subtree, not just the target element itself</div>
     <div id="lu_case_11_lbl1" style="display:none">Product</div>
     <nav aria-labelledby="lu_case_11_lbl1" id="lu_case_11a">First</nav>
     <div id="lu_case_11_lbl2" style="display:none">Company</div>

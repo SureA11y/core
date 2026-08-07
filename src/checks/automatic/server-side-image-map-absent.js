@@ -16,9 +16,8 @@
  *   users. Client-side image maps (<map>/<area>, each with real href/alt)
  *   are the accessible alternative and are not flagged by this rule.
  * @implementation-notes
- * - Matches a widely-used reference engine's server-side-image-map: presence of ismap is itself
- *   the violation (there is no automatable way to verify a "usable
- *   alternative" exists elsewhere on the page).
+ * - Presence of ismap is itself the violation (there is no automatable way
+ *   to verify a "usable alternative" exists elsewhere on the page).
  */
 
 const id = 'server-side-image-map-absent';

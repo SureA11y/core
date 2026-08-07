@@ -61,7 +61,7 @@
   </div>
 
   <div class="case" id="case_15">
-    <div class="case-title">15 — PASS: a bare &lt;li&gt; (no role="" attribute) several DOM levels above a natively-focusable &lt;a&gt; is itself the real owned child (implicit listitem role), so the walk stops there instead of recursing through it and misreporting the &lt;a&gt; — matches aria-required-children's own native-tag fallback for this exact CSS-reset pattern (fixed 2026-07-31; found via a real Angular app)</div>
+    <div class="case-title">15 — PASS: a bare &lt;li&gt; (no role="" attribute) several DOM levels above a natively-focusable &lt;a&gt; is itself the real owned child (implicit listitem role), so the walk stops there instead of recursing through it and misreporting the &lt;a&gt; — matches aria-required-children's own native-tag fallback for this exact CSS-reset pattern</div>
     <ul role="list" id="apc_case_15">
       <li>
         <avq-card>
@@ -78,7 +78,7 @@
   <h2>B. Invalid</h2>
 
   <div class="case" id="case_06">
-    <div class="case-title">06 — FAIL: a role="none" wrapper hides a disallowed role="region" descendant (found on a real site — Red Cross's utility-nav dropdown menu)</div>
+    <div class="case-title">06 — FAIL: a role="none" wrapper hides a disallowed role="region" descendant</div>
     <ul role="menubar" id="apc_case_06">
       <li role="menuitem">File</li>
       <li role="none">
@@ -104,7 +104,7 @@
   </div>
 
   <div class="case" id="case_10">
-    <div class="case-title">10 — FAIL: a roleless-but-focusable (tabindex) child is a real accessible-tree node, not a transparent wrapper (widened 2026-07-21 — matches a widely-used reference engine's own getOwnedRoles exactly)</div>
+    <div class="case-title">10 — FAIL: a roleless-but-focusable (tabindex) child is a real accessible-tree node, not a transparent wrapper</div>
     <div role="menubar" id="apc_case_10">
       <div role="menuitem">File</div>
       <div id="apc_case_10_child" tabindex="0">Roleless but focusable</div>

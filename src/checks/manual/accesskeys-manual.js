@@ -4,7 +4,7 @@
  * @check accesskeys
  * @atomic true
  * @summary accesskey values must be unique on the page
- * @standard Best Practices (a widely-used reference engine's classification; no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
  * @applicability
  *   Applies whenever two or more elements share the same non-empty
  *   accesskey attribute value (case-insensitive).

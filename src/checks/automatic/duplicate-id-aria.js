@@ -18,9 +18,8 @@
  *   which element the reference resolves to (typically the first, silently
  *   dropping the others).
  * @implementation-notes
- * - Scoped deliberately to ids referenced by ARIA (matching a widely-used
- *   reference engine's duplicate-id-aria, not the broader/deprecated page-wide duplicate-id
- *   check — see ROADMAP.md's "Skip" list).
+ * - Scoped deliberately to ids referenced by ARIA, not the broader/
+ *   deprecated page-wide duplicate-id check (see ROADMAP.md's "Skip" list).
  * - Document-wide by design: id uniqueness and ARIA id references are a
  *   whole-document property, not scoped to a sub-root.
  */

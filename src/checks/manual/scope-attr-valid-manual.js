@@ -4,7 +4,7 @@
  * @check scope-attr-valid
  * @atomic true
  * @summary The scope attribute must have a valid value
- * @standard Best Practices (a widely-used reference engine's classification; no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
  * @applicability
  *   Applies to elements with a non-empty scope attribute.
  * @expectation

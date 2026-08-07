@@ -250,10 +250,8 @@ function validateMeta(meta) {
   assert.ok(Array.isArray(meta.tags) && meta.tags.length > 0, 'meta.tags must be non-empty array');
 
   // wcagSc: automatic checks are always WCAG-normative and must declare at least one SC.
-  // Manual checks legitimately come in two shapes (verified against every existing manual
-  // rule file, not assumed): a pure "Best Practice" (a widely-used reference engine's
-  // classification) advisory rule with NO WCAG SC at
-  // all (wcagSc: [], normativeMappings: [], coverage: {} -- Tier 1b, see ROADMAP.md), or a
+  // Manual checks come in two shapes: a pure "Best Practice" advisory rule with NO WCAG SC
+  // at all (wcagSc: [], normativeMappings: [], coverage: {} -- Tier 1b, see ROADMAP.md), or a
   // WCAG-SC-tied quality/manual-review rule (wcagSc non-empty, e.g. the *-quality-manual
   // family) that otherwise follows the same shape as an automatic rule's mappings.
   assert.ok(Array.isArray(meta.wcagSc), 'meta.wcagSc must be an array');
@@ -320,10 +318,8 @@ function validateTags(meta) {
   assert.ok(tags.has(meta.type), `meta.tags must include "${meta.type}"`);
 
   if (meta.wcagSc.length === 0) {
-    // Tier 1b: a pure "Best Practice" (a widely-used reference engine's classification)
-    // advisory rule with no WCAG SC at all carries
-    // 'best-practice' instead of any wcag2*/wcag21*/wcag22* level tag (verified across
-    // every existing wcagSc:[] manual rule file -- none carry a level tag).
+    // Tier 1b: a pure "Best Practice" advisory rule with no WCAG SC at all carries
+    // 'best-practice' instead of any wcag2*/wcag21*/wcag22* level tag.
     assert.ok(
       tags.has('best-practice'),
       'meta.tags must include "best-practice" for a rule with no wcagSc (Tier 1b advisory)'

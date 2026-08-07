@@ -4,7 +4,7 @@
  * @check landmark-banner-is-top-level
  * @atomic true
  * @summary The banner landmark must not be nested inside another landmark
- * @standard Best Practices (a widely-used reference engine's classification; no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
  * @applicability
  *   Applies whenever the page contains at least one banner candidate:
  *   explicit role="banner", OR a <header> with NO role attribute at all,
@@ -16,9 +16,8 @@
  *   whole-page banner and confuses landmark-based navigation for
  *   assistive technology users.
  * @implementation-notes
- * - Not WCAG-normative (a widely-used reference engine classifies this as "Best Practices," no SC
- *   tag) — authored as an advisory, cantTell-capped `type: 'manual'`
- *   rule per ROADMAP.md Tier 1b and the design doc's policy model
+ * - Not WCAG-normative — authored as an advisory, cantTell-capped
+ *   `type: 'manual'` rule per ROADMAP.md Tier 1b and the design doc's policy model
  *   ("Advisory / best-practice rules may exist, but must not produce
  *   `fail`"). Matches the existing `page-title-patterns-manual.js`
  *   precedent: deterministic DOM analysis, no human required, but
@@ -26,9 +25,7 @@
  * - Landmark detection here models WAI-ARIA APG landmark roles and the
  *   HTML-AAM implicit-role mapping (header→banner, footer→contentinfo,
  *   main→main, nav→navigation, aside→complementary, section/form→
- *   region/form only when accessibly named), not a byte-for-byte port
- *   of a widely-used reference engine's internal algorithm — verify against upstream if exact
- *   parity is ever required.
+ *   region/form only when accessibly named).
  * - Candidate selection (`isBannerCandidate` below) is deliberately
  *   unconditional — a `<header>`/`role="banner"` counts as a candidate
  *   regardless of nesting — rather than reusing the same HTML-AAM
@@ -38,9 +35,7 @@
  *   self-defeating: the moment a `<header>` is nested inside another
  *   landmark, that same nesting would make it stop counting as a banner
  *   candidate in the first place, so the rule could never flag the one
- *   case it exists to catch. This matches a widely-used reference
- *   engine's own unconditional `header:not([role]), [role=banner]`
- *   selector. The ancestor walk (`hasLandmarkAncestor`) is intentionally
+ *   case it exists to catch. The ancestor walk (`hasLandmarkAncestor`) is intentionally
  *   asymmetric: it still uses the full suppression-aware
  *   `getLandmarkRole` for each ancestor, since an ancestor genuinely
  *   needs its own real role to count as blocking.
@@ -80,9 +75,8 @@ function runInPage(ctx) {
 
   // Delegates to the shared helpers.getLandmarkNameInfo (aria-label -> aria-labelledby, via the
   // target's own accessible name, not raw textContent -> title attribute fallback) rather than a
-  // local copy -- see that function's header comment in src/core/dom-helpers.js for the real bug
-  // (missing title fallback) this replaced across all 7 landmark rule files that had their own
-  // copy of this logic.
+  // local copy -- see that function's header comment in src/core/dom-helpers.js. Sharing it keeps
+  // the title-attribute fallback consistent across the landmark rules.
   function getAccessibleLandmarkName(el) {
     try {
       if (helpers && typeof helpers.getLandmarkNameInfo === 'function') {
@@ -105,10 +99,8 @@ function runInPage(ctx) {
   // (an ancestor's bare TAG only counts when it carries no role attribute
   // at all; an explicit role="dialog"-style override no longer suppresses)
   // rather than a local tag-only copy. See that function's header comment
-  // in src/core/aria-helpers.js for the full algorithm and the real page
-  // (handsontable.com's docs-assistant side panel, an
-  // <aside role="dialog"> containing its own <header>) that surfaced this
-  // rule's own former tag-only copy as a false negative.
+  // in src/core/aria-helpers.js for the full algorithm. Example: an
+  // <aside role="dialog"> containing its own <header>.
   function hasSectioningAncestor(el, includeMain) {
     return helpers && typeof helpers.hasLandmarkScopingAncestor === 'function'
       ? helpers.hasLandmarkScopingAncestor(el, { includeMain })
@@ -122,11 +114,9 @@ function runInPage(ctx) {
     if (tag === 'main') return 'main';
     if (tag === 'nav') return 'navigation';
     if (tag === 'aside') {
-      // A named <aside> is never suppressed, even when nested — matches
-      // landmark-unique's own verified-against-reference-engine precedent
-      // (that engine's real `aside` implicit-role function keeps
-      // "complementary" when the element has an accessible name, even
-      // inside sectioning content); propagated here for consistency.
+      // A named <aside> is never suppressed, even when nested — it keeps
+      // "complementary" when it has an accessible name, even inside
+      // sectioning content. Matches landmark-unique's precedent.
       if (!hasSectioningAncestor(el, false)) return 'complementary';
       return getAccessibleLandmarkName(el) ? 'complementary' : '';
     }
@@ -154,7 +144,7 @@ function runInPage(ctx) {
   }
 
   // Candidate selection is deliberately NOT the same as getLandmarkRole()
-  // === 'banner' — see the 2026-08-01 fix note above. A <header> is a
+  // === 'banner' — see the fix note above. A <header> is a
   // candidate purely by tag + absence of any role attribute, independent
   // of whether sectioning-ancestor nesting would currently suppress its
   // implicit role; an explicit role="banner" is always a candidate too.
@@ -179,9 +169,8 @@ function runInPage(ctx) {
   }
 
   // queryAllSmart (shadow-DOM-aware) instead of plain document.querySelectorAll -- see
-  // landmark-unique-manual.js's header comment for the real page (Airtable, 2026-07-23)
-  // that surfaced this gap: a third-party shadow-DOM-hosted widget's own landmark is
-  // invisible to a light-DOM-only query.
+  // landmark-unique-manual.js's header comment. A third-party shadow-DOM-hosted
+  // widget's own landmark is invisible to a light-DOM-only query.
   let nodes;
   try {
     nodes =
@@ -206,7 +195,7 @@ function runInPage(ctx) {
     // begin with, from AT's perspective). queryAllSmart's default hidden-
     // content policy only excludes "hard" CSS-based hiding (display:none,
     // etc.), not the softer aria-hidden exclusion, so this needs its own
-    // check. Found while extending direct coverage of this rule family.
+    // check.
     if (helpers && typeof helpers.isAccTreeEligible === 'function') {
       const elig = (() => {
         try {

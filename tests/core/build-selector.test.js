@@ -80,12 +80,11 @@ test('buildSelector: disambiguates an ancestor in the middle of several same-tag
 
 // Regression test for a bug in the CSS-identifier-escaping fallback used
 // when window.CSS.escape is unavailable — which is jsdom's actual situation
-// (confirmed: jsdom does not implement CSS.escape), so this fallback is not
+// (jsdom does not implement CSS.escape), so this fallback is not
 // a rare edge case, it's the one path exercised by every selector this
 // engine ever builds. The old fallback only escaped individual disallowed
 // characters and didn't handle CSS's "identifier can't start with an
-// unescaped digit" rule, so an ID like a UUID (found on a real site —
-// Nike's homepage, id="13cbc70d-ca70-4938-9150-5abddc780c24") produced an
+// unescaped digit" rule, so an ID like a UUID produced an
 // invalid selector fragment. buildSelectorUncached's own el.matches()
 // verification then threw (silently caught) and fell back to
 // buildSimpleSelector's bare-tag-name selector for every element anchored
@@ -185,12 +184,11 @@ test('buildSelector: multi-region contextSelector does not collide selectors acr
 // leading/trailing whitespace, the built selector could never match its
 // own element — el.matches(candidate) correctly returned false, and the
 // element fell through to buildSimpleSelector's bare-tag-name fallback.
-// Found 2026-08-02 via the cross-engine comparisons project on Slack's
-// real homepage: several role="region" promo cards have a templated
+// A real-world shape: several role="region" promo cards have a templated
 // aria-label ending in a trailing ", " (string-concatenation artifact),
 // which degraded 7 otherwise-uniquely-anchorable elements to the bare
 // selector "header" — a selector that resolves to the *first* <header> on
-// the whole page (the real site banner), not any of the 7 actual elements.
+// the whole page (the site banner), not any of the 7 actual elements.
 test('buildSelector: an aria-label anchor with leading/trailing whitespace on the target itself resolves uniquely', () => {
   const { helpers, document } = helpersFor(`<!doctype html><html><body>
     <button aria-label=" Save draft ">Save</button>
@@ -206,7 +204,7 @@ test('buildSelector: an aria-label anchor with leading/trailing whitespace on th
   assert.equal(matches[0], target);
 });
 
-test('buildSelector: an aria-label anchor with leading/trailing whitespace on an ANCESTOR resolves uniquely (the Slack promo-card shape)', () => {
+test('buildSelector: an aria-label anchor with leading/trailing whitespace on an ANCESTOR resolves uniquely', () => {
   const { helpers, document } = helpersFor(`<!doctype html><html><body>
     <div aria-label="New Feature, Partner Apps MCP Connect your tools., ">
       <figure><img alt=""></figure>

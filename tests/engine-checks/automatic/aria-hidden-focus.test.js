@@ -287,16 +287,13 @@ test(`${RULE_ID}: fail when aria-hidden subtree contains focusable descendant (l
 });
 
 test(`${RULE_ID}: fail when a slotted focusable element's aria-hidden ancestor only exists across a shadow-DOM slot boundary`, () => {
-  // Regression for composedParent's assignedSlot-vs-parentNode ordering
-  // bug (found while root-causing the aria-required-parent Spectrum Web
-  // Components false positive, 2026-07-22): closestAriaHiddenTrue walks
-  // ancestors via composedParent, which previously checked parentNode
-  // before assignedSlot — parentNode is always truthy for a normally-
-  // connected slotted element, so the assignedSlot branch never fired,
-  // silently missing any aria-hidden ancestor that only exists inside the
-  // shadow tree a light-DOM element is distributed into. This is a real
-  // false NEGATIVE (a genuinely hidden-but-focusable element going
-  // unflagged), the opposite direction from the aria-required-parent bug.
+  // closestAriaHiddenTrue walks ancestors via composedParent, which
+  // previously checked parentNode before assignedSlot — parentNode is
+  // always truthy for a normally-connected slotted element, so the
+  // assignedSlot branch never fired, silently missing any aria-hidden
+  // ancestor that only exists inside the shadow tree a light-DOM element
+  // is distributed into. This is a false NEGATIVE (a genuinely hidden-but-
+  // focusable element going unflagged).
   const dom = createDom(`<!doctype html><html><body>
       <div id="host"><button id="a" slot="x">Btn</button></div>
     </body></html>`);
@@ -316,7 +313,7 @@ test(`${RULE_ID}: fail when a slotted focusable element's aria-hidden ancestor o
   assert.strictEqual(rule.occurrences[0].data.details.offenders[0].tag, 'button');
 });
 
-test(`${RULE_ID}: pass when the only "focusable" content has an explicit negative tabindex (found on a real site — Wikipedia's sticky header)`, () => {
+test(`${RULE_ID}: pass when the only "focusable" content has an explicit negative tabindex`, () => {
   const html = `<!doctype html><html><body>
       <div id="ah_neg_desc" aria-hidden="true">
         <button tabindex="-1">Not tabbable</button>
@@ -370,7 +367,7 @@ test(`${RULE_ID}: excludes visibility:hidden focusable candidates (pass when onl
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: excludes candidates that are opacity:0 AND visibility:hidden together (pass — visibility:hidden wins; found on a real site, Getty's global nav dropdowns)`, () => {
+test(`${RULE_ID}: excludes candidates that are opacity:0 AND visibility:hidden together (pass — visibility:hidden wins)`, () => {
   const html = `<!doctype html><html><body>
       <div id="ah_root_op_vh" aria-hidden="true">
         <a id="op_vh_link" href="#x" style="opacity:0;visibility:hidden">Hidden link</a>
@@ -380,7 +377,7 @@ test(`${RULE_ID}: excludes candidates that are opacity:0 AND visibility:hidden t
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: excludes a candidate whose closer ancestor is opacity:0 but a FARTHER ancestor is display:none — the closer, filterable opacity:0 must not mask the farther, unconditional display:none (found on a real site, BuzzFeed's carousel slides)`, () => {
+test(`${RULE_ID}: excludes a candidate whose closer ancestor is opacity:0 but a FARTHER ancestor is display:none — the closer, filterable opacity:0 must not mask the farther, unconditional display:none`, () => {
   const html = `<!doctype html><html><body>
       <div id="ah_outer_display_none" style="display:none">
         <div id="ah_root_deep" aria-hidden="true">

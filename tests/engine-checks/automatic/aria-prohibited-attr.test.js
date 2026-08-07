@@ -58,21 +58,21 @@ test(`${RULE_ID}: fail when aria-labelledby is present on a naming-prohibited ro
   assert.equal(rule.occurrences[0].data.details.attr, 'aria-labelledby');
 });
 
-test(`${RULE_ID}: fail when aria-label is present on role="mark" (widened role, Tier 4)`, () => {
+test(`${RULE_ID}: fail when aria-label is present on role="mark"`, () => {
   const html = `<!doctype html><html><body><div id="a" role="mark" aria-label="Highlighted"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   assert.equal(rule.occurrences[0].data.details.role, 'mark');
 });
 
-test(`${RULE_ID}: fail when aria-label is present on role="presentation" (widened 2026-07-21 — verified against a reference engine's own prohibitedAttrs table)`, () => {
+test(`${RULE_ID}: fail when aria-label is present on role="presentation"`, () => {
   const html = `<!doctype html><html><body><div id="a" role="presentation" aria-label="Something"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   assert.equal(rule.occurrences[0].data.details.role, 'presentation');
 });
 
-test(`${RULE_ID}: fail when aria-labelledby is present on role="none" (widened 2026-07-21 — "none" is "presentation"'s ARIA 1.2 alias)`, () => {
+test(`${RULE_ID}: fail when aria-labelledby is present on role="none" ("none" is "presentation"'s ARIA 1.2 alias)`, () => {
   const html = `<!doctype html><html><body><span id="lbl">Label</span><div id="a" role="none" aria-labelledby="lbl"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
@@ -93,7 +93,7 @@ test(`${RULE_ID}: pass when naming attribute is empty/whitespace`, () => {
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail when aria-label is on a roleless span with no content fallback (widened 2026-07-31 — the emoji-mart case)`, () => {
+test(`${RULE_ID}: fail when aria-label is on a roleless span with no content fallback`, () => {
   const html = `<!doctype html><html><body><span id="a" aria-label="party_parrot" class="emoji-mart-emoji-custom"></span></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
@@ -111,7 +111,7 @@ test(`${RULE_ID}: fail when aria-labelledby is on a roleless div with no content
   assert.equal(rule.occurrences[0].data.details.attr, 'aria-labelledby');
 });
 
-test(`${RULE_ID}: fail when aria-label is on a span carrying an INVALID role="" token (not a recognized ARIA role) with no content fallback — must not be silently skipped as "has a real role" (fixed 2026-07-31; confirmed by comparing against the identical markup with the role attribute removed entirely, which already correctly failed)`, () => {
+test(`${RULE_ID}: fail when aria-label is on a span carrying an INVALID role="" token (not a recognized ARIA role) with no content fallback — must not be silently skipped as "has a real role"`, () => {
   const html = `<!doctype html><html><body><span id="a" role="totally-bogus-not-a-real-role" aria-label="icon-only" class="icon-x"></span></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
@@ -165,7 +165,7 @@ test(`${RULE_ID}: notApplicable when aria-label is on a roleless tag not in the 
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail when aria-label is on a roleless autonomous custom element with no content fallback (added 2026-08-03 — the rottentomatoes.com <play-button> case)`, () => {
+test(`${RULE_ID}: fail when aria-label is on a roleless autonomous custom element with no content fallback`, () => {
   const html = `<!doctype html><html><body><play-button id="a" aria-label="Play The Odyssey trailer"></play-button></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
@@ -193,7 +193,7 @@ test(`${RULE_ID}: notApplicable for a spec-reserved hyphenated (non-custom-eleme
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: a roleless element with hidden="until-found" is still evaluated for its own aria-labelledby, unlike a plain [hidden] (added 2026-08-03 — the irs.gov accordion-panel case)`, () => {
+test(`${RULE_ID}: a roleless element with hidden="until-found" is still evaluated for its own aria-labelledby, unlike a plain [hidden]`, () => {
   const html = `<!doctype html><html><body>
     <button id="btn_panel">Question</button>
     <div id="panel" hidden="until-found" aria-labelledby="btn_panel">Some real answer content here.</div>

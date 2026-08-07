@@ -6,7 +6,7 @@ const { JSDOM } = require('jsdom');
 
 const { createDomHelpers } = require('../../src/core/dom-helpers.js');
 
-// Regression coverage for helpers.resolveTieredOutcome (added 2026-07-31).
+// Regression coverage for helpers.resolveTieredOutcome.
 // A rule that collects two independent confidence tiers in one run (some
 // findings confident enough for `fail`, others only `cantTell`) used to
 // hand-roll "if failOccurrences.length return fail(failOccurrences); else

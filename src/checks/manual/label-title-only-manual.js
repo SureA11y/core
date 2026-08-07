@@ -4,7 +4,7 @@
  * @check label-title-only
  * @atomic true
  * @summary Form controls should not rely on the title attribute as their only label
- * @standard Best Practices (a widely-used reference engine's classification; no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
  * @applicability
  *   Applies to labelable form controls (input, excluding
  *   hidden/submit/reset/button/image; select; textarea) that have a
@@ -77,16 +77,13 @@ function runInPage(ctx) {
     applicableCount += 1;
 
     // Delegates to the shared helpers.getAccessibleNameInfo (aria ->
-    // native <label> -> title, the same correct precedence every other
+    // native <label> -> title, the same precedence every other
     // name-dependent rule in this engine uses) rather than a local,
-    // hand-rolled "does a <label for>/wrapping <label> exist" check.
-    // Found while extending direct coverage of this rule: the previous
-    // local check only verified a label's STRUCTURAL association
-    // (for="..."/wrapping), never whether it actually contributed a name
-    // -- an empty <label for="x"></label> or an empty wrapping <label>
-    // exempted the control from this rule even though title was still,
-    // functionally, its only real label (the same "structural association
-    // alone isn't enough" gap already fixed elsewhere in this engine, see
+    // hand-rolled "does a <label for>/wrapping <label> exist" check. A
+    // structural-association-only check (for="..."/wrapping) never verifies
+    // the label actually contributes a name -- an empty <label for="x">
+    // </label> or empty wrapping <label> would exempt the control even
+    // though title is functionally its only real label (see
     // dom-helpers.js's hasLabelAssociation/labelContributesAccessibleName).
     // If the resolved mechanism isn't 'title', some higher-priority
     // mechanism (aria-label/aria-labelledby/a real contributing label)

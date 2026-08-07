@@ -28,12 +28,12 @@
   </div>
 
   <div class="case" id="case_03">
-    <div class="case-title">03 — CANTTELL: th named only via aria-label, no visible text — real screen-reader/browser testing (NVDA+Firefox, iOS VoiceOver+Safari) confirms aria-label is ignored on &lt;th&gt;, found via a live-DOM cross-engine run 2026-07-21 (DuckDuckGo's browser-comparison table, icon-only column headers)</div>
+    <div class="case-title">03 — CANTTELL: th named only via aria-label, no visible text — aria-label is ignored on &lt;th&gt;</div>
     <table><tr><th id="eth_case_03" aria-label="Chrome"></th></tr></table>
   </div>
 
   <div class="case" id="case_04">
-    <div class="case-title">04 — CANTTELL: empty div with role="columnheader" — a widely-used reference engine's own selector covers ARIA-role headers, not just native &lt;th&gt;, found missing entirely via the cross-engine diff tool 2026-07-23</div>
+    <div class="case-title">04 — CANTTELL: empty div with role="columnheader" — covers ARIA-role headers, not just native &lt;th&gt;</div>
     <div role="columnheader" id="eth_case_04"></div>
   </div>
 
@@ -43,7 +43,7 @@
   </div>
 
   <div class="case" id="case_06">
-    <div class="case-title">06 — NEUTRAL: empty th with role="presentation" — no longer meaningfully a header, matches a widely-used reference engine's `th:not([role])` exclusion</div>
+    <div class="case-title">06 — NEUTRAL: empty th with role="presentation" — no longer meaningfully a header</div>
     <table><tr><th id="eth_case_06" role="presentation"></th></tr></table>
   </div>
 

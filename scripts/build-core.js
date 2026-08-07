@@ -999,9 +999,7 @@ ${implEntriesInPage.join(',\n')}
   // frames unconditionally via CDP already (see @surea11y/playwright's
   // ROADMAP.md gap #1) -- strictly better than what this cooperative
   // postMessage protocol can achieve, which requires the child frame to
-  // also call a11yCoreEnableFrameResponder(), the same real limitation
-  // a widely-used reference engine's own runPartial/finishRun protocol has
-  // for non-cooperating frames.
+  // also call a11yCoreEnableFrameResponder().
   //
   // Wrapped in its own private IIFE with its OWN local copy of
   // CHECK_DEFS/RULE_IMPLS/runnersSharedSource -- mirroring exactly how

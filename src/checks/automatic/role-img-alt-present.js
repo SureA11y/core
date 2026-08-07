@@ -14,8 +14,7 @@
  *   Each applicable element with role="img" has an accessible text alternative:
  *    - aria-label with a non-empty value; OR
  *    - aria-labelledby referencing at least one existing element that contributes non-empty text; OR
- *    - a non-empty title attribute (last-resort accessible-name source per HTML-AAM,
- *      also accepted by a widely-used reference engine's equivalent role-img-alt rule).
+ *    - a non-empty title attribute (last-resort accessible-name source per HTML-AAM).
  */
 
 const id = 'role-img-text-alternative-present';
@@ -152,8 +151,7 @@ function runInPage(ctx) {
     const hasValidAriaLabel = hasAriaLabelAttr && ariaLabel.length > 0;
     const hasValidAriaLabelledbyAttr = hasAriaLabelledbyAttr && ariaLabelledby.length > 0;
 
-    // Last-resort naming mechanism per HTML-AAM (also accepted by
-    // a widely-used reference engine's role-img-alt): a non-empty title attribute.
+    // Last-resort naming mechanism per HTML-AAM: a non-empty title attribute.
     const titleRaw = (() => {
       try {
         return el.getAttribute('title');

@@ -4,7 +4,7 @@
  * @check focus-order-semantics
  * @atomic true
  * @summary Elements added to the tab order should have interactive semantics
- * @standard Best Practices (a widely-used reference engine's classification; no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
  * @applicability
  *   Elements with an explicit `tabindex` of `0` or greater (in the tab
  *   order) AND an explicit `role` attribute that is one of a curated set
@@ -16,8 +16,8 @@
  *   announce, which is confusing for keyboard users who land on it and
  *   get no indication of what activating it (if anything) would do.
  * @implementation-notes
- * - Not WCAG-normative by a widely-used reference engine's own classification — authored as an
- *   advisory, cantTell-capped `type: 'manual'` rule.
+ * - Not WCAG-normative — authored as an advisory, cantTell-capped
+ *   `type: 'manual'` rule.
  * - The non-interactive role list is deliberately curated and
  *   conservative (structural/document roles only) — legitimate custom
  *   widget patterns using `tabindex` with a genuinely interactive role
@@ -30,21 +30,12 @@
  *   this engine's own `scrollable-region-focusable` check exists to
  *   RECOMMEND (a scrollable landmark with no other focusable content
  *   needs `tabindex="0"` to be keyboard-reachable at all) — flagging it
- *   here would be internally inconsistent with that sibling check. This
- *   also matches a widely-used reference engine's own
- *   `focus-order-semantics` rule, whose `valid-scrollable-semantics`
- *   check explicitly allowlists `region` (along with `navigation`,
- *   `status`, `tabpanel`) as always valid regardless of actual
- *   scrollability — not scoped to the scrolling case specifically, since
- *   a `role="region"` is also commonly made tabbable on its own merits
- *   (e.g. a cookie-consent banner or notification/toast region a
- *   keyboard user should be able to reach directly). Found via a real,
- *   extremely common pattern: OneTrust's cookie-consent banner
- *   (`<div id="onetrust-banner-sdk" role="region" tabindex="0">`), used
- *   on a large fraction of real-world sites. Scoped to `region` only
- *   (not the reference engine's full navigation/status/tabpanel
- *   allowlist) since that's what real corpus data confirmed — those
- *   other three roles remain flagged pending their own evidence.
+ *   here would be internally inconsistent with that sibling check. A
+ *   `role="region"` is also commonly made tabbable on its own merits
+ *   (e.g. a cookie-consent banner or notification/toast region a keyboard
+ *   user should be able to reach directly, as in
+ *   `<div role="region" tabindex="0">`). Scoped to `region` only;
+ *   navigation/status/tabpanel remain flagged pending their own evidence.
  */
 
 const id = 'focus-order-semantics';

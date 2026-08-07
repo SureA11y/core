@@ -15,9 +15,7 @@ const { createDomHelpers } = require('../../src/core/dom-helpers.js');
 // dead code — composedParent silently returned the same thing as
 // parentElement for the single most common shadow-DOM pattern (a light-DOM
 // child distributed into a shadow tree via <slot>), never actually reaching
-// the shadow-tree container the element is really rendered inside. Found
-// 2026-07-22 while root-causing a real aria-required-parent false positive
-// on Adobe Spectrum Web Components (98 occurrences on one page).
+// the shadow-tree container the element is really rendered inside.
 test('composedParent: assignedSlot wins over parentNode for a connected slotted element', () => {
   const dom = new JSDOM(
     `<!doctype html><html><body><div id="host"><span id="slotted">hi</span></div></body></html>`,

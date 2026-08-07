@@ -18,12 +18,11 @@
  *   violation (see implementation-notes). Any other direct or wrapped child
  *   breaks the description-list semantics assistive technologies rely on.
  * @implementation-notes
- * - Only one level of <div> wrapping is flattened, matching a widely-used
- *   reference engine's definition-list algorithm — a <div> nested inside
+ * - Only one level of <div> wrapping is flattened — a <div> nested inside
  *   another wrapping <div> is not flattened further and its contents are
  *   reported invalid.
- * - Matches a widely-used reference engine: the dt/dd pairing is only
- *   required "when not empty". A flattened set with NEITHER dt nor dd
+ * - The dt/dd pairing is only required "when not empty". A flattened set
+ *   with NEITHER dt nor dd
  *   — whether from an empty wrapping <div>, only <script>/<template>/
  *   <style> content, or a genuinely childless <dl> — is not flagged; only
  *   an unbalanced dt/dd pairing is a real structural problem.
@@ -108,8 +107,7 @@ function runInPage(ctx) {
     }
     const dedupedInvalidTags = [...new Set(invalidTags)];
 
-    // Matches a widely-used reference engine's definition-list check:
-    // the dt/dd pairing is only required "when not empty" — a <dl> with
+    // The dt/dd pairing is only required "when not empty" — a <dl> with
     // NEITHER dt nor dd (whether genuinely childless after flattening, only
     // passthrough script/template/style content, or an empty wrapping div)
     // is vacuously fine, not a violation. Only an UNBALANCED pairing (dt

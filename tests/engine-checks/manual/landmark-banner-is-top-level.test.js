@@ -28,7 +28,7 @@ test(`${RULE_ID}: notApplicable when the banner is top-level`, () => {
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: cantTell when a <header> is nested inside <main> (2026-08-01 fix — see file header comment: candidate selection no longer reuses the suppression that makes a nested header lose its own implicit banner role, matching a widely-used reference engine's unconditional header selector; found live on TurboTax's real homepage)`, () => {
+test(`${RULE_ID}: cantTell when a <header> is nested inside <main>`, () => {
   const html = `<!doctype html><html><body><main><header id="a">inner</header></main></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
@@ -36,7 +36,7 @@ test(`${RULE_ID}: cantTell when a <header> is nested inside <main> (2026-08-01 f
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'LANDMARK_BANNER_NOT_TOP_LEVEL');
 });
 
-test(`${RULE_ID}: cantTell when a <header> nested inside an ancestor whose role has been overridden away from a landmark-scoping role (<aside role="dialog">) still keeps its implicit banner role, and is correctly flagged non-top-level when that ancestor is itself nested inside a real landmark (found on a real site — handsontable.com's docs-assistant side panel; the outer wrapper uses role="search" rather than <nav> deliberately, so this test isolates the <aside role="dialog"> fix from an unrelated, already-suppressing <nav> ancestor)`, () => {
+test(`${RULE_ID}: cantTell when a <header> nested inside an ancestor whose role has been overridden away from a landmark-scoping role (<aside role="dialog">) still keeps its implicit banner role, and is correctly flagged non-top-level when that ancestor is itself nested inside a real landmark (the outer wrapper uses role="search" rather than <nav> deliberately, so this test isolates the <aside role="dialog"> fix from an unrelated, already-suppressing <nav> ancestor)`, () => {
   const html = `<!doctype html><html><body>
     <div role="search" aria-label="Docs assistant"><aside role="dialog" aria-label="Assistant panel"><header id="a">Panel header</header></aside></div>
   </body></html>`;
@@ -45,7 +45,7 @@ test(`${RULE_ID}: cantTell when a <header> nested inside an ancestor whose role 
   assert.ok(hasOccurrenceForId(rule, 'a'));
 });
 
-test(`${RULE_ID}: cantTell when a <header> is nested inside a NAMED <aside> — the aside is a genuine complementary landmark ancestor, so this is real non-top-level nesting (2026-08-01 fix, see above)`, () => {
+test(`${RULE_ID}: cantTell when a <header> is nested inside a NAMED <aside> — the aside is a genuine complementary landmark ancestor, so this is real non-top-level nesting`, () => {
   const html = `<!doctype html><html><body><aside aria-label="Related"><header id="a">inner</header></aside></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
@@ -59,7 +59,7 @@ test(`${RULE_ID}: an UNNAMED top-level <aside> is STILL a real complementary lan
   assert.ok(hasOccurrenceForId(rule, 'a'));
 });
 
-test(`${RULE_ID}: notApplicable when a <header> is nested inside an UNNAMED <section> — an unnamed <section> has no implicit role at all, unlike a top-level <aside> (see above), so there is genuinely no landmark ancestor here; proves the 2026-08-01 fix only flags real landmark nesting, not every sectioning-tag ancestor`, () => {
+test(`${RULE_ID}: notApplicable when a <header> is nested inside an UNNAMED <section> — an unnamed <section> has no implicit role at all, unlike a top-level <aside> (see above), so there is genuinely no landmark ancestor here; proves the fix only flags real landmark nesting, not every sectioning-tag ancestor`, () => {
   const html = `<!doctype html><html><body><section><header id="a">inner</header></section></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });

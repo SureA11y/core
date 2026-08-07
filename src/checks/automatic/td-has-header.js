@@ -109,12 +109,9 @@ function runInPage(ctx) {
     applicableCount += 1;
 
     // An aria-hidden <th> is removed from the accessibility tree entirely
-    // -- a real screen reader never announces it, so it can't actually
-    // serve as another cell's row/column header, even though it's still
-    // structurally a <th>. Found while extending direct coverage of this
-    // rule: without this check, a <td> relying solely on such a header
-    // was wrongly reported as having one (a false `pass` on a
-    // fail/pass-capable automatic rule).
+    // -- a screen reader never announces it, so it can't actually serve as
+    // another cell's row/column header, even though it's still structurally
+    // a <th>.
     function isHeaderCell(cell) {
       return !!(cell && cell.tagName && cell.tagName.toLowerCase() === 'th' && isEligible(cell));
     }

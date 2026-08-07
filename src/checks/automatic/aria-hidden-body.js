@@ -14,10 +14,10 @@
  * @expectation
  *   <body> does not have aria-hidden="true". Hiding the document body
  *   removes the entire page's content and structure from the
- *   accessibility tree at once — a widely-used reference engine tags this under both 1.3.1
- *   (Info and Relationships: the page's structure becomes entirely
- *   non-determinable) and 4.1.2 (Name, Role, Value: nothing in the
- *   document exposes a role/name/value any longer).
+ *   accessibility tree at once — both 1.3.1 (Info and Relationships: the
+ *   page's structure becomes entirely non-determinable) and 4.1.2 (Name,
+ *   Role, Value: nothing in the document exposes a role/name/value any
+ *   longer) apply.
  */
 
 const id = 'aria-hidden-body';

@@ -75,7 +75,7 @@ test('slider-name-present: role=slider missing name => fail', () => {
   assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
-test('slider-name-present: wrapping <label> has its own aria-label even though its only child content is aria-hidden (found on a real site)', () => {
+test('slider-name-present: wrapping <label> has its own aria-label even though its only child content is aria-hidden', () => {
   const html = `<!doctype html><html><body>
     <label aria-label="Toggle Navigation" for="c"><svg aria-hidden="true"><path d="M0 0"/></svg></label>
     <input role="slider" id="c" type="range">
@@ -144,8 +144,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/slider-name-present-all-scena
 });
 
 test('slider-name-present: aria-labelledby pointing at an <iframe> falls back to its title attribute => pass', () => {
-  // Regression for a real false positive found via BBC News' cookie-consent
-  // dialog (2026-07-22) — a copy-pasted bug across 16 *-name-present rules:
+  // Regression for a false positive — a copy-pasted bug across the
+  // *-name-present rules:
   // aria-labelledby pointing at an <iframe> has no "content" to compute a
   // name from (iframe content is opaque/cross-origin per HTML-AAM); the
   // referenced element's own accessible name must fall back to its title
@@ -163,10 +163,8 @@ test('slider-name-present: aria-labelledby pointing at an <iframe> falls back to
 });
 
 test("slider-name-present: label association with empty content falls back to the label's own title attribute => pass", () => {
-  // Regression for the theoretical sibling gap to the <iframe>-title-
-  // fallback fix (found via a deliberate audit of every duplicated
-  // accessible-name helper across the *-name-present rule family,
-  // 2026-07-22): getLabelText previously stopped at content-only
+  // Regression for the sibling gap to the <iframe>-title-fallback fix:
+  // getLabelText previously stopped at content-only
   // (getConservativeSubtreeText) when resolving a native <label for> whose
   // content is empty, never checking the label's own title attribute — the
   // same final-fallback step the general accname algorithm applies to any

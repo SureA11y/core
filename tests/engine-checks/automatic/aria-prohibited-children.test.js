@@ -61,7 +61,7 @@ test(`${RULE_ID}: pass when the only disallowed-role descendant is aria-hidden (
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail when a role="none" wrapper hides a disallowed role="region" descendant (found on a real site — Red Cross's utility-nav dropdown menu)`, () => {
+test(`${RULE_ID}: fail when a role="none" wrapper hides a disallowed role="region" descendant`, () => {
   const html = `<!doctype html><html><body>
     <ul role="menubar">
       <li role="menuitem">File</li>
@@ -100,7 +100,7 @@ test(`${RULE_ID}: fail when table directly owns a disallowed role="button"`, () 
   assert.ok(hasOccurrenceForId(rule, 'a'));
 });
 
-test(`${RULE_ID}: fail when a roleless-but-focusable (tabindex) child is owned by a container (widened 2026-07-21 — matches a reference engine's own getOwnedRoles exactly)`, () => {
+test(`${RULE_ID}: fail when a roleless-but-focusable (tabindex) child is owned by a container`, () => {
   const html = `<!doctype html><html><body>
     <div role="menubar">
       <div role="menuitem">File</div>
@@ -130,7 +130,7 @@ test(`${RULE_ID}: fail when a roleless-but-natively-focusable (e.g. <a href>, no
   assert.ok(/natively focusable/.test(rule.occurrences[0].summary));
 });
 
-test(`${RULE_ID}: pass when a natively-focusable descendant sits several DOM levels inside a bare <li> (no role="" attribute) under role="list" — the <li>'s implicit listitem role is the real owned child and stops the walk there, matching aria-required-children's own native-tag fallback (fixed 2026-07-31; found via a real Angular app rendering <ul role="list"><li><avq-card>...<a routerlink>...</a></avq-card></li></ul>)`, () => {
+test(`${RULE_ID}: pass when a natively-focusable descendant sits several DOM levels inside a bare <li> (no role="" attribute) under role="list" — the <li>'s implicit listitem role is the real owned child and stops the walk there, matching aria-required-children's own native-tag fallback`, () => {
   const html = `<!doctype html><html><body>
     <ul role="list">
       <li>

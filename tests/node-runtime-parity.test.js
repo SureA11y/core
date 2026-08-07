@@ -14,7 +14,7 @@
  * src/core.js (where the re-embedded copy actually lives), never back to
  * the original src/checks/**\/*.js file, so per-rule-file coverage looked
  * near-zero for ~123 of 125 rules regardless of how thorough their fixture
- * actually was (verified 2026-08-01: aria-hidden-focus.js went from 18%
+ * actually was (aria-hidden-focus.js went from 18%
  * to 84% line coverage just by running its EXISTING fixture through the
  * other entry point below -- zero new test cases).
  *

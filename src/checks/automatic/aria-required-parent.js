@@ -94,24 +94,20 @@ function runInPage(ctx) {
   }
 
   // Roles that may host a nested listitem/treeitem group without breaking
-  // the required-context chain (verified against a widely-used reference
-  // engine's own getMissingContext, which special-cases exactly these two
-  // roles via its ownGroupRoles option).
+  // the required-context chain — the group role is transparent for exactly
+  // these two roles.
   const GROUP_TRANSPARENT_FOR_ROLES = new Set(['listitem', 'treeitem']);
 
   // A real ancestor role — not "no role at all" and not the two roles that
   // strip an element from the accessibility tree's parent/child chain
-  // entirely (presentation/none) — stops the search, matching that reference
-  // engine's getMissingContext. This is stricter than "any ancestor with the right
-  // role anywhere up the tree": the required-context relationship is about
-  // the accessibility tree's actual PARENT, so an intervening ancestor with
-  // its OWN distinct real role (e.g. a plain <li>'s native "listitem" role)
-  // blocks the search even if a further-up ancestor has the correct role.
-  // Found via a real page — Le Monde's review-carousel tablist, where each
-  // <button role="tab"> sits inside a plain <li> (native listitem) inside
-  // <ul role="tablist">: that reference engine correctly fails this (the tablist is never the
-  // tab's accessible-tree parent, listitem is), which the old "walk every
-  // ancestor" version here missed entirely.
+  // entirely (presentation/none) — stops the search. This is stricter than
+  // "any ancestor with the right role anywhere up the tree": the
+  // required-context relationship is about the accessibility tree's actual
+  // PARENT, so an intervening ancestor with its OWN distinct real role
+  // (e.g. a plain <li>'s native "listitem" role) blocks the search even if
+  // a further-up ancestor has the correct role. E.g. a <button role="tab">
+  // inside a plain <li> (native listitem) inside <ul role="tablist"> fails:
+  // the tablist is never the tab's accessible-tree parent, the listitem is.
   function getRealContextRole(el) {
     const role = ariaHelpers.getContainmentRole(el);
     if (!role || role === 'presentation' || role === 'none') return '';
@@ -121,13 +117,11 @@ function runInPage(ctx) {
   // Flat-tree ancestor walk (ctx.helpers.composedParent — assignedSlot wins
   // over parentNode, then shadow host). A slotted light-DOM element's real
   // rendered ancestor is whatever the shadow tree wraps its <slot> in (e.g.
-  // a role="list" container), not its own light-DOM parentElement — found
-  // via Adobe Spectrum Web Components' <sp-sidenav-item role="listitem">,
-  // distributed via slot="descendant" into its parent's shadow root, which
-  // wraps that slot in a <div role="list">. composedParent can return a
-  // non-Element node (a ShadowRoot, nodeType 11) when climbing out of a
-  // shadow tree that has no further light-DOM parent — skip those and keep
-  // climbing rather than treating them as a (roleless) context.
+  // a role="list" container), not its own light-DOM parentElement.
+  // composedParent can return a non-Element node (a ShadowRoot, nodeType
+  // 11) when climbing out of a shadow tree that has no further light-DOM
+  // parent — skip those and keep climbing rather than treating them as a
+  // (roleless) context.
   const getComposedParent =
     helpers && typeof helpers.composedParent === 'function'
       ? helpers.composedParent
@@ -142,10 +136,9 @@ function runInPage(ctx) {
     // Mutable working copy: passing a transparent "group" ancestor also
     // makes the element's OWN role an acceptable context from that point on
     // (a nested treeitem-under-group-under-treeitem chain is a normal,
-    // arbitrarily-deep ARIA tree/list, not just one level) — mirroring that
-    // reference engine's getMissingContext, which pushes explicitRole into
-    // reqContext at the same point. Cloned lazily so the caller's Set (built
-    // once per element in runInPage) is never mutated.
+    // arbitrarily-deep ARIA tree/list, not just one level). Cloned lazily
+    // so the caller's Set (built once per element in runInPage) is never
+    // mutated.
     let roles = acceptableRoles;
     while (cur && guard++ < 200) {
       if (cur.nodeType !== 1) {

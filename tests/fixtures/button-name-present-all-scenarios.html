@@ -189,14 +189,14 @@
   <h2>F. Native &lt;label&gt; association</h2>
 
   <div class="case" id="case_27">
-    <div class="case-title">27 — NEUTRAL (PASS): icon-only button named via a wrapping &lt;label&gt; alongside a sibling description (found on a real site — DeviantArt's settings toggles wrap a description div and an unlabeled aria-pressed button in one &lt;label&gt;)</div>
+    <div class="case-title">27 — NEUTRAL (PASS): icon-only button named via a wrapping &lt;label&gt; alongside a sibling description</div>
     <label><div>Display Mature Content</div><button id="btn_case_27" aria-pressed="false"><span></span></button></label>
   </div>
 
   <h2>G. role override to a value-role (content is a VALUE, not a NAME)</h2>
 
   <div class="case" id="case_28">
-    <div class="case-title">28 — FAIL: native &lt;button role="combobox"&gt;, no programmatic name — content ("List") is the combobox's selected VALUE, not its name, so it must not be credited (found on a real site — Spotify's "sort by" control)</div>
+    <div class="case-title">28 — FAIL: native &lt;button role="combobox"&gt;, no programmatic name — content ("List") is the combobox's selected VALUE, not its name, so it must not be credited</div>
     <button type="button" role="combobox" aria-expanded="false" id="btn_case_28"><span>List</span></button>
   </div>
 

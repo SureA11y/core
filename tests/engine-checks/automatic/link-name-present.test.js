@@ -83,10 +83,8 @@ test('link-name-present: named link => pass', () => {
 });
 
 test('link-name-present: named via a child image with alt="" but aria-labelledby pointing to real text => pass', () => {
-  // Regression for a real false positive found via a live-DOM cross-engine
-  // run 2026-07-21: eBay's product-card links wrap an
-  // <img alt="" aria-labelledby="..."> (empty alt, correctly marking the
-  // image itself decorative, but ALSO pointing to the real product-title
+  // Regression: an <img alt="" aria-labelledby="..."> (empty alt, correctly
+  // marking the image itself decorative, but ALSO pointing to real title
   // text elsewhere on the page). The shared getContentNameInfo helper
   // (src/core/dom-helpers.js) only ever checked the image's plain `alt`
   // value when computing what an image-like descendant contributes to a
@@ -166,16 +164,15 @@ test(`${RULE_ID}: an image with a real alt is named from that alt, not an unrela
 });
 
 test(`${RULE_ID}: named via light-DOM text distributed into an unnamed shadow-DOM <slot> => pass`, () => {
-  // Regression for a real false positive found via a live-DOM cross-engine
-  // run 2026-07-22: Shoelace's <sl-button> renders its shadow-DOM internal
-  // <a part="base"> wrapping three EMPTY <slot> elements (prefix/label/
-  // suffix); the button's real accessible name is a plain light-DOM text
-  // node ("Follow") with no slot="" attribute, so it's distributed into the
-  // unnamed middle slot. getContentNameInfo's descendant walk used each
-  // <slot>'s own childNodes (fallback content only, empty here) instead of
-  // its assignedNodes({flatten:true}) (what's actually rendered/exposed to
-  // the accessibility tree), so it found nothing — a real false positive on
-  // any component library that projects a control's label via <slot>.
+  // Regression: a component's shadow-DOM internal <a part="base"> wraps
+  // EMPTY <slot> elements (prefix/label/suffix); the control's real
+  // accessible name is a plain light-DOM text node ("Follow") with no
+  // slot="" attribute, so it's distributed into the unnamed middle slot.
+  // getContentNameInfo's descendant walk used each <slot>'s own childNodes
+  // (fallback content only, empty here) instead of its
+  // assignedNodes({flatten:true}) (what's actually rendered/exposed to the
+  // accessibility tree), so it found nothing — a real false positive on any
+  // component library that projects a control's label via <slot>.
   if (!createDom || !runa11yCoreOnDom || !assertRule) {
     assert.ok(true);
     return;
@@ -195,7 +192,7 @@ test(`${RULE_ID}: named via light-DOM text distributed into an unnamed shadow-DO
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail when role overrides <a href> to a value-role and only content is present (same class of bug as button-name-present's Spotify finding, different host tag)`, () => {
+test(`${RULE_ID}: fail when role overrides <a href> to a value-role and only content is present`, () => {
   if (!runa11yCoreOnHtml || !assertRule) {
     assert.ok(true);
     return;

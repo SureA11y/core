@@ -47,9 +47,8 @@ function runInPage(ctx) {
     // own accessible name (img alt, aria-label/aria-labelledby, title) when
     // it has one, not just literal text nodes. See getContentNameInfo's
     // header comment in src/core/dom-helpers.js for the full rationale
-    // (this replaced a text-node-only TreeWalker that missed the common
-    // "<a><img alt='...'></a>" logo-link / "<button><img alt='...'></button>"
-    // icon-button pattern).
+    // (covers the common "<a><img alt='...'></a>" logo-link /
+    // "<button><img alt='...'></button>" icon-button pattern).
     if (helpers.getContentNameInfo) {
       const info = helpers.getContentNameInfo(container, ctx);
       return info && info.present ? info.value : '';
@@ -107,10 +106,9 @@ function runInPage(ctx) {
     // one of these roles is no longer semantically a button — per the WAI-ARIA
     // Accessible Name and Description Computation spec these roles are
     // name-from-author-only, and their rendered content represents a VALUE,
-    // not a NAME. Found on a real page (Spotify's "sort by" control): a
-    // <button role="combobox">List</button> where "List" is the combobox's
-    // currently selected value, not a label for what the combobox is —
-    // crediting it as the accessible name masked a real missing-name bug.
+    // not a NAME. E.g. <button role="combobox">List</button> where "List" is
+    // the combobox's currently selected value, not a label — crediting it as
+    // the accessible name would mask a missing name.
     const VALUE_ROLES = [
       'textbox',
       'progressbar',

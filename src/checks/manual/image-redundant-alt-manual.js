@@ -4,7 +4,7 @@
  * @check image-redundant-alt
  * @atomic true
  * @summary An image's alt text must not duplicate adjacent visible text
- * @standard Best Practices (a widely-used reference engine's classification; no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
  * @applicability
  *   Applies to <img> elements with non-empty alt text whose immediate
  *   parent element also has other visible text content (i.e. text nodes
@@ -70,9 +70,7 @@ function runInPage(ctx) {
         // technology, so its text can't cause the "same words twice"
         // double-announcement this rule exists to catch -- counting it
         // anyway flags a redundancy that doesn't exist in what AT users
-        // actually hear. Found while extending direct coverage of this
-        // rule and noticing every other rule in the catalog performs this
-        // check.
+        // actually hear.
         if (isAccTreeEligible) {
           const elig = (() => {
             try {

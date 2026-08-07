@@ -64,11 +64,10 @@ test(`${RULE_ID}: fail when no owned child of an acceptable role exists`, () => 
 });
 
 test(`${RULE_ID}: pass when the required owned role only exists across a shadow-DOM slot boundary (composed-tree descendant, not light-DOM querySelectorAll)`, () => {
-  // Regression found while root-causing the aria-required-parent Spectrum
-  // Web Components false positive (2026-07-22) — the identical bug in the
-  // opposite (descendant) direction. A shadow root's role="list" div wraps
-  // an empty <slot>; the real role="listitem" element is a light-DOM child
-  // distributed into that slot. Plain querySelectorAll(CANDIDATE_SELECTOR)
+  // Regression: the same bug as aria-required-parent's shadow-DOM case, in
+  // the opposite (descendant) direction. A shadow root's role="list" div
+  // wraps an empty <slot>; the real role="listitem" element is a light-DOM
+  // child distributed into that slot. Plain querySelectorAll(CANDIDATE_SELECTOR)
   // only sees the slot's own (empty) fallback content, never what's
   // actually projected into it.
   const dom = createDom(`<!doctype html><html><body>

@@ -14,34 +14,23 @@
  *   checked state is already exposed natively), but when an author sets
  *   it explicitly it should agree with the element's actual state —
  *   otherwise assistive technology is told something different from what
- *   a sighted user perceives. This is the same static/live-DOM check
- *   a widely-used reference engine's own `aria-conditional-attr` rule
- *   performs (verified directly against its `ariaConditionalCheckboxAttr`/
- *   `ariaConditionalRadioAttr` source).
+ *   a sighted user perceives.
  * @implementation-notes
  * - Deliberately authored as `type: 'manual'` (cantTell-capped, never
- *   fail), unlike most ARIA-validity rules in this file family. That
- *   reference engine runs as a script injected into the LIVE, already-hydrated DOM, so a
- *   mismatch it reports is a genuine, current-state fact. This engine
- *   analyzes STATIC markup only (no script execution) — `.checked`
+ *   fail), unlike most ARIA-validity rules in this file family. This
+ *   engine analyzes STATIC markup only (no script execution) — `.checked`
  *   reliably reflects the static `checked` attribute for freshly-parsed
- *   markup (verified directly against jsdom), but a very common, entirely
- *   legitimate real-world pattern is a JS-hydrated widget whose
- *   server-rendered HTML intentionally ships `aria-checked="true"` (or
- *   `"mixed"`) BEFORE client JS sets the native `checked`/`indeterminate`
- *   property to match on hydration. A hard `fail` here would misfire on
- *   that pattern constantly — real risk given how common it is in exactly
- *   the kind of JS-framework-heavy pages this engine's own real-world
- *   corpus is full of. Flagging for human review (cantTell) captures the
- *   same signal without the false-positive risk of asserting it as a
- *   confirmed violation.
+ *   markup, but a very common, entirely legitimate real-world pattern is a
+ *   JS-hydrated widget whose server-rendered HTML intentionally ships
+ *   `aria-checked="true"` (or `"mixed"`) BEFORE client JS sets the native
+ *   `checked`/`indeterminate` property to match on hydration. A hard
+ *   `fail` here would misfire on that pattern constantly. Flagging for
+ *   human review (cantTell) captures the same signal without the
+ *   false-positive risk of asserting it as a confirmed violation.
  * - `aria-checked="mixed"` is only meaningful for checkboxes (radio
- *   buttons have no indeterminate state) — matches that reference engine's
- *   own `normalizeAriaChecked` (radio) vs `normalizeAriaChecked2` (checkbox)
- *   split, verified directly against its source.
+ *   buttons have no indeterminate state).
  * - Any `aria-checked` value other than "true"/"false"/"mixed" (checkbox)
- *   or "true"/"false" (radio) is treated as equivalent to "false" — also
- *   matches that reference engine's own normalization exactly.
+ *   or "true"/"false" (radio) is treated as equivalent to "false".
  * - Not rule-gated on isAccTreeEligible: whether the accessible state
  *   matches is still a markup-correctness property, while engine-level
  *   hidden-subtree filtering applies unless engineOptions.includeHiddenElements

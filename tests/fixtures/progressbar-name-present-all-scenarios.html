@@ -19,8 +19,7 @@
   <p class="note">
     Each target element has a stable <code>id</code> of the form <code>pbar_case_NN</code>.
     Mechanism priority: aria-label &gt; aria-labelledby &gt; title. role="progressbar" is
-    name-from-author-only per WAI-ARIA — it does NOT support name-from-content at all
-    (verified against a widely-used reference engine's own aria-progressbar-name check).
+    name-from-author-only per WAI-ARIA — it does NOT support name-from-content at all.
   </p>
 
   <h2>A. Named (eligible)</h2>
@@ -59,7 +58,7 @@
   </div>
 
   <div class="case" id="case_09">
-    <div class="case-title">09 — FAIL: role=progressbar, no name of its own, but a descendant carries an unrelated aria-label (must not be picked up as a fallback name — found on a real site, Instacart's &lt;ul role="progressbar"&gt; loading skeleton)</div>
+    <div class="case-title">09 — FAIL: role=progressbar, no name of its own, but a descendant carries an unrelated aria-label (must not be picked up as a fallback name)</div>
     <ul role="progressbar" aria-valuenow="50" id="pbar_case_09"><li><span aria-label="Loading Box"></span></li></ul>
   </div>
 

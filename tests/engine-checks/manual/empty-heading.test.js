@@ -60,7 +60,7 @@ test(`${RULE_ID}: notApplicable when the empty heading is display:none`, () => {
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: notApplicable when a named descendant (icon-only link with aria-label) provides the heading's accessible name (found on a real site — Navy Federal's logo-link header)`, () => {
+test(`${RULE_ID}: notApplicable when a named descendant (icon-only link with aria-label) provides the heading's accessible name`, () => {
   const html = `<!doctype html><html><body>
     <h1 id="a"><a href="/" aria-label="Site homepage"><svg width="10" height="10"></svg></a></h1>
   </body></html>`;
@@ -77,7 +77,7 @@ test(`${RULE_ID}: cantTell when the heading's only descendant link also has no a
   assert.ok(hasOccurrenceForId(rule, 'a'));
 });
 
-test(`${RULE_ID}: cantTell when the heading's only text is inside a CSS display:none descendant (found on a real site, Instacart's footer "Top departments" toggle)`, () => {
+test(`${RULE_ID}: cantTell when the heading's only text is inside a CSS display:none descendant`, () => {
   const html = `<!doctype html><html><body>
     <h2 id="a"><button style="display:none"><span>Top departments</span></button></h2>
   </body></html>`;
@@ -86,7 +86,7 @@ test(`${RULE_ID}: cantTell when the heading's only text is inside a CSS display:
   assert.ok(hasOccurrenceForId(rule, 'a'));
 });
 
-test(`${RULE_ID}: notApplicable when a named descendant image (alt text, nested through an extra wrapper) provides the heading's accessible name (found on a real site — Party City's logo header, <h1><a><div><img alt="..."></div></a></h1>)`, () => {
+test(`${RULE_ID}: notApplicable when a named descendant image (alt text, nested through an extra wrapper) provides the heading's accessible name (<h1><a><div><img alt="..."></div></a></h1>)`, () => {
   const html = `<!doctype html><html><body>
     <h1 id="a"><a href="/"><div><img src="logo.png" alt="Colorful 'Party City' logo"></div></a></h1>
   </body></html>`;

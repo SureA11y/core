@@ -22,19 +22,15 @@
  * - The rotation DEGREE is what makes this the exploit signature, not
  *   merely the presence of a `rotate()` function: a small decorative icon
  *   rotated 45 degrees inside an orientation media query is not a page
- *   lock. Matches a widely-used reference engine's own
- *   `css-orientation-lock` check (`cssOrientationLockEvaluate`), which
- *   computes the actual rotation angle and only flags ~90/~270 degrees,
- *   explicitly excluding ~0/~180 (a no-op or a flip, neither of which
- *   changes portrait<->landscape).
+ *   lock. Compute the actual rotation angle and only flag ~90/~270 degrees,
+ *   excluding ~0/~180 (a no-op or a flip, neither of which changes
+ *   portrait<->landscape).
  * - Only `rotate`/`rotateZ` (transform functions) and the standalone CSS
- *   `rotate` property are parsed for degrees — matches that reference engine's
- *   own two sources (`style.transform`/`style.rotate`) but, like that engine,
- *   does not attempt to decompose `matrix()`/`matrix3d()`/`rotate3d()` into an
- *   equivalent angle (that engine does handle those; deliberately deferred here
- *   as the same class of "genuinely more complex, lower real-world
- *   value" work already deferred elsewhere in this engine, e.g.
- *   `table-th-has-data-cells`'s narrower positional-header algorithm).
+ *   `rotate` property are parsed for degrees, from the two sources
+ *   `style.transform`/`style.rotate`; `matrix()`/`matrix3d()`/`rotate3d()`
+ *   are not decomposed into an equivalent angle (deliberately deferred as
+ *   the same class of higher-complexity/lower-value work deferred elsewhere,
+ *   e.g. `table-th-has-data-cells`'s narrower positional-header algorithm).
  * - Cross-origin stylesheets throw on `.cssRules` access (browser
  *   security model) and are skipped — same class of limitation as any
  *   check that can only see same-origin/inspectable content (compare
@@ -94,9 +90,9 @@ function runInPage(ctx) {
   }
 
   // Converts a rotate()/rotateZ() angle argument (with unit) to degrees.
-  // Matches a widely-used reference engine's own getAngleInDegrees: only deg/grad/rad/turn are
-  // recognized; a unitless or unrecognized value contributes 0 (ignored,
-  // not treated as a lock -- an unparseable angle isn't a confirmed exploit).
+  // Only deg/grad/rad/turn are recognized; a unitless or unrecognized value
+  // contributes 0 (ignored, not treated as a lock -- an unparseable angle
+  // isn't a confirmed exploit).
   function angleToDegrees(raw) {
     const m = /(-?[\d.]+)\s*(deg|grad|rad|turn)/i.exec(raw);
     if (!m) return 0;
@@ -123,17 +119,17 @@ function runInPage(ctx) {
     return total;
   }
 
-  // Whole-page-orientation-lock detection, matching a widely-used reference engine's own degree
-  // math exactly (see @implementation-notes): a rotation near 0 or 180
-  // degrees (mod 180) is a no-op or a flip, neither of which changes
-  // portrait<->landscape, so it's explicitly NOT a lock; only a rotation
-  // near 90 or 270 degrees (mod 90, once the 0/180 case is excluded) is.
+  // Whole-page-orientation-lock detection (see @implementation-notes): a
+  // rotation near 0 or 180 degrees (mod 180) is a no-op or a flip, neither
+  // of which changes portrait<->landscape, so it's NOT a lock; only a
+  // rotation near 90 or 270 degrees (mod 90, once the 0/180 case is
+  // excluded) is.
   function isLockingRotation(styleDecl) {
     if (!styleDecl) return false;
     const transformVal =
       trim(styleDecl.transform) ||
       trim(styleDecl.getPropertyValue ? styleDecl.getPropertyValue('-webkit-transform') : '');
-    // The standalone CSS `rotate` property (distinct from `transform: rotate()`) -- that reference engine checks this too.
+    // The standalone CSS `rotate` property (distinct from `transform: rotate()`).
     const rotatePropVal = trim(
       styleDecl.getPropertyValue ? styleDecl.getPropertyValue('rotate') : ''
     );

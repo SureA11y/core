@@ -27,8 +27,8 @@
  *       mechanism (e.g. a screen reader's "jump by heading" command).
  * @implementation-notes
  * - This rule intentionally checks presence, not position, for the
- *   same-page-anchor condition (b): a widely-used reference engine's real bypass algorithm is
- *   heuristic (see ROADMAP.md's Tier 1a note on why this rule was
+ *   same-page-anchor condition (b): a full bypass algorithm is heuristic
+ *   (see ROADMAP.md's Tier 1a note on why this rule was
  *   deferred from the rest of that batch), and getting DOM-order /
  *   keyboard-focus-order positioning exactly right without introducing
  *   false positives is materially harder than the rest of Tier 1a. Being
@@ -117,11 +117,10 @@ function runInPage(ctx) {
   // Filters through isAccTreeEligible (hidden/aria-hidden/display:none/inert
   // don't count as "a bypass mechanism is present") -- see
   // page-has-heading-one-manual.js for the identical real-world trigger
-  // (e.g. CDC's flu page, whose only <h1> sits inside a display:none
-  // ancestor, unreachable by sighted and screen reader users alike). A
-  // fully non-rendered <main>/heading must not be credited here, since
-  // that would wrongly return `pass` for a page with zero actual bypass
-  // mechanisms.
+  // (e.g. a page whose only <h1> sits inside a display:none ancestor,
+  // unreachable by sighted and screen reader users alike). A fully
+  // non-rendered <main>/heading must not be credited here, since that would
+  // wrongly return `pass` for a page with zero actual bypass mechanisms.
   function hasMainLandmark() {
     for (const el of queryAll('main, [role="main"]')) {
       if (el && isExposedToAt(el)) return true;

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-31T16:50:37.704Z",
+  "generatedAt": "2026-08-07T08:56:31.323Z",
   "summary": {
     "total": 125,
     "withFixture": 125,
@@ -110,10 +110,10 @@
       "testFile": "tests/engine-checks/automatic/aria-allowed-role.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/aria-allowed-role-all-scenarios.html",
-      "totalCases": 45,
+      "totalCases": 50,
       "caseCounts": {
-        "PASS": 26,
-        "FAIL": 18,
+        "PASS": 30,
+        "FAIL": 19,
         "CANTTELL": 0,
         "OTHER": 1
       }
@@ -358,9 +358,9 @@
       "testFile": "tests/engine-checks/automatic/aria-roles-valid.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/aria-roles-valid-all-scenarios.html",
-      "totalCases": 6,
+      "totalCases": 7,
       "caseCounts": {
-        "PASS": 3,
+        "PASS": 4,
         "FAIL": 2,
         "CANTTELL": 0,
         "OTHER": 1
@@ -415,8 +415,8 @@
       "fixtureFile": "tests/fixtures/aria-valid-attr-value-all-scenarios.html",
       "totalCases": 15,
       "caseCounts": {
-        "PASS": 7,
-        "FAIL": 7,
+        "PASS": 8,
+        "FAIL": 6,
         "CANTTELL": 0,
         "OTHER": 1
       }
@@ -565,9 +565,9 @@
       "testFile": "tests/engine-checks/automatic/combobox-name-present.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/combobox-name-present-all-scenarios.html",
-      "totalCases": 22,
+      "totalCases": 24,
       "caseCounts": {
-        "PASS": 5,
+        "PASS": 7,
         "FAIL": 5,
         "CANTTELL": 0,
         "OTHER": 12
@@ -845,12 +845,12 @@
       "testFile": "tests/engine-checks/manual/focus-order-semantics.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/focus-order-semantics-all-scenarios.html",
-      "totalCases": 5,
+      "totalCases": 6,
       "caseCounts": {
         "PASS": 0,
         "FAIL": 0,
         "CANTTELL": 2,
-        "OTHER": 3
+        "OTHER": 4
       }
     },
     {
@@ -1202,11 +1202,11 @@
       "testFile": "tests/engine-checks/manual/label-title-only.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/label-title-only-all-scenarios.html",
-      "totalCases": 3,
+      "totalCases": 4,
       "caseCounts": {
         "PASS": 0,
         "FAIL": 0,
-        "CANTTELL": 1,
+        "CANTTELL": 2,
         "OTHER": 2
       }
     },
@@ -1219,11 +1219,11 @@
       "testFile": "tests/engine-checks/manual/landmark-banner-is-top-level.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/landmark-banner-is-top-level-all-scenarios.html",
-      "totalCases": 3,
+      "totalCases": 4,
       "caseCounts": {
         "PASS": 0,
         "FAIL": 0,
-        "CANTTELL": 2,
+        "CANTTELL": 3,
         "OTHER": 1
       }
     },
@@ -1236,11 +1236,11 @@
       "testFile": "tests/engine-checks/manual/landmark-contentinfo-is-top-level.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/landmark-contentinfo-is-top-level-all-scenarios.html",
-      "totalCases": 3,
+      "totalCases": 4,
       "caseCounts": {
         "PASS": 0,
         "FAIL": 0,
-        "CANTTELL": 1,
+        "CANTTELL": 2,
         "OTHER": 2
       }
     },
@@ -1433,9 +1433,9 @@
       "testFile": "tests/engine-checks/automatic/listbox-name-present.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/listbox-name-present-all-scenarios.html",
-      "totalCases": 21,
+      "totalCases": 23,
       "caseCounts": {
-        "PASS": 5,
+        "PASS": 7,
         "FAIL": 5,
         "CANTTELL": 0,
         "OTHER": 11
@@ -1452,12 +1452,12 @@
       "testFile": "tests/engine-checks/automatic/listitem-parent-valid.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/listitem-parent-valid-all-scenarios.html",
-      "totalCases": 9,
+      "totalCases": 13,
       "caseCounts": {
         "PASS": 5,
-        "FAIL": 4,
+        "FAIL": 5,
         "CANTTELL": 0,
-        "OTHER": 0
+        "OTHER": 3
       }
     },
     {
@@ -1806,12 +1806,12 @@
       "testFile": "tests/engine-checks/manual/presentation-role-conflict.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/presentation-role-conflict-all-scenarios.html",
-      "totalCases": 10,
+      "totalCases": 13,
       "caseCounts": {
         "PASS": 0,
         "FAIL": 0,
-        "CANTTELL": 6,
-        "OTHER": 4
+        "CANTTELL": 7,
+        "OTHER": 6
       }
     },
     {
@@ -1917,9 +1917,9 @@
       "testFile": "tests/engine-checks/automatic/searchbox-name-present.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/searchbox-name-present-all-scenarios.html",
-      "totalCases": 21,
+      "totalCases": 23,
       "caseCounts": {
-        "PASS": 5,
+        "PASS": 7,
         "FAIL": 5,
         "CANTTELL": 0,
         "OTHER": 11
@@ -1972,10 +1972,10 @@
       "testFile": "tests/engine-checks/automatic/slider-name-present.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/slider-name-present-all-scenarios.html",
-      "totalCases": 21,
+      "totalCases": 23,
       "caseCounts": {
-        "PASS": 8,
-        "FAIL": 5,
+        "PASS": 9,
+        "FAIL": 6,
         "CANTTELL": 0,
         "OTHER": 8
       }
@@ -1991,9 +1991,9 @@
       "testFile": "tests/engine-checks/automatic/spinbutton-name-present.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/spinbutton-name-present-all-scenarios.html",
-      "totalCases": 21,
+      "totalCases": 23,
       "caseCounts": {
-        "PASS": 5,
+        "PASS": 7,
         "FAIL": 5,
         "CANTTELL": 0,
         "OTHER": 11
@@ -2048,10 +2048,10 @@
       "testFile": "tests/engine-checks/automatic/svg-text-alternative-present.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/svg-text-alternative-present-all-scenarios.html",
-      "totalCases": 24,
+      "totalCases": 26,
       "caseCounts": {
         "PASS": 5,
-        "FAIL": 12,
+        "FAIL": 14,
         "CANTTELL": 0,
         "OTHER": 7
       }
@@ -2234,9 +2234,9 @@
       "testFile": "tests/engine-checks/automatic/textbox-name-present.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/textbox-name-present-all-scenarios.html",
-      "totalCases": 21,
+      "totalCases": 23,
       "caseCounts": {
-        "PASS": 5,
+        "PASS": 7,
         "FAIL": 5,
         "CANTTELL": 0,
         "OTHER": 11

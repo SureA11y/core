@@ -29,24 +29,21 @@
  *   (naming attributes on pure text-semantics roles) rather than an
  *   exhaustive per-role prohibited-attribute table; see
  *   src/core/aria-helpers.js file header for this engine's confidence-
- *   scoping rationale. The 14-role list is verified directly against a
- *   widely-used reference engine's own role data table and the W3C
- *   WAI-ARIA 1.2 spec's §5.2.8.6 "Roles which cannot be named"; only
- *   roles/attrs with high confidence from the spec text are included,
- *   since a wrong entry here causes a false-positive fail.
+ *   scoping rationale. The 14-role list comes from the W3C WAI-ARIA 1.2
+ *   spec's §5.2.8.6 "Roles which cannot be named"; only roles/attrs with
+ *   high confidence from the spec text are included, since a wrong entry
+ *   here causes a false-positive fail.
  * - The pre-existing presentation-role-conflict rule already treats
  *   aria-label/aria-labelledby as conflicting on presentation/none, but at
  *   manual/cantTell confidence across a broad attribute list; this rule's
  *   narrower, unambiguous naming-prohibition case fires as a hard,
  *   WCAG-normative fail instead, matching this engine's "one rule = one
  *   normative decision" pattern.
- * - Investigated, but deliberately did NOT add, `definition`/`term`
- *   despite both appearing on MDN's aria-label reference page's "not
- *   supported" list: that MDN list is wrong for these two — the reference
- *   engine's own role data explicitly declares `nameFrom: ['author']`
- *   (`definition`) / `nameFrom: ['author', 'contents']` (`term`), and the
- *   W3C spec's own §5.2.8.4 "Roles Supporting Name From Author" index
- *   lists both by name. A confirmed MDN documentation bug, not a gap here.
+ * - Deliberately excludes `definition`/`term` despite both appearing on
+ *   MDN's aria-label "not supported" list: both support name from author
+ *   (`nameFrom: ['author']` for definition, `['author', 'contents']` for
+ *   term), and the W3C spec's §5.2.8.4 "Roles Supporting Name From Author"
+ *   index lists both by name.
  * - Not rule-gated on isAccTreeEligible: this remains a static-markup
  *   property, while engine-level hidden-subtree filtering still applies
  *   unless engineOptions.includeHiddenElements is true.
@@ -193,11 +190,10 @@ function runInPage(ctx) {
   // --- Tier 2: no role at all (see header comment for the full rationale
   // and how ROLELESS_NATIVE_TAGS/WIDGET_TYPE_ROLES were derived) ---
 
-  // Small, curated set of native tags empirically verified (against a
-  // widely-used reference engine's own getRole() at runtime, not guessed)
-  // to carry no explicit or implicit ARIA role. Deliberately excludes
-  // <section>/<form>/<a> — all conditionally roleless too, but already
-  // handled with more nuance elsewhere in this engine (see header comment).
+  // Small, curated set of native tags verified to carry no explicit or
+  // implicit ARIA role. Deliberately excludes <section>/<form>/<a> — all
+  // conditionally roleless too, but already handled with more nuance
+  // elsewhere in this engine (see header comment).
   const ROLELESS_NATIVE_TAGS = new Set([
     'p',
     'b',
@@ -232,10 +228,8 @@ function runInPage(ctx) {
     'legend'
   ]);
 
-  // WAI-ARIA roles a widely-used reference engine's own role table types as
-  // "widget" (verified directly against its source, not the six-category
-  // WAI-ARIA taxonomy — this engine's algorithm branches on its own `type`
-  // field, so parity means matching that field exactly).
+  // WAI-ARIA roles typed as "widget" (the role set the roleless-branch
+  // exemption below branches on, not the six-category WAI-ARIA taxonomy).
   const WIDGET_TYPE_ROLES = new Set([
     'alert',
     'alertdialog',
@@ -325,12 +319,9 @@ function runInPage(ctx) {
   // implicit role depending on other attributes, which is exactly why
   // ROLELESS_NATIVE_TAGS is a hand-verified allowlist rather than a
   // blanket rule; a custom element has no such spec-defined conditional
-  // role logic whatsoever). Added 2026-08-03 after finding real custom
-  // elements carrying aria-label with no other name source were silently
-  // skipped by this branch entirely, since it only ever checked the fixed
-  // native-tag allowlist below -- e.g. rottentomatoes.com's
-  // `<play-button aria-label="Play ...">` (106 occurrences on one page)
-  // and Angular Material's `<app-carousel aria-label="...">`.
+  // role logic whatsoever). Covers e.g. a `<play-button aria-label="...">`
+  // or `<app-carousel aria-label="...">` with no other name source, which
+  // the fixed native-tag allowlist below would otherwise skip.
   function isRolelessCustomElementTag(tag) {
     return tag.includes('-') && !RESERVED_HYPHENATED_TAGS.has(tag);
   }

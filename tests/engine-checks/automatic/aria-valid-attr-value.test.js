@@ -78,7 +78,7 @@ test(`${RULE_ID}: pass for a valid integer aria-level`, () => {
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: pass for an empty ID-reference-list value (allowEmpty, matches a reference engine's own standards table exactly)`, () => {
+test(`${RULE_ID}: pass for an empty ID-reference-list value (allowEmpty)`, () => {
   const html = `<!doctype html><html><body><div id="a" aria-labelledby=""></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
@@ -103,7 +103,7 @@ test(`${RULE_ID}: fail when idref-list references only a non-existent id`, () =>
   assert.equal(rule.occurrences[0].data.details.valueReason, 'idref-list-none-found');
 });
 
-test(`${RULE_ID}: pass when idref-list is partially dangling (at least one id resolves) — verified 2026-07-21 to be an exact match for a reference engine's own idrefs validation, not a conservative guess`, () => {
+test(`${RULE_ID}: pass when idref-list is partially dangling (at least one id resolves)`, () => {
   const html = `<!doctype html><html><body>
     <span id="lbl">Label</span>
     <div id="a" aria-labelledby="lbl does_not_exist"></div>

@@ -48,7 +48,7 @@ test('fail: wrapping <label> whose only text is aria-hidden gives no real access
   assert.ok(hasOccurrenceForId(rule, 'b'));
 });
 
-test("pass: wrapping <label> has its own aria-label even though its only child content is aria-hidden (found on a real site — basecamp.com's nav toggle)", () => {
+test('pass: wrapping <label> has its own aria-label even though its only child content is aria-hidden', () => {
   const html = `
     <!doctype html><html><body>
       <label aria-label="Toggle Navigation" for="c"><svg aria-hidden="true"><path d="M0 0"/></svg></label>
@@ -72,15 +72,11 @@ test('fail: <label for> whose only text is aria-hidden gives no real accessible 
 });
 
 test("pass: <label for> with empty content falls back to the label's own title attribute", () => {
-  // Regression for a real false positive found via a full fixtures
-  // cross-engine regression 2026-08-02, on
-  // slider-name-present-all-scenarios.html's case_22 (designed for a
-  // different rule, but exercised here too since the cross-engine tool
-  // runs every rule against every fixture): a <label for> whose own
+  // Regression for a false positive: a <label for> whose own
   // content is empty still contributes a name via its title attribute per
   // accname's title-fallback step, which applies to the label element
-  // itself, not just the control it labels. The reference engine's `label`
-  // rule already passed this; labelContributesAccessibleName (src/core/dom-helpers.js)
+  // itself, not just the control it labels.
+  // labelContributesAccessibleName (src/core/dom-helpers.js)
   // only checked the label's aria-name and content name, never its title.
   const html = `
     <!doctype html><html><body>

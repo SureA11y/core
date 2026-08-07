@@ -4,7 +4,7 @@
  * @check heading-order
  * @atomic true
  * @summary Heading levels must not skip a level going deeper
- * @standard Best Practices (a widely-used reference engine's classification; no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
  * @applicability
  *   Applies whenever the page contains two or more heading elements
  *   (native <h1>-<h6>, or explicit role="heading" with aria-level —
@@ -92,12 +92,11 @@ function runInPage(ctx) {
     // assistive technology users rely on" (see this rule's own header
     // comment) must not let an aria-hidden heading participate in that
     // outline at all: it's invisible to exactly the users this rule
-    // exists to protect. Without this check, an aria-hidden heading was
-    // BOTH wrongly flagged itself (it isn't part of the AT-perceived
-    // outline in the first place) AND could mask a real skip immediately
-    // after it, by wrongly advancing the "highest level reached so far"
-    // tracker on a level no AT user actually encountered. Found while
-    // extending direct coverage of this rule.
+    // exists to protect. Without this check an aria-hidden heading is both
+    // flagged itself (though it isn't part of the AT-perceived outline)
+    // and can mask a real skip immediately after it, by advancing the
+    // "highest level reached so far" tracker on a level no AT user
+    // actually encountered.
     if (helpers.isAccTreeEligible) {
       const elig = (() => {
         try {

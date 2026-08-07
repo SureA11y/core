@@ -4,7 +4,7 @@
  * @check landmark-no-duplicate-contentinfo
  * @atomic true
  * @summary A page must not have more than one contentinfo landmark
- * @standard Best Practices (a widely-used reference engine's classification; no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
  * @applicability
  *   Applies whenever the page contains at least one contentinfo landmark
  *   (explicit role="contentinfo", or an implicit, non-nested <footer>).
@@ -16,11 +16,8 @@
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent.
  * - Only landmarks actually exposed to assistive technology can collide —
- *   matches a widely-used reference engine's own `page-no-duplicate` check (confirmed by reading
- *   its source directly: `query_selector_all_filter_default(..., elm =>
- *   _isVisibleToScreenReaders(elm))`) — same fix applied to the sibling
- *   banner/main rules after finding real hidden-duplicate false positives
- *   on Trello and Zoom.
+ *   same as the sibling banner/main rules, avoiding hidden-duplicate false
+ *   positives.
  */
 
 const id = 'landmark-no-duplicate-contentinfo';
@@ -55,9 +52,8 @@ function runInPage(ctx) {
 
   // Delegates to the shared helpers.getLandmarkNameInfo (aria-label -> aria-labelledby, via the
   // target's own accessible name, not raw textContent -> title attribute fallback) rather than a
-  // local copy -- see that function's header comment in src/core/dom-helpers.js for the real bug
-  // (missing title fallback) this replaced across all 7 landmark rule files that had their own
-  // copy of this logic.
+  // local copy -- see that function's header comment in src/core/dom-helpers.js. Sharing it keeps
+  // the title-attribute fallback consistent across the landmark rules.
   function getAccessibleLandmarkName(el) {
     try {
       if (helpers && typeof helpers.getLandmarkNameInfo === 'function') {
@@ -80,10 +76,8 @@ function runInPage(ctx) {
   // (an ancestor's bare TAG only counts when it carries no role attribute
   // at all; an explicit role="dialog"-style override no longer suppresses)
   // rather than a local tag-only copy. See that function's header comment
-  // in src/core/aria-helpers.js for the full algorithm and the real page
-  // (handsontable.com's docs-assistant side panel, an
-  // <aside role="dialog"> containing its own <header>) that surfaced this
-  // rule's own former tag-only copy as a false negative.
+  // in src/core/aria-helpers.js for the full algorithm. Example: an
+  // <aside role="dialog"> containing its own <header>.
   function hasSectioningAncestor(el, includeMain) {
     return helpers && typeof helpers.hasLandmarkScopingAncestor === 'function'
       ? helpers.hasLandmarkScopingAncestor(el, { includeMain })
@@ -97,11 +91,9 @@ function runInPage(ctx) {
     if (tag === 'main') return 'main';
     if (tag === 'nav') return 'navigation';
     if (tag === 'aside') {
-      // A named <aside> is never suppressed, even when nested — matches
-      // landmark-unique's own verified-against-reference-engine precedent
-      // (that engine's real `aside` implicit-role function keeps
-      // "complementary" when the element has an accessible name, even
-      // inside sectioning content); propagated here for consistency.
+      // A named <aside> is never suppressed, even when nested — it keeps
+      // "complementary" when it has an accessible name, even inside
+      // sectioning content. Matches landmark-unique's precedent.
       if (!hasSectioningAncestor(el, false)) return 'complementary';
       return getAccessibleLandmarkName(el) ? 'complementary' : '';
     }
@@ -129,9 +121,8 @@ function runInPage(ctx) {
   }
 
   // queryAllSmart (shadow-DOM-aware) instead of plain document.querySelectorAll -- see
-  // landmark-unique-manual.js's header comment for the real page (Airtable)
-  // that surfaced this gap: a third-party shadow-DOM-hosted widget's own landmark is
-  // invisible to a light-DOM-only query.
+  // landmark-unique-manual.js's header comment. A third-party shadow-DOM-hosted
+  // widget's own landmark is invisible to a light-DOM-only query.
   let nodes;
   try {
     nodes =

@@ -18,7 +18,7 @@
  *   a frame can have a non-empty title while still failing uniqueness.
  * - Compares the title ATTRIBUTE specifically, not the full computed
  *   accessible name (aria-label could legitimately differ in wording even
- *   when title happens to collide) — matches a widely-used reference engine's frame-title-unique.
+ *   when title happens to collide).
  * - Not rule-gated on isAccTreeEligible: duplicate titles are a static
  *   markup property. Engine-level hidden-subtree filtering still applies
  *   unless engineOptions.includeHiddenElements is true.

@@ -24,28 +24,17 @@
  *   inverse relationship: does a given <li> have a valid parent).
  * - Direct children that are not exposed to the accessibility tree (e.g.
  *   display:none, [hidden], aria-hidden="true") are excluded from
- *   consideration entirely — matching a widely-used reference engine's own
- *   `only-listitems` check, which likewise skips non-AT-visible children. Confirmed against
- *   two real sites: Spotify's newsroom has a stray `<input type="hidden">`
- *   as a direct <ul> child (UA-stylesheet display:none by spec for
- *   input[type=hidden]), and Stanford's main nav interleaves `<li>` with
- *   `<span style="display:none">` hydration markers. Neither is reachable
- *   by assistive technology, so neither breaks the list semantics a screen
- *   reader actually announces.
- * - The explicit-role-overrides-tag behavior above was added after reading
- *   a widely-used reference engine's ACTUAL `only-listitems` evaluate function
- *   directly (`invalidChildrenEvaluate`/`getInvalidSelector` — note this is a
- *   DIFFERENT function from the similarly-named, unused `onlyListitemsEvaluate`
- *   elsewhere in that engine's source; don't confuse the two when re-verifying). Its
- *   exact rule: if a child has an explicit role, only `validRoles` (here,
- *   `['listitem']`) is consulted — the tag name is never checked. Only
- *   without an explicit role does the tag name (`validNodeNames`) matter.
- *   Found via two real sites: Notion's footer nav lists include a
- *   `<li role="none">` used purely to host the list's own visually-hidden
- *   label (referenced by the `<ul>`'s `aria-labelledby`), and LinkedIn has
- *   both an all-`<li role="menuitem">` menu list and a footer list mixing
- *   real `<li>`s with one `<li role="presentation">` — that reference engine
- *   correctly flags all of these, surea11y's tag-only check missed them entirely.
+ *   consideration entirely — an element not reachable by assistive
+ *   technology can't break the list semantics a screen reader announces.
+ *   Common cases: a stray `<input type="hidden">` as a direct <ul> child
+ *   (UA-stylesheet display:none by spec), or `<span style="display:none">`
+ *   hydration markers interleaved with real `<li>`s.
+ * - Explicit-role-overrides-tag: if a child has an explicit role, only
+ *   `['listitem']` is consulted — the tag name is never checked. Only
+ *   without an explicit role does the tag name matter. Catches cases a
+ *   tag-only check misses: `<li role="none">` hosting a list's own
+ *   visually-hidden label, `<li role="menuitem">` menu items, or a real
+ *   `<li>` mixed with an `<li role="presentation">`.
  */
 
 const id = 'list-children-valid';
@@ -120,8 +109,7 @@ function runInPage(ctx) {
       const roleAttr = child.getAttribute ? String(child.getAttribute('role') || '').trim() : '';
       const explicitRole = roleAttr ? (roleAttr.split(/\s+/)[0] || '').toLowerCase() : '';
 
-      // An explicit role always wins over the tag — see the header
-      // comment's Notion/LinkedIn examples.
+      // An explicit role always wins over the tag — see header comment.
       const valid = explicitRole ? explicitRole === 'listitem' : ALLOWED_CHILD_TAGS.has(tag);
 
       if (!valid) invalidTags.push(tag);

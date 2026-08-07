@@ -78,8 +78,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/summary-name-present-all-scen
 });
 
 test(`${RULE_ID}: aria-labelledby pointing at an <iframe> falls back to its title attribute => pass`, () => {
-  // Regression for a real false positive found via BBC News' cookie-consent
-  // dialog (2026-07-22) — a copy-pasted bug across 16 *-name-present rules:
+  // Regression for a false positive — a copy-pasted bug across the
+  // *-name-present rules:
   // aria-labelledby pointing at an <iframe> has no "content" to compute a
   // name from (iframe content is opaque/cross-origin per HTML-AAM); the
   // referenced element's own accessible name must fall back to its title

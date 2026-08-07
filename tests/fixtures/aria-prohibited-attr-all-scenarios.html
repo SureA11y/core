@@ -53,17 +53,17 @@
   </div>
 
   <div class="case" id="case_07">
-    <div class="case-title">07 — FAIL: aria-label on role="mark" (widened role, 2026-07-19 Tier 4)</div>
+    <div class="case-title">07 — FAIL: aria-label on role="mark" (widened role)</div>
     <div role="mark" aria-label="Highlighted" id="apa_case_07"></div>
   </div>
 
   <div class="case" id="case_08">
-    <div class="case-title">08 — FAIL: aria-label on role="presentation" (widened role, 2026-07-21 — verified directly against a widely-used reference engine's own prohibitedAttrs table and the W3C spec's §5.2.8.6 "Roles which cannot be named")</div>
+    <div class="case-title">08 — FAIL: aria-label on role="presentation" (widened role — W3C spec §5.2.8.6 "Roles which cannot be named")</div>
     <div role="presentation" aria-label="Something" id="apa_case_08"></div>
   </div>
 
   <div class="case" id="case_09">
-    <div class="case-title">09 — FAIL: aria-labelledby on role="none" (widened role, 2026-07-21 — "none" is "presentation"'s documented ARIA 1.2 alias, identical semantics)</div>
+    <div class="case-title">09 — FAIL: aria-labelledby on role="none" (widened role — "none" is "presentation"'s documented ARIA 1.2 alias, identical semantics)</div>
     <span id="apa_case_09_lbl">Label</span>
     <div role="none" aria-labelledby="apa_case_09_lbl" id="apa_case_09"></div>
   </div>
@@ -75,7 +75,7 @@
     <div role="button" aria-label="Submit" id="apa_case_06"></div>
   </div>
 
-  <h2>D. Roleless elements (widened 2026-07-31 — no explicit or implicit role at all)</h2>
+  <h2>D. Roleless elements (no explicit or implicit role at all)</h2>
 
   <div class="case" id="case_10">
     <div class="case-title">10 — FAIL: aria-label on a roleless span with no content fallback (the emoji-mart case)</div>
@@ -106,7 +106,7 @@
   </div>
 
   <div class="case" id="case_16">
-    <div class="case-title">16 — FAIL: aria-label on a span carrying an INVALID role="" token (not a recognized ARIA role), no content fallback — must fall through to this branch instead of being skipped as "has a real role" (fixed 2026-07-31; identical markup with the role attribute removed entirely already correctly failed as case 10 does)</div>
+    <div class="case-title">16 — FAIL: aria-label on a span carrying an INVALID role="" token (not a recognized ARIA role), no content fallback — must fall through to this branch instead of being skipped as "has a real role" (identical markup with the role attribute removed entirely already correctly failed as case 10 does)</div>
     <span id="apa_case_16" role="totally-bogus-not-a-real-role" aria-label="icon-only" class="icon-x"></span>
   </div>
 

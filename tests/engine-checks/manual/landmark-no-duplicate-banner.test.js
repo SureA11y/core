@@ -55,7 +55,7 @@ test(`${RULE_ID}: cantTell with one occurrence per banner when more than one exi
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'LANDMARK_DUPLICATE_BANNER');
 });
 
-test(`${RULE_ID}: cantTell when a <header> nested inside an ancestor whose role has been overridden away from a landmark-scoping role (<aside role="dialog">) still keeps its implicit banner role and collides with a top-level header (found on a real site — handsontable.com's docs-assistant side panel)`, () => {
+test(`${RULE_ID}: cantTell when a <header> nested inside an ancestor whose role has been overridden away from a landmark-scoping role (<aside role="dialog">) still keeps its implicit banner role and collides with a top-level header`, () => {
   const html = `<!doctype html><html><body>
     <header id="a">Site header</header>
     <aside role="dialog" aria-label="Assistant panel"><header id="b">Panel header</header></aside>
@@ -75,7 +75,7 @@ test(`${RULE_ID}: notApplicable when a <header> is nested inside a plain (no rol
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: notApplicable when the only "duplicate" banner is display:none (a responsive desktop/mobile pattern) — matches a reference engine's own visibility gate (found on a real site, Trello's homepage)`, () => {
+test(`${RULE_ID}: notApplicable when the only "duplicate" banner is display:none (a responsive desktop/mobile pattern)`, () => {
   const html = `<!doctype html><html><body>
     <header id="a">Visible</header>
     <header id="b" style="display:none">Hidden duplicate</header>

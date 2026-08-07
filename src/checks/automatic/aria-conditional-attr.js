@@ -16,13 +16,12 @@
  *   `"false"` silently drops the error message from the accessibility
  *   tree — authors almost always intend it to be exposed.
  * @implementation-notes
- * - This is deliberately narrow: a widely-used reference engine's own
- *   `aria-conditional-attr` rule covers a broader table of attribute/condition
- *   pairs. This rule implements only the one pairing (`aria-errormessage` /
- *   `aria-invalid`) that is unambiguous and explicitly stated in the
- *   ARIA spec, to keep `fail` high-confidence — matches this repo's
- *   established pattern (see `aria-required-attr`/`aria-prohibited-attr`
- *   for the same "narrower than that reference engine, but zero false positives"
+ * - This is deliberately narrow: the broader space is a table of many
+ *   attribute/condition pairs. This rule implements only the one pairing
+ *   (`aria-errormessage` / `aria-invalid`) that is unambiguous and
+ *   explicitly stated in the ARIA spec, to keep `fail` high-confidence —
+ *   matches this repo's established pattern (see `aria-required-attr`/
+ *   `aria-prohibited-attr` for the same "narrow but zero false positives"
  *   trade-off).
  * - Does not check whether the `aria-errormessage` ID reference itself
  *   resolves to an existing element — that is `aria-valid-attr-value`'s

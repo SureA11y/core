@@ -126,9 +126,7 @@
 </div>
 
 <!-- visibility:hidden must win even when opacity:0 is ALSO present on the
-     same element (found on a real site — Getty's global nav dropdowns,
-     which use `opacity:0;visibility:hidden` together as a fade transition
-     for collapsed menu panels). visibility:hidden alone already removes an
+     same element. visibility:hidden alone already removes an
      element from the tab order in real browsers, so this must still PASS. -->
 <div id="case_opacity_and_visibility_hidden" aria-hidden="true">
   <a href="#x" style="opacity:0;visibility:hidden">Hidden link</a>
@@ -136,10 +134,7 @@
 
 <!-- opacity:0 on a CLOSE ancestor must not mask display:none on a FARTHER
      ancestor — a single interleaved chain walk that returns on the first
-     blocking condition found would miss the farther, unconditional block
-     (found on a real site — BuzzFeed's carousel slides are aria-hidden with
-     opacity:0 for a fade transition, nested inside a responsive wrapper
-     that is display:none at some viewport widths). -->
+     blocking condition found would miss the farther, unconditional block. -->
 <div id="case_opacity_close_display_none_far" style="display:none">
   <div aria-hidden="true">
     <div style="opacity:0">
@@ -170,10 +165,8 @@
 <!-- ========================================================= -->
 <!-- 11) PASS: negative tabindex removes an element from the tab -->
 <!-- sequence entirely — the standard technique for safely hiding -->
-<!-- focusable content behind aria-hidden (verified on a real site, -->
-<!-- Wikipedia's sticky header: <button tabindex="-1">/<a tabindex="-1"> -->
-<!-- inside aria-hidden divs; matches a widely-used reference engine's own aria-hidden-focus check -->
-<!-- check, which requires tabbability, not raw focusability). -->
+<!-- focusable content behind aria-hidden, which requires -->
+<!-- tabbability, not raw focusability. -->
 <!-- ========================================================= -->
 <div id="case_tabindex_negative_descendant" aria-hidden="true">
   <button tabindex="-1">Not tabbable</button>

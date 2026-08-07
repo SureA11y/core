@@ -53,13 +53,8 @@ test(`${RULE_ID}: cantTell when there is no main at all`, () => {
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'LANDMARK_MAIN_MISSING');
 });
 
-// Presence-only, matching a reference engine's real landmark-one-main scope exactly (its
-// page-has-main check is a plain descendant-exists test, confirmed by reading that engine's
-// source directly) -- "more than one main" is landmark-no-duplicate-main's job, a
-// fully separate rule, matching that same reference engine shipping landmark-one-main/
-// landmark-no-duplicate-main as two distinct checks. See this rule's own header comment for
-// the real page (Resy, DuckDuckGo) that exposed the previous, wrongly diverging "also flag
-// multiple" branch.
+// Presence-only: this is a plain "a main exists" descendant check. "More than
+// one main" is landmark-no-duplicate-main's job, a fully separate rule.
 test(`${RULE_ID}: notApplicable when more than one main exists (out of this rule's scope)`, () => {
   const html = `<!doctype html><html><body><main id="a">A</main><main id="b">B</main></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });

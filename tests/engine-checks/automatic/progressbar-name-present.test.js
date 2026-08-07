@@ -22,7 +22,7 @@ test(`${RULE_ID}: notApplicable when no role="progressbar" is present`, () => {
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail when progressbar has visible text content but no aria-label/aria-labelledby/title (role="progressbar" is name-from-author-only per WAI-ARIA — verified against a widely-used reference engine's own aria-progressbar-name check, which has no content-based naming method at all)`, () => {
+test(`${RULE_ID}: fail when progressbar has visible text content but no aria-label/aria-labelledby/title (role="progressbar" is name-from-author-only per WAI-ARIA)`, () => {
   const html = `<!doctype html><html><body><div id="a" role="progressbar" aria-valuenow="50">Loading</div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
@@ -36,7 +36,7 @@ test(`${RULE_ID}: fail when progressbar has visible text content but no aria-lab
   assert.match(rule.occurrences[0].hint, /aria-label/i);
 });
 
-test(`${RULE_ID}: fail when the progressbar's own name is absent but a DESCENDANT has its own unrelated aria-label (content must not be picked up as a fallback name — found on a real site, Instacart's <ul role="progressbar"> loading skeleton, where nested descendants carry aria-label="Loading Box" for a different purpose)`, () => {
+test(`${RULE_ID}: fail when the progressbar's own name is absent but a DESCENDANT has its own unrelated aria-label (content must not be picked up as a fallback name)`, () => {
   const html = `<!doctype html><html><body>
     <ul id="a" role="progressbar" aria-valuenow="50"><li><span aria-label="Loading Box"></span></li></ul>
   </body></html>`;
@@ -83,11 +83,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/progressbar-name-present-all-
 });
 
 test(`${RULE_ID}: aria-labelledby pointing at an <iframe> falls back to its title attribute => pass`, () => {
-  // Regression for a real false positive found via BBC News' cookie-consent
-  // dialog (2026-07-22) — a copy-pasted bug across 16 *-name-present rules:
-  // aria-labelledby pointing at an <iframe> has no "content" to compute a
-  // name from (iframe content is opaque/cross-origin per HTML-AAM); the
-  // referenced element's own accessible name must fall back to its title
+  // Regression: aria-labelledby pointing at an <iframe> has no "content" to
+  // compute a name from (iframe content is opaque/cross-origin per HTML-AAM);
+  // the referenced element's own accessible name must fall back to its title
   // attribute, which the previous getConservativeSubtreeText-only
   // resolveAriaLabelledbyText never checked. Fixed via the shared
   // getTextFromIdRefs helper.

@@ -4,7 +4,7 @@
  * @check landmark-one-main
  * @atomic true
  * @summary The page should have a main landmark
- * @standard Best Practices (a widely-used reference engine's classification; no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
  * @applicability
  *   Always applicable to any HTML document with a <body> element —
  *   "does the page have a main landmark" is a whole-page concern,
@@ -18,21 +18,15 @@
  * - Not WCAG-normative — authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent.
- * - Presence-only, matching a widely-used reference engine's real
- *   `landmark-one-main` scope exactly: its `page-has-main` check is a
- *   plain descendant-exists test, `has-descendant-evaluate` — it does NOT
- *   flag more than one main. "More than one main" is a fully separate
- *   rule in that engine (`landmark-no-duplicate-main` /
- *   `page-no-duplicate-main`), already correctly implemented here as
- *   `landmark-no-duplicate-main` — deliberately not duplicated in this
- *   rule too, since e.g. Resy's and DuckDuckGo's homepages each genuinely
- *   have two visible `<main>` elements, which is out of scope for
- *   "does a main landmark exist," not a violation this rule should
- *   report.
+ * - Presence-only: a plain descendant-exists test. It does NOT flag more
+ *   than one main. "More than one main" is a separate rule,
+ *   `landmark-no-duplicate-main`, already implemented — deliberately not
+ *   duplicated here, since a page can genuinely have two visible `<main>`
+ *   elements, which is out of scope for "does a main landmark exist," not
+ *   a violation this rule should report.
  * - Filters candidates through `isAccTreeEligible` (hidden/aria-hidden/
  *   display:none/inert elements don't count as "a main landmark exists"),
- *   matching `landmark-no-duplicate-main`'s own precedent and
- *   that reference engine's own accessibility-tree-scoped matching.
+ *   matching `landmark-no-duplicate-main`'s own precedent.
  */
 
 const id = 'landmark-one-main';
@@ -100,9 +94,8 @@ function runInPage(ctx) {
   }
 
   // queryAllSmart (shadow-DOM-aware) instead of plain document.querySelectorAll -- see
-  // landmark-unique-manual.js's header comment for the real page (Airtable)
-  // that surfaced this gap: a third-party shadow-DOM-hosted widget's own landmark is
-  // invisible to a light-DOM-only query.
+  // landmark-unique-manual.js's header comment. A third-party shadow-DOM-hosted
+  // widget's own landmark is invisible to a light-DOM-only query.
   let nodes;
   try {
     nodes =

@@ -34,7 +34,7 @@ test(`${RULE_ID}: pass when at least one applicable <area> exists and all have a
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: pass when alt is entirely absent but a non-empty title attribute is present (sibling fix to img-alt-present's real AliExpress finding, 2026-07-23 — same HTML-AAM fallback, also accepted by a reference engine's own area-alt rule)`, () => {
+test(`${RULE_ID}: pass when alt is entirely absent but a non-empty title attribute is present (HTML-AAM title fallback)`, () => {
   const html = `<!doctype html><html><body>
     <img alt="" usemap="#m" src="x.png">
     <map name="m">

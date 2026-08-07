@@ -4,31 +4,25 @@
  * @check empty-table-header
  * @atomic true
  * @summary Table header cells must not be empty
- * @standard Best Practices (a widely-used reference engine's classification; no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
  * @applicability
  *   Applies to <th> elements that don't carry a conflicting explicit role,
  *   plus any element (native <th> or not) with role="columnheader" or
- *   role="rowheader" — matches a widely-used reference engine's own
- *   `empty-table-header` selector exactly (`th:not([role]), [role="columnheader"], [role="rowheader"]`,
- *   verified directly against its rule descriptor): a <th> that explicitly
- *   restates role="columnheader"/"rowheader" is still covered via the second
- *   clause, but a <th role="presentation"> (no longer meaningfully a header)
- *   is correctly excluded, and an ARIA-role-only header (e.g. a <div
- *   role="columnheader"> in a role="grid"/role="table" widget) is caught too.
+ *   role="rowheader" (`th:not([role]), [role="columnheader"], [role="rowheader"]`):
+ *   a <th> that explicitly restates role="columnheader"/"rowheader" is still
+ *   covered via the second clause, but a <th role="presentation"> (no longer
+ *   meaningfully a header) is correctly excluded, and an ARIA-role-only header
+ *   (e.g. a <div role="columnheader"> in a role="grid"/role="table" widget) is
+ *   caught too.
  * @expectation
  *   The header cell has visible text content. A <th> named only via
  *   aria-label/aria-labelledby (no visible text) is ALSO flagged, not
- *   treated as equivalent — real screen-reader/browser testing (verified
- *   against https://butterpep.com/table-header-naming.html and
- *   https://html5accessibility.com/stuff/2024/05/22/not-so-short-note-on-aria-label-usage-big-table-edition/)
- *   confirms aria-label support on <th> is genuinely inconsistent in
- *   practice: NVDA+Firefox and iOS VoiceOver+Safari ignore it entirely
- *   (only visible text is announced), JAWS+Chrome/IE11 also only announce
- *   visible text in the header cell itself. Visible text is the one
- *   mechanism confirmed to work across every tested combination. A widely-used
- *   reference engine's own equivalent check (`has-visible-text` only, no aria-label/
- *   aria-labelledby alternative — confirmed directly against its rule
- *   descriptor) reaches the same conclusion.
+ *   treated as equivalent — aria-label support on <th> is genuinely
+ *   inconsistent in practice: NVDA+Firefox and iOS VoiceOver+Safari ignore
+ *   it entirely (only visible text is announced), JAWS+Chrome/IE11 also only
+ *   announce visible text in the header cell itself. Visible text is the one
+ *   mechanism confirmed to work across every tested combination. See
+ *   https://html5accessibility.com/stuff/2024/05/22/not-so-short-note-on-aria-label-usage-big-table-edition/.
  * @implementation-notes
  * - Not WCAG-normative — authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
@@ -84,13 +78,10 @@ function runInPage(ctx) {
   }
 
   // Plain el.textContent includes text from aria-hidden descendants, which
-  // a real screen reader never announces -- exactly the AT-announcement
-  // gap this rule's own header comment extensively researched (real
-  // NVDA/VoiceOver/JAWS testing). A <th> whose only text comes from an
-  // aria-hidden descendant (e.g. <th><span aria-hidden="true">Name</span
-  // ></th>) was wrongly treated as having visible text and never flagged,
-  // even though AT announces nothing for it at all. Found while extending
-  // direct coverage of this rule.
+  // a real screen reader never announces. A <th> whose only text comes from
+  // an aria-hidden descendant (e.g. <th><span aria-hidden="true">Name</span
+  // ></th>) would otherwise be treated as having visible text, even though
+  // AT announces nothing for it.
   function getVisibleText(el) {
     function walk(node) {
       if (node.nodeType === 3) return node.nodeValue || '';
@@ -126,9 +117,8 @@ function runInPage(ctx) {
     return '';
   }
 
-  // Matches a widely-used reference engine's own empty-table-header selector exactly: a <th> with
-  // no conflicting explicit role, plus any element carrying an explicit
-  // columnheader/rowheader role (native or not).
+  // A <th> with no conflicting explicit role, plus any element carrying an
+  // explicit columnheader/rowheader role (native or not).
   const selector = 'th:not([role]), [role="columnheader"], [role="rowheader"]';
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)

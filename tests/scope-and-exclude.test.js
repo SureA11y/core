@@ -27,13 +27,13 @@ test('contextSelector scopes evaluation to a subtree', () => {
 });
 
 test('contextSelector: a single string matching multiple elements scans ALL of them, not just the first', () => {
-  // Regression for a real gap found while scoping multi-region support
-  // (2026-07-22): contextSelector used to resolve via document.querySelector
+  // Regression for a real gap found while scoping multi-region support:
+  // contextSelector used to resolve via document.querySelector
   // (first match only) -- a selector matching several elements silently
   // scanned only the first, dropping the rest with no indication anything
   // was skipped. Switched to querySelectorAll semantics for both the
   // single-string and array forms, so "matches this selector" means all
-  // matches, consistently -- same as a reference engine's own .include() behavior.
+  // matches, consistently.
   const html = `
     <!doctype html>
     <html><body>

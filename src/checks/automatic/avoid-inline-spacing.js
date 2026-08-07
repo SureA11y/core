@@ -19,8 +19,7 @@
  * @implementation-notes
  * - Static text-based parsing of the style attribute string (regex for
  *   the three property names followed by `!important`), not computed
- *   style — matches the property list a widely-used reference engine's avoid-inline-spacing
- *   rule checks.
+ *   style.
  */
 
 const id = 'avoid-inline-spacing';

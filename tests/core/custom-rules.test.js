@@ -7,8 +7,8 @@ const { runa11yCoreOnHtml } = require('../helpers/runDomRulesOnHtml.js');
 
 // engineOptions.customRules: same module shape as an internal rule file
 // ({ id, meta, runInPage, applicability?, data? }), registered per-call (not a
-// mutable global registry like some reference engines' configure() -- matches surea11y's
-// existing "fresh engineOptions per call" design). runInPage/applicability may
+// mutable global registry -- matches surea11y's "fresh engineOptions per
+// call" design). runInPage/applicability may
 // be a real function (same-realm callers) or a function-source string
 // (required for cross-realm callers, e.g. Playwright's page.evaluate, whose
 // engineOptions argument crosses a JSON/structured-clone boundary that can't

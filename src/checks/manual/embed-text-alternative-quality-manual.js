@@ -168,15 +168,11 @@ function runInPage(ctx) {
     // nonexistent id) is not a "detected" text alternative to review the
     // QUALITY of -- there's no text here at all, and this element's
     // sibling automatic rule (embed-text-alternative-present) already
-    // reports it as a fail (no accessible name). Found while extending
-    // coverage of this rule family and diffing it against object-/svg-/
-    // canvas-text-alternative-quality-manual, which all correctly require
-    // aria-labelledby to actually resolve to non-empty text
-    // (hasResolvedLabelledBy) rather than merely being present as an
-    // attribute -- this rule alone treated a present-but-broken
-    // aria-labelledby as "still a mechanism, worth reviewing", producing a
-    // confusing cantTell ("review this text for accuracy") for an element
-    // that has no text alternative whatsoever.
+    // reports it as a fail (no accessible name). Like object-/svg-/
+    // canvas-text-alternative-quality-manual, require aria-labelledby to
+    // actually resolve to non-empty text rather than merely being present
+    // as an attribute; a present-but-broken aria-labelledby has no text
+    // alternative to review.
     const hasNameMechanism = !!(ariaLabel || title || labelledByText);
     if (!hasNameMechanism) continue;
 

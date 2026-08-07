@@ -30,12 +30,10 @@ test(`${RULE_ID}: fail when delay is positive`, () => {
 });
 
 test(`${RULE_ID}: notApplicable for a meta refresh nested inside noscript`, () => {
-  // Regression for a real false positive found via a live-DOM cross-engine
-  // run 2026-07-21: Slack's homepage has
-  // <noscript><meta http-equiv="refresh" content="0; URL=/?nojsmode=1"></noscript>
+  // Regression for a false positive: a meta refresh nested inside <noscript>,
+  // e.g. <noscript><meta http-equiv="refresh" content="0; URL=/?nojsmode=1"></noscript>
   // — a JS-disabled fallback that never takes effect for any context capable
-  // of running accessibility tooling in the first place (a widely-used
-  // reference engine's own same-named check correctly doesn't flag it either).
+  // of running accessibility tooling in the first place.
   const html = `<!doctype html><html><head><noscript><meta http-equiv="refresh" content="0; URL=/?nojsmode=1"></noscript></head><body></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });

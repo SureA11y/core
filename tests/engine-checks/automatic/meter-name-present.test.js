@@ -35,7 +35,7 @@ test(`${RULE_ID}: fail when meter has no accessible name`, () => {
   assert.equal(rule.occurrences[0].data.details.controlType, 'meter');
 });
 
-test(`${RULE_ID}: fail when meter has visible text content but no aria-label/aria-labelledby/title (role="meter" is name-from-author-only per WAI-ARIA — verified against a widely-used reference engine's own aria-meter-name check, which has no content-based naming method at all)`, () => {
+test(`${RULE_ID}: fail when meter has visible text content but no aria-label/aria-labelledby/title (role="meter" is name-from-author-only per WAI-ARIA)`, () => {
   const html = `<!doctype html><html><body><div id="a" role="meter" aria-valuenow="80">80% full</div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
@@ -80,8 +80,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/meter-name-present-all-scenar
 });
 
 test(`${RULE_ID}: aria-labelledby pointing at an <iframe> falls back to its title attribute => pass`, () => {
-  // Regression for a real false positive found via BBC News' cookie-consent
-  // dialog (2026-07-22) — a copy-pasted bug across 16 *-name-present rules:
+  // Regression for a false positive — a copy-pasted bug across the
+  // *-name-present rules:
   // aria-labelledby pointing at an <iframe> has no "content" to compute a
   // name from (iframe content is opaque/cross-origin per HTML-AAM); the
   // referenced element's own accessible name must fall back to its title

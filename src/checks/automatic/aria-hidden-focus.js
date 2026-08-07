@@ -12,7 +12,7 @@
  *   No element with aria-hidden="true" may itself be focusable, and no focusable element
  *   may exist within an aria-hidden="true" subtree.
  *
- * Notes on parity with a widely-used reference engine's aria-hidden-focus check:
+ * Notes:
  * - Focusability is computed via ctx.helpers.getFocusableInfo (native + tabindex + contenteditable).
  * - Elements that are not rendered (e.g., display:none, visibility:hidden, [hidden]) are excluded.
  * - Elements hidden via CSS in ways that still allow keyboard focus (e.g., opacity:0, off-screen, clip)
@@ -485,14 +485,11 @@ function runInPage(ctx) {
     // An explicit negative tabindex removes the element from the keyboard
     // tab sequence entirely, regardless of tag — the standard, WAI-
     // recommended technique for safely hiding focusable content behind
-    // aria-hidden (verified against a widely-used reference engine's own aria-hidden-focus check,
-    // which requires tabbability — not raw focusability — via its
-    // `focusable-not-tabbable` sub-check; confirmed via a real page:
-    // Wikipedia's sticky header uses <button tabindex="-1">/<a tabindex="-1">
-    // inside aria-hidden divs, a correct pattern this rule was previously
-    // flagging as a false positive). Such an element is still
-    // programmatically focusable (script could call .focus()), but that's
-    // not what "no focusable content behind aria-hidden" cares about.
+    // aria-hidden (e.g. <button tabindex="-1"> / <a tabindex="-1"> inside
+    // an aria-hidden container). This cares about tabbability, not raw
+    // focusability. Such an element is still programmatically focusable
+    // (script could call .focus()), but that's not what "no focusable
+    // content behind aria-hidden" cares about.
     const explicitTabindex = trim(el.getAttribute('tabindex'));
     if (
       explicitTabindex !== '' &&
@@ -640,10 +637,9 @@ function runInPage(ctx) {
     // cheaper first cannot change which elements end up in the bucket —
     // it only skips the expensive check for the (typically vast) majority
     // of focusable candidates that were never inside an aria-hidden root
-    // in the first place. On a real page with a large focusable-candidate
-    // count and a complex stylesheet (Daily Mail: ~1400 links, ~3600 CSS
-    // rules), this cut this check's runtime from ~30s to well under 1s —
-    // a pure ordering change, not a behavior change.
+    // in the first place. On pages with many focusable candidates and a
+    // large stylesheet this is a big speedup, and a pure ordering change,
+    // not a behavior change.
     const rootEl = closestAriaHiddenTrue(el);
     if (!rootEl) continue;
 

@@ -4,13 +4,12 @@
  * @check presentation-role-conflict
  * @atomic true
  * @summary role="presentation"/"none" must not be combined with a global ARIA naming attribute or focusability
- * @standard Best Practices (a widely-used reference engine's classification; no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
  * @applicability
  *   Applies to elements with an explicit role="presentation" or
  *   role="none", OR an <img alt=""> (empty alt gives an <img> an implicit
  *   presentation role per HTML-AAM, even with no explicit role attribute
- *   at all — verified against a widely-used reference engine's own selector
- *   for this exact check, `img[alt=''], [role="none"], [role="presentation"]`).
+ *   at all — `img[alt=''], [role="none"], [role="presentation"]`).
  * @expectation
  *   The element does not also carry a WAI-ARIA *global* state/property
  *   (aria-label, aria-hidden, aria-describedby, aria-live, aria-current,
@@ -35,23 +34,17 @@
  *   flagged either. An `aria-hidden=""` (empty/invalid value, does NOT
  *   hide) still triggers normally. Focusability is unaffected by this
  *   exemption (see the code comment at the check site).
- * - The conflicting-attribute set matches a widely-used reference
- *   engine's own `none: ['is-element-focusable',
- *   'has-global-aria-attribute']` condition exactly —
- *   `has-global-aria-attribute` checks against the full list of ARIA
- *   attributes marked `global: true` in that engine's own standards data,
- *   not a narrower naming-only list.
- * - Deliberately NOT replicating that reference engine's
- *   `hasImplicitChromiumRoleMatches` applicability gate, which makes its
- *   own check inapplicable to role="presentation" on elements with no
- *   native implicit role to suppress in the first place (e.g. `<div
- *   role="presentation" aria-hidden="true">` — a <div> has no native
- *   role, so there's nothing for the presentational role to "conflict"
- *   with per that engine's own scope decision). surea11y stays
- *   broader/more cautious here rather than narrower, which is the safer
- *   direction to diverge in. The native-implicit-role table needed to
- *   replicate that gate, if this scope decision is ever revisited, is in
- *   ROADMAP.md §7 item 9.
+ * - The conflicting-attribute set is the full list of ARIA attributes
+ *   marked `global: true`, not a narrower naming-only list.
+ * - Deliberately NOT applying an implicit-role applicability gate that
+ *   would make the check inapplicable to role="presentation" on elements
+ *   with no native implicit role to suppress (e.g. `<div
+ *   role="presentation" aria-hidden="true">` — a <div> has no native role,
+ *   so there's nothing for the presentational role to "conflict" with).
+ *   surea11y stays broader/more cautious here rather than narrower, which
+ *   is the safer direction to diverge in. The native-implicit-role table
+ *   needed to add that gate, if this scope decision is ever revisited, is
+ *   in ROADMAP.md §7 item 9.
  * - Focusability is computed via helpers.getFocusableInfo (native +
  *   tabindex), same helper aria-hidden-focus already relies on — a
  *   `:disabled` or otherwise non-focusable element is not flagged.
@@ -82,9 +75,8 @@ function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
   // The full set of ARIA attributes marked `global: true` per the WAI-ARIA
-  // spec (confirmed against a widely-used reference engine's own
-  // `standards.ariaAttrs` data at runtime, 2026-07-20) — any of these present on a presentational
-  // element restores its implicit role, not just the naming ones.
+  // spec — any of these present on a presentational element restores its
+  // implicit role, not just the naming ones.
   const CONFLICTING_ATTRS = [
     'aria-atomic',
     'aria-braillelabel',
@@ -129,33 +121,29 @@ function runInPage(ctx) {
 
     // Presence, not value truthiness: the WAI-ARIA role-conflict-resolution
     // rule triggers on a global ARIA attribute being SPECIFIED at all, even
-    // with an empty value — found on a real site, Slack's homepage has
-    // <img alt="" aria-hidden="">, where aria-hidden="" (empty string) is
-    // still a specified attribute. A truthy-value check would have missed
-    // this even after aria-hidden was added to CONFLICTING_ATTRS above.
+    // with an empty value — e.g. <img alt="" aria-hidden="">, where
+    // aria-hidden="" (empty string) is still a specified attribute. A
+    // truthy-value check would miss this.
     let present = CONFLICTING_ATTRS.filter((attr) =>
       el.hasAttribute ? el.hasAttribute(attr) : el.getAttribute(attr) != null
     );
 
-    // aria-hidden="true" (the exact, valid truthy value — NOT the empty-string
-    // Slack case above, which never actually hides anything) is a special
-    // case: it removes the element and its subtree from the accessibility
-    // tree unconditionally, independent of role. That makes the "role
-    // restoration" this rule warns about ("...which restores its implicit
-    // role and cancels the presentational intent") factually inert — no AT
-    // will ever expose the restored role OR any of the other conflicting
-    // attributes (aria-label, aria-describedby, ...) present alongside it,
-    // since the whole element stays out of the tree regardless. Confirmed
-    // 2026-08-04 against a real page (aljazeera.com's league-ticker crest
-    // icons, W3C's footer social-media icons, and other sites' <svg
-    // role="presentation" aria-hidden="true"> decorative icons) — this
-    // pattern is extremely common (a defensive belt-and-suspenders
-    // double-hide, not an authoring mistake) and was previously flagged with
-    // a misleading "cancels the presentational intent" message. Focusability
-    // is NOT covered by this exemption — a keyboard user can still tab onto
-    // an aria-hidden="true" focusable element (the aria-hidden-focus
-    // anti-pattern), a real, independent hazard aria-hidden does nothing to
-    // prevent.
+    // aria-hidden="true" (the exact, valid truthy value — not the
+    // empty-string case above, which never actually hides anything) is a
+    // special case: it removes the element and its subtree from the
+    // accessibility tree unconditionally, independent of role. That makes
+    // the "role restoration" this rule warns about ("...which restores its
+    // implicit role and cancels the presentational intent") factually
+    // inert — no AT will ever expose the restored role OR any of the other
+    // conflicting attributes (aria-label, aria-describedby, ...) present
+    // alongside it, since the whole element stays out of the tree
+    // regardless. This pattern is extremely common (e.g. <svg
+    // role="presentation" aria-hidden="true"> decorative icons — a
+    // defensive belt-and-suspenders double-hide, not an authoring mistake).
+    // Focusability is NOT covered by this exemption — a keyboard user can
+    // still tab onto an aria-hidden="true" focusable element (the
+    // aria-hidden-focus anti-pattern), a real, independent hazard
+    // aria-hidden does nothing to prevent.
     if (el.getAttribute('aria-hidden') === 'true') {
       present = [];
     }
