@@ -91,7 +91,7 @@ function runInPage(ctx) {
     // An aria-hidden row (or cell) isn't part of the AT-perceived table
     // structure at all -- it must not be treated as the table's "first
     // row" (or counted toward a row's cell count) for this positional
-    // heuristic. Found while extending direct coverage of this rule.
+    // heuristic.
     const rows = Array.from(table.rows).filter(isEligible);
     if (rows.length < 2) continue;
 

@@ -4,7 +4,7 @@
  * @check tabindex
  * @atomic true
  * @summary tabindex should not be greater than 0
- * @standard Best Practices (a widely-used reference engine's classification; no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
  * @applicability
  *   Applies to elements with a tabindex attribute whose value parses as
  *   a valid integer.

@@ -22,12 +22,8 @@
  * below, update that literal too.
  *
  * SOURCE: W3C WCAG 2.1 and 2.2 "Success Criteria" tables (each SC's own "Introduced in
- * version" note), cross-checked against a widely-used reference engine's own
- * `wcag21a`/`wcag21aa`/`wcag22aa`-tagged rules (e.g. `autocomplete-valid` <-> that
- * engine's SC-1.3.5 rule carries `wcag21aa` with no `wcag2aa`; `target-size-minimum`
- * <-> its SC-2.5.8 rule carries `wcag22aa` alone) -- that engine never tags a rule
- * with more than one version prefix, matching the
- * "each SC belongs to exactly one origin version" model this file encodes.
+ * version" note). Each SC belongs to exactly one origin version, which is the model
+ * this file encodes.
  */
 
 // SCs newly introduced in WCAG 2.1 (not present in WCAG 2.0).

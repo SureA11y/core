@@ -22,20 +22,15 @@
  * @implementation-notes
  * - A distinct atomic decision from aria-required-children (see that
  *   rule): "does at least one required child exist" vs "is every owned
- *   child one of the allowed roles." A widely-used reference engine
- *   bundles both under one check; this repo's "one rule = one normative
- *   decision" principle splits them.
+ *   child one of the allowed roles" — split per this repo's "one rule =
+ *   one normative decision" principle.
  * - The "allowed owned roles" set is exactly REQUIRED_OWNED_ROLES, not a
- *   separately authored, broader list — verified directly against a
- *   widely-used reference engine's own ariaRequiredChildren/getOwnedRoles
- *   algorithm, which likewise treats an owned element as allowed only if
+ *   separately authored, broader list: an owned element is allowed only if
  *   its role is literally in the container's required set.
  * - A ROLELESS descendant that has any global WAI-ARIA attribute or is
- *   focusable is also flagged, matching that reference engine's
- *   `getOwnedRoles` (`hasGlobalAriaOrFocusable = !!globalAriaAttr ||
- *   _isFocusable(vNode)`): such a descendant is treated as an owned entry
- *   with `role: null`, which can never match a container's
- *   required-owned-roles set, so it's always "unallowed". Both signals
+ *   focusable is also flagged: it's treated as an owned entry with
+ *   `role: null`, which can never match a container's required-owned-roles
+ *   set, so it's always "unallowed". Both signals
  *   (global-attribute presence, focusability via the shared
  *   `helpers.getFocusableInfo`) are static, declarative markup facts with
  *   no live-DOM/hydration risk, unlike e.g.
@@ -45,8 +40,8 @@
  *   focusability (e.g. an `<a href>`), so the reported `data.details.attr`
  *   and message correctly say `nativeFocusable` rather than claiming a
  *   tabindex attribute that isn't actually present in the markup.
- * - Recursion stops at the first non-transparent role boundary, same as
- *   that reference engine: a nested container with its own real role
+ * - Recursion stops at the first non-transparent role boundary: a nested
+ *   container with its own real role
  *   (e.g. a `<div role="listbox">` inside a menubar) is evaluated as its
  *   own owned-role entry against the outer container (and, separately,
  *   gets its own applicability pass as a container in the same rule run)
@@ -134,7 +129,7 @@ function runInPage(ctx) {
   // aria-allowed-attr.js's GLOBAL_ATTRS — duplicated, not imported, since
   // runInPage must be self-contained per scripts/build-core.js). A
   // roleless descendant carrying any of these is a real accessible-tree
-  // node a widely-used reference engine's getOwnedRoles also flags, not a transparent wrapper.
+  // node, not a transparent wrapper.
   const GLOBAL_ARIA_ATTRS = [
     'aria-atomic',
     'aria-braillelabel',
@@ -178,13 +173,12 @@ function runInPage(ctx) {
   // non-transparent role boundary otherwise — see header comment. A
   // roleless descendant is ALSO a non-transparent boundary (an owned
   // entry with role: null, which can never satisfy a required-role set)
-  // when it carries a global aria-* attribute or is focusable — matches
-  // a widely-used reference engine's own getOwnedRoles exactly (see header comment).
-  // kidRole comes from getContainmentRole, not getExplicitRole (see header
-  // comment's 2026-07-31 fix): "roleless" here means neither an explicit
-  // role="" NOR one of the native containment tags (li, tr, td, ...), so a
-  // bare <li>/<tr>/... is a real listitem/row boundary, not a transparent
-  // wrapper the walk should pass through.
+  // when it carries a global aria-* attribute or is focusable.
+  // kidRole comes from getContainmentRole, not getExplicitRole: "roleless"
+  // here means neither an explicit role="" NOR one of the native
+  // containment tags (li, tr, td, ...), so a bare <li>/<tr>/... is a real
+  // listitem/row boundary, not a transparent wrapper the walk should pass
+  // through.
   function collectOwnedRoles(el, requiredSet, out, depth) {
     if (depth > MAX_DEPTH) return;
     const kids = el.children ? Array.prototype.slice.call(el.children) : [];

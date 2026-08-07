@@ -28,7 +28,7 @@ test(`${RULE_ID}: notApplicable when the contentinfo is top-level`, () => {
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: cantTell when a <footer> nested inside an ancestor whose role has been overridden away from a landmark-scoping role (<aside role="dialog">) still keeps its implicit contentinfo role, and is correctly flagged non-top-level when that ancestor is itself nested inside a real landmark (mirrors a real bug found on handsontable.com's docs-assistant side panel, banner/<header> variant; the outer wrapper uses role="search" rather than <nav> deliberately, so this test isolates the <aside role="dialog"> fix from an unrelated, already-suppressing <nav> ancestor)`, () => {
+test(`${RULE_ID}: cantTell when a <footer> nested inside an ancestor whose role has been overridden away from a landmark-scoping role (<aside role="dialog">) still keeps its implicit contentinfo role, and is correctly flagged non-top-level when that ancestor is itself nested inside a real landmark (the outer wrapper uses role="search" rather than <nav> deliberately, so this test isolates the <aside role="dialog"> fix from an unrelated, already-suppressing <nav> ancestor)`, () => {
   const html = `<!doctype html><html><body>
     <div role="search" aria-label="Docs assistant"><aside role="dialog" aria-label="Assistant panel"><footer id="a">Panel footer</footer></aside></div>
   </body></html>`;
@@ -37,14 +37,14 @@ test(`${RULE_ID}: cantTell when a <footer> nested inside an ancestor whose role 
   assert.ok(hasOccurrenceForId(rule, 'a'));
 });
 
-test(`${RULE_ID}: cantTell when a <footer> is nested inside a NAMED <aside> — the aside is a genuine complementary landmark ancestor, so this is real non-top-level nesting (2026-08-01 fix — see landmark-banner-is-top-level's file header comment for the shared root cause and TurboTax evidence)`, () => {
+test(`${RULE_ID}: cantTell when a <footer> is nested inside a NAMED <aside> — the aside is a genuine complementary landmark ancestor, so this is real non-top-level nesting`, () => {
   const html = `<!doctype html><html><body><aside aria-label="Related"><footer id="a">inner</footer></aside></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'a'));
 });
 
-test(`${RULE_ID}: cantTell when a <footer> is nested inside <main> (2026-08-01 fix, same shape as the banner/header case)`, () => {
+test(`${RULE_ID}: cantTell when a <footer> is nested inside <main>`, () => {
   const html = `<!doctype html><html><body><main><footer id="a">inner</footer></main></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
@@ -59,7 +59,7 @@ test(`${RULE_ID}: an UNNAMED top-level <aside> is STILL a real complementary lan
   assert.ok(hasOccurrenceForId(rule, 'a'));
 });
 
-test(`${RULE_ID}: notApplicable when a <footer> is nested inside an UNNAMED <section> — an unnamed <section> has no implicit role at all, unlike a top-level <aside> (see above), so there is genuinely no landmark ancestor here; proves the 2026-08-01 fix only flags real landmark nesting`, () => {
+test(`${RULE_ID}: notApplicable when a <footer> is nested inside an UNNAMED <section> — an unnamed <section> has no implicit role at all, unlike a top-level <aside> (see above), so there is genuinely no landmark ancestor here`, () => {
   const html = `<!doctype html><html><body><section><footer id="a">inner</footer></section></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });

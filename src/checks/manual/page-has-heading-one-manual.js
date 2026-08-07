@@ -4,7 +4,7 @@
  * @check page-has-heading-one
  * @atomic true
  * @summary The page should have at least one level-one heading
- * @standard Best Practices (a widely-used reference engine's classification; no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
  * @applicability
  *   Always applicable to any HTML document with a <body> element —
  *   "does the page have an h1" is a whole-page concern, matching
@@ -23,11 +23,10 @@
  *   display:none/inert elements don't count as "the page has a heading
  *   one"), matching `landmark-one-main`'s own precedent — a raw
  *   `document.querySelectorAll` would wrongly credit an `<h1>` that sits
- *   inside a `display:none` ancestor (e.g. CDC's flu page), genuinely
- *   unreachable by sighted and screen reader users alike, as satisfying
- *   this check. This does NOT regress purely-visually-clipped-but-AT-
- *   exposed headings (e.g. eBay's homepage `<h1>` hidden via
- *   clip-path/off-screen positioning, `visibility:visible`, no
+ *   inside a `display:none` ancestor, genuinely unreachable by sighted and
+ *   screen reader users alike, as satisfying this check. This does NOT
+ *   regress purely-visually-clipped-but-AT-exposed headings (e.g. an `<h1>`
+ *   hidden via clip-path/off-screen positioning, `visibility:visible`, no
  *   `aria-hidden`) — `isAccTreeEligible` only excludes elements actually
  *   removed from the accessibility tree, not ones merely clipped from the
  *   visual viewport.

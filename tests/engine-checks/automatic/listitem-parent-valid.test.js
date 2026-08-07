@@ -40,14 +40,14 @@ test(`${RULE_ID}: pass when li is inside role="list"`, () => {
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail when li's parent is a <ul> with an explicit role="menu" (the explicit role overrides the tag's native "list" role — found on a real site, Nike's desktop nav dropdown)`, () => {
+test(`${RULE_ID}: fail when li's parent is a <ul> with an explicit role="menu" (the explicit role overrides the tag's native "list" role)`, () => {
   const html = `<!doctype html><html><body><ul role="menu"><li id="a">orphan</li></ul></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'a'));
 });
 
-test(`${RULE_ID}: pass when li's parent is a <ul> with an explicit role="presentation" (list semantics deliberately suppressed, matches a reference engine's own listitem check)`, () => {
+test(`${RULE_ID}: pass when li's parent is a <ul> with an explicit role="presentation" (list semantics deliberately suppressed)`, () => {
   const html = `<!doctype html><html><body><ul role="presentation"><li id="a">item</li></ul></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });

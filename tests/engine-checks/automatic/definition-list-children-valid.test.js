@@ -62,13 +62,13 @@ test(`${RULE_ID}: fail when dd is present with no matching dt (unbalanced pairin
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'DL_NO_DT_DD');
 });
 
-test(`${RULE_ID}: pass when dl has no dt/dd and nothing else after flattening (empty wrapping div) — verified against a reference engine's "when not empty" framing`, () => {
+test(`${RULE_ID}: pass when dl has no dt/dd and nothing else after flattening (empty wrapping div)`, () => {
   const html = `<!doctype html><html><body><dl id="b"><div></div></dl></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: pass when dl's only children are passthrough (script/template) — matches a reference engine's "when not empty" framing`, () => {
+test(`${RULE_ID}: pass when dl's only children are passthrough (script/template)`, () => {
   const html = `<!doctype html><html><body><dl id="a"><script></script></dl><dl id="b"><template></template></dl></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });

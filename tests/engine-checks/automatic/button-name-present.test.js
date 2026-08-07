@@ -236,7 +236,7 @@ test(`${RULE_ID}: pass when an icon-only button's name comes from a nested role=
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: pass when an icon-only button's name comes from a wrapping <label> (found on a real site — DeviantArt's settings toggles wrap a description div and an unlabeled aria-pressed button in one <label>)`, () => {
+test(`${RULE_ID}: pass when an icon-only button's name comes from a wrapping <label> (a description div and an unlabeled aria-pressed button in one <label>)`, () => {
   if (!runa11yCoreOnHtml || !assertRule) {
     assert.ok(true);
     return;

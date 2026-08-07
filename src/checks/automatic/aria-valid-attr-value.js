@@ -24,21 +24,15 @@
  *   idref-list attributes (aria-labelledby, aria-describedby,
  *   aria-controls, aria-owns, etc.) when NONE of the space-separated ids
  *   resolve — a partially-dangling list (some ids exist, some don't) is
- *   left unflagged. This exactly matches a widely-used reference engine's
- *   own `validateAttrValue` source (`idrefs(vNode, attr).some(node =>
- *   !!node)` — that engine itself only invalidates when every token fails
- *   to resolve). Single-idref attributes (aria-activedescendant,
- *   aria-errormessage) are flagged whenever their one id doesn't resolve,
- *   also matching that engine's `idref` case exactly.
+ *   left unflagged (only invalidate when every token fails to resolve).
+ *   Single-idref attributes (aria-activedescendant, aria-errormessage) are
+ *   flagged whenever their one id doesn't resolve.
  * - An explicitly-EMPTY idref/idref-list value (e.g.
- *   `aria-describedby=""`) is valid, not a violation — matches that same
- *   reference engine's own standards table, which sets `allowEmpty: true`
- *   on every idref/idref-list ARIA attribute with zero exceptions. A
- *   common, deliberate pattern in templated markup (e.g. React
- *   conditionally rendering `aria-describedby={hasError ? errorId :
- *   ''}`); flagging it is a real false positive (e.g. chase.com's login
- *   form ships `aria-describedby=""` unconditionally on its username/
- *   password inputs).
+ *   `aria-describedby=""`) is valid, not a violation — `allowEmpty` holds
+ *   for every idref/idref-list ARIA attribute. A common, deliberate pattern
+ *   in templated markup (e.g. React conditionally rendering
+ *   `aria-describedby={hasError ? errorId : ''}`); flagging it would be a
+ *   false positive.
  */
 
 const id = 'aria-valid-attr-value';

@@ -12,9 +12,8 @@
  *   declare — either because WAI-ARIA has deprecated it (e.g. "directory",
  *   superseded by role="list") or because it's reserved for user-agent-
  *   internal use only, not a spec deprecation but the same "valid token,
- *   prohibited for authors" shape (role="generic" — verified against both
- *   the WAI-ARIA 1.2 spec text and MDN's explicit "It should not be used
- *   by web authors" guidance).
+ *   prohibited for authors" shape (role="generic" — per WAI-ARIA 1.2 and
+ *   MDN's "It should not be used by web authors" guidance).
  * @expectation
  *   The role in use is neither deprecated nor author-prohibited. This is a
  *   distinct, atomic decision from aria-roles-valid (existence/

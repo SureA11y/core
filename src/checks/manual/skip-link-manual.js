@@ -4,16 +4,15 @@
  * @check skip-link
  * @atomic true
  * @summary A "skip" link must resolve to a real, usable target
- * @standard Best Practices (a widely-used reference engine's classification; no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
  * @applicability
  *   Applies to <a href="#fragment"> elements whose accessible name
  *   matches a common "skip to ..." / "jump to ..." authoring convention
  *   (case-insensitive "skip" or "jump to" in the name) — the recognizable
  *   pattern for a skip-navigation link, not every same-page anchor link
  *   on the page. "jump to" is included alongside "skip" since real skip
- *   links use both conventions (e.g. Wish.com's "Jump to section" link,
- *   which a purely positional, non-text-based match — like a widely-used
- *   reference engine's own — would catch but a "skip"-only text pattern
+ *   links use both conventions (e.g. a "Jump to section" link, which a
+ *   purely positional match would catch but a "skip"-only text pattern
  *   would miss). Text-pattern matching itself stays deliberate (see
  *   implementation-notes) — this only widens the known-convention list.
  * @expectation

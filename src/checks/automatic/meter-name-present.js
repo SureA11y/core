@@ -96,9 +96,8 @@ function runInPage(ctx) {
     const title = getAttr(el, 'title');
     if (title) return { ok: true, method: 'title' };
 
-    // role="meter" is name-from-author-only per WAI-ARIA (verified against
-    // a widely-used reference engine's own aria-meter-name check: any: ['aria-label',
-    // 'aria-labelledby', title] — no content-based naming method at all).
+    // role="meter" is name-from-author-only per WAI-ARIA: aria-label,
+    // aria-labelledby, or title — no content-based naming method at all.
     // It must NOT fall back to subtree content — visible text near/inside a
     // custom meter widget is not reliably exposed as its accessible name.
     return { ok: false, method: 'none' };

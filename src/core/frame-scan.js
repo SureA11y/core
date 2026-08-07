@@ -7,8 +7,7 @@
  * Playwright-driven scan doesn't need any of this (see
  * @surea11y/playwright's ROADMAP.md gap #1 -- CDP-level frame access is
  * unconditional, strictly better than what a cooperative protocol like this
- * one can achieve). This exists for when there is no automation driver, the
- * same situation a widely-used reference engine itself is built around.
+ * one can achieve). This exists for when there is no automation driver.
  *
  * Inlined into generated core.js (via scripts/build-core.js), wrapped in its
  * OWN private IIFE together with its own local copies of CHECK_DEFS/
@@ -74,9 +73,8 @@ function getFrameElementUrl(el) {
  * (src/core/frame-messaging.js). A child that doesn't respond (no
  * cooperating surea11y loaded and enabled there via
  * a11yCoreEnableFrameResponder() -- the common case for most third-party
- * embeds, and the same real limitation a widely-used reference engine itself has for
- * non-cooperating frames) is reported as { url, error } rather than
- * aborting the scan, matching the non-fatal-per-frame philosophy already
+ * embeds) is reported as { url, error } rather than aborting the scan,
+ * matching the non-fatal-per-frame philosophy already
  * established for the Playwright binding's .frames(true). A child that
  * does respond replies with its OWN complete { topFrame, frames } result,
  * recursively including ITS OWN nested frames -- a tree, not a flat list
@@ -152,22 +150,17 @@ function runa11yCoreAcrossFrames(pageUrl, contextSelector, engineOptions, runOnl
  * runa11yCoreAcrossFrames() call. A page calls this once (e.g. right after
  * loading surea11y) to become scannable from above. Deliberately a
  * separate, explicit call rather than an automatic side effect of loading
- * surea11y's code -- unlike a widely-used reference engine, whose mere
- * presence as a loaded <script> makes it listen automatically. surea11y's distribution model
- * (a function you call, not a script tag with load-time side effects)
- * doesn't have an equivalent "just including it" moment, and an explicit
- * opt-in is a clearer consent point besides -- it means every Node/jsdom
- * consumer that merely requires the module never gets a phantom
- * `window.addEventListener` they didn't ask for.
+ * surea11y's code: an explicit opt-in is a clear consent point, and it
+ * means every Node/jsdom consumer that merely requires the module never
+ * gets a phantom `window.addEventListener` they didn't ask for.
  *
  * The incoming run command's own engineOptions/runOnly are always used
- * as-is (matching a widely-used reference engine's own behavior: the parent's
- * request carries the options, the child just executes with them, no local
- * override) -- there's no origin/identity check on the sender beyond the
- * namespaced message envelope itself, matching that reference engine's own permissiveness here
- * (running a read-only scan and replying with DOM-derived results isn't a
- * privileged operation; the DOM content involved is no more sensitive than
- * what's already rendered on the page).
+ * as-is (the parent's request carries the options, the child just executes
+ * with them, no local override) -- there's no origin/identity check on the
+ * sender beyond the namespaced message envelope itself (running a read-only
+ * scan and replying with DOM-derived results isn't a privileged operation;
+ * the DOM content involved is no more sensitive than what's already
+ * rendered on the page).
  *
  * @returns {function(): void} disable() -- stops responding to future scans
  */

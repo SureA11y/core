@@ -4,7 +4,7 @@
  * @check landmark-unique
  * @atomic true
  * @summary Landmarks sharing the same role must have unique accessible names
- * @standard Best Practices (a widely-used reference engine's classification; no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
  * @applicability
  *   Applies whenever two or more landmark regions on the page share the
  *   same landmark role (banner, contentinfo, main, navigation,
@@ -59,9 +59,7 @@ function runInPage(ctx) {
 
   // Delegates to the shared helpers.getLandmarkNameInfo (aria-label -> aria-labelledby, via the
   // target's own accessible name, not raw textContent -> title attribute fallback) rather than a
-  // local copy -- see that function's header comment in src/core/dom-helpers.js for the real bug
-  // (missing title fallback) this replaced across all 7 landmark rule files that had their own
-  // copy of this logic.
+  // local copy -- see that function's header comment in src/core/dom-helpers.js.
   function getAccessibleLandmarkName(el) {
     try {
       if (helpers && typeof helpers.getLandmarkNameInfo === 'function') {
@@ -82,20 +80,16 @@ function runInPage(ctx) {
   // an ancestor's bare TAG only counts when it carries no role attribute at
   // all; an explicit role="dialog"-style override no longer suppresses —
   // see that function's header comment in src/core/aria-helpers.js), using
-  // two distinct ancestor scopes matched directly against a widely-used
-  // reference engine's own implicit-role functions rather than one shared
-  // list: <header>/<footer> use "sectioning content PLUS <main>"
-  // (includeMain: true) to decide banner/contentinfo suppression, but
-  // <aside> uses PLAIN sectioning content only — NOT main (includeMain:
-  // false) — to decide complementary suppression. A single shared
-  // sectioning-ancestors set that includes 'main' is correct for
-  // header/footer but wrong for aside: e.g. Know Your Meme's two unnamed
-  // <aside class="extra-large-only"> elements are direct children of
-  // <main>, which would incorrectly suppress their implicit
-  // "complementary" role entirely, hiding a real duplicate-landmark
-  // violation that a widely-used reference engine correctly flags. The
-  // role-aware half matters too: e.g. handsontable.com's docs-assistant
-  // side panel has an <aside role="dialog"> containing its own <header> —
+  // two distinct ancestor scopes rather than one shared list: <header>/
+  // <footer> use "sectioning content PLUS <main>" (includeMain: true) to
+  // decide banner/contentinfo suppression, but <aside> uses PLAIN
+  // sectioning content only — NOT main (includeMain: false) — to decide
+  // complementary suppression. A single shared sectioning-ancestors set
+  // that includes 'main' is correct for header/footer but wrong for aside:
+  // e.g. two unnamed <aside> elements that are direct children of <main>
+  // would have their implicit "complementary" role incorrectly suppressed,
+  // hiding a real duplicate-landmark violation. The role-aware half matters
+  // too: e.g. an <aside role="dialog"> containing its own <header> —
   // role="dialog" isn't one of the four scoping roles, so the nested
   // <header> keeps "banner" per spec, but a tag-only (non-role-aware)
   // check would unconditionally suppress it just because the ancestor TAG
@@ -113,10 +107,9 @@ function runInPage(ctx) {
     if (tag === 'main') return 'main';
     if (tag === 'nav') return 'navigation';
     if (tag === 'aside') {
-      // Per a widely-used reference engine's own `aside` implicit-role function: suppressed by a
-      // sectioning-content ancestor ONLY when the <aside> also has no
-      // accessible name — a named <aside> is never suppressed, even when
-      // nested.
+      // An <aside> is suppressed by a sectioning-content ancestor ONLY
+      // when it also has no accessible name — a named <aside> is never
+      // suppressed, even when nested.
       if (!hasSectioningAncestor(el, false)) return 'complementary';
       return getAccessibleLandmarkName(el) ? 'complementary' : '';
     }
@@ -144,15 +137,12 @@ function runInPage(ctx) {
       // <form>/<section> only count as landmarks when they have an
       // accessible name — a property of the ELEMENT, not of how the role
       // got there. This applies whether the role is implicit (already
-      // handled in getImplicitLandmarkRole below) or explicit, but an
-      // explicit role bypassed the check entirely before this fix. Verified
-      // against a widely-used reference engine's isLandmarkVirtual (checks
-      // nodeName === 'section' || 'form' unconditionally, regardless of role source) and the W3C
+      // handled in getImplicitLandmarkRole below) or explicit. Per the W3C
       // ARIA-in-HTML spec ("a form is not exposed as a landmark region
-      // unless it has been provided an accessible name"). Found via a real
-      // page: europa.eu's unnamed <form role="search"> nested inside an
-      // unnamed <div role="search"> was wrongly counted as a second
-      // distinct "search" landmark.
+      // unless it has been provided an accessible name"). Otherwise an
+      // unnamed <form role="search"> nested inside an unnamed
+      // <div role="search"> gets wrongly counted as a second distinct
+      // "search" landmark.
       const tag = el.tagName ? el.tagName.toLowerCase() : '';
       if (tag === 'form' || tag === 'section') {
         return getAccessibleLandmarkName(el) ? explicit : '';
@@ -177,12 +167,10 @@ function runInPage(ctx) {
   }
 
   // queryAllSmart (shadow-DOM-aware, includeShadowDom defaults true) instead of a plain
-  // document.querySelectorAll -- a real page (Airtable's homepage) has a
-  // third-party Transcend cookie-consent widget rendering its own unnamed <nav>/<footer>
-  // inside a shadow root (#transcend-shadow-root), which a widely-used reference engine's
-  // own landmark-unique (a real browser DOM, shadow roots included by design) correctly sees as colliding
-  // with the page's own unnamed header <nav>/page <footer> -- a real, confirmed surea11y
-  // false-negative miss, invisible to plain querySelectorAll's light-DOM-only reach.
+  // document.querySelectorAll -- a third-party widget rendering its own
+  // unnamed <nav>/<footer> inside a shadow root collides with the page's
+  // own unnamed header <nav>/page <footer>, but is invisible to plain
+  // querySelectorAll's light-DOM-only reach.
   let nodes;
   try {
     nodes =
@@ -193,15 +181,12 @@ function runInPage(ctx) {
     nodes = [];
   }
 
-  // Only landmarks actually exposed to assistive technology can collide —
-  // matches a widely-used reference engine's own `landmarkUniqueMatches` gate
-  // (`_isVisibleToScreenReaders`), confirmed by reading its source
-  // directly. Without this, responsive layouts that render both a
-  // desktop and a mobile copy of the same named nav (one hidden via CSS
-  // at any given viewport — found on real sites: BuzzFeed, Kraken,
-  // weather.com) were wrongly flagged as duplicate landmarks, since the
-  // hidden copy is never actually reachable by AT and can't really
-  // collide with the visible one.
+  // Only landmarks actually exposed to assistive technology can collide.
+  // Without this, responsive layouts that render both a desktop and a
+  // mobile copy of the same named nav (one hidden via CSS at any given
+  // viewport) are wrongly flagged as duplicate landmarks, since the hidden
+  // copy is never reachable by AT and can't really collide with the
+  // visible one.
   const byRole = new Map(); // role -> [{el, name}]
   const seen = new Set();
   for (const el of nodes) {

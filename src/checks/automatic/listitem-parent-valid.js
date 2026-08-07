@@ -25,21 +25,17 @@
  *   native role is fully replaced by the explicit one — the same "any
  *   explicit role overrides the element's native role" ARIA principle
  *   applied elsewhere in this engine), so an <li> inside it is invalid
- *   despite the <ul> tag (e.g. Nike's desktop nav dropdown: `<ul
- *   class="desktop-category" role="menu"><li>...`). Conversely
+ *   despite the <ul> tag (e.g. `<ul role="menu"><li>...`). Conversely
  *   role="presentation"/"none" on the parent is still a valid
- *   (list-semantics-suppressing) parent, matching a widely-used reference
- *   engine's own `listitem` check
- *   (`['presentation', 'none', 'list'].includes(parentRole)`).
+ *   (list-semantics-suppressing) parent — the accepted parent roles are
+ *   presentation, none, and list.
  * - The SAME "explicit role wins" principle applies to the <li> ELEMENT
  *   ITSELF: an <li role="tab">/role="menuitem">/role="presentation"> etc.
  *   is exposed to AT with that role, never "listitem" — the whole point
  *   of this check (list items need a valid list-container parent) doesn't
  *   apply when the element isn't claiming listitem semantics in the first
- *   place. A widely-used reference engine's own `listitem` rule
- *   structurally excludes any `<li>` with an explicit `role` attribute
- *   from candidacy at all (`no-role-matches`), so this check matches that
- *   scope. `role="listitem"` itself is a no-op restatement (not an
+ *   place. Any `<li>` with an explicit `role` attribute is excluded from
+ *   candidacy. `role="listitem"` itself is a no-op restatement (not an
  *   override), so it still falls through to the normal parent-validity
  *   check below.
  */
@@ -89,7 +85,7 @@ function runInPage(ctx) {
     // An explicit role on the <li> ITSELF overrides its native "listitem"
     // role entirely, the same "any explicit role wins over the tag's
     // native role" principle this check already applies to the PARENT
-    // (see the header comment's Nike example). An <li role="tab">/
+    // (see the header comment). An <li role="tab">/
     // role="menuitem">/role="presentation"> etc. is exposed to AT with
     // THAT role, never "listitem" -- so the "list item needs a valid list
     // container parent" concern this rule exists for doesn't apply to it
@@ -110,7 +106,7 @@ function runInPage(ctx) {
     let valid;
     if (explicitRole) {
       // An explicit role always wins over the tag's native role, in either
-      // direction — see the header comment's Nike example.
+      // direction — see the header comment.
       valid = explicitRole === 'list' || explicitRole === 'presentation' || explicitRole === 'none';
     } else {
       valid = parentTag === 'ul' || parentTag === 'ol';

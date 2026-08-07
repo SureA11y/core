@@ -176,7 +176,7 @@
     </div>
   </div>
 
-  <h2>C. Name from content — recursive (2026-07-19 fix)</h2>
+  <h2>C. Name from content — recursive</h2>
 
   <div class="case" id="case_21">
     <div class="case-title">21 — PASS: logo link, name comes from a wrapped &lt;img alt&gt; (name-from-content recursion, not just literal text nodes)</div>
@@ -189,7 +189,7 @@
   </div>
 
   <div class="case" id="case_23">
-    <div class="case-title">23 — PASS: name comes from a nested &lt;img alt="" aria-labelledby&gt; — empty alt correctly marks the image itself decorative, but aria-labelledby (pointing to real text elsewhere) takes priority over alt per the accname spec — found on a real site, eBay's product-card links (2026-07-21)</div>
+    <div class="case-title">23 — PASS: name comes from a nested &lt;img alt="" aria-labelledby&gt; — empty alt correctly marks the image itself decorative, but aria-labelledby (pointing to real text elsewhere) takes priority over alt per the accname spec</div>
     <span id="lnp_case_23_lbl">Sony Wireless Headphones</span>
     <a href="/item/1" id="link_case_23"><img alt="" aria-labelledby="lnp_case_23_lbl"></a>
   </div>
@@ -197,7 +197,7 @@
   <h2>D. role override to a value-role (content is a VALUE, not a NAME)</h2>
 
   <div class="case" id="case_24">
-    <div class="case-title">24 — FAIL: &lt;a href role="combobox"&gt;, no programmatic name — content ("List") is the combobox's selected VALUE, not its name, so it must not be credited (same class of bug as button-name-present's Spotify "sort by" finding, on a different host tag)</div>
+    <div class="case-title">24 — FAIL: &lt;a href role="combobox"&gt;, no programmatic name — content ("List") is the combobox's selected VALUE, not its name, so it must not be credited</div>
     <a href="/x" role="combobox" aria-expanded="false" id="link_case_24"><span>List</span></a>
   </div>
 

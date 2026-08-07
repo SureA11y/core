@@ -65,7 +65,7 @@ test(`${RULE_ID}: role=presentation but focusable is NOT excluded and fails if a
   assert.ok(hasOccurrenceForId(rule, 'pres_focus'));
 });
 
-test(`${RULE_ID}: pass when alt is entirely absent but a non-empty title attribute is present (found on a real site — AliExpress's homepage logo, 2026-07-23: <img title="..."> with no alt attribute at all is a real, valid HTML-AAM text-alternative fallback, also accepted by a reference engine's own image-alt rule via its non-empty-title check)`, () => {
+test(`${RULE_ID}: pass when alt is entirely absent but a non-empty title attribute is present (a valid HTML-AAM text-alternative fallback)`, () => {
   const html = `<!doctype html><html><body>
     <img id="title_only" src="x.png" title="Company logo">
   </body></html>`;

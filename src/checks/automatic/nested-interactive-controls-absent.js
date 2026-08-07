@@ -20,10 +20,9 @@
  *   technology — activating the outer control and the inner one become
  *   ambiguous, and some AT only exposes one of the two.
  * @implementation-notes
- * - Matches a widely-used reference engine's nested-interactive. Reports on the outer
- *   (containing) control, not the nested descendant — this engine
- *   considers the container the fixable unit ("move the nested control
- *   outside this element").
+ * - Reports on the outer (containing) control, not the nested descendant —
+ *   this engine considers the container the fixable unit ("move the nested
+ *   control outside this element").
  * - A container can be reported once even with multiple nested
  *   descendants (listed together); a deeply nested chain (A > B > C, all
  *   interactive) reports both A and B as separate occurrences, since each
@@ -121,8 +120,7 @@ function runInPage(ctx) {
     // hiding, let alone aria-hidden. A nested descendant that is never
     // actually rendered or exposed to AT (display:none, aria-hidden,
     // etc.) creates no real ambiguity for ANY user, since it isn't there
-    // to be confused with the outer control. Found while extending direct
-    // coverage of this rule.
+    // to be confused with the outer control.
     let nested;
     try {
       nested = Array.from(el.querySelectorAll(INTERACTIVE_SELECTOR)).filter(isEligible);

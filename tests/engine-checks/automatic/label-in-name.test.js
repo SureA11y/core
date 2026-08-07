@@ -122,10 +122,10 @@ test('label-in-name: control not visually rendered => notApplicable (element ski
 });
 
 test('label-in-name: aria-hidden decorative icon glyph does not count as visible label text => notApplicable', () => {
-  // Regression for the Material Icons ligature-font false positive found via
-  // a live-DOM cross-engine run 2026-07-21: an aria-hidden icon
-  // (<mat-icon aria-hidden="true">format_color_fill</mat-icon> in the real
-  // case) was being treated as "visible label text" that must be included
+  // Regression for a Material Icons ligature-font false positive: an
+  // aria-hidden icon
+  // (<mat-icon aria-hidden="true">format_color_fill</mat-icon>) was being
+  // treated as "visible label text" that must be included
   // in the aria-label, purely because the previous implementation collected
   // text via raw container.textContent (which ignores aria-hidden and CSS
   // visibility entirely) instead of the intended TreeWalker-based, filtered

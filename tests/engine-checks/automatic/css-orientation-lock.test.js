@@ -48,12 +48,10 @@ test(`${RULE_ID}: fail when the rotation is 270deg (still a lock)`, () => {
 });
 
 test(`${RULE_ID}: pass when a rotate() in an orientation media query is a small decorative angle (45deg), not a page lock`, () => {
-  // Regression for a real false positive found via the live-DOM cross-engine
-  // corpus 2026-07-23 (Times of India's homepage): a decorative arrow-icon
-  // rotate(45deg) sitting inside an @media (orientation:portrait) block (one
-  // of several OR'd responsive conditions) was wrongly flagged as an
-  // orientation-lock hack. Only rotations near 90/270 degrees are a lock,
-  // matching a reference engine's own degree-based check exactly.
+  // A decorative arrow-icon rotate(45deg) sitting inside an
+  // @media (orientation:portrait) block (one of several OR'd responsive
+  // conditions) must not be flagged as an orientation-lock hack. Only
+  // rotations near 90/270 degrees are a lock.
   const html = `<!doctype html><html><head><style>@media (orientation: portrait) { .icon:after { transform: rotate(45deg); } }</style></head><body><span class="icon"></span></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });

@@ -47,7 +47,7 @@ test(`${RULE_ID}: fail when two label[for] point at the same control`, () => {
   assert.equal(rule.occurrences[0].data.details.labelCount, 2);
 });
 
-test(`${RULE_ID}: pass when the second label[for] is display:none (not AT-eligible, mirrors a widely-used reference engine)`, () => {
+test(`${RULE_ID}: pass when the second label[for] is display:none (not AT-eligible)`, () => {
   const html = `<!doctype html><html><body><label for="y">Name</label><input id="y" type="text"><label for="y" style="display:none">Hidden duplicate</label></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });

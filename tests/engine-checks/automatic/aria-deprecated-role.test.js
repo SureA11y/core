@@ -43,7 +43,7 @@ test(`${RULE_ID}: fail when role is deprecated`, () => {
   assert.match(rule.occurrences[0].hint, /role="list"/);
 });
 
-test(`${RULE_ID}: fail when role="generic" is explicitly declared (reserved for user-agent-internal use, not authors — verified against WAI-ARIA 1.2 spec + MDN)`, () => {
+test(`${RULE_ID}: fail when role="generic" is explicitly declared (reserved for user-agent-internal use, not authors — WAI-ARIA 1.2)`, () => {
   const html = `<!doctype html><html><body><div id="a" role="generic"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });

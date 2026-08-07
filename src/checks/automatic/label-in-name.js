@@ -90,20 +90,13 @@ function runInPage(ctx) {
   }
 
   // Unlike isDomVisible above, this also excludes aria-hidden subtrees.
-  // Needed specifically for collectVisibleTextUnder's per-text-node check
-  // below: an aria-hidden icon-font glyph (e.g. Material Icons' ligature
-  // pattern, <mat-icon aria-hidden="true">format_color_fill</mat-icon>) is
-  // technically DOM-visible pixels, but is never perceived by a sighted or
-  // voice-control user as literal readable words the way real visible text
-  // is — a widely-used reference engine's own label-content-name-mismatch check reaches the same
-  // practical outcome via a canvas-based ligature-detection heuristic
-  // (measuring rendered glyph shapes), not replicable here since this rule
-  // runs against static markup with no real canvas/font rendering
-  // available; excluding aria-hidden content is a cheaper, static-markup
-  // signal that gets the common case (decorative icon fonts) right without
-  // needing one (e.g. Angular Material's theme-picker button,
-  // aria-label="Select a theme", with an aria-hidden icon that would
-  // otherwise render literally as "format_color_fill").
+  // Needed for collectVisibleTextUnder's per-text-node check below: an
+  // aria-hidden icon-font glyph (e.g. an <i aria-hidden="true"> ligature
+  // rendering as "format_color_fill") is DOM-visible pixels but is never
+  // perceived as literal readable words the way real visible text is.
+  // Excluding aria-hidden content is a cheap static-markup signal that gets
+  // the common case (decorative icon fonts) right — an icon-only button
+  // named via aria-label shouldn't have its glyph name counted as text.
   function isAccEligible(el) {
     if (!el) return false;
     const fn =

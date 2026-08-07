@@ -14,8 +14,7 @@
  *   the referencing cell, and (d) is not the cell itself.
  * @implementation-notes
  * - One occurrence per offending cell (not per bad token), listing every
- *   invalid reference — matches a widely-used reference engine's
- *   td-headers-attr reporting granularity.
+ *   invalid reference.
  * - Not rule-gated on isAccTreeEligible: this remains a static-markup
  *   property, while engine-level hidden-subtree filtering still applies
  *   unless engineOptions.includeHiddenElements is true.

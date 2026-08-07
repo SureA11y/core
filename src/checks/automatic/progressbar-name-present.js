@@ -96,16 +96,12 @@ function runInPage(ctx) {
     const title = getAttr(el, 'title');
     if (title) return { ok: true, method: 'title' };
 
-    // role="progressbar" is name-from-author-only per WAI-ARIA (verified
-    // against a widely-used reference engine's own aria-progressbar-name check: any:
-    // ['aria-label', 'aria-labelledby', title] — no content-based naming
-    // method at all). It must NOT fall back to subtree content: found on a
-    // real site, Instacart's <ul role="progressbar"> loading skeleton has
-    // no name of its own, but nested descendants carry their own
-    // aria-label="Loading Box" (for a completely different purpose) —
-    // falling back to subtree content picked that up and wrongly treated
-    // it as the progressbar's own name, when that reference engine correctly
-    // still flags it as unnamed.
+    // role="progressbar" is name-from-author-only per WAI-ARIA: aria-label,
+    // aria-labelledby, or title — no content-based naming method at all. It
+    // must NOT fall back to subtree content: e.g. a <ul role="progressbar">
+    // loading skeleton with no name of its own, whose nested descendants
+    // carry their own aria-label for a different purpose — falling back to
+    // subtree content would wrongly treat that as the progressbar's name.
     return { ok: false, method: 'none' };
   }
 

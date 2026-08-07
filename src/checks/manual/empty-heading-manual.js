@@ -4,7 +4,7 @@
  * @check empty-heading
  * @atomic true
  * @summary Heading elements must not be empty
- * @standard Best Practices (a widely-used reference engine's classification; no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
  * @applicability
  *   Applies to elements with a heading role: native <h1>-<h6>, or any
  *   element with explicit role="heading" (unless overridden by another
@@ -30,7 +30,7 @@
  *   `helpers.getContentNameInfo` (see dom-helpers.js) — the same "name
  *   from content" implementation the 19 `-name-present` rules already
  *   use — rather than a narrower hand-rolled walker, so an `<img alt="...">`
- *   descendant's alt text (e.g. Party City's
+ *   descendant's alt text (e.g. a
  *   `<h1><a><div><img alt="..."></div></a></h1>` logo header) is correctly
  *   picked up as the heading's name instead of producing a false "empty
  *   heading" cantTell.

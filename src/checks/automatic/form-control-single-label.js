@@ -17,16 +17,13 @@
  *   are ambiguous: many screen readers only announce one of them, and it
  *   is not deterministic which.
  * @implementation-notes
- * - Matches a widely-used reference engine's form-field-multiple-labels. Distinct, atomic
- *   decision from form-control-programmatic-label-present (that
- *   rule checks a label exists at all; this one checks there is at most
- *   one).
+ * - Distinct, atomic decision from form-control-programmatic-label-present
+ *   (that rule checks a label exists at all; this one checks there is at
+ *   most one).
  * - A label that isn't accessibility-tree-eligible (display:none,
  *   aria-hidden, etc.) is excluded before counting: it can't contribute to
  *   the control's accessible name, so it can't create the ambiguity this
- *   rule exists to catch. Matches the reference engine's own
- *   multiple-label check, which filters hidden labels the same way before
- *   deciding whether there's more than one.
+ *   rule exists to catch.
  */
 
 const id = 'form-control-single-label';

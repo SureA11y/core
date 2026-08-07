@@ -59,7 +59,7 @@ test(`${RULE_ID}: pass when the context role is only reachable via aria-owns`, (
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail when the required-context role exists further up the tree but a real intervening ancestor role blocks it (found on a real site — Le Monde's review tablist, <ul role="tablist"><li><button role="tab">)`, () => {
+test(`${RULE_ID}: fail when the required-context role exists further up the tree but an intervening ancestor role blocks it (<ul role="tablist"><li><button role="tab">)`, () => {
   const html = `<!doctype html><html><body>
     <ul role="tablist"><li><button id="a" role="tab">t1</button></li></ul>
   </body></html>`;
@@ -69,13 +69,10 @@ test(`${RULE_ID}: fail when the required-context role exists further up the tree
 });
 
 test(`${RULE_ID}: pass when role="group" is the immediate parent context for menuitem (menu > presentation > group > menuitem)`, () => {
-  // Regression for a real false positive found via a live-DOM cross-engine
-  // run 2026-07-21: Ant Design's sectioned sidebar nav has role="menuitem"
-  // items whose DIRECT parent is a role="group" <ul> (wrapped in a
+  // A menuitem whose DIRECT parent is a role="group" <ul> (wrapped in a
   // role="presentation" <li> for the section heading), itself owned by the
-  // outer role="menu" (72 occurrences on one page) - verified directly
-  // against the real live page's DOM structure and against a reference
-  // engine's own menuitem role descriptor (requiredContext: ['menu','menubar','group']).
+  // outer role="menu", satisfies menuitem's requiredContext
+  // (['menu','menubar','group']).
   const html = `<!doctype html><html><body>
     <ul role="menu"><li role="presentation"><ul role="group"><li id="a" role="menuitem" tabindex="-1">Item</li></ul></li></ul>
   </body></html>`;
@@ -100,20 +97,17 @@ test(`${RULE_ID}: pass when the only intervening ancestor is transparent (role="
 });
 
 test(`${RULE_ID}: pass for a multi-level nested treeitem (treeitem > group > treeitem > group > tree) — a normal, arbitrarily-deep ARIA tree`, () => {
-  // Regression for a real false positive found via a live-DOM cross-engine
-  // run 2026-08-02: GitHub's PR "Files changed" file-tree sidebar nests a
-  // sub-tree's <li role="treeitem"> items directly inside their parent
-  // directory treeitem's own <ul role="group"> children container (a
+  // A sub-tree's <li role="treeitem"> items nested directly inside their
+  // parent directory treeitem's own <ul role="group"> children container (a
   // standard ARIA TreeView pattern: tree > treeitem > group > treeitem >
   // group > treeitem...). hasAcceptableAncestorContext previously treated
   // the immediate role="group" ancestor as transparent (per
   // GROUP_TRANSPARENT_FOR_ROLES) and kept walking, but stopped at the next
   // real ancestor role — a second treeitem — and failed since "treeitem"
-  // wasn't itself in the original acceptable-roles set. A reference
-  // engine's own getMissingContext handles this by pushing the tested
-  // element's own role into the acceptable set at the same point it drops
-  // "group", so a further treeitem ancestor also satisfies the requirement;
-  // this check now mirrors that.
+  // wasn't itself in the original acceptable-roles set. The fix pushes the
+  // tested element's own role into the acceptable set at the same point it
+  // drops "group", so a further treeitem ancestor also satisfies the
+  // requirement.
   const html = `<!doctype html><html><body>
     <ul role="tree">
       <li role="treeitem" aria-expanded="true">Outer dir
@@ -128,14 +122,12 @@ test(`${RULE_ID}: pass for a multi-level nested treeitem (treeitem > group > tre
 });
 
 test(`${RULE_ID}: pass when an intervening ancestor has an invalid/unrecognized role token (not a real ARIA role) — transparent to the search, same as no role at all`, () => {
-  // Regression for a real false positive found via a live-DOM cross-engine
-  // run 2026-07-31: tabulator.info's column-grouping example has
-  // role="columnheader" cells whose immediate role-bearing ancestor is
-  // role="columngroup" (not a real ARIA role — Tabulator's own invention),
-  // itself inside the real role="row" ancestor. A reference engine's own
-  // explicit-role resolution validates role="" tokens against its known
-  // role list and falls back past invalid ones, finding "row"; this rule
-  // previously stopped the search at the bogus "columngroup" token instead.
+  // A role="columnheader" cell whose immediate role-bearing ancestor is
+  // role="columngroup" (not a real ARIA role), itself inside a real
+  // role="row" ancestor. Explicit-role resolution validates role="" tokens
+  // against the known role list and falls back past invalid ones, finding
+  // "row"; this rule previously stopped the search at the bogus
+  // "columngroup" token instead.
   const html = `<!doctype html><html><body>
     <div role="grid"><div role="row"><div role="columngroup"><div id="a" role="columnheader">Progress</div></div></div></div>
   </body></html>`;
@@ -154,13 +146,11 @@ test(`${RULE_ID}: fail when no acceptable ancestor/owner context role exists`, (
 });
 
 test(`${RULE_ID}: pass when the required-context role only exists across a shadow-DOM slot boundary (composed-tree ancestor, not light-DOM parentElement)`, () => {
-  // Regression for a real false positive found via a live-DOM cross-engine
-  // run 2026-07-22: Adobe Spectrum Web Components' <sp-sidenav-item
-  // role="listitem"> elements are light-DOM children of <sp-sidenav>,
-  // distributed via slot="descendant" into a shadow root that wraps that
-  // slot in <div role="list">. The listitem's real rendered ancestor (the
+  // A role="listitem" element is a light-DOM child of a host, distributed
+  // via slot="descendant" into a shadow root that wraps that slot in
+  // <div role="list">. The listitem's real rendered ancestor (the
   // role="list" div) is only reachable via .assignedSlot, invisible to
-  // .parentElement — 98 occurrences on one real page before this fix.
+  // .parentElement.
   const dom = createDom(`<!doctype html><html><body>
     <div id="host"><div id="a" role="listitem" slot="descendant">Item</div></div>
   </body></html>`);

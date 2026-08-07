@@ -2,10 +2,7 @@
 
 /**
  * postMessage-based RPC used to reach into cooperating child frames (same-
- * or cross-origin -- treated identically, exactly like a widely-used
- * reference engine's own runPartial/finishRun/frameMessenger protocol,
- * confirmed by reading that engine's _sendCommandToFrame/_collectResultsFromFrames
- * source directly rather than assuming). Used by frame-scan.js.
+ * or cross-origin, treated identically). Used by frame-scan.js.
  *
  * Only matters for the "plain script injection" consumption mode (surea11y
  * loaded directly into a page with no automation driver -- see
@@ -61,7 +58,7 @@ function installFrameRpcListener(win, channel) {
 
     if (data.type === 'run') {
       const responder = registry.responder;
-      if (typeof responder !== 'function') return; // no responder enabled here: unreachable, same as a widely-used reference engine's own limitation
+      if (typeof responder !== 'function') return; // no responder enabled here: unreachable
       Promise.resolve()
         .then(function () {
           return responder(data.payload);
@@ -137,10 +134,9 @@ function nextFrameRpcRequestId(win) {
 
 /**
  * Pings a target frame's window; resolves true if a cooperating surea11y
- * responder answers within pingWaitTime (default 500ms, matching a widely-used
- * reference engine's own default), false otherwise. Never rejects -- "not reachable" is a normal,
- * expected outcome (most iframes on the web have no surea11y loaded at
- * all), not an error.
+ * responder answers within pingWaitTime (default 500ms), false otherwise.
+ * Never rejects -- "not reachable" is a normal, expected outcome (most
+ * iframes on the web have no surea11y loaded at all), not an error.
  */
 function pingFrame(win, targetWindow, pingWaitTime) {
   installFrameRpcListener(win, FRAME_RPC_CHANNEL);
@@ -188,8 +184,7 @@ function pingFrame(win, targetWindow, pingWaitTime) {
 /**
  * Sends a 'run' command to a target frame's window (already confirmed
  * reachable via pingFrame) and resolves with its reply payload, or rejects
- * on timeout (default 60s, matching a widely-used reference engine's own frameWaitTime default) or an
- * explicit error reply.
+ * on timeout (default 60s) or an explicit error reply.
  */
 function sendFrameRunCommand(win, targetWindow, payload, frameWaitTime) {
   installFrameRpcListener(win, FRAME_RPC_CHANNEL);

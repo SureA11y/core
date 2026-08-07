@@ -56,12 +56,12 @@
   </div>
 
   <div class="case" id="case_08">
-    <div class="case-title">08 — PASS: ul, li plus an invalid child that is display:none (not exposed to AT, excluded from consideration — found on a real site, Stanford's main nav interleaves &lt;li&gt; with hydration-marker &lt;span style="display:none"&gt;)</div>
+    <div class="case-title">08 — PASS: ul, li plus an invalid child that is display:none (not exposed to AT, excluded from consideration)</div>
     <ul id="lcv_case_08"><li>Grape</li><span style="display:none">hydration marker</span></ul>
   </div>
 
   <div class="case" id="case_09">
-    <div class="case-title">09 — PASS: ul, li plus an &lt;input type="hidden"&gt; direct child (UA-stylesheet display:none by spec, not exposed to AT — found on a real site, Spotify's newsroom Mailchimp embed)</div>
+    <div class="case-title">09 — PASS: ul, li plus an &lt;input type="hidden"&gt; direct child (UA-stylesheet display:none by spec, not exposed to AT)</div>
     <ul id="lcv_case_09"><li>Honeydew</li><input type="hidden" value="x"></ul>
   </div>
 
@@ -76,12 +76,12 @@
   </div>
 
   <div class="case" id="case_12">
-    <div class="case-title">12 — FAIL: ul, an &lt;li role="none"&gt; direct child (an explicit role always wins over the &lt;li&gt; tag — verified against a widely-used reference engine's own only-listitems algorithm; found on a real site, Notion's footer nav lists use &lt;li role="none"&gt; to host the list's own visually-hidden label)</div>
+    <div class="case-title">12 — FAIL: ul, an &lt;li role="none"&gt; direct child (an explicit role always wins over the &lt;li&gt; tag)</div>
     <ul id="lcv_case_12"><li role="none">Section label</li><li>Mango</li></ul>
   </div>
 
   <div class="case" id="case_13">
-    <div class="case-title">13 — FAIL: ul, an &lt;li role="menuitem"&gt; direct child (found on a real site — LinkedIn's top-nav menu list)</div>
+    <div class="case-title">13 — FAIL: ul, an &lt;li role="menuitem"&gt; direct child</div>
     <ul id="lcv_case_13"><li role="menuitem">Item</li></ul>
   </div>
 

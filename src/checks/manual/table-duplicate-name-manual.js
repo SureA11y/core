@@ -4,7 +4,7 @@
  * @check table-duplicate-name
  * @atomic true
  * @summary A table's caption must not duplicate its summary attribute
- * @standard Best Practices (a widely-used reference engine's classification; no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
  * @applicability
  *   Applies to <table> elements that have both a <caption> with text
  *   content and a (deprecated but still encountered) summary attribute.
@@ -17,9 +17,8 @@
  * - Not WCAG-normative — authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent.
- * - Narrowly scoped to caption-vs-summary duplication specifically
- *   (matching a reference engine's table-duplicate-name check), not a general "table
- *   name quality" check.
+ * - Narrowly scoped to caption-vs-summary duplication specifically, not a
+ *   general "table name quality" check.
  */
 
 const id = 'table-duplicate-name';

@@ -12,10 +12,9 @@ const { createDomHelpers } = require('../../src/core/dom-helpers.js');
 // pipeline, `root` is `document.documentElement` (the <html> element), so
 // any rule scanning by attribute selector (`[role]`, `[lang]`, etc.) was
 // structurally blind to an issue asserted directly on <html> itself, no
-// matter how correct that rule's own logic was. Found via a real page —
-// news24.com's South Africa homepage, `<html role="document">`, which
-// a widely-used reference engine correctly flags but aria-allowed-role
-// couldn't reach at all before this fix.
+// matter how correct that rule's own logic was. A `<html role="document">`
+// is exactly the case aria-allowed-role couldn't reach at all before this
+// fix.
 test('queryAllSmart: matches the root element itself when it satisfies the selector', () => {
   const dom = new JSDOM(
     `<!doctype html><html lang="en" role="document"><body><div id="d"></div></body></html>`,

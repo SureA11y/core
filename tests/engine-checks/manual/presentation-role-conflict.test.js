@@ -64,7 +64,7 @@ test(`${RULE_ID}: notApplicable when role="presentation" is on a disabled (non-f
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: cantTell when <img alt=""> has aria-hidden="" (empty value, but still a specified global ARIA attribute — presence, not value, triggers the conflict; found on a real site, Slack's homepage)`, () => {
+test(`${RULE_ID}: cantTell when <img alt=""> has aria-hidden="" (empty value, but still a specified global ARIA attribute — presence, not value, triggers the conflict)`, () => {
   const html = `<!doctype html><html><body><img id="a" src="x.png" alt="" aria-hidden=""></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });

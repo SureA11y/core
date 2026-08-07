@@ -4,7 +4,7 @@
  * @check landmark-main-is-top-level
  * @atomic true
  * @summary The main landmark must not be nested inside another landmark
- * @standard Best Practices (a widely-used reference engine's classification; no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
  * @applicability
  *   Applies whenever the page contains at least one main landmark
  *   (explicit role="main", or an implicit <main> element).
@@ -59,9 +59,8 @@ function runInPage(ctx) {
 
   // Delegates to the shared helpers.getLandmarkNameInfo (aria-label -> aria-labelledby, via the
   // target's own accessible name, not raw textContent -> title attribute fallback) rather than a
-  // local copy -- see that function's header comment in src/core/dom-helpers.js for the real bug
-  // (missing title fallback) this replaced across all 7 landmark rule files that had their own
-  // copy of this logic.
+  // local copy -- see that function's header comment in src/core/dom-helpers.js. Sharing it keeps
+  // the title-attribute fallback consistent across the landmark rules.
   function getAccessibleLandmarkName(el) {
     try {
       if (helpers && typeof helpers.getLandmarkNameInfo === 'function') {
@@ -84,10 +83,8 @@ function runInPage(ctx) {
   // (an ancestor's bare TAG only counts when it carries no role attribute
   // at all; an explicit role="dialog"-style override no longer suppresses)
   // rather than a local tag-only copy. See that function's header comment
-  // in src/core/aria-helpers.js for the full algorithm and the real page
-  // (handsontable.com's docs-assistant side panel, an
-  // <aside role="dialog"> containing its own <header>) that surfaced this
-  // rule's own former tag-only copy as a false negative.
+  // in src/core/aria-helpers.js for the full algorithm. Example: an
+  // <aside role="dialog"> containing its own <header>.
   function hasSectioningAncestor(el, includeMain) {
     return helpers && typeof helpers.hasLandmarkScopingAncestor === 'function'
       ? helpers.hasLandmarkScopingAncestor(el, { includeMain })
@@ -101,11 +98,9 @@ function runInPage(ctx) {
     if (tag === 'main') return 'main';
     if (tag === 'nav') return 'navigation';
     if (tag === 'aside') {
-      // A named <aside> is never suppressed, even when nested — matches
-      // landmark-unique's own verified-against-reference-engine precedent
-      // (that engine's real `aside` implicit-role function keeps
-      // "complementary" when the element has an accessible name, even
-      // inside sectioning content); propagated here for consistency.
+      // A named <aside> is never suppressed, even when nested — it keeps
+      // "complementary" when it has an accessible name, even inside
+      // sectioning content. Matches landmark-unique's precedent.
       if (!hasSectioningAncestor(el, false)) return 'complementary';
       return getAccessibleLandmarkName(el) ? 'complementary' : '';
     }
@@ -146,9 +141,8 @@ function runInPage(ctx) {
   }
 
   // queryAllSmart (shadow-DOM-aware) instead of plain document.querySelectorAll -- see
-  // landmark-unique-manual.js's header comment for the real page (Airtable)
-  // that surfaced this gap: a third-party shadow-DOM-hosted widget's own landmark is
-  // invisible to a light-DOM-only query.
+  // landmark-unique-manual.js's header comment. A third-party shadow-DOM-hosted
+  // widget's own landmark is invisible to a light-DOM-only query.
   let nodes;
   try {
     nodes =
@@ -173,7 +167,7 @@ function runInPage(ctx) {
     // begin with, from AT's perspective). queryAllSmart's default hidden-
     // content policy only excludes "hard" CSS-based hiding (display:none,
     // etc.), not the softer aria-hidden exclusion, so this needs its own
-    // check. Found while extending direct coverage of this rule family.
+    // check.
     if (helpers && typeof helpers.isAccTreeEligible === 'function') {
       const elig = (() => {
         try {

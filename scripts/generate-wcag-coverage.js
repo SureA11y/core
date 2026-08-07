@@ -29,7 +29,7 @@
  * - FACETS definitions are loaded from the facets file and used to compute per-SC facet coverage.
  *
  * WCAG level/version coverage:
- * - This script also summarizes rule coverage using widely-used reference-engine-style WCAG tags:
+ * - This script also summarizes rule coverage using level/version WCAG tags:
  *     wcag2a / wcag2aa / wcag2aaa
  *     wcag21a / wcag21aa / wcag21aaa
  *     wcag22a / wcag22aa / wcag22aaa
@@ -284,7 +284,7 @@ function formatAutomationMix(automationCounts) {
  * ========================= */
 
 /**
- * Parse widely-used reference-engine-style WCAG tags.
+ * Parse level/version WCAG tags.
  * Examples:
  *   wcag2a, wcag2aa, wcag2aaa
  *   wcag21a, wcag21aa, wcag21aaa

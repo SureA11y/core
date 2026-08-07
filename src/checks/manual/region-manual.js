@@ -4,7 +4,7 @@
  * @check region
  * @atomic true
  * @summary Page content should be contained within a landmark region
- * @standard Best Practices (a widely-used reference engine's classification; no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
  * @applicability
  *   Applies to any element under <body> that directly carries visible text
  *   (or other own content — see @implementation-notes) and is not itself a
@@ -27,8 +27,8 @@
  *   gives at most one candidate for the entire page and either misses
  *   every real gap inside it or collapses the whole page into one
  *   undifferentiated report.
- * - Algorithm, using this engine's own (already more spec-correct in
- *   places — see hasLandmarkScopingAncestor's header comment) helpers:
+ * - Algorithm, using this engine's own helpers (see
+ *   hasLandmarkScopingAncestor's header comment):
  *     1. Depth-first walk from <body>'s children.
  *     2. At each node: if it's ineligible for the accessibility tree
  *        (helpers.isAccTreeEligible), OR is itself a "stopper" (landmark,
@@ -49,7 +49,7 @@
  *   contiguous unplaced content into one occurrence per real gap instead
  *   of reporting every individual text-bearing leaf — this is what keeps
  *   the walk from being noisy on ordinary pages that mix landmarked and
- *   stray content, not the old direct-children-only restriction.
+ *   stray content.
  * - "Stopper" exemptions (button, dialog, <svg>, resolvable skip-links)
  *   are a deliberate scope choice, not an oversight: these
  *   are extremely common real-world patterns (floating action buttons,
@@ -116,9 +116,7 @@ function runInPage(ctx) {
 
   // Delegates to the shared helpers.getLandmarkNameInfo (aria-label -> aria-labelledby, via the
   // target's own accessible name, not raw textContent -> title attribute fallback) rather than a
-  // local copy -- see that function's header comment in src/core/dom-helpers.js for the real bug
-  // (missing title fallback) this replaced across all 7 landmark rule files that had their own
-  // copy of this logic.
+  // local copy -- see that function's header comment in src/core/dom-helpers.js.
   function getAccessibleLandmarkName(el) {
     try {
       if (helpers && typeof helpers.getLandmarkNameInfo === 'function') {
@@ -141,10 +139,9 @@ function runInPage(ctx) {
   // (an ancestor's bare TAG only counts when it carries no role attribute
   // at all; an explicit role="dialog"-style override no longer suppresses)
   // rather than a local tag-only copy. See that function's header comment
-  // in src/core/aria-helpers.js for the full algorithm and the real page
-  // (handsontable.com's docs-assistant side panel, an
-  // <aside role="dialog"> containing its own <header>) that surfaced this
-  // rule's own former tag-only copy as a false negative.
+  // in src/core/aria-helpers.js for the full algorithm — e.g. an
+  // <aside role="dialog"> containing its own <header>, where the <header>
+  // keeps its banner role.
   function hasSectioningAncestor(el, includeMain) {
     return helpers && typeof helpers.hasLandmarkScopingAncestor === 'function'
       ? helpers.hasLandmarkScopingAncestor(el, { includeMain })
@@ -158,11 +155,9 @@ function runInPage(ctx) {
     if (tag === 'main') return 'main';
     if (tag === 'nav') return 'navigation';
     if (tag === 'aside') {
-      // A named <aside> is never suppressed, even when nested — matches
-      // landmark-unique's own verified-against-reference-engine precedent
-      // (that engine's real `aside` implicit-role function keeps
+      // A named <aside> is never suppressed, even when nested: keeps
       // "complementary" when the element has an accessible name, even
-      // inside sectioning content); propagated here for consistency.
+      // inside sectioning content. See landmark-unique-manual.js.
       if (!hasSectioningAncestor(el, false)) return 'complementary';
       return getAccessibleLandmarkName(el) ? 'complementary' : '';
     }
@@ -193,8 +188,7 @@ function runInPage(ctx) {
 
   // Roles/attributes that make an element its own self-contained
   // announced area — not literally a WAI-ARIA landmark, but not "content
-  // that needs a landmark" either. Same live-region role list a widely-used
-  // reference engine's own region rule stops recursion at.
+  // that needs a landmark" either.
   const LIVE_REGION_ROLES = new Set(['alert', 'status', 'log', 'marquee', 'timer']);
 
   function isAriaLive(el) {
@@ -254,12 +248,11 @@ function runInPage(ctx) {
   const VISUAL_CONTENT_TAGS = new Set(['img', 'video', 'audio', 'canvas', 'object', 'embed']);
 
   // Non-recursive "does THIS element, on its own, carry content" check —
-  // deliberately mirrors only the direct-content half of getContentNameInfo/
-  // a widely-used reference engine's own has-content check, not a full
-  // name-from-content recursion: the whole point is to keep recursing
-  // through plain wrapper elements (a framework's root mount <div> included)
-  // until reaching the actual content-bearing node, rather than a coarse
-  // ancestor swallowing everything beneath it into one report.
+  // deliberately mirrors only the direct-content half of getContentNameInfo,
+  // not a full name-from-content recursion: the whole point is to keep
+  // recursing through plain wrapper elements (a framework's root mount
+  // <div> included) until reaching the actual content-bearing node, rather
+  // than a coarse ancestor swallowing everything beneath it into one report.
   function hasOwnContent(el) {
     const kids = el.childNodes || [];
     for (let i = 0; i < kids.length; i++) {
@@ -338,9 +331,8 @@ function runInPage(ctx) {
   // Collapse each candidate leaf upward through parents that have no OTHER
   // stopper anywhere in their subtree, so contiguous unplaced content
   // merges into ONE occurrence per real gap instead of one per text node --
-  // this collapsing, not the old direct-children-only scope, is what keeps
-  // ordinary pages (landmarked content mixed with a little stray content)
-  // from producing noisy, one-per-leaf reports.
+  // this collapsing is what keeps ordinary pages (landmarked content mixed
+  // with a little stray content) from producing noisy, one-per-leaf reports.
   const collapsed = [];
   const seen = new Set();
   for (const leaf of leaves) {

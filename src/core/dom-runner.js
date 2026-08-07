@@ -49,15 +49,10 @@ function runCore(
   // contextSelector accepts a single selector string (which may itself be a
   // comma-separated selector list -- ordinary CSS union semantics) OR an
   // array of selector strings for scanning multiple, possibly disjoint
-  // regions in one run (a widely-used reference engine's multi-.include()
-  // capability has no equivalent here otherwise). Both forms resolve via querySelectorAll,
-  // not querySelector -- previously a single string only ever scanned its
-  // FIRST match, silently ignoring the rest if it happened to match more
-  // than one element. That was a real gap, not a deliberate "one region
-  // only" design: switched to querySelectorAll for both forms so
-  // "matches this selector" actually means all matches, consistently.
-  // Shared with frame-scan.js (same resolution used to discover which
-  // child <iframe>/<frame> elements fall within the same scan scope).
+  // regions in one run. Both forms resolve via querySelectorAll, not
+  // querySelector, so "matches this selector" means all matches, not just
+  // the first. Shared with frame-scan.js (same resolution used to discover
+  // which child <iframe>/<frame> elements fall within the same scan scope).
   const { ctxSelector, roots } = resolveContextRoots(document, contextSelector);
 
   // Default on: opt OUT with `includeShadowDom: false`, not opt in.
@@ -192,9 +187,9 @@ function runCore(
   // structured-clone/JSON boundary there, so a live Function reference can't survive it,
   // but a string can). Reconstructed via `new Function`, matching exactly how build-core.js
   // already embeds each built-in rule's own runInPage source into the in-page runner.
-  // Scan-scoped only (not added to the static CHECK_DEFS/getRulesCatalog() catalog) --
-  // matches surea11y's existing "fresh engineOptions per call, no mutable global config"
-  // design (see ROADMAP.md), rather than a widely-used reference engine's stateful global configure().
+  // Scan-scoped only (not added to the static CHECK_DEFS/getRulesCatalog()
+  // catalog) -- matches surea11y's "fresh engineOptions per call, no
+  // mutable global config" design (see ROADMAP.md).
   let effectiveCheckDefs = CHECK_DEFS;
   let effectiveRuleImpls = RULE_IMPLS;
   let overriddenBuiltinIds = [];

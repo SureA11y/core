@@ -23,11 +23,10 @@
     (DOM-visible; note aria-hidden on the <em>control itself</em> does NOT
     gate this — see case 14), and (c) have a deterministically-extractable
     visible text label — <strong>text inside an aria-hidden descendant does
-    not count as visible label text</strong> (2026-07-21: an aria-hidden
-    icon-font glyph, e.g. Material Icons' ligature pattern, is technically
-    DOM-visible pixels but never perceived as literal readable words the way
-    a widely-used reference engine's own canvas-based icon-ligature detection also concludes —
-    see case 13). When applicable, the rule fails if the normalized
+    not count as visible label text</strong> (an aria-hidden icon-font glyph,
+    e.g. an icon ligature, is technically DOM-visible pixels but never
+    perceived as literal readable words — see case 13). When applicable, the
+    rule fails if the normalized
     accessible name does not contain the normalized visible label as a
     substring. Each target has a stable id <code>lin_case_NN</code>.
   </p>
@@ -105,7 +104,7 @@
   <h2>D. aria-hidden on the control itself does NOT gate applicability; on a descendant, it DOES exclude that text from the visible-label comparison</h2>
 
   <div class="case" id="case_13">
-    <div class="case-title">13 — N/A: only content is an aria-hidden decorative glyph, which does not count as visible label text (2026-07-21)</div>
+    <div class="case-title">13 — N/A: only content is an aria-hidden decorative glyph, which does not count as visible label text</div>
     <button id="lin_case_13" aria-label="Close dialog"><span aria-hidden="true">✕</span></button>
   </div>
 
@@ -127,7 +126,7 @@
   </div>
 
   <div class="case" id="case_17">
-    <div class="case-title">17 — PASS: aria-hidden decorative icon alongside real visible text — the icon is excluded, only "Save" is compared (2026-07-21, the actual Angular Material button-with-icon shape)</div>
+    <div class="case-title">17 — PASS: aria-hidden decorative icon alongside real visible text — the icon is excluded, only "Save" is compared</div>
     <button id="lin_case_17" aria-label="Save changes"><span aria-hidden="true">💾</span> Save</button>
   </div>
 

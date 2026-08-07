@@ -59,7 +59,7 @@
   </div>
 
   <div class="case" id="case_10">
-    <div class="case-title">10 — PASS: role="application" is permitted on &lt;video&gt; (verified against a widely-used reference engine)</div>
+    <div class="case-title">10 — PASS: role="application" is permitted on &lt;video&gt;</div>
     <video role="application" id="aar_case_10"></video>
   </div>
 
@@ -85,7 +85,7 @@
   </div>
 
   <div class="case" id="case_19">
-    <div class="case-title">19 — PASS: role="navigation" is permitted on &lt;table&gt; (any role permitted; found on a real site — Wikipedia's sidebar)</div>
+    <div class="case-title">19 — PASS: role="navigation" is permitted on &lt;table&gt; (any role permitted)</div>
     <table role="navigation" id="aar_case_19"><tbody><tr><td>x</td></tr></tbody></table>
   </div>
 
@@ -135,12 +135,12 @@
   </div>
 
   <div class="case" id="case_37">
-    <div class="case-title">37 — PASS: role="banner" is permitted on a top-level &lt;header&gt; (restates its own conditional native role — found on a real site, Navy Federal's top-level page header)</div>
+    <div class="case-title">37 — PASS: role="banner" is permitted on a top-level &lt;header&gt; (restates its own conditional native role)</div>
     <header role="banner" id="aar_case_37"></header>
   </div>
 
   <div class="case" id="case_33">
-    <div class="case-title">33 — PASS: role="menu" is permitted on &lt;nav&gt; (verified against a widely-used reference engine's own allowedRoles array; found on a real site — Vimeo's global nav dropdown panels)</div>
+    <div class="case-title">33 — PASS: role="menu" is permitted on &lt;nav&gt;</div>
     <nav role="menu" id="aar_case_33"></nav>
   </div>
 
@@ -188,54 +188,54 @@
   </div>
 
   <div class="case" id="case_23">
-    <div class="case-title">23 — FAIL: &lt;label&gt; associated with a labelable control permits no explicit role (found on a real site — basecamp.com's nav toggle)</div>
+    <div class="case-title">23 — FAIL: &lt;label&gt; associated with a labelable control permits no explicit role</div>
     <label for="aar_case_23_target" role="button" id="aar_case_23">Toggle</label>
     <input id="aar_case_23_target" type="checkbox">
   </div>
 
   <div class="case" id="case_25">
-    <div class="case-title">25 — FAIL: role="button" is not permitted on &lt;input type="checkbox"&gt; without aria-pressed (found on a real site — Wikipedia's dropdown toggles)</div>
+    <div class="case-title">25 — FAIL: role="button" is not permitted on &lt;input type="checkbox"&gt; without aria-pressed</div>
     <input type="checkbox" role="button" aria-haspopup="true" id="aar_case_25">
   </div>
 
   <div class="case" id="case_28">
-    <div class="case-title">28 — FAIL: role="region" is not permitted on &lt;form&gt; (found on a real site — Stack Overflow's search filter panel)</div>
+    <div class="case-title">28 — FAIL: role="region" is not permitted on &lt;form&gt;</div>
     <form role="region" id="aar_case_28"></form>
   </div>
 
   <div class="case" id="case_29">
-    <div class="case-title">29 — FAIL: role="dialog" is not permitted on &lt;aside&gt; (found on a real site — Stack Overflow's feed-link modal)</div>
+    <div class="case-title">29 — FAIL: role="dialog" is not permitted on &lt;aside&gt;</div>
     <aside role="dialog" id="aar_case_29"></aside>
   </div>
 
   <div class="case" id="case_32">
-    <div class="case-title">32 — FAIL: role="region" is not permitted on a &lt;section&gt; with no accessible name (found on a real site — ESPN's global scoreboard)</div>
+    <div class="case-title">32 — FAIL: role="region" is not permitted on a &lt;section&gt; with no accessible name</div>
     <section role="region" id="aar_case_32"></section>
   </div>
 
   <div class="case" id="case_36">
-    <div class="case-title">36 — FAIL: role="navigation" is not permitted on &lt;header&gt; (found on a real site — Vimeo's global nav header)</div>
+    <div class="case-title">36 — FAIL: role="navigation" is not permitted on &lt;header&gt;</div>
     <header role="navigation" id="aar_case_36"></header>
   </div>
 
   <div class="case" id="case_38">
-    <div class="case-title">38 — FAIL: role="banner" is NOT permitted on a &lt;header&gt; nested inside &lt;main&gt; (nested headers have no implicit "banner" role to restate — 'banner' isn't in that reference engine's allowedRoles array for &lt;header&gt; either)</div>
+    <div class="case-title">38 — FAIL: role="banner" is NOT permitted on a &lt;header&gt; nested inside &lt;main&gt; (nested headers have no implicit "banner" role to restate)</div>
     <main><header role="banner" id="aar_case_38"></header></main>
   </div>
 
   <div class="case" id="case_39">
-    <div class="case-title">39 — FAIL: role="group" is NOT permitted on &lt;a href&gt; (found on a real site — Blick Art Materials' homepage carousel; &lt;a href&gt; was previously wrongly treated as unconstrained)</div>
+    <div class="case-title">39 — FAIL: role="group" is NOT permitted on &lt;a href&gt; (&lt;a href&gt; was previously wrongly treated as unconstrained)</div>
     <a href="/x" role="group" id="aar_case_39"></a>
   </div>
 
   <div class="case" id="case_41">
-    <div class="case-title">41 — FAIL: no override role is permitted on &lt;area href&gt; at all (a widely-used reference engine's allowedRoles is literally false here) — only its own native "link" role may be restated</div>
+    <div class="case-title">41 — FAIL: no override role is permitted on &lt;area href&gt; at all — only its own native "link" role may be restated</div>
     <img alt="" usemap="#map41" src="x.png">
     <map name="map41"><area href="/x" role="tab" shape="rect" coords="0,0,10,10" id="aar_case_41"></map>
   </div>
 
   <div class="case" id="case_43">
-    <div class="case-title">43 — FAIL: role="group" is NOT permitted on &lt;article&gt; (widened 2026-07-21 — found on a real site, Udacity's homepage Swiper.js carousel slides, 15 identical &lt;article role="group"&gt; instances)</div>
+    <div class="case-title">43 — FAIL: role="group" is NOT permitted on &lt;article&gt;</div>
     <article role="group" id="aar_case_43"></article>
   </div>
 
@@ -245,12 +245,12 @@
   </div>
 
   <div class="case" id="case_45">
-    <div class="case-title">45 — FAIL: no override role is ever permitted on &lt;picture&gt; (found on a real site, TradingView's homepage, &lt;picture role="presentation"&gt; used twice for hero illustrations; a widely-used reference engine's own element spec: allowedRoles: false)</div>
+    <div class="case-title">45 — FAIL: no override role is ever permitted on &lt;picture&gt;</div>
     <picture role="presentation" id="aar_case_45"><img src="x.png" alt=""></picture>
   </div>
 
   <div class="case" id="case_46">
-    <div class="case-title">46 — PASS: role="gridcell" is permitted on &lt;button&gt; (widened 2026-08-04 — found on a real site, MUI's DatePicker calendar, every day cell is a &lt;button role="gridcell"&gt;)</div>
+    <div class="case-title">46 — PASS: role="gridcell" is permitted on &lt;button&gt;</div>
     <button role="gridcell" id="aar_case_46">1</button>
   </div>
 

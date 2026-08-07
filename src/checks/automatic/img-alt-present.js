@@ -172,15 +172,11 @@ function runInPage(ctx) {
       if (ariaName && ariaName.present) continue;
     }
 
-    // A non-empty title attribute is HTML-AAM's own next fallback naming
-    // source for <img> once alt is entirely absent (not merely alt="",
-    // which explicitly marks decorative and stays excluded from this
-    // branch since hasAlt already short-circuited above) -- confirmed
-    // against a widely-used reference engine's own image-alt rule, which
-    // lists a non-empty title as one of its "any" satisfying conditions
-    // alongside has-alt/aria-label/aria-labelledby (e.g. AliExpress's
-    // logo: `<img src="..." title="...">` with no alt attribute at all --
-    // a real false positive, not a missing text alternative).
+    // A non-empty title attribute is HTML-AAM's next fallback naming source
+    // for <img> once alt is entirely absent (not merely alt="", which
+    // explicitly marks decorative and stays excluded from this branch since
+    // hasAlt already short-circuited above). An `<img src="..." title="...">`
+    // with no alt attribute at all is not missing a text alternative.
     const title = trim(el.getAttribute('title'));
     if (title) continue;
 

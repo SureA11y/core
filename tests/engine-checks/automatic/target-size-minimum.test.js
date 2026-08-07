@@ -192,7 +192,7 @@ test(`${RULE_ID}: conflict inside svg => cantTell (essential/equivalent uncertai
     </svg>
   </body></html>`;
   const result = run(html);
-  // Fixed 2026-07-31: this uncertain-tier finding used to be recorded only
+  // This uncertain-tier finding used to be recorded only
   // as a page-level boolean with no occurrence at all — unrecoverable from
   // the result the moment it was combined with a real page. Now it's a
   // real occurrence, same as a fail-tier finding would be. Both A and B
@@ -203,9 +203,9 @@ test(`${RULE_ID}: conflict inside svg => cantTell (essential/equivalent uncertai
   }
 });
 
-test(`${RULE_ID}: undersized target flush against an adequately-sized neighbor => fail (widened geometry check)`, () => {
-  // Regression guard for the fix that widened the pure-geometry spacing
-  // check to compare against ANY nearby target (not just other undersized
+test(`${RULE_ID}: undersized target flush against an adequately-sized neighbor => fail`, () => {
+  // The pure-geometry spacing check compares against ANY nearby target
+  // (not just other undersized
   // ones). #big is >=24x24, so an "undersized-only" comparison would have
   // missed this conflict; centers are 22.36px apart (< MIN 24), so the
   // deterministic distance check must catch it directly (hitCount: 0).
@@ -223,7 +223,7 @@ test(`${RULE_ID}: undersized target flush against an adequately-sized neighbor =
 });
 
 test(`${RULE_ID}: ambiguous near-threshold perimeter sampling => cantTell (not a hard fail)`, () => {
-  // Empirically verified: centers are ~26.9px apart (just outside the pure
+  // Centers are ~26.9px apart (just outside the pure
   // geometry MIN=24 distance check), but the 24x24 sampling circle around
   // #small's center clips the corner of #big for 3 of 16 perimeter
   // samples. That lands in the ambiguous band (>= HIT_THRESHOLD-1 but
@@ -234,13 +234,13 @@ test(`${RULE_ID}: ambiguous near-threshold perimeter sampling => cantTell (not a
     <button id="big" data-rect="25,10,30,30">Big</button>
   </body></html>`;
   const result = run(html);
-  // Fixed 2026-07-31: same gap as the svg case above — this ambiguous-tier
+  // Same gap as the svg case above — this ambiguous-tier
   // finding used to have no occurrence at all, just a boolean flag.
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'undersized-ambiguous-spacing');
 });
 
-test(`${RULE_ID}: a page with both a confident fail AND an uncertain/essential-exempt conflict reports BOTH under a 'fail' outcome, not just the confident one (fixed 2026-07-31 — see helpers.resolveTieredOutcome)`, () => {
+test(`${RULE_ID}: a page with both a confident fail AND an uncertain/essential-exempt conflict reports BOTH under a 'fail' outcome, not just the confident one`, () => {
   const html = `<!doctype html><html><body>
     <button id="a" data-rect="10,80,10,10">A</button>
     <button id="b" data-rect="25,80,10,10">B</button>
@@ -329,7 +329,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/target-size-all-scenarios.htm
 
   const result = run(html);
 
-  // 16, not 13: fixed 2026-07-31 — canttell_svg_a/canttell_svg_b are
+  // 16, not 13: canttell_svg_a/canttell_svg_b are
   // cantTell-tier (essential/equivalent uncertainty) occurrences that used
   // to be silently discarded whenever the overall outcome was 'fail'
   // (see helpers.resolveTieredOutcome's header comment); they're now
@@ -358,7 +358,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/target-size-all-scenarios.htm
     'fail_geo_b',
     'fail_styled_checkbox_1',
     'fail_styled_checkbox_2',
-    'canttell_svg_a', // essential/equivalent uncertainty inside svg — now merged into the 'fail' result (fixed 2026-07-31)
+    'canttell_svg_a', // essential/equivalent uncertainty inside svg — now merged into the 'fail' result
     'canttell_svg_b',
     'canttell_ambiguous_spacing_target' // ambiguous-tier perimeter sampling — same merging
   ];

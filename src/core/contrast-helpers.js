@@ -375,15 +375,12 @@ function createContrastHelpers(opts, shared) {
       }
 
       // <input type="submit"|"button"|"reset">'s visible label is
-      // rendered from its `value` attribute, not a DOM text node, so
-      // it's structurally invisible to the SHOW_TEXT walk above (void
-      // elements can't have text-node children at all) -- without this,
-      // these inputs would be silently skipped by both contrast-minimum
-      // and contrast-enhanced regardless of contrast mode (e.g.
-      // progressive.com's `<input type="submit" value="Get a quote">`
-      // would never be considered a candidate at all, even for a genuine
-      // AAA-level failure). Same eligibility gates as the real
-      // text-node path above, applied to the input element itself.
+      // rendered from its `value` attribute, not a DOM text node, so it's
+      // structurally invisible to the SHOW_TEXT walk above (void elements
+      // can't have text-node children at all). Without this, these inputs
+      // would be silently skipped by both contrast-minimum and
+      // contrast-enhanced. Same eligibility gates as the text-node path
+      // above, applied to the input element itself.
       const visitedValueInputs = new Set();
       for (const walkRoot of walkRoots) {
         let candidates;
@@ -1118,20 +1115,12 @@ function createContrastHelpers(opts, shared) {
     let cur = el;
     let guard = 0;
     // Once a closer ancestor's own background-color is confirmed fully
-    // opaque (and that ancestor is itself free of blend-mode/filter),
-    // it visually PAINTS OVER anything farther out -- a
-    // background-image/gradient beyond that point can no longer affect
-    // what's actually rendered behind el's text, so continuing to flag
-    // it as a computability blocker is a false "not computable".
-    // Confirmed via a minimal repro: solid black text on a
-    // fully-opaque white <div>, itself sitting on a <body> with a
-    // background-image, was reported cantTell even though the image is
-    // 100% visually irrelevant to that text's rendered background —
-    // and BACKGROUND_IMAGE_OR_GRADIENT is the dominant real-world
-    // computability blocker (e.g. 100% of cantTell occurrences sampled on
-    // nasa.gov and en.wikipedia.org), so this single-layer "solid
-    // card/nav/modal over a page-level hero image" pattern is common
-    // enough to matter.
+    // opaque (and that ancestor is itself free of blend-mode/filter), it
+    // visually PAINTS OVER anything farther out -- a background-image/
+    // gradient beyond that point can no longer affect what's rendered
+    // behind el's text, so continuing to flag it as a computability blocker
+    // would be a false "not computable". This covers the common "solid
+    // card/nav/modal over a page-level hero image" pattern.
     //
     // This does NOT extend to mix-blend-mode/filter or an ancestor's
     // `opacity` — those are compositing-GROUP operations applied to that

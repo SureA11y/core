@@ -48,7 +48,7 @@ test(`${RULE_ID}: fail when ul has a non-li direct child`, () => {
   assert.deepStrictEqual(rule.occurrences[0].data.details.invalidChildren, ['div']);
 });
 
-test(`${RULE_ID}: pass when the only invalid-looking direct child is display:none (not exposed to AT, matches a reference engine's own list check — found on a real site, Stanford's main nav)`, () => {
+test(`${RULE_ID}: pass when the only invalid-looking direct child is display:none (not exposed to AT)`, () => {
   const html = `<!doctype html><html><body>
     <ul id="a"><li>Grape</li><span style="display:none">hydration marker</span></ul>
   </body></html>`;
@@ -56,7 +56,7 @@ test(`${RULE_ID}: pass when the only invalid-looking direct child is display:non
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: pass when the only invalid-looking direct child is <input type="hidden"> (UA-stylesheet display:none — found on a real site, Spotify's Mailchimp embed)`, () => {
+test(`${RULE_ID}: pass when the only invalid-looking direct child is <input type="hidden"> (UA-stylesheet display:none)`, () => {
   const html = `<!doctype html><html><body>
     <ul id="a"><li>Honeydew</li><input type="hidden" value="x"></ul>
   </body></html>`;
@@ -64,7 +64,7 @@ test(`${RULE_ID}: pass when the only invalid-looking direct child is <input type
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail when a direct <li> child has an explicit role="none" (an explicit role always wins over the tag — found on a real site, Notion's footer nav lists use <li role="none"> to host the list's own visually-hidden label)`, () => {
+test(`${RULE_ID}: fail when a direct <li> child has an explicit role="none" (an explicit role always wins over the tag)`, () => {
   const html = `<!doctype html><html><body>
     <ul id="a"><li role="none">Section label</li><li>Item</li></ul>
   </body></html>`;
@@ -73,7 +73,7 @@ test(`${RULE_ID}: fail when a direct <li> child has an explicit role="none" (an 
   assert.deepStrictEqual(rule.occurrences[0].data.details.invalidChildren, ['li']);
 });
 
-test(`${RULE_ID}: fail when a direct <li> child has an explicit role="menuitem" (found on a real site, LinkedIn's top-nav menu list)`, () => {
+test(`${RULE_ID}: fail when a direct <li> child has an explicit role="menuitem"`, () => {
   const html = `<!doctype html><html><body>
     <ul id="a"><li role="menuitem">Item</li></ul>
   </body></html>`;
