@@ -1,0 +1,9 @@
+# Every change requires review from the maintainer.
+#
+# Kept deliberately simple: one owner, one rule. When the project has more
+# than one regular maintainer, replace @rumoroso with an org team
+# (e.g. @SureA11y/maintainers) rather than listing individuals here.
+#
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+* @rumoroso
