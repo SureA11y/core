@@ -79,8 +79,8 @@ test("pass: <label for> with empty content falls back to the label's own title a
   // runs every rule against every fixture): a <label for> whose own
   // content is empty still contributes a name via its title attribute per
   // accname's title-fallback step, which applies to the label element
-  // itself, not just the control it labels. the reference engine's `label` rule already
-  // passed this; labelContributesAccessibleName (src/core/dom-helpers.js)
+  // itself, not just the control it labels. The reference engine's `label`
+  // rule already passed this; labelContributesAccessibleName (src/core/dom-helpers.js)
   // only checked the label's aria-name and content name, never its title.
   const html = `
     <!doctype html><html><body>

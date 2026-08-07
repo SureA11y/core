@@ -184,8 +184,8 @@ test('normalizeRuleMeta: requirements/mappings pass through string/object/null, 
     'req-text'
   );
   assert.deepEqual(
-    normalizeRuleMeta('r', 'r', { mappings: { the reference engine: 'image-alt' } }, 'a11ycore').mappings,
-    { the reference engine: 'image-alt' }
+    normalizeRuleMeta('r', 'r', { mappings: { external: 'image-alt' } }, 'a11ycore').mappings,
+    { external: 'image-alt' }
   );
   assert.equal(normalizeRuleMeta('r', 'r', { requirements: 42 }, 'a11ycore').requirements, null);
   assert.equal(normalizeRuleMeta('r', 'r', { mappings: true }, 'a11ycore').mappings, null);
