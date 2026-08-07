@@ -10,7 +10,9 @@ surea11y is a library: it reads a DOM tree and computed styles and returns struc
 
 ## Reporting a vulnerability
 
-If you find a security issue, please report it privately rather than opening a public issue — email rumoroso.a11y@gmail.com with a description and, if possible, a minimal reproduction. Please allow a reasonable window to investigate and fix before any public disclosure.
+If you find a security issue, please report it privately rather than opening a public issue — email rumoroso.a11y@gmail.com with a description and, if possible, a minimal reproduction.
+
+You can expect an acknowledgement within five working days. This is a solo-maintained project, so please allow 90 days from that acknowledgement before public disclosure, and get in touch again if you haven't heard back.
 
 There is no bug bounty program.
 
