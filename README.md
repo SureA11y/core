@@ -506,6 +506,14 @@ Correctness fixes ship as patches when ready; feature work is batched into
 periodic minors; breaking changes are reserved for major versions and are rare by
 design.
 
+## Maintainer
+
+surea11y is built and maintained by [Jorge Rumoroso](https://github.com/rumoroso).
+
+Bug reports and rule proposals are welcome via
+[issues](https://github.com/SureA11y/core/issues). For security disclosures see
+[`SECURITY.md`](./SECURITY.md).
+
 ## License
 
 This project is released under the Mozilla Public License 2.0 (MPL-2.0).
