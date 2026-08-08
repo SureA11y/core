@@ -16104,13 +16104,51 @@ const createDomHelpers = (function createDomHelpers(opts) {
       }
 
       const ownName = getAccessibleNameInfo(node, _ctx, opts);
-      if (ownName && ownName.present && ownName.value) {
+      // A descendant's own name outranks its content for real naming
+      // mechanisms (aria-label/aria-labelledby, a native <label>), but not for
+      // a bare title: accname orders name-from-content ahead of the title
+      // fallback, so a descendant's title may only speak for it when its
+      // content is empty. Same precedence the image-like branch above applies
+      // to alt; without it, a tooltip silently replaces the visible text of
+      // anything named from its content.
+      const titleOnlyName = !!(
+        ownName &&
+        ownName.present &&
+        ownName.value &&
+        ownName.mechanism === 'title'
+      );
+
+      if (ownName && ownName.present && ownName.value && !titleOnlyName) {
         parts.push(ownName.value);
         const tag = `descendant-name-used:${ownName.mechanism || 'unknown'}`;
         if (flags.indexOf(tag) === -1) flags.push(tag);
         return; // this descendant speaks for itself; don't also use its content
       }
 
+      if (titleOnlyName) {
+        // Content first; keep the title only if the content contributed
+        // nothing. Compared on the trimmed join rather than parts.length,
+        // since a whitespace-only text node pushes a part but no name text.
+        const before = parts.length;
+        walkChildren(node, parts);
+        if (!trim(parts.slice(before).join(' '))) {
+          parts.length = before;
+          parts.push(ownName.value);
+          if (flags.indexOf('descendant-name-used:title-fallback') === -1)
+            flags.push('descendant-name-used:title-fallback');
+        } else if (flags.indexOf('descendant-title-superseded-by-content') === -1) {
+          flags.push('descendant-title-superseded-by-content');
+        }
+        return;
+      }
+
+      walkChildren(node, parts);
+    }
+
+    // Extracted from collect() so the title-only branch above can walk a
+    // descendant's children and then decide whether the title was needed,
+    // without duplicating the <slot> handling.
+    function walkChildren(node, parts) {
       // A <slot>'s own childNodes are its FALLBACK content only —
       // rendered solely when nothing is assigned to it. When real content
       // IS distributed into it, that's what's exposed to the accessibility
@@ -53897,13 +53935,51 @@ const createDomHelpers = (function createDomHelpers(opts) {
       }
 
       const ownName = getAccessibleNameInfo(node, _ctx, opts);
-      if (ownName && ownName.present && ownName.value) {
+      // A descendant's own name outranks its content for real naming
+      // mechanisms (aria-label/aria-labelledby, a native <label>), but not for
+      // a bare title: accname orders name-from-content ahead of the title
+      // fallback, so a descendant's title may only speak for it when its
+      // content is empty. Same precedence the image-like branch above applies
+      // to alt; without it, a tooltip silently replaces the visible text of
+      // anything named from its content.
+      const titleOnlyName = !!(
+        ownName &&
+        ownName.present &&
+        ownName.value &&
+        ownName.mechanism === 'title'
+      );
+
+      if (ownName && ownName.present && ownName.value && !titleOnlyName) {
         parts.push(ownName.value);
         const tag = `descendant-name-used:${ownName.mechanism || 'unknown'}`;
         if (flags.indexOf(tag) === -1) flags.push(tag);
         return; // this descendant speaks for itself; don't also use its content
       }
 
+      if (titleOnlyName) {
+        // Content first; keep the title only if the content contributed
+        // nothing. Compared on the trimmed join rather than parts.length,
+        // since a whitespace-only text node pushes a part but no name text.
+        const before = parts.length;
+        walkChildren(node, parts);
+        if (!trim(parts.slice(before).join(' '))) {
+          parts.length = before;
+          parts.push(ownName.value);
+          if (flags.indexOf('descendant-name-used:title-fallback') === -1)
+            flags.push('descendant-name-used:title-fallback');
+        } else if (flags.indexOf('descendant-title-superseded-by-content') === -1) {
+          flags.push('descendant-title-superseded-by-content');
+        }
+        return;
+      }
+
+      walkChildren(node, parts);
+    }
+
+    // Extracted from collect() so the title-only branch above can walk a
+    // descendant's children and then decide whether the title was needed,
+    // without duplicating the <slot> handling.
+    function walkChildren(node, parts) {
       // A <slot>'s own childNodes are its FALLBACK content only —
       // rendered solely when nothing is assigned to it. When real content
       // IS distributed into it, that's what's exposed to the accessibility
@@ -91645,13 +91721,51 @@ const createDomHelpers = (function createDomHelpers(opts) {
       }
 
       const ownName = getAccessibleNameInfo(node, _ctx, opts);
-      if (ownName && ownName.present && ownName.value) {
+      // A descendant's own name outranks its content for real naming
+      // mechanisms (aria-label/aria-labelledby, a native <label>), but not for
+      // a bare title: accname orders name-from-content ahead of the title
+      // fallback, so a descendant's title may only speak for it when its
+      // content is empty. Same precedence the image-like branch above applies
+      // to alt; without it, a tooltip silently replaces the visible text of
+      // anything named from its content.
+      const titleOnlyName = !!(
+        ownName &&
+        ownName.present &&
+        ownName.value &&
+        ownName.mechanism === 'title'
+      );
+
+      if (ownName && ownName.present && ownName.value && !titleOnlyName) {
         parts.push(ownName.value);
         const tag = `descendant-name-used:${ownName.mechanism || 'unknown'}`;
         if (flags.indexOf(tag) === -1) flags.push(tag);
         return; // this descendant speaks for itself; don't also use its content
       }
 
+      if (titleOnlyName) {
+        // Content first; keep the title only if the content contributed
+        // nothing. Compared on the trimmed join rather than parts.length,
+        // since a whitespace-only text node pushes a part but no name text.
+        const before = parts.length;
+        walkChildren(node, parts);
+        if (!trim(parts.slice(before).join(' '))) {
+          parts.length = before;
+          parts.push(ownName.value);
+          if (flags.indexOf('descendant-name-used:title-fallback') === -1)
+            flags.push('descendant-name-used:title-fallback');
+        } else if (flags.indexOf('descendant-title-superseded-by-content') === -1) {
+          flags.push('descendant-title-superseded-by-content');
+        }
+        return;
+      }
+
+      walkChildren(node, parts);
+    }
+
+    // Extracted from collect() so the title-only branch above can walk a
+    // descendant's children and then decide whether the title was needed,
+    // without duplicating the <slot> handling.
+    function walkChildren(node, parts) {
       // A <slot>'s own childNodes are its FALLBACK content only —
       // rendered solely when nothing is assigned to it. When real content
       // IS distributed into it, that's what's exposed to the accessibility
