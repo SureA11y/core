@@ -3254,6 +3254,32 @@ function createDomHelpers(opts) {
       return tag === 'img' || tag === 'area' || (tag === 'input' && type === 'image');
     }
 
+    // aria-hidden is inherited by the subtree, but isAccTreeEligible's
+    // 'ariaHiddenOverridden*' escapes are per-element — so without this the
+    // named element is in-tree while the descendants it takes its name from
+    // are not, and any element-wrapped text resolves empty.
+    // Narrower than opts.includeHidden: isAccTreeEligible returns these two
+    // reasons only after ruling out every other blocker, so forgiving them
+    // still excludes display:none/inert/hidden descendants.
+    const ARIA_HIDDEN_ONLY_REASONS = ['ariaHidden', 'ariaHiddenProgrammaticFocusExcluded'];
+
+    const ariaHiddenOverrideRoot = (() => {
+      try {
+        const r = isAccTreeEligible(el);
+        if (!r || !r.eligible || !Array.isArray(r.reasons)) return false;
+        return r.reasons.some(
+          (x) => typeof x === 'string' && x.indexOf('ariaHiddenOverridden') === 0
+        );
+      } catch {
+        return false;
+      }
+    })();
+
+    function isAriaHiddenOnlyIneligible(eligRes) {
+      const rs = eligRes && Array.isArray(eligRes.reasons) ? eligRes.reasons : [];
+      return rs.length === 1 && ARIA_HIDDEN_ONLY_REASONS.indexOf(rs[0]) !== -1;
+    }
+
     function collect(node, parts) {
       if (truncated) return;
       visitedCount += 1;
@@ -3292,6 +3318,10 @@ function createDomHelpers(opts) {
         try {
           const eligRes = isAccTreeEligible(node);
           eligible = !!(eligRes && eligRes.eligible);
+          // See ARIA_HIDDEN_ONLY_REASONS above.
+          if (!eligible && ariaHiddenOverrideRoot && isAriaHiddenOnlyIneligible(eligRes)) {
+            eligible = true;
+          }
         } catch {
           eligible = true;
         }
