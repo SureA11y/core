@@ -13,6 +13,22 @@ Removing, renaming, or changing the type/meaning of any of these is a **major** 
 
 This list is deliberately not a new, invented guarantee — it codifies what the 6 real consumers above (and `docs/OUTPUT_SCHEMA.md`'s own worked examples) already depend on today, either directly or as documented shape.
 
+## Package entry points (covered by semver)
+
+Since 1.4.0 the package declares an explicit `exports` map. These are the only importable paths, and removing or repointing one is a **major** bump:
+
+| Specifier | Resolves to | Contents |
+|---|---|---|
+| `@surea11y/core` | `src/index.js` | the full engine surface (`runDomRulesInPage`, `runa11yCoreInPage`, catalog accessors, …) |
+| `@surea11y/core/baseline` | `src/baseline.js` | `buildBaselineEntries()`, `matchBaseline()` |
+| `@surea11y/core/report` | `src/report.js` | `renderHtmlReport()` |
+| `@surea11y/core/sarif` | `src/sarif.js` | `renderSarifReport()` |
+| `@surea11y/core/browser` | `surea11y.browser.js` | the standalone browser bundle, for bundlers that resolve it as a module |
+
+Anything **not** in that table — `src/core/*`, `src/checks/*`, `src/i18n/*`, `src/policy/*`, and the generated `src/core.js` itself — is internal. Before 1.4.0 there was no `exports` map, so those paths were technically reachable via deep `require()`; they were never documented as public and are no longer resolvable. The `<script src="node_modules/@surea11y/core/surea11y.browser.js">` form documented in the README is a filesystem path, not module resolution, and is unaffected.
+
+Declaring this map is what lets the engine's internal file layout change without a major bump. Note that `src/checks/*` is still *shipped* (the generated bundle `require()`s it at runtime) — shipped is not the same as public.
+
 ## Explicitly unstable (not covered by semver)
 
 - `perfStats` and `ruleTimings` — internal timing/debug counters, only present when `engineOptions.perfStats`/`.profileRules` is set. Shape not covered by this document.

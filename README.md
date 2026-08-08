@@ -118,6 +118,26 @@ For a detailed comparison of both execution models, see
 
 ---
 
+## Which package do I need?
+
+surea11y is a family of packages sharing one engine. Install the one that
+matches how you test — each pulls in `@surea11y/core` for you.
+
+| I want to… | Install |
+|---|---|
+| Add accessibility checks to **Playwright** tests | [`@surea11y/playwright`](https://github.com/SureA11y/playwright#readme) |
+| …**Puppeteer** | [`@surea11y/puppeteer`](https://github.com/SureA11y/puppeteer#readme) |
+| …**Selenium** | [`@surea11y/selenium`](https://github.com/SureA11y/selenium#readme) |
+| …**Cypress** | [`@surea11y/cypress`](https://github.com/SureA11y/cypress#readme) |
+| …**WebdriverIO** | [`@surea11y/webdriverio`](https://github.com/SureA11y/webdriverio#readme) |
+| Assert in **Jest or Vitest** component tests | [`@surea11y/test-matchers`](https://github.com/SureA11y/test-matchers#readme) |
+| Scan static HTML from a **terminal or CI pipeline** | [`@surea11y/cli`](https://github.com/SureA11y/cli#readme) |
+| Run the engine against **a DOM I already have** | `@surea11y/core` (this package) |
+
+The rest of this README covers `@surea11y/core` itself.
+
+---
+
 ## Installation
 
 Install the core package from npm:
@@ -126,10 +146,13 @@ Install the core package from npm:
 npm install @surea11y/core
 ```
 
-The core engine has no runtime dependencies — requiring the library
-itself never loads `jsdom`. Only the bundled CLI loads it, and only
-when you actually run a scan, keeping the library lightweight and
-suitable for embedding into your own tooling.
+The core engine has **zero runtime dependencies**. Installing it pulls
+nothing else into your tree, which keeps it lightweight and suitable for
+embedding into your own tooling.
+
+The engine needs a DOM to read, but it never creates one — you supply it,
+whether that's jsdom, a Playwright page, or the live document in a
+browser. That is why nothing is installed on your behalf.
 
 ---
 
@@ -137,18 +160,21 @@ suitable for embedding into your own tooling.
 
 ### CLI
 
-The CLI is the fastest way to analyse a page without writing any code.
+The CLI ships as a separate package, [`@surea11y/cli`](https://www.npmjs.com/package/@surea11y/cli),
+so that installing the engine never pulls a DOM implementation into
+projects that already have one:
 
 ```bash
-npx @surea11y/core scan ./index.html
-npx @surea11y/core scan https://example.com/
+npx @surea11y/cli scan ./index.html
+npx @surea11y/cli scan https://example.com/
 ```
 
 The CLI analyses static HTML. It does not execute client-side
 JavaScript, making it ideal for static sites and server-rendered
 applications.
 
-For available options, exit codes and advanced usage, see `docs/CLI.md`.
+For available options, exit codes and advanced usage, see the
+[CLI documentation](https://github.com/SureA11y/cli#readme).
 
 ---
 
@@ -159,7 +185,12 @@ surea11y exposes two entry points depending on where your code executes.
 #### Node.js + jsdom
 
 Use `runDomRulesInPage()` when your application already has a DOM
-available through jsdom.
+available through jsdom. jsdom is not a dependency of this package, so
+install it alongside if you don't already have it:
+
+```bash
+npm install jsdom
+```
 
 ```js
 const { JSDOM } = require("jsdom");
@@ -357,7 +388,6 @@ and progressively explore more advanced features.
 |---|---|
 | `docs/OUTPUT_SCHEMA.md` | Complete description of every field returned by the engine. |
 | `docs/API_STABILITY.md` | Semver guarantees on the result shape, and the rule-ID deprecation policy. |
-| `docs/CLI.md` | CLI commands, options, exit codes and examples. |
 | `docs/BASELINE.md` | CI baseline/allowlist: gate builds only on new violations. |
 | `docs/REPORT.md` | Self-contained HTML report: browsable summary, WCAG rollup, filterable occurrence table. |
 | `docs/SARIF.md` | SARIF 2.1.0 report for GitHub Code Scanning and other SARIF dashboards. |
@@ -430,9 +460,6 @@ implementations and supporting infrastructure remain clearly separated.
 
 ```text
 surea11y.browser.js        # Generated standalone browser bundle
-
-bin/
-  core.js                  # CLI entry point
 
 src/
   index.js                 # Public API

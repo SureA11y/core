@@ -18,7 +18,7 @@ Open `report.html` directly from disk. Works alongside any other output mode —
 ## Library usage
 
 ```js
-const { renderHtmlReport } = require('@surea11y/core/src/report');
+const { renderHtmlReport } = require('@surea11y/core/report');
 const { runDomRulesInPage } = require('@surea11y/core');
 
 const result = runDomRulesInPage(url, null, {}, null);
