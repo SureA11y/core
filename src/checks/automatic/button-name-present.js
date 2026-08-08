@@ -78,7 +78,14 @@ function runInPage(ctx) {
 
   for (const el of nodes) {
     // isAccTreeEligible returns { eligible, reasons }, not a boolean.
-    const eligResult = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el, ctx) : true;
+    // Naming rules apply only to elements included in the accessibility tree
+    // (ACT c487ae), which excludes focusable aria-hidden content;
+    // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
+    const eligResult = helpers.isIncludedInAccessibilityTree
+      ? helpers.isIncludedInAccessibilityTree(el, ctx)
+      : helpers.isAccTreeEligible
+        ? helpers.isAccTreeEligible(el, ctx)
+        : true;
     const eligible =
       typeof eligResult === 'boolean' ? eligResult : !!(eligResult && eligResult.eligible);
     if (!eligible) continue;

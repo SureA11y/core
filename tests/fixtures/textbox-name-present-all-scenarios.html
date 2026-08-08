@@ -85,12 +85,12 @@
   </div>
 
   <div class="case" id="case_12">
-    <div class="case-title">12 — EXCEPTION: aria-hidden="true" but focusable (tabindex=0) => eligible, missing name => FAIL</div>
+    <div class="case-title">12 — EXCEPTION: aria-hidden="true" but focusable (tabindex=0) => excluded from naming rules (ACT: not included in the accessibility tree); aria-hidden-focus reports it</div>
     <div role="textbox" aria-hidden="true" tabindex="0" id="textbox_case_12"></div>
   </div>
 
   <div class="case" id="case_13">
-    <div class="case-title">13 — EXCEPTION: aria-hidden="true" but IDREF-referenced => eligible, missing name => FAIL</div>
+    <div class="case-title">13 — EXCEPTION: aria-hidden="true" but IDREF-referenced => excluded from naming rules (ACT: not included in the accessibility tree); aria-hidden-focus reports it</div>
     <div aria-labelledby="textbox_case_13">This references the textbox below by id.</div>
     <div role="textbox" aria-hidden="true" id="textbox_case_13"></div>
   </div>

@@ -2812,6 +2812,23 @@ function createDomHelpers(opts) {
     return { present: !!value, value, mechanism: 'label', flags: value ? [] : ['empty'] };
   }
 
+  // ACT scopes every accessible-name rule to elements "included in the
+  // accessibility tree" (c487ae link-name, 97a4e1 button-name and siblings),
+  // and its glossary puts focusable aria-hidden content outside that set:
+  // "Because they are hidden, these elements are considered not included in
+  // the accessibility tree", even where a browser leaves them in it. The
+  // defect they do represent, aria-hidden over content in the focus order,
+  // belongs to aria-hidden-focus (ACT 6cfa84, WCAG 4.1.2).
+  //
+  // isAccTreeEligible keeps them eligible on purpose so aria-hidden-focus can
+  // reach them, so naming rules need this narrower question instead.
+  function isIncludedInAccessibilityTree(el) {
+    const r = isAccTreeEligible(el);
+    if (!r || !r.eligible) return false;
+    const reasons = Array.isArray(r.reasons) ? r.reasons : [];
+    return !reasons.some((x) => typeof x === 'string' && x.indexOf('ariaHiddenOverridden') === 0);
+  }
+
   function getAccessibleNameInfo(el, _ctx, opts) {
     const flags = [];
     if (!isElement(el))
@@ -4463,6 +4480,7 @@ function createDomHelpers(opts) {
     hasAccessibleName,
     isExcluded,
     isAccTreeEligible,
+    isIncludedInAccessibilityTree,
     isDomVisibleEligible,
     isWholeDocumentScope,
 
