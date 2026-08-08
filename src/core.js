@@ -36294,16 +36294,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return getImplicitLandmarkRole(el);
   }
 
-  // Candidate selection is deliberately NOT the same as getLandmarkRole()
-  // === 'banner' — see the fix note above. A <header> is a
-  // candidate purely by tag + absence of any role attribute, independent
-  // of whether sectioning-ancestor nesting would currently suppress its
-  // implicit role; an explicit role="banner" is always a candidate too.
+  // A candidate must actually have the banner role. Per HTML-AAM a <header>
+  // descended from article/aside/main/nav/section is not a banner at all, so
+  // flagging it as a nested banner reports a landmark that does not exist.
   function isBannerCandidate(el) {
-    if (!el || !el.getAttribute) return false;
-    const explicit = getExplicitRoleToken(el);
-    if (explicit) return explicit === 'banner';
-    return !!(el.tagName && el.tagName.toLowerCase() === 'header');
+    return getLandmarkRole(el) === 'banner';
   }
 
   function hasLandmarkAncestor(el) {
@@ -36482,11 +36477,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // a candidate purely by tag + absence of any role attribute, independent
   // of whether sectioning-ancestor nesting would currently suppress its
   // implicit role; an explicit role="contentinfo" is always a candidate too.
+  // A candidate must actually have the contentinfo role — a <footer> inside
+  // article/aside/main/nav/section is not one, so flagging it as nested
+  // would report a landmark that does not exist.
   function isContentinfoCandidate(el) {
-    if (!el || !el.getAttribute) return false;
-    const explicit = getExplicitRoleToken(el);
-    if (explicit) return explicit === 'contentinfo';
-    return !!(el.tagName && el.tagName.toLowerCase() === 'footer');
+    return getLandmarkRole(el) === 'contentinfo';
   }
 
   function hasLandmarkAncestor(el) {
@@ -74110,16 +74105,11 @@ const __a11yCoreCrossFrameApi = (function () {
     return getImplicitLandmarkRole(el);
   }
 
-  // Candidate selection is deliberately NOT the same as getLandmarkRole()
-  // === 'banner' — see the fix note above. A <header> is a
-  // candidate purely by tag + absence of any role attribute, independent
-  // of whether sectioning-ancestor nesting would currently suppress its
-  // implicit role; an explicit role="banner" is always a candidate too.
+  // A candidate must actually have the banner role. Per HTML-AAM a <header>
+  // descended from article/aside/main/nav/section is not a banner at all, so
+  // flagging it as a nested banner reports a landmark that does not exist.
   function isBannerCandidate(el) {
-    if (!el || !el.getAttribute) return false;
-    const explicit = getExplicitRoleToken(el);
-    if (explicit) return explicit === 'banner';
-    return !!(el.tagName && el.tagName.toLowerCase() === 'header');
+    return getLandmarkRole(el) === 'banner';
   }
 
   function hasLandmarkAncestor(el) {
@@ -74298,11 +74288,11 @@ const __a11yCoreCrossFrameApi = (function () {
   // a candidate purely by tag + absence of any role attribute, independent
   // of whether sectioning-ancestor nesting would currently suppress its
   // implicit role; an explicit role="contentinfo" is always a candidate too.
+  // A candidate must actually have the contentinfo role — a <footer> inside
+  // article/aside/main/nav/section is not one, so flagging it as nested
+  // would report a landmark that does not exist.
   function isContentinfoCandidate(el) {
-    if (!el || !el.getAttribute) return false;
-    const explicit = getExplicitRoleToken(el);
-    if (explicit) return explicit === 'contentinfo';
-    return !!(el.tagName && el.tagName.toLowerCase() === 'footer');
+    return getLandmarkRole(el) === 'contentinfo';
   }
 
   function hasLandmarkAncestor(el) {
