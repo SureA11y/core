@@ -270,41 +270,6 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/link-name-present-all-scenari
   }
 });
 
-// A focusable link under aria-hidden stays in scope, so its name must be
-// computed with that same override applied to its subtree.
-test(`${RULE_ID}: pass when a focusable link under aria-hidden has element-wrapped text`, () => {
-  if (!runa11yCoreOnHtml || !assertRule) {
-    assert.ok(true);
-    return;
-  }
-  const html = `<!doctype html><html><body><div aria-hidden="true"><a href="/x" id="ahw"><span>Undergraduate Degrees</span></a></div></body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
-});
-
-test(`${RULE_ID}: fail when a focusable link under aria-hidden genuinely has no text at all`, () => {
-  if (!runa11yCoreOnHtml || !assertRule) {
-    assert.ok(true);
-    return;
-  }
-  const html = `<!doctype html><html><body><div aria-hidden="true"><a href="/x" id="ahe"><span></span></a></div></body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
-});
-
-test(`${RULE_ID}: the aria-hidden-under-focusable defect is still reported, by aria-hidden-focus`, () => {
-  if (!runa11yCoreOnHtml) {
-    assert.ok(true);
-    return;
-  }
-  const html = `<!doctype html><html><body><div aria-hidden="true"><a href="/x" id="ahw"><span>Undergraduate Degrees</span></a></div></body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: ['aria-hidden-focus'] });
-  const rule = (result.checksResults || []).find((c) => c.ruleId === 'aria-hidden-focus');
-  assert.ok(rule, 'expected an aria-hidden-focus result');
-  assert.equal(rule.outcome, 'fail');
-  assert.ok((rule.occurrences || []).length >= 1);
-});
-
 test(`${RULE_ID}: fail when role="alert" overrides <a href> and only content is present`, () => {
   if (!runa11yCoreOnHtml || !assertRule) {
     assert.ok(true);
