@@ -224,7 +224,7 @@ See the option-by-option table above for anything not shown here, and the `custo
 
 Every shipped rule is baked into `src/core.js` at build time. `engineOptions.customRules` is the runtime escape hatch: an array of rule descriptors registered for that one call only — nothing is added to the static catalog (`getRulesCatalog()`/`getChecksCatalog()`), and nothing persists between calls. This is deliberate, not a limitation to work around: surea11y already takes fresh `engineOptions` per call with no mutable global config (unlike some other engines, which need a `configure()`/`reset()` step against a shared runtime), and custom rules follow that same per-call model.
 
-Calling the library directly is one way in; the CLI also exposes this via `--custom-rules <path>` (a local file, loaded once per scan) — see [`CLI.md`](./CLI.md#custom-rules).
+Calling the library directly is one way in; the CLI also exposes this via `--custom-rules <path>` (a local file, loaded once per scan) — see [the CLI docs](https://github.com/SureA11y/cli/blob/main/docs/CLI.md#custom-rules).
 
 A descriptor has the *same shape as an internal rule module's own export* — if you already know how to write a rule file for this engine, you already know this API:
 

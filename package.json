@@ -1,10 +1,40 @@
 {
   "name": "@surea11y/core",
-  "version": "1.3.0",
-  "description": "Lightweight DOM rules accessibility core with modular rules.",
+  "version": "1.4.0",
+  "description": "Deterministic WCAG 2.2 accessibility engine that tells you what it can't tell you. Zero dependencies.",
+  "keywords": [
+    "accessibility",
+    "a11y",
+    "wcag",
+    "wcag21",
+    "wcag22",
+    "accessibility-testing",
+    "a11y-testing",
+    "audit",
+    "aria",
+    "contrast",
+    "sarif",
+    "zero-dependencies",
+    "jsdom",
+    "playwright",
+    "puppeteer",
+    "selenium",
+    "cypress",
+    "webdriverio",
+    "jest",
+    "vitest"
+  ],
   "main": "src/index.js",
   "bin": {
-    "surea11y": "bin/core.js"
+    "surea11y-core": "bin/surea11y-core.js"
+  },
+  "exports": {
+    ".": "./src/index.js",
+    "./baseline": "./src/baseline.js",
+    "./report": "./src/report.js",
+    "./sarif": "./src/sarif.js",
+    "./browser": "./surea11y.browser.js",
+    "./package.json": "./package.json"
   },
   "author": "Jorge Rumoroso",
   "license": "MPL-2.0",
@@ -23,8 +53,13 @@
     "access": "public"
   },
   "files": [
-    "src",
-    "bin",
+    "src/index.js",
+    "src/core.js",
+    "src/baseline.js",
+    "src/report.js",
+    "src/sarif.js",
+    "src/checks/**/*.js",
+    "bin/surea11y-core.js",
     "surea11y.browser.js",
     "docs/**/*.md",
     "README.md",
@@ -33,8 +68,7 @@
     "!docs/RULE_TEMPLATE.md",
     "!docs/RULE_TEST_TEMPLATE.md",
     "!docs/RULE_TEST_AUTHORING.md",
-    "!docs/TEST_OUTCOME_STABILITY.md",
-    "!src/explain"
+    "!docs/TEST_OUTCOME_STABILITY.md"
   ],
   "scripts": {
     "lint": "eslint .",
@@ -44,7 +78,7 @@
     "build": "node scripts/build-core.js && node scripts/build-browser.js",
     "pretest": "playwright install chromium",
     "test": "npm run format:check && npm run build && node scripts/run-tests.js",
-    "test:coverage": "npm run build && node scripts/run-tests.js --experimental-test-coverage --test-coverage-include=src/**/*.js --test-coverage-include=bin/**/*.js",
+    "test:coverage": "npm run build && node scripts/run-tests.js --experimental-test-coverage --test-coverage-include=src/**/*.js",
     "test:contrast-helpers": "node tests/contrast-helpers.test.js",
     "helpers-perf-bench": "node --expose-gc scripts/dom-helpers-perf-bench.js",
     "engine-perf-bench": "node --expose-gc scripts/engine-perf-bench.js  --profileRules=true --iters=25 --top=15",
@@ -60,14 +94,12 @@
     "i18n:new": "node scripts/i18n-scaffold.js",
     "i18n:report": "node scripts/i18n-report.js"
   },
-  "dependencies": {
-    "jsdom": "^29.1.1"
-  },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "eslint": "^10.8.0",
     "eslint-config-prettier": "^10.1.8",
     "globals": "^17.8.0",
+    "jsdom": "^29.1.1",
     "playwright": "^1.62.1",
     "prettier": "^3.9.6"
   }

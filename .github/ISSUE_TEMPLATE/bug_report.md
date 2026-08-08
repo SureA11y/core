@@ -15,7 +15,7 @@ labels: bug
 
 - [ ] Static HTML via `runDomRulesInPage` / jsdom
 - [ ] Real browser via `runa11yCoreInPage` (Puppeteer/Playwright/Selenium/Cypress/WebdriverIO — say which)
-- [ ] CLI (`npx @surea11y/core scan ...`)
+- [ ] CLI (`npx @surea11y/cli scan ...`)
 
 `@surea11y/core` version: <!-- from package.json / npm ls -->
 
