@@ -1103,3 +1103,73 @@ test('getAccessibleNameInfo (via native <label>): a label whose content-walk thr
   const r = helpers.getLabelMethod(byId(document, 'x'), {});
   assert.equal(r.method, 'label');
 });
+
+// ===== getContentNameInfo: an aria-hidden override propagates to the subtree =====
+
+test('getContentNameInfo: a focusable link under aria-hidden is named from element-wrapped text (the wrapper must not erase the name)', () => {
+  const { helpers, document } = helpersFor(
+    '<div aria-hidden="true"><a href="/x" id="a"><span>Undergraduate Degrees</span></a></div>'
+  );
+  const info = helpers.getContentNameInfo(byId(document, 'a'), { helpers });
+  assert.equal(info.present, true);
+  assert.equal(info.value, 'Undergraduate Degrees');
+});
+
+test('getContentNameInfo: the same link named from a bare text node is unchanged (the pre-fix passing case must stay passing)', () => {
+  const { helpers, document } = helpersFor(
+    '<div aria-hidden="true"><a href="/x" id="a">Undergraduate Degrees</a></div>'
+  );
+  const info = helpers.getContentNameInfo(byId(document, 'a'), { helpers });
+  assert.equal(info.value, 'Undergraduate Degrees');
+});
+
+test('getContentNameInfo: the override reaches through several levels of wrapper elements', () => {
+  const { helpers, document } = helpersFor(
+    '<div aria-hidden="true"><a href="/x" id="a"><strong><span>Graduate Degrees</span></strong></a></div>'
+  );
+  const info = helpers.getContentNameInfo(byId(document, 'a'), { helpers });
+  assert.equal(info.value, 'Graduate Degrees');
+});
+
+test('getContentNameInfo: <button> under aria-hidden behaves the same as <a> (the bug was never link-specific)', () => {
+  const { helpers, document } = helpersFor(
+    '<div aria-hidden="true"><button id="b"><span>Save changes</span></button></div>'
+  );
+  const info = helpers.getContentNameInfo(byId(document, 'b'), { helpers });
+  assert.equal(info.value, 'Save changes');
+});
+
+test('getContentNameInfo: the override does NOT leak to a non-focusable element under aria-hidden', () => {
+  const { helpers, document } = helpersFor(
+    '<div aria-hidden="true"><div id="plain"><span>Not exposed</span></div></div>'
+  );
+  const info = helpers.getContentNameInfo(byId(document, 'plain'), { helpers });
+  assert.equal(info.present, false);
+  assert.equal(info.value, '');
+});
+
+test('getContentNameInfo: only aria-hidden is forgiven -- a display:none descendant of the same link stays excluded', () => {
+  const { helpers, document } = helpersFor(
+    '<div aria-hidden="true"><a href="/x" id="a">' +
+      '<span style="display:none">Hidden</span><span>Docs</span></a></div>'
+  );
+  const info = helpers.getContentNameInfo(byId(document, 'a'), { helpers });
+  assert.equal(info.value, 'Docs');
+});
+
+test('getContentNameInfo: a focusable link under aria-hidden with genuinely empty content is still unnamed', () => {
+  const { helpers, document } = helpersFor(
+    '<div aria-hidden="true"><a href="/x" id="a"><span></span></a></div>'
+  );
+  const info = helpers.getContentNameInfo(byId(document, 'a'), { helpers });
+  assert.equal(info.present, false);
+  assert.equal(info.value, '');
+});
+
+test('getContentNameInfo: an element NOT under aria-hidden is unaffected by the propagation logic', () => {
+  const { helpers, document } = helpersFor(
+    '<a href="/x" id="a"><span style="display:none">Hidden</span><span>Docs</span></a>'
+  );
+  const info = helpers.getContentNameInfo(byId(document, 'a'), { helpers });
+  assert.equal(info.value, 'Docs');
+});
