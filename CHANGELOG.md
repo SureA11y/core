@@ -4,6 +4,9 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ## [Unreleased]
 
+### Fixed
+- `getContentNameInfo` let a descendant's `title` outrank its own text when computing a name from subtree content, so `<a title="T">Text</a>` could name itself `"T"` instead of `"Text"`. Content now wins over `title` unless the descendant's content is empty, matching Chrome and the accname spec. Same class of bug as the earlier `alt`-vs-`title` fix for image descendants, just never applied to the generic case.
+
 ## [1.4.0] - 2026-08-08
 
 ### Added
