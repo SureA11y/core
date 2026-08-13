@@ -1083,9 +1083,9 @@ module.exports = {
   htmlXmlLangMismatch_hint_fail:
     'Make lang and xml:lang declare the same primary language, or remove the deprecated xml:lang attribute.',
 
-  avoidInlineSpacing_title: 'Inline style must not force text spacing with !important',
+  avoidInlineSpacing_title: 'Inline style must not force text spacing below the WCAG metric',
   avoidInlineSpacing_description:
-    'Checks that inline style does not set line-height, letter-spacing, or word-spacing with !important, which blocks user text-spacing overrides.',
+    'Checks that where inline style forces line-height, letter-spacing or word-spacing with !important, the value already meets WCAG 1.4.12, so the user has nothing left to override.',
   avoidInlineSpacing_summary_fail:
     "This element's inline style forces {{properties}} with !important, blocking user text-spacing overrides.",
   avoidInlineSpacing_hint_fail:

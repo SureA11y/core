@@ -16,18 +16,48 @@
   <h1>Scenario fixture: <code>avoid-inline-spacing</code></h1>
 
   <div class="case" id="case_01">
-    <div class="case-title">01 — PASS: spacing property without !important</div>
+    <div class="case-title">01 — INELIGIBLE: spacing property without !important</div>
     <p style="letter-spacing:2px" id="ais_case_01">Spaced text</p>
   </div>
 
   <div class="case" id="case_02">
-    <div class="case-title">02 — FAIL: letter-spacing forced with !important</div>
+    <div class="case-title">02 — PASS: letter-spacing forced at 0.125em, already above the 0.12 metric</div>
     <p style="letter-spacing:2px !important" id="ais_case_02">Spaced text</p>
   </div>
 
   <div class="case" id="case_03">
-    <div class="case-title">03 — FAIL: line-height and word-spacing both forced (one occurrence, both properties listed)</div>
+    <div class="case-title">03 — PASS: line-height and word-spacing both forced above their metrics</div>
     <p style="line-height:1.8 !important; word-spacing:4px !important" id="ais_case_03">Spaced text</p>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — FAIL: line-height forced below 1.5</div>
+    <p style="line-height:1.2 !important" id="ais_case_04">Spaced text</p>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — FAIL: letter-spacing and word-spacing both forced below their metrics</div>
+    <p style="letter-spacing:1px !important; word-spacing:1px !important" id="ais_case_05">Spaced text</p>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — FAIL: line-height forced to normal, which no user agent takes to 1.5</div>
+    <p style="line-height:normal !important" id="ais_case_06">Spaced text</p>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — INELIGIBLE: forced below the metric but the element has no text of its own</div>
+    <div style="line-height:0.1em !important" id="ais_case_07"><span>Nested text</span></div>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — INELIGIBLE: inherit specifies no spacing of its own</div>
+    <p style="line-height:1.2em"><span style="line-height:inherit !important; display:block" id="ais_case_08">Spaced text</span></p>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — PASS: the later !important declaration is the one that takes effect</div>
+    <p style="line-height:1em !important; line-height:2em !important" id="ais_case_09">Spaced text</p>
   </div>
 
   <p class="note">End of fixture.</p>

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-07T08:56:31.323Z",
+  "generatedAt": "2026-08-13T20:14:53.424Z",
   "summary": {
     "total": 125,
     "withFixture": 125,
@@ -94,9 +94,9 @@
       "totalCases": 13,
       "caseCounts": {
         "PASS": 8,
-        "FAIL": 3,
+        "FAIL": 4,
         "CANTTELL": 0,
-        "OTHER": 2
+        "OTHER": 1
       }
     },
     {
@@ -442,7 +442,7 @@
     },
     {
       "ruleId": "avoid-inline-spacing",
-      "title": "Inline style must not force text spacing with !important",
+      "title": "Inline style must not force text spacing below the WCAG metric",
       "type": "automatic",
       "wcagSc": [
         "1.4.12"
@@ -451,12 +451,12 @@
       "testFile": "tests/engine-checks/automatic/avoid-inline-spacing.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/avoid-inline-spacing-all-scenarios.html",
-      "totalCases": 3,
+      "totalCases": 9,
       "caseCounts": {
-        "PASS": 1,
-        "FAIL": 2,
+        "PASS": 3,
+        "FAIL": 3,
         "CANTTELL": 0,
-        "OTHER": 0
+        "OTHER": 3
       }
     },
     {
@@ -473,9 +473,9 @@
       "totalCases": 25,
       "caseCounts": {
         "PASS": 11,
-        "FAIL": 6,
+        "FAIL": 4,
         "CANTTELL": 0,
-        "OTHER": 8
+        "OTHER": 10
       }
     },
     {
@@ -530,9 +530,9 @@
       "totalCases": 25,
       "caseCounts": {
         "PASS": 9,
-        "FAIL": 9,
+        "FAIL": 7,
         "CANTTELL": 0,
-        "OTHER": 7
+        "OTHER": 9
       }
     },
     {
@@ -868,10 +868,10 @@
       "fixtureFile": "tests/fixtures/form-control-programmatic-label-all-scenarios.html",
       "totalCases": 41,
       "caseCounts": {
-        "PASS": 15,
-        "FAIL": 12,
+        "PASS": 13,
+        "FAIL": 10,
         "CANTTELL": 0,
-        "OTHER": 14
+        "OTHER": 18
       }
     },
     {
@@ -1149,10 +1149,10 @@
       "fixtureFile": "tests/fixtures/input-image-alt-present-all-scenarios.html",
       "totalCases": 19,
       "caseCounts": {
-        "PASS": 4,
+        "PASS": 3,
         "FAIL": 9,
         "CANTTELL": 0,
-        "OTHER": 6
+        "OTHER": 7
       }
     },
     {
@@ -1223,8 +1223,8 @@
       "caseCounts": {
         "PASS": 0,
         "FAIL": 0,
-        "CANTTELL": 3,
-        "OTHER": 1
+        "CANTTELL": 2,
+        "OTHER": 2
       }
     },
     {
@@ -1240,8 +1240,8 @@
       "caseCounts": {
         "PASS": 0,
         "FAIL": 0,
-        "CANTTELL": 2,
-        "OTHER": 2
+        "CANTTELL": 1,
+        "OTHER": 3
       }
     },
     {
@@ -1680,9 +1680,9 @@
       "totalCases": 18,
       "caseCounts": {
         "PASS": 5,
-        "FAIL": 7,
+        "FAIL": 6,
         "CANTTELL": 0,
-        "OTHER": 6
+        "OTHER": 7
       }
     },
     {
@@ -1975,9 +1975,9 @@
       "totalCases": 23,
       "caseCounts": {
         "PASS": 9,
-        "FAIL": 6,
+        "FAIL": 4,
         "CANTTELL": 0,
-        "OTHER": 8
+        "OTHER": 10
       }
     },
     {

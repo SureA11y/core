@@ -1054,9 +1054,9 @@ module.exports = {
   htmlXmlLangMismatch_hint_fail:
     'Faites en sorte que lang et xml:lang déclarent la même langue principale, ou retirez l’attribut obsolète xml:lang.',
   avoidInlineSpacing_title:
-    'Un style en ligne ne doit pas forcer l’espacement du texte avec !important',
+    'Un style en ligne ne doit pas forcer l’espacement du texte en dessous du seuil WCAG',
   avoidInlineSpacing_description:
-    'Vérifie qu’un style en ligne ne définit pas line-height, letter-spacing, ou word-spacing avec !important, ce qui bloque les surcharges d’espacement de texte par l’utilisateur.',
+    'Vérifie que lorsqu’un style en ligne force line-height, letter-spacing ou word-spacing avec !important, la valeur respecte déjà WCAG 1.4.12, ne laissant rien à surcharger à l’utilisateur.',
   avoidInlineSpacing_summary_fail:
     'Le style en ligne de cet élément force {{properties}} avec !important, bloquant les surcharges d’espacement de texte par l’utilisateur.',
   avoidInlineSpacing_hint_fail:

@@ -28,7 +28,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | `aria-valid-attr` | aria-* attributes must be real, defined ARIA attributes | 4.1.2 | A | high | serious |
 | `aria-valid-attr-value` | aria-* attribute values must match their declared type | 4.1.2 | A | high | serious |
 | `autocomplete-valid` | autocomplete attribute must be a valid autofill value | 1.3.5 | AA | high | moderate |
-| `avoid-inline-spacing` | Inline style must not force text spacing with !important | 1.4.12 | AA | high | moderate |
+| `avoid-inline-spacing` | Inline style must not force text spacing below the WCAG metric | 1.4.12 | AA | high | moderate |
 | `binary-control-name-present` | Binary controls have an accessible name | 4.1.2 | A | high | serious |
 | `button-name-present` | Buttons have an accessible name | 4.1.2 | A | high | serious |
 | `bypass-blocks-present` | Page must provide a way to bypass repeated blocks | 2.4.1 | A | medium | serious |

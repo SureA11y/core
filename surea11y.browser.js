@@ -1278,8 +1278,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "avoid-inline-spacing",
-    "title": "Inline style must not force text spacing with !important",
-    "description": "Checks that inline style does not set line-height, letter-spacing, or word-spacing with !important, which blocks user text-spacing overrides.",
+    "title": "Inline style must not force text spacing below the WCAG metric",
+    "description": "Checks that where inline style forces line-height, letter-spacing or word-spacing with !important, the value already meets WCAG 1.4.12, so the user has nothing left to override.",
     "i18n": {
       "titleKey": "avoidInlineSpacing_title",
       "descriptionKey": "avoidInlineSpacing_description"
@@ -11493,6 +11493,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const { helpers, rule } = ctx;
 
   const SPACING_PROPS = ['line-height', 'letter-spacing', 'word-spacing'];
+  // WCAG 1.4.12's own metrics, as multiples of the font size.
+  const MIN_RATIO = { 'line-height': 1.5, 'letter-spacing': 0.12, 'word-spacing': 0.16 };
+  // Only these two take the value from the parent, leaving this declaration
+  // specifying no spacing of its own. `initial` and `revert` resolve to a
+  // concrete value (`normal` for all three properties), so they stay in scope.
+  const INHERITED_KEYWORDS = ['inherit', 'unset'];
+  // No user agent's `normal` line height reaches 1.5, so a forced `normal`
+  // always falls short of the metric.
+  const NORMAL_LINE_HEIGHT_RATIO = 1.2;
+  const CAMEL = {
+    'line-height': 'lineHeight',
+    'letter-spacing': 'letterSpacing',
+    'word-spacing': 'wordSpacing'
+  };
 
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('[style]')
@@ -11500,6 +11514,136 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const occurrences = [];
   let applicableCount = 0;
+
+  // Within one declaration block, importance wins over order, so the last
+  // important declaration is the one that takes effect. Passed Example 5 of ACT
+  // 78fd32 turns on this and Passed Example 6 on the non-important half.
+  function effectiveDeclaration(raw, prop) {
+    const re = new RegExp('(?:^|;)\\s*' + prop + '\\s*:\\s*([^;]*)', 'gi');
+    let chosen = null;
+    let m;
+    while ((m = re.exec(raw))) {
+      const value = String(m[1] || '').trim();
+      const important = /!\s*important\s*$/i.test(value);
+      const clean = value.replace(/!\s*important\s*$/i, '').trim();
+      if (!clean) continue;
+      if (!chosen || important || !chosen.important) {
+        if (chosen && chosen.important && !important) continue;
+        chosen = { value: clean, important };
+      }
+    }
+    return chosen;
+  }
+
+  function hasVisibleTextChild(el) {
+    let kids;
+    try {
+      kids = el.childNodes ? Array.from(el.childNodes) : [];
+    } catch {
+      return false;
+    }
+    return kids.some((n) => n && n.nodeType === 3 && String(n.nodeValue || '').trim() !== '');
+  }
+
+  function isRendered(el) {
+    if (helpers.isDomVisibleEligible) {
+      try {
+        return !!helpers.isDomVisibleEligible(el, ctx, { targetSet: 'dom' }).eligible;
+      } catch {
+        return true;
+      }
+    }
+    return true;
+  }
+
+  const px = (v) => {
+    const n = parseFloat(v);
+    return Number.isFinite(n) && /px\s*$/.test(String(v)) ? n : null;
+  };
+
+  function computedStyleOf(el) {
+    if (helpers && typeof helpers.computedStyle === 'function') {
+      try {
+        const cs = helpers.computedStyle(el);
+        if (cs) return cs;
+      } catch {
+        // fall through to the realm's own view
+      }
+    }
+    try {
+      const view = el.ownerDocument && el.ownerDocument.defaultView;
+      if (view && typeof view.getComputedStyle === 'function') return view.getComputedStyle(el);
+    } catch {
+      // no computed style available
+    }
+    return null;
+  }
+
+  // ACT scopes these rules to text visible on screen, and text pushed far off
+  // canvas is the one hidden shape the shared eligibility check keeps eligible.
+  function isOffScreen(el) {
+    if (!helpers.getVisibilityHintsInfo) return false;
+    try {
+      const info = helpers.getVisibilityHintsInfo(el, ctx, {});
+      return !!(info && Array.isArray(info.hints) && info.hints.indexOf('offscreen') !== -1);
+    } catch {
+      return false;
+    }
+  }
+
+  // A realm that does not lay the document out reports font-size as the CSS
+  // absolute-size keyword rather than a length. Resolving those keeps px-valued
+  // spacing checkable there, and cannot manufacture a failure: a font size
+  // larger than assumed only makes a px ratio smaller.
+  const ABSOLUTE_FONT_SIZES = {
+    'xx-small': 9,
+    'x-small': 10,
+    small: 13,
+    medium: 16,
+    large: 18,
+    'x-large': 24,
+    'xx-large': 32
+  };
+
+  function fontSizeOf(cs) {
+    if (!cs) return null;
+    const direct = px(cs.fontSize);
+    if (direct !== null) return direct;
+    const keyword = String(cs.fontSize || '')
+      .trim()
+      .toLowerCase();
+    return ABSOLUTE_FONT_SIZES[keyword] || null;
+  }
+
+  /**
+   * The spacing as a multiple of the font size, or null when it cannot be
+   * resolved. Computed style is preferred because it already applies the
+   * cascade and unit resolution; the declared value is only a fallback for
+   * environments that do not lay the document out.
+   */
+  function spacingRatio(el, prop, declared) {
+    const cs = computedStyleOf(el);
+    const fontSize = fontSizeOf(cs);
+    if (cs && fontSize) {
+      const used = px(cs[CAMEL[prop]]);
+      if (used !== null) return used / fontSize;
+    }
+
+    const v = String(declared || '')
+      .trim()
+      .toLowerCase();
+    // `normal`, and the keywords that resolve to it, add nothing for the two
+    // spacing properties and stay under the metric for line height.
+    if (v === 'normal' || v === 'initial' || v === 'revert' || v === 'revert-layer') {
+      return prop === 'line-height' ? NORMAL_LINE_HEIGHT_RATIO : 0;
+    }
+    if (/^[0-9.]+$/.test(v)) return parseFloat(v);
+    if (/em$/.test(v)) return parseFloat(v);
+    if (/%$/.test(v)) return parseFloat(v) / 100;
+    const asPx = px(v);
+    if (asPx !== null && fontSize) return asPx / fontSize;
+    return null;
+  }
 
   for (const el of nodes) {
     if (!el || !el.getAttribute) continue;
@@ -11510,14 +11654,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const hasAnySpacingProp = SPACING_PROPS.some((p) => lower.includes(p));
     if (!hasAnySpacingProp) continue;
 
-    applicableCount += 1;
+    // The rule is about text the user needs to re-space, so an element with no
+    // text of its own, or none that renders, is not a target.
+    if (!hasVisibleTextChild(el) || !isRendered(el) || isOffScreen(el)) continue;
 
     const flagged = [];
+    let inScope = false;
     for (const prop of SPACING_PROPS) {
-      const re = new RegExp(prop.replace('-', '\\-') + '\\s*:[^;]*!important', 'i');
-      if (re.test(raw)) flagged.push(prop);
+      const decl = effectiveDeclaration(raw, prop);
+      if (!decl || !decl.important) continue;
+      if (INHERITED_KEYWORDS.indexOf(decl.value.toLowerCase()) !== -1) continue;
+      inScope = true;
+      const ratio = spacingRatio(el, prop, decl.value);
+      // Unresolvable spacing is left alone: this engine reserves fail for
+      // high-confidence violations.
+      if (ratio === null) continue;
+      if (ratio < MIN_RATIO[prop]) flagged.push(prop);
     }
 
+    if (inScope) applicableCount += 1;
     if (!flagged.length) continue;
 
     const tag = el.tagName.toLowerCase();
@@ -11527,8 +11682,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     occurrences.push({
       selector: stableSelector,
       html,
-      summary: `This element's inline style forces ${flagged.join(', ')} with !important, blocking user text-spacing overrides.`,
-      hint: 'Remove !important from line-height/letter-spacing/word-spacing in inline styles so users can override text spacing.',
+      summary: `This element's inline style forces ${flagged.join(', ')} with !important below the WCAG text-spacing metric, so the user cannot raise it.`,
+      hint: 'Remove !important from line-height/letter-spacing/word-spacing in inline styles, or set a value that already meets the metric (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em).',
       i18n: {
         summaryKey: 'avoidInlineSpacing_summary_fail',
         hintKey: 'avoidInlineSpacing_hint_fail',
@@ -28376,8 +28531,8 @@ const I18N = {
     "htmlXmlLangMismatch_description": "Prüft, ob die Attribute lang und xml:lang des <html>-Elements dieselbe Hauptsprache deklarieren, wenn beide vorhanden sind.",
     "htmlXmlLangMismatch_summary_fail": "Die Attribute lang („{{lang}}“) und xml:lang („{{xmlLang}}“) deklarieren unterschiedliche Sprachen.",
     "htmlXmlLangMismatch_hint_fail": "Lassen Sie lang und xml:lang dieselbe Hauptsprache deklarieren, oder entfernen Sie das veraltete Attribut xml:lang.",
-    "avoidInlineSpacing_title": "Inline-Stile dürfen den Textabstand nicht mit !important erzwingen",
-    "avoidInlineSpacing_description": "Prüft, ob Inline-Stile line-height, letter-spacing oder word-spacing nicht mit !important setzen, was das Überschreiben des Textabstands durch den Nutzer blockiert.",
+    "avoidInlineSpacing_title": "Inline-Stile dürfen den Textabstand nicht unter den WCAG-Wert erzwingen",
+    "avoidInlineSpacing_description": "Prüft, dass ein per !important erzwungener Wert für line-height, letter-spacing oder word-spacing WCAG 1.4.12 bereits erfüllt, sodass dem Nutzer nichts zu überschreiben bleibt.",
     "avoidInlineSpacing_summary_fail": "Der Inline-Stil dieses Elements erzwingt {{properties}} mit !important und blockiert damit Überschreibungen des Textabstands durch den Nutzer.",
     "avoidInlineSpacing_hint_fail": "Entfernen Sie !important von line-height/letter-spacing/word-spacing in Inline-Stilen, damit Nutzer den Textabstand überschreiben können.",
     "metaRefreshNoExceptions_title": "Die Seite darf überhaupt keinen Meta-Refresh verwenden (AAA)",
@@ -28998,8 +29153,8 @@ const I18N = {
     "htmlXmlLangMismatch_description": "Checks that the <html> element's lang and xml:lang attributes declare the same primary language, when both are present.",
     "htmlXmlLangMismatch_summary_fail": "The lang (\"{{lang}}\") and xml:lang (\"{{xmlLang}}\") attributes declare different languages.",
     "htmlXmlLangMismatch_hint_fail": "Make lang and xml:lang declare the same primary language, or remove the deprecated xml:lang attribute.",
-    "avoidInlineSpacing_title": "Inline style must not force text spacing with !important",
-    "avoidInlineSpacing_description": "Checks that inline style does not set line-height, letter-spacing, or word-spacing with !important, which blocks user text-spacing overrides.",
+    "avoidInlineSpacing_title": "Inline style must not force text spacing below the WCAG metric",
+    "avoidInlineSpacing_description": "Checks that where inline style forces line-height, letter-spacing or word-spacing with !important, the value already meets WCAG 1.4.12, so the user has nothing left to override.",
     "avoidInlineSpacing_summary_fail": "This element's inline style forces {{properties}} with !important, blocking user text-spacing overrides.",
     "avoidInlineSpacing_hint_fail": "Remove !important from line-height/letter-spacing/word-spacing in inline styles so users can override text spacing.",
     "metaRefreshNoExceptions_title": "Page must not use a meta refresh at all (AAA)",
@@ -29620,8 +29775,8 @@ const I18N = {
     "htmlXmlLangMismatch_description": "Comprueba que los atributos lang y xml:lang del elemento <html> declaren el mismo idioma principal, cuando ambos están presentes.",
     "htmlXmlLangMismatch_summary_fail": "Los atributos lang (\"{{lang}}\") y xml:lang (\"{{xmlLang}}\") declaran idiomas diferentes.",
     "htmlXmlLangMismatch_hint_fail": "Hacer que lang y xml:lang declaren el mismo idioma principal, o eliminar el atributo obsoleto xml:lang.",
-    "avoidInlineSpacing_title": "El estilo en línea no debe forzar el espaciado de texto con !important",
-    "avoidInlineSpacing_description": "Comprueba que el estilo en línea no establezca line-height, letter-spacing o word-spacing con !important, lo que bloquea las anulaciones de espaciado de texto del usuario.",
+    "avoidInlineSpacing_title": "El estilo en línea no debe forzar el espaciado de texto por debajo del umbral WCAG",
+    "avoidInlineSpacing_description": "Comprueba que cuando el estilo en línea fuerza line-height, letter-spacing o word-spacing con !important, el valor ya cumple WCAG 1.4.12, por lo que al usuario no le queda nada que anular.",
     "avoidInlineSpacing_summary_fail": "El estilo en línea de este elemento fuerza {{properties}} con !important, bloqueando las anulaciones de espaciado de texto del usuario.",
     "avoidInlineSpacing_hint_fail": "Eliminar !important de line-height/letter-spacing/word-spacing en los estilos en línea para que los usuarios puedan anular el espaciado de texto.",
     "metaRefreshNoExceptions_title": "La página no debe usar un meta refresh en absoluto (AAA)",
@@ -30242,8 +30397,8 @@ const I18N = {
     "htmlXmlLangMismatch_description": "Vérifie que les attributs lang et xml:lang de l’élément <html> déclarent la même langue principale, lorsque les deux sont présents.",
     "htmlXmlLangMismatch_summary_fail": "Les attributs lang (« {{lang}} ») et xml:lang (« {{xmlLang}} ») déclarent des langues différentes.",
     "htmlXmlLangMismatch_hint_fail": "Faites en sorte que lang et xml:lang déclarent la même langue principale, ou retirez l’attribut obsolète xml:lang.",
-    "avoidInlineSpacing_title": "Un style en ligne ne doit pas forcer l’espacement du texte avec !important",
-    "avoidInlineSpacing_description": "Vérifie qu’un style en ligne ne définit pas line-height, letter-spacing, ou word-spacing avec !important, ce qui bloque les surcharges d’espacement de texte par l’utilisateur.",
+    "avoidInlineSpacing_title": "Un style en ligne ne doit pas forcer l’espacement du texte en dessous du seuil WCAG",
+    "avoidInlineSpacing_description": "Vérifie que lorsqu’un style en ligne force line-height, letter-spacing ou word-spacing avec !important, la valeur respecte déjà WCAG 1.4.12, ne laissant rien à surcharger à l’utilisateur.",
     "avoidInlineSpacing_summary_fail": "Le style en ligne de cet élément force {{properties}} avec !important, bloquant les surcharges d’espacement de texte par l’utilisateur.",
     "avoidInlineSpacing_hint_fail": "Retirez !important de line-height/letter-spacing/word-spacing dans les styles en ligne afin que les utilisateurs puissent surcharger l’espacement du texte.",
     "metaRefreshNoExceptions_title": "La page ne doit utiliser aucun rafraîchissement meta (AAA)",
