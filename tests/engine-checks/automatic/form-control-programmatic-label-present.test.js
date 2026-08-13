@@ -216,11 +216,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/form-control-programmatic-lab
     'fc_case_12',
     'fc_case_18',
     'fc_case_19',
-    'fc_case_21',
-    'fc_case_22',
-    'fc_case_25',
     'fc_case_37',
-    'fc_case_39a',
     'fc_case_40b',
     'fc_case_41',
     'fc_case_43'
@@ -249,7 +245,11 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/form-control-programmatic-lab
     'fc_case_44',
 
     // Ineligible in acc (should not produce occurrences)
+    'fc_case_21',
+    'fc_case_22',
     'fc_case_24',
+    'fc_case_25',
+    'fc_case_39a',
     'fc_case_27',
     'fc_case_28',
     'fc_case_29',
@@ -281,17 +281,17 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/form-control-programmatic-lab
   }
 });
 
-test('fail: unlabeled native control is still evaluated even when aria-hidden="true"', () => {
+test('notApplicable: unlabeled native control carrying aria-hidden="true" itself', () => {
   const html = `
     <!doctype html><html><body>
       <input id="ah1" type="text" aria-hidden="true">
     </body></html>
   `;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test('fail: unlabeled native control is still evaluated when an ancestor is aria-hidden="true"', () => {
+test('notApplicable: unlabeled native control under an aria-hidden="true" ancestor', () => {
   const html = `
     <!doctype html><html><body>
       <div aria-hidden="true">
@@ -300,5 +300,91 @@ test('fail: unlabeled native control is still evaluated when an ancestor is aria
     </body></html>
   `;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test('notApplicable: aria-hidden control referenced by aria-labelledby (IDREF override)', () => {
+  const html = `
+    <!doctype html><html><body>
+      <div aria-labelledby="ah3">References the control.</div>
+      <input id="ah3" type="text" aria-hidden="true">
+    </body></html>
+  `;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test('aria-hidden-focus still reports the control this rule now skips', () => {
+  const html = `
+    <!doctype html><html><body>
+      <div aria-hidden="true">
+        <input id="ah4" type="text">
+      </div>
+    </body></html>
+  `;
+  const result = runa11yCoreOnHtml(html, { runOnly: ['aria-hidden-focus'] });
+  assertRule(result, 'aria-hidden-focus', 'fail', { minOccurrences: 1 });
+});
+
+test('fail: an unlabeled control outside the aria-hidden subtree is unaffected', () => {
+  const html = `
+    <!doctype html><html><body>
+      <div aria-hidden="true"><input id="ah5" type="text"></div>
+      <input id="visible" type="text">
+    </body></html>
+  `;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'visible'));
+  assert.ok(!hasOccurrenceForId(rule, 'ah5'));
+});
+
+// A labeled aria-hidden control is out of scope, not a pass: the name is not
+// exposed either, so the rule has nothing to assert about it.
+test('notApplicable: aria-hidden control that does carry an aria-label', () => {
+  const html = `
+    <!doctype html><html><body>
+      <div aria-hidden="true"><input id="ah6" type="text" aria-label="Search"></div>
+    </body></html>
+  `;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test('notApplicable: <select> and <textarea> inside aria-hidden, like <input>', () => {
+  const html = `
+    <!doctype html><html><body>
+      <div aria-hidden="true">
+        <select id="ah7"><option>a</option></select>
+        <textarea id="ah8"></textarea>
+      </div>
+    </body></html>
+  `;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+// Guards against over-excluding: only the aria-hidden overrides are dropped.
+// A focusable role=presentation control keeps its role by conflict resolution.
+test('fail: focusable role="presentation" control stays in scope', () => {
+  const html = `
+    <!doctype html><html><body>
+      <input id="pres" type="text" role="presentation">
+    </body></html>
+  `;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'pres'));
+});
+
+test('notApplicable: control under an aria-hidden ancestor several levels up', () => {
+  const html = `
+    <!doctype html><html><body>
+      <div aria-hidden="true"><div><fieldset><div>
+        <input id="ah9" type="text">
+      </div></fieldset></div></div>
+    </body></html>
+  `;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
