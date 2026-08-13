@@ -11053,8 +11053,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
-  const selector =
-    'input[type="checkbox"], input[type="radio"], [role="checkbox"], [role="radio"], [role="switch"]';
+  // Native checkbox/radio without an explicit role belongs to
+  // form-control-programmatic-label-present.
+  const selector = '[role="checkbox"], [role="radio"], [role="switch"]';
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
@@ -15109,6 +15110,41 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const trim = (v) => (v == null ? '' : String(v)).trim();
 
+  // Roles with their own *-name-present rule; a control carrying one
+  // explicitly is skipped here so it is reported once.
+  const ROLE_OWNED_ELSEWHERE = [
+    'alertdialog',
+    'button',
+    'checkbox',
+    'combobox',
+    'dialog',
+    'grid',
+    'link',
+    'listbox',
+    'menu',
+    'menubar',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'meter',
+    'option',
+    'progressbar',
+    'radio',
+    'radiogroup',
+    'scrollbar',
+    'searchbox',
+    'slider',
+    'spinbutton',
+    'switch',
+    'tab',
+    'tablist',
+    'textbox',
+    'toolbar',
+    'tooltip',
+    'tree',
+    'treeitem'
+  ];
+
   const metrics = {
     applicableCount: 0,
     passCount: 0,
@@ -15216,6 +15252,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     } catch {
       role = '';
     }
+
+    if (role && ROLE_OWNED_ELSEWHERE.indexOf(role) !== -1) continue;
 
     if (role === 'presentation' || role === 'none') {
       const fi = getFocusableInfo
@@ -23601,7 +23639,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
-  const selector = 'input[type="range"], [role="slider"]';
+  // Native input[type=range] belongs to
+  // form-control-programmatic-label-present.
+  const selector = '[role="slider"]';
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);

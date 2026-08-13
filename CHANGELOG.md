@@ -4,6 +4,9 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ## [Unreleased]
 
+### Changed
+- Form-control naming is now split by native element vs. explicit ARIA role, so a control isn't reported by two rules at once: `binary-control-name-present`/`slider-name-present` are role-only, and `form-control-programmatic-label-present` skips a control whose explicit role has its own naming rule. An unlabelled checkbox used to produce two findings; now one.
+
 ### Fixed
 - `form-control-programmatic-label-present` used the looser `isAccTreeEligible` check, which keeps a focusable `aria-hidden` control "eligible", so it reported controls no assistive technology can reach. Switched to `isIncludedInAccessibilityTree`, matching the `*-name-present` rules and settling an existing inconsistency with `binary-control-name-present`, which already excluded the same case.
 - The 18 `*-name-present` rules judged an element whether or not it was actually reachable by assistive technology, so a focusable element inside `aria-hidden` (both the tabbable and the IDREF-referenced case) got a real pass/fail verdict even though ACT's own glossary says such elements aren't in the accessibility tree at all — Chrome agrees, reporting `ignored: true` with no name. New shared `helpers.isIncludedInAccessibilityTree` routes all 18 rules to `notApplicable` there instead; the focus-order defect itself is still reported by `aria-hidden-focus`, which already owns it.

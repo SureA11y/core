@@ -160,8 +160,9 @@ function runInPage(ctx) {
   const occurrences = [];
   let applicableCount = 0;
 
-  const selector =
-    'input[type="checkbox"], input[type="radio"], [role="checkbox"], [role="radio"], [role="switch"]';
+  // Native checkbox/radio without an explicit role belongs to
+  // form-control-programmatic-label-present.
+  const selector = '[role="checkbox"], [role="radio"], [role="switch"]';
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
