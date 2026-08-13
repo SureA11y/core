@@ -31617,6 +31617,35 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
       const eligCache = new WeakMap();
       const inactiveCache = new WeakMap();
+      const clipHiddenCache = new WeakMap();
+
+      // clip:rect(0,0,0,0) / clip-path:inset(50%+) (the sr-only technique) has
+      // no visually-presented color, so contrast rules exempt it even though
+      // isDomVisibleEligible itself keeps it eligible for other callers
+      // (aria-hidden-focus etc. need to find clipped-but-focusable elements).
+      const isClipHidden = (el) => {
+        if (!helpers || typeof helpers.getVisibilityHintsInfo !== 'function') return false;
+        if (clipHiddenCache.has(el)) return clipHiddenCache.get(el);
+
+        let hidden = false;
+        try {
+          let cur = el;
+          let guard = 0;
+          while (cur && cur.nodeType === 1 && guard++ < 100) {
+            const info = helpers.getVisibilityHintsInfo(cur, ctx, {});
+            if (info && Array.isArray(info.hints) && info.hints.indexOf('clipped') !== -1) {
+              hidden = true;
+              break;
+            }
+            cur = composedParent ? composedParent(cur) : cur.parentElement;
+          }
+        } catch {
+          hidden = false;
+        }
+
+        clipHiddenCache.set(el, hidden);
+        return hidden;
+      };
 
       const isVisibleEligible = (el) => {
         if (!helpers || typeof helpers.isDomVisibleEligible !== 'function') return true;
@@ -31626,6 +31655,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         try {
           const r = helpers.isDomVisibleEligible(el, ctx, { visibilityMode });
           ok = __asEligibilityBool(r);
+          if (ok && isClipHidden(el)) ok = false;
         } catch {
           ok = false;
         }
