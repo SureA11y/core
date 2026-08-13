@@ -73,8 +73,15 @@ const meta = {
 function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
-  const isAccTreeEligible =
-    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+  // ACT e086e5 applies only to controls included in the accessibility tree, so
+  // a focusable control inside aria-hidden is out of scope; aria-hidden-focus
+  // reports that markup instead.
+  const isEligibleHelper =
+    helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+      ? helpers.isIncludedInAccessibilityTree
+      : helpers && typeof helpers.isAccTreeEligible === 'function'
+        ? helpers.isAccTreeEligible
+        : null;
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
 
@@ -108,9 +115,9 @@ function runInPage(ctx) {
   }
 
   function isEligibleAcc(el) {
-    if (!isAccTreeEligible) return true;
+    if (!isEligibleHelper) return true;
     try {
-      const r = isAccTreeEligible(el, ctx);
+      const r = isEligibleHelper(el, ctx);
       if (typeof r === 'boolean') return r;
       return !!(r && r.eligible);
     } catch {
