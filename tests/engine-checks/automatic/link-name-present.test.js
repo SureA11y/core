@@ -269,3 +269,45 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/link-name-present-all-scenari
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
 });
+
+test(`${RULE_ID}: fail when role="alert" overrides <a href> and only content is present`, () => {
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
+  const html = `<!doctype html><html><body><a href="/x" role="alert" id="al"><span>Explore My Notes</span></a></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+});
+
+test(`${RULE_ID}: pass when role="alert" overrides <a href> but aria-label is present`, () => {
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
+  const html = `<!doctype html><html><body><a href="/x" role="alert" aria-label="Explore My Notes">Explore My Notes</a></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: roles that DO name from contents still pass on content alone`, () => {
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
+  for (const role of ['button', 'menuitem', 'tab', 'treeitem', 'option', 'switch']) {
+    const html = `<!doctype html><html><body><a href="/x" role="${role}">Open settings</a></body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
+test(`${RULE_ID}: an unrecognised role falls back to the implicit link role and still names from contents`, () => {
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
+  const html = `<!doctype html><html><body><a href="/x" role="totally-not-a-role">Documentation</a></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
