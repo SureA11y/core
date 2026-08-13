@@ -21963,6 +21963,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const isAccTreeEligible =
     helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+  const getFocusableInfo =
+    helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
 
   function isEligible(node) {
     if (!isAccTreeEligible) return true;
@@ -21974,6 +21976,58 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  function matchesInteractive(node) {
+    return !!(
+      node &&
+      node.nodeType === 1 &&
+      typeof node.matches === 'function' &&
+      node.matches(INTERACTIVE_SELECTOR)
+    );
+  }
+
+  // Operable = a native-interactive / ARIA-widget element that is exposed to
+  // the accessibility tree and platform-focusable. A widget-role element with
+  // no independent focus (e.g. a role="option" with no tabindex, driven by
+  // its container via roving tabindex or aria-activedescendant) is not
+  // operable and does not nest an interactive control. When no focus model is
+  // available, role membership alone qualifies.
+  function isOperableInteractive(node) {
+    if (!matchesInteractive(node)) return false;
+    if (!isEligible(node)) return false;
+    if (!getFocusableInfo) return true;
+    try {
+      const info = getFocusableInfo(node, ctx);
+      return !!(info && info.focusable);
+    } catch {
+      return true;
+    }
+  }
+
+  // Shallowest operable interactive descendants of `root`. Traversal stops at
+  // each counted node instead of descending into it, so a control nested
+  // inside another operable control is attributed to its nearest operable
+  // ancestor rather than to every enclosing container. Eligibility is applied
+  // per node during the walk, so hidden or aria-hidden subtrees drop out.
+  function collectNestedOperable(root) {
+    const out = [];
+    const top = root && root.children;
+    if (!top || !top.length) return out;
+    const stack = [];
+    for (let i = top.length - 1; i >= 0; i--) stack.push(top[i]);
+    while (stack.length) {
+      const node = stack.pop();
+      if (node && node.nodeType === 1 && isOperableInteractive(node)) {
+        out.push(node);
+        continue; // do not descend into a counted control
+      }
+      const kids = node && node.children;
+      if (kids && kids.length) {
+        for (let i = kids.length - 1; i >= 0; i--) stack.push(kids[i]);
+      }
+    }
+    return out;
+  }
+
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(INTERACTIVE_SELECTOR)
     : helpers.queryAll(INTERACTIVE_SELECTOR);
@@ -21982,30 +22036,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.querySelectorAll) continue;
+    if (!el || el.nodeType !== 1) continue;
     if (!isEligible(el)) continue;
 
     applicableCount += 1;
 
-    // The nested search uses the raw native querySelectorAll (not
-    // helpers.queryAllSmart), so it isn't subject to that helper's
-    // default hidden-content policy at all -- not even hard CSS-based
-    // hiding, let alone aria-hidden. A nested descendant that is never
-    // actually rendered or exposed to AT (display:none, aria-hidden,
-    // etc.) creates no real ambiguity for ANY user, since it isn't there
-    // to be confused with the outer control.
-    let nested;
-    try {
-      nested = Array.from(el.querySelectorAll(INTERACTIVE_SELECTOR)).filter(isEligible);
-    } catch {
-      nested = [];
-    }
+    const nested = collectNestedOperable(el);
     if (!nested.length) continue;
 
     const nestedTags = nested.map((n) => (n && n.tagName ? n.tagName.toLowerCase() : 'unknown'));
-    const dedupedNestedTags = [
-      ...new Set(nested.map((n) => (n && n.tagName ? n.tagName.toLowerCase() : 'unknown')))
-    ];
+    const dedupedNestedTags = [...new Set(nestedTags)];
 
     const tag = el.tagName.toLowerCase();
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
