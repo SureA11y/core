@@ -89,7 +89,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/menuitem-name-present-all-sce
   }
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 8, maxOccurrences: 8 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 7, maxOccurrences: 7 });
 
   const expectedFailIds = [
     'menuitem_case_01',
@@ -98,11 +98,11 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/menuitem-name-present-all-sce
     'menuitem_case_08',
     'menuitem_case_10',
     'menuitem_case_12',
-    'menuitem_case_14',
     'menuitem_case_18'
   ];
 
   const expectedNoOccIds = [
+    'menuitem_case_14',
     'menuitem_case_02',
     'menuitem_case_03',
     'menuitem_case_04',

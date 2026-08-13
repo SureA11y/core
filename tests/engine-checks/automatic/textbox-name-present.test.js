@@ -102,7 +102,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/textbox-name-present-all-scen
   }
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 8, maxOccurrences: 8 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 6, maxOccurrences: 6 });
 
   const expectedFailIds = [
     'textbox_case_01',
@@ -110,12 +110,12 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/textbox-name-present-all-scen
     'textbox_case_08',
     'textbox_case_09',
     'textbox_case_10',
-    'textbox_case_12',
-    'textbox_case_13',
     'textbox_case_17'
   ];
 
   const expectedNoOccIds = [
+    'textbox_case_12',
+    'textbox_case_13',
     'textbox_case_03',
     'textbox_case_04',
     'textbox_case_05',

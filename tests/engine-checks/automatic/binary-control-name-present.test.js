@@ -126,7 +126,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/binary-control-name-present-a
   }
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 9, maxOccurrences: 9 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 7, maxOccurrences: 7 });
 
   const expectedFailIds = [
     'binctl_case_01',
@@ -135,12 +135,12 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/binary-control-name-present-a
     'binctl_case_13',
     'binctl_case_15',
     'binctl_case_17',
-    'binctl_case_19',
-    'binctl_case_18b',
     'binctl_case_23'
   ];
 
   const expectedNoOccIds = [
+    'binctl_case_19',
+    'binctl_case_18b',
     'binctl_case_02',
     'binctl_case_03',
     'binctl_case_04',

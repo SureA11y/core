@@ -297,7 +297,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/button-name-present-all-scena
   }
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 15, maxOccurrences: 15 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 13, maxOccurrences: 13 });
 
   const expectedFailIds = [
     'btn_case_01',
@@ -309,8 +309,6 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/button-name-present-all-scena
     'btn_case_14',
     'btn_case_16',
     'btn_case_17',
-    'btn_case_19',
-    'btn_case_19b',
     'btn_case_23',
     'btn_case_26',
     'btn_case_28',
@@ -318,6 +316,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/button-name-present-all-scena
   ];
 
   const expectedNoOccIds = [
+    'btn_case_19',
+    'btn_case_19b',
     'btn_case_02',
     'btn_case_03',
     'btn_case_04',
@@ -354,4 +354,17 @@ test(`${RULE_ID}: an unrecognised role on a <button> still names from contents`,
   const html = `<!doctype html><html><body><button role="totally-not-a-role">Save changes</button></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: a tabbable button inside aria-hidden is out of scope, whatever names it`, () => {
+  for (const inner of [
+    '<button>Save</button>',
+    '<button><span>Save</span></button>',
+    '<button aria-label="Save changes"></button>',
+    '<button></button>'
+  ]) {
+    const html = `<!doctype html><html><body><div aria-hidden="true">${inner}</div></body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  }
 });
