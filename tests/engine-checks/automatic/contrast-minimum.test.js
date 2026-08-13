@@ -502,7 +502,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/contrast-all-scenarios.html)`
 
   const result = run(html);
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 15, maxOccurrences: 15 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 14, maxOccurrences: 14 });
 
   const expectedFailIds = [
     'aa_fail_light_gray_on_white',
@@ -515,7 +515,6 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/contrast-all-scenarios.html)`
     'eligible_aria_hidden_tabbable_fail',
     'excluded_aria_hidden_prog_focus',
     'eligible_offscreen_fail',
-    'eligible_sr_only_fail',
     'eligible_zero_size_text',
     'eligible_enabled_button_fail',
     // <input type="submit"|"button">'s visible label comes from the
@@ -536,6 +535,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/contrast-all-scenarios.html)`
     'excluded_visibility_collapse_fail',
     'excluded_details_closed_fail',
     'excluded_template_fail',
+    'excluded_sr_only_clip_fail', // never visually presented; no contrast requirement
     'whitespace_only',
     'blocker_gradient_bg', // not computable => notApplicable-territory, no occurrence here
     'blocker_image_bg',
@@ -573,7 +573,7 @@ test(`${RULE_ID} (node runtime): fixture coverage (tests/fixtures/contrast-all-s
   const rule = ruleFrom(result);
   assert.ok(rule);
   assert.strictEqual(rule.outcome, 'fail');
-  assert.strictEqual(rule.occurrences.length, 15);
+  assert.strictEqual(rule.occurrences.length, 14);
 
   const expectedFailIds = [
     'aa_fail_light_gray_on_white',
@@ -586,7 +586,6 @@ test(`${RULE_ID} (node runtime): fixture coverage (tests/fixtures/contrast-all-s
     'eligible_aria_hidden_tabbable_fail',
     'excluded_aria_hidden_prog_focus',
     'eligible_offscreen_fail',
-    'eligible_sr_only_fail',
     'eligible_zero_size_text',
     'eligible_enabled_button_fail',
     'eligible_submit_input_fail',
@@ -597,6 +596,7 @@ test(`${RULE_ID} (node runtime): fixture coverage (tests/fixtures/contrast-all-s
     'aa_pass_aaa_fail_gray_on_white',
     'bg_alpha_white_50_black_text',
     'bg_alpha_80_over_gray_black_text',
+    'excluded_sr_only_clip_fail',
     'blocker_gradient_bg',
     'blocker_image_bg',
     'blocker_mix_blend_mode',
