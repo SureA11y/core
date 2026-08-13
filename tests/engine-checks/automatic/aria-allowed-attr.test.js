@@ -228,6 +228,42 @@ test(`${RULE_ID}: fail when aria-modal is present on a role that doesn't support
   assert.equal(rule.occurrences[0].data.details.attr, 'aria-modal');
 });
 
+test(`${RULE_ID}: cantTell when an ARIA-1.2-deprecated ex-global is used on a role that doesn't support it`, () => {
+  // role="heading" supports none of the four ex-globals, so each is deprecated there.
+  for (const attr of ['aria-invalid', 'aria-haspopup', 'aria-errormessage', 'aria-disabled']) {
+    const html = `<!doctype html><html><body><div id="a" role="heading" aria-level="2" ${attr}="true"></div></body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+    assert.equal(rule.occurrences[0].occurrenceOutcome, 'cantTell');
+    assert.equal(rule.occurrences[0].data.details.reasonCode, 'ARIA_ATTR_DEPRECATED');
+    assert.equal(rule.occurrences[0].data.details.attr, attr);
+  }
+});
+
+test(`${RULE_ID}: pass when a deprecated ex-global IS supported by the role (e.g. checkbox + aria-invalid)`, () => {
+  const html = `<!doctype html><html><body><div id="a" role="checkbox" aria-checked="true" aria-invalid="true"></div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: a genuinely-unsupported attr fails and a deprecated one cantTells on the same element`, () => {
+  const html = `<!doctype html><html><body><div id="a" role="radio" aria-checked="true" aria-valuenow="1" aria-invalid="false"></div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  const byAttr = Object.fromEntries(
+    rule.occurrences.map((o) => [o.data.details.attr, o.occurrenceOutcome])
+  );
+  assert.strictEqual(byAttr['aria-valuenow'], 'fail');
+  assert.strictEqual(byAttr['aria-invalid'], 'cantTell');
+});
+
+test(`${RULE_ID}: implicit-role radio input with aria-invalid is cantTell (Angular Material default)`, () => {
+  const html = `<!doctype html><html><body><input id="a" type="radio" aria-invalid="false" aria-label="Option"></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.equal(rule.occurrences[0].data.details.reasonCode, 'ARIA_ATTR_DEPRECATED');
+});
+
 test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><body><div id="a" role="checkbox" aria-valuenow="1"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
@@ -245,9 +281,18 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-allowed-attr-all-scenari
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 5, maxOccurrences: 5 });
+  // 5 fail occurrences (case_04 carries two) + 1 cantTell (case_14, a
+  // deprecated-but-allowed attr) => resolves to fail overall, 6 occurrences.
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 6, maxOccurrences: 6 });
+
+  const outcomeForId = (id) =>
+    (rule.occurrences || []).find(
+      (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+    )?.occurrenceOutcome;
 
   const expectedFailIds = ['aaa_case_03', 'aaa_case_04', 'aaa_case_05', 'aaa_case_13'];
+  assert.ok(hasOccurrenceForId(rule, 'aaa_case_14'), 'Expected occurrence for aaa_case_14');
+  assert.strictEqual(outcomeForId('aaa_case_14'), 'cantTell');
   const expectedNoOccIds = [
     'aaa_case_01',
     'aaa_case_02',
