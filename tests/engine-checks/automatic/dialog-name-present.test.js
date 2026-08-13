@@ -98,7 +98,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/dialog-name-present-all-scena
   }
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 9, maxOccurrences: 9 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 7, maxOccurrences: 7 });
 
   const expectedFailIds = [
     'dialog_case_01',
@@ -107,12 +107,12 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/dialog-name-present-all-scena
     'dialog_case_08',
     'dialog_case_09',
     'dialog_case_10',
-    'dialog_case_12',
-    'dialog_case_13',
     'dialog_case_17'
   ];
 
   const expectedNoOccIds = [
+    'dialog_case_12',
+    'dialog_case_13',
     'dialog_case_03',
     'dialog_case_04',
     'dialog_case_05',

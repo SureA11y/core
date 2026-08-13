@@ -78,7 +78,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/treeitem-name-present-all-sce
   }
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 7, maxOccurrences: 7 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 6, maxOccurrences: 6 });
 
   const expectedFailIds = [
     'treeitem_case_01',
@@ -86,11 +86,11 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/treeitem-name-present-all-sce
     'treeitem_case_07',
     'treeitem_case_08',
     'treeitem_case_09',
-    'treeitem_case_11',
     'treeitem_case_15'
   ];
 
   const expectedNoOccIds = [
+    'treeitem_case_11',
     'treeitem_case_02',
     'treeitem_case_03',
     'treeitem_case_04',

@@ -227,7 +227,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/link-name-present-all-scenari
   }
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 10, maxOccurrences: 10 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 8, maxOccurrences: 8 });
 
   const expectedFailIds = [
     'link_case_01',
@@ -236,13 +236,13 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/link-name-present-all-scenari
     'link_case_10',
     'link_case_11',
     'link_case_13',
-    'link_case_15c',
-    'link_case_16',
     'link_case_20',
     'link_case_24'
   ];
 
   const expectedNoOccIds = [
+    'link_case_15c',
+    'link_case_16',
     'link_case_02',
     'link_case_03',
     'link_case_04',
@@ -310,4 +310,60 @@ test(`${RULE_ID}: an unrecognised role falls back to the implicit link role and 
   const html = `<!doctype html><html><body><a href="/x" role="totally-not-a-role">Documentation</a></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+// ACT c487ae scopes this rule to elements included in the accessibility tree,
+// and its glossary excludes focusable aria-hidden content. aria-hidden-focus
+// (ACT 6cfa84) reports that markup.
+test(`${RULE_ID}: a tabbable link inside aria-hidden is out of scope, whatever names it`, () => {
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
+  for (const inner of [
+    '<a href="/x">Docs</a>',
+    '<a href="/x"><span>Docs</span></a>',
+    '<a href="/x" aria-label="Documentation">x</a>',
+    '<a href="/x" title="Documentation">x</a>',
+    '<a href="/x"></a>'
+  ]) {
+    const html = `<!doctype html><html><body><div aria-hidden="true">${inner}</div></body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
+test(`${RULE_ID}: aria-hidden-focus still reports the same markup`, () => {
+  if (!runa11yCoreOnHtml) {
+    assert.ok(true);
+    return;
+  }
+  const html = `<!doctype html><html><body><div aria-hidden="true"><a href="/x">Docs</a></div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: ['aria-hidden-focus'] });
+  const rule = (result.checksResults || []).find((c) => c.ruleId === 'aria-hidden-focus');
+  assert.ok(rule);
+  assert.equal(rule.outcome, 'fail');
+});
+
+test(`${RULE_ID}: links outside aria-hidden are unaffected`, () => {
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
+  assertRule(
+    runa11yCoreOnHtml('<!doctype html><html><body><a href="/x">Docs</a></body></html>', {
+      runOnly: [RULE_ID]
+    }),
+    RULE_ID,
+    'pass',
+    { maxOccurrences: 0 }
+  );
+  assertRule(
+    runa11yCoreOnHtml('<!doctype html><html><body><a href="/x"></a></body></html>', {
+      runOnly: [RULE_ID]
+    }),
+    RULE_ID,
+    'fail',
+    { minOccurrences: 1 }
+  );
 });

@@ -129,12 +129,12 @@
   </div>
 
   <div class="case" id="case_19">
-    <div class="case-title">19 — EXCEPTION: aria-hidden="true" but focusable (tabindex=0) => eligible, missing name => FAIL</div>
+    <div class="case-title">19 — EXCEPTION: aria-hidden="true" but focusable (tabindex=0) => excluded from naming rules (ACT: not included in the accessibility tree); aria-hidden-focus reports it</div>
     <div role="switch" aria-hidden="true" tabindex="0" aria-checked="false" id="binctl_case_19"></div>
   </div>
 
   <div class="case" id="case_18b">
-    <div class="case-title">18b — EXCEPTION: native checkbox, aria-hidden="true", no explicit tabindex — native form controls are tabbable by default so this remains eligible, missing name => FAIL</div>
+    <div class="case-title">18b — EXCEPTION: native checkbox, aria-hidden="true", no explicit tabindex — native form controls are tabbable by default so this stays focusable, but naming rules do not apply (ACT: not included in the accessibility tree); aria-hidden-focus reports it</div>
     <input type="checkbox" aria-hidden="true" id="binctl_case_18b" />
   </div>
 

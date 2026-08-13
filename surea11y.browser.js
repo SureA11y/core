@@ -11030,9 +11030,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return '';
   }
 
+  // Naming rules apply only to elements included in the accessibility tree
+  // (ACT c487ae and siblings), which excludes focusable aria-hidden content.
+  // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
   function isEligibleAcc(helpers, el, ctx) {
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -11240,7 +11247,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   for (const el of nodes) {
     // isAccTreeEligible returns { eligible, reasons }, not a boolean.
-    const eligResult = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el, ctx) : true;
+    // Naming rules apply only to elements included in the accessibility tree
+    // (ACT c487ae), which excludes focusable aria-hidden content;
+    // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
+    const eligResult = helpers.isIncludedInAccessibilityTree
+      ? helpers.isIncludedInAccessibilityTree(el, ctx)
+      : helpers.isAccTreeEligible
+        ? helpers.isAccTreeEligible(el, ctx)
+        : true;
     const eligible =
       typeof eligResult === 'boolean' ? eligResult : !!(eligResult && eligResult.eligible);
     if (!eligible) continue;
@@ -11864,9 +11878,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return '';
   }
 
+  // Naming rules apply only to elements included in the accessibility tree
+  // (ACT c487ae and siblings), which excludes focusable aria-hidden content.
+  // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
   function isEligibleAcc(helpers, el, ctx) {
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -14093,9 +14114,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return '';
   }
 
+  // Naming rules apply only to elements included in the accessibility tree
+  // (ACT c487ae and siblings), which excludes focusable aria-hidden content.
+  // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
   function isEligibleAcc(helpers, el, ctx) {
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -19164,7 +19192,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   for (const el of nodes) {
     // isAccTreeEligible returns { eligible, reasons }, not a boolean.
-    const eligResult = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el, ctx) : true;
+    // Naming rules apply only to elements included in the accessibility tree
+    // (ACT c487ae), which excludes focusable aria-hidden content;
+    // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
+    const eligResult = helpers.isIncludedInAccessibilityTree
+      ? helpers.isIncludedInAccessibilityTree(el, ctx)
+      : helpers.isAccTreeEligible
+        ? helpers.isAccTreeEligible(el, ctx)
+        : true;
     const eligible =
       typeof eligResult === 'boolean' ? eligResult : !!(eligResult && eligResult.eligible);
     if (!eligible) continue;
@@ -19218,6 +19253,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       programmaticName.trim().length === 0 && isContentNameCandidate
         ? getConservativeSubtreeText(el)
         : '';
+
     const finalName = (programmaticName.trim().length ? programmaticName : contentName).trim();
 
     if (finalName.length === 0) {
@@ -19546,9 +19582,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return '';
   }
 
+  // Naming rules apply only to elements included in the accessibility tree
+  // (ACT c487ae and siblings), which excludes focusable aria-hidden content.
+  // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
   function isEligibleAcc(helpers, el, ctx) {
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -20208,9 +20251,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return '';
   }
 
+  // Naming rules apply only to elements included in the accessibility tree
+  // (ACT c487ae and siblings), which excludes focusable aria-hidden content.
+  // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
   function isEligibleAcc(helpers, el, ctx) {
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -20621,9 +20671,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return '';
   }
 
+  // Naming rules apply only to elements included in the accessibility tree
+  // (ACT c487ae and siblings), which excludes focusable aria-hidden content.
+  // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
   function isEligibleAcc(helpers, el, ctx) {
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -21386,9 +21443,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return '';
   }
 
+  // Naming rules apply only to elements included in the accessibility tree
+  // (ACT c487ae and siblings), which excludes focusable aria-hidden content.
+  // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
   function isEligibleAcc(helpers, el, ctx) {
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -22177,9 +22241,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return '';
   }
 
+  // Naming rules apply only to elements included in the accessibility tree
+  // (ACT c487ae and siblings), which excludes focusable aria-hidden content.
+  // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
   function isEligibleAcc(helpers, el, ctx) {
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -23010,9 +23081,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return '';
   }
 
+  // Naming rules apply only to elements included in the accessibility tree
+  // (ACT c487ae and siblings), which excludes focusable aria-hidden content.
+  // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
   function isEligibleAcc(helpers, el, ctx) {
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -23493,9 +23571,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return '';
   }
 
+  // Naming rules apply only to elements included in the accessibility tree
+  // (ACT c487ae and siblings), which excludes focusable aria-hidden content.
+  // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
   function isEligibleAcc(helpers, el, ctx) {
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -23713,9 +23798,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return '';
   }
 
+  // Naming rules apply only to elements included in the accessibility tree
+  // (ACT c487ae and siblings), which excludes focusable aria-hidden content.
+  // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
   function isEligibleAcc(helpers, el, ctx) {
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -23910,9 +24002,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return '';
   }
 
+  // Naming rules apply only to elements included in the accessibility tree
+  // (ACT c487ae and siblings), which excludes focusable aria-hidden content.
+  // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
   function isEligibleAcc(helpers, el, ctx) {
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -24742,9 +24841,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return '';
   }
 
+  // Naming rules apply only to elements included in the accessibility tree
+  // (ACT c487ae and siblings), which excludes focusable aria-hidden content.
+  // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
   function isEligibleAcc(helpers, el, ctx) {
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -25963,9 +26069,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return '';
   }
 
+  // Naming rules apply only to elements included in the accessibility tree
+  // (ACT c487ae and siblings), which excludes focusable aria-hidden content.
+  // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
   function isEligibleAcc(helpers, el, ctx) {
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -26160,9 +26273,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return '';
   }
 
+  // Naming rules apply only to elements included in the accessibility tree
+  // (ACT c487ae and siblings), which excludes focusable aria-hidden content.
+  // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
   function isEligibleAcc(helpers, el, ctx) {
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -26304,9 +26424,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return '';
   }
 
+  // Naming rules apply only to elements included in the accessibility tree
+  // (ACT c487ae and siblings), which excludes focusable aria-hidden content.
+  // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
   function isEligibleAcc(helpers, el, ctx) {
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -34964,6 +35091,23 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return { present: !!value, value, mechanism: 'label', flags: value ? [] : ['empty'] };
   }
 
+  // ACT scopes every accessible-name rule to elements "included in the
+  // accessibility tree" (c487ae link-name, 97a4e1 button-name and siblings),
+  // and its glossary puts focusable aria-hidden content outside that set:
+  // "Because they are hidden, these elements are considered not included in
+  // the accessibility tree", even where a browser leaves them in it. The
+  // defect they do represent, aria-hidden over content in the focus order,
+  // belongs to aria-hidden-focus (ACT 6cfa84, WCAG 4.1.2).
+  //
+  // isAccTreeEligible keeps them eligible on purpose so aria-hidden-focus can
+  // reach them, so naming rules need this narrower question instead.
+  function isIncludedInAccessibilityTree(el) {
+    const r = isAccTreeEligible(el);
+    if (!r || !r.eligible) return false;
+    const reasons = Array.isArray(r.reasons) ? r.reasons : [];
+    return !reasons.some((x) => typeof x === 'string' && x.indexOf('ariaHiddenOverridden') === 0);
+  }
+
   function getAccessibleNameInfo(el, _ctx, opts) {
     const flags = [];
     if (!isElement(el))
@@ -36615,6 +36759,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     hasAccessibleName,
     isExcluded,
     isAccTreeEligible,
+    isIncludedInAccessibilityTree,
     isDomVisibleEligible,
     isWholeDocumentScope,
 

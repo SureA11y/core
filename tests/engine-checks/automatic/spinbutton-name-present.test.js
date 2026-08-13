@@ -96,7 +96,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/spinbutton-name-present-all-s
   }
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 8, maxOccurrences: 8 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 6, maxOccurrences: 6 });
 
   const expectedFailIds = [
     'spinbutton_case_01',
@@ -104,12 +104,12 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/spinbutton-name-present-all-s
     'spinbutton_case_08',
     'spinbutton_case_09',
     'spinbutton_case_10',
-    'spinbutton_case_12',
-    'spinbutton_case_13',
     'spinbutton_case_17'
   ];
 
   const expectedNoOccIds = [
+    'spinbutton_case_12',
+    'spinbutton_case_13',
     'spinbutton_case_03',
     'spinbutton_case_04',
     'spinbutton_case_05',
