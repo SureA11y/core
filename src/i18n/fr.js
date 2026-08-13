@@ -625,6 +625,10 @@ module.exports = {
     '{{element}} : le libellé visible « {{visibleLabel}} » (source : {{labelSource}}) n’est pas inclus dans le nom accessible (source : {{nameMechanism}}).',
   labelInName_hint_fail:
     'Modifiez aria-label ou aria-labelledby (ou le texte du libellé visible) afin que le nom accessible inclue le libellé visible.',
+  labelInName_summary_cantTell:
+    '{{element}} : le libellé visible « {{visibleLabel}} » (source : {{labelSource}}) ne diffère du nom accessible (source : {{nameMechanism}}) que par une abréviation ou une césure.',
+  labelInName_hint_cantTell:
+    'Vérifiez manuellement que les deux formulations correspondent : le balisage ne permet pas de distinguer une abréviation volontaire d’une incohérence.',
   ariaRolesValid_title: 'L’attribut role doit être un rôle ARIA valide et non abstrait',
   ariaRolesValid_description:
     'Vérifie qu’un attribut role="" explicite correspond à un rôle WAI-ARIA réel et non abstrait.',

@@ -631,6 +631,10 @@ module.exports = {
     '{{element}}: la etiqueta visible "{{visibleLabel}}" (de {{labelSource}}) no está incluida en el nombre accesible (de {{nameMechanism}}).',
   labelInName_hint_fail:
     'Actualizar aria-label/aria-labelledby (o el texto de la etiqueta visible) para que el nombre accesible incluya el texto de la etiqueta visible.',
+  labelInName_summary_cantTell:
+    '{{element}}: la etiqueta visible "{{visibleLabel}}" (de {{labelSource}}) se diferencia del nombre accesible (de {{nameMechanism}}) solo por una abreviatura o por la separación con guion.',
+  labelInName_hint_cantTell:
+    'Comprobar manualmente si ambas redacciones coinciden: el marcado no permite distinguir una abreviatura intencionada de una discrepancia.',
 
   /* =========================
    * Familia de validez ARIA

@@ -615,6 +615,10 @@ module.exports = {
     '{{element}}: visible label "{{visibleLabel}}" (from {{labelSource}}) is not included in the accessible name (from {{nameMechanism}}).',
   labelInName_hint_fail:
     'Update aria-label/aria-labelledby (or the visible label text) so the accessible name includes the visible label wording.',
+  labelInName_summary_cantTell:
+    '{{element}}: visible label "{{visibleLabel}}" (from {{labelSource}}) differs from the accessible name (from {{nameMechanism}}) only by an abbreviation or by hyphenation.',
+  labelInName_hint_cantTell:
+    'Check by hand whether the two wordings match: markup cannot tell an intended abbreviation from a mismatch.',
 
   /* =========================
    * ARIA validity family
