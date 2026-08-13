@@ -101,6 +101,7 @@
     "eslint-config-prettier": "^10.1.8",
     "globals": "^17.8.0",
     "jsdom": "^29.1.1",
+    "language-subtag-registry": "^0.4.2",
     "playwright": "^1.62.1",
     "prettier": "^3.9.6"
   }
