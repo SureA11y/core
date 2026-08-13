@@ -114,11 +114,17 @@ function runInPage(ctx) {
     // ARIA 1.2 "Name From: author, contents". Every other known role is
     // name-from-author-only: <button role="combobox">List</button> exposes a
     // value, not a label. An unknown role falls back to the implicit role.
+    // <generated:aria-name-from-content>
     const NAME_FROM_CONTENT_ROLES = [
       'button',
       'cell',
       'checkbox',
       'columnheader',
+      'doc-backlink',
+      'doc-biblioref',
+      'doc-glossref',
+      'doc-noteref',
+      'graphics-object',
       'gridcell',
       'heading',
       'link',
@@ -128,12 +134,14 @@ function runInPage(ctx) {
       'option',
       'radio',
       'row',
+      'rowgroup',
       'rowheader',
       'switch',
       'tab',
       'tooltip',
       'treeitem'
     ];
+    // </generated:aria-name-from-content>
     const isKnownRoleToken =
       helpers && helpers.aria && typeof helpers.aria.isKnownRole === 'function'
         ? (() => {
