@@ -67,8 +67,26 @@ function runInPage(ctx) {
   const occurrences = [];
   let applicableCount = 0;
 
+  // A role on an element hidden from assistive technology has no effect, so
+  // ACT 674b10 does not apply to it.
+  function isHidden(el) {
+    try {
+      if (typeof helpers.isDomVisibleEligible === 'function') {
+        if (!helpers.isDomVisibleEligible(el, ctx)) return true;
+      }
+      for (let n = el; n && n.getAttribute; n = n.parentElement) {
+        if (String(n.getAttribute('aria-hidden') || '').toLowerCase() === 'true') return true;
+      }
+    } catch {
+      return false;
+    }
+    return false;
+  }
+
   for (const el of nodes) {
     if (!el || !el.getAttribute) continue;
+
+    if (isHidden(el)) continue;
 
     const role = ariaHelpers.getExplicitRole(el);
     if (!role) continue;

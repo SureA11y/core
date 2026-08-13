@@ -67,19 +67,44 @@ function runInPage(ctx) {
   const occurrences = [];
   let applicableCount = 0;
 
+  // Programmatically hidden per the ACT glossary: display:none, visibility not
+  // visible, or aria-hidden on the element or an ancestor.
+  function isHidden(el) {
+    try {
+      if (typeof helpers.isDomVisibleEligible === 'function') {
+        if (!helpers.isDomVisibleEligible(el, ctx)) return true;
+      }
+      for (let n = el; n && n.getAttribute; n = n.parentElement) {
+        if (String(n.getAttribute('aria-hidden') || '').toLowerCase() === 'true') return true;
+      }
+    } catch {
+      return false;
+    }
+    return false;
+  }
+
   for (const el of nodes) {
     if (!el || !el.getAttribute) continue;
 
-    const role = ariaHelpers.getExplicitRole(el);
-    if (!role) continue; // role="" or whitespace-only: not this rule's concern
+    // ACT 674b10 is not applicable to a programmatically hidden element.
+    if (isHidden(el)) continue;
+
+    // role takes a fallback list and the first token the browser recognises
+    // wins, so role="searchfield searchbox" resolves to searchbox. The rule
+    // fails only when no token names a concrete role.
+    const tokens =
+      typeof ariaHelpers.getAllRoleTokens === 'function'
+        ? ariaHelpers.getAllRoleTokens(el)
+        : [ariaHelpers.getExplicitRole(el)].filter(Boolean);
+    if (!tokens.length) continue; // role="" or whitespace-only: not this rule's concern
 
     applicableCount += 1;
 
-    const isAbstract = ariaHelpers.isAbstractRole(role);
-    const isKnown = ariaHelpers.isKnownRole(role);
+    const usable = tokens.find((t) => ariaHelpers.isKnownRole(t) && !ariaHelpers.isAbstractRole(t));
+    if (usable) continue;
 
-    if (isKnown && !isAbstract) continue;
-
+    const role = tokens[0];
+    const isKnown = tokens.some((t) => ariaHelpers.isKnownRole(t));
     const reasonCode = !isKnown ? 'ARIA_ROLE_INVALID' : 'ARIA_ROLE_ABSTRACT';
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
     const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';

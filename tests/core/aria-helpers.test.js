@@ -71,9 +71,14 @@ test('isAbstractRole / isDeprecatedRole / isKnownRole / isValidConcreteRole', ()
   assert.equal(helpers.isValidConcreteRole('graphics-document'), true);
   assert.equal(helpers.isValidConcreteRole('graphics-object'), true);
   assert.equal(helpers.isValidConcreteRole('graphics-symbol'), true);
-  // Digital Publishing WAI-ARIA is a separate module deliberately NOT added
-  // (no corpus evidence of use) — should still be unknown.
-  assert.equal(helpers.isValidConcreteRole('doc-abstract'), false);
+  // Digital Publishing WAI-ARIA is one of the modules ACT counts as a WAI-ARIA
+  // Specification, and browsers resolve its roles, so they are valid.
+  assert.equal(helpers.isValidConcreteRole('doc-abstract'), true);
+  assert.equal(helpers.isValidConcreteRole('doc-biblioref'), true);
+  // ARIA 1.3 roles aria-query does not carry yet are supplemented back.
+  assert.equal(helpers.isValidConcreteRole('comment'), true);
+  assert.equal(helpers.isValidConcreteRole('suggestion'), true);
+  assert.equal(helpers.isValidConcreteRole('text'), true);
 });
 
 test('getDeprecatedRoleGuidance: role-specific message, generic fallback otherwise', () => {
