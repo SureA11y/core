@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-13T20:18:15.104Z",
+  "generatedAt": "2026-08-13T20:21:58.894Z",
   "summary": {
     "total": 125,
     "withFixture": 125,
@@ -91,11 +91,11 @@
       "testFile": "tests/engine-checks/automatic/aria-allowed-attr.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/aria-allowed-attr-all-scenarios.html",
-      "totalCases": 13,
+      "totalCases": 14,
       "caseCounts": {
         "PASS": 8,
         "FAIL": 4,
-        "CANTTELL": 0,
+        "CANTTELL": 1,
         "OTHER": 1
       }
     },

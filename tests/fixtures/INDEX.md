@@ -1,6 +1,6 @@
 # Fixture Index
 
-Generated: 2026-08-13T20:18:15.104Z
+Generated: 2026-08-13T20:21:58.894Z
 
 Every implemented rule should have a `tests/fixtures/<slug>-all-scenarios.html` scenario page (numbered `case_NN` blocks, each marked PASS/FAIL/CANTTELL in its `.case-title`) and a "fixture coverage" test in its `tests/engine-checks/**/<rule>.test.js` asserting the exact expected ids. See `docs/RULE_AUTHORING.md`.
 
@@ -20,7 +20,7 @@ None — every rule has a fixture.
 | area-alt-decorative | manual | `tests/fixtures/area-alt-decorative-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
 | area-alt-present | automatic | `tests/fixtures/area-alt-present-all-scenarios.html` | 23 | 5 | 8 | 0 | 10 |
 | area-alt-quality | manual | `tests/fixtures/area-alt-quality-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
-| aria-allowed-attr | automatic | `tests/fixtures/aria-allowed-attr-all-scenarios.html` | 13 | 8 | 4 | 0 | 1 |
+| aria-allowed-attr | automatic | `tests/fixtures/aria-allowed-attr-all-scenarios.html` | 14 | 8 | 4 | 1 | 1 |
 | aria-allowed-role | automatic | `tests/fixtures/aria-allowed-role-all-scenarios.html` | 50 | 30 | 19 | 0 | 1 |
 | aria-braille-equivalent | automatic | `tests/fixtures/aria-braille-equivalent-all-scenarios.html` | 6 | 3 | 2 | 0 | 1 |
 | aria-checked-state-mismatch | manual | `tests/fixtures/aria-checked-state-mismatch-all-scenarios.html` | 10 | 3 | 0 | 5 | 2 |
