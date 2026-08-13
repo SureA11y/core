@@ -14,7 +14,7 @@
   </style>
 </head>
 <body>
-  <h1>Scenario fixture: <code>aria-deprecated-role</code> (role attribute must not be deprecated)</h1>
+  <h1>Scenario fixture: <code>aria-deprecated-role</code> (role attribute should not be deprecated)</h1>
 
   <p class="note">
     Each target has a stable <code>id</code> of the form <code>adr_case_NN</code>.
@@ -27,15 +27,15 @@
     <div role="list" id="adr_case_01"></div>
   </div>
 
-  <h2>B. Invalid</h2>
+  <h2>B. Needs review</h2>
 
   <div class="case" id="case_02">
-    <div class="case-title">02 — FAIL: role is deprecated (directory)</div>
+    <div class="case-title">02 — CANTTELL: role is deprecated (directory)</div>
     <div role="directory" id="adr_case_02"></div>
   </div>
 
   <div class="case" id="case_04">
-    <div class="case-title">04 — FAIL: role="generic" explicitly declared (reserved for user-agent-internal use, not authors — verified against WAI-ARIA 1.2 spec + MDN)</div>
+    <div class="case-title">04 — CANTTELL: role="generic" explicitly declared (reserved for user agents; WAI-ARIA 1.2 states this at SHOULD NOT strength)</div>
     <div role="generic" id="adr_case_04"></div>
   </div>
 

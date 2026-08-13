@@ -54,8 +54,18 @@ test('isAbstractRole / isDeprecatedRole / isKnownRole / isValidConcreteRole', ()
   assert.equal(helpers.isAbstractRole('button'), false);
 
   assert.equal(helpers.isDeprecatedRole('directory'), true);
-  assert.equal(helpers.isDeprecatedRole('generic'), true);
   assert.equal(helpers.isDeprecatedRole('button'), false);
+  // "generic" is reserved for user agents rather than deprecated, so it is
+  // tracked separately from isDeprecatedRole.
+  assert.equal(helpers.isDeprecatedRole('generic'), false);
+  assert.equal(helpers.isAuthorDiscouragedRole('generic'), true);
+  assert.equal(helpers.isAuthorDiscouragedRole('directory'), false);
+  assert.equal(helpers.isAuthorProhibitedRole('generic'), false);
+
+  // ARIA-1.2-deprecated ex-globals (still allowed, reported as cantTell).
+  assert.equal(helpers.isDeprecatedAttr('aria-invalid'), true);
+  assert.equal(helpers.isDeprecatedAttr('aria-haspopup'), true);
+  assert.equal(helpers.isDeprecatedAttr('aria-checked'), false);
 
   assert.equal(helpers.isKnownRole('button'), true); // concrete
   assert.equal(helpers.isKnownRole('widget'), true); // abstract

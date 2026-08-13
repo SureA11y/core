@@ -5,30 +5,36 @@
 /**
  * @check aria-deprecated-role
  * @atomic true
- * @summary An explicit role attribute must not use a deprecated or author-prohibited ARIA role
+ * @summary An explicit role attribute should not use a deprecated or author-discouraged ARIA role
  * @standard WCAG 2.2
  * @sc 4.1.2
  * @applicability
  *   Applies to any element whose role attribute's first (used) token is a
- *   valid, non-abstract ARIA role that authors must never explicitly
+ *   valid, non-abstract ARIA role that authors should not explicitly
  *   declare — either because WAI-ARIA has deprecated it (e.g. "directory",
- *   superseded by role="list") or because it's reserved for user-agent-
- *   internal use only, not a spec deprecation but the same "valid token,
- *   prohibited for authors" shape (role="generic" — per WAI-ARIA 1.2 and
- *   MDN's "It should not be used by web authors" guidance).
+ *   superseded by role="list") or because it is reserved for user-agent-
+ *   internal use (role="generic", which ARIA 1.2 §5.4 says authors SHOULD
+ *   NOT use in content).
  * @expectation
- *   The role in use is neither deprecated nor author-prohibited. This is a
- *   distinct, atomic decision from aria-roles-valid (existence/
- *   abstractness): a role can be perfectly valid and non-abstract while
- *   still being off-limits for explicit author use.
+ *   The role in use is neither deprecated nor reserved. Graded by the
+ *   strength of the rule ARIA states:
+ *   - CANTTELL at SHOULD NOT, which leaves the usage conforming, so the
+ *     author decides whether it matters: a deprecated role ("directory") or
+ *     one reserved for user agents ("generic").
+ *   - FAIL at MUST NOT. No ARIA 1.2 or 1.3 role carries an author MUST NOT
+ *     outside the abstract roles, so this outcome is reserved for a later
+ *     revision promoting a role to that strength.
+ *   Distinct, atomic decision from aria-roles-valid (existence/
+ *   abstractness): a role can be valid and non-abstract while still being
+ *   discouraged in explicit author use.
  */
 
 const id = 'aria-deprecated-role';
 
 const meta = {
-  title: 'role attribute must not use a deprecated or author-prohibited ARIA role',
+  title: 'role attribute should not use a deprecated or author-discouraged ARIA role',
   description:
-    'Checks that an explicit role="" attribute does not use a role deprecated by the WAI-ARIA specification, or one reserved for user-agent-internal use only (e.g. role="generic").',
+    'Checks that an explicit role="" attribute does not use a role deprecated by the WAI-ARIA specification, or one reserved for user-agent-internal use (e.g. role="generic").',
   i18n: {
     titleKey: 'ariaDeprecatedRole_title',
     descriptionKey: 'ariaDeprecatedRole_description'
@@ -64,7 +70,8 @@ function runInPage(ctx) {
     ? helpers.queryAllSmart('[role]')
     : helpers.queryAll('[role]');
 
-  const occurrences = [];
+  const failOccurrences = [];
+  const cantTellOccurrences = [];
   let applicableCount = 0;
 
   // A role on an element hidden from assistive technology has no effect, so
@@ -97,7 +104,14 @@ function runInPage(ctx) {
 
     applicableCount += 1;
 
-    if (!ariaHelpers.isDeprecatedRole(role)) continue;
+    const deprecated = ariaHelpers.isDeprecatedRole(role);
+    const discouraged =
+      typeof ariaHelpers.isAuthorDiscouragedRole === 'function' &&
+      ariaHelpers.isAuthorDiscouragedRole(role);
+    const prohibited =
+      typeof ariaHelpers.isAuthorProhibitedRole === 'function' &&
+      ariaHelpers.isAuthorProhibitedRole(role);
+    if (!deprecated && !discouraged && !prohibited) continue;
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
     const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
@@ -105,34 +119,70 @@ function runInPage(ctx) {
       ? ariaHelpers.getDeprecatedRoleGuidance(role)
       : 'Replace the deprecated role with its recommended replacement.';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: `This element uses role="${role}", which authors must not explicitly declare.`,
-      hint: guidance,
-      i18n: {
-        summaryKey: 'ariaDeprecatedRole_summary_fail',
-        hintKey: 'ariaDeprecatedRole_hint_fail',
-        params: { role, guidance }
-      },
-      data: {
-        details: { reasonCode: 'ARIA_ROLE_DEPRECATED', role, guidance }
-      }
-    });
+    if (prohibited) {
+      // Author MUST NOT: the usage is non-conforming, not merely discouraged.
+      failOccurrences.push({
+        selector: stableSelector,
+        html,
+        summary: `This element uses role="${role}", which authors must not explicitly declare.`,
+        hint: guidance,
+        occurrenceOutcome: 'fail',
+        i18n: {
+          summaryKey: 'ariaDeprecatedRole_summary_fail',
+          hintKey: 'ariaDeprecatedRole_hint_fail',
+          params: { role, guidance }
+        },
+        data: {
+          details: { reasonCode: 'ARIA_ROLE_AUTHOR_PROHIBITED', role, guidance }
+        }
+      });
+    } else if (discouraged) {
+      // Reserved for user-agent-internal use, at SHOULD NOT strength.
+      cantTellOccurrences.push({
+        selector: stableSelector,
+        html,
+        summary: `This element uses role="${role}", which is reserved for user agents (still valid, but discouraged).`,
+        hint: guidance,
+        occurrenceOutcome: 'cantTell',
+        i18n: {
+          summaryKey: 'ariaDeprecatedRole_summary_cantTell_discouraged',
+          hintKey: 'ariaDeprecatedRole_hint_cantTell',
+          params: { role, guidance }
+        },
+        data: {
+          details: { reasonCode: 'ARIA_ROLE_AUTHOR_DISCOURAGED', role, guidance }
+        }
+      });
+    } else {
+      // Deprecated but still valid: surfaced for the author to decide.
+      cantTellOccurrences.push({
+        selector: stableSelector,
+        html,
+        summary: `This element uses role="${role}", which is deprecated in WAI-ARIA.`,
+        hint: guidance,
+        occurrenceOutcome: 'cantTell',
+        i18n: {
+          summaryKey: 'ariaDeprecatedRole_summary_cantTell',
+          hintKey: 'ariaDeprecatedRole_hint_cantTell',
+          params: { role, guidance }
+        },
+        data: {
+          details: { reasonCode: 'ARIA_ROLE_DEPRECATED', role, guidance }
+        }
+      });
+    }
   }
 
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'moderate',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+
+  const resolved = helpers.resolveTieredOutcome(
+    failOccurrences,
+    cantTellOccurrences,
+    rule.defaultSeverity || 'moderate'
+  );
+  return { ruleId: rule.ruleId, ...resolved };
 }
 
 module.exports = { id, meta, runInPage };

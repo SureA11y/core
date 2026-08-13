@@ -651,12 +651,17 @@ module.exports = {
     'Reemplazar este rol abstracto por un rol concreto adecuado para el widget o la estructura.',
 
   ariaDeprecatedRole_title:
-    'El atributo role no debe usar un rol ARIA obsoleto o prohibido para autores',
+    'El atributo role no debería usar un rol ARIA obsoleto o desaconsejado para autores',
   ariaDeprecatedRole_description:
-    'Comprueba que un atributo role="" explícito no use un rol obsoleto según la especificación WAI-ARIA, ni uno reservado únicamente para uso interno del agente de usuario (por ejemplo, role="generic").',
+    'Comprueba que un atributo role="" explícito no use un rol obsoleto según la especificación WAI-ARIA, ni uno reservado para uso interno del agente de usuario (por ejemplo, role="generic").',
   ariaDeprecatedRole_summary_fail:
     'Este elemento usa role="{{role}}", que los autores no deben declarar explícitamente.',
   ariaDeprecatedRole_hint_fail: '{{guidance}}',
+  ariaDeprecatedRole_summary_cantTell:
+    'Este elemento usa role="{{role}}", que está obsoleto en WAI-ARIA (todavía válido, pero desaconsejado).',
+  ariaDeprecatedRole_summary_cantTell_discouraged:
+    'Este elemento usa role="{{role}}", que está reservado para los agentes de usuario (todavía válido, pero desaconsejado).',
+  ariaDeprecatedRole_hint_cantTell: '{{guidance}}',
 
   ariaValidAttr_title: 'Los atributos aria-* deben ser atributos ARIA reales y definidos',
   ariaValidAttr_description:
@@ -678,6 +683,10 @@ module.exports = {
     'Comprueba que cada atributo aria-* reconocido presente en un elemento con un rol explícito esté admitido globalmente o admitido por ese rol.',
   ariaAllowedAttr_summary_fail: '{{attr}} no está permitido en role="{{role}}".',
   ariaAllowedAttr_hint_fail: 'Eliminar este atributo, o usar un rol que lo admita.',
+  ariaAllowedAttr_summary_cantTell:
+    '{{attr}} está obsoleto en role="{{role}}" (todavía permitido, pero desaconsejado).',
+  ariaAllowedAttr_hint_cantTell:
+    'Este atributo se eliminó del conjunto global de ARIA en 1.2; elimínelo o use un rol que lo admita, ya que una versión futura de ARIA podría no permitirlo.',
 
   ariaProhibitedAttr_title:
     'Los atributos de nombrado ARIA no deben usarse en roles que los prohíban',

@@ -490,8 +490,8 @@ const CHECK_DEFS = [
   },
   {
     "ruleId": "aria-deprecated-role",
-    "title": "role attribute must not use a deprecated or author-prohibited ARIA role",
-    "description": "Checks that an explicit role=\"\" attribute does not use a role deprecated by the WAI-ARIA specification, or one reserved for user-agent-internal use only (e.g. role=\"generic\").",
+    "title": "role attribute should not use a deprecated or author-discouraged ARIA role",
+    "description": "Checks that an explicit role=\"\" attribute does not use a role deprecated by the WAI-ARIA specification, or one reserved for user-agent-internal use (e.g. role=\"generic\").",
     "i18n": {
       "titleKey": "ariaDeprecatedRole_title",
       "descriptionKey": "ariaDeprecatedRole_description"
@@ -7601,10 +7601,13 @@ const I18N = {
     "ariaRolesValid_hint_invalid": "Verwenden Sie einen gültigen ARIA-Rollenwert, oder entfernen Sie das role-Attribut, wenn keine Rolle zutrifft.",
     "ariaRolesValid_summary_abstract": "role=\"{{role}}\" ist eine abstrakte ARIA-Rolle, die nicht direkt verwendet werden darf.",
     "ariaRolesValid_hint_abstract": "Ersetzen Sie diese abstrakte Rolle durch eine konkrete Rolle, die zu dem Widget/der Struktur passt.",
-    "ariaDeprecatedRole_title": "Das role-Attribut darf keine veraltete oder für Autoren untersagte ARIA-Rolle verwenden",
-    "ariaDeprecatedRole_description": "Prüft, ob ein explizites role=\"\"-Attribut keine durch die WAI-ARIA-Spezifikation als veraltet markierte Rolle verwendet, und keine Rolle, die ausschließlich für die interne Verwendung durch den User-Agent reserviert ist (z. B. role=\"generic\").",
+    "ariaDeprecatedRole_title": "Das role-Attribut sollte keine veraltete oder für Autoren nicht empfohlene ARIA-Rolle verwenden",
+    "ariaDeprecatedRole_description": "Prüft, ob ein explizites role=\"\"-Attribut keine durch die WAI-ARIA-Spezifikation als veraltet markierte Rolle verwendet, und keine Rolle, die für die interne Verwendung durch den User-Agent reserviert ist (z. B. role=\"generic\").",
     "ariaDeprecatedRole_summary_fail": "Dieses Element verwendet role=\"{{role}}\", was Autoren nicht explizit deklarieren dürfen.",
     "ariaDeprecatedRole_hint_fail": "{{guidance}}",
+    "ariaDeprecatedRole_summary_cantTell": "Dieses Element verwendet role=\"{{role}}\", die in WAI-ARIA veraltet ist (weiterhin gültig, aber nicht empfohlen).",
+    "ariaDeprecatedRole_summary_cantTell_discouraged": "Dieses Element verwendet role=\"{{role}}\", die User-Agents vorbehalten ist (weiterhin gültig, aber nicht empfohlen).",
+    "ariaDeprecatedRole_hint_cantTell": "{{guidance}}",
     "ariaValidAttr_title": "aria-*-Attribute müssen echte, definierte ARIA-Attribute sein",
     "ariaValidAttr_description": "Prüft, ob jeder im DOM vorhandene aria-*-Attributname ein echtes, durch die WAI-ARIA-Spezifikation definiertes Attribut ist.",
     "ariaValidAttr_summary_fail": "{{attr}} ist kein erkanntes ARIA-Attribut.",
@@ -7617,6 +7620,8 @@ const I18N = {
     "ariaAllowedAttr_description": "Prüft, ob jedes erkannte aria-*-Attribut auf einem Element mit expliziter Rolle entweder global unterstützt wird oder von dieser Rolle unterstützt wird.",
     "ariaAllowedAttr_summary_fail": "{{attr}} ist bei role=\"{{role}}\" nicht zulässig.",
     "ariaAllowedAttr_hint_fail": "Entfernen Sie dieses Attribut, oder verwenden Sie eine Rolle, die es unterstützt.",
+    "ariaAllowedAttr_summary_cantTell": "{{attr}} ist bei role=\"{{role}}\" veraltet (weiterhin zulässig, aber nicht empfohlen).",
+    "ariaAllowedAttr_hint_cantTell": "Dieses Attribut wurde in ARIA 1.2 aus dem globalen Satz entfernt; entfernen Sie es oder verwenden Sie eine Rolle, die es unterstützt, da eine künftige ARIA-Version es möglicherweise nicht mehr zulässt.",
     "ariaProhibitedAttr_title": "ARIA-Benennungsattribute dürfen nicht bei Rollen verwendet werden, die sie untersagen",
     "ariaProhibitedAttr_description": "Prüft, ob aria-label/aria-labelledby nicht bei WAI-ARIA-Rollen vorhanden sind, deren Spezifikation die ARIA-Benennung ausdrücklich untersagt (z. B. generic, emphasis, strong, paragraph).",
     "ariaProhibitedAttr_summary_fail": "{{attr}} ist bei role=\"{{role}}\" untersagt.",
@@ -8225,10 +8230,13 @@ const I18N = {
     "ariaRolesValid_hint_invalid": "Use a valid ARIA role token, or remove the role attribute if none applies.",
     "ariaRolesValid_summary_abstract": "role=\"{{role}}\" is an abstract ARIA role, which must not be used directly.",
     "ariaRolesValid_hint_abstract": "Replace this abstract role with a concrete role appropriate for the widget/structure.",
-    "ariaDeprecatedRole_title": "role attribute must not use a deprecated or author-prohibited ARIA role",
-    "ariaDeprecatedRole_description": "Checks that an explicit role=\"\" attribute does not use a role deprecated by the WAI-ARIA specification, or one reserved for user-agent-internal use only (e.g. role=\"generic\").",
+    "ariaDeprecatedRole_title": "role attribute should not use a deprecated or author-discouraged ARIA role",
+    "ariaDeprecatedRole_description": "Checks that an explicit role=\"\" attribute does not use a role deprecated by the WAI-ARIA specification, or one reserved for user-agent-internal use (e.g. role=\"generic\").",
     "ariaDeprecatedRole_summary_fail": "This element uses role=\"{{role}}\", which authors must not explicitly declare.",
     "ariaDeprecatedRole_hint_fail": "{{guidance}}",
+    "ariaDeprecatedRole_summary_cantTell": "This element uses role=\"{{role}}\", which is deprecated in WAI-ARIA (still valid, but discouraged).",
+    "ariaDeprecatedRole_summary_cantTell_discouraged": "This element uses role=\"{{role}}\", which is reserved for user agents (still valid, but discouraged).",
+    "ariaDeprecatedRole_hint_cantTell": "{{guidance}}",
     "ariaValidAttr_title": "aria-* attributes must be real, defined ARIA attributes",
     "ariaValidAttr_description": "Checks that every aria-* attribute name present in the DOM is a real attribute defined by the WAI-ARIA specification.",
     "ariaValidAttr_summary_fail": "{{attr}} is not a recognized ARIA attribute.",
@@ -8241,6 +8249,8 @@ const I18N = {
     "ariaAllowedAttr_description": "Checks that every recognized aria-* attribute present on an element with an explicit role is either globally supported or supported by that role.",
     "ariaAllowedAttr_summary_fail": "{{attr}} is not permitted on role=\"{{role}}\".",
     "ariaAllowedAttr_hint_fail": "Remove this attribute, or use a role that supports it.",
+    "ariaAllowedAttr_summary_cantTell": "{{attr}} is deprecated on role=\"{{role}}\" (still allowed, but discouraged).",
+    "ariaAllowedAttr_hint_cantTell": "This attribute was removed from the ARIA global set in 1.2; remove it or use a role that supports it, as a future ARIA version may disallow it.",
     "ariaProhibitedAttr_title": "ARIA naming attributes must not be used on roles that prohibit them",
     "ariaProhibitedAttr_description": "Checks that aria-label/aria-labelledby are not present on WAI-ARIA roles whose specification explicitly prohibits ARIA naming (e.g. generic, emphasis, strong, paragraph).",
     "ariaProhibitedAttr_summary_fail": "{{attr}} is prohibited on role=\"{{role}}\".",
@@ -8849,10 +8859,13 @@ const I18N = {
     "ariaRolesValid_hint_invalid": "Usar un token de rol ARIA válido, o eliminar el atributo role si no aplica ninguno.",
     "ariaRolesValid_summary_abstract": "role=\"{{role}}\" es un rol ARIA abstracto, que no debe usarse directamente.",
     "ariaRolesValid_hint_abstract": "Reemplazar este rol abstracto por un rol concreto adecuado para el widget o la estructura.",
-    "ariaDeprecatedRole_title": "El atributo role no debe usar un rol ARIA obsoleto o prohibido para autores",
-    "ariaDeprecatedRole_description": "Comprueba que un atributo role=\"\" explícito no use un rol obsoleto según la especificación WAI-ARIA, ni uno reservado únicamente para uso interno del agente de usuario (por ejemplo, role=\"generic\").",
+    "ariaDeprecatedRole_title": "El atributo role no debería usar un rol ARIA obsoleto o desaconsejado para autores",
+    "ariaDeprecatedRole_description": "Comprueba que un atributo role=\"\" explícito no use un rol obsoleto según la especificación WAI-ARIA, ni uno reservado para uso interno del agente de usuario (por ejemplo, role=\"generic\").",
     "ariaDeprecatedRole_summary_fail": "Este elemento usa role=\"{{role}}\", que los autores no deben declarar explícitamente.",
     "ariaDeprecatedRole_hint_fail": "{{guidance}}",
+    "ariaDeprecatedRole_summary_cantTell": "Este elemento usa role=\"{{role}}\", que está obsoleto en WAI-ARIA (todavía válido, pero desaconsejado).",
+    "ariaDeprecatedRole_summary_cantTell_discouraged": "Este elemento usa role=\"{{role}}\", que está reservado para los agentes de usuario (todavía válido, pero desaconsejado).",
+    "ariaDeprecatedRole_hint_cantTell": "{{guidance}}",
     "ariaValidAttr_title": "Los atributos aria-* deben ser atributos ARIA reales y definidos",
     "ariaValidAttr_description": "Comprueba que cada nombre de atributo aria-* presente en el DOM sea un atributo real definido por la especificación WAI-ARIA.",
     "ariaValidAttr_summary_fail": "{{attr}} no es un atributo ARIA reconocido.",
@@ -8865,6 +8878,8 @@ const I18N = {
     "ariaAllowedAttr_description": "Comprueba que cada atributo aria-* reconocido presente en un elemento con un rol explícito esté admitido globalmente o admitido por ese rol.",
     "ariaAllowedAttr_summary_fail": "{{attr}} no está permitido en role=\"{{role}}\".",
     "ariaAllowedAttr_hint_fail": "Eliminar este atributo, o usar un rol que lo admita.",
+    "ariaAllowedAttr_summary_cantTell": "{{attr}} está obsoleto en role=\"{{role}}\" (todavía permitido, pero desaconsejado).",
+    "ariaAllowedAttr_hint_cantTell": "Este atributo se eliminó del conjunto global de ARIA en 1.2; elimínelo o use un rol que lo admita, ya que una versión futura de ARIA podría no permitirlo.",
     "ariaProhibitedAttr_title": "Los atributos de nombrado ARIA no deben usarse en roles que los prohíban",
     "ariaProhibitedAttr_description": "Comprueba que aria-label/aria-labelledby no estén presentes en roles WAI-ARIA cuya especificación prohíbe explícitamente el nombrado ARIA (por ejemplo, generic, emphasis, strong, paragraph).",
     "ariaProhibitedAttr_summary_fail": "{{attr}} está prohibido en role=\"{{role}}\".",
@@ -9473,10 +9488,13 @@ const I18N = {
     "ariaRolesValid_hint_invalid": "Utilisez un rôle ARIA valide, ou retirez l’attribut role si aucun ne s’applique.",
     "ariaRolesValid_summary_abstract": "role=\"{{role}}\" est un rôle ARIA abstrait, qui ne doit pas être utilisé directement.",
     "ariaRolesValid_hint_abstract": "Remplacez ce rôle abstrait par un rôle concret adapté au composant/à la structure.",
-    "ariaDeprecatedRole_title": "L’attribut role ne doit pas utiliser un rôle ARIA obsolète ou interdit aux auteurs",
+    "ariaDeprecatedRole_title": "L’attribut role ne devrait pas utiliser un rôle ARIA obsolète ou déconseillé aux auteurs",
     "ariaDeprecatedRole_description": "Vérifie qu’un attribut role=\"\" explicite n’utilise pas un rôle rendu obsolète par la spécification WAI-ARIA, ni un rôle réservé à un usage interne à l’agent utilisateur (ex. role=\"generic\").",
     "ariaDeprecatedRole_summary_fail": "Cet élément utilise role=\"{{role}}\", que les auteurs ne doivent pas déclarer explicitement.",
     "ariaDeprecatedRole_hint_fail": "{{guidance}}",
+    "ariaDeprecatedRole_summary_cantTell": "Cet élément utilise role=\"{{role}}\", qui est obsolète dans WAI-ARIA (toujours valide, mais déconseillé).",
+    "ariaDeprecatedRole_summary_cantTell_discouraged": "Cet élément utilise role=\"{{role}}\", qui est réservé aux agents utilisateurs (toujours valide, mais déconseillé).",
+    "ariaDeprecatedRole_hint_cantTell": "{{guidance}}",
     "ariaValidAttr_title": "Les attributs aria-* doivent être des attributs ARIA réels et définis",
     "ariaValidAttr_description": "Vérifie que chaque nom d’attribut aria-* présent dans le DOM est un attribut réel défini par la spécification WAI-ARIA.",
     "ariaValidAttr_summary_fail": "{{attr}} n’est pas un attribut ARIA reconnu.",
@@ -9489,6 +9507,8 @@ const I18N = {
     "ariaAllowedAttr_description": "Vérifie que chaque attribut aria-* reconnu présent sur un élément ayant un rôle explicite est soit globalement pris en charge, soit pris en charge par ce rôle.",
     "ariaAllowedAttr_summary_fail": "{{attr}} n’est pas autorisé sur role=\"{{role}}\".",
     "ariaAllowedAttr_hint_fail": "Retirez cet attribut, ou utilisez un rôle qui le prend en charge.",
+    "ariaAllowedAttr_summary_cantTell": "{{attr}} est obsolète sur role=\"{{role}}\" (toujours autorisé, mais déconseillé).",
+    "ariaAllowedAttr_hint_cantTell": "Cet attribut a été retiré de l’ensemble global d’ARIA en 1.2 ; retirez-le ou utilisez un rôle qui le prend en charge, car une future version d’ARIA pourrait l’interdire.",
     "ariaProhibitedAttr_title": "Les attributs de nommage ARIA ne doivent pas être utilisés sur des rôles qui les interdisent",
     "ariaProhibitedAttr_description": "Vérifie que aria-label/aria-labelledby ne sont pas présents sur des rôles WAI-ARIA dont la spécification interdit explicitement le nommage ARIA (ex. generic, emphasis, strong, paragraph).",
     "ariaProhibitedAttr_summary_fail": "{{attr}} est interdit sur role=\"{{role}}\".",
@@ -11869,21 +11889,41 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   // </generated:aria-abstract-roles>
 
   // -------------------------------------------------------------------
-  // B) Valid, concrete (non-abstract) roles that authors must never
-  //    explicitly declare — either because WAI-ARIA has deprecated them
-  //    (a direct replacement exists) or because they are reserved for
-  //    user-agent-internal use only (not a spec deprecation, but the
-  //    same "valid token, prohibited for authors" shape). Flagged by
-  //    aria-deprecated-role, not aria-roles-valid (which only checks
-  //    existence/abstractness) — see DEPRECATED_ROLE_GUIDANCE below for
-  //    per-role, reason-accurate messaging.
+  // B) Valid, concrete (non-abstract) roles authors should not explicitly
+  //    declare — either because WAI-ARIA has deprecated them (a direct
+  //    replacement exists) or because they are reserved for
+  //    user-agent-internal use. Flagged by aria-deprecated-role, not
+  //    aria-roles-valid (which only checks existence/abstractness) — see
+  //    DEPRECATED_ROLE_GUIDANCE below for per-role, reason-accurate
+  //    messaging.
   // -------------------------------------------------------------------
+  // Deprecated but still VALID roles (SHOULD NOT, still conforming). Reported
+  // as cantTell so the author decides whether it matters to them.
   const DEPRECATED_ROLES = new Set([
-    'directory', // superseded by role="list"
-    // WAI-ARIA 1.2: "intended for use as the implicit role of generic
-    // elements in host languages for use by user agents only; not for
-    // use by developers." MDN: "It should not be used by web authors."
-    'generic'
+    'directory' // superseded by role="list"
+  ]);
+
+  // Valid roles reserved for user-agent-internal use, which ARIA states at
+  // SHOULD NOT strength — conforming, so reported as cantTell.
+  const AUTHOR_DISCOURAGED_ROLES = new Set([
+    'generic' // "primarily for implementors of user agents"
+  ]);
+
+  // Roles carrying an author MUST NOT, reported as fail. Empty under ARIA 1.2
+  // and 1.3, whose only author MUST NOT covers abstract roles — the concern of
+  // aria-roles-valid.
+  const AUTHOR_PROHIBITED_ROLES = new Set([]);
+
+  // Deprecated but still ALLOWED states/properties (SHOULD NOT, still
+  // conforming): the four ARIA 1.2 keeps in the global set as deprecated and
+  // marks "deprecated on this role" wherever a role does not support them.
+  // Reported as cantTell, not a not-allowed fail. Flat rather than per-role
+  // because the deprecation is uniform and no role prohibits any of the four.
+  const DEPRECATED_ATTRS = new Set([
+    'aria-disabled',
+    'aria-errormessage',
+    'aria-haspopup',
+    'aria-invalid'
   ]);
 
   const DEPRECATED_ROLE_GUIDANCE = {
@@ -12558,6 +12598,18 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     return DEPRECATED_ROLES.has(lower(role));
   }
 
+  function isAuthorDiscouragedRole(role) {
+    return AUTHOR_DISCOURAGED_ROLES.has(lower(role));
+  }
+
+  function isAuthorProhibitedRole(role) {
+    return AUTHOR_PROHIBITED_ROLES.has(lower(role));
+  }
+
+  function isDeprecatedAttr(attr /* , role */) {
+    return DEPRECATED_ATTRS.has(lower(attr));
+  }
+
   function isKnownRole(role) {
     const r = lower(role);
     return ABSTRACT_ROLES.has(r) || CONCRETE_ROLES.has(r);
@@ -12833,6 +12885,9 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     getAllRoleTokens,
     isAbstractRole,
     isDeprecatedRole,
+    isAuthorDiscouragedRole,
+    isAuthorProhibitedRole,
+    isDeprecatedAttr,
     getDeprecatedRoleGuidance,
     isKnownRole,
     isValidConcreteRole,
@@ -19079,8 +19134,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "aria-deprecated-role",
-    "title": "role attribute must not use a deprecated or author-prohibited ARIA role",
-    "description": "Checks that an explicit role=\"\" attribute does not use a role deprecated by the WAI-ARIA specification, or one reserved for user-agent-internal use only (e.g. role=\"generic\").",
+    "title": "role attribute should not use a deprecated or author-discouraged ARIA role",
+    "description": "Checks that an explicit role=\"\" attribute does not use a role deprecated by the WAI-ARIA specification, or one reserved for user-agent-internal use (e.g. role=\"generic\").",
     "i18n": {
       "titleKey": "ariaDeprecatedRole_title",
       "descriptionKey": "ariaDeprecatedRole_description"
@@ -27539,7 +27594,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     ? helpers.queryAllSmart('[role]')
     : helpers.queryAll('[role]');
 
-  const occurrences = [];
+  const failOccurrences = [];
+  const cantTellOccurrences = [];
   let applicableCount = 0;
 
   // A role on an element hidden from assistive technology has no effect, so
@@ -27572,7 +27628,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     applicableCount += 1;
 
-    if (!ariaHelpers.isDeprecatedRole(role)) continue;
+    const deprecated = ariaHelpers.isDeprecatedRole(role);
+    const discouraged =
+      typeof ariaHelpers.isAuthorDiscouragedRole === 'function' &&
+      ariaHelpers.isAuthorDiscouragedRole(role);
+    const prohibited =
+      typeof ariaHelpers.isAuthorProhibitedRole === 'function' &&
+      ariaHelpers.isAuthorProhibitedRole(role);
+    if (!deprecated && !discouraged && !prohibited) continue;
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
     const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
@@ -27580,34 +27643,70 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       ? ariaHelpers.getDeprecatedRoleGuidance(role)
       : 'Replace the deprecated role with its recommended replacement.';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: `This element uses role="${role}", which authors must not explicitly declare.`,
-      hint: guidance,
-      i18n: {
-        summaryKey: 'ariaDeprecatedRole_summary_fail',
-        hintKey: 'ariaDeprecatedRole_hint_fail',
-        params: { role, guidance }
-      },
-      data: {
-        details: { reasonCode: 'ARIA_ROLE_DEPRECATED', role, guidance }
-      }
-    });
+    if (prohibited) {
+      // Author MUST NOT: the usage is non-conforming, not merely discouraged.
+      failOccurrences.push({
+        selector: stableSelector,
+        html,
+        summary: `This element uses role="${role}", which authors must not explicitly declare.`,
+        hint: guidance,
+        occurrenceOutcome: 'fail',
+        i18n: {
+          summaryKey: 'ariaDeprecatedRole_summary_fail',
+          hintKey: 'ariaDeprecatedRole_hint_fail',
+          params: { role, guidance }
+        },
+        data: {
+          details: { reasonCode: 'ARIA_ROLE_AUTHOR_PROHIBITED', role, guidance }
+        }
+      });
+    } else if (discouraged) {
+      // Reserved for user-agent-internal use, at SHOULD NOT strength.
+      cantTellOccurrences.push({
+        selector: stableSelector,
+        html,
+        summary: `This element uses role="${role}", which is reserved for user agents (still valid, but discouraged).`,
+        hint: guidance,
+        occurrenceOutcome: 'cantTell',
+        i18n: {
+          summaryKey: 'ariaDeprecatedRole_summary_cantTell_discouraged',
+          hintKey: 'ariaDeprecatedRole_hint_cantTell',
+          params: { role, guidance }
+        },
+        data: {
+          details: { reasonCode: 'ARIA_ROLE_AUTHOR_DISCOURAGED', role, guidance }
+        }
+      });
+    } else {
+      // Deprecated but still valid: surfaced for the author to decide.
+      cantTellOccurrences.push({
+        selector: stableSelector,
+        html,
+        summary: `This element uses role="${role}", which is deprecated in WAI-ARIA.`,
+        hint: guidance,
+        occurrenceOutcome: 'cantTell',
+        i18n: {
+          summaryKey: 'ariaDeprecatedRole_summary_cantTell',
+          hintKey: 'ariaDeprecatedRole_hint_cantTell',
+          params: { role, guidance }
+        },
+        data: {
+          details: { reasonCode: 'ARIA_ROLE_DEPRECATED', role, guidance }
+        }
+      });
+    }
   }
 
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'moderate',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+
+  const resolved = helpers.resolveTieredOutcome(
+    failOccurrences,
+    cantTellOccurrences,
+    rule.defaultSeverity || 'moderate'
+  );
+  return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "aria-hidden-body": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
@@ -47000,10 +47099,13 @@ const I18N = {
     "ariaRolesValid_hint_invalid": "Verwenden Sie einen gültigen ARIA-Rollenwert, oder entfernen Sie das role-Attribut, wenn keine Rolle zutrifft.",
     "ariaRolesValid_summary_abstract": "role=\"{{role}}\" ist eine abstrakte ARIA-Rolle, die nicht direkt verwendet werden darf.",
     "ariaRolesValid_hint_abstract": "Ersetzen Sie diese abstrakte Rolle durch eine konkrete Rolle, die zu dem Widget/der Struktur passt.",
-    "ariaDeprecatedRole_title": "Das role-Attribut darf keine veraltete oder für Autoren untersagte ARIA-Rolle verwenden",
-    "ariaDeprecatedRole_description": "Prüft, ob ein explizites role=\"\"-Attribut keine durch die WAI-ARIA-Spezifikation als veraltet markierte Rolle verwendet, und keine Rolle, die ausschließlich für die interne Verwendung durch den User-Agent reserviert ist (z. B. role=\"generic\").",
+    "ariaDeprecatedRole_title": "Das role-Attribut sollte keine veraltete oder für Autoren nicht empfohlene ARIA-Rolle verwenden",
+    "ariaDeprecatedRole_description": "Prüft, ob ein explizites role=\"\"-Attribut keine durch die WAI-ARIA-Spezifikation als veraltet markierte Rolle verwendet, und keine Rolle, die für die interne Verwendung durch den User-Agent reserviert ist (z. B. role=\"generic\").",
     "ariaDeprecatedRole_summary_fail": "Dieses Element verwendet role=\"{{role}}\", was Autoren nicht explizit deklarieren dürfen.",
     "ariaDeprecatedRole_hint_fail": "{{guidance}}",
+    "ariaDeprecatedRole_summary_cantTell": "Dieses Element verwendet role=\"{{role}}\", die in WAI-ARIA veraltet ist (weiterhin gültig, aber nicht empfohlen).",
+    "ariaDeprecatedRole_summary_cantTell_discouraged": "Dieses Element verwendet role=\"{{role}}\", die User-Agents vorbehalten ist (weiterhin gültig, aber nicht empfohlen).",
+    "ariaDeprecatedRole_hint_cantTell": "{{guidance}}",
     "ariaValidAttr_title": "aria-*-Attribute müssen echte, definierte ARIA-Attribute sein",
     "ariaValidAttr_description": "Prüft, ob jeder im DOM vorhandene aria-*-Attributname ein echtes, durch die WAI-ARIA-Spezifikation definiertes Attribut ist.",
     "ariaValidAttr_summary_fail": "{{attr}} ist kein erkanntes ARIA-Attribut.",
@@ -47016,6 +47118,8 @@ const I18N = {
     "ariaAllowedAttr_description": "Prüft, ob jedes erkannte aria-*-Attribut auf einem Element mit expliziter Rolle entweder global unterstützt wird oder von dieser Rolle unterstützt wird.",
     "ariaAllowedAttr_summary_fail": "{{attr}} ist bei role=\"{{role}}\" nicht zulässig.",
     "ariaAllowedAttr_hint_fail": "Entfernen Sie dieses Attribut, oder verwenden Sie eine Rolle, die es unterstützt.",
+    "ariaAllowedAttr_summary_cantTell": "{{attr}} ist bei role=\"{{role}}\" veraltet (weiterhin zulässig, aber nicht empfohlen).",
+    "ariaAllowedAttr_hint_cantTell": "Dieses Attribut wurde in ARIA 1.2 aus dem globalen Satz entfernt; entfernen Sie es oder verwenden Sie eine Rolle, die es unterstützt, da eine künftige ARIA-Version es möglicherweise nicht mehr zulässt.",
     "ariaProhibitedAttr_title": "ARIA-Benennungsattribute dürfen nicht bei Rollen verwendet werden, die sie untersagen",
     "ariaProhibitedAttr_description": "Prüft, ob aria-label/aria-labelledby nicht bei WAI-ARIA-Rollen vorhanden sind, deren Spezifikation die ARIA-Benennung ausdrücklich untersagt (z. B. generic, emphasis, strong, paragraph).",
     "ariaProhibitedAttr_summary_fail": "{{attr}} ist bei role=\"{{role}}\" untersagt.",
@@ -47624,10 +47728,13 @@ const I18N = {
     "ariaRolesValid_hint_invalid": "Use a valid ARIA role token, or remove the role attribute if none applies.",
     "ariaRolesValid_summary_abstract": "role=\"{{role}}\" is an abstract ARIA role, which must not be used directly.",
     "ariaRolesValid_hint_abstract": "Replace this abstract role with a concrete role appropriate for the widget/structure.",
-    "ariaDeprecatedRole_title": "role attribute must not use a deprecated or author-prohibited ARIA role",
-    "ariaDeprecatedRole_description": "Checks that an explicit role=\"\" attribute does not use a role deprecated by the WAI-ARIA specification, or one reserved for user-agent-internal use only (e.g. role=\"generic\").",
+    "ariaDeprecatedRole_title": "role attribute should not use a deprecated or author-discouraged ARIA role",
+    "ariaDeprecatedRole_description": "Checks that an explicit role=\"\" attribute does not use a role deprecated by the WAI-ARIA specification, or one reserved for user-agent-internal use (e.g. role=\"generic\").",
     "ariaDeprecatedRole_summary_fail": "This element uses role=\"{{role}}\", which authors must not explicitly declare.",
     "ariaDeprecatedRole_hint_fail": "{{guidance}}",
+    "ariaDeprecatedRole_summary_cantTell": "This element uses role=\"{{role}}\", which is deprecated in WAI-ARIA (still valid, but discouraged).",
+    "ariaDeprecatedRole_summary_cantTell_discouraged": "This element uses role=\"{{role}}\", which is reserved for user agents (still valid, but discouraged).",
+    "ariaDeprecatedRole_hint_cantTell": "{{guidance}}",
     "ariaValidAttr_title": "aria-* attributes must be real, defined ARIA attributes",
     "ariaValidAttr_description": "Checks that every aria-* attribute name present in the DOM is a real attribute defined by the WAI-ARIA specification.",
     "ariaValidAttr_summary_fail": "{{attr}} is not a recognized ARIA attribute.",
@@ -47640,6 +47747,8 @@ const I18N = {
     "ariaAllowedAttr_description": "Checks that every recognized aria-* attribute present on an element with an explicit role is either globally supported or supported by that role.",
     "ariaAllowedAttr_summary_fail": "{{attr}} is not permitted on role=\"{{role}}\".",
     "ariaAllowedAttr_hint_fail": "Remove this attribute, or use a role that supports it.",
+    "ariaAllowedAttr_summary_cantTell": "{{attr}} is deprecated on role=\"{{role}}\" (still allowed, but discouraged).",
+    "ariaAllowedAttr_hint_cantTell": "This attribute was removed from the ARIA global set in 1.2; remove it or use a role that supports it, as a future ARIA version may disallow it.",
     "ariaProhibitedAttr_title": "ARIA naming attributes must not be used on roles that prohibit them",
     "ariaProhibitedAttr_description": "Checks that aria-label/aria-labelledby are not present on WAI-ARIA roles whose specification explicitly prohibits ARIA naming (e.g. generic, emphasis, strong, paragraph).",
     "ariaProhibitedAttr_summary_fail": "{{attr}} is prohibited on role=\"{{role}}\".",
@@ -48248,10 +48357,13 @@ const I18N = {
     "ariaRolesValid_hint_invalid": "Usar un token de rol ARIA válido, o eliminar el atributo role si no aplica ninguno.",
     "ariaRolesValid_summary_abstract": "role=\"{{role}}\" es un rol ARIA abstracto, que no debe usarse directamente.",
     "ariaRolesValid_hint_abstract": "Reemplazar este rol abstracto por un rol concreto adecuado para el widget o la estructura.",
-    "ariaDeprecatedRole_title": "El atributo role no debe usar un rol ARIA obsoleto o prohibido para autores",
-    "ariaDeprecatedRole_description": "Comprueba que un atributo role=\"\" explícito no use un rol obsoleto según la especificación WAI-ARIA, ni uno reservado únicamente para uso interno del agente de usuario (por ejemplo, role=\"generic\").",
+    "ariaDeprecatedRole_title": "El atributo role no debería usar un rol ARIA obsoleto o desaconsejado para autores",
+    "ariaDeprecatedRole_description": "Comprueba que un atributo role=\"\" explícito no use un rol obsoleto según la especificación WAI-ARIA, ni uno reservado para uso interno del agente de usuario (por ejemplo, role=\"generic\").",
     "ariaDeprecatedRole_summary_fail": "Este elemento usa role=\"{{role}}\", que los autores no deben declarar explícitamente.",
     "ariaDeprecatedRole_hint_fail": "{{guidance}}",
+    "ariaDeprecatedRole_summary_cantTell": "Este elemento usa role=\"{{role}}\", que está obsoleto en WAI-ARIA (todavía válido, pero desaconsejado).",
+    "ariaDeprecatedRole_summary_cantTell_discouraged": "Este elemento usa role=\"{{role}}\", que está reservado para los agentes de usuario (todavía válido, pero desaconsejado).",
+    "ariaDeprecatedRole_hint_cantTell": "{{guidance}}",
     "ariaValidAttr_title": "Los atributos aria-* deben ser atributos ARIA reales y definidos",
     "ariaValidAttr_description": "Comprueba que cada nombre de atributo aria-* presente en el DOM sea un atributo real definido por la especificación WAI-ARIA.",
     "ariaValidAttr_summary_fail": "{{attr}} no es un atributo ARIA reconocido.",
@@ -48264,6 +48376,8 @@ const I18N = {
     "ariaAllowedAttr_description": "Comprueba que cada atributo aria-* reconocido presente en un elemento con un rol explícito esté admitido globalmente o admitido por ese rol.",
     "ariaAllowedAttr_summary_fail": "{{attr}} no está permitido en role=\"{{role}}\".",
     "ariaAllowedAttr_hint_fail": "Eliminar este atributo, o usar un rol que lo admita.",
+    "ariaAllowedAttr_summary_cantTell": "{{attr}} está obsoleto en role=\"{{role}}\" (todavía permitido, pero desaconsejado).",
+    "ariaAllowedAttr_hint_cantTell": "Este atributo se eliminó del conjunto global de ARIA en 1.2; elimínelo o use un rol que lo admita, ya que una versión futura de ARIA podría no permitirlo.",
     "ariaProhibitedAttr_title": "Los atributos de nombrado ARIA no deben usarse en roles que los prohíban",
     "ariaProhibitedAttr_description": "Comprueba que aria-label/aria-labelledby no estén presentes en roles WAI-ARIA cuya especificación prohíbe explícitamente el nombrado ARIA (por ejemplo, generic, emphasis, strong, paragraph).",
     "ariaProhibitedAttr_summary_fail": "{{attr}} está prohibido en role=\"{{role}}\".",
@@ -48872,10 +48986,13 @@ const I18N = {
     "ariaRolesValid_hint_invalid": "Utilisez un rôle ARIA valide, ou retirez l’attribut role si aucun ne s’applique.",
     "ariaRolesValid_summary_abstract": "role=\"{{role}}\" est un rôle ARIA abstrait, qui ne doit pas être utilisé directement.",
     "ariaRolesValid_hint_abstract": "Remplacez ce rôle abstrait par un rôle concret adapté au composant/à la structure.",
-    "ariaDeprecatedRole_title": "L’attribut role ne doit pas utiliser un rôle ARIA obsolète ou interdit aux auteurs",
+    "ariaDeprecatedRole_title": "L’attribut role ne devrait pas utiliser un rôle ARIA obsolète ou déconseillé aux auteurs",
     "ariaDeprecatedRole_description": "Vérifie qu’un attribut role=\"\" explicite n’utilise pas un rôle rendu obsolète par la spécification WAI-ARIA, ni un rôle réservé à un usage interne à l’agent utilisateur (ex. role=\"generic\").",
     "ariaDeprecatedRole_summary_fail": "Cet élément utilise role=\"{{role}}\", que les auteurs ne doivent pas déclarer explicitement.",
     "ariaDeprecatedRole_hint_fail": "{{guidance}}",
+    "ariaDeprecatedRole_summary_cantTell": "Cet élément utilise role=\"{{role}}\", qui est obsolète dans WAI-ARIA (toujours valide, mais déconseillé).",
+    "ariaDeprecatedRole_summary_cantTell_discouraged": "Cet élément utilise role=\"{{role}}\", qui est réservé aux agents utilisateurs (toujours valide, mais déconseillé).",
+    "ariaDeprecatedRole_hint_cantTell": "{{guidance}}",
     "ariaValidAttr_title": "Les attributs aria-* doivent être des attributs ARIA réels et définis",
     "ariaValidAttr_description": "Vérifie que chaque nom d’attribut aria-* présent dans le DOM est un attribut réel défini par la spécification WAI-ARIA.",
     "ariaValidAttr_summary_fail": "{{attr}} n’est pas un attribut ARIA reconnu.",
@@ -48888,6 +49005,8 @@ const I18N = {
     "ariaAllowedAttr_description": "Vérifie que chaque attribut aria-* reconnu présent sur un élément ayant un rôle explicite est soit globalement pris en charge, soit pris en charge par ce rôle.",
     "ariaAllowedAttr_summary_fail": "{{attr}} n’est pas autorisé sur role=\"{{role}}\".",
     "ariaAllowedAttr_hint_fail": "Retirez cet attribut, ou utilisez un rôle qui le prend en charge.",
+    "ariaAllowedAttr_summary_cantTell": "{{attr}} est obsolète sur role=\"{{role}}\" (toujours autorisé, mais déconseillé).",
+    "ariaAllowedAttr_hint_cantTell": "Cet attribut a été retiré de l’ensemble global d’ARIA en 1.2 ; retirez-le ou utilisez un rôle qui le prend en charge, car une future version d’ARIA pourrait l’interdire.",
     "ariaProhibitedAttr_title": "Les attributs de nommage ARIA ne doivent pas être utilisés sur des rôles qui les interdisent",
     "ariaProhibitedAttr_description": "Vérifie que aria-label/aria-labelledby ne sont pas présents sur des rôles WAI-ARIA dont la spécification interdit explicitement le nommage ARIA (ex. generic, emphasis, strong, paragraph).",
     "ariaProhibitedAttr_summary_fail": "{{attr}} est interdit sur role=\"{{role}}\".",
@@ -51268,21 +51387,41 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   // </generated:aria-abstract-roles>
 
   // -------------------------------------------------------------------
-  // B) Valid, concrete (non-abstract) roles that authors must never
-  //    explicitly declare — either because WAI-ARIA has deprecated them
-  //    (a direct replacement exists) or because they are reserved for
-  //    user-agent-internal use only (not a spec deprecation, but the
-  //    same "valid token, prohibited for authors" shape). Flagged by
-  //    aria-deprecated-role, not aria-roles-valid (which only checks
-  //    existence/abstractness) — see DEPRECATED_ROLE_GUIDANCE below for
-  //    per-role, reason-accurate messaging.
+  // B) Valid, concrete (non-abstract) roles authors should not explicitly
+  //    declare — either because WAI-ARIA has deprecated them (a direct
+  //    replacement exists) or because they are reserved for
+  //    user-agent-internal use. Flagged by aria-deprecated-role, not
+  //    aria-roles-valid (which only checks existence/abstractness) — see
+  //    DEPRECATED_ROLE_GUIDANCE below for per-role, reason-accurate
+  //    messaging.
   // -------------------------------------------------------------------
+  // Deprecated but still VALID roles (SHOULD NOT, still conforming). Reported
+  // as cantTell so the author decides whether it matters to them.
   const DEPRECATED_ROLES = new Set([
-    'directory', // superseded by role="list"
-    // WAI-ARIA 1.2: "intended for use as the implicit role of generic
-    // elements in host languages for use by user agents only; not for
-    // use by developers." MDN: "It should not be used by web authors."
-    'generic'
+    'directory' // superseded by role="list"
+  ]);
+
+  // Valid roles reserved for user-agent-internal use, which ARIA states at
+  // SHOULD NOT strength — conforming, so reported as cantTell.
+  const AUTHOR_DISCOURAGED_ROLES = new Set([
+    'generic' // "primarily for implementors of user agents"
+  ]);
+
+  // Roles carrying an author MUST NOT, reported as fail. Empty under ARIA 1.2
+  // and 1.3, whose only author MUST NOT covers abstract roles — the concern of
+  // aria-roles-valid.
+  const AUTHOR_PROHIBITED_ROLES = new Set([]);
+
+  // Deprecated but still ALLOWED states/properties (SHOULD NOT, still
+  // conforming): the four ARIA 1.2 keeps in the global set as deprecated and
+  // marks "deprecated on this role" wherever a role does not support them.
+  // Reported as cantTell, not a not-allowed fail. Flat rather than per-role
+  // because the deprecation is uniform and no role prohibits any of the four.
+  const DEPRECATED_ATTRS = new Set([
+    'aria-disabled',
+    'aria-errormessage',
+    'aria-haspopup',
+    'aria-invalid'
   ]);
 
   const DEPRECATED_ROLE_GUIDANCE = {
@@ -51957,6 +52096,18 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     return DEPRECATED_ROLES.has(lower(role));
   }
 
+  function isAuthorDiscouragedRole(role) {
+    return AUTHOR_DISCOURAGED_ROLES.has(lower(role));
+  }
+
+  function isAuthorProhibitedRole(role) {
+    return AUTHOR_PROHIBITED_ROLES.has(lower(role));
+  }
+
+  function isDeprecatedAttr(attr /* , role */) {
+    return DEPRECATED_ATTRS.has(lower(attr));
+  }
+
   function isKnownRole(role) {
     const r = lower(role);
     return ABSTRACT_ROLES.has(r) || CONCRETE_ROLES.has(r);
@@ -52232,6 +52383,9 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     getAllRoleTokens,
     isAbstractRole,
     isDeprecatedRole,
+    isAuthorDiscouragedRole,
+    isAuthorProhibitedRole,
+    isDeprecatedAttr,
     getDeprecatedRoleGuidance,
     isKnownRole,
     isValidConcreteRole,
@@ -58438,8 +58592,8 @@ const __a11yCoreCrossFrameApi = (function () {
   },
   {
     "ruleId": "aria-deprecated-role",
-    "title": "role attribute must not use a deprecated or author-prohibited ARIA role",
-    "description": "Checks that an explicit role=\"\" attribute does not use a role deprecated by the WAI-ARIA specification, or one reserved for user-agent-internal use only (e.g. role=\"generic\").",
+    "title": "role attribute should not use a deprecated or author-discouraged ARIA role",
+    "description": "Checks that an explicit role=\"\" attribute does not use a role deprecated by the WAI-ARIA specification, or one reserved for user-agent-internal use (e.g. role=\"generic\").",
     "i18n": {
       "titleKey": "ariaDeprecatedRole_title",
       "descriptionKey": "ariaDeprecatedRole_description"
@@ -66893,7 +67047,8 @@ const __a11yCoreCrossFrameApi = (function () {
     ? helpers.queryAllSmart('[role]')
     : helpers.queryAll('[role]');
 
-  const occurrences = [];
+  const failOccurrences = [];
+  const cantTellOccurrences = [];
   let applicableCount = 0;
 
   // A role on an element hidden from assistive technology has no effect, so
@@ -66926,7 +67081,14 @@ const __a11yCoreCrossFrameApi = (function () {
 
     applicableCount += 1;
 
-    if (!ariaHelpers.isDeprecatedRole(role)) continue;
+    const deprecated = ariaHelpers.isDeprecatedRole(role);
+    const discouraged =
+      typeof ariaHelpers.isAuthorDiscouragedRole === 'function' &&
+      ariaHelpers.isAuthorDiscouragedRole(role);
+    const prohibited =
+      typeof ariaHelpers.isAuthorProhibitedRole === 'function' &&
+      ariaHelpers.isAuthorProhibitedRole(role);
+    if (!deprecated && !discouraged && !prohibited) continue;
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
     const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
@@ -66934,34 +67096,70 @@ const __a11yCoreCrossFrameApi = (function () {
       ? ariaHelpers.getDeprecatedRoleGuidance(role)
       : 'Replace the deprecated role with its recommended replacement.';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: `This element uses role="${role}", which authors must not explicitly declare.`,
-      hint: guidance,
-      i18n: {
-        summaryKey: 'ariaDeprecatedRole_summary_fail',
-        hintKey: 'ariaDeprecatedRole_hint_fail',
-        params: { role, guidance }
-      },
-      data: {
-        details: { reasonCode: 'ARIA_ROLE_DEPRECATED', role, guidance }
-      }
-    });
+    if (prohibited) {
+      // Author MUST NOT: the usage is non-conforming, not merely discouraged.
+      failOccurrences.push({
+        selector: stableSelector,
+        html,
+        summary: `This element uses role="${role}", which authors must not explicitly declare.`,
+        hint: guidance,
+        occurrenceOutcome: 'fail',
+        i18n: {
+          summaryKey: 'ariaDeprecatedRole_summary_fail',
+          hintKey: 'ariaDeprecatedRole_hint_fail',
+          params: { role, guidance }
+        },
+        data: {
+          details: { reasonCode: 'ARIA_ROLE_AUTHOR_PROHIBITED', role, guidance }
+        }
+      });
+    } else if (discouraged) {
+      // Reserved for user-agent-internal use, at SHOULD NOT strength.
+      cantTellOccurrences.push({
+        selector: stableSelector,
+        html,
+        summary: `This element uses role="${role}", which is reserved for user agents (still valid, but discouraged).`,
+        hint: guidance,
+        occurrenceOutcome: 'cantTell',
+        i18n: {
+          summaryKey: 'ariaDeprecatedRole_summary_cantTell_discouraged',
+          hintKey: 'ariaDeprecatedRole_hint_cantTell',
+          params: { role, guidance }
+        },
+        data: {
+          details: { reasonCode: 'ARIA_ROLE_AUTHOR_DISCOURAGED', role, guidance }
+        }
+      });
+    } else {
+      // Deprecated but still valid: surfaced for the author to decide.
+      cantTellOccurrences.push({
+        selector: stableSelector,
+        html,
+        summary: `This element uses role="${role}", which is deprecated in WAI-ARIA.`,
+        hint: guidance,
+        occurrenceOutcome: 'cantTell',
+        i18n: {
+          summaryKey: 'ariaDeprecatedRole_summary_cantTell',
+          hintKey: 'ariaDeprecatedRole_hint_cantTell',
+          params: { role, guidance }
+        },
+        data: {
+          details: { reasonCode: 'ARIA_ROLE_DEPRECATED', role, guidance }
+        }
+      });
+    }
   }
 
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'moderate',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+
+  const resolved = helpers.resolveTieredOutcome(
+    failOccurrences,
+    cantTellOccurrences,
+    rule.defaultSeverity || 'moderate'
+  );
+  return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "aria-hidden-body": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
@@ -86354,10 +86552,13 @@ const I18N = {
     "ariaRolesValid_hint_invalid": "Verwenden Sie einen gültigen ARIA-Rollenwert, oder entfernen Sie das role-Attribut, wenn keine Rolle zutrifft.",
     "ariaRolesValid_summary_abstract": "role=\"{{role}}\" ist eine abstrakte ARIA-Rolle, die nicht direkt verwendet werden darf.",
     "ariaRolesValid_hint_abstract": "Ersetzen Sie diese abstrakte Rolle durch eine konkrete Rolle, die zu dem Widget/der Struktur passt.",
-    "ariaDeprecatedRole_title": "Das role-Attribut darf keine veraltete oder für Autoren untersagte ARIA-Rolle verwenden",
-    "ariaDeprecatedRole_description": "Prüft, ob ein explizites role=\"\"-Attribut keine durch die WAI-ARIA-Spezifikation als veraltet markierte Rolle verwendet, und keine Rolle, die ausschließlich für die interne Verwendung durch den User-Agent reserviert ist (z. B. role=\"generic\").",
+    "ariaDeprecatedRole_title": "Das role-Attribut sollte keine veraltete oder für Autoren nicht empfohlene ARIA-Rolle verwenden",
+    "ariaDeprecatedRole_description": "Prüft, ob ein explizites role=\"\"-Attribut keine durch die WAI-ARIA-Spezifikation als veraltet markierte Rolle verwendet, und keine Rolle, die für die interne Verwendung durch den User-Agent reserviert ist (z. B. role=\"generic\").",
     "ariaDeprecatedRole_summary_fail": "Dieses Element verwendet role=\"{{role}}\", was Autoren nicht explizit deklarieren dürfen.",
     "ariaDeprecatedRole_hint_fail": "{{guidance}}",
+    "ariaDeprecatedRole_summary_cantTell": "Dieses Element verwendet role=\"{{role}}\", die in WAI-ARIA veraltet ist (weiterhin gültig, aber nicht empfohlen).",
+    "ariaDeprecatedRole_summary_cantTell_discouraged": "Dieses Element verwendet role=\"{{role}}\", die User-Agents vorbehalten ist (weiterhin gültig, aber nicht empfohlen).",
+    "ariaDeprecatedRole_hint_cantTell": "{{guidance}}",
     "ariaValidAttr_title": "aria-*-Attribute müssen echte, definierte ARIA-Attribute sein",
     "ariaValidAttr_description": "Prüft, ob jeder im DOM vorhandene aria-*-Attributname ein echtes, durch die WAI-ARIA-Spezifikation definiertes Attribut ist.",
     "ariaValidAttr_summary_fail": "{{attr}} ist kein erkanntes ARIA-Attribut.",
@@ -86370,6 +86571,8 @@ const I18N = {
     "ariaAllowedAttr_description": "Prüft, ob jedes erkannte aria-*-Attribut auf einem Element mit expliziter Rolle entweder global unterstützt wird oder von dieser Rolle unterstützt wird.",
     "ariaAllowedAttr_summary_fail": "{{attr}} ist bei role=\"{{role}}\" nicht zulässig.",
     "ariaAllowedAttr_hint_fail": "Entfernen Sie dieses Attribut, oder verwenden Sie eine Rolle, die es unterstützt.",
+    "ariaAllowedAttr_summary_cantTell": "{{attr}} ist bei role=\"{{role}}\" veraltet (weiterhin zulässig, aber nicht empfohlen).",
+    "ariaAllowedAttr_hint_cantTell": "Dieses Attribut wurde in ARIA 1.2 aus dem globalen Satz entfernt; entfernen Sie es oder verwenden Sie eine Rolle, die es unterstützt, da eine künftige ARIA-Version es möglicherweise nicht mehr zulässt.",
     "ariaProhibitedAttr_title": "ARIA-Benennungsattribute dürfen nicht bei Rollen verwendet werden, die sie untersagen",
     "ariaProhibitedAttr_description": "Prüft, ob aria-label/aria-labelledby nicht bei WAI-ARIA-Rollen vorhanden sind, deren Spezifikation die ARIA-Benennung ausdrücklich untersagt (z. B. generic, emphasis, strong, paragraph).",
     "ariaProhibitedAttr_summary_fail": "{{attr}} ist bei role=\"{{role}}\" untersagt.",
@@ -86978,10 +87181,13 @@ const I18N = {
     "ariaRolesValid_hint_invalid": "Use a valid ARIA role token, or remove the role attribute if none applies.",
     "ariaRolesValid_summary_abstract": "role=\"{{role}}\" is an abstract ARIA role, which must not be used directly.",
     "ariaRolesValid_hint_abstract": "Replace this abstract role with a concrete role appropriate for the widget/structure.",
-    "ariaDeprecatedRole_title": "role attribute must not use a deprecated or author-prohibited ARIA role",
-    "ariaDeprecatedRole_description": "Checks that an explicit role=\"\" attribute does not use a role deprecated by the WAI-ARIA specification, or one reserved for user-agent-internal use only (e.g. role=\"generic\").",
+    "ariaDeprecatedRole_title": "role attribute should not use a deprecated or author-discouraged ARIA role",
+    "ariaDeprecatedRole_description": "Checks that an explicit role=\"\" attribute does not use a role deprecated by the WAI-ARIA specification, or one reserved for user-agent-internal use (e.g. role=\"generic\").",
     "ariaDeprecatedRole_summary_fail": "This element uses role=\"{{role}}\", which authors must not explicitly declare.",
     "ariaDeprecatedRole_hint_fail": "{{guidance}}",
+    "ariaDeprecatedRole_summary_cantTell": "This element uses role=\"{{role}}\", which is deprecated in WAI-ARIA (still valid, but discouraged).",
+    "ariaDeprecatedRole_summary_cantTell_discouraged": "This element uses role=\"{{role}}\", which is reserved for user agents (still valid, but discouraged).",
+    "ariaDeprecatedRole_hint_cantTell": "{{guidance}}",
     "ariaValidAttr_title": "aria-* attributes must be real, defined ARIA attributes",
     "ariaValidAttr_description": "Checks that every aria-* attribute name present in the DOM is a real attribute defined by the WAI-ARIA specification.",
     "ariaValidAttr_summary_fail": "{{attr}} is not a recognized ARIA attribute.",
@@ -86994,6 +87200,8 @@ const I18N = {
     "ariaAllowedAttr_description": "Checks that every recognized aria-* attribute present on an element with an explicit role is either globally supported or supported by that role.",
     "ariaAllowedAttr_summary_fail": "{{attr}} is not permitted on role=\"{{role}}\".",
     "ariaAllowedAttr_hint_fail": "Remove this attribute, or use a role that supports it.",
+    "ariaAllowedAttr_summary_cantTell": "{{attr}} is deprecated on role=\"{{role}}\" (still allowed, but discouraged).",
+    "ariaAllowedAttr_hint_cantTell": "This attribute was removed from the ARIA global set in 1.2; remove it or use a role that supports it, as a future ARIA version may disallow it.",
     "ariaProhibitedAttr_title": "ARIA naming attributes must not be used on roles that prohibit them",
     "ariaProhibitedAttr_description": "Checks that aria-label/aria-labelledby are not present on WAI-ARIA roles whose specification explicitly prohibits ARIA naming (e.g. generic, emphasis, strong, paragraph).",
     "ariaProhibitedAttr_summary_fail": "{{attr}} is prohibited on role=\"{{role}}\".",
@@ -87602,10 +87810,13 @@ const I18N = {
     "ariaRolesValid_hint_invalid": "Usar un token de rol ARIA válido, o eliminar el atributo role si no aplica ninguno.",
     "ariaRolesValid_summary_abstract": "role=\"{{role}}\" es un rol ARIA abstracto, que no debe usarse directamente.",
     "ariaRolesValid_hint_abstract": "Reemplazar este rol abstracto por un rol concreto adecuado para el widget o la estructura.",
-    "ariaDeprecatedRole_title": "El atributo role no debe usar un rol ARIA obsoleto o prohibido para autores",
-    "ariaDeprecatedRole_description": "Comprueba que un atributo role=\"\" explícito no use un rol obsoleto según la especificación WAI-ARIA, ni uno reservado únicamente para uso interno del agente de usuario (por ejemplo, role=\"generic\").",
+    "ariaDeprecatedRole_title": "El atributo role no debería usar un rol ARIA obsoleto o desaconsejado para autores",
+    "ariaDeprecatedRole_description": "Comprueba que un atributo role=\"\" explícito no use un rol obsoleto según la especificación WAI-ARIA, ni uno reservado para uso interno del agente de usuario (por ejemplo, role=\"generic\").",
     "ariaDeprecatedRole_summary_fail": "Este elemento usa role=\"{{role}}\", que los autores no deben declarar explícitamente.",
     "ariaDeprecatedRole_hint_fail": "{{guidance}}",
+    "ariaDeprecatedRole_summary_cantTell": "Este elemento usa role=\"{{role}}\", que está obsoleto en WAI-ARIA (todavía válido, pero desaconsejado).",
+    "ariaDeprecatedRole_summary_cantTell_discouraged": "Este elemento usa role=\"{{role}}\", que está reservado para los agentes de usuario (todavía válido, pero desaconsejado).",
+    "ariaDeprecatedRole_hint_cantTell": "{{guidance}}",
     "ariaValidAttr_title": "Los atributos aria-* deben ser atributos ARIA reales y definidos",
     "ariaValidAttr_description": "Comprueba que cada nombre de atributo aria-* presente en el DOM sea un atributo real definido por la especificación WAI-ARIA.",
     "ariaValidAttr_summary_fail": "{{attr}} no es un atributo ARIA reconocido.",
@@ -87618,6 +87829,8 @@ const I18N = {
     "ariaAllowedAttr_description": "Comprueba que cada atributo aria-* reconocido presente en un elemento con un rol explícito esté admitido globalmente o admitido por ese rol.",
     "ariaAllowedAttr_summary_fail": "{{attr}} no está permitido en role=\"{{role}}\".",
     "ariaAllowedAttr_hint_fail": "Eliminar este atributo, o usar un rol que lo admita.",
+    "ariaAllowedAttr_summary_cantTell": "{{attr}} está obsoleto en role=\"{{role}}\" (todavía permitido, pero desaconsejado).",
+    "ariaAllowedAttr_hint_cantTell": "Este atributo se eliminó del conjunto global de ARIA en 1.2; elimínelo o use un rol que lo admita, ya que una versión futura de ARIA podría no permitirlo.",
     "ariaProhibitedAttr_title": "Los atributos de nombrado ARIA no deben usarse en roles que los prohíban",
     "ariaProhibitedAttr_description": "Comprueba que aria-label/aria-labelledby no estén presentes en roles WAI-ARIA cuya especificación prohíbe explícitamente el nombrado ARIA (por ejemplo, generic, emphasis, strong, paragraph).",
     "ariaProhibitedAttr_summary_fail": "{{attr}} está prohibido en role=\"{{role}}\".",
@@ -88226,10 +88439,13 @@ const I18N = {
     "ariaRolesValid_hint_invalid": "Utilisez un rôle ARIA valide, ou retirez l’attribut role si aucun ne s’applique.",
     "ariaRolesValid_summary_abstract": "role=\"{{role}}\" est un rôle ARIA abstrait, qui ne doit pas être utilisé directement.",
     "ariaRolesValid_hint_abstract": "Remplacez ce rôle abstrait par un rôle concret adapté au composant/à la structure.",
-    "ariaDeprecatedRole_title": "L’attribut role ne doit pas utiliser un rôle ARIA obsolète ou interdit aux auteurs",
+    "ariaDeprecatedRole_title": "L’attribut role ne devrait pas utiliser un rôle ARIA obsolète ou déconseillé aux auteurs",
     "ariaDeprecatedRole_description": "Vérifie qu’un attribut role=\"\" explicite n’utilise pas un rôle rendu obsolète par la spécification WAI-ARIA, ni un rôle réservé à un usage interne à l’agent utilisateur (ex. role=\"generic\").",
     "ariaDeprecatedRole_summary_fail": "Cet élément utilise role=\"{{role}}\", que les auteurs ne doivent pas déclarer explicitement.",
     "ariaDeprecatedRole_hint_fail": "{{guidance}}",
+    "ariaDeprecatedRole_summary_cantTell": "Cet élément utilise role=\"{{role}}\", qui est obsolète dans WAI-ARIA (toujours valide, mais déconseillé).",
+    "ariaDeprecatedRole_summary_cantTell_discouraged": "Cet élément utilise role=\"{{role}}\", qui est réservé aux agents utilisateurs (toujours valide, mais déconseillé).",
+    "ariaDeprecatedRole_hint_cantTell": "{{guidance}}",
     "ariaValidAttr_title": "Les attributs aria-* doivent être des attributs ARIA réels et définis",
     "ariaValidAttr_description": "Vérifie que chaque nom d’attribut aria-* présent dans le DOM est un attribut réel défini par la spécification WAI-ARIA.",
     "ariaValidAttr_summary_fail": "{{attr}} n’est pas un attribut ARIA reconnu.",
@@ -88242,6 +88458,8 @@ const I18N = {
     "ariaAllowedAttr_description": "Vérifie que chaque attribut aria-* reconnu présent sur un élément ayant un rôle explicite est soit globalement pris en charge, soit pris en charge par ce rôle.",
     "ariaAllowedAttr_summary_fail": "{{attr}} n’est pas autorisé sur role=\"{{role}}\".",
     "ariaAllowedAttr_hint_fail": "Retirez cet attribut, ou utilisez un rôle qui le prend en charge.",
+    "ariaAllowedAttr_summary_cantTell": "{{attr}} est obsolète sur role=\"{{role}}\" (toujours autorisé, mais déconseillé).",
+    "ariaAllowedAttr_hint_cantTell": "Cet attribut a été retiré de l’ensemble global d’ARIA en 1.2 ; retirez-le ou utilisez un rôle qui le prend en charge, car une future version d’ARIA pourrait l’interdire.",
     "ariaProhibitedAttr_title": "Les attributs de nommage ARIA ne doivent pas être utilisés sur des rôles qui les interdisent",
     "ariaProhibitedAttr_description": "Vérifie que aria-label/aria-labelledby ne sont pas présents sur des rôles WAI-ARIA dont la spécification interdit explicitement le nommage ARIA (ex. generic, emphasis, strong, paragraph).",
     "ariaProhibitedAttr_summary_fail": "{{attr}} est interdit sur role=\"{{role}}\".",
@@ -90622,21 +90840,41 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   // </generated:aria-abstract-roles>
 
   // -------------------------------------------------------------------
-  // B) Valid, concrete (non-abstract) roles that authors must never
-  //    explicitly declare — either because WAI-ARIA has deprecated them
-  //    (a direct replacement exists) or because they are reserved for
-  //    user-agent-internal use only (not a spec deprecation, but the
-  //    same "valid token, prohibited for authors" shape). Flagged by
-  //    aria-deprecated-role, not aria-roles-valid (which only checks
-  //    existence/abstractness) — see DEPRECATED_ROLE_GUIDANCE below for
-  //    per-role, reason-accurate messaging.
+  // B) Valid, concrete (non-abstract) roles authors should not explicitly
+  //    declare — either because WAI-ARIA has deprecated them (a direct
+  //    replacement exists) or because they are reserved for
+  //    user-agent-internal use. Flagged by aria-deprecated-role, not
+  //    aria-roles-valid (which only checks existence/abstractness) — see
+  //    DEPRECATED_ROLE_GUIDANCE below for per-role, reason-accurate
+  //    messaging.
   // -------------------------------------------------------------------
+  // Deprecated but still VALID roles (SHOULD NOT, still conforming). Reported
+  // as cantTell so the author decides whether it matters to them.
   const DEPRECATED_ROLES = new Set([
-    'directory', // superseded by role="list"
-    // WAI-ARIA 1.2: "intended for use as the implicit role of generic
-    // elements in host languages for use by user agents only; not for
-    // use by developers." MDN: "It should not be used by web authors."
-    'generic'
+    'directory' // superseded by role="list"
+  ]);
+
+  // Valid roles reserved for user-agent-internal use, which ARIA states at
+  // SHOULD NOT strength — conforming, so reported as cantTell.
+  const AUTHOR_DISCOURAGED_ROLES = new Set([
+    'generic' // "primarily for implementors of user agents"
+  ]);
+
+  // Roles carrying an author MUST NOT, reported as fail. Empty under ARIA 1.2
+  // and 1.3, whose only author MUST NOT covers abstract roles — the concern of
+  // aria-roles-valid.
+  const AUTHOR_PROHIBITED_ROLES = new Set([]);
+
+  // Deprecated but still ALLOWED states/properties (SHOULD NOT, still
+  // conforming): the four ARIA 1.2 keeps in the global set as deprecated and
+  // marks "deprecated on this role" wherever a role does not support them.
+  // Reported as cantTell, not a not-allowed fail. Flat rather than per-role
+  // because the deprecation is uniform and no role prohibits any of the four.
+  const DEPRECATED_ATTRS = new Set([
+    'aria-disabled',
+    'aria-errormessage',
+    'aria-haspopup',
+    'aria-invalid'
   ]);
 
   const DEPRECATED_ROLE_GUIDANCE = {
@@ -91311,6 +91549,18 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     return DEPRECATED_ROLES.has(lower(role));
   }
 
+  function isAuthorDiscouragedRole(role) {
+    return AUTHOR_DISCOURAGED_ROLES.has(lower(role));
+  }
+
+  function isAuthorProhibitedRole(role) {
+    return AUTHOR_PROHIBITED_ROLES.has(lower(role));
+  }
+
+  function isDeprecatedAttr(attr /* , role */) {
+    return DEPRECATED_ATTRS.has(lower(attr));
+  }
+
   function isKnownRole(role) {
     const r = lower(role);
     return ABSTRACT_ROLES.has(r) || CONCRETE_ROLES.has(r);
@@ -91586,6 +91836,9 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     getAllRoleTokens,
     isAbstractRole,
     isDeprecatedRole,
+    isAuthorDiscouragedRole,
+    isAuthorProhibitedRole,
+    isDeprecatedAttr,
     getDeprecatedRoleGuidance,
     isKnownRole,
     isValidConcreteRole,
