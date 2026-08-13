@@ -367,3 +367,26 @@ test(`${RULE_ID}: links outside aria-hidden are unaffected`, () => {
     { minOccurrences: 1 }
   );
 });
+
+// Module roles inherit name-from-content from their superclass: doc-noteref
+// inherits from link, and Chrome names <a role="doc-noteref"><sup>1</sup></a>
+// "1". listitem does not inherit it and still fails.
+test(`${RULE_ID}: module roles that inherit name from content are named by it`, () => {
+  for (const markup of [
+    '<a href="#fn1" role="doc-noteref"><sup>1</sup></a>',
+    '<a href="#b" role="doc-biblioref">Smith 2020</a>',
+    '<a href="#t" role="doc-backlink">Back</a>'
+  ]) {
+    const html = `<!doctype html><html><body>${markup}</body></html>`;
+    assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'pass', {
+      maxOccurrences: 0
+    });
+  }
+});
+
+test(`${RULE_ID}: a role without name from content is still unnamed`, () => {
+  const html = `<!doctype html><html><body><a href="#x" role="listitem">Datepicker</a></body></html>`;
+  assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 1
+  });
+});

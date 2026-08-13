@@ -34,6 +34,8 @@ const BEGIN_IMPLICIT = '  // <generated:aria-implicit-roles>';
 const END_IMPLICIT = '  // </generated:aria-implicit-roles>';
 const BEGIN_ABSTRACT = '  // <generated:aria-abstract-roles>';
 const END_ABSTRACT = '  // </generated:aria-abstract-roles>';
+const BEGIN_NAME_FROM_CONTENT = '    // <generated:aria-name-from-content>';
+const END_NAME_FROM_CONTENT = '    // </generated:aria-name-from-content>';
 const BEGIN_CONCRETE = '  // <generated:aria-concrete-roles>';
 const END_CONCRETE = '  // </generated:aria-concrete-roles>';
 
@@ -218,6 +220,29 @@ function nonGlobalAttrs(globals, table) {
   return [...all].filter((a) => !globalSet.has(a)).sort();
 }
 
+// Roles whose accessible name may come from their own content. Derived from
+// nameFrom rather than the ARIA 5.2.8.5 list alone, so module roles that
+// inherit it are included: doc-noteref inherits from link and Chrome names
+// <a role="doc-noteref"><sup>1</sup></a> "1".
+function nameFromContentRoles() {
+  const out = [];
+  for (const [name, def] of roles.entries()) {
+    if (def.abstract) continue;
+    if ((def.nameFrom || []).includes('contents')) out.push(name);
+  }
+  return out.sort();
+}
+
+function renderNameFromContent(list) {
+  return [
+    BEGIN_NAME_FROM_CONTENT,
+    '    const NAME_FROM_CONTENT_ROLES = [',
+    ...list.map((r) => `      '${r}',`),
+    '    ];',
+    END_NAME_FROM_CONTENT
+  ].join('\n');
+}
+
 function renderGlobals(list) {
   return [
     BEGIN_GLOBAL,
@@ -294,6 +319,23 @@ function main() {
 
   fs.writeFileSync(RULE_PATH, source);
   fs.writeFileSync(HELPERS_PATH, helpers);
+
+  const nfc = nameFromContentRoles();
+  for (const rel of [
+    'src/checks/automatic/link-name-present.js',
+    'src/checks/automatic/button-name-present.js'
+  ]) {
+    const file = path.join(__dirname, '..', rel);
+    const before = fs.readFileSync(file, 'utf8');
+    const after = replaceBlock(
+      before,
+      BEGIN_NAME_FROM_CONTENT,
+      END_NAME_FROM_CONTENT,
+      renderNameFromContent(nfc)
+    );
+    fs.writeFileSync(file, after);
+  }
+  console.log(`Wrote ${nfc.length} name-from-content role(s) into the naming rules`);
   console.log(
     `Wrote ${Object.keys(table).length} concrete role(s), ${globals.length} global attribute(s) and ${Object.keys(implicit).length} implicit-role mapping(s) into ${path.relative(process.cwd(), RULE_PATH)}`
   );
