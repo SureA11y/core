@@ -83,3 +83,12 @@ test(`meta-refresh-no-exceptions: notApplicable when engineOptions.fragment is t
     maxOccurrences: 0
   });
 });
+
+// An invalid refresh directive never refreshes, so there is nothing to report.
+test(`${RULE_ID}: notApplicable for content that is not a valid refresh directive`, () => {
+  for (const content of ['foo; URL=/x', '+72001; /x', '-00.12 foo', '0:1', '; 72001']) {
+    const html = `<!doctype html><html><head><meta http-equiv="refresh" content="${content}"></head><body>x</body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});

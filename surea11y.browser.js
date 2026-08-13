@@ -21017,6 +21017,34 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     : [];
 
   const occurrences = [];
+  // HTML's shared declarative refresh steps. Returns the delay in seconds, or
+  // null when the value is not a valid refresh directive, in which case the
+  // browser never refreshes and there is nothing to report. Rejects a leading
+  // sign ("+72001"), a non-numeric time ("foo"), and a separator other than
+  // "," or ";" ("0:1").
+  function parseRefreshDelay(input) {
+    const s = String(input == null ? '' : input);
+    const isSpace = (c) => c === ' ' || c === '\t' || c === '\n' || c === '\f' || c === '\r';
+    let i = 0;
+    while (i < s.length && isSpace(s[i])) i++;
+    let digits = '';
+    while (i < s.length && s[i] >= '0' && s[i] <= '9') digits += s[i++];
+    if (!digits) return null;
+    if (s[i] === '.') {
+      i++;
+      while (i < s.length && s[i] >= '0' && s[i] <= '9') i++;
+    }
+    if (i >= s.length) return parseInt(digits, 10);
+    let sawSpace = false;
+    while (i < s.length && isSpace(s[i])) {
+      sawSpace = true;
+      i++;
+    }
+    if (i >= s.length) return parseInt(digits, 10);
+    if (s[i] === ';' || s[i] === ',' || sawSpace) return parseInt(digits, 10);
+    return null;
+  }
+
   let applicableCount = 0;
 
   for (const el of nodes) {
@@ -21024,6 +21052,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (el.closest && el.closest('noscript')) continue; // never applies with scripting enabled
     const raw = String(el.getAttribute('content') || '').trim();
     if (!raw) continue;
+    if (parseRefreshDelay(raw) === null) continue;
 
     applicableCount += 1;
 
@@ -21075,16 +21104,42 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
+  // HTML's shared declarative refresh steps. Returns the delay in seconds, or
+  // null when the value is not a valid refresh directive, in which case the
+  // browser never refreshes and there is nothing to report. Rejects a leading
+  // sign ("+72001"), a non-numeric time ("foo"), and a separator other than
+  // "," or ";" ("0:1").
+  function parseRefreshDelay(input) {
+    const s = String(input == null ? '' : input);
+    const isSpace = (c) => c === ' ' || c === '\t' || c === '\n' || c === '\f' || c === '\r';
+    let i = 0;
+    while (i < s.length && isSpace(s[i])) i++;
+    let digits = '';
+    while (i < s.length && s[i] >= '0' && s[i] <= '9') digits += s[i++];
+    if (!digits) return null;
+    if (s[i] === '.') {
+      i++;
+      while (i < s.length && s[i] >= '0' && s[i] <= '9') i++;
+    }
+    if (i >= s.length) return parseInt(digits, 10);
+    let sawSpace = false;
+    while (i < s.length && isSpace(s[i])) {
+      sawSpace = true;
+      i++;
+    }
+    if (i >= s.length) return parseInt(digits, 10);
+    if (s[i] === ';' || s[i] === ',' || sawSpace) return parseInt(digits, 10);
+    return null;
+  }
+
   for (const el of nodes) {
     if (!el || !el.getAttribute) continue;
     if (el.closest && el.closest('noscript')) continue; // never applies with scripting enabled — see meta-refresh-no-exceptions.js's header comment
     const raw = String(el.getAttribute('content') || '').trim();
     if (!raw) continue;
 
-    const match = raw.match(/^([0-9]*\.?[0-9]+)/);
-    if (!match) continue;
-    const delay = parseFloat(match[1]);
-    if (Number.isNaN(delay)) continue;
+    const delay = parseRefreshDelay(raw);
+    if (delay === null) continue;
 
     applicableCount += 1;
 
@@ -21239,20 +21294,40 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const raw = String(el.getAttribute('content') || '').trim();
     if (!raw) continue;
 
-    applicableCount += 1;
-
     const parsed = parseContent(raw);
+
+    // ACT b4f0c3 applies only when content carries maximum-scale or
+    // user-scalable; content that sets neither cannot restrict zoom.
+    if (parsed['user-scalable'] === undefined && parsed['maximum-scale'] === undefined) continue;
+
+    applicableCount += 1;
     const reasons = [];
 
+    // CSS Device Adaptation translates an unparseable value to 0, so
+    // user-scalable=invalid and maximum-scale=yes disable zoom just as
+    // user-scalable=no does. A negative maximum-scale is out of range and
+    // dropped instead, which is why it does not restrict anything.
     const userScalable = parsed['user-scalable'];
-    if (userScalable === 'no' || userScalable === '0') {
-      reasons.push('user-scalable=' + userScalable);
+    if (
+      userScalable !== undefined &&
+      userScalable !== 'yes' &&
+      userScalable !== 'device-width' &&
+      userScalable !== 'device-height'
+    ) {
+      const scale = parseFloat(userScalable);
+      if (Number.isNaN(scale) || (scale > -1 && scale < 1)) {
+        reasons.push('user-scalable=' + userScalable);
+      }
     }
 
     const maxScaleRaw = parsed['maximum-scale'];
-    if (maxScaleRaw !== undefined) {
+    if (
+      maxScaleRaw !== undefined &&
+      maxScaleRaw !== 'device-width' &&
+      maxScaleRaw !== 'device-height'
+    ) {
       const maxScale = parseFloat(maxScaleRaw);
-      if (!Number.isNaN(maxScale) && maxScale < 2) {
+      if (Number.isNaN(maxScale) || (maxScale >= 0 && maxScale < 2)) {
         reasons.push('maximum-scale=' + maxScaleRaw);
       }
     }
