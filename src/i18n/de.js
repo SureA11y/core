@@ -653,12 +653,17 @@ module.exports = {
     'Ersetzen Sie diese abstrakte Rolle durch eine konkrete Rolle, die zu dem Widget/der Struktur passt.',
 
   ariaDeprecatedRole_title:
-    'Das role-Attribut darf keine veraltete oder für Autoren untersagte ARIA-Rolle verwenden',
+    'Das role-Attribut sollte keine veraltete oder für Autoren nicht empfohlene ARIA-Rolle verwenden',
   ariaDeprecatedRole_description:
-    'Prüft, ob ein explizites role=""-Attribut keine durch die WAI-ARIA-Spezifikation als veraltet markierte Rolle verwendet, und keine Rolle, die ausschließlich für die interne Verwendung durch den User-Agent reserviert ist (z. B. role="generic").',
+    'Prüft, ob ein explizites role=""-Attribut keine durch die WAI-ARIA-Spezifikation als veraltet markierte Rolle verwendet, und keine Rolle, die für die interne Verwendung durch den User-Agent reserviert ist (z. B. role="generic").',
   ariaDeprecatedRole_summary_fail:
     'Dieses Element verwendet role="{{role}}", was Autoren nicht explizit deklarieren dürfen.',
   ariaDeprecatedRole_hint_fail: '{{guidance}}',
+  ariaDeprecatedRole_summary_cantTell:
+    'Dieses Element verwendet role="{{role}}", die in WAI-ARIA veraltet ist (weiterhin gültig, aber nicht empfohlen).',
+  ariaDeprecatedRole_summary_cantTell_discouraged:
+    'Dieses Element verwendet role="{{role}}", die User-Agents vorbehalten ist (weiterhin gültig, aber nicht empfohlen).',
+  ariaDeprecatedRole_hint_cantTell: '{{guidance}}',
 
   ariaValidAttr_title: 'aria-*-Attribute müssen echte, definierte ARIA-Attribute sein',
   ariaValidAttr_description:
@@ -682,6 +687,10 @@ module.exports = {
   ariaAllowedAttr_summary_fail: '{{attr}} ist bei role="{{role}}" nicht zulässig.',
   ariaAllowedAttr_hint_fail:
     'Entfernen Sie dieses Attribut, oder verwenden Sie eine Rolle, die es unterstützt.',
+  ariaAllowedAttr_summary_cantTell:
+    '{{attr}} ist bei role="{{role}}" veraltet (weiterhin zulässig, aber nicht empfohlen).',
+  ariaAllowedAttr_hint_cantTell:
+    'Dieses Attribut wurde in ARIA 1.2 aus dem globalen Satz entfernt; entfernen Sie es oder verwenden Sie eine Rolle, die es unterstützt, da eine künftige ARIA-Version es möglicherweise nicht mehr zulässt.',
 
   ariaProhibitedAttr_title:
     'ARIA-Benennungsattribute dürfen nicht bei Rollen verwendet werden, die sie untersagen',

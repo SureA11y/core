@@ -1,6 +1,6 @@
 # Fixture Index
 
-Generated: 2026-08-13T20:16:12.690Z
+Generated: 2026-08-13T20:18:15.104Z
 
 Every implemented rule should have a `tests/fixtures/<slug>-all-scenarios.html` scenario page (numbered `case_NN` blocks, each marked PASS/FAIL/CANTTELL in its `.case-title`) and a "fixture coverage" test in its `tests/engine-checks/**/<rule>.test.js` asserting the exact expected ids. See `docs/RULE_AUTHORING.md`.
 
@@ -25,7 +25,7 @@ None — every rule has a fixture.
 | aria-braille-equivalent | automatic | `tests/fixtures/aria-braille-equivalent-all-scenarios.html` | 6 | 3 | 2 | 0 | 1 |
 | aria-checked-state-mismatch | manual | `tests/fixtures/aria-checked-state-mismatch-all-scenarios.html` | 10 | 3 | 0 | 5 | 2 |
 | aria-conditional-attr | automatic | `tests/fixtures/aria-conditional-attr-all-scenarios.html` | 6 | 3 | 2 | 0 | 1 |
-| aria-deprecated-role | automatic | `tests/fixtures/aria-deprecated-role-all-scenarios.html` | 4 | 1 | 2 | 0 | 1 |
+| aria-deprecated-role | automatic | `tests/fixtures/aria-deprecated-role-all-scenarios.html` | 4 | 1 | 0 | 2 | 1 |
 | aria-hidden-body | automatic | `tests/fixtures/aria-hidden-body-all-scenarios.html` | 1 | 0 | 1 | 0 | 0 |
 | aria-hidden-focus | automatic | `tests/fixtures/aria-hidden-focus-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
 | aria-prohibited-attr | automatic | `tests/fixtures/aria-prohibited-attr-all-scenarios.html` | 15 | 2 | 9 | 0 | 4 |
@@ -63,7 +63,7 @@ None — every rule has a fixture.
 | focus-order-semantics | manual | `tests/fixtures/focus-order-semantics-all-scenarios.html` | 6 | 0 | 0 | 2 | 4 |
 | form-control-programmatic-label-present | automatic | `tests/fixtures/form-control-programmatic-label-all-scenarios.html` | 41 | 13 | 10 | 0 | 18 |
 | form-control-programmatic-label-quality | manual | `tests/fixtures/form-control-programmatic-label-quality-manual-all-scenarios.html` | 14 | 0 | 0 | 0 | 14 |
-| form-control-single-label | automatic | `tests/fixtures/form-control-single-label-all-scenarios.html` | 7 | 4 | 2 | 0 | 1 |
+| form-control-single-label | automatic | `tests/fixtures/form-control-single-label-all-scenarios.html` | 9 | 5 | 2 | 1 | 1 |
 | heading-order | manual | `tests/fixtures/heading-order-all-scenarios.html` | 1 | 0 | 0 | 1 | 0 |
 | html-lang-attr-present | automatic | `tests/fixtures/language-page-present-all-scenarios.html` | 1 | 0 | 1 | 0 | 0 |
 | html-xml-lang-mismatch | automatic | `tests/fixtures/html-xml-lang-mismatch-all-scenarios.html` | 1 | 0 | 1 | 0 | 0 |

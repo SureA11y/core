@@ -635,12 +635,17 @@ module.exports = {
     'Replace this abstract role with a concrete role appropriate for the widget/structure.',
 
   ariaDeprecatedRole_title:
-    'role attribute must not use a deprecated or author-prohibited ARIA role',
+    'role attribute should not use a deprecated or author-discouraged ARIA role',
   ariaDeprecatedRole_description:
-    'Checks that an explicit role="" attribute does not use a role deprecated by the WAI-ARIA specification, or one reserved for user-agent-internal use only (e.g. role="generic").',
+    'Checks that an explicit role="" attribute does not use a role deprecated by the WAI-ARIA specification, or one reserved for user-agent-internal use (e.g. role="generic").',
   ariaDeprecatedRole_summary_fail:
     'This element uses role="{{role}}", which authors must not explicitly declare.',
   ariaDeprecatedRole_hint_fail: '{{guidance}}',
+  ariaDeprecatedRole_summary_cantTell:
+    'This element uses role="{{role}}", which is deprecated in WAI-ARIA (still valid, but discouraged).',
+  ariaDeprecatedRole_summary_cantTell_discouraged:
+    'This element uses role="{{role}}", which is reserved for user agents (still valid, but discouraged).',
+  ariaDeprecatedRole_hint_cantTell: '{{guidance}}',
 
   ariaValidAttr_title: 'aria-* attributes must be real, defined ARIA attributes',
   ariaValidAttr_description:
@@ -661,6 +666,10 @@ module.exports = {
     'Checks that every recognized aria-* attribute present on an element with an explicit role is either globally supported or supported by that role.',
   ariaAllowedAttr_summary_fail: '{{attr}} is not permitted on role="{{role}}".',
   ariaAllowedAttr_hint_fail: 'Remove this attribute, or use a role that supports it.',
+  ariaAllowedAttr_summary_cantTell:
+    '{{attr}} is deprecated on role="{{role}}" (still allowed, but discouraged).',
+  ariaAllowedAttr_hint_cantTell:
+    'This attribute was removed from the ARIA global set in 1.2; remove it or use a role that supports it, as a future ARIA version may disallow it.',
 
   ariaProhibitedAttr_title: 'ARIA naming attributes must not be used on roles that prohibit them',
   ariaProhibitedAttr_description:

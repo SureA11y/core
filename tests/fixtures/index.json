@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-13T20:16:12.690Z",
+  "generatedAt": "2026-08-13T20:18:15.104Z",
   "summary": {
     "total": 125,
     "withFixture": 125,
@@ -177,7 +177,7 @@
     },
     {
       "ruleId": "aria-deprecated-role",
-      "title": "role attribute must not use a deprecated or author-prohibited ARIA role",
+      "title": "role attribute should not use a deprecated or author-discouraged ARIA role",
       "type": "automatic",
       "wcagSc": [
         "4.1.2"
@@ -189,8 +189,8 @@
       "totalCases": 4,
       "caseCounts": {
         "PASS": 1,
-        "FAIL": 2,
-        "CANTTELL": 0,
+        "FAIL": 0,
+        "CANTTELL": 2,
         "OTHER": 1
       }
     },
@@ -904,11 +904,11 @@
       "testFile": "tests/engine-checks/automatic/form-control-single-label.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/form-control-single-label-all-scenarios.html",
-      "totalCases": 7,
+      "totalCases": 9,
       "caseCounts": {
-        "PASS": 4,
+        "PASS": 5,
         "FAIL": 2,
-        "CANTTELL": 0,
+        "CANTTELL": 1,
         "OTHER": 1
       }
     },

@@ -163,21 +163,41 @@ function createAriaHelpers(opts, shared) {
   // </generated:aria-abstract-roles>
 
   // -------------------------------------------------------------------
-  // B) Valid, concrete (non-abstract) roles that authors must never
-  //    explicitly declare — either because WAI-ARIA has deprecated them
-  //    (a direct replacement exists) or because they are reserved for
-  //    user-agent-internal use only (not a spec deprecation, but the
-  //    same "valid token, prohibited for authors" shape). Flagged by
-  //    aria-deprecated-role, not aria-roles-valid (which only checks
-  //    existence/abstractness) — see DEPRECATED_ROLE_GUIDANCE below for
-  //    per-role, reason-accurate messaging.
+  // B) Valid, concrete (non-abstract) roles authors should not explicitly
+  //    declare — either because WAI-ARIA has deprecated them (a direct
+  //    replacement exists) or because they are reserved for
+  //    user-agent-internal use. Flagged by aria-deprecated-role, not
+  //    aria-roles-valid (which only checks existence/abstractness) — see
+  //    DEPRECATED_ROLE_GUIDANCE below for per-role, reason-accurate
+  //    messaging.
   // -------------------------------------------------------------------
+  // Deprecated but still VALID roles (SHOULD NOT, still conforming). Reported
+  // as cantTell so the author decides whether it matters to them.
   const DEPRECATED_ROLES = new Set([
-    'directory', // superseded by role="list"
-    // WAI-ARIA 1.2: "intended for use as the implicit role of generic
-    // elements in host languages for use by user agents only; not for
-    // use by developers." MDN: "It should not be used by web authors."
-    'generic'
+    'directory' // superseded by role="list"
+  ]);
+
+  // Valid roles reserved for user-agent-internal use, which ARIA states at
+  // SHOULD NOT strength — conforming, so reported as cantTell.
+  const AUTHOR_DISCOURAGED_ROLES = new Set([
+    'generic' // "primarily for implementors of user agents"
+  ]);
+
+  // Roles carrying an author MUST NOT, reported as fail. Empty under ARIA 1.2
+  // and 1.3, whose only author MUST NOT covers abstract roles — the concern of
+  // aria-roles-valid.
+  const AUTHOR_PROHIBITED_ROLES = new Set([]);
+
+  // Deprecated but still ALLOWED states/properties (SHOULD NOT, still
+  // conforming): the four ARIA 1.2 keeps in the global set as deprecated and
+  // marks "deprecated on this role" wherever a role does not support them.
+  // Reported as cantTell, not a not-allowed fail. Flat rather than per-role
+  // because the deprecation is uniform and no role prohibits any of the four.
+  const DEPRECATED_ATTRS = new Set([
+    'aria-disabled',
+    'aria-errormessage',
+    'aria-haspopup',
+    'aria-invalid'
   ]);
 
   const DEPRECATED_ROLE_GUIDANCE = {
@@ -852,6 +872,18 @@ function createAriaHelpers(opts, shared) {
     return DEPRECATED_ROLES.has(lower(role));
   }
 
+  function isAuthorDiscouragedRole(role) {
+    return AUTHOR_DISCOURAGED_ROLES.has(lower(role));
+  }
+
+  function isAuthorProhibitedRole(role) {
+    return AUTHOR_PROHIBITED_ROLES.has(lower(role));
+  }
+
+  function isDeprecatedAttr(attr /* , role */) {
+    return DEPRECATED_ATTRS.has(lower(attr));
+  }
+
   function isKnownRole(role) {
     const r = lower(role);
     return ABSTRACT_ROLES.has(r) || CONCRETE_ROLES.has(r);
@@ -1127,6 +1159,9 @@ function createAriaHelpers(opts, shared) {
     getAllRoleTokens,
     isAbstractRole,
     isDeprecatedRole,
+    isAuthorDiscouragedRole,
+    isAuthorProhibitedRole,
+    isDeprecatedAttr,
     getDeprecatedRoleGuidance,
     isKnownRole,
     isValidConcreteRole,
