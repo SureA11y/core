@@ -22,13 +22,44 @@ test(`${RULE_ID}: notApplicable when no <input type="image">`, () => {
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: pass when at least one applicable <input type="image"> exists and all have alt (alt may be empty)`, () => {
+test(`${RULE_ID}: pass when every applicable <input type="image"> has a non-empty name`, () => {
   const html = `<!doctype html><html><body>
     <input id="ok1" type="image" alt="Search" src="x.png">
-    <input id="ok2" type="image" alt="" src="y.png">
+    <input id="ok2" type="image" alt="" aria-label="Clear" src="y.png">
   </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: fail on alt="" with no other naming source`, () => {
+  const html = `<!doctype html><html><body><input id="e" type="image" alt="" src="x.png"></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'empty_alt');
+});
+
+test(`${RULE_ID}: alt="" is fine when the control is named elsewhere`, () => {
+  for (const markup of [
+    `<input type="image" src="x.png" alt="" aria-label="Search">`,
+    `<input type="image" src="x.png" alt="" title="Search">`
+  ]) {
+    const result = runa11yCoreOnHtml(`<!doctype html><html><body>${markup}</body></html>`, {
+      runOnly: [RULE_ID]
+    });
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
+test(`${RULE_ID}: exactly one rule reports an unnamed alt="" image button`, () => {
+  const html = `<!doctype html><html><body><input type="image" alt="" src="x.png"></body></html>`;
+  const result = runa11yCoreOnHtml(html, {
+    runOnly: [RULE_ID, 'input-image-alt-decorative']
+  });
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
+  assertRule(result, 'input-image-alt-decorative', 'notApplicable', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
 });
 
 test(`${RULE_ID}: pass when alt is entirely absent but a non-empty title attribute is present (same HTML-AAM fallback)`, () => {
@@ -85,10 +116,11 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/input-image-alt-present-all-s
 
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 8, maxOccurrences: 8 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 9, maxOccurrences: 9 });
 
   const expectedFailIds = [
     'input_image_case_01',
+    'input_image_case_03', // alt="" with no other naming source
     'input_image_case_10',
     'input_image_case_11',
     'input_image_case_12',
@@ -101,7 +133,6 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/input-image-alt-present-all-s
   const expectedNoOccIds = [
     'input_image_case_02',
     'input_image_case_04', // aria-hidden: outside the accessibility tree
-    'input_image_case_03',
     'input_image_case_05',
     'input_image_case_06',
     'input_image_case_07',
@@ -245,8 +276,9 @@ test(`${RULE_ID}: a name that merely starts with the default word passes`, () =>
   }
 });
 
-test(`${RULE_ID}: decorative alt="" is not treated as a default name`, () => {
+test(`${RULE_ID}: alt="" fails as an empty name, not as a default name`, () => {
   const html = `<!doctype html><html><body><input type="image" src="x.png" alt=""></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'empty_alt');
 });

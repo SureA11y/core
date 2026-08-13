@@ -26,6 +26,10 @@ module.exports = {
     'Der zugaengliche Name ist der Browser-Standard fuer eine Bildschaltflaeche und sagt nichts aus.',
   inputImage_altPresent_hint_defaultName:
     'Ersetzen Sie ihn durch Text, der die Aktion beschreibt, zum Beispiel "Suchen".',
+  inputImage_altPresent_summary_emptyAlt:
+    'Ein leeres alt="" auf <input type="image"> laesst das Steuerelement ohne Namen.',
+  inputImage_altPresent_hint_emptyAlt:
+    'Beschreiben Sie die Aktion in alt, oder benennen Sie das Steuerelement mit aria-label oder aria-labelledby.',
   ariaHidden_programmaticFocus_review_title: 'Programmatischen Fokus bei aria-hidden überprüfen',
   ariaHidden_programmaticFocus_review_description:
     'Markiert Elemente, die aria-hidden sind, aber aufgrund von programmatischem Fokus (z. B. tabindex < 0) als geeignet gelten. Überprüfen Sie die beabsichtigte Fokusverwaltung und die Sichtbarkeit für assistive Technologien.',

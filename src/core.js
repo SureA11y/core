@@ -7310,6 +7310,8 @@ const I18N = {
     "inputImage_altPresent_hint_fail": "Fügen Sie ein alt-Attribut hinzu (verwenden Sie alt=\"\" nur, wenn ein separater zugänglicher Name bereitgestellt wird).",
     "inputImage_altPresent_summary_defaultName": "Der zugaengliche Name ist der Browser-Standard fuer eine Bildschaltflaeche und sagt nichts aus.",
     "inputImage_altPresent_hint_defaultName": "Ersetzen Sie ihn durch Text, der die Aktion beschreibt, zum Beispiel \"Suchen\".",
+    "inputImage_altPresent_summary_emptyAlt": "Ein leeres alt=\"\" auf <input type=\"image\"> laesst das Steuerelement ohne Namen.",
+    "inputImage_altPresent_hint_emptyAlt": "Beschreiben Sie die Aktion in alt, oder benennen Sie das Steuerelement mit aria-label oder aria-labelledby.",
     "ariaHidden_programmaticFocus_review_title": "Programmatischen Fokus bei aria-hidden überprüfen",
     "ariaHidden_programmaticFocus_review_description": "Markiert Elemente, die aria-hidden sind, aber aufgrund von programmatischem Fokus (z. B. tabindex < 0) als geeignet gelten. Überprüfen Sie die beabsichtigte Fokusverwaltung und die Sichtbarkeit für assistive Technologien.",
     "ariaHidden_programmaticFocus_review_summary": "Überprüfung: Ein aria-hidden-Element ist programmatisch fokussierbar.",
@@ -7928,6 +7930,8 @@ const I18N = {
     "inputImage_altPresent_hint_fail": "Add an alt attribute (use alt=\"\" only when a separate accessible name is provided).",
     "inputImage_altPresent_summary_defaultName": "Accessible name is the browser default for an image button, which conveys nothing.",
     "inputImage_altPresent_hint_defaultName": "Replace it with text describing what the button does, for example \"Search\".",
+    "inputImage_altPresent_summary_emptyAlt": "Empty alt=\"\" on <input type=\"image\"> leaves the control unnamed.",
+    "inputImage_altPresent_hint_emptyAlt": "Describe the action in alt, or name the control with aria-label or aria-labelledby.",
     "ariaHidden_programmaticFocus_review_title": "Review aria-hidden programmatic focus",
     "ariaHidden_programmaticFocus_review_description": "Flags elements that are aria-hidden but considered eligible due to programmatic focus (e.g., tabindex < 0). Verify intended focus management and assistive technology exposure.",
     "ariaHidden_programmaticFocus_review_summary": "Review: aria-hidden element is programmatically focusable.",
@@ -8546,6 +8550,8 @@ const I18N = {
     "inputImage_altPresent_hint_fail": "Agregar un atributo alt (usar alt=\"\" solo cuando se proporcione un nombre accesible por separado).",
     "inputImage_altPresent_summary_defaultName": "El nombre accesible es el predeterminado del navegador para un boton de imagen y no aporta informacion.",
     "inputImage_altPresent_hint_defaultName": "Sustituyelo por un texto que describa la accion del boton, por ejemplo \"Buscar\".",
+    "inputImage_altPresent_summary_emptyAlt": "Un alt=\"\" vacio en <input type=\"image\"> deja el control sin nombre.",
+    "inputImage_altPresent_hint_emptyAlt": "Describe la accion en alt, o nombra el control con aria-label o aria-labelledby.",
     "ariaHidden_programmaticFocus_review_title": "Revisar el foco programático en aria-hidden",
     "ariaHidden_programmaticFocus_review_description": "Señala elementos aria-hidden considerados elegibles debido a un foco programático (por ejemplo, tabindex < 0). Verificar que la gestión del foco es intencionada y la exposición a las tecnologías de asistencia.",
     "ariaHidden_programmaticFocus_review_summary": "Revisión: un elemento aria-hidden es enfocable de forma programática.",
@@ -9164,6 +9170,8 @@ const I18N = {
     "inputImage_altPresent_hint_fail": "Ajoutez un attribut alt (utilisez alt=\"\" uniquement lorsqu’un nom accessible séparé est fourni).",
     "inputImage_altPresent_summary_defaultName": "Le nom accessible est celui par defaut du navigateur pour un bouton image et n'apporte aucune information.",
     "inputImage_altPresent_hint_defaultName": "Remplacez-le par un texte decrivant l action du bouton, par exemple \"Rechercher\".",
+    "inputImage_altPresent_summary_emptyAlt": "Un alt=\"\" vide sur <input type=\"image\"> laisse le controle sans nom.",
+    "inputImage_altPresent_hint_emptyAlt": "Decrivez l action dans alt, ou nommez le controle avec aria-label ou aria-labelledby.",
     "ariaHidden_programmaticFocus_review_title": "Vérifier le focus programmatique avec aria-hidden",
     "ariaHidden_programmaticFocus_review_description": "Signale les éléments aria-hidden considérés comme éligibles uniquement via un focus programmatique (ex. tabindex < 0). Vérifiez l’intention de gestion du focus et l’exposition aux technologies d’assistance.",
     "ariaHidden_programmaticFocus_review_summary": "Vérification : un élément aria-hidden est focusable de façon programmatique.",
@@ -35544,6 +35552,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const isAccTreeEligible =
     helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
 
+  const getAriaNameInfo =
+    helpers && typeof helpers.getAriaNameInfo === 'function' ? helpers.getAriaNameInfo : null;
+
   const getFocusableInfo =
     helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
 
@@ -35578,6 +35589,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         !Number.isNaN(Number(String(tabindex).trim()));
     }
     return !focusable;
+  }
+
+  // alt="" plus a name from aria-label/aria-labelledby/title is the judgement
+  // call this rule reviews. alt="" with no other source leaves the control
+  // unnamed, which input-image-alt-present fails outright.
+  function hasNameFromOtherSource(el) {
+    if (getAriaNameInfo) {
+      try {
+        const aria = getAriaNameInfo(el, ctx);
+        if (aria && aria.present && String(aria.value || '').trim()) return true;
+      } catch {
+        // fall through to title
+      }
+    }
+    try {
+      const title = el.getAttribute('title');
+      return title != null && String(title).trim() !== '';
+    } catch {
+      return false;
+    }
   }
 
   const els = (() => {
@@ -35616,6 +35647,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     // Rule-specific applicability (only elements that already have a text alternative mechanism)
     if (!(el.getAttribute('alt') != null && String(el.getAttribute('alt')).trim() === '')) continue;
+    if (!hasNameFromOtherSource(el)) continue;
 
     applicableCount += 1;
 
@@ -35768,49 +35800,44 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       continue;
     }
 
-    const hasAlt = el.getAttribute('alt') !== null;
-    if (hasAlt) continue;
+    // effectiveName already covers the naming sources HTML-AAM allows here,
+    // in order: aria-label/aria-labelledby, then alt, then title.
+    if (effectiveName) continue;
 
-    // aria-label / aria-labelledby is also a valid, standards-recognized
-    // text-alternative mechanism for <input type="image"> (HTML-AAM
-    // accessible name computation includes ARIA naming before falling
-    // back to alt).
-    if (getAriaNameInfo) {
-      let ariaName;
-      try {
-        ariaName = getAriaNameInfo(el, ctx);
-      } catch {
-        ariaName = null;
-      }
-      if (ariaName && ariaName.present) continue;
-    }
-
-    // A non-empty title attribute is HTML-AAM's own next fallback naming
-    // source once alt is entirely absent. Same gap img-alt-present handles
-    // for <img title="..."> with no alt.
-    const titleRaw = (() => {
-      try {
-        return el.getAttribute('title');
-      } catch {
-        return null;
-      }
-    })();
-    if (titleRaw !== null && String(titleRaw).trim()) continue;
+    // An image button is a control, so an empty name fails whether alt is
+    // absent or present-but-empty. alt="" marks a decorative image, and an
+    // image button is never decorative.
+    const emptyAlt = el.getAttribute('alt') !== null;
 
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
-    const baseOccurrence = {
-      summary: 'Missing alt attribute on <input type="image">.',
-      hint: 'Add an alt attribute (use alt="" only when a separate accessible name is provided).',
-      i18n: {
-        summaryKey: 'inputImage_altPresent_summary_fail',
-        hintKey: 'inputImage_altPresent_hint_fail',
-        params: { element: 'input[type=image]' }
-      },
-      data: {
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    };
+    const baseOccurrence = emptyAlt
+      ? {
+          summary: 'Empty alt="" on <input type="image"> leaves the control unnamed.',
+          hint: 'Describe the action in alt, or name the control with aria-label or aria-labelledby.',
+          i18n: {
+            summaryKey: 'inputImage_altPresent_summary_emptyAlt',
+            hintKey: 'inputImage_altPresent_hint_emptyAlt',
+            params: { element: 'input[type=image]' }
+          },
+          data: {
+            visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
+            details: { reasonCode: 'empty_alt' }
+          }
+        }
+      : {
+          summary: 'Missing alt attribute on <input type="image">.',
+          hint: 'Add an alt attribute (use alt="" only when a separate accessible name is provided).',
+          i18n: {
+            summaryKey: 'inputImage_altPresent_summary_fail',
+            hintKey: 'inputImage_altPresent_hint_fail',
+            params: { element: 'input[type=image]' }
+          },
+          data: {
+            visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
+            details: { reasonCode: 'missing_alt' }
+          }
+        };
 
     if (helpers && typeof helpers.reportOccurrence === 'function') {
       occurrences.push(helpers.reportOccurrence(el, baseOccurrence));
@@ -45428,6 +45455,8 @@ const I18N = {
     "inputImage_altPresent_hint_fail": "Fügen Sie ein alt-Attribut hinzu (verwenden Sie alt=\"\" nur, wenn ein separater zugänglicher Name bereitgestellt wird).",
     "inputImage_altPresent_summary_defaultName": "Der zugaengliche Name ist der Browser-Standard fuer eine Bildschaltflaeche und sagt nichts aus.",
     "inputImage_altPresent_hint_defaultName": "Ersetzen Sie ihn durch Text, der die Aktion beschreibt, zum Beispiel \"Suchen\".",
+    "inputImage_altPresent_summary_emptyAlt": "Ein leeres alt=\"\" auf <input type=\"image\"> laesst das Steuerelement ohne Namen.",
+    "inputImage_altPresent_hint_emptyAlt": "Beschreiben Sie die Aktion in alt, oder benennen Sie das Steuerelement mit aria-label oder aria-labelledby.",
     "ariaHidden_programmaticFocus_review_title": "Programmatischen Fokus bei aria-hidden überprüfen",
     "ariaHidden_programmaticFocus_review_description": "Markiert Elemente, die aria-hidden sind, aber aufgrund von programmatischem Fokus (z. B. tabindex < 0) als geeignet gelten. Überprüfen Sie die beabsichtigte Fokusverwaltung und die Sichtbarkeit für assistive Technologien.",
     "ariaHidden_programmaticFocus_review_summary": "Überprüfung: Ein aria-hidden-Element ist programmatisch fokussierbar.",
@@ -46046,6 +46075,8 @@ const I18N = {
     "inputImage_altPresent_hint_fail": "Add an alt attribute (use alt=\"\" only when a separate accessible name is provided).",
     "inputImage_altPresent_summary_defaultName": "Accessible name is the browser default for an image button, which conveys nothing.",
     "inputImage_altPresent_hint_defaultName": "Replace it with text describing what the button does, for example \"Search\".",
+    "inputImage_altPresent_summary_emptyAlt": "Empty alt=\"\" on <input type=\"image\"> leaves the control unnamed.",
+    "inputImage_altPresent_hint_emptyAlt": "Describe the action in alt, or name the control with aria-label or aria-labelledby.",
     "ariaHidden_programmaticFocus_review_title": "Review aria-hidden programmatic focus",
     "ariaHidden_programmaticFocus_review_description": "Flags elements that are aria-hidden but considered eligible due to programmatic focus (e.g., tabindex < 0). Verify intended focus management and assistive technology exposure.",
     "ariaHidden_programmaticFocus_review_summary": "Review: aria-hidden element is programmatically focusable.",
@@ -46664,6 +46695,8 @@ const I18N = {
     "inputImage_altPresent_hint_fail": "Agregar un atributo alt (usar alt=\"\" solo cuando se proporcione un nombre accesible por separado).",
     "inputImage_altPresent_summary_defaultName": "El nombre accesible es el predeterminado del navegador para un boton de imagen y no aporta informacion.",
     "inputImage_altPresent_hint_defaultName": "Sustituyelo por un texto que describa la accion del boton, por ejemplo \"Buscar\".",
+    "inputImage_altPresent_summary_emptyAlt": "Un alt=\"\" vacio en <input type=\"image\"> deja el control sin nombre.",
+    "inputImage_altPresent_hint_emptyAlt": "Describe la accion en alt, o nombra el control con aria-label o aria-labelledby.",
     "ariaHidden_programmaticFocus_review_title": "Revisar el foco programático en aria-hidden",
     "ariaHidden_programmaticFocus_review_description": "Señala elementos aria-hidden considerados elegibles debido a un foco programático (por ejemplo, tabindex < 0). Verificar que la gestión del foco es intencionada y la exposición a las tecnologías de asistencia.",
     "ariaHidden_programmaticFocus_review_summary": "Revisión: un elemento aria-hidden es enfocable de forma programática.",
@@ -47282,6 +47315,8 @@ const I18N = {
     "inputImage_altPresent_hint_fail": "Ajoutez un attribut alt (utilisez alt=\"\" uniquement lorsqu’un nom accessible séparé est fourni).",
     "inputImage_altPresent_summary_defaultName": "Le nom accessible est celui par defaut du navigateur pour un bouton image et n'apporte aucune information.",
     "inputImage_altPresent_hint_defaultName": "Remplacez-le par un texte decrivant l action du bouton, par exemple \"Rechercher\".",
+    "inputImage_altPresent_summary_emptyAlt": "Un alt=\"\" vide sur <input type=\"image\"> laisse le controle sans nom.",
+    "inputImage_altPresent_hint_emptyAlt": "Decrivez l action dans alt, ou nommez le controle avec aria-label ou aria-labelledby.",
     "ariaHidden_programmaticFocus_review_title": "Vérifier le focus programmatique avec aria-hidden",
     "ariaHidden_programmaticFocus_review_description": "Signale les éléments aria-hidden considérés comme éligibles uniquement via un focus programmatique (ex. tabindex < 0). Vérifiez l’intention de gestion du focus et l’exposition aux technologies d’assistance.",
     "ariaHidden_programmaticFocus_review_summary": "Vérification : un élément aria-hidden est focusable de façon programmatique.",
@@ -73617,6 +73652,9 @@ const __a11yCoreCrossFrameApi = (function () {
   const isAccTreeEligible =
     helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
 
+  const getAriaNameInfo =
+    helpers && typeof helpers.getAriaNameInfo === 'function' ? helpers.getAriaNameInfo : null;
+
   const getFocusableInfo =
     helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
 
@@ -73651,6 +73689,26 @@ const __a11yCoreCrossFrameApi = (function () {
         !Number.isNaN(Number(String(tabindex).trim()));
     }
     return !focusable;
+  }
+
+  // alt="" plus a name from aria-label/aria-labelledby/title is the judgement
+  // call this rule reviews. alt="" with no other source leaves the control
+  // unnamed, which input-image-alt-present fails outright.
+  function hasNameFromOtherSource(el) {
+    if (getAriaNameInfo) {
+      try {
+        const aria = getAriaNameInfo(el, ctx);
+        if (aria && aria.present && String(aria.value || '').trim()) return true;
+      } catch {
+        // fall through to title
+      }
+    }
+    try {
+      const title = el.getAttribute('title');
+      return title != null && String(title).trim() !== '';
+    } catch {
+      return false;
+    }
   }
 
   const els = (() => {
@@ -73689,6 +73747,7 @@ const __a11yCoreCrossFrameApi = (function () {
 
     // Rule-specific applicability (only elements that already have a text alternative mechanism)
     if (!(el.getAttribute('alt') != null && String(el.getAttribute('alt')).trim() === '')) continue;
+    if (!hasNameFromOtherSource(el)) continue;
 
     applicableCount += 1;
 
@@ -73841,49 +73900,44 @@ const __a11yCoreCrossFrameApi = (function () {
       continue;
     }
 
-    const hasAlt = el.getAttribute('alt') !== null;
-    if (hasAlt) continue;
+    // effectiveName already covers the naming sources HTML-AAM allows here,
+    // in order: aria-label/aria-labelledby, then alt, then title.
+    if (effectiveName) continue;
 
-    // aria-label / aria-labelledby is also a valid, standards-recognized
-    // text-alternative mechanism for <input type="image"> (HTML-AAM
-    // accessible name computation includes ARIA naming before falling
-    // back to alt).
-    if (getAriaNameInfo) {
-      let ariaName;
-      try {
-        ariaName = getAriaNameInfo(el, ctx);
-      } catch {
-        ariaName = null;
-      }
-      if (ariaName && ariaName.present) continue;
-    }
-
-    // A non-empty title attribute is HTML-AAM's own next fallback naming
-    // source once alt is entirely absent. Same gap img-alt-present handles
-    // for <img title="..."> with no alt.
-    const titleRaw = (() => {
-      try {
-        return el.getAttribute('title');
-      } catch {
-        return null;
-      }
-    })();
-    if (titleRaw !== null && String(titleRaw).trim()) continue;
+    // An image button is a control, so an empty name fails whether alt is
+    // absent or present-but-empty. alt="" marks a decorative image, and an
+    // image button is never decorative.
+    const emptyAlt = el.getAttribute('alt') !== null;
 
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
-    const baseOccurrence = {
-      summary: 'Missing alt attribute on <input type="image">.',
-      hint: 'Add an alt attribute (use alt="" only when a separate accessible name is provided).',
-      i18n: {
-        summaryKey: 'inputImage_altPresent_summary_fail',
-        hintKey: 'inputImage_altPresent_hint_fail',
-        params: { element: 'input[type=image]' }
-      },
-      data: {
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    };
+    const baseOccurrence = emptyAlt
+      ? {
+          summary: 'Empty alt="" on <input type="image"> leaves the control unnamed.',
+          hint: 'Describe the action in alt, or name the control with aria-label or aria-labelledby.',
+          i18n: {
+            summaryKey: 'inputImage_altPresent_summary_emptyAlt',
+            hintKey: 'inputImage_altPresent_hint_emptyAlt',
+            params: { element: 'input[type=image]' }
+          },
+          data: {
+            visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
+            details: { reasonCode: 'empty_alt' }
+          }
+        }
+      : {
+          summary: 'Missing alt attribute on <input type="image">.',
+          hint: 'Add an alt attribute (use alt="" only when a separate accessible name is provided).',
+          i18n: {
+            summaryKey: 'inputImage_altPresent_summary_fail',
+            hintKey: 'inputImage_altPresent_hint_fail',
+            params: { element: 'input[type=image]' }
+          },
+          data: {
+            visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
+            details: { reasonCode: 'missing_alt' }
+          }
+        };
 
     if (helpers && typeof helpers.reportOccurrence === 'function') {
       occurrences.push(helpers.reportOccurrence(el, baseOccurrence));
@@ -83501,6 +83555,8 @@ const I18N = {
     "inputImage_altPresent_hint_fail": "Fügen Sie ein alt-Attribut hinzu (verwenden Sie alt=\"\" nur, wenn ein separater zugänglicher Name bereitgestellt wird).",
     "inputImage_altPresent_summary_defaultName": "Der zugaengliche Name ist der Browser-Standard fuer eine Bildschaltflaeche und sagt nichts aus.",
     "inputImage_altPresent_hint_defaultName": "Ersetzen Sie ihn durch Text, der die Aktion beschreibt, zum Beispiel \"Suchen\".",
+    "inputImage_altPresent_summary_emptyAlt": "Ein leeres alt=\"\" auf <input type=\"image\"> laesst das Steuerelement ohne Namen.",
+    "inputImage_altPresent_hint_emptyAlt": "Beschreiben Sie die Aktion in alt, oder benennen Sie das Steuerelement mit aria-label oder aria-labelledby.",
     "ariaHidden_programmaticFocus_review_title": "Programmatischen Fokus bei aria-hidden überprüfen",
     "ariaHidden_programmaticFocus_review_description": "Markiert Elemente, die aria-hidden sind, aber aufgrund von programmatischem Fokus (z. B. tabindex < 0) als geeignet gelten. Überprüfen Sie die beabsichtigte Fokusverwaltung und die Sichtbarkeit für assistive Technologien.",
     "ariaHidden_programmaticFocus_review_summary": "Überprüfung: Ein aria-hidden-Element ist programmatisch fokussierbar.",
@@ -84119,6 +84175,8 @@ const I18N = {
     "inputImage_altPresent_hint_fail": "Add an alt attribute (use alt=\"\" only when a separate accessible name is provided).",
     "inputImage_altPresent_summary_defaultName": "Accessible name is the browser default for an image button, which conveys nothing.",
     "inputImage_altPresent_hint_defaultName": "Replace it with text describing what the button does, for example \"Search\".",
+    "inputImage_altPresent_summary_emptyAlt": "Empty alt=\"\" on <input type=\"image\"> leaves the control unnamed.",
+    "inputImage_altPresent_hint_emptyAlt": "Describe the action in alt, or name the control with aria-label or aria-labelledby.",
     "ariaHidden_programmaticFocus_review_title": "Review aria-hidden programmatic focus",
     "ariaHidden_programmaticFocus_review_description": "Flags elements that are aria-hidden but considered eligible due to programmatic focus (e.g., tabindex < 0). Verify intended focus management and assistive technology exposure.",
     "ariaHidden_programmaticFocus_review_summary": "Review: aria-hidden element is programmatically focusable.",
@@ -84737,6 +84795,8 @@ const I18N = {
     "inputImage_altPresent_hint_fail": "Agregar un atributo alt (usar alt=\"\" solo cuando se proporcione un nombre accesible por separado).",
     "inputImage_altPresent_summary_defaultName": "El nombre accesible es el predeterminado del navegador para un boton de imagen y no aporta informacion.",
     "inputImage_altPresent_hint_defaultName": "Sustituyelo por un texto que describa la accion del boton, por ejemplo \"Buscar\".",
+    "inputImage_altPresent_summary_emptyAlt": "Un alt=\"\" vacio en <input type=\"image\"> deja el control sin nombre.",
+    "inputImage_altPresent_hint_emptyAlt": "Describe la accion en alt, o nombra el control con aria-label o aria-labelledby.",
     "ariaHidden_programmaticFocus_review_title": "Revisar el foco programático en aria-hidden",
     "ariaHidden_programmaticFocus_review_description": "Señala elementos aria-hidden considerados elegibles debido a un foco programático (por ejemplo, tabindex < 0). Verificar que la gestión del foco es intencionada y la exposición a las tecnologías de asistencia.",
     "ariaHidden_programmaticFocus_review_summary": "Revisión: un elemento aria-hidden es enfocable de forma programática.",
@@ -85355,6 +85415,8 @@ const I18N = {
     "inputImage_altPresent_hint_fail": "Ajoutez un attribut alt (utilisez alt=\"\" uniquement lorsqu’un nom accessible séparé est fourni).",
     "inputImage_altPresent_summary_defaultName": "Le nom accessible est celui par defaut du navigateur pour un bouton image et n'apporte aucune information.",
     "inputImage_altPresent_hint_defaultName": "Remplacez-le par un texte decrivant l action du bouton, par exemple \"Rechercher\".",
+    "inputImage_altPresent_summary_emptyAlt": "Un alt=\"\" vide sur <input type=\"image\"> laisse le controle sans nom.",
+    "inputImage_altPresent_hint_emptyAlt": "Decrivez l action dans alt, ou nommez le controle avec aria-label ou aria-labelledby.",
     "ariaHidden_programmaticFocus_review_title": "Vérifier le focus programmatique avec aria-hidden",
     "ariaHidden_programmaticFocus_review_description": "Signale les éléments aria-hidden considérés comme éligibles uniquement via un focus programmatique (ex. tabindex < 0). Vérifiez l’intention de gestion du focus et l’exposition aux technologies d’assistance.",
     "ariaHidden_programmaticFocus_review_summary": "Vérification : un élément aria-hidden est focusable de façon programmatique.",
