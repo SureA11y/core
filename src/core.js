@@ -11835,6 +11835,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   // -------------------------------------------------------------------
   // A) Abstract roles — MUST NOT be used directly in a role="" attribute.
   // -------------------------------------------------------------------
+  // <generated:aria-abstract-roles>
   const ABSTRACT_ROLES = new Set([
     'command',
     'composite',
@@ -11849,6 +11850,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     'widget',
     'window'
   ]);
+  // </generated:aria-abstract-roles>
 
   // -------------------------------------------------------------------
   // B) Valid, concrete (non-abstract) roles that authors must never
@@ -11891,103 +11893,140 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   //    Digital Publishing WAI-ARIA (doc-abstract etc.) is a separate
   //    module, deliberately left out of scope for now.
   // -------------------------------------------------------------------
+  // <generated:aria-concrete-roles>
   const CONCRETE_ROLES = new Set([
-    // WAI-ARIA Graphics Module 1.0 (see comment above)
-    'graphics-document',
-    'graphics-object',
-    'graphics-symbol',
-    // Live region / window roles
     'alert',
     'alertdialog',
-    'dialog',
-    'log',
-    'marquee',
-    'status',
-    'timer',
-    // Landmark roles
-    'banner',
-    'complementary',
-    'contentinfo',
-    'form',
-    'main',
-    'navigation',
-    'region',
-    'search',
-    // Widget roles (leaf)
-    'button',
-    'checkbox',
-    'gridcell',
-    'link',
-    'menuitem',
-    'menuitemcheckbox',
-    'menuitemradio',
-    'option',
-    'progressbar',
-    'radio',
-    'scrollbar',
-    'searchbox',
-    'separator',
-    'slider',
-    'spinbutton',
-    'switch',
-    'tab',
-    'tabpanel',
-    'textbox',
-    'treeitem',
-    'tooltip',
-    // Composite widget roles
-    'combobox',
-    'grid',
-    'listbox',
-    'menu',
-    'menubar',
-    'radiogroup',
-    'tablist',
-    'tree',
-    'treegrid',
-    // Document structure roles
     'application',
     'article',
+    'banner',
     'blockquote',
+    'button',
     'caption',
     'cell',
+    'checkbox',
     'code',
     'columnheader',
+    'combobox',
     'comment',
+    'complementary',
+    'contentinfo',
     'definition',
     'deletion',
+    'dialog',
     'directory',
+    'doc-abstract',
+    'doc-acknowledgments',
+    'doc-afterword',
+    'doc-appendix',
+    'doc-backlink',
+    'doc-biblioentry',
+    'doc-bibliography',
+    'doc-biblioref',
+    'doc-chapter',
+    'doc-colophon',
+    'doc-conclusion',
+    'doc-cover',
+    'doc-credit',
+    'doc-credits',
+    'doc-dedication',
+    'doc-endnote',
+    'doc-endnotes',
+    'doc-epigraph',
+    'doc-epilogue',
+    'doc-errata',
+    'doc-example',
+    'doc-footnote',
+    'doc-foreword',
+    'doc-glossary',
+    'doc-glossref',
+    'doc-index',
+    'doc-introduction',
+    'doc-noteref',
+    'doc-notice',
+    'doc-pagebreak',
+    'doc-pagefooter',
+    'doc-pageheader',
+    'doc-pagelist',
+    'doc-part',
+    'doc-preface',
+    'doc-prologue',
+    'doc-pullquote',
+    'doc-qna',
+    'doc-subtitle',
+    'doc-tip',
+    'doc-toc',
     'document',
     'emphasis',
     'feed',
     'figure',
+    'form',
     'generic',
+    'graphics-document',
+    'graphics-object',
+    'graphics-symbol',
+    'grid',
+    'gridcell',
     'group',
     'heading',
     'img',
     'insertion',
+    'link',
     'list',
+    'listbox',
     'listitem',
+    'log',
+    'main',
     'mark',
+    'marquee',
     'math',
+    'menu',
+    'menubar',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
     'meter',
+    'navigation',
     'none',
     'note',
+    'option',
     'paragraph',
     'presentation',
+    'progressbar',
+    'radio',
+    'radiogroup',
+    'region',
     'row',
     'rowgroup',
     'rowheader',
+    'scrollbar',
+    'search',
+    'searchbox',
+    'separator',
+    'slider',
+    'spinbutton',
+    'status',
     'strong',
     'subscript',
     'suggestion',
     'superscript',
+    'switch',
+    'tab',
     'table',
+    'tablist',
+    'tabpanel',
     'term',
     'text',
+    'textbox',
     'time',
-    'toolbar'
+    'timer',
+    'toolbar',
+    'tooltip',
+    'tree',
+    'treegrid',
+    'treeitem'
   ]);
+  // </generated:aria-concrete-roles>
 
   // -------------------------------------------------------------------
   // D) ARIA attribute value types.
@@ -27481,8 +27520,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
+  // A role on an element hidden from assistive technology has no effect, so
+  // ACT 674b10 does not apply to it.
+  function isHidden(el) {
+    try {
+      if (typeof helpers.isDomVisibleEligible === 'function') {
+        if (!helpers.isDomVisibleEligible(el, ctx)) return true;
+      }
+      for (let n = el; n && n.getAttribute; n = n.parentElement) {
+        if (String(n.getAttribute('aria-hidden') || '').toLowerCase() === 'true') return true;
+      }
+    } catch {
+      return false;
+    }
+    return false;
+  }
+
   for (const el of nodes) {
     if (!el || !el.getAttribute) continue;
+
+    if (isHidden(el)) continue;
 
     const role = ariaHelpers.getExplicitRole(el);
     if (!role) continue;
@@ -29534,19 +29591,44 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
+  // Programmatically hidden per the ACT glossary: display:none, visibility not
+  // visible, or aria-hidden on the element or an ancestor.
+  function isHidden(el) {
+    try {
+      if (typeof helpers.isDomVisibleEligible === 'function') {
+        if (!helpers.isDomVisibleEligible(el, ctx)) return true;
+      }
+      for (let n = el; n && n.getAttribute; n = n.parentElement) {
+        if (String(n.getAttribute('aria-hidden') || '').toLowerCase() === 'true') return true;
+      }
+    } catch {
+      return false;
+    }
+    return false;
+  }
+
   for (const el of nodes) {
     if (!el || !el.getAttribute) continue;
 
-    const role = ariaHelpers.getExplicitRole(el);
-    if (!role) continue; // role="" or whitespace-only: not this rule's concern
+    // ACT 674b10 is not applicable to a programmatically hidden element.
+    if (isHidden(el)) continue;
+
+    // role takes a fallback list and the first token the browser recognises
+    // wins, so role="searchfield searchbox" resolves to searchbox. The rule
+    // fails only when no token names a concrete role.
+    const tokens =
+      typeof ariaHelpers.getAllRoleTokens === 'function'
+        ? ariaHelpers.getAllRoleTokens(el)
+        : [ariaHelpers.getExplicitRole(el)].filter(Boolean);
+    if (!tokens.length) continue; // role="" or whitespace-only: not this rule's concern
 
     applicableCount += 1;
 
-    const isAbstract = ariaHelpers.isAbstractRole(role);
-    const isKnown = ariaHelpers.isKnownRole(role);
+    const usable = tokens.find((t) => ariaHelpers.isKnownRole(t) && !ariaHelpers.isAbstractRole(t));
+    if (usable) continue;
 
-    if (isKnown && !isAbstract) continue;
-
+    const role = tokens[0];
+    const isKnown = tokens.some((t) => ariaHelpers.isKnownRole(t));
     const reasonCode = !isKnown ? 'ARIA_ROLE_INVALID' : 'ARIA_ROLE_ABSTRACT';
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
     const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
@@ -50671,6 +50753,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   // -------------------------------------------------------------------
   // A) Abstract roles — MUST NOT be used directly in a role="" attribute.
   // -------------------------------------------------------------------
+  // <generated:aria-abstract-roles>
   const ABSTRACT_ROLES = new Set([
     'command',
     'composite',
@@ -50685,6 +50768,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     'widget',
     'window'
   ]);
+  // </generated:aria-abstract-roles>
 
   // -------------------------------------------------------------------
   // B) Valid, concrete (non-abstract) roles that authors must never
@@ -50727,103 +50811,140 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   //    Digital Publishing WAI-ARIA (doc-abstract etc.) is a separate
   //    module, deliberately left out of scope for now.
   // -------------------------------------------------------------------
+  // <generated:aria-concrete-roles>
   const CONCRETE_ROLES = new Set([
-    // WAI-ARIA Graphics Module 1.0 (see comment above)
-    'graphics-document',
-    'graphics-object',
-    'graphics-symbol',
-    // Live region / window roles
     'alert',
     'alertdialog',
-    'dialog',
-    'log',
-    'marquee',
-    'status',
-    'timer',
-    // Landmark roles
-    'banner',
-    'complementary',
-    'contentinfo',
-    'form',
-    'main',
-    'navigation',
-    'region',
-    'search',
-    // Widget roles (leaf)
-    'button',
-    'checkbox',
-    'gridcell',
-    'link',
-    'menuitem',
-    'menuitemcheckbox',
-    'menuitemradio',
-    'option',
-    'progressbar',
-    'radio',
-    'scrollbar',
-    'searchbox',
-    'separator',
-    'slider',
-    'spinbutton',
-    'switch',
-    'tab',
-    'tabpanel',
-    'textbox',
-    'treeitem',
-    'tooltip',
-    // Composite widget roles
-    'combobox',
-    'grid',
-    'listbox',
-    'menu',
-    'menubar',
-    'radiogroup',
-    'tablist',
-    'tree',
-    'treegrid',
-    // Document structure roles
     'application',
     'article',
+    'banner',
     'blockquote',
+    'button',
     'caption',
     'cell',
+    'checkbox',
     'code',
     'columnheader',
+    'combobox',
     'comment',
+    'complementary',
+    'contentinfo',
     'definition',
     'deletion',
+    'dialog',
     'directory',
+    'doc-abstract',
+    'doc-acknowledgments',
+    'doc-afterword',
+    'doc-appendix',
+    'doc-backlink',
+    'doc-biblioentry',
+    'doc-bibliography',
+    'doc-biblioref',
+    'doc-chapter',
+    'doc-colophon',
+    'doc-conclusion',
+    'doc-cover',
+    'doc-credit',
+    'doc-credits',
+    'doc-dedication',
+    'doc-endnote',
+    'doc-endnotes',
+    'doc-epigraph',
+    'doc-epilogue',
+    'doc-errata',
+    'doc-example',
+    'doc-footnote',
+    'doc-foreword',
+    'doc-glossary',
+    'doc-glossref',
+    'doc-index',
+    'doc-introduction',
+    'doc-noteref',
+    'doc-notice',
+    'doc-pagebreak',
+    'doc-pagefooter',
+    'doc-pageheader',
+    'doc-pagelist',
+    'doc-part',
+    'doc-preface',
+    'doc-prologue',
+    'doc-pullquote',
+    'doc-qna',
+    'doc-subtitle',
+    'doc-tip',
+    'doc-toc',
     'document',
     'emphasis',
     'feed',
     'figure',
+    'form',
     'generic',
+    'graphics-document',
+    'graphics-object',
+    'graphics-symbol',
+    'grid',
+    'gridcell',
     'group',
     'heading',
     'img',
     'insertion',
+    'link',
     'list',
+    'listbox',
     'listitem',
+    'log',
+    'main',
     'mark',
+    'marquee',
     'math',
+    'menu',
+    'menubar',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
     'meter',
+    'navigation',
     'none',
     'note',
+    'option',
     'paragraph',
     'presentation',
+    'progressbar',
+    'radio',
+    'radiogroup',
+    'region',
     'row',
     'rowgroup',
     'rowheader',
+    'scrollbar',
+    'search',
+    'searchbox',
+    'separator',
+    'slider',
+    'spinbutton',
+    'status',
     'strong',
     'subscript',
     'suggestion',
     'superscript',
+    'switch',
+    'tab',
     'table',
+    'tablist',
+    'tabpanel',
     'term',
     'text',
+    'textbox',
     'time',
-    'toolbar'
+    'timer',
+    'toolbar',
+    'tooltip',
+    'tree',
+    'treegrid',
+    'treeitem'
   ]);
+  // </generated:aria-concrete-roles>
 
   // -------------------------------------------------------------------
   // D) ARIA attribute value types.
@@ -66272,8 +66393,26 @@ const __a11yCoreCrossFrameApi = (function () {
   const occurrences = [];
   let applicableCount = 0;
 
+  // A role on an element hidden from assistive technology has no effect, so
+  // ACT 674b10 does not apply to it.
+  function isHidden(el) {
+    try {
+      if (typeof helpers.isDomVisibleEligible === 'function') {
+        if (!helpers.isDomVisibleEligible(el, ctx)) return true;
+      }
+      for (let n = el; n && n.getAttribute; n = n.parentElement) {
+        if (String(n.getAttribute('aria-hidden') || '').toLowerCase() === 'true') return true;
+      }
+    } catch {
+      return false;
+    }
+    return false;
+  }
+
   for (const el of nodes) {
     if (!el || !el.getAttribute) continue;
+
+    if (isHidden(el)) continue;
 
     const role = ariaHelpers.getExplicitRole(el);
     if (!role) continue;
@@ -68325,19 +68464,44 @@ const __a11yCoreCrossFrameApi = (function () {
   const occurrences = [];
   let applicableCount = 0;
 
+  // Programmatically hidden per the ACT glossary: display:none, visibility not
+  // visible, or aria-hidden on the element or an ancestor.
+  function isHidden(el) {
+    try {
+      if (typeof helpers.isDomVisibleEligible === 'function') {
+        if (!helpers.isDomVisibleEligible(el, ctx)) return true;
+      }
+      for (let n = el; n && n.getAttribute; n = n.parentElement) {
+        if (String(n.getAttribute('aria-hidden') || '').toLowerCase() === 'true') return true;
+      }
+    } catch {
+      return false;
+    }
+    return false;
+  }
+
   for (const el of nodes) {
     if (!el || !el.getAttribute) continue;
 
-    const role = ariaHelpers.getExplicitRole(el);
-    if (!role) continue; // role="" or whitespace-only: not this rule's concern
+    // ACT 674b10 is not applicable to a programmatically hidden element.
+    if (isHidden(el)) continue;
+
+    // role takes a fallback list and the first token the browser recognises
+    // wins, so role="searchfield searchbox" resolves to searchbox. The rule
+    // fails only when no token names a concrete role.
+    const tokens =
+      typeof ariaHelpers.getAllRoleTokens === 'function'
+        ? ariaHelpers.getAllRoleTokens(el)
+        : [ariaHelpers.getExplicitRole(el)].filter(Boolean);
+    if (!tokens.length) continue; // role="" or whitespace-only: not this rule's concern
 
     applicableCount += 1;
 
-    const isAbstract = ariaHelpers.isAbstractRole(role);
-    const isKnown = ariaHelpers.isKnownRole(role);
+    const usable = tokens.find((t) => ariaHelpers.isKnownRole(t) && !ariaHelpers.isAbstractRole(t));
+    if (usable) continue;
 
-    if (isKnown && !isAbstract) continue;
-
+    const role = tokens[0];
+    const isKnown = tokens.some((t) => ariaHelpers.isKnownRole(t));
     const reasonCode = !isKnown ? 'ARIA_ROLE_INVALID' : 'ARIA_ROLE_ABSTRACT';
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
     const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
@@ -89462,6 +89626,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   // -------------------------------------------------------------------
   // A) Abstract roles — MUST NOT be used directly in a role="" attribute.
   // -------------------------------------------------------------------
+  // <generated:aria-abstract-roles>
   const ABSTRACT_ROLES = new Set([
     'command',
     'composite',
@@ -89476,6 +89641,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     'widget',
     'window'
   ]);
+  // </generated:aria-abstract-roles>
 
   // -------------------------------------------------------------------
   // B) Valid, concrete (non-abstract) roles that authors must never
@@ -89518,103 +89684,140 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   //    Digital Publishing WAI-ARIA (doc-abstract etc.) is a separate
   //    module, deliberately left out of scope for now.
   // -------------------------------------------------------------------
+  // <generated:aria-concrete-roles>
   const CONCRETE_ROLES = new Set([
-    // WAI-ARIA Graphics Module 1.0 (see comment above)
-    'graphics-document',
-    'graphics-object',
-    'graphics-symbol',
-    // Live region / window roles
     'alert',
     'alertdialog',
-    'dialog',
-    'log',
-    'marquee',
-    'status',
-    'timer',
-    // Landmark roles
-    'banner',
-    'complementary',
-    'contentinfo',
-    'form',
-    'main',
-    'navigation',
-    'region',
-    'search',
-    // Widget roles (leaf)
-    'button',
-    'checkbox',
-    'gridcell',
-    'link',
-    'menuitem',
-    'menuitemcheckbox',
-    'menuitemradio',
-    'option',
-    'progressbar',
-    'radio',
-    'scrollbar',
-    'searchbox',
-    'separator',
-    'slider',
-    'spinbutton',
-    'switch',
-    'tab',
-    'tabpanel',
-    'textbox',
-    'treeitem',
-    'tooltip',
-    // Composite widget roles
-    'combobox',
-    'grid',
-    'listbox',
-    'menu',
-    'menubar',
-    'radiogroup',
-    'tablist',
-    'tree',
-    'treegrid',
-    // Document structure roles
     'application',
     'article',
+    'banner',
     'blockquote',
+    'button',
     'caption',
     'cell',
+    'checkbox',
     'code',
     'columnheader',
+    'combobox',
     'comment',
+    'complementary',
+    'contentinfo',
     'definition',
     'deletion',
+    'dialog',
     'directory',
+    'doc-abstract',
+    'doc-acknowledgments',
+    'doc-afterword',
+    'doc-appendix',
+    'doc-backlink',
+    'doc-biblioentry',
+    'doc-bibliography',
+    'doc-biblioref',
+    'doc-chapter',
+    'doc-colophon',
+    'doc-conclusion',
+    'doc-cover',
+    'doc-credit',
+    'doc-credits',
+    'doc-dedication',
+    'doc-endnote',
+    'doc-endnotes',
+    'doc-epigraph',
+    'doc-epilogue',
+    'doc-errata',
+    'doc-example',
+    'doc-footnote',
+    'doc-foreword',
+    'doc-glossary',
+    'doc-glossref',
+    'doc-index',
+    'doc-introduction',
+    'doc-noteref',
+    'doc-notice',
+    'doc-pagebreak',
+    'doc-pagefooter',
+    'doc-pageheader',
+    'doc-pagelist',
+    'doc-part',
+    'doc-preface',
+    'doc-prologue',
+    'doc-pullquote',
+    'doc-qna',
+    'doc-subtitle',
+    'doc-tip',
+    'doc-toc',
     'document',
     'emphasis',
     'feed',
     'figure',
+    'form',
     'generic',
+    'graphics-document',
+    'graphics-object',
+    'graphics-symbol',
+    'grid',
+    'gridcell',
     'group',
     'heading',
     'img',
     'insertion',
+    'link',
     'list',
+    'listbox',
     'listitem',
+    'log',
+    'main',
     'mark',
+    'marquee',
     'math',
+    'menu',
+    'menubar',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
     'meter',
+    'navigation',
     'none',
     'note',
+    'option',
     'paragraph',
     'presentation',
+    'progressbar',
+    'radio',
+    'radiogroup',
+    'region',
     'row',
     'rowgroup',
     'rowheader',
+    'scrollbar',
+    'search',
+    'searchbox',
+    'separator',
+    'slider',
+    'spinbutton',
+    'status',
     'strong',
     'subscript',
     'suggestion',
     'superscript',
+    'switch',
+    'tab',
     'table',
+    'tablist',
+    'tabpanel',
     'term',
     'text',
+    'textbox',
     'time',
-    'toolbar'
+    'timer',
+    'toolbar',
+    'tooltip',
+    'tree',
+    'treegrid',
+    'treeitem'
   ]);
+  // </generated:aria-concrete-roles>
 
   // -------------------------------------------------------------------
   // D) ARIA attribute value types.

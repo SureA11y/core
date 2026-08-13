@@ -25,12 +25,38 @@ const path = require('node:path');
 const { roles, elementRoles } = require('aria-query');
 
 const RULE_PATH = path.join(__dirname, '..', 'src', 'checks', 'automatic', 'aria-allowed-attr.js');
+const HELPERS_PATH = path.join(__dirname, '..', 'src', 'core', 'aria-helpers.js');
 
 const BEGIN_GLOBAL = '  // <generated:aria-global-attrs>';
 const END_GLOBAL = '  // </generated:aria-global-attrs>';
 const BEGIN_ROLES = '  // <generated:aria-role-attrs>';
 const BEGIN_IMPLICIT = '  // <generated:aria-implicit-roles>';
 const END_IMPLICIT = '  // </generated:aria-implicit-roles>';
+const BEGIN_ABSTRACT = '  // <generated:aria-abstract-roles>';
+const END_ABSTRACT = '  // </generated:aria-abstract-roles>';
+const BEGIN_CONCRETE = '  // <generated:aria-concrete-roles>';
+const END_CONCRETE = '  // </generated:aria-concrete-roles>';
+
+// ARIA 1.3 roles aria-query does not carry yet. Dropping them would report a
+// valid role as unrecognised.
+const SUPPLEMENTAL_CONCRETE_ROLES = ['comment', 'suggestion', 'text'];
+
+function roleSets() {
+  const concrete = new Set(SUPPLEMENTAL_CONCRETE_ROLES);
+  const abstract = new Set();
+  for (const [name, def] of roles.entries()) (def.abstract ? abstract : concrete).add(name);
+  return { concrete, abstract };
+}
+
+function renderRoleSet(begin, end, name, values) {
+  return [
+    begin,
+    `  const ${name} = new Set([`,
+    ...[...values].sort().map((v) => `    '${v}',`),
+    '  ]);',
+    end
+  ].join('\n');
+}
 const END_ROLES = '  // </generated:aria-role-attrs>';
 
 // Every role inherits roletype's properties, so those are exactly the ARIA
@@ -241,8 +267,24 @@ function main() {
     renderImplicit(implicit, nonGlobalAttrs(globals, table))
   );
 
+  let helpers = fs.readFileSync(HELPERS_PATH, 'utf8');
+  const helpersBefore = helpers;
+  const sets = roleSets();
+  helpers = replaceBlock(
+    helpers,
+    BEGIN_ABSTRACT,
+    END_ABSTRACT,
+    renderRoleSet(BEGIN_ABSTRACT, END_ABSTRACT, 'ABSTRACT_ROLES', sets.abstract)
+  );
+  helpers = replaceBlock(
+    helpers,
+    BEGIN_CONCRETE,
+    END_CONCRETE,
+    renderRoleSet(BEGIN_CONCRETE, END_CONCRETE, 'CONCRETE_ROLES', sets.concrete)
+  );
+
   if (check) {
-    if (before !== source) {
+    if (before !== source || helpersBefore !== helpers) {
       console.error('ARIA tables are stale. Run: node scripts/generate-aria-tables.js');
       process.exit(1);
     }
@@ -251,6 +293,7 @@ function main() {
   }
 
   fs.writeFileSync(RULE_PATH, source);
+  fs.writeFileSync(HELPERS_PATH, helpers);
   console.log(
     `Wrote ${Object.keys(table).length} concrete role(s), ${globals.length} global attribute(s) and ${Object.keys(implicit).length} implicit-role mapping(s) into ${path.relative(process.cwd(), RULE_PATH)}`
   );
