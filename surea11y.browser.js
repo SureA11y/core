@@ -22147,12 +22147,65 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     );
   }
 
+  // A composite widget owns children of a fixed role and drives their focus
+  // itself (via roving tabindex or aria-activedescendant). The roving-tabindex
+  // model gives the active child tabindex="0" and the rest tabindex="-1", so
+  // the owned children ARE platform-focusable even though the container, not
+  // the child, is the operable unit. Such a child is part of the composite,
+  // not a control nested inside another control, so it must not be reported
+  // regardless of its tabindex. The map is keyed by the child role and lists
+  // the container roles that legitimately own it.
+  const COMPOSITE_CHILD_CONTAINERS = {
+    option: ['listbox', 'combobox'],
+    tab: ['tablist'],
+    treeitem: ['tree'],
+    menuitem: ['menu', 'menubar'],
+    menuitemcheckbox: ['menu', 'menubar'],
+    menuitemradio: ['menu', 'menubar'],
+    radio: ['radiogroup']
+  };
+
+  function getExplicitRole(node) {
+    if (!node || node.nodeType !== 1 || typeof node.getAttribute !== 'function') return '';
+    const raw = node.getAttribute('role');
+    if (!raw) return '';
+    // role accepts a space-separated fallback list; the first token wins.
+    const first = raw.trim().split(/\s+/)[0];
+    return first ? first.toLowerCase() : '';
+  }
+
+  function parentElementOf(node) {
+    if (!node) return null;
+    if (node.parentElement) return node.parentElement;
+    const p = node.parentNode;
+    return p && p.nodeType === 1 ? p : null;
+  }
+
+  // True when `node` is an owned child of a composite widget: its role is a
+  // composite-child role and a matching container role is present on one of
+  // its ancestors. The roving tab stop (tabindex="0") such a container places
+  // on its active child does not make that child an independently nested
+  // control.
+  function isManagedCompositeChild(node) {
+    const role = getExplicitRole(node);
+    const containers = COMPOSITE_CHILD_CONTAINERS[role];
+    if (!containers) return false;
+    let p = parentElementOf(node);
+    while (p && p.nodeType === 1) {
+      if (containers.indexOf(getExplicitRole(p)) !== -1) return true;
+      p = parentElementOf(p);
+    }
+    return false;
+  }
+
   // Operable = a native-interactive / ARIA-widget element that is exposed to
   // the accessibility tree and platform-focusable. A widget-role element with
   // no independent focus (e.g. a role="option" with no tabindex, driven by
   // its container via roving tabindex or aria-activedescendant) is not
   // operable and does not nest an interactive control. When no focus model is
-  // available, role membership alone qualifies.
+  // available, role membership alone qualifies. (Composite-owned children are
+  // handled earlier as attribution boundaries in collectNestedOperable, so
+  // they never reach here.)
   function isOperableInteractive(node) {
     if (!matchesInteractive(node)) return false;
     if (!isEligible(node)) return false;
@@ -22178,9 +22231,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     for (let i = top.length - 1; i >= 0; i--) stack.push(top[i]);
     while (stack.length) {
       const node = stack.pop();
-      if (node && node.nodeType === 1 && isOperableInteractive(node)) {
-        out.push(node);
-        continue; // do not descend into a counted control
+      if (node && node.nodeType === 1) {
+        // A composite-owned child (option in a listbox/combobox, tab in a
+        // tablist, ...) is not a nested interactive control: its container
+        // owns it and drives its focus (roving tabindex or
+        // aria-activedescendant). Treat it as an attribution boundary — do not
+        // count it, and do not descend past it. Any control genuinely nested
+        // inside it is attributed to the child itself (examined as its own
+        // container in the main loop), keeping the report at the nearest
+        // interactive ancestor rather than bubbling up to the composite.
+        if (isManagedCompositeChild(node)) continue;
+        if (isOperableInteractive(node)) {
+          out.push(node);
+          continue; // do not descend into a counted control
+        }
       }
       const kids = node && node.children;
       if (kids && kids.length) {

@@ -136,13 +136,49 @@ test(`${RULE_ID}: pass when the only nested control is disabled (not focusable)`
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail when a listbox option is made independently focusable via tabindex`, () => {
-  // An option with tabindex="0" is itself a focus target, so it nests an
-  // operable control inside the listbox.
-  const html = `<!doctype html><html><body><div role="listbox" id="lb"><div role="option" tabindex="0">Home</div></div></body></html>`;
+test(`${RULE_ID}: pass for a listbox using roving tabindex on its options`, () => {
+  // Roving tabindex is one of the two standard composite-widget focus models:
+  // the active option carries tabindex="0" and the rest tabindex="-1". The
+  // container owns the option, so a focusable owned child is not a nested
+  // interactive control. (This is what Angular CDK Listbox emits.)
+  const html = `<!doctype html><html><body><div role="listbox" id="lb"><div role="option" tabindex="0">Home</div><div role="option" tabindex="-1">About</div></div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: Angular CDK segmented-button (listbox/option, roving tabindex) passes`, () => {
+  // Regression: a role="listbox" custom element whose role="option" children
+  // are managed with roving tabindex (active segment tabindex="0", others
+  // tabindex="-1") must not be flagged as nesting interactive controls.
+  const html = `<!doctype html><html><body>
+    <avq-segmented-button role="listbox" aria-label="Card style" class="cdk-listbox" id="cdk-listbox-1" tabindex="-1" aria-multiselectable="false" aria-orientation="horizontal">
+      <avq-segment role="option" value="elevated" class="cdk-option cdk-option-active" id="cdk-option-3" aria-selected="true" tabindex="0"><div class="avq-segment-button"><span>Default</span></div></avq-segment>
+      <avq-segment role="option" value="outlined" class="cdk-option" id="cdk-option-4" aria-selected="false" tabindex="-1"><div class="avq-segment-button"><span>Outlined</span></div></avq-segment>
+      <avq-segment role="option" value="filled" class="cdk-option" id="cdk-option-5" aria-selected="false" tabindex="-1"><div class="avq-segment-button"><span>Filled</span></div></avq-segment>
+    </avq-segmented-button>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: fail for an orphan focusable role=option with no owning listbox`, () => {
+  // The composite exemption requires a real container relationship. A
+  // role="option" with tabindex="0" that is NOT owned by a listbox/combobox
+  // is a focusable widget nested in a control, so it still counts.
+  const html = `<!doctype html><html><body><a id="a" href="/x">Card <span role="option" tabindex="0">Home</span></a></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
-  assert.ok(hasOccurrenceForId(rule, 'lb'));
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+});
+
+test(`${RULE_ID}: fail when a genuinely nested control sits inside a listbox option`, () => {
+  // The exemption applies to the owned option itself, not to arbitrary
+  // focusable controls placed inside it. A real <button> inside an option is
+  // still a nested interactive control (attributed to the option).
+  const html = `<!doctype html><html><body><div role="listbox"><div role="option" id="opt" tabindex="0">Home <button>x</button></div></div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'opt'));
 });
 
 test(`${RULE_ID}: fail when a focusable role=button is nested in a link`, () => {
