@@ -58,7 +58,13 @@ const meta = {
 function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
+  // Shape alone accepts unregistered tags such as "eng" and "em-US", so the
+  // primary subtag is checked against the IANA registry via the shared helper.
   const BCP47_RE = /^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{2,8})*$/;
+  const isValidTag =
+    typeof helpers.isValidLanguageTag === 'function'
+      ? helpers.isValidLanguageTag
+      : (v) => BCP47_RE.test(String(v || ''));
 
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('[lang]')
@@ -71,12 +77,19 @@ function runInPage(ctx) {
     if (!el || !el.getAttribute) continue;
     if (el.tagName && el.tagName.toLowerCase() === 'html') continue;
 
-    const raw = String(el.getAttribute('lang') || '').trim();
-    if (!raw) continue;
+    const rawAttr = el.getAttribute('lang');
+    if (rawAttr === null || rawAttr === '') continue; // ACT de46e4: empty is out of scope
+
+    // The rule applies only where text actually inherits the language, so an
+    // element with no text, or whose text reaches no one, has nothing to
+    // declare a language for.
+    if (!String(el.textContent || '').trim()) continue;
 
     applicableCount += 1;
 
-    if (BCP47_RE.test(raw)) continue;
+    // A whitespace-only value is in scope and has no primary language tag.
+    const raw = String(rawAttr).trim();
+    if (isValidTag(raw)) continue;
 
     const tag = el.tagName.toLowerCase();
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';

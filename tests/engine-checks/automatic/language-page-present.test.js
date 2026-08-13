@@ -170,18 +170,29 @@ test('pass when <html> lang is valid language tag with subtags (pt-BR)', () => {
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test('pass (known scope limitation) when lang is syntactically valid but not a real registered subtag (xx-ZZ)', () => {
-  // The rule performs a minimal BCP47 *syntax* check only; it does not validate
-  // against the IANA Language Subtag Registry. "xx-ZZ" is syntactically well-formed
-  // (2-letter primary subtag + 2-letter region subtag) even though neither subtag is
-  // a real registered value, so it currently passes. This is a documented, accepted
-  // scope limitation (semantic/registry validation is out of scope for SC 3.1.1's
-  // "programmatically declared" requirement), not a bug to fix here.
+test('fail when the primary subtag is not in the IANA registry (xx-ZZ)', () => {
+  // A well-formed but unregistered tag declares no determinable language, so
+  // the primary subtag is checked against the registry, not just the shape.
   const html =
     '<!doctype html><html lang="xx-ZZ"><head><title>x</title></head><body>Hi</body></html>';
 
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
+});
+
+test('fail on a three-letter tag whose two-letter form is the registered one (eng)', () => {
+  const html =
+    '<!doctype html><html lang="eng"><head><title>x</title></head><body>Hi</body></html>';
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
+});
+
+test('pass on registered tags, including three-letter ones with no two-letter form', () => {
+  for (const lang of ['en', 'FR', 'en-US-GB', 'haw', 'yue']) {
+    const html = `<!doctype html><html lang="${lang}"><head><title>x</title></head><body>Hi</body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  }
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/language-page-present-all-scenarios.html)`, () => {

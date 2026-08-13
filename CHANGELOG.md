@@ -6,6 +6,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Added
 - `scripts/generate-aria-tables.js` generates `aria-allowed-attr`'s global/per-role/implicit-role tables from the `aria-query` package (a devDependency, output committed) instead of hand-maintaining them, with a `--check` mode that fails when the committed tables go stale.
+- `scripts/generate-language-subtags.js` writes the IANA primary language subtags into `dom-helpers` from the `language-subtag-registry` package (a devDependency), same `--check` convention. New shared `helpers.isValidLanguageTag` backs both `valid-lang` and `html-lang-attr-present`.
 
 ### Changed
 - `meta-viewport-zoom-enabled` now applies only when `content` sets `maximum-scale` or `user-scalable` — setting neither can't restrict zoom, so there's nothing to judge.
@@ -13,6 +14,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 - Form-control naming is now split by native element vs. explicit ARIA role, so a control isn't reported by two rules at once: `binary-control-name-present`/`slider-name-present` are role-only, and `form-control-programmatic-label-present` skips a control whose explicit role has its own naming rule. An unlabelled checkbox used to produce two findings; now one.
 
 ### Fixed
+- `valid-lang` and `html-lang-attr-present` checked shape only (`/^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{2,8})*$/`), so `lang="eng"` and `lang="em-US"` passed although neither is a registered primary subtag (the registry lists a three-letter code only when no two-letter one exists — that's why `"en"` is registered and `"eng"` isn't). Both now validate against the real IANA registry. `valid-lang` also now applies only where text actually inherits the language from the element, and a whitespace-only value fails.
 - `meta-viewport-zoom-enabled` passed values it couldn't parse (`user-scalable=0.5`, `maximum-scale=invalid`, `maximum-scale=yes`), even though CSS Device Adaptation treats an unparseable value as `0` — which disables zoom exactly like an explicit `0` does. A negative `maximum-scale` is out of range and correctly still passes.
 - `meta-refresh-timing-absent` and `meta-refresh-no-exceptions` reported directives a browser never acts on (`"foo; URL=x"`, `"+72001"`, `"0:1"`), since a malformed value makes the whole directive invalid rather than falling back to a default delay. Both now parse `content` with the shared declarative-refresh steps.
 - `aria-allowed-attr` only looked at `[role]`, so an ARIA state/property on an element with no explicit role went unjudged (e.g. `<button aria-sort>`, `<p aria-checked>`) even though ACT 5c01ea applies to any element in the accessibility tree. The generator now also emits an implicit-role table, gated by an explicit allowlist of elements whose role is unconditional (verified against Chrome's own accessibility tree) so a future `aria-query` update can't silently widen the rule.
