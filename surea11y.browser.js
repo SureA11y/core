@@ -1460,7 +1460,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "wcag241",
       "navigation",
       "atomic",
-      "automatic",
+      "manual",
       "a11ycore"
     ],
     "wcagSc": [
@@ -1475,9 +1475,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A"
       }
     ],
-    "defaultSeverity": "serious",
+    "defaultSeverity": "moderate",
     "defaultConfidence": "medium",
-    "type": "automatic",
+    "type": "manual",
     "coverage": {
       "facetsBySc": {
         "2.4.1": [
@@ -12195,7 +12195,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // (e.g. a page whose only <h1> sits inside a display:none ancestor,
   // unreachable by sighted and screen reader users alike). A fully
   // non-rendered <main>/heading must not be credited here, since that would
-  // wrongly return `pass` for a page with zero actual bypass mechanisms.
+  // wrongly treat a page with zero currently-exposed bypass mechanisms as
+  // having one.
   function hasMainLandmark() {
     for (const el of queryAll('main, [role="main"]')) {
       if (el && isExposedToAt(el)) return true;
@@ -12203,10 +12204,41 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return false;
   }
 
+  // Resolve a fragment id (or legacy <a name>) inside a specific root node
+  // (a Document or a ShadowRoot). Both expose getElementById; querySelector
+  // is used for the legacy anchor-name fallback.
+  function resolveInRoot(root, fragment) {
+    if (!root) return null;
+    let target;
+    try {
+      target = typeof root.getElementById === 'function' ? root.getElementById(fragment) : null;
+    } catch {
+      target = null;
+    }
+    if (target) return target;
+    try {
+      target =
+        typeof root.querySelector === 'function'
+          ? root.querySelector('a[name="' + fragment.replace(/"/g, '\\"') + '"]')
+          : null;
+    } catch {
+      target = null;
+    }
+    return target;
+  }
+
+  // Shadow-DOM-aware: gather anchors via queryAllSmart (pierces shadow roots
+  // when includeShadowDom is enabled, and drops hard-hidden links), and
+  // resolve each fragment in the link's own root before falling back to the
+  // document. This credits a skip link encapsulated in a web component the
+  // same way as one authored in the light DOM.
   function hasWorkingAnchorLink() {
     let links;
     try {
-      links = document.querySelectorAll('a[href]');
+      links =
+        helpers && typeof helpers.queryAllSmart === 'function'
+          ? helpers.queryAllSmart('a[href]')
+          : document.querySelectorAll('a[href]');
     } catch {
       links = [];
     }
@@ -12223,18 +12255,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       fragment = fragment.trim();
       if (!fragment) continue;
 
-      let target;
+      let root = document;
       try {
-        target = document.getElementById(fragment);
-      } catch {
-        target = null;
-      }
-      if (!target) {
-        try {
-          target = document.querySelector('a[name="' + fragment.replace(/"/g, '\\"') + '"]');
-        } catch {
-          target = null;
+        if (typeof a.getRootNode === 'function') {
+          const r = a.getRootNode();
+          if (r) root = r;
         }
+      } catch {
+        root = document;
+      }
+
+      let target = resolveInRoot(root, fragment);
+      if (!target && root !== document) {
+        target = resolveInRoot(document, fragment);
       }
       if (target) return true;
     }
@@ -12252,8 +12285,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const anchorLink = mainLandmark ? false : hasWorkingAnchorLink();
   const heading = mainLandmark || anchorLink ? false : hasHeading();
 
+  // A recognized mechanism is present -> nothing to review on this page.
   if (mainLandmark || anchorLink || heading) {
-    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
   const stableSelector = helpers.buildSelector ? helpers.buildSelector(body) : 'body';
@@ -12265,11 +12299,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     {
       selector: stableSelector,
       html,
-      summary: 'This page has no recognized way to bypass repeated blocks of content.',
-      hint: 'Add a main landmark (<main> or role="main"), a working "skip to content" link, or heading elements that assistive technology can use to jump past repeated content.',
+      summary:
+        'No recognized way to bypass repeated blocks of content was detected on this page — verify a bypass mechanism exists.',
+      hint: 'Confirm the page offers a bypass mechanism: a main landmark (<main> or role="main"), a working "skip to content" link, or heading elements that assistive technology can use to jump past repeated content. (A mechanism may be temporarily hidden — e.g. while a modal dialog makes the page inert — or provided on a per-site basis; this needs human confirmation.)',
       i18n: {
-        summaryKey: 'bypassBlocksPresent_summary_fail',
-        hintKey: 'bypassBlocksPresent_hint_fail',
+        summaryKey: 'bypassBlocksPresent_summary_cantTell',
+        hintKey: 'bypassBlocksPresent_hint_cantTell',
         params: {}
       },
       data: {
@@ -12281,8 +12316,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   return {
     ruleId: rule.ruleId,
-    outcome: 'fail',
-    severity: rule.defaultSeverity || 'serious',
+    outcome: 'cantTell',
+    severity: rule.defaultSeverity || 'moderate',
     occurrences
   };
 }), applicability: (function applicability(ctx) {
@@ -28468,8 +28503,8 @@ const I18N = {
     "nestedInteractiveControlsAbsent_hint_fail": "Verschieben Sie die verschachtelten interaktiven Elemente außerhalb dieses Elements; verschachtelte interaktive Elemente sind über assistive Technologien nicht zuverlässig bedienbar.",
     "bypassBlocksPresent_title": "Die Seite muss eine Möglichkeit bieten, wiederkehrende Blöcke zu überspringen",
     "bypassBlocksPresent_description": "Prüft, ob die Seite mindestens einen anerkannten Mechanismus nach WCAG 2.4.1 zum Überspringen wiederkehrender Blöcke hat: eine main-Landmarke, einen funktionierenden Anker-Link auf derselben Seite oder eine Überschrift.",
-    "bypassBlocksPresent_summary_fail": "Diese Seite hat keine anerkannte Möglichkeit, wiederkehrende Inhaltsblöcke zu überspringen.",
-    "bypassBlocksPresent_hint_fail": "Fügen Sie eine main-Landmarke (<main> oder role=\"main\"), einen funktionierenden „Zum Inhalt springen“-Link oder Überschriften-Elemente hinzu, die assistive Technologien nutzen können, um wiederkehrende Inhalte zu überspringen.",
+    "bypassBlocksPresent_summary_cantTell": "Auf dieser Seite wurde keine anerkannte Möglichkeit erkannt, wiederkehrende Inhaltsblöcke zu überspringen – prüfen Sie, ob ein Überspring-Mechanismus vorhanden ist.",
+    "bypassBlocksPresent_hint_cantTell": "Bestätigen Sie, dass die Seite einen Überspring-Mechanismus bietet: eine main-Landmarke (<main> oder role=\"main\"), einen funktionierenden „Zum Inhalt springen“-Link oder Überschriften-Elemente, die assistive Technologien nutzen können, um wiederkehrende Inhalte zu überspringen. (Ein Mechanismus kann vorübergehend verborgen sein – z. B. während ein modaler Dialog die Seite inert macht – oder seitenweit bereitgestellt werden; dies erfordert eine menschliche Bestätigung.)",
     "landmarkBannerIsTopLevel_title": "Die banner-Landmarke muss auf oberster Ebene liegen",
     "landmarkBannerIsTopLevel_description": "Prüft, ob die banner-Landmarke (role=\"banner\" oder ein nicht verschachtelter <header>) nicht innerhalb einer anderen Landmarke verschachtelt ist.",
     "landmarkBannerIsTopLevel_summary_cantTell": "Diese banner-Landmarke ist innerhalb einer anderen Landmarke verschachtelt.",
@@ -29090,8 +29125,8 @@ const I18N = {
     "nestedInteractiveControlsAbsent_hint_fail": "Move the nested interactive control(s) outside this element; nested interactive controls are not reliably operable via assistive technology.",
     "bypassBlocksPresent_title": "Page must provide a way to bypass repeated blocks",
     "bypassBlocksPresent_description": "Checks that the page has at least one recognized WCAG 2.4.1 bypass-blocks mechanism: a main landmark, a working same-page anchor link, or a heading.",
-    "bypassBlocksPresent_summary_fail": "This page has no recognized way to bypass repeated blocks of content.",
-    "bypassBlocksPresent_hint_fail": "Add a main landmark (<main> or role=\"main\"), a working \"skip to content\" link, or heading elements that assistive technology can use to jump past repeated content.",
+    "bypassBlocksPresent_summary_cantTell": "No recognized way to bypass repeated blocks of content was detected on this page — verify a bypass mechanism exists.",
+    "bypassBlocksPresent_hint_cantTell": "Confirm the page offers a bypass mechanism: a main landmark (<main> or role=\"main\"), a working \"skip to content\" link, or heading elements that assistive technology can use to jump past repeated content. (A mechanism may be temporarily hidden — e.g. while a modal dialog makes the page inert — or provided on a per-site basis; this needs human confirmation.)",
     "landmarkBannerIsTopLevel_title": "Banner landmark must be top-level",
     "landmarkBannerIsTopLevel_description": "Checks that the banner landmark (role=\"banner\" or a non-nested <header>) is not nested inside another landmark region.",
     "landmarkBannerIsTopLevel_summary_cantTell": "This banner landmark is nested inside another landmark region.",
@@ -29712,8 +29747,8 @@ const I18N = {
     "nestedInteractiveControlsAbsent_hint_fail": "Mover el/los control(es) interactivo(s) anidado(s) fuera de este elemento; los controles interactivos anidados no son operables de forma fiable mediante tecnología de asistencia.",
     "bypassBlocksPresent_title": "La página debe proporcionar una forma de omitir bloques repetidos",
     "bypassBlocksPresent_description": "Comprueba que la página tenga al menos un mecanismo reconocido de omisión de bloques del criterio de éxito 2.4.1 de WCAG: un landmark main, un enlace de anclaje funcional dentro de la misma página, o un encabezado.",
-    "bypassBlocksPresent_summary_fail": "Esta página no tiene ninguna forma reconocida de omitir bloques de contenido repetidos.",
-    "bypassBlocksPresent_hint_fail": "Agregar un landmark main (<main> o role=\"main\"), un enlace funcional de \"saltar al contenido\", o elementos de encabezado que las tecnologías de asistencia puedan usar para saltar el contenido repetido.",
+    "bypassBlocksPresent_summary_cantTell": "No se detectó ninguna forma reconocida de omitir bloques de contenido repetidos en esta página; verifique que exista un mecanismo de omisión.",
+    "bypassBlocksPresent_hint_cantTell": "Confirme que la página ofrece un mecanismo de omisión: un landmark main (<main> o role=\"main\"), un enlace funcional de \"saltar al contenido\", o elementos de encabezado que las tecnologías de asistencia puedan usar para saltar el contenido repetido. (Un mecanismo puede estar oculto temporalmente —por ejemplo, mientras un diálogo modal deja la página inerte— o proporcionarse a nivel de sitio; esto requiere confirmación humana.)",
     "landmarkBannerIsTopLevel_title": "El landmark banner debe ser de nivel superior",
     "landmarkBannerIsTopLevel_description": "Comprueba que el landmark banner (role=\"banner\" o un <header> no anidado) no esté anidado dentro de otra región landmark.",
     "landmarkBannerIsTopLevel_summary_cantTell": "Este landmark banner está anidado dentro de otra región landmark.",
@@ -30334,8 +30369,8 @@ const I18N = {
     "nestedInteractiveControlsAbsent_hint_fail": "Déplacez le(s) contrôle(s) interactif(s) imbriqué(s) hors de cet élément ; les contrôles interactifs imbriqués ne sont pas utilisables de façon fiable via les technologies d’assistance.",
     "bypassBlocksPresent_title": "La page doit proposer un moyen de contourner les blocs répétés",
     "bypassBlocksPresent_description": "Vérifie que la page dispose d’au moins un mécanisme reconnu de contournement des blocs répétés (WCAG 2.4.1) : un point de repère main, un lien d’ancrage fonctionnel vers la même page, ou un titre.",
-    "bypassBlocksPresent_summary_fail": "Cette page n’a aucun moyen reconnu de contourner les blocs de contenu répétés.",
-    "bypassBlocksPresent_hint_fail": "Ajoutez un point de repère main (<main> ou role=\"main\"), un lien « aller au contenu » fonctionnel, ou des éléments de titre que les technologies d’assistance peuvent utiliser pour passer le contenu répété.",
+    "bypassBlocksPresent_summary_cantTell": "Aucun moyen reconnu de contourner les blocs de contenu répétés n’a été détecté sur cette page — vérifiez qu’un mécanisme de contournement existe.",
+    "bypassBlocksPresent_hint_cantTell": "Confirmez que la page propose un mécanisme de contournement : un point de repère main (<main> ou role=\"main\"), un lien « aller au contenu » fonctionnel, ou des éléments de titre que les technologies d’assistance peuvent utiliser pour passer le contenu répété. (Un mécanisme peut être temporairement masqué — par exemple pendant qu’une boîte de dialogue modale rend la page inerte — ou fourni à l’échelle du site ; cela nécessite une confirmation humaine.)",
     "landmarkBannerIsTopLevel_title": "Le point de repère banner doit être de premier niveau",
     "landmarkBannerIsTopLevel_description": "Vérifie que le point de repère banner (role=\"banner\" ou un <header> non imbriqué) n’est pas imbriqué dans un autre point de repère.",
     "landmarkBannerIsTopLevel_summary_cantTell": "Ce point de repère banner est imbriqué dans un autre point de repère.",

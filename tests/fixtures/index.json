@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-13T20:14:53.424Z",
+  "generatedAt": "2026-08-13T20:16:12.690Z",
   "summary": {
     "total": 125,
     "withFixture": 125,
@@ -500,18 +500,18 @@
     {
       "ruleId": "bypass-blocks-present",
       "title": "Page must provide a way to bypass repeated blocks",
-      "type": "automatic",
+      "type": "manual",
       "wcagSc": [
         "2.4.1"
       ],
-      "ruleFile": "src/checks/automatic/bypass-blocks-present.js",
-      "testFile": "tests/engine-checks/automatic/bypass-blocks-present.test.js",
+      "ruleFile": "src/checks/manual/bypass-blocks-present-manual.js",
+      "testFile": "tests/engine-checks/manual/bypass-blocks-present.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/bypass-blocks-present-all-scenarios.html",
-      "totalCases": 1,
+      "totalCases": 0,
       "caseCounts": {
         "PASS": 0,
-        "FAIL": 1,
+        "FAIL": 0,
         "CANTTELL": 0,
         "OTHER": 0
       }

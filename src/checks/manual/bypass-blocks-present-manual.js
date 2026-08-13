@@ -21,30 +21,57 @@
  *       before it (nav, header, repeated blocks) in one step;
  *   (b) a working same-page anchor link — technique G1/G123: an
  *       <a href="#id"> (or legacy <a name="id">) whose target resolves to
- *       a real element anywhere in the document. Deliberately NOT
- *       required to be positioned before a <nav> or be keyboard-focus-
- *       order-first — see implementation notes;
+ *       a real element in the link's own tree (light DOM or the same shadow
+ *       root). Deliberately NOT required to be positioned before a <nav> or
+ *       be keyboard-focus-order-first — see implementation notes;
  *   (c) at least one heading (<h1>-<h6> or [role="heading"]) — technique
  *       H69: heading navigation is itself a standards-recognized bypass
  *       mechanism (e.g. a screen reader's "jump by heading" command).
  * @implementation-notes
+ * - Outcome model: this rule is `type: 'manual'` (cantTell-capped, never
+ *   `fail`). When a recognized mechanism is found the page has nothing to
+ *   review here → `notApplicable` (matching page-has-heading-one-manual /
+ *   skip-link-manual's "nothing to flag" convention). When none is found we
+ *   return `cantTell` — "we could not detect a bypass mechanism, please
+ *   verify" — rather than a hard `fail`. The absence of a *detectable*
+ *   mechanism is NOT high-confidence evidence that 2.4.1 is violated, for
+ *   several reasons the engine cannot resolve from a single static snapshot:
+ *     • Applicability itself is undecidable in-page. 2.4.1 governs blocks of
+ *       content "repeated on multiple Web pages"; whether any block is
+ *       actually repeated across the site is not knowable from one document,
+ *       so a page that legitimately needs no bypass mechanism would be
+ *       indistinguishable from one that omits a required one.
+ *     • Transient accessibility-tree state. When a modal dialog is open the
+ *       rest of the page is routinely made `inert` or `aria-hidden="true"`,
+ *       so the page's real <main>/headings are (correctly) filtered out by
+ *       isAccTreeEligible for the duration of that state and only the dialog
+ *       is exposed — a snapshot taken then would see "no mechanism" though
+ *       the page has one once the dialog closes. The same applies to content
+ *       that is display:none until revealed by script (tabs, accordions, an
+ *       unmounted SPA view).
+ *   Both cases would produce false positives under a hard `fail`, which this
+ *   engine reserves for high-confidence violations; `cantTell` routes them to
+ *   human review instead. This mirrors how other tools treat 2.4.1 (e.g. axe
+ *   marks the no-mechanism case "needs review" via reviewOnFail rather than
+ *   failing it), and why no ACT rule hard-fails 2.4.1 by presence alone.
  * - This rule intentionally checks presence, not position, for the
  *   same-page-anchor condition (b): a full bypass algorithm is heuristic
  *   (see ROADMAP.md's Tier 1a note on why this rule was
  *   deferred from the rest of that batch), and getting DOM-order /
  *   keyboard-focus-order positioning exactly right without introducing
  *   false positives is materially harder than the rest of Tier 1a. Being
- *   lenient about condition (b) can only produce a false NEGATIVE (missing
- *   a page whose only anchor link isn't a real skip mechanism, e.g. a
- *   "back to top" link) — never a false positive — which matches this
- *   engine's non-negotiable "fail is reserved for high-confidence
- *   violations" policy. A future revision can tighten (b) once a
- *   positional heuristic has been validated against real pages without
- *   regressions.
- * - `fail` therefore means: no main landmark, no resolvable same-page
- *   anchor link anywhere, and no heading anywhere on the page. That is a
- *   strong, low-ambiguity signal that the page truly has zero recognized
- *   bypass mechanism.
+ *   lenient about condition (b) can only make us *miss* a review prompt
+ *   (a page whose only anchor link isn't a real skip mechanism, e.g. a
+ *   "back to top" link) — never raise a spurious one.
+ * - Shadow DOM: all three conditions use `helpers.queryAllSmart`, which is
+ *   shadow-DOM-aware (when the run enables includeShadowDom) and applies the
+ *   engine's hidden-content policy. The same-page-anchor target is resolved
+ *   in the link's own root (`getRootNode()` — the document, or the shadow
+ *   root the link lives in) before falling back to the document, so a skip
+ *   link encapsulated in a web component is credited the same as one in the
+ *   light DOM. (Previously the anchor path used raw
+ *   `document.querySelectorAll`/`getElementById`, which never pierced shadow
+ *   roots — a genuine gap now closed.)
  */
 
 const id = 'bypass-blocks-present';
@@ -58,7 +85,7 @@ const meta = {
     descriptionKey: 'bypassBlocksPresent_description'
   },
   helpUrl: null,
-  tags: ['wcag2a', 'wcag241', 'navigation', 'atomic', 'automatic'],
+  tags: ['wcag2a', 'wcag241', 'navigation', 'atomic', 'manual'],
   wcagSc: ['2.4.1'],
   normativeMappings: [
     {
@@ -69,9 +96,9 @@ const meta = {
       conformanceLevel: 'A'
     }
   ],
-  defaultSeverity: 'serious',
+  defaultSeverity: 'moderate',
   category: 'operable',
-  type: 'automatic',
+  type: 'manual',
   defaultConfidence: 'medium',
   coverage: { facetsBySc: { '2.4.1': ['bypass-blocks-present'] } }
 };
@@ -122,7 +149,8 @@ function runInPage(ctx) {
   // (e.g. a page whose only <h1> sits inside a display:none ancestor,
   // unreachable by sighted and screen reader users alike). A fully
   // non-rendered <main>/heading must not be credited here, since that would
-  // wrongly return `pass` for a page with zero actual bypass mechanisms.
+  // wrongly treat a page with zero currently-exposed bypass mechanisms as
+  // having one.
   function hasMainLandmark() {
     for (const el of queryAll('main, [role="main"]')) {
       if (el && isExposedToAt(el)) return true;
@@ -130,10 +158,41 @@ function runInPage(ctx) {
     return false;
   }
 
+  // Resolve a fragment id (or legacy <a name>) inside a specific root node
+  // (a Document or a ShadowRoot). Both expose getElementById; querySelector
+  // is used for the legacy anchor-name fallback.
+  function resolveInRoot(root, fragment) {
+    if (!root) return null;
+    let target;
+    try {
+      target = typeof root.getElementById === 'function' ? root.getElementById(fragment) : null;
+    } catch {
+      target = null;
+    }
+    if (target) return target;
+    try {
+      target =
+        typeof root.querySelector === 'function'
+          ? root.querySelector('a[name="' + fragment.replace(/"/g, '\\"') + '"]')
+          : null;
+    } catch {
+      target = null;
+    }
+    return target;
+  }
+
+  // Shadow-DOM-aware: gather anchors via queryAllSmart (pierces shadow roots
+  // when includeShadowDom is enabled, and drops hard-hidden links), and
+  // resolve each fragment in the link's own root before falling back to the
+  // document. This credits a skip link encapsulated in a web component the
+  // same way as one authored in the light DOM.
   function hasWorkingAnchorLink() {
     let links;
     try {
-      links = document.querySelectorAll('a[href]');
+      links =
+        helpers && typeof helpers.queryAllSmart === 'function'
+          ? helpers.queryAllSmart('a[href]')
+          : document.querySelectorAll('a[href]');
     } catch {
       links = [];
     }
@@ -150,18 +209,19 @@ function runInPage(ctx) {
       fragment = fragment.trim();
       if (!fragment) continue;
 
-      let target;
+      let root = document;
       try {
-        target = document.getElementById(fragment);
-      } catch {
-        target = null;
-      }
-      if (!target) {
-        try {
-          target = document.querySelector('a[name="' + fragment.replace(/"/g, '\\"') + '"]');
-        } catch {
-          target = null;
+        if (typeof a.getRootNode === 'function') {
+          const r = a.getRootNode();
+          if (r) root = r;
         }
+      } catch {
+        root = document;
+      }
+
+      let target = resolveInRoot(root, fragment);
+      if (!target && root !== document) {
+        target = resolveInRoot(document, fragment);
       }
       if (target) return true;
     }
@@ -179,8 +239,9 @@ function runInPage(ctx) {
   const anchorLink = mainLandmark ? false : hasWorkingAnchorLink();
   const heading = mainLandmark || anchorLink ? false : hasHeading();
 
+  // A recognized mechanism is present -> nothing to review on this page.
   if (mainLandmark || anchorLink || heading) {
-    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
   const stableSelector = helpers.buildSelector ? helpers.buildSelector(body) : 'body';
@@ -192,11 +253,12 @@ function runInPage(ctx) {
     {
       selector: stableSelector,
       html,
-      summary: 'This page has no recognized way to bypass repeated blocks of content.',
-      hint: 'Add a main landmark (<main> or role="main"), a working "skip to content" link, or heading elements that assistive technology can use to jump past repeated content.',
+      summary:
+        'No recognized way to bypass repeated blocks of content was detected on this page — verify a bypass mechanism exists.',
+      hint: 'Confirm the page offers a bypass mechanism: a main landmark (<main> or role="main"), a working "skip to content" link, or heading elements that assistive technology can use to jump past repeated content. (A mechanism may be temporarily hidden — e.g. while a modal dialog makes the page inert — or provided on a per-site basis; this needs human confirmation.)',
       i18n: {
-        summaryKey: 'bypassBlocksPresent_summary_fail',
-        hintKey: 'bypassBlocksPresent_hint_fail',
+        summaryKey: 'bypassBlocksPresent_summary_cantTell',
+        hintKey: 'bypassBlocksPresent_hint_cantTell',
         params: {}
       },
       data: {
@@ -208,8 +270,8 @@ function runInPage(ctx) {
 
   return {
     ruleId: rule.ruleId,
-    outcome: 'fail',
-    severity: rule.defaultSeverity || 'serious',
+    outcome: 'cantTell',
+    severity: rule.defaultSeverity || 'moderate',
     occurrences
   };
 }

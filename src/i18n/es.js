@@ -919,10 +919,10 @@ module.exports = {
   bypassBlocksPresent_title: 'La página debe proporcionar una forma de omitir bloques repetidos',
   bypassBlocksPresent_description:
     'Comprueba que la página tenga al menos un mecanismo reconocido de omisión de bloques del criterio de éxito 2.4.1 de WCAG: un landmark main, un enlace de anclaje funcional dentro de la misma página, o un encabezado.',
-  bypassBlocksPresent_summary_fail:
-    'Esta página no tiene ninguna forma reconocida de omitir bloques de contenido repetidos.',
-  bypassBlocksPresent_hint_fail:
-    'Agregar un landmark main (<main> o role="main"), un enlace funcional de "saltar al contenido", o elementos de encabezado que las tecnologías de asistencia puedan usar para saltar el contenido repetido.',
+  bypassBlocksPresent_summary_cantTell:
+    'No se detectó ninguna forma reconocida de omitir bloques de contenido repetidos en esta página; verifique que exista un mecanismo de omisión.',
+  bypassBlocksPresent_hint_cantTell:
+    'Confirme que la página ofrece un mecanismo de omisión: un landmark main (<main> o role="main"), un enlace funcional de "saltar al contenido", o elementos de encabezado que las tecnologías de asistencia puedan usar para saltar el contenido repetido. (Un mecanismo puede estar oculto temporalmente —por ejemplo, mientras un diálogo modal deja la página inerte— o proporcionarse a nivel de sitio; esto requiere confirmación humana.)',
 
   landmarkBannerIsTopLevel_title: 'El landmark banner debe ser de nivel superior',
   landmarkBannerIsTopLevel_description:

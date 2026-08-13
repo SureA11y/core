@@ -82,12 +82,15 @@ test('page-title-present: fail unscoped, notApplicable when scoped to a subtree'
   });
 });
 
-test('bypass-blocks-present: fail unscoped, notApplicable with engineOptions.fragment: true', () => {
+test('bypass-blocks-present: cantTell unscoped, notApplicable with engineOptions.fragment: true', () => {
   const html =
     '<!doctype html><html><body><a href="#missing">Skip</a><nav>Nav</nav><div>Content</div></body></html>';
 
   const unscoped = runa11yCoreOnHtml(html, { runOnly: ['bypass-blocks-present'] });
-  assertRule(unscoped, 'bypass-blocks-present', 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assertRule(unscoped, 'bypass-blocks-present', 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
 
   const fragment = runa11yCoreOnHtml(html, {
     runOnly: ['bypass-blocks-present'],

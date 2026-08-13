@@ -2,11 +2,11 @@
 
 Generated from the compiled engine's own catalog (`getChecksCatalog()`/`getRulesCatalog()`) — run `node scripts/generate-rule-catalog.js` after `npm run build` to regenerate this file whenever rules change. Do not hand-edit.
 
-**125 rules total: 77 automatic (WCAG-normative, can return `fail`), 48 manual (advisory/judgment-required, capped at `cantTell`). 101 carry at least one formal WCAG Success Criterion mapping.**
+**125 rules total: 76 automatic (WCAG-normative, can return `fail`), 49 manual (advisory/judgment-required, capped at `cantTell`). 101 carry at least one formal WCAG Success Criterion mapping.**
 
 See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`severity` mean on a scan result, and [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md) for how these roll up to an SC-level conformance claim. For WCAG-facet-level coverage-gap tracking (which parts of an SC are and aren't automatable yet), see `coverage/coverage-report.md` instead — that one is organized by facet, this one by rule.
 
-## Automatic rules (77) — can return `fail`
+## Automatic rules (76) — can return `fail`
 
 | Rule ID | Title | WCAG SC | Level | Confidence | Default severity |
 |---|---|---|---|---|---|
@@ -31,7 +31,6 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | `avoid-inline-spacing` | Inline style must not force text spacing below the WCAG metric | 1.4.12 | AA | high | moderate |
 | `binary-control-name-present` | Binary controls have an accessible name | 4.1.2 | A | high | serious |
 | `button-name-present` | Buttons have an accessible name | 4.1.2 | A | high | serious |
-| `bypass-blocks-present` | Page must provide a way to bypass repeated blocks | 2.4.1 | A | medium | serious |
 | `canvas-text-alternative-present` | &lt;canvas&gt; must provide a text alternative | 1.1.1 | A | high | serious |
 | `combobox-name-present` | Comboboxes have an accessible name | 4.1.2 | A | high | serious |
 | `contrast-computable` | Color contrast is computable for rendered text | 1.4.3, 1.4.6 | AAA | high | serious |
@@ -88,7 +87,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | `valid-lang` | Element lang attribute must be syntactically valid | 3.1.2 | AA | high | moderate |
 | `video-poster-text-alternative-present` | &lt;video&gt; poster must have a text alternative | 1.1.1 | A | medium | serious |
 
-## Manual rules (48) — advisory, capped at `cantTell`
+## Manual rules (49) — advisory, capped at `cantTell`
 
 | Rule ID | Title | WCAG SC | Level | Confidence | Default severity |
 |---|---|---|---|---|---|
@@ -97,6 +96,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | `area-alt-quality` | &lt;area&gt; alt text must be appropriate (manual review) | 1.1.1 | A | medium | minor |
 | `aria-checked-state-mismatch` | Native checkbox/radio aria-checked should match its actual state | 4.1.2 | A | medium | moderate |
 | `aria-text` | role="text" elements should have no focusable descendants | — | — | medium | minor |
+| `bypass-blocks-present` | Page must provide a way to bypass repeated blocks | 2.4.1 | A | medium | moderate |
 | `canvas-text-alternative-quality` | &lt;canvas&gt; text alternative must be appropriate (manual review) | 1.1.1 | A | medium | minor |
 | `css-hidden-focus` | Focusable elements must not be visually hidden | 2.4.7 | AA | low | serious |
 | `embed-text-alternative-quality` | &lt;embed&gt; text alternative must be appropriate (manual review) | 1.1.1 | A | medium | minor |
