@@ -22,6 +22,10 @@ module.exports = {
   inputImage_altPresent_summary_fail: 'Fehlendes alt-Attribut auf <input type="image">.',
   inputImage_altPresent_hint_fail:
     'Fügen Sie ein alt-Attribut hinzu (verwenden Sie alt="" nur, wenn ein separater zugänglicher Name bereitgestellt wird).',
+  inputImage_altPresent_summary_defaultName:
+    'Der zugaengliche Name ist der Browser-Standard fuer eine Bildschaltflaeche und sagt nichts aus.',
+  inputImage_altPresent_hint_defaultName:
+    'Ersetzen Sie ihn durch Text, der die Aktion beschreibt, zum Beispiel "Suchen".',
   ariaHidden_programmaticFocus_review_title: 'Programmatischen Fokus bei aria-hidden überprüfen',
   ariaHidden_programmaticFocus_review_description:
     'Markiert Elemente, die aria-hidden sind, aber aufgrund von programmatischem Fokus (z. B. tabindex < 0) als geeignet gelten. Überprüfen Sie die beabsichtigte Fokusverwaltung und die Sichtbarkeit für assistive Technologien.',

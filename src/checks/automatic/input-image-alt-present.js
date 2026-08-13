@@ -9,11 +9,10 @@
  * @standard WCAG 2.2
  * @sc 1.1.1
  * @applicability
- *   Applies to <input type="image"> elements that are exposed to assistive technologies.
- *   Elements otherwise hidden from the accessibility tree remain applicable
- *   if they are focusable or referenced by IDREF relationships (per engine eligibility checks).
+ *   Applies to <input type="image"> elements included in the accessibility tree.
  * @expectation
- *   Each applicable <input type="image"> element has an alt attribute.
+ *   Each applicable <input type="image"> element has an alt attribute, and its
+ *   accessible name is not the browser default for an image button.
  *   The alt attribute may be empty (alt="").
  */
 
@@ -72,8 +71,14 @@ function runInPage(ctx) {
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
 
-  const isAccTreeEligible =
-    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+  // ACT 59796f applies to image buttons included in the accessibility tree,
+  // which excludes focusable content inside aria-hidden.
+  const isEligibleHelper =
+    helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+      ? helpers.isIncludedInAccessibilityTree
+      : helpers && typeof helpers.isAccTreeEligible === 'function'
+        ? helpers.isAccTreeEligible
+        : null;
 
   const getAriaNameInfo =
     helpers && typeof helpers.getAriaNameInfo === 'function' ? helpers.getAriaNameInfo : null;
@@ -99,19 +104,70 @@ function runInPage(ctx) {
   for (const el of inputs) {
     if (!el || !el.getAttribute) continue;
 
-    // Applicability: eligible in the acc tree (with helper exceptions).
-    if (isAccTreeEligible) {
+    if (isEligibleHelper) {
       const elig = (() => {
         try {
-          return isAccTreeEligible(el, ctx);
+          return isEligibleHelper(el, ctx);
         } catch {
-          return { eligible: true, reasons: [] };
+          return true;
         }
       })();
-      if (elig && elig.eligible === false) continue;
+      const eligible = typeof elig === 'boolean' ? elig : !(elig && elig.eligible === false);
+      if (!eligible) continue;
     }
 
     applicableCount += 1;
+
+    // The browser's own fallback name for an image button carries no
+    // information, so an author-supplied name equal to it is treated as no
+    // name at all (ACT 59796f). Only the English defaults are recognised:
+    // "Submit Query" from HTML-AAM, "Submit" from Chrome.
+    const effectiveName = (() => {
+      let v = '';
+      if (getAriaNameInfo) {
+        try {
+          const aria = getAriaNameInfo(el, ctx);
+          if (aria && aria.present && aria.value) v = String(aria.value);
+        } catch {
+          v = '';
+        }
+      }
+      if (!v) {
+        const alt = el.getAttribute('alt');
+        if (alt != null && String(alt).trim()) v = String(alt);
+      }
+      if (!v) {
+        const t = el.getAttribute('title');
+        if (t != null && String(t).trim()) v = String(t);
+      }
+      return v.trim().toLowerCase();
+    })();
+
+    if (effectiveName === 'submit query' || effectiveName === 'submit') {
+      const eligInfoDefault = getEligibilityInfo
+        ? getEligibilityInfo(el, ctx, { targetSet: 'acc' })
+        : null;
+      const defaultNameOccurrence = {
+        summary:
+          'Accessible name is the browser default for an image button, which conveys nothing.',
+        hint: 'Replace it with text describing what the button does, for example "Search".',
+        i18n: {
+          summaryKey: 'inputImage_altPresent_summary_defaultName',
+          hintKey: 'inputImage_altPresent_hint_defaultName',
+          params: { element: 'input[type=image]' }
+        },
+        data: {
+          visibilityFilter: eligInfoDefault || { targetSet: 'acc', accEligible: null, reasons: [] },
+          details: { reasonCode: 'default_name' }
+        }
+      };
+      occurrences.push(
+        helpers && typeof helpers.reportOccurrence === 'function'
+          ? helpers.reportOccurrence(el, defaultNameOccurrence)
+          : { selector: '', html: '', ...defaultNameOccurrence }
+      );
+      continue;
+    }
 
     const hasAlt = el.getAttribute('alt') !== null;
     if (hasAlt) continue;

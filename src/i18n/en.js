@@ -20,6 +20,10 @@ module.exports = {
   inputImage_altPresent_summary_fail: 'Missing alt attribute on <input type="image">.',
   inputImage_altPresent_hint_fail:
     'Add an alt attribute (use alt="" only when a separate accessible name is provided).',
+  inputImage_altPresent_summary_defaultName:
+    'Accessible name is the browser default for an image button, which conveys nothing.',
+  inputImage_altPresent_hint_defaultName:
+    'Replace it with text describing what the button does, for example "Search".',
   ariaHidden_programmaticFocus_review_title: 'Review aria-hidden programmatic focus',
   ariaHidden_programmaticFocus_review_description:
     'Flags elements that are aria-hidden but considered eligible due to programmatic focus (e.g., tabindex < 0). Verify intended focus management and assistive technology exposure.',

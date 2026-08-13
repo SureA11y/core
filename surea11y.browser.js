@@ -17190,8 +17190,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
 
-  const isAccTreeEligible =
-    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+  // ACT 59796f applies to image buttons included in the accessibility tree,
+  // which excludes focusable content inside aria-hidden.
+  const isEligibleHelper =
+    helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+      ? helpers.isIncludedInAccessibilityTree
+      : helpers && typeof helpers.isAccTreeEligible === 'function'
+        ? helpers.isAccTreeEligible
+        : null;
 
   const getAriaNameInfo =
     helpers && typeof helpers.getAriaNameInfo === 'function' ? helpers.getAriaNameInfo : null;
@@ -17217,19 +17223,70 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   for (const el of inputs) {
     if (!el || !el.getAttribute) continue;
 
-    // Applicability: eligible in the acc tree (with helper exceptions).
-    if (isAccTreeEligible) {
+    if (isEligibleHelper) {
       const elig = (() => {
         try {
-          return isAccTreeEligible(el, ctx);
+          return isEligibleHelper(el, ctx);
         } catch {
-          return { eligible: true, reasons: [] };
+          return true;
         }
       })();
-      if (elig && elig.eligible === false) continue;
+      const eligible = typeof elig === 'boolean' ? elig : !(elig && elig.eligible === false);
+      if (!eligible) continue;
     }
 
     applicableCount += 1;
+
+    // The browser's own fallback name for an image button carries no
+    // information, so an author-supplied name equal to it is treated as no
+    // name at all (ACT 59796f). Only the English defaults are recognised:
+    // "Submit Query" from HTML-AAM, "Submit" from Chrome.
+    const effectiveName = (() => {
+      let v = '';
+      if (getAriaNameInfo) {
+        try {
+          const aria = getAriaNameInfo(el, ctx);
+          if (aria && aria.present && aria.value) v = String(aria.value);
+        } catch {
+          v = '';
+        }
+      }
+      if (!v) {
+        const alt = el.getAttribute('alt');
+        if (alt != null && String(alt).trim()) v = String(alt);
+      }
+      if (!v) {
+        const t = el.getAttribute('title');
+        if (t != null && String(t).trim()) v = String(t);
+      }
+      return v.trim().toLowerCase();
+    })();
+
+    if (effectiveName === 'submit query' || effectiveName === 'submit') {
+      const eligInfoDefault = getEligibilityInfo
+        ? getEligibilityInfo(el, ctx, { targetSet: 'acc' })
+        : null;
+      const defaultNameOccurrence = {
+        summary:
+          'Accessible name is the browser default for an image button, which conveys nothing.',
+        hint: 'Replace it with text describing what the button does, for example "Search".',
+        i18n: {
+          summaryKey: 'inputImage_altPresent_summary_defaultName',
+          hintKey: 'inputImage_altPresent_hint_defaultName',
+          params: { element: 'input[type=image]' }
+        },
+        data: {
+          visibilityFilter: eligInfoDefault || { targetSet: 'acc', accEligible: null, reasons: [] },
+          details: { reasonCode: 'default_name' }
+        }
+      };
+      occurrences.push(
+        helpers && typeof helpers.reportOccurrence === 'function'
+          ? helpers.reportOccurrence(el, defaultNameOccurrence)
+          : { selector: '', html: '', ...defaultNameOccurrence }
+      );
+      continue;
+    }
 
     const hasAlt = el.getAttribute('alt') !== null;
     if (hasAlt) continue;
@@ -26889,6 +26946,8 @@ const I18N = {
     "inputImage_altPresent_description": "Prüft, ob <input type=\"image\">-Elemente ein alt-Attribut bereitstellen, um einen Mechanismus für eine Textalternative zu unterstützen.",
     "inputImage_altPresent_summary_fail": "Fehlendes alt-Attribut auf <input type=\"image\">.",
     "inputImage_altPresent_hint_fail": "Fügen Sie ein alt-Attribut hinzu (verwenden Sie alt=\"\" nur, wenn ein separater zugänglicher Name bereitgestellt wird).",
+    "inputImage_altPresent_summary_defaultName": "Der zugaengliche Name ist der Browser-Standard fuer eine Bildschaltflaeche und sagt nichts aus.",
+    "inputImage_altPresent_hint_defaultName": "Ersetzen Sie ihn durch Text, der die Aktion beschreibt, zum Beispiel \"Suchen\".",
     "ariaHidden_programmaticFocus_review_title": "Programmatischen Fokus bei aria-hidden überprüfen",
     "ariaHidden_programmaticFocus_review_description": "Markiert Elemente, die aria-hidden sind, aber aufgrund von programmatischem Fokus (z. B. tabindex < 0) als geeignet gelten. Überprüfen Sie die beabsichtigte Fokusverwaltung und die Sichtbarkeit für assistive Technologien.",
     "ariaHidden_programmaticFocus_review_summary": "Überprüfung: Ein aria-hidden-Element ist programmatisch fokussierbar.",
@@ -27505,6 +27564,8 @@ const I18N = {
     "inputImage_altPresent_description": "Checks that <input type=\"image\"> elements provide an alt attribute to support a text alternative mechanism.",
     "inputImage_altPresent_summary_fail": "Missing alt attribute on <input type=\"image\">.",
     "inputImage_altPresent_hint_fail": "Add an alt attribute (use alt=\"\" only when a separate accessible name is provided).",
+    "inputImage_altPresent_summary_defaultName": "Accessible name is the browser default for an image button, which conveys nothing.",
+    "inputImage_altPresent_hint_defaultName": "Replace it with text describing what the button does, for example \"Search\".",
     "ariaHidden_programmaticFocus_review_title": "Review aria-hidden programmatic focus",
     "ariaHidden_programmaticFocus_review_description": "Flags elements that are aria-hidden but considered eligible due to programmatic focus (e.g., tabindex < 0). Verify intended focus management and assistive technology exposure.",
     "ariaHidden_programmaticFocus_review_summary": "Review: aria-hidden element is programmatically focusable.",
@@ -28121,6 +28182,8 @@ const I18N = {
     "inputImage_altPresent_description": "Comprueba que los elementos <input type=\"image\"> incluyan un atributo alt para ofrecer un mecanismo de alternativa textual.",
     "inputImage_altPresent_summary_fail": "Falta el atributo alt en <input type=\"image\">.",
     "inputImage_altPresent_hint_fail": "Agregar un atributo alt (usar alt=\"\" solo cuando se proporcione un nombre accesible por separado).",
+    "inputImage_altPresent_summary_defaultName": "El nombre accesible es el predeterminado del navegador para un boton de imagen y no aporta informacion.",
+    "inputImage_altPresent_hint_defaultName": "Sustituyelo por un texto que describa la accion del boton, por ejemplo \"Buscar\".",
     "ariaHidden_programmaticFocus_review_title": "Revisar el foco programático en aria-hidden",
     "ariaHidden_programmaticFocus_review_description": "Señala elementos aria-hidden considerados elegibles debido a un foco programático (por ejemplo, tabindex < 0). Verificar que la gestión del foco es intencionada y la exposición a las tecnologías de asistencia.",
     "ariaHidden_programmaticFocus_review_summary": "Revisión: un elemento aria-hidden es enfocable de forma programática.",
@@ -28737,6 +28800,8 @@ const I18N = {
     "inputImage_altPresent_description": "Vérifie que les éléments <input type=\"image\"> fournissent un attribut alt afin de proposer un mécanisme d’alternative textuelle.",
     "inputImage_altPresent_summary_fail": "Attribut alt manquant sur <input type=\"image\">.",
     "inputImage_altPresent_hint_fail": "Ajoutez un attribut alt (utilisez alt=\"\" uniquement lorsqu’un nom accessible séparé est fourni).",
+    "inputImage_altPresent_summary_defaultName": "Le nom accessible est celui par defaut du navigateur pour un bouton image et n'apporte aucune information.",
+    "inputImage_altPresent_hint_defaultName": "Remplacez-le par un texte decrivant l action du bouton, par exemple \"Rechercher\".",
     "ariaHidden_programmaticFocus_review_title": "Vérifier le focus programmatique avec aria-hidden",
     "ariaHidden_programmaticFocus_review_description": "Signale les éléments aria-hidden considérés comme éligibles uniquement via un focus programmatique (ex. tabindex < 0). Vérifiez l’intention de gestion du focus et l’exposition aux technologies d’assistance.",
     "ariaHidden_programmaticFocus_review_summary": "Vérification : un élément aria-hidden est focusable de façon programmatique.",
