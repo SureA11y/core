@@ -92,6 +92,41 @@ function runInPage(ctx) {
 
   const trim = (v) => (v == null ? '' : String(v)).trim();
 
+  // Roles with their own *-name-present rule; a control carrying one
+  // explicitly is skipped here so it is reported once.
+  const ROLE_OWNED_ELSEWHERE = [
+    'alertdialog',
+    'button',
+    'checkbox',
+    'combobox',
+    'dialog',
+    'grid',
+    'link',
+    'listbox',
+    'menu',
+    'menubar',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'meter',
+    'option',
+    'progressbar',
+    'radio',
+    'radiogroup',
+    'scrollbar',
+    'searchbox',
+    'slider',
+    'spinbutton',
+    'switch',
+    'tab',
+    'tablist',
+    'textbox',
+    'toolbar',
+    'tooltip',
+    'tree',
+    'treeitem'
+  ];
+
   const metrics = {
     applicableCount: 0,
     passCount: 0,
@@ -199,6 +234,8 @@ function runInPage(ctx) {
     } catch {
       role = '';
     }
+
+    if (role && ROLE_OWNED_ELSEWHERE.indexOf(role) !== -1) continue;
 
     if (role === 'presentation' || role === 'none') {
       const fi = getFocusableInfo

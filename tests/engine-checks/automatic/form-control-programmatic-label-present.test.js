@@ -339,8 +339,6 @@ test('fail: an unlabeled control outside the aria-hidden subtree is unaffected',
   assert.ok(!hasOccurrenceForId(rule, 'ah5'));
 });
 
-// A labeled aria-hidden control is out of scope, not a pass: the name is not
-// exposed either, so the rule has nothing to assert about it.
 test('notApplicable: aria-hidden control that does carry an aria-label', () => {
   const html = `
     <!doctype html><html><body>
@@ -364,8 +362,8 @@ test('notApplicable: <select> and <textarea> inside aria-hidden, like <input>', 
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-// Guards against over-excluding: only the aria-hidden overrides are dropped.
-// A focusable role=presentation control keeps its role by conflict resolution.
+// Presentational role conflict resolution: a focusable element keeps its
+// implicit role.
 test('fail: focusable role="presentation" control stays in scope', () => {
   const html = `
     <!doctype html><html><body>
@@ -387,4 +385,42 @@ test('notApplicable: control under an aria-hidden ancestor several levels up', (
   `;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test('notApplicable: native control carrying a role owned by another rule', () => {
+  for (const markup of [
+    `<input type="text" role="button">`,
+    `<input type="text" role="combobox">`,
+    `<input type="text" role="searchbox">`,
+    `<input type="checkbox" role="switch">`,
+    `<select role="listbox"><option>a</option></select>`
+  ]) {
+    const result = runa11yCoreOnHtml(`<!doctype html><html><body>${markup}</body></html>`, {
+      runOnly: [RULE_ID]
+    });
+    assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
+test('fail: an unrecognized role does not take the control out of scope', () => {
+  const html = `
+    <!doctype html><html><body>
+      <input id="weird" type="text" role="not-a-real-role">
+    </body></html>
+  `;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'weird'));
+});
+
+test('exactly one rule reports an unlabeled native checkbox', () => {
+  const html = `<!doctype html><html><body><input id="cb" type="checkbox"></body></html>`;
+  const result = runa11yCoreOnHtml(html, {
+    runOnly: [RULE_ID, 'binary-control-name-present']
+  });
+  const candidates = [RULE_ID, 'binary-control-name-present'];
+  const reporting = (result.checksResults || [])
+    .filter((r) => candidates.includes(r.ruleId) && (r.occurrences || []).length > 0)
+    .map((r) => r.ruleId);
+  assert.deepStrictEqual(reporting, [RULE_ID]);
 });

@@ -148,7 +148,9 @@ function runInPage(ctx) {
   const occurrences = [];
   let applicableCount = 0;
 
-  const selector = 'input[type="range"], [role="slider"]';
+  // Native input[type=range] belongs to
+  // form-control-programmatic-label-present.
+  const selector = '[role="slider"]';
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);

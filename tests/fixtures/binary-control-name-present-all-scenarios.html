@@ -29,7 +29,7 @@
   <h2>A. Native input[type=checkbox]: mechanism priority order</h2>
 
   <div class="case" id="case_01">
-    <div class="case-title">01 — FAIL: native checkbox, no name at all</div>
+    <div class="case-title">01 — OUT OF SCOPE: native checkbox with no explicit role; form-control-programmatic-label-present reports it</div>
     <input type="checkbox" id="binctl_case_01" />
   </div>
 
@@ -63,7 +63,7 @@
   <h2>B. Native input[type=radio]: mechanism priority order</h2>
 
   <div class="case" id="case_07">
-    <div class="case-title">07 — FAIL: native radio, no name at all</div>
+    <div class="case-title">07 — OUT OF SCOPE: native radio with no explicit role; form-control-programmatic-label-present reports it</div>
     <input type="radio" name="binctl_r" id="binctl_case_07" />
   </div>
 
@@ -156,7 +156,7 @@
   </div>
 
   <div class="case" id="case_23">
-    <div class="case-title">23 — EXCEPTION: visibility:hidden ancestor overridden by descendant visibility:visible => eligible, missing name => FAIL</div>
+    <div class="case-title">23 — OUT OF SCOPE: visibility:hidden ancestor overridden by descendant visibility:visible, so it is eligible, but a native checkbox with no explicit role belongs to form-control-programmatic-label-present</div>
     <div style="visibility:hidden">
       <input type="checkbox" style="visibility:visible" id="binctl_case_23" />
     </div>
