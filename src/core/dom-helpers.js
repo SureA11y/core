@@ -4562,6 +4562,12 @@ function createDomHelpers(opts) {
     getLabelMethod,
     getLabelStrength,
 
+    // Whether a <label> carries text that names its associated control
+    // (own aria-name, else rendered content, else title). Shared so
+    // form-control-single-label and form-control-programmatic-label-present
+    // agree on what a label is worth.
+    labelContributesAccessibleName,
+
     // Flat-tree ancestor walk (assignedSlot-aware, then shadow host) —
     // see this function's own definition above for why assignedSlot
     // must win over parentNode.

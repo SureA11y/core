@@ -912,6 +912,10 @@ module.exports = {
     'Dieses <{{element}}> ist mit {{labelCount}} Beschriftungen verknüpft.',
   formControlSingleLabel_hint_fail:
     'Behalten Sie nur ein <label> pro Formularelement (entweder umschließend oder über for/id referenziert).',
+  formControlSingleLabel_summary_cantTell:
+    'Dieses <{{element}}> hat ein beschriftendes <label> und zusätzlich eine leere <label>-Verknüpfung; prüfen Sie, wie es angesagt wird.',
+  formControlSingleLabel_hint_cantTell:
+    'Entfernen Sie das überflüssige leere <label>, sodass genau ein <label> mit dem Element verknüpft ist.',
 
   nestedInteractiveControlsAbsent_title:
     'Interaktive Formularelemente dürfen nicht verschachtelt sein',

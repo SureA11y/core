@@ -53,7 +53,7 @@
     <label for="fcsl_case_05">Duplicate label</label>
   </div>
 
-  <h2>C. Not applicable (skipped, not counted)</h2>
+  <h2>C. Passing edge cases (no occurrence)</h2>
 
   <div class="case" id="case_06">
     <div class="case-title">06 — NEUTRAL: control with no label at all (covered by a different rule)</div>
@@ -65,6 +65,21 @@
     <label for="fcsl_case_07">Full name</label>
     <input id="fcsl_case_07" type="text">
     <label for="fcsl_case_07" style="display:none">Hidden duplicate</label>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — PASS: two empty labels, but aria-label overrides them so they don't feed the name</div>
+    <label for="fcsl_case_08"></label>
+    <label><input id="fcsl_case_08" type="radio" aria-label="Internal entity person"></label>
+  </div>
+
+  <h2>D. Needs review (cantTell)</h2>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — CANTTELL: one real label plus a redundant empty label[for], no override</div>
+    <label for="fcsl_case_09">Given name</label>
+    <label for="fcsl_case_09"></label>
+    <input id="fcsl_case_09" type="text">
   </div>
 
   <p class="note">End of fixture.</p>

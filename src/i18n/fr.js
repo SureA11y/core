@@ -869,6 +869,10 @@ module.exports = {
   formControlSingleLabel_summary_fail: 'Ce <{{element}}> est associé à {{labelCount}} étiquettes.',
   formControlSingleLabel_hint_fail:
     'Conservez une seule <label> par contrôle de formulaire (soit en l’enveloppant, soit en la référençant via for/id).',
+  formControlSingleLabel_summary_cantTell:
+    'Ce <{{element}}> a une <label> qui l’étiquette plus une association de <label> vide supplémentaire ; vérifiez comment il est annoncé.',
+  formControlSingleLabel_hint_cantTell:
+    'Supprimez la <label> vide redondante afin qu’une seule <label> soit associée au contrôle.',
   nestedInteractiveControlsAbsent_title: 'Les contrôles interactifs ne doivent pas être imbriqués',
   nestedInteractiveControlsAbsent_description:
     'Vérifie qu’un contrôle interactif (lien, bouton, contrôle de formulaire, ou rôle de widget ARIA) ne contient pas un autre contrôle interactif.',

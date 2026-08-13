@@ -877,6 +877,10 @@ module.exports = {
     'This <{{element}}> is associated with {{labelCount}} labels.',
   formControlSingleLabel_hint_fail:
     'Keep only one <label> per form control (either wrapping it or referencing it via for/id).',
+  formControlSingleLabel_summary_cantTell:
+    'This <{{element}}> has one labelling <label> plus an extra empty <label> association; verify how it is announced.',
+  formControlSingleLabel_hint_cantTell:
+    'Remove the redundant empty <label> so exactly one <label> is associated with the control.',
 
   nestedInteractiveControlsAbsent_title: 'Interactive controls must not be nested',
   nestedInteractiveControlsAbsent_description:

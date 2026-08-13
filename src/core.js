@@ -7731,6 +7731,8 @@ const I18N = {
     "formControlSingleLabel_description": "Prüft, ob ein Formularelement mit höchstens einem <label> verknüpft ist (durch Umschließen oder durch label[for]).",
     "formControlSingleLabel_summary_fail": "Dieses <{{element}}> ist mit {{labelCount}} Beschriftungen verknüpft.",
     "formControlSingleLabel_hint_fail": "Behalten Sie nur ein <label> pro Formularelement (entweder umschließend oder über for/id referenziert).",
+    "formControlSingleLabel_summary_cantTell": "Dieses <{{element}}> hat ein beschriftendes <label> und zusätzlich eine leere <label>-Verknüpfung; prüfen Sie, wie es angesagt wird.",
+    "formControlSingleLabel_hint_cantTell": "Entfernen Sie das überflüssige leere <label>, sodass genau ein <label> mit dem Element verknüpft ist.",
     "nestedInteractiveControlsAbsent_title": "Interaktive Formularelemente dürfen nicht verschachtelt sein",
     "nestedInteractiveControlsAbsent_description": "Prüft, ob ein interaktives Element (Link, Schaltfläche, Formularelement oder ARIA-Widget-Rolle) kein weiteres interaktives Element enthält.",
     "nestedInteractiveControlsAbsent_summary_fail": "Dieses <{{element}}> enthält ein oder mehrere verschachtelte interaktive Elemente: {{nestedElements}}.",
@@ -8353,6 +8355,8 @@ const I18N = {
     "formControlSingleLabel_description": "Checks that a form control is associated with at most one <label> (by wrapping or by label[for]).",
     "formControlSingleLabel_summary_fail": "This <{{element}}> is associated with {{labelCount}} labels.",
     "formControlSingleLabel_hint_fail": "Keep only one <label> per form control (either wrapping it or referencing it via for/id).",
+    "formControlSingleLabel_summary_cantTell": "This <{{element}}> has one labelling <label> plus an extra empty <label> association; verify how it is announced.",
+    "formControlSingleLabel_hint_cantTell": "Remove the redundant empty <label> so exactly one <label> is associated with the control.",
     "nestedInteractiveControlsAbsent_title": "Interactive controls must not be nested",
     "nestedInteractiveControlsAbsent_description": "Checks that an interactive control (link, button, form control, or ARIA widget role) does not contain another interactive control.",
     "nestedInteractiveControlsAbsent_summary_fail": "This <{{element}}> contains one or more nested interactive controls: {{nestedElements}}.",
@@ -8975,6 +8979,8 @@ const I18N = {
     "formControlSingleLabel_description": "Comprueba que un control de formulario esté asociado a como máximo una <label> (por envoltura o mediante label[for]).",
     "formControlSingleLabel_summary_fail": "Este <{{element}}> está asociado a {{labelCount}} etiquetas.",
     "formControlSingleLabel_hint_fail": "Mantener solo una <label> por control de formulario (ya sea envolviéndolo o referenciándolo mediante for/id).",
+    "formControlSingleLabel_summary_cantTell": "Este <{{element}}> tiene una <label> que lo etiqueta más una asociación de <label> vacía adicional; verifique cómo se anuncia.",
+    "formControlSingleLabel_hint_cantTell": "Elimine la <label> vacía redundante para que solo una <label> quede asociada al control.",
     "nestedInteractiveControlsAbsent_title": "Los controles interactivos no deben estar anidados",
     "nestedInteractiveControlsAbsent_description": "Comprueba que un control interactivo (enlace, botón, control de formulario o rol de widget ARIA) no contenga otro control interactivo.",
     "nestedInteractiveControlsAbsent_summary_fail": "Este <{{element}}> contiene uno o más controles interactivos anidados: {{nestedElements}}.",
@@ -9597,6 +9603,8 @@ const I18N = {
     "formControlSingleLabel_description": "Vérifie qu’un contrôle de formulaire est associé à au plus un <label> (par imbrication ou par label[for]).",
     "formControlSingleLabel_summary_fail": "Ce <{{element}}> est associé à {{labelCount}} étiquettes.",
     "formControlSingleLabel_hint_fail": "Conservez une seule <label> par contrôle de formulaire (soit en l’enveloppant, soit en la référençant via for/id).",
+    "formControlSingleLabel_summary_cantTell": "Ce <{{element}}> a une <label> qui l’étiquette plus une association de <label> vide supplémentaire ; vérifiez comment il est annoncé.",
+    "formControlSingleLabel_hint_cantTell": "Supprimez la <label> vide redondante afin qu’une seule <label> soit associée au contrôle.",
     "nestedInteractiveControlsAbsent_title": "Les contrôles interactifs ne doivent pas être imbriqués",
     "nestedInteractiveControlsAbsent_description": "Vérifie qu’un contrôle interactif (lien, bouton, contrôle de formulaire, ou rôle de widget ARIA) ne contient pas un autre contrôle interactif.",
     "nestedInteractiveControlsAbsent_summary_fail": "Ce <{{element}}> contient un ou plusieurs contrôles interactifs imbriqués : {{nestedElements}}.",
@@ -17369,6 +17377,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     getLabelMethod,
     getLabelStrength,
+
+    // Whether a <label> carries text that names its associated control
+    // (own aria-name, else rendered content, else title). Shared so
+    // form-control-single-label and form-control-programmatic-label-present
+    // agree on what a label is worth.
+    labelContributesAccessibleName,
 
     // Flat-tree ancestor walk (assignedSlot-aware, then shadow host) —
     // see this function's own definition above for why assignedSlot
@@ -34933,6 +34947,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const isAccTreeEligible =
     helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+  const getAriaNameInfo =
+    helpers && typeof helpers.getAriaNameInfo === 'function' ? helpers.getAriaNameInfo : null;
+  const labelContributesName =
+    helpers && typeof helpers.labelContributesAccessibleName === 'function'
+      ? helpers.labelContributesAccessibleName
+      : null;
 
   const selector =
     'input:not([type="hidden"]):not([type="submit"]):not([type="reset"]):not([type="button"]):not([type="image"]),select,textarea';
@@ -34953,7 +34973,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     labelsByFor.get(forValue).push(lab);
   }
 
-  const occurrences = [];
+  const failOccurrences = [];
+  const cantTellOccurrences = [];
   let applicableCount = 0;
 
   for (const el of nodes) {
@@ -34982,42 +35003,94 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     if (eligibleLabels.size <= 1) continue;
 
+    // An override (aria-labelledby / aria-label) supersedes every native
+    // <label>, so the labels contribute nothing to the accessible name and
+    // cannot compete.
+    const override = getAriaNameInfo ? getAriaNameInfo(el, ctx) : null;
+    if (override && override.present && override.value) continue;
+
+    // Without an override the labels feed the name; only labels with their
+    // own text compete for it.
+    const contributing = labelContributesName
+      ? [...eligibleLabels].filter((lab) => labelContributesName(lab))
+      : [...eligibleLabels];
+
     const tag = el.tagName.toLowerCase();
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
     const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This form control is associated with more than one <label>.',
-      hint: 'Keep only one <label> per form control (either wrapping it or referencing it via for/id).',
-      i18n: {
-        summaryKey: 'formControlSingleLabel_summary_fail',
-        hintKey: 'formControlSingleLabel_hint_fail',
-        params: { element: tag, labelCount: String(eligibleLabels.size) }
-      },
-      data: {
-        details: {
-          reasonCode: 'FORM_FIELD_MULTIPLE_LABELS',
-          element: tag,
-          labelCount: eligibleLabels.size
+    if (contributing.length >= 2) {
+      failOccurrences.push({
+        selector: stableSelector,
+        html,
+        summary: 'This form control is associated with more than one <label>.',
+        hint: 'Keep only one <label> per form control (either wrapping it or referencing it via for/id).',
+        occurrenceOutcome: 'fail',
+        i18n: {
+          summaryKey: 'formControlSingleLabel_summary_fail',
+          hintKey: 'formControlSingleLabel_hint_fail',
+          params: { element: tag, labelCount: String(contributing.length) }
+        },
+        data: {
+          details: {
+            reasonCode: 'FORM_FIELD_MULTIPLE_LABELS',
+            element: tag,
+            labelCount: contributing.length
+          }
         }
-      }
-    });
+      });
+    } else if (contributing.length === 1) {
+      cantTellOccurrences.push({
+        selector: stableSelector,
+        html,
+        summary:
+          'This form control has one labelling <label> plus an extra empty <label> association.',
+        hint: 'Remove the redundant empty <label> so exactly one <label> is associated with the control.',
+        occurrenceOutcome: 'cantTell',
+        i18n: {
+          summaryKey: 'formControlSingleLabel_summary_cantTell',
+          hintKey: 'formControlSingleLabel_hint_cantTell',
+          params: { element: tag, labelCount: String(eligibleLabels.size) }
+        },
+        data: {
+          details: {
+            reasonCode: 'FORM_FIELD_EXTRA_EMPTY_LABEL',
+            element: tag,
+            labelCount: eligibleLabels.size,
+            contributingLabelCount: contributing.length
+          }
+        }
+      });
+    }
+    // contributing.length === 0: no label carries text, so nothing competes
+    // for the name. A control left unnamed is form-control-programmatic-
+    // label-present's concern.
   }
 
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'moderate',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+
+  const resolved = helpers.resolveTieredOutcome
+    ? helpers.resolveTieredOutcome(
+        failOccurrences,
+        cantTellOccurrences,
+        rule.defaultSeverity || 'moderate'
+      )
+    : failOccurrences.length
+      ? {
+          outcome: 'fail',
+          severity: rule.defaultSeverity || 'moderate',
+          occurrences: failOccurrences
+        }
+      : cantTellOccurrences.length
+        ? {
+            outcome: 'cantTell',
+            severity: rule.defaultSeverity || 'moderate',
+            occurrences: cantTellOccurrences
+          }
+        : { outcome: 'pass', severity: 'minor', occurrences: [] };
+  return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "heading-order": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
@@ -47057,6 +47130,8 @@ const I18N = {
     "formControlSingleLabel_description": "Prüft, ob ein Formularelement mit höchstens einem <label> verknüpft ist (durch Umschließen oder durch label[for]).",
     "formControlSingleLabel_summary_fail": "Dieses <{{element}}> ist mit {{labelCount}} Beschriftungen verknüpft.",
     "formControlSingleLabel_hint_fail": "Behalten Sie nur ein <label> pro Formularelement (entweder umschließend oder über for/id referenziert).",
+    "formControlSingleLabel_summary_cantTell": "Dieses <{{element}}> hat ein beschriftendes <label> und zusätzlich eine leere <label>-Verknüpfung; prüfen Sie, wie es angesagt wird.",
+    "formControlSingleLabel_hint_cantTell": "Entfernen Sie das überflüssige leere <label>, sodass genau ein <label> mit dem Element verknüpft ist.",
     "nestedInteractiveControlsAbsent_title": "Interaktive Formularelemente dürfen nicht verschachtelt sein",
     "nestedInteractiveControlsAbsent_description": "Prüft, ob ein interaktives Element (Link, Schaltfläche, Formularelement oder ARIA-Widget-Rolle) kein weiteres interaktives Element enthält.",
     "nestedInteractiveControlsAbsent_summary_fail": "Dieses <{{element}}> enthält ein oder mehrere verschachtelte interaktive Elemente: {{nestedElements}}.",
@@ -47679,6 +47754,8 @@ const I18N = {
     "formControlSingleLabel_description": "Checks that a form control is associated with at most one <label> (by wrapping or by label[for]).",
     "formControlSingleLabel_summary_fail": "This <{{element}}> is associated with {{labelCount}} labels.",
     "formControlSingleLabel_hint_fail": "Keep only one <label> per form control (either wrapping it or referencing it via for/id).",
+    "formControlSingleLabel_summary_cantTell": "This <{{element}}> has one labelling <label> plus an extra empty <label> association; verify how it is announced.",
+    "formControlSingleLabel_hint_cantTell": "Remove the redundant empty <label> so exactly one <label> is associated with the control.",
     "nestedInteractiveControlsAbsent_title": "Interactive controls must not be nested",
     "nestedInteractiveControlsAbsent_description": "Checks that an interactive control (link, button, form control, or ARIA widget role) does not contain another interactive control.",
     "nestedInteractiveControlsAbsent_summary_fail": "This <{{element}}> contains one or more nested interactive controls: {{nestedElements}}.",
@@ -48301,6 +48378,8 @@ const I18N = {
     "formControlSingleLabel_description": "Comprueba que un control de formulario esté asociado a como máximo una <label> (por envoltura o mediante label[for]).",
     "formControlSingleLabel_summary_fail": "Este <{{element}}> está asociado a {{labelCount}} etiquetas.",
     "formControlSingleLabel_hint_fail": "Mantener solo una <label> por control de formulario (ya sea envolviéndolo o referenciándolo mediante for/id).",
+    "formControlSingleLabel_summary_cantTell": "Este <{{element}}> tiene una <label> que lo etiqueta más una asociación de <label> vacía adicional; verifique cómo se anuncia.",
+    "formControlSingleLabel_hint_cantTell": "Elimine la <label> vacía redundante para que solo una <label> quede asociada al control.",
     "nestedInteractiveControlsAbsent_title": "Los controles interactivos no deben estar anidados",
     "nestedInteractiveControlsAbsent_description": "Comprueba que un control interactivo (enlace, botón, control de formulario o rol de widget ARIA) no contenga otro control interactivo.",
     "nestedInteractiveControlsAbsent_summary_fail": "Este <{{element}}> contiene uno o más controles interactivos anidados: {{nestedElements}}.",
@@ -48923,6 +49002,8 @@ const I18N = {
     "formControlSingleLabel_description": "Vérifie qu’un contrôle de formulaire est associé à au plus un <label> (par imbrication ou par label[for]).",
     "formControlSingleLabel_summary_fail": "Ce <{{element}}> est associé à {{labelCount}} étiquettes.",
     "formControlSingleLabel_hint_fail": "Conservez une seule <label> par contrôle de formulaire (soit en l’enveloppant, soit en la référençant via for/id).",
+    "formControlSingleLabel_summary_cantTell": "Ce <{{element}}> a une <label> qui l’étiquette plus une association de <label> vide supplémentaire ; vérifiez comment il est annoncé.",
+    "formControlSingleLabel_hint_cantTell": "Supprimez la <label> vide redondante afin qu’une seule <label> soit associée au contrôle.",
     "nestedInteractiveControlsAbsent_title": "Les contrôles interactifs ne doivent pas être imbriqués",
     "nestedInteractiveControlsAbsent_description": "Vérifie qu’un contrôle interactif (lien, bouton, contrôle de formulaire, ou rôle de widget ARIA) ne contient pas un autre contrôle interactif.",
     "nestedInteractiveControlsAbsent_summary_fail": "Ce <{{element}}> contient un ou plusieurs contrôles interactifs imbriqués : {{nestedElements}}.",
@@ -56695,6 +56776,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     getLabelMethod,
     getLabelStrength,
+
+    // Whether a <label> carries text that names its associated control
+    // (own aria-name, else rendered content, else title). Shared so
+    // form-control-single-label and form-control-programmatic-label-present
+    // agree on what a label is worth.
+    labelContributesAccessibleName,
 
     // Flat-tree ancestor walk (assignedSlot-aware, then shadow host) —
     // see this function's own definition above for why assignedSlot
@@ -74214,6 +74301,12 @@ const __a11yCoreCrossFrameApi = (function () {
 
   const isAccTreeEligible =
     helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+  const getAriaNameInfo =
+    helpers && typeof helpers.getAriaNameInfo === 'function' ? helpers.getAriaNameInfo : null;
+  const labelContributesName =
+    helpers && typeof helpers.labelContributesAccessibleName === 'function'
+      ? helpers.labelContributesAccessibleName
+      : null;
 
   const selector =
     'input:not([type="hidden"]):not([type="submit"]):not([type="reset"]):not([type="button"]):not([type="image"]),select,textarea';
@@ -74234,7 +74327,8 @@ const __a11yCoreCrossFrameApi = (function () {
     labelsByFor.get(forValue).push(lab);
   }
 
-  const occurrences = [];
+  const failOccurrences = [];
+  const cantTellOccurrences = [];
   let applicableCount = 0;
 
   for (const el of nodes) {
@@ -74263,42 +74357,94 @@ const __a11yCoreCrossFrameApi = (function () {
 
     if (eligibleLabels.size <= 1) continue;
 
+    // An override (aria-labelledby / aria-label) supersedes every native
+    // <label>, so the labels contribute nothing to the accessible name and
+    // cannot compete.
+    const override = getAriaNameInfo ? getAriaNameInfo(el, ctx) : null;
+    if (override && override.present && override.value) continue;
+
+    // Without an override the labels feed the name; only labels with their
+    // own text compete for it.
+    const contributing = labelContributesName
+      ? [...eligibleLabels].filter((lab) => labelContributesName(lab))
+      : [...eligibleLabels];
+
     const tag = el.tagName.toLowerCase();
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
     const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This form control is associated with more than one <label>.',
-      hint: 'Keep only one <label> per form control (either wrapping it or referencing it via for/id).',
-      i18n: {
-        summaryKey: 'formControlSingleLabel_summary_fail',
-        hintKey: 'formControlSingleLabel_hint_fail',
-        params: { element: tag, labelCount: String(eligibleLabels.size) }
-      },
-      data: {
-        details: {
-          reasonCode: 'FORM_FIELD_MULTIPLE_LABELS',
-          element: tag,
-          labelCount: eligibleLabels.size
+    if (contributing.length >= 2) {
+      failOccurrences.push({
+        selector: stableSelector,
+        html,
+        summary: 'This form control is associated with more than one <label>.',
+        hint: 'Keep only one <label> per form control (either wrapping it or referencing it via for/id).',
+        occurrenceOutcome: 'fail',
+        i18n: {
+          summaryKey: 'formControlSingleLabel_summary_fail',
+          hintKey: 'formControlSingleLabel_hint_fail',
+          params: { element: tag, labelCount: String(contributing.length) }
+        },
+        data: {
+          details: {
+            reasonCode: 'FORM_FIELD_MULTIPLE_LABELS',
+            element: tag,
+            labelCount: contributing.length
+          }
         }
-      }
-    });
+      });
+    } else if (contributing.length === 1) {
+      cantTellOccurrences.push({
+        selector: stableSelector,
+        html,
+        summary:
+          'This form control has one labelling <label> plus an extra empty <label> association.',
+        hint: 'Remove the redundant empty <label> so exactly one <label> is associated with the control.',
+        occurrenceOutcome: 'cantTell',
+        i18n: {
+          summaryKey: 'formControlSingleLabel_summary_cantTell',
+          hintKey: 'formControlSingleLabel_hint_cantTell',
+          params: { element: tag, labelCount: String(eligibleLabels.size) }
+        },
+        data: {
+          details: {
+            reasonCode: 'FORM_FIELD_EXTRA_EMPTY_LABEL',
+            element: tag,
+            labelCount: eligibleLabels.size,
+            contributingLabelCount: contributing.length
+          }
+        }
+      });
+    }
+    // contributing.length === 0: no label carries text, so nothing competes
+    // for the name. A control left unnamed is form-control-programmatic-
+    // label-present's concern.
   }
 
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'moderate',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+
+  const resolved = helpers.resolveTieredOutcome
+    ? helpers.resolveTieredOutcome(
+        failOccurrences,
+        cantTellOccurrences,
+        rule.defaultSeverity || 'moderate'
+      )
+    : failOccurrences.length
+      ? {
+          outcome: 'fail',
+          severity: rule.defaultSeverity || 'moderate',
+          occurrences: failOccurrences
+        }
+      : cantTellOccurrences.length
+        ? {
+            outcome: 'cantTell',
+            severity: rule.defaultSeverity || 'moderate',
+            occurrences: cantTellOccurrences
+          }
+        : { outcome: 'pass', severity: 'minor', occurrences: [] };
+  return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "heading-order": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
@@ -86338,6 +86484,8 @@ const I18N = {
     "formControlSingleLabel_description": "Prüft, ob ein Formularelement mit höchstens einem <label> verknüpft ist (durch Umschließen oder durch label[for]).",
     "formControlSingleLabel_summary_fail": "Dieses <{{element}}> ist mit {{labelCount}} Beschriftungen verknüpft.",
     "formControlSingleLabel_hint_fail": "Behalten Sie nur ein <label> pro Formularelement (entweder umschließend oder über for/id referenziert).",
+    "formControlSingleLabel_summary_cantTell": "Dieses <{{element}}> hat ein beschriftendes <label> und zusätzlich eine leere <label>-Verknüpfung; prüfen Sie, wie es angesagt wird.",
+    "formControlSingleLabel_hint_cantTell": "Entfernen Sie das überflüssige leere <label>, sodass genau ein <label> mit dem Element verknüpft ist.",
     "nestedInteractiveControlsAbsent_title": "Interaktive Formularelemente dürfen nicht verschachtelt sein",
     "nestedInteractiveControlsAbsent_description": "Prüft, ob ein interaktives Element (Link, Schaltfläche, Formularelement oder ARIA-Widget-Rolle) kein weiteres interaktives Element enthält.",
     "nestedInteractiveControlsAbsent_summary_fail": "Dieses <{{element}}> enthält ein oder mehrere verschachtelte interaktive Elemente: {{nestedElements}}.",
@@ -86960,6 +87108,8 @@ const I18N = {
     "formControlSingleLabel_description": "Checks that a form control is associated with at most one <label> (by wrapping or by label[for]).",
     "formControlSingleLabel_summary_fail": "This <{{element}}> is associated with {{labelCount}} labels.",
     "formControlSingleLabel_hint_fail": "Keep only one <label> per form control (either wrapping it or referencing it via for/id).",
+    "formControlSingleLabel_summary_cantTell": "This <{{element}}> has one labelling <label> plus an extra empty <label> association; verify how it is announced.",
+    "formControlSingleLabel_hint_cantTell": "Remove the redundant empty <label> so exactly one <label> is associated with the control.",
     "nestedInteractiveControlsAbsent_title": "Interactive controls must not be nested",
     "nestedInteractiveControlsAbsent_description": "Checks that an interactive control (link, button, form control, or ARIA widget role) does not contain another interactive control.",
     "nestedInteractiveControlsAbsent_summary_fail": "This <{{element}}> contains one or more nested interactive controls: {{nestedElements}}.",
@@ -87582,6 +87732,8 @@ const I18N = {
     "formControlSingleLabel_description": "Comprueba que un control de formulario esté asociado a como máximo una <label> (por envoltura o mediante label[for]).",
     "formControlSingleLabel_summary_fail": "Este <{{element}}> está asociado a {{labelCount}} etiquetas.",
     "formControlSingleLabel_hint_fail": "Mantener solo una <label> por control de formulario (ya sea envolviéndolo o referenciándolo mediante for/id).",
+    "formControlSingleLabel_summary_cantTell": "Este <{{element}}> tiene una <label> que lo etiqueta más una asociación de <label> vacía adicional; verifique cómo se anuncia.",
+    "formControlSingleLabel_hint_cantTell": "Elimine la <label> vacía redundante para que solo una <label> quede asociada al control.",
     "nestedInteractiveControlsAbsent_title": "Los controles interactivos no deben estar anidados",
     "nestedInteractiveControlsAbsent_description": "Comprueba que un control interactivo (enlace, botón, control de formulario o rol de widget ARIA) no contenga otro control interactivo.",
     "nestedInteractiveControlsAbsent_summary_fail": "Este <{{element}}> contiene uno o más controles interactivos anidados: {{nestedElements}}.",
@@ -88204,6 +88356,8 @@ const I18N = {
     "formControlSingleLabel_description": "Vérifie qu’un contrôle de formulaire est associé à au plus un <label> (par imbrication ou par label[for]).",
     "formControlSingleLabel_summary_fail": "Ce <{{element}}> est associé à {{labelCount}} étiquettes.",
     "formControlSingleLabel_hint_fail": "Conservez une seule <label> par contrôle de formulaire (soit en l’enveloppant, soit en la référençant via for/id).",
+    "formControlSingleLabel_summary_cantTell": "Ce <{{element}}> a une <label> qui l’étiquette plus une association de <label> vide supplémentaire ; vérifiez comment il est annoncé.",
+    "formControlSingleLabel_hint_cantTell": "Supprimez la <label> vide redondante afin qu’une seule <label> soit associée au contrôle.",
     "nestedInteractiveControlsAbsent_title": "Les contrôles interactifs ne doivent pas être imbriqués",
     "nestedInteractiveControlsAbsent_description": "Vérifie qu’un contrôle interactif (lien, bouton, contrôle de formulaire, ou rôle de widget ARIA) ne contient pas un autre contrôle interactif.",
     "nestedInteractiveControlsAbsent_summary_fail": "Ce <{{element}}> contient un ou plusieurs contrôles interactifs imbriqués : {{nestedElements}}.",
@@ -95976,6 +96130,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     getLabelMethod,
     getLabelStrength,
+
+    // Whether a <label> carries text that names its associated control
+    // (own aria-name, else rendered content, else title). Shared so
+    // form-control-single-label and form-control-programmatic-label-present
+    // agree on what a label is worth.
+    labelContributesAccessibleName,
 
     // Flat-tree ancestor walk (assignedSlot-aware, then shadow host) —
     // see this function's own definition above for why assignedSlot
