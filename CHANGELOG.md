@@ -4,10 +4,15 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ## [Unreleased]
 
+### Added
+- `scripts/generate-aria-tables.js` generates `aria-allowed-attr`'s global/per-role/implicit-role tables from the `aria-query` package (a devDependency, output committed) instead of hand-maintaining them, with a `--check` mode that fails when the committed tables go stale.
+
 ### Changed
+- `aria-allowed-attr` now covers all 127 concrete ARIA roles instead of 35 hand-listed ones, so `button`, `link`, `img` and 27 other common roles are no longer skipped.
 - Form-control naming is now split by native element vs. explicit ARIA role, so a control isn't reported by two rules at once: `binary-control-name-present`/`slider-name-present` are role-only, and `form-control-programmatic-label-present` skips a control whose explicit role has its own naming rule. An unlabelled checkbox used to produce two findings; now one.
 
 ### Fixed
+- `aria-allowed-attr` treated `aria-disabled`, `aria-haspopup`, `aria-invalid` and `aria-errormessage` as global attributes, so misuse on a role that doesn't support them went unreported; the generated table has the real 17 globals. It also no longer judges attributes against `role="none"`/`"presentation"`, since presentational role conflict resolution can drop that role on a focusable element — `presentation-role-conflict` already owns that case.
 - `input-image-alt-present` treated `alt=""` as marking an image button decorative and passed it, but an image button is a control, not decoration — ACT 59796f requires a non-empty name, so an empty `alt` (or no `alt` at all) now fails. `alt=""` combined with `aria-label`/`aria-labelledby`/`title` still passes, since the control does have a name; that judgment call moved entirely to `input-image-alt-decorative`, so one element now yields one finding instead of two.
 - `input-image-alt-present` now scopes to elements included in the accessibility tree (was the looser `isAccTreeEligible`), and rejects an accessible name equal to the browser's own fallback for an image button (`"Submit Query"`/`"Submit"`) as no name at all, per ACT 59796f. New locale strings for the fallback-name case in all four locales.
 - `form-control-programmatic-label-present` used the looser `isAccTreeEligible` check, which keeps a focusable `aria-hidden` control "eligible", so it reported controls no assistive technology can reach. Switched to `isIncludedInAccessibilityTree`, matching the `*-name-present` rules and settling an existing inconsistency with `binary-control-name-present`, which already excluded the same case.

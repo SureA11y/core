@@ -7838,6 +7838,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // Declared inside runInPage (rather than at module scope) because the
   // build inlines only this function's own source text — see
   // scripts/build-core.js header ("runInPage MUST be self-contained").
+  // <generated:aria-global-attrs>
   const GLOBAL_ATTRS = [
     'aria-atomic',
     'aria-braillelabel',
@@ -7848,14 +7849,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     'aria-describedby',
     'aria-description',
     'aria-details',
-    'aria-disabled',
     'aria-dropeffect',
-    'aria-errormessage',
     'aria-flowto',
     'aria-grabbed',
-    'aria-haspopup',
     'aria-hidden',
-    'aria-invalid',
     'aria-keyshortcuts',
     'aria-label',
     'aria-labelledby',
@@ -7864,176 +7861,631 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     'aria-relevant',
     'aria-roledescription'
   ];
+  // </generated:aria-global-attrs>
 
   // Per-role supported (non-global) states/properties. Deliberately
   // conservative — see src/core/aria-helpers.js file header for the same
   // confidence-scoping rationale; only well-established, unambiguous
   // role/attribute pairings from the WAI-ARIA role definitions are listed.
+  // <generated:aria-role-attrs>
   const SUPPORTED_ATTRS_BY_ROLE = {
+    alert: [],
     alertdialog: ['aria-modal'],
-    checkbox: ['aria-checked', 'aria-readonly', 'aria-required', 'aria-expanded'],
+    application: [
+      'aria-activedescendant',
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    article: ['aria-posinset', 'aria-setsize'],
+    banner: [],
+    blockquote: [],
+    button: ['aria-disabled', 'aria-expanded', 'aria-haspopup', 'aria-pressed'],
+    caption: [],
+    cell: ['aria-colindex', 'aria-colspan', 'aria-rowindex', 'aria-rowspan'],
+    checkbox: [
+      'aria-checked',
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-invalid',
+      'aria-readonly',
+      'aria-required'
+    ],
+    code: [],
     columnheader: [
-      'aria-sort',
       'aria-colindex',
       'aria-colspan',
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid',
       'aria-readonly',
       'aria-required',
       'aria-rowindex',
       'aria-rowspan',
       'aria-selected',
-      'aria-expanded'
+      'aria-sort'
     ],
     combobox: [
-      'aria-expanded',
+      'aria-activedescendant',
       'aria-autocomplete',
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid',
       'aria-readonly',
-      'aria-required',
-      'aria-activedescendant'
+      'aria-required'
     ],
+    complementary: [],
+    contentinfo: [],
+    definition: [],
+    deletion: [],
     dialog: ['aria-modal'],
+    directory: [],
+    'doc-abstract': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-acknowledgments': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-afterword': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-appendix': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-backlink': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-biblioentry': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid',
+      'aria-level',
+      'aria-posinset',
+      'aria-setsize'
+    ],
+    'doc-bibliography': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-biblioref': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-chapter': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-colophon': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-conclusion': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-cover': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-credit': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-credits': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-dedication': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-endnote': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid',
+      'aria-level',
+      'aria-posinset',
+      'aria-setsize'
+    ],
+    'doc-endnotes': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-epigraph': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-epilogue': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-errata': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-example': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-footnote': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-foreword': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-glossary': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-glossref': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-index': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-introduction': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-noteref': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-notice': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-pagebreak': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid',
+      'aria-orientation',
+      'aria-valuemax',
+      'aria-valuemin',
+      'aria-valuenow',
+      'aria-valuetext'
+    ],
+    'doc-pagefooter': ['aria-disabled', 'aria-errormessage', 'aria-haspopup', 'aria-invalid'],
+    'doc-pageheader': ['aria-disabled', 'aria-errormessage', 'aria-haspopup', 'aria-invalid'],
+    'doc-pagelist': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-part': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-preface': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-prologue': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-pullquote': [],
+    'doc-qna': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-subtitle': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-tip': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-toc': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    document: [],
+    emphasis: [],
+    feed: [],
+    figure: [],
+    form: [],
+    generic: [],
+    'graphics-document': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'graphics-object': [
+      'aria-activedescendant',
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'graphics-symbol': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
     grid: [
+      'aria-activedescendant',
+      'aria-colcount',
+      'aria-disabled',
       'aria-multiselectable',
       'aria-readonly',
-      'aria-colcount',
-      'aria-rowcount',
-      'aria-activedescendant'
+      'aria-rowcount'
     ],
     gridcell: [
-      'aria-selected',
-      'aria-readonly',
-      'aria-required',
       'aria-colindex',
       'aria-colspan',
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid',
+      'aria-readonly',
+      'aria-required',
       'aria-rowindex',
       'aria-rowspan',
-      'aria-expanded'
+      'aria-selected'
     ],
+    group: ['aria-activedescendant', 'aria-disabled'],
     heading: ['aria-level'],
+    img: [],
+    insertion: [],
+    link: ['aria-disabled', 'aria-expanded', 'aria-haspopup'],
+    list: [],
     listbox: [
-      'aria-multiselectable',
-      'aria-readonly',
-      'aria-required',
-      'aria-orientation',
+      'aria-activedescendant',
+      'aria-disabled',
+      'aria-errormessage',
       'aria-expanded',
-      'aria-activedescendant'
+      'aria-invalid',
+      'aria-multiselectable',
+      'aria-orientation',
+      'aria-readonly',
+      'aria-required'
     ],
     listitem: ['aria-level', 'aria-posinset', 'aria-setsize'],
-    menu: ['aria-activedescendant', 'aria-orientation'],
-    menubar: ['aria-activedescendant', 'aria-orientation'],
+    log: [],
+    main: [],
+    mark: [],
+    marquee: [],
+    math: [],
+    menu: ['aria-activedescendant', 'aria-disabled', 'aria-orientation'],
+    menubar: ['aria-activedescendant', 'aria-disabled', 'aria-orientation'],
+    menuitem: ['aria-disabled', 'aria-expanded', 'aria-haspopup', 'aria-posinset', 'aria-setsize'],
     menuitemcheckbox: [
       'aria-checked',
+      'aria-disabled',
+      'aria-errormessage',
       'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid',
+      'aria-posinset',
       'aria-readonly',
       'aria-required',
-      'aria-posinset',
       'aria-setsize'
     ],
     menuitemradio: [
       'aria-checked',
+      'aria-disabled',
+      'aria-errormessage',
       'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid',
+      'aria-posinset',
       'aria-readonly',
       'aria-required',
-      'aria-posinset',
       'aria-setsize'
     ],
-    meter: ['aria-valuenow', 'aria-valuemin', 'aria-valuemax', 'aria-valuetext'],
-    option: ['aria-selected', 'aria-checked', 'aria-posinset', 'aria-setsize'],
-    progressbar: ['aria-valuenow', 'aria-valuemin', 'aria-valuemax', 'aria-valuetext'],
-    radio: ['aria-checked', 'aria-posinset', 'aria-setsize'],
-    radiogroup: ['aria-readonly', 'aria-required', 'aria-orientation', 'aria-activedescendant'],
+    meter: ['aria-valuemax', 'aria-valuemin', 'aria-valuenow', 'aria-valuetext'],
+    navigation: [],
+    none: [],
+    note: [],
+    option: ['aria-checked', 'aria-disabled', 'aria-posinset', 'aria-selected', 'aria-setsize'],
+    paragraph: [],
+    presentation: [],
+    progressbar: ['aria-valuemax', 'aria-valuemin', 'aria-valuenow', 'aria-valuetext'],
+    radio: ['aria-checked', 'aria-disabled', 'aria-posinset', 'aria-setsize'],
+    radiogroup: [
+      'aria-activedescendant',
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-invalid',
+      'aria-orientation',
+      'aria-readonly',
+      'aria-required'
+    ],
+    region: [],
     row: [
-      'aria-selected',
+      'aria-activedescendant',
+      'aria-colindex',
+      'aria-disabled',
+      'aria-expanded',
       'aria-level',
       'aria-posinset',
-      'aria-setsize',
-      'aria-colindex',
       'aria-rowindex',
-      'aria-expanded',
-      'aria-activedescendant'
+      'aria-selected',
+      'aria-setsize'
     ],
+    rowgroup: [],
     rowheader: [
-      'aria-sort',
       'aria-colindex',
       'aria-colspan',
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid',
       'aria-readonly',
       'aria-required',
       'aria-rowindex',
       'aria-rowspan',
       'aria-selected',
-      'aria-expanded'
+      'aria-sort'
     ],
     scrollbar: [
-      'aria-valuenow',
-      'aria-valuemin',
-      'aria-valuemax',
-      'aria-valuetext',
+      'aria-disabled',
       'aria-orientation',
-      'aria-controls'
+      'aria-valuemax',
+      'aria-valuemin',
+      'aria-valuenow',
+      'aria-valuetext'
     ],
+    search: [],
     searchbox: [
       'aria-activedescendant',
       'aria-autocomplete',
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-haspopup',
+      'aria-invalid',
       'aria-multiline',
       'aria-placeholder',
       'aria-readonly',
       'aria-required'
     ],
     separator: [
-      'aria-valuenow',
-      'aria-valuemin',
+      'aria-disabled',
+      'aria-orientation',
       'aria-valuemax',
-      'aria-valuetext',
-      'aria-orientation'
+      'aria-valuemin',
+      'aria-valuenow',
+      'aria-valuetext'
     ],
     slider: [
-      'aria-valuenow',
-      'aria-valuemin',
-      'aria-valuemax',
-      'aria-valuetext',
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-haspopup',
+      'aria-invalid',
       'aria-orientation',
-      'aria-readonly'
+      'aria-readonly',
+      'aria-valuemax',
+      'aria-valuemin',
+      'aria-valuenow',
+      'aria-valuetext'
     ],
     spinbutton: [
-      'aria-valuenow',
-      'aria-valuemin',
-      'aria-valuemax',
-      'aria-valuetext',
+      'aria-activedescendant',
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-invalid',
       'aria-readonly',
       'aria-required',
-      'aria-activedescendant'
+      'aria-valuemax',
+      'aria-valuemin',
+      'aria-valuenow',
+      'aria-valuetext'
     ],
-    switch: ['aria-checked', 'aria-expanded', 'aria-readonly', 'aria-required'],
-    tab: ['aria-selected', 'aria-expanded', 'aria-posinset', 'aria-setsize'],
+    status: [],
+    strong: [],
+    subscript: [],
+    superscript: [],
+    switch: [
+      'aria-checked',
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-invalid',
+      'aria-readonly',
+      'aria-required'
+    ],
+    tab: [
+      'aria-disabled',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-posinset',
+      'aria-selected',
+      'aria-setsize'
+    ],
     table: ['aria-colcount', 'aria-rowcount'],
-    tablist: ['aria-multiselectable', 'aria-orientation', 'aria-level', 'aria-activedescendant'],
+    tablist: [
+      'aria-activedescendant',
+      'aria-disabled',
+      'aria-level',
+      'aria-multiselectable',
+      'aria-orientation'
+    ],
+    tabpanel: [],
+    term: [],
     textbox: [
       'aria-activedescendant',
       'aria-autocomplete',
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-haspopup',
+      'aria-invalid',
       'aria-multiline',
       'aria-placeholder',
       'aria-readonly',
       'aria-required'
     ],
-    toolbar: ['aria-activedescendant', 'aria-orientation'],
-    tree: ['aria-multiselectable', 'aria-required', 'aria-orientation', 'aria-activedescendant'],
-    treegrid: [
+    time: [],
+    timer: [],
+    toolbar: ['aria-activedescendant', 'aria-disabled', 'aria-orientation'],
+    tooltip: [],
+    tree: [
+      'aria-activedescendant',
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-invalid',
       'aria-multiselectable',
+      'aria-orientation',
+      'aria-required'
+    ],
+    treegrid: [
+      'aria-activedescendant',
+      'aria-colcount',
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-invalid',
+      'aria-multiselectable',
+      'aria-orientation',
       'aria-readonly',
       'aria-required',
-      'aria-orientation',
-      'aria-colcount',
-      'aria-rowcount',
-      'aria-activedescendant'
+      'aria-rowcount'
     ],
     treeitem: [
       'aria-checked',
-      'aria-selected',
+      'aria-disabled',
       'aria-expanded',
+      'aria-haspopup',
       'aria-level',
       'aria-posinset',
+      'aria-selected',
       'aria-setsize'
     ]
   };
+  // </generated:aria-role-attrs>
 
   const globalSet = new Set(GLOBAL_ATTRS);
   const nodes = helpers.queryAllSmart
@@ -8049,9 +8501,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const role = ariaHelpers.getExplicitRole(el);
     if (!role || !ariaHelpers.isValidConcreteRole(role)) continue; // aria-roles-valid's concern
 
-    // Deliberately scoped: only roles with an explicit supported-attrs
-    // entry are evaluated (see file header — kept narrow to avoid
-    // over-claiming constraints for roles not yet modeled here).
+    // Presentational role conflict resolution drops role="none"/"presentation"
+    // when the element is focusable or carries global ARIA, so the implicit
+    // role decides which attributes are supported. Judging against the
+    // presentational role would flag valid markup such as
+    // <button role="none" aria-pressed="false">; presentation-role-conflict
+    // owns this case.
+    if (role === 'none' || role === 'presentation') continue;
+
+    // Roles absent from the generated table are unknown to ARIA, so there is
+    // nothing to judge them against.
     const roleSupported = SUPPORTED_ATTRS_BY_ROLE[role];
     if (!roleSupported) continue;
     const roleSupportedSet = new Set(roleSupported);

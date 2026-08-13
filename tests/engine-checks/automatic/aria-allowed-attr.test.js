@@ -22,10 +22,24 @@ test(`${RULE_ID}: notApplicable when no role attributes present`, () => {
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: notApplicable when role is not modeled in the supported-attrs table`, () => {
+test(`${RULE_ID}: fail when the attribute is unsupported by a role the ARIA tables cover`, () => {
   const html = `<!doctype html><html><body><div id="a" role="button" aria-valuenow="1"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+});
+
+test(`${RULE_ID}: notApplicable when the role is not a valid concrete ARIA role`, () => {
+  const html = `<!doctype html><html><body><div id="a" role="not-a-role" aria-valuenow="1"></div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: ARIA 1.3 globals aria-query does not know are still allowed anywhere`, () => {
+  for (const attr of ['aria-description', 'aria-braillelabel', 'aria-brailleroledescription']) {
+    const html = `<!doctype html><html><body><div role="button" ${attr}="x">b</div></body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  }
 });
 
 test(`${RULE_ID}: pass when only global aria-* attributes are present`, () => {
@@ -231,13 +245,12 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-allowed-attr-all-scenari
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 4, maxOccurrences: 4 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 5, maxOccurrences: 5 });
 
-  const expectedFailIds = ['aaa_case_03', 'aaa_case_04', 'aaa_case_13'];
+  const expectedFailIds = ['aaa_case_03', 'aaa_case_04', 'aaa_case_05', 'aaa_case_13'];
   const expectedNoOccIds = [
     'aaa_case_01',
     'aaa_case_02',
-    'aaa_case_05',
     'aaa_case_06',
     'aaa_case_07a',
     'aaa_case_07b',
@@ -257,4 +270,16 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-allowed-attr-all-scenari
   for (const id of expectedNoOccIds) {
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
+});
+
+test(`${RULE_ID}: role="none" on a focusable element does not decide which attributes are allowed`, () => {
+  const html = `<!doctype html><html><body><button role="none" aria-pressed="false">ACT rules are cool!</button></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: role="presentation" is skipped for the same reason`, () => {
+  const html = `<!doctype html><html><body><div role="presentation" aria-pressed="false">x</div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
