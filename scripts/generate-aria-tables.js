@@ -22,13 +22,15 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const { roles } = require('aria-query');
+const { roles, elementRoles } = require('aria-query');
 
 const RULE_PATH = path.join(__dirname, '..', 'src', 'checks', 'automatic', 'aria-allowed-attr.js');
 
 const BEGIN_GLOBAL = '  // <generated:aria-global-attrs>';
 const END_GLOBAL = '  // </generated:aria-global-attrs>';
 const BEGIN_ROLES = '  // <generated:aria-role-attrs>';
+const BEGIN_IMPLICIT = '  // <generated:aria-implicit-roles>';
+const END_IMPLICIT = '  // </generated:aria-implicit-roles>';
 const END_ROLES = '  // </generated:aria-role-attrs>';
 
 // Every role inherits roletype's properties, so those are exactly the ARIA
@@ -63,6 +65,131 @@ function roleAttrs(globals) {
     out[name] = specific;
   }
   return out;
+}
+
+// Elements whose implicit role is the same in every context, each confirmed
+// against Chrome's accessibility tree. aria-query supplies the role value;
+// this list gates which elements are allowed through, so a package update
+// cannot silently widen the rule.
+//
+// Deliberately absent, with the condition that rules them out:
+//   a          role depends on href (link vs generic)
+//   aside      complementary only outside sectioning content
+//   section    generic until it has an accessible name, then region
+//   select     combobox, or listbox with multiple/size>1
+//   li         listitem only inside ul/ol/menu
+//   img        role depends on alt
+//   header     banner only outside sectioning content, same for footer
+//   table, tbody, thead, tfoot, tr, th, td
+//              HTML-AAM assigns table roles, but browsers drop them for
+//              layout tables, so the role is not context-free in practice
+//   datalist   not exposed at all (Chrome reports no role)
+const CONTEXT_FREE_ELEMENTS = [
+  'article',
+  'blockquote',
+  'button',
+  'caption',
+  'code',
+  'dd',
+  'del',
+  'details',
+  'dfn',
+  'dialog',
+  'dt',
+  'em',
+  'fieldset',
+  'figure',
+  'h1',
+  'h2',
+  'h3',
+  'h4',
+  'h5',
+  'h6',
+  'hr',
+  'ins',
+  'main',
+  'mark',
+  'menu',
+  'meter',
+  'nav',
+  'ol',
+  'optgroup',
+  'option',
+  'output',
+  'p',
+  'progress',
+  'strong',
+  'sub',
+  'sup',
+  'textarea',
+  'time',
+  'ul'
+];
+
+// input roles are keyed by type. Only types with a stable ARIA role are
+// listed: color, date, time, month, week, datetime-local and file report
+// browser-internal names with no ARIA equivalent, and hidden is not exposed.
+const INPUT_ROLES = {
+  text: 'textbox',
+  tel: 'textbox',
+  url: 'textbox',
+  email: 'textbox',
+  password: 'textbox',
+  search: 'searchbox',
+  number: 'spinbutton',
+  range: 'slider',
+  checkbox: 'checkbox',
+  radio: 'radio',
+  button: 'button',
+  submit: 'button',
+  reset: 'button',
+  image: 'button'
+};
+
+function implicitRoles() {
+  const allowed = new Set(CONTEXT_FREE_ELEMENTS);
+  const bySource = new Map();
+  for (const [concept, roleSet] of elementRoles.entries()) {
+    if (!allowed.has(concept.name)) continue;
+    if ((concept.attributes && concept.attributes.length) || concept.constraints) continue;
+    const list = [...roleSet];
+    if (list.length !== 1) continue;
+    bySource.set(concept.name, list[0]);
+  }
+  const missing = CONTEXT_FREE_ELEMENTS.filter((e) => !bySource.has(e));
+  if (missing.length) {
+    throw new Error(
+      `aria-query no longer supplies a single unconditional role for: ${missing.join(', ')}`
+    );
+  }
+  const out = {};
+  for (const name of CONTEXT_FREE_ELEMENTS) out[name] = bySource.get(name);
+  for (const [type, role] of Object.entries(INPUT_ROLES)) out[`input[type=${type}]`] = role;
+  return out;
+}
+
+function renderImplicit(table, nonGlobalAttrs) {
+  const lines = [BEGIN_IMPLICIT, '  const IMPLICIT_ROLE_BY_ELEMENT = {'];
+  for (const key of Object.keys(table)) {
+    const k = /^[A-Za-z_$][\w$]*$/.test(key) ? key : `'${key}'`;
+    lines.push(`    ${k}: '${table[key]}',`);
+  }
+  lines.push('  };');
+  // Only a non-global attribute can ever be disallowed, so the rule looks for
+  // elements carrying one instead of walking every node on the page.
+  lines.push('  const NON_GLOBAL_ARIA_ATTR_SELECTOR =');
+  const sel = nonGlobalAttrs.map((a) => `[${a}]`).join(', ');
+  lines.push(`    '${sel}';`);
+  lines.push(END_IMPLICIT);
+  return lines.join('\n');
+}
+
+// Every ARIA property any concrete role supports, minus the globals.
+function nonGlobalAttrs(globals, table) {
+  const globalSet = new Set(globals);
+  const all = new Set();
+  for (const attrs of Object.values(table)) for (const a of attrs) all.add(a);
+  return [...all].filter((a) => !globalSet.has(a)).sort();
 }
 
 function renderGlobals(list) {
@@ -101,11 +228,18 @@ function main() {
   const check = process.argv.includes('--check');
   const globals = globalAttrs();
   const table = roleAttrs(globals);
+  const implicit = implicitRoles();
 
   let source = fs.readFileSync(RULE_PATH, 'utf8');
   const before = source;
   source = replaceBlock(source, BEGIN_GLOBAL, END_GLOBAL, renderGlobals(globals));
   source = replaceBlock(source, BEGIN_ROLES, END_ROLES, renderRoles(table));
+  source = replaceBlock(
+    source,
+    BEGIN_IMPLICIT,
+    END_IMPLICIT,
+    renderImplicit(implicit, nonGlobalAttrs(globals, table))
+  );
 
   if (check) {
     if (before !== source) {
@@ -118,7 +252,7 @@ function main() {
 
   fs.writeFileSync(RULE_PATH, source);
   console.log(
-    `Wrote ${Object.keys(table).length} concrete role(s) and ${globals.length} global attribute(s) into ${path.relative(process.cwd(), RULE_PATH)}`
+    `Wrote ${Object.keys(table).length} concrete role(s), ${globals.length} global attribute(s) and ${Object.keys(implicit).length} implicit-role mapping(s) into ${path.relative(process.cwd(), RULE_PATH)}`
   );
 }
 

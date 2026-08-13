@@ -7867,6 +7867,66 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // conservative — see src/core/aria-helpers.js file header for the same
   // confidence-scoping rationale; only well-established, unambiguous
   // role/attribute pairings from the WAI-ARIA role definitions are listed.
+  // <generated:aria-implicit-roles>
+  const IMPLICIT_ROLE_BY_ELEMENT = {
+    article: 'article',
+    blockquote: 'blockquote',
+    button: 'button',
+    caption: 'caption',
+    code: 'code',
+    dd: 'definition',
+    del: 'deletion',
+    details: 'group',
+    dfn: 'term',
+    dialog: 'dialog',
+    dt: 'term',
+    em: 'emphasis',
+    fieldset: 'group',
+    figure: 'figure',
+    h1: 'heading',
+    h2: 'heading',
+    h3: 'heading',
+    h4: 'heading',
+    h5: 'heading',
+    h6: 'heading',
+    hr: 'separator',
+    ins: 'insertion',
+    main: 'main',
+    mark: 'mark',
+    menu: 'list',
+    meter: 'meter',
+    nav: 'navigation',
+    ol: 'list',
+    optgroup: 'group',
+    option: 'option',
+    output: 'status',
+    p: 'paragraph',
+    progress: 'progressbar',
+    strong: 'strong',
+    sub: 'subscript',
+    sup: 'superscript',
+    textarea: 'textbox',
+    time: 'time',
+    ul: 'list',
+    'input[type=text]': 'textbox',
+    'input[type=tel]': 'textbox',
+    'input[type=url]': 'textbox',
+    'input[type=email]': 'textbox',
+    'input[type=password]': 'textbox',
+    'input[type=search]': 'searchbox',
+    'input[type=number]': 'spinbutton',
+    'input[type=range]': 'slider',
+    'input[type=checkbox]': 'checkbox',
+    'input[type=radio]': 'radio',
+    'input[type=button]': 'button',
+    'input[type=submit]': 'button',
+    'input[type=reset]': 'button',
+    'input[type=image]': 'button'
+  };
+  const NON_GLOBAL_ARIA_ATTR_SELECTOR =
+    '[aria-activedescendant], [aria-autocomplete], [aria-checked], [aria-colcount], [aria-colindex], [aria-colspan], [aria-disabled], [aria-errormessage], [aria-expanded], [aria-haspopup], [aria-invalid], [aria-level], [aria-modal], [aria-multiline], [aria-multiselectable], [aria-orientation], [aria-placeholder], [aria-posinset], [aria-pressed], [aria-readonly], [aria-required], [aria-rowcount], [aria-rowindex], [aria-rowspan], [aria-selected], [aria-setsize], [aria-sort], [aria-valuemax], [aria-valuemin], [aria-valuenow], [aria-valuetext]';
+  // </generated:aria-implicit-roles>
+
   // <generated:aria-role-attrs>
   const SUPPORTED_ATTRS_BY_ROLE = {
     alert: [],
@@ -8488,9 +8548,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // </generated:aria-role-attrs>
 
   const globalSet = new Set(GLOBAL_ATTRS);
+  // [role] keeps the explicit-role path; the attribute selector brings in
+  // elements judged by their implicit role. Only non-global attributes can be
+  // disallowed, so nothing else needs visiting.
+  const selector = '[role], ' + NON_GLOBAL_ARIA_ATTR_SELECTOR;
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('[role]')
-    : helpers.queryAll('[role]');
+    ? helpers.queryAllSmart(selector)
+    : helpers.queryAll(selector);
 
   const occurrences = [];
   let applicableCount = 0;
@@ -8498,7 +8562,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   for (const el of nodes) {
     if (!el || !el.attributes) continue;
 
-    const role = ariaHelpers.getExplicitRole(el);
+    // ACT 5c01ea scopes the rule to any element carrying an ARIA attribute, so
+    // an element with no role attribute is judged against its implicit role.
+    // Only elements whose implicit role is context-free are covered; the
+    // generator lists what is excluded and why.
+    const explicitRole = ariaHelpers.getExplicitRole(el);
+    let role = explicitRole;
+    if (!role) {
+      const tag = String(el.tagName || '').toLowerCase();
+      const key =
+        tag === 'input'
+          ? 'input[type=' + String(el.getAttribute('type') || 'text').toLowerCase() + ']'
+          : tag;
+      role = Object.prototype.hasOwnProperty.call(IMPLICIT_ROLE_BY_ELEMENT, key)
+        ? IMPLICIT_ROLE_BY_ELEMENT[key]
+        : '';
+    }
     if (!role || !ariaHelpers.isValidConcreteRole(role)) continue; // aria-roles-valid's concern
 
     // Presentational role conflict resolution drops role="none"/"presentation"

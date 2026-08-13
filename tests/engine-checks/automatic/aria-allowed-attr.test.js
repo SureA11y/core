@@ -283,3 +283,46 @@ test(`${RULE_ID}: role="presentation" is skipped for the same reason`, () => {
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
+
+test(`${RULE_ID}: an element with no role attribute is judged by its implicit role`, () => {
+  const html = `<!doctype html><html><body><button id="b" aria-sort="ascending">Sort</button></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'b'));
+});
+
+test(`${RULE_ID}: an attribute the implicit role supports passes`, () => {
+  for (const markup of [
+    `<button aria-pressed="false">B</button>`,
+    `<input type="password" aria-required="true">`,
+    `<input type="range" aria-valuenow="3">`,
+    `<textarea aria-multiline="true"></textarea>`
+  ]) {
+    const result = runa11yCoreOnHtml(`<!doctype html><html><body>${markup}</body></html>`, {
+      runOnly: [RULE_ID]
+    });
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
+test(`${RULE_ID}: elements whose implicit role depends on context stay out of scope`, () => {
+  for (const markup of [
+    `<a href="#" aria-sort="ascending">x</a>`,
+    `<table><tr><td aria-selected="true">x</td></tr></table>`,
+    `<section aria-checked="true">x</section>`,
+    `<select aria-sort="ascending"><option>a</option></select>`,
+    `<ul><li aria-checked="true">x</li></ul>`,
+    `<img src="x.png" alt="" aria-checked="true">`
+  ]) {
+    const result = runa11yCoreOnHtml(`<!doctype html><html><body>${markup}</body></html>`, {
+      runOnly: [RULE_ID]
+    });
+    assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
+test(`${RULE_ID}: an element with no implicit role mapping is skipped`, () => {
+  const html = `<!doctype html><html><body><div aria-checked="true">x</div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
