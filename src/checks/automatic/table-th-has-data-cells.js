@@ -9,7 +9,10 @@
  * @standard WCAG 2.2
  * @sc 1.3.1
  * @applicability
- *   Applies to <table> elements that contain at least one <th>.
+ *   Applies to <table> elements that keep their table semantics and are included
+ *   in the accessibility tree, and that contain at least one <th> which is
+ *   visible, included in the accessibility tree, and not overridden by an
+ *   explicit role other than rowheader/columnheader.
  * @expectation
  *   The table also contains at least one <td> somewhere in it.
  * @implementation-notes
@@ -30,9 +33,10 @@
  *   if some particular <th> in it doesn't actually describe any cell
  *   (false negative, not a false positive — acceptable under this
  *   engine's philosophy).
- * - Not rule-gated on isAccTreeEligible: this remains a static-markup
- *   property, while engine-level hidden-subtree filtering still applies
- *   unless engineOptions.includeHiddenElements is true.
+ * - Applicability IS gated, because the zero-<td> case above turns any
+ *   over-broad scope straight into a false fail: a layout table marked
+ *   role="presentation" with a stray <th> and no <td> was being failed,
+ *   as were tables whose only header was hidden or carried role="cell".
  */
 
 const id = 'table-th-has-data-cells';
@@ -72,8 +76,63 @@ function runInPage(ctx) {
   const occurrences = [];
   let applicableCount = 0;
 
+  function explicitRole(el) {
+    try {
+      return String((el && el.getAttribute && el.getAttribute('role')) || '')
+        .trim()
+        .toLowerCase()
+        .split(/\s+/)[0];
+    } catch {
+      return '';
+    }
+  }
+
+  function isIncludedInTree(el) {
+    const fn =
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : null;
+    if (!fn) return true;
+    try {
+      const r = fn(el, ctx);
+      return typeof r === 'boolean' ? r : !!(r && r.eligible);
+    } catch {
+      return true;
+    }
+  }
+
+  // role="presentation"/"none" removes the table role, and with it every
+  // header cell the role would have implied. A table is not focusable, so
+  // presentational role conflict resolution does not restore it.
+  function hasTableSemantics(table) {
+    const role = explicitRole(table);
+    if (role === 'presentation' || role === 'none') return false;
+    if (role && role !== 'table' && role !== 'grid' && role !== 'treegrid') return false;
+    return isIncludedInTree(table);
+  }
+
+  // A <th> only carries a rowheader/columnheader role while nothing overrides
+  // it, and a hidden header describes nothing to a screen reader either way.
+  function isHeaderCellInScope(th) {
+    if (!th) return false;
+    const role = explicitRole(th);
+    if (role && role !== 'rowheader' && role !== 'columnheader') return false;
+    if (helpers.isDomVisibleEligible) {
+      try {
+        if (!helpers.isDomVisibleEligible(th, ctx, { targetSet: 'dom' }).eligible) return false;
+      } catch {
+        // fall through to the tree check
+      }
+    }
+    return isIncludedInTree(th);
+  }
+
   for (const table of tables) {
     if (!table || !table.querySelectorAll) continue;
+
+    // A table stripped of its semantics has no header cells to describe
+    // anything, so nothing in it is in scope.
+    if (!hasTableSemantics(table)) continue;
 
     let ths;
     try {
@@ -81,7 +140,9 @@ function runInPage(ctx) {
     } catch {
       ths = [];
     }
-    if (!ths.length) continue;
+
+    const headers = Array.from(ths).filter(isHeaderCellInScope);
+    if (!headers.length) continue;
 
     applicableCount += 1;
 
@@ -93,7 +154,7 @@ function runInPage(ctx) {
     }
     if (hasDataCell) continue;
 
-    for (const th of ths) {
+    for (const th of headers) {
       if (!th) continue;
       const stableSelector = helpers.buildSelector ? helpers.buildSelector(th) : 'html';
       const html = helpers.getOuterHtmlSnippet
