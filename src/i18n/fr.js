@@ -22,6 +22,10 @@ module.exports = {
   inputImage_altPresent_summary_fail: 'Attribut alt manquant sur <input type="image">.',
   inputImage_altPresent_hint_fail:
     'Ajoutez un attribut alt (utilisez alt="" uniquement lorsqu’un nom accessible séparé est fourni).',
+  inputImage_altPresent_summary_defaultName:
+    "Le nom accessible est celui par defaut du navigateur pour un bouton image et n'apporte aucune information.",
+  inputImage_altPresent_hint_defaultName:
+    'Remplacez-le par un texte decrivant l action du bouton, par exemple "Rechercher".',
   ariaHidden_programmaticFocus_review_title: 'Vérifier le focus programmatique avec aria-hidden',
   ariaHidden_programmaticFocus_review_description:
     'Signale les éléments aria-hidden considérés comme éligibles uniquement via un focus programmatique (ex. tabindex < 0). Vérifiez l’intention de gestion du focus et l’exposition aux technologies d’assistance.',
