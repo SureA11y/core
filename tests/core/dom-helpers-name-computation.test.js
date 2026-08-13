@@ -100,6 +100,109 @@ test('getContentNameInfo: input[type=image] with no label falls back to its alt,
   assert.ok(info.flags.includes('descendant-alt-used'));
 });
 
+// ===== getContentNameInfo: NON-image descendant title vs. its own content =====
+//
+// Companion to the image-descendant block above, applying the same precedence
+// to every other descendant. The generic branch resolved a descendant's
+// contribution via the general getAccessibleNameInfo, whose last-resort `title`
+// fallback then short-circuited recursion into that descendant's own text -- so
+// a tooltip replaced the visible text of anything named from its content.
+// accname orders name-from-content ahead of the title fallback.
+
+test("getContentNameInfo: a link descendant's text content outranks its own title", () => {
+  const { helpers, document } = helpersFor(
+    '<div id="wrap"><a href="/x" title="Some tooltip">Real Link Text</a></div>'
+  );
+  const info = helpers.getContentNameInfo(byId(document, 'wrap'), { helpers });
+  assert.equal(info.present, true);
+  assert.equal(info.value, 'Real Link Text');
+  assert.ok(info.flags.includes('descendant-title-superseded-by-content'));
+});
+
+test('getContentNameInfo: a non-link descendant (span) also has its content outrank its title', () => {
+  const { helpers, document } = helpersFor(
+    '<div id="wrap"><span title="Some tooltip">Real Span Text</span></div>'
+  );
+  const info = helpers.getContentNameInfo(byId(document, 'wrap'), { helpers });
+  assert.equal(info.present, true);
+  assert.equal(info.value, 'Real Span Text');
+});
+
+test('getContentNameInfo: a descendant title IS used when that descendant has no content', () => {
+  const { helpers, document } = helpersFor(
+    '<div id="wrap"><a href="/x" title="Tooltip only"></a></div>'
+  );
+  const info = helpers.getContentNameInfo(byId(document, 'wrap'), { helpers });
+  assert.equal(info.present, true);
+  assert.equal(info.value, 'Tooltip only');
+  assert.ok(info.flags.includes('descendant-name-used:title-fallback'));
+});
+
+test('getContentNameInfo: a descendant whose content is only whitespace falls back to its title', () => {
+  const { helpers, document } = helpersFor(
+    '<div id="wrap"><a href="/x" title="Tooltip only">   </a></div>'
+  );
+  const info = helpers.getContentNameInfo(byId(document, 'wrap'), { helpers });
+  assert.equal(info.present, true);
+  assert.equal(info.value, 'Tooltip only');
+  assert.ok(info.flags.includes('descendant-name-used:title-fallback'));
+});
+
+test('getContentNameInfo: aria-label on a non-image descendant still outranks its content and title', () => {
+  const { helpers, document } = helpersFor(
+    '<div id="wrap"><a href="/x" aria-label="Aria Name" title="Tooltip">Content Text</a></div>'
+  );
+  const info = helpers.getContentNameInfo(byId(document, 'wrap'), { helpers });
+  assert.equal(info.present, true);
+  assert.equal(info.value, 'Aria Name');
+  assert.ok(info.flags.includes('descendant-name-used:aria-label'));
+});
+
+test('getContentNameInfo: two labels differing only in text (shared title) produce DISTINCT names', () => {
+  // Same title on both label targets, different visible text -- collapsing
+  // these to one name is what produces a phantom landmark-unique collision.
+  const { helpers, document } = helpersFor(
+    '<div id="lA"><a href="/x" title="SHARED">Alpha Navigation</a></div>' +
+      '<div id="lB"><a href="/y" title="SHARED">Beta Navigation</a></div>'
+  );
+  const a = helpers.getContentNameInfo(byId(document, 'lA'), { helpers });
+  const b = helpers.getContentNameInfo(byId(document, 'lB'), { helpers });
+  assert.equal(a.value, 'Alpha Navigation');
+  assert.equal(b.value, 'Beta Navigation');
+  assert.notEqual(a.value, b.value);
+});
+
+// A whitespace-only aria-label is treated as absent by accname, so computation
+// falls through to content -- and, with the title precedence above, past the
+// title too.
+
+test('getContentNameInfo: a whitespace-only aria-label on a descendant is skipped in favour of its content', () => {
+  const { helpers, document } = helpersFor(
+    '<div id="wrap"><a href="/x" aria-label=" " title="Tooltip">Text Content</a></div>'
+  );
+  const info = helpers.getContentNameInfo(byId(document, 'wrap'), { helpers });
+  assert.equal(info.value, 'Text Content');
+  assert.ok(info.flags.includes('descendant-title-superseded-by-content'));
+});
+
+test('getContentNameInfo: whitespace-only aria-label with no content falls through to the title', () => {
+  const { helpers, document } = helpersFor(
+    '<div id="wrap"><a href="/x" aria-label=" " title="Tooltip"></a></div>'
+  );
+  const info = helpers.getContentNameInfo(byId(document, 'wrap'), { helpers });
+  assert.equal(info.value, 'Tooltip');
+  assert.ok(info.flags.includes('descendant-name-used:title-fallback'));
+});
+
+test('getContentNameInfo: a deeper descendant title still loses to its own nested content', () => {
+  const { helpers, document } = helpersFor(
+    '<div id="wrap"><span title="Outer tooltip"><em>Nested Real Text</em></span></div>'
+  );
+  const info = helpers.getContentNameInfo(byId(document, 'wrap'), { helpers });
+  assert.equal(info.present, true);
+  assert.equal(info.value, 'Nested Real Text');
+});
+
 test('getContentNameInfo: neither alt, title, nor aria present on an image descendant contributes nothing (not an error)', () => {
   const { helpers, document } = helpersFor('<button id="b"><img src="x.png"></button>');
   const info = helpers.getContentNameInfo(byId(document, 'b'), { helpers });
