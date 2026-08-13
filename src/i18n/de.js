@@ -926,10 +926,10 @@ module.exports = {
     'Die Seite muss eine Möglichkeit bieten, wiederkehrende Blöcke zu überspringen',
   bypassBlocksPresent_description:
     'Prüft, ob die Seite mindestens einen anerkannten Mechanismus nach WCAG 2.4.1 zum Überspringen wiederkehrender Blöcke hat: eine main-Landmarke, einen funktionierenden Anker-Link auf derselben Seite oder eine Überschrift.',
-  bypassBlocksPresent_summary_fail:
-    'Diese Seite hat keine anerkannte Möglichkeit, wiederkehrende Inhaltsblöcke zu überspringen.',
-  bypassBlocksPresent_hint_fail:
-    'Fügen Sie eine main-Landmarke (<main> oder role="main"), einen funktionierenden „Zum Inhalt springen“-Link oder Überschriften-Elemente hinzu, die assistive Technologien nutzen können, um wiederkehrende Inhalte zu überspringen.',
+  bypassBlocksPresent_summary_cantTell:
+    'Auf dieser Seite wurde keine anerkannte Möglichkeit erkannt, wiederkehrende Inhaltsblöcke zu überspringen – prüfen Sie, ob ein Überspring-Mechanismus vorhanden ist.',
+  bypassBlocksPresent_hint_cantTell:
+    'Bestätigen Sie, dass die Seite einen Überspring-Mechanismus bietet: eine main-Landmarke (<main> oder role="main"), einen funktionierenden „Zum Inhalt springen“-Link oder Überschriften-Elemente, die assistive Technologien nutzen können, um wiederkehrende Inhalte zu überspringen. (Ein Mechanismus kann vorübergehend verborgen sein – z. B. während ein modaler Dialog die Seite inert macht – oder seitenweit bereitgestellt werden; dies erfordert eine menschliche Bestätigung.)',
 
   landmarkBannerIsTopLevel_title: 'Die banner-Landmarke muss auf oberster Ebene liegen',
   landmarkBannerIsTopLevel_description:

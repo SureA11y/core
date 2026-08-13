@@ -879,10 +879,10 @@ module.exports = {
   bypassBlocksPresent_title: 'La page doit proposer un moyen de contourner les blocs répétés',
   bypassBlocksPresent_description:
     'Vérifie que la page dispose d’au moins un mécanisme reconnu de contournement des blocs répétés (WCAG 2.4.1) : un point de repère main, un lien d’ancrage fonctionnel vers la même page, ou un titre.',
-  bypassBlocksPresent_summary_fail:
-    'Cette page n’a aucun moyen reconnu de contourner les blocs de contenu répétés.',
-  bypassBlocksPresent_hint_fail:
-    'Ajoutez un point de repère main (<main> ou role="main"), un lien « aller au contenu » fonctionnel, ou des éléments de titre que les technologies d’assistance peuvent utiliser pour passer le contenu répété.',
+  bypassBlocksPresent_summary_cantTell:
+    'Aucun moyen reconnu de contourner les blocs de contenu répétés n’a été détecté sur cette page — vérifiez qu’un mécanisme de contournement existe.',
+  bypassBlocksPresent_hint_cantTell:
+    'Confirmez que la page propose un mécanisme de contournement : un point de repère main (<main> ou role="main"), un lien « aller au contenu » fonctionnel, ou des éléments de titre que les technologies d’assistance peuvent utiliser pour passer le contenu répété. (Un mécanisme peut être temporairement masqué — par exemple pendant qu’une boîte de dialogue modale rend la page inerte — ou fourni à l’échelle du site ; cela nécessite une confirmation humaine.)',
   landmarkBannerIsTopLevel_title: 'Le point de repère banner doit être de premier niveau',
   landmarkBannerIsTopLevel_description:
     'Vérifie que le point de repère banner (role="banner" ou un <header> non imbriqué) n’est pas imbriqué dans un autre point de repère.',

@@ -889,10 +889,10 @@ module.exports = {
   bypassBlocksPresent_title: 'Page must provide a way to bypass repeated blocks',
   bypassBlocksPresent_description:
     'Checks that the page has at least one recognized WCAG 2.4.1 bypass-blocks mechanism: a main landmark, a working same-page anchor link, or a heading.',
-  bypassBlocksPresent_summary_fail:
-    'This page has no recognized way to bypass repeated blocks of content.',
-  bypassBlocksPresent_hint_fail:
-    'Add a main landmark (<main> or role="main"), a working "skip to content" link, or heading elements that assistive technology can use to jump past repeated content.',
+  bypassBlocksPresent_summary_cantTell:
+    'No recognized way to bypass repeated blocks of content was detected on this page — verify a bypass mechanism exists.',
+  bypassBlocksPresent_hint_cantTell:
+    'Confirm the page offers a bypass mechanism: a main landmark (<main> or role="main"), a working "skip to content" link, or heading elements that assistive technology can use to jump past repeated content. (A mechanism may be temporarily hidden — e.g. while a modal dialog makes the page inert — or provided on a per-site basis; this needs human confirmation.)',
 
   landmarkBannerIsTopLevel_title: 'Banner landmark must be top-level',
   landmarkBannerIsTopLevel_description:
