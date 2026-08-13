@@ -169,49 +169,44 @@ function runInPage(ctx) {
       continue;
     }
 
-    const hasAlt = el.getAttribute('alt') !== null;
-    if (hasAlt) continue;
+    // effectiveName already covers the naming sources HTML-AAM allows here,
+    // in order: aria-label/aria-labelledby, then alt, then title.
+    if (effectiveName) continue;
 
-    // aria-label / aria-labelledby is also a valid, standards-recognized
-    // text-alternative mechanism for <input type="image"> (HTML-AAM
-    // accessible name computation includes ARIA naming before falling
-    // back to alt).
-    if (getAriaNameInfo) {
-      let ariaName;
-      try {
-        ariaName = getAriaNameInfo(el, ctx);
-      } catch {
-        ariaName = null;
-      }
-      if (ariaName && ariaName.present) continue;
-    }
-
-    // A non-empty title attribute is HTML-AAM's own next fallback naming
-    // source once alt is entirely absent. Same gap img-alt-present handles
-    // for <img title="..."> with no alt.
-    const titleRaw = (() => {
-      try {
-        return el.getAttribute('title');
-      } catch {
-        return null;
-      }
-    })();
-    if (titleRaw !== null && String(titleRaw).trim()) continue;
+    // An image button is a control, so an empty name fails whether alt is
+    // absent or present-but-empty. alt="" marks a decorative image, and an
+    // image button is never decorative.
+    const emptyAlt = el.getAttribute('alt') !== null;
 
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
-    const baseOccurrence = {
-      summary: 'Missing alt attribute on <input type="image">.',
-      hint: 'Add an alt attribute (use alt="" only when a separate accessible name is provided).',
-      i18n: {
-        summaryKey: 'inputImage_altPresent_summary_fail',
-        hintKey: 'inputImage_altPresent_hint_fail',
-        params: { element: 'input[type=image]' }
-      },
-      data: {
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    };
+    const baseOccurrence = emptyAlt
+      ? {
+          summary: 'Empty alt="" on <input type="image"> leaves the control unnamed.',
+          hint: 'Describe the action in alt, or name the control with aria-label or aria-labelledby.',
+          i18n: {
+            summaryKey: 'inputImage_altPresent_summary_emptyAlt',
+            hintKey: 'inputImage_altPresent_hint_emptyAlt',
+            params: { element: 'input[type=image]' }
+          },
+          data: {
+            visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
+            details: { reasonCode: 'empty_alt' }
+          }
+        }
+      : {
+          summary: 'Missing alt attribute on <input type="image">.',
+          hint: 'Add an alt attribute (use alt="" only when a separate accessible name is provided).',
+          i18n: {
+            summaryKey: 'inputImage_altPresent_summary_fail',
+            hintKey: 'inputImage_altPresent_hint_fail',
+            params: { element: 'input[type=image]' }
+          },
+          data: {
+            visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
+            details: { reasonCode: 'missing_alt' }
+          }
+        };
 
     if (helpers && typeof helpers.reportOccurrence === 'function') {
       occurrences.push(helpers.reportOccurrence(el, baseOccurrence));

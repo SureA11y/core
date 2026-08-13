@@ -71,6 +71,9 @@ function runInPage(ctx) {
   const isAccTreeEligible =
     helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
 
+  const getAriaNameInfo =
+    helpers && typeof helpers.getAriaNameInfo === 'function' ? helpers.getAriaNameInfo : null;
+
   const getFocusableInfo =
     helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
 
@@ -105,6 +108,26 @@ function runInPage(ctx) {
         !Number.isNaN(Number(String(tabindex).trim()));
     }
     return !focusable;
+  }
+
+  // alt="" plus a name from aria-label/aria-labelledby/title is the judgement
+  // call this rule reviews. alt="" with no other source leaves the control
+  // unnamed, which input-image-alt-present fails outright.
+  function hasNameFromOtherSource(el) {
+    if (getAriaNameInfo) {
+      try {
+        const aria = getAriaNameInfo(el, ctx);
+        if (aria && aria.present && String(aria.value || '').trim()) return true;
+      } catch {
+        // fall through to title
+      }
+    }
+    try {
+      const title = el.getAttribute('title');
+      return title != null && String(title).trim() !== '';
+    } catch {
+      return false;
+    }
   }
 
   const els = (() => {
@@ -143,6 +166,7 @@ function runInPage(ctx) {
 
     // Rule-specific applicability (only elements that already have a text alternative mechanism)
     if (!(el.getAttribute('alt') != null && String(el.getAttribute('alt')).trim() === '')) continue;
+    if (!hasNameFromOtherSource(el)) continue;
 
     applicableCount += 1;
 

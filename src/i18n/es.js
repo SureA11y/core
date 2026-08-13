@@ -24,6 +24,10 @@ module.exports = {
     'El nombre accesible es el predeterminado del navegador para un boton de imagen y no aporta informacion.',
   inputImage_altPresent_hint_defaultName:
     'Sustituyelo por un texto que describa la accion del boton, por ejemplo "Buscar".',
+  inputImage_altPresent_summary_emptyAlt:
+    'Un alt="" vacio en <input type="image"> deja el control sin nombre.',
+  inputImage_altPresent_hint_emptyAlt:
+    'Describe la accion en alt, o nombra el control con aria-label o aria-labelledby.',
   ariaHidden_programmaticFocus_review_title: 'Revisar el foco programático en aria-hidden',
   ariaHidden_programmaticFocus_review_description:
     'Señala elementos aria-hidden considerados elegibles debido a un foco programático (por ejemplo, tabindex < 0). Verificar que la gestión del foco es intencionada y la exposición a las tecnologías de asistencia.',

@@ -24,6 +24,10 @@ module.exports = {
     'Accessible name is the browser default for an image button, which conveys nothing.',
   inputImage_altPresent_hint_defaultName:
     'Replace it with text describing what the button does, for example "Search".',
+  inputImage_altPresent_summary_emptyAlt:
+    'Empty alt="" on <input type="image"> leaves the control unnamed.',
+  inputImage_altPresent_hint_emptyAlt:
+    'Describe the action in alt, or name the control with aria-label or aria-labelledby.',
   ariaHidden_programmaticFocus_review_title: 'Review aria-hidden programmatic focus',
   ariaHidden_programmaticFocus_review_description:
     'Flags elements that are aria-hidden but considered eligible due to programmatic focus (e.g., tabindex < 0). Verify intended focus management and assistive technology exposure.',
