@@ -53,6 +53,52 @@ test(`${RULE_ID}: evaluates each table independently`, () => {
   assert.ok(hasOccurrenceForId(rule, 'bad'));
 });
 
+test(`${RULE_ID}: notApplicable for a table whose role removes its table semantics`, () => {
+  for (const role of ['presentation', 'none']) {
+    const html = `<!doctype html><html><body><table role="${role}"><tr><th>Spacer</th></tr></table></body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
+test(`${RULE_ID}: notApplicable when an explicit role overrides the header cell`, () => {
+  const html = `<!doctype html><html><body><table><tr><th role="cell">Column A</th></tr></table></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: an explicit rowheader or columnheader role stays in scope`, () => {
+  for (const role of ['rowheader', 'columnheader']) {
+    const html = `<!doctype html><html><body><table><tr><th role="${role}">Column A</th></tr></table></body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  }
+});
+
+test(`${RULE_ID}: notApplicable when the only header cell is hidden`, () => {
+  for (const markup of [
+    '<th style="display:none">Organization</th>',
+    '<th aria-hidden="true">Organization</th>'
+  ]) {
+    const html = `<!doctype html><html><body><table><tr>${markup}</tr></table></body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
+test(`${RULE_ID}: notApplicable when the table itself is inside an aria-hidden subtree`, () => {
+  const html = `<!doctype html><html><body><div aria-hidden="true"><table><tr><th>Name</th></tr></table></div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: a hidden header cell does not shield a visible one in the same table`, () => {
+  const html = `<!doctype html><html><body><table><tr><th style="display:none">Hidden</th><th id="shown">Shown</th></tr></table></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'shown'));
+});
+
 test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><body><table><tr><th id="a">Name</th></tr></table></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });

@@ -144,7 +144,11 @@ function runInPage(ctx) {
   }
 
   // Minimal BCP47 primary subtag check
-  if (!/^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{2,8})*$/.test(lang)) {
+  const isValidTag =
+    helpers && typeof helpers.isValidLanguageTag === 'function'
+      ? helpers.isValidLanguageTag
+      : (v) => /^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{2,8})*$/.test(String(v || ''));
+  if (!isValidTag(lang)) {
     return {
       ruleId: rule.ruleId,
       outcome: 'fail',

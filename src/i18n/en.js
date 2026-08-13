@@ -20,6 +20,14 @@ module.exports = {
   inputImage_altPresent_summary_fail: 'Missing alt attribute on <input type="image">.',
   inputImage_altPresent_hint_fail:
     'Add an alt attribute (use alt="" only when a separate accessible name is provided).',
+  inputImage_altPresent_summary_defaultName:
+    'Accessible name is the browser default for an image button, which conveys nothing.',
+  inputImage_altPresent_hint_defaultName:
+    'Replace it with text describing what the button does, for example "Search".',
+  inputImage_altPresent_summary_emptyAlt:
+    'Empty alt="" on <input type="image"> leaves the control unnamed.',
+  inputImage_altPresent_hint_emptyAlt:
+    'Describe the action in alt, or name the control with aria-label or aria-labelledby.',
   ariaHidden_programmaticFocus_review_title: 'Review aria-hidden programmatic focus',
   ariaHidden_programmaticFocus_review_description:
     'Flags elements that are aria-hidden but considered eligible due to programmatic focus (e.g., tabindex < 0). Verify intended focus management and assistive technology exposure.',
@@ -607,6 +615,10 @@ module.exports = {
     '{{element}}: visible label "{{visibleLabel}}" (from {{labelSource}}) is not included in the accessible name (from {{nameMechanism}}).',
   labelInName_hint_fail:
     'Update aria-label/aria-labelledby (or the visible label text) so the accessible name includes the visible label wording.',
+  labelInName_summary_cantTell:
+    '{{element}}: visible label "{{visibleLabel}}" (from {{labelSource}}) differs from the accessible name (from {{nameMechanism}}) only by an abbreviation or by hyphenation.',
+  labelInName_hint_cantTell:
+    'Check by hand whether the two wordings match: markup cannot tell an intended abbreviation from a mismatch.',
 
   /* =========================
    * ARIA validity family
@@ -623,12 +635,17 @@ module.exports = {
     'Replace this abstract role with a concrete role appropriate for the widget/structure.',
 
   ariaDeprecatedRole_title:
-    'role attribute must not use a deprecated or author-prohibited ARIA role',
+    'role attribute should not use a deprecated or author-discouraged ARIA role',
   ariaDeprecatedRole_description:
-    'Checks that an explicit role="" attribute does not use a role deprecated by the WAI-ARIA specification, or one reserved for user-agent-internal use only (e.g. role="generic").',
+    'Checks that an explicit role="" attribute does not use a role deprecated by the WAI-ARIA specification, or one reserved for user-agent-internal use (e.g. role="generic").',
   ariaDeprecatedRole_summary_fail:
     'This element uses role="{{role}}", which authors must not explicitly declare.',
   ariaDeprecatedRole_hint_fail: '{{guidance}}',
+  ariaDeprecatedRole_summary_cantTell:
+    'This element uses role="{{role}}", which is deprecated in WAI-ARIA (still valid, but discouraged).',
+  ariaDeprecatedRole_summary_cantTell_discouraged:
+    'This element uses role="{{role}}", which is reserved for user agents (still valid, but discouraged).',
+  ariaDeprecatedRole_hint_cantTell: '{{guidance}}',
 
   ariaValidAttr_title: 'aria-* attributes must be real, defined ARIA attributes',
   ariaValidAttr_description:
@@ -649,6 +666,10 @@ module.exports = {
     'Checks that every recognized aria-* attribute present on an element with an explicit role is either globally supported or supported by that role.',
   ariaAllowedAttr_summary_fail: '{{attr}} is not permitted on role="{{role}}".',
   ariaAllowedAttr_hint_fail: 'Remove this attribute, or use a role that supports it.',
+  ariaAllowedAttr_summary_cantTell:
+    '{{attr}} is deprecated on role="{{role}}" (still allowed, but discouraged).',
+  ariaAllowedAttr_hint_cantTell:
+    'This attribute was removed from the ARIA global set in 1.2; remove it or use a role that supports it, as a future ARIA version may disallow it.',
 
   ariaProhibitedAttr_title: 'ARIA naming attributes must not be used on roles that prohibit them',
   ariaProhibitedAttr_description:
@@ -865,6 +886,10 @@ module.exports = {
     'This <{{element}}> is associated with {{labelCount}} labels.',
   formControlSingleLabel_hint_fail:
     'Keep only one <label> per form control (either wrapping it or referencing it via for/id).',
+  formControlSingleLabel_summary_cantTell:
+    'This <{{element}}> has one labelling <label> plus an extra empty <label> association; verify how it is announced.',
+  formControlSingleLabel_hint_cantTell:
+    'Remove the redundant empty <label> so exactly one <label> is associated with the control.',
 
   nestedInteractiveControlsAbsent_title: 'Interactive controls must not be nested',
   nestedInteractiveControlsAbsent_description:
@@ -877,10 +902,10 @@ module.exports = {
   bypassBlocksPresent_title: 'Page must provide a way to bypass repeated blocks',
   bypassBlocksPresent_description:
     'Checks that the page has at least one recognized WCAG 2.4.1 bypass-blocks mechanism: a main landmark, a working same-page anchor link, or a heading.',
-  bypassBlocksPresent_summary_fail:
-    'This page has no recognized way to bypass repeated blocks of content.',
-  bypassBlocksPresent_hint_fail:
-    'Add a main landmark (<main> or role="main"), a working "skip to content" link, or heading elements that assistive technology can use to jump past repeated content.',
+  bypassBlocksPresent_summary_cantTell:
+    'No recognized way to bypass repeated blocks of content was detected on this page — verify a bypass mechanism exists.',
+  bypassBlocksPresent_hint_cantTell:
+    'Confirm the page offers a bypass mechanism: a main landmark (<main> or role="main"), a working "skip to content" link, or heading elements that assistive technology can use to jump past repeated content. (A mechanism may be temporarily hidden — e.g. while a modal dialog makes the page inert — or provided on a per-site basis; this needs human confirmation.)',
 
   landmarkBannerIsTopLevel_title: 'Banner landmark must be top-level',
   landmarkBannerIsTopLevel_description:
@@ -1071,9 +1096,9 @@ module.exports = {
   htmlXmlLangMismatch_hint_fail:
     'Make lang and xml:lang declare the same primary language, or remove the deprecated xml:lang attribute.',
 
-  avoidInlineSpacing_title: 'Inline style must not force text spacing with !important',
+  avoidInlineSpacing_title: 'Inline style must not force text spacing below the WCAG metric',
   avoidInlineSpacing_description:
-    'Checks that inline style does not set line-height, letter-spacing, or word-spacing with !important, which blocks user text-spacing overrides.',
+    'Checks that where inline style forces line-height, letter-spacing or word-spacing with !important, the value already meets WCAG 1.4.12, so the user has nothing left to override.',
   avoidInlineSpacing_summary_fail:
     "This element's inline style forces {{properties}} with !important, blocking user text-spacing overrides.",
   avoidInlineSpacing_hint_fail:

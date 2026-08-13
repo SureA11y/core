@@ -99,3 +99,31 @@ test(`meta-refresh-timing-absent: notApplicable when engineOptions.fragment is t
     maxOccurrences: 0
   });
 });
+
+// An invalid refresh directive never refreshes, so there is nothing to report.
+test(`${RULE_ID}: notApplicable for content that is not a valid refresh directive`, () => {
+  for (const content of ['foo; URL=/x', '+72001; /x', '-00.12 foo', '0:1', '; 72001']) {
+    const html = `<!doctype html><html><head><meta http-equiv="refresh" content="${content}"></head><body>x</body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
+test(`${RULE_ID}: valid directives are still evaluated`, () => {
+  const cases = [
+    ['0', 'pass'],
+    ['0; url=/x', 'pass'],
+    ['5', 'fail'],
+    ['2 url=/x', 'fail']
+  ];
+  for (const [content, expected] of cases) {
+    const html = `<!doctype html><html><head><meta http-equiv="refresh" content="${content}"></head><body>x</body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(
+      result,
+      RULE_ID,
+      expected,
+      expected === 'pass' ? { maxOccurrences: 0 } : { minOccurrences: 1 }
+    );
+  }
+});

@@ -22,12 +22,9 @@
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent (this rule mirrors
  *   its structure with contentinfo/footer in place of banner/header).
- * - Candidate selection (`isContentinfoCandidate` below) is deliberately
- *   unconditional, instead of reusing the sectioning-ancestor suppression
- *   that the violation check itself depends on — same
- *   self-defeating-candidate-selection reasoning as
- *   landmark-banner-is-top-level (see that file's header comment for the
- *   full root cause).
+ * - Candidate selection (`isContentinfoCandidate`) requires the element to
+ *   really carry the contentinfo role, via the suppression-aware
+ *   `getLandmarkRole` — same reasoning as landmark-banner-is-top-level.
  */
 
 const id = 'landmark-contentinfo-is-top-level';
@@ -135,11 +132,11 @@ function runInPage(ctx) {
   // a candidate purely by tag + absence of any role attribute, independent
   // of whether sectioning-ancestor nesting would currently suppress its
   // implicit role; an explicit role="contentinfo" is always a candidate too.
+  // A candidate must actually have the contentinfo role — a <footer> inside
+  // article/aside/main/nav/section is not one, so flagging it as nested
+  // would report a landmark that does not exist.
   function isContentinfoCandidate(el) {
-    if (!el || !el.getAttribute) return false;
-    const explicit = getExplicitRoleToken(el);
-    if (explicit) return explicit === 'contentinfo';
-    return !!(el.tagName && el.tagName.toLowerCase() === 'footer');
+    return getLandmarkRole(el) === 'contentinfo';
   }
 
   function hasLandmarkAncestor(el) {

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>bypass-blocks-present — scenario fixture (FAIL case)</title>
+  <title>bypass-blocks-present — scenario fixture (cantTell / needs-review case)</title>
   <style>
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
     h1 { font-size: 20px; margin: 0 0 16px; }
@@ -12,7 +12,7 @@
   </style>
 </head>
 <body>
-  <div class="case-title">01 — FAIL: no main landmark, no working same-page anchor link, no heading</div>
+  <div class="case-title">01 — cantTell: no main landmark, no working same-page anchor link, no heading (needs human review)</div>
   <nav>Home | About | Contact</nav>
   <div>
     <p>This page has repeated navigation content but no main landmark
@@ -21,8 +21,8 @@
   </div>
   <p class="note">
     This is a whole-document check: only one outcome per page. See the companion
-    scenarios in this rule's <code>.test.js</code> file for the three independent PASS
-    conditions (main landmark / working anchor link / heading) — each is trivial to
+    scenarios in this rule's <code>.test.js</code> file for the three independent
+    notApplicable conditions (main landmark / working anchor link / heading) — each is trivial to
     demonstrate individually and not worth three separate fixture files.
   </p>
 </body>

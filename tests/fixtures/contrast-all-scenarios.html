@@ -23,9 +23,17 @@
     .visibilityHidden { visibility: hidden; }
     .visibilityCollapse { visibility: collapse; }
 
-    /* "Not visually visible" but SHOULD STILL BE ELIGIBLE under your deterministic policy */
+    /* "Not visually visible" but SHOULD STILL BE ELIGIBLE under your deterministic policy
+       -- opacity:0 and offscreen positioning can each be a single-property
+       authoring mistake on text meant to be visible, so contrast rules still
+       evaluate them. */
     .opacityZero { opacity: 0; }
     .offscreen { position: absolute; left: -9999px; top: 0; }
+
+    /* sr-only clip technique: EXCLUDED from contrast rules. Unlike opacity/
+       offscreen, this is a coordinated, unambiguous pattern (5+ properties)
+       used specifically to hide content from sighted users while keeping it
+       for assistive tech -- there is no visually-presented color to check. */
     .srOnly {
       position: absolute;
       width: 1px;
@@ -355,12 +363,12 @@
 </section>
 
 <!-- ========================================================= -->
-<!-- 24) SR-only clipping (still eligible) -->
+<!-- 24) SR-only clipping (excluded from contrast rules) -->
 <!-- ========================================================= -->
 <section class="case bgWhite" id="case-sr-only">
-  <p class="label">SR-only clipped (still eligible)</p>
-  <p class="text normalText srOnly" id="eligible_sr_only_fail" style="color:#999999;">
-    Eligible SR-only. Should be evaluated.
+  <p class="label">SR-only clipped (excluded)</p>
+  <p class="text normalText srOnly" id="excluded_sr_only_clip_fail" style="color:#999999;">
+    Excluded SR-only. Never visually presented, so no contrast requirement.
   </p>
 </section>
 

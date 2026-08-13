@@ -36,14 +36,28 @@
     </div>
   </div>
 
-  <div class="case" id="case_03">
-    <div class="case-title">03 — CANTTELL: header nested inside &lt;main&gt; — candidate selection no longer reuses the suppression that makes a nested header lose its own implicit banner role</div>
+  <div class="case" id="case_03b">
+    <div class="case-title">03b — CANTTELL: header with an explicit role="banner" inside &lt;main&gt; — an explicit role is never suppressed, so this is a real nested banner</div>
     <main>
-      <header id="lbtl_case_03">Nested inside main, now correctly flagged</header>
+      <header role="banner" id="lbtl_case_03b">Explicit banner nested in main</header>
     </main>
   </div>
 
+  <div class="case" id="case_03c">
+    <div class="case-title">03c — CANTTELL: header inside a &lt;footer&gt; — contentinfo blocks but is not sectioning content, so the header keeps its implicit banner role and is genuinely nested</div>
+    <footer>
+      <header id="lbtl_case_03c">Banner nested in a contentinfo</header>
+    </footer>
+  </div>
+
   <h2>C. Not applicable (skipped, not counted)</h2>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — NEUTRAL: header nested inside &lt;main&gt; — per HTML-AAM a header descended from main has no banner role at all, so there is no banner here to be nested</div>
+    <main>
+      <header id="lbtl_case_03">Not a banner at all</header>
+    </main>
+  </div>
 
   <div class="case" id="case_04">
     <div class="case-title">04 — NEUTRAL: header nested inside an UNNAMED section — an unnamed &lt;section&gt; has no implicit role at all (unlike a top-level &lt;aside&gt;, which is unconditionally complementary), so there is genuinely no landmark ancestor here</div>

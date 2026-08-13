@@ -20,6 +20,14 @@ module.exports = {
   inputImage_altPresent_summary_fail: 'Falta el atributo alt en <input type="image">.',
   inputImage_altPresent_hint_fail:
     'Agregar un atributo alt (usar alt="" solo cuando se proporcione un nombre accesible por separado).',
+  inputImage_altPresent_summary_defaultName:
+    'El nombre accesible es el predeterminado del navegador para un boton de imagen y no aporta informacion.',
+  inputImage_altPresent_hint_defaultName:
+    'Sustituyelo por un texto que describa la accion del boton, por ejemplo "Buscar".',
+  inputImage_altPresent_summary_emptyAlt:
+    'Un alt="" vacio en <input type="image"> deja el control sin nombre.',
+  inputImage_altPresent_hint_emptyAlt:
+    'Describe la accion en alt, o nombra el control con aria-label o aria-labelledby.',
   ariaHidden_programmaticFocus_review_title: 'Revisar el foco programático en aria-hidden',
   ariaHidden_programmaticFocus_review_description:
     'Señala elementos aria-hidden considerados elegibles debido a un foco programático (por ejemplo, tabindex < 0). Verificar que la gestión del foco es intencionada y la exposición a las tecnologías de asistencia.',
@@ -623,6 +631,10 @@ module.exports = {
     '{{element}}: la etiqueta visible "{{visibleLabel}}" (de {{labelSource}}) no está incluida en el nombre accesible (de {{nameMechanism}}).',
   labelInName_hint_fail:
     'Actualizar aria-label/aria-labelledby (o el texto de la etiqueta visible) para que el nombre accesible incluya el texto de la etiqueta visible.',
+  labelInName_summary_cantTell:
+    '{{element}}: la etiqueta visible "{{visibleLabel}}" (de {{labelSource}}) se diferencia del nombre accesible (de {{nameMechanism}}) solo por una abreviatura o por la separación con guion.',
+  labelInName_hint_cantTell:
+    'Comprobar manualmente si ambas redacciones coinciden: el marcado no permite distinguir una abreviatura intencionada de una discrepancia.',
 
   /* =========================
    * Familia de validez ARIA
@@ -639,12 +651,17 @@ module.exports = {
     'Reemplazar este rol abstracto por un rol concreto adecuado para el widget o la estructura.',
 
   ariaDeprecatedRole_title:
-    'El atributo role no debe usar un rol ARIA obsoleto o prohibido para autores',
+    'El atributo role no debería usar un rol ARIA obsoleto o desaconsejado para autores',
   ariaDeprecatedRole_description:
-    'Comprueba que un atributo role="" explícito no use un rol obsoleto según la especificación WAI-ARIA, ni uno reservado únicamente para uso interno del agente de usuario (por ejemplo, role="generic").',
+    'Comprueba que un atributo role="" explícito no use un rol obsoleto según la especificación WAI-ARIA, ni uno reservado para uso interno del agente de usuario (por ejemplo, role="generic").',
   ariaDeprecatedRole_summary_fail:
     'Este elemento usa role="{{role}}", que los autores no deben declarar explícitamente.',
   ariaDeprecatedRole_hint_fail: '{{guidance}}',
+  ariaDeprecatedRole_summary_cantTell:
+    'Este elemento usa role="{{role}}", que está obsoleto en WAI-ARIA (todavía válido, pero desaconsejado).',
+  ariaDeprecatedRole_summary_cantTell_discouraged:
+    'Este elemento usa role="{{role}}", que está reservado para los agentes de usuario (todavía válido, pero desaconsejado).',
+  ariaDeprecatedRole_hint_cantTell: '{{guidance}}',
 
   ariaValidAttr_title: 'Los atributos aria-* deben ser atributos ARIA reales y definidos',
   ariaValidAttr_description:
@@ -666,6 +683,10 @@ module.exports = {
     'Comprueba que cada atributo aria-* reconocido presente en un elemento con un rol explícito esté admitido globalmente o admitido por ese rol.',
   ariaAllowedAttr_summary_fail: '{{attr}} no está permitido en role="{{role}}".',
   ariaAllowedAttr_hint_fail: 'Eliminar este atributo, o usar un rol que lo admita.',
+  ariaAllowedAttr_summary_cantTell:
+    '{{attr}} está obsoleto en role="{{role}}" (todavía permitido, pero desaconsejado).',
+  ariaAllowedAttr_hint_cantTell:
+    'Este atributo se eliminó del conjunto global de ARIA en 1.2; elimínelo o use un rol que lo admita, ya que una versión futura de ARIA podría no permitirlo.',
 
   ariaProhibitedAttr_title:
     'Los atributos de nombrado ARIA no deben usarse en roles que los prohíban',
@@ -895,6 +916,10 @@ module.exports = {
     'Este <{{element}}> está asociado a {{labelCount}} etiquetas.',
   formControlSingleLabel_hint_fail:
     'Mantener solo una <label> por control de formulario (ya sea envolviéndolo o referenciándolo mediante for/id).',
+  formControlSingleLabel_summary_cantTell:
+    'Este <{{element}}> tiene una <label> que lo etiqueta más una asociación de <label> vacía adicional; verifique cómo se anuncia.',
+  formControlSingleLabel_hint_cantTell:
+    'Elimine la <label> vacía redundante para que solo una <label> quede asociada al control.',
 
   nestedInteractiveControlsAbsent_title: 'Los controles interactivos no deben estar anidados',
   nestedInteractiveControlsAbsent_description:
@@ -907,10 +932,10 @@ module.exports = {
   bypassBlocksPresent_title: 'La página debe proporcionar una forma de omitir bloques repetidos',
   bypassBlocksPresent_description:
     'Comprueba que la página tenga al menos un mecanismo reconocido de omisión de bloques del criterio de éxito 2.4.1 de WCAG: un landmark main, un enlace de anclaje funcional dentro de la misma página, o un encabezado.',
-  bypassBlocksPresent_summary_fail:
-    'Esta página no tiene ninguna forma reconocida de omitir bloques de contenido repetidos.',
-  bypassBlocksPresent_hint_fail:
-    'Agregar un landmark main (<main> o role="main"), un enlace funcional de "saltar al contenido", o elementos de encabezado que las tecnologías de asistencia puedan usar para saltar el contenido repetido.',
+  bypassBlocksPresent_summary_cantTell:
+    'No se detectó ninguna forma reconocida de omitir bloques de contenido repetidos en esta página; verifique que exista un mecanismo de omisión.',
+  bypassBlocksPresent_hint_cantTell:
+    'Confirme que la página ofrece un mecanismo de omisión: un landmark main (<main> o role="main"), un enlace funcional de "saltar al contenido", o elementos de encabezado que las tecnologías de asistencia puedan usar para saltar el contenido repetido. (Un mecanismo puede estar oculto temporalmente —por ejemplo, mientras un diálogo modal deja la página inerte— o proporcionarse a nivel de sitio; esto requiere confirmación humana.)',
 
   landmarkBannerIsTopLevel_title: 'El landmark banner debe ser de nivel superior',
   landmarkBannerIsTopLevel_description:
@@ -1105,9 +1130,9 @@ module.exports = {
     'Hacer que lang y xml:lang declaren el mismo idioma principal, o eliminar el atributo obsoleto xml:lang.',
 
   avoidInlineSpacing_title:
-    'El estilo en línea no debe forzar el espaciado de texto con !important',
+    'El estilo en línea no debe forzar el espaciado de texto por debajo del umbral WCAG',
   avoidInlineSpacing_description:
-    'Comprueba que el estilo en línea no establezca line-height, letter-spacing o word-spacing con !important, lo que bloquea las anulaciones de espaciado de texto del usuario.',
+    'Comprueba que cuando el estilo en línea fuerza line-height, letter-spacing o word-spacing con !important, el valor ya cumple WCAG 1.4.12, por lo que al usuario no le queda nada que anular.',
   avoidInlineSpacing_summary_fail:
     'El estilo en línea de este elemento fuerza {{properties}} con !important, bloqueando las anulaciones de espaciado de texto del usuario.',
   avoidInlineSpacing_hint_fail:

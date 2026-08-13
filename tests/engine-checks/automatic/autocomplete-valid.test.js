@@ -22,10 +22,10 @@ test(`${RULE_ID}: notApplicable when no autocomplete attribute is present`, () =
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: pass for "off"`, () => {
+test(`${RULE_ID}: notApplicable for "off", which is a toggle rather than a field name`, () => {
   const html = `<!doctype html><html><body><input autocomplete="off"></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: pass for a single recognized field-name token`, () => {
@@ -70,5 +70,45 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/autocomplete-valid-all-scenar
   assert.ok(hasOccurrenceForId(rule, 'acv_case_06'));
   for (const id of ['acv_case_01', 'acv_case_02', 'acv_case_03', 'acv_case_04', 'acv_case_07']) {
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
+  }
+});
+
+// ACT 73f2c2 exempts controls where autocomplete cannot describe an input
+// purpose.
+test(`${RULE_ID}: notApplicable for the on/off toggle, disabled and fixed-value controls`, () => {
+  for (const markup of [
+    '<input type="text" autocomplete="off">',
+    '<input type="text" autocomplete="ON">',
+    '<input type="submit" autocomplete="email">',
+    '<input type="checkbox" autocomplete="badname">',
+    '<input autocomplete="badname" disabled>',
+    '<input autocomplete="badname" aria-disabled="true">'
+  ]) {
+    const html = `<!doctype html><html><body>${markup}</body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
+test(`${RULE_ID}: a contact modality token needs a contact field after it`, () => {
+  const bad = `<!doctype html><html><body><input autocomplete="work photo"></body></html>`;
+  assertRule(runa11yCoreOnHtml(bad, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 1
+  });
+
+  for (const value of ['work email', 'home tel', 'mobile tel-national', 'work impp']) {
+    const html = `<!doctype html><html><body><input autocomplete="${value}"></body></html>`;
+    assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'pass', {
+      maxOccurrences: 0
+    });
+  }
+});
+
+test(`${RULE_ID}: full token order is accepted`, () => {
+  for (const value of ['section-one shipping work email', 'billing email webauthn', 'photo']) {
+    const html = `<!doctype html><html><body><input autocomplete="${value}"></body></html>`;
+    assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'pass', {
+      maxOccurrences: 0
+    });
   }
 });

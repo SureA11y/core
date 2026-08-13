@@ -55,13 +55,23 @@ test(`${RULE_ID}: notApplicable when only ineligible objects exist (aria-hidden 
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: aria-hidden but tabbable (tabindex=0) is applicable and fails if unnamed`, () => {
+test(`${RULE_ID}: notApplicable when an aria-hidden object is tabbable`, () => {
   const html = `<!doctype html><html><body>
     <object id="focus_ah" data="x.svg" aria-hidden="true" tabindex="0"></object>
   </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
-  assert.ok(hasOccurrenceForId(rule, 'focus_ah'));
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: an aria-hidden object does not suppress a sibling outside the subtree`, () => {
+  const html = `<!doctype html><html><body>
+    <div aria-hidden="true"><object id="anc_ah" data="x.svg" tabindex="0"></object></div>
+    <object id="unnamed" data="y.svg"></object>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'unnamed'));
+  assert.ok(!hasOccurrenceForId(rule, 'anc_ah'));
 });
 
 test(`${RULE_ID}: inert subtree is ineligible and does not cause pass (=> notApplicable when only inert objects)`, () => {
@@ -94,11 +104,10 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/object-text-alternative-prese
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
   // Expected fails for the crafted fixture.
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 7, maxOccurrences: 7 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 6, maxOccurrences: 6 });
 
   const expectedFailIds = [
     'object_case_01',
-    'object_case_08',
     'object_case_10',
     'object_case_11',
     'object_case_12',
@@ -113,6 +122,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/object-text-alternative-prese
     'object_case_05',
     'object_case_06',
     'object_case_07',
+    'object_case_08', // aria-hidden, tabbable => hidden regardless of focusability
     'object_case_09',
     'object_case_13',
     'object_case_14',

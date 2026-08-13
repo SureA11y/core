@@ -1,6 +1,6 @@
 {
   "name": "@surea11y/core",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "Deterministic WCAG 2.2 accessibility engine that tells you what it can't tell you. Zero dependencies.",
   "keywords": [
     "accessibility",
@@ -96,10 +96,12 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "aria-query": "^5.3.2",
     "eslint": "^10.8.0",
     "eslint-config-prettier": "^10.1.8",
     "globals": "^17.8.0",
     "jsdom": "^29.1.1",
+    "language-subtag-registry": "^0.4.2",
     "playwright": "^1.62.1",
     "prettier": "^3.9.6"
   }

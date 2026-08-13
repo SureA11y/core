@@ -1,6 +1,6 @@
 # Fixture Index
 
-Generated: 2026-08-07T08:56:31.323Z
+Generated: 2026-08-13T20:21:58.894Z
 
 Every implemented rule should have a `tests/fixtures/<slug>-all-scenarios.html` scenario page (numbered `case_NN` blocks, each marked PASS/FAIL/CANTTELL in its `.case-title`) and a "fixture coverage" test in its `tests/engine-checks/**/<rule>.test.js` asserting the exact expected ids. See `docs/RULE_AUTHORING.md`.
 
@@ -20,12 +20,12 @@ None — every rule has a fixture.
 | area-alt-decorative | manual | `tests/fixtures/area-alt-decorative-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
 | area-alt-present | automatic | `tests/fixtures/area-alt-present-all-scenarios.html` | 23 | 5 | 8 | 0 | 10 |
 | area-alt-quality | manual | `tests/fixtures/area-alt-quality-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
-| aria-allowed-attr | automatic | `tests/fixtures/aria-allowed-attr-all-scenarios.html` | 13 | 8 | 3 | 0 | 2 |
+| aria-allowed-attr | automatic | `tests/fixtures/aria-allowed-attr-all-scenarios.html` | 14 | 8 | 4 | 1 | 1 |
 | aria-allowed-role | automatic | `tests/fixtures/aria-allowed-role-all-scenarios.html` | 50 | 30 | 19 | 0 | 1 |
 | aria-braille-equivalent | automatic | `tests/fixtures/aria-braille-equivalent-all-scenarios.html` | 6 | 3 | 2 | 0 | 1 |
 | aria-checked-state-mismatch | manual | `tests/fixtures/aria-checked-state-mismatch-all-scenarios.html` | 10 | 3 | 0 | 5 | 2 |
 | aria-conditional-attr | automatic | `tests/fixtures/aria-conditional-attr-all-scenarios.html` | 6 | 3 | 2 | 0 | 1 |
-| aria-deprecated-role | automatic | `tests/fixtures/aria-deprecated-role-all-scenarios.html` | 4 | 1 | 2 | 0 | 1 |
+| aria-deprecated-role | automatic | `tests/fixtures/aria-deprecated-role-all-scenarios.html` | 4 | 1 | 0 | 2 | 1 |
 | aria-hidden-body | automatic | `tests/fixtures/aria-hidden-body-all-scenarios.html` | 1 | 0 | 1 | 0 | 0 |
 | aria-hidden-focus | automatic | `tests/fixtures/aria-hidden-focus-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
 | aria-prohibited-attr | automatic | `tests/fixtures/aria-prohibited-attr-all-scenarios.html` | 15 | 2 | 9 | 0 | 4 |
@@ -39,11 +39,11 @@ None — every rule has a fixture.
 | aria-valid-attr | automatic | `tests/fixtures/aria-valid-attr-all-scenarios.html` | 5 | 1 | 2 | 0 | 2 |
 | aria-valid-attr-value | automatic | `tests/fixtures/aria-valid-attr-value-all-scenarios.html` | 15 | 8 | 6 | 0 | 1 |
 | autocomplete-valid | automatic | `tests/fixtures/autocomplete-valid-all-scenarios.html` | 7 | 4 | 2 | 0 | 1 |
-| avoid-inline-spacing | automatic | `tests/fixtures/avoid-inline-spacing-all-scenarios.html` | 3 | 1 | 2 | 0 | 0 |
-| binary-control-name-present | automatic | `tests/fixtures/binary-control-name-present-all-scenarios.html` | 25 | 11 | 6 | 0 | 8 |
+| avoid-inline-spacing | automatic | `tests/fixtures/avoid-inline-spacing-all-scenarios.html` | 9 | 3 | 3 | 0 | 3 |
+| binary-control-name-present | automatic | `tests/fixtures/binary-control-name-present-all-scenarios.html` | 25 | 11 | 4 | 0 | 10 |
 | button-name-present | automatic | `tests/fixtures/button-name-present-all-scenarios.html` | 24 | 9 | 12 | 0 | 3 |
-| bypass-blocks-present | automatic | `tests/fixtures/bypass-blocks-present-all-scenarios.html` | 1 | 0 | 1 | 0 | 0 |
-| canvas-text-alternative-present | automatic | `tests/fixtures/canvas-text-alternative-present-all-scenarios.html` | 25 | 9 | 9 | 0 | 7 |
+| bypass-blocks-present | manual | `tests/fixtures/bypass-blocks-present-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
+| canvas-text-alternative-present | automatic | `tests/fixtures/canvas-text-alternative-present-all-scenarios.html` | 25 | 9 | 7 | 0 | 9 |
 | canvas-text-alternative-quality | manual | `tests/fixtures/canvas-text-alternative-quality-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
 | combobox-name-present | automatic | `tests/fixtures/combobox-name-present-all-scenarios.html` | 24 | 7 | 5 | 0 | 12 |
 | contrast-computable | automatic | `tests/fixtures/contrast-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
@@ -61,9 +61,9 @@ None — every rule has a fixture.
 | empty-heading | manual | `tests/fixtures/empty-heading-all-scenarios.html` | 10 | 0 | 0 | 3 | 7 |
 | empty-table-header | manual | `tests/fixtures/empty-table-header-all-scenarios.html` | 6 | 0 | 0 | 4 | 2 |
 | focus-order-semantics | manual | `tests/fixtures/focus-order-semantics-all-scenarios.html` | 6 | 0 | 0 | 2 | 4 |
-| form-control-programmatic-label-present | automatic | `tests/fixtures/form-control-programmatic-label-all-scenarios.html` | 41 | 15 | 12 | 0 | 14 |
+| form-control-programmatic-label-present | automatic | `tests/fixtures/form-control-programmatic-label-all-scenarios.html` | 41 | 13 | 10 | 0 | 18 |
 | form-control-programmatic-label-quality | manual | `tests/fixtures/form-control-programmatic-label-quality-manual-all-scenarios.html` | 14 | 0 | 0 | 0 | 14 |
-| form-control-single-label | automatic | `tests/fixtures/form-control-single-label-all-scenarios.html` | 7 | 4 | 2 | 0 | 1 |
+| form-control-single-label | automatic | `tests/fixtures/form-control-single-label-all-scenarios.html` | 9 | 5 | 2 | 1 | 1 |
 | heading-order | manual | `tests/fixtures/heading-order-all-scenarios.html` | 1 | 0 | 0 | 1 | 0 |
 | html-lang-attr-present | automatic | `tests/fixtures/language-page-present-all-scenarios.html` | 1 | 0 | 1 | 0 | 0 |
 | html-xml-lang-mismatch | automatic | `tests/fixtures/html-xml-lang-mismatch-all-scenarios.html` | 1 | 0 | 1 | 0 | 0 |
@@ -76,12 +76,12 @@ None — every rule has a fixture.
 | img-alt-present | automatic | `tests/fixtures/img-alt-present-all-scenarios.html` | 33 | 6 | 11 | 0 | 16 |
 | img-alt-quality | manual | `tests/fixtures/img-alt-quality-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
 | input-image-alt-decorative | manual | `tests/fixtures/input-image-alt-decorative-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
-| input-image-alt-present | automatic | `tests/fixtures/input-image-alt-present-all-scenarios.html` | 19 | 4 | 9 | 0 | 6 |
+| input-image-alt-present | automatic | `tests/fixtures/input-image-alt-present-all-scenarios.html` | 19 | 3 | 9 | 0 | 7 |
 | input-image-alt-quality | manual | `tests/fixtures/input-image-alt-quality-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
 | label-in-name | automatic | `tests/fixtures/label-in-name-all-scenarios.html` | 17 | 7 | 5 | 0 | 5 |
 | label-title-only | manual | `tests/fixtures/label-title-only-all-scenarios.html` | 4 | 0 | 0 | 2 | 2 |
-| landmark-banner-is-top-level | manual | `tests/fixtures/landmark-banner-is-top-level-all-scenarios.html` | 4 | 0 | 0 | 3 | 1 |
-| landmark-contentinfo-is-top-level | manual | `tests/fixtures/landmark-contentinfo-is-top-level-all-scenarios.html` | 4 | 0 | 0 | 2 | 2 |
+| landmark-banner-is-top-level | manual | `tests/fixtures/landmark-banner-is-top-level-all-scenarios.html` | 4 | 0 | 0 | 2 | 2 |
+| landmark-contentinfo-is-top-level | manual | `tests/fixtures/landmark-contentinfo-is-top-level-all-scenarios.html` | 4 | 0 | 0 | 1 | 3 |
 | landmark-main-is-top-level | manual | `tests/fixtures/landmark-main-is-top-level-all-scenarios.html` | 2 | 0 | 0 | 1 | 1 |
 | landmark-no-duplicate-banner | manual | `tests/fixtures/landmark-no-duplicate-banner-all-scenarios.html` | 1 | 0 | 0 | 1 | 0 |
 | landmark-no-duplicate-contentinfo | manual | `tests/fixtures/landmark-no-duplicate-contentinfo-all-scenarios.html` | 1 | 0 | 0 | 1 | 0 |
@@ -105,7 +105,7 @@ None — every rule has a fixture.
 | mouse-only-event-handlers | manual | `tests/fixtures/mouse-only-event-handlers-all-scenarios.html` | 6 | 0 | 0 | 2 | 4 |
 | nested-interactive-controls-absent | automatic | `tests/fixtures/nested-interactive-controls-absent-all-scenarios.html` | 5 | 2 | 3 | 0 | 0 |
 | no-autoplay-audio | manual | `tests/fixtures/no-autoplay-audio-all-scenarios.html` | 5 | 0 | 0 | 2 | 3 |
-| object-text-alternative-present | automatic | `tests/fixtures/object-text-alternative-present-all-scenarios.html` | 18 | 5 | 7 | 0 | 6 |
+| object-text-alternative-present | automatic | `tests/fixtures/object-text-alternative-present-all-scenarios.html` | 18 | 5 | 6 | 0 | 7 |
 | object-text-alternative-quality | manual | `tests/fixtures/object-text-alternative-quality-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
 | option-name-present | automatic | `tests/fixtures/option-name-present-all-scenarios.html` | 17 | 4 | 5 | 0 | 8 |
 | p-as-heading | manual | `tests/fixtures/p-as-heading-all-scenarios.html` | 4 | 0 | 0 | 1 | 3 |
@@ -121,7 +121,7 @@ None — every rule has a fixture.
 | searchbox-name-present | automatic | `tests/fixtures/searchbox-name-present-all-scenarios.html` | 23 | 7 | 5 | 0 | 11 |
 | server-side-image-map-absent | automatic | `tests/fixtures/server-side-image-map-absent-all-scenarios.html` | 3 | 0 | 1 | 0 | 2 |
 | skip-link | manual | `tests/fixtures/skip-link-all-scenarios.html` | 6 | 0 | 0 | 3 | 3 |
-| slider-name-present | automatic | `tests/fixtures/slider-name-present-all-scenarios.html` | 23 | 9 | 6 | 0 | 8 |
+| slider-name-present | automatic | `tests/fixtures/slider-name-present-all-scenarios.html` | 23 | 9 | 4 | 0 | 10 |
 | spinbutton-name-present | automatic | `tests/fixtures/spinbutton-name-present-all-scenarios.html` | 23 | 7 | 5 | 0 | 11 |
 | summary-name-present | automatic | `tests/fixtures/summary-name-present-all-scenarios.html` | 6 | 4 | 2 | 0 | 0 |
 | svg-image-text-alternative-present | automatic | `tests/fixtures/svg-image-text-alternative-present-all-scenarios.html` | 20 | 6 | 8 | 0 | 6 |

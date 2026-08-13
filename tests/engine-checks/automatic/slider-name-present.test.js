@@ -32,7 +32,7 @@ test('slider-name-present: no applicable elements => notApplicable', () => {
 });
 
 test('slider-name-present: input range with label => pass', () => {
-  const html = `<!doctype html><html><body><label>Volume <input type='range'/></label></body></html>`;
+  const html = `<!doctype html><html><body><label>Volume <input type='range' role='slider'/></label></body></html>`;
 
   if (!runa11yCoreOnHtml || !assertRule) {
     assert.ok(true);
@@ -43,7 +43,7 @@ test('slider-name-present: input range with label => pass', () => {
 });
 
 test('slider-name-present: input range label hidden only => fail', () => {
-  const html = `<!doctype html><html><body><label><span aria-hidden='true'>Volume</span><input type='range'/></label></body></html>`;
+  const html = `<!doctype html><html><body><label><span aria-hidden='true'>Volume</span><input type='range' role='slider'/></label></body></html>`;
 
   if (!runa11yCoreOnHtml || !assertRule) {
     assert.ok(true);
@@ -104,20 +104,22 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/slider-name-present-all-scena
   }
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 8, maxOccurrences: 8 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 5, maxOccurrences: 5 });
 
   const expectedFailIds = [
-    'slider_case_01',
-    'slider_case_07',
     'slider_case_08',
     'slider_case_09',
     'slider_case_10',
-    'slider_case_15',
     'slider_case_19',
     'slider_case_23'
   ];
 
   const expectedNoOccIds = [
+    // native input[type=range] with no explicit role: owned by
+    // form-control-programmatic-label-present
+    'slider_case_01',
+    'slider_case_07',
+    'slider_case_15',
     'slider_case_02',
     'slider_case_03',
     'slider_case_04',
@@ -173,7 +175,7 @@ test("slider-name-present: label association with empty content falls back to th
   // <label for> association is only checked for native range inputs
   // (role="slider" is name-from-author-only per WAI-ARIA and doesn't use
   // native label association at all).
-  const html = `<!doctype html><html><body><label for='a' title='Search'></label><input id='a' type='range'/></body></html>`;
+  const html = `<!doctype html><html><body><label for='a' title='Search'></label><input id='a' type='range' role='slider'/></body></html>`;
 
   if (!runa11yCoreOnHtml || !assertRule) {
     assert.ok(true);
@@ -181,4 +183,31 @@ test("slider-name-present: label association with empty content falls back to th
   }
   const result = runa11yCoreOnHtml(html);
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test('slider-name-present: notApplicable for a bare native range input', () => {
+  const html = `<!doctype html><html><body><input type='range'/></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test('slider-name-present: an unlabeled native range is still reported, by the labeling rule', () => {
+  const html = `<!doctype html><html><body><input type='range'/></body></html>`;
+  const result = runa11yCoreOnHtml(html, {
+    runOnly: [RULE_ID, 'form-control-programmatic-label-present']
+  });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, 'form-control-programmatic-label-present', 'fail', { minOccurrences: 1 });
+});
+
+test('slider-name-present: an explicit role keeps a native range in scope', () => {
+  const html = `<!doctype html><html><body><input type='range' role='slider'/></body></html>`;
+  const result = runa11yCoreOnHtml(html, {
+    runOnly: [RULE_ID, 'form-control-programmatic-label-present']
+  });
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assertRule(result, 'form-control-programmatic-label-present', 'notApplicable', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
 });

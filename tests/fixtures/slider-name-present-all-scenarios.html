@@ -28,7 +28,7 @@
   <h2>A. Native input[type=range]: mechanism priority order</h2>
 
   <div class="case" id="case_01">
-    <div class="case-title">01 — FAIL: native range, no name at all</div>
+    <div class="case-title">01 — OUT OF SCOPE: native range with no explicit role; form-control-programmatic-label-present reports it</div>
     <input type="range" id="slider_case_01" />
   </div>
 
@@ -60,7 +60,7 @@
   </div>
 
   <div class="case" id="case_07">
-    <div class="case-title">07 — FAIL: native range, aria-label empty string, no label fallback</div>
+    <div class="case-title">07 — OUT OF SCOPE: native range with no explicit role, aria-label empty; form-control-programmatic-label-present reports it</div>
     <input type="range" id="slider_case_07" aria-label="" />
   </div>
 

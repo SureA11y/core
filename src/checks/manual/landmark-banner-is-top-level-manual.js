@@ -28,19 +28,13 @@
  *   HTML-AAM implicit-role mapping (header→banner, footer→contentinfo,
  *   main→main, nav→navigation, aside→complementary, section/form→
  *   region/form only when accessibly named).
- * - Candidate selection (`isBannerCandidate` below) is deliberately
- *   unconditional — a `<header>`/`role="banner"` counts as a candidate
- *   regardless of nesting — rather than reusing the same HTML-AAM
- *   sectioning-ancestor suppression (`getImplicitLandmarkRole`'s
- *   `hasSectioningAncestor` gate) that the violation check itself relies
- *   on. Gating candidate selection on that suppression would be
- *   self-defeating: the moment a `<header>` is nested inside another
- *   landmark, that same nesting would make it stop counting as a banner
- *   candidate in the first place, so the rule could never flag the one
- *   case it exists to catch. The ancestor walk (`hasLandmarkAncestor`) is intentionally
- *   asymmetric: it still uses the full suppression-aware
- *   `getLandmarkRole` for each ancestor, since an ancestor genuinely
- *   needs its own real role to count as blocking.
+ * - Candidate selection (`isBannerCandidate`) requires the element to really
+ *   carry the banner role, via the suppression-aware `getLandmarkRole`. The
+ *   two ancestor sets differ, so this does not make the rule vacuous: the
+ *   suppression set is the sectioning tags plus `<main>`, while the blocking
+ *   set is any landmark role, so a `<header>` inside `role="region"`,
+ *   `<form>` or `<footer>` is still caught, and an explicit `role="banner"`
+ *   is a candidate wherever it sits.
  */
 
 const id = 'landmark-banner-is-top-level';
@@ -145,16 +139,11 @@ function runInPage(ctx) {
     return getImplicitLandmarkRole(el);
   }
 
-  // Candidate selection is deliberately NOT the same as getLandmarkRole()
-  // === 'banner' — see the fix note above. A <header> is a
-  // candidate purely by tag + absence of any role attribute, independent
-  // of whether sectioning-ancestor nesting would currently suppress its
-  // implicit role; an explicit role="banner" is always a candidate too.
+  // A candidate must actually have the banner role. Per HTML-AAM a <header>
+  // descended from article/aside/main/nav/section is not a banner at all, so
+  // flagging it as a nested banner reports a landmark that does not exist.
   function isBannerCandidate(el) {
-    if (!el || !el.getAttribute) return false;
-    const explicit = getExplicitRoleToken(el);
-    if (explicit) return explicit === 'banner';
-    return !!(el.tagName && el.tagName.toLowerCase() === 'header');
+    return getLandmarkRole(el) === 'banner';
   }
 
   function hasLandmarkAncestor(el) {

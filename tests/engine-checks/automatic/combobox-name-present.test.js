@@ -95,7 +95,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/combobox-name-present-all-sce
   }
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 8, maxOccurrences: 8 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 6, maxOccurrences: 6 });
 
   const expectedFailIds = [
     'combobox_case_01',
@@ -103,12 +103,12 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/combobox-name-present-all-sce
     'combobox_case_08',
     'combobox_case_09',
     'combobox_case_10',
-    'combobox_case_12',
-    'combobox_case_13',
     'combobox_case_17'
   ];
 
   const expectedNoOccIds = [
+    'combobox_case_12',
+    'combobox_case_13',
     'combobox_case_03',
     'combobox_case_04',
     'combobox_case_05',

@@ -9,11 +9,10 @@
  * @standard WCAG 2.2
  * @sc 1.1.1
  * @applicability
- *   Applies to <input type="image"> elements that are exposed to assistive technologies.
- *   Elements otherwise hidden from the accessibility tree remain applicable
- *   if they are focusable or referenced by IDREF relationships (per engine eligibility checks).
+ *   Applies to <input type="image"> elements included in the accessibility tree.
  * @expectation
- *   Each applicable <input type="image"> element has an alt attribute.
+ *   Each applicable <input type="image"> element has an alt attribute, and its
+ *   accessible name is not the browser default for an image button.
  *   The alt attribute may be empty (alt="").
  */
 
@@ -72,8 +71,14 @@ function runInPage(ctx) {
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
 
-  const isAccTreeEligible =
-    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+  // ACT 59796f applies to image buttons included in the accessibility tree,
+  // which excludes focusable content inside aria-hidden.
+  const isEligibleHelper =
+    helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+      ? helpers.isIncludedInAccessibilityTree
+      : helpers && typeof helpers.isAccTreeEligible === 'function'
+        ? helpers.isAccTreeEligible
+        : null;
 
   const getAriaNameInfo =
     helpers && typeof helpers.getAriaNameInfo === 'function' ? helpers.getAriaNameInfo : null;
@@ -99,63 +104,109 @@ function runInPage(ctx) {
   for (const el of inputs) {
     if (!el || !el.getAttribute) continue;
 
-    // Applicability: eligible in the acc tree (with helper exceptions).
-    if (isAccTreeEligible) {
+    if (isEligibleHelper) {
       const elig = (() => {
         try {
-          return isAccTreeEligible(el, ctx);
+          return isEligibleHelper(el, ctx);
         } catch {
-          return { eligible: true, reasons: [] };
+          return true;
         }
       })();
-      if (elig && elig.eligible === false) continue;
+      const eligible = typeof elig === 'boolean' ? elig : !(elig && elig.eligible === false);
+      if (!eligible) continue;
     }
 
     applicableCount += 1;
 
-    const hasAlt = el.getAttribute('alt') !== null;
-    if (hasAlt) continue;
-
-    // aria-label / aria-labelledby is also a valid, standards-recognized
-    // text-alternative mechanism for <input type="image"> (HTML-AAM
-    // accessible name computation includes ARIA naming before falling
-    // back to alt).
-    if (getAriaNameInfo) {
-      let ariaName;
-      try {
-        ariaName = getAriaNameInfo(el, ctx);
-      } catch {
-        ariaName = null;
+    // The browser's own fallback name for an image button carries no
+    // information, so an author-supplied name equal to it is treated as no
+    // name at all (ACT 59796f). Only the English defaults are recognised:
+    // "Submit Query" from HTML-AAM, "Submit" from Chrome.
+    const effectiveName = (() => {
+      let v = '';
+      if (getAriaNameInfo) {
+        try {
+          const aria = getAriaNameInfo(el, ctx);
+          if (aria && aria.present && aria.value) v = String(aria.value);
+        } catch {
+          v = '';
+        }
       }
-      if (ariaName && ariaName.present) continue;
+      if (!v) {
+        const alt = el.getAttribute('alt');
+        if (alt != null && String(alt).trim()) v = String(alt);
+      }
+      if (!v) {
+        const t = el.getAttribute('title');
+        if (t != null && String(t).trim()) v = String(t);
+      }
+      return v.trim().toLowerCase();
+    })();
+
+    if (effectiveName === 'submit query' || effectiveName === 'submit') {
+      const eligInfoDefault = getEligibilityInfo
+        ? getEligibilityInfo(el, ctx, { targetSet: 'acc' })
+        : null;
+      const defaultNameOccurrence = {
+        summary:
+          'Accessible name is the browser default for an image button, which conveys nothing.',
+        hint: 'Replace it with text describing what the button does, for example "Search".',
+        i18n: {
+          summaryKey: 'inputImage_altPresent_summary_defaultName',
+          hintKey: 'inputImage_altPresent_hint_defaultName',
+          params: { element: 'input[type=image]' }
+        },
+        data: {
+          visibilityFilter: eligInfoDefault || { targetSet: 'acc', accEligible: null, reasons: [] },
+          details: { reasonCode: 'default_name' }
+        }
+      };
+      occurrences.push(
+        helpers && typeof helpers.reportOccurrence === 'function'
+          ? helpers.reportOccurrence(el, defaultNameOccurrence)
+          : { selector: '', html: '', ...defaultNameOccurrence }
+      );
+      continue;
     }
 
-    // A non-empty title attribute is HTML-AAM's own next fallback naming
-    // source once alt is entirely absent. Same gap img-alt-present handles
-    // for <img title="..."> with no alt.
-    const titleRaw = (() => {
-      try {
-        return el.getAttribute('title');
-      } catch {
-        return null;
-      }
-    })();
-    if (titleRaw !== null && String(titleRaw).trim()) continue;
+    // effectiveName already covers the naming sources HTML-AAM allows here,
+    // in order: aria-label/aria-labelledby, then alt, then title.
+    if (effectiveName) continue;
+
+    // An image button is a control, so an empty name fails whether alt is
+    // absent or present-but-empty. alt="" marks a decorative image, and an
+    // image button is never decorative.
+    const emptyAlt = el.getAttribute('alt') !== null;
 
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
-    const baseOccurrence = {
-      summary: 'Missing alt attribute on <input type="image">.',
-      hint: 'Add an alt attribute (use alt="" only when a separate accessible name is provided).',
-      i18n: {
-        summaryKey: 'inputImage_altPresent_summary_fail',
-        hintKey: 'inputImage_altPresent_hint_fail',
-        params: { element: 'input[type=image]' }
-      },
-      data: {
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    };
+    const baseOccurrence = emptyAlt
+      ? {
+          summary: 'Empty alt="" on <input type="image"> leaves the control unnamed.',
+          hint: 'Describe the action in alt, or name the control with aria-label or aria-labelledby.',
+          i18n: {
+            summaryKey: 'inputImage_altPresent_summary_emptyAlt',
+            hintKey: 'inputImage_altPresent_hint_emptyAlt',
+            params: { element: 'input[type=image]' }
+          },
+          data: {
+            visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
+            details: { reasonCode: 'empty_alt' }
+          }
+        }
+      : {
+          summary: 'Missing alt attribute on <input type="image">.',
+          hint: 'Add an alt attribute (use alt="" only when a separate accessible name is provided).',
+          i18n: {
+            summaryKey: 'inputImage_altPresent_summary_fail',
+            hintKey: 'inputImage_altPresent_hint_fail',
+            params: { element: 'input[type=image]' }
+          },
+          data: {
+            visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
+            details: { reasonCode: 'missing_alt' }
+          }
+        };
 
     if (helpers && typeof helpers.reportOccurrence === 'function') {
       occurrences.push(helpers.reportOccurrence(el, baseOccurrence));

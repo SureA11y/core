@@ -22,10 +22,24 @@ test(`${RULE_ID}: notApplicable when no role attributes present`, () => {
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: notApplicable when role is not modeled in the supported-attrs table`, () => {
+test(`${RULE_ID}: fail when the attribute is unsupported by a role the ARIA tables cover`, () => {
   const html = `<!doctype html><html><body><div id="a" role="button" aria-valuenow="1"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+});
+
+test(`${RULE_ID}: notApplicable when the role is not a valid concrete ARIA role`, () => {
+  const html = `<!doctype html><html><body><div id="a" role="not-a-role" aria-valuenow="1"></div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: ARIA 1.3 globals aria-query does not know are still allowed anywhere`, () => {
+  for (const attr of ['aria-description', 'aria-braillelabel', 'aria-brailleroledescription']) {
+    const html = `<!doctype html><html><body><div role="button" ${attr}="x">b</div></body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  }
 });
 
 test(`${RULE_ID}: pass when only global aria-* attributes are present`, () => {
@@ -214,6 +228,42 @@ test(`${RULE_ID}: fail when aria-modal is present on a role that doesn't support
   assert.equal(rule.occurrences[0].data.details.attr, 'aria-modal');
 });
 
+test(`${RULE_ID}: cantTell when an ARIA-1.2-deprecated ex-global is used on a role that doesn't support it`, () => {
+  // role="heading" supports none of the four ex-globals, so each is deprecated there.
+  for (const attr of ['aria-invalid', 'aria-haspopup', 'aria-errormessage', 'aria-disabled']) {
+    const html = `<!doctype html><html><body><div id="a" role="heading" aria-level="2" ${attr}="true"></div></body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+    assert.equal(rule.occurrences[0].occurrenceOutcome, 'cantTell');
+    assert.equal(rule.occurrences[0].data.details.reasonCode, 'ARIA_ATTR_DEPRECATED');
+    assert.equal(rule.occurrences[0].data.details.attr, attr);
+  }
+});
+
+test(`${RULE_ID}: pass when a deprecated ex-global IS supported by the role (e.g. checkbox + aria-invalid)`, () => {
+  const html = `<!doctype html><html><body><div id="a" role="checkbox" aria-checked="true" aria-invalid="true"></div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: a genuinely-unsupported attr fails and a deprecated one cantTells on the same element`, () => {
+  const html = `<!doctype html><html><body><div id="a" role="radio" aria-checked="true" aria-valuenow="1" aria-invalid="false"></div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  const byAttr = Object.fromEntries(
+    rule.occurrences.map((o) => [o.data.details.attr, o.occurrenceOutcome])
+  );
+  assert.strictEqual(byAttr['aria-valuenow'], 'fail');
+  assert.strictEqual(byAttr['aria-invalid'], 'cantTell');
+});
+
+test(`${RULE_ID}: implicit-role radio input with aria-invalid is cantTell (Angular Material default)`, () => {
+  const html = `<!doctype html><html><body><input id="a" type="radio" aria-invalid="false" aria-label="Option"></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.equal(rule.occurrences[0].data.details.reasonCode, 'ARIA_ATTR_DEPRECATED');
+});
+
 test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><body><div id="a" role="checkbox" aria-valuenow="1"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
@@ -231,13 +281,21 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-allowed-attr-all-scenari
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 4, maxOccurrences: 4 });
+  // 5 fail occurrences (case_04 carries two) + 1 cantTell (case_14, a
+  // deprecated-but-allowed attr) => resolves to fail overall, 6 occurrences.
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 6, maxOccurrences: 6 });
 
-  const expectedFailIds = ['aaa_case_03', 'aaa_case_04', 'aaa_case_13'];
+  const outcomeForId = (id) =>
+    (rule.occurrences || []).find(
+      (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+    )?.occurrenceOutcome;
+
+  const expectedFailIds = ['aaa_case_03', 'aaa_case_04', 'aaa_case_05', 'aaa_case_13'];
+  assert.ok(hasOccurrenceForId(rule, 'aaa_case_14'), 'Expected occurrence for aaa_case_14');
+  assert.strictEqual(outcomeForId('aaa_case_14'), 'cantTell');
   const expectedNoOccIds = [
     'aaa_case_01',
     'aaa_case_02',
-    'aaa_case_05',
     'aaa_case_06',
     'aaa_case_07a',
     'aaa_case_07b',
@@ -257,4 +315,59 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-allowed-attr-all-scenari
   for (const id of expectedNoOccIds) {
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
+});
+
+test(`${RULE_ID}: role="none" on a focusable element does not decide which attributes are allowed`, () => {
+  const html = `<!doctype html><html><body><button role="none" aria-pressed="false">ACT rules are cool!</button></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: role="presentation" is skipped for the same reason`, () => {
+  const html = `<!doctype html><html><body><div role="presentation" aria-pressed="false">x</div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: an element with no role attribute is judged by its implicit role`, () => {
+  const html = `<!doctype html><html><body><button id="b" aria-sort="ascending">Sort</button></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'b'));
+});
+
+test(`${RULE_ID}: an attribute the implicit role supports passes`, () => {
+  for (const markup of [
+    `<button aria-pressed="false">B</button>`,
+    `<input type="password" aria-required="true">`,
+    `<input type="range" aria-valuenow="3">`,
+    `<textarea aria-multiline="true"></textarea>`
+  ]) {
+    const result = runa11yCoreOnHtml(`<!doctype html><html><body>${markup}</body></html>`, {
+      runOnly: [RULE_ID]
+    });
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
+test(`${RULE_ID}: elements whose implicit role depends on context stay out of scope`, () => {
+  for (const markup of [
+    `<a href="#" aria-sort="ascending">x</a>`,
+    `<table><tr><td aria-selected="true">x</td></tr></table>`,
+    `<section aria-checked="true">x</section>`,
+    `<select aria-sort="ascending"><option>a</option></select>`,
+    `<ul><li aria-checked="true">x</li></ul>`,
+    `<img src="x.png" alt="" aria-checked="true">`
+  ]) {
+    const result = runa11yCoreOnHtml(`<!doctype html><html><body>${markup}</body></html>`, {
+      runOnly: [RULE_ID]
+    });
+    assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
+test(`${RULE_ID}: an element with no implicit role mapping is skipped`, () => {
+  const html = `<!doctype html><html><body><div aria-checked="true">x</div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });

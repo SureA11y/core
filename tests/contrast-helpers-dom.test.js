@@ -455,6 +455,52 @@ test('getTextScan: respects helpers.isDomVisibleEligible and helpers.isExcluded'
   assert.strictEqual(scan.elements[0].el.id, 'p1');
 });
 
+test('getTextScan: excludes text whose own element carries the "clipped" visibility hint (sr-only technique), even when isDomVisibleEligible says eligible', () => {
+  const { document, window, helpers } = makeHelpers('<p id="p1">Visible</p><p id="p2">Clipped</p>');
+  const p2 = document.getElementById('p2');
+  const scan = helpers.getTextScan(
+    ctxFor(document, window),
+    {
+      isDomVisibleEligible: () => true,
+      getVisibilityHintsInfo: (el) => ({ hints: el === p2 ? ['clipped'] : [] })
+    },
+    {}
+  );
+  assert.strictEqual(scan.eligibleTextCount, 1);
+  assert.strictEqual(scan.elements[0].el.id, 'p1');
+});
+
+test('getTextScan: excludes text whose ANCESTOR (not the text\'s own element) carries the "clipped" hint', () => {
+  const { document, window, helpers } = makeHelpers(
+    '<span id="wrapper"><strong id="p1">Warning:</strong> details</span>'
+  );
+  const wrapper = document.getElementById('wrapper');
+  const scan = helpers.getTextScan(
+    ctxFor(document, window),
+    {
+      isDomVisibleEligible: () => true,
+      getVisibilityHintsInfo: (el) => ({ hints: el === wrapper ? ['clipped'] : [] })
+    },
+    {}
+  );
+  assert.strictEqual(scan.eligibleTextCount, 0);
+});
+
+test('getTextScan: a getVisibilityHintsInfo that throws is not treated as clipped (falls back to isDomVisibleEligible)', () => {
+  const { document, window, helpers } = makeHelpers('<p id="p1">Hello</p>');
+  const scan = helpers.getTextScan(
+    ctxFor(document, window),
+    {
+      isDomVisibleEligible: () => true,
+      getVisibilityHintsInfo: () => {
+        throw new Error('boom');
+      }
+    },
+    {}
+  );
+  assert.strictEqual(scan.eligibleTextCount, 1);
+});
+
 test('getTextScan: excludes text inside an inactive (disabled) UI component', () => {
   const { document, window, helpers } = makeHelpers(
     '<button disabled>Disabled label</button><p id="p1">Active</p>'

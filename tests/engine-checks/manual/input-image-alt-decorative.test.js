@@ -47,7 +47,7 @@ test(`${RULE_ID}: cantTell when at least one applicable element triggers manual 
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
 
   const expected = ['ii_d_01', 'ii_d_06'];
-  const notExpected = ['ii_d_02', 'ii_d_03', 'ii_d_04', 'ii_d_05', 'ii_d_07'];
+  const notExpected = ['ii_d_02', 'ii_d_03', 'ii_d_04', 'ii_d_05', 'ii_d_07', 'ii_d_08'];
 
   for (const id of expected) {
     assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);
@@ -112,7 +112,7 @@ test(`${RULE_ID} (node runtime): non-focusable (disabled) role="none" input is e
 });
 
 test(`${RULE_ID} (node runtime): a role="presentation" input WITHOUT disabled is NOT excluded — natively focusable by default`, () => {
-  const html = `<!doctype html><html><body><input id="i4" type="image" alt="" src="x.png" role="presentation"></body></html>`;
+  const html = `<!doctype html><html><body><input id="i4" type="image" alt="" aria-label="Search" src="x.png" role="presentation"></body></html>`;
   const result = runNode(html);
   const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
   assert.ok(rule);
@@ -121,7 +121,7 @@ test(`${RULE_ID} (node runtime): a role="presentation" input WITHOUT disabled is
 });
 
 test(`${RULE_ID} (node runtime): a focusable role="presentation" input is NOT excluded (mirrors img-alt-present policy)`, () => {
-  const html = `<!doctype html><html><body><input id="i3" type="image" alt="" src="x.png" role="presentation" tabindex="0"></body></html>`;
+  const html = `<!doctype html><html><body><input id="i3" type="image" alt="" aria-label="Search" src="x.png" role="presentation" tabindex="0"></body></html>`;
   const result = runNode(html);
   const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
   assert.ok(rule);

@@ -79,16 +79,42 @@ function runInPage(ctx) {
   const occurrences = [];
   let applicableCount = 0;
 
+  // HTML's shared declarative refresh steps. Returns the delay in seconds, or
+  // null when the value is not a valid refresh directive, in which case the
+  // browser never refreshes and there is nothing to report. Rejects a leading
+  // sign ("+72001"), a non-numeric time ("foo"), and a separator other than
+  // "," or ";" ("0:1").
+  function parseRefreshDelay(input) {
+    const s = String(input == null ? '' : input);
+    const isSpace = (c) => c === ' ' || c === '\t' || c === '\n' || c === '\f' || c === '\r';
+    let i = 0;
+    while (i < s.length && isSpace(s[i])) i++;
+    let digits = '';
+    while (i < s.length && s[i] >= '0' && s[i] <= '9') digits += s[i++];
+    if (!digits) return null;
+    if (s[i] === '.') {
+      i++;
+      while (i < s.length && s[i] >= '0' && s[i] <= '9') i++;
+    }
+    if (i >= s.length) return parseInt(digits, 10);
+    let sawSpace = false;
+    while (i < s.length && isSpace(s[i])) {
+      sawSpace = true;
+      i++;
+    }
+    if (i >= s.length) return parseInt(digits, 10);
+    if (s[i] === ';' || s[i] === ',' || sawSpace) return parseInt(digits, 10);
+    return null;
+  }
+
   for (const el of nodes) {
     if (!el || !el.getAttribute) continue;
     if (el.closest && el.closest('noscript')) continue; // never applies with scripting enabled — see meta-refresh-no-exceptions.js's header comment
     const raw = String(el.getAttribute('content') || '').trim();
     if (!raw) continue;
 
-    const match = raw.match(/^([0-9]*\.?[0-9]+)/);
-    if (!match) continue;
-    const delay = parseFloat(match[1]);
-    if (Number.isNaN(delay)) continue;
+    const delay = parseRefreshDelay(raw);
+    if (delay === null) continue;
 
     applicableCount += 1;
 

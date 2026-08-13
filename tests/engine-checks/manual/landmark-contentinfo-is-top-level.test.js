@@ -37,26 +37,22 @@ test(`${RULE_ID}: cantTell when a <footer> nested inside an ancestor whose role 
   assert.ok(hasOccurrenceForId(rule, 'a'));
 });
 
-test(`${RULE_ID}: cantTell when a <footer> is nested inside a NAMED <aside> — the aside is a genuine complementary landmark ancestor, so this is real non-top-level nesting`, () => {
+test(`${RULE_ID}: notApplicable when a <footer> is nested inside a NAMED <aside> — <aside> is sectioning content, so the footer has no contentinfo role to begin with`, () => {
   const html = `<!doctype html><html><body><aside aria-label="Related"><footer id="a">inner</footer></aside></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
-  assert.ok(hasOccurrenceForId(rule, 'a'));
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: cantTell when a <footer> is nested inside <main>`, () => {
+test(`${RULE_ID}: notApplicable when a <footer> is nested inside <main> — per HTML-AAM it has no contentinfo role there, so there is no landmark to be nested`, () => {
   const html = `<!doctype html><html><body><main><footer id="a">inner</footer></main></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
-  assert.ok(hasOccurrenceForId(rule, 'a'));
-  assert.equal(rule.occurrences[0].data.details.reasonCode, 'LANDMARK_CONTENTINFO_NOT_TOP_LEVEL');
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: an UNNAMED top-level <aside> is STILL a real complementary landmark (per getImplicitLandmarkRole: only an aside that is itself nested inside sectioning content needs a name to keep the role) — so this is real non-top-level nesting too, same as the named case above`, () => {
+test(`${RULE_ID}: an UNNAMED top-level <aside> is still a complementary landmark, but <aside> is sectioning content either way, so the footer has no contentinfo role and nothing is flagged`, () => {
   const html = `<!doctype html><html><body><aside><footer id="a">inner</footer></aside></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
-  assert.ok(hasOccurrenceForId(rule, 'a'));
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: notApplicable when a <footer> is nested inside an UNNAMED <section> — an unnamed <section> has no implicit role at all, unlike a top-level <aside> (see above), so there is genuinely no landmark ancestor here`, () => {
@@ -92,7 +88,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/landmark-contentinfo-is-top-l
 
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
   assert.ok(hasOccurrenceForId(rule, 'lctl_case_02'));
-  assert.ok(hasOccurrenceForId(rule, 'lctl_case_03'));
+  assert.ok(hasOccurrenceForId(rule, 'lctl_case_03b'));
+  // A roleless <footer> under <main> has no contentinfo role per HTML-AAM.
+  assert.ok(!hasOccurrenceForId(rule, 'lctl_case_03'));
 });
 
 // Regression coverage for a bug found while extending this rule family's
@@ -108,4 +106,25 @@ test(`${RULE_ID}: an aria-hidden nested footer is not flagged (it isn't part of 
   const html = `<!doctype html><html><body><div role="main"><footer aria-hidden="true">Hidden</footer></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: a roleless <footer> inside sectioning content is not a contentinfo and is not flagged`, () => {
+  for (const tag of ['article', 'aside', 'nav', 'section', 'main']) {
+    const html = `<!doctype html><html><body><main><${tag}><footer id="f">Card footer</footer></${tag}></main></body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    const rule = (result.checksResults || []).find((c) => c.ruleId === RULE_ID);
+    assert.ok(rule, `expected a result for ${tag}`);
+    assert.strictEqual(
+      rule.outcome,
+      'notApplicable',
+      `<footer> inside <${tag}> must not be a contentinfo`
+    );
+  }
+});
+
+test(`${RULE_ID}: an explicit role="contentinfo" is still flagged wherever it is nested`, () => {
+  const html = `<!doctype html><html><body><main><footer role="contentinfo" id="c">Real contentinfo</footer></main></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'c'));
 });

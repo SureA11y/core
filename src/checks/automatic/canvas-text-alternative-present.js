@@ -9,9 +9,8 @@
  * @standard WCAG 2.2
  * @sc 1.1.1
  * @applicability
- *   Applies to <canvas> elements that are exposed to assistive technologies.
- *   Elements otherwise hidden from the accessibility tree remain applicable
- *   if they are focusable (tabbable) or referenced by IDREF relationships (per engine eligibility checks).
+ *   Applies to <canvas> elements included in the accessibility tree.
+ *   Hidden elements are excluded whether or not they are focusable.
  * @expectation
  *   Each applicable <canvas> provides a text alternative via fallback content or an accessible name.
  */
@@ -71,8 +70,15 @@ function runInPage(ctx) {
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
 
-  const isAccTreeEligible =
-    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+  // aria-hidden removes the canvas from the accessibility tree, so a text
+  // alternative on it cannot reach anyone; aria-hidden-focus reports a
+  // focusable one. Matches the other non-text-content rules.
+  const isEligibleHelper =
+    helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+      ? helpers.isIncludedInAccessibilityTree
+      : helpers && typeof helpers.isAccTreeEligible === 'function'
+        ? helpers.isAccTreeEligible
+        : null;
 
   const getTextAlternativeInfo =
     helpers && typeof helpers.getTextAlternativeInfo === 'function'
@@ -97,15 +103,16 @@ function runInPage(ctx) {
   for (const el of canvases) {
     if (!el) continue;
 
-    // Applicability: eligible in the accessibility tree (with focusable/IDREF exceptions handled by helper).
-    if (isAccTreeEligible) {
+    // Applicability: included in the accessibility tree.
+    if (isEligibleHelper) {
       const elig = (() => {
         try {
-          return isAccTreeEligible(el, ctx);
+          return isEligibleHelper(el, ctx);
         } catch {
           return { eligible: true, reasons: [] };
         }
       })();
+      if (elig === false) continue;
       if (elig && elig.eligible === false) continue;
     }
 

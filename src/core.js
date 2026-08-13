@@ -490,8 +490,8 @@ const CHECK_DEFS = [
   },
   {
     "ruleId": "aria-deprecated-role",
-    "title": "role attribute must not use a deprecated or author-prohibited ARIA role",
-    "description": "Checks that an explicit role=\"\" attribute does not use a role deprecated by the WAI-ARIA specification, or one reserved for user-agent-internal use only (e.g. role=\"generic\").",
+    "title": "role attribute should not use a deprecated or author-discouraged ARIA role",
+    "description": "Checks that an explicit role=\"\" attribute does not use a role deprecated by the WAI-ARIA specification, or one reserved for user-agent-internal use (e.g. role=\"generic\").",
     "i18n": {
       "titleKey": "ariaDeprecatedRole_title",
       "descriptionKey": "ariaDeprecatedRole_description"
@@ -1263,8 +1263,8 @@ const CHECK_DEFS = [
   },
   {
     "ruleId": "avoid-inline-spacing",
-    "title": "Inline style must not force text spacing with !important",
-    "description": "Checks that inline style does not set line-height, letter-spacing, or word-spacing with !important, which blocks user text-spacing overrides.",
+    "title": "Inline style must not force text spacing below the WCAG metric",
+    "description": "Checks that where inline style forces line-height, letter-spacing or word-spacing with !important, the value already meets WCAG 1.4.12, so the user has nothing left to override.",
     "i18n": {
       "titleKey": "avoidInlineSpacing_title",
       "descriptionKey": "avoidInlineSpacing_description"
@@ -1445,7 +1445,7 @@ const CHECK_DEFS = [
       "wcag241",
       "navigation",
       "atomic",
-      "automatic",
+      "manual",
       "a11ycore"
     ],
     "wcagSc": [
@@ -1460,9 +1460,9 @@ const CHECK_DEFS = [
         "conformanceLevel": "A"
       }
     ],
-    "defaultSeverity": "serious",
+    "defaultSeverity": "moderate",
     "defaultConfidence": "medium",
-    "type": "automatic",
+    "type": "manual",
     "coverage": {
       "facetsBySc": {
         "2.4.1": [
@@ -7186,7 +7186,7 @@ const RULE_IMPLS = {
   "avoid-inline-spacing": { run: require("./checks/automatic/avoid-inline-spacing.js").runInPage, applicability: require("./checks/automatic/avoid-inline-spacing.js").applicability || null },
   "binary-control-name-present": { run: require("./checks/automatic/binary-control-name-present.js").runInPage, applicability: require("./checks/automatic/binary-control-name-present.js").applicability || null },
   "button-name-present": { run: require("./checks/automatic/button-name-present.js").runInPage, applicability: require("./checks/automatic/button-name-present.js").applicability || null },
-  "bypass-blocks-present": { run: require("./checks/automatic/bypass-blocks-present.js").runInPage, applicability: require("./checks/automatic/bypass-blocks-present.js").applicability || null },
+  "bypass-blocks-present": { run: require("./checks/manual/bypass-blocks-present-manual.js").runInPage, applicability: require("./checks/manual/bypass-blocks-present-manual.js").applicability || null },
   "canvas-text-alternative-present": { run: require("./checks/automatic/canvas-text-alternative-present.js").runInPage, applicability: require("./checks/automatic/canvas-text-alternative-present.js").applicability || null },
   "canvas-text-alternative-quality": { run: require("./checks/manual/canvas-text-alternative-quality-manual.js").runInPage, applicability: require("./checks/manual/canvas-text-alternative-quality-manual.js").applicability || null },
   "combobox-name-present": { run: require("./checks/automatic/combobox-name-present.js").runInPage, applicability: require("./checks/automatic/combobox-name-present.js").applicability || null },
@@ -7308,6 +7308,10 @@ const I18N = {
     "inputImage_altPresent_description": "Prüft, ob <input type=\"image\">-Elemente ein alt-Attribut bereitstellen, um einen Mechanismus für eine Textalternative zu unterstützen.",
     "inputImage_altPresent_summary_fail": "Fehlendes alt-Attribut auf <input type=\"image\">.",
     "inputImage_altPresent_hint_fail": "Fügen Sie ein alt-Attribut hinzu (verwenden Sie alt=\"\" nur, wenn ein separater zugänglicher Name bereitgestellt wird).",
+    "inputImage_altPresent_summary_defaultName": "Der zugaengliche Name ist der Browser-Standard fuer eine Bildschaltflaeche und sagt nichts aus.",
+    "inputImage_altPresent_hint_defaultName": "Ersetzen Sie ihn durch Text, der die Aktion beschreibt, zum Beispiel \"Suchen\".",
+    "inputImage_altPresent_summary_emptyAlt": "Ein leeres alt=\"\" auf <input type=\"image\"> laesst das Steuerelement ohne Namen.",
+    "inputImage_altPresent_hint_emptyAlt": "Beschreiben Sie die Aktion in alt, oder benennen Sie das Steuerelement mit aria-label oder aria-labelledby.",
     "ariaHidden_programmaticFocus_review_title": "Programmatischen Fokus bei aria-hidden überprüfen",
     "ariaHidden_programmaticFocus_review_description": "Markiert Elemente, die aria-hidden sind, aber aufgrund von programmatischem Fokus (z. B. tabindex < 0) als geeignet gelten. Überprüfen Sie die beabsichtigte Fokusverwaltung und die Sichtbarkeit für assistive Technologien.",
     "ariaHidden_programmaticFocus_review_summary": "Überprüfung: Ein aria-hidden-Element ist programmatisch fokussierbar.",
@@ -7589,16 +7593,21 @@ const I18N = {
     "labelInName_description": "Prüft, ob bei einem Formularelement mit sichtbarer Textbeschriftung der zugängliche Name diesen sichtbaren Beschriftungstext enthält (WCAG 2.5.3).",
     "labelInName_summary_fail": "{{element}}: Die sichtbare Beschriftung „{{visibleLabel}}“ (aus {{labelSource}}) ist nicht im zugänglichen Namen enthalten (aus {{nameMechanism}}).",
     "labelInName_hint_fail": "Aktualisieren Sie aria-label/aria-labelledby (oder den sichtbaren Beschriftungstext), damit der zugängliche Name den Wortlaut der sichtbaren Beschriftung enthält.",
+    "labelInName_summary_cantTell": "{{element}}: Die sichtbare Beschriftung „{{visibleLabel}}“ (aus {{labelSource}}) unterscheidet sich vom zugänglichen Namen (aus {{nameMechanism}}) nur durch eine Abkürzung oder eine Bindestrichschreibung.",
+    "labelInName_hint_cantTell": "Prüfen Sie manuell, ob beide Formulierungen übereinstimmen: Aus dem Markup lässt sich eine beabsichtigte Abkürzung nicht von einer Abweichung unterscheiden.",
     "ariaRolesValid_title": "Das role-Attribut muss eine gültige, nicht abstrakte ARIA-Rolle sein",
     "ariaRolesValid_description": "Prüft, ob ein explizites role=\"\"-Attribut zu einer echten, nicht abstrakten WAI-ARIA-Rolle aufgelöst wird.",
     "ariaRolesValid_summary_invalid": "role=\"{{role}}\" ist keine erkannte ARIA-Rolle.",
     "ariaRolesValid_hint_invalid": "Verwenden Sie einen gültigen ARIA-Rollenwert, oder entfernen Sie das role-Attribut, wenn keine Rolle zutrifft.",
     "ariaRolesValid_summary_abstract": "role=\"{{role}}\" ist eine abstrakte ARIA-Rolle, die nicht direkt verwendet werden darf.",
     "ariaRolesValid_hint_abstract": "Ersetzen Sie diese abstrakte Rolle durch eine konkrete Rolle, die zu dem Widget/der Struktur passt.",
-    "ariaDeprecatedRole_title": "Das role-Attribut darf keine veraltete oder für Autoren untersagte ARIA-Rolle verwenden",
-    "ariaDeprecatedRole_description": "Prüft, ob ein explizites role=\"\"-Attribut keine durch die WAI-ARIA-Spezifikation als veraltet markierte Rolle verwendet, und keine Rolle, die ausschließlich für die interne Verwendung durch den User-Agent reserviert ist (z. B. role=\"generic\").",
+    "ariaDeprecatedRole_title": "Das role-Attribut sollte keine veraltete oder für Autoren nicht empfohlene ARIA-Rolle verwenden",
+    "ariaDeprecatedRole_description": "Prüft, ob ein explizites role=\"\"-Attribut keine durch die WAI-ARIA-Spezifikation als veraltet markierte Rolle verwendet, und keine Rolle, die für die interne Verwendung durch den User-Agent reserviert ist (z. B. role=\"generic\").",
     "ariaDeprecatedRole_summary_fail": "Dieses Element verwendet role=\"{{role}}\", was Autoren nicht explizit deklarieren dürfen.",
     "ariaDeprecatedRole_hint_fail": "{{guidance}}",
+    "ariaDeprecatedRole_summary_cantTell": "Dieses Element verwendet role=\"{{role}}\", die in WAI-ARIA veraltet ist (weiterhin gültig, aber nicht empfohlen).",
+    "ariaDeprecatedRole_summary_cantTell_discouraged": "Dieses Element verwendet role=\"{{role}}\", die User-Agents vorbehalten ist (weiterhin gültig, aber nicht empfohlen).",
+    "ariaDeprecatedRole_hint_cantTell": "{{guidance}}",
     "ariaValidAttr_title": "aria-*-Attribute müssen echte, definierte ARIA-Attribute sein",
     "ariaValidAttr_description": "Prüft, ob jeder im DOM vorhandene aria-*-Attributname ein echtes, durch die WAI-ARIA-Spezifikation definiertes Attribut ist.",
     "ariaValidAttr_summary_fail": "{{attr}} ist kein erkanntes ARIA-Attribut.",
@@ -7611,6 +7620,8 @@ const I18N = {
     "ariaAllowedAttr_description": "Prüft, ob jedes erkannte aria-*-Attribut auf einem Element mit expliziter Rolle entweder global unterstützt wird oder von dieser Rolle unterstützt wird.",
     "ariaAllowedAttr_summary_fail": "{{attr}} ist bei role=\"{{role}}\" nicht zulässig.",
     "ariaAllowedAttr_hint_fail": "Entfernen Sie dieses Attribut, oder verwenden Sie eine Rolle, die es unterstützt.",
+    "ariaAllowedAttr_summary_cantTell": "{{attr}} ist bei role=\"{{role}}\" veraltet (weiterhin zulässig, aber nicht empfohlen).",
+    "ariaAllowedAttr_hint_cantTell": "Dieses Attribut wurde in ARIA 1.2 aus dem globalen Satz entfernt; entfernen Sie es oder verwenden Sie eine Rolle, die es unterstützt, da eine künftige ARIA-Version es möglicherweise nicht mehr zulässt.",
     "ariaProhibitedAttr_title": "ARIA-Benennungsattribute dürfen nicht bei Rollen verwendet werden, die sie untersagen",
     "ariaProhibitedAttr_description": "Prüft, ob aria-label/aria-labelledby nicht bei WAI-ARIA-Rollen vorhanden sind, deren Spezifikation die ARIA-Benennung ausdrücklich untersagt (z. B. generic, emphasis, strong, paragraph).",
     "ariaProhibitedAttr_summary_fail": "{{attr}} ist bei role=\"{{role}}\" untersagt.",
@@ -7725,14 +7736,16 @@ const I18N = {
     "formControlSingleLabel_description": "Prüft, ob ein Formularelement mit höchstens einem <label> verknüpft ist (durch Umschließen oder durch label[for]).",
     "formControlSingleLabel_summary_fail": "Dieses <{{element}}> ist mit {{labelCount}} Beschriftungen verknüpft.",
     "formControlSingleLabel_hint_fail": "Behalten Sie nur ein <label> pro Formularelement (entweder umschließend oder über for/id referenziert).",
+    "formControlSingleLabel_summary_cantTell": "Dieses <{{element}}> hat ein beschriftendes <label> und zusätzlich eine leere <label>-Verknüpfung; prüfen Sie, wie es angesagt wird.",
+    "formControlSingleLabel_hint_cantTell": "Entfernen Sie das überflüssige leere <label>, sodass genau ein <label> mit dem Element verknüpft ist.",
     "nestedInteractiveControlsAbsent_title": "Interaktive Formularelemente dürfen nicht verschachtelt sein",
     "nestedInteractiveControlsAbsent_description": "Prüft, ob ein interaktives Element (Link, Schaltfläche, Formularelement oder ARIA-Widget-Rolle) kein weiteres interaktives Element enthält.",
     "nestedInteractiveControlsAbsent_summary_fail": "Dieses <{{element}}> enthält ein oder mehrere verschachtelte interaktive Elemente: {{nestedElements}}.",
     "nestedInteractiveControlsAbsent_hint_fail": "Verschieben Sie die verschachtelten interaktiven Elemente außerhalb dieses Elements; verschachtelte interaktive Elemente sind über assistive Technologien nicht zuverlässig bedienbar.",
     "bypassBlocksPresent_title": "Die Seite muss eine Möglichkeit bieten, wiederkehrende Blöcke zu überspringen",
     "bypassBlocksPresent_description": "Prüft, ob die Seite mindestens einen anerkannten Mechanismus nach WCAG 2.4.1 zum Überspringen wiederkehrender Blöcke hat: eine main-Landmarke, einen funktionierenden Anker-Link auf derselben Seite oder eine Überschrift.",
-    "bypassBlocksPresent_summary_fail": "Diese Seite hat keine anerkannte Möglichkeit, wiederkehrende Inhaltsblöcke zu überspringen.",
-    "bypassBlocksPresent_hint_fail": "Fügen Sie eine main-Landmarke (<main> oder role=\"main\"), einen funktionierenden „Zum Inhalt springen“-Link oder Überschriften-Elemente hinzu, die assistive Technologien nutzen können, um wiederkehrende Inhalte zu überspringen.",
+    "bypassBlocksPresent_summary_cantTell": "Auf dieser Seite wurde keine anerkannte Möglichkeit erkannt, wiederkehrende Inhaltsblöcke zu überspringen – prüfen Sie, ob ein Überspring-Mechanismus vorhanden ist.",
+    "bypassBlocksPresent_hint_cantTell": "Bestätigen Sie, dass die Seite einen Überspring-Mechanismus bietet: eine main-Landmarke (<main> oder role=\"main\"), einen funktionierenden „Zum Inhalt springen“-Link oder Überschriften-Elemente, die assistive Technologien nutzen können, um wiederkehrende Inhalte zu überspringen. (Ein Mechanismus kann vorübergehend verborgen sein – z. B. während ein modaler Dialog die Seite inert macht – oder seitenweit bereitgestellt werden; dies erfordert eine menschliche Bestätigung.)",
     "landmarkBannerIsTopLevel_title": "Die banner-Landmarke muss auf oberster Ebene liegen",
     "landmarkBannerIsTopLevel_description": "Prüft, ob die banner-Landmarke (role=\"banner\" oder ein nicht verschachtelter <header>) nicht innerhalb einer anderen Landmarke verschachtelt ist.",
     "landmarkBannerIsTopLevel_summary_cantTell": "Diese banner-Landmarke ist innerhalb einer anderen Landmarke verschachtelt.",
@@ -7834,8 +7847,8 @@ const I18N = {
     "htmlXmlLangMismatch_description": "Prüft, ob die Attribute lang und xml:lang des <html>-Elements dieselbe Hauptsprache deklarieren, wenn beide vorhanden sind.",
     "htmlXmlLangMismatch_summary_fail": "Die Attribute lang („{{lang}}“) und xml:lang („{{xmlLang}}“) deklarieren unterschiedliche Sprachen.",
     "htmlXmlLangMismatch_hint_fail": "Lassen Sie lang und xml:lang dieselbe Hauptsprache deklarieren, oder entfernen Sie das veraltete Attribut xml:lang.",
-    "avoidInlineSpacing_title": "Inline-Stile dürfen den Textabstand nicht mit !important erzwingen",
-    "avoidInlineSpacing_description": "Prüft, ob Inline-Stile line-height, letter-spacing oder word-spacing nicht mit !important setzen, was das Überschreiben des Textabstands durch den Nutzer blockiert.",
+    "avoidInlineSpacing_title": "Inline-Stile dürfen den Textabstand nicht unter den WCAG-Wert erzwingen",
+    "avoidInlineSpacing_description": "Prüft, dass ein per !important erzwungener Wert für line-height, letter-spacing oder word-spacing WCAG 1.4.12 bereits erfüllt, sodass dem Nutzer nichts zu überschreiben bleibt.",
     "avoidInlineSpacing_summary_fail": "Der Inline-Stil dieses Elements erzwingt {{properties}} mit !important und blockiert damit Überschreibungen des Textabstands durch den Nutzer.",
     "avoidInlineSpacing_hint_fail": "Entfernen Sie !important von line-height/letter-spacing/word-spacing in Inline-Stilen, damit Nutzer den Textabstand überschreiben können.",
     "metaRefreshNoExceptions_title": "Die Seite darf überhaupt keinen Meta-Refresh verwenden (AAA)",
@@ -7924,6 +7937,10 @@ const I18N = {
     "inputImage_altPresent_description": "Checks that <input type=\"image\"> elements provide an alt attribute to support a text alternative mechanism.",
     "inputImage_altPresent_summary_fail": "Missing alt attribute on <input type=\"image\">.",
     "inputImage_altPresent_hint_fail": "Add an alt attribute (use alt=\"\" only when a separate accessible name is provided).",
+    "inputImage_altPresent_summary_defaultName": "Accessible name is the browser default for an image button, which conveys nothing.",
+    "inputImage_altPresent_hint_defaultName": "Replace it with text describing what the button does, for example \"Search\".",
+    "inputImage_altPresent_summary_emptyAlt": "Empty alt=\"\" on <input type=\"image\"> leaves the control unnamed.",
+    "inputImage_altPresent_hint_emptyAlt": "Describe the action in alt, or name the control with aria-label or aria-labelledby.",
     "ariaHidden_programmaticFocus_review_title": "Review aria-hidden programmatic focus",
     "ariaHidden_programmaticFocus_review_description": "Flags elements that are aria-hidden but considered eligible due to programmatic focus (e.g., tabindex < 0). Verify intended focus management and assistive technology exposure.",
     "ariaHidden_programmaticFocus_review_summary": "Review: aria-hidden element is programmatically focusable.",
@@ -8205,16 +8222,21 @@ const I18N = {
     "labelInName_description": "Checks that when a control has a visible text label, the accessible name contains that visible label text (WCAG 2.5.3).",
     "labelInName_summary_fail": "{{element}}: visible label \"{{visibleLabel}}\" (from {{labelSource}}) is not included in the accessible name (from {{nameMechanism}}).",
     "labelInName_hint_fail": "Update aria-label/aria-labelledby (or the visible label text) so the accessible name includes the visible label wording.",
+    "labelInName_summary_cantTell": "{{element}}: visible label \"{{visibleLabel}}\" (from {{labelSource}}) differs from the accessible name (from {{nameMechanism}}) only by an abbreviation or by hyphenation.",
+    "labelInName_hint_cantTell": "Check by hand whether the two wordings match: markup cannot tell an intended abbreviation from a mismatch.",
     "ariaRolesValid_title": "role attribute must be a valid, non-abstract ARIA role",
     "ariaRolesValid_description": "Checks that an explicit role=\"\" attribute resolves to a real, non-abstract WAI-ARIA role.",
     "ariaRolesValid_summary_invalid": "role=\"{{role}}\" is not a recognized ARIA role.",
     "ariaRolesValid_hint_invalid": "Use a valid ARIA role token, or remove the role attribute if none applies.",
     "ariaRolesValid_summary_abstract": "role=\"{{role}}\" is an abstract ARIA role, which must not be used directly.",
     "ariaRolesValid_hint_abstract": "Replace this abstract role with a concrete role appropriate for the widget/structure.",
-    "ariaDeprecatedRole_title": "role attribute must not use a deprecated or author-prohibited ARIA role",
-    "ariaDeprecatedRole_description": "Checks that an explicit role=\"\" attribute does not use a role deprecated by the WAI-ARIA specification, or one reserved for user-agent-internal use only (e.g. role=\"generic\").",
+    "ariaDeprecatedRole_title": "role attribute should not use a deprecated or author-discouraged ARIA role",
+    "ariaDeprecatedRole_description": "Checks that an explicit role=\"\" attribute does not use a role deprecated by the WAI-ARIA specification, or one reserved for user-agent-internal use (e.g. role=\"generic\").",
     "ariaDeprecatedRole_summary_fail": "This element uses role=\"{{role}}\", which authors must not explicitly declare.",
     "ariaDeprecatedRole_hint_fail": "{{guidance}}",
+    "ariaDeprecatedRole_summary_cantTell": "This element uses role=\"{{role}}\", which is deprecated in WAI-ARIA (still valid, but discouraged).",
+    "ariaDeprecatedRole_summary_cantTell_discouraged": "This element uses role=\"{{role}}\", which is reserved for user agents (still valid, but discouraged).",
+    "ariaDeprecatedRole_hint_cantTell": "{{guidance}}",
     "ariaValidAttr_title": "aria-* attributes must be real, defined ARIA attributes",
     "ariaValidAttr_description": "Checks that every aria-* attribute name present in the DOM is a real attribute defined by the WAI-ARIA specification.",
     "ariaValidAttr_summary_fail": "{{attr}} is not a recognized ARIA attribute.",
@@ -8227,6 +8249,8 @@ const I18N = {
     "ariaAllowedAttr_description": "Checks that every recognized aria-* attribute present on an element with an explicit role is either globally supported or supported by that role.",
     "ariaAllowedAttr_summary_fail": "{{attr}} is not permitted on role=\"{{role}}\".",
     "ariaAllowedAttr_hint_fail": "Remove this attribute, or use a role that supports it.",
+    "ariaAllowedAttr_summary_cantTell": "{{attr}} is deprecated on role=\"{{role}}\" (still allowed, but discouraged).",
+    "ariaAllowedAttr_hint_cantTell": "This attribute was removed from the ARIA global set in 1.2; remove it or use a role that supports it, as a future ARIA version may disallow it.",
     "ariaProhibitedAttr_title": "ARIA naming attributes must not be used on roles that prohibit them",
     "ariaProhibitedAttr_description": "Checks that aria-label/aria-labelledby are not present on WAI-ARIA roles whose specification explicitly prohibits ARIA naming (e.g. generic, emphasis, strong, paragraph).",
     "ariaProhibitedAttr_summary_fail": "{{attr}} is prohibited on role=\"{{role}}\".",
@@ -8341,14 +8365,16 @@ const I18N = {
     "formControlSingleLabel_description": "Checks that a form control is associated with at most one <label> (by wrapping or by label[for]).",
     "formControlSingleLabel_summary_fail": "This <{{element}}> is associated with {{labelCount}} labels.",
     "formControlSingleLabel_hint_fail": "Keep only one <label> per form control (either wrapping it or referencing it via for/id).",
+    "formControlSingleLabel_summary_cantTell": "This <{{element}}> has one labelling <label> plus an extra empty <label> association; verify how it is announced.",
+    "formControlSingleLabel_hint_cantTell": "Remove the redundant empty <label> so exactly one <label> is associated with the control.",
     "nestedInteractiveControlsAbsent_title": "Interactive controls must not be nested",
     "nestedInteractiveControlsAbsent_description": "Checks that an interactive control (link, button, form control, or ARIA widget role) does not contain another interactive control.",
     "nestedInteractiveControlsAbsent_summary_fail": "This <{{element}}> contains one or more nested interactive controls: {{nestedElements}}.",
     "nestedInteractiveControlsAbsent_hint_fail": "Move the nested interactive control(s) outside this element; nested interactive controls are not reliably operable via assistive technology.",
     "bypassBlocksPresent_title": "Page must provide a way to bypass repeated blocks",
     "bypassBlocksPresent_description": "Checks that the page has at least one recognized WCAG 2.4.1 bypass-blocks mechanism: a main landmark, a working same-page anchor link, or a heading.",
-    "bypassBlocksPresent_summary_fail": "This page has no recognized way to bypass repeated blocks of content.",
-    "bypassBlocksPresent_hint_fail": "Add a main landmark (<main> or role=\"main\"), a working \"skip to content\" link, or heading elements that assistive technology can use to jump past repeated content.",
+    "bypassBlocksPresent_summary_cantTell": "No recognized way to bypass repeated blocks of content was detected on this page — verify a bypass mechanism exists.",
+    "bypassBlocksPresent_hint_cantTell": "Confirm the page offers a bypass mechanism: a main landmark (<main> or role=\"main\"), a working \"skip to content\" link, or heading elements that assistive technology can use to jump past repeated content. (A mechanism may be temporarily hidden — e.g. while a modal dialog makes the page inert — or provided on a per-site basis; this needs human confirmation.)",
     "landmarkBannerIsTopLevel_title": "Banner landmark must be top-level",
     "landmarkBannerIsTopLevel_description": "Checks that the banner landmark (role=\"banner\" or a non-nested <header>) is not nested inside another landmark region.",
     "landmarkBannerIsTopLevel_summary_cantTell": "This banner landmark is nested inside another landmark region.",
@@ -8450,8 +8476,8 @@ const I18N = {
     "htmlXmlLangMismatch_description": "Checks that the <html> element's lang and xml:lang attributes declare the same primary language, when both are present.",
     "htmlXmlLangMismatch_summary_fail": "The lang (\"{{lang}}\") and xml:lang (\"{{xmlLang}}\") attributes declare different languages.",
     "htmlXmlLangMismatch_hint_fail": "Make lang and xml:lang declare the same primary language, or remove the deprecated xml:lang attribute.",
-    "avoidInlineSpacing_title": "Inline style must not force text spacing with !important",
-    "avoidInlineSpacing_description": "Checks that inline style does not set line-height, letter-spacing, or word-spacing with !important, which blocks user text-spacing overrides.",
+    "avoidInlineSpacing_title": "Inline style must not force text spacing below the WCAG metric",
+    "avoidInlineSpacing_description": "Checks that where inline style forces line-height, letter-spacing or word-spacing with !important, the value already meets WCAG 1.4.12, so the user has nothing left to override.",
     "avoidInlineSpacing_summary_fail": "This element's inline style forces {{properties}} with !important, blocking user text-spacing overrides.",
     "avoidInlineSpacing_hint_fail": "Remove !important from line-height/letter-spacing/word-spacing in inline styles so users can override text spacing.",
     "metaRefreshNoExceptions_title": "Page must not use a meta refresh at all (AAA)",
@@ -8540,6 +8566,10 @@ const I18N = {
     "inputImage_altPresent_description": "Comprueba que los elementos <input type=\"image\"> incluyan un atributo alt para ofrecer un mecanismo de alternativa textual.",
     "inputImage_altPresent_summary_fail": "Falta el atributo alt en <input type=\"image\">.",
     "inputImage_altPresent_hint_fail": "Agregar un atributo alt (usar alt=\"\" solo cuando se proporcione un nombre accesible por separado).",
+    "inputImage_altPresent_summary_defaultName": "El nombre accesible es el predeterminado del navegador para un boton de imagen y no aporta informacion.",
+    "inputImage_altPresent_hint_defaultName": "Sustituyelo por un texto que describa la accion del boton, por ejemplo \"Buscar\".",
+    "inputImage_altPresent_summary_emptyAlt": "Un alt=\"\" vacio en <input type=\"image\"> deja el control sin nombre.",
+    "inputImage_altPresent_hint_emptyAlt": "Describe la accion en alt, o nombra el control con aria-label o aria-labelledby.",
     "ariaHidden_programmaticFocus_review_title": "Revisar el foco programático en aria-hidden",
     "ariaHidden_programmaticFocus_review_description": "Señala elementos aria-hidden considerados elegibles debido a un foco programático (por ejemplo, tabindex < 0). Verificar que la gestión del foco es intencionada y la exposición a las tecnologías de asistencia.",
     "ariaHidden_programmaticFocus_review_summary": "Revisión: un elemento aria-hidden es enfocable de forma programática.",
@@ -8821,16 +8851,21 @@ const I18N = {
     "labelInName_description": "Comprueba que, cuando un control tiene una etiqueta de texto visible, el nombre accesible contenga ese texto de etiqueta visible (WCAG 2.5.3).",
     "labelInName_summary_fail": "{{element}}: la etiqueta visible \"{{visibleLabel}}\" (de {{labelSource}}) no está incluida en el nombre accesible (de {{nameMechanism}}).",
     "labelInName_hint_fail": "Actualizar aria-label/aria-labelledby (o el texto de la etiqueta visible) para que el nombre accesible incluya el texto de la etiqueta visible.",
+    "labelInName_summary_cantTell": "{{element}}: la etiqueta visible \"{{visibleLabel}}\" (de {{labelSource}}) se diferencia del nombre accesible (de {{nameMechanism}}) solo por una abreviatura o por la separación con guion.",
+    "labelInName_hint_cantTell": "Comprobar manualmente si ambas redacciones coinciden: el marcado no permite distinguir una abreviatura intencionada de una discrepancia.",
     "ariaRolesValid_title": "El atributo role debe ser un rol ARIA válido y no abstracto",
     "ariaRolesValid_description": "Comprueba que un atributo role=\"\" explícito se resuelva en un rol WAI-ARIA real y no abstracto.",
     "ariaRolesValid_summary_invalid": "role=\"{{role}}\" no es un rol ARIA reconocido.",
     "ariaRolesValid_hint_invalid": "Usar un token de rol ARIA válido, o eliminar el atributo role si no aplica ninguno.",
     "ariaRolesValid_summary_abstract": "role=\"{{role}}\" es un rol ARIA abstracto, que no debe usarse directamente.",
     "ariaRolesValid_hint_abstract": "Reemplazar este rol abstracto por un rol concreto adecuado para el widget o la estructura.",
-    "ariaDeprecatedRole_title": "El atributo role no debe usar un rol ARIA obsoleto o prohibido para autores",
-    "ariaDeprecatedRole_description": "Comprueba que un atributo role=\"\" explícito no use un rol obsoleto según la especificación WAI-ARIA, ni uno reservado únicamente para uso interno del agente de usuario (por ejemplo, role=\"generic\").",
+    "ariaDeprecatedRole_title": "El atributo role no debería usar un rol ARIA obsoleto o desaconsejado para autores",
+    "ariaDeprecatedRole_description": "Comprueba que un atributo role=\"\" explícito no use un rol obsoleto según la especificación WAI-ARIA, ni uno reservado para uso interno del agente de usuario (por ejemplo, role=\"generic\").",
     "ariaDeprecatedRole_summary_fail": "Este elemento usa role=\"{{role}}\", que los autores no deben declarar explícitamente.",
     "ariaDeprecatedRole_hint_fail": "{{guidance}}",
+    "ariaDeprecatedRole_summary_cantTell": "Este elemento usa role=\"{{role}}\", que está obsoleto en WAI-ARIA (todavía válido, pero desaconsejado).",
+    "ariaDeprecatedRole_summary_cantTell_discouraged": "Este elemento usa role=\"{{role}}\", que está reservado para los agentes de usuario (todavía válido, pero desaconsejado).",
+    "ariaDeprecatedRole_hint_cantTell": "{{guidance}}",
     "ariaValidAttr_title": "Los atributos aria-* deben ser atributos ARIA reales y definidos",
     "ariaValidAttr_description": "Comprueba que cada nombre de atributo aria-* presente en el DOM sea un atributo real definido por la especificación WAI-ARIA.",
     "ariaValidAttr_summary_fail": "{{attr}} no es un atributo ARIA reconocido.",
@@ -8843,6 +8878,8 @@ const I18N = {
     "ariaAllowedAttr_description": "Comprueba que cada atributo aria-* reconocido presente en un elemento con un rol explícito esté admitido globalmente o admitido por ese rol.",
     "ariaAllowedAttr_summary_fail": "{{attr}} no está permitido en role=\"{{role}}\".",
     "ariaAllowedAttr_hint_fail": "Eliminar este atributo, o usar un rol que lo admita.",
+    "ariaAllowedAttr_summary_cantTell": "{{attr}} está obsoleto en role=\"{{role}}\" (todavía permitido, pero desaconsejado).",
+    "ariaAllowedAttr_hint_cantTell": "Este atributo se eliminó del conjunto global de ARIA en 1.2; elimínelo o use un rol que lo admita, ya que una versión futura de ARIA podría no permitirlo.",
     "ariaProhibitedAttr_title": "Los atributos de nombrado ARIA no deben usarse en roles que los prohíban",
     "ariaProhibitedAttr_description": "Comprueba que aria-label/aria-labelledby no estén presentes en roles WAI-ARIA cuya especificación prohíbe explícitamente el nombrado ARIA (por ejemplo, generic, emphasis, strong, paragraph).",
     "ariaProhibitedAttr_summary_fail": "{{attr}} está prohibido en role=\"{{role}}\".",
@@ -8957,14 +8994,16 @@ const I18N = {
     "formControlSingleLabel_description": "Comprueba que un control de formulario esté asociado a como máximo una <label> (por envoltura o mediante label[for]).",
     "formControlSingleLabel_summary_fail": "Este <{{element}}> está asociado a {{labelCount}} etiquetas.",
     "formControlSingleLabel_hint_fail": "Mantener solo una <label> por control de formulario (ya sea envolviéndolo o referenciándolo mediante for/id).",
+    "formControlSingleLabel_summary_cantTell": "Este <{{element}}> tiene una <label> que lo etiqueta más una asociación de <label> vacía adicional; verifique cómo se anuncia.",
+    "formControlSingleLabel_hint_cantTell": "Elimine la <label> vacía redundante para que solo una <label> quede asociada al control.",
     "nestedInteractiveControlsAbsent_title": "Los controles interactivos no deben estar anidados",
     "nestedInteractiveControlsAbsent_description": "Comprueba que un control interactivo (enlace, botón, control de formulario o rol de widget ARIA) no contenga otro control interactivo.",
     "nestedInteractiveControlsAbsent_summary_fail": "Este <{{element}}> contiene uno o más controles interactivos anidados: {{nestedElements}}.",
     "nestedInteractiveControlsAbsent_hint_fail": "Mover el/los control(es) interactivo(s) anidado(s) fuera de este elemento; los controles interactivos anidados no son operables de forma fiable mediante tecnología de asistencia.",
     "bypassBlocksPresent_title": "La página debe proporcionar una forma de omitir bloques repetidos",
     "bypassBlocksPresent_description": "Comprueba que la página tenga al menos un mecanismo reconocido de omisión de bloques del criterio de éxito 2.4.1 de WCAG: un landmark main, un enlace de anclaje funcional dentro de la misma página, o un encabezado.",
-    "bypassBlocksPresent_summary_fail": "Esta página no tiene ninguna forma reconocida de omitir bloques de contenido repetidos.",
-    "bypassBlocksPresent_hint_fail": "Agregar un landmark main (<main> o role=\"main\"), un enlace funcional de \"saltar al contenido\", o elementos de encabezado que las tecnologías de asistencia puedan usar para saltar el contenido repetido.",
+    "bypassBlocksPresent_summary_cantTell": "No se detectó ninguna forma reconocida de omitir bloques de contenido repetidos en esta página; verifique que exista un mecanismo de omisión.",
+    "bypassBlocksPresent_hint_cantTell": "Confirme que la página ofrece un mecanismo de omisión: un landmark main (<main> o role=\"main\"), un enlace funcional de \"saltar al contenido\", o elementos de encabezado que las tecnologías de asistencia puedan usar para saltar el contenido repetido. (Un mecanismo puede estar oculto temporalmente —por ejemplo, mientras un diálogo modal deja la página inerte— o proporcionarse a nivel de sitio; esto requiere confirmación humana.)",
     "landmarkBannerIsTopLevel_title": "El landmark banner debe ser de nivel superior",
     "landmarkBannerIsTopLevel_description": "Comprueba que el landmark banner (role=\"banner\" o un <header> no anidado) no esté anidado dentro de otra región landmark.",
     "landmarkBannerIsTopLevel_summary_cantTell": "Este landmark banner está anidado dentro de otra región landmark.",
@@ -9066,8 +9105,8 @@ const I18N = {
     "htmlXmlLangMismatch_description": "Comprueba que los atributos lang y xml:lang del elemento <html> declaren el mismo idioma principal, cuando ambos están presentes.",
     "htmlXmlLangMismatch_summary_fail": "Los atributos lang (\"{{lang}}\") y xml:lang (\"{{xmlLang}}\") declaran idiomas diferentes.",
     "htmlXmlLangMismatch_hint_fail": "Hacer que lang y xml:lang declaren el mismo idioma principal, o eliminar el atributo obsoleto xml:lang.",
-    "avoidInlineSpacing_title": "El estilo en línea no debe forzar el espaciado de texto con !important",
-    "avoidInlineSpacing_description": "Comprueba que el estilo en línea no establezca line-height, letter-spacing o word-spacing con !important, lo que bloquea las anulaciones de espaciado de texto del usuario.",
+    "avoidInlineSpacing_title": "El estilo en línea no debe forzar el espaciado de texto por debajo del umbral WCAG",
+    "avoidInlineSpacing_description": "Comprueba que cuando el estilo en línea fuerza line-height, letter-spacing o word-spacing con !important, el valor ya cumple WCAG 1.4.12, por lo que al usuario no le queda nada que anular.",
     "avoidInlineSpacing_summary_fail": "El estilo en línea de este elemento fuerza {{properties}} con !important, bloqueando las anulaciones de espaciado de texto del usuario.",
     "avoidInlineSpacing_hint_fail": "Eliminar !important de line-height/letter-spacing/word-spacing en los estilos en línea para que los usuarios puedan anular el espaciado de texto.",
     "metaRefreshNoExceptions_title": "La página no debe usar un meta refresh en absoluto (AAA)",
@@ -9156,6 +9195,10 @@ const I18N = {
     "inputImage_altPresent_description": "Vérifie que les éléments <input type=\"image\"> fournissent un attribut alt afin de proposer un mécanisme d’alternative textuelle.",
     "inputImage_altPresent_summary_fail": "Attribut alt manquant sur <input type=\"image\">.",
     "inputImage_altPresent_hint_fail": "Ajoutez un attribut alt (utilisez alt=\"\" uniquement lorsqu’un nom accessible séparé est fourni).",
+    "inputImage_altPresent_summary_defaultName": "Le nom accessible est celui par defaut du navigateur pour un bouton image et n'apporte aucune information.",
+    "inputImage_altPresent_hint_defaultName": "Remplacez-le par un texte decrivant l action du bouton, par exemple \"Rechercher\".",
+    "inputImage_altPresent_summary_emptyAlt": "Un alt=\"\" vide sur <input type=\"image\"> laisse le controle sans nom.",
+    "inputImage_altPresent_hint_emptyAlt": "Decrivez l action dans alt, ou nommez le controle avec aria-label ou aria-labelledby.",
     "ariaHidden_programmaticFocus_review_title": "Vérifier le focus programmatique avec aria-hidden",
     "ariaHidden_programmaticFocus_review_description": "Signale les éléments aria-hidden considérés comme éligibles uniquement via un focus programmatique (ex. tabindex < 0). Vérifiez l’intention de gestion du focus et l’exposition aux technologies d’assistance.",
     "ariaHidden_programmaticFocus_review_summary": "Vérification : un élément aria-hidden est focusable de façon programmatique.",
@@ -9437,16 +9480,21 @@ const I18N = {
     "labelInName_description": "Vérifie que lorsqu’un composant possède un libellé textuel visible, le nom accessible contient ce libellé visible (WCAG 2.5.3).",
     "labelInName_summary_fail": "{{element}} : le libellé visible « {{visibleLabel}} » (source : {{labelSource}}) n’est pas inclus dans le nom accessible (source : {{nameMechanism}}).",
     "labelInName_hint_fail": "Modifiez aria-label ou aria-labelledby (ou le texte du libellé visible) afin que le nom accessible inclue le libellé visible.",
+    "labelInName_summary_cantTell": "{{element}} : le libellé visible « {{visibleLabel}} » (source : {{labelSource}}) ne diffère du nom accessible (source : {{nameMechanism}}) que par une abréviation ou une césure.",
+    "labelInName_hint_cantTell": "Vérifiez manuellement que les deux formulations correspondent : le balisage ne permet pas de distinguer une abréviation volontaire d’une incohérence.",
     "ariaRolesValid_title": "L’attribut role doit être un rôle ARIA valide et non abstrait",
     "ariaRolesValid_description": "Vérifie qu’un attribut role=\"\" explicite correspond à un rôle WAI-ARIA réel et non abstrait.",
     "ariaRolesValid_summary_invalid": "role=\"{{role}}\" n’est pas un rôle ARIA reconnu.",
     "ariaRolesValid_hint_invalid": "Utilisez un rôle ARIA valide, ou retirez l’attribut role si aucun ne s’applique.",
     "ariaRolesValid_summary_abstract": "role=\"{{role}}\" est un rôle ARIA abstrait, qui ne doit pas être utilisé directement.",
     "ariaRolesValid_hint_abstract": "Remplacez ce rôle abstrait par un rôle concret adapté au composant/à la structure.",
-    "ariaDeprecatedRole_title": "L’attribut role ne doit pas utiliser un rôle ARIA obsolète ou interdit aux auteurs",
+    "ariaDeprecatedRole_title": "L’attribut role ne devrait pas utiliser un rôle ARIA obsolète ou déconseillé aux auteurs",
     "ariaDeprecatedRole_description": "Vérifie qu’un attribut role=\"\" explicite n’utilise pas un rôle rendu obsolète par la spécification WAI-ARIA, ni un rôle réservé à un usage interne à l’agent utilisateur (ex. role=\"generic\").",
     "ariaDeprecatedRole_summary_fail": "Cet élément utilise role=\"{{role}}\", que les auteurs ne doivent pas déclarer explicitement.",
     "ariaDeprecatedRole_hint_fail": "{{guidance}}",
+    "ariaDeprecatedRole_summary_cantTell": "Cet élément utilise role=\"{{role}}\", qui est obsolète dans WAI-ARIA (toujours valide, mais déconseillé).",
+    "ariaDeprecatedRole_summary_cantTell_discouraged": "Cet élément utilise role=\"{{role}}\", qui est réservé aux agents utilisateurs (toujours valide, mais déconseillé).",
+    "ariaDeprecatedRole_hint_cantTell": "{{guidance}}",
     "ariaValidAttr_title": "Les attributs aria-* doivent être des attributs ARIA réels et définis",
     "ariaValidAttr_description": "Vérifie que chaque nom d’attribut aria-* présent dans le DOM est un attribut réel défini par la spécification WAI-ARIA.",
     "ariaValidAttr_summary_fail": "{{attr}} n’est pas un attribut ARIA reconnu.",
@@ -9459,6 +9507,8 @@ const I18N = {
     "ariaAllowedAttr_description": "Vérifie que chaque attribut aria-* reconnu présent sur un élément ayant un rôle explicite est soit globalement pris en charge, soit pris en charge par ce rôle.",
     "ariaAllowedAttr_summary_fail": "{{attr}} n’est pas autorisé sur role=\"{{role}}\".",
     "ariaAllowedAttr_hint_fail": "Retirez cet attribut, ou utilisez un rôle qui le prend en charge.",
+    "ariaAllowedAttr_summary_cantTell": "{{attr}} est obsolète sur role=\"{{role}}\" (toujours autorisé, mais déconseillé).",
+    "ariaAllowedAttr_hint_cantTell": "Cet attribut a été retiré de l’ensemble global d’ARIA en 1.2 ; retirez-le ou utilisez un rôle qui le prend en charge, car une future version d’ARIA pourrait l’interdire.",
     "ariaProhibitedAttr_title": "Les attributs de nommage ARIA ne doivent pas être utilisés sur des rôles qui les interdisent",
     "ariaProhibitedAttr_description": "Vérifie que aria-label/aria-labelledby ne sont pas présents sur des rôles WAI-ARIA dont la spécification interdit explicitement le nommage ARIA (ex. generic, emphasis, strong, paragraph).",
     "ariaProhibitedAttr_summary_fail": "{{attr}} est interdit sur role=\"{{role}}\".",
@@ -9573,14 +9623,16 @@ const I18N = {
     "formControlSingleLabel_description": "Vérifie qu’un contrôle de formulaire est associé à au plus un <label> (par imbrication ou par label[for]).",
     "formControlSingleLabel_summary_fail": "Ce <{{element}}> est associé à {{labelCount}} étiquettes.",
     "formControlSingleLabel_hint_fail": "Conservez une seule <label> par contrôle de formulaire (soit en l’enveloppant, soit en la référençant via for/id).",
+    "formControlSingleLabel_summary_cantTell": "Ce <{{element}}> a une <label> qui l’étiquette plus une association de <label> vide supplémentaire ; vérifiez comment il est annoncé.",
+    "formControlSingleLabel_hint_cantTell": "Supprimez la <label> vide redondante afin qu’une seule <label> soit associée au contrôle.",
     "nestedInteractiveControlsAbsent_title": "Les contrôles interactifs ne doivent pas être imbriqués",
     "nestedInteractiveControlsAbsent_description": "Vérifie qu’un contrôle interactif (lien, bouton, contrôle de formulaire, ou rôle de widget ARIA) ne contient pas un autre contrôle interactif.",
     "nestedInteractiveControlsAbsent_summary_fail": "Ce <{{element}}> contient un ou plusieurs contrôles interactifs imbriqués : {{nestedElements}}.",
     "nestedInteractiveControlsAbsent_hint_fail": "Déplacez le(s) contrôle(s) interactif(s) imbriqué(s) hors de cet élément ; les contrôles interactifs imbriqués ne sont pas utilisables de façon fiable via les technologies d’assistance.",
     "bypassBlocksPresent_title": "La page doit proposer un moyen de contourner les blocs répétés",
     "bypassBlocksPresent_description": "Vérifie que la page dispose d’au moins un mécanisme reconnu de contournement des blocs répétés (WCAG 2.4.1) : un point de repère main, un lien d’ancrage fonctionnel vers la même page, ou un titre.",
-    "bypassBlocksPresent_summary_fail": "Cette page n’a aucun moyen reconnu de contourner les blocs de contenu répétés.",
-    "bypassBlocksPresent_hint_fail": "Ajoutez un point de repère main (<main> ou role=\"main\"), un lien « aller au contenu » fonctionnel, ou des éléments de titre que les technologies d’assistance peuvent utiliser pour passer le contenu répété.",
+    "bypassBlocksPresent_summary_cantTell": "Aucun moyen reconnu de contourner les blocs de contenu répétés n’a été détecté sur cette page — vérifiez qu’un mécanisme de contournement existe.",
+    "bypassBlocksPresent_hint_cantTell": "Confirmez que la page propose un mécanisme de contournement : un point de repère main (<main> ou role=\"main\"), un lien « aller au contenu » fonctionnel, ou des éléments de titre que les technologies d’assistance peuvent utiliser pour passer le contenu répété. (Un mécanisme peut être temporairement masqué — par exemple pendant qu’une boîte de dialogue modale rend la page inerte — ou fourni à l’échelle du site ; cela nécessite une confirmation humaine.)",
     "landmarkBannerIsTopLevel_title": "Le point de repère banner doit être de premier niveau",
     "landmarkBannerIsTopLevel_description": "Vérifie que le point de repère banner (role=\"banner\" ou un <header> non imbriqué) n’est pas imbriqué dans un autre point de repère.",
     "landmarkBannerIsTopLevel_summary_cantTell": "Ce point de repère banner est imbriqué dans un autre point de repère.",
@@ -9682,8 +9734,8 @@ const I18N = {
     "htmlXmlLangMismatch_description": "Vérifie que les attributs lang et xml:lang de l’élément <html> déclarent la même langue principale, lorsque les deux sont présents.",
     "htmlXmlLangMismatch_summary_fail": "Les attributs lang (« {{lang}} ») et xml:lang (« {{xmlLang}} ») déclarent des langues différentes.",
     "htmlXmlLangMismatch_hint_fail": "Faites en sorte que lang et xml:lang déclarent la même langue principale, ou retirez l’attribut obsolète xml:lang.",
-    "avoidInlineSpacing_title": "Un style en ligne ne doit pas forcer l’espacement du texte avec !important",
-    "avoidInlineSpacing_description": "Vérifie qu’un style en ligne ne définit pas line-height, letter-spacing, ou word-spacing avec !important, ce qui bloque les surcharges d’espacement de texte par l’utilisateur.",
+    "avoidInlineSpacing_title": "Un style en ligne ne doit pas forcer l’espacement du texte en dessous du seuil WCAG",
+    "avoidInlineSpacing_description": "Vérifie que lorsqu’un style en ligne force line-height, letter-spacing ou word-spacing avec !important, la valeur respecte déjà WCAG 1.4.12, ne laissant rien à surcharger à l’utilisateur.",
     "avoidInlineSpacing_summary_fail": "Le style en ligne de cet élément force {{properties}} avec !important, bloquant les surcharges d’espacement de texte par l’utilisateur.",
     "avoidInlineSpacing_hint_fail": "Retirez !important de line-height/letter-spacing/word-spacing dans les styles en ligne afin que les utilisateurs puissent surcharger l’espacement du texte.",
     "metaRefreshNoExceptions_title": "La page ne doit utiliser aucun rafraîchissement meta (AAA)",
@@ -10696,6 +10748,35 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
       const eligCache = new WeakMap();
       const inactiveCache = new WeakMap();
+      const clipHiddenCache = new WeakMap();
+
+      // clip:rect(0,0,0,0) / clip-path:inset(50%+) (the sr-only technique) has
+      // no visually-presented color, so contrast rules exempt it even though
+      // isDomVisibleEligible itself keeps it eligible for other callers
+      // (aria-hidden-focus etc. need to find clipped-but-focusable elements).
+      const isClipHidden = (el) => {
+        if (!helpers || typeof helpers.getVisibilityHintsInfo !== 'function') return false;
+        if (clipHiddenCache.has(el)) return clipHiddenCache.get(el);
+
+        let hidden = false;
+        try {
+          let cur = el;
+          let guard = 0;
+          while (cur && cur.nodeType === 1 && guard++ < 100) {
+            const info = helpers.getVisibilityHintsInfo(cur, ctx, {});
+            if (info && Array.isArray(info.hints) && info.hints.indexOf('clipped') !== -1) {
+              hidden = true;
+              break;
+            }
+            cur = composedParent ? composedParent(cur) : cur.parentElement;
+          }
+        } catch {
+          hidden = false;
+        }
+
+        clipHiddenCache.set(el, hidden);
+        return hidden;
+      };
 
       const isVisibleEligible = (el) => {
         if (!helpers || typeof helpers.isDomVisibleEligible !== 'function') return true;
@@ -10705,6 +10786,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         try {
           const r = helpers.isDomVisibleEligible(el, ctx, { visibilityMode });
           ok = __asEligibilityBool(r);
+          if (ok && isClipHidden(el)) ok = false;
         } catch {
           ok = false;
         }
@@ -11819,6 +11901,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   // -------------------------------------------------------------------
   // A) Abstract roles — MUST NOT be used directly in a role="" attribute.
   // -------------------------------------------------------------------
+  // <generated:aria-abstract-roles>
   const ABSTRACT_ROLES = new Set([
     'command',
     'composite',
@@ -11833,23 +11916,44 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     'widget',
     'window'
   ]);
+  // </generated:aria-abstract-roles>
 
   // -------------------------------------------------------------------
-  // B) Valid, concrete (non-abstract) roles that authors must never
-  //    explicitly declare — either because WAI-ARIA has deprecated them
-  //    (a direct replacement exists) or because they are reserved for
-  //    user-agent-internal use only (not a spec deprecation, but the
-  //    same "valid token, prohibited for authors" shape). Flagged by
-  //    aria-deprecated-role, not aria-roles-valid (which only checks
-  //    existence/abstractness) — see DEPRECATED_ROLE_GUIDANCE below for
-  //    per-role, reason-accurate messaging.
+  // B) Valid, concrete (non-abstract) roles authors should not explicitly
+  //    declare — either because WAI-ARIA has deprecated them (a direct
+  //    replacement exists) or because they are reserved for
+  //    user-agent-internal use. Flagged by aria-deprecated-role, not
+  //    aria-roles-valid (which only checks existence/abstractness) — see
+  //    DEPRECATED_ROLE_GUIDANCE below for per-role, reason-accurate
+  //    messaging.
   // -------------------------------------------------------------------
+  // Deprecated but still VALID roles (SHOULD NOT, still conforming). Reported
+  // as cantTell so the author decides whether it matters to them.
   const DEPRECATED_ROLES = new Set([
-    'directory', // superseded by role="list"
-    // WAI-ARIA 1.2: "intended for use as the implicit role of generic
-    // elements in host languages for use by user agents only; not for
-    // use by developers." MDN: "It should not be used by web authors."
-    'generic'
+    'directory' // superseded by role="list"
+  ]);
+
+  // Valid roles reserved for user-agent-internal use, which ARIA states at
+  // SHOULD NOT strength — conforming, so reported as cantTell.
+  const AUTHOR_DISCOURAGED_ROLES = new Set([
+    'generic' // "primarily for implementors of user agents"
+  ]);
+
+  // Roles carrying an author MUST NOT, reported as fail. Empty under ARIA 1.2
+  // and 1.3, whose only author MUST NOT covers abstract roles — the concern of
+  // aria-roles-valid.
+  const AUTHOR_PROHIBITED_ROLES = new Set([]);
+
+  // Deprecated but still ALLOWED states/properties (SHOULD NOT, still
+  // conforming): the four ARIA 1.2 keeps in the global set as deprecated and
+  // marks "deprecated on this role" wherever a role does not support them.
+  // Reported as cantTell, not a not-allowed fail. Flat rather than per-role
+  // because the deprecation is uniform and no role prohibits any of the four.
+  const DEPRECATED_ATTRS = new Set([
+    'aria-disabled',
+    'aria-errormessage',
+    'aria-haspopup',
+    'aria-invalid'
   ]);
 
   const DEPRECATED_ROLE_GUIDANCE = {
@@ -11875,103 +11979,140 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   //    Digital Publishing WAI-ARIA (doc-abstract etc.) is a separate
   //    module, deliberately left out of scope for now.
   // -------------------------------------------------------------------
+  // <generated:aria-concrete-roles>
   const CONCRETE_ROLES = new Set([
-    // WAI-ARIA Graphics Module 1.0 (see comment above)
-    'graphics-document',
-    'graphics-object',
-    'graphics-symbol',
-    // Live region / window roles
     'alert',
     'alertdialog',
-    'dialog',
-    'log',
-    'marquee',
-    'status',
-    'timer',
-    // Landmark roles
-    'banner',
-    'complementary',
-    'contentinfo',
-    'form',
-    'main',
-    'navigation',
-    'region',
-    'search',
-    // Widget roles (leaf)
-    'button',
-    'checkbox',
-    'gridcell',
-    'link',
-    'menuitem',
-    'menuitemcheckbox',
-    'menuitemradio',
-    'option',
-    'progressbar',
-    'radio',
-    'scrollbar',
-    'searchbox',
-    'separator',
-    'slider',
-    'spinbutton',
-    'switch',
-    'tab',
-    'tabpanel',
-    'textbox',
-    'treeitem',
-    'tooltip',
-    // Composite widget roles
-    'combobox',
-    'grid',
-    'listbox',
-    'menu',
-    'menubar',
-    'radiogroup',
-    'tablist',
-    'tree',
-    'treegrid',
-    // Document structure roles
     'application',
     'article',
+    'banner',
     'blockquote',
+    'button',
     'caption',
     'cell',
+    'checkbox',
     'code',
     'columnheader',
+    'combobox',
     'comment',
+    'complementary',
+    'contentinfo',
     'definition',
     'deletion',
+    'dialog',
     'directory',
+    'doc-abstract',
+    'doc-acknowledgments',
+    'doc-afterword',
+    'doc-appendix',
+    'doc-backlink',
+    'doc-biblioentry',
+    'doc-bibliography',
+    'doc-biblioref',
+    'doc-chapter',
+    'doc-colophon',
+    'doc-conclusion',
+    'doc-cover',
+    'doc-credit',
+    'doc-credits',
+    'doc-dedication',
+    'doc-endnote',
+    'doc-endnotes',
+    'doc-epigraph',
+    'doc-epilogue',
+    'doc-errata',
+    'doc-example',
+    'doc-footnote',
+    'doc-foreword',
+    'doc-glossary',
+    'doc-glossref',
+    'doc-index',
+    'doc-introduction',
+    'doc-noteref',
+    'doc-notice',
+    'doc-pagebreak',
+    'doc-pagefooter',
+    'doc-pageheader',
+    'doc-pagelist',
+    'doc-part',
+    'doc-preface',
+    'doc-prologue',
+    'doc-pullquote',
+    'doc-qna',
+    'doc-subtitle',
+    'doc-tip',
+    'doc-toc',
     'document',
     'emphasis',
     'feed',
     'figure',
+    'form',
     'generic',
+    'graphics-document',
+    'graphics-object',
+    'graphics-symbol',
+    'grid',
+    'gridcell',
     'group',
     'heading',
     'img',
     'insertion',
+    'link',
     'list',
+    'listbox',
     'listitem',
+    'log',
+    'main',
     'mark',
+    'marquee',
     'math',
+    'menu',
+    'menubar',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
     'meter',
+    'navigation',
     'none',
     'note',
+    'option',
     'paragraph',
     'presentation',
+    'progressbar',
+    'radio',
+    'radiogroup',
+    'region',
     'row',
     'rowgroup',
     'rowheader',
+    'scrollbar',
+    'search',
+    'searchbox',
+    'separator',
+    'slider',
+    'spinbutton',
+    'status',
     'strong',
     'subscript',
     'suggestion',
     'superscript',
+    'switch',
+    'tab',
     'table',
+    'tablist',
+    'tabpanel',
     'term',
     'text',
+    'textbox',
     'time',
-    'toolbar'
+    'timer',
+    'toolbar',
+    'tooltip',
+    'tree',
+    'treegrid',
+    'treeitem'
   ]);
+  // </generated:aria-concrete-roles>
 
   // -------------------------------------------------------------------
   // D) ARIA attribute value types.
@@ -12487,6 +12628,18 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     return DEPRECATED_ROLES.has(lower(role));
   }
 
+  function isAuthorDiscouragedRole(role) {
+    return AUTHOR_DISCOURAGED_ROLES.has(lower(role));
+  }
+
+  function isAuthorProhibitedRole(role) {
+    return AUTHOR_PROHIBITED_ROLES.has(lower(role));
+  }
+
+  function isDeprecatedAttr(attr /* , role */) {
+    return DEPRECATED_ATTRS.has(lower(attr));
+  }
+
   function isKnownRole(role) {
     const r = lower(role);
     return ABSTRACT_ROLES.has(r) || CONCRETE_ROLES.has(r);
@@ -12762,6 +12915,9 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     getAllRoleTokens,
     isAbstractRole,
     isDeprecatedRole,
+    isAuthorDiscouragedRole,
+    isAuthorProhibitedRole,
+    isDeprecatedAttr,
     getDeprecatedRoleGuidance,
     isKnownRole,
     isValidConcreteRole,
@@ -12849,6 +13005,28 @@ const resolveContextRoots = (function resolveContextRoots(document, contextSelec
   return { ctxSelector, roots };
 });
 const createDomHelpers = (function createDomHelpers(opts) {
+  // <generated:language-subtags>
+  const LANGUAGE_SUBTAGS =
+    'aa aaa aab aac aad aae aaf aag aah aai aak aal aam aan aao aap aaq aas aat aau aav aaw aax aaz ab aba abb abc abd abe abf abg abh abi abj abl abm abn abo abp abq abr abs abt abu abv abw abx aby abz aca acb acd ace acf ach aci ack acl acm acn acp acq acr acs act acu acv acw acx acy acz ada adb add ade adf adg adh adi adj adl adn ado adp adq adr ads adt adu adw adx ady adz ae aea aeb aec aed aee aek ael aem aen aeq aer aes aeu aew aey aez af afa afb afd afe afg afh afi afk afn afo afp afs aft afu afz aga agb agc agd age agf agg agh agi agj agk agl agm agn ago agp agq agr ags agt agu agv agw agx agy agz aha ahb ahg ahh ahi ahk ahl ahm ahn aho ahp ahr ahs aht aia aib aic aid aie aif aig aih aii aij aik ail aim ain aio aip aiq air ais ait aiw aix aiy aja ajg aji ajn ajp ajs ajt aju ajw ajz ak akb akc akd ake akf akg akh aki akj akk akl akm ako akp akq akr aks akt aku akv akw akx aky akz ala alc ald ale alf alg alh ali alj alk all alm aln alo alp alq alr als alt alu alv alw alx aly alz am ama amb amc ame amf amg ami amj amk aml amm amn amo amp amq amr ams amt amu amv amw amx amy amz an ana anb anc and ane anf ang anh ani anj ank anl anm ann ano anp anq anr ans ant anu anv anw anx any anz aoa aob aoc aod aoe aof aog aoh aoi aoj aok aol aom aon aor aos aot aou aox aoz apa apb apc apd ape apf apg aph api apj apk apl apm apn apo app apq apr aps apt apu apv apw apx apy apz aqa aqc aqd aqg aqk aql aqm aqn aqp aqr aqt aqz ar arb arc ard are arh ari arj ark arl arn aro arp arq arr ars art aru arv arw arx ary arz as asa asb asc asd ase asf asg ash asi asj ask asl asn aso asp asq asr ass ast asu asv asw asx asy asz ata atb atc atd ate atg ath ati atj atk atl atm atn ato atp atq atr ats att atu atv atw atx aty atz aua aub auc aud aue auf aug auh aui auj auk aul aum aun auo aup auq aur aus aut auu auw aux auy auz av avb avd avi avk avl avm avn avo avs avt avu avv awa awb awc awd awe awg awh awi awk awm awn awo awr aws awt awu awv aww awx awy axb axe axg axk axl axm axx ay aya ayb ayc ayd aye ayg ayh ayi ayk ayl ayn ayo ayp ayq ayr ays ayt ayu ayx ayy ayz az aza azb azc azd azg azj azm azn azo azt azz ba baa bab bac bad bae baf bag bah bai baj bal ban bao bap bar bas bat bau bav baw bax bay baz bba bbb bbc bbd bbe bbf bbg bbh bbi bbj bbk bbl bbm bbn bbo bbp bbq bbr bbs bbt bbu bbv bbw bbx bby bbz bca bcb bcc bcd bce bcf bcg bch bci bcj bck bcl bcm bcn bco bcp bcq bcr bcs bct bcu bcv bcw bcy bcz bda bdb bdc bdd bde bdf bdg bdh bdi bdj bdk bdl bdm bdn bdo bdp bdq bdr bds bdt bdu bdv bdw bdx bdy bdz be bea beb bec bed bee bef beg beh bei bej bek bem beo bep beq ber bes bet beu bev bew bex bey bez bfa bfb bfc bfd bfe bff bfg bfh bfi bfj bfk bfl bfm bfn bfo bfp bfq bfr bfs bft bfu bfw bfx bfy bfz bg bga bgb bgc bgd bge bgf bgg bgi bgj bgk bgl bgm bgn bgo bgp bgq bgr bgs bgt bgu bgv bgw bgx bgy bgz bh bha bhb bhc bhd bhe bhf bhg bhh bhi bhj bhk bhl bhm bhn bho bhp bhq bhr bhs bht bhu bhv bhw bhx bhy bhz bi bia bib bic bid bie bif big bij bik bil bim bin bio bip biq bir bit biu biv biw bix biy biz bja bjb bjc bjd bje bjf bjg bjh bji bjj bjk bjl bjm bjn bjo bjp bjq bjr bjs bjt bju bjv bjw bjx bjy bjz bka bkb bkc bkd bkf bkg bkh bki bkj bkk bkl bkm bkn bko bkp bkq bkr bks bkt bku bkv bkw bkx bky bkz bla blb blc bld ble blf blg blh bli blj blk bll blm bln blo blp blq blr bls blt blv blw blx bly blz bm bma bmb bmc bmd bme bmf bmg bmh bmi bmj bmk bml bmm bmn bmo bmp bmq bmr bms bmt bmu bmv bmw bmx bmy bmz bn bna bnb bnc bnd bne bnf bng bni bnj bnk bnl bnm bnn bno bnp bnq bnr bns bnt bnu bnv bnw bnx bny bnz bo boa bob boe bof bog boh boi boj bok bol bom bon boo bop boq bor bot bou bov bow box boy boz bpa bpb bpc bpd bpe bpg bph bpi bpj bpk bpl bpm bpn bpo bpp bpq bpr bps bpt bpu bpv bpw bpx bpy bpz bqa bqb bqc bqd bqf bqg bqh bqi bqj bqk bql bqm bqn bqo bqp bqq bqr bqs bqt bqu bqv bqw bqx bqy bqz br bra brb brc brd brf brg brh bri brj brk brl brm brn bro brp brq brr brs brt bru brv brw brx bry brz bs bsa bsb bsc bse bsf bsg bsh bsi bsj bsk bsl bsm bsn bso bsp bsq bsr bss bst bsu bsv bsw bsx bsy bta btb btc btd bte btf btg bth bti btj btk btl btm btn bto btp btq btr bts btt btu btv btw btx bty btz bua bub buc bud bue buf bug buh bui buj buk bum bun buo bup buq bus but buu buv buw bux buy buz bva bvb bvc bvd bve bvf bvg bvh bvi bvj bvk bvl bvm bvn bvo bvp bvq bvr bvt bvu bvv bvw bvx bvy bvz bwa bwb bwc bwd bwe bwf bwg bwh bwi bwj bwk bwl bwm bwn bwo bwp bwq bwr bws bwt bwu bww bwx bwy bwz bxa bxb bxc bxd bxe bxf bxg bxh bxi bxj bxk bxl bxm bxn bxo bxp bxq bxr bxs bxu bxv bxw bxx bxz bya byb byc byd bye byf byg byh byi byj byk byl bym byn byo byp byq byr bys byt byv byw byx byy byz bza bzb bzc bzd bze bzf bzg bzh bzi bzj bzk bzl bzm bzn bzo bzp bzq bzr bzs bzt bzu bzv bzw bzx bzy bzz ca caa cab cac cad cae caf cag cah cai caj cak cal cam can cao cap caq car cas cau cav caw cax cay caz cba cbb cbc cbd cbe cbg cbh cbi cbj cbk cbl cbn cbo cbq cbr cbs cbt cbu cbv cbw cby cca ccc ccd cce ccg cch ccj ccl ccm ccn cco ccp ccq ccr ccs cda cdc cdd cde cdf cdg cdh cdi cdj cdm cdn cdo cdr cds cdy cdz ce cea ceb ceg cek cel cen cet cey cfa cfd cfg cfm cga cgc cgg cgk ch chb chc chd chf chg chh chj chk chl chm chn cho chp chq chr cht chw chx chy chz cia cib cic cid cie cih cik cim cin cip cir ciw ciy cja cje cjh cji cjk cjm cjn cjo cjp cjr cjs cjv cjy cka ckb ckh ckl ckm ckn cko ckq ckr cks ckt cku ckv ckx cky ckz cla clc cld cle clh cli clj clk cll clm clo cls clt clu clw cly cma cmc cme cmg cmi cmk cml cmm cmn cmo cmr cms cmt cna cnb cnc cng cnh cni cnk cnl cno cnp cnq cnr cns cnt cnu cnw cnx co coa cob coc cod coe cof cog coh coj cok col com con coo cop coq cot cou cov cow cox coy coz cpa cpb cpc cpe cpf cpg cpi cpn cpo cpp cps cpu cpx cpy cqd cqu cr cra crb crc crd crf crg crh cri crj crk crl crm crn cro crp crq crr crs crt crv crw crx cry crz cs csa csb csc csd cse csf csg csh csi csj csk csl csm csn cso csp csq csr css cst csu csv csw csx csy csz cta ctc ctd cte ctg cth ctl ctm ctn cto ctp cts ctt ctu cty ctz cu cua cub cuc cug cuh cui cuj cuk cul cum cuo cup cuq cur cus cut cuu cuv cuw cux cuy cv cvg cvn cwa cwb cwd cwe cwg cwt cxh cy cya cyb cyo czh czk czn czo czt da daa dac dad dae daf dag dah dai daj dak dal dam dao dap daq dar das dau dav daw dax day daz dba dbb dbd dbe dbf dbg dbi dbj dbl dbm dbn dbo dbp dbq dbr dbt dbu dbv dbw dby dcc dcr dda ddd dde ddg ddi ddj ddn ddo ddr dds ddw de dec ded dee def deg deh dei dek del dem den dep deq der des dev dez dga dgb dgc dgd dge dgg dgh dgi dgk dgl dgn dgo dgr dgs dgt dgu dgw dgx dgz dha dhd dhg dhi dhl dhm dhn dho dhr dhs dhu dhv dhw dhx dia dib dic did dif dig dih dii dij dik dil dim din dio dip diq dir dis dit diu diw dix diy diz dja djb djc djd dje djf dji djj djk djl djm djn djo djr dju djw dka dkg dkk dkl dkr dks dkx dlg dlk dlm dln dma dmb dmc dmd dme dmf dmg dmk dml dmm dmn dmo dmr dms dmu dmv dmw dmx dmy dna dnd dne dng dni dnj dnk dnn dno dnr dnt dnu dnv dnw dny doa dob doc doe dof doh doi dok dol don doo dop doq dor dos dot dov dow dox doy doz dpp dra drb drc drd dre drg drh dri drl drn dro drq drr drs drt dru drw dry dsb dse dsh dsi dsk dsl dsn dso dsq dsz dta dtb dtd dth dti dtk dtm dtn dto dtp dtr dts dtt dtu dty dua dub duc dud due duf dug duh dui duj duk dul dum dun duo dup duq dur dus duu duv duw dux duy duz dv dva dwa dwk dwl dwr dws dwu dww dwy dwz dya dyb dyd dyg dyi dym dyn dyo dyr dyu dyy dz dza dzd dze dzg dzl dzn eaa ebc ebg ebk ebo ebr ebu ecr ecs ecy ee eee efa efe efi ega egl egm ego egx egy ehs ehu eip eit eiv eja eka ekc eke ekg eki ekk ekl ekm eko ekp ekr eky el ele elh eli elk elm elo elp elu elx ema emb eme emg emi emk emm emn emo emp emq ems emu emw emx emy emz en ena enb enc end enf enh enl enm enn eno enq enr enu env enw enx eo eot epi era erg erh eri erk ero err ers ert erw es ese esg esh esi esk esl esm esn eso esq ess esu esx esy et etb etc eth etn eto etr ets ett etu etx etz eu eud euq eve evh evn ewo ext eya eyo eza eze fa faa fab fad faf fag fah fai faj fak fal fam fan fap far fat fau fax fay faz fbl fcs fer ff ffi ffm fgr fi fia fie fif fil fip fir fit fiu fiw fj fkk fkv fla flh fli fll fln flr fly fmp fmu fnb fng fni fo fod foi fom fon for fos fox fpe fqs fr frc frd frk frm fro frp frq frr frs frt fse fsl fss fub fuc fud fue fuf fuh fui fuj fum fun fuq fur fut fuu fuv fuy fvr fwa fwe fy ga gaa gab gac gad gae gaf gag gah gai gaj gak gal gam gan gao gap gaq gar gas gat gau gav gaw gax gay gaz gba gbb gbc gbd gbe gbf gbg gbh gbi gbj gbk gbl gbm gbn gbo gbp gbq gbr gbs gbu gbv gbw gbx gby gbz gcc gcd gce gcf gcl gcn gcr gct gd gda gdb gdc gdd gde gdf gdg gdh gdi gdj gdk gdl gdm gdn gdo gdq gdr gds gdt gdu gdx gea geb gec ged gef geg geh gei gej gek gel gem geq ges gev gew gex gey gez gfk gft gfx gga ggb ggd gge ggg ggk ggl ggn ggo ggr ggt ggu ggw gha ghc ghe ghh ghk ghl ghn gho ghr ghs ght gia gib gic gid gie gig gih gii gil gim gin gio gip giq gir gis git giu giw gix giy giz gji gjk gjm gjn gjr gju gka gkd gke gkn gko gkp gku gl glb glc gld glh gli glj glk gll glo glr glu glw gly gma gmb gmd gme gmg gmh gml gmm gmn gmq gmr gmu gmv gmw gmx gmy gmz gn gna gnb gnc gnd gne gng gnh gni gnj gnk gnl gnm gnn gno gnq gnr gnt gnu gnw gnz goa gob goc god goe gof gog goh goi goj gok gol gom gon goo gop goq gor gos got gou gov gow gox goy goz gpa gpe gpn gqa gqi gqn gqr gqu gra grb grc grd grg grh gri grj grk grm gro grq grr grs grt gru grv grw grx gry grz gse gsg gsl gsm gsn gso gsp gss gsw gta gti gtu gu gua gub guc gud gue guf gug guh gui guk gul gum gun guo gup guq gur gus gut guu guv guw gux guz gv gva gvc gve gvf gvj gvl gvm gvn gvo gvp gvr gvs gvy gwa gwb gwc gwd gwe gwf gwg gwi gwj gwm gwn gwr gwt gwu gww gwx gxx gya gyb gyd gye gyf gyg gyi gyl gym gyn gyo gyr gyy gyz gza gzi gzn ha haa hab hac had hae haf hag hah hai haj hak hal ham han hao hap haq har has hav haw hax hay haz hba hbb hbn hbo hbu hca hch hdn hds hdy he hea hed heg heh hei hem hgm hgw hhi hhr hhy hi hia hib hid hif hig hih hii hij hik hil him hio hir hit hiw hix hji hka hke hkh hkk hkn hks hla hlb hld hle hlt hlu hma hmb hmc hmd hme hmf hmg hmh hmi hmj hmk hml hmm hmn hmp hmq hmr hms hmt hmu hmv hmw hmx hmy hmz hna hnd hne hng hnh hni hnj hnm hnn hno hns hnu ho hoa hob hoc hod hoe hoh hoi hoj hok hol hom hoo hop hor hos hot hov how hoy hoz hpo hps hr hra hrc hre hrk hrm hro hrp hrr hrt hru hrw hrx hrz hsb hsh hsl hsn hss ht hti hto hts htu htx hu hub huc hud hue huf hug huh hui huj huk hul hum huo hup huq hur hus hut huu huv huw hux huy huz hvc hve hvk hvn hvv hwa hwc hwo hy hya hyw hyx hz ia iai ian iap iar iba ibb ibd ibe ibg ibh ibi ibl ibm ibn ibr ibu iby ica ich icl icr id ida idb idc idd ide idi idr ids idt idu ie ifa ifb ife iff ifk ifm ifu ify ig igb ige igg igl igm ign igo igs igw ihb ihi ihp ihw ii iin iir ijc ije ijj ijn ijo ijs ik ike ikh iki ikk ikl iko ikp ikr iks ikt ikv ikw ikx ikz ila ilb ilg ili ilk ill ilm ilo ilp ils ilu ilv ilw ima ime imi iml imn imo imr ims imt imy in inb inc ine ing inh inj inl inm inn ino inp ins int inz io ior iou iow ipi ipo iqu iqw ira ire irh iri irk irn iro irr iru irx iry is isa isc isd ise isg ish isi isk ism isn iso isr ist isu isv it itb itc itd ite iti itk itl itm ito itr its itt itv itw itx ity itz iu ium ivb ivv iw iwk iwm iwo iws ixc ixl iya iyo iyx izh izi izm izr izz ja jaa jab jac jad jae jaf jah jaj jak jal jam jan jao jaq jar jas jat jau jax jay jaz jbe jbi jbj jbk jbm jbn jbo jbr jbt jbu jbw jcs jct jda jdg jdt jeb jee jeg jeh jei jek jel jen jer jet jeu jgb jge jgk jgo jhi jhs ji jia jib jic jid jie jig jih jii jil jim jio jiq jit jiu jiv jiy jje jjr jka jkm jko jkp jkr jks jku jle jls jma jmb jmc jmd jmi jml jmn jmr jms jmw jmx jna jnd jng jni jnj jnl jns job jod jog jor jos jow jpa jpr jpx jqr jra jrb jrr jrt jru jsl jua jub juc jud juh jui juk jul jum jun juo jup jur jus jut juu juw juy jv jvd jvn jw jwi jya jye jyy ka kaa kab kac kad kae kaf kag kah kai kaj kak kam kao kap kaq kar kav kaw kax kay kba kbb kbc kbd kbe kbf kbg kbh kbi kbj kbk kbl kbm kbn kbo kbp kbq kbr kbs kbt kbu kbv kbw kbx kby kbz kca kcb kcc kcd kce kcf kcg kch kci kcj kck kcl kcm kcn kco kcp kcq kcr kcs kct kcu kcv kcw kcx kcy kcz kda kdc kdd kde kdf kdg kdh kdi kdj kdk kdl kdm kdn kdo kdp kdq kdr kdt kdu kdv kdw kdx kdy kdz kea keb kec ked kee kef keg keh kei kej kek kel kem ken keo kep keq ker kes ket keu kev kew kex key kez kfa kfb kfc kfd kfe kff kfg kfh kfi kfj kfk kfl kfm kfn kfo kfp kfq kfr kfs kft kfu kfv kfw kfx kfy kfz kg kga kgb kgc kgd kge kgf kgg kgh kgi kgj kgk kgl kgm kgn kgo kgp kgq kgr kgs kgt kgu kgv kgw kgx kgy kha khb khc khd khe khf khg khh khi khj khk khl khn kho khp khq khr khs kht khu khv khw khx khy khz ki kia kib kic kid kie kif kig kih kii kij kil kim kio kip kiq kis kit kiu kiv kiw kix kiy kiz kj kja kjb kjc kjd kje kjf kjg kjh kji kjj kjk kjl kjm kjn kjo kjp kjq kjr kjs kjt kju kjv kjx kjy kjz kk kka kkb kkc kkd kke kkf kkg kkh kki kkj kkk kkl kkm kkn kko kkp kkq kkr kks kkt kku kkv kkw kkx kky kkz kl kla klb klc kld kle klf klg klh kli klj klk kll klm kln klo klp klq klr kls klt klu klv klw klx kly klz km kma kmb kmc kmd kme kmf kmg kmh kmi kmj kmk kml kmm kmn kmo kmp kmq kmr kms kmt kmu kmv kmw kmx kmy kmz kn kna knb knc knd kne knf kng kni knj knk knl knm knn kno knp knq knr kns knt knu knv knw knx kny knz ko koa koc kod koe kof kog koh koi koj kok kol koo kop koq kos kot kou kov kow kox koy koz kpa kpb kpc kpd kpe kpf kpg kph kpi kpj kpk kpl kpm kpn kpo kpp kpq kpr kps kpt kpu kpv kpw kpx kpy kpz kqa kqb kqc kqd kqe kqf kqg kqh kqi kqj kqk kql kqm kqn kqo kqp kqq kqr kqs kqt kqu kqv kqw kqx kqy kqz kr kra krb krc krd kre krf krh kri krj krk krl krm krn kro krp krr krs krt kru krv krw krx kry krz ks ksa ksb ksc ksd kse ksf ksg ksh ksi ksj ksk ksl ksm ksn kso ksp ksq ksr kss kst ksu ksv ksw ksx ksy ksz kta ktb ktc ktd kte ktf ktg kth kti ktj ktk ktl ktm ktn kto ktp ktq ktr kts ktt ktu ktv ktw ktx kty ktz ku kub kuc kud kue kuf kug kuh kui kuj kuk kul kum kun kuo kup kuq kus kut kuu kuv kuw kux kuy kuz kv kva kvb kvc kvd kve kvf kvg kvh kvi kvj kvk kvl kvm kvn kvo kvp kvq kvr kvs kvt kvu kvv kvw kvx kvy kvz kw kwa kwb kwc kwd kwe kwf kwg kwh kwi kwj kwk kwl kwm kwn kwo kwp kwq kwr kws kwt kwu kwv kww kwx kwy kwz kxa kxb kxc kxd kxe kxf kxh kxi kxj kxk kxl kxm kxn kxo kxp kxq kxr kxs kxt kxu kxv kxw kxx kxy kxz ky kya kyb kyc kyd kye kyf kyg kyh kyi kyj kyk kyl kym kyn kyo kyp kyq kyr kys kyt kyu kyv kyw kyx kyy kyz kza kzb kzc kzd kze kzf kzg kzh kzi kzj kzk kzl kzm kzn kzo kzp kzq kzr kzs kzt kzu kzv kzw kzx kzy kzz la laa lab lac lad lae laf lag lah lai laj lak lal lam lan lap laq lar las lau law lax lay laz lb lba lbb lbc lbe lbf lbg lbi lbj lbk lbl lbm lbn lbo lbq lbr lbs lbt lbu lbv lbw lbx lby lbz lcc lcd lce lcf lch lcl lcm lcp lcq lcs lda ldb ldd ldg ldh ldi ldj ldk ldl ldm ldn ldo ldp ldq lea leb lec led lee lef leg leh lei lej lek lel lem len leo lep leq ler les let leu lev lew lex ley lez lfa lfn lg lga lgb lgg lgh lgi lgk lgl lgm lgn lgo lgq lgr lgs lgt lgu lgz lha lhh lhi lhl lhm lhn lhp lhs lht lhu li lia lib lic lid lie lif lig lih lii lij lik lil lio lip liq lir lis liu liv liw lix liy liz lja lje lji ljl ljp ljw ljx lka lkb lkc lkd lke lkh lki lkj lkl lkm lkn lko lkr lks lkt lku lky lla llb llc lld lle llf llg llh lli llj llk lll llm lln llo llp llq lls llu llx lma lmb lmc lmd lme lmf lmg lmh lmi lmj lmk lml lmm lmn lmo lmp lmq lmr lmu lmv lmw lmx lmy lmz ln lna lnb lnd lng lnh lni lnj lnl lnm lnn lno lns lnu lnw lnz lo loa lob loc loe lof log loh loi loj lok lol lom lon loo lop loq lor los lot lou lov low lox loy loz lpa lpe lpn lpo lpx lqr lra lrc lre lrg lri lrk lrl lrm lrn lro lrr lrt lrv lrz lsa lsb lsc lsd lse lsg lsh lsi lsl lsm lsn lso lsp lsr lss lst lsv lsw lsy lt ltc ltg lth lti ltn lto lts ltu lu lua luc lud lue luf luh lui luj luk lul lum lun luo lup luq lur lus lut luu luv luw luy luz lv lva lvi lvk lvl lvs lvu lwa lwe lwg lwh lwl lwm lwo lws lwt lwu lww lxm lya lyg lyn lzh lzl lzn lzz maa mab mad mae maf mag mai maj mak mam man map maq mas mat mau mav maw max maz mba mbb mbc mbd mbe mbf mbh mbi mbj mbk mbl mbm mbn mbo mbp mbq mbr mbs mbt mbu mbv mbw mbx mby mbz mca mcb mcc mcd mce mcf mcg mch mci mcj mck mcl mcm mcn mco mcp mcq mcr mcs mct mcu mcv mcw mcx mcy mcz mda mdb mdc mdd mde mdf mdg mdh mdi mdj mdk mdl mdm mdn mdp mdq mdr mds mdt mdu mdv mdw mdx mdy mdz mea meb mec med mee mef meg meh mei mej mek mel mem men meo mep meq mer mes met meu mev mew mey mez mfa mfb mfc mfd mfe mff mfg mfh mfi mfj mfk mfl mfm mfn mfo mfp mfq mfr mfs mft mfu mfv mfw mfx mfy mfz mg mga mgb mgc mgd mge mgf mgg mgh mgi mgj mgk mgl mgm mgn mgo mgp mgq mgr mgs mgt mgu mgv mgw mgx mgy mgz mh mha mhb mhc mhd mhe mhf mhg mhh mhi mhj mhk mhl mhm mhn mho mhp mhq mhr mhs mht mhu mhw mhx mhy mhz mi mia mib mic mid mie mif mig mih mii mij mik mil mim min mio mip miq mir mis mit miu miw mix miy miz mja mjb mjc mjd mje mjg mjh mji mjj mjk mjl mjm mjn mjo mjp mjq mjr mjs mjt mju mjv mjw mjx mjy mjz mk mka mkb mkc mke mkf mkg mkh mki mkj mkk mkl mkm mkn mko mkp mkq mkr mks mkt mku mkv mkw mkx mky mkz ml mla mlb mlc mld mle mlf mlh mli mlj mlk mll mlm mln mlo mlp mlq mlr mls mlu mlv mlw mlx mlz mma mmb mmc mmd mme mmf mmg mmh mmi mmj mmk mml mmm mmn mmo mmp mmq mmr mmt mmu mmv mmw mmx mmy mmz mn mna mnb mnc mnd mne mnf mng mnh mni mnj mnk mnl mnm mnn mno mnp mnq mnr mns mnt mnu mnv mnw mnx mny mnz mo moa moc mod moe mof mog moh moi moj mok mom moo mop moq mor mos mot mou mov mow mox moy moz mpa mpb mpc mpd mpe mpg mph mpi mpj mpk mpl mpm mpn mpo mpp mpq mpr mps mpt mpu mpv mpw mpx mpy mpz mqa mqb mqc mqe mqf mqg mqh mqi mqj mqk mql mqm mqn mqo mqp mqq mqr mqs mqt mqu mqv mqw mqx mqy mqz mr mra mrb mrc mrd mre mrf mrg mrh mrj mrk mrl mrm mrn mro mrp mrq mrr mrs mrt mru mrv mrw mrx mry mrz ms msb msc msd mse msf msg msh msi msj msk msl msm msn mso msp msq msr mss mst msu msv msw msx msy msz mt mta mtb mtc mtd mte mtf mtg mth mti mtj mtk mtl mtm mtn mto mtp mtq mtr mts mtt mtu mtv mtw mtx mty mua mub muc mud mue mug muh mui muj muk mul mum mun muo mup muq mur mus mut muu muv mux muy muz mva mvb mvd mve mvf mvg mvh mvi mvk mvl mvm mvn mvo mvp mvq mvr mvs mvt mvu mvv mvw mvx mvy mvz mwa mwb mwc mwd mwe mwf mwg mwh mwi mwj mwk mwl mwm mwn mwo mwp mwq mwr mws mwt mwu mwv mww mwx mwy mwz mxa mxb mxc mxd mxe mxf mxg mxh mxi mxj mxk mxl mxm mxn mxo mxp mxq mxr mxs mxt mxu mxv mxw mxx mxy mxz my myb myc myd mye myf myg myh myi myj myk myl mym myn myo myp myq myr mys myt myu myv myw myx myy myz mza mzb mzc mzd mze mzg mzh mzi mzj mzk mzl mzm mzn mzo mzp mzq mzr mzs mzt mzu mzv mzw mzx mzy mzz na naa nab nac nad nae naf nag nah nai naj nak nal nam nan nao nap naq nar nas nat naw nax nay naz nb nba nbb nbc nbd nbe nbf nbg nbh nbi nbj nbk nbm nbn nbo nbp nbq nbr nbs nbt nbu nbv nbw nbx nby nca ncb ncc ncd nce ncf ncg nch nci ncj nck ncl ncm ncn nco ncp ncq ncr ncs nct ncu ncx ncz nd nda ndb ndc ndd ndf ndg ndh ndi ndj ndk ndl ndm ndn ndp ndq ndr nds ndt ndu ndv ndw ndx ndy ndz ne nea neb nec ned nee nef neg neh nei nej nek nem nen neo neq ner nes net neu nev new nex ney nez nfa nfd nfl nfr nfu ng nga ngb ngc ngd nge ngf ngg ngh ngi ngj ngk ngl ngm ngn ngo ngp ngq ngr ngs ngt ngu ngv ngw ngx ngy ngz nha nhb nhc nhd nhe nhf nhg nhh nhi nhk nhm nhn nho nhp nhq nhr nht nhu nhv nhw nhx nhy nhz nia nib nic nid nie nif nig nih nii nij nik nil nim nin nio niq nir nis nit niu niv niw nix niy niz nja njb njd njh nji njj njl njm njn njo njr njs njt nju njx njy njz nka nkb nkc nkd nke nkf nkg nkh nki nkj nkk nkm nkn nko nkp nkq nkr nks nkt nku nkv nkw nkx nkz nl nla nlc nle nlg nli nlj nlk nll nlm nln nlo nlq nlr nlu nlv nlw nlx nly nlz nma nmb nmc nmd nme nmf nmg nmh nmi nmj nmk nml nmm nmn nmo nmp nmq nmr nms nmt nmu nmv nmw nmx nmy nmz nn nna nnb nnc nnd nne nnf nng nnh nni nnj nnk nnl nnm nnn nnp nnq nnr nns nnt nnu nnv nnw nnx nny nnz no noa noc nod noe nof nog noh noi noj nok nol nom non noo nop noq nos not nou nov now noy noz npa npb npg nph npi npl npn npo nps npu npx npy nqg nqk nql nqm nqn nqo nqq nqt nqy nr nra nrb nrc nre nrf nrg nri nrk nrl nrm nrn nrp nrr nrt nru nrx nrz nsa nsb nsc nsd nse nsf nsg nsh nsi nsk nsl nsm nsn nso nsp nsq nsr nss nst nsu nsv nsw nsx nsy nsz ntd nte ntg nti ntj ntk ntm nto ntp ntr nts ntu ntw ntx nty ntz nua nub nuc nud nue nuf nug nuh nui nuj nuk nul num nun nuo nup nuq nur nus nut nuu nuv nuw nux nuy nuz nv nvh nvm nvo nwa nwb nwc nwe nwg nwi nwm nwo nwr nww nwx nwy nxa nxd nxe nxg nxi nxk nxl nxm nxn nxo nxq nxr nxu nxx ny nyb nyc nyd nye nyf nyg nyh nyi nyj nyk nyl nym nyn nyo nyp nyq nyr nys nyt nyu nyv nyw nyx nyy nza nzb nzd nzi nzk nzm nzr nzs nzu nzy nzz oaa oac oak oar oav obi obk obl obm obo obr obt obu oc oca och ocm oco ocu oda odk odt odu ofo ofs ofu ogb ogc oge ogg ogo ogu oht ohu oia oie oin oj ojb ojc ojg ojp ojs ojv ojw oka okb okc okd oke okg okh oki okj okk okl okm okn oko okr oks oku okv okx okz ola old ole olk olm olo olr olt olu om oma omb omc ome omg omi omk oml omn omo omp omq omr omt omu omv omw omx omy ona onb one ong oni onj onk onn ono onp onr ons ont onu onw onx ood oog oon oor oos opa opk opm opo opt opy or ora orc ore org orh orn oro orr ors ort oru orv orw orx ory orz os osa osc osi osn oso osp ost osu osx ota otb otd ote oti otk otl otm otn oto otq otr ots ott otu otw otx oty otz oua oub oue oui oum oun ovd owi owl oyb oyd oym oyy ozm pa paa pab pac pad pae paf pag pah pai pak pal pam pao pap paq par pas pat pau pav paw pax pay paz pbb pbc pbe pbf pbg pbh pbi pbl pbm pbn pbo pbp pbr pbs pbt pbu pbv pby pbz pca pcb pcc pcd pce pcf pcg pch pci pcj pck pcl pcm pcn pcp pcr pcw pda pdc pdi pdn pdo pdt pdu pea peb ped pee pef peg peh pei pej pek pel pem peo pep peq pes pev pex pey pez pfa pfe pfl pga pgd pgg pgi pgk pgl pgn pgs pgu pgy pgz pha phd phg phh phi phj phk phl phm phn pho phq phr pht phu phv phw pi pia pib pic pid pie pif pig pih pii pij pil pim pin pio pip pir pis pit piu piv piw pix piy piz pjt pka pkb pkc pkg pkh pkn pko pkp pkr pks pkt pku pl pla plb plc pld ple plf plg plh plj plk pll pln plo plp plq plr pls plt plu plv plw ply plz pma pmb pmc pmd pme pmf pmh pmi pmj pmk pml pmm pmn pmo pmq pmr pms pmt pmu pmw pmx pmy pmz pna pnb pnc pnd pne png pnh pni pnj pnk pnl pnm pnn pno pnp pnq pnr pns pnt pnu pnv pnw pnx pny pnz poc pod poe pof pog poh poi pok pom pon poo pop poq pos pot pov pow pox poy poz ppa ppe ppi ppk ppl ppm ppn ppo ppp ppq ppr pps ppt ppu pqa pqe pqm pqw pra prb prc prd pre prf prg prh pri prk prl prm prn pro prp prq prr prs prt pru prw prx pry prz ps psa psc psd pse psg psh psi psl psm psn pso psp psq psr pss pst psu psw psy pt pta pth pti ptn pto ptp ptq ptr ptt ptu ptv ptw pty pua pub puc pud pue puf pug pui puj puk pum puo pup puq pur put puu puw pux puy puz pwa pwb pwg pwi pwm pwn pwo pwr pww pxm pye pym pyn pys pyu pyx pyy pze pzh pzn qaa..qtz qu qua qub quc qud quf qug quh qui quk qul qum qun qup quq qur qus quv quw qux quy quz qva qvc qve qvh qvi qvj qvl qvm qvn qvo qvp qvs qvw qvy qvz qwa qwc qwe qwh qwm qws qwt qxa qxc qxh qxl qxn qxo qxp qxq qxr qxs qxt qxu qxw qya qyp raa rab rac rad raf rag rah rai raj rak ral ram ran rao rap raq rar ras rat rau rav raw rax ray raz rbb rbk rbl rbp rcf rdb rea reb ree reg rei rej rel rem ren rer res ret rey rga rge rgk rgn rgr rgs rgu rhg rhp ria rib rie rif ril rim rin rir rit riu rjg rji rjs rka rkb rkh rki rkm rkt rkw rm rma rmb rmc rmd rme rmf rmg rmh rmi rmk rml rmm rmn rmo rmp rmq rmr rms rmt rmu rmv rmw rmx rmy rmz rn rna rnb rnd rng rnl rnn rnp rnr rnw ro roa rob roc rod roe rof rog rol rom roo rop ror rou row rpn rpt rri rrm rro rrt rsb rsi rsk rsl rsm rsn rsw rtc rth rtm rts rtw ru rub ruc rue ruf rug ruh rui ruk ruo rup ruq rut ruu ruy ruz rw rwa rwk rwl rwm rwo rwr rxd rxw ryn rys ryu rzh sa saa sab sac sad sae saf sah sai saj sak sal sam sao sap saq sar sas sat sau sav saw sax say saz sba sbb sbc sbd sbe sbf sbg sbh sbi sbj sbk sbl sbm sbn sbo sbp sbq sbr sbs sbt sbu sbv sbw sbx sby sbz sc sca scb sce scf scg sch sci sck scl scn sco scp scq scs sct scu scv scw scx sd sda sdb sdc sde sdf sdg sdh sdj sdk sdl sdm sdn sdo sdp sdq sdr sds sdt sdu sdv sdx sdz se sea seb sec sed see sef seg seh sei sej sek sel sem sen seo sep seq ser ses set seu sev sew sey sez sfb sfe sfm sfs sfw sg sga sgb sgc sgd sge sgg sgh sgi sgj sgk sgl sgm sgn sgo sgp sgr sgs sgt sgu sgw sgx sgy sgz sh sha shb shc shd she shg shh shi shj shk shl shm shn sho shp shq shr shs sht shu shv shw shx shy shz si sia sib sid sie sif sig sih sii sij sik sil sim sio sip siq sir sis sit siu siv siw six siy siz sja sjb sjc sjd sje sjg sjk sjl sjm sjn sjo sjp sjr sjs sjt sju sjw sk ska skb skc skd ske skf skg skh ski skj skk skm skn sko skp skq skr sks skt sku skv skw skx sky skz sl sla slc sld sle slf slg slh sli slj sll slm sln slp slq slr sls slt slu slw slx sly slz sm sma smb smc smd smf smg smh smi smj smk sml smm smn smp smq smr sms smt smu smv smw smx smy smz sn snb snc sne snf sng snh sni snj snk snl snm snn sno snp snq snr sns snu snv snw snx sny snz so soa sob soc sod soe sog soh soi soj sok sol son soo sop soq sor sos sou sov sow sox soy soz spb spc spd spe spg spi spk spl spm spn spo spp spq spr sps spt spu spv spx spy sq sqa sqh sqj sqk sqm sqn sqo sqq sqr sqs sqt squ sqx sr sra srb src sre srf srg srh sri srk srl srm srn sro srq srr srs srt sru srv srw srx sry srz ss ssa ssb ssc ssd sse ssf ssg ssh ssi ssj ssk ssl ssm ssn sso ssp ssq ssr sss sst ssu ssv ssx ssy ssz st sta stb std ste stf stg sth sti stj stk stl stm stn sto stp stq str sts stt stu stv stw sty su sua sub suc sue sug sui suj suk sul sum suo suq sur sus sut suv suw sux suy suz sv sva svb svc sve svk svm svr svs svx sw swb swc swf swg swh swi swj swk swl swm swn swo swp swq swr sws swt swu swv sww swx swy sxb sxc sxe sxg sxk sxl sxm sxn sxo sxr sxs sxu sxw sya syb syc syd syi syk syl sym syn syo syr sys syw syx syy sza szb szc szd sze szg szl szn szp szs szv szw szy ta taa tab tac tad tae taf tag tai taj tak tal tan tao tap taq tar tas tau tav taw tax tay taz tba tbb tbc tbd tbe tbf tbg tbh tbi tbj tbk tbl tbm tbn tbo tbp tbq tbr tbs tbt tbu tbv tbw tbx tby tbz tca tcb tcc tcd tce tcf tcg tch tci tck tcl tcm tcn tco tcp tcq tcs tct tcu tcw tcx tcy tcz tda tdb tdc tdd tde tdf tdg tdh tdi tdj tdk tdl tdm tdn tdo tdq tdr tds tdt tdu tdv tdx tdy te tea teb tec ted tee tef teg teh tei tek tem ten teo tep teq ter tes tet teu tev tew tex tey tez tfi tfn tfo tfr tft tg tga tgb tgc tgd tge tgf tgg tgh tgi tgj tgn tgo tgp tgq tgr tgs tgt tgu tgv tgw tgx tgy tgz th thc thd the thf thh thi thk thl thm thn thp thq thr ths tht thu thv thw thx thy thz ti tia tic tid tie tif tig tih tii tij tik til tim tin tio tip tiq tis tit tiu tiv tiw tix tiy tiz tja tjg tji tjj tjl tjm tjn tjo tjp tjs tju tjw tk tka tkb tkd tke tkf tkg tkk tkl tkm tkn tkp tkq tkr tks tkt tku tkv tkw tkx tkz tl tla tlb tlc tld tlf tlg tlh tli tlj tlk tll tlm tln tlo tlp tlq tlr tls tlt tlu tlv tlw tlx tly tma tmb tmc tmd tme tmf tmg tmh tmi tmj tmk tml tmm tmn tmo tmp tmq tmr tms tmt tmu tmv tmw tmy tmz tn tna tnb tnc tnd tne tnf tng tnh tni tnk tnl tnm tnn tno tnp tnq tnr tns tnt tnu tnv tnw tnx tny tnz to tob toc tod toe tof tog toh toi toj tok tol tom too top toq tor tos tou tov tow tox toy toz tpa tpc tpe tpf tpg tpi tpj tpk tpl tpm tpn tpo tpp tpq tpr tpt tpu tpv tpw tpx tpy tpz tqb tql tqm tqn tqo tqp tqq tqr tqt tqu tqw tr tra trb trc trd tre trf trg trh tri trj trk trl trm trn tro trp trq trr trs trt tru trv trw trx try trz ts tsa tsb tsc tsd tse tsf tsg tsh tsi tsj tsk tsl tsm tsp tsq tsr tss tst tsu tsv tsw tsx tsy tsz tt tta ttb ttc ttd tte ttf ttg tth tti ttj ttk ttl ttm ttn tto ttp ttq ttr tts ttt ttu ttv ttw tty ttz tua tub tuc tud tue tuf tug tuh tui tuj tul tum tun tuo tup tuq tus tut tuu tuv tuw tux tuy tuz tva tvd tve tvi tvk tvl tvm tvn tvo tvs tvt tvu tvw tvx tvy tw twa twb twc twd twe twf twg twh twl twm twn two twp twq twr twt twu tww twx twy txa txb txc txe txg txh txi txj txm txn txo txq txr txs txt txu txx txy ty tya tye tyh tyi tyj tyl tyn typ tyr tys tyt tyu tyv tyx tyy tyz tza tzh tzj tzl tzm tzn tzo tzx uam uan uar uba ubi ubl ubr ubu uby uda ude udg udi udj udl udm udu ues ufi ug uga ugb uge ugh ugn ugo ugy uha uhn uis uiv uji uk uka ukg ukh uki ukk ukl ukp ukq uks uku ukv ukw uky ula ulb ulc ule ulf uli ulk ull ulm uln ulu ulw uly uma umb umc umd umg umi umm umn umo ump umr ums umu una und une ung uni unk unm unn unp unr unu unx unz uok uon upi upv ur ura urb urc ure urf urg urh uri urj urk url urm urn uro urp urr urt uru urv urw urx ury urz usa ush usi usk usp uss usu uta ute uth utp utr utu uum uun uur uuu uve uvh uvl uwa uya uz uzn uzs vaa vae vaf vag vah vai vaj val vam van vao vap var vas vau vav vay vbb vbk ve vec ved vel vem veo vep ver vgr vgt vi vic vid vif vig vil vin vis vit viv vjk vka vki vkj vkk vkl vkm vkn vko vkp vkt vku vkz vlp vls vma vmb vmc vmd vme vmf vmg vmh vmi vmj vmk vml vmm vmp vmq vmr vms vmu vmv vmw vmx vmy vmz vnk vnm vnp vo vor vot vra vro vrs vrt vsi vsl vsn vsv vto vum vun vut vwa wa waa wab wac wad wae waf wag wah wai waj wak wal wam wan wao wap waq war was wat wau wav waw wax way waz wba wbb wbe wbf wbh wbi wbj wbk wbl wbm wbp wbq wbr wbs wbt wbv wbw wca wci wdd wdg wdj wdk wdt wdu wdy wea wec wed weg weh wei wem wen weo wep wer wes wet weu wew wfg wga wgb wgg wgi wgo wgu wgw wgy wha whg whk whu wib wic wie wif wig wih wii wij wik wil wim win wir wit wiu wiv wiw wiy wja wji wka wkb wkd wkl wkr wku wkw wky wla wlc wle wlg wlh wli wlk wll wlm wlo wlr wls wlu wlv wlw wlx wly wma wmb wmc wmd wme wmg wmh wmi wmm wmn wmo wms wmt wmw wmx wnb wnc wnd wne wng wni wnk wnm wnn wno wnp wnu wnw wny wo woa wob woc wod woe wof wog woi wok wom won woo wor wos wow woy wpc wra wrb wrd wrg wrh wri wrk wrl wrm wrn wro wrp wrr wrs wru wrv wrw wrx wry wrz wsa wsg wsi wsk wsr wss wsu wsv wtb wtf wth wti wtk wtm wtw wua wub wud wuh wul wum wun wur wut wuu wuv wux wuy wwa wwb wwo wwr www wxa wxw wya wyb wyi wym wyn wyr wyy xaa xab xac xad xae xag xai xaj xak xal xam xan xao xap xaq xar xas xat xau xav xaw xay xba xbb xbc xbd xbe xbg xbi xbj xbm xbn xbo xbp xbr xbw xbx xby xcb xcc xce xcg xch xcl xcm xcn xco xcr xct xcu xcv xcw xcy xda xdc xdk xdm xdo xdq xdy xeb xed xeg xel xem xep xer xes xet xeu xfa xga xgb xgd xgf xgg xgi xgl xgm xgn xgr xgu xgw xh xha xhc xhd xhe xhm xhr xht xhu xhv xia xib xii xil xin xip xir xis xiv xiy xjb xjt xka xkb xkc xkd xke xkf xkg xkh xki xkj xkk xkl xkn xko xkp xkq xkr xks xkt xku xkv xkw xkx xky xkz xla xlb xlc xld xle xlg xli xln xlo xlp xls xlu xly xma xmb xmc xmd xme xmf xmg xmh xmj xmk xml xmm xmn xmo xmp xmq xmr xms xmt xmu xmv xmw xmx xmy xmz xna xnb xnd xng xnh xni xnj xnk xnm xnn xno xnq xnr xns xnt xnu xny xnz xoc xod xog xoi xok xom xon xoo xop xor xow xpa xpb xpc xpd xpe xpf xpg xph xpi xpj xpk xpl xpm xpn xpo xpp xpq xpr xps xpt xpu xpv xpw xpx xpy xpz xqa xqt xra xrb xrd xre xrg xri xrm xrn xrq xrr xrt xru xrw xsa xsb xsc xsd xse xsh xsi xsj xsl xsm xsn xso xsp xsq xsr xss xsu xsv xsy xta xtb xtc xtd xte xtg xth xti xtj xtl xtm xtn xto xtp xtq xtr xts xtt xtu xtv xtw xty xtz xua xub xud xug xuj xul xum xun xuo xup xur xut xuu xve xvi xvn xvo xvs xwa xwc xwd xwe xwg xwj xwk xwl xwo xwr xwt xww xxb xxk xxm xxr xxt xya xyb xyj xyk xyl xyt xyy xzh xzm xzp yaa yab yac yad yae yaf yag yah yai yaj yak yal yam yan yao yap yaq yar yas yat yau yav yaw yax yay yaz yba ybb ybd ybe ybh ybi ybj ybk ybl ybm ybn ybo ybx yby ych ycl ycn ycp ycr yda ydd yde ydg ydk yds yea yec yee yei yej yel yen yer yes yet yeu yev yey yga ygi ygl ygm ygp ygr ygs ygu ygw yha yhd yhl yhs yi yia yif yig yih yii yij yik yil yim yin yip yiq yir yis yit yiu yiv yix yiy yiz yka ykg ykh yki ykk ykl ykm ykn yko ykr ykt yku yky yla ylb yle ylg yli yll ylm yln ylo ylr ylu yly yma ymb ymc ymd yme ymg ymh ymi ymk yml ymm ymn ymo ymp ymq ymr yms ymt ymx ymz yna ynb ynd yne yng ynh ynk ynl ynn yno ynq yns ynu yo yob yog yoi yok yol yom yon yos yot yox yoy ypa ypb ypg yph ypk ypm ypn ypo ypp ypz yra yrb yre yri yrk yrl yrm yrn yro yrs yrw yry ysc ysd ysg ysl ysm ysn yso ysp ysr yss ysy yta ytl ytp ytw yty yua yub yuc yud yue yuf yug yui yuj yuk yul yum yun yup yuq yur yut yuu yuw yux yuy yuz yva yvt ywa ywg ywl ywn ywq ywr ywt ywu yww yxa yxg yxl yxm yxu yxy yyr yyu yyz yzg yzk za zaa zab zac zad zae zaf zag zah zai zaj zak zal zam zao zap zaq zar zas zat zau zav zaw zax zay zaz zba zbc zbe zbl zbt zbu zbw zca zcd zch zdj zea zeg zeh zem zen zga zgb zgh zgm zgn zgr zh zhb zhd zhi zhn zhw zhx zia zib zik zil zim zin zir ziw ziz zka zkb zkd zkg zkh zkk zkn zko zkp zkr zkt zku zkv zkz zla zle zlj zlm zln zlq zls zlu zlw zma zmb zmc zmd zme zmf zmg zmh zmi zmj zmk zml zmm zmn zmo zmp zmq zmr zms zmt zmu zmv zmw zmx zmy zmz zna znd zne zng znk zns zoc zoh zom zoo zoq zor zos zpa zpb zpc zpd zpe zpf zpg zph zpi zpj zpk zpl zpm zpn zpo zpp zpq zpr zps zpt zpu zpv zpw zpx zpy zpz zqe zra zrg zrn zro zrp zrs zsa zsk zsl zsm zsr zsu zte ztg ztl ztm ztn ztp ztq zts ztt ztu ztx zty zu zua zuh zum zun zuy zwa zxx zyb zyg zyj zyn zyp zza zzj';
+  // </generated:language-subtags>
+
+  // BCP 47 well-formedness plus a registry check on the primary subtag. Shape
+  // alone accepts "eng" and "em-US", which look like language tags but are not
+  // registered: the IANA registry lists a three-letter subtag only when no
+  // two-letter one exists, so "en" is registered and "eng" is not.
+  let __languageSubtagSet = null;
+  function isRegisteredLanguageSubtag(subtag) {
+    if (!__languageSubtagSet) __languageSubtagSet = new Set(LANGUAGE_SUBTAGS.split(' '));
+    return __languageSubtagSet.has(String(subtag || '').toLowerCase());
+  }
+
+  function isValidLanguageTag(value) {
+    const raw = String(value == null ? '' : value).trim();
+    if (!raw) return false;
+    if (!/^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{1,8})*$/.test(raw)) return false;
+    return isRegisteredLanguageSubtag(raw.split('-')[0]);
+  }
+
   const document = opts && opts.document ? opts.document : null;
   const window = opts && opts.window ? opts.window : null;
   // Some engine paths may not pass opts.window; recover it from document when possible.
@@ -15557,6 +15735,23 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return { present: !!value, value, mechanism: 'label', flags: value ? [] : ['empty'] };
   }
 
+  // ACT scopes every accessible-name rule to elements "included in the
+  // accessibility tree" (c487ae link-name, 97a4e1 button-name and siblings),
+  // and its glossary puts focusable aria-hidden content outside that set:
+  // "Because they are hidden, these elements are considered not included in
+  // the accessibility tree", even where a browser leaves them in it. The
+  // defect they do represent, aria-hidden over content in the focus order,
+  // belongs to aria-hidden-focus (ACT 6cfa84, WCAG 4.1.2).
+  //
+  // isAccTreeEligible keeps them eligible on purpose so aria-hidden-focus can
+  // reach them, so naming rules need this narrower question instead.
+  function isIncludedInAccessibilityTree(el) {
+    const r = isAccTreeEligible(el);
+    if (!r || !r.eligible) return false;
+    const reasons = Array.isArray(r.reasons) ? r.reasons : [];
+    return !reasons.some((x) => typeof x === 'string' && x.indexOf('ariaHiddenOverridden') === 0);
+  }
+
   function getAccessibleNameInfo(el, _ctx, opts) {
     const flags = [];
     if (!isElement(el))
@@ -15999,32 +16194,6 @@ const createDomHelpers = (function createDomHelpers(opts) {
       return tag === 'img' || tag === 'area' || (tag === 'input' && type === 'image');
     }
 
-    // aria-hidden is inherited by the subtree, but isAccTreeEligible's
-    // 'ariaHiddenOverridden*' escapes are per-element — so without this the
-    // named element is in-tree while the descendants it takes its name from
-    // are not, and any element-wrapped text resolves empty.
-    // Narrower than opts.includeHidden: isAccTreeEligible returns these two
-    // reasons only after ruling out every other blocker, so forgiving them
-    // still excludes display:none/inert/hidden descendants.
-    const ARIA_HIDDEN_ONLY_REASONS = ['ariaHidden', 'ariaHiddenProgrammaticFocusExcluded'];
-
-    const ariaHiddenOverrideRoot = (() => {
-      try {
-        const r = isAccTreeEligible(el);
-        if (!r || !r.eligible || !Array.isArray(r.reasons)) return false;
-        return r.reasons.some(
-          (x) => typeof x === 'string' && x.indexOf('ariaHiddenOverridden') === 0
-        );
-      } catch {
-        return false;
-      }
-    })();
-
-    function isAriaHiddenOnlyIneligible(eligRes) {
-      const rs = eligRes && Array.isArray(eligRes.reasons) ? eligRes.reasons : [];
-      return rs.length === 1 && ARIA_HIDDEN_ONLY_REASONS.indexOf(rs[0]) !== -1;
-    }
-
     function collect(node, parts) {
       if (truncated) return;
       visitedCount += 1;
@@ -16063,10 +16232,6 @@ const createDomHelpers = (function createDomHelpers(opts) {
         try {
           const eligRes = isAccTreeEligible(node);
           eligible = !!(eligRes && eligRes.eligible);
-          // See ARIA_HIDDEN_ONLY_REASONS above.
-          if (!eligible && ariaHiddenOverrideRoot && isAriaHiddenOnlyIneligible(eligRes)) {
-            eligible = true;
-          }
         } catch {
           eligible = true;
         }
@@ -17225,6 +17390,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
   }
 
   return {
+    isValidLanguageTag,
+    isRegisteredLanguageSubtag,
+
     // Existing query/snippet utilities
     queryAll,
     queryAllDeep,
@@ -17238,6 +17406,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     hasAccessibleName,
     isExcluded,
     isAccTreeEligible,
+    isIncludedInAccessibilityTree,
     isDomVisibleEligible,
     isWholeDocumentScope,
 
@@ -17293,6 +17462,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     getLabelMethod,
     getLabelStrength,
+
+    // Whether a <label> carries text that names its associated control
+    // (own aria-name, else rendered content, else title). Shared so
+    // form-control-single-label and form-control-programmatic-label-present
+    // agree on what a label is worth.
+    labelContributesAccessibleName,
 
     // Flat-tree ancestor walk (assignedSlot-aware, then shadow host) —
     // see this function's own definition above for why assignedSlot
@@ -18989,8 +19164,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "aria-deprecated-role",
-    "title": "role attribute must not use a deprecated or author-prohibited ARIA role",
-    "description": "Checks that an explicit role=\"\" attribute does not use a role deprecated by the WAI-ARIA specification, or one reserved for user-agent-internal use only (e.g. role=\"generic\").",
+    "title": "role attribute should not use a deprecated or author-discouraged ARIA role",
+    "description": "Checks that an explicit role=\"\" attribute does not use a role deprecated by the WAI-ARIA specification, or one reserved for user-agent-internal use (e.g. role=\"generic\").",
     "i18n": {
       "titleKey": "ariaDeprecatedRole_title",
       "descriptionKey": "ariaDeprecatedRole_description"
@@ -19762,8 +19937,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "avoid-inline-spacing",
-    "title": "Inline style must not force text spacing with !important",
-    "description": "Checks that inline style does not set line-height, letter-spacing, or word-spacing with !important, which blocks user text-spacing overrides.",
+    "title": "Inline style must not force text spacing below the WCAG metric",
+    "description": "Checks that where inline style forces line-height, letter-spacing or word-spacing with !important, the value already meets WCAG 1.4.12, so the user has nothing left to override.",
     "i18n": {
       "titleKey": "avoidInlineSpacing_title",
       "descriptionKey": "avoidInlineSpacing_description"
@@ -19944,7 +20119,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "wcag241",
       "navigation",
       "atomic",
-      "automatic",
+      "manual",
       "a11ycore"
     ],
     "wcagSc": [
@@ -19959,9 +20134,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A"
       }
     ],
-    "defaultSeverity": "serious",
+    "defaultSeverity": "moderate",
     "defaultConfidence": "medium",
-    "type": "automatic",
+    "type": "manual",
     "coverage": {
       "facetsBySc": {
         "2.4.1": [
@@ -26322,6 +26497,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // Declared inside runInPage (rather than at module scope) because the
   // build inlines only this function's own source text — see
   // scripts/build-core.js header ("runInPage MUST be self-contained").
+  // <generated:aria-global-attrs>
   const GLOBAL_ATTRS = [
     'aria-atomic',
     'aria-braillelabel',
@@ -26332,14 +26508,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     'aria-describedby',
     'aria-description',
     'aria-details',
-    'aria-disabled',
     'aria-dropeffect',
-    'aria-errormessage',
     'aria-flowto',
     'aria-grabbed',
-    'aria-haspopup',
     'aria-hidden',
-    'aria-invalid',
     'aria-keyshortcuts',
     'aria-label',
     'aria-labelledby',
@@ -26348,194 +26520,736 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     'aria-relevant',
     'aria-roledescription'
   ];
+  // </generated:aria-global-attrs>
 
   // Per-role supported (non-global) states/properties. Deliberately
   // conservative — see src/core/aria-helpers.js file header for the same
   // confidence-scoping rationale; only well-established, unambiguous
   // role/attribute pairings from the WAI-ARIA role definitions are listed.
+  // <generated:aria-implicit-roles>
+  const IMPLICIT_ROLE_BY_ELEMENT = {
+    article: 'article',
+    blockquote: 'blockquote',
+    button: 'button',
+    caption: 'caption',
+    code: 'code',
+    dd: 'definition',
+    del: 'deletion',
+    details: 'group',
+    dfn: 'term',
+    dialog: 'dialog',
+    dt: 'term',
+    em: 'emphasis',
+    fieldset: 'group',
+    figure: 'figure',
+    h1: 'heading',
+    h2: 'heading',
+    h3: 'heading',
+    h4: 'heading',
+    h5: 'heading',
+    h6: 'heading',
+    hr: 'separator',
+    ins: 'insertion',
+    main: 'main',
+    mark: 'mark',
+    menu: 'list',
+    meter: 'meter',
+    nav: 'navigation',
+    ol: 'list',
+    optgroup: 'group',
+    option: 'option',
+    output: 'status',
+    p: 'paragraph',
+    progress: 'progressbar',
+    strong: 'strong',
+    sub: 'subscript',
+    sup: 'superscript',
+    textarea: 'textbox',
+    time: 'time',
+    ul: 'list',
+    'input[type=text]': 'textbox',
+    'input[type=tel]': 'textbox',
+    'input[type=url]': 'textbox',
+    'input[type=email]': 'textbox',
+    'input[type=password]': 'textbox',
+    'input[type=search]': 'searchbox',
+    'input[type=number]': 'spinbutton',
+    'input[type=range]': 'slider',
+    'input[type=checkbox]': 'checkbox',
+    'input[type=radio]': 'radio',
+    'input[type=button]': 'button',
+    'input[type=submit]': 'button',
+    'input[type=reset]': 'button',
+    'input[type=image]': 'button'
+  };
+  const NON_GLOBAL_ARIA_ATTR_SELECTOR =
+    '[aria-activedescendant], [aria-autocomplete], [aria-checked], [aria-colcount], [aria-colindex], [aria-colspan], [aria-disabled], [aria-errormessage], [aria-expanded], [aria-haspopup], [aria-invalid], [aria-level], [aria-modal], [aria-multiline], [aria-multiselectable], [aria-orientation], [aria-placeholder], [aria-posinset], [aria-pressed], [aria-readonly], [aria-required], [aria-rowcount], [aria-rowindex], [aria-rowspan], [aria-selected], [aria-setsize], [aria-sort], [aria-valuemax], [aria-valuemin], [aria-valuenow], [aria-valuetext]';
+  // </generated:aria-implicit-roles>
+
+  // <generated:aria-role-attrs>
   const SUPPORTED_ATTRS_BY_ROLE = {
+    alert: [],
     alertdialog: ['aria-modal'],
-    checkbox: ['aria-checked', 'aria-readonly', 'aria-required', 'aria-expanded'],
+    application: [
+      'aria-activedescendant',
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    article: ['aria-posinset', 'aria-setsize'],
+    banner: [],
+    blockquote: [],
+    button: ['aria-disabled', 'aria-expanded', 'aria-haspopup', 'aria-pressed'],
+    caption: [],
+    cell: ['aria-colindex', 'aria-colspan', 'aria-rowindex', 'aria-rowspan'],
+    checkbox: [
+      'aria-checked',
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-invalid',
+      'aria-readonly',
+      'aria-required'
+    ],
+    code: [],
     columnheader: [
-      'aria-sort',
       'aria-colindex',
       'aria-colspan',
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid',
       'aria-readonly',
       'aria-required',
       'aria-rowindex',
       'aria-rowspan',
       'aria-selected',
-      'aria-expanded'
+      'aria-sort'
     ],
     combobox: [
-      'aria-expanded',
+      'aria-activedescendant',
       'aria-autocomplete',
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid',
       'aria-readonly',
-      'aria-required',
-      'aria-activedescendant'
+      'aria-required'
     ],
+    complementary: [],
+    contentinfo: [],
+    definition: [],
+    deletion: [],
     dialog: ['aria-modal'],
+    directory: [],
+    'doc-abstract': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-acknowledgments': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-afterword': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-appendix': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-backlink': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-biblioentry': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid',
+      'aria-level',
+      'aria-posinset',
+      'aria-setsize'
+    ],
+    'doc-bibliography': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-biblioref': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-chapter': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-colophon': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-conclusion': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-cover': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-credit': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-credits': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-dedication': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-endnote': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid',
+      'aria-level',
+      'aria-posinset',
+      'aria-setsize'
+    ],
+    'doc-endnotes': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-epigraph': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-epilogue': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-errata': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-example': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-footnote': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-foreword': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-glossary': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-glossref': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-index': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-introduction': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-noteref': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-notice': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-pagebreak': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid',
+      'aria-orientation',
+      'aria-valuemax',
+      'aria-valuemin',
+      'aria-valuenow',
+      'aria-valuetext'
+    ],
+    'doc-pagefooter': ['aria-disabled', 'aria-errormessage', 'aria-haspopup', 'aria-invalid'],
+    'doc-pageheader': ['aria-disabled', 'aria-errormessage', 'aria-haspopup', 'aria-invalid'],
+    'doc-pagelist': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-part': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-preface': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-prologue': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-pullquote': [],
+    'doc-qna': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-subtitle': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-tip': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-toc': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    document: [],
+    emphasis: [],
+    feed: [],
+    figure: [],
+    form: [],
+    generic: [],
+    'graphics-document': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'graphics-object': [
+      'aria-activedescendant',
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'graphics-symbol': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
     grid: [
+      'aria-activedescendant',
+      'aria-colcount',
+      'aria-disabled',
       'aria-multiselectable',
       'aria-readonly',
-      'aria-colcount',
-      'aria-rowcount',
-      'aria-activedescendant'
+      'aria-rowcount'
     ],
     gridcell: [
-      'aria-selected',
-      'aria-readonly',
-      'aria-required',
       'aria-colindex',
       'aria-colspan',
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid',
+      'aria-readonly',
+      'aria-required',
       'aria-rowindex',
       'aria-rowspan',
-      'aria-expanded'
+      'aria-selected'
     ],
+    group: ['aria-activedescendant', 'aria-disabled'],
     heading: ['aria-level'],
+    img: [],
+    insertion: [],
+    link: ['aria-disabled', 'aria-expanded', 'aria-haspopup'],
+    list: [],
     listbox: [
-      'aria-multiselectable',
-      'aria-readonly',
-      'aria-required',
-      'aria-orientation',
+      'aria-activedescendant',
+      'aria-disabled',
+      'aria-errormessage',
       'aria-expanded',
-      'aria-activedescendant'
+      'aria-invalid',
+      'aria-multiselectable',
+      'aria-orientation',
+      'aria-readonly',
+      'aria-required'
     ],
     listitem: ['aria-level', 'aria-posinset', 'aria-setsize'],
-    menu: ['aria-activedescendant', 'aria-orientation'],
-    menubar: ['aria-activedescendant', 'aria-orientation'],
+    log: [],
+    main: [],
+    mark: [],
+    marquee: [],
+    math: [],
+    menu: ['aria-activedescendant', 'aria-disabled', 'aria-orientation'],
+    menubar: ['aria-activedescendant', 'aria-disabled', 'aria-orientation'],
+    menuitem: ['aria-disabled', 'aria-expanded', 'aria-haspopup', 'aria-posinset', 'aria-setsize'],
     menuitemcheckbox: [
       'aria-checked',
+      'aria-disabled',
+      'aria-errormessage',
       'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid',
+      'aria-posinset',
       'aria-readonly',
       'aria-required',
-      'aria-posinset',
       'aria-setsize'
     ],
     menuitemradio: [
       'aria-checked',
+      'aria-disabled',
+      'aria-errormessage',
       'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid',
+      'aria-posinset',
       'aria-readonly',
       'aria-required',
-      'aria-posinset',
       'aria-setsize'
     ],
-    meter: ['aria-valuenow', 'aria-valuemin', 'aria-valuemax', 'aria-valuetext'],
-    option: ['aria-selected', 'aria-checked', 'aria-posinset', 'aria-setsize'],
-    progressbar: ['aria-valuenow', 'aria-valuemin', 'aria-valuemax', 'aria-valuetext'],
-    radio: ['aria-checked', 'aria-posinset', 'aria-setsize'],
-    radiogroup: ['aria-readonly', 'aria-required', 'aria-orientation', 'aria-activedescendant'],
+    meter: ['aria-valuemax', 'aria-valuemin', 'aria-valuenow', 'aria-valuetext'],
+    navigation: [],
+    none: [],
+    note: [],
+    option: ['aria-checked', 'aria-disabled', 'aria-posinset', 'aria-selected', 'aria-setsize'],
+    paragraph: [],
+    presentation: [],
+    progressbar: ['aria-valuemax', 'aria-valuemin', 'aria-valuenow', 'aria-valuetext'],
+    radio: ['aria-checked', 'aria-disabled', 'aria-posinset', 'aria-setsize'],
+    radiogroup: [
+      'aria-activedescendant',
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-invalid',
+      'aria-orientation',
+      'aria-readonly',
+      'aria-required'
+    ],
+    region: [],
     row: [
-      'aria-selected',
+      'aria-activedescendant',
+      'aria-colindex',
+      'aria-disabled',
+      'aria-expanded',
       'aria-level',
       'aria-posinset',
-      'aria-setsize',
-      'aria-colindex',
       'aria-rowindex',
-      'aria-expanded',
-      'aria-activedescendant'
+      'aria-selected',
+      'aria-setsize'
     ],
+    rowgroup: [],
     rowheader: [
-      'aria-sort',
       'aria-colindex',
       'aria-colspan',
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid',
       'aria-readonly',
       'aria-required',
       'aria-rowindex',
       'aria-rowspan',
       'aria-selected',
-      'aria-expanded'
+      'aria-sort'
     ],
     scrollbar: [
-      'aria-valuenow',
-      'aria-valuemin',
-      'aria-valuemax',
-      'aria-valuetext',
+      'aria-disabled',
       'aria-orientation',
-      'aria-controls'
+      'aria-valuemax',
+      'aria-valuemin',
+      'aria-valuenow',
+      'aria-valuetext'
     ],
+    search: [],
     searchbox: [
       'aria-activedescendant',
       'aria-autocomplete',
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-haspopup',
+      'aria-invalid',
       'aria-multiline',
       'aria-placeholder',
       'aria-readonly',
       'aria-required'
     ],
     separator: [
-      'aria-valuenow',
-      'aria-valuemin',
+      'aria-disabled',
+      'aria-orientation',
       'aria-valuemax',
-      'aria-valuetext',
-      'aria-orientation'
+      'aria-valuemin',
+      'aria-valuenow',
+      'aria-valuetext'
     ],
     slider: [
-      'aria-valuenow',
-      'aria-valuemin',
-      'aria-valuemax',
-      'aria-valuetext',
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-haspopup',
+      'aria-invalid',
       'aria-orientation',
-      'aria-readonly'
+      'aria-readonly',
+      'aria-valuemax',
+      'aria-valuemin',
+      'aria-valuenow',
+      'aria-valuetext'
     ],
     spinbutton: [
-      'aria-valuenow',
-      'aria-valuemin',
-      'aria-valuemax',
-      'aria-valuetext',
+      'aria-activedescendant',
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-invalid',
       'aria-readonly',
       'aria-required',
-      'aria-activedescendant'
+      'aria-valuemax',
+      'aria-valuemin',
+      'aria-valuenow',
+      'aria-valuetext'
     ],
-    switch: ['aria-checked', 'aria-expanded', 'aria-readonly', 'aria-required'],
-    tab: ['aria-selected', 'aria-expanded', 'aria-posinset', 'aria-setsize'],
+    status: [],
+    strong: [],
+    subscript: [],
+    superscript: [],
+    switch: [
+      'aria-checked',
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-invalid',
+      'aria-readonly',
+      'aria-required'
+    ],
+    tab: [
+      'aria-disabled',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-posinset',
+      'aria-selected',
+      'aria-setsize'
+    ],
     table: ['aria-colcount', 'aria-rowcount'],
-    tablist: ['aria-multiselectable', 'aria-orientation', 'aria-level', 'aria-activedescendant'],
+    tablist: [
+      'aria-activedescendant',
+      'aria-disabled',
+      'aria-level',
+      'aria-multiselectable',
+      'aria-orientation'
+    ],
+    tabpanel: [],
+    term: [],
     textbox: [
       'aria-activedescendant',
       'aria-autocomplete',
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-haspopup',
+      'aria-invalid',
       'aria-multiline',
       'aria-placeholder',
       'aria-readonly',
       'aria-required'
     ],
-    toolbar: ['aria-activedescendant', 'aria-orientation'],
-    tree: ['aria-multiselectable', 'aria-required', 'aria-orientation', 'aria-activedescendant'],
-    treegrid: [
+    time: [],
+    timer: [],
+    toolbar: ['aria-activedescendant', 'aria-disabled', 'aria-orientation'],
+    tooltip: [],
+    tree: [
+      'aria-activedescendant',
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-invalid',
       'aria-multiselectable',
+      'aria-orientation',
+      'aria-required'
+    ],
+    treegrid: [
+      'aria-activedescendant',
+      'aria-colcount',
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-invalid',
+      'aria-multiselectable',
+      'aria-orientation',
       'aria-readonly',
       'aria-required',
-      'aria-orientation',
-      'aria-colcount',
-      'aria-rowcount',
-      'aria-activedescendant'
+      'aria-rowcount'
     ],
     treeitem: [
       'aria-checked',
-      'aria-selected',
+      'aria-disabled',
       'aria-expanded',
+      'aria-haspopup',
       'aria-level',
       'aria-posinset',
+      'aria-selected',
       'aria-setsize'
     ]
   };
+  // </generated:aria-role-attrs>
 
   const globalSet = new Set(GLOBAL_ATTRS);
+  // [role] keeps the explicit-role path; the attribute selector brings in
+  // elements judged by their implicit role. Only non-global attributes can be
+  // disallowed, so nothing else needs visiting.
+  const selector = '[role], ' + NON_GLOBAL_ARIA_ATTR_SELECTOR;
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('[role]')
-    : helpers.queryAll('[role]');
+    ? helpers.queryAllSmart(selector)
+    : helpers.queryAll(selector);
 
-  const occurrences = [];
+  const failOccurrences = [];
+  const cantTellOccurrences = [];
   let applicableCount = 0;
 
   for (const el of nodes) {
     if (!el || !el.attributes) continue;
 
-    const role = ariaHelpers.getExplicitRole(el);
+    // ACT 5c01ea scopes the rule to any element carrying an ARIA attribute, so
+    // an element with no role attribute is judged against its implicit role.
+    // Only elements whose implicit role is context-free are covered; the
+    // generator lists what is excluded and why.
+    const explicitRole = ariaHelpers.getExplicitRole(el);
+    let role = explicitRole;
+    if (!role) {
+      const tag = String(el.tagName || '').toLowerCase();
+      const key =
+        tag === 'input'
+          ? 'input[type=' + String(el.getAttribute('type') || 'text').toLowerCase() + ']'
+          : tag;
+      role = Object.prototype.hasOwnProperty.call(IMPLICIT_ROLE_BY_ELEMENT, key)
+        ? IMPLICIT_ROLE_BY_ELEMENT[key]
+        : '';
+    }
     if (!role || !ariaHelpers.isValidConcreteRole(role)) continue; // aria-roles-valid's concern
 
-    // Deliberately scoped: only roles with an explicit supported-attrs
-    // entry are evaluated (see file header — kept narrow to avoid
-    // over-claiming constraints for roles not yet modeled here).
+    // Presentational role conflict resolution drops role="none"/"presentation"
+    // when the element is focusable or carries global ARIA, so the implicit
+    // role decides which attributes are supported. Judging against the
+    // presentational role would flag valid markup such as
+    // <button role="none" aria-pressed="false">; presentation-role-conflict
+    // owns this case.
+    if (role === 'none' || role === 'presentation') continue;
+
+    // Roles absent from the generated table are unknown to ARIA, so there is
+    // nothing to judge them against.
     const roleSupported = SUPPORTED_ATTRS_BY_ROLE[role];
     if (!roleSupported) continue;
     const roleSupportedSet = new Set(roleSupported);
@@ -26561,11 +27275,36 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
     for (const name of disallowed) {
-      occurrences.push({
+      // A property ARIA deprecated (rather than prohibited) on this role is
+      // still allowed — surfaced as cantTell for the author to decide, not a
+      // not-allowed fail.
+      const deprecated =
+        typeof ariaHelpers.isDeprecatedAttr === 'function' &&
+        ariaHelpers.isDeprecatedAttr(name, role);
+      if (deprecated) {
+        cantTellOccurrences.push({
+          selector: stableSelector,
+          html,
+          summary: 'This ARIA attribute is deprecated for this element’s role.',
+          hint: 'It is still allowed but discouraged; remove it or use a role that supports it, as a future ARIA version may disallow it.',
+          occurrenceOutcome: 'cantTell',
+          i18n: {
+            summaryKey: 'ariaAllowedAttr_summary_cantTell',
+            hintKey: 'ariaAllowedAttr_hint_cantTell',
+            params: { attr: name, role }
+          },
+          data: {
+            details: { reasonCode: 'ARIA_ATTR_DEPRECATED', attr: name, role }
+          }
+        });
+        continue;
+      }
+      failOccurrences.push({
         selector: stableSelector,
         html,
         summary: 'This ARIA attribute is not permitted for this element’s role.',
         hint: 'Remove this attribute, or use a role that supports it.',
+        occurrenceOutcome: 'fail',
         i18n: {
           summaryKey: 'ariaAllowedAttr_summary_fail',
           hintKey: 'ariaAllowedAttr_hint_fail',
@@ -26581,15 +27320,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'moderate',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+
+  const resolved = helpers.resolveTieredOutcome(
+    failOccurrences,
+    cantTellOccurrences,
+    rule.defaultSeverity || 'moderate'
+  );
+  return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "aria-allowed-role": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
@@ -26911,11 +27648,30 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     ? helpers.queryAllSmart('[role]')
     : helpers.queryAll('[role]');
 
-  const occurrences = [];
+  const failOccurrences = [];
+  const cantTellOccurrences = [];
   let applicableCount = 0;
+
+  // A role on an element hidden from assistive technology has no effect, so
+  // ACT 674b10 does not apply to it.
+  function isHidden(el) {
+    try {
+      if (typeof helpers.isDomVisibleEligible === 'function') {
+        if (!helpers.isDomVisibleEligible(el, ctx)) return true;
+      }
+      for (let n = el; n && n.getAttribute; n = n.parentElement) {
+        if (String(n.getAttribute('aria-hidden') || '').toLowerCase() === 'true') return true;
+      }
+    } catch {
+      return false;
+    }
+    return false;
+  }
 
   for (const el of nodes) {
     if (!el || !el.getAttribute) continue;
+
+    if (isHidden(el)) continue;
 
     const role = ariaHelpers.getExplicitRole(el);
     if (!role) continue;
@@ -26926,7 +27682,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     applicableCount += 1;
 
-    if (!ariaHelpers.isDeprecatedRole(role)) continue;
+    const deprecated = ariaHelpers.isDeprecatedRole(role);
+    const discouraged =
+      typeof ariaHelpers.isAuthorDiscouragedRole === 'function' &&
+      ariaHelpers.isAuthorDiscouragedRole(role);
+    const prohibited =
+      typeof ariaHelpers.isAuthorProhibitedRole === 'function' &&
+      ariaHelpers.isAuthorProhibitedRole(role);
+    if (!deprecated && !discouraged && !prohibited) continue;
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
     const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
@@ -26934,34 +27697,70 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       ? ariaHelpers.getDeprecatedRoleGuidance(role)
       : 'Replace the deprecated role with its recommended replacement.';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: `This element uses role="${role}", which authors must not explicitly declare.`,
-      hint: guidance,
-      i18n: {
-        summaryKey: 'ariaDeprecatedRole_summary_fail',
-        hintKey: 'ariaDeprecatedRole_hint_fail',
-        params: { role, guidance }
-      },
-      data: {
-        details: { reasonCode: 'ARIA_ROLE_DEPRECATED', role, guidance }
-      }
-    });
+    if (prohibited) {
+      // Author MUST NOT: the usage is non-conforming, not merely discouraged.
+      failOccurrences.push({
+        selector: stableSelector,
+        html,
+        summary: `This element uses role="${role}", which authors must not explicitly declare.`,
+        hint: guidance,
+        occurrenceOutcome: 'fail',
+        i18n: {
+          summaryKey: 'ariaDeprecatedRole_summary_fail',
+          hintKey: 'ariaDeprecatedRole_hint_fail',
+          params: { role, guidance }
+        },
+        data: {
+          details: { reasonCode: 'ARIA_ROLE_AUTHOR_PROHIBITED', role, guidance }
+        }
+      });
+    } else if (discouraged) {
+      // Reserved for user-agent-internal use, at SHOULD NOT strength.
+      cantTellOccurrences.push({
+        selector: stableSelector,
+        html,
+        summary: `This element uses role="${role}", which is reserved for user agents (still valid, but discouraged).`,
+        hint: guidance,
+        occurrenceOutcome: 'cantTell',
+        i18n: {
+          summaryKey: 'ariaDeprecatedRole_summary_cantTell_discouraged',
+          hintKey: 'ariaDeprecatedRole_hint_cantTell',
+          params: { role, guidance }
+        },
+        data: {
+          details: { reasonCode: 'ARIA_ROLE_AUTHOR_DISCOURAGED', role, guidance }
+        }
+      });
+    } else {
+      // Deprecated but still valid: surfaced for the author to decide.
+      cantTellOccurrences.push({
+        selector: stableSelector,
+        html,
+        summary: `This element uses role="${role}", which is deprecated in WAI-ARIA.`,
+        hint: guidance,
+        occurrenceOutcome: 'cantTell',
+        i18n: {
+          summaryKey: 'ariaDeprecatedRole_summary_cantTell',
+          hintKey: 'ariaDeprecatedRole_hint_cantTell',
+          params: { role, guidance }
+        },
+        data: {
+          details: { reasonCode: 'ARIA_ROLE_DEPRECATED', role, guidance }
+        }
+      });
+    }
   }
 
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'moderate',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+
+  const resolved = helpers.resolveTieredOutcome(
+    failOccurrences,
+    cantTellOccurrences,
+    rule.defaultSeverity || 'moderate'
+  );
+  return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "aria-hidden-body": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
@@ -28967,19 +29766,44 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
+  // Programmatically hidden per the ACT glossary: display:none, visibility not
+  // visible, or aria-hidden on the element or an ancestor.
+  function isHidden(el) {
+    try {
+      if (typeof helpers.isDomVisibleEligible === 'function') {
+        if (!helpers.isDomVisibleEligible(el, ctx)) return true;
+      }
+      for (let n = el; n && n.getAttribute; n = n.parentElement) {
+        if (String(n.getAttribute('aria-hidden') || '').toLowerCase() === 'true') return true;
+      }
+    } catch {
+      return false;
+    }
+    return false;
+  }
+
   for (const el of nodes) {
     if (!el || !el.getAttribute) continue;
 
-    const role = ariaHelpers.getExplicitRole(el);
-    if (!role) continue; // role="" or whitespace-only: not this rule's concern
+    // ACT 674b10 is not applicable to a programmatically hidden element.
+    if (isHidden(el)) continue;
+
+    // role takes a fallback list and the first token the browser recognises
+    // wins, so role="searchfield searchbox" resolves to searchbox. The rule
+    // fails only when no token names a concrete role.
+    const tokens =
+      typeof ariaHelpers.getAllRoleTokens === 'function'
+        ? ariaHelpers.getAllRoleTokens(el)
+        : [ariaHelpers.getExplicitRole(el)].filter(Boolean);
+    if (!tokens.length) continue; // role="" or whitespace-only: not this rule's concern
 
     applicableCount += 1;
 
-    const isAbstract = ariaHelpers.isAbstractRole(role);
-    const isKnown = ariaHelpers.isKnownRole(role);
+    const usable = tokens.find((t) => ariaHelpers.isKnownRole(t) && !ariaHelpers.isAbstractRole(t));
+    if (usable) continue;
 
-    if (isKnown && !isAbstract) continue;
-
+    const role = tokens[0];
+    const isKnown = tokens.some((t) => ariaHelpers.isKnownRole(t));
     const reasonCode = !isKnown ? 'ARIA_ROLE_INVALID' : 'ARIA_ROLE_ABSTRACT';
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
     const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
@@ -29297,7 +30121,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (tokens[i] && tokens[i].startsWith('section-') && tokens[i].length > 'section-'.length)
       i += 1;
     if (tokens[i] === 'shipping' || tokens[i] === 'billing') i += 1;
-    if (CONTACT_MODALITY.has(tokens[i])) i += 1;
+    // A contact modality token is only allowed when the field that follows is
+    // a contact field, so "work photo" is invalid while "work email" is not.
+    if (CONTACT_MODALITY.has(tokens[i])) {
+      const next = tokens[i + 1];
+      const isContactField =
+        next === 'email' || next === 'impp' || next === 'tel' || (next || '').startsWith('tel-');
+      if (!isContactField) return false;
+      i += 1;
+    }
 
     let end = tokens.length;
     if (tokens[end - 1] === 'webauthn') end -= 1;
@@ -29314,10 +30146,38 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
+  // ACT 73f2c2 exempts controls where the attribute cannot describe an input
+  // purpose: the on/off toggle, disabled controls, input types with a fixed
+  // value, and controls that take no input.
+  const FIXED_VALUE_TYPES = new Set([
+    'button',
+    'checkbox',
+    'file',
+    'image',
+    'radio',
+    'reset',
+    'submit'
+  ]);
+
+  function isExempt(el) {
+    const tag = String(el.tagName || '').toLowerCase();
+    if (tag === 'input') {
+      const type = String(el.getAttribute('type') || 'text').toLowerCase();
+      if (FIXED_VALUE_TYPES.has(type)) return true;
+    }
+    if (el.hasAttribute && el.hasAttribute('disabled')) return true;
+    if (String(el.getAttribute('aria-disabled') || '').toLowerCase() === 'true') return true;
+    return false;
+  }
+
   for (const el of nodes) {
     if (!el || !el.getAttribute) continue;
     const raw = String(el.getAttribute('autocomplete') || '').trim();
     if (!raw) continue;
+
+    const tokens = raw.toLowerCase().split(/\s+/).filter(Boolean);
+    if (tokens.length === 1 && (tokens[0] === 'on' || tokens[0] === 'off')) continue;
+    if (isExempt(el)) continue;
 
     applicableCount += 1;
 
@@ -29360,6 +30220,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const { helpers, rule } = ctx;
 
   const SPACING_PROPS = ['line-height', 'letter-spacing', 'word-spacing'];
+  // WCAG 1.4.12's own metrics, as multiples of the font size.
+  const MIN_RATIO = { 'line-height': 1.5, 'letter-spacing': 0.12, 'word-spacing': 0.16 };
+  // Only these two take the value from the parent, leaving this declaration
+  // specifying no spacing of its own. `initial` and `revert` resolve to a
+  // concrete value (`normal` for all three properties), so they stay in scope.
+  const INHERITED_KEYWORDS = ['inherit', 'unset'];
+  // No user agent's `normal` line height reaches 1.5, so a forced `normal`
+  // always falls short of the metric.
+  const NORMAL_LINE_HEIGHT_RATIO = 1.2;
+  const CAMEL = {
+    'line-height': 'lineHeight',
+    'letter-spacing': 'letterSpacing',
+    'word-spacing': 'wordSpacing'
+  };
 
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('[style]')
@@ -29367,6 +30241,136 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const occurrences = [];
   let applicableCount = 0;
+
+  // Within one declaration block, importance wins over order, so the last
+  // important declaration is the one that takes effect. Passed Example 5 of ACT
+  // 78fd32 turns on this and Passed Example 6 on the non-important half.
+  function effectiveDeclaration(raw, prop) {
+    const re = new RegExp('(?:^|;)\\s*' + prop + '\\s*:\\s*([^;]*)', 'gi');
+    let chosen = null;
+    let m;
+    while ((m = re.exec(raw))) {
+      const value = String(m[1] || '').trim();
+      const important = /!\s*important\s*$/i.test(value);
+      const clean = value.replace(/!\s*important\s*$/i, '').trim();
+      if (!clean) continue;
+      if (!chosen || important || !chosen.important) {
+        if (chosen && chosen.important && !important) continue;
+        chosen = { value: clean, important };
+      }
+    }
+    return chosen;
+  }
+
+  function hasVisibleTextChild(el) {
+    let kids;
+    try {
+      kids = el.childNodes ? Array.from(el.childNodes) : [];
+    } catch {
+      return false;
+    }
+    return kids.some((n) => n && n.nodeType === 3 && String(n.nodeValue || '').trim() !== '');
+  }
+
+  function isRendered(el) {
+    if (helpers.isDomVisibleEligible) {
+      try {
+        return !!helpers.isDomVisibleEligible(el, ctx, { targetSet: 'dom' }).eligible;
+      } catch {
+        return true;
+      }
+    }
+    return true;
+  }
+
+  const px = (v) => {
+    const n = parseFloat(v);
+    return Number.isFinite(n) && /px\s*$/.test(String(v)) ? n : null;
+  };
+
+  function computedStyleOf(el) {
+    if (helpers && typeof helpers.computedStyle === 'function') {
+      try {
+        const cs = helpers.computedStyle(el);
+        if (cs) return cs;
+      } catch {
+        // fall through to the realm's own view
+      }
+    }
+    try {
+      const view = el.ownerDocument && el.ownerDocument.defaultView;
+      if (view && typeof view.getComputedStyle === 'function') return view.getComputedStyle(el);
+    } catch {
+      // no computed style available
+    }
+    return null;
+  }
+
+  // ACT scopes these rules to text visible on screen, and text pushed far off
+  // canvas is the one hidden shape the shared eligibility check keeps eligible.
+  function isOffScreen(el) {
+    if (!helpers.getVisibilityHintsInfo) return false;
+    try {
+      const info = helpers.getVisibilityHintsInfo(el, ctx, {});
+      return !!(info && Array.isArray(info.hints) && info.hints.indexOf('offscreen') !== -1);
+    } catch {
+      return false;
+    }
+  }
+
+  // A realm that does not lay the document out reports font-size as the CSS
+  // absolute-size keyword rather than a length. Resolving those keeps px-valued
+  // spacing checkable there, and cannot manufacture a failure: a font size
+  // larger than assumed only makes a px ratio smaller.
+  const ABSOLUTE_FONT_SIZES = {
+    'xx-small': 9,
+    'x-small': 10,
+    small: 13,
+    medium: 16,
+    large: 18,
+    'x-large': 24,
+    'xx-large': 32
+  };
+
+  function fontSizeOf(cs) {
+    if (!cs) return null;
+    const direct = px(cs.fontSize);
+    if (direct !== null) return direct;
+    const keyword = String(cs.fontSize || '')
+      .trim()
+      .toLowerCase();
+    return ABSOLUTE_FONT_SIZES[keyword] || null;
+  }
+
+  /**
+   * The spacing as a multiple of the font size, or null when it cannot be
+   * resolved. Computed style is preferred because it already applies the
+   * cascade and unit resolution; the declared value is only a fallback for
+   * environments that do not lay the document out.
+   */
+  function spacingRatio(el, prop, declared) {
+    const cs = computedStyleOf(el);
+    const fontSize = fontSizeOf(cs);
+    if (cs && fontSize) {
+      const used = px(cs[CAMEL[prop]]);
+      if (used !== null) return used / fontSize;
+    }
+
+    const v = String(declared || '')
+      .trim()
+      .toLowerCase();
+    // `normal`, and the keywords that resolve to it, add nothing for the two
+    // spacing properties and stay under the metric for line height.
+    if (v === 'normal' || v === 'initial' || v === 'revert' || v === 'revert-layer') {
+      return prop === 'line-height' ? NORMAL_LINE_HEIGHT_RATIO : 0;
+    }
+    if (/^[0-9.]+$/.test(v)) return parseFloat(v);
+    if (/em$/.test(v)) return parseFloat(v);
+    if (/%$/.test(v)) return parseFloat(v) / 100;
+    const asPx = px(v);
+    if (asPx !== null && fontSize) return asPx / fontSize;
+    return null;
+  }
 
   for (const el of nodes) {
     if (!el || !el.getAttribute) continue;
@@ -29377,14 +30381,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const hasAnySpacingProp = SPACING_PROPS.some((p) => lower.includes(p));
     if (!hasAnySpacingProp) continue;
 
-    applicableCount += 1;
+    // The rule is about text the user needs to re-space, so an element with no
+    // text of its own, or none that renders, is not a target.
+    if (!hasVisibleTextChild(el) || !isRendered(el) || isOffScreen(el)) continue;
 
     const flagged = [];
+    let inScope = false;
     for (const prop of SPACING_PROPS) {
-      const re = new RegExp(prop.replace('-', '\\-') + '\\s*:[^;]*!important', 'i');
-      if (re.test(raw)) flagged.push(prop);
+      const decl = effectiveDeclaration(raw, prop);
+      if (!decl || !decl.important) continue;
+      if (INHERITED_KEYWORDS.indexOf(decl.value.toLowerCase()) !== -1) continue;
+      inScope = true;
+      const ratio = spacingRatio(el, prop, decl.value);
+      // Unresolvable spacing is left alone: this engine reserves fail for
+      // high-confidence violations.
+      if (ratio === null) continue;
+      if (ratio < MIN_RATIO[prop]) flagged.push(prop);
     }
 
+    if (inScope) applicableCount += 1;
     if (!flagged.length) continue;
 
     const tag = el.tagName.toLowerCase();
@@ -29394,8 +30409,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     occurrences.push({
       selector: stableSelector,
       html,
-      summary: `This element's inline style forces ${flagged.join(', ')} with !important, blocking user text-spacing overrides.`,
-      hint: 'Remove !important from line-height/letter-spacing/word-spacing in inline styles so users can override text spacing.',
+      summary: `This element's inline style forces ${flagged.join(', ')} with !important below the WCAG text-spacing metric, so the user cannot raise it.`,
+      hint: 'Remove !important from line-height/letter-spacing/word-spacing in inline styles, or set a value that already meets the metric (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em).',
       i18n: {
         summaryKey: 'avoidInlineSpacing_summary_fail',
         hintKey: 'avoidInlineSpacing_hint_fail',
@@ -29514,9 +30529,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return '';
   }
 
+  // Naming rules apply only to elements included in the accessibility tree
+  // (ACT c487ae and siblings), which excludes focusable aria-hidden content.
+  // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
   function isEligibleAcc(helpers, el, ctx) {
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -29530,8 +30552,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
-  const selector =
-    'input[type="checkbox"], input[type="radio"], [role="checkbox"], [role="radio"], [role="switch"]';
+  // Native checkbox/radio without an explicit role belongs to
+  // form-control-programmatic-label-present.
+  const selector = '[role="checkbox"], [role="radio"], [role="switch"]';
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
@@ -29724,7 +30747,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   for (const el of nodes) {
     // isAccTreeEligible returns { eligible, reasons }, not a boolean.
-    const eligResult = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el, ctx) : true;
+    // Naming rules apply only to elements included in the accessibility tree
+    // (ACT c487ae), which excludes focusable aria-hidden content;
+    // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
+    const eligResult = helpers.isIncludedInAccessibilityTree
+      ? helpers.isIncludedInAccessibilityTree(el, ctx)
+      : helpers.isAccTreeEligible
+        ? helpers.isAccTreeEligible(el, ctx)
+        : true;
     const eligible =
       typeof eligResult === 'boolean' ? eligResult : !!(eligResult && eligResult.eligible);
     if (!eligible) continue;
@@ -29750,24 +30780,50 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       inputValueName = getInputButtonValueName(el);
     }
 
-    // A native <button> (or [role="button"]) whose role has been overridden to
-    // one of these roles is no longer semantically a button — per the WAI-ARIA
-    // Accessible Name and Description Computation spec these roles are
-    // name-from-author-only, and their rendered content represents a VALUE,
-    // not a NAME. E.g. <button role="combobox">List</button> where "List" is
-    // the combobox's currently selected value, not a label — crediting it as
-    // the accessible name would mask a missing name.
-    const VALUE_ROLES = [
-      'textbox',
-      'progressbar',
-      'scrollbar',
-      'slider',
-      'spinbutton',
-      'combobox',
-      'listbox'
+    // ARIA 1.2 "Name From: author, contents". Every other known role is
+    // name-from-author-only: <button role="combobox">List</button> exposes a
+    // value, not a label. An unknown role falls back to the implicit role.
+    // <generated:aria-name-from-content>
+    const NAME_FROM_CONTENT_ROLES = [
+      'button',
+      'cell',
+      'checkbox',
+      'columnheader',
+      'doc-backlink',
+      'doc-biblioref',
+      'doc-glossref',
+      'doc-noteref',
+      'graphics-object',
+      'gridcell',
+      'heading',
+      'link',
+      'menuitem',
+      'menuitemcheckbox',
+      'menuitemradio',
+      'option',
+      'radio',
+      'row',
+      'rowgroup',
+      'rowheader',
+      'switch',
+      'tab',
+      'tooltip',
+      'treeitem'
     ];
+    // </generated:aria-name-from-content>
+    const isKnownRoleToken =
+      helpers && helpers.aria && typeof helpers.aria.isKnownRole === 'function'
+        ? (() => {
+            try {
+              return !!helpers.aria.isKnownRole(roleNorm);
+            } catch {
+              return false;
+            }
+          })()
+        : false;
     const isContentNameCandidate =
-      (tag === 'button' || role === 'button') && !VALUE_ROLES.includes(roleNorm);
+      (tag === 'button' || role === 'button') &&
+      (!roleNorm || !isKnownRoleToken || NAME_FROM_CONTENT_ROLES.includes(roleNorm));
     const contentName =
       !trustedProgrammaticName && !inputValueName && isContentNameCandidate
         ? getConservativeSubtreeText(el)
@@ -29866,7 +30922,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // (e.g. a page whose only <h1> sits inside a display:none ancestor,
   // unreachable by sighted and screen reader users alike). A fully
   // non-rendered <main>/heading must not be credited here, since that would
-  // wrongly return `pass` for a page with zero actual bypass mechanisms.
+  // wrongly treat a page with zero currently-exposed bypass mechanisms as
+  // having one.
   function hasMainLandmark() {
     for (const el of queryAll('main, [role="main"]')) {
       if (el && isExposedToAt(el)) return true;
@@ -29874,10 +30931,41 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return false;
   }
 
+  // Resolve a fragment id (or legacy <a name>) inside a specific root node
+  // (a Document or a ShadowRoot). Both expose getElementById; querySelector
+  // is used for the legacy anchor-name fallback.
+  function resolveInRoot(root, fragment) {
+    if (!root) return null;
+    let target;
+    try {
+      target = typeof root.getElementById === 'function' ? root.getElementById(fragment) : null;
+    } catch {
+      target = null;
+    }
+    if (target) return target;
+    try {
+      target =
+        typeof root.querySelector === 'function'
+          ? root.querySelector('a[name="' + fragment.replace(/"/g, '\\"') + '"]')
+          : null;
+    } catch {
+      target = null;
+    }
+    return target;
+  }
+
+  // Shadow-DOM-aware: gather anchors via queryAllSmart (pierces shadow roots
+  // when includeShadowDom is enabled, and drops hard-hidden links), and
+  // resolve each fragment in the link's own root before falling back to the
+  // document. This credits a skip link encapsulated in a web component the
+  // same way as one authored in the light DOM.
   function hasWorkingAnchorLink() {
     let links;
     try {
-      links = document.querySelectorAll('a[href]');
+      links =
+        helpers && typeof helpers.queryAllSmart === 'function'
+          ? helpers.queryAllSmart('a[href]')
+          : document.querySelectorAll('a[href]');
     } catch {
       links = [];
     }
@@ -29894,18 +30982,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       fragment = fragment.trim();
       if (!fragment) continue;
 
-      let target;
+      let root = document;
       try {
-        target = document.getElementById(fragment);
-      } catch {
-        target = null;
-      }
-      if (!target) {
-        try {
-          target = document.querySelector('a[name="' + fragment.replace(/"/g, '\\"') + '"]');
-        } catch {
-          target = null;
+        if (typeof a.getRootNode === 'function') {
+          const r = a.getRootNode();
+          if (r) root = r;
         }
+      } catch {
+        root = document;
+      }
+
+      let target = resolveInRoot(root, fragment);
+      if (!target && root !== document) {
+        target = resolveInRoot(document, fragment);
       }
       if (target) return true;
     }
@@ -29923,8 +31012,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const anchorLink = mainLandmark ? false : hasWorkingAnchorLink();
   const heading = mainLandmark || anchorLink ? false : hasHeading();
 
+  // A recognized mechanism is present -> nothing to review on this page.
   if (mainLandmark || anchorLink || heading) {
-    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
   const stableSelector = helpers.buildSelector ? helpers.buildSelector(body) : 'body';
@@ -29936,11 +31026,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     {
       selector: stableSelector,
       html,
-      summary: 'This page has no recognized way to bypass repeated blocks of content.',
-      hint: 'Add a main landmark (<main> or role="main"), a working "skip to content" link, or heading elements that assistive technology can use to jump past repeated content.',
+      summary:
+        'No recognized way to bypass repeated blocks of content was detected on this page — verify a bypass mechanism exists.',
+      hint: 'Confirm the page offers a bypass mechanism: a main landmark (<main> or role="main"), a working "skip to content" link, or heading elements that assistive technology can use to jump past repeated content. (A mechanism may be temporarily hidden — e.g. while a modal dialog makes the page inert — or provided on a per-site basis; this needs human confirmation.)',
       i18n: {
-        summaryKey: 'bypassBlocksPresent_summary_fail',
-        hintKey: 'bypassBlocksPresent_hint_fail',
+        summaryKey: 'bypassBlocksPresent_summary_cantTell',
+        hintKey: 'bypassBlocksPresent_hint_cantTell',
         params: {}
       },
       data: {
@@ -29952,8 +31043,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   return {
     ruleId: rule.ruleId,
-    outcome: 'fail',
-    severity: rule.defaultSeverity || 'serious',
+    outcome: 'cantTell',
+    severity: rule.defaultSeverity || 'moderate',
     occurrences
   };
 }), applicability: (function applicability(ctx) {
@@ -29981,8 +31072,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
 
-  const isAccTreeEligible =
-    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+  // aria-hidden removes the canvas from the accessibility tree, so a text
+  // alternative on it cannot reach anyone; aria-hidden-focus reports a
+  // focusable one. Matches the other non-text-content rules.
+  const isEligibleHelper =
+    helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+      ? helpers.isIncludedInAccessibilityTree
+      : helpers && typeof helpers.isAccTreeEligible === 'function'
+        ? helpers.isAccTreeEligible
+        : null;
 
   const getTextAlternativeInfo =
     helpers && typeof helpers.getTextAlternativeInfo === 'function'
@@ -30007,15 +31105,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   for (const el of canvases) {
     if (!el) continue;
 
-    // Applicability: eligible in the accessibility tree (with focusable/IDREF exceptions handled by helper).
-    if (isAccTreeEligible) {
+    // Applicability: included in the accessibility tree.
+    if (isEligibleHelper) {
       const elig = (() => {
         try {
-          return isAccTreeEligible(el, ctx);
+          return isEligibleHelper(el, ctx);
         } catch {
           return { eligible: true, reasons: [] };
         }
       })();
+      if (elig === false) continue;
       if (elig && elig.eligible === false) continue;
     }
 
@@ -30330,9 +31429,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return '';
   }
 
+  // Naming rules apply only to elements included in the accessibility tree
+  // (ACT c487ae and siblings), which excludes focusable aria-hidden content.
+  // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
   function isEligibleAcc(helpers, el, ctx) {
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -32559,9 +33665,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return '';
   }
 
+  // Naming rules apply only to elements included in the accessibility tree
+  // (ACT c487ae and siblings), which excludes focusable aria-hidden content.
+  // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
   function isEligibleAcc(helpers, el, ctx) {
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -33528,8 +34641,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "form-control-programmatic-label-present": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
-  const isAccTreeEligible =
-    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+  // ACT e086e5 applies only to controls included in the accessibility tree, so
+  // a focusable control inside aria-hidden is out of scope; aria-hidden-focus
+  // reports that markup instead.
+  const isEligibleHelper =
+    helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+      ? helpers.isIncludedInAccessibilityTree
+      : helpers && typeof helpers.isAccTreeEligible === 'function'
+        ? helpers.isAccTreeEligible
+        : null;
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
 
@@ -33539,6 +34659,41 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     helpers && typeof helpers.getLabelMethod === 'function' ? helpers.getLabelMethod : null;
 
   const trim = (v) => (v == null ? '' : String(v)).trim();
+
+  // Roles with their own *-name-present rule; a control carrying one
+  // explicitly is skipped here so it is reported once.
+  const ROLE_OWNED_ELSEWHERE = [
+    'alertdialog',
+    'button',
+    'checkbox',
+    'combobox',
+    'dialog',
+    'grid',
+    'link',
+    'listbox',
+    'menu',
+    'menubar',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'meter',
+    'option',
+    'progressbar',
+    'radio',
+    'radiogroup',
+    'scrollbar',
+    'searchbox',
+    'slider',
+    'spinbutton',
+    'switch',
+    'tab',
+    'tablist',
+    'textbox',
+    'toolbar',
+    'tooltip',
+    'tree',
+    'treeitem'
+  ];
 
   const metrics = {
     applicableCount: 0,
@@ -33563,9 +34718,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function isEligibleAcc(el) {
-    if (!isAccTreeEligible) return true;
+    if (!isEligibleHelper) return true;
     try {
-      const r = isAccTreeEligible(el, ctx);
+      const r = isEligibleHelper(el, ctx);
       if (typeof r === 'boolean') return r;
       return !!(r && r.eligible);
     } catch {
@@ -33647,6 +34802,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     } catch {
       role = '';
     }
+
+    if (role && ROLE_OWNED_ELSEWHERE.indexOf(role) !== -1) continue;
 
     if (role === 'presentation' || role === 'none') {
       const fi = getFocusableInfo
@@ -33943,6 +35100,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const isAccTreeEligible =
     helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+  const getAriaNameInfo =
+    helpers && typeof helpers.getAriaNameInfo === 'function' ? helpers.getAriaNameInfo : null;
+  const labelContributesName =
+    helpers && typeof helpers.labelContributesAccessibleName === 'function'
+      ? helpers.labelContributesAccessibleName
+      : null;
 
   const selector =
     'input:not([type="hidden"]):not([type="submit"]):not([type="reset"]):not([type="button"]):not([type="image"]),select,textarea';
@@ -33963,7 +35126,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     labelsByFor.get(forValue).push(lab);
   }
 
-  const occurrences = [];
+  const failOccurrences = [];
+  const cantTellOccurrences = [];
   let applicableCount = 0;
 
   for (const el of nodes) {
@@ -33992,42 +35156,94 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     if (eligibleLabels.size <= 1) continue;
 
+    // An override (aria-labelledby / aria-label) supersedes every native
+    // <label>, so the labels contribute nothing to the accessible name and
+    // cannot compete.
+    const override = getAriaNameInfo ? getAriaNameInfo(el, ctx) : null;
+    if (override && override.present && override.value) continue;
+
+    // Without an override the labels feed the name; only labels with their
+    // own text compete for it.
+    const contributing = labelContributesName
+      ? [...eligibleLabels].filter((lab) => labelContributesName(lab))
+      : [...eligibleLabels];
+
     const tag = el.tagName.toLowerCase();
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
     const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This form control is associated with more than one <label>.',
-      hint: 'Keep only one <label> per form control (either wrapping it or referencing it via for/id).',
-      i18n: {
-        summaryKey: 'formControlSingleLabel_summary_fail',
-        hintKey: 'formControlSingleLabel_hint_fail',
-        params: { element: tag, labelCount: String(eligibleLabels.size) }
-      },
-      data: {
-        details: {
-          reasonCode: 'FORM_FIELD_MULTIPLE_LABELS',
-          element: tag,
-          labelCount: eligibleLabels.size
+    if (contributing.length >= 2) {
+      failOccurrences.push({
+        selector: stableSelector,
+        html,
+        summary: 'This form control is associated with more than one <label>.',
+        hint: 'Keep only one <label> per form control (either wrapping it or referencing it via for/id).',
+        occurrenceOutcome: 'fail',
+        i18n: {
+          summaryKey: 'formControlSingleLabel_summary_fail',
+          hintKey: 'formControlSingleLabel_hint_fail',
+          params: { element: tag, labelCount: String(contributing.length) }
+        },
+        data: {
+          details: {
+            reasonCode: 'FORM_FIELD_MULTIPLE_LABELS',
+            element: tag,
+            labelCount: contributing.length
+          }
         }
-      }
-    });
+      });
+    } else if (contributing.length === 1) {
+      cantTellOccurrences.push({
+        selector: stableSelector,
+        html,
+        summary:
+          'This form control has one labelling <label> plus an extra empty <label> association.',
+        hint: 'Remove the redundant empty <label> so exactly one <label> is associated with the control.',
+        occurrenceOutcome: 'cantTell',
+        i18n: {
+          summaryKey: 'formControlSingleLabel_summary_cantTell',
+          hintKey: 'formControlSingleLabel_hint_cantTell',
+          params: { element: tag, labelCount: String(eligibleLabels.size) }
+        },
+        data: {
+          details: {
+            reasonCode: 'FORM_FIELD_EXTRA_EMPTY_LABEL',
+            element: tag,
+            labelCount: eligibleLabels.size,
+            contributingLabelCount: contributing.length
+          }
+        }
+      });
+    }
+    // contributing.length === 0: no label carries text, so nothing competes
+    // for the name. A control left unnamed is form-control-programmatic-
+    // label-present's concern.
   }
 
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'moderate',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+
+  const resolved = helpers.resolveTieredOutcome
+    ? helpers.resolveTieredOutcome(
+        failOccurrences,
+        cantTellOccurrences,
+        rule.defaultSeverity || 'moderate'
+      )
+    : failOccurrences.length
+      ? {
+          outcome: 'fail',
+          severity: rule.defaultSeverity || 'moderate',
+          occurrences: failOccurrences
+        }
+      : cantTellOccurrences.length
+        ? {
+            outcome: 'cantTell',
+            severity: rule.defaultSeverity || 'moderate',
+            occurrences: cantTellOccurrences
+          }
+        : { outcome: 'pass', severity: 'minor', occurrences: [] };
+  return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "heading-order": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
@@ -34215,7 +35431,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // Minimal BCP47 primary subtag check
-  if (!/^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{2,8})*$/.test(lang)) {
+  const isValidTag =
+    helpers && typeof helpers.isValidLanguageTag === 'function'
+      ? helpers.isValidLanguageTag
+      : (v) => /^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{2,8})*$/.test(String(v || ''));
+  if (!isValidTag(lang)) {
     return {
       ruleId: rule.ruleId,
       outcome: 'fail',
@@ -35087,8 +36307,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
 
-  const isAccTreeEligible =
-    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+  // ACT 23a2a8 exempts programmatically hidden images, and that glossary term
+  // has no focusability carve-out, so an aria-hidden image stays out of scope
+  // even when tabbable; aria-hidden-focus reports that markup instead.
+  const isEligibleHelper =
+    helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+      ? helpers.isIncludedInAccessibilityTree
+      : helpers && typeof helpers.isAccTreeEligible === 'function'
+        ? helpers.isAccTreeEligible
+        : null;
   const getFocusableInfo =
     helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
   const getAriaNameInfo =
@@ -35140,11 +36367,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const el = imgs[i];
     if (!el || !el.getAttribute) continue;
 
-    // Eligibility: only imgs exposed to assistive tech (with focusable/IDREF exceptions handled by helper)
-    if (isAccTreeEligible) {
+    // Eligibility: only imgs exposed to assistive tech.
+    if (isEligibleHelper) {
       let elig;
       try {
-        elig = isAccTreeEligible(el, ctx);
+        elig = isEligibleHelper(el, ctx);
       } catch {
         elig = null;
       }
@@ -35457,6 +36684,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const isAccTreeEligible =
     helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
 
+  const getAriaNameInfo =
+    helpers && typeof helpers.getAriaNameInfo === 'function' ? helpers.getAriaNameInfo : null;
+
   const getFocusableInfo =
     helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
 
@@ -35491,6 +36721,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         !Number.isNaN(Number(String(tabindex).trim()));
     }
     return !focusable;
+  }
+
+  // alt="" plus a name from aria-label/aria-labelledby/title is the judgement
+  // call this rule reviews. alt="" with no other source leaves the control
+  // unnamed, which input-image-alt-present fails outright.
+  function hasNameFromOtherSource(el) {
+    if (getAriaNameInfo) {
+      try {
+        const aria = getAriaNameInfo(el, ctx);
+        if (aria && aria.present && String(aria.value || '').trim()) return true;
+      } catch {
+        // fall through to title
+      }
+    }
+    try {
+      const title = el.getAttribute('title');
+      return title != null && String(title).trim() !== '';
+    } catch {
+      return false;
+    }
   }
 
   const els = (() => {
@@ -35529,6 +36779,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     // Rule-specific applicability (only elements that already have a text alternative mechanism)
     if (!(el.getAttribute('alt') != null && String(el.getAttribute('alt')).trim() === '')) continue;
+    if (!hasNameFromOtherSource(el)) continue;
 
     applicableCount += 1;
 
@@ -35583,8 +36834,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
 
-  const isAccTreeEligible =
-    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+  // ACT 59796f applies to image buttons included in the accessibility tree,
+  // which excludes focusable content inside aria-hidden.
+  const isEligibleHelper =
+    helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+      ? helpers.isIncludedInAccessibilityTree
+      : helpers && typeof helpers.isAccTreeEligible === 'function'
+        ? helpers.isAccTreeEligible
+        : null;
 
   const getAriaNameInfo =
     helpers && typeof helpers.getAriaNameInfo === 'function' ? helpers.getAriaNameInfo : null;
@@ -35610,63 +36867,109 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   for (const el of inputs) {
     if (!el || !el.getAttribute) continue;
 
-    // Applicability: eligible in the acc tree (with helper exceptions).
-    if (isAccTreeEligible) {
+    if (isEligibleHelper) {
       const elig = (() => {
         try {
-          return isAccTreeEligible(el, ctx);
+          return isEligibleHelper(el, ctx);
         } catch {
-          return { eligible: true, reasons: [] };
+          return true;
         }
       })();
-      if (elig && elig.eligible === false) continue;
+      const eligible = typeof elig === 'boolean' ? elig : !(elig && elig.eligible === false);
+      if (!eligible) continue;
     }
 
     applicableCount += 1;
 
-    const hasAlt = el.getAttribute('alt') !== null;
-    if (hasAlt) continue;
-
-    // aria-label / aria-labelledby is also a valid, standards-recognized
-    // text-alternative mechanism for <input type="image"> (HTML-AAM
-    // accessible name computation includes ARIA naming before falling
-    // back to alt).
-    if (getAriaNameInfo) {
-      let ariaName;
-      try {
-        ariaName = getAriaNameInfo(el, ctx);
-      } catch {
-        ariaName = null;
+    // The browser's own fallback name for an image button carries no
+    // information, so an author-supplied name equal to it is treated as no
+    // name at all (ACT 59796f). Only the English defaults are recognised:
+    // "Submit Query" from HTML-AAM, "Submit" from Chrome.
+    const effectiveName = (() => {
+      let v = '';
+      if (getAriaNameInfo) {
+        try {
+          const aria = getAriaNameInfo(el, ctx);
+          if (aria && aria.present && aria.value) v = String(aria.value);
+        } catch {
+          v = '';
+        }
       }
-      if (ariaName && ariaName.present) continue;
+      if (!v) {
+        const alt = el.getAttribute('alt');
+        if (alt != null && String(alt).trim()) v = String(alt);
+      }
+      if (!v) {
+        const t = el.getAttribute('title');
+        if (t != null && String(t).trim()) v = String(t);
+      }
+      return v.trim().toLowerCase();
+    })();
+
+    if (effectiveName === 'submit query' || effectiveName === 'submit') {
+      const eligInfoDefault = getEligibilityInfo
+        ? getEligibilityInfo(el, ctx, { targetSet: 'acc' })
+        : null;
+      const defaultNameOccurrence = {
+        summary:
+          'Accessible name is the browser default for an image button, which conveys nothing.',
+        hint: 'Replace it with text describing what the button does, for example "Search".',
+        i18n: {
+          summaryKey: 'inputImage_altPresent_summary_defaultName',
+          hintKey: 'inputImage_altPresent_hint_defaultName',
+          params: { element: 'input[type=image]' }
+        },
+        data: {
+          visibilityFilter: eligInfoDefault || { targetSet: 'acc', accEligible: null, reasons: [] },
+          details: { reasonCode: 'default_name' }
+        }
+      };
+      occurrences.push(
+        helpers && typeof helpers.reportOccurrence === 'function'
+          ? helpers.reportOccurrence(el, defaultNameOccurrence)
+          : { selector: '', html: '', ...defaultNameOccurrence }
+      );
+      continue;
     }
 
-    // A non-empty title attribute is HTML-AAM's own next fallback naming
-    // source once alt is entirely absent. Same gap img-alt-present handles
-    // for <img title="..."> with no alt.
-    const titleRaw = (() => {
-      try {
-        return el.getAttribute('title');
-      } catch {
-        return null;
-      }
-    })();
-    if (titleRaw !== null && String(titleRaw).trim()) continue;
+    // effectiveName already covers the naming sources HTML-AAM allows here,
+    // in order: aria-label/aria-labelledby, then alt, then title.
+    if (effectiveName) continue;
+
+    // An image button is a control, so an empty name fails whether alt is
+    // absent or present-but-empty. alt="" marks a decorative image, and an
+    // image button is never decorative.
+    const emptyAlt = el.getAttribute('alt') !== null;
 
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
-    const baseOccurrence = {
-      summary: 'Missing alt attribute on <input type="image">.',
-      hint: 'Add an alt attribute (use alt="" only when a separate accessible name is provided).',
-      i18n: {
-        summaryKey: 'inputImage_altPresent_summary_fail',
-        hintKey: 'inputImage_altPresent_hint_fail',
-        params: { element: 'input[type=image]' }
-      },
-      data: {
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    };
+    const baseOccurrence = emptyAlt
+      ? {
+          summary: 'Empty alt="" on <input type="image"> leaves the control unnamed.',
+          hint: 'Describe the action in alt, or name the control with aria-label or aria-labelledby.',
+          i18n: {
+            summaryKey: 'inputImage_altPresent_summary_emptyAlt',
+            hintKey: 'inputImage_altPresent_hint_emptyAlt',
+            params: { element: 'input[type=image]' }
+          },
+          data: {
+            visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
+            details: { reasonCode: 'empty_alt' }
+          }
+        }
+      : {
+          summary: 'Missing alt attribute on <input type="image">.',
+          hint: 'Add an alt attribute (use alt="" only when a separate accessible name is provided).',
+          i18n: {
+            summaryKey: 'inputImage_altPresent_summary_fail',
+            hintKey: 'inputImage_altPresent_hint_fail',
+            params: { element: 'input[type=image]' }
+          },
+          data: {
+            visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
+            details: { reasonCode: 'missing_alt' }
+          }
+        };
 
     if (helpers && typeof helpers.reportOccurrence === 'function') {
       occurrences.push(helpers.reportOccurrence(el, baseOccurrence));
@@ -35839,6 +37142,56 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const v = s == null ? '' : String(s);
     // deterministic normalization: trim + collapse whitespace + case-fold
     return v.replace(/\s+/g, ' ').trim().toLowerCase();
+  }
+
+  // WCAG 2.5.3's label-in-name comparison is over words, not characters: drop
+  // parenthesised text, case-fold and NFKD-normalise, then reduce every
+  // non-letter/digit to a space. `hyphensJoin` deletes hyphens instead of
+  // splitting on them, which distinguishes a real mismatch from one that is
+  // only a hyphenation difference.
+  function tokenize(s, hyphensJoin) {
+    let v = (s == null ? '' : String(s)).replace(/\([^)]*\)/g, ' ').toLowerCase();
+    try {
+      v = v.normalize('NFKD');
+    } catch {
+      // Realm without String#normalize: the word comparison below still holds.
+    }
+    if (hyphensJoin) v = v.replace(/[-‐-―−]/g, '');
+    return v
+      .replace(/[^\p{L}\p{N}]+/gu, ' ')
+      .split(' ')
+      .filter(Boolean);
+  }
+
+  // The label's words must appear adjacent and in order inside the name, so a
+  // scattered subsequence does not count. Words in `prefixable` may match a
+  // longer name word they start.
+  function containsWordRun(needle, hay, prefixable) {
+    if (!needle.length) return true;
+    for (let i = 0; i + needle.length <= hay.length; i++) {
+      let ok = true;
+      for (let j = 0; j < needle.length; j++) {
+        const want = needle[j];
+        const got = hay[i + j];
+        if (got === want) continue;
+        if (prefixable && prefixable.has(want) && got.indexOf(want) === 0) continue;
+        ok = false;
+        break;
+      }
+      if (ok) return true;
+    }
+    return false;
+  }
+
+  // A trailing period marks a word the author may have shortened ("Ave." for
+  // "Avenue"). Tokenizing removes the period, so collect these beforehand.
+  function abbreviatedWords(s) {
+    const out = new Set();
+    for (const w of (s == null ? '' : String(s)).split(/\s+/)) {
+      const m = /^([\p{L}\p{N}]+)\.$/u.exec(w);
+      if (m) out.add(m[1].toLowerCase());
+    }
+    return out;
   }
 
   function getElementDescriptor(el) {
@@ -36086,7 +37439,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const accName = acc && acc.value != null ? String(acc.value) : '';
     const accNorm = norm(accName);
 
-    const contains = !!(accNorm && visibleNorm && accNorm.indexOf(visibleNorm) !== -1);
+    const labelTokens = tokenize(visibleLabel, false);
+    const nameTokens = tokenize(accName, false);
+    const contains = containsWordRun(labelTokens, nameTokens, null);
+
+    // An abbreviation, or a word hyphenated differently in the two places, is
+    // not something markup settles: the author may have meant either. Report
+    // without asserting a defect instead of failing or staying silent.
+    let uncertainty = '';
+    if (!contains) {
+      if (containsWordRun(tokenize(visibleLabel, true), tokenize(accName, true), null)) {
+        uncertainty = 'HYPHENATION_DIFFERS';
+      } else {
+        const abbreviated = abbreviatedWords(visibleLabel);
+        if (abbreviated.size && containsWordRun(labelTokens, nameTokens, abbreviated))
+          uncertainty = 'POSSIBLE_ABBREVIATION';
+      }
+    }
 
     if (!contains) {
       const selectorOut = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
@@ -36097,11 +37466,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       occurrences.push({
         selector: selectorOut,
         html,
-        summary: 'Accessible name does not contain the visible label text.',
-        hint: 'Ensure the accessible name includes the visible text label (e.g., update aria-label/aria-labelledby to include the visible wording).',
+        ...(uncertainty ? { outcome: 'cantTell' } : null),
+        summary: uncertainty
+          ? 'Accessible name may not contain the visible label text.'
+          : 'Accessible name does not contain the visible label text.',
+        hint: uncertainty
+          ? 'Check by hand: the two differ only by an abbreviation or by hyphenation, which markup cannot settle.'
+          : 'Ensure the accessible name includes the visible text label (e.g., update aria-label/aria-labelledby to include the visible wording).',
         i18n: {
-          summaryKey: 'labelInName_summary_fail',
-          hintKey: 'labelInName_hint_fail',
+          summaryKey: uncertainty ? 'labelInName_summary_cantTell' : 'labelInName_summary_fail',
+          hintKey: uncertainty ? 'labelInName_hint_cantTell' : 'labelInName_hint_fail',
           params: {
             element: getElementDescriptor(el),
             visibleLabel: clipForSummary(visibleLabel),
@@ -36111,10 +37485,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         },
         data: {
           details: {
-            reasonCode: 'VISIBLE_LABEL_NOT_IN_ACCESSIBLE_NAME',
+            reasonCode: uncertainty || 'VISIBLE_LABEL_NOT_IN_ACCESSIBLE_NAME',
             visibleLabel,
             accessibleName: accName,
             normalized: { visibleLabel: visibleNorm, accessibleName: accNorm },
+            tokenized: { visibleLabel: labelTokens, accessibleName: nameTokens },
             labelSource: labelInfo && labelInfo.source ? labelInfo.source : 'none',
             nameMechanism: acc && acc.mechanism ? acc.mechanism : 'none'
           }
@@ -36125,13 +37500,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   if (applicableCount === 0)
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
-  if (occurrences.length)
+  if (occurrences.length) {
+    const anyFail = occurrences.some((o) => o.outcome !== 'cantTell');
     return {
       ruleId: rule.ruleId,
-      outcome: 'fail',
+      outcome: anyFail ? 'fail' : 'cantTell',
       severity: rule.defaultSeverity || 'minor',
       occurrences
     };
+  }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "label-title-only": { run: (function runInPage(ctx) {
@@ -36294,16 +37671,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return getImplicitLandmarkRole(el);
   }
 
-  // Candidate selection is deliberately NOT the same as getLandmarkRole()
-  // === 'banner' — see the fix note above. A <header> is a
-  // candidate purely by tag + absence of any role attribute, independent
-  // of whether sectioning-ancestor nesting would currently suppress its
-  // implicit role; an explicit role="banner" is always a candidate too.
+  // A candidate must actually have the banner role. Per HTML-AAM a <header>
+  // descended from article/aside/main/nav/section is not a banner at all, so
+  // flagging it as a nested banner reports a landmark that does not exist.
   function isBannerCandidate(el) {
-    if (!el || !el.getAttribute) return false;
-    const explicit = getExplicitRoleToken(el);
-    if (explicit) return explicit === 'banner';
-    return !!(el.tagName && el.tagName.toLowerCase() === 'header');
+    return getLandmarkRole(el) === 'banner';
   }
 
   function hasLandmarkAncestor(el) {
@@ -36482,11 +37854,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // a candidate purely by tag + absence of any role attribute, independent
   // of whether sectioning-ancestor nesting would currently suppress its
   // implicit role; an explicit role="contentinfo" is always a candidate too.
+  // A candidate must actually have the contentinfo role — a <footer> inside
+  // article/aside/main/nav/section is not one, so flagging it as nested
+  // would report a landmark that does not exist.
   function isContentinfoCandidate(el) {
-    if (!el || !el.getAttribute) return false;
-    const explicit = getExplicitRoleToken(el);
-    if (explicit) return explicit === 'contentinfo';
-    return !!(el.tagName && el.tagName.toLowerCase() === 'footer');
+    return getLandmarkRole(el) === 'contentinfo';
   }
 
   function hasLandmarkAncestor(el) {
@@ -37635,7 +39007,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   for (const el of nodes) {
     // isAccTreeEligible returns { eligible, reasons }, not a boolean.
-    const eligResult = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el, ctx) : true;
+    // Naming rules apply only to elements included in the accessibility tree
+    // (ACT c487ae), which excludes focusable aria-hidden content;
+    // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
+    const eligResult = helpers.isIncludedInAccessibilityTree
+      ? helpers.isIncludedInAccessibilityTree(el, ctx)
+      : helpers.isAccTreeEligible
+        ? helpers.isAccTreeEligible(el, ctx)
+        : true;
     const eligible =
       typeof eligResult === 'boolean' ? eligResult : !!(eligResult && eligResult.eligible);
     if (!eligible) continue;
@@ -37645,33 +39024,59 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const nameInfo = helpers.getAccessibleNameInfo ? helpers.getAccessibleNameInfo(el, ctx) : null;
     const programmaticName = nameInfo && typeof nameInfo.value === 'string' ? nameInfo.value : '';
 
-    // A native <a href>/<area href> (or [role="link"]) whose role has been
-    // overridden to one of these roles is no longer semantically a link —
-    // per the WAI-ARIA Accessible Name and Description Computation spec
-    // these roles are name-from-author-only, and their rendered content
-    // represents a VALUE, not a NAME (see button-name-present.js's identical
-    // fix for a real-world example — <button role="combobox">List</button> —
-    // of the same class of bug on a different host tag).
     const role = el.getAttribute ? el.getAttribute('role') : null;
     const roleNorm = String(role || '')
       .replace(/\s+/g, ' ')
       .trim()
       .toLowerCase();
-    const VALUE_ROLES = [
-      'textbox',
-      'progressbar',
-      'scrollbar',
-      'slider',
-      'spinbutton',
-      'combobox',
-      'listbox'
+    // ARIA 1.2 "Name From: author, contents". Every other known role is
+    // name-from-author-only. An unknown role falls back to the implicit role.
+    // <generated:aria-name-from-content>
+    const NAME_FROM_CONTENT_ROLES = [
+      'button',
+      'cell',
+      'checkbox',
+      'columnheader',
+      'doc-backlink',
+      'doc-biblioref',
+      'doc-glossref',
+      'doc-noteref',
+      'graphics-object',
+      'gridcell',
+      'heading',
+      'link',
+      'menuitem',
+      'menuitemcheckbox',
+      'menuitemradio',
+      'option',
+      'radio',
+      'row',
+      'rowgroup',
+      'rowheader',
+      'switch',
+      'tab',
+      'tooltip',
+      'treeitem'
     ];
-    const isContentNameCandidate = !VALUE_ROLES.includes(roleNorm);
+    // </generated:aria-name-from-content>
+    const isKnownRoleToken =
+      helpers && helpers.aria && typeof helpers.aria.isKnownRole === 'function'
+        ? (() => {
+            try {
+              return !!helpers.aria.isKnownRole(roleNorm);
+            } catch {
+              return false;
+            }
+          })()
+        : false;
+    const isContentNameCandidate =
+      !roleNorm || !isKnownRoleToken || NAME_FROM_CONTENT_ROLES.includes(roleNorm);
 
     const contentName =
       programmaticName.trim().length === 0 && isContentNameCandidate
         ? getConservativeSubtreeText(el)
         : '';
+
     const finalName = (programmaticName.trim().length ? programmaticName : contentName).trim();
 
     if (finalName.length === 0) {
@@ -38000,9 +39405,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return '';
   }
 
+  // Naming rules apply only to elements included in the accessibility tree
+  // (ACT c487ae and siblings), which excludes focusable aria-hidden content.
+  // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
   function isEligibleAcc(helpers, el, ctx) {
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -38662,9 +40074,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return '';
   }
 
+  // Naming rules apply only to elements included in the accessibility tree
+  // (ACT c487ae and siblings), which excludes focusable aria-hidden content.
+  // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
   function isEligibleAcc(helpers, el, ctx) {
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -38762,6 +40181,34 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     : [];
 
   const occurrences = [];
+  // HTML's shared declarative refresh steps. Returns the delay in seconds, or
+  // null when the value is not a valid refresh directive, in which case the
+  // browser never refreshes and there is nothing to report. Rejects a leading
+  // sign ("+72001"), a non-numeric time ("foo"), and a separator other than
+  // "," or ";" ("0:1").
+  function parseRefreshDelay(input) {
+    const s = String(input == null ? '' : input);
+    const isSpace = (c) => c === ' ' || c === '\t' || c === '\n' || c === '\f' || c === '\r';
+    let i = 0;
+    while (i < s.length && isSpace(s[i])) i++;
+    let digits = '';
+    while (i < s.length && s[i] >= '0' && s[i] <= '9') digits += s[i++];
+    if (!digits) return null;
+    if (s[i] === '.') {
+      i++;
+      while (i < s.length && s[i] >= '0' && s[i] <= '9') i++;
+    }
+    if (i >= s.length) return parseInt(digits, 10);
+    let sawSpace = false;
+    while (i < s.length && isSpace(s[i])) {
+      sawSpace = true;
+      i++;
+    }
+    if (i >= s.length) return parseInt(digits, 10);
+    if (s[i] === ';' || s[i] === ',' || sawSpace) return parseInt(digits, 10);
+    return null;
+  }
+
   let applicableCount = 0;
 
   for (const el of nodes) {
@@ -38769,6 +40216,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (el.closest && el.closest('noscript')) continue; // never applies with scripting enabled
     const raw = String(el.getAttribute('content') || '').trim();
     if (!raw) continue;
+    if (parseRefreshDelay(raw) === null) continue;
 
     applicableCount += 1;
 
@@ -38820,16 +40268,42 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
+  // HTML's shared declarative refresh steps. Returns the delay in seconds, or
+  // null when the value is not a valid refresh directive, in which case the
+  // browser never refreshes and there is nothing to report. Rejects a leading
+  // sign ("+72001"), a non-numeric time ("foo"), and a separator other than
+  // "," or ";" ("0:1").
+  function parseRefreshDelay(input) {
+    const s = String(input == null ? '' : input);
+    const isSpace = (c) => c === ' ' || c === '\t' || c === '\n' || c === '\f' || c === '\r';
+    let i = 0;
+    while (i < s.length && isSpace(s[i])) i++;
+    let digits = '';
+    while (i < s.length && s[i] >= '0' && s[i] <= '9') digits += s[i++];
+    if (!digits) return null;
+    if (s[i] === '.') {
+      i++;
+      while (i < s.length && s[i] >= '0' && s[i] <= '9') i++;
+    }
+    if (i >= s.length) return parseInt(digits, 10);
+    let sawSpace = false;
+    while (i < s.length && isSpace(s[i])) {
+      sawSpace = true;
+      i++;
+    }
+    if (i >= s.length) return parseInt(digits, 10);
+    if (s[i] === ';' || s[i] === ',' || sawSpace) return parseInt(digits, 10);
+    return null;
+  }
+
   for (const el of nodes) {
     if (!el || !el.getAttribute) continue;
     if (el.closest && el.closest('noscript')) continue; // never applies with scripting enabled — see meta-refresh-no-exceptions.js's header comment
     const raw = String(el.getAttribute('content') || '').trim();
     if (!raw) continue;
 
-    const match = raw.match(/^([0-9]*\.?[0-9]+)/);
-    if (!match) continue;
-    const delay = parseFloat(match[1]);
-    if (Number.isNaN(delay)) continue;
+    const delay = parseRefreshDelay(raw);
+    if (delay === null) continue;
 
     applicableCount += 1;
 
@@ -38984,20 +40458,40 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const raw = String(el.getAttribute('content') || '').trim();
     if (!raw) continue;
 
-    applicableCount += 1;
-
     const parsed = parseContent(raw);
+
+    // ACT b4f0c3 applies only when content carries maximum-scale or
+    // user-scalable; content that sets neither cannot restrict zoom.
+    if (parsed['user-scalable'] === undefined && parsed['maximum-scale'] === undefined) continue;
+
+    applicableCount += 1;
     const reasons = [];
 
+    // CSS Device Adaptation translates an unparseable value to 0, so
+    // user-scalable=invalid and maximum-scale=yes disable zoom just as
+    // user-scalable=no does. A negative maximum-scale is out of range and
+    // dropped instead, which is why it does not restrict anything.
     const userScalable = parsed['user-scalable'];
-    if (userScalable === 'no' || userScalable === '0') {
-      reasons.push('user-scalable=' + userScalable);
+    if (
+      userScalable !== undefined &&
+      userScalable !== 'yes' &&
+      userScalable !== 'device-width' &&
+      userScalable !== 'device-height'
+    ) {
+      const scale = parseFloat(userScalable);
+      if (Number.isNaN(scale) || (scale > -1 && scale < 1)) {
+        reasons.push('user-scalable=' + userScalable);
+      }
     }
 
     const maxScaleRaw = parsed['maximum-scale'];
-    if (maxScaleRaw !== undefined) {
+    if (
+      maxScaleRaw !== undefined &&
+      maxScaleRaw !== 'device-width' &&
+      maxScaleRaw !== 'device-height'
+    ) {
       const maxScale = parseFloat(maxScaleRaw);
-      if (!Number.isNaN(maxScale) && maxScale < 2) {
+      if (Number.isNaN(maxScale) || (maxScale >= 0 && maxScale < 2)) {
         reasons.push('maximum-scale=' + maxScaleRaw);
       }
     }
@@ -39075,9 +40569,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return '';
   }
 
+  // Naming rules apply only to elements included in the accessibility tree
+  // (ACT c487ae and siblings), which excludes focusable aria-hidden content.
+  // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
   function isEligibleAcc(helpers, el, ctx) {
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -39283,6 +40784,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const isAccTreeEligible =
     helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+  const getFocusableInfo =
+    helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
 
   function isEligible(node) {
     if (!isAccTreeEligible) return true;
@@ -39294,6 +40797,122 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  function matchesInteractive(node) {
+    return !!(
+      node &&
+      node.nodeType === 1 &&
+      typeof node.matches === 'function' &&
+      node.matches(INTERACTIVE_SELECTOR)
+    );
+  }
+
+  // A composite widget owns children of a fixed role and drives their focus
+  // itself (via roving tabindex or aria-activedescendant). The roving-tabindex
+  // model gives the active child tabindex="0" and the rest tabindex="-1", so
+  // the owned children ARE platform-focusable even though the container, not
+  // the child, is the operable unit. Such a child is part of the composite,
+  // not a control nested inside another control, so it must not be reported
+  // regardless of its tabindex. The map is keyed by the child role and lists
+  // the container roles that legitimately own it.
+  const COMPOSITE_CHILD_CONTAINERS = {
+    option: ['listbox', 'combobox'],
+    tab: ['tablist'],
+    treeitem: ['tree'],
+    menuitem: ['menu', 'menubar'],
+    menuitemcheckbox: ['menu', 'menubar'],
+    menuitemradio: ['menu', 'menubar'],
+    radio: ['radiogroup']
+  };
+
+  function getExplicitRole(node) {
+    if (!node || node.nodeType !== 1 || typeof node.getAttribute !== 'function') return '';
+    const raw = node.getAttribute('role');
+    if (!raw) return '';
+    // role accepts a space-separated fallback list; the first token wins.
+    const first = raw.trim().split(/\s+/)[0];
+    return first ? first.toLowerCase() : '';
+  }
+
+  function parentElementOf(node) {
+    if (!node) return null;
+    if (node.parentElement) return node.parentElement;
+    const p = node.parentNode;
+    return p && p.nodeType === 1 ? p : null;
+  }
+
+  // True when `node` is an owned child of a composite widget: its role is a
+  // composite-child role and a matching container role is present on one of
+  // its ancestors. The roving tab stop (tabindex="0") such a container places
+  // on its active child does not make that child an independently nested
+  // control.
+  function isManagedCompositeChild(node) {
+    const role = getExplicitRole(node);
+    const containers = COMPOSITE_CHILD_CONTAINERS[role];
+    if (!containers) return false;
+    let p = parentElementOf(node);
+    while (p && p.nodeType === 1) {
+      if (containers.indexOf(getExplicitRole(p)) !== -1) return true;
+      p = parentElementOf(p);
+    }
+    return false;
+  }
+
+  // Operable = a native-interactive / ARIA-widget element that is exposed to
+  // the accessibility tree and platform-focusable. A widget-role element with
+  // no independent focus (e.g. a role="option" with no tabindex, driven by
+  // its container via roving tabindex or aria-activedescendant) is not
+  // operable and does not nest an interactive control. When no focus model is
+  // available, role membership alone qualifies. (Composite-owned children are
+  // handled earlier as attribution boundaries in collectNestedOperable, so
+  // they never reach here.)
+  function isOperableInteractive(node) {
+    if (!matchesInteractive(node)) return false;
+    if (!isEligible(node)) return false;
+    if (!getFocusableInfo) return true;
+    try {
+      const info = getFocusableInfo(node, ctx);
+      return !!(info && info.focusable);
+    } catch {
+      return true;
+    }
+  }
+
+  // Shallowest operable interactive descendants of `root`. Traversal stops at
+  // each counted node instead of descending into it, so a control nested
+  // inside another operable control is attributed to its nearest operable
+  // ancestor rather than to every enclosing container. Eligibility is applied
+  // per node during the walk, so hidden or aria-hidden subtrees drop out.
+  function collectNestedOperable(root) {
+    const out = [];
+    const top = root && root.children;
+    if (!top || !top.length) return out;
+    const stack = [];
+    for (let i = top.length - 1; i >= 0; i--) stack.push(top[i]);
+    while (stack.length) {
+      const node = stack.pop();
+      if (node && node.nodeType === 1) {
+        // A composite-owned child (option in a listbox/combobox, tab in a
+        // tablist, ...) is not a nested interactive control: its container
+        // owns it and drives its focus (roving tabindex or
+        // aria-activedescendant). Treat it as an attribution boundary — do not
+        // count it, and do not descend past it. Any control genuinely nested
+        // inside it is attributed to the child itself (examined as its own
+        // container in the main loop), keeping the report at the nearest
+        // interactive ancestor rather than bubbling up to the composite.
+        if (isManagedCompositeChild(node)) continue;
+        if (isOperableInteractive(node)) {
+          out.push(node);
+          continue; // do not descend into a counted control
+        }
+      }
+      const kids = node && node.children;
+      if (kids && kids.length) {
+        for (let i = kids.length - 1; i >= 0; i--) stack.push(kids[i]);
+      }
+    }
+    return out;
+  }
+
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(INTERACTIVE_SELECTOR)
     : helpers.queryAll(INTERACTIVE_SELECTOR);
@@ -39302,30 +40921,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.querySelectorAll) continue;
+    if (!el || el.nodeType !== 1) continue;
     if (!isEligible(el)) continue;
 
     applicableCount += 1;
 
-    // The nested search uses the raw native querySelectorAll (not
-    // helpers.queryAllSmart), so it isn't subject to that helper's
-    // default hidden-content policy at all -- not even hard CSS-based
-    // hiding, let alone aria-hidden. A nested descendant that is never
-    // actually rendered or exposed to AT (display:none, aria-hidden,
-    // etc.) creates no real ambiguity for ANY user, since it isn't there
-    // to be confused with the outer control.
-    let nested;
-    try {
-      nested = Array.from(el.querySelectorAll(INTERACTIVE_SELECTOR)).filter(isEligible);
-    } catch {
-      nested = [];
-    }
+    const nested = collectNestedOperable(el);
     if (!nested.length) continue;
 
     const nestedTags = nested.map((n) => (n && n.tagName ? n.tagName.toLowerCase() : 'unknown'));
-    const dedupedNestedTags = [
-      ...new Set(nested.map((n) => (n && n.tagName ? n.tagName.toLowerCase() : 'unknown')))
-    ];
+    const dedupedNestedTags = [...new Set(nestedTags)];
 
     const tag = el.tagName.toLowerCase();
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
@@ -39448,8 +41053,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
 
-  const isAccTreeEligible =
-    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+  // ACT 8fc3b6 applies only to objects included in the accessibility tree, so a
+  // focusable object inside aria-hidden is out of scope; aria-hidden-focus
+  // reports that markup instead.
+  const isEligibleHelper =
+    helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+      ? helpers.isIncludedInAccessibilityTree
+      : helpers && typeof helpers.isAccTreeEligible === 'function'
+        ? helpers.isAccTreeEligible
+        : null;
 
   const getFocusableInfo =
     helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
@@ -39525,14 +41137,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   for (const el of objects) {
     if (!el || !el.getAttribute) continue;
 
-    if (isAccTreeEligible) {
+    if (isEligibleHelper) {
       const elig = (() => {
         try {
-          return isAccTreeEligible(el, ctx);
+          return isEligibleHelper(el, ctx);
         } catch {
           return { eligible: true, reasons: [] };
         }
       })();
+      if (elig === false) continue;
       if (elig && elig.eligible === false) continue;
     }
 
@@ -39840,9 +41453,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return '';
   }
 
+  // Naming rules apply only to elements included in the accessibility tree
+  // (ACT c487ae and siblings), which excludes focusable aria-hidden content.
+  // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
   function isEligibleAcc(helpers, el, ctx) {
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -40631,9 +42251,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return '';
   }
 
+  // Naming rules apply only to elements included in the accessibility tree
+  // (ACT c487ae and siblings), which excludes focusable aria-hidden content.
+  // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
   function isEligibleAcc(helpers, el, ctx) {
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -41464,9 +43091,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return '';
   }
 
+  // Naming rules apply only to elements included in the accessibility tree
+  // (ACT c487ae and siblings), which excludes focusable aria-hidden content.
+  // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
   function isEligibleAcc(helpers, el, ctx) {
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -41947,9 +43581,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return '';
   }
 
+  // Naming rules apply only to elements included in the accessibility tree
+  // (ACT c487ae and siblings), which excludes focusable aria-hidden content.
+  // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
   function isEligibleAcc(helpers, el, ctx) {
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -41963,7 +43604,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
-  const selector = 'input[type="range"], [role="slider"]';
+  // Native input[type=range] belongs to
+  // form-control-programmatic-label-present.
+  const selector = '[role="slider"]';
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
@@ -42167,9 +43810,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return '';
   }
 
+  // Naming rules apply only to elements included in the accessibility tree
+  // (ACT c487ae and siblings), which excludes focusable aria-hidden content.
+  // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
   function isEligibleAcc(helpers, el, ctx) {
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -42364,9 +44014,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return '';
   }
 
+  // Naming rules apply only to elements included in the accessibility tree
+  // (ACT c487ae and siblings), which excludes focusable aria-hidden content.
+  // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
   function isEligibleAcc(helpers, el, ctx) {
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -43196,9 +44853,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return '';
   }
 
+  // Naming rules apply only to elements included in the accessibility tree
+  // (ACT c487ae and siblings), which excludes focusable aria-hidden content.
+  // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
   function isEligibleAcc(helpers, el, ctx) {
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -43590,8 +45254,63 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
+  function explicitRole(el) {
+    try {
+      return String((el && el.getAttribute && el.getAttribute('role')) || '')
+        .trim()
+        .toLowerCase()
+        .split(/\s+/)[0];
+    } catch {
+      return '';
+    }
+  }
+
+  function isIncludedInTree(el) {
+    const fn =
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : null;
+    if (!fn) return true;
+    try {
+      const r = fn(el, ctx);
+      return typeof r === 'boolean' ? r : !!(r && r.eligible);
+    } catch {
+      return true;
+    }
+  }
+
+  // role="presentation"/"none" removes the table role, and with it every
+  // header cell the role would have implied. A table is not focusable, so
+  // presentational role conflict resolution does not restore it.
+  function hasTableSemantics(table) {
+    const role = explicitRole(table);
+    if (role === 'presentation' || role === 'none') return false;
+    if (role && role !== 'table' && role !== 'grid' && role !== 'treegrid') return false;
+    return isIncludedInTree(table);
+  }
+
+  // A <th> only carries a rowheader/columnheader role while nothing overrides
+  // it, and a hidden header describes nothing to a screen reader either way.
+  function isHeaderCellInScope(th) {
+    if (!th) return false;
+    const role = explicitRole(th);
+    if (role && role !== 'rowheader' && role !== 'columnheader') return false;
+    if (helpers.isDomVisibleEligible) {
+      try {
+        if (!helpers.isDomVisibleEligible(th, ctx, { targetSet: 'dom' }).eligible) return false;
+      } catch {
+        // fall through to the tree check
+      }
+    }
+    return isIncludedInTree(th);
+  }
+
   for (const table of tables) {
     if (!table || !table.querySelectorAll) continue;
+
+    // A table stripped of its semantics has no header cells to describe
+    // anything, so nothing in it is in scope.
+    if (!hasTableSemantics(table)) continue;
 
     let ths;
     try {
@@ -43599,7 +45318,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     } catch {
       ths = [];
     }
-    if (!ths.length) continue;
+
+    const headers = Array.from(ths).filter(isHeaderCellInScope);
+    if (!headers.length) continue;
 
     applicableCount += 1;
 
@@ -43611,7 +45332,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
     if (hasDataCell) continue;
 
-    for (const th of ths) {
+    for (const th of headers) {
       if (!th) continue;
       const stableSelector = helpers.buildSelector ? helpers.buildSelector(th) : 'html';
       const html = helpers.getOuterHtmlSnippet
@@ -44417,9 +46138,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return '';
   }
 
+  // Naming rules apply only to elements included in the accessibility tree
+  // (ACT c487ae and siblings), which excludes focusable aria-hidden content.
+  // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
   function isEligibleAcc(helpers, el, ctx) {
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -44614,9 +46342,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return '';
   }
 
+  // Naming rules apply only to elements included in the accessibility tree
+  // (ACT c487ae and siblings), which excludes focusable aria-hidden content.
+  // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
   function isEligibleAcc(helpers, el, ctx) {
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -44758,9 +46493,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return '';
   }
 
+  // Naming rules apply only to elements included in the accessibility tree
+  // (ACT c487ae and siblings), which excludes focusable aria-hidden content.
+  // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
   function isEligibleAcc(helpers, el, ctx) {
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -44849,7 +46591,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "valid-lang": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
+  // Shape alone accepts unregistered tags such as "eng" and "em-US", so the
+  // primary subtag is checked against the IANA registry via the shared helper.
   const BCP47_RE = /^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{2,8})*$/;
+  const isValidTag =
+    typeof helpers.isValidLanguageTag === 'function'
+      ? helpers.isValidLanguageTag
+      : (v) => BCP47_RE.test(String(v || ''));
 
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('[lang]')
@@ -44862,12 +46610,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!el || !el.getAttribute) continue;
     if (el.tagName && el.tagName.toLowerCase() === 'html') continue;
 
-    const raw = String(el.getAttribute('lang') || '').trim();
-    if (!raw) continue;
+    const rawAttr = el.getAttribute('lang');
+    if (rawAttr === null || rawAttr === '') continue; // ACT de46e4: empty is out of scope
+
+    // The rule applies only where text actually inherits the language, so an
+    // element with no text, or whose text reaches no one, has nothing to
+    // declare a language for.
+    if (!String(el.textContent || '').trim()) continue;
 
     applicableCount += 1;
 
-    if (BCP47_RE.test(raw)) continue;
+    // A whitespace-only value is in scope and has no primary language tag.
+    const raw = String(rawAttr).trim();
+    if (isValidTag(raw)) continue;
 
     const tag = el.tagName.toLowerCase();
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
@@ -45169,6 +46924,10 @@ const I18N = {
     "inputImage_altPresent_description": "Prüft, ob <input type=\"image\">-Elemente ein alt-Attribut bereitstellen, um einen Mechanismus für eine Textalternative zu unterstützen.",
     "inputImage_altPresent_summary_fail": "Fehlendes alt-Attribut auf <input type=\"image\">.",
     "inputImage_altPresent_hint_fail": "Fügen Sie ein alt-Attribut hinzu (verwenden Sie alt=\"\" nur, wenn ein separater zugänglicher Name bereitgestellt wird).",
+    "inputImage_altPresent_summary_defaultName": "Der zugaengliche Name ist der Browser-Standard fuer eine Bildschaltflaeche und sagt nichts aus.",
+    "inputImage_altPresent_hint_defaultName": "Ersetzen Sie ihn durch Text, der die Aktion beschreibt, zum Beispiel \"Suchen\".",
+    "inputImage_altPresent_summary_emptyAlt": "Ein leeres alt=\"\" auf <input type=\"image\"> laesst das Steuerelement ohne Namen.",
+    "inputImage_altPresent_hint_emptyAlt": "Beschreiben Sie die Aktion in alt, oder benennen Sie das Steuerelement mit aria-label oder aria-labelledby.",
     "ariaHidden_programmaticFocus_review_title": "Programmatischen Fokus bei aria-hidden überprüfen",
     "ariaHidden_programmaticFocus_review_description": "Markiert Elemente, die aria-hidden sind, aber aufgrund von programmatischem Fokus (z. B. tabindex < 0) als geeignet gelten. Überprüfen Sie die beabsichtigte Fokusverwaltung und die Sichtbarkeit für assistive Technologien.",
     "ariaHidden_programmaticFocus_review_summary": "Überprüfung: Ein aria-hidden-Element ist programmatisch fokussierbar.",
@@ -45450,16 +47209,21 @@ const I18N = {
     "labelInName_description": "Prüft, ob bei einem Formularelement mit sichtbarer Textbeschriftung der zugängliche Name diesen sichtbaren Beschriftungstext enthält (WCAG 2.5.3).",
     "labelInName_summary_fail": "{{element}}: Die sichtbare Beschriftung „{{visibleLabel}}“ (aus {{labelSource}}) ist nicht im zugänglichen Namen enthalten (aus {{nameMechanism}}).",
     "labelInName_hint_fail": "Aktualisieren Sie aria-label/aria-labelledby (oder den sichtbaren Beschriftungstext), damit der zugängliche Name den Wortlaut der sichtbaren Beschriftung enthält.",
+    "labelInName_summary_cantTell": "{{element}}: Die sichtbare Beschriftung „{{visibleLabel}}“ (aus {{labelSource}}) unterscheidet sich vom zugänglichen Namen (aus {{nameMechanism}}) nur durch eine Abkürzung oder eine Bindestrichschreibung.",
+    "labelInName_hint_cantTell": "Prüfen Sie manuell, ob beide Formulierungen übereinstimmen: Aus dem Markup lässt sich eine beabsichtigte Abkürzung nicht von einer Abweichung unterscheiden.",
     "ariaRolesValid_title": "Das role-Attribut muss eine gültige, nicht abstrakte ARIA-Rolle sein",
     "ariaRolesValid_description": "Prüft, ob ein explizites role=\"\"-Attribut zu einer echten, nicht abstrakten WAI-ARIA-Rolle aufgelöst wird.",
     "ariaRolesValid_summary_invalid": "role=\"{{role}}\" ist keine erkannte ARIA-Rolle.",
     "ariaRolesValid_hint_invalid": "Verwenden Sie einen gültigen ARIA-Rollenwert, oder entfernen Sie das role-Attribut, wenn keine Rolle zutrifft.",
     "ariaRolesValid_summary_abstract": "role=\"{{role}}\" ist eine abstrakte ARIA-Rolle, die nicht direkt verwendet werden darf.",
     "ariaRolesValid_hint_abstract": "Ersetzen Sie diese abstrakte Rolle durch eine konkrete Rolle, die zu dem Widget/der Struktur passt.",
-    "ariaDeprecatedRole_title": "Das role-Attribut darf keine veraltete oder für Autoren untersagte ARIA-Rolle verwenden",
-    "ariaDeprecatedRole_description": "Prüft, ob ein explizites role=\"\"-Attribut keine durch die WAI-ARIA-Spezifikation als veraltet markierte Rolle verwendet, und keine Rolle, die ausschließlich für die interne Verwendung durch den User-Agent reserviert ist (z. B. role=\"generic\").",
+    "ariaDeprecatedRole_title": "Das role-Attribut sollte keine veraltete oder für Autoren nicht empfohlene ARIA-Rolle verwenden",
+    "ariaDeprecatedRole_description": "Prüft, ob ein explizites role=\"\"-Attribut keine durch die WAI-ARIA-Spezifikation als veraltet markierte Rolle verwendet, und keine Rolle, die für die interne Verwendung durch den User-Agent reserviert ist (z. B. role=\"generic\").",
     "ariaDeprecatedRole_summary_fail": "Dieses Element verwendet role=\"{{role}}\", was Autoren nicht explizit deklarieren dürfen.",
     "ariaDeprecatedRole_hint_fail": "{{guidance}}",
+    "ariaDeprecatedRole_summary_cantTell": "Dieses Element verwendet role=\"{{role}}\", die in WAI-ARIA veraltet ist (weiterhin gültig, aber nicht empfohlen).",
+    "ariaDeprecatedRole_summary_cantTell_discouraged": "Dieses Element verwendet role=\"{{role}}\", die User-Agents vorbehalten ist (weiterhin gültig, aber nicht empfohlen).",
+    "ariaDeprecatedRole_hint_cantTell": "{{guidance}}",
     "ariaValidAttr_title": "aria-*-Attribute müssen echte, definierte ARIA-Attribute sein",
     "ariaValidAttr_description": "Prüft, ob jeder im DOM vorhandene aria-*-Attributname ein echtes, durch die WAI-ARIA-Spezifikation definiertes Attribut ist.",
     "ariaValidAttr_summary_fail": "{{attr}} ist kein erkanntes ARIA-Attribut.",
@@ -45472,6 +47236,8 @@ const I18N = {
     "ariaAllowedAttr_description": "Prüft, ob jedes erkannte aria-*-Attribut auf einem Element mit expliziter Rolle entweder global unterstützt wird oder von dieser Rolle unterstützt wird.",
     "ariaAllowedAttr_summary_fail": "{{attr}} ist bei role=\"{{role}}\" nicht zulässig.",
     "ariaAllowedAttr_hint_fail": "Entfernen Sie dieses Attribut, oder verwenden Sie eine Rolle, die es unterstützt.",
+    "ariaAllowedAttr_summary_cantTell": "{{attr}} ist bei role=\"{{role}}\" veraltet (weiterhin zulässig, aber nicht empfohlen).",
+    "ariaAllowedAttr_hint_cantTell": "Dieses Attribut wurde in ARIA 1.2 aus dem globalen Satz entfernt; entfernen Sie es oder verwenden Sie eine Rolle, die es unterstützt, da eine künftige ARIA-Version es möglicherweise nicht mehr zulässt.",
     "ariaProhibitedAttr_title": "ARIA-Benennungsattribute dürfen nicht bei Rollen verwendet werden, die sie untersagen",
     "ariaProhibitedAttr_description": "Prüft, ob aria-label/aria-labelledby nicht bei WAI-ARIA-Rollen vorhanden sind, deren Spezifikation die ARIA-Benennung ausdrücklich untersagt (z. B. generic, emphasis, strong, paragraph).",
     "ariaProhibitedAttr_summary_fail": "{{attr}} ist bei role=\"{{role}}\" untersagt.",
@@ -45586,14 +47352,16 @@ const I18N = {
     "formControlSingleLabel_description": "Prüft, ob ein Formularelement mit höchstens einem <label> verknüpft ist (durch Umschließen oder durch label[for]).",
     "formControlSingleLabel_summary_fail": "Dieses <{{element}}> ist mit {{labelCount}} Beschriftungen verknüpft.",
     "formControlSingleLabel_hint_fail": "Behalten Sie nur ein <label> pro Formularelement (entweder umschließend oder über for/id referenziert).",
+    "formControlSingleLabel_summary_cantTell": "Dieses <{{element}}> hat ein beschriftendes <label> und zusätzlich eine leere <label>-Verknüpfung; prüfen Sie, wie es angesagt wird.",
+    "formControlSingleLabel_hint_cantTell": "Entfernen Sie das überflüssige leere <label>, sodass genau ein <label> mit dem Element verknüpft ist.",
     "nestedInteractiveControlsAbsent_title": "Interaktive Formularelemente dürfen nicht verschachtelt sein",
     "nestedInteractiveControlsAbsent_description": "Prüft, ob ein interaktives Element (Link, Schaltfläche, Formularelement oder ARIA-Widget-Rolle) kein weiteres interaktives Element enthält.",
     "nestedInteractiveControlsAbsent_summary_fail": "Dieses <{{element}}> enthält ein oder mehrere verschachtelte interaktive Elemente: {{nestedElements}}.",
     "nestedInteractiveControlsAbsent_hint_fail": "Verschieben Sie die verschachtelten interaktiven Elemente außerhalb dieses Elements; verschachtelte interaktive Elemente sind über assistive Technologien nicht zuverlässig bedienbar.",
     "bypassBlocksPresent_title": "Die Seite muss eine Möglichkeit bieten, wiederkehrende Blöcke zu überspringen",
     "bypassBlocksPresent_description": "Prüft, ob die Seite mindestens einen anerkannten Mechanismus nach WCAG 2.4.1 zum Überspringen wiederkehrender Blöcke hat: eine main-Landmarke, einen funktionierenden Anker-Link auf derselben Seite oder eine Überschrift.",
-    "bypassBlocksPresent_summary_fail": "Diese Seite hat keine anerkannte Möglichkeit, wiederkehrende Inhaltsblöcke zu überspringen.",
-    "bypassBlocksPresent_hint_fail": "Fügen Sie eine main-Landmarke (<main> oder role=\"main\"), einen funktionierenden „Zum Inhalt springen“-Link oder Überschriften-Elemente hinzu, die assistive Technologien nutzen können, um wiederkehrende Inhalte zu überspringen.",
+    "bypassBlocksPresent_summary_cantTell": "Auf dieser Seite wurde keine anerkannte Möglichkeit erkannt, wiederkehrende Inhaltsblöcke zu überspringen – prüfen Sie, ob ein Überspring-Mechanismus vorhanden ist.",
+    "bypassBlocksPresent_hint_cantTell": "Bestätigen Sie, dass die Seite einen Überspring-Mechanismus bietet: eine main-Landmarke (<main> oder role=\"main\"), einen funktionierenden „Zum Inhalt springen“-Link oder Überschriften-Elemente, die assistive Technologien nutzen können, um wiederkehrende Inhalte zu überspringen. (Ein Mechanismus kann vorübergehend verborgen sein – z. B. während ein modaler Dialog die Seite inert macht – oder seitenweit bereitgestellt werden; dies erfordert eine menschliche Bestätigung.)",
     "landmarkBannerIsTopLevel_title": "Die banner-Landmarke muss auf oberster Ebene liegen",
     "landmarkBannerIsTopLevel_description": "Prüft, ob die banner-Landmarke (role=\"banner\" oder ein nicht verschachtelter <header>) nicht innerhalb einer anderen Landmarke verschachtelt ist.",
     "landmarkBannerIsTopLevel_summary_cantTell": "Diese banner-Landmarke ist innerhalb einer anderen Landmarke verschachtelt.",
@@ -45695,8 +47463,8 @@ const I18N = {
     "htmlXmlLangMismatch_description": "Prüft, ob die Attribute lang und xml:lang des <html>-Elements dieselbe Hauptsprache deklarieren, wenn beide vorhanden sind.",
     "htmlXmlLangMismatch_summary_fail": "Die Attribute lang („{{lang}}“) und xml:lang („{{xmlLang}}“) deklarieren unterschiedliche Sprachen.",
     "htmlXmlLangMismatch_hint_fail": "Lassen Sie lang und xml:lang dieselbe Hauptsprache deklarieren, oder entfernen Sie das veraltete Attribut xml:lang.",
-    "avoidInlineSpacing_title": "Inline-Stile dürfen den Textabstand nicht mit !important erzwingen",
-    "avoidInlineSpacing_description": "Prüft, ob Inline-Stile line-height, letter-spacing oder word-spacing nicht mit !important setzen, was das Überschreiben des Textabstands durch den Nutzer blockiert.",
+    "avoidInlineSpacing_title": "Inline-Stile dürfen den Textabstand nicht unter den WCAG-Wert erzwingen",
+    "avoidInlineSpacing_description": "Prüft, dass ein per !important erzwungener Wert für line-height, letter-spacing oder word-spacing WCAG 1.4.12 bereits erfüllt, sodass dem Nutzer nichts zu überschreiben bleibt.",
     "avoidInlineSpacing_summary_fail": "Der Inline-Stil dieses Elements erzwingt {{properties}} mit !important und blockiert damit Überschreibungen des Textabstands durch den Nutzer.",
     "avoidInlineSpacing_hint_fail": "Entfernen Sie !important von line-height/letter-spacing/word-spacing in Inline-Stilen, damit Nutzer den Textabstand überschreiben können.",
     "metaRefreshNoExceptions_title": "Die Seite darf überhaupt keinen Meta-Refresh verwenden (AAA)",
@@ -45785,6 +47553,10 @@ const I18N = {
     "inputImage_altPresent_description": "Checks that <input type=\"image\"> elements provide an alt attribute to support a text alternative mechanism.",
     "inputImage_altPresent_summary_fail": "Missing alt attribute on <input type=\"image\">.",
     "inputImage_altPresent_hint_fail": "Add an alt attribute (use alt=\"\" only when a separate accessible name is provided).",
+    "inputImage_altPresent_summary_defaultName": "Accessible name is the browser default for an image button, which conveys nothing.",
+    "inputImage_altPresent_hint_defaultName": "Replace it with text describing what the button does, for example \"Search\".",
+    "inputImage_altPresent_summary_emptyAlt": "Empty alt=\"\" on <input type=\"image\"> leaves the control unnamed.",
+    "inputImage_altPresent_hint_emptyAlt": "Describe the action in alt, or name the control with aria-label or aria-labelledby.",
     "ariaHidden_programmaticFocus_review_title": "Review aria-hidden programmatic focus",
     "ariaHidden_programmaticFocus_review_description": "Flags elements that are aria-hidden but considered eligible due to programmatic focus (e.g., tabindex < 0). Verify intended focus management and assistive technology exposure.",
     "ariaHidden_programmaticFocus_review_summary": "Review: aria-hidden element is programmatically focusable.",
@@ -46066,16 +47838,21 @@ const I18N = {
     "labelInName_description": "Checks that when a control has a visible text label, the accessible name contains that visible label text (WCAG 2.5.3).",
     "labelInName_summary_fail": "{{element}}: visible label \"{{visibleLabel}}\" (from {{labelSource}}) is not included in the accessible name (from {{nameMechanism}}).",
     "labelInName_hint_fail": "Update aria-label/aria-labelledby (or the visible label text) so the accessible name includes the visible label wording.",
+    "labelInName_summary_cantTell": "{{element}}: visible label \"{{visibleLabel}}\" (from {{labelSource}}) differs from the accessible name (from {{nameMechanism}}) only by an abbreviation or by hyphenation.",
+    "labelInName_hint_cantTell": "Check by hand whether the two wordings match: markup cannot tell an intended abbreviation from a mismatch.",
     "ariaRolesValid_title": "role attribute must be a valid, non-abstract ARIA role",
     "ariaRolesValid_description": "Checks that an explicit role=\"\" attribute resolves to a real, non-abstract WAI-ARIA role.",
     "ariaRolesValid_summary_invalid": "role=\"{{role}}\" is not a recognized ARIA role.",
     "ariaRolesValid_hint_invalid": "Use a valid ARIA role token, or remove the role attribute if none applies.",
     "ariaRolesValid_summary_abstract": "role=\"{{role}}\" is an abstract ARIA role, which must not be used directly.",
     "ariaRolesValid_hint_abstract": "Replace this abstract role with a concrete role appropriate for the widget/structure.",
-    "ariaDeprecatedRole_title": "role attribute must not use a deprecated or author-prohibited ARIA role",
-    "ariaDeprecatedRole_description": "Checks that an explicit role=\"\" attribute does not use a role deprecated by the WAI-ARIA specification, or one reserved for user-agent-internal use only (e.g. role=\"generic\").",
+    "ariaDeprecatedRole_title": "role attribute should not use a deprecated or author-discouraged ARIA role",
+    "ariaDeprecatedRole_description": "Checks that an explicit role=\"\" attribute does not use a role deprecated by the WAI-ARIA specification, or one reserved for user-agent-internal use (e.g. role=\"generic\").",
     "ariaDeprecatedRole_summary_fail": "This element uses role=\"{{role}}\", which authors must not explicitly declare.",
     "ariaDeprecatedRole_hint_fail": "{{guidance}}",
+    "ariaDeprecatedRole_summary_cantTell": "This element uses role=\"{{role}}\", which is deprecated in WAI-ARIA (still valid, but discouraged).",
+    "ariaDeprecatedRole_summary_cantTell_discouraged": "This element uses role=\"{{role}}\", which is reserved for user agents (still valid, but discouraged).",
+    "ariaDeprecatedRole_hint_cantTell": "{{guidance}}",
     "ariaValidAttr_title": "aria-* attributes must be real, defined ARIA attributes",
     "ariaValidAttr_description": "Checks that every aria-* attribute name present in the DOM is a real attribute defined by the WAI-ARIA specification.",
     "ariaValidAttr_summary_fail": "{{attr}} is not a recognized ARIA attribute.",
@@ -46088,6 +47865,8 @@ const I18N = {
     "ariaAllowedAttr_description": "Checks that every recognized aria-* attribute present on an element with an explicit role is either globally supported or supported by that role.",
     "ariaAllowedAttr_summary_fail": "{{attr}} is not permitted on role=\"{{role}}\".",
     "ariaAllowedAttr_hint_fail": "Remove this attribute, or use a role that supports it.",
+    "ariaAllowedAttr_summary_cantTell": "{{attr}} is deprecated on role=\"{{role}}\" (still allowed, but discouraged).",
+    "ariaAllowedAttr_hint_cantTell": "This attribute was removed from the ARIA global set in 1.2; remove it or use a role that supports it, as a future ARIA version may disallow it.",
     "ariaProhibitedAttr_title": "ARIA naming attributes must not be used on roles that prohibit them",
     "ariaProhibitedAttr_description": "Checks that aria-label/aria-labelledby are not present on WAI-ARIA roles whose specification explicitly prohibits ARIA naming (e.g. generic, emphasis, strong, paragraph).",
     "ariaProhibitedAttr_summary_fail": "{{attr}} is prohibited on role=\"{{role}}\".",
@@ -46202,14 +47981,16 @@ const I18N = {
     "formControlSingleLabel_description": "Checks that a form control is associated with at most one <label> (by wrapping or by label[for]).",
     "formControlSingleLabel_summary_fail": "This <{{element}}> is associated with {{labelCount}} labels.",
     "formControlSingleLabel_hint_fail": "Keep only one <label> per form control (either wrapping it or referencing it via for/id).",
+    "formControlSingleLabel_summary_cantTell": "This <{{element}}> has one labelling <label> plus an extra empty <label> association; verify how it is announced.",
+    "formControlSingleLabel_hint_cantTell": "Remove the redundant empty <label> so exactly one <label> is associated with the control.",
     "nestedInteractiveControlsAbsent_title": "Interactive controls must not be nested",
     "nestedInteractiveControlsAbsent_description": "Checks that an interactive control (link, button, form control, or ARIA widget role) does not contain another interactive control.",
     "nestedInteractiveControlsAbsent_summary_fail": "This <{{element}}> contains one or more nested interactive controls: {{nestedElements}}.",
     "nestedInteractiveControlsAbsent_hint_fail": "Move the nested interactive control(s) outside this element; nested interactive controls are not reliably operable via assistive technology.",
     "bypassBlocksPresent_title": "Page must provide a way to bypass repeated blocks",
     "bypassBlocksPresent_description": "Checks that the page has at least one recognized WCAG 2.4.1 bypass-blocks mechanism: a main landmark, a working same-page anchor link, or a heading.",
-    "bypassBlocksPresent_summary_fail": "This page has no recognized way to bypass repeated blocks of content.",
-    "bypassBlocksPresent_hint_fail": "Add a main landmark (<main> or role=\"main\"), a working \"skip to content\" link, or heading elements that assistive technology can use to jump past repeated content.",
+    "bypassBlocksPresent_summary_cantTell": "No recognized way to bypass repeated blocks of content was detected on this page — verify a bypass mechanism exists.",
+    "bypassBlocksPresent_hint_cantTell": "Confirm the page offers a bypass mechanism: a main landmark (<main> or role=\"main\"), a working \"skip to content\" link, or heading elements that assistive technology can use to jump past repeated content. (A mechanism may be temporarily hidden — e.g. while a modal dialog makes the page inert — or provided on a per-site basis; this needs human confirmation.)",
     "landmarkBannerIsTopLevel_title": "Banner landmark must be top-level",
     "landmarkBannerIsTopLevel_description": "Checks that the banner landmark (role=\"banner\" or a non-nested <header>) is not nested inside another landmark region.",
     "landmarkBannerIsTopLevel_summary_cantTell": "This banner landmark is nested inside another landmark region.",
@@ -46311,8 +48092,8 @@ const I18N = {
     "htmlXmlLangMismatch_description": "Checks that the <html> element's lang and xml:lang attributes declare the same primary language, when both are present.",
     "htmlXmlLangMismatch_summary_fail": "The lang (\"{{lang}}\") and xml:lang (\"{{xmlLang}}\") attributes declare different languages.",
     "htmlXmlLangMismatch_hint_fail": "Make lang and xml:lang declare the same primary language, or remove the deprecated xml:lang attribute.",
-    "avoidInlineSpacing_title": "Inline style must not force text spacing with !important",
-    "avoidInlineSpacing_description": "Checks that inline style does not set line-height, letter-spacing, or word-spacing with !important, which blocks user text-spacing overrides.",
+    "avoidInlineSpacing_title": "Inline style must not force text spacing below the WCAG metric",
+    "avoidInlineSpacing_description": "Checks that where inline style forces line-height, letter-spacing or word-spacing with !important, the value already meets WCAG 1.4.12, so the user has nothing left to override.",
     "avoidInlineSpacing_summary_fail": "This element's inline style forces {{properties}} with !important, blocking user text-spacing overrides.",
     "avoidInlineSpacing_hint_fail": "Remove !important from line-height/letter-spacing/word-spacing in inline styles so users can override text spacing.",
     "metaRefreshNoExceptions_title": "Page must not use a meta refresh at all (AAA)",
@@ -46401,6 +48182,10 @@ const I18N = {
     "inputImage_altPresent_description": "Comprueba que los elementos <input type=\"image\"> incluyan un atributo alt para ofrecer un mecanismo de alternativa textual.",
     "inputImage_altPresent_summary_fail": "Falta el atributo alt en <input type=\"image\">.",
     "inputImage_altPresent_hint_fail": "Agregar un atributo alt (usar alt=\"\" solo cuando se proporcione un nombre accesible por separado).",
+    "inputImage_altPresent_summary_defaultName": "El nombre accesible es el predeterminado del navegador para un boton de imagen y no aporta informacion.",
+    "inputImage_altPresent_hint_defaultName": "Sustituyelo por un texto que describa la accion del boton, por ejemplo \"Buscar\".",
+    "inputImage_altPresent_summary_emptyAlt": "Un alt=\"\" vacio en <input type=\"image\"> deja el control sin nombre.",
+    "inputImage_altPresent_hint_emptyAlt": "Describe la accion en alt, o nombra el control con aria-label o aria-labelledby.",
     "ariaHidden_programmaticFocus_review_title": "Revisar el foco programático en aria-hidden",
     "ariaHidden_programmaticFocus_review_description": "Señala elementos aria-hidden considerados elegibles debido a un foco programático (por ejemplo, tabindex < 0). Verificar que la gestión del foco es intencionada y la exposición a las tecnologías de asistencia.",
     "ariaHidden_programmaticFocus_review_summary": "Revisión: un elemento aria-hidden es enfocable de forma programática.",
@@ -46682,16 +48467,21 @@ const I18N = {
     "labelInName_description": "Comprueba que, cuando un control tiene una etiqueta de texto visible, el nombre accesible contenga ese texto de etiqueta visible (WCAG 2.5.3).",
     "labelInName_summary_fail": "{{element}}: la etiqueta visible \"{{visibleLabel}}\" (de {{labelSource}}) no está incluida en el nombre accesible (de {{nameMechanism}}).",
     "labelInName_hint_fail": "Actualizar aria-label/aria-labelledby (o el texto de la etiqueta visible) para que el nombre accesible incluya el texto de la etiqueta visible.",
+    "labelInName_summary_cantTell": "{{element}}: la etiqueta visible \"{{visibleLabel}}\" (de {{labelSource}}) se diferencia del nombre accesible (de {{nameMechanism}}) solo por una abreviatura o por la separación con guion.",
+    "labelInName_hint_cantTell": "Comprobar manualmente si ambas redacciones coinciden: el marcado no permite distinguir una abreviatura intencionada de una discrepancia.",
     "ariaRolesValid_title": "El atributo role debe ser un rol ARIA válido y no abstracto",
     "ariaRolesValid_description": "Comprueba que un atributo role=\"\" explícito se resuelva en un rol WAI-ARIA real y no abstracto.",
     "ariaRolesValid_summary_invalid": "role=\"{{role}}\" no es un rol ARIA reconocido.",
     "ariaRolesValid_hint_invalid": "Usar un token de rol ARIA válido, o eliminar el atributo role si no aplica ninguno.",
     "ariaRolesValid_summary_abstract": "role=\"{{role}}\" es un rol ARIA abstracto, que no debe usarse directamente.",
     "ariaRolesValid_hint_abstract": "Reemplazar este rol abstracto por un rol concreto adecuado para el widget o la estructura.",
-    "ariaDeprecatedRole_title": "El atributo role no debe usar un rol ARIA obsoleto o prohibido para autores",
-    "ariaDeprecatedRole_description": "Comprueba que un atributo role=\"\" explícito no use un rol obsoleto según la especificación WAI-ARIA, ni uno reservado únicamente para uso interno del agente de usuario (por ejemplo, role=\"generic\").",
+    "ariaDeprecatedRole_title": "El atributo role no debería usar un rol ARIA obsoleto o desaconsejado para autores",
+    "ariaDeprecatedRole_description": "Comprueba que un atributo role=\"\" explícito no use un rol obsoleto según la especificación WAI-ARIA, ni uno reservado para uso interno del agente de usuario (por ejemplo, role=\"generic\").",
     "ariaDeprecatedRole_summary_fail": "Este elemento usa role=\"{{role}}\", que los autores no deben declarar explícitamente.",
     "ariaDeprecatedRole_hint_fail": "{{guidance}}",
+    "ariaDeprecatedRole_summary_cantTell": "Este elemento usa role=\"{{role}}\", que está obsoleto en WAI-ARIA (todavía válido, pero desaconsejado).",
+    "ariaDeprecatedRole_summary_cantTell_discouraged": "Este elemento usa role=\"{{role}}\", que está reservado para los agentes de usuario (todavía válido, pero desaconsejado).",
+    "ariaDeprecatedRole_hint_cantTell": "{{guidance}}",
     "ariaValidAttr_title": "Los atributos aria-* deben ser atributos ARIA reales y definidos",
     "ariaValidAttr_description": "Comprueba que cada nombre de atributo aria-* presente en el DOM sea un atributo real definido por la especificación WAI-ARIA.",
     "ariaValidAttr_summary_fail": "{{attr}} no es un atributo ARIA reconocido.",
@@ -46704,6 +48494,8 @@ const I18N = {
     "ariaAllowedAttr_description": "Comprueba que cada atributo aria-* reconocido presente en un elemento con un rol explícito esté admitido globalmente o admitido por ese rol.",
     "ariaAllowedAttr_summary_fail": "{{attr}} no está permitido en role=\"{{role}}\".",
     "ariaAllowedAttr_hint_fail": "Eliminar este atributo, o usar un rol que lo admita.",
+    "ariaAllowedAttr_summary_cantTell": "{{attr}} está obsoleto en role=\"{{role}}\" (todavía permitido, pero desaconsejado).",
+    "ariaAllowedAttr_hint_cantTell": "Este atributo se eliminó del conjunto global de ARIA en 1.2; elimínelo o use un rol que lo admita, ya que una versión futura de ARIA podría no permitirlo.",
     "ariaProhibitedAttr_title": "Los atributos de nombrado ARIA no deben usarse en roles que los prohíban",
     "ariaProhibitedAttr_description": "Comprueba que aria-label/aria-labelledby no estén presentes en roles WAI-ARIA cuya especificación prohíbe explícitamente el nombrado ARIA (por ejemplo, generic, emphasis, strong, paragraph).",
     "ariaProhibitedAttr_summary_fail": "{{attr}} está prohibido en role=\"{{role}}\".",
@@ -46818,14 +48610,16 @@ const I18N = {
     "formControlSingleLabel_description": "Comprueba que un control de formulario esté asociado a como máximo una <label> (por envoltura o mediante label[for]).",
     "formControlSingleLabel_summary_fail": "Este <{{element}}> está asociado a {{labelCount}} etiquetas.",
     "formControlSingleLabel_hint_fail": "Mantener solo una <label> por control de formulario (ya sea envolviéndolo o referenciándolo mediante for/id).",
+    "formControlSingleLabel_summary_cantTell": "Este <{{element}}> tiene una <label> que lo etiqueta más una asociación de <label> vacía adicional; verifique cómo se anuncia.",
+    "formControlSingleLabel_hint_cantTell": "Elimine la <label> vacía redundante para que solo una <label> quede asociada al control.",
     "nestedInteractiveControlsAbsent_title": "Los controles interactivos no deben estar anidados",
     "nestedInteractiveControlsAbsent_description": "Comprueba que un control interactivo (enlace, botón, control de formulario o rol de widget ARIA) no contenga otro control interactivo.",
     "nestedInteractiveControlsAbsent_summary_fail": "Este <{{element}}> contiene uno o más controles interactivos anidados: {{nestedElements}}.",
     "nestedInteractiveControlsAbsent_hint_fail": "Mover el/los control(es) interactivo(s) anidado(s) fuera de este elemento; los controles interactivos anidados no son operables de forma fiable mediante tecnología de asistencia.",
     "bypassBlocksPresent_title": "La página debe proporcionar una forma de omitir bloques repetidos",
     "bypassBlocksPresent_description": "Comprueba que la página tenga al menos un mecanismo reconocido de omisión de bloques del criterio de éxito 2.4.1 de WCAG: un landmark main, un enlace de anclaje funcional dentro de la misma página, o un encabezado.",
-    "bypassBlocksPresent_summary_fail": "Esta página no tiene ninguna forma reconocida de omitir bloques de contenido repetidos.",
-    "bypassBlocksPresent_hint_fail": "Agregar un landmark main (<main> o role=\"main\"), un enlace funcional de \"saltar al contenido\", o elementos de encabezado que las tecnologías de asistencia puedan usar para saltar el contenido repetido.",
+    "bypassBlocksPresent_summary_cantTell": "No se detectó ninguna forma reconocida de omitir bloques de contenido repetidos en esta página; verifique que exista un mecanismo de omisión.",
+    "bypassBlocksPresent_hint_cantTell": "Confirme que la página ofrece un mecanismo de omisión: un landmark main (<main> o role=\"main\"), un enlace funcional de \"saltar al contenido\", o elementos de encabezado que las tecnologías de asistencia puedan usar para saltar el contenido repetido. (Un mecanismo puede estar oculto temporalmente —por ejemplo, mientras un diálogo modal deja la página inerte— o proporcionarse a nivel de sitio; esto requiere confirmación humana.)",
     "landmarkBannerIsTopLevel_title": "El landmark banner debe ser de nivel superior",
     "landmarkBannerIsTopLevel_description": "Comprueba que el landmark banner (role=\"banner\" o un <header> no anidado) no esté anidado dentro de otra región landmark.",
     "landmarkBannerIsTopLevel_summary_cantTell": "Este landmark banner está anidado dentro de otra región landmark.",
@@ -46927,8 +48721,8 @@ const I18N = {
     "htmlXmlLangMismatch_description": "Comprueba que los atributos lang y xml:lang del elemento <html> declaren el mismo idioma principal, cuando ambos están presentes.",
     "htmlXmlLangMismatch_summary_fail": "Los atributos lang (\"{{lang}}\") y xml:lang (\"{{xmlLang}}\") declaran idiomas diferentes.",
     "htmlXmlLangMismatch_hint_fail": "Hacer que lang y xml:lang declaren el mismo idioma principal, o eliminar el atributo obsoleto xml:lang.",
-    "avoidInlineSpacing_title": "El estilo en línea no debe forzar el espaciado de texto con !important",
-    "avoidInlineSpacing_description": "Comprueba que el estilo en línea no establezca line-height, letter-spacing o word-spacing con !important, lo que bloquea las anulaciones de espaciado de texto del usuario.",
+    "avoidInlineSpacing_title": "El estilo en línea no debe forzar el espaciado de texto por debajo del umbral WCAG",
+    "avoidInlineSpacing_description": "Comprueba que cuando el estilo en línea fuerza line-height, letter-spacing o word-spacing con !important, el valor ya cumple WCAG 1.4.12, por lo que al usuario no le queda nada que anular.",
     "avoidInlineSpacing_summary_fail": "El estilo en línea de este elemento fuerza {{properties}} con !important, bloqueando las anulaciones de espaciado de texto del usuario.",
     "avoidInlineSpacing_hint_fail": "Eliminar !important de line-height/letter-spacing/word-spacing en los estilos en línea para que los usuarios puedan anular el espaciado de texto.",
     "metaRefreshNoExceptions_title": "La página no debe usar un meta refresh en absoluto (AAA)",
@@ -47017,6 +48811,10 @@ const I18N = {
     "inputImage_altPresent_description": "Vérifie que les éléments <input type=\"image\"> fournissent un attribut alt afin de proposer un mécanisme d’alternative textuelle.",
     "inputImage_altPresent_summary_fail": "Attribut alt manquant sur <input type=\"image\">.",
     "inputImage_altPresent_hint_fail": "Ajoutez un attribut alt (utilisez alt=\"\" uniquement lorsqu’un nom accessible séparé est fourni).",
+    "inputImage_altPresent_summary_defaultName": "Le nom accessible est celui par defaut du navigateur pour un bouton image et n'apporte aucune information.",
+    "inputImage_altPresent_hint_defaultName": "Remplacez-le par un texte decrivant l action du bouton, par exemple \"Rechercher\".",
+    "inputImage_altPresent_summary_emptyAlt": "Un alt=\"\" vide sur <input type=\"image\"> laisse le controle sans nom.",
+    "inputImage_altPresent_hint_emptyAlt": "Decrivez l action dans alt, ou nommez le controle avec aria-label ou aria-labelledby.",
     "ariaHidden_programmaticFocus_review_title": "Vérifier le focus programmatique avec aria-hidden",
     "ariaHidden_programmaticFocus_review_description": "Signale les éléments aria-hidden considérés comme éligibles uniquement via un focus programmatique (ex. tabindex < 0). Vérifiez l’intention de gestion du focus et l’exposition aux technologies d’assistance.",
     "ariaHidden_programmaticFocus_review_summary": "Vérification : un élément aria-hidden est focusable de façon programmatique.",
@@ -47298,16 +49096,21 @@ const I18N = {
     "labelInName_description": "Vérifie que lorsqu’un composant possède un libellé textuel visible, le nom accessible contient ce libellé visible (WCAG 2.5.3).",
     "labelInName_summary_fail": "{{element}} : le libellé visible « {{visibleLabel}} » (source : {{labelSource}}) n’est pas inclus dans le nom accessible (source : {{nameMechanism}}).",
     "labelInName_hint_fail": "Modifiez aria-label ou aria-labelledby (ou le texte du libellé visible) afin que le nom accessible inclue le libellé visible.",
+    "labelInName_summary_cantTell": "{{element}} : le libellé visible « {{visibleLabel}} » (source : {{labelSource}}) ne diffère du nom accessible (source : {{nameMechanism}}) que par une abréviation ou une césure.",
+    "labelInName_hint_cantTell": "Vérifiez manuellement que les deux formulations correspondent : le balisage ne permet pas de distinguer une abréviation volontaire d’une incohérence.",
     "ariaRolesValid_title": "L’attribut role doit être un rôle ARIA valide et non abstrait",
     "ariaRolesValid_description": "Vérifie qu’un attribut role=\"\" explicite correspond à un rôle WAI-ARIA réel et non abstrait.",
     "ariaRolesValid_summary_invalid": "role=\"{{role}}\" n’est pas un rôle ARIA reconnu.",
     "ariaRolesValid_hint_invalid": "Utilisez un rôle ARIA valide, ou retirez l’attribut role si aucun ne s’applique.",
     "ariaRolesValid_summary_abstract": "role=\"{{role}}\" est un rôle ARIA abstrait, qui ne doit pas être utilisé directement.",
     "ariaRolesValid_hint_abstract": "Remplacez ce rôle abstrait par un rôle concret adapté au composant/à la structure.",
-    "ariaDeprecatedRole_title": "L’attribut role ne doit pas utiliser un rôle ARIA obsolète ou interdit aux auteurs",
+    "ariaDeprecatedRole_title": "L’attribut role ne devrait pas utiliser un rôle ARIA obsolète ou déconseillé aux auteurs",
     "ariaDeprecatedRole_description": "Vérifie qu’un attribut role=\"\" explicite n’utilise pas un rôle rendu obsolète par la spécification WAI-ARIA, ni un rôle réservé à un usage interne à l’agent utilisateur (ex. role=\"generic\").",
     "ariaDeprecatedRole_summary_fail": "Cet élément utilise role=\"{{role}}\", que les auteurs ne doivent pas déclarer explicitement.",
     "ariaDeprecatedRole_hint_fail": "{{guidance}}",
+    "ariaDeprecatedRole_summary_cantTell": "Cet élément utilise role=\"{{role}}\", qui est obsolète dans WAI-ARIA (toujours valide, mais déconseillé).",
+    "ariaDeprecatedRole_summary_cantTell_discouraged": "Cet élément utilise role=\"{{role}}\", qui est réservé aux agents utilisateurs (toujours valide, mais déconseillé).",
+    "ariaDeprecatedRole_hint_cantTell": "{{guidance}}",
     "ariaValidAttr_title": "Les attributs aria-* doivent être des attributs ARIA réels et définis",
     "ariaValidAttr_description": "Vérifie que chaque nom d’attribut aria-* présent dans le DOM est un attribut réel défini par la spécification WAI-ARIA.",
     "ariaValidAttr_summary_fail": "{{attr}} n’est pas un attribut ARIA reconnu.",
@@ -47320,6 +49123,8 @@ const I18N = {
     "ariaAllowedAttr_description": "Vérifie que chaque attribut aria-* reconnu présent sur un élément ayant un rôle explicite est soit globalement pris en charge, soit pris en charge par ce rôle.",
     "ariaAllowedAttr_summary_fail": "{{attr}} n’est pas autorisé sur role=\"{{role}}\".",
     "ariaAllowedAttr_hint_fail": "Retirez cet attribut, ou utilisez un rôle qui le prend en charge.",
+    "ariaAllowedAttr_summary_cantTell": "{{attr}} est obsolète sur role=\"{{role}}\" (toujours autorisé, mais déconseillé).",
+    "ariaAllowedAttr_hint_cantTell": "Cet attribut a été retiré de l’ensemble global d’ARIA en 1.2 ; retirez-le ou utilisez un rôle qui le prend en charge, car une future version d’ARIA pourrait l’interdire.",
     "ariaProhibitedAttr_title": "Les attributs de nommage ARIA ne doivent pas être utilisés sur des rôles qui les interdisent",
     "ariaProhibitedAttr_description": "Vérifie que aria-label/aria-labelledby ne sont pas présents sur des rôles WAI-ARIA dont la spécification interdit explicitement le nommage ARIA (ex. generic, emphasis, strong, paragraph).",
     "ariaProhibitedAttr_summary_fail": "{{attr}} est interdit sur role=\"{{role}}\".",
@@ -47434,14 +49239,16 @@ const I18N = {
     "formControlSingleLabel_description": "Vérifie qu’un contrôle de formulaire est associé à au plus un <label> (par imbrication ou par label[for]).",
     "formControlSingleLabel_summary_fail": "Ce <{{element}}> est associé à {{labelCount}} étiquettes.",
     "formControlSingleLabel_hint_fail": "Conservez une seule <label> par contrôle de formulaire (soit en l’enveloppant, soit en la référençant via for/id).",
+    "formControlSingleLabel_summary_cantTell": "Ce <{{element}}> a une <label> qui l’étiquette plus une association de <label> vide supplémentaire ; vérifiez comment il est annoncé.",
+    "formControlSingleLabel_hint_cantTell": "Supprimez la <label> vide redondante afin qu’une seule <label> soit associée au contrôle.",
     "nestedInteractiveControlsAbsent_title": "Les contrôles interactifs ne doivent pas être imbriqués",
     "nestedInteractiveControlsAbsent_description": "Vérifie qu’un contrôle interactif (lien, bouton, contrôle de formulaire, ou rôle de widget ARIA) ne contient pas un autre contrôle interactif.",
     "nestedInteractiveControlsAbsent_summary_fail": "Ce <{{element}}> contient un ou plusieurs contrôles interactifs imbriqués : {{nestedElements}}.",
     "nestedInteractiveControlsAbsent_hint_fail": "Déplacez le(s) contrôle(s) interactif(s) imbriqué(s) hors de cet élément ; les contrôles interactifs imbriqués ne sont pas utilisables de façon fiable via les technologies d’assistance.",
     "bypassBlocksPresent_title": "La page doit proposer un moyen de contourner les blocs répétés",
     "bypassBlocksPresent_description": "Vérifie que la page dispose d’au moins un mécanisme reconnu de contournement des blocs répétés (WCAG 2.4.1) : un point de repère main, un lien d’ancrage fonctionnel vers la même page, ou un titre.",
-    "bypassBlocksPresent_summary_fail": "Cette page n’a aucun moyen reconnu de contourner les blocs de contenu répétés.",
-    "bypassBlocksPresent_hint_fail": "Ajoutez un point de repère main (<main> ou role=\"main\"), un lien « aller au contenu » fonctionnel, ou des éléments de titre que les technologies d’assistance peuvent utiliser pour passer le contenu répété.",
+    "bypassBlocksPresent_summary_cantTell": "Aucun moyen reconnu de contourner les blocs de contenu répétés n’a été détecté sur cette page — vérifiez qu’un mécanisme de contournement existe.",
+    "bypassBlocksPresent_hint_cantTell": "Confirmez que la page propose un mécanisme de contournement : un point de repère main (<main> ou role=\"main\"), un lien « aller au contenu » fonctionnel, ou des éléments de titre que les technologies d’assistance peuvent utiliser pour passer le contenu répété. (Un mécanisme peut être temporairement masqué — par exemple pendant qu’une boîte de dialogue modale rend la page inerte — ou fourni à l’échelle du site ; cela nécessite une confirmation humaine.)",
     "landmarkBannerIsTopLevel_title": "Le point de repère banner doit être de premier niveau",
     "landmarkBannerIsTopLevel_description": "Vérifie que le point de repère banner (role=\"banner\" ou un <header> non imbriqué) n’est pas imbriqué dans un autre point de repère.",
     "landmarkBannerIsTopLevel_summary_cantTell": "Ce point de repère banner est imbriqué dans un autre point de repère.",
@@ -47543,8 +49350,8 @@ const I18N = {
     "htmlXmlLangMismatch_description": "Vérifie que les attributs lang et xml:lang de l’élément <html> déclarent la même langue principale, lorsque les deux sont présents.",
     "htmlXmlLangMismatch_summary_fail": "Les attributs lang (« {{lang}} ») et xml:lang (« {{xmlLang}} ») déclarent des langues différentes.",
     "htmlXmlLangMismatch_hint_fail": "Faites en sorte que lang et xml:lang déclarent la même langue principale, ou retirez l’attribut obsolète xml:lang.",
-    "avoidInlineSpacing_title": "Un style en ligne ne doit pas forcer l’espacement du texte avec !important",
-    "avoidInlineSpacing_description": "Vérifie qu’un style en ligne ne définit pas line-height, letter-spacing, ou word-spacing avec !important, ce qui bloque les surcharges d’espacement de texte par l’utilisateur.",
+    "avoidInlineSpacing_title": "Un style en ligne ne doit pas forcer l’espacement du texte en dessous du seuil WCAG",
+    "avoidInlineSpacing_description": "Vérifie que lorsqu’un style en ligne force line-height, letter-spacing ou word-spacing avec !important, la valeur respecte déjà WCAG 1.4.12, ne laissant rien à surcharger à l’utilisateur.",
     "avoidInlineSpacing_summary_fail": "Le style en ligne de cet élément force {{properties}} avec !important, bloquant les surcharges d’espacement de texte par l’utilisateur.",
     "avoidInlineSpacing_hint_fail": "Retirez !important de line-height/letter-spacing/word-spacing dans les styles en ligne afin que les utilisateurs puissent surcharger l’espacement du texte.",
     "metaRefreshNoExceptions_title": "La page ne doit utiliser aucun rafraîchissement meta (AAA)",
@@ -48557,6 +50364,35 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
       const eligCache = new WeakMap();
       const inactiveCache = new WeakMap();
+      const clipHiddenCache = new WeakMap();
+
+      // clip:rect(0,0,0,0) / clip-path:inset(50%+) (the sr-only technique) has
+      // no visually-presented color, so contrast rules exempt it even though
+      // isDomVisibleEligible itself keeps it eligible for other callers
+      // (aria-hidden-focus etc. need to find clipped-but-focusable elements).
+      const isClipHidden = (el) => {
+        if (!helpers || typeof helpers.getVisibilityHintsInfo !== 'function') return false;
+        if (clipHiddenCache.has(el)) return clipHiddenCache.get(el);
+
+        let hidden = false;
+        try {
+          let cur = el;
+          let guard = 0;
+          while (cur && cur.nodeType === 1 && guard++ < 100) {
+            const info = helpers.getVisibilityHintsInfo(cur, ctx, {});
+            if (info && Array.isArray(info.hints) && info.hints.indexOf('clipped') !== -1) {
+              hidden = true;
+              break;
+            }
+            cur = composedParent ? composedParent(cur) : cur.parentElement;
+          }
+        } catch {
+          hidden = false;
+        }
+
+        clipHiddenCache.set(el, hidden);
+        return hidden;
+      };
 
       const isVisibleEligible = (el) => {
         if (!helpers || typeof helpers.isDomVisibleEligible !== 'function') return true;
@@ -48566,6 +50402,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         try {
           const r = helpers.isDomVisibleEligible(el, ctx, { visibilityMode });
           ok = __asEligibilityBool(r);
+          if (ok && isClipHidden(el)) ok = false;
         } catch {
           ok = false;
         }
@@ -49680,6 +51517,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   // -------------------------------------------------------------------
   // A) Abstract roles — MUST NOT be used directly in a role="" attribute.
   // -------------------------------------------------------------------
+  // <generated:aria-abstract-roles>
   const ABSTRACT_ROLES = new Set([
     'command',
     'composite',
@@ -49694,23 +51532,44 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     'widget',
     'window'
   ]);
+  // </generated:aria-abstract-roles>
 
   // -------------------------------------------------------------------
-  // B) Valid, concrete (non-abstract) roles that authors must never
-  //    explicitly declare — either because WAI-ARIA has deprecated them
-  //    (a direct replacement exists) or because they are reserved for
-  //    user-agent-internal use only (not a spec deprecation, but the
-  //    same "valid token, prohibited for authors" shape). Flagged by
-  //    aria-deprecated-role, not aria-roles-valid (which only checks
-  //    existence/abstractness) — see DEPRECATED_ROLE_GUIDANCE below for
-  //    per-role, reason-accurate messaging.
+  // B) Valid, concrete (non-abstract) roles authors should not explicitly
+  //    declare — either because WAI-ARIA has deprecated them (a direct
+  //    replacement exists) or because they are reserved for
+  //    user-agent-internal use. Flagged by aria-deprecated-role, not
+  //    aria-roles-valid (which only checks existence/abstractness) — see
+  //    DEPRECATED_ROLE_GUIDANCE below for per-role, reason-accurate
+  //    messaging.
   // -------------------------------------------------------------------
+  // Deprecated but still VALID roles (SHOULD NOT, still conforming). Reported
+  // as cantTell so the author decides whether it matters to them.
   const DEPRECATED_ROLES = new Set([
-    'directory', // superseded by role="list"
-    // WAI-ARIA 1.2: "intended for use as the implicit role of generic
-    // elements in host languages for use by user agents only; not for
-    // use by developers." MDN: "It should not be used by web authors."
-    'generic'
+    'directory' // superseded by role="list"
+  ]);
+
+  // Valid roles reserved for user-agent-internal use, which ARIA states at
+  // SHOULD NOT strength — conforming, so reported as cantTell.
+  const AUTHOR_DISCOURAGED_ROLES = new Set([
+    'generic' // "primarily for implementors of user agents"
+  ]);
+
+  // Roles carrying an author MUST NOT, reported as fail. Empty under ARIA 1.2
+  // and 1.3, whose only author MUST NOT covers abstract roles — the concern of
+  // aria-roles-valid.
+  const AUTHOR_PROHIBITED_ROLES = new Set([]);
+
+  // Deprecated but still ALLOWED states/properties (SHOULD NOT, still
+  // conforming): the four ARIA 1.2 keeps in the global set as deprecated and
+  // marks "deprecated on this role" wherever a role does not support them.
+  // Reported as cantTell, not a not-allowed fail. Flat rather than per-role
+  // because the deprecation is uniform and no role prohibits any of the four.
+  const DEPRECATED_ATTRS = new Set([
+    'aria-disabled',
+    'aria-errormessage',
+    'aria-haspopup',
+    'aria-invalid'
   ]);
 
   const DEPRECATED_ROLE_GUIDANCE = {
@@ -49736,103 +51595,140 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   //    Digital Publishing WAI-ARIA (doc-abstract etc.) is a separate
   //    module, deliberately left out of scope for now.
   // -------------------------------------------------------------------
+  // <generated:aria-concrete-roles>
   const CONCRETE_ROLES = new Set([
-    // WAI-ARIA Graphics Module 1.0 (see comment above)
-    'graphics-document',
-    'graphics-object',
-    'graphics-symbol',
-    // Live region / window roles
     'alert',
     'alertdialog',
-    'dialog',
-    'log',
-    'marquee',
-    'status',
-    'timer',
-    // Landmark roles
-    'banner',
-    'complementary',
-    'contentinfo',
-    'form',
-    'main',
-    'navigation',
-    'region',
-    'search',
-    // Widget roles (leaf)
-    'button',
-    'checkbox',
-    'gridcell',
-    'link',
-    'menuitem',
-    'menuitemcheckbox',
-    'menuitemradio',
-    'option',
-    'progressbar',
-    'radio',
-    'scrollbar',
-    'searchbox',
-    'separator',
-    'slider',
-    'spinbutton',
-    'switch',
-    'tab',
-    'tabpanel',
-    'textbox',
-    'treeitem',
-    'tooltip',
-    // Composite widget roles
-    'combobox',
-    'grid',
-    'listbox',
-    'menu',
-    'menubar',
-    'radiogroup',
-    'tablist',
-    'tree',
-    'treegrid',
-    // Document structure roles
     'application',
     'article',
+    'banner',
     'blockquote',
+    'button',
     'caption',
     'cell',
+    'checkbox',
     'code',
     'columnheader',
+    'combobox',
     'comment',
+    'complementary',
+    'contentinfo',
     'definition',
     'deletion',
+    'dialog',
     'directory',
+    'doc-abstract',
+    'doc-acknowledgments',
+    'doc-afterword',
+    'doc-appendix',
+    'doc-backlink',
+    'doc-biblioentry',
+    'doc-bibliography',
+    'doc-biblioref',
+    'doc-chapter',
+    'doc-colophon',
+    'doc-conclusion',
+    'doc-cover',
+    'doc-credit',
+    'doc-credits',
+    'doc-dedication',
+    'doc-endnote',
+    'doc-endnotes',
+    'doc-epigraph',
+    'doc-epilogue',
+    'doc-errata',
+    'doc-example',
+    'doc-footnote',
+    'doc-foreword',
+    'doc-glossary',
+    'doc-glossref',
+    'doc-index',
+    'doc-introduction',
+    'doc-noteref',
+    'doc-notice',
+    'doc-pagebreak',
+    'doc-pagefooter',
+    'doc-pageheader',
+    'doc-pagelist',
+    'doc-part',
+    'doc-preface',
+    'doc-prologue',
+    'doc-pullquote',
+    'doc-qna',
+    'doc-subtitle',
+    'doc-tip',
+    'doc-toc',
     'document',
     'emphasis',
     'feed',
     'figure',
+    'form',
     'generic',
+    'graphics-document',
+    'graphics-object',
+    'graphics-symbol',
+    'grid',
+    'gridcell',
     'group',
     'heading',
     'img',
     'insertion',
+    'link',
     'list',
+    'listbox',
     'listitem',
+    'log',
+    'main',
     'mark',
+    'marquee',
     'math',
+    'menu',
+    'menubar',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
     'meter',
+    'navigation',
     'none',
     'note',
+    'option',
     'paragraph',
     'presentation',
+    'progressbar',
+    'radio',
+    'radiogroup',
+    'region',
     'row',
     'rowgroup',
     'rowheader',
+    'scrollbar',
+    'search',
+    'searchbox',
+    'separator',
+    'slider',
+    'spinbutton',
+    'status',
     'strong',
     'subscript',
     'suggestion',
     'superscript',
+    'switch',
+    'tab',
     'table',
+    'tablist',
+    'tabpanel',
     'term',
     'text',
+    'textbox',
     'time',
-    'toolbar'
+    'timer',
+    'toolbar',
+    'tooltip',
+    'tree',
+    'treegrid',
+    'treeitem'
   ]);
+  // </generated:aria-concrete-roles>
 
   // -------------------------------------------------------------------
   // D) ARIA attribute value types.
@@ -50348,6 +52244,18 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     return DEPRECATED_ROLES.has(lower(role));
   }
 
+  function isAuthorDiscouragedRole(role) {
+    return AUTHOR_DISCOURAGED_ROLES.has(lower(role));
+  }
+
+  function isAuthorProhibitedRole(role) {
+    return AUTHOR_PROHIBITED_ROLES.has(lower(role));
+  }
+
+  function isDeprecatedAttr(attr /* , role */) {
+    return DEPRECATED_ATTRS.has(lower(attr));
+  }
+
   function isKnownRole(role) {
     const r = lower(role);
     return ABSTRACT_ROLES.has(r) || CONCRETE_ROLES.has(r);
@@ -50623,6 +52531,9 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     getAllRoleTokens,
     isAbstractRole,
     isDeprecatedRole,
+    isAuthorDiscouragedRole,
+    isAuthorProhibitedRole,
+    isDeprecatedAttr,
     getDeprecatedRoleGuidance,
     isKnownRole,
     isValidConcreteRole,
@@ -50710,6 +52621,28 @@ const resolveContextRoots = (function resolveContextRoots(document, contextSelec
   return { ctxSelector, roots };
 });
 const createDomHelpers = (function createDomHelpers(opts) {
+  // <generated:language-subtags>
+  const LANGUAGE_SUBTAGS =
+    'aa aaa aab aac aad aae aaf aag aah aai aak aal aam aan aao aap aaq aas aat aau aav aaw aax aaz ab aba abb abc abd abe abf abg abh abi abj abl abm abn abo abp abq abr abs abt abu abv abw abx aby abz aca acb acd ace acf ach aci ack acl acm acn acp acq acr acs act acu acv acw acx acy acz ada adb add ade adf adg adh adi adj adl adn ado adp adq adr ads adt adu adw adx ady adz ae aea aeb aec aed aee aek ael aem aen aeq aer aes aeu aew aey aez af afa afb afd afe afg afh afi afk afn afo afp afs aft afu afz aga agb agc agd age agf agg agh agi agj agk agl agm agn ago agp agq agr ags agt agu agv agw agx agy agz aha ahb ahg ahh ahi ahk ahl ahm ahn aho ahp ahr ahs aht aia aib aic aid aie aif aig aih aii aij aik ail aim ain aio aip aiq air ais ait aiw aix aiy aja ajg aji ajn ajp ajs ajt aju ajw ajz ak akb akc akd ake akf akg akh aki akj akk akl akm ako akp akq akr aks akt aku akv akw akx aky akz ala alc ald ale alf alg alh ali alj alk all alm aln alo alp alq alr als alt alu alv alw alx aly alz am ama amb amc ame amf amg ami amj amk aml amm amn amo amp amq amr ams amt amu amv amw amx amy amz an ana anb anc and ane anf ang anh ani anj ank anl anm ann ano anp anq anr ans ant anu anv anw anx any anz aoa aob aoc aod aoe aof aog aoh aoi aoj aok aol aom aon aor aos aot aou aox aoz apa apb apc apd ape apf apg aph api apj apk apl apm apn apo app apq apr aps apt apu apv apw apx apy apz aqa aqc aqd aqg aqk aql aqm aqn aqp aqr aqt aqz ar arb arc ard are arh ari arj ark arl arn aro arp arq arr ars art aru arv arw arx ary arz as asa asb asc asd ase asf asg ash asi asj ask asl asn aso asp asq asr ass ast asu asv asw asx asy asz ata atb atc atd ate atg ath ati atj atk atl atm atn ato atp atq atr ats att atu atv atw atx aty atz aua aub auc aud aue auf aug auh aui auj auk aul aum aun auo aup auq aur aus aut auu auw aux auy auz av avb avd avi avk avl avm avn avo avs avt avu avv awa awb awc awd awe awg awh awi awk awm awn awo awr aws awt awu awv aww awx awy axb axe axg axk axl axm axx ay aya ayb ayc ayd aye ayg ayh ayi ayk ayl ayn ayo ayp ayq ayr ays ayt ayu ayx ayy ayz az aza azb azc azd azg azj azm azn azo azt azz ba baa bab bac bad bae baf bag bah bai baj bal ban bao bap bar bas bat bau bav baw bax bay baz bba bbb bbc bbd bbe bbf bbg bbh bbi bbj bbk bbl bbm bbn bbo bbp bbq bbr bbs bbt bbu bbv bbw bbx bby bbz bca bcb bcc bcd bce bcf bcg bch bci bcj bck bcl bcm bcn bco bcp bcq bcr bcs bct bcu bcv bcw bcy bcz bda bdb bdc bdd bde bdf bdg bdh bdi bdj bdk bdl bdm bdn bdo bdp bdq bdr bds bdt bdu bdv bdw bdx bdy bdz be bea beb bec bed bee bef beg beh bei bej bek bem beo bep beq ber bes bet beu bev bew bex bey bez bfa bfb bfc bfd bfe bff bfg bfh bfi bfj bfk bfl bfm bfn bfo bfp bfq bfr bfs bft bfu bfw bfx bfy bfz bg bga bgb bgc bgd bge bgf bgg bgi bgj bgk bgl bgm bgn bgo bgp bgq bgr bgs bgt bgu bgv bgw bgx bgy bgz bh bha bhb bhc bhd bhe bhf bhg bhh bhi bhj bhk bhl bhm bhn bho bhp bhq bhr bhs bht bhu bhv bhw bhx bhy bhz bi bia bib bic bid bie bif big bij bik bil bim bin bio bip biq bir bit biu biv biw bix biy biz bja bjb bjc bjd bje bjf bjg bjh bji bjj bjk bjl bjm bjn bjo bjp bjq bjr bjs bjt bju bjv bjw bjx bjy bjz bka bkb bkc bkd bkf bkg bkh bki bkj bkk bkl bkm bkn bko bkp bkq bkr bks bkt bku bkv bkw bkx bky bkz bla blb blc bld ble blf blg blh bli blj blk bll blm bln blo blp blq blr bls blt blv blw blx bly blz bm bma bmb bmc bmd bme bmf bmg bmh bmi bmj bmk bml bmm bmn bmo bmp bmq bmr bms bmt bmu bmv bmw bmx bmy bmz bn bna bnb bnc bnd bne bnf bng bni bnj bnk bnl bnm bnn bno bnp bnq bnr bns bnt bnu bnv bnw bnx bny bnz bo boa bob boe bof bog boh boi boj bok bol bom bon boo bop boq bor bot bou bov bow box boy boz bpa bpb bpc bpd bpe bpg bph bpi bpj bpk bpl bpm bpn bpo bpp bpq bpr bps bpt bpu bpv bpw bpx bpy bpz bqa bqb bqc bqd bqf bqg bqh bqi bqj bqk bql bqm bqn bqo bqp bqq bqr bqs bqt bqu bqv bqw bqx bqy bqz br bra brb brc brd brf brg brh bri brj brk brl brm brn bro brp brq brr brs brt bru brv brw brx bry brz bs bsa bsb bsc bse bsf bsg bsh bsi bsj bsk bsl bsm bsn bso bsp bsq bsr bss bst bsu bsv bsw bsx bsy bta btb btc btd bte btf btg bth bti btj btk btl btm btn bto btp btq btr bts btt btu btv btw btx bty btz bua bub buc bud bue buf bug buh bui buj buk bum bun buo bup buq bus but buu buv buw bux buy buz bva bvb bvc bvd bve bvf bvg bvh bvi bvj bvk bvl bvm bvn bvo bvp bvq bvr bvt bvu bvv bvw bvx bvy bvz bwa bwb bwc bwd bwe bwf bwg bwh bwi bwj bwk bwl bwm bwn bwo bwp bwq bwr bws bwt bwu bww bwx bwy bwz bxa bxb bxc bxd bxe bxf bxg bxh bxi bxj bxk bxl bxm bxn bxo bxp bxq bxr bxs bxu bxv bxw bxx bxz bya byb byc byd bye byf byg byh byi byj byk byl bym byn byo byp byq byr bys byt byv byw byx byy byz bza bzb bzc bzd bze bzf bzg bzh bzi bzj bzk bzl bzm bzn bzo bzp bzq bzr bzs bzt bzu bzv bzw bzx bzy bzz ca caa cab cac cad cae caf cag cah cai caj cak cal cam can cao cap caq car cas cau cav caw cax cay caz cba cbb cbc cbd cbe cbg cbh cbi cbj cbk cbl cbn cbo cbq cbr cbs cbt cbu cbv cbw cby cca ccc ccd cce ccg cch ccj ccl ccm ccn cco ccp ccq ccr ccs cda cdc cdd cde cdf cdg cdh cdi cdj cdm cdn cdo cdr cds cdy cdz ce cea ceb ceg cek cel cen cet cey cfa cfd cfg cfm cga cgc cgg cgk ch chb chc chd chf chg chh chj chk chl chm chn cho chp chq chr cht chw chx chy chz cia cib cic cid cie cih cik cim cin cip cir ciw ciy cja cje cjh cji cjk cjm cjn cjo cjp cjr cjs cjv cjy cka ckb ckh ckl ckm ckn cko ckq ckr cks ckt cku ckv ckx cky ckz cla clc cld cle clh cli clj clk cll clm clo cls clt clu clw cly cma cmc cme cmg cmi cmk cml cmm cmn cmo cmr cms cmt cna cnb cnc cng cnh cni cnk cnl cno cnp cnq cnr cns cnt cnu cnw cnx co coa cob coc cod coe cof cog coh coj cok col com con coo cop coq cot cou cov cow cox coy coz cpa cpb cpc cpe cpf cpg cpi cpn cpo cpp cps cpu cpx cpy cqd cqu cr cra crb crc crd crf crg crh cri crj crk crl crm crn cro crp crq crr crs crt crv crw crx cry crz cs csa csb csc csd cse csf csg csh csi csj csk csl csm csn cso csp csq csr css cst csu csv csw csx csy csz cta ctc ctd cte ctg cth ctl ctm ctn cto ctp cts ctt ctu cty ctz cu cua cub cuc cug cuh cui cuj cuk cul cum cuo cup cuq cur cus cut cuu cuv cuw cux cuy cv cvg cvn cwa cwb cwd cwe cwg cwt cxh cy cya cyb cyo czh czk czn czo czt da daa dac dad dae daf dag dah dai daj dak dal dam dao dap daq dar das dau dav daw dax day daz dba dbb dbd dbe dbf dbg dbi dbj dbl dbm dbn dbo dbp dbq dbr dbt dbu dbv dbw dby dcc dcr dda ddd dde ddg ddi ddj ddn ddo ddr dds ddw de dec ded dee def deg deh dei dek del dem den dep deq der des dev dez dga dgb dgc dgd dge dgg dgh dgi dgk dgl dgn dgo dgr dgs dgt dgu dgw dgx dgz dha dhd dhg dhi dhl dhm dhn dho dhr dhs dhu dhv dhw dhx dia dib dic did dif dig dih dii dij dik dil dim din dio dip diq dir dis dit diu diw dix diy diz dja djb djc djd dje djf dji djj djk djl djm djn djo djr dju djw dka dkg dkk dkl dkr dks dkx dlg dlk dlm dln dma dmb dmc dmd dme dmf dmg dmk dml dmm dmn dmo dmr dms dmu dmv dmw dmx dmy dna dnd dne dng dni dnj dnk dnn dno dnr dnt dnu dnv dnw dny doa dob doc doe dof doh doi dok dol don doo dop doq dor dos dot dov dow dox doy doz dpp dra drb drc drd dre drg drh dri drl drn dro drq drr drs drt dru drw dry dsb dse dsh dsi dsk dsl dsn dso dsq dsz dta dtb dtd dth dti dtk dtm dtn dto dtp dtr dts dtt dtu dty dua dub duc dud due duf dug duh dui duj duk dul dum dun duo dup duq dur dus duu duv duw dux duy duz dv dva dwa dwk dwl dwr dws dwu dww dwy dwz dya dyb dyd dyg dyi dym dyn dyo dyr dyu dyy dz dza dzd dze dzg dzl dzn eaa ebc ebg ebk ebo ebr ebu ecr ecs ecy ee eee efa efe efi ega egl egm ego egx egy ehs ehu eip eit eiv eja eka ekc eke ekg eki ekk ekl ekm eko ekp ekr eky el ele elh eli elk elm elo elp elu elx ema emb eme emg emi emk emm emn emo emp emq ems emu emw emx emy emz en ena enb enc end enf enh enl enm enn eno enq enr enu env enw enx eo eot epi era erg erh eri erk ero err ers ert erw es ese esg esh esi esk esl esm esn eso esq ess esu esx esy et etb etc eth etn eto etr ets ett etu etx etz eu eud euq eve evh evn ewo ext eya eyo eza eze fa faa fab fad faf fag fah fai faj fak fal fam fan fap far fat fau fax fay faz fbl fcs fer ff ffi ffm fgr fi fia fie fif fil fip fir fit fiu fiw fj fkk fkv fla flh fli fll fln flr fly fmp fmu fnb fng fni fo fod foi fom fon for fos fox fpe fqs fr frc frd frk frm fro frp frq frr frs frt fse fsl fss fub fuc fud fue fuf fuh fui fuj fum fun fuq fur fut fuu fuv fuy fvr fwa fwe fy ga gaa gab gac gad gae gaf gag gah gai gaj gak gal gam gan gao gap gaq gar gas gat gau gav gaw gax gay gaz gba gbb gbc gbd gbe gbf gbg gbh gbi gbj gbk gbl gbm gbn gbo gbp gbq gbr gbs gbu gbv gbw gbx gby gbz gcc gcd gce gcf gcl gcn gcr gct gd gda gdb gdc gdd gde gdf gdg gdh gdi gdj gdk gdl gdm gdn gdo gdq gdr gds gdt gdu gdx gea geb gec ged gef geg geh gei gej gek gel gem geq ges gev gew gex gey gez gfk gft gfx gga ggb ggd gge ggg ggk ggl ggn ggo ggr ggt ggu ggw gha ghc ghe ghh ghk ghl ghn gho ghr ghs ght gia gib gic gid gie gig gih gii gil gim gin gio gip giq gir gis git giu giw gix giy giz gji gjk gjm gjn gjr gju gka gkd gke gkn gko gkp gku gl glb glc gld glh gli glj glk gll glo glr glu glw gly gma gmb gmd gme gmg gmh gml gmm gmn gmq gmr gmu gmv gmw gmx gmy gmz gn gna gnb gnc gnd gne gng gnh gni gnj gnk gnl gnm gnn gno gnq gnr gnt gnu gnw gnz goa gob goc god goe gof gog goh goi goj gok gol gom gon goo gop goq gor gos got gou gov gow gox goy goz gpa gpe gpn gqa gqi gqn gqr gqu gra grb grc grd grg grh gri grj grk grm gro grq grr grs grt gru grv grw grx gry grz gse gsg gsl gsm gsn gso gsp gss gsw gta gti gtu gu gua gub guc gud gue guf gug guh gui guk gul gum gun guo gup guq gur gus gut guu guv guw gux guz gv gva gvc gve gvf gvj gvl gvm gvn gvo gvp gvr gvs gvy gwa gwb gwc gwd gwe gwf gwg gwi gwj gwm gwn gwr gwt gwu gww gwx gxx gya gyb gyd gye gyf gyg gyi gyl gym gyn gyo gyr gyy gyz gza gzi gzn ha haa hab hac had hae haf hag hah hai haj hak hal ham han hao hap haq har has hav haw hax hay haz hba hbb hbn hbo hbu hca hch hdn hds hdy he hea hed heg heh hei hem hgm hgw hhi hhr hhy hi hia hib hid hif hig hih hii hij hik hil him hio hir hit hiw hix hji hka hke hkh hkk hkn hks hla hlb hld hle hlt hlu hma hmb hmc hmd hme hmf hmg hmh hmi hmj hmk hml hmm hmn hmp hmq hmr hms hmt hmu hmv hmw hmx hmy hmz hna hnd hne hng hnh hni hnj hnm hnn hno hns hnu ho hoa hob hoc hod hoe hoh hoi hoj hok hol hom hoo hop hor hos hot hov how hoy hoz hpo hps hr hra hrc hre hrk hrm hro hrp hrr hrt hru hrw hrx hrz hsb hsh hsl hsn hss ht hti hto hts htu htx hu hub huc hud hue huf hug huh hui huj huk hul hum huo hup huq hur hus hut huu huv huw hux huy huz hvc hve hvk hvn hvv hwa hwc hwo hy hya hyw hyx hz ia iai ian iap iar iba ibb ibd ibe ibg ibh ibi ibl ibm ibn ibr ibu iby ica ich icl icr id ida idb idc idd ide idi idr ids idt idu ie ifa ifb ife iff ifk ifm ifu ify ig igb ige igg igl igm ign igo igs igw ihb ihi ihp ihw ii iin iir ijc ije ijj ijn ijo ijs ik ike ikh iki ikk ikl iko ikp ikr iks ikt ikv ikw ikx ikz ila ilb ilg ili ilk ill ilm ilo ilp ils ilu ilv ilw ima ime imi iml imn imo imr ims imt imy in inb inc ine ing inh inj inl inm inn ino inp ins int inz io ior iou iow ipi ipo iqu iqw ira ire irh iri irk irn iro irr iru irx iry is isa isc isd ise isg ish isi isk ism isn iso isr ist isu isv it itb itc itd ite iti itk itl itm ito itr its itt itv itw itx ity itz iu ium ivb ivv iw iwk iwm iwo iws ixc ixl iya iyo iyx izh izi izm izr izz ja jaa jab jac jad jae jaf jah jaj jak jal jam jan jao jaq jar jas jat jau jax jay jaz jbe jbi jbj jbk jbm jbn jbo jbr jbt jbu jbw jcs jct jda jdg jdt jeb jee jeg jeh jei jek jel jen jer jet jeu jgb jge jgk jgo jhi jhs ji jia jib jic jid jie jig jih jii jil jim jio jiq jit jiu jiv jiy jje jjr jka jkm jko jkp jkr jks jku jle jls jma jmb jmc jmd jmi jml jmn jmr jms jmw jmx jna jnd jng jni jnj jnl jns job jod jog jor jos jow jpa jpr jpx jqr jra jrb jrr jrt jru jsl jua jub juc jud juh jui juk jul jum jun juo jup jur jus jut juu juw juy jv jvd jvn jw jwi jya jye jyy ka kaa kab kac kad kae kaf kag kah kai kaj kak kam kao kap kaq kar kav kaw kax kay kba kbb kbc kbd kbe kbf kbg kbh kbi kbj kbk kbl kbm kbn kbo kbp kbq kbr kbs kbt kbu kbv kbw kbx kby kbz kca kcb kcc kcd kce kcf kcg kch kci kcj kck kcl kcm kcn kco kcp kcq kcr kcs kct kcu kcv kcw kcx kcy kcz kda kdc kdd kde kdf kdg kdh kdi kdj kdk kdl kdm kdn kdo kdp kdq kdr kdt kdu kdv kdw kdx kdy kdz kea keb kec ked kee kef keg keh kei kej kek kel kem ken keo kep keq ker kes ket keu kev kew kex key kez kfa kfb kfc kfd kfe kff kfg kfh kfi kfj kfk kfl kfm kfn kfo kfp kfq kfr kfs kft kfu kfv kfw kfx kfy kfz kg kga kgb kgc kgd kge kgf kgg kgh kgi kgj kgk kgl kgm kgn kgo kgp kgq kgr kgs kgt kgu kgv kgw kgx kgy kha khb khc khd khe khf khg khh khi khj khk khl khn kho khp khq khr khs kht khu khv khw khx khy khz ki kia kib kic kid kie kif kig kih kii kij kil kim kio kip kiq kis kit kiu kiv kiw kix kiy kiz kj kja kjb kjc kjd kje kjf kjg kjh kji kjj kjk kjl kjm kjn kjo kjp kjq kjr kjs kjt kju kjv kjx kjy kjz kk kka kkb kkc kkd kke kkf kkg kkh kki kkj kkk kkl kkm kkn kko kkp kkq kkr kks kkt kku kkv kkw kkx kky kkz kl kla klb klc kld kle klf klg klh kli klj klk kll klm kln klo klp klq klr kls klt klu klv klw klx kly klz km kma kmb kmc kmd kme kmf kmg kmh kmi kmj kmk kml kmm kmn kmo kmp kmq kmr kms kmt kmu kmv kmw kmx kmy kmz kn kna knb knc knd kne knf kng kni knj knk knl knm knn kno knp knq knr kns knt knu knv knw knx kny knz ko koa koc kod koe kof kog koh koi koj kok kol koo kop koq kos kot kou kov kow kox koy koz kpa kpb kpc kpd kpe kpf kpg kph kpi kpj kpk kpl kpm kpn kpo kpp kpq kpr kps kpt kpu kpv kpw kpx kpy kpz kqa kqb kqc kqd kqe kqf kqg kqh kqi kqj kqk kql kqm kqn kqo kqp kqq kqr kqs kqt kqu kqv kqw kqx kqy kqz kr kra krb krc krd kre krf krh kri krj krk krl krm krn kro krp krr krs krt kru krv krw krx kry krz ks ksa ksb ksc ksd kse ksf ksg ksh ksi ksj ksk ksl ksm ksn kso ksp ksq ksr kss kst ksu ksv ksw ksx ksy ksz kta ktb ktc ktd kte ktf ktg kth kti ktj ktk ktl ktm ktn kto ktp ktq ktr kts ktt ktu ktv ktw ktx kty ktz ku kub kuc kud kue kuf kug kuh kui kuj kuk kul kum kun kuo kup kuq kus kut kuu kuv kuw kux kuy kuz kv kva kvb kvc kvd kve kvf kvg kvh kvi kvj kvk kvl kvm kvn kvo kvp kvq kvr kvs kvt kvu kvv kvw kvx kvy kvz kw kwa kwb kwc kwd kwe kwf kwg kwh kwi kwj kwk kwl kwm kwn kwo kwp kwq kwr kws kwt kwu kwv kww kwx kwy kwz kxa kxb kxc kxd kxe kxf kxh kxi kxj kxk kxl kxm kxn kxo kxp kxq kxr kxs kxt kxu kxv kxw kxx kxy kxz ky kya kyb kyc kyd kye kyf kyg kyh kyi kyj kyk kyl kym kyn kyo kyp kyq kyr kys kyt kyu kyv kyw kyx kyy kyz kza kzb kzc kzd kze kzf kzg kzh kzi kzj kzk kzl kzm kzn kzo kzp kzq kzr kzs kzt kzu kzv kzw kzx kzy kzz la laa lab lac lad lae laf lag lah lai laj lak lal lam lan lap laq lar las lau law lax lay laz lb lba lbb lbc lbe lbf lbg lbi lbj lbk lbl lbm lbn lbo lbq lbr lbs lbt lbu lbv lbw lbx lby lbz lcc lcd lce lcf lch lcl lcm lcp lcq lcs lda ldb ldd ldg ldh ldi ldj ldk ldl ldm ldn ldo ldp ldq lea leb lec led lee lef leg leh lei lej lek lel lem len leo lep leq ler les let leu lev lew lex ley lez lfa lfn lg lga lgb lgg lgh lgi lgk lgl lgm lgn lgo lgq lgr lgs lgt lgu lgz lha lhh lhi lhl lhm lhn lhp lhs lht lhu li lia lib lic lid lie lif lig lih lii lij lik lil lio lip liq lir lis liu liv liw lix liy liz lja lje lji ljl ljp ljw ljx lka lkb lkc lkd lke lkh lki lkj lkl lkm lkn lko lkr lks lkt lku lky lla llb llc lld lle llf llg llh lli llj llk lll llm lln llo llp llq lls llu llx lma lmb lmc lmd lme lmf lmg lmh lmi lmj lmk lml lmm lmn lmo lmp lmq lmr lmu lmv lmw lmx lmy lmz ln lna lnb lnd lng lnh lni lnj lnl lnm lnn lno lns lnu lnw lnz lo loa lob loc loe lof log loh loi loj lok lol lom lon loo lop loq lor los lot lou lov low lox loy loz lpa lpe lpn lpo lpx lqr lra lrc lre lrg lri lrk lrl lrm lrn lro lrr lrt lrv lrz lsa lsb lsc lsd lse lsg lsh lsi lsl lsm lsn lso lsp lsr lss lst lsv lsw lsy lt ltc ltg lth lti ltn lto lts ltu lu lua luc lud lue luf luh lui luj luk lul lum lun luo lup luq lur lus lut luu luv luw luy luz lv lva lvi lvk lvl lvs lvu lwa lwe lwg lwh lwl lwm lwo lws lwt lwu lww lxm lya lyg lyn lzh lzl lzn lzz maa mab mad mae maf mag mai maj mak mam man map maq mas mat mau mav maw max maz mba mbb mbc mbd mbe mbf mbh mbi mbj mbk mbl mbm mbn mbo mbp mbq mbr mbs mbt mbu mbv mbw mbx mby mbz mca mcb mcc mcd mce mcf mcg mch mci mcj mck mcl mcm mcn mco mcp mcq mcr mcs mct mcu mcv mcw mcx mcy mcz mda mdb mdc mdd mde mdf mdg mdh mdi mdj mdk mdl mdm mdn mdp mdq mdr mds mdt mdu mdv mdw mdx mdy mdz mea meb mec med mee mef meg meh mei mej mek mel mem men meo mep meq mer mes met meu mev mew mey mez mfa mfb mfc mfd mfe mff mfg mfh mfi mfj mfk mfl mfm mfn mfo mfp mfq mfr mfs mft mfu mfv mfw mfx mfy mfz mg mga mgb mgc mgd mge mgf mgg mgh mgi mgj mgk mgl mgm mgn mgo mgp mgq mgr mgs mgt mgu mgv mgw mgx mgy mgz mh mha mhb mhc mhd mhe mhf mhg mhh mhi mhj mhk mhl mhm mhn mho mhp mhq mhr mhs mht mhu mhw mhx mhy mhz mi mia mib mic mid mie mif mig mih mii mij mik mil mim min mio mip miq mir mis mit miu miw mix miy miz mja mjb mjc mjd mje mjg mjh mji mjj mjk mjl mjm mjn mjo mjp mjq mjr mjs mjt mju mjv mjw mjx mjy mjz mk mka mkb mkc mke mkf mkg mkh mki mkj mkk mkl mkm mkn mko mkp mkq mkr mks mkt mku mkv mkw mkx mky mkz ml mla mlb mlc mld mle mlf mlh mli mlj mlk mll mlm mln mlo mlp mlq mlr mls mlu mlv mlw mlx mlz mma mmb mmc mmd mme mmf mmg mmh mmi mmj mmk mml mmm mmn mmo mmp mmq mmr mmt mmu mmv mmw mmx mmy mmz mn mna mnb mnc mnd mne mnf mng mnh mni mnj mnk mnl mnm mnn mno mnp mnq mnr mns mnt mnu mnv mnw mnx mny mnz mo moa moc mod moe mof mog moh moi moj mok mom moo mop moq mor mos mot mou mov mow mox moy moz mpa mpb mpc mpd mpe mpg mph mpi mpj mpk mpl mpm mpn mpo mpp mpq mpr mps mpt mpu mpv mpw mpx mpy mpz mqa mqb mqc mqe mqf mqg mqh mqi mqj mqk mql mqm mqn mqo mqp mqq mqr mqs mqt mqu mqv mqw mqx mqy mqz mr mra mrb mrc mrd mre mrf mrg mrh mrj mrk mrl mrm mrn mro mrp mrq mrr mrs mrt mru mrv mrw mrx mry mrz ms msb msc msd mse msf msg msh msi msj msk msl msm msn mso msp msq msr mss mst msu msv msw msx msy msz mt mta mtb mtc mtd mte mtf mtg mth mti mtj mtk mtl mtm mtn mto mtp mtq mtr mts mtt mtu mtv mtw mtx mty mua mub muc mud mue mug muh mui muj muk mul mum mun muo mup muq mur mus mut muu muv mux muy muz mva mvb mvd mve mvf mvg mvh mvi mvk mvl mvm mvn mvo mvp mvq mvr mvs mvt mvu mvv mvw mvx mvy mvz mwa mwb mwc mwd mwe mwf mwg mwh mwi mwj mwk mwl mwm mwn mwo mwp mwq mwr mws mwt mwu mwv mww mwx mwy mwz mxa mxb mxc mxd mxe mxf mxg mxh mxi mxj mxk mxl mxm mxn mxo mxp mxq mxr mxs mxt mxu mxv mxw mxx mxy mxz my myb myc myd mye myf myg myh myi myj myk myl mym myn myo myp myq myr mys myt myu myv myw myx myy myz mza mzb mzc mzd mze mzg mzh mzi mzj mzk mzl mzm mzn mzo mzp mzq mzr mzs mzt mzu mzv mzw mzx mzy mzz na naa nab nac nad nae naf nag nah nai naj nak nal nam nan nao nap naq nar nas nat naw nax nay naz nb nba nbb nbc nbd nbe nbf nbg nbh nbi nbj nbk nbm nbn nbo nbp nbq nbr nbs nbt nbu nbv nbw nbx nby nca ncb ncc ncd nce ncf ncg nch nci ncj nck ncl ncm ncn nco ncp ncq ncr ncs nct ncu ncx ncz nd nda ndb ndc ndd ndf ndg ndh ndi ndj ndk ndl ndm ndn ndp ndq ndr nds ndt ndu ndv ndw ndx ndy ndz ne nea neb nec ned nee nef neg neh nei nej nek nem nen neo neq ner nes net neu nev new nex ney nez nfa nfd nfl nfr nfu ng nga ngb ngc ngd nge ngf ngg ngh ngi ngj ngk ngl ngm ngn ngo ngp ngq ngr ngs ngt ngu ngv ngw ngx ngy ngz nha nhb nhc nhd nhe nhf nhg nhh nhi nhk nhm nhn nho nhp nhq nhr nht nhu nhv nhw nhx nhy nhz nia nib nic nid nie nif nig nih nii nij nik nil nim nin nio niq nir nis nit niu niv niw nix niy niz nja njb njd njh nji njj njl njm njn njo njr njs njt nju njx njy njz nka nkb nkc nkd nke nkf nkg nkh nki nkj nkk nkm nkn nko nkp nkq nkr nks nkt nku nkv nkw nkx nkz nl nla nlc nle nlg nli nlj nlk nll nlm nln nlo nlq nlr nlu nlv nlw nlx nly nlz nma nmb nmc nmd nme nmf nmg nmh nmi nmj nmk nml nmm nmn nmo nmp nmq nmr nms nmt nmu nmv nmw nmx nmy nmz nn nna nnb nnc nnd nne nnf nng nnh nni nnj nnk nnl nnm nnn nnp nnq nnr nns nnt nnu nnv nnw nnx nny nnz no noa noc nod noe nof nog noh noi noj nok nol nom non noo nop noq nos not nou nov now noy noz npa npb npg nph npi npl npn npo nps npu npx npy nqg nqk nql nqm nqn nqo nqq nqt nqy nr nra nrb nrc nre nrf nrg nri nrk nrl nrm nrn nrp nrr nrt nru nrx nrz nsa nsb nsc nsd nse nsf nsg nsh nsi nsk nsl nsm nsn nso nsp nsq nsr nss nst nsu nsv nsw nsx nsy nsz ntd nte ntg nti ntj ntk ntm nto ntp ntr nts ntu ntw ntx nty ntz nua nub nuc nud nue nuf nug nuh nui nuj nuk nul num nun nuo nup nuq nur nus nut nuu nuv nuw nux nuy nuz nv nvh nvm nvo nwa nwb nwc nwe nwg nwi nwm nwo nwr nww nwx nwy nxa nxd nxe nxg nxi nxk nxl nxm nxn nxo nxq nxr nxu nxx ny nyb nyc nyd nye nyf nyg nyh nyi nyj nyk nyl nym nyn nyo nyp nyq nyr nys nyt nyu nyv nyw nyx nyy nza nzb nzd nzi nzk nzm nzr nzs nzu nzy nzz oaa oac oak oar oav obi obk obl obm obo obr obt obu oc oca och ocm oco ocu oda odk odt odu ofo ofs ofu ogb ogc oge ogg ogo ogu oht ohu oia oie oin oj ojb ojc ojg ojp ojs ojv ojw oka okb okc okd oke okg okh oki okj okk okl okm okn oko okr oks oku okv okx okz ola old ole olk olm olo olr olt olu om oma omb omc ome omg omi omk oml omn omo omp omq omr omt omu omv omw omx omy ona onb one ong oni onj onk onn ono onp onr ons ont onu onw onx ood oog oon oor oos opa opk opm opo opt opy or ora orc ore org orh orn oro orr ors ort oru orv orw orx ory orz os osa osc osi osn oso osp ost osu osx ota otb otd ote oti otk otl otm otn oto otq otr ots ott otu otw otx oty otz oua oub oue oui oum oun ovd owi owl oyb oyd oym oyy ozm pa paa pab pac pad pae paf pag pah pai pak pal pam pao pap paq par pas pat pau pav paw pax pay paz pbb pbc pbe pbf pbg pbh pbi pbl pbm pbn pbo pbp pbr pbs pbt pbu pbv pby pbz pca pcb pcc pcd pce pcf pcg pch pci pcj pck pcl pcm pcn pcp pcr pcw pda pdc pdi pdn pdo pdt pdu pea peb ped pee pef peg peh pei pej pek pel pem peo pep peq pes pev pex pey pez pfa pfe pfl pga pgd pgg pgi pgk pgl pgn pgs pgu pgy pgz pha phd phg phh phi phj phk phl phm phn pho phq phr pht phu phv phw pi pia pib pic pid pie pif pig pih pii pij pil pim pin pio pip pir pis pit piu piv piw pix piy piz pjt pka pkb pkc pkg pkh pkn pko pkp pkr pks pkt pku pl pla plb plc pld ple plf plg plh plj plk pll pln plo plp plq plr pls plt plu plv plw ply plz pma pmb pmc pmd pme pmf pmh pmi pmj pmk pml pmm pmn pmo pmq pmr pms pmt pmu pmw pmx pmy pmz pna pnb pnc pnd pne png pnh pni pnj pnk pnl pnm pnn pno pnp pnq pnr pns pnt pnu pnv pnw pnx pny pnz poc pod poe pof pog poh poi pok pom pon poo pop poq pos pot pov pow pox poy poz ppa ppe ppi ppk ppl ppm ppn ppo ppp ppq ppr pps ppt ppu pqa pqe pqm pqw pra prb prc prd pre prf prg prh pri prk prl prm prn pro prp prq prr prs prt pru prw prx pry prz ps psa psc psd pse psg psh psi psl psm psn pso psp psq psr pss pst psu psw psy pt pta pth pti ptn pto ptp ptq ptr ptt ptu ptv ptw pty pua pub puc pud pue puf pug pui puj puk pum puo pup puq pur put puu puw pux puy puz pwa pwb pwg pwi pwm pwn pwo pwr pww pxm pye pym pyn pys pyu pyx pyy pze pzh pzn qaa..qtz qu qua qub quc qud quf qug quh qui quk qul qum qun qup quq qur qus quv quw qux quy quz qva qvc qve qvh qvi qvj qvl qvm qvn qvo qvp qvs qvw qvy qvz qwa qwc qwe qwh qwm qws qwt qxa qxc qxh qxl qxn qxo qxp qxq qxr qxs qxt qxu qxw qya qyp raa rab rac rad raf rag rah rai raj rak ral ram ran rao rap raq rar ras rat rau rav raw rax ray raz rbb rbk rbl rbp rcf rdb rea reb ree reg rei rej rel rem ren rer res ret rey rga rge rgk rgn rgr rgs rgu rhg rhp ria rib rie rif ril rim rin rir rit riu rjg rji rjs rka rkb rkh rki rkm rkt rkw rm rma rmb rmc rmd rme rmf rmg rmh rmi rmk rml rmm rmn rmo rmp rmq rmr rms rmt rmu rmv rmw rmx rmy rmz rn rna rnb rnd rng rnl rnn rnp rnr rnw ro roa rob roc rod roe rof rog rol rom roo rop ror rou row rpn rpt rri rrm rro rrt rsb rsi rsk rsl rsm rsn rsw rtc rth rtm rts rtw ru rub ruc rue ruf rug ruh rui ruk ruo rup ruq rut ruu ruy ruz rw rwa rwk rwl rwm rwo rwr rxd rxw ryn rys ryu rzh sa saa sab sac sad sae saf sah sai saj sak sal sam sao sap saq sar sas sat sau sav saw sax say saz sba sbb sbc sbd sbe sbf sbg sbh sbi sbj sbk sbl sbm sbn sbo sbp sbq sbr sbs sbt sbu sbv sbw sbx sby sbz sc sca scb sce scf scg sch sci sck scl scn sco scp scq scs sct scu scv scw scx sd sda sdb sdc sde sdf sdg sdh sdj sdk sdl sdm sdn sdo sdp sdq sdr sds sdt sdu sdv sdx sdz se sea seb sec sed see sef seg seh sei sej sek sel sem sen seo sep seq ser ses set seu sev sew sey sez sfb sfe sfm sfs sfw sg sga sgb sgc sgd sge sgg sgh sgi sgj sgk sgl sgm sgn sgo sgp sgr sgs sgt sgu sgw sgx sgy sgz sh sha shb shc shd she shg shh shi shj shk shl shm shn sho shp shq shr shs sht shu shv shw shx shy shz si sia sib sid sie sif sig sih sii sij sik sil sim sio sip siq sir sis sit siu siv siw six siy siz sja sjb sjc sjd sje sjg sjk sjl sjm sjn sjo sjp sjr sjs sjt sju sjw sk ska skb skc skd ske skf skg skh ski skj skk skm skn sko skp skq skr sks skt sku skv skw skx sky skz sl sla slc sld sle slf slg slh sli slj sll slm sln slp slq slr sls slt slu slw slx sly slz sm sma smb smc smd smf smg smh smi smj smk sml smm smn smp smq smr sms smt smu smv smw smx smy smz sn snb snc sne snf sng snh sni snj snk snl snm snn sno snp snq snr sns snu snv snw snx sny snz so soa sob soc sod soe sog soh soi soj sok sol son soo sop soq sor sos sou sov sow sox soy soz spb spc spd spe spg spi spk spl spm spn spo spp spq spr sps spt spu spv spx spy sq sqa sqh sqj sqk sqm sqn sqo sqq sqr sqs sqt squ sqx sr sra srb src sre srf srg srh sri srk srl srm srn sro srq srr srs srt sru srv srw srx sry srz ss ssa ssb ssc ssd sse ssf ssg ssh ssi ssj ssk ssl ssm ssn sso ssp ssq ssr sss sst ssu ssv ssx ssy ssz st sta stb std ste stf stg sth sti stj stk stl stm stn sto stp stq str sts stt stu stv stw sty su sua sub suc sue sug sui suj suk sul sum suo suq sur sus sut suv suw sux suy suz sv sva svb svc sve svk svm svr svs svx sw swb swc swf swg swh swi swj swk swl swm swn swo swp swq swr sws swt swu swv sww swx swy sxb sxc sxe sxg sxk sxl sxm sxn sxo sxr sxs sxu sxw sya syb syc syd syi syk syl sym syn syo syr sys syw syx syy sza szb szc szd sze szg szl szn szp szs szv szw szy ta taa tab tac tad tae taf tag tai taj tak tal tan tao tap taq tar tas tau tav taw tax tay taz tba tbb tbc tbd tbe tbf tbg tbh tbi tbj tbk tbl tbm tbn tbo tbp tbq tbr tbs tbt tbu tbv tbw tbx tby tbz tca tcb tcc tcd tce tcf tcg tch tci tck tcl tcm tcn tco tcp tcq tcs tct tcu tcw tcx tcy tcz tda tdb tdc tdd tde tdf tdg tdh tdi tdj tdk tdl tdm tdn tdo tdq tdr tds tdt tdu tdv tdx tdy te tea teb tec ted tee tef teg teh tei tek tem ten teo tep teq ter tes tet teu tev tew tex tey tez tfi tfn tfo tfr tft tg tga tgb tgc tgd tge tgf tgg tgh tgi tgj tgn tgo tgp tgq tgr tgs tgt tgu tgv tgw tgx tgy tgz th thc thd the thf thh thi thk thl thm thn thp thq thr ths tht thu thv thw thx thy thz ti tia tic tid tie tif tig tih tii tij tik til tim tin tio tip tiq tis tit tiu tiv tiw tix tiy tiz tja tjg tji tjj tjl tjm tjn tjo tjp tjs tju tjw tk tka tkb tkd tke tkf tkg tkk tkl tkm tkn tkp tkq tkr tks tkt tku tkv tkw tkx tkz tl tla tlb tlc tld tlf tlg tlh tli tlj tlk tll tlm tln tlo tlp tlq tlr tls tlt tlu tlv tlw tlx tly tma tmb tmc tmd tme tmf tmg tmh tmi tmj tmk tml tmm tmn tmo tmp tmq tmr tms tmt tmu tmv tmw tmy tmz tn tna tnb tnc tnd tne tnf tng tnh tni tnk tnl tnm tnn tno tnp tnq tnr tns tnt tnu tnv tnw tnx tny tnz to tob toc tod toe tof tog toh toi toj tok tol tom too top toq tor tos tou tov tow tox toy toz tpa tpc tpe tpf tpg tpi tpj tpk tpl tpm tpn tpo tpp tpq tpr tpt tpu tpv tpw tpx tpy tpz tqb tql tqm tqn tqo tqp tqq tqr tqt tqu tqw tr tra trb trc trd tre trf trg trh tri trj trk trl trm trn tro trp trq trr trs trt tru trv trw trx try trz ts tsa tsb tsc tsd tse tsf tsg tsh tsi tsj tsk tsl tsm tsp tsq tsr tss tst tsu tsv tsw tsx tsy tsz tt tta ttb ttc ttd tte ttf ttg tth tti ttj ttk ttl ttm ttn tto ttp ttq ttr tts ttt ttu ttv ttw tty ttz tua tub tuc tud tue tuf tug tuh tui tuj tul tum tun tuo tup tuq tus tut tuu tuv tuw tux tuy tuz tva tvd tve tvi tvk tvl tvm tvn tvo tvs tvt tvu tvw tvx tvy tw twa twb twc twd twe twf twg twh twl twm twn two twp twq twr twt twu tww twx twy txa txb txc txe txg txh txi txj txm txn txo txq txr txs txt txu txx txy ty tya tye tyh tyi tyj tyl tyn typ tyr tys tyt tyu tyv tyx tyy tyz tza tzh tzj tzl tzm tzn tzo tzx uam uan uar uba ubi ubl ubr ubu uby uda ude udg udi udj udl udm udu ues ufi ug uga ugb uge ugh ugn ugo ugy uha uhn uis uiv uji uk uka ukg ukh uki ukk ukl ukp ukq uks uku ukv ukw uky ula ulb ulc ule ulf uli ulk ull ulm uln ulu ulw uly uma umb umc umd umg umi umm umn umo ump umr ums umu una und une ung uni unk unm unn unp unr unu unx unz uok uon upi upv ur ura urb urc ure urf urg urh uri urj urk url urm urn uro urp urr urt uru urv urw urx ury urz usa ush usi usk usp uss usu uta ute uth utp utr utu uum uun uur uuu uve uvh uvl uwa uya uz uzn uzs vaa vae vaf vag vah vai vaj val vam van vao vap var vas vau vav vay vbb vbk ve vec ved vel vem veo vep ver vgr vgt vi vic vid vif vig vil vin vis vit viv vjk vka vki vkj vkk vkl vkm vkn vko vkp vkt vku vkz vlp vls vma vmb vmc vmd vme vmf vmg vmh vmi vmj vmk vml vmm vmp vmq vmr vms vmu vmv vmw vmx vmy vmz vnk vnm vnp vo vor vot vra vro vrs vrt vsi vsl vsn vsv vto vum vun vut vwa wa waa wab wac wad wae waf wag wah wai waj wak wal wam wan wao wap waq war was wat wau wav waw wax way waz wba wbb wbe wbf wbh wbi wbj wbk wbl wbm wbp wbq wbr wbs wbt wbv wbw wca wci wdd wdg wdj wdk wdt wdu wdy wea wec wed weg weh wei wem wen weo wep wer wes wet weu wew wfg wga wgb wgg wgi wgo wgu wgw wgy wha whg whk whu wib wic wie wif wig wih wii wij wik wil wim win wir wit wiu wiv wiw wiy wja wji wka wkb wkd wkl wkr wku wkw wky wla wlc wle wlg wlh wli wlk wll wlm wlo wlr wls wlu wlv wlw wlx wly wma wmb wmc wmd wme wmg wmh wmi wmm wmn wmo wms wmt wmw wmx wnb wnc wnd wne wng wni wnk wnm wnn wno wnp wnu wnw wny wo woa wob woc wod woe wof wog woi wok wom won woo wor wos wow woy wpc wra wrb wrd wrg wrh wri wrk wrl wrm wrn wro wrp wrr wrs wru wrv wrw wrx wry wrz wsa wsg wsi wsk wsr wss wsu wsv wtb wtf wth wti wtk wtm wtw wua wub wud wuh wul wum wun wur wut wuu wuv wux wuy wwa wwb wwo wwr www wxa wxw wya wyb wyi wym wyn wyr wyy xaa xab xac xad xae xag xai xaj xak xal xam xan xao xap xaq xar xas xat xau xav xaw xay xba xbb xbc xbd xbe xbg xbi xbj xbm xbn xbo xbp xbr xbw xbx xby xcb xcc xce xcg xch xcl xcm xcn xco xcr xct xcu xcv xcw xcy xda xdc xdk xdm xdo xdq xdy xeb xed xeg xel xem xep xer xes xet xeu xfa xga xgb xgd xgf xgg xgi xgl xgm xgn xgr xgu xgw xh xha xhc xhd xhe xhm xhr xht xhu xhv xia xib xii xil xin xip xir xis xiv xiy xjb xjt xka xkb xkc xkd xke xkf xkg xkh xki xkj xkk xkl xkn xko xkp xkq xkr xks xkt xku xkv xkw xkx xky xkz xla xlb xlc xld xle xlg xli xln xlo xlp xls xlu xly xma xmb xmc xmd xme xmf xmg xmh xmj xmk xml xmm xmn xmo xmp xmq xmr xms xmt xmu xmv xmw xmx xmy xmz xna xnb xnd xng xnh xni xnj xnk xnm xnn xno xnq xnr xns xnt xnu xny xnz xoc xod xog xoi xok xom xon xoo xop xor xow xpa xpb xpc xpd xpe xpf xpg xph xpi xpj xpk xpl xpm xpn xpo xpp xpq xpr xps xpt xpu xpv xpw xpx xpy xpz xqa xqt xra xrb xrd xre xrg xri xrm xrn xrq xrr xrt xru xrw xsa xsb xsc xsd xse xsh xsi xsj xsl xsm xsn xso xsp xsq xsr xss xsu xsv xsy xta xtb xtc xtd xte xtg xth xti xtj xtl xtm xtn xto xtp xtq xtr xts xtt xtu xtv xtw xty xtz xua xub xud xug xuj xul xum xun xuo xup xur xut xuu xve xvi xvn xvo xvs xwa xwc xwd xwe xwg xwj xwk xwl xwo xwr xwt xww xxb xxk xxm xxr xxt xya xyb xyj xyk xyl xyt xyy xzh xzm xzp yaa yab yac yad yae yaf yag yah yai yaj yak yal yam yan yao yap yaq yar yas yat yau yav yaw yax yay yaz yba ybb ybd ybe ybh ybi ybj ybk ybl ybm ybn ybo ybx yby ych ycl ycn ycp ycr yda ydd yde ydg ydk yds yea yec yee yei yej yel yen yer yes yet yeu yev yey yga ygi ygl ygm ygp ygr ygs ygu ygw yha yhd yhl yhs yi yia yif yig yih yii yij yik yil yim yin yip yiq yir yis yit yiu yiv yix yiy yiz yka ykg ykh yki ykk ykl ykm ykn yko ykr ykt yku yky yla ylb yle ylg yli yll ylm yln ylo ylr ylu yly yma ymb ymc ymd yme ymg ymh ymi ymk yml ymm ymn ymo ymp ymq ymr yms ymt ymx ymz yna ynb ynd yne yng ynh ynk ynl ynn yno ynq yns ynu yo yob yog yoi yok yol yom yon yos yot yox yoy ypa ypb ypg yph ypk ypm ypn ypo ypp ypz yra yrb yre yri yrk yrl yrm yrn yro yrs yrw yry ysc ysd ysg ysl ysm ysn yso ysp ysr yss ysy yta ytl ytp ytw yty yua yub yuc yud yue yuf yug yui yuj yuk yul yum yun yup yuq yur yut yuu yuw yux yuy yuz yva yvt ywa ywg ywl ywn ywq ywr ywt ywu yww yxa yxg yxl yxm yxu yxy yyr yyu yyz yzg yzk za zaa zab zac zad zae zaf zag zah zai zaj zak zal zam zao zap zaq zar zas zat zau zav zaw zax zay zaz zba zbc zbe zbl zbt zbu zbw zca zcd zch zdj zea zeg zeh zem zen zga zgb zgh zgm zgn zgr zh zhb zhd zhi zhn zhw zhx zia zib zik zil zim zin zir ziw ziz zka zkb zkd zkg zkh zkk zkn zko zkp zkr zkt zku zkv zkz zla zle zlj zlm zln zlq zls zlu zlw zma zmb zmc zmd zme zmf zmg zmh zmi zmj zmk zml zmm zmn zmo zmp zmq zmr zms zmt zmu zmv zmw zmx zmy zmz zna znd zne zng znk zns zoc zoh zom zoo zoq zor zos zpa zpb zpc zpd zpe zpf zpg zph zpi zpj zpk zpl zpm zpn zpo zpp zpq zpr zps zpt zpu zpv zpw zpx zpy zpz zqe zra zrg zrn zro zrp zrs zsa zsk zsl zsm zsr zsu zte ztg ztl ztm ztn ztp ztq zts ztt ztu ztx zty zu zua zuh zum zun zuy zwa zxx zyb zyg zyj zyn zyp zza zzj';
+  // </generated:language-subtags>
+
+  // BCP 47 well-formedness plus a registry check on the primary subtag. Shape
+  // alone accepts "eng" and "em-US", which look like language tags but are not
+  // registered: the IANA registry lists a three-letter subtag only when no
+  // two-letter one exists, so "en" is registered and "eng" is not.
+  let __languageSubtagSet = null;
+  function isRegisteredLanguageSubtag(subtag) {
+    if (!__languageSubtagSet) __languageSubtagSet = new Set(LANGUAGE_SUBTAGS.split(' '));
+    return __languageSubtagSet.has(String(subtag || '').toLowerCase());
+  }
+
+  function isValidLanguageTag(value) {
+    const raw = String(value == null ? '' : value).trim();
+    if (!raw) return false;
+    if (!/^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{1,8})*$/.test(raw)) return false;
+    return isRegisteredLanguageSubtag(raw.split('-')[0]);
+  }
+
   const document = opts && opts.document ? opts.document : null;
   const window = opts && opts.window ? opts.window : null;
   // Some engine paths may not pass opts.window; recover it from document when possible.
@@ -53418,6 +55351,23 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return { present: !!value, value, mechanism: 'label', flags: value ? [] : ['empty'] };
   }
 
+  // ACT scopes every accessible-name rule to elements "included in the
+  // accessibility tree" (c487ae link-name, 97a4e1 button-name and siblings),
+  // and its glossary puts focusable aria-hidden content outside that set:
+  // "Because they are hidden, these elements are considered not included in
+  // the accessibility tree", even where a browser leaves them in it. The
+  // defect they do represent, aria-hidden over content in the focus order,
+  // belongs to aria-hidden-focus (ACT 6cfa84, WCAG 4.1.2).
+  //
+  // isAccTreeEligible keeps them eligible on purpose so aria-hidden-focus can
+  // reach them, so naming rules need this narrower question instead.
+  function isIncludedInAccessibilityTree(el) {
+    const r = isAccTreeEligible(el);
+    if (!r || !r.eligible) return false;
+    const reasons = Array.isArray(r.reasons) ? r.reasons : [];
+    return !reasons.some((x) => typeof x === 'string' && x.indexOf('ariaHiddenOverridden') === 0);
+  }
+
   function getAccessibleNameInfo(el, _ctx, opts) {
     const flags = [];
     if (!isElement(el))
@@ -53860,32 +55810,6 @@ const createDomHelpers = (function createDomHelpers(opts) {
       return tag === 'img' || tag === 'area' || (tag === 'input' && type === 'image');
     }
 
-    // aria-hidden is inherited by the subtree, but isAccTreeEligible's
-    // 'ariaHiddenOverridden*' escapes are per-element — so without this the
-    // named element is in-tree while the descendants it takes its name from
-    // are not, and any element-wrapped text resolves empty.
-    // Narrower than opts.includeHidden: isAccTreeEligible returns these two
-    // reasons only after ruling out every other blocker, so forgiving them
-    // still excludes display:none/inert/hidden descendants.
-    const ARIA_HIDDEN_ONLY_REASONS = ['ariaHidden', 'ariaHiddenProgrammaticFocusExcluded'];
-
-    const ariaHiddenOverrideRoot = (() => {
-      try {
-        const r = isAccTreeEligible(el);
-        if (!r || !r.eligible || !Array.isArray(r.reasons)) return false;
-        return r.reasons.some(
-          (x) => typeof x === 'string' && x.indexOf('ariaHiddenOverridden') === 0
-        );
-      } catch {
-        return false;
-      }
-    })();
-
-    function isAriaHiddenOnlyIneligible(eligRes) {
-      const rs = eligRes && Array.isArray(eligRes.reasons) ? eligRes.reasons : [];
-      return rs.length === 1 && ARIA_HIDDEN_ONLY_REASONS.indexOf(rs[0]) !== -1;
-    }
-
     function collect(node, parts) {
       if (truncated) return;
       visitedCount += 1;
@@ -53924,10 +55848,6 @@ const createDomHelpers = (function createDomHelpers(opts) {
         try {
           const eligRes = isAccTreeEligible(node);
           eligible = !!(eligRes && eligRes.eligible);
-          // See ARIA_HIDDEN_ONLY_REASONS above.
-          if (!eligible && ariaHiddenOverrideRoot && isAriaHiddenOnlyIneligible(eligRes)) {
-            eligible = true;
-          }
         } catch {
           eligible = true;
         }
@@ -55086,6 +57006,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
   }
 
   return {
+    isValidLanguageTag,
+    isRegisteredLanguageSubtag,
+
     // Existing query/snippet utilities
     queryAll,
     queryAllDeep,
@@ -55099,6 +57022,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     hasAccessibleName,
     isExcluded,
     isAccTreeEligible,
+    isIncludedInAccessibilityTree,
     isDomVisibleEligible,
     isWholeDocumentScope,
 
@@ -55154,6 +57078,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     getLabelMethod,
     getLabelStrength,
+
+    // Whether a <label> carries text that names its associated control
+    // (own aria-name, else rendered content, else title). Shared so
+    // form-control-single-label and form-control-programmatic-label-present
+    // agree on what a label is worth.
+    labelContributesAccessibleName,
 
     // Flat-tree ancestor walk (assignedSlot-aware, then shadow host) —
     // see this function's own definition above for why assignedSlot
@@ -56810,8 +58740,8 @@ const __a11yCoreCrossFrameApi = (function () {
   },
   {
     "ruleId": "aria-deprecated-role",
-    "title": "role attribute must not use a deprecated or author-prohibited ARIA role",
-    "description": "Checks that an explicit role=\"\" attribute does not use a role deprecated by the WAI-ARIA specification, or one reserved for user-agent-internal use only (e.g. role=\"generic\").",
+    "title": "role attribute should not use a deprecated or author-discouraged ARIA role",
+    "description": "Checks that an explicit role=\"\" attribute does not use a role deprecated by the WAI-ARIA specification, or one reserved for user-agent-internal use (e.g. role=\"generic\").",
     "i18n": {
       "titleKey": "ariaDeprecatedRole_title",
       "descriptionKey": "ariaDeprecatedRole_description"
@@ -57583,8 +59513,8 @@ const __a11yCoreCrossFrameApi = (function () {
   },
   {
     "ruleId": "avoid-inline-spacing",
-    "title": "Inline style must not force text spacing with !important",
-    "description": "Checks that inline style does not set line-height, letter-spacing, or word-spacing with !important, which blocks user text-spacing overrides.",
+    "title": "Inline style must not force text spacing below the WCAG metric",
+    "description": "Checks that where inline style forces line-height, letter-spacing or word-spacing with !important, the value already meets WCAG 1.4.12, so the user has nothing left to override.",
     "i18n": {
       "titleKey": "avoidInlineSpacing_title",
       "descriptionKey": "avoidInlineSpacing_description"
@@ -57765,7 +59695,7 @@ const __a11yCoreCrossFrameApi = (function () {
       "wcag241",
       "navigation",
       "atomic",
-      "automatic",
+      "manual",
       "a11ycore"
     ],
     "wcagSc": [
@@ -57780,9 +59710,9 @@ const __a11yCoreCrossFrameApi = (function () {
         "conformanceLevel": "A"
       }
     ],
-    "defaultSeverity": "serious",
+    "defaultSeverity": "moderate",
     "defaultConfidence": "medium",
-    "type": "automatic",
+    "type": "manual",
     "coverage": {
       "facetsBySc": {
         "2.4.1": [
@@ -64138,6 +66068,7 @@ const __a11yCoreCrossFrameApi = (function () {
   // Declared inside runInPage (rather than at module scope) because the
   // build inlines only this function's own source text — see
   // scripts/build-core.js header ("runInPage MUST be self-contained").
+  // <generated:aria-global-attrs>
   const GLOBAL_ATTRS = [
     'aria-atomic',
     'aria-braillelabel',
@@ -64148,14 +66079,10 @@ const __a11yCoreCrossFrameApi = (function () {
     'aria-describedby',
     'aria-description',
     'aria-details',
-    'aria-disabled',
     'aria-dropeffect',
-    'aria-errormessage',
     'aria-flowto',
     'aria-grabbed',
-    'aria-haspopup',
     'aria-hidden',
-    'aria-invalid',
     'aria-keyshortcuts',
     'aria-label',
     'aria-labelledby',
@@ -64164,194 +66091,736 @@ const __a11yCoreCrossFrameApi = (function () {
     'aria-relevant',
     'aria-roledescription'
   ];
+  // </generated:aria-global-attrs>
 
   // Per-role supported (non-global) states/properties. Deliberately
   // conservative — see src/core/aria-helpers.js file header for the same
   // confidence-scoping rationale; only well-established, unambiguous
   // role/attribute pairings from the WAI-ARIA role definitions are listed.
+  // <generated:aria-implicit-roles>
+  const IMPLICIT_ROLE_BY_ELEMENT = {
+    article: 'article',
+    blockquote: 'blockquote',
+    button: 'button',
+    caption: 'caption',
+    code: 'code',
+    dd: 'definition',
+    del: 'deletion',
+    details: 'group',
+    dfn: 'term',
+    dialog: 'dialog',
+    dt: 'term',
+    em: 'emphasis',
+    fieldset: 'group',
+    figure: 'figure',
+    h1: 'heading',
+    h2: 'heading',
+    h3: 'heading',
+    h4: 'heading',
+    h5: 'heading',
+    h6: 'heading',
+    hr: 'separator',
+    ins: 'insertion',
+    main: 'main',
+    mark: 'mark',
+    menu: 'list',
+    meter: 'meter',
+    nav: 'navigation',
+    ol: 'list',
+    optgroup: 'group',
+    option: 'option',
+    output: 'status',
+    p: 'paragraph',
+    progress: 'progressbar',
+    strong: 'strong',
+    sub: 'subscript',
+    sup: 'superscript',
+    textarea: 'textbox',
+    time: 'time',
+    ul: 'list',
+    'input[type=text]': 'textbox',
+    'input[type=tel]': 'textbox',
+    'input[type=url]': 'textbox',
+    'input[type=email]': 'textbox',
+    'input[type=password]': 'textbox',
+    'input[type=search]': 'searchbox',
+    'input[type=number]': 'spinbutton',
+    'input[type=range]': 'slider',
+    'input[type=checkbox]': 'checkbox',
+    'input[type=radio]': 'radio',
+    'input[type=button]': 'button',
+    'input[type=submit]': 'button',
+    'input[type=reset]': 'button',
+    'input[type=image]': 'button'
+  };
+  const NON_GLOBAL_ARIA_ATTR_SELECTOR =
+    '[aria-activedescendant], [aria-autocomplete], [aria-checked], [aria-colcount], [aria-colindex], [aria-colspan], [aria-disabled], [aria-errormessage], [aria-expanded], [aria-haspopup], [aria-invalid], [aria-level], [aria-modal], [aria-multiline], [aria-multiselectable], [aria-orientation], [aria-placeholder], [aria-posinset], [aria-pressed], [aria-readonly], [aria-required], [aria-rowcount], [aria-rowindex], [aria-rowspan], [aria-selected], [aria-setsize], [aria-sort], [aria-valuemax], [aria-valuemin], [aria-valuenow], [aria-valuetext]';
+  // </generated:aria-implicit-roles>
+
+  // <generated:aria-role-attrs>
   const SUPPORTED_ATTRS_BY_ROLE = {
+    alert: [],
     alertdialog: ['aria-modal'],
-    checkbox: ['aria-checked', 'aria-readonly', 'aria-required', 'aria-expanded'],
+    application: [
+      'aria-activedescendant',
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    article: ['aria-posinset', 'aria-setsize'],
+    banner: [],
+    blockquote: [],
+    button: ['aria-disabled', 'aria-expanded', 'aria-haspopup', 'aria-pressed'],
+    caption: [],
+    cell: ['aria-colindex', 'aria-colspan', 'aria-rowindex', 'aria-rowspan'],
+    checkbox: [
+      'aria-checked',
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-invalid',
+      'aria-readonly',
+      'aria-required'
+    ],
+    code: [],
     columnheader: [
-      'aria-sort',
       'aria-colindex',
       'aria-colspan',
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid',
       'aria-readonly',
       'aria-required',
       'aria-rowindex',
       'aria-rowspan',
       'aria-selected',
-      'aria-expanded'
+      'aria-sort'
     ],
     combobox: [
-      'aria-expanded',
+      'aria-activedescendant',
       'aria-autocomplete',
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid',
       'aria-readonly',
-      'aria-required',
-      'aria-activedescendant'
+      'aria-required'
     ],
+    complementary: [],
+    contentinfo: [],
+    definition: [],
+    deletion: [],
     dialog: ['aria-modal'],
+    directory: [],
+    'doc-abstract': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-acknowledgments': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-afterword': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-appendix': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-backlink': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-biblioentry': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid',
+      'aria-level',
+      'aria-posinset',
+      'aria-setsize'
+    ],
+    'doc-bibliography': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-biblioref': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-chapter': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-colophon': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-conclusion': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-cover': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-credit': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-credits': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-dedication': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-endnote': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid',
+      'aria-level',
+      'aria-posinset',
+      'aria-setsize'
+    ],
+    'doc-endnotes': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-epigraph': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-epilogue': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-errata': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-example': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-footnote': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-foreword': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-glossary': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-glossref': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-index': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-introduction': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-noteref': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-notice': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-pagebreak': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid',
+      'aria-orientation',
+      'aria-valuemax',
+      'aria-valuemin',
+      'aria-valuenow',
+      'aria-valuetext'
+    ],
+    'doc-pagefooter': ['aria-disabled', 'aria-errormessage', 'aria-haspopup', 'aria-invalid'],
+    'doc-pageheader': ['aria-disabled', 'aria-errormessage', 'aria-haspopup', 'aria-invalid'],
+    'doc-pagelist': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-part': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-preface': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-prologue': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-pullquote': [],
+    'doc-qna': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-subtitle': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-tip': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'doc-toc': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    document: [],
+    emphasis: [],
+    feed: [],
+    figure: [],
+    form: [],
+    generic: [],
+    'graphics-document': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'graphics-object': [
+      'aria-activedescendant',
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
+    'graphics-symbol': [
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid'
+    ],
     grid: [
+      'aria-activedescendant',
+      'aria-colcount',
+      'aria-disabled',
       'aria-multiselectable',
       'aria-readonly',
-      'aria-colcount',
-      'aria-rowcount',
-      'aria-activedescendant'
+      'aria-rowcount'
     ],
     gridcell: [
-      'aria-selected',
-      'aria-readonly',
-      'aria-required',
       'aria-colindex',
       'aria-colspan',
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid',
+      'aria-readonly',
+      'aria-required',
       'aria-rowindex',
       'aria-rowspan',
-      'aria-expanded'
+      'aria-selected'
     ],
+    group: ['aria-activedescendant', 'aria-disabled'],
     heading: ['aria-level'],
+    img: [],
+    insertion: [],
+    link: ['aria-disabled', 'aria-expanded', 'aria-haspopup'],
+    list: [],
     listbox: [
-      'aria-multiselectable',
-      'aria-readonly',
-      'aria-required',
-      'aria-orientation',
+      'aria-activedescendant',
+      'aria-disabled',
+      'aria-errormessage',
       'aria-expanded',
-      'aria-activedescendant'
+      'aria-invalid',
+      'aria-multiselectable',
+      'aria-orientation',
+      'aria-readonly',
+      'aria-required'
     ],
     listitem: ['aria-level', 'aria-posinset', 'aria-setsize'],
-    menu: ['aria-activedescendant', 'aria-orientation'],
-    menubar: ['aria-activedescendant', 'aria-orientation'],
+    log: [],
+    main: [],
+    mark: [],
+    marquee: [],
+    math: [],
+    menu: ['aria-activedescendant', 'aria-disabled', 'aria-orientation'],
+    menubar: ['aria-activedescendant', 'aria-disabled', 'aria-orientation'],
+    menuitem: ['aria-disabled', 'aria-expanded', 'aria-haspopup', 'aria-posinset', 'aria-setsize'],
     menuitemcheckbox: [
       'aria-checked',
+      'aria-disabled',
+      'aria-errormessage',
       'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid',
+      'aria-posinset',
       'aria-readonly',
       'aria-required',
-      'aria-posinset',
       'aria-setsize'
     ],
     menuitemradio: [
       'aria-checked',
+      'aria-disabled',
+      'aria-errormessage',
       'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid',
+      'aria-posinset',
       'aria-readonly',
       'aria-required',
-      'aria-posinset',
       'aria-setsize'
     ],
-    meter: ['aria-valuenow', 'aria-valuemin', 'aria-valuemax', 'aria-valuetext'],
-    option: ['aria-selected', 'aria-checked', 'aria-posinset', 'aria-setsize'],
-    progressbar: ['aria-valuenow', 'aria-valuemin', 'aria-valuemax', 'aria-valuetext'],
-    radio: ['aria-checked', 'aria-posinset', 'aria-setsize'],
-    radiogroup: ['aria-readonly', 'aria-required', 'aria-orientation', 'aria-activedescendant'],
+    meter: ['aria-valuemax', 'aria-valuemin', 'aria-valuenow', 'aria-valuetext'],
+    navigation: [],
+    none: [],
+    note: [],
+    option: ['aria-checked', 'aria-disabled', 'aria-posinset', 'aria-selected', 'aria-setsize'],
+    paragraph: [],
+    presentation: [],
+    progressbar: ['aria-valuemax', 'aria-valuemin', 'aria-valuenow', 'aria-valuetext'],
+    radio: ['aria-checked', 'aria-disabled', 'aria-posinset', 'aria-setsize'],
+    radiogroup: [
+      'aria-activedescendant',
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-invalid',
+      'aria-orientation',
+      'aria-readonly',
+      'aria-required'
+    ],
+    region: [],
     row: [
-      'aria-selected',
+      'aria-activedescendant',
+      'aria-colindex',
+      'aria-disabled',
+      'aria-expanded',
       'aria-level',
       'aria-posinset',
-      'aria-setsize',
-      'aria-colindex',
       'aria-rowindex',
-      'aria-expanded',
-      'aria-activedescendant'
+      'aria-selected',
+      'aria-setsize'
     ],
+    rowgroup: [],
     rowheader: [
-      'aria-sort',
       'aria-colindex',
       'aria-colspan',
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-invalid',
       'aria-readonly',
       'aria-required',
       'aria-rowindex',
       'aria-rowspan',
       'aria-selected',
-      'aria-expanded'
+      'aria-sort'
     ],
     scrollbar: [
-      'aria-valuenow',
-      'aria-valuemin',
-      'aria-valuemax',
-      'aria-valuetext',
+      'aria-disabled',
       'aria-orientation',
-      'aria-controls'
+      'aria-valuemax',
+      'aria-valuemin',
+      'aria-valuenow',
+      'aria-valuetext'
     ],
+    search: [],
     searchbox: [
       'aria-activedescendant',
       'aria-autocomplete',
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-haspopup',
+      'aria-invalid',
       'aria-multiline',
       'aria-placeholder',
       'aria-readonly',
       'aria-required'
     ],
     separator: [
-      'aria-valuenow',
-      'aria-valuemin',
+      'aria-disabled',
+      'aria-orientation',
       'aria-valuemax',
-      'aria-valuetext',
-      'aria-orientation'
+      'aria-valuemin',
+      'aria-valuenow',
+      'aria-valuetext'
     ],
     slider: [
-      'aria-valuenow',
-      'aria-valuemin',
-      'aria-valuemax',
-      'aria-valuetext',
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-haspopup',
+      'aria-invalid',
       'aria-orientation',
-      'aria-readonly'
+      'aria-readonly',
+      'aria-valuemax',
+      'aria-valuemin',
+      'aria-valuenow',
+      'aria-valuetext'
     ],
     spinbutton: [
-      'aria-valuenow',
-      'aria-valuemin',
-      'aria-valuemax',
-      'aria-valuetext',
+      'aria-activedescendant',
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-invalid',
       'aria-readonly',
       'aria-required',
-      'aria-activedescendant'
+      'aria-valuemax',
+      'aria-valuemin',
+      'aria-valuenow',
+      'aria-valuetext'
     ],
-    switch: ['aria-checked', 'aria-expanded', 'aria-readonly', 'aria-required'],
-    tab: ['aria-selected', 'aria-expanded', 'aria-posinset', 'aria-setsize'],
+    status: [],
+    strong: [],
+    subscript: [],
+    superscript: [],
+    switch: [
+      'aria-checked',
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-expanded',
+      'aria-invalid',
+      'aria-readonly',
+      'aria-required'
+    ],
+    tab: [
+      'aria-disabled',
+      'aria-expanded',
+      'aria-haspopup',
+      'aria-posinset',
+      'aria-selected',
+      'aria-setsize'
+    ],
     table: ['aria-colcount', 'aria-rowcount'],
-    tablist: ['aria-multiselectable', 'aria-orientation', 'aria-level', 'aria-activedescendant'],
+    tablist: [
+      'aria-activedescendant',
+      'aria-disabled',
+      'aria-level',
+      'aria-multiselectable',
+      'aria-orientation'
+    ],
+    tabpanel: [],
+    term: [],
     textbox: [
       'aria-activedescendant',
       'aria-autocomplete',
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-haspopup',
+      'aria-invalid',
       'aria-multiline',
       'aria-placeholder',
       'aria-readonly',
       'aria-required'
     ],
-    toolbar: ['aria-activedescendant', 'aria-orientation'],
-    tree: ['aria-multiselectable', 'aria-required', 'aria-orientation', 'aria-activedescendant'],
-    treegrid: [
+    time: [],
+    timer: [],
+    toolbar: ['aria-activedescendant', 'aria-disabled', 'aria-orientation'],
+    tooltip: [],
+    tree: [
+      'aria-activedescendant',
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-invalid',
       'aria-multiselectable',
+      'aria-orientation',
+      'aria-required'
+    ],
+    treegrid: [
+      'aria-activedescendant',
+      'aria-colcount',
+      'aria-disabled',
+      'aria-errormessage',
+      'aria-invalid',
+      'aria-multiselectable',
+      'aria-orientation',
       'aria-readonly',
       'aria-required',
-      'aria-orientation',
-      'aria-colcount',
-      'aria-rowcount',
-      'aria-activedescendant'
+      'aria-rowcount'
     ],
     treeitem: [
       'aria-checked',
-      'aria-selected',
+      'aria-disabled',
       'aria-expanded',
+      'aria-haspopup',
       'aria-level',
       'aria-posinset',
+      'aria-selected',
       'aria-setsize'
     ]
   };
+  // </generated:aria-role-attrs>
 
   const globalSet = new Set(GLOBAL_ATTRS);
+  // [role] keeps the explicit-role path; the attribute selector brings in
+  // elements judged by their implicit role. Only non-global attributes can be
+  // disallowed, so nothing else needs visiting.
+  const selector = '[role], ' + NON_GLOBAL_ARIA_ATTR_SELECTOR;
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('[role]')
-    : helpers.queryAll('[role]');
+    ? helpers.queryAllSmart(selector)
+    : helpers.queryAll(selector);
 
-  const occurrences = [];
+  const failOccurrences = [];
+  const cantTellOccurrences = [];
   let applicableCount = 0;
 
   for (const el of nodes) {
     if (!el || !el.attributes) continue;
 
-    const role = ariaHelpers.getExplicitRole(el);
+    // ACT 5c01ea scopes the rule to any element carrying an ARIA attribute, so
+    // an element with no role attribute is judged against its implicit role.
+    // Only elements whose implicit role is context-free are covered; the
+    // generator lists what is excluded and why.
+    const explicitRole = ariaHelpers.getExplicitRole(el);
+    let role = explicitRole;
+    if (!role) {
+      const tag = String(el.tagName || '').toLowerCase();
+      const key =
+        tag === 'input'
+          ? 'input[type=' + String(el.getAttribute('type') || 'text').toLowerCase() + ']'
+          : tag;
+      role = Object.prototype.hasOwnProperty.call(IMPLICIT_ROLE_BY_ELEMENT, key)
+        ? IMPLICIT_ROLE_BY_ELEMENT[key]
+        : '';
+    }
     if (!role || !ariaHelpers.isValidConcreteRole(role)) continue; // aria-roles-valid's concern
 
-    // Deliberately scoped: only roles with an explicit supported-attrs
-    // entry are evaluated (see file header — kept narrow to avoid
-    // over-claiming constraints for roles not yet modeled here).
+    // Presentational role conflict resolution drops role="none"/"presentation"
+    // when the element is focusable or carries global ARIA, so the implicit
+    // role decides which attributes are supported. Judging against the
+    // presentational role would flag valid markup such as
+    // <button role="none" aria-pressed="false">; presentation-role-conflict
+    // owns this case.
+    if (role === 'none' || role === 'presentation') continue;
+
+    // Roles absent from the generated table are unknown to ARIA, so there is
+    // nothing to judge them against.
     const roleSupported = SUPPORTED_ATTRS_BY_ROLE[role];
     if (!roleSupported) continue;
     const roleSupportedSet = new Set(roleSupported);
@@ -64377,11 +66846,36 @@ const __a11yCoreCrossFrameApi = (function () {
     const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
     for (const name of disallowed) {
-      occurrences.push({
+      // A property ARIA deprecated (rather than prohibited) on this role is
+      // still allowed — surfaced as cantTell for the author to decide, not a
+      // not-allowed fail.
+      const deprecated =
+        typeof ariaHelpers.isDeprecatedAttr === 'function' &&
+        ariaHelpers.isDeprecatedAttr(name, role);
+      if (deprecated) {
+        cantTellOccurrences.push({
+          selector: stableSelector,
+          html,
+          summary: 'This ARIA attribute is deprecated for this element’s role.',
+          hint: 'It is still allowed but discouraged; remove it or use a role that supports it, as a future ARIA version may disallow it.',
+          occurrenceOutcome: 'cantTell',
+          i18n: {
+            summaryKey: 'ariaAllowedAttr_summary_cantTell',
+            hintKey: 'ariaAllowedAttr_hint_cantTell',
+            params: { attr: name, role }
+          },
+          data: {
+            details: { reasonCode: 'ARIA_ATTR_DEPRECATED', attr: name, role }
+          }
+        });
+        continue;
+      }
+      failOccurrences.push({
         selector: stableSelector,
         html,
         summary: 'This ARIA attribute is not permitted for this element’s role.',
         hint: 'Remove this attribute, or use a role that supports it.',
+        occurrenceOutcome: 'fail',
         i18n: {
           summaryKey: 'ariaAllowedAttr_summary_fail',
           hintKey: 'ariaAllowedAttr_hint_fail',
@@ -64397,15 +66891,13 @@ const __a11yCoreCrossFrameApi = (function () {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'moderate',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+
+  const resolved = helpers.resolveTieredOutcome(
+    failOccurrences,
+    cantTellOccurrences,
+    rule.defaultSeverity || 'moderate'
+  );
+  return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "aria-allowed-role": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
@@ -64727,11 +67219,30 @@ const __a11yCoreCrossFrameApi = (function () {
     ? helpers.queryAllSmart('[role]')
     : helpers.queryAll('[role]');
 
-  const occurrences = [];
+  const failOccurrences = [];
+  const cantTellOccurrences = [];
   let applicableCount = 0;
+
+  // A role on an element hidden from assistive technology has no effect, so
+  // ACT 674b10 does not apply to it.
+  function isHidden(el) {
+    try {
+      if (typeof helpers.isDomVisibleEligible === 'function') {
+        if (!helpers.isDomVisibleEligible(el, ctx)) return true;
+      }
+      for (let n = el; n && n.getAttribute; n = n.parentElement) {
+        if (String(n.getAttribute('aria-hidden') || '').toLowerCase() === 'true') return true;
+      }
+    } catch {
+      return false;
+    }
+    return false;
+  }
 
   for (const el of nodes) {
     if (!el || !el.getAttribute) continue;
+
+    if (isHidden(el)) continue;
 
     const role = ariaHelpers.getExplicitRole(el);
     if (!role) continue;
@@ -64742,7 +67253,14 @@ const __a11yCoreCrossFrameApi = (function () {
 
     applicableCount += 1;
 
-    if (!ariaHelpers.isDeprecatedRole(role)) continue;
+    const deprecated = ariaHelpers.isDeprecatedRole(role);
+    const discouraged =
+      typeof ariaHelpers.isAuthorDiscouragedRole === 'function' &&
+      ariaHelpers.isAuthorDiscouragedRole(role);
+    const prohibited =
+      typeof ariaHelpers.isAuthorProhibitedRole === 'function' &&
+      ariaHelpers.isAuthorProhibitedRole(role);
+    if (!deprecated && !discouraged && !prohibited) continue;
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
     const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
@@ -64750,34 +67268,70 @@ const __a11yCoreCrossFrameApi = (function () {
       ? ariaHelpers.getDeprecatedRoleGuidance(role)
       : 'Replace the deprecated role with its recommended replacement.';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: `This element uses role="${role}", which authors must not explicitly declare.`,
-      hint: guidance,
-      i18n: {
-        summaryKey: 'ariaDeprecatedRole_summary_fail',
-        hintKey: 'ariaDeprecatedRole_hint_fail',
-        params: { role, guidance }
-      },
-      data: {
-        details: { reasonCode: 'ARIA_ROLE_DEPRECATED', role, guidance }
-      }
-    });
+    if (prohibited) {
+      // Author MUST NOT: the usage is non-conforming, not merely discouraged.
+      failOccurrences.push({
+        selector: stableSelector,
+        html,
+        summary: `This element uses role="${role}", which authors must not explicitly declare.`,
+        hint: guidance,
+        occurrenceOutcome: 'fail',
+        i18n: {
+          summaryKey: 'ariaDeprecatedRole_summary_fail',
+          hintKey: 'ariaDeprecatedRole_hint_fail',
+          params: { role, guidance }
+        },
+        data: {
+          details: { reasonCode: 'ARIA_ROLE_AUTHOR_PROHIBITED', role, guidance }
+        }
+      });
+    } else if (discouraged) {
+      // Reserved for user-agent-internal use, at SHOULD NOT strength.
+      cantTellOccurrences.push({
+        selector: stableSelector,
+        html,
+        summary: `This element uses role="${role}", which is reserved for user agents (still valid, but discouraged).`,
+        hint: guidance,
+        occurrenceOutcome: 'cantTell',
+        i18n: {
+          summaryKey: 'ariaDeprecatedRole_summary_cantTell_discouraged',
+          hintKey: 'ariaDeprecatedRole_hint_cantTell',
+          params: { role, guidance }
+        },
+        data: {
+          details: { reasonCode: 'ARIA_ROLE_AUTHOR_DISCOURAGED', role, guidance }
+        }
+      });
+    } else {
+      // Deprecated but still valid: surfaced for the author to decide.
+      cantTellOccurrences.push({
+        selector: stableSelector,
+        html,
+        summary: `This element uses role="${role}", which is deprecated in WAI-ARIA.`,
+        hint: guidance,
+        occurrenceOutcome: 'cantTell',
+        i18n: {
+          summaryKey: 'ariaDeprecatedRole_summary_cantTell',
+          hintKey: 'ariaDeprecatedRole_hint_cantTell',
+          params: { role, guidance }
+        },
+        data: {
+          details: { reasonCode: 'ARIA_ROLE_DEPRECATED', role, guidance }
+        }
+      });
+    }
   }
 
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'moderate',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+
+  const resolved = helpers.resolveTieredOutcome(
+    failOccurrences,
+    cantTellOccurrences,
+    rule.defaultSeverity || 'moderate'
+  );
+  return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "aria-hidden-body": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
@@ -66783,19 +69337,44 @@ const __a11yCoreCrossFrameApi = (function () {
   const occurrences = [];
   let applicableCount = 0;
 
+  // Programmatically hidden per the ACT glossary: display:none, visibility not
+  // visible, or aria-hidden on the element or an ancestor.
+  function isHidden(el) {
+    try {
+      if (typeof helpers.isDomVisibleEligible === 'function') {
+        if (!helpers.isDomVisibleEligible(el, ctx)) return true;
+      }
+      for (let n = el; n && n.getAttribute; n = n.parentElement) {
+        if (String(n.getAttribute('aria-hidden') || '').toLowerCase() === 'true') return true;
+      }
+    } catch {
+      return false;
+    }
+    return false;
+  }
+
   for (const el of nodes) {
     if (!el || !el.getAttribute) continue;
 
-    const role = ariaHelpers.getExplicitRole(el);
-    if (!role) continue; // role="" or whitespace-only: not this rule's concern
+    // ACT 674b10 is not applicable to a programmatically hidden element.
+    if (isHidden(el)) continue;
+
+    // role takes a fallback list and the first token the browser recognises
+    // wins, so role="searchfield searchbox" resolves to searchbox. The rule
+    // fails only when no token names a concrete role.
+    const tokens =
+      typeof ariaHelpers.getAllRoleTokens === 'function'
+        ? ariaHelpers.getAllRoleTokens(el)
+        : [ariaHelpers.getExplicitRole(el)].filter(Boolean);
+    if (!tokens.length) continue; // role="" or whitespace-only: not this rule's concern
 
     applicableCount += 1;
 
-    const isAbstract = ariaHelpers.isAbstractRole(role);
-    const isKnown = ariaHelpers.isKnownRole(role);
+    const usable = tokens.find((t) => ariaHelpers.isKnownRole(t) && !ariaHelpers.isAbstractRole(t));
+    if (usable) continue;
 
-    if (isKnown && !isAbstract) continue;
-
+    const role = tokens[0];
+    const isKnown = tokens.some((t) => ariaHelpers.isKnownRole(t));
     const reasonCode = !isKnown ? 'ARIA_ROLE_INVALID' : 'ARIA_ROLE_ABSTRACT';
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
     const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
@@ -67113,7 +69692,15 @@ const __a11yCoreCrossFrameApi = (function () {
     if (tokens[i] && tokens[i].startsWith('section-') && tokens[i].length > 'section-'.length)
       i += 1;
     if (tokens[i] === 'shipping' || tokens[i] === 'billing') i += 1;
-    if (CONTACT_MODALITY.has(tokens[i])) i += 1;
+    // A contact modality token is only allowed when the field that follows is
+    // a contact field, so "work photo" is invalid while "work email" is not.
+    if (CONTACT_MODALITY.has(tokens[i])) {
+      const next = tokens[i + 1];
+      const isContactField =
+        next === 'email' || next === 'impp' || next === 'tel' || (next || '').startsWith('tel-');
+      if (!isContactField) return false;
+      i += 1;
+    }
 
     let end = tokens.length;
     if (tokens[end - 1] === 'webauthn') end -= 1;
@@ -67130,10 +69717,38 @@ const __a11yCoreCrossFrameApi = (function () {
   const occurrences = [];
   let applicableCount = 0;
 
+  // ACT 73f2c2 exempts controls where the attribute cannot describe an input
+  // purpose: the on/off toggle, disabled controls, input types with a fixed
+  // value, and controls that take no input.
+  const FIXED_VALUE_TYPES = new Set([
+    'button',
+    'checkbox',
+    'file',
+    'image',
+    'radio',
+    'reset',
+    'submit'
+  ]);
+
+  function isExempt(el) {
+    const tag = String(el.tagName || '').toLowerCase();
+    if (tag === 'input') {
+      const type = String(el.getAttribute('type') || 'text').toLowerCase();
+      if (FIXED_VALUE_TYPES.has(type)) return true;
+    }
+    if (el.hasAttribute && el.hasAttribute('disabled')) return true;
+    if (String(el.getAttribute('aria-disabled') || '').toLowerCase() === 'true') return true;
+    return false;
+  }
+
   for (const el of nodes) {
     if (!el || !el.getAttribute) continue;
     const raw = String(el.getAttribute('autocomplete') || '').trim();
     if (!raw) continue;
+
+    const tokens = raw.toLowerCase().split(/\s+/).filter(Boolean);
+    if (tokens.length === 1 && (tokens[0] === 'on' || tokens[0] === 'off')) continue;
+    if (isExempt(el)) continue;
 
     applicableCount += 1;
 
@@ -67176,6 +69791,20 @@ const __a11yCoreCrossFrameApi = (function () {
   const { helpers, rule } = ctx;
 
   const SPACING_PROPS = ['line-height', 'letter-spacing', 'word-spacing'];
+  // WCAG 1.4.12's own metrics, as multiples of the font size.
+  const MIN_RATIO = { 'line-height': 1.5, 'letter-spacing': 0.12, 'word-spacing': 0.16 };
+  // Only these two take the value from the parent, leaving this declaration
+  // specifying no spacing of its own. `initial` and `revert` resolve to a
+  // concrete value (`normal` for all three properties), so they stay in scope.
+  const INHERITED_KEYWORDS = ['inherit', 'unset'];
+  // No user agent's `normal` line height reaches 1.5, so a forced `normal`
+  // always falls short of the metric.
+  const NORMAL_LINE_HEIGHT_RATIO = 1.2;
+  const CAMEL = {
+    'line-height': 'lineHeight',
+    'letter-spacing': 'letterSpacing',
+    'word-spacing': 'wordSpacing'
+  };
 
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('[style]')
@@ -67183,6 +69812,136 @@ const __a11yCoreCrossFrameApi = (function () {
 
   const occurrences = [];
   let applicableCount = 0;
+
+  // Within one declaration block, importance wins over order, so the last
+  // important declaration is the one that takes effect. Passed Example 5 of ACT
+  // 78fd32 turns on this and Passed Example 6 on the non-important half.
+  function effectiveDeclaration(raw, prop) {
+    const re = new RegExp('(?:^|;)\\s*' + prop + '\\s*:\\s*([^;]*)', 'gi');
+    let chosen = null;
+    let m;
+    while ((m = re.exec(raw))) {
+      const value = String(m[1] || '').trim();
+      const important = /!\s*important\s*$/i.test(value);
+      const clean = value.replace(/!\s*important\s*$/i, '').trim();
+      if (!clean) continue;
+      if (!chosen || important || !chosen.important) {
+        if (chosen && chosen.important && !important) continue;
+        chosen = { value: clean, important };
+      }
+    }
+    return chosen;
+  }
+
+  function hasVisibleTextChild(el) {
+    let kids;
+    try {
+      kids = el.childNodes ? Array.from(el.childNodes) : [];
+    } catch {
+      return false;
+    }
+    return kids.some((n) => n && n.nodeType === 3 && String(n.nodeValue || '').trim() !== '');
+  }
+
+  function isRendered(el) {
+    if (helpers.isDomVisibleEligible) {
+      try {
+        return !!helpers.isDomVisibleEligible(el, ctx, { targetSet: 'dom' }).eligible;
+      } catch {
+        return true;
+      }
+    }
+    return true;
+  }
+
+  const px = (v) => {
+    const n = parseFloat(v);
+    return Number.isFinite(n) && /px\s*$/.test(String(v)) ? n : null;
+  };
+
+  function computedStyleOf(el) {
+    if (helpers && typeof helpers.computedStyle === 'function') {
+      try {
+        const cs = helpers.computedStyle(el);
+        if (cs) return cs;
+      } catch {
+        // fall through to the realm's own view
+      }
+    }
+    try {
+      const view = el.ownerDocument && el.ownerDocument.defaultView;
+      if (view && typeof view.getComputedStyle === 'function') return view.getComputedStyle(el);
+    } catch {
+      // no computed style available
+    }
+    return null;
+  }
+
+  // ACT scopes these rules to text visible on screen, and text pushed far off
+  // canvas is the one hidden shape the shared eligibility check keeps eligible.
+  function isOffScreen(el) {
+    if (!helpers.getVisibilityHintsInfo) return false;
+    try {
+      const info = helpers.getVisibilityHintsInfo(el, ctx, {});
+      return !!(info && Array.isArray(info.hints) && info.hints.indexOf('offscreen') !== -1);
+    } catch {
+      return false;
+    }
+  }
+
+  // A realm that does not lay the document out reports font-size as the CSS
+  // absolute-size keyword rather than a length. Resolving those keeps px-valued
+  // spacing checkable there, and cannot manufacture a failure: a font size
+  // larger than assumed only makes a px ratio smaller.
+  const ABSOLUTE_FONT_SIZES = {
+    'xx-small': 9,
+    'x-small': 10,
+    small: 13,
+    medium: 16,
+    large: 18,
+    'x-large': 24,
+    'xx-large': 32
+  };
+
+  function fontSizeOf(cs) {
+    if (!cs) return null;
+    const direct = px(cs.fontSize);
+    if (direct !== null) return direct;
+    const keyword = String(cs.fontSize || '')
+      .trim()
+      .toLowerCase();
+    return ABSOLUTE_FONT_SIZES[keyword] || null;
+  }
+
+  /**
+   * The spacing as a multiple of the font size, or null when it cannot be
+   * resolved. Computed style is preferred because it already applies the
+   * cascade and unit resolution; the declared value is only a fallback for
+   * environments that do not lay the document out.
+   */
+  function spacingRatio(el, prop, declared) {
+    const cs = computedStyleOf(el);
+    const fontSize = fontSizeOf(cs);
+    if (cs && fontSize) {
+      const used = px(cs[CAMEL[prop]]);
+      if (used !== null) return used / fontSize;
+    }
+
+    const v = String(declared || '')
+      .trim()
+      .toLowerCase();
+    // `normal`, and the keywords that resolve to it, add nothing for the two
+    // spacing properties and stay under the metric for line height.
+    if (v === 'normal' || v === 'initial' || v === 'revert' || v === 'revert-layer') {
+      return prop === 'line-height' ? NORMAL_LINE_HEIGHT_RATIO : 0;
+    }
+    if (/^[0-9.]+$/.test(v)) return parseFloat(v);
+    if (/em$/.test(v)) return parseFloat(v);
+    if (/%$/.test(v)) return parseFloat(v) / 100;
+    const asPx = px(v);
+    if (asPx !== null && fontSize) return asPx / fontSize;
+    return null;
+  }
 
   for (const el of nodes) {
     if (!el || !el.getAttribute) continue;
@@ -67193,14 +69952,25 @@ const __a11yCoreCrossFrameApi = (function () {
     const hasAnySpacingProp = SPACING_PROPS.some((p) => lower.includes(p));
     if (!hasAnySpacingProp) continue;
 
-    applicableCount += 1;
+    // The rule is about text the user needs to re-space, so an element with no
+    // text of its own, or none that renders, is not a target.
+    if (!hasVisibleTextChild(el) || !isRendered(el) || isOffScreen(el)) continue;
 
     const flagged = [];
+    let inScope = false;
     for (const prop of SPACING_PROPS) {
-      const re = new RegExp(prop.replace('-', '\\-') + '\\s*:[^;]*!important', 'i');
-      if (re.test(raw)) flagged.push(prop);
+      const decl = effectiveDeclaration(raw, prop);
+      if (!decl || !decl.important) continue;
+      if (INHERITED_KEYWORDS.indexOf(decl.value.toLowerCase()) !== -1) continue;
+      inScope = true;
+      const ratio = spacingRatio(el, prop, decl.value);
+      // Unresolvable spacing is left alone: this engine reserves fail for
+      // high-confidence violations.
+      if (ratio === null) continue;
+      if (ratio < MIN_RATIO[prop]) flagged.push(prop);
     }
 
+    if (inScope) applicableCount += 1;
     if (!flagged.length) continue;
 
     const tag = el.tagName.toLowerCase();
@@ -67210,8 +69980,8 @@ const __a11yCoreCrossFrameApi = (function () {
     occurrences.push({
       selector: stableSelector,
       html,
-      summary: `This element's inline style forces ${flagged.join(', ')} with !important, blocking user text-spacing overrides.`,
-      hint: 'Remove !important from line-height/letter-spacing/word-spacing in inline styles so users can override text spacing.',
+      summary: `This element's inline style forces ${flagged.join(', ')} with !important below the WCAG text-spacing metric, so the user cannot raise it.`,
+      hint: 'Remove !important from line-height/letter-spacing/word-spacing in inline styles, or set a value that already meets the metric (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em).',
       i18n: {
         summaryKey: 'avoidInlineSpacing_summary_fail',
         hintKey: 'avoidInlineSpacing_hint_fail',
@@ -67330,9 +70100,16 @@ const __a11yCoreCrossFrameApi = (function () {
     return '';
   }
 
+  // Naming rules apply only to elements included in the accessibility tree
+  // (ACT c487ae and siblings), which excludes focusable aria-hidden content.
+  // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
   function isEligibleAcc(helpers, el, ctx) {
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -67346,8 +70123,9 @@ const __a11yCoreCrossFrameApi = (function () {
   const occurrences = [];
   let applicableCount = 0;
 
-  const selector =
-    'input[type="checkbox"], input[type="radio"], [role="checkbox"], [role="radio"], [role="switch"]';
+  // Native checkbox/radio without an explicit role belongs to
+  // form-control-programmatic-label-present.
+  const selector = '[role="checkbox"], [role="radio"], [role="switch"]';
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
@@ -67540,7 +70318,14 @@ const __a11yCoreCrossFrameApi = (function () {
 
   for (const el of nodes) {
     // isAccTreeEligible returns { eligible, reasons }, not a boolean.
-    const eligResult = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el, ctx) : true;
+    // Naming rules apply only to elements included in the accessibility tree
+    // (ACT c487ae), which excludes focusable aria-hidden content;
+    // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
+    const eligResult = helpers.isIncludedInAccessibilityTree
+      ? helpers.isIncludedInAccessibilityTree(el, ctx)
+      : helpers.isAccTreeEligible
+        ? helpers.isAccTreeEligible(el, ctx)
+        : true;
     const eligible =
       typeof eligResult === 'boolean' ? eligResult : !!(eligResult && eligResult.eligible);
     if (!eligible) continue;
@@ -67566,24 +70351,50 @@ const __a11yCoreCrossFrameApi = (function () {
       inputValueName = getInputButtonValueName(el);
     }
 
-    // A native <button> (or [role="button"]) whose role has been overridden to
-    // one of these roles is no longer semantically a button — per the WAI-ARIA
-    // Accessible Name and Description Computation spec these roles are
-    // name-from-author-only, and their rendered content represents a VALUE,
-    // not a NAME. E.g. <button role="combobox">List</button> where "List" is
-    // the combobox's currently selected value, not a label — crediting it as
-    // the accessible name would mask a missing name.
-    const VALUE_ROLES = [
-      'textbox',
-      'progressbar',
-      'scrollbar',
-      'slider',
-      'spinbutton',
-      'combobox',
-      'listbox'
+    // ARIA 1.2 "Name From: author, contents". Every other known role is
+    // name-from-author-only: <button role="combobox">List</button> exposes a
+    // value, not a label. An unknown role falls back to the implicit role.
+    // <generated:aria-name-from-content>
+    const NAME_FROM_CONTENT_ROLES = [
+      'button',
+      'cell',
+      'checkbox',
+      'columnheader',
+      'doc-backlink',
+      'doc-biblioref',
+      'doc-glossref',
+      'doc-noteref',
+      'graphics-object',
+      'gridcell',
+      'heading',
+      'link',
+      'menuitem',
+      'menuitemcheckbox',
+      'menuitemradio',
+      'option',
+      'radio',
+      'row',
+      'rowgroup',
+      'rowheader',
+      'switch',
+      'tab',
+      'tooltip',
+      'treeitem'
     ];
+    // </generated:aria-name-from-content>
+    const isKnownRoleToken =
+      helpers && helpers.aria && typeof helpers.aria.isKnownRole === 'function'
+        ? (() => {
+            try {
+              return !!helpers.aria.isKnownRole(roleNorm);
+            } catch {
+              return false;
+            }
+          })()
+        : false;
     const isContentNameCandidate =
-      (tag === 'button' || role === 'button') && !VALUE_ROLES.includes(roleNorm);
+      (tag === 'button' || role === 'button') &&
+      (!roleNorm || !isKnownRoleToken || NAME_FROM_CONTENT_ROLES.includes(roleNorm));
     const contentName =
       !trustedProgrammaticName && !inputValueName && isContentNameCandidate
         ? getConservativeSubtreeText(el)
@@ -67682,7 +70493,8 @@ const __a11yCoreCrossFrameApi = (function () {
   // (e.g. a page whose only <h1> sits inside a display:none ancestor,
   // unreachable by sighted and screen reader users alike). A fully
   // non-rendered <main>/heading must not be credited here, since that would
-  // wrongly return `pass` for a page with zero actual bypass mechanisms.
+  // wrongly treat a page with zero currently-exposed bypass mechanisms as
+  // having one.
   function hasMainLandmark() {
     for (const el of queryAll('main, [role="main"]')) {
       if (el && isExposedToAt(el)) return true;
@@ -67690,10 +70502,41 @@ const __a11yCoreCrossFrameApi = (function () {
     return false;
   }
 
+  // Resolve a fragment id (or legacy <a name>) inside a specific root node
+  // (a Document or a ShadowRoot). Both expose getElementById; querySelector
+  // is used for the legacy anchor-name fallback.
+  function resolveInRoot(root, fragment) {
+    if (!root) return null;
+    let target;
+    try {
+      target = typeof root.getElementById === 'function' ? root.getElementById(fragment) : null;
+    } catch {
+      target = null;
+    }
+    if (target) return target;
+    try {
+      target =
+        typeof root.querySelector === 'function'
+          ? root.querySelector('a[name="' + fragment.replace(/"/g, '\\"') + '"]')
+          : null;
+    } catch {
+      target = null;
+    }
+    return target;
+  }
+
+  // Shadow-DOM-aware: gather anchors via queryAllSmart (pierces shadow roots
+  // when includeShadowDom is enabled, and drops hard-hidden links), and
+  // resolve each fragment in the link's own root before falling back to the
+  // document. This credits a skip link encapsulated in a web component the
+  // same way as one authored in the light DOM.
   function hasWorkingAnchorLink() {
     let links;
     try {
-      links = document.querySelectorAll('a[href]');
+      links =
+        helpers && typeof helpers.queryAllSmart === 'function'
+          ? helpers.queryAllSmart('a[href]')
+          : document.querySelectorAll('a[href]');
     } catch {
       links = [];
     }
@@ -67710,18 +70553,19 @@ const __a11yCoreCrossFrameApi = (function () {
       fragment = fragment.trim();
       if (!fragment) continue;
 
-      let target;
+      let root = document;
       try {
-        target = document.getElementById(fragment);
-      } catch {
-        target = null;
-      }
-      if (!target) {
-        try {
-          target = document.querySelector('a[name="' + fragment.replace(/"/g, '\\"') + '"]');
-        } catch {
-          target = null;
+        if (typeof a.getRootNode === 'function') {
+          const r = a.getRootNode();
+          if (r) root = r;
         }
+      } catch {
+        root = document;
+      }
+
+      let target = resolveInRoot(root, fragment);
+      if (!target && root !== document) {
+        target = resolveInRoot(document, fragment);
       }
       if (target) return true;
     }
@@ -67739,8 +70583,9 @@ const __a11yCoreCrossFrameApi = (function () {
   const anchorLink = mainLandmark ? false : hasWorkingAnchorLink();
   const heading = mainLandmark || anchorLink ? false : hasHeading();
 
+  // A recognized mechanism is present -> nothing to review on this page.
   if (mainLandmark || anchorLink || heading) {
-    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
   const stableSelector = helpers.buildSelector ? helpers.buildSelector(body) : 'body';
@@ -67752,11 +70597,12 @@ const __a11yCoreCrossFrameApi = (function () {
     {
       selector: stableSelector,
       html,
-      summary: 'This page has no recognized way to bypass repeated blocks of content.',
-      hint: 'Add a main landmark (<main> or role="main"), a working "skip to content" link, or heading elements that assistive technology can use to jump past repeated content.',
+      summary:
+        'No recognized way to bypass repeated blocks of content was detected on this page — verify a bypass mechanism exists.',
+      hint: 'Confirm the page offers a bypass mechanism: a main landmark (<main> or role="main"), a working "skip to content" link, or heading elements that assistive technology can use to jump past repeated content. (A mechanism may be temporarily hidden — e.g. while a modal dialog makes the page inert — or provided on a per-site basis; this needs human confirmation.)',
       i18n: {
-        summaryKey: 'bypassBlocksPresent_summary_fail',
-        hintKey: 'bypassBlocksPresent_hint_fail',
+        summaryKey: 'bypassBlocksPresent_summary_cantTell',
+        hintKey: 'bypassBlocksPresent_hint_cantTell',
         params: {}
       },
       data: {
@@ -67768,8 +70614,8 @@ const __a11yCoreCrossFrameApi = (function () {
 
   return {
     ruleId: rule.ruleId,
-    outcome: 'fail',
-    severity: rule.defaultSeverity || 'serious',
+    outcome: 'cantTell',
+    severity: rule.defaultSeverity || 'moderate',
     occurrences
   };
 }), applicability: (function applicability(ctx) {
@@ -67797,8 +70643,15 @@ const __a11yCoreCrossFrameApi = (function () {
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
 
-  const isAccTreeEligible =
-    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+  // aria-hidden removes the canvas from the accessibility tree, so a text
+  // alternative on it cannot reach anyone; aria-hidden-focus reports a
+  // focusable one. Matches the other non-text-content rules.
+  const isEligibleHelper =
+    helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+      ? helpers.isIncludedInAccessibilityTree
+      : helpers && typeof helpers.isAccTreeEligible === 'function'
+        ? helpers.isAccTreeEligible
+        : null;
 
   const getTextAlternativeInfo =
     helpers && typeof helpers.getTextAlternativeInfo === 'function'
@@ -67823,15 +70676,16 @@ const __a11yCoreCrossFrameApi = (function () {
   for (const el of canvases) {
     if (!el) continue;
 
-    // Applicability: eligible in the accessibility tree (with focusable/IDREF exceptions handled by helper).
-    if (isAccTreeEligible) {
+    // Applicability: included in the accessibility tree.
+    if (isEligibleHelper) {
       const elig = (() => {
         try {
-          return isAccTreeEligible(el, ctx);
+          return isEligibleHelper(el, ctx);
         } catch {
           return { eligible: true, reasons: [] };
         }
       })();
+      if (elig === false) continue;
       if (elig && elig.eligible === false) continue;
     }
 
@@ -68146,9 +71000,16 @@ const __a11yCoreCrossFrameApi = (function () {
     return '';
   }
 
+  // Naming rules apply only to elements included in the accessibility tree
+  // (ACT c487ae and siblings), which excludes focusable aria-hidden content.
+  // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
   function isEligibleAcc(helpers, el, ctx) {
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -70375,9 +73236,16 @@ const __a11yCoreCrossFrameApi = (function () {
     return '';
   }
 
+  // Naming rules apply only to elements included in the accessibility tree
+  // (ACT c487ae and siblings), which excludes focusable aria-hidden content.
+  // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
   function isEligibleAcc(helpers, el, ctx) {
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -71344,8 +74212,15 @@ const __a11yCoreCrossFrameApi = (function () {
     "form-control-programmatic-label-present": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
-  const isAccTreeEligible =
-    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+  // ACT e086e5 applies only to controls included in the accessibility tree, so
+  // a focusable control inside aria-hidden is out of scope; aria-hidden-focus
+  // reports that markup instead.
+  const isEligibleHelper =
+    helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+      ? helpers.isIncludedInAccessibilityTree
+      : helpers && typeof helpers.isAccTreeEligible === 'function'
+        ? helpers.isAccTreeEligible
+        : null;
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
 
@@ -71355,6 +74230,41 @@ const __a11yCoreCrossFrameApi = (function () {
     helpers && typeof helpers.getLabelMethod === 'function' ? helpers.getLabelMethod : null;
 
   const trim = (v) => (v == null ? '' : String(v)).trim();
+
+  // Roles with their own *-name-present rule; a control carrying one
+  // explicitly is skipped here so it is reported once.
+  const ROLE_OWNED_ELSEWHERE = [
+    'alertdialog',
+    'button',
+    'checkbox',
+    'combobox',
+    'dialog',
+    'grid',
+    'link',
+    'listbox',
+    'menu',
+    'menubar',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'meter',
+    'option',
+    'progressbar',
+    'radio',
+    'radiogroup',
+    'scrollbar',
+    'searchbox',
+    'slider',
+    'spinbutton',
+    'switch',
+    'tab',
+    'tablist',
+    'textbox',
+    'toolbar',
+    'tooltip',
+    'tree',
+    'treeitem'
+  ];
 
   const metrics = {
     applicableCount: 0,
@@ -71379,9 +74289,9 @@ const __a11yCoreCrossFrameApi = (function () {
   }
 
   function isEligibleAcc(el) {
-    if (!isAccTreeEligible) return true;
+    if (!isEligibleHelper) return true;
     try {
-      const r = isAccTreeEligible(el, ctx);
+      const r = isEligibleHelper(el, ctx);
       if (typeof r === 'boolean') return r;
       return !!(r && r.eligible);
     } catch {
@@ -71463,6 +74373,8 @@ const __a11yCoreCrossFrameApi = (function () {
     } catch {
       role = '';
     }
+
+    if (role && ROLE_OWNED_ELSEWHERE.indexOf(role) !== -1) continue;
 
     if (role === 'presentation' || role === 'none') {
       const fi = getFocusableInfo
@@ -71759,6 +74671,12 @@ const __a11yCoreCrossFrameApi = (function () {
 
   const isAccTreeEligible =
     helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+  const getAriaNameInfo =
+    helpers && typeof helpers.getAriaNameInfo === 'function' ? helpers.getAriaNameInfo : null;
+  const labelContributesName =
+    helpers && typeof helpers.labelContributesAccessibleName === 'function'
+      ? helpers.labelContributesAccessibleName
+      : null;
 
   const selector =
     'input:not([type="hidden"]):not([type="submit"]):not([type="reset"]):not([type="button"]):not([type="image"]),select,textarea';
@@ -71779,7 +74697,8 @@ const __a11yCoreCrossFrameApi = (function () {
     labelsByFor.get(forValue).push(lab);
   }
 
-  const occurrences = [];
+  const failOccurrences = [];
+  const cantTellOccurrences = [];
   let applicableCount = 0;
 
   for (const el of nodes) {
@@ -71808,42 +74727,94 @@ const __a11yCoreCrossFrameApi = (function () {
 
     if (eligibleLabels.size <= 1) continue;
 
+    // An override (aria-labelledby / aria-label) supersedes every native
+    // <label>, so the labels contribute nothing to the accessible name and
+    // cannot compete.
+    const override = getAriaNameInfo ? getAriaNameInfo(el, ctx) : null;
+    if (override && override.present && override.value) continue;
+
+    // Without an override the labels feed the name; only labels with their
+    // own text compete for it.
+    const contributing = labelContributesName
+      ? [...eligibleLabels].filter((lab) => labelContributesName(lab))
+      : [...eligibleLabels];
+
     const tag = el.tagName.toLowerCase();
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
     const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This form control is associated with more than one <label>.',
-      hint: 'Keep only one <label> per form control (either wrapping it or referencing it via for/id).',
-      i18n: {
-        summaryKey: 'formControlSingleLabel_summary_fail',
-        hintKey: 'formControlSingleLabel_hint_fail',
-        params: { element: tag, labelCount: String(eligibleLabels.size) }
-      },
-      data: {
-        details: {
-          reasonCode: 'FORM_FIELD_MULTIPLE_LABELS',
-          element: tag,
-          labelCount: eligibleLabels.size
+    if (contributing.length >= 2) {
+      failOccurrences.push({
+        selector: stableSelector,
+        html,
+        summary: 'This form control is associated with more than one <label>.',
+        hint: 'Keep only one <label> per form control (either wrapping it or referencing it via for/id).',
+        occurrenceOutcome: 'fail',
+        i18n: {
+          summaryKey: 'formControlSingleLabel_summary_fail',
+          hintKey: 'formControlSingleLabel_hint_fail',
+          params: { element: tag, labelCount: String(contributing.length) }
+        },
+        data: {
+          details: {
+            reasonCode: 'FORM_FIELD_MULTIPLE_LABELS',
+            element: tag,
+            labelCount: contributing.length
+          }
         }
-      }
-    });
+      });
+    } else if (contributing.length === 1) {
+      cantTellOccurrences.push({
+        selector: stableSelector,
+        html,
+        summary:
+          'This form control has one labelling <label> plus an extra empty <label> association.',
+        hint: 'Remove the redundant empty <label> so exactly one <label> is associated with the control.',
+        occurrenceOutcome: 'cantTell',
+        i18n: {
+          summaryKey: 'formControlSingleLabel_summary_cantTell',
+          hintKey: 'formControlSingleLabel_hint_cantTell',
+          params: { element: tag, labelCount: String(eligibleLabels.size) }
+        },
+        data: {
+          details: {
+            reasonCode: 'FORM_FIELD_EXTRA_EMPTY_LABEL',
+            element: tag,
+            labelCount: eligibleLabels.size,
+            contributingLabelCount: contributing.length
+          }
+        }
+      });
+    }
+    // contributing.length === 0: no label carries text, so nothing competes
+    // for the name. A control left unnamed is form-control-programmatic-
+    // label-present's concern.
   }
 
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'moderate',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+
+  const resolved = helpers.resolveTieredOutcome
+    ? helpers.resolveTieredOutcome(
+        failOccurrences,
+        cantTellOccurrences,
+        rule.defaultSeverity || 'moderate'
+      )
+    : failOccurrences.length
+      ? {
+          outcome: 'fail',
+          severity: rule.defaultSeverity || 'moderate',
+          occurrences: failOccurrences
+        }
+      : cantTellOccurrences.length
+        ? {
+            outcome: 'cantTell',
+            severity: rule.defaultSeverity || 'moderate',
+            occurrences: cantTellOccurrences
+          }
+        : { outcome: 'pass', severity: 'minor', occurrences: [] };
+  return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "heading-order": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
@@ -72031,7 +75002,11 @@ const __a11yCoreCrossFrameApi = (function () {
   }
 
   // Minimal BCP47 primary subtag check
-  if (!/^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{2,8})*$/.test(lang)) {
+  const isValidTag =
+    helpers && typeof helpers.isValidLanguageTag === 'function'
+      ? helpers.isValidLanguageTag
+      : (v) => /^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{2,8})*$/.test(String(v || ''));
+  if (!isValidTag(lang)) {
     return {
       ruleId: rule.ruleId,
       outcome: 'fail',
@@ -72903,8 +75878,15 @@ const __a11yCoreCrossFrameApi = (function () {
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
 
-  const isAccTreeEligible =
-    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+  // ACT 23a2a8 exempts programmatically hidden images, and that glossary term
+  // has no focusability carve-out, so an aria-hidden image stays out of scope
+  // even when tabbable; aria-hidden-focus reports that markup instead.
+  const isEligibleHelper =
+    helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+      ? helpers.isIncludedInAccessibilityTree
+      : helpers && typeof helpers.isAccTreeEligible === 'function'
+        ? helpers.isAccTreeEligible
+        : null;
   const getFocusableInfo =
     helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
   const getAriaNameInfo =
@@ -72956,11 +75938,11 @@ const __a11yCoreCrossFrameApi = (function () {
     const el = imgs[i];
     if (!el || !el.getAttribute) continue;
 
-    // Eligibility: only imgs exposed to assistive tech (with focusable/IDREF exceptions handled by helper)
-    if (isAccTreeEligible) {
+    // Eligibility: only imgs exposed to assistive tech.
+    if (isEligibleHelper) {
       let elig;
       try {
-        elig = isAccTreeEligible(el, ctx);
+        elig = isEligibleHelper(el, ctx);
       } catch {
         elig = null;
       }
@@ -73273,6 +76255,9 @@ const __a11yCoreCrossFrameApi = (function () {
   const isAccTreeEligible =
     helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
 
+  const getAriaNameInfo =
+    helpers && typeof helpers.getAriaNameInfo === 'function' ? helpers.getAriaNameInfo : null;
+
   const getFocusableInfo =
     helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
 
@@ -73307,6 +76292,26 @@ const __a11yCoreCrossFrameApi = (function () {
         !Number.isNaN(Number(String(tabindex).trim()));
     }
     return !focusable;
+  }
+
+  // alt="" plus a name from aria-label/aria-labelledby/title is the judgement
+  // call this rule reviews. alt="" with no other source leaves the control
+  // unnamed, which input-image-alt-present fails outright.
+  function hasNameFromOtherSource(el) {
+    if (getAriaNameInfo) {
+      try {
+        const aria = getAriaNameInfo(el, ctx);
+        if (aria && aria.present && String(aria.value || '').trim()) return true;
+      } catch {
+        // fall through to title
+      }
+    }
+    try {
+      const title = el.getAttribute('title');
+      return title != null && String(title).trim() !== '';
+    } catch {
+      return false;
+    }
   }
 
   const els = (() => {
@@ -73345,6 +76350,7 @@ const __a11yCoreCrossFrameApi = (function () {
 
     // Rule-specific applicability (only elements that already have a text alternative mechanism)
     if (!(el.getAttribute('alt') != null && String(el.getAttribute('alt')).trim() === '')) continue;
+    if (!hasNameFromOtherSource(el)) continue;
 
     applicableCount += 1;
 
@@ -73399,8 +76405,14 @@ const __a11yCoreCrossFrameApi = (function () {
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
 
-  const isAccTreeEligible =
-    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+  // ACT 59796f applies to image buttons included in the accessibility tree,
+  // which excludes focusable content inside aria-hidden.
+  const isEligibleHelper =
+    helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+      ? helpers.isIncludedInAccessibilityTree
+      : helpers && typeof helpers.isAccTreeEligible === 'function'
+        ? helpers.isAccTreeEligible
+        : null;
 
   const getAriaNameInfo =
     helpers && typeof helpers.getAriaNameInfo === 'function' ? helpers.getAriaNameInfo : null;
@@ -73426,63 +76438,109 @@ const __a11yCoreCrossFrameApi = (function () {
   for (const el of inputs) {
     if (!el || !el.getAttribute) continue;
 
-    // Applicability: eligible in the acc tree (with helper exceptions).
-    if (isAccTreeEligible) {
+    if (isEligibleHelper) {
       const elig = (() => {
         try {
-          return isAccTreeEligible(el, ctx);
+          return isEligibleHelper(el, ctx);
         } catch {
-          return { eligible: true, reasons: [] };
+          return true;
         }
       })();
-      if (elig && elig.eligible === false) continue;
+      const eligible = typeof elig === 'boolean' ? elig : !(elig && elig.eligible === false);
+      if (!eligible) continue;
     }
 
     applicableCount += 1;
 
-    const hasAlt = el.getAttribute('alt') !== null;
-    if (hasAlt) continue;
-
-    // aria-label / aria-labelledby is also a valid, standards-recognized
-    // text-alternative mechanism for <input type="image"> (HTML-AAM
-    // accessible name computation includes ARIA naming before falling
-    // back to alt).
-    if (getAriaNameInfo) {
-      let ariaName;
-      try {
-        ariaName = getAriaNameInfo(el, ctx);
-      } catch {
-        ariaName = null;
+    // The browser's own fallback name for an image button carries no
+    // information, so an author-supplied name equal to it is treated as no
+    // name at all (ACT 59796f). Only the English defaults are recognised:
+    // "Submit Query" from HTML-AAM, "Submit" from Chrome.
+    const effectiveName = (() => {
+      let v = '';
+      if (getAriaNameInfo) {
+        try {
+          const aria = getAriaNameInfo(el, ctx);
+          if (aria && aria.present && aria.value) v = String(aria.value);
+        } catch {
+          v = '';
+        }
       }
-      if (ariaName && ariaName.present) continue;
+      if (!v) {
+        const alt = el.getAttribute('alt');
+        if (alt != null && String(alt).trim()) v = String(alt);
+      }
+      if (!v) {
+        const t = el.getAttribute('title');
+        if (t != null && String(t).trim()) v = String(t);
+      }
+      return v.trim().toLowerCase();
+    })();
+
+    if (effectiveName === 'submit query' || effectiveName === 'submit') {
+      const eligInfoDefault = getEligibilityInfo
+        ? getEligibilityInfo(el, ctx, { targetSet: 'acc' })
+        : null;
+      const defaultNameOccurrence = {
+        summary:
+          'Accessible name is the browser default for an image button, which conveys nothing.',
+        hint: 'Replace it with text describing what the button does, for example "Search".',
+        i18n: {
+          summaryKey: 'inputImage_altPresent_summary_defaultName',
+          hintKey: 'inputImage_altPresent_hint_defaultName',
+          params: { element: 'input[type=image]' }
+        },
+        data: {
+          visibilityFilter: eligInfoDefault || { targetSet: 'acc', accEligible: null, reasons: [] },
+          details: { reasonCode: 'default_name' }
+        }
+      };
+      occurrences.push(
+        helpers && typeof helpers.reportOccurrence === 'function'
+          ? helpers.reportOccurrence(el, defaultNameOccurrence)
+          : { selector: '', html: '', ...defaultNameOccurrence }
+      );
+      continue;
     }
 
-    // A non-empty title attribute is HTML-AAM's own next fallback naming
-    // source once alt is entirely absent. Same gap img-alt-present handles
-    // for <img title="..."> with no alt.
-    const titleRaw = (() => {
-      try {
-        return el.getAttribute('title');
-      } catch {
-        return null;
-      }
-    })();
-    if (titleRaw !== null && String(titleRaw).trim()) continue;
+    // effectiveName already covers the naming sources HTML-AAM allows here,
+    // in order: aria-label/aria-labelledby, then alt, then title.
+    if (effectiveName) continue;
+
+    // An image button is a control, so an empty name fails whether alt is
+    // absent or present-but-empty. alt="" marks a decorative image, and an
+    // image button is never decorative.
+    const emptyAlt = el.getAttribute('alt') !== null;
 
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
-    const baseOccurrence = {
-      summary: 'Missing alt attribute on <input type="image">.',
-      hint: 'Add an alt attribute (use alt="" only when a separate accessible name is provided).',
-      i18n: {
-        summaryKey: 'inputImage_altPresent_summary_fail',
-        hintKey: 'inputImage_altPresent_hint_fail',
-        params: { element: 'input[type=image]' }
-      },
-      data: {
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    };
+    const baseOccurrence = emptyAlt
+      ? {
+          summary: 'Empty alt="" on <input type="image"> leaves the control unnamed.',
+          hint: 'Describe the action in alt, or name the control with aria-label or aria-labelledby.',
+          i18n: {
+            summaryKey: 'inputImage_altPresent_summary_emptyAlt',
+            hintKey: 'inputImage_altPresent_hint_emptyAlt',
+            params: { element: 'input[type=image]' }
+          },
+          data: {
+            visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
+            details: { reasonCode: 'empty_alt' }
+          }
+        }
+      : {
+          summary: 'Missing alt attribute on <input type="image">.',
+          hint: 'Add an alt attribute (use alt="" only when a separate accessible name is provided).',
+          i18n: {
+            summaryKey: 'inputImage_altPresent_summary_fail',
+            hintKey: 'inputImage_altPresent_hint_fail',
+            params: { element: 'input[type=image]' }
+          },
+          data: {
+            visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
+            details: { reasonCode: 'missing_alt' }
+          }
+        };
 
     if (helpers && typeof helpers.reportOccurrence === 'function') {
       occurrences.push(helpers.reportOccurrence(el, baseOccurrence));
@@ -73655,6 +76713,56 @@ const __a11yCoreCrossFrameApi = (function () {
     const v = s == null ? '' : String(s);
     // deterministic normalization: trim + collapse whitespace + case-fold
     return v.replace(/\s+/g, ' ').trim().toLowerCase();
+  }
+
+  // WCAG 2.5.3's label-in-name comparison is over words, not characters: drop
+  // parenthesised text, case-fold and NFKD-normalise, then reduce every
+  // non-letter/digit to a space. `hyphensJoin` deletes hyphens instead of
+  // splitting on them, which distinguishes a real mismatch from one that is
+  // only a hyphenation difference.
+  function tokenize(s, hyphensJoin) {
+    let v = (s == null ? '' : String(s)).replace(/\([^)]*\)/g, ' ').toLowerCase();
+    try {
+      v = v.normalize('NFKD');
+    } catch {
+      // Realm without String#normalize: the word comparison below still holds.
+    }
+    if (hyphensJoin) v = v.replace(/[-‐-―−]/g, '');
+    return v
+      .replace(/[^\p{L}\p{N}]+/gu, ' ')
+      .split(' ')
+      .filter(Boolean);
+  }
+
+  // The label's words must appear adjacent and in order inside the name, so a
+  // scattered subsequence does not count. Words in `prefixable` may match a
+  // longer name word they start.
+  function containsWordRun(needle, hay, prefixable) {
+    if (!needle.length) return true;
+    for (let i = 0; i + needle.length <= hay.length; i++) {
+      let ok = true;
+      for (let j = 0; j < needle.length; j++) {
+        const want = needle[j];
+        const got = hay[i + j];
+        if (got === want) continue;
+        if (prefixable && prefixable.has(want) && got.indexOf(want) === 0) continue;
+        ok = false;
+        break;
+      }
+      if (ok) return true;
+    }
+    return false;
+  }
+
+  // A trailing period marks a word the author may have shortened ("Ave." for
+  // "Avenue"). Tokenizing removes the period, so collect these beforehand.
+  function abbreviatedWords(s) {
+    const out = new Set();
+    for (const w of (s == null ? '' : String(s)).split(/\s+/)) {
+      const m = /^([\p{L}\p{N}]+)\.$/u.exec(w);
+      if (m) out.add(m[1].toLowerCase());
+    }
+    return out;
   }
 
   function getElementDescriptor(el) {
@@ -73902,7 +77010,23 @@ const __a11yCoreCrossFrameApi = (function () {
     const accName = acc && acc.value != null ? String(acc.value) : '';
     const accNorm = norm(accName);
 
-    const contains = !!(accNorm && visibleNorm && accNorm.indexOf(visibleNorm) !== -1);
+    const labelTokens = tokenize(visibleLabel, false);
+    const nameTokens = tokenize(accName, false);
+    const contains = containsWordRun(labelTokens, nameTokens, null);
+
+    // An abbreviation, or a word hyphenated differently in the two places, is
+    // not something markup settles: the author may have meant either. Report
+    // without asserting a defect instead of failing or staying silent.
+    let uncertainty = '';
+    if (!contains) {
+      if (containsWordRun(tokenize(visibleLabel, true), tokenize(accName, true), null)) {
+        uncertainty = 'HYPHENATION_DIFFERS';
+      } else {
+        const abbreviated = abbreviatedWords(visibleLabel);
+        if (abbreviated.size && containsWordRun(labelTokens, nameTokens, abbreviated))
+          uncertainty = 'POSSIBLE_ABBREVIATION';
+      }
+    }
 
     if (!contains) {
       const selectorOut = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
@@ -73913,11 +77037,16 @@ const __a11yCoreCrossFrameApi = (function () {
       occurrences.push({
         selector: selectorOut,
         html,
-        summary: 'Accessible name does not contain the visible label text.',
-        hint: 'Ensure the accessible name includes the visible text label (e.g., update aria-label/aria-labelledby to include the visible wording).',
+        ...(uncertainty ? { outcome: 'cantTell' } : null),
+        summary: uncertainty
+          ? 'Accessible name may not contain the visible label text.'
+          : 'Accessible name does not contain the visible label text.',
+        hint: uncertainty
+          ? 'Check by hand: the two differ only by an abbreviation or by hyphenation, which markup cannot settle.'
+          : 'Ensure the accessible name includes the visible text label (e.g., update aria-label/aria-labelledby to include the visible wording).',
         i18n: {
-          summaryKey: 'labelInName_summary_fail',
-          hintKey: 'labelInName_hint_fail',
+          summaryKey: uncertainty ? 'labelInName_summary_cantTell' : 'labelInName_summary_fail',
+          hintKey: uncertainty ? 'labelInName_hint_cantTell' : 'labelInName_hint_fail',
           params: {
             element: getElementDescriptor(el),
             visibleLabel: clipForSummary(visibleLabel),
@@ -73927,10 +77056,11 @@ const __a11yCoreCrossFrameApi = (function () {
         },
         data: {
           details: {
-            reasonCode: 'VISIBLE_LABEL_NOT_IN_ACCESSIBLE_NAME',
+            reasonCode: uncertainty || 'VISIBLE_LABEL_NOT_IN_ACCESSIBLE_NAME',
             visibleLabel,
             accessibleName: accName,
             normalized: { visibleLabel: visibleNorm, accessibleName: accNorm },
+            tokenized: { visibleLabel: labelTokens, accessibleName: nameTokens },
             labelSource: labelInfo && labelInfo.source ? labelInfo.source : 'none',
             nameMechanism: acc && acc.mechanism ? acc.mechanism : 'none'
           }
@@ -73941,13 +77071,15 @@ const __a11yCoreCrossFrameApi = (function () {
 
   if (applicableCount === 0)
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
-  if (occurrences.length)
+  if (occurrences.length) {
+    const anyFail = occurrences.some((o) => o.outcome !== 'cantTell');
     return {
       ruleId: rule.ruleId,
-      outcome: 'fail',
+      outcome: anyFail ? 'fail' : 'cantTell',
       severity: rule.defaultSeverity || 'minor',
       occurrences
     };
+  }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "label-title-only": { run: (function runInPage(ctx) {
@@ -74110,16 +77242,11 @@ const __a11yCoreCrossFrameApi = (function () {
     return getImplicitLandmarkRole(el);
   }
 
-  // Candidate selection is deliberately NOT the same as getLandmarkRole()
-  // === 'banner' — see the fix note above. A <header> is a
-  // candidate purely by tag + absence of any role attribute, independent
-  // of whether sectioning-ancestor nesting would currently suppress its
-  // implicit role; an explicit role="banner" is always a candidate too.
+  // A candidate must actually have the banner role. Per HTML-AAM a <header>
+  // descended from article/aside/main/nav/section is not a banner at all, so
+  // flagging it as a nested banner reports a landmark that does not exist.
   function isBannerCandidate(el) {
-    if (!el || !el.getAttribute) return false;
-    const explicit = getExplicitRoleToken(el);
-    if (explicit) return explicit === 'banner';
-    return !!(el.tagName && el.tagName.toLowerCase() === 'header');
+    return getLandmarkRole(el) === 'banner';
   }
 
   function hasLandmarkAncestor(el) {
@@ -74298,11 +77425,11 @@ const __a11yCoreCrossFrameApi = (function () {
   // a candidate purely by tag + absence of any role attribute, independent
   // of whether sectioning-ancestor nesting would currently suppress its
   // implicit role; an explicit role="contentinfo" is always a candidate too.
+  // A candidate must actually have the contentinfo role — a <footer> inside
+  // article/aside/main/nav/section is not one, so flagging it as nested
+  // would report a landmark that does not exist.
   function isContentinfoCandidate(el) {
-    if (!el || !el.getAttribute) return false;
-    const explicit = getExplicitRoleToken(el);
-    if (explicit) return explicit === 'contentinfo';
-    return !!(el.tagName && el.tagName.toLowerCase() === 'footer');
+    return getLandmarkRole(el) === 'contentinfo';
   }
 
   function hasLandmarkAncestor(el) {
@@ -75451,7 +78578,14 @@ const __a11yCoreCrossFrameApi = (function () {
 
   for (const el of nodes) {
     // isAccTreeEligible returns { eligible, reasons }, not a boolean.
-    const eligResult = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el, ctx) : true;
+    // Naming rules apply only to elements included in the accessibility tree
+    // (ACT c487ae), which excludes focusable aria-hidden content;
+    // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
+    const eligResult = helpers.isIncludedInAccessibilityTree
+      ? helpers.isIncludedInAccessibilityTree(el, ctx)
+      : helpers.isAccTreeEligible
+        ? helpers.isAccTreeEligible(el, ctx)
+        : true;
     const eligible =
       typeof eligResult === 'boolean' ? eligResult : !!(eligResult && eligResult.eligible);
     if (!eligible) continue;
@@ -75461,33 +78595,59 @@ const __a11yCoreCrossFrameApi = (function () {
     const nameInfo = helpers.getAccessibleNameInfo ? helpers.getAccessibleNameInfo(el, ctx) : null;
     const programmaticName = nameInfo && typeof nameInfo.value === 'string' ? nameInfo.value : '';
 
-    // A native <a href>/<area href> (or [role="link"]) whose role has been
-    // overridden to one of these roles is no longer semantically a link —
-    // per the WAI-ARIA Accessible Name and Description Computation spec
-    // these roles are name-from-author-only, and their rendered content
-    // represents a VALUE, not a NAME (see button-name-present.js's identical
-    // fix for a real-world example — <button role="combobox">List</button> —
-    // of the same class of bug on a different host tag).
     const role = el.getAttribute ? el.getAttribute('role') : null;
     const roleNorm = String(role || '')
       .replace(/\s+/g, ' ')
       .trim()
       .toLowerCase();
-    const VALUE_ROLES = [
-      'textbox',
-      'progressbar',
-      'scrollbar',
-      'slider',
-      'spinbutton',
-      'combobox',
-      'listbox'
+    // ARIA 1.2 "Name From: author, contents". Every other known role is
+    // name-from-author-only. An unknown role falls back to the implicit role.
+    // <generated:aria-name-from-content>
+    const NAME_FROM_CONTENT_ROLES = [
+      'button',
+      'cell',
+      'checkbox',
+      'columnheader',
+      'doc-backlink',
+      'doc-biblioref',
+      'doc-glossref',
+      'doc-noteref',
+      'graphics-object',
+      'gridcell',
+      'heading',
+      'link',
+      'menuitem',
+      'menuitemcheckbox',
+      'menuitemradio',
+      'option',
+      'radio',
+      'row',
+      'rowgroup',
+      'rowheader',
+      'switch',
+      'tab',
+      'tooltip',
+      'treeitem'
     ];
-    const isContentNameCandidate = !VALUE_ROLES.includes(roleNorm);
+    // </generated:aria-name-from-content>
+    const isKnownRoleToken =
+      helpers && helpers.aria && typeof helpers.aria.isKnownRole === 'function'
+        ? (() => {
+            try {
+              return !!helpers.aria.isKnownRole(roleNorm);
+            } catch {
+              return false;
+            }
+          })()
+        : false;
+    const isContentNameCandidate =
+      !roleNorm || !isKnownRoleToken || NAME_FROM_CONTENT_ROLES.includes(roleNorm);
 
     const contentName =
       programmaticName.trim().length === 0 && isContentNameCandidate
         ? getConservativeSubtreeText(el)
         : '';
+
     const finalName = (programmaticName.trim().length ? programmaticName : contentName).trim();
 
     if (finalName.length === 0) {
@@ -75816,9 +78976,16 @@ const __a11yCoreCrossFrameApi = (function () {
     return '';
   }
 
+  // Naming rules apply only to elements included in the accessibility tree
+  // (ACT c487ae and siblings), which excludes focusable aria-hidden content.
+  // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
   function isEligibleAcc(helpers, el, ctx) {
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -76478,9 +79645,16 @@ const __a11yCoreCrossFrameApi = (function () {
     return '';
   }
 
+  // Naming rules apply only to elements included in the accessibility tree
+  // (ACT c487ae and siblings), which excludes focusable aria-hidden content.
+  // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
   function isEligibleAcc(helpers, el, ctx) {
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -76578,6 +79752,34 @@ const __a11yCoreCrossFrameApi = (function () {
     : [];
 
   const occurrences = [];
+  // HTML's shared declarative refresh steps. Returns the delay in seconds, or
+  // null when the value is not a valid refresh directive, in which case the
+  // browser never refreshes and there is nothing to report. Rejects a leading
+  // sign ("+72001"), a non-numeric time ("foo"), and a separator other than
+  // "," or ";" ("0:1").
+  function parseRefreshDelay(input) {
+    const s = String(input == null ? '' : input);
+    const isSpace = (c) => c === ' ' || c === '\t' || c === '\n' || c === '\f' || c === '\r';
+    let i = 0;
+    while (i < s.length && isSpace(s[i])) i++;
+    let digits = '';
+    while (i < s.length && s[i] >= '0' && s[i] <= '9') digits += s[i++];
+    if (!digits) return null;
+    if (s[i] === '.') {
+      i++;
+      while (i < s.length && s[i] >= '0' && s[i] <= '9') i++;
+    }
+    if (i >= s.length) return parseInt(digits, 10);
+    let sawSpace = false;
+    while (i < s.length && isSpace(s[i])) {
+      sawSpace = true;
+      i++;
+    }
+    if (i >= s.length) return parseInt(digits, 10);
+    if (s[i] === ';' || s[i] === ',' || sawSpace) return parseInt(digits, 10);
+    return null;
+  }
+
   let applicableCount = 0;
 
   for (const el of nodes) {
@@ -76585,6 +79787,7 @@ const __a11yCoreCrossFrameApi = (function () {
     if (el.closest && el.closest('noscript')) continue; // never applies with scripting enabled
     const raw = String(el.getAttribute('content') || '').trim();
     if (!raw) continue;
+    if (parseRefreshDelay(raw) === null) continue;
 
     applicableCount += 1;
 
@@ -76636,16 +79839,42 @@ const __a11yCoreCrossFrameApi = (function () {
   const occurrences = [];
   let applicableCount = 0;
 
+  // HTML's shared declarative refresh steps. Returns the delay in seconds, or
+  // null when the value is not a valid refresh directive, in which case the
+  // browser never refreshes and there is nothing to report. Rejects a leading
+  // sign ("+72001"), a non-numeric time ("foo"), and a separator other than
+  // "," or ";" ("0:1").
+  function parseRefreshDelay(input) {
+    const s = String(input == null ? '' : input);
+    const isSpace = (c) => c === ' ' || c === '\t' || c === '\n' || c === '\f' || c === '\r';
+    let i = 0;
+    while (i < s.length && isSpace(s[i])) i++;
+    let digits = '';
+    while (i < s.length && s[i] >= '0' && s[i] <= '9') digits += s[i++];
+    if (!digits) return null;
+    if (s[i] === '.') {
+      i++;
+      while (i < s.length && s[i] >= '0' && s[i] <= '9') i++;
+    }
+    if (i >= s.length) return parseInt(digits, 10);
+    let sawSpace = false;
+    while (i < s.length && isSpace(s[i])) {
+      sawSpace = true;
+      i++;
+    }
+    if (i >= s.length) return parseInt(digits, 10);
+    if (s[i] === ';' || s[i] === ',' || sawSpace) return parseInt(digits, 10);
+    return null;
+  }
+
   for (const el of nodes) {
     if (!el || !el.getAttribute) continue;
     if (el.closest && el.closest('noscript')) continue; // never applies with scripting enabled — see meta-refresh-no-exceptions.js's header comment
     const raw = String(el.getAttribute('content') || '').trim();
     if (!raw) continue;
 
-    const match = raw.match(/^([0-9]*\.?[0-9]+)/);
-    if (!match) continue;
-    const delay = parseFloat(match[1]);
-    if (Number.isNaN(delay)) continue;
+    const delay = parseRefreshDelay(raw);
+    if (delay === null) continue;
 
     applicableCount += 1;
 
@@ -76800,20 +80029,40 @@ const __a11yCoreCrossFrameApi = (function () {
     const raw = String(el.getAttribute('content') || '').trim();
     if (!raw) continue;
 
-    applicableCount += 1;
-
     const parsed = parseContent(raw);
+
+    // ACT b4f0c3 applies only when content carries maximum-scale or
+    // user-scalable; content that sets neither cannot restrict zoom.
+    if (parsed['user-scalable'] === undefined && parsed['maximum-scale'] === undefined) continue;
+
+    applicableCount += 1;
     const reasons = [];
 
+    // CSS Device Adaptation translates an unparseable value to 0, so
+    // user-scalable=invalid and maximum-scale=yes disable zoom just as
+    // user-scalable=no does. A negative maximum-scale is out of range and
+    // dropped instead, which is why it does not restrict anything.
     const userScalable = parsed['user-scalable'];
-    if (userScalable === 'no' || userScalable === '0') {
-      reasons.push('user-scalable=' + userScalable);
+    if (
+      userScalable !== undefined &&
+      userScalable !== 'yes' &&
+      userScalable !== 'device-width' &&
+      userScalable !== 'device-height'
+    ) {
+      const scale = parseFloat(userScalable);
+      if (Number.isNaN(scale) || (scale > -1 && scale < 1)) {
+        reasons.push('user-scalable=' + userScalable);
+      }
     }
 
     const maxScaleRaw = parsed['maximum-scale'];
-    if (maxScaleRaw !== undefined) {
+    if (
+      maxScaleRaw !== undefined &&
+      maxScaleRaw !== 'device-width' &&
+      maxScaleRaw !== 'device-height'
+    ) {
       const maxScale = parseFloat(maxScaleRaw);
-      if (!Number.isNaN(maxScale) && maxScale < 2) {
+      if (Number.isNaN(maxScale) || (maxScale >= 0 && maxScale < 2)) {
         reasons.push('maximum-scale=' + maxScaleRaw);
       }
     }
@@ -76891,9 +80140,16 @@ const __a11yCoreCrossFrameApi = (function () {
     return '';
   }
 
+  // Naming rules apply only to elements included in the accessibility tree
+  // (ACT c487ae and siblings), which excludes focusable aria-hidden content.
+  // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
   function isEligibleAcc(helpers, el, ctx) {
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -77099,6 +80355,8 @@ const __a11yCoreCrossFrameApi = (function () {
 
   const isAccTreeEligible =
     helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+  const getFocusableInfo =
+    helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
 
   function isEligible(node) {
     if (!isAccTreeEligible) return true;
@@ -77110,6 +80368,122 @@ const __a11yCoreCrossFrameApi = (function () {
     }
   }
 
+  function matchesInteractive(node) {
+    return !!(
+      node &&
+      node.nodeType === 1 &&
+      typeof node.matches === 'function' &&
+      node.matches(INTERACTIVE_SELECTOR)
+    );
+  }
+
+  // A composite widget owns children of a fixed role and drives their focus
+  // itself (via roving tabindex or aria-activedescendant). The roving-tabindex
+  // model gives the active child tabindex="0" and the rest tabindex="-1", so
+  // the owned children ARE platform-focusable even though the container, not
+  // the child, is the operable unit. Such a child is part of the composite,
+  // not a control nested inside another control, so it must not be reported
+  // regardless of its tabindex. The map is keyed by the child role and lists
+  // the container roles that legitimately own it.
+  const COMPOSITE_CHILD_CONTAINERS = {
+    option: ['listbox', 'combobox'],
+    tab: ['tablist'],
+    treeitem: ['tree'],
+    menuitem: ['menu', 'menubar'],
+    menuitemcheckbox: ['menu', 'menubar'],
+    menuitemradio: ['menu', 'menubar'],
+    radio: ['radiogroup']
+  };
+
+  function getExplicitRole(node) {
+    if (!node || node.nodeType !== 1 || typeof node.getAttribute !== 'function') return '';
+    const raw = node.getAttribute('role');
+    if (!raw) return '';
+    // role accepts a space-separated fallback list; the first token wins.
+    const first = raw.trim().split(/\s+/)[0];
+    return first ? first.toLowerCase() : '';
+  }
+
+  function parentElementOf(node) {
+    if (!node) return null;
+    if (node.parentElement) return node.parentElement;
+    const p = node.parentNode;
+    return p && p.nodeType === 1 ? p : null;
+  }
+
+  // True when `node` is an owned child of a composite widget: its role is a
+  // composite-child role and a matching container role is present on one of
+  // its ancestors. The roving tab stop (tabindex="0") such a container places
+  // on its active child does not make that child an independently nested
+  // control.
+  function isManagedCompositeChild(node) {
+    const role = getExplicitRole(node);
+    const containers = COMPOSITE_CHILD_CONTAINERS[role];
+    if (!containers) return false;
+    let p = parentElementOf(node);
+    while (p && p.nodeType === 1) {
+      if (containers.indexOf(getExplicitRole(p)) !== -1) return true;
+      p = parentElementOf(p);
+    }
+    return false;
+  }
+
+  // Operable = a native-interactive / ARIA-widget element that is exposed to
+  // the accessibility tree and platform-focusable. A widget-role element with
+  // no independent focus (e.g. a role="option" with no tabindex, driven by
+  // its container via roving tabindex or aria-activedescendant) is not
+  // operable and does not nest an interactive control. When no focus model is
+  // available, role membership alone qualifies. (Composite-owned children are
+  // handled earlier as attribution boundaries in collectNestedOperable, so
+  // they never reach here.)
+  function isOperableInteractive(node) {
+    if (!matchesInteractive(node)) return false;
+    if (!isEligible(node)) return false;
+    if (!getFocusableInfo) return true;
+    try {
+      const info = getFocusableInfo(node, ctx);
+      return !!(info && info.focusable);
+    } catch {
+      return true;
+    }
+  }
+
+  // Shallowest operable interactive descendants of `root`. Traversal stops at
+  // each counted node instead of descending into it, so a control nested
+  // inside another operable control is attributed to its nearest operable
+  // ancestor rather than to every enclosing container. Eligibility is applied
+  // per node during the walk, so hidden or aria-hidden subtrees drop out.
+  function collectNestedOperable(root) {
+    const out = [];
+    const top = root && root.children;
+    if (!top || !top.length) return out;
+    const stack = [];
+    for (let i = top.length - 1; i >= 0; i--) stack.push(top[i]);
+    while (stack.length) {
+      const node = stack.pop();
+      if (node && node.nodeType === 1) {
+        // A composite-owned child (option in a listbox/combobox, tab in a
+        // tablist, ...) is not a nested interactive control: its container
+        // owns it and drives its focus (roving tabindex or
+        // aria-activedescendant). Treat it as an attribution boundary — do not
+        // count it, and do not descend past it. Any control genuinely nested
+        // inside it is attributed to the child itself (examined as its own
+        // container in the main loop), keeping the report at the nearest
+        // interactive ancestor rather than bubbling up to the composite.
+        if (isManagedCompositeChild(node)) continue;
+        if (isOperableInteractive(node)) {
+          out.push(node);
+          continue; // do not descend into a counted control
+        }
+      }
+      const kids = node && node.children;
+      if (kids && kids.length) {
+        for (let i = kids.length - 1; i >= 0; i--) stack.push(kids[i]);
+      }
+    }
+    return out;
+  }
+
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(INTERACTIVE_SELECTOR)
     : helpers.queryAll(INTERACTIVE_SELECTOR);
@@ -77118,30 +80492,16 @@ const __a11yCoreCrossFrameApi = (function () {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.querySelectorAll) continue;
+    if (!el || el.nodeType !== 1) continue;
     if (!isEligible(el)) continue;
 
     applicableCount += 1;
 
-    // The nested search uses the raw native querySelectorAll (not
-    // helpers.queryAllSmart), so it isn't subject to that helper's
-    // default hidden-content policy at all -- not even hard CSS-based
-    // hiding, let alone aria-hidden. A nested descendant that is never
-    // actually rendered or exposed to AT (display:none, aria-hidden,
-    // etc.) creates no real ambiguity for ANY user, since it isn't there
-    // to be confused with the outer control.
-    let nested;
-    try {
-      nested = Array.from(el.querySelectorAll(INTERACTIVE_SELECTOR)).filter(isEligible);
-    } catch {
-      nested = [];
-    }
+    const nested = collectNestedOperable(el);
     if (!nested.length) continue;
 
     const nestedTags = nested.map((n) => (n && n.tagName ? n.tagName.toLowerCase() : 'unknown'));
-    const dedupedNestedTags = [
-      ...new Set(nested.map((n) => (n && n.tagName ? n.tagName.toLowerCase() : 'unknown')))
-    ];
+    const dedupedNestedTags = [...new Set(nestedTags)];
 
     const tag = el.tagName.toLowerCase();
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
@@ -77264,8 +80624,15 @@ const __a11yCoreCrossFrameApi = (function () {
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
 
-  const isAccTreeEligible =
-    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+  // ACT 8fc3b6 applies only to objects included in the accessibility tree, so a
+  // focusable object inside aria-hidden is out of scope; aria-hidden-focus
+  // reports that markup instead.
+  const isEligibleHelper =
+    helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+      ? helpers.isIncludedInAccessibilityTree
+      : helpers && typeof helpers.isAccTreeEligible === 'function'
+        ? helpers.isAccTreeEligible
+        : null;
 
   const getFocusableInfo =
     helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
@@ -77341,14 +80708,15 @@ const __a11yCoreCrossFrameApi = (function () {
   for (const el of objects) {
     if (!el || !el.getAttribute) continue;
 
-    if (isAccTreeEligible) {
+    if (isEligibleHelper) {
       const elig = (() => {
         try {
-          return isAccTreeEligible(el, ctx);
+          return isEligibleHelper(el, ctx);
         } catch {
           return { eligible: true, reasons: [] };
         }
       })();
+      if (elig === false) continue;
       if (elig && elig.eligible === false) continue;
     }
 
@@ -77656,9 +81024,16 @@ const __a11yCoreCrossFrameApi = (function () {
     return '';
   }
 
+  // Naming rules apply only to elements included in the accessibility tree
+  // (ACT c487ae and siblings), which excludes focusable aria-hidden content.
+  // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
   function isEligibleAcc(helpers, el, ctx) {
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -78447,9 +81822,16 @@ const __a11yCoreCrossFrameApi = (function () {
     return '';
   }
 
+  // Naming rules apply only to elements included in the accessibility tree
+  // (ACT c487ae and siblings), which excludes focusable aria-hidden content.
+  // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
   function isEligibleAcc(helpers, el, ctx) {
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -79280,9 +82662,16 @@ const __a11yCoreCrossFrameApi = (function () {
     return '';
   }
 
+  // Naming rules apply only to elements included in the accessibility tree
+  // (ACT c487ae and siblings), which excludes focusable aria-hidden content.
+  // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
   function isEligibleAcc(helpers, el, ctx) {
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -79763,9 +83152,16 @@ const __a11yCoreCrossFrameApi = (function () {
     return '';
   }
 
+  // Naming rules apply only to elements included in the accessibility tree
+  // (ACT c487ae and siblings), which excludes focusable aria-hidden content.
+  // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
   function isEligibleAcc(helpers, el, ctx) {
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -79779,7 +83175,9 @@ const __a11yCoreCrossFrameApi = (function () {
   const occurrences = [];
   let applicableCount = 0;
 
-  const selector = 'input[type="range"], [role="slider"]';
+  // Native input[type=range] belongs to
+  // form-control-programmatic-label-present.
+  const selector = '[role="slider"]';
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
@@ -79983,9 +83381,16 @@ const __a11yCoreCrossFrameApi = (function () {
     return '';
   }
 
+  // Naming rules apply only to elements included in the accessibility tree
+  // (ACT c487ae and siblings), which excludes focusable aria-hidden content.
+  // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
   function isEligibleAcc(helpers, el, ctx) {
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -80180,9 +83585,16 @@ const __a11yCoreCrossFrameApi = (function () {
     return '';
   }
 
+  // Naming rules apply only to elements included in the accessibility tree
+  // (ACT c487ae and siblings), which excludes focusable aria-hidden content.
+  // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
   function isEligibleAcc(helpers, el, ctx) {
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -81012,9 +84424,16 @@ const __a11yCoreCrossFrameApi = (function () {
     return '';
   }
 
+  // Naming rules apply only to elements included in the accessibility tree
+  // (ACT c487ae and siblings), which excludes focusable aria-hidden content.
+  // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
   function isEligibleAcc(helpers, el, ctx) {
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -81406,8 +84825,63 @@ const __a11yCoreCrossFrameApi = (function () {
   const occurrences = [];
   let applicableCount = 0;
 
+  function explicitRole(el) {
+    try {
+      return String((el && el.getAttribute && el.getAttribute('role')) || '')
+        .trim()
+        .toLowerCase()
+        .split(/\s+/)[0];
+    } catch {
+      return '';
+    }
+  }
+
+  function isIncludedInTree(el) {
+    const fn =
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : null;
+    if (!fn) return true;
+    try {
+      const r = fn(el, ctx);
+      return typeof r === 'boolean' ? r : !!(r && r.eligible);
+    } catch {
+      return true;
+    }
+  }
+
+  // role="presentation"/"none" removes the table role, and with it every
+  // header cell the role would have implied. A table is not focusable, so
+  // presentational role conflict resolution does not restore it.
+  function hasTableSemantics(table) {
+    const role = explicitRole(table);
+    if (role === 'presentation' || role === 'none') return false;
+    if (role && role !== 'table' && role !== 'grid' && role !== 'treegrid') return false;
+    return isIncludedInTree(table);
+  }
+
+  // A <th> only carries a rowheader/columnheader role while nothing overrides
+  // it, and a hidden header describes nothing to a screen reader either way.
+  function isHeaderCellInScope(th) {
+    if (!th) return false;
+    const role = explicitRole(th);
+    if (role && role !== 'rowheader' && role !== 'columnheader') return false;
+    if (helpers.isDomVisibleEligible) {
+      try {
+        if (!helpers.isDomVisibleEligible(th, ctx, { targetSet: 'dom' }).eligible) return false;
+      } catch {
+        // fall through to the tree check
+      }
+    }
+    return isIncludedInTree(th);
+  }
+
   for (const table of tables) {
     if (!table || !table.querySelectorAll) continue;
+
+    // A table stripped of its semantics has no header cells to describe
+    // anything, so nothing in it is in scope.
+    if (!hasTableSemantics(table)) continue;
 
     let ths;
     try {
@@ -81415,7 +84889,9 @@ const __a11yCoreCrossFrameApi = (function () {
     } catch {
       ths = [];
     }
-    if (!ths.length) continue;
+
+    const headers = Array.from(ths).filter(isHeaderCellInScope);
+    if (!headers.length) continue;
 
     applicableCount += 1;
 
@@ -81427,7 +84903,7 @@ const __a11yCoreCrossFrameApi = (function () {
     }
     if (hasDataCell) continue;
 
-    for (const th of ths) {
+    for (const th of headers) {
       if (!th) continue;
       const stableSelector = helpers.buildSelector ? helpers.buildSelector(th) : 'html';
       const html = helpers.getOuterHtmlSnippet
@@ -82233,9 +85709,16 @@ const __a11yCoreCrossFrameApi = (function () {
     return '';
   }
 
+  // Naming rules apply only to elements included in the accessibility tree
+  // (ACT c487ae and siblings), which excludes focusable aria-hidden content.
+  // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
   function isEligibleAcc(helpers, el, ctx) {
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -82430,9 +85913,16 @@ const __a11yCoreCrossFrameApi = (function () {
     return '';
   }
 
+  // Naming rules apply only to elements included in the accessibility tree
+  // (ACT c487ae and siblings), which excludes focusable aria-hidden content.
+  // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
   function isEligibleAcc(helpers, el, ctx) {
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -82574,9 +86064,16 @@ const __a11yCoreCrossFrameApi = (function () {
     return '';
   }
 
+  // Naming rules apply only to elements included in the accessibility tree
+  // (ACT c487ae and siblings), which excludes focusable aria-hidden content.
+  // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
   function isEligibleAcc(helpers, el, ctx) {
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -82665,7 +86162,13 @@ const __a11yCoreCrossFrameApi = (function () {
     "valid-lang": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
+  // Shape alone accepts unregistered tags such as "eng" and "em-US", so the
+  // primary subtag is checked against the IANA registry via the shared helper.
   const BCP47_RE = /^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{2,8})*$/;
+  const isValidTag =
+    typeof helpers.isValidLanguageTag === 'function'
+      ? helpers.isValidLanguageTag
+      : (v) => BCP47_RE.test(String(v || ''));
 
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('[lang]')
@@ -82678,12 +86181,19 @@ const __a11yCoreCrossFrameApi = (function () {
     if (!el || !el.getAttribute) continue;
     if (el.tagName && el.tagName.toLowerCase() === 'html') continue;
 
-    const raw = String(el.getAttribute('lang') || '').trim();
-    if (!raw) continue;
+    const rawAttr = el.getAttribute('lang');
+    if (rawAttr === null || rawAttr === '') continue; // ACT de46e4: empty is out of scope
+
+    // The rule applies only where text actually inherits the language, so an
+    // element with no text, or whose text reaches no one, has nothing to
+    // declare a language for.
+    if (!String(el.textContent || '').trim()) continue;
 
     applicableCount += 1;
 
-    if (BCP47_RE.test(raw)) continue;
+    // A whitespace-only value is in scope and has no primary language tag.
+    const raw = String(rawAttr).trim();
+    if (isValidTag(raw)) continue;
 
     const tag = el.tagName.toLowerCase();
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
@@ -82985,6 +86495,10 @@ const I18N = {
     "inputImage_altPresent_description": "Prüft, ob <input type=\"image\">-Elemente ein alt-Attribut bereitstellen, um einen Mechanismus für eine Textalternative zu unterstützen.",
     "inputImage_altPresent_summary_fail": "Fehlendes alt-Attribut auf <input type=\"image\">.",
     "inputImage_altPresent_hint_fail": "Fügen Sie ein alt-Attribut hinzu (verwenden Sie alt=\"\" nur, wenn ein separater zugänglicher Name bereitgestellt wird).",
+    "inputImage_altPresent_summary_defaultName": "Der zugaengliche Name ist der Browser-Standard fuer eine Bildschaltflaeche und sagt nichts aus.",
+    "inputImage_altPresent_hint_defaultName": "Ersetzen Sie ihn durch Text, der die Aktion beschreibt, zum Beispiel \"Suchen\".",
+    "inputImage_altPresent_summary_emptyAlt": "Ein leeres alt=\"\" auf <input type=\"image\"> laesst das Steuerelement ohne Namen.",
+    "inputImage_altPresent_hint_emptyAlt": "Beschreiben Sie die Aktion in alt, oder benennen Sie das Steuerelement mit aria-label oder aria-labelledby.",
     "ariaHidden_programmaticFocus_review_title": "Programmatischen Fokus bei aria-hidden überprüfen",
     "ariaHidden_programmaticFocus_review_description": "Markiert Elemente, die aria-hidden sind, aber aufgrund von programmatischem Fokus (z. B. tabindex < 0) als geeignet gelten. Überprüfen Sie die beabsichtigte Fokusverwaltung und die Sichtbarkeit für assistive Technologien.",
     "ariaHidden_programmaticFocus_review_summary": "Überprüfung: Ein aria-hidden-Element ist programmatisch fokussierbar.",
@@ -83266,16 +86780,21 @@ const I18N = {
     "labelInName_description": "Prüft, ob bei einem Formularelement mit sichtbarer Textbeschriftung der zugängliche Name diesen sichtbaren Beschriftungstext enthält (WCAG 2.5.3).",
     "labelInName_summary_fail": "{{element}}: Die sichtbare Beschriftung „{{visibleLabel}}“ (aus {{labelSource}}) ist nicht im zugänglichen Namen enthalten (aus {{nameMechanism}}).",
     "labelInName_hint_fail": "Aktualisieren Sie aria-label/aria-labelledby (oder den sichtbaren Beschriftungstext), damit der zugängliche Name den Wortlaut der sichtbaren Beschriftung enthält.",
+    "labelInName_summary_cantTell": "{{element}}: Die sichtbare Beschriftung „{{visibleLabel}}“ (aus {{labelSource}}) unterscheidet sich vom zugänglichen Namen (aus {{nameMechanism}}) nur durch eine Abkürzung oder eine Bindestrichschreibung.",
+    "labelInName_hint_cantTell": "Prüfen Sie manuell, ob beide Formulierungen übereinstimmen: Aus dem Markup lässt sich eine beabsichtigte Abkürzung nicht von einer Abweichung unterscheiden.",
     "ariaRolesValid_title": "Das role-Attribut muss eine gültige, nicht abstrakte ARIA-Rolle sein",
     "ariaRolesValid_description": "Prüft, ob ein explizites role=\"\"-Attribut zu einer echten, nicht abstrakten WAI-ARIA-Rolle aufgelöst wird.",
     "ariaRolesValid_summary_invalid": "role=\"{{role}}\" ist keine erkannte ARIA-Rolle.",
     "ariaRolesValid_hint_invalid": "Verwenden Sie einen gültigen ARIA-Rollenwert, oder entfernen Sie das role-Attribut, wenn keine Rolle zutrifft.",
     "ariaRolesValid_summary_abstract": "role=\"{{role}}\" ist eine abstrakte ARIA-Rolle, die nicht direkt verwendet werden darf.",
     "ariaRolesValid_hint_abstract": "Ersetzen Sie diese abstrakte Rolle durch eine konkrete Rolle, die zu dem Widget/der Struktur passt.",
-    "ariaDeprecatedRole_title": "Das role-Attribut darf keine veraltete oder für Autoren untersagte ARIA-Rolle verwenden",
-    "ariaDeprecatedRole_description": "Prüft, ob ein explizites role=\"\"-Attribut keine durch die WAI-ARIA-Spezifikation als veraltet markierte Rolle verwendet, und keine Rolle, die ausschließlich für die interne Verwendung durch den User-Agent reserviert ist (z. B. role=\"generic\").",
+    "ariaDeprecatedRole_title": "Das role-Attribut sollte keine veraltete oder für Autoren nicht empfohlene ARIA-Rolle verwenden",
+    "ariaDeprecatedRole_description": "Prüft, ob ein explizites role=\"\"-Attribut keine durch die WAI-ARIA-Spezifikation als veraltet markierte Rolle verwendet, und keine Rolle, die für die interne Verwendung durch den User-Agent reserviert ist (z. B. role=\"generic\").",
     "ariaDeprecatedRole_summary_fail": "Dieses Element verwendet role=\"{{role}}\", was Autoren nicht explizit deklarieren dürfen.",
     "ariaDeprecatedRole_hint_fail": "{{guidance}}",
+    "ariaDeprecatedRole_summary_cantTell": "Dieses Element verwendet role=\"{{role}}\", die in WAI-ARIA veraltet ist (weiterhin gültig, aber nicht empfohlen).",
+    "ariaDeprecatedRole_summary_cantTell_discouraged": "Dieses Element verwendet role=\"{{role}}\", die User-Agents vorbehalten ist (weiterhin gültig, aber nicht empfohlen).",
+    "ariaDeprecatedRole_hint_cantTell": "{{guidance}}",
     "ariaValidAttr_title": "aria-*-Attribute müssen echte, definierte ARIA-Attribute sein",
     "ariaValidAttr_description": "Prüft, ob jeder im DOM vorhandene aria-*-Attributname ein echtes, durch die WAI-ARIA-Spezifikation definiertes Attribut ist.",
     "ariaValidAttr_summary_fail": "{{attr}} ist kein erkanntes ARIA-Attribut.",
@@ -83288,6 +86807,8 @@ const I18N = {
     "ariaAllowedAttr_description": "Prüft, ob jedes erkannte aria-*-Attribut auf einem Element mit expliziter Rolle entweder global unterstützt wird oder von dieser Rolle unterstützt wird.",
     "ariaAllowedAttr_summary_fail": "{{attr}} ist bei role=\"{{role}}\" nicht zulässig.",
     "ariaAllowedAttr_hint_fail": "Entfernen Sie dieses Attribut, oder verwenden Sie eine Rolle, die es unterstützt.",
+    "ariaAllowedAttr_summary_cantTell": "{{attr}} ist bei role=\"{{role}}\" veraltet (weiterhin zulässig, aber nicht empfohlen).",
+    "ariaAllowedAttr_hint_cantTell": "Dieses Attribut wurde in ARIA 1.2 aus dem globalen Satz entfernt; entfernen Sie es oder verwenden Sie eine Rolle, die es unterstützt, da eine künftige ARIA-Version es möglicherweise nicht mehr zulässt.",
     "ariaProhibitedAttr_title": "ARIA-Benennungsattribute dürfen nicht bei Rollen verwendet werden, die sie untersagen",
     "ariaProhibitedAttr_description": "Prüft, ob aria-label/aria-labelledby nicht bei WAI-ARIA-Rollen vorhanden sind, deren Spezifikation die ARIA-Benennung ausdrücklich untersagt (z. B. generic, emphasis, strong, paragraph).",
     "ariaProhibitedAttr_summary_fail": "{{attr}} ist bei role=\"{{role}}\" untersagt.",
@@ -83402,14 +86923,16 @@ const I18N = {
     "formControlSingleLabel_description": "Prüft, ob ein Formularelement mit höchstens einem <label> verknüpft ist (durch Umschließen oder durch label[for]).",
     "formControlSingleLabel_summary_fail": "Dieses <{{element}}> ist mit {{labelCount}} Beschriftungen verknüpft.",
     "formControlSingleLabel_hint_fail": "Behalten Sie nur ein <label> pro Formularelement (entweder umschließend oder über for/id referenziert).",
+    "formControlSingleLabel_summary_cantTell": "Dieses <{{element}}> hat ein beschriftendes <label> und zusätzlich eine leere <label>-Verknüpfung; prüfen Sie, wie es angesagt wird.",
+    "formControlSingleLabel_hint_cantTell": "Entfernen Sie das überflüssige leere <label>, sodass genau ein <label> mit dem Element verknüpft ist.",
     "nestedInteractiveControlsAbsent_title": "Interaktive Formularelemente dürfen nicht verschachtelt sein",
     "nestedInteractiveControlsAbsent_description": "Prüft, ob ein interaktives Element (Link, Schaltfläche, Formularelement oder ARIA-Widget-Rolle) kein weiteres interaktives Element enthält.",
     "nestedInteractiveControlsAbsent_summary_fail": "Dieses <{{element}}> enthält ein oder mehrere verschachtelte interaktive Elemente: {{nestedElements}}.",
     "nestedInteractiveControlsAbsent_hint_fail": "Verschieben Sie die verschachtelten interaktiven Elemente außerhalb dieses Elements; verschachtelte interaktive Elemente sind über assistive Technologien nicht zuverlässig bedienbar.",
     "bypassBlocksPresent_title": "Die Seite muss eine Möglichkeit bieten, wiederkehrende Blöcke zu überspringen",
     "bypassBlocksPresent_description": "Prüft, ob die Seite mindestens einen anerkannten Mechanismus nach WCAG 2.4.1 zum Überspringen wiederkehrender Blöcke hat: eine main-Landmarke, einen funktionierenden Anker-Link auf derselben Seite oder eine Überschrift.",
-    "bypassBlocksPresent_summary_fail": "Diese Seite hat keine anerkannte Möglichkeit, wiederkehrende Inhaltsblöcke zu überspringen.",
-    "bypassBlocksPresent_hint_fail": "Fügen Sie eine main-Landmarke (<main> oder role=\"main\"), einen funktionierenden „Zum Inhalt springen“-Link oder Überschriften-Elemente hinzu, die assistive Technologien nutzen können, um wiederkehrende Inhalte zu überspringen.",
+    "bypassBlocksPresent_summary_cantTell": "Auf dieser Seite wurde keine anerkannte Möglichkeit erkannt, wiederkehrende Inhaltsblöcke zu überspringen – prüfen Sie, ob ein Überspring-Mechanismus vorhanden ist.",
+    "bypassBlocksPresent_hint_cantTell": "Bestätigen Sie, dass die Seite einen Überspring-Mechanismus bietet: eine main-Landmarke (<main> oder role=\"main\"), einen funktionierenden „Zum Inhalt springen“-Link oder Überschriften-Elemente, die assistive Technologien nutzen können, um wiederkehrende Inhalte zu überspringen. (Ein Mechanismus kann vorübergehend verborgen sein – z. B. während ein modaler Dialog die Seite inert macht – oder seitenweit bereitgestellt werden; dies erfordert eine menschliche Bestätigung.)",
     "landmarkBannerIsTopLevel_title": "Die banner-Landmarke muss auf oberster Ebene liegen",
     "landmarkBannerIsTopLevel_description": "Prüft, ob die banner-Landmarke (role=\"banner\" oder ein nicht verschachtelter <header>) nicht innerhalb einer anderen Landmarke verschachtelt ist.",
     "landmarkBannerIsTopLevel_summary_cantTell": "Diese banner-Landmarke ist innerhalb einer anderen Landmarke verschachtelt.",
@@ -83511,8 +87034,8 @@ const I18N = {
     "htmlXmlLangMismatch_description": "Prüft, ob die Attribute lang und xml:lang des <html>-Elements dieselbe Hauptsprache deklarieren, wenn beide vorhanden sind.",
     "htmlXmlLangMismatch_summary_fail": "Die Attribute lang („{{lang}}“) und xml:lang („{{xmlLang}}“) deklarieren unterschiedliche Sprachen.",
     "htmlXmlLangMismatch_hint_fail": "Lassen Sie lang und xml:lang dieselbe Hauptsprache deklarieren, oder entfernen Sie das veraltete Attribut xml:lang.",
-    "avoidInlineSpacing_title": "Inline-Stile dürfen den Textabstand nicht mit !important erzwingen",
-    "avoidInlineSpacing_description": "Prüft, ob Inline-Stile line-height, letter-spacing oder word-spacing nicht mit !important setzen, was das Überschreiben des Textabstands durch den Nutzer blockiert.",
+    "avoidInlineSpacing_title": "Inline-Stile dürfen den Textabstand nicht unter den WCAG-Wert erzwingen",
+    "avoidInlineSpacing_description": "Prüft, dass ein per !important erzwungener Wert für line-height, letter-spacing oder word-spacing WCAG 1.4.12 bereits erfüllt, sodass dem Nutzer nichts zu überschreiben bleibt.",
     "avoidInlineSpacing_summary_fail": "Der Inline-Stil dieses Elements erzwingt {{properties}} mit !important und blockiert damit Überschreibungen des Textabstands durch den Nutzer.",
     "avoidInlineSpacing_hint_fail": "Entfernen Sie !important von line-height/letter-spacing/word-spacing in Inline-Stilen, damit Nutzer den Textabstand überschreiben können.",
     "metaRefreshNoExceptions_title": "Die Seite darf überhaupt keinen Meta-Refresh verwenden (AAA)",
@@ -83601,6 +87124,10 @@ const I18N = {
     "inputImage_altPresent_description": "Checks that <input type=\"image\"> elements provide an alt attribute to support a text alternative mechanism.",
     "inputImage_altPresent_summary_fail": "Missing alt attribute on <input type=\"image\">.",
     "inputImage_altPresent_hint_fail": "Add an alt attribute (use alt=\"\" only when a separate accessible name is provided).",
+    "inputImage_altPresent_summary_defaultName": "Accessible name is the browser default for an image button, which conveys nothing.",
+    "inputImage_altPresent_hint_defaultName": "Replace it with text describing what the button does, for example \"Search\".",
+    "inputImage_altPresent_summary_emptyAlt": "Empty alt=\"\" on <input type=\"image\"> leaves the control unnamed.",
+    "inputImage_altPresent_hint_emptyAlt": "Describe the action in alt, or name the control with aria-label or aria-labelledby.",
     "ariaHidden_programmaticFocus_review_title": "Review aria-hidden programmatic focus",
     "ariaHidden_programmaticFocus_review_description": "Flags elements that are aria-hidden but considered eligible due to programmatic focus (e.g., tabindex < 0). Verify intended focus management and assistive technology exposure.",
     "ariaHidden_programmaticFocus_review_summary": "Review: aria-hidden element is programmatically focusable.",
@@ -83882,16 +87409,21 @@ const I18N = {
     "labelInName_description": "Checks that when a control has a visible text label, the accessible name contains that visible label text (WCAG 2.5.3).",
     "labelInName_summary_fail": "{{element}}: visible label \"{{visibleLabel}}\" (from {{labelSource}}) is not included in the accessible name (from {{nameMechanism}}).",
     "labelInName_hint_fail": "Update aria-label/aria-labelledby (or the visible label text) so the accessible name includes the visible label wording.",
+    "labelInName_summary_cantTell": "{{element}}: visible label \"{{visibleLabel}}\" (from {{labelSource}}) differs from the accessible name (from {{nameMechanism}}) only by an abbreviation or by hyphenation.",
+    "labelInName_hint_cantTell": "Check by hand whether the two wordings match: markup cannot tell an intended abbreviation from a mismatch.",
     "ariaRolesValid_title": "role attribute must be a valid, non-abstract ARIA role",
     "ariaRolesValid_description": "Checks that an explicit role=\"\" attribute resolves to a real, non-abstract WAI-ARIA role.",
     "ariaRolesValid_summary_invalid": "role=\"{{role}}\" is not a recognized ARIA role.",
     "ariaRolesValid_hint_invalid": "Use a valid ARIA role token, or remove the role attribute if none applies.",
     "ariaRolesValid_summary_abstract": "role=\"{{role}}\" is an abstract ARIA role, which must not be used directly.",
     "ariaRolesValid_hint_abstract": "Replace this abstract role with a concrete role appropriate for the widget/structure.",
-    "ariaDeprecatedRole_title": "role attribute must not use a deprecated or author-prohibited ARIA role",
-    "ariaDeprecatedRole_description": "Checks that an explicit role=\"\" attribute does not use a role deprecated by the WAI-ARIA specification, or one reserved for user-agent-internal use only (e.g. role=\"generic\").",
+    "ariaDeprecatedRole_title": "role attribute should not use a deprecated or author-discouraged ARIA role",
+    "ariaDeprecatedRole_description": "Checks that an explicit role=\"\" attribute does not use a role deprecated by the WAI-ARIA specification, or one reserved for user-agent-internal use (e.g. role=\"generic\").",
     "ariaDeprecatedRole_summary_fail": "This element uses role=\"{{role}}\", which authors must not explicitly declare.",
     "ariaDeprecatedRole_hint_fail": "{{guidance}}",
+    "ariaDeprecatedRole_summary_cantTell": "This element uses role=\"{{role}}\", which is deprecated in WAI-ARIA (still valid, but discouraged).",
+    "ariaDeprecatedRole_summary_cantTell_discouraged": "This element uses role=\"{{role}}\", which is reserved for user agents (still valid, but discouraged).",
+    "ariaDeprecatedRole_hint_cantTell": "{{guidance}}",
     "ariaValidAttr_title": "aria-* attributes must be real, defined ARIA attributes",
     "ariaValidAttr_description": "Checks that every aria-* attribute name present in the DOM is a real attribute defined by the WAI-ARIA specification.",
     "ariaValidAttr_summary_fail": "{{attr}} is not a recognized ARIA attribute.",
@@ -83904,6 +87436,8 @@ const I18N = {
     "ariaAllowedAttr_description": "Checks that every recognized aria-* attribute present on an element with an explicit role is either globally supported or supported by that role.",
     "ariaAllowedAttr_summary_fail": "{{attr}} is not permitted on role=\"{{role}}\".",
     "ariaAllowedAttr_hint_fail": "Remove this attribute, or use a role that supports it.",
+    "ariaAllowedAttr_summary_cantTell": "{{attr}} is deprecated on role=\"{{role}}\" (still allowed, but discouraged).",
+    "ariaAllowedAttr_hint_cantTell": "This attribute was removed from the ARIA global set in 1.2; remove it or use a role that supports it, as a future ARIA version may disallow it.",
     "ariaProhibitedAttr_title": "ARIA naming attributes must not be used on roles that prohibit them",
     "ariaProhibitedAttr_description": "Checks that aria-label/aria-labelledby are not present on WAI-ARIA roles whose specification explicitly prohibits ARIA naming (e.g. generic, emphasis, strong, paragraph).",
     "ariaProhibitedAttr_summary_fail": "{{attr}} is prohibited on role=\"{{role}}\".",
@@ -84018,14 +87552,16 @@ const I18N = {
     "formControlSingleLabel_description": "Checks that a form control is associated with at most one <label> (by wrapping or by label[for]).",
     "formControlSingleLabel_summary_fail": "This <{{element}}> is associated with {{labelCount}} labels.",
     "formControlSingleLabel_hint_fail": "Keep only one <label> per form control (either wrapping it or referencing it via for/id).",
+    "formControlSingleLabel_summary_cantTell": "This <{{element}}> has one labelling <label> plus an extra empty <label> association; verify how it is announced.",
+    "formControlSingleLabel_hint_cantTell": "Remove the redundant empty <label> so exactly one <label> is associated with the control.",
     "nestedInteractiveControlsAbsent_title": "Interactive controls must not be nested",
     "nestedInteractiveControlsAbsent_description": "Checks that an interactive control (link, button, form control, or ARIA widget role) does not contain another interactive control.",
     "nestedInteractiveControlsAbsent_summary_fail": "This <{{element}}> contains one or more nested interactive controls: {{nestedElements}}.",
     "nestedInteractiveControlsAbsent_hint_fail": "Move the nested interactive control(s) outside this element; nested interactive controls are not reliably operable via assistive technology.",
     "bypassBlocksPresent_title": "Page must provide a way to bypass repeated blocks",
     "bypassBlocksPresent_description": "Checks that the page has at least one recognized WCAG 2.4.1 bypass-blocks mechanism: a main landmark, a working same-page anchor link, or a heading.",
-    "bypassBlocksPresent_summary_fail": "This page has no recognized way to bypass repeated blocks of content.",
-    "bypassBlocksPresent_hint_fail": "Add a main landmark (<main> or role=\"main\"), a working \"skip to content\" link, or heading elements that assistive technology can use to jump past repeated content.",
+    "bypassBlocksPresent_summary_cantTell": "No recognized way to bypass repeated blocks of content was detected on this page — verify a bypass mechanism exists.",
+    "bypassBlocksPresent_hint_cantTell": "Confirm the page offers a bypass mechanism: a main landmark (<main> or role=\"main\"), a working \"skip to content\" link, or heading elements that assistive technology can use to jump past repeated content. (A mechanism may be temporarily hidden — e.g. while a modal dialog makes the page inert — or provided on a per-site basis; this needs human confirmation.)",
     "landmarkBannerIsTopLevel_title": "Banner landmark must be top-level",
     "landmarkBannerIsTopLevel_description": "Checks that the banner landmark (role=\"banner\" or a non-nested <header>) is not nested inside another landmark region.",
     "landmarkBannerIsTopLevel_summary_cantTell": "This banner landmark is nested inside another landmark region.",
@@ -84127,8 +87663,8 @@ const I18N = {
     "htmlXmlLangMismatch_description": "Checks that the <html> element's lang and xml:lang attributes declare the same primary language, when both are present.",
     "htmlXmlLangMismatch_summary_fail": "The lang (\"{{lang}}\") and xml:lang (\"{{xmlLang}}\") attributes declare different languages.",
     "htmlXmlLangMismatch_hint_fail": "Make lang and xml:lang declare the same primary language, or remove the deprecated xml:lang attribute.",
-    "avoidInlineSpacing_title": "Inline style must not force text spacing with !important",
-    "avoidInlineSpacing_description": "Checks that inline style does not set line-height, letter-spacing, or word-spacing with !important, which blocks user text-spacing overrides.",
+    "avoidInlineSpacing_title": "Inline style must not force text spacing below the WCAG metric",
+    "avoidInlineSpacing_description": "Checks that where inline style forces line-height, letter-spacing or word-spacing with !important, the value already meets WCAG 1.4.12, so the user has nothing left to override.",
     "avoidInlineSpacing_summary_fail": "This element's inline style forces {{properties}} with !important, blocking user text-spacing overrides.",
     "avoidInlineSpacing_hint_fail": "Remove !important from line-height/letter-spacing/word-spacing in inline styles so users can override text spacing.",
     "metaRefreshNoExceptions_title": "Page must not use a meta refresh at all (AAA)",
@@ -84217,6 +87753,10 @@ const I18N = {
     "inputImage_altPresent_description": "Comprueba que los elementos <input type=\"image\"> incluyan un atributo alt para ofrecer un mecanismo de alternativa textual.",
     "inputImage_altPresent_summary_fail": "Falta el atributo alt en <input type=\"image\">.",
     "inputImage_altPresent_hint_fail": "Agregar un atributo alt (usar alt=\"\" solo cuando se proporcione un nombre accesible por separado).",
+    "inputImage_altPresent_summary_defaultName": "El nombre accesible es el predeterminado del navegador para un boton de imagen y no aporta informacion.",
+    "inputImage_altPresent_hint_defaultName": "Sustituyelo por un texto que describa la accion del boton, por ejemplo \"Buscar\".",
+    "inputImage_altPresent_summary_emptyAlt": "Un alt=\"\" vacio en <input type=\"image\"> deja el control sin nombre.",
+    "inputImage_altPresent_hint_emptyAlt": "Describe la accion en alt, o nombra el control con aria-label o aria-labelledby.",
     "ariaHidden_programmaticFocus_review_title": "Revisar el foco programático en aria-hidden",
     "ariaHidden_programmaticFocus_review_description": "Señala elementos aria-hidden considerados elegibles debido a un foco programático (por ejemplo, tabindex < 0). Verificar que la gestión del foco es intencionada y la exposición a las tecnologías de asistencia.",
     "ariaHidden_programmaticFocus_review_summary": "Revisión: un elemento aria-hidden es enfocable de forma programática.",
@@ -84498,16 +88038,21 @@ const I18N = {
     "labelInName_description": "Comprueba que, cuando un control tiene una etiqueta de texto visible, el nombre accesible contenga ese texto de etiqueta visible (WCAG 2.5.3).",
     "labelInName_summary_fail": "{{element}}: la etiqueta visible \"{{visibleLabel}}\" (de {{labelSource}}) no está incluida en el nombre accesible (de {{nameMechanism}}).",
     "labelInName_hint_fail": "Actualizar aria-label/aria-labelledby (o el texto de la etiqueta visible) para que el nombre accesible incluya el texto de la etiqueta visible.",
+    "labelInName_summary_cantTell": "{{element}}: la etiqueta visible \"{{visibleLabel}}\" (de {{labelSource}}) se diferencia del nombre accesible (de {{nameMechanism}}) solo por una abreviatura o por la separación con guion.",
+    "labelInName_hint_cantTell": "Comprobar manualmente si ambas redacciones coinciden: el marcado no permite distinguir una abreviatura intencionada de una discrepancia.",
     "ariaRolesValid_title": "El atributo role debe ser un rol ARIA válido y no abstracto",
     "ariaRolesValid_description": "Comprueba que un atributo role=\"\" explícito se resuelva en un rol WAI-ARIA real y no abstracto.",
     "ariaRolesValid_summary_invalid": "role=\"{{role}}\" no es un rol ARIA reconocido.",
     "ariaRolesValid_hint_invalid": "Usar un token de rol ARIA válido, o eliminar el atributo role si no aplica ninguno.",
     "ariaRolesValid_summary_abstract": "role=\"{{role}}\" es un rol ARIA abstracto, que no debe usarse directamente.",
     "ariaRolesValid_hint_abstract": "Reemplazar este rol abstracto por un rol concreto adecuado para el widget o la estructura.",
-    "ariaDeprecatedRole_title": "El atributo role no debe usar un rol ARIA obsoleto o prohibido para autores",
-    "ariaDeprecatedRole_description": "Comprueba que un atributo role=\"\" explícito no use un rol obsoleto según la especificación WAI-ARIA, ni uno reservado únicamente para uso interno del agente de usuario (por ejemplo, role=\"generic\").",
+    "ariaDeprecatedRole_title": "El atributo role no debería usar un rol ARIA obsoleto o desaconsejado para autores",
+    "ariaDeprecatedRole_description": "Comprueba que un atributo role=\"\" explícito no use un rol obsoleto según la especificación WAI-ARIA, ni uno reservado para uso interno del agente de usuario (por ejemplo, role=\"generic\").",
     "ariaDeprecatedRole_summary_fail": "Este elemento usa role=\"{{role}}\", que los autores no deben declarar explícitamente.",
     "ariaDeprecatedRole_hint_fail": "{{guidance}}",
+    "ariaDeprecatedRole_summary_cantTell": "Este elemento usa role=\"{{role}}\", que está obsoleto en WAI-ARIA (todavía válido, pero desaconsejado).",
+    "ariaDeprecatedRole_summary_cantTell_discouraged": "Este elemento usa role=\"{{role}}\", que está reservado para los agentes de usuario (todavía válido, pero desaconsejado).",
+    "ariaDeprecatedRole_hint_cantTell": "{{guidance}}",
     "ariaValidAttr_title": "Los atributos aria-* deben ser atributos ARIA reales y definidos",
     "ariaValidAttr_description": "Comprueba que cada nombre de atributo aria-* presente en el DOM sea un atributo real definido por la especificación WAI-ARIA.",
     "ariaValidAttr_summary_fail": "{{attr}} no es un atributo ARIA reconocido.",
@@ -84520,6 +88065,8 @@ const I18N = {
     "ariaAllowedAttr_description": "Comprueba que cada atributo aria-* reconocido presente en un elemento con un rol explícito esté admitido globalmente o admitido por ese rol.",
     "ariaAllowedAttr_summary_fail": "{{attr}} no está permitido en role=\"{{role}}\".",
     "ariaAllowedAttr_hint_fail": "Eliminar este atributo, o usar un rol que lo admita.",
+    "ariaAllowedAttr_summary_cantTell": "{{attr}} está obsoleto en role=\"{{role}}\" (todavía permitido, pero desaconsejado).",
+    "ariaAllowedAttr_hint_cantTell": "Este atributo se eliminó del conjunto global de ARIA en 1.2; elimínelo o use un rol que lo admita, ya que una versión futura de ARIA podría no permitirlo.",
     "ariaProhibitedAttr_title": "Los atributos de nombrado ARIA no deben usarse en roles que los prohíban",
     "ariaProhibitedAttr_description": "Comprueba que aria-label/aria-labelledby no estén presentes en roles WAI-ARIA cuya especificación prohíbe explícitamente el nombrado ARIA (por ejemplo, generic, emphasis, strong, paragraph).",
     "ariaProhibitedAttr_summary_fail": "{{attr}} está prohibido en role=\"{{role}}\".",
@@ -84634,14 +88181,16 @@ const I18N = {
     "formControlSingleLabel_description": "Comprueba que un control de formulario esté asociado a como máximo una <label> (por envoltura o mediante label[for]).",
     "formControlSingleLabel_summary_fail": "Este <{{element}}> está asociado a {{labelCount}} etiquetas.",
     "formControlSingleLabel_hint_fail": "Mantener solo una <label> por control de formulario (ya sea envolviéndolo o referenciándolo mediante for/id).",
+    "formControlSingleLabel_summary_cantTell": "Este <{{element}}> tiene una <label> que lo etiqueta más una asociación de <label> vacía adicional; verifique cómo se anuncia.",
+    "formControlSingleLabel_hint_cantTell": "Elimine la <label> vacía redundante para que solo una <label> quede asociada al control.",
     "nestedInteractiveControlsAbsent_title": "Los controles interactivos no deben estar anidados",
     "nestedInteractiveControlsAbsent_description": "Comprueba que un control interactivo (enlace, botón, control de formulario o rol de widget ARIA) no contenga otro control interactivo.",
     "nestedInteractiveControlsAbsent_summary_fail": "Este <{{element}}> contiene uno o más controles interactivos anidados: {{nestedElements}}.",
     "nestedInteractiveControlsAbsent_hint_fail": "Mover el/los control(es) interactivo(s) anidado(s) fuera de este elemento; los controles interactivos anidados no son operables de forma fiable mediante tecnología de asistencia.",
     "bypassBlocksPresent_title": "La página debe proporcionar una forma de omitir bloques repetidos",
     "bypassBlocksPresent_description": "Comprueba que la página tenga al menos un mecanismo reconocido de omisión de bloques del criterio de éxito 2.4.1 de WCAG: un landmark main, un enlace de anclaje funcional dentro de la misma página, o un encabezado.",
-    "bypassBlocksPresent_summary_fail": "Esta página no tiene ninguna forma reconocida de omitir bloques de contenido repetidos.",
-    "bypassBlocksPresent_hint_fail": "Agregar un landmark main (<main> o role=\"main\"), un enlace funcional de \"saltar al contenido\", o elementos de encabezado que las tecnologías de asistencia puedan usar para saltar el contenido repetido.",
+    "bypassBlocksPresent_summary_cantTell": "No se detectó ninguna forma reconocida de omitir bloques de contenido repetidos en esta página; verifique que exista un mecanismo de omisión.",
+    "bypassBlocksPresent_hint_cantTell": "Confirme que la página ofrece un mecanismo de omisión: un landmark main (<main> o role=\"main\"), un enlace funcional de \"saltar al contenido\", o elementos de encabezado que las tecnologías de asistencia puedan usar para saltar el contenido repetido. (Un mecanismo puede estar oculto temporalmente —por ejemplo, mientras un diálogo modal deja la página inerte— o proporcionarse a nivel de sitio; esto requiere confirmación humana.)",
     "landmarkBannerIsTopLevel_title": "El landmark banner debe ser de nivel superior",
     "landmarkBannerIsTopLevel_description": "Comprueba que el landmark banner (role=\"banner\" o un <header> no anidado) no esté anidado dentro de otra región landmark.",
     "landmarkBannerIsTopLevel_summary_cantTell": "Este landmark banner está anidado dentro de otra región landmark.",
@@ -84743,8 +88292,8 @@ const I18N = {
     "htmlXmlLangMismatch_description": "Comprueba que los atributos lang y xml:lang del elemento <html> declaren el mismo idioma principal, cuando ambos están presentes.",
     "htmlXmlLangMismatch_summary_fail": "Los atributos lang (\"{{lang}}\") y xml:lang (\"{{xmlLang}}\") declaran idiomas diferentes.",
     "htmlXmlLangMismatch_hint_fail": "Hacer que lang y xml:lang declaren el mismo idioma principal, o eliminar el atributo obsoleto xml:lang.",
-    "avoidInlineSpacing_title": "El estilo en línea no debe forzar el espaciado de texto con !important",
-    "avoidInlineSpacing_description": "Comprueba que el estilo en línea no establezca line-height, letter-spacing o word-spacing con !important, lo que bloquea las anulaciones de espaciado de texto del usuario.",
+    "avoidInlineSpacing_title": "El estilo en línea no debe forzar el espaciado de texto por debajo del umbral WCAG",
+    "avoidInlineSpacing_description": "Comprueba que cuando el estilo en línea fuerza line-height, letter-spacing o word-spacing con !important, el valor ya cumple WCAG 1.4.12, por lo que al usuario no le queda nada que anular.",
     "avoidInlineSpacing_summary_fail": "El estilo en línea de este elemento fuerza {{properties}} con !important, bloqueando las anulaciones de espaciado de texto del usuario.",
     "avoidInlineSpacing_hint_fail": "Eliminar !important de line-height/letter-spacing/word-spacing en los estilos en línea para que los usuarios puedan anular el espaciado de texto.",
     "metaRefreshNoExceptions_title": "La página no debe usar un meta refresh en absoluto (AAA)",
@@ -84833,6 +88382,10 @@ const I18N = {
     "inputImage_altPresent_description": "Vérifie que les éléments <input type=\"image\"> fournissent un attribut alt afin de proposer un mécanisme d’alternative textuelle.",
     "inputImage_altPresent_summary_fail": "Attribut alt manquant sur <input type=\"image\">.",
     "inputImage_altPresent_hint_fail": "Ajoutez un attribut alt (utilisez alt=\"\" uniquement lorsqu’un nom accessible séparé est fourni).",
+    "inputImage_altPresent_summary_defaultName": "Le nom accessible est celui par defaut du navigateur pour un bouton image et n'apporte aucune information.",
+    "inputImage_altPresent_hint_defaultName": "Remplacez-le par un texte decrivant l action du bouton, par exemple \"Rechercher\".",
+    "inputImage_altPresent_summary_emptyAlt": "Un alt=\"\" vide sur <input type=\"image\"> laisse le controle sans nom.",
+    "inputImage_altPresent_hint_emptyAlt": "Decrivez l action dans alt, ou nommez le controle avec aria-label ou aria-labelledby.",
     "ariaHidden_programmaticFocus_review_title": "Vérifier le focus programmatique avec aria-hidden",
     "ariaHidden_programmaticFocus_review_description": "Signale les éléments aria-hidden considérés comme éligibles uniquement via un focus programmatique (ex. tabindex < 0). Vérifiez l’intention de gestion du focus et l’exposition aux technologies d’assistance.",
     "ariaHidden_programmaticFocus_review_summary": "Vérification : un élément aria-hidden est focusable de façon programmatique.",
@@ -85114,16 +88667,21 @@ const I18N = {
     "labelInName_description": "Vérifie que lorsqu’un composant possède un libellé textuel visible, le nom accessible contient ce libellé visible (WCAG 2.5.3).",
     "labelInName_summary_fail": "{{element}} : le libellé visible « {{visibleLabel}} » (source : {{labelSource}}) n’est pas inclus dans le nom accessible (source : {{nameMechanism}}).",
     "labelInName_hint_fail": "Modifiez aria-label ou aria-labelledby (ou le texte du libellé visible) afin que le nom accessible inclue le libellé visible.",
+    "labelInName_summary_cantTell": "{{element}} : le libellé visible « {{visibleLabel}} » (source : {{labelSource}}) ne diffère du nom accessible (source : {{nameMechanism}}) que par une abréviation ou une césure.",
+    "labelInName_hint_cantTell": "Vérifiez manuellement que les deux formulations correspondent : le balisage ne permet pas de distinguer une abréviation volontaire d’une incohérence.",
     "ariaRolesValid_title": "L’attribut role doit être un rôle ARIA valide et non abstrait",
     "ariaRolesValid_description": "Vérifie qu’un attribut role=\"\" explicite correspond à un rôle WAI-ARIA réel et non abstrait.",
     "ariaRolesValid_summary_invalid": "role=\"{{role}}\" n’est pas un rôle ARIA reconnu.",
     "ariaRolesValid_hint_invalid": "Utilisez un rôle ARIA valide, ou retirez l’attribut role si aucun ne s’applique.",
     "ariaRolesValid_summary_abstract": "role=\"{{role}}\" est un rôle ARIA abstrait, qui ne doit pas être utilisé directement.",
     "ariaRolesValid_hint_abstract": "Remplacez ce rôle abstrait par un rôle concret adapté au composant/à la structure.",
-    "ariaDeprecatedRole_title": "L’attribut role ne doit pas utiliser un rôle ARIA obsolète ou interdit aux auteurs",
+    "ariaDeprecatedRole_title": "L’attribut role ne devrait pas utiliser un rôle ARIA obsolète ou déconseillé aux auteurs",
     "ariaDeprecatedRole_description": "Vérifie qu’un attribut role=\"\" explicite n’utilise pas un rôle rendu obsolète par la spécification WAI-ARIA, ni un rôle réservé à un usage interne à l’agent utilisateur (ex. role=\"generic\").",
     "ariaDeprecatedRole_summary_fail": "Cet élément utilise role=\"{{role}}\", que les auteurs ne doivent pas déclarer explicitement.",
     "ariaDeprecatedRole_hint_fail": "{{guidance}}",
+    "ariaDeprecatedRole_summary_cantTell": "Cet élément utilise role=\"{{role}}\", qui est obsolète dans WAI-ARIA (toujours valide, mais déconseillé).",
+    "ariaDeprecatedRole_summary_cantTell_discouraged": "Cet élément utilise role=\"{{role}}\", qui est réservé aux agents utilisateurs (toujours valide, mais déconseillé).",
+    "ariaDeprecatedRole_hint_cantTell": "{{guidance}}",
     "ariaValidAttr_title": "Les attributs aria-* doivent être des attributs ARIA réels et définis",
     "ariaValidAttr_description": "Vérifie que chaque nom d’attribut aria-* présent dans le DOM est un attribut réel défini par la spécification WAI-ARIA.",
     "ariaValidAttr_summary_fail": "{{attr}} n’est pas un attribut ARIA reconnu.",
@@ -85136,6 +88694,8 @@ const I18N = {
     "ariaAllowedAttr_description": "Vérifie que chaque attribut aria-* reconnu présent sur un élément ayant un rôle explicite est soit globalement pris en charge, soit pris en charge par ce rôle.",
     "ariaAllowedAttr_summary_fail": "{{attr}} n’est pas autorisé sur role=\"{{role}}\".",
     "ariaAllowedAttr_hint_fail": "Retirez cet attribut, ou utilisez un rôle qui le prend en charge.",
+    "ariaAllowedAttr_summary_cantTell": "{{attr}} est obsolète sur role=\"{{role}}\" (toujours autorisé, mais déconseillé).",
+    "ariaAllowedAttr_hint_cantTell": "Cet attribut a été retiré de l’ensemble global d’ARIA en 1.2 ; retirez-le ou utilisez un rôle qui le prend en charge, car une future version d’ARIA pourrait l’interdire.",
     "ariaProhibitedAttr_title": "Les attributs de nommage ARIA ne doivent pas être utilisés sur des rôles qui les interdisent",
     "ariaProhibitedAttr_description": "Vérifie que aria-label/aria-labelledby ne sont pas présents sur des rôles WAI-ARIA dont la spécification interdit explicitement le nommage ARIA (ex. generic, emphasis, strong, paragraph).",
     "ariaProhibitedAttr_summary_fail": "{{attr}} est interdit sur role=\"{{role}}\".",
@@ -85250,14 +88810,16 @@ const I18N = {
     "formControlSingleLabel_description": "Vérifie qu’un contrôle de formulaire est associé à au plus un <label> (par imbrication ou par label[for]).",
     "formControlSingleLabel_summary_fail": "Ce <{{element}}> est associé à {{labelCount}} étiquettes.",
     "formControlSingleLabel_hint_fail": "Conservez une seule <label> par contrôle de formulaire (soit en l’enveloppant, soit en la référençant via for/id).",
+    "formControlSingleLabel_summary_cantTell": "Ce <{{element}}> a une <label> qui l’étiquette plus une association de <label> vide supplémentaire ; vérifiez comment il est annoncé.",
+    "formControlSingleLabel_hint_cantTell": "Supprimez la <label> vide redondante afin qu’une seule <label> soit associée au contrôle.",
     "nestedInteractiveControlsAbsent_title": "Les contrôles interactifs ne doivent pas être imbriqués",
     "nestedInteractiveControlsAbsent_description": "Vérifie qu’un contrôle interactif (lien, bouton, contrôle de formulaire, ou rôle de widget ARIA) ne contient pas un autre contrôle interactif.",
     "nestedInteractiveControlsAbsent_summary_fail": "Ce <{{element}}> contient un ou plusieurs contrôles interactifs imbriqués : {{nestedElements}}.",
     "nestedInteractiveControlsAbsent_hint_fail": "Déplacez le(s) contrôle(s) interactif(s) imbriqué(s) hors de cet élément ; les contrôles interactifs imbriqués ne sont pas utilisables de façon fiable via les technologies d’assistance.",
     "bypassBlocksPresent_title": "La page doit proposer un moyen de contourner les blocs répétés",
     "bypassBlocksPresent_description": "Vérifie que la page dispose d’au moins un mécanisme reconnu de contournement des blocs répétés (WCAG 2.4.1) : un point de repère main, un lien d’ancrage fonctionnel vers la même page, ou un titre.",
-    "bypassBlocksPresent_summary_fail": "Cette page n’a aucun moyen reconnu de contourner les blocs de contenu répétés.",
-    "bypassBlocksPresent_hint_fail": "Ajoutez un point de repère main (<main> ou role=\"main\"), un lien « aller au contenu » fonctionnel, ou des éléments de titre que les technologies d’assistance peuvent utiliser pour passer le contenu répété.",
+    "bypassBlocksPresent_summary_cantTell": "Aucun moyen reconnu de contourner les blocs de contenu répétés n’a été détecté sur cette page — vérifiez qu’un mécanisme de contournement existe.",
+    "bypassBlocksPresent_hint_cantTell": "Confirmez que la page propose un mécanisme de contournement : un point de repère main (<main> ou role=\"main\"), un lien « aller au contenu » fonctionnel, ou des éléments de titre que les technologies d’assistance peuvent utiliser pour passer le contenu répété. (Un mécanisme peut être temporairement masqué — par exemple pendant qu’une boîte de dialogue modale rend la page inerte — ou fourni à l’échelle du site ; cela nécessite une confirmation humaine.)",
     "landmarkBannerIsTopLevel_title": "Le point de repère banner doit être de premier niveau",
     "landmarkBannerIsTopLevel_description": "Vérifie que le point de repère banner (role=\"banner\" ou un <header> non imbriqué) n’est pas imbriqué dans un autre point de repère.",
     "landmarkBannerIsTopLevel_summary_cantTell": "Ce point de repère banner est imbriqué dans un autre point de repère.",
@@ -85359,8 +88921,8 @@ const I18N = {
     "htmlXmlLangMismatch_description": "Vérifie que les attributs lang et xml:lang de l’élément <html> déclarent la même langue principale, lorsque les deux sont présents.",
     "htmlXmlLangMismatch_summary_fail": "Les attributs lang (« {{lang}} ») et xml:lang (« {{xmlLang}} ») déclarent des langues différentes.",
     "htmlXmlLangMismatch_hint_fail": "Faites en sorte que lang et xml:lang déclarent la même langue principale, ou retirez l’attribut obsolète xml:lang.",
-    "avoidInlineSpacing_title": "Un style en ligne ne doit pas forcer l’espacement du texte avec !important",
-    "avoidInlineSpacing_description": "Vérifie qu’un style en ligne ne définit pas line-height, letter-spacing, ou word-spacing avec !important, ce qui bloque les surcharges d’espacement de texte par l’utilisateur.",
+    "avoidInlineSpacing_title": "Un style en ligne ne doit pas forcer l’espacement du texte en dessous du seuil WCAG",
+    "avoidInlineSpacing_description": "Vérifie que lorsqu’un style en ligne force line-height, letter-spacing ou word-spacing avec !important, la valeur respecte déjà WCAG 1.4.12, ne laissant rien à surcharger à l’utilisateur.",
     "avoidInlineSpacing_summary_fail": "Le style en ligne de cet élément force {{properties}} avec !important, bloquant les surcharges d’espacement de texte par l’utilisateur.",
     "avoidInlineSpacing_hint_fail": "Retirez !important de line-height/letter-spacing/word-spacing dans les styles en ligne afin que les utilisateurs puissent surcharger l’espacement du texte.",
     "metaRefreshNoExceptions_title": "La page ne doit utiliser aucun rafraîchissement meta (AAA)",
@@ -86373,6 +89935,35 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
       const eligCache = new WeakMap();
       const inactiveCache = new WeakMap();
+      const clipHiddenCache = new WeakMap();
+
+      // clip:rect(0,0,0,0) / clip-path:inset(50%+) (the sr-only technique) has
+      // no visually-presented color, so contrast rules exempt it even though
+      // isDomVisibleEligible itself keeps it eligible for other callers
+      // (aria-hidden-focus etc. need to find clipped-but-focusable elements).
+      const isClipHidden = (el) => {
+        if (!helpers || typeof helpers.getVisibilityHintsInfo !== 'function') return false;
+        if (clipHiddenCache.has(el)) return clipHiddenCache.get(el);
+
+        let hidden = false;
+        try {
+          let cur = el;
+          let guard = 0;
+          while (cur && cur.nodeType === 1 && guard++ < 100) {
+            const info = helpers.getVisibilityHintsInfo(cur, ctx, {});
+            if (info && Array.isArray(info.hints) && info.hints.indexOf('clipped') !== -1) {
+              hidden = true;
+              break;
+            }
+            cur = composedParent ? composedParent(cur) : cur.parentElement;
+          }
+        } catch {
+          hidden = false;
+        }
+
+        clipHiddenCache.set(el, hidden);
+        return hidden;
+      };
 
       const isVisibleEligible = (el) => {
         if (!helpers || typeof helpers.isDomVisibleEligible !== 'function') return true;
@@ -86382,6 +89973,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         try {
           const r = helpers.isDomVisibleEligible(el, ctx, { visibilityMode });
           ok = __asEligibilityBool(r);
+          if (ok && isClipHidden(el)) ok = false;
         } catch {
           ok = false;
         }
@@ -87496,6 +91088,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   // -------------------------------------------------------------------
   // A) Abstract roles — MUST NOT be used directly in a role="" attribute.
   // -------------------------------------------------------------------
+  // <generated:aria-abstract-roles>
   const ABSTRACT_ROLES = new Set([
     'command',
     'composite',
@@ -87510,23 +91103,44 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     'widget',
     'window'
   ]);
+  // </generated:aria-abstract-roles>
 
   // -------------------------------------------------------------------
-  // B) Valid, concrete (non-abstract) roles that authors must never
-  //    explicitly declare — either because WAI-ARIA has deprecated them
-  //    (a direct replacement exists) or because they are reserved for
-  //    user-agent-internal use only (not a spec deprecation, but the
-  //    same "valid token, prohibited for authors" shape). Flagged by
-  //    aria-deprecated-role, not aria-roles-valid (which only checks
-  //    existence/abstractness) — see DEPRECATED_ROLE_GUIDANCE below for
-  //    per-role, reason-accurate messaging.
+  // B) Valid, concrete (non-abstract) roles authors should not explicitly
+  //    declare — either because WAI-ARIA has deprecated them (a direct
+  //    replacement exists) or because they are reserved for
+  //    user-agent-internal use. Flagged by aria-deprecated-role, not
+  //    aria-roles-valid (which only checks existence/abstractness) — see
+  //    DEPRECATED_ROLE_GUIDANCE below for per-role, reason-accurate
+  //    messaging.
   // -------------------------------------------------------------------
+  // Deprecated but still VALID roles (SHOULD NOT, still conforming). Reported
+  // as cantTell so the author decides whether it matters to them.
   const DEPRECATED_ROLES = new Set([
-    'directory', // superseded by role="list"
-    // WAI-ARIA 1.2: "intended for use as the implicit role of generic
-    // elements in host languages for use by user agents only; not for
-    // use by developers." MDN: "It should not be used by web authors."
-    'generic'
+    'directory' // superseded by role="list"
+  ]);
+
+  // Valid roles reserved for user-agent-internal use, which ARIA states at
+  // SHOULD NOT strength — conforming, so reported as cantTell.
+  const AUTHOR_DISCOURAGED_ROLES = new Set([
+    'generic' // "primarily for implementors of user agents"
+  ]);
+
+  // Roles carrying an author MUST NOT, reported as fail. Empty under ARIA 1.2
+  // and 1.3, whose only author MUST NOT covers abstract roles — the concern of
+  // aria-roles-valid.
+  const AUTHOR_PROHIBITED_ROLES = new Set([]);
+
+  // Deprecated but still ALLOWED states/properties (SHOULD NOT, still
+  // conforming): the four ARIA 1.2 keeps in the global set as deprecated and
+  // marks "deprecated on this role" wherever a role does not support them.
+  // Reported as cantTell, not a not-allowed fail. Flat rather than per-role
+  // because the deprecation is uniform and no role prohibits any of the four.
+  const DEPRECATED_ATTRS = new Set([
+    'aria-disabled',
+    'aria-errormessage',
+    'aria-haspopup',
+    'aria-invalid'
   ]);
 
   const DEPRECATED_ROLE_GUIDANCE = {
@@ -87552,103 +91166,140 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   //    Digital Publishing WAI-ARIA (doc-abstract etc.) is a separate
   //    module, deliberately left out of scope for now.
   // -------------------------------------------------------------------
+  // <generated:aria-concrete-roles>
   const CONCRETE_ROLES = new Set([
-    // WAI-ARIA Graphics Module 1.0 (see comment above)
-    'graphics-document',
-    'graphics-object',
-    'graphics-symbol',
-    // Live region / window roles
     'alert',
     'alertdialog',
-    'dialog',
-    'log',
-    'marquee',
-    'status',
-    'timer',
-    // Landmark roles
-    'banner',
-    'complementary',
-    'contentinfo',
-    'form',
-    'main',
-    'navigation',
-    'region',
-    'search',
-    // Widget roles (leaf)
-    'button',
-    'checkbox',
-    'gridcell',
-    'link',
-    'menuitem',
-    'menuitemcheckbox',
-    'menuitemradio',
-    'option',
-    'progressbar',
-    'radio',
-    'scrollbar',
-    'searchbox',
-    'separator',
-    'slider',
-    'spinbutton',
-    'switch',
-    'tab',
-    'tabpanel',
-    'textbox',
-    'treeitem',
-    'tooltip',
-    // Composite widget roles
-    'combobox',
-    'grid',
-    'listbox',
-    'menu',
-    'menubar',
-    'radiogroup',
-    'tablist',
-    'tree',
-    'treegrid',
-    // Document structure roles
     'application',
     'article',
+    'banner',
     'blockquote',
+    'button',
     'caption',
     'cell',
+    'checkbox',
     'code',
     'columnheader',
+    'combobox',
     'comment',
+    'complementary',
+    'contentinfo',
     'definition',
     'deletion',
+    'dialog',
     'directory',
+    'doc-abstract',
+    'doc-acknowledgments',
+    'doc-afterword',
+    'doc-appendix',
+    'doc-backlink',
+    'doc-biblioentry',
+    'doc-bibliography',
+    'doc-biblioref',
+    'doc-chapter',
+    'doc-colophon',
+    'doc-conclusion',
+    'doc-cover',
+    'doc-credit',
+    'doc-credits',
+    'doc-dedication',
+    'doc-endnote',
+    'doc-endnotes',
+    'doc-epigraph',
+    'doc-epilogue',
+    'doc-errata',
+    'doc-example',
+    'doc-footnote',
+    'doc-foreword',
+    'doc-glossary',
+    'doc-glossref',
+    'doc-index',
+    'doc-introduction',
+    'doc-noteref',
+    'doc-notice',
+    'doc-pagebreak',
+    'doc-pagefooter',
+    'doc-pageheader',
+    'doc-pagelist',
+    'doc-part',
+    'doc-preface',
+    'doc-prologue',
+    'doc-pullquote',
+    'doc-qna',
+    'doc-subtitle',
+    'doc-tip',
+    'doc-toc',
     'document',
     'emphasis',
     'feed',
     'figure',
+    'form',
     'generic',
+    'graphics-document',
+    'graphics-object',
+    'graphics-symbol',
+    'grid',
+    'gridcell',
     'group',
     'heading',
     'img',
     'insertion',
+    'link',
     'list',
+    'listbox',
     'listitem',
+    'log',
+    'main',
     'mark',
+    'marquee',
     'math',
+    'menu',
+    'menubar',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
     'meter',
+    'navigation',
     'none',
     'note',
+    'option',
     'paragraph',
     'presentation',
+    'progressbar',
+    'radio',
+    'radiogroup',
+    'region',
     'row',
     'rowgroup',
     'rowheader',
+    'scrollbar',
+    'search',
+    'searchbox',
+    'separator',
+    'slider',
+    'spinbutton',
+    'status',
     'strong',
     'subscript',
     'suggestion',
     'superscript',
+    'switch',
+    'tab',
     'table',
+    'tablist',
+    'tabpanel',
     'term',
     'text',
+    'textbox',
     'time',
-    'toolbar'
+    'timer',
+    'toolbar',
+    'tooltip',
+    'tree',
+    'treegrid',
+    'treeitem'
   ]);
+  // </generated:aria-concrete-roles>
 
   // -------------------------------------------------------------------
   // D) ARIA attribute value types.
@@ -88164,6 +91815,18 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     return DEPRECATED_ROLES.has(lower(role));
   }
 
+  function isAuthorDiscouragedRole(role) {
+    return AUTHOR_DISCOURAGED_ROLES.has(lower(role));
+  }
+
+  function isAuthorProhibitedRole(role) {
+    return AUTHOR_PROHIBITED_ROLES.has(lower(role));
+  }
+
+  function isDeprecatedAttr(attr /* , role */) {
+    return DEPRECATED_ATTRS.has(lower(attr));
+  }
+
   function isKnownRole(role) {
     const r = lower(role);
     return ABSTRACT_ROLES.has(r) || CONCRETE_ROLES.has(r);
@@ -88439,6 +92102,9 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     getAllRoleTokens,
     isAbstractRole,
     isDeprecatedRole,
+    isAuthorDiscouragedRole,
+    isAuthorProhibitedRole,
+    isDeprecatedAttr,
     getDeprecatedRoleGuidance,
     isKnownRole,
     isValidConcreteRole,
@@ -88526,6 +92192,28 @@ const resolveContextRoots = (function resolveContextRoots(document, contextSelec
   return { ctxSelector, roots };
 });
 const createDomHelpers = (function createDomHelpers(opts) {
+  // <generated:language-subtags>
+  const LANGUAGE_SUBTAGS =
+    'aa aaa aab aac aad aae aaf aag aah aai aak aal aam aan aao aap aaq aas aat aau aav aaw aax aaz ab aba abb abc abd abe abf abg abh abi abj abl abm abn abo abp abq abr abs abt abu abv abw abx aby abz aca acb acd ace acf ach aci ack acl acm acn acp acq acr acs act acu acv acw acx acy acz ada adb add ade adf adg adh adi adj adl adn ado adp adq adr ads adt adu adw adx ady adz ae aea aeb aec aed aee aek ael aem aen aeq aer aes aeu aew aey aez af afa afb afd afe afg afh afi afk afn afo afp afs aft afu afz aga agb agc agd age agf agg agh agi agj agk agl agm agn ago agp agq agr ags agt agu agv agw agx agy agz aha ahb ahg ahh ahi ahk ahl ahm ahn aho ahp ahr ahs aht aia aib aic aid aie aif aig aih aii aij aik ail aim ain aio aip aiq air ais ait aiw aix aiy aja ajg aji ajn ajp ajs ajt aju ajw ajz ak akb akc akd ake akf akg akh aki akj akk akl akm ako akp akq akr aks akt aku akv akw akx aky akz ala alc ald ale alf alg alh ali alj alk all alm aln alo alp alq alr als alt alu alv alw alx aly alz am ama amb amc ame amf amg ami amj amk aml amm amn amo amp amq amr ams amt amu amv amw amx amy amz an ana anb anc and ane anf ang anh ani anj ank anl anm ann ano anp anq anr ans ant anu anv anw anx any anz aoa aob aoc aod aoe aof aog aoh aoi aoj aok aol aom aon aor aos aot aou aox aoz apa apb apc apd ape apf apg aph api apj apk apl apm apn apo app apq apr aps apt apu apv apw apx apy apz aqa aqc aqd aqg aqk aql aqm aqn aqp aqr aqt aqz ar arb arc ard are arh ari arj ark arl arn aro arp arq arr ars art aru arv arw arx ary arz as asa asb asc asd ase asf asg ash asi asj ask asl asn aso asp asq asr ass ast asu asv asw asx asy asz ata atb atc atd ate atg ath ati atj atk atl atm atn ato atp atq atr ats att atu atv atw atx aty atz aua aub auc aud aue auf aug auh aui auj auk aul aum aun auo aup auq aur aus aut auu auw aux auy auz av avb avd avi avk avl avm avn avo avs avt avu avv awa awb awc awd awe awg awh awi awk awm awn awo awr aws awt awu awv aww awx awy axb axe axg axk axl axm axx ay aya ayb ayc ayd aye ayg ayh ayi ayk ayl ayn ayo ayp ayq ayr ays ayt ayu ayx ayy ayz az aza azb azc azd azg azj azm azn azo azt azz ba baa bab bac bad bae baf bag bah bai baj bal ban bao bap bar bas bat bau bav baw bax bay baz bba bbb bbc bbd bbe bbf bbg bbh bbi bbj bbk bbl bbm bbn bbo bbp bbq bbr bbs bbt bbu bbv bbw bbx bby bbz bca bcb bcc bcd bce bcf bcg bch bci bcj bck bcl bcm bcn bco bcp bcq bcr bcs bct bcu bcv bcw bcy bcz bda bdb bdc bdd bde bdf bdg bdh bdi bdj bdk bdl bdm bdn bdo bdp bdq bdr bds bdt bdu bdv bdw bdx bdy bdz be bea beb bec bed bee bef beg beh bei bej bek bem beo bep beq ber bes bet beu bev bew bex bey bez bfa bfb bfc bfd bfe bff bfg bfh bfi bfj bfk bfl bfm bfn bfo bfp bfq bfr bfs bft bfu bfw bfx bfy bfz bg bga bgb bgc bgd bge bgf bgg bgi bgj bgk bgl bgm bgn bgo bgp bgq bgr bgs bgt bgu bgv bgw bgx bgy bgz bh bha bhb bhc bhd bhe bhf bhg bhh bhi bhj bhk bhl bhm bhn bho bhp bhq bhr bhs bht bhu bhv bhw bhx bhy bhz bi bia bib bic bid bie bif big bij bik bil bim bin bio bip biq bir bit biu biv biw bix biy biz bja bjb bjc bjd bje bjf bjg bjh bji bjj bjk bjl bjm bjn bjo bjp bjq bjr bjs bjt bju bjv bjw bjx bjy bjz bka bkb bkc bkd bkf bkg bkh bki bkj bkk bkl bkm bkn bko bkp bkq bkr bks bkt bku bkv bkw bkx bky bkz bla blb blc bld ble blf blg blh bli blj blk bll blm bln blo blp blq blr bls blt blv blw blx bly blz bm bma bmb bmc bmd bme bmf bmg bmh bmi bmj bmk bml bmm bmn bmo bmp bmq bmr bms bmt bmu bmv bmw bmx bmy bmz bn bna bnb bnc bnd bne bnf bng bni bnj bnk bnl bnm bnn bno bnp bnq bnr bns bnt bnu bnv bnw bnx bny bnz bo boa bob boe bof bog boh boi boj bok bol bom bon boo bop boq bor bot bou bov bow box boy boz bpa bpb bpc bpd bpe bpg bph bpi bpj bpk bpl bpm bpn bpo bpp bpq bpr bps bpt bpu bpv bpw bpx bpy bpz bqa bqb bqc bqd bqf bqg bqh bqi bqj bqk bql bqm bqn bqo bqp bqq bqr bqs bqt bqu bqv bqw bqx bqy bqz br bra brb brc brd brf brg brh bri brj brk brl brm brn bro brp brq brr brs brt bru brv brw brx bry brz bs bsa bsb bsc bse bsf bsg bsh bsi bsj bsk bsl bsm bsn bso bsp bsq bsr bss bst bsu bsv bsw bsx bsy bta btb btc btd bte btf btg bth bti btj btk btl btm btn bto btp btq btr bts btt btu btv btw btx bty btz bua bub buc bud bue buf bug buh bui buj buk bum bun buo bup buq bus but buu buv buw bux buy buz bva bvb bvc bvd bve bvf bvg bvh bvi bvj bvk bvl bvm bvn bvo bvp bvq bvr bvt bvu bvv bvw bvx bvy bvz bwa bwb bwc bwd bwe bwf bwg bwh bwi bwj bwk bwl bwm bwn bwo bwp bwq bwr bws bwt bwu bww bwx bwy bwz bxa bxb bxc bxd bxe bxf bxg bxh bxi bxj bxk bxl bxm bxn bxo bxp bxq bxr bxs bxu bxv bxw bxx bxz bya byb byc byd bye byf byg byh byi byj byk byl bym byn byo byp byq byr bys byt byv byw byx byy byz bza bzb bzc bzd bze bzf bzg bzh bzi bzj bzk bzl bzm bzn bzo bzp bzq bzr bzs bzt bzu bzv bzw bzx bzy bzz ca caa cab cac cad cae caf cag cah cai caj cak cal cam can cao cap caq car cas cau cav caw cax cay caz cba cbb cbc cbd cbe cbg cbh cbi cbj cbk cbl cbn cbo cbq cbr cbs cbt cbu cbv cbw cby cca ccc ccd cce ccg cch ccj ccl ccm ccn cco ccp ccq ccr ccs cda cdc cdd cde cdf cdg cdh cdi cdj cdm cdn cdo cdr cds cdy cdz ce cea ceb ceg cek cel cen cet cey cfa cfd cfg cfm cga cgc cgg cgk ch chb chc chd chf chg chh chj chk chl chm chn cho chp chq chr cht chw chx chy chz cia cib cic cid cie cih cik cim cin cip cir ciw ciy cja cje cjh cji cjk cjm cjn cjo cjp cjr cjs cjv cjy cka ckb ckh ckl ckm ckn cko ckq ckr cks ckt cku ckv ckx cky ckz cla clc cld cle clh cli clj clk cll clm clo cls clt clu clw cly cma cmc cme cmg cmi cmk cml cmm cmn cmo cmr cms cmt cna cnb cnc cng cnh cni cnk cnl cno cnp cnq cnr cns cnt cnu cnw cnx co coa cob coc cod coe cof cog coh coj cok col com con coo cop coq cot cou cov cow cox coy coz cpa cpb cpc cpe cpf cpg cpi cpn cpo cpp cps cpu cpx cpy cqd cqu cr cra crb crc crd crf crg crh cri crj crk crl crm crn cro crp crq crr crs crt crv crw crx cry crz cs csa csb csc csd cse csf csg csh csi csj csk csl csm csn cso csp csq csr css cst csu csv csw csx csy csz cta ctc ctd cte ctg cth ctl ctm ctn cto ctp cts ctt ctu cty ctz cu cua cub cuc cug cuh cui cuj cuk cul cum cuo cup cuq cur cus cut cuu cuv cuw cux cuy cv cvg cvn cwa cwb cwd cwe cwg cwt cxh cy cya cyb cyo czh czk czn czo czt da daa dac dad dae daf dag dah dai daj dak dal dam dao dap daq dar das dau dav daw dax day daz dba dbb dbd dbe dbf dbg dbi dbj dbl dbm dbn dbo dbp dbq dbr dbt dbu dbv dbw dby dcc dcr dda ddd dde ddg ddi ddj ddn ddo ddr dds ddw de dec ded dee def deg deh dei dek del dem den dep deq der des dev dez dga dgb dgc dgd dge dgg dgh dgi dgk dgl dgn dgo dgr dgs dgt dgu dgw dgx dgz dha dhd dhg dhi dhl dhm dhn dho dhr dhs dhu dhv dhw dhx dia dib dic did dif dig dih dii dij dik dil dim din dio dip diq dir dis dit diu diw dix diy diz dja djb djc djd dje djf dji djj djk djl djm djn djo djr dju djw dka dkg dkk dkl dkr dks dkx dlg dlk dlm dln dma dmb dmc dmd dme dmf dmg dmk dml dmm dmn dmo dmr dms dmu dmv dmw dmx dmy dna dnd dne dng dni dnj dnk dnn dno dnr dnt dnu dnv dnw dny doa dob doc doe dof doh doi dok dol don doo dop doq dor dos dot dov dow dox doy doz dpp dra drb drc drd dre drg drh dri drl drn dro drq drr drs drt dru drw dry dsb dse dsh dsi dsk dsl dsn dso dsq dsz dta dtb dtd dth dti dtk dtm dtn dto dtp dtr dts dtt dtu dty dua dub duc dud due duf dug duh dui duj duk dul dum dun duo dup duq dur dus duu duv duw dux duy duz dv dva dwa dwk dwl dwr dws dwu dww dwy dwz dya dyb dyd dyg dyi dym dyn dyo dyr dyu dyy dz dza dzd dze dzg dzl dzn eaa ebc ebg ebk ebo ebr ebu ecr ecs ecy ee eee efa efe efi ega egl egm ego egx egy ehs ehu eip eit eiv eja eka ekc eke ekg eki ekk ekl ekm eko ekp ekr eky el ele elh eli elk elm elo elp elu elx ema emb eme emg emi emk emm emn emo emp emq ems emu emw emx emy emz en ena enb enc end enf enh enl enm enn eno enq enr enu env enw enx eo eot epi era erg erh eri erk ero err ers ert erw es ese esg esh esi esk esl esm esn eso esq ess esu esx esy et etb etc eth etn eto etr ets ett etu etx etz eu eud euq eve evh evn ewo ext eya eyo eza eze fa faa fab fad faf fag fah fai faj fak fal fam fan fap far fat fau fax fay faz fbl fcs fer ff ffi ffm fgr fi fia fie fif fil fip fir fit fiu fiw fj fkk fkv fla flh fli fll fln flr fly fmp fmu fnb fng fni fo fod foi fom fon for fos fox fpe fqs fr frc frd frk frm fro frp frq frr frs frt fse fsl fss fub fuc fud fue fuf fuh fui fuj fum fun fuq fur fut fuu fuv fuy fvr fwa fwe fy ga gaa gab gac gad gae gaf gag gah gai gaj gak gal gam gan gao gap gaq gar gas gat gau gav gaw gax gay gaz gba gbb gbc gbd gbe gbf gbg gbh gbi gbj gbk gbl gbm gbn gbo gbp gbq gbr gbs gbu gbv gbw gbx gby gbz gcc gcd gce gcf gcl gcn gcr gct gd gda gdb gdc gdd gde gdf gdg gdh gdi gdj gdk gdl gdm gdn gdo gdq gdr gds gdt gdu gdx gea geb gec ged gef geg geh gei gej gek gel gem geq ges gev gew gex gey gez gfk gft gfx gga ggb ggd gge ggg ggk ggl ggn ggo ggr ggt ggu ggw gha ghc ghe ghh ghk ghl ghn gho ghr ghs ght gia gib gic gid gie gig gih gii gil gim gin gio gip giq gir gis git giu giw gix giy giz gji gjk gjm gjn gjr gju gka gkd gke gkn gko gkp gku gl glb glc gld glh gli glj glk gll glo glr glu glw gly gma gmb gmd gme gmg gmh gml gmm gmn gmq gmr gmu gmv gmw gmx gmy gmz gn gna gnb gnc gnd gne gng gnh gni gnj gnk gnl gnm gnn gno gnq gnr gnt gnu gnw gnz goa gob goc god goe gof gog goh goi goj gok gol gom gon goo gop goq gor gos got gou gov gow gox goy goz gpa gpe gpn gqa gqi gqn gqr gqu gra grb grc grd grg grh gri grj grk grm gro grq grr grs grt gru grv grw grx gry grz gse gsg gsl gsm gsn gso gsp gss gsw gta gti gtu gu gua gub guc gud gue guf gug guh gui guk gul gum gun guo gup guq gur gus gut guu guv guw gux guz gv gva gvc gve gvf gvj gvl gvm gvn gvo gvp gvr gvs gvy gwa gwb gwc gwd gwe gwf gwg gwi gwj gwm gwn gwr gwt gwu gww gwx gxx gya gyb gyd gye gyf gyg gyi gyl gym gyn gyo gyr gyy gyz gza gzi gzn ha haa hab hac had hae haf hag hah hai haj hak hal ham han hao hap haq har has hav haw hax hay haz hba hbb hbn hbo hbu hca hch hdn hds hdy he hea hed heg heh hei hem hgm hgw hhi hhr hhy hi hia hib hid hif hig hih hii hij hik hil him hio hir hit hiw hix hji hka hke hkh hkk hkn hks hla hlb hld hle hlt hlu hma hmb hmc hmd hme hmf hmg hmh hmi hmj hmk hml hmm hmn hmp hmq hmr hms hmt hmu hmv hmw hmx hmy hmz hna hnd hne hng hnh hni hnj hnm hnn hno hns hnu ho hoa hob hoc hod hoe hoh hoi hoj hok hol hom hoo hop hor hos hot hov how hoy hoz hpo hps hr hra hrc hre hrk hrm hro hrp hrr hrt hru hrw hrx hrz hsb hsh hsl hsn hss ht hti hto hts htu htx hu hub huc hud hue huf hug huh hui huj huk hul hum huo hup huq hur hus hut huu huv huw hux huy huz hvc hve hvk hvn hvv hwa hwc hwo hy hya hyw hyx hz ia iai ian iap iar iba ibb ibd ibe ibg ibh ibi ibl ibm ibn ibr ibu iby ica ich icl icr id ida idb idc idd ide idi idr ids idt idu ie ifa ifb ife iff ifk ifm ifu ify ig igb ige igg igl igm ign igo igs igw ihb ihi ihp ihw ii iin iir ijc ije ijj ijn ijo ijs ik ike ikh iki ikk ikl iko ikp ikr iks ikt ikv ikw ikx ikz ila ilb ilg ili ilk ill ilm ilo ilp ils ilu ilv ilw ima ime imi iml imn imo imr ims imt imy in inb inc ine ing inh inj inl inm inn ino inp ins int inz io ior iou iow ipi ipo iqu iqw ira ire irh iri irk irn iro irr iru irx iry is isa isc isd ise isg ish isi isk ism isn iso isr ist isu isv it itb itc itd ite iti itk itl itm ito itr its itt itv itw itx ity itz iu ium ivb ivv iw iwk iwm iwo iws ixc ixl iya iyo iyx izh izi izm izr izz ja jaa jab jac jad jae jaf jah jaj jak jal jam jan jao jaq jar jas jat jau jax jay jaz jbe jbi jbj jbk jbm jbn jbo jbr jbt jbu jbw jcs jct jda jdg jdt jeb jee jeg jeh jei jek jel jen jer jet jeu jgb jge jgk jgo jhi jhs ji jia jib jic jid jie jig jih jii jil jim jio jiq jit jiu jiv jiy jje jjr jka jkm jko jkp jkr jks jku jle jls jma jmb jmc jmd jmi jml jmn jmr jms jmw jmx jna jnd jng jni jnj jnl jns job jod jog jor jos jow jpa jpr jpx jqr jra jrb jrr jrt jru jsl jua jub juc jud juh jui juk jul jum jun juo jup jur jus jut juu juw juy jv jvd jvn jw jwi jya jye jyy ka kaa kab kac kad kae kaf kag kah kai kaj kak kam kao kap kaq kar kav kaw kax kay kba kbb kbc kbd kbe kbf kbg kbh kbi kbj kbk kbl kbm kbn kbo kbp kbq kbr kbs kbt kbu kbv kbw kbx kby kbz kca kcb kcc kcd kce kcf kcg kch kci kcj kck kcl kcm kcn kco kcp kcq kcr kcs kct kcu kcv kcw kcx kcy kcz kda kdc kdd kde kdf kdg kdh kdi kdj kdk kdl kdm kdn kdo kdp kdq kdr kdt kdu kdv kdw kdx kdy kdz kea keb kec ked kee kef keg keh kei kej kek kel kem ken keo kep keq ker kes ket keu kev kew kex key kez kfa kfb kfc kfd kfe kff kfg kfh kfi kfj kfk kfl kfm kfn kfo kfp kfq kfr kfs kft kfu kfv kfw kfx kfy kfz kg kga kgb kgc kgd kge kgf kgg kgh kgi kgj kgk kgl kgm kgn kgo kgp kgq kgr kgs kgt kgu kgv kgw kgx kgy kha khb khc khd khe khf khg khh khi khj khk khl khn kho khp khq khr khs kht khu khv khw khx khy khz ki kia kib kic kid kie kif kig kih kii kij kil kim kio kip kiq kis kit kiu kiv kiw kix kiy kiz kj kja kjb kjc kjd kje kjf kjg kjh kji kjj kjk kjl kjm kjn kjo kjp kjq kjr kjs kjt kju kjv kjx kjy kjz kk kka kkb kkc kkd kke kkf kkg kkh kki kkj kkk kkl kkm kkn kko kkp kkq kkr kks kkt kku kkv kkw kkx kky kkz kl kla klb klc kld kle klf klg klh kli klj klk kll klm kln klo klp klq klr kls klt klu klv klw klx kly klz km kma kmb kmc kmd kme kmf kmg kmh kmi kmj kmk kml kmm kmn kmo kmp kmq kmr kms kmt kmu kmv kmw kmx kmy kmz kn kna knb knc knd kne knf kng kni knj knk knl knm knn kno knp knq knr kns knt knu knv knw knx kny knz ko koa koc kod koe kof kog koh koi koj kok kol koo kop koq kos kot kou kov kow kox koy koz kpa kpb kpc kpd kpe kpf kpg kph kpi kpj kpk kpl kpm kpn kpo kpp kpq kpr kps kpt kpu kpv kpw kpx kpy kpz kqa kqb kqc kqd kqe kqf kqg kqh kqi kqj kqk kql kqm kqn kqo kqp kqq kqr kqs kqt kqu kqv kqw kqx kqy kqz kr kra krb krc krd kre krf krh kri krj krk krl krm krn kro krp krr krs krt kru krv krw krx kry krz ks ksa ksb ksc ksd kse ksf ksg ksh ksi ksj ksk ksl ksm ksn kso ksp ksq ksr kss kst ksu ksv ksw ksx ksy ksz kta ktb ktc ktd kte ktf ktg kth kti ktj ktk ktl ktm ktn kto ktp ktq ktr kts ktt ktu ktv ktw ktx kty ktz ku kub kuc kud kue kuf kug kuh kui kuj kuk kul kum kun kuo kup kuq kus kut kuu kuv kuw kux kuy kuz kv kva kvb kvc kvd kve kvf kvg kvh kvi kvj kvk kvl kvm kvn kvo kvp kvq kvr kvs kvt kvu kvv kvw kvx kvy kvz kw kwa kwb kwc kwd kwe kwf kwg kwh kwi kwj kwk kwl kwm kwn kwo kwp kwq kwr kws kwt kwu kwv kww kwx kwy kwz kxa kxb kxc kxd kxe kxf kxh kxi kxj kxk kxl kxm kxn kxo kxp kxq kxr kxs kxt kxu kxv kxw kxx kxy kxz ky kya kyb kyc kyd kye kyf kyg kyh kyi kyj kyk kyl kym kyn kyo kyp kyq kyr kys kyt kyu kyv kyw kyx kyy kyz kza kzb kzc kzd kze kzf kzg kzh kzi kzj kzk kzl kzm kzn kzo kzp kzq kzr kzs kzt kzu kzv kzw kzx kzy kzz la laa lab lac lad lae laf lag lah lai laj lak lal lam lan lap laq lar las lau law lax lay laz lb lba lbb lbc lbe lbf lbg lbi lbj lbk lbl lbm lbn lbo lbq lbr lbs lbt lbu lbv lbw lbx lby lbz lcc lcd lce lcf lch lcl lcm lcp lcq lcs lda ldb ldd ldg ldh ldi ldj ldk ldl ldm ldn ldo ldp ldq lea leb lec led lee lef leg leh lei lej lek lel lem len leo lep leq ler les let leu lev lew lex ley lez lfa lfn lg lga lgb lgg lgh lgi lgk lgl lgm lgn lgo lgq lgr lgs lgt lgu lgz lha lhh lhi lhl lhm lhn lhp lhs lht lhu li lia lib lic lid lie lif lig lih lii lij lik lil lio lip liq lir lis liu liv liw lix liy liz lja lje lji ljl ljp ljw ljx lka lkb lkc lkd lke lkh lki lkj lkl lkm lkn lko lkr lks lkt lku lky lla llb llc lld lle llf llg llh lli llj llk lll llm lln llo llp llq lls llu llx lma lmb lmc lmd lme lmf lmg lmh lmi lmj lmk lml lmm lmn lmo lmp lmq lmr lmu lmv lmw lmx lmy lmz ln lna lnb lnd lng lnh lni lnj lnl lnm lnn lno lns lnu lnw lnz lo loa lob loc loe lof log loh loi loj lok lol lom lon loo lop loq lor los lot lou lov low lox loy loz lpa lpe lpn lpo lpx lqr lra lrc lre lrg lri lrk lrl lrm lrn lro lrr lrt lrv lrz lsa lsb lsc lsd lse lsg lsh lsi lsl lsm lsn lso lsp lsr lss lst lsv lsw lsy lt ltc ltg lth lti ltn lto lts ltu lu lua luc lud lue luf luh lui luj luk lul lum lun luo lup luq lur lus lut luu luv luw luy luz lv lva lvi lvk lvl lvs lvu lwa lwe lwg lwh lwl lwm lwo lws lwt lwu lww lxm lya lyg lyn lzh lzl lzn lzz maa mab mad mae maf mag mai maj mak mam man map maq mas mat mau mav maw max maz mba mbb mbc mbd mbe mbf mbh mbi mbj mbk mbl mbm mbn mbo mbp mbq mbr mbs mbt mbu mbv mbw mbx mby mbz mca mcb mcc mcd mce mcf mcg mch mci mcj mck mcl mcm mcn mco mcp mcq mcr mcs mct mcu mcv mcw mcx mcy mcz mda mdb mdc mdd mde mdf mdg mdh mdi mdj mdk mdl mdm mdn mdp mdq mdr mds mdt mdu mdv mdw mdx mdy mdz mea meb mec med mee mef meg meh mei mej mek mel mem men meo mep meq mer mes met meu mev mew mey mez mfa mfb mfc mfd mfe mff mfg mfh mfi mfj mfk mfl mfm mfn mfo mfp mfq mfr mfs mft mfu mfv mfw mfx mfy mfz mg mga mgb mgc mgd mge mgf mgg mgh mgi mgj mgk mgl mgm mgn mgo mgp mgq mgr mgs mgt mgu mgv mgw mgx mgy mgz mh mha mhb mhc mhd mhe mhf mhg mhh mhi mhj mhk mhl mhm mhn mho mhp mhq mhr mhs mht mhu mhw mhx mhy mhz mi mia mib mic mid mie mif mig mih mii mij mik mil mim min mio mip miq mir mis mit miu miw mix miy miz mja mjb mjc mjd mje mjg mjh mji mjj mjk mjl mjm mjn mjo mjp mjq mjr mjs mjt mju mjv mjw mjx mjy mjz mk mka mkb mkc mke mkf mkg mkh mki mkj mkk mkl mkm mkn mko mkp mkq mkr mks mkt mku mkv mkw mkx mky mkz ml mla mlb mlc mld mle mlf mlh mli mlj mlk mll mlm mln mlo mlp mlq mlr mls mlu mlv mlw mlx mlz mma mmb mmc mmd mme mmf mmg mmh mmi mmj mmk mml mmm mmn mmo mmp mmq mmr mmt mmu mmv mmw mmx mmy mmz mn mna mnb mnc mnd mne mnf mng mnh mni mnj mnk mnl mnm mnn mno mnp mnq mnr mns mnt mnu mnv mnw mnx mny mnz mo moa moc mod moe mof mog moh moi moj mok mom moo mop moq mor mos mot mou mov mow mox moy moz mpa mpb mpc mpd mpe mpg mph mpi mpj mpk mpl mpm mpn mpo mpp mpq mpr mps mpt mpu mpv mpw mpx mpy mpz mqa mqb mqc mqe mqf mqg mqh mqi mqj mqk mql mqm mqn mqo mqp mqq mqr mqs mqt mqu mqv mqw mqx mqy mqz mr mra mrb mrc mrd mre mrf mrg mrh mrj mrk mrl mrm mrn mro mrp mrq mrr mrs mrt mru mrv mrw mrx mry mrz ms msb msc msd mse msf msg msh msi msj msk msl msm msn mso msp msq msr mss mst msu msv msw msx msy msz mt mta mtb mtc mtd mte mtf mtg mth mti mtj mtk mtl mtm mtn mto mtp mtq mtr mts mtt mtu mtv mtw mtx mty mua mub muc mud mue mug muh mui muj muk mul mum mun muo mup muq mur mus mut muu muv mux muy muz mva mvb mvd mve mvf mvg mvh mvi mvk mvl mvm mvn mvo mvp mvq mvr mvs mvt mvu mvv mvw mvx mvy mvz mwa mwb mwc mwd mwe mwf mwg mwh mwi mwj mwk mwl mwm mwn mwo mwp mwq mwr mws mwt mwu mwv mww mwx mwy mwz mxa mxb mxc mxd mxe mxf mxg mxh mxi mxj mxk mxl mxm mxn mxo mxp mxq mxr mxs mxt mxu mxv mxw mxx mxy mxz my myb myc myd mye myf myg myh myi myj myk myl mym myn myo myp myq myr mys myt myu myv myw myx myy myz mza mzb mzc mzd mze mzg mzh mzi mzj mzk mzl mzm mzn mzo mzp mzq mzr mzs mzt mzu mzv mzw mzx mzy mzz na naa nab nac nad nae naf nag nah nai naj nak nal nam nan nao nap naq nar nas nat naw nax nay naz nb nba nbb nbc nbd nbe nbf nbg nbh nbi nbj nbk nbm nbn nbo nbp nbq nbr nbs nbt nbu nbv nbw nbx nby nca ncb ncc ncd nce ncf ncg nch nci ncj nck ncl ncm ncn nco ncp ncq ncr ncs nct ncu ncx ncz nd nda ndb ndc ndd ndf ndg ndh ndi ndj ndk ndl ndm ndn ndp ndq ndr nds ndt ndu ndv ndw ndx ndy ndz ne nea neb nec ned nee nef neg neh nei nej nek nem nen neo neq ner nes net neu nev new nex ney nez nfa nfd nfl nfr nfu ng nga ngb ngc ngd nge ngf ngg ngh ngi ngj ngk ngl ngm ngn ngo ngp ngq ngr ngs ngt ngu ngv ngw ngx ngy ngz nha nhb nhc nhd nhe nhf nhg nhh nhi nhk nhm nhn nho nhp nhq nhr nht nhu nhv nhw nhx nhy nhz nia nib nic nid nie nif nig nih nii nij nik nil nim nin nio niq nir nis nit niu niv niw nix niy niz nja njb njd njh nji njj njl njm njn njo njr njs njt nju njx njy njz nka nkb nkc nkd nke nkf nkg nkh nki nkj nkk nkm nkn nko nkp nkq nkr nks nkt nku nkv nkw nkx nkz nl nla nlc nle nlg nli nlj nlk nll nlm nln nlo nlq nlr nlu nlv nlw nlx nly nlz nma nmb nmc nmd nme nmf nmg nmh nmi nmj nmk nml nmm nmn nmo nmp nmq nmr nms nmt nmu nmv nmw nmx nmy nmz nn nna nnb nnc nnd nne nnf nng nnh nni nnj nnk nnl nnm nnn nnp nnq nnr nns nnt nnu nnv nnw nnx nny nnz no noa noc nod noe nof nog noh noi noj nok nol nom non noo nop noq nos not nou nov now noy noz npa npb npg nph npi npl npn npo nps npu npx npy nqg nqk nql nqm nqn nqo nqq nqt nqy nr nra nrb nrc nre nrf nrg nri nrk nrl nrm nrn nrp nrr nrt nru nrx nrz nsa nsb nsc nsd nse nsf nsg nsh nsi nsk nsl nsm nsn nso nsp nsq nsr nss nst nsu nsv nsw nsx nsy nsz ntd nte ntg nti ntj ntk ntm nto ntp ntr nts ntu ntw ntx nty ntz nua nub nuc nud nue nuf nug nuh nui nuj nuk nul num nun nuo nup nuq nur nus nut nuu nuv nuw nux nuy nuz nv nvh nvm nvo nwa nwb nwc nwe nwg nwi nwm nwo nwr nww nwx nwy nxa nxd nxe nxg nxi nxk nxl nxm nxn nxo nxq nxr nxu nxx ny nyb nyc nyd nye nyf nyg nyh nyi nyj nyk nyl nym nyn nyo nyp nyq nyr nys nyt nyu nyv nyw nyx nyy nza nzb nzd nzi nzk nzm nzr nzs nzu nzy nzz oaa oac oak oar oav obi obk obl obm obo obr obt obu oc oca och ocm oco ocu oda odk odt odu ofo ofs ofu ogb ogc oge ogg ogo ogu oht ohu oia oie oin oj ojb ojc ojg ojp ojs ojv ojw oka okb okc okd oke okg okh oki okj okk okl okm okn oko okr oks oku okv okx okz ola old ole olk olm olo olr olt olu om oma omb omc ome omg omi omk oml omn omo omp omq omr omt omu omv omw omx omy ona onb one ong oni onj onk onn ono onp onr ons ont onu onw onx ood oog oon oor oos opa opk opm opo opt opy or ora orc ore org orh orn oro orr ors ort oru orv orw orx ory orz os osa osc osi osn oso osp ost osu osx ota otb otd ote oti otk otl otm otn oto otq otr ots ott otu otw otx oty otz oua oub oue oui oum oun ovd owi owl oyb oyd oym oyy ozm pa paa pab pac pad pae paf pag pah pai pak pal pam pao pap paq par pas pat pau pav paw pax pay paz pbb pbc pbe pbf pbg pbh pbi pbl pbm pbn pbo pbp pbr pbs pbt pbu pbv pby pbz pca pcb pcc pcd pce pcf pcg pch pci pcj pck pcl pcm pcn pcp pcr pcw pda pdc pdi pdn pdo pdt pdu pea peb ped pee pef peg peh pei pej pek pel pem peo pep peq pes pev pex pey pez pfa pfe pfl pga pgd pgg pgi pgk pgl pgn pgs pgu pgy pgz pha phd phg phh phi phj phk phl phm phn pho phq phr pht phu phv phw pi pia pib pic pid pie pif pig pih pii pij pil pim pin pio pip pir pis pit piu piv piw pix piy piz pjt pka pkb pkc pkg pkh pkn pko pkp pkr pks pkt pku pl pla plb plc pld ple plf plg plh plj plk pll pln plo plp plq plr pls plt plu plv plw ply plz pma pmb pmc pmd pme pmf pmh pmi pmj pmk pml pmm pmn pmo pmq pmr pms pmt pmu pmw pmx pmy pmz pna pnb pnc pnd pne png pnh pni pnj pnk pnl pnm pnn pno pnp pnq pnr pns pnt pnu pnv pnw pnx pny pnz poc pod poe pof pog poh poi pok pom pon poo pop poq pos pot pov pow pox poy poz ppa ppe ppi ppk ppl ppm ppn ppo ppp ppq ppr pps ppt ppu pqa pqe pqm pqw pra prb prc prd pre prf prg prh pri prk prl prm prn pro prp prq prr prs prt pru prw prx pry prz ps psa psc psd pse psg psh psi psl psm psn pso psp psq psr pss pst psu psw psy pt pta pth pti ptn pto ptp ptq ptr ptt ptu ptv ptw pty pua pub puc pud pue puf pug pui puj puk pum puo pup puq pur put puu puw pux puy puz pwa pwb pwg pwi pwm pwn pwo pwr pww pxm pye pym pyn pys pyu pyx pyy pze pzh pzn qaa..qtz qu qua qub quc qud quf qug quh qui quk qul qum qun qup quq qur qus quv quw qux quy quz qva qvc qve qvh qvi qvj qvl qvm qvn qvo qvp qvs qvw qvy qvz qwa qwc qwe qwh qwm qws qwt qxa qxc qxh qxl qxn qxo qxp qxq qxr qxs qxt qxu qxw qya qyp raa rab rac rad raf rag rah rai raj rak ral ram ran rao rap raq rar ras rat rau rav raw rax ray raz rbb rbk rbl rbp rcf rdb rea reb ree reg rei rej rel rem ren rer res ret rey rga rge rgk rgn rgr rgs rgu rhg rhp ria rib rie rif ril rim rin rir rit riu rjg rji rjs rka rkb rkh rki rkm rkt rkw rm rma rmb rmc rmd rme rmf rmg rmh rmi rmk rml rmm rmn rmo rmp rmq rmr rms rmt rmu rmv rmw rmx rmy rmz rn rna rnb rnd rng rnl rnn rnp rnr rnw ro roa rob roc rod roe rof rog rol rom roo rop ror rou row rpn rpt rri rrm rro rrt rsb rsi rsk rsl rsm rsn rsw rtc rth rtm rts rtw ru rub ruc rue ruf rug ruh rui ruk ruo rup ruq rut ruu ruy ruz rw rwa rwk rwl rwm rwo rwr rxd rxw ryn rys ryu rzh sa saa sab sac sad sae saf sah sai saj sak sal sam sao sap saq sar sas sat sau sav saw sax say saz sba sbb sbc sbd sbe sbf sbg sbh sbi sbj sbk sbl sbm sbn sbo sbp sbq sbr sbs sbt sbu sbv sbw sbx sby sbz sc sca scb sce scf scg sch sci sck scl scn sco scp scq scs sct scu scv scw scx sd sda sdb sdc sde sdf sdg sdh sdj sdk sdl sdm sdn sdo sdp sdq sdr sds sdt sdu sdv sdx sdz se sea seb sec sed see sef seg seh sei sej sek sel sem sen seo sep seq ser ses set seu sev sew sey sez sfb sfe sfm sfs sfw sg sga sgb sgc sgd sge sgg sgh sgi sgj sgk sgl sgm sgn sgo sgp sgr sgs sgt sgu sgw sgx sgy sgz sh sha shb shc shd she shg shh shi shj shk shl shm shn sho shp shq shr shs sht shu shv shw shx shy shz si sia sib sid sie sif sig sih sii sij sik sil sim sio sip siq sir sis sit siu siv siw six siy siz sja sjb sjc sjd sje sjg sjk sjl sjm sjn sjo sjp sjr sjs sjt sju sjw sk ska skb skc skd ske skf skg skh ski skj skk skm skn sko skp skq skr sks skt sku skv skw skx sky skz sl sla slc sld sle slf slg slh sli slj sll slm sln slp slq slr sls slt slu slw slx sly slz sm sma smb smc smd smf smg smh smi smj smk sml smm smn smp smq smr sms smt smu smv smw smx smy smz sn snb snc sne snf sng snh sni snj snk snl snm snn sno snp snq snr sns snu snv snw snx sny snz so soa sob soc sod soe sog soh soi soj sok sol son soo sop soq sor sos sou sov sow sox soy soz spb spc spd spe spg spi spk spl spm spn spo spp spq spr sps spt spu spv spx spy sq sqa sqh sqj sqk sqm sqn sqo sqq sqr sqs sqt squ sqx sr sra srb src sre srf srg srh sri srk srl srm srn sro srq srr srs srt sru srv srw srx sry srz ss ssa ssb ssc ssd sse ssf ssg ssh ssi ssj ssk ssl ssm ssn sso ssp ssq ssr sss sst ssu ssv ssx ssy ssz st sta stb std ste stf stg sth sti stj stk stl stm stn sto stp stq str sts stt stu stv stw sty su sua sub suc sue sug sui suj suk sul sum suo suq sur sus sut suv suw sux suy suz sv sva svb svc sve svk svm svr svs svx sw swb swc swf swg swh swi swj swk swl swm swn swo swp swq swr sws swt swu swv sww swx swy sxb sxc sxe sxg sxk sxl sxm sxn sxo sxr sxs sxu sxw sya syb syc syd syi syk syl sym syn syo syr sys syw syx syy sza szb szc szd sze szg szl szn szp szs szv szw szy ta taa tab tac tad tae taf tag tai taj tak tal tan tao tap taq tar tas tau tav taw tax tay taz tba tbb tbc tbd tbe tbf tbg tbh tbi tbj tbk tbl tbm tbn tbo tbp tbq tbr tbs tbt tbu tbv tbw tbx tby tbz tca tcb tcc tcd tce tcf tcg tch tci tck tcl tcm tcn tco tcp tcq tcs tct tcu tcw tcx tcy tcz tda tdb tdc tdd tde tdf tdg tdh tdi tdj tdk tdl tdm tdn tdo tdq tdr tds tdt tdu tdv tdx tdy te tea teb tec ted tee tef teg teh tei tek tem ten teo tep teq ter tes tet teu tev tew tex tey tez tfi tfn tfo tfr tft tg tga tgb tgc tgd tge tgf tgg tgh tgi tgj tgn tgo tgp tgq tgr tgs tgt tgu tgv tgw tgx tgy tgz th thc thd the thf thh thi thk thl thm thn thp thq thr ths tht thu thv thw thx thy thz ti tia tic tid tie tif tig tih tii tij tik til tim tin tio tip tiq tis tit tiu tiv tiw tix tiy tiz tja tjg tji tjj tjl tjm tjn tjo tjp tjs tju tjw tk tka tkb tkd tke tkf tkg tkk tkl tkm tkn tkp tkq tkr tks tkt tku tkv tkw tkx tkz tl tla tlb tlc tld tlf tlg tlh tli tlj tlk tll tlm tln tlo tlp tlq tlr tls tlt tlu tlv tlw tlx tly tma tmb tmc tmd tme tmf tmg tmh tmi tmj tmk tml tmm tmn tmo tmp tmq tmr tms tmt tmu tmv tmw tmy tmz tn tna tnb tnc tnd tne tnf tng tnh tni tnk tnl tnm tnn tno tnp tnq tnr tns tnt tnu tnv tnw tnx tny tnz to tob toc tod toe tof tog toh toi toj tok tol tom too top toq tor tos tou tov tow tox toy toz tpa tpc tpe tpf tpg tpi tpj tpk tpl tpm tpn tpo tpp tpq tpr tpt tpu tpv tpw tpx tpy tpz tqb tql tqm tqn tqo tqp tqq tqr tqt tqu tqw tr tra trb trc trd tre trf trg trh tri trj trk trl trm trn tro trp trq trr trs trt tru trv trw trx try trz ts tsa tsb tsc tsd tse tsf tsg tsh tsi tsj tsk tsl tsm tsp tsq tsr tss tst tsu tsv tsw tsx tsy tsz tt tta ttb ttc ttd tte ttf ttg tth tti ttj ttk ttl ttm ttn tto ttp ttq ttr tts ttt ttu ttv ttw tty ttz tua tub tuc tud tue tuf tug tuh tui tuj tul tum tun tuo tup tuq tus tut tuu tuv tuw tux tuy tuz tva tvd tve tvi tvk tvl tvm tvn tvo tvs tvt tvu tvw tvx tvy tw twa twb twc twd twe twf twg twh twl twm twn two twp twq twr twt twu tww twx twy txa txb txc txe txg txh txi txj txm txn txo txq txr txs txt txu txx txy ty tya tye tyh tyi tyj tyl tyn typ tyr tys tyt tyu tyv tyx tyy tyz tza tzh tzj tzl tzm tzn tzo tzx uam uan uar uba ubi ubl ubr ubu uby uda ude udg udi udj udl udm udu ues ufi ug uga ugb uge ugh ugn ugo ugy uha uhn uis uiv uji uk uka ukg ukh uki ukk ukl ukp ukq uks uku ukv ukw uky ula ulb ulc ule ulf uli ulk ull ulm uln ulu ulw uly uma umb umc umd umg umi umm umn umo ump umr ums umu una und une ung uni unk unm unn unp unr unu unx unz uok uon upi upv ur ura urb urc ure urf urg urh uri urj urk url urm urn uro urp urr urt uru urv urw urx ury urz usa ush usi usk usp uss usu uta ute uth utp utr utu uum uun uur uuu uve uvh uvl uwa uya uz uzn uzs vaa vae vaf vag vah vai vaj val vam van vao vap var vas vau vav vay vbb vbk ve vec ved vel vem veo vep ver vgr vgt vi vic vid vif vig vil vin vis vit viv vjk vka vki vkj vkk vkl vkm vkn vko vkp vkt vku vkz vlp vls vma vmb vmc vmd vme vmf vmg vmh vmi vmj vmk vml vmm vmp vmq vmr vms vmu vmv vmw vmx vmy vmz vnk vnm vnp vo vor vot vra vro vrs vrt vsi vsl vsn vsv vto vum vun vut vwa wa waa wab wac wad wae waf wag wah wai waj wak wal wam wan wao wap waq war was wat wau wav waw wax way waz wba wbb wbe wbf wbh wbi wbj wbk wbl wbm wbp wbq wbr wbs wbt wbv wbw wca wci wdd wdg wdj wdk wdt wdu wdy wea wec wed weg weh wei wem wen weo wep wer wes wet weu wew wfg wga wgb wgg wgi wgo wgu wgw wgy wha whg whk whu wib wic wie wif wig wih wii wij wik wil wim win wir wit wiu wiv wiw wiy wja wji wka wkb wkd wkl wkr wku wkw wky wla wlc wle wlg wlh wli wlk wll wlm wlo wlr wls wlu wlv wlw wlx wly wma wmb wmc wmd wme wmg wmh wmi wmm wmn wmo wms wmt wmw wmx wnb wnc wnd wne wng wni wnk wnm wnn wno wnp wnu wnw wny wo woa wob woc wod woe wof wog woi wok wom won woo wor wos wow woy wpc wra wrb wrd wrg wrh wri wrk wrl wrm wrn wro wrp wrr wrs wru wrv wrw wrx wry wrz wsa wsg wsi wsk wsr wss wsu wsv wtb wtf wth wti wtk wtm wtw wua wub wud wuh wul wum wun wur wut wuu wuv wux wuy wwa wwb wwo wwr www wxa wxw wya wyb wyi wym wyn wyr wyy xaa xab xac xad xae xag xai xaj xak xal xam xan xao xap xaq xar xas xat xau xav xaw xay xba xbb xbc xbd xbe xbg xbi xbj xbm xbn xbo xbp xbr xbw xbx xby xcb xcc xce xcg xch xcl xcm xcn xco xcr xct xcu xcv xcw xcy xda xdc xdk xdm xdo xdq xdy xeb xed xeg xel xem xep xer xes xet xeu xfa xga xgb xgd xgf xgg xgi xgl xgm xgn xgr xgu xgw xh xha xhc xhd xhe xhm xhr xht xhu xhv xia xib xii xil xin xip xir xis xiv xiy xjb xjt xka xkb xkc xkd xke xkf xkg xkh xki xkj xkk xkl xkn xko xkp xkq xkr xks xkt xku xkv xkw xkx xky xkz xla xlb xlc xld xle xlg xli xln xlo xlp xls xlu xly xma xmb xmc xmd xme xmf xmg xmh xmj xmk xml xmm xmn xmo xmp xmq xmr xms xmt xmu xmv xmw xmx xmy xmz xna xnb xnd xng xnh xni xnj xnk xnm xnn xno xnq xnr xns xnt xnu xny xnz xoc xod xog xoi xok xom xon xoo xop xor xow xpa xpb xpc xpd xpe xpf xpg xph xpi xpj xpk xpl xpm xpn xpo xpp xpq xpr xps xpt xpu xpv xpw xpx xpy xpz xqa xqt xra xrb xrd xre xrg xri xrm xrn xrq xrr xrt xru xrw xsa xsb xsc xsd xse xsh xsi xsj xsl xsm xsn xso xsp xsq xsr xss xsu xsv xsy xta xtb xtc xtd xte xtg xth xti xtj xtl xtm xtn xto xtp xtq xtr xts xtt xtu xtv xtw xty xtz xua xub xud xug xuj xul xum xun xuo xup xur xut xuu xve xvi xvn xvo xvs xwa xwc xwd xwe xwg xwj xwk xwl xwo xwr xwt xww xxb xxk xxm xxr xxt xya xyb xyj xyk xyl xyt xyy xzh xzm xzp yaa yab yac yad yae yaf yag yah yai yaj yak yal yam yan yao yap yaq yar yas yat yau yav yaw yax yay yaz yba ybb ybd ybe ybh ybi ybj ybk ybl ybm ybn ybo ybx yby ych ycl ycn ycp ycr yda ydd yde ydg ydk yds yea yec yee yei yej yel yen yer yes yet yeu yev yey yga ygi ygl ygm ygp ygr ygs ygu ygw yha yhd yhl yhs yi yia yif yig yih yii yij yik yil yim yin yip yiq yir yis yit yiu yiv yix yiy yiz yka ykg ykh yki ykk ykl ykm ykn yko ykr ykt yku yky yla ylb yle ylg yli yll ylm yln ylo ylr ylu yly yma ymb ymc ymd yme ymg ymh ymi ymk yml ymm ymn ymo ymp ymq ymr yms ymt ymx ymz yna ynb ynd yne yng ynh ynk ynl ynn yno ynq yns ynu yo yob yog yoi yok yol yom yon yos yot yox yoy ypa ypb ypg yph ypk ypm ypn ypo ypp ypz yra yrb yre yri yrk yrl yrm yrn yro yrs yrw yry ysc ysd ysg ysl ysm ysn yso ysp ysr yss ysy yta ytl ytp ytw yty yua yub yuc yud yue yuf yug yui yuj yuk yul yum yun yup yuq yur yut yuu yuw yux yuy yuz yva yvt ywa ywg ywl ywn ywq ywr ywt ywu yww yxa yxg yxl yxm yxu yxy yyr yyu yyz yzg yzk za zaa zab zac zad zae zaf zag zah zai zaj zak zal zam zao zap zaq zar zas zat zau zav zaw zax zay zaz zba zbc zbe zbl zbt zbu zbw zca zcd zch zdj zea zeg zeh zem zen zga zgb zgh zgm zgn zgr zh zhb zhd zhi zhn zhw zhx zia zib zik zil zim zin zir ziw ziz zka zkb zkd zkg zkh zkk zkn zko zkp zkr zkt zku zkv zkz zla zle zlj zlm zln zlq zls zlu zlw zma zmb zmc zmd zme zmf zmg zmh zmi zmj zmk zml zmm zmn zmo zmp zmq zmr zms zmt zmu zmv zmw zmx zmy zmz zna znd zne zng znk zns zoc zoh zom zoo zoq zor zos zpa zpb zpc zpd zpe zpf zpg zph zpi zpj zpk zpl zpm zpn zpo zpp zpq zpr zps zpt zpu zpv zpw zpx zpy zpz zqe zra zrg zrn zro zrp zrs zsa zsk zsl zsm zsr zsu zte ztg ztl ztm ztn ztp ztq zts ztt ztu ztx zty zu zua zuh zum zun zuy zwa zxx zyb zyg zyj zyn zyp zza zzj';
+  // </generated:language-subtags>
+
+  // BCP 47 well-formedness plus a registry check on the primary subtag. Shape
+  // alone accepts "eng" and "em-US", which look like language tags but are not
+  // registered: the IANA registry lists a three-letter subtag only when no
+  // two-letter one exists, so "en" is registered and "eng" is not.
+  let __languageSubtagSet = null;
+  function isRegisteredLanguageSubtag(subtag) {
+    if (!__languageSubtagSet) __languageSubtagSet = new Set(LANGUAGE_SUBTAGS.split(' '));
+    return __languageSubtagSet.has(String(subtag || '').toLowerCase());
+  }
+
+  function isValidLanguageTag(value) {
+    const raw = String(value == null ? '' : value).trim();
+    if (!raw) return false;
+    if (!/^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{1,8})*$/.test(raw)) return false;
+    return isRegisteredLanguageSubtag(raw.split('-')[0]);
+  }
+
   const document = opts && opts.document ? opts.document : null;
   const window = opts && opts.window ? opts.window : null;
   // Some engine paths may not pass opts.window; recover it from document when possible.
@@ -91234,6 +94922,23 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return { present: !!value, value, mechanism: 'label', flags: value ? [] : ['empty'] };
   }
 
+  // ACT scopes every accessible-name rule to elements "included in the
+  // accessibility tree" (c487ae link-name, 97a4e1 button-name and siblings),
+  // and its glossary puts focusable aria-hidden content outside that set:
+  // "Because they are hidden, these elements are considered not included in
+  // the accessibility tree", even where a browser leaves them in it. The
+  // defect they do represent, aria-hidden over content in the focus order,
+  // belongs to aria-hidden-focus (ACT 6cfa84, WCAG 4.1.2).
+  //
+  // isAccTreeEligible keeps them eligible on purpose so aria-hidden-focus can
+  // reach them, so naming rules need this narrower question instead.
+  function isIncludedInAccessibilityTree(el) {
+    const r = isAccTreeEligible(el);
+    if (!r || !r.eligible) return false;
+    const reasons = Array.isArray(r.reasons) ? r.reasons : [];
+    return !reasons.some((x) => typeof x === 'string' && x.indexOf('ariaHiddenOverridden') === 0);
+  }
+
   function getAccessibleNameInfo(el, _ctx, opts) {
     const flags = [];
     if (!isElement(el))
@@ -91676,32 +95381,6 @@ const createDomHelpers = (function createDomHelpers(opts) {
       return tag === 'img' || tag === 'area' || (tag === 'input' && type === 'image');
     }
 
-    // aria-hidden is inherited by the subtree, but isAccTreeEligible's
-    // 'ariaHiddenOverridden*' escapes are per-element — so without this the
-    // named element is in-tree while the descendants it takes its name from
-    // are not, and any element-wrapped text resolves empty.
-    // Narrower than opts.includeHidden: isAccTreeEligible returns these two
-    // reasons only after ruling out every other blocker, so forgiving them
-    // still excludes display:none/inert/hidden descendants.
-    const ARIA_HIDDEN_ONLY_REASONS = ['ariaHidden', 'ariaHiddenProgrammaticFocusExcluded'];
-
-    const ariaHiddenOverrideRoot = (() => {
-      try {
-        const r = isAccTreeEligible(el);
-        if (!r || !r.eligible || !Array.isArray(r.reasons)) return false;
-        return r.reasons.some(
-          (x) => typeof x === 'string' && x.indexOf('ariaHiddenOverridden') === 0
-        );
-      } catch {
-        return false;
-      }
-    })();
-
-    function isAriaHiddenOnlyIneligible(eligRes) {
-      const rs = eligRes && Array.isArray(eligRes.reasons) ? eligRes.reasons : [];
-      return rs.length === 1 && ARIA_HIDDEN_ONLY_REASONS.indexOf(rs[0]) !== -1;
-    }
-
     function collect(node, parts) {
       if (truncated) return;
       visitedCount += 1;
@@ -91740,10 +95419,6 @@ const createDomHelpers = (function createDomHelpers(opts) {
         try {
           const eligRes = isAccTreeEligible(node);
           eligible = !!(eligRes && eligRes.eligible);
-          // See ARIA_HIDDEN_ONLY_REASONS above.
-          if (!eligible && ariaHiddenOverrideRoot && isAriaHiddenOnlyIneligible(eligRes)) {
-            eligible = true;
-          }
         } catch {
           eligible = true;
         }
@@ -92902,6 +96577,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
   }
 
   return {
+    isValidLanguageTag,
+    isRegisteredLanguageSubtag,
+
     // Existing query/snippet utilities
     queryAll,
     queryAllDeep,
@@ -92915,6 +96593,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     hasAccessibleName,
     isExcluded,
     isAccTreeEligible,
+    isIncludedInAccessibilityTree,
     isDomVisibleEligible,
     isWholeDocumentScope,
 
@@ -92970,6 +96649,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     getLabelMethod,
     getLabelStrength,
+
+    // Whether a <label> carries text that names its associated control
+    // (own aria-name, else rendered content, else title). Shared so
+    // form-control-single-label and form-control-programmatic-label-present
+    // agree on what a label is worth.
+    labelContributesAccessibleName,
 
     // Flat-tree ancestor walk (assignedSlot-aware, then shadow host) —
     // see this function's own definition above for why assignedSlot

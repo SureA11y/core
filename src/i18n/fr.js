@@ -22,6 +22,14 @@ module.exports = {
   inputImage_altPresent_summary_fail: 'Attribut alt manquant sur <input type="image">.',
   inputImage_altPresent_hint_fail:
     'Ajoutez un attribut alt (utilisez alt="" uniquement lorsqu’un nom accessible séparé est fourni).',
+  inputImage_altPresent_summary_defaultName:
+    "Le nom accessible est celui par defaut du navigateur pour un bouton image et n'apporte aucune information.",
+  inputImage_altPresent_hint_defaultName:
+    'Remplacez-le par un texte decrivant l action du bouton, par exemple "Rechercher".',
+  inputImage_altPresent_summary_emptyAlt:
+    'Un alt="" vide sur <input type="image"> laisse le controle sans nom.',
+  inputImage_altPresent_hint_emptyAlt:
+    'Decrivez l action dans alt, ou nommez le controle avec aria-label ou aria-labelledby.',
   ariaHidden_programmaticFocus_review_title: 'Vérifier le focus programmatique avec aria-hidden',
   ariaHidden_programmaticFocus_review_description:
     'Signale les éléments aria-hidden considérés comme éligibles uniquement via un focus programmatique (ex. tabindex < 0). Vérifiez l’intention de gestion du focus et l’exposition aux technologies d’assistance.',
@@ -617,6 +625,10 @@ module.exports = {
     '{{element}} : le libellé visible « {{visibleLabel}} » (source : {{labelSource}}) n’est pas inclus dans le nom accessible (source : {{nameMechanism}}).',
   labelInName_hint_fail:
     'Modifiez aria-label ou aria-labelledby (ou le texte du libellé visible) afin que le nom accessible inclue le libellé visible.',
+  labelInName_summary_cantTell:
+    '{{element}} : le libellé visible « {{visibleLabel}} » (source : {{labelSource}}) ne diffère du nom accessible (source : {{nameMechanism}}) que par une abréviation ou une césure.',
+  labelInName_hint_cantTell:
+    'Vérifiez manuellement que les deux formulations correspondent : le balisage ne permet pas de distinguer une abréviation volontaire d’une incohérence.',
   ariaRolesValid_title: 'L’attribut role doit être un rôle ARIA valide et non abstrait',
   ariaRolesValid_description:
     'Vérifie qu’un attribut role="" explicite correspond à un rôle WAI-ARIA réel et non abstrait.',
@@ -628,12 +640,17 @@ module.exports = {
   ariaRolesValid_hint_abstract:
     'Remplacez ce rôle abstrait par un rôle concret adapté au composant/à la structure.',
   ariaDeprecatedRole_title:
-    'L’attribut role ne doit pas utiliser un rôle ARIA obsolète ou interdit aux auteurs',
+    'L’attribut role ne devrait pas utiliser un rôle ARIA obsolète ou déconseillé aux auteurs',
   ariaDeprecatedRole_description:
     'Vérifie qu’un attribut role="" explicite n’utilise pas un rôle rendu obsolète par la spécification WAI-ARIA, ni un rôle réservé à un usage interne à l’agent utilisateur (ex. role="generic").',
   ariaDeprecatedRole_summary_fail:
     'Cet élément utilise role="{{role}}", que les auteurs ne doivent pas déclarer explicitement.',
   ariaDeprecatedRole_hint_fail: '{{guidance}}',
+  ariaDeprecatedRole_summary_cantTell:
+    'Cet élément utilise role="{{role}}", qui est obsolète dans WAI-ARIA (toujours valide, mais déconseillé).',
+  ariaDeprecatedRole_summary_cantTell_discouraged:
+    'Cet élément utilise role="{{role}}", qui est réservé aux agents utilisateurs (toujours valide, mais déconseillé).',
+  ariaDeprecatedRole_hint_cantTell: '{{guidance}}',
   ariaValidAttr_title: 'Les attributs aria-* doivent être des attributs ARIA réels et définis',
   ariaValidAttr_description:
     'Vérifie que chaque nom d’attribut aria-* présent dans le DOM est un attribut réel défini par la spécification WAI-ARIA.',
@@ -653,6 +670,10 @@ module.exports = {
     'Vérifie que chaque attribut aria-* reconnu présent sur un élément ayant un rôle explicite est soit globalement pris en charge, soit pris en charge par ce rôle.',
   ariaAllowedAttr_summary_fail: '{{attr}} n’est pas autorisé sur role="{{role}}".',
   ariaAllowedAttr_hint_fail: 'Retirez cet attribut, ou utilisez un rôle qui le prend en charge.',
+  ariaAllowedAttr_summary_cantTell:
+    '{{attr}} est obsolète sur role="{{role}}" (toujours autorisé, mais déconseillé).',
+  ariaAllowedAttr_hint_cantTell:
+    'Cet attribut a été retiré de l’ensemble global d’ARIA en 1.2 ; retirez-le ou utilisez un rôle qui le prend en charge, car une future version d’ARIA pourrait l’interdire.',
   ariaProhibitedAttr_title:
     'Les attributs de nommage ARIA ne doivent pas être utilisés sur des rôles qui les interdisent',
   ariaProhibitedAttr_description:
@@ -857,6 +878,10 @@ module.exports = {
   formControlSingleLabel_summary_fail: 'Ce <{{element}}> est associé à {{labelCount}} étiquettes.',
   formControlSingleLabel_hint_fail:
     'Conservez une seule <label> par contrôle de formulaire (soit en l’enveloppant, soit en la référençant via for/id).',
+  formControlSingleLabel_summary_cantTell:
+    'Ce <{{element}}> a une <label> qui l’étiquette plus une association de <label> vide supplémentaire ; vérifiez comment il est annoncé.',
+  formControlSingleLabel_hint_cantTell:
+    'Supprimez la <label> vide redondante afin qu’une seule <label> soit associée au contrôle.',
   nestedInteractiveControlsAbsent_title: 'Les contrôles interactifs ne doivent pas être imbriqués',
   nestedInteractiveControlsAbsent_description:
     'Vérifie qu’un contrôle interactif (lien, bouton, contrôle de formulaire, ou rôle de widget ARIA) ne contient pas un autre contrôle interactif.',
@@ -867,10 +892,10 @@ module.exports = {
   bypassBlocksPresent_title: 'La page doit proposer un moyen de contourner les blocs répétés',
   bypassBlocksPresent_description:
     'Vérifie que la page dispose d’au moins un mécanisme reconnu de contournement des blocs répétés (WCAG 2.4.1) : un point de repère main, un lien d’ancrage fonctionnel vers la même page, ou un titre.',
-  bypassBlocksPresent_summary_fail:
-    'Cette page n’a aucun moyen reconnu de contourner les blocs de contenu répétés.',
-  bypassBlocksPresent_hint_fail:
-    'Ajoutez un point de repère main (<main> ou role="main"), un lien « aller au contenu » fonctionnel, ou des éléments de titre que les technologies d’assistance peuvent utiliser pour passer le contenu répété.',
+  bypassBlocksPresent_summary_cantTell:
+    'Aucun moyen reconnu de contourner les blocs de contenu répétés n’a été détecté sur cette page — vérifiez qu’un mécanisme de contournement existe.',
+  bypassBlocksPresent_hint_cantTell:
+    'Confirmez que la page propose un mécanisme de contournement : un point de repère main (<main> ou role="main"), un lien « aller au contenu » fonctionnel, ou des éléments de titre que les technologies d’assistance peuvent utiliser pour passer le contenu répété. (Un mécanisme peut être temporairement masqué — par exemple pendant qu’une boîte de dialogue modale rend la page inerte — ou fourni à l’échelle du site ; cela nécessite une confirmation humaine.)',
   landmarkBannerIsTopLevel_title: 'Le point de repère banner doit être de premier niveau',
   landmarkBannerIsTopLevel_description:
     'Vérifie que le point de repère banner (role="banner" ou un <header> non imbriqué) n’est pas imbriqué dans un autre point de repère.',
@@ -1042,9 +1067,9 @@ module.exports = {
   htmlXmlLangMismatch_hint_fail:
     'Faites en sorte que lang et xml:lang déclarent la même langue principale, ou retirez l’attribut obsolète xml:lang.',
   avoidInlineSpacing_title:
-    'Un style en ligne ne doit pas forcer l’espacement du texte avec !important',
+    'Un style en ligne ne doit pas forcer l’espacement du texte en dessous du seuil WCAG',
   avoidInlineSpacing_description:
-    'Vérifie qu’un style en ligne ne définit pas line-height, letter-spacing, ou word-spacing avec !important, ce qui bloque les surcharges d’espacement de texte par l’utilisateur.',
+    'Vérifie que lorsqu’un style en ligne force line-height, letter-spacing ou word-spacing avec !important, la valeur respecte déjà WCAG 1.4.12, ne laissant rien à surcharger à l’utilisateur.',
   avoidInlineSpacing_summary_fail:
     'Le style en ligne de cet élément force {{properties}} avec !important, bloquant les surcharges d’espacement de texte par l’utilisateur.',
   avoidInlineSpacing_hint_fail:

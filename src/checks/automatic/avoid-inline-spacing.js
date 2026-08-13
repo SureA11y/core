@@ -5,31 +5,36 @@
 /**
  * @check avoid-inline-spacing
  * @atomic true
- * @summary Inline style must not force text-spacing properties with !important
+ * @summary Inline style must not force text spacing below the WCAG metric
  * @standard WCAG 2.2
  * @sc 1.4.12
  * @applicability
- *   Applies to elements with an inline style attribute that sets
- *   line-height, letter-spacing, or word-spacing.
+ *   Applies to a rendered element with visible text of its own whose style
+ *   attribute declares line-height, letter-spacing or word-spacing as
+ *   `!important` with a real value. A CSS-wide keyword (inherit, initial,
+ *   unset, revert) specifies no spacing of its own and is out of scope.
  * @expectation
- *   None of those three properties are declared with `!important` in the
- *   inline style. WCAG 1.4.12 (Text Spacing) requires that users be able
- *   to override these properties via a user stylesheet without losing
- *   content or functionality; `!important` on an inline declaration
- *   defeats that override (inline `!important` wins over nearly every
- *   other origin, including user stylesheets applied the normal way).
+ *   Each such declaration already meets WCAG 1.4.12's own metric for that
+ *   property, as a multiple of the font size: line-height at least 1.5,
+ *   letter-spacing at least 0.12, word-spacing at least 0.16. A forced value
+ *   that already satisfies the criterion leaves the user nothing to override.
  * @implementation-notes
- * - Static text-based parsing of the style attribute string (regex for
- *   the three property names followed by `!important`), not computed
- *   style.
+ * - Computed style resolves the cascade and the units; the declared value is
+ *   only a fallback for environments that do not lay the document out. Spacing
+ *   that resolves to neither is left unreported rather than failed.
+ * - Within one declaration block, importance outranks order, so the effective
+ *   declaration is the last `!important` one for that property.
+ * - ACT 78fd32/24afc2/9e45ec additionally require the text to contain a soft
+ *   wrap break, which cannot be determined without layout. Not implemented, so
+ *   a forced value on text that never wraps is still reported.
  */
 
 const id = 'avoid-inline-spacing';
 
 const meta = {
-  title: 'Inline style must not force text spacing with !important',
+  title: 'Inline style must not force text spacing below the WCAG metric',
   description:
-    'Checks that inline style does not set line-height, letter-spacing, or word-spacing with !important, which blocks user text-spacing overrides.',
+    'Checks that where inline style forces line-height, letter-spacing or word-spacing with !important, the value already meets WCAG 1.4.12, so the user has nothing left to override.',
   i18n: {
     titleKey: 'avoidInlineSpacing_title',
     descriptionKey: 'avoidInlineSpacing_description'
@@ -57,6 +62,20 @@ function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
   const SPACING_PROPS = ['line-height', 'letter-spacing', 'word-spacing'];
+  // WCAG 1.4.12's own metrics, as multiples of the font size.
+  const MIN_RATIO = { 'line-height': 1.5, 'letter-spacing': 0.12, 'word-spacing': 0.16 };
+  // Only these two take the value from the parent, leaving this declaration
+  // specifying no spacing of its own. `initial` and `revert` resolve to a
+  // concrete value (`normal` for all three properties), so they stay in scope.
+  const INHERITED_KEYWORDS = ['inherit', 'unset'];
+  // No user agent's `normal` line height reaches 1.5, so a forced `normal`
+  // always falls short of the metric.
+  const NORMAL_LINE_HEIGHT_RATIO = 1.2;
+  const CAMEL = {
+    'line-height': 'lineHeight',
+    'letter-spacing': 'letterSpacing',
+    'word-spacing': 'wordSpacing'
+  };
 
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('[style]')
@@ -64,6 +83,136 @@ function runInPage(ctx) {
 
   const occurrences = [];
   let applicableCount = 0;
+
+  // Within one declaration block, importance wins over order, so the last
+  // important declaration is the one that takes effect. Passed Example 5 of ACT
+  // 78fd32 turns on this and Passed Example 6 on the non-important half.
+  function effectiveDeclaration(raw, prop) {
+    const re = new RegExp('(?:^|;)\\s*' + prop + '\\s*:\\s*([^;]*)', 'gi');
+    let chosen = null;
+    let m;
+    while ((m = re.exec(raw))) {
+      const value = String(m[1] || '').trim();
+      const important = /!\s*important\s*$/i.test(value);
+      const clean = value.replace(/!\s*important\s*$/i, '').trim();
+      if (!clean) continue;
+      if (!chosen || important || !chosen.important) {
+        if (chosen && chosen.important && !important) continue;
+        chosen = { value: clean, important };
+      }
+    }
+    return chosen;
+  }
+
+  function hasVisibleTextChild(el) {
+    let kids;
+    try {
+      kids = el.childNodes ? Array.from(el.childNodes) : [];
+    } catch {
+      return false;
+    }
+    return kids.some((n) => n && n.nodeType === 3 && String(n.nodeValue || '').trim() !== '');
+  }
+
+  function isRendered(el) {
+    if (helpers.isDomVisibleEligible) {
+      try {
+        return !!helpers.isDomVisibleEligible(el, ctx, { targetSet: 'dom' }).eligible;
+      } catch {
+        return true;
+      }
+    }
+    return true;
+  }
+
+  const px = (v) => {
+    const n = parseFloat(v);
+    return Number.isFinite(n) && /px\s*$/.test(String(v)) ? n : null;
+  };
+
+  function computedStyleOf(el) {
+    if (helpers && typeof helpers.computedStyle === 'function') {
+      try {
+        const cs = helpers.computedStyle(el);
+        if (cs) return cs;
+      } catch {
+        // fall through to the realm's own view
+      }
+    }
+    try {
+      const view = el.ownerDocument && el.ownerDocument.defaultView;
+      if (view && typeof view.getComputedStyle === 'function') return view.getComputedStyle(el);
+    } catch {
+      // no computed style available
+    }
+    return null;
+  }
+
+  // ACT scopes these rules to text visible on screen, and text pushed far off
+  // canvas is the one hidden shape the shared eligibility check keeps eligible.
+  function isOffScreen(el) {
+    if (!helpers.getVisibilityHintsInfo) return false;
+    try {
+      const info = helpers.getVisibilityHintsInfo(el, ctx, {});
+      return !!(info && Array.isArray(info.hints) && info.hints.indexOf('offscreen') !== -1);
+    } catch {
+      return false;
+    }
+  }
+
+  // A realm that does not lay the document out reports font-size as the CSS
+  // absolute-size keyword rather than a length. Resolving those keeps px-valued
+  // spacing checkable there, and cannot manufacture a failure: a font size
+  // larger than assumed only makes a px ratio smaller.
+  const ABSOLUTE_FONT_SIZES = {
+    'xx-small': 9,
+    'x-small': 10,
+    small: 13,
+    medium: 16,
+    large: 18,
+    'x-large': 24,
+    'xx-large': 32
+  };
+
+  function fontSizeOf(cs) {
+    if (!cs) return null;
+    const direct = px(cs.fontSize);
+    if (direct !== null) return direct;
+    const keyword = String(cs.fontSize || '')
+      .trim()
+      .toLowerCase();
+    return ABSOLUTE_FONT_SIZES[keyword] || null;
+  }
+
+  /**
+   * The spacing as a multiple of the font size, or null when it cannot be
+   * resolved. Computed style is preferred because it already applies the
+   * cascade and unit resolution; the declared value is only a fallback for
+   * environments that do not lay the document out.
+   */
+  function spacingRatio(el, prop, declared) {
+    const cs = computedStyleOf(el);
+    const fontSize = fontSizeOf(cs);
+    if (cs && fontSize) {
+      const used = px(cs[CAMEL[prop]]);
+      if (used !== null) return used / fontSize;
+    }
+
+    const v = String(declared || '')
+      .trim()
+      .toLowerCase();
+    // `normal`, and the keywords that resolve to it, add nothing for the two
+    // spacing properties and stay under the metric for line height.
+    if (v === 'normal' || v === 'initial' || v === 'revert' || v === 'revert-layer') {
+      return prop === 'line-height' ? NORMAL_LINE_HEIGHT_RATIO : 0;
+    }
+    if (/^[0-9.]+$/.test(v)) return parseFloat(v);
+    if (/em$/.test(v)) return parseFloat(v);
+    if (/%$/.test(v)) return parseFloat(v) / 100;
+    const asPx = px(v);
+    if (asPx !== null && fontSize) return asPx / fontSize;
+    return null;
+  }
 
   for (const el of nodes) {
     if (!el || !el.getAttribute) continue;
@@ -74,14 +223,25 @@ function runInPage(ctx) {
     const hasAnySpacingProp = SPACING_PROPS.some((p) => lower.includes(p));
     if (!hasAnySpacingProp) continue;
 
-    applicableCount += 1;
+    // The rule is about text the user needs to re-space, so an element with no
+    // text of its own, or none that renders, is not a target.
+    if (!hasVisibleTextChild(el) || !isRendered(el) || isOffScreen(el)) continue;
 
     const flagged = [];
+    let inScope = false;
     for (const prop of SPACING_PROPS) {
-      const re = new RegExp(prop.replace('-', '\\-') + '\\s*:[^;]*!important', 'i');
-      if (re.test(raw)) flagged.push(prop);
+      const decl = effectiveDeclaration(raw, prop);
+      if (!decl || !decl.important) continue;
+      if (INHERITED_KEYWORDS.indexOf(decl.value.toLowerCase()) !== -1) continue;
+      inScope = true;
+      const ratio = spacingRatio(el, prop, decl.value);
+      // Unresolvable spacing is left alone: this engine reserves fail for
+      // high-confidence violations.
+      if (ratio === null) continue;
+      if (ratio < MIN_RATIO[prop]) flagged.push(prop);
     }
 
+    if (inScope) applicableCount += 1;
     if (!flagged.length) continue;
 
     const tag = el.tagName.toLowerCase();
@@ -91,8 +251,8 @@ function runInPage(ctx) {
     occurrences.push({
       selector: stableSelector,
       html,
-      summary: `This element's inline style forces ${flagged.join(', ')} with !important, blocking user text-spacing overrides.`,
-      hint: 'Remove !important from line-height/letter-spacing/word-spacing in inline styles so users can override text spacing.',
+      summary: `This element's inline style forces ${flagged.join(', ')} with !important below the WCAG text-spacing metric, so the user cannot raise it.`,
+      hint: 'Remove !important from line-height/letter-spacing/word-spacing in inline styles, or set a value that already meets the metric (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em).',
       i18n: {
         summaryKey: 'avoidInlineSpacing_summary_fail',
         hintKey: 'avoidInlineSpacing_hint_fail',

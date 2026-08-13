@@ -152,6 +152,94 @@ test('label-in-name: real visible text alongside an aria-hidden icon is still co
   assertRule(result, 'label-in-name', 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+test(`${RULE_ID}: parenthesised text in the visible label is dropped before comparing`, () => {
+  const html = `
+<!doctype html><html><body>
+  <button aria-label="Search by date">Search by date (YYYY-MM-DD)</button>
+</body></html>
+  `;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: punctuation and emoji on either side do not affect the comparison`, () => {
+  const html = `
+<!doctype html><html><body>
+  <button aria-label="&#128161; Submit &#128161;">&gt;&gt;&gt; ** Submit ** &lt;&lt;&lt;</button>
+  <button aria-label="Next">Next&hellip;</button>
+</body></html>
+  `;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: a label word that merely prefixes a name word does not satisfy the rule`, () => {
+  const html = `
+<!doctype html><html><body>
+  <a id="italy" href="#" aria-label="Discover Italy">Discover It</a>
+</body></html>
+  `;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'italy'));
+});
+
+test(`${RULE_ID}: a single-character label is compared as a whole word`, () => {
+  const html = `
+<!doctype html><html><body>
+  <a id="one" href="#" aria-label="1a">1</a>
+</body></html>
+  `;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+});
+
+test(`${RULE_ID}: the label's words must be adjacent in the name, not merely present`, () => {
+  const html = `
+<!doctype html><html><body>
+  <button aria-label="save all files">save files</button>
+</body></html>
+  `;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+});
+
+test(`${RULE_ID}: a possible abbreviation is cantTell rather than a failure`, () => {
+  const html = `
+<!doctype html><html><body>
+  <a href="#" aria-label="University Avenue">University Ave.</a>
+</body></html>
+  `;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.strictEqual(rule.occurrences[0].outcome, 'cantTell');
+  assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'POSSIBLE_ABBREVIATION');
+});
+
+test(`${RULE_ID}: a hyphenation difference is cantTell rather than a failure`, () => {
+  const html = `
+<!doctype html><html><body>
+  <a href="#" aria-label="non-standard">nonstandard</a>
+</body></html>
+  `;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'HYPHENATION_DIFFERS');
+});
+
+test(`${RULE_ID}: a real mismatch alongside an uncertain one still fails the rule`, () => {
+  const html = `
+<!doctype html><html><body>
+  <a href="#" aria-label="University Avenue">University Ave.</a>
+  <button aria-label="Submit form">Save</button>
+</body></html>
+  `;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  const codes = rule.occurrences.map((o) => o.data.details.reasonCode).sort();
+  assert.deepStrictEqual(codes, ['POSSIBLE_ABBREVIATION', 'VISIBLE_LABEL_NOT_IN_ACCESSIBLE_NAME']);
+});
+
 test(`${RULE_ID}: fixture coverage (tests/fixtures/label-in-name-all-scenarios.html)`, () => {
   const fixturePath = path.join(__dirname, '../..', 'fixtures', 'label-in-name-all-scenarios.html');
   const html = fs.readFileSync(fixturePath, 'utf8');
