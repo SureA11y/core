@@ -12155,8 +12155,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
 
-  const isAccTreeEligible =
-    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+  // aria-hidden removes the canvas from the accessibility tree, so a text
+  // alternative on it cannot reach anyone; aria-hidden-focus reports a
+  // focusable one. Matches the other non-text-content rules.
+  const isEligibleHelper =
+    helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+      ? helpers.isIncludedInAccessibilityTree
+      : helpers && typeof helpers.isAccTreeEligible === 'function'
+        ? helpers.isAccTreeEligible
+        : null;
 
   const getTextAlternativeInfo =
     helpers && typeof helpers.getTextAlternativeInfo === 'function'
@@ -12181,15 +12188,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   for (const el of canvases) {
     if (!el) continue;
 
-    // Applicability: eligible in the accessibility tree (with focusable/IDREF exceptions handled by helper).
-    if (isAccTreeEligible) {
+    // Applicability: included in the accessibility tree.
+    if (isEligibleHelper) {
       const elig = (() => {
         try {
-          return isAccTreeEligible(el, ctx);
+          return isEligibleHelper(el, ctx);
         } catch {
           return { eligible: true, reasons: [] };
         }
       })();
+      if (elig === false) continue;
       if (elig && elig.eligible === false) continue;
     }
 
@@ -17323,8 +17331,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
 
-  const isAccTreeEligible =
-    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+  // ACT 23a2a8 exempts programmatically hidden images, and that glossary term
+  // has no focusability carve-out, so an aria-hidden image stays out of scope
+  // even when tabbable; aria-hidden-focus reports that markup instead.
+  const isEligibleHelper =
+    helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+      ? helpers.isIncludedInAccessibilityTree
+      : helpers && typeof helpers.isAccTreeEligible === 'function'
+        ? helpers.isAccTreeEligible
+        : null;
   const getFocusableInfo =
     helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
   const getAriaNameInfo =
@@ -17376,11 +17391,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const el = imgs[i];
     if (!el || !el.getAttribute) continue;
 
-    // Eligibility: only imgs exposed to assistive tech (with focusable/IDREF exceptions handled by helper)
-    if (isAccTreeEligible) {
+    // Eligibility: only imgs exposed to assistive tech.
+    if (isEligibleHelper) {
       let elig;
       try {
-        elig = isAccTreeEligible(el, ctx);
+        elig = isEligibleHelper(el, ctx);
       } catch {
         elig = null;
       }
@@ -21884,8 +21899,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
 
-  const isAccTreeEligible =
-    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+  // ACT 8fc3b6 applies only to objects included in the accessibility tree, so a
+  // focusable object inside aria-hidden is out of scope; aria-hidden-focus
+  // reports that markup instead.
+  const isEligibleHelper =
+    helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+      ? helpers.isIncludedInAccessibilityTree
+      : helpers && typeof helpers.isAccTreeEligible === 'function'
+        ? helpers.isAccTreeEligible
+        : null;
 
   const getFocusableInfo =
     helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
@@ -21961,14 +21983,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   for (const el of objects) {
     if (!el || !el.getAttribute) continue;
 
-    if (isAccTreeEligible) {
+    if (isEligibleHelper) {
       const elig = (() => {
         try {
-          return isAccTreeEligible(el, ctx);
+          return isEligibleHelper(el, ctx);
         } catch {
           return { eligible: true, reasons: [] };
         }
       })();
+      if (elig === false) continue;
       if (elig && elig.eligible === false) continue;
     }
 

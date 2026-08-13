@@ -9,9 +9,8 @@
  * @standard WCAG 2.2
  * @sc 1.1.1
  * @applicability
- *   Applies to <object> elements that are exposed to assistive technologies.
- *   Objects otherwise hidden from the accessibility tree remain applicable
- *   if they are tabbable or referenced by IDREF relationships (per engine eligibility checks).
+ *   Applies to <object> elements included in the accessibility tree.
+ *   Hidden objects are excluded whether or not they are focusable.
  *   role="presentation"/role="none" are excluded only when not focusable.
  * @expectation
  *   Each applicable <object> provides a text alternative via:
@@ -71,8 +70,15 @@ function runInPage(ctx) {
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
 
-  const isAccTreeEligible =
-    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+  // ACT 8fc3b6 applies only to objects included in the accessibility tree, so a
+  // focusable object inside aria-hidden is out of scope; aria-hidden-focus
+  // reports that markup instead.
+  const isEligibleHelper =
+    helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+      ? helpers.isIncludedInAccessibilityTree
+      : helpers && typeof helpers.isAccTreeEligible === 'function'
+        ? helpers.isAccTreeEligible
+        : null;
 
   const getFocusableInfo =
     helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
@@ -148,14 +154,15 @@ function runInPage(ctx) {
   for (const el of objects) {
     if (!el || !el.getAttribute) continue;
 
-    if (isAccTreeEligible) {
+    if (isEligibleHelper) {
       const elig = (() => {
         try {
-          return isAccTreeEligible(el, ctx);
+          return isEligibleHelper(el, ctx);
         } catch {
           return { eligible: true, reasons: [] };
         }
       })();
+      if (elig === false) continue;
       if (elig && elig.eligible === false) continue;
     }
 

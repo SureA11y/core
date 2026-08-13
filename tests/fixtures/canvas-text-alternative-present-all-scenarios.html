@@ -106,10 +106,10 @@
   </div>
 
   <div class="case" id="case_10">
-    <div class="case-title">10 — FAIL: aria-hidden but tabbable (tabindex=0), no text alternative</div>
+    <div class="case-title">10 — INELIGIBLE: aria-hidden but tabbable (tabindex=0), no text alternative</div>
     <div class="row">
       <canvas id="canvas_case_10" aria-hidden="true" tabindex="0"></canvas>
-      <span>Eligibility override due to tabbable focus; rule applies and fails.</span>
+      <span>Hidden regardless of focusability; aria-hidden-focus reports it instead.</span>
     </div>
   </div>
 
@@ -131,11 +131,11 @@
   </div>
 
   <div class="case" id="case_20">
-    <div class="case-title">20 — FAIL: IDREF-referenced aria-hidden canvas is eligible but unnamed</div>
+    <div class="case-title">20 — INELIGIBLE: IDREF-referenced aria-hidden canvas</div>
     <div class="row">
       <div id="host_20" aria-labelledby="canvas_case_20">Host</div>
       <canvas id="canvas_case_20" aria-hidden="true"></canvas>
-      <span>IDREF override makes canvas eligible; it fails due to missing text alternative.</span>
+      <span>An IDREF reference names the host; it does not put the canvas back in the tree.</span>
     </div>
   </div>
 

@@ -39,13 +39,31 @@ test(`${RULE_ID}: notApplicable when only ineligible images exist (aria-hidden a
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: aria-hidden but focusable is applicable and fails if alt missing`, () => {
+test(`${RULE_ID}: notApplicable when an aria-hidden image is focusable`, () => {
   const html = `<!doctype html><html><body>
     <img id="focus_ah" src="x.png" aria-hidden="true" tabindex="0">
   </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
-  assert.ok(hasOccurrenceForId(rule, 'focus_ah'));
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: notApplicable when a focusable image is under an aria-hidden ancestor`, () => {
+  const html = `<!doctype html><html><body>
+    <div aria-hidden="true"><img id="anc_ah" src="x.png" tabindex="0"></div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: an aria-hidden image does not suppress a sibling outside the subtree`, () => {
+  const html = `<!doctype html><html><body>
+    <div aria-hidden="true"><img id="anc_ah" src="x.png" tabindex="0"></div>
+    <img id="visible_no_alt" src="y.png">
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'visible_no_alt'));
+  assert.ok(!hasOccurrenceForId(rule, 'anc_ah'));
 });
 
 test(`${RULE_ID}: role=presentation not focusable is excluded and does not cause pass (=> notApplicable)`, () => {
@@ -103,13 +121,10 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/img-alt-present-all-scenarios
 
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  // With the current helper behavior and the fixed presentation logic, we expect 12 fails.
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 12, maxOccurrences: 12 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 10, maxOccurrences: 10 });
 
   const expectedFailIds = [
     'img_case_01',
-    'img_case_12',
-    'img_case_13_label',
     'img_case_18',
     'img_case_24', // opacity:0 case (note: duplicated in template; consider renaming template id)
     'img_case_25',
@@ -130,6 +145,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/img-alt-present-all-scenarios
     'img_case_09',
     'img_case_10',
     'img_case_11',
+    'img_case_12', // aria-hidden, focusable => hidden regardless of focusability
+    'img_case_13_label', // aria-hidden, IDREF-referenced => same
     'img_case_14', // has alt
     'img_case_15', // hiddenAttr => ineligible in current helper
     'img_case_16', // visibilityHidden => ineligible

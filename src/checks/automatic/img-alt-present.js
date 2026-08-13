@@ -9,10 +9,10 @@
  * @standard WCAG 2.2
  * @sc 1.1.1
  * @applicability
- *   Applies to <img> elements that are exposed to assistive technologies.
- *   Images with role="presentation" or role="none" are excluded only when they are not focusable.
- *   Elements otherwise hidden from the accessibility tree remain applicable
- *   if they are focusable or referenced by IDREF relationships (per engine eligibility checks).
+ *   Applies to <img> elements included in the accessibility tree.
+ *   Images with role="presentation" or role="none" are excluded only when they are not focusable,
+ *   since a focusable one reverts to the img role under presentational roles conflict resolution.
+ *   Hidden images are excluded whether or not they are focusable.
  * @expectation
  *   Each applicable <img> element has an alt attribute.
  *   The alt attribute may be empty (alt="").
@@ -60,8 +60,15 @@ function runInPage(ctx) {
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
 
-  const isAccTreeEligible =
-    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+  // ACT 23a2a8 exempts programmatically hidden images, and that glossary term
+  // has no focusability carve-out, so an aria-hidden image stays out of scope
+  // even when tabbable; aria-hidden-focus reports that markup instead.
+  const isEligibleHelper =
+    helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+      ? helpers.isIncludedInAccessibilityTree
+      : helpers && typeof helpers.isAccTreeEligible === 'function'
+        ? helpers.isAccTreeEligible
+        : null;
   const getFocusableInfo =
     helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
   const getAriaNameInfo =
@@ -113,11 +120,11 @@ function runInPage(ctx) {
     const el = imgs[i];
     if (!el || !el.getAttribute) continue;
 
-    // Eligibility: only imgs exposed to assistive tech (with focusable/IDREF exceptions handled by helper)
-    if (isAccTreeEligible) {
+    // Eligibility: only imgs exposed to assistive tech.
+    if (isEligibleHelper) {
       let elig;
       try {
-        elig = isAccTreeEligible(el, ctx);
+        elig = isEligibleHelper(el, ctx);
       } catch {
         elig = null;
       }
