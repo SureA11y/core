@@ -1117,9 +1117,9 @@ module.exports = {
     'Hacer que lang y xml:lang declaren el mismo idioma principal, o eliminar el atributo obsoleto xml:lang.',
 
   avoidInlineSpacing_title:
-    'El estilo en línea no debe forzar el espaciado de texto con !important',
+    'El estilo en línea no debe forzar el espaciado de texto por debajo del umbral WCAG',
   avoidInlineSpacing_description:
-    'Comprueba que el estilo en línea no establezca line-height, letter-spacing o word-spacing con !important, lo que bloquea las anulaciones de espaciado de texto del usuario.',
+    'Comprueba que cuando el estilo en línea fuerza line-height, letter-spacing o word-spacing con !important, el valor ya cumple WCAG 1.4.12, por lo que al usuario no le queda nada que anular.',
   avoidInlineSpacing_summary_fail:
     'El estilo en línea de este elemento fuerza {{properties}} con !important, bloqueando las anulaciones de espaciado de texto del usuario.',
   avoidInlineSpacing_hint_fail:

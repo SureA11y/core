@@ -1123,9 +1123,10 @@ module.exports = {
   htmlXmlLangMismatch_hint_fail:
     'Lassen Sie lang und xml:lang dieselbe Hauptsprache deklarieren, oder entfernen Sie das veraltete Attribut xml:lang.',
 
-  avoidInlineSpacing_title: 'Inline-Stile dürfen den Textabstand nicht mit !important erzwingen',
+  avoidInlineSpacing_title:
+    'Inline-Stile dürfen den Textabstand nicht unter den WCAG-Wert erzwingen',
   avoidInlineSpacing_description:
-    'Prüft, ob Inline-Stile line-height, letter-spacing oder word-spacing nicht mit !important setzen, was das Überschreiben des Textabstands durch den Nutzer blockiert.',
+    'Prüft, dass ein per !important erzwungener Wert für line-height, letter-spacing oder word-spacing WCAG 1.4.12 bereits erfüllt, sodass dem Nutzer nichts zu überschreiben bleibt.',
   avoidInlineSpacing_summary_fail:
     'Der Inline-Stil dieses Elements erzwingt {{properties}} mit !important und blockiert damit Überschreibungen des Textabstands durch den Nutzer.',
   avoidInlineSpacing_hint_fail:
