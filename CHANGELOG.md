@@ -4,6 +4,8 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ## [Unreleased]
 
+## [1.4.1] - 2026-08-13
+
 ### Added
 - `scripts/generate-aria-tables.js` generates `aria-allowed-attr`'s global/per-role/implicit-role tables from the `aria-query` package (a devDependency, output committed) instead of hand-maintaining them, with a `--check` mode that fails when the committed tables go stale.
 - `scripts/generate-language-subtags.js` writes the IANA primary language subtags into `dom-helpers` from the `language-subtag-registry` package (a devDependency), same `--check` convention. New shared `helpers.isValidLanguageTag` backs both `valid-lang` and `html-lang-attr-present`.
