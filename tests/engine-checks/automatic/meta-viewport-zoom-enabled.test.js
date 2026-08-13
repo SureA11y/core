@@ -16,8 +16,8 @@ test(`${RULE_ID}: notApplicable when there is no viewport meta tag`, () => {
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: pass when viewport allows zoom`, () => {
-  const html = `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"></head><body></body></html>`;
+test(`${RULE_ID}: pass when the keys are present and allow zoom`, () => {
+  const html = `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes"></head><body></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
@@ -85,4 +85,58 @@ test(`meta-viewport-zoom-enabled: notApplicable when engineOptions.fragment is t
     minOccurrences: 0,
     maxOccurrences: 0
   });
+});
+
+// CSS Device Adaptation translates an unparseable value to 0, so these stop
+// zoom just as user-scalable=no does (ACT b4f0c3).
+test(`${RULE_ID}: fail on values that translate to zero`, () => {
+  for (const content of [
+    'user-scalable=0.5',
+    'user-scalable=invalid',
+    'maximum-scale=invalid',
+    'maximum-scale=yes'
+  ]) {
+    const html = `<!doctype html><html><head><meta name="viewport" content="${content}"></head><body><p>x</p></body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  }
+});
+
+test(`${RULE_ID}: a negative maximum-scale is dropped by the browser and passes`, () => {
+  const html = `<!doctype html><html><head><meta name="viewport" content="maximum-scale=-1"></head><body><p>x</p></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: notApplicable when content sets neither key`, () => {
+  const html = `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"></head><body><p>x</p></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+// The pass/fail boundaries: user-scalable fails inside -1..1 exclusive,
+// maximum-scale fails from 0 up to but not including 2.
+test(`${RULE_ID}: boundary values`, () => {
+  const cases = [
+    ['user-scalable=1', 'pass'],
+    ['user-scalable=-1', 'pass'],
+    ['user-scalable=0', 'fail'],
+    ['user-scalable=0.999', 'fail'],
+    ['user-scalable=-0.999', 'fail'],
+    ['maximum-scale=2', 'pass'],
+    ['maximum-scale=1.999', 'fail'],
+    ['maximum-scale=0', 'fail'],
+    ['user-scalable=device-width', 'pass'],
+    ['maximum-scale=device-height', 'pass']
+  ];
+  for (const [content, expected] of cases) {
+    const html = `<!doctype html><html><head><meta name="viewport" content="${content}"></head><body><p>x</p></body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(
+      result,
+      RULE_ID,
+      expected,
+      expected === 'pass' ? { maxOccurrences: 0 } : { minOccurrences: 1 }
+    );
+  }
 });

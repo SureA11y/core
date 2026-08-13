@@ -123,10 +123,10 @@
   <h2>C. Eligibility exceptions</h2>
 
   <div class="case" id="case_08">
-    <div class="case-title">08 — FAIL: aria-hidden but tabbable (tabindex=0) stays applicable and must have text alt</div>
+    <div class="case-title">08 — INELIGIBLE: aria-hidden but tabbable (tabindex=0)</div>
     <div class="row">
       <object id="object_case_08" data="x.svg" aria-hidden="true" tabindex="0"></object>
-      <span>Tabbable override => eligible; missing text alternative => fail.</span>
+      <span>Hidden regardless of focusability; aria-hidden-focus reports it instead.</span>
     </div>
   </div>
 

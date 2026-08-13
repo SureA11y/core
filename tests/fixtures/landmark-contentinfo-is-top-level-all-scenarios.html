@@ -37,9 +37,16 @@
   </div>
 
   <div class="case" id="case_03">
-    <div class="case-title">03 — CANTTELL: footer nested inside &lt;main&gt; — candidate selection no longer reuses the suppression that makes a nested footer lose its own implicit contentinfo role</div>
+    <div class="case-title">03 — NEUTRAL: footer nested inside &lt;main&gt; — per HTML-AAM a footer descended from main has no contentinfo role at all, so there is no contentinfo here to be nested</div>
     <main>
-      <footer id="lctl_case_03">Nested inside main, now correctly flagged</footer>
+      <footer id="lctl_case_03">Not a contentinfo at all</footer>
+    </main>
+  </div>
+
+  <div class="case" id="case_03b">
+    <div class="case-title">03b — CANTTELL: footer with an explicit role="contentinfo" inside &lt;main&gt; — an explicit role is never suppressed</div>
+    <main>
+      <footer role="contentinfo" id="lctl_case_03b">Explicit contentinfo nested in main</footer>
     </main>
   </div>
 

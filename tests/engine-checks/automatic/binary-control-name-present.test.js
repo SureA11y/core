@@ -32,7 +32,7 @@ test('binary-control-name-present: no applicable elements => notApplicable', () 
 });
 
 test('binary-control-name-present: checkbox with label => pass', () => {
-  const html = `<!doctype html><html><body><label><input type='checkbox'/> Accept</label></body></html>`;
+  const html = `<!doctype html><html><body><label><input type='checkbox' role='switch'/> Accept</label></body></html>`;
 
   if (!runa11yCoreOnHtml || !assertRule) {
     assert.ok(true);
@@ -43,7 +43,7 @@ test('binary-control-name-present: checkbox with label => pass', () => {
 });
 
 test('binary-control-name-present: checkbox with hidden-only label text => fail', () => {
-  const html = `<!doctype html><html><body><label><input type='checkbox'/><span aria-hidden='true'>Accept</span></label></body></html>`;
+  const html = `<!doctype html><html><body><label><input type='checkbox' role='switch'/><span aria-hidden='true'>Accept</span></label></body></html>`;
 
   if (!runa11yCoreOnHtml || !assertRule) {
     assert.ok(true);
@@ -54,7 +54,7 @@ test('binary-control-name-present: checkbox with hidden-only label text => fail'
 });
 
 test('binary-control-name-present: radio with label[for] => pass', () => {
-  const html = `<!doctype html><html><body><input id='r1' type='radio'/><label for='r1'>Choice A</label></body></html>`;
+  const html = `<!doctype html><html><body><input id='r1' type='radio' role='radio'/><label for='r1'>Choice A</label></body></html>`;
 
   if (!runa11yCoreOnHtml || !assertRule) {
     assert.ok(true);
@@ -126,21 +126,18 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/binary-control-name-present-a
   }
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 9, maxOccurrences: 9 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 4, maxOccurrences: 4 });
 
-  const expectedFailIds = [
-    'binctl_case_01',
-    'binctl_case_07',
-    'binctl_case_10',
-    'binctl_case_13',
-    'binctl_case_15',
-    'binctl_case_17',
-    'binctl_case_19',
-    'binctl_case_18b',
-    'binctl_case_23'
-  ];
+  const expectedFailIds = ['binctl_case_10', 'binctl_case_13', 'binctl_case_15', 'binctl_case_17'];
 
   const expectedNoOccIds = [
+    // native checkbox/radio with no explicit role: owned by
+    // form-control-programmatic-label-present
+    'binctl_case_01',
+    'binctl_case_07',
+    'binctl_case_23',
+    'binctl_case_19',
+    'binctl_case_18b',
     'binctl_case_02',
     'binctl_case_03',
     'binctl_case_04',
@@ -199,7 +196,7 @@ test("binary-control-name-present: label association with empty content falls ba
   // checkbox/radio inputs (role-based ones use content-as-name instead,
   // per WAI-ARIA; <label for> doesn't apply to non-labelable elements
   // anyway per the HTML living standard).
-  const html = `<!doctype html><html><body><label for='a' title='Search'></label><input id='a' type='checkbox'/></body></html>`;
+  const html = `<!doctype html><html><body><label for='a' title='Search'></label><input id='a' type='checkbox' role='switch'/></body></html>`;
 
   if (!runa11yCoreOnHtml || !assertRule) {
     assert.ok(true);
@@ -207,4 +204,37 @@ test("binary-control-name-present: label association with empty content falls ba
   }
   const result = runa11yCoreOnHtml(html);
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test('binary-control-name-present: notApplicable for a bare native checkbox', () => {
+  const html = `<!doctype html><html><body><input type='checkbox'/></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test('binary-control-name-present: notApplicable for a bare native radio', () => {
+  const html = `<!doctype html><html><body><input type='radio'/></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test('binary-control-name-present: an unlabeled native checkbox is still reported, by the labeling rule', () => {
+  const html = `<!doctype html><html><body><input type='checkbox'/></body></html>`;
+  const result = runa11yCoreOnHtml(html, {
+    runOnly: [RULE_ID, 'form-control-programmatic-label-present']
+  });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, 'form-control-programmatic-label-present', 'fail', { minOccurrences: 1 });
+});
+
+test('binary-control-name-present: an explicit role keeps a native checkbox in scope', () => {
+  const html = `<!doctype html><html><body><input type='checkbox' role='switch'/></body></html>`;
+  const result = runa11yCoreOnHtml(html, {
+    runOnly: [RULE_ID, 'form-control-programmatic-label-present']
+  });
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assertRule(result, 'form-control-programmatic-label-present', 'notApplicable', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
 });

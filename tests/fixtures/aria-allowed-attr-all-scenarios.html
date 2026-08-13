@@ -83,10 +83,17 @@
     <div role="checkbox" aria-checked="true" aria-modal="true" id="aaa_case_13"></div>
   </div>
 
-  <h2>C. Not applicable (skipped, not counted)</h2>
+  <h2>C. Deprecated, still allowed (cantTell)</h2>
+
+  <div class="case" id="case_14">
+    <div class="case-title">14 — CANTTELL: aria-invalid is deprecated (not prohibited) on role=radio, which does not support it</div>
+    <div role="radio" aria-checked="true" aria-invalid="false" id="aaa_case_14"></div>
+  </div>
+
+  <h2>D. Not applicable (skipped, not counted)</h2>
 
   <div class="case" id="case_05">
-    <div class="case-title">05 — NEUTRAL: role not modeled in the supported-attrs table</div>
+    <div class="case-title">05 — FAIL: aria-valuenow is not supported on role="button"</div>
     <div role="button" aria-valuenow="1" id="aaa_case_05"></div>
   </div>
 

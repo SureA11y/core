@@ -151,41 +151,41 @@
     </div>
   </div>
 
-  <h2 id="exceptions">E. Exceptions that may remain eligible (focusable / IDREF-referenced)</h2>
+  <h2 id="exceptions">E. Focusable / IDREF-referenced images in hidden subtrees</h2>
 
   <div class="case" id="case_12">
-    <div class="case-title">12 — EXCEPTION CANDIDATE: <code>aria-hidden="true"</code> but focusable (<code>tabindex="0"</code>), missing alt</div>
+    <div class="case-title">12 — INELIGIBLE: <code>aria-hidden="true"</code> but focusable (<code>tabindex="0"</code>), missing alt</div>
     <div class="row">
       <span class="imgbox">img</span>
       <img id="img_case_12" aria-hidden="true" tabindex="0"
            src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%23ff77aa'/%3E%3C/svg%3E">
       <span>Focusable image (tabindex=0) but aria-hidden; missing alt.</span>
     </div>
-    <div class="meta">Per your engine exception, this may remain eligible for acc rules.</div>
+    <div class="meta">Hidden regardless of focusability, so out of scope here; aria-hidden-focus reports it.</div>
   </div>
 
   <div class="case" id="case_13">
-    <div class="case-title">13 — EXCEPTION CANDIDATE: IDREF-referenced image, missing alt</div>
+    <div class="case-title">13 — INELIGIBLE: IDREF-referenced image in an aria-hidden subtree, missing alt</div>
     <div class="row">
       <span class="imgbox">ref</span>
       <div aria-labelledby="img_case_13_label">This element references the image id via aria-labelledby.</div>
       <img id="img_case_13_label" aria-hidden="true"
            src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%23ff77aa'/%3E%3C/svg%3E">
-      <span>Referenced by IDREF; missing alt. (aria-hidden=true to force “exception” behavior if implemented.)</span>
+      <span>Referenced by IDREF; missing alt; aria-hidden=true.</span>
     </div>
-    <div class="meta">If your eligibility helper treats IDREF-referenced nodes as eligible, this should be evaluated.</div>
+    <div class="meta">An IDREF reference does not re-expose an aria-hidden image, so it stays out of scope.</div>
   </div>
 
   
   <div class="case" id="case_14">
-    <div class="case-title">14 — EXCEPTION CANDIDATE: <code>aria-hidden="true"</code> but focusable (<code>tabindex="0"</code>), alt present</div>
+    <div class="case-title">14 — INELIGIBLE: <code>aria-hidden="true"</code> but focusable (<code>tabindex="0"</code>), alt present</div>
     <div class="row">
       <span class="imgbox">img</span>
       <img id="img_case_14" aria-hidden="true" tabindex="0" alt="Focusable but aria-hidden"
            src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%2345c46a'/%3E%3C/svg%3E">
       <span>Focusable image (tabindex=0) but aria-hidden; alt present.</span>
     </div>
-    <div class="meta">If your eligibility helper treats focusable nodes as eligible, this should be evaluated and pass (for this atomic rule).</div>
+    <div class="meta">Out of scope like case 12; the alt attribute makes no difference either way.</div>
   </div>
 
   <div class="case" id="case_15">

@@ -130,7 +130,15 @@ function runInPage(ctx) {
     if (tokens[i] && tokens[i].startsWith('section-') && tokens[i].length > 'section-'.length)
       i += 1;
     if (tokens[i] === 'shipping' || tokens[i] === 'billing') i += 1;
-    if (CONTACT_MODALITY.has(tokens[i])) i += 1;
+    // A contact modality token is only allowed when the field that follows is
+    // a contact field, so "work photo" is invalid while "work email" is not.
+    if (CONTACT_MODALITY.has(tokens[i])) {
+      const next = tokens[i + 1];
+      const isContactField =
+        next === 'email' || next === 'impp' || next === 'tel' || (next || '').startsWith('tel-');
+      if (!isContactField) return false;
+      i += 1;
+    }
 
     let end = tokens.length;
     if (tokens[end - 1] === 'webauthn') end -= 1;
@@ -147,10 +155,38 @@ function runInPage(ctx) {
   const occurrences = [];
   let applicableCount = 0;
 
+  // ACT 73f2c2 exempts controls where the attribute cannot describe an input
+  // purpose: the on/off toggle, disabled controls, input types with a fixed
+  // value, and controls that take no input.
+  const FIXED_VALUE_TYPES = new Set([
+    'button',
+    'checkbox',
+    'file',
+    'image',
+    'radio',
+    'reset',
+    'submit'
+  ]);
+
+  function isExempt(el) {
+    const tag = String(el.tagName || '').toLowerCase();
+    if (tag === 'input') {
+      const type = String(el.getAttribute('type') || 'text').toLowerCase();
+      if (FIXED_VALUE_TYPES.has(type)) return true;
+    }
+    if (el.hasAttribute && el.hasAttribute('disabled')) return true;
+    if (String(el.getAttribute('aria-disabled') || '').toLowerCase() === 'true') return true;
+    return false;
+  }
+
   for (const el of nodes) {
     if (!el || !el.getAttribute) continue;
     const raw = String(el.getAttribute('autocomplete') || '').trim();
     if (!raw) continue;
+
+    const tokens = raw.toLowerCase().split(/\s+/).filter(Boolean);
+    if (tokens.length === 1 && (tokens[0] === 'on' || tokens[0] === 'off')) continue;
+    if (isExempt(el)) continue;
 
     applicableCount += 1;
 

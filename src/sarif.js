@@ -5,8 +5,8 @@
 /**
  * Renders one scan result as a SARIF 2.1.0 log (docs/SARIF.md) for GitHub
  * Code Scanning / other SARIF-consuming dashboards -- a different output
- * shape from --json's raw result, purpose-built for that ecosystem (see
- * docs/CLI.md's --sarif flag).
+ * shape from --json's raw result, purpose-built for that ecosystem (written
+ * by @surea11y/cli's --sarif flag, see its docs/CLI.md).
  *
  * Only fail/cantTell occurrences become SARIF results (a pass/notApplicable
  * result has no occurrences at all -- see docs/OUTPUT_SCHEMA.md), the same

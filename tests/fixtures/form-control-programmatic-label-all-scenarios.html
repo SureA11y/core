@@ -199,22 +199,22 @@
 <h2>E. Hidden from the accessibility tree (acc ineligible) + focus/IDREF exceptions</h2>
 
 <div class="case" id="case_21">
-  <div class="case-title">21 — it is eligible (tabbable by default) so it should fail</div>
+  <div class="case-title">21 — aria-hidden="true" on a natively tabbable control => out of scope for this rule (ACT e086e5: not included in the accessibility tree); aria-hidden-focus reports it</div>
   <div class="row">
     <input id="fc_case_21" type="text" aria-hidden="true" />
   </div>
 </div>
 
 <div class="case" id="case_22">
-  <div class="case-title">22 — FAIL (eligible exception): aria-hidden=true but tabbable (tabindex=0), unlabeled</div>
+  <div class="case-title">22 — OUT OF SCOPE: aria-hidden=true but tabbable (tabindex=0), unlabeled — no accessible name exists to check (ACT e086e5)</div>
   <div class="row">
     <input id="fc_case_22" type="text" aria-hidden="true" tabindex="0" />
-    <span>Per helper: tabbable overrides aria-hidden eligibility.</span>
+    <span>Tabbable keeps it eligible for aria-hidden-focus, not for naming.</span>
   </div>
 </div>
 
 <div class="case" id="case_23">
-  <div class="case-title">23 — PASS (eligible exception): aria-hidden=true but tabbable, aria-label present</div>
+  <div class="case-title">23 — OUT OF SCOPE: aria-hidden=true but tabbable, aria-label present — the name is not exposed either (ACT e086e5)</div>
   <div class="row">
     <input id="fc_case_23" type="text" aria-hidden="true" tabindex="0" aria-label="Hidden but tabbable" />
   </div>
@@ -229,16 +229,16 @@
 </div>
 
 <div class="case" id="case_25">
-  <div class="case-title">25 — FAIL (eligible exception): aria-hidden=true and referenced by IDREF (aria-labelledby)</div>
+  <div class="case-title">25 — OUT OF SCOPE: aria-hidden=true and referenced by IDREF (aria-labelledby) — still not in the accessibility tree (ACT e086e5)</div>
   <div class="row">
     <div aria-labelledby="fc_case_25">References the control via IDREF.</div>
     <input id="fc_case_25" type="text" aria-hidden="true" />
-    <span>Helper may keep referenced nodes eligible.</span>
+    <span>The IDREF override keeps it eligible for aria-hidden-focus, not for naming.</span>
   </div>
 </div>
 
 <div class="case" id="case_26">
-  <div class="case-title">26 — PASS (eligible exception): aria-hidden=true and referenced by IDREF, aria-label present</div>
+  <div class="case-title">26 — OUT OF SCOPE: aria-hidden=true and referenced by IDREF, aria-label present (ACT e086e5)</div>
   <div class="row">
     <div aria-labelledby="fc_case_26">References the control via IDREF.</div>
     <input id="fc_case_26" type="text" aria-hidden="true" aria-label="Referenced control" />
@@ -349,7 +349,7 @@
 <h2>L. Aggregation / whole-rule behavior</h2>
 
 <div class="case" id="case_39">
-  <div class="case-title">39 — it is eligible (tabbable by default) so it should fail</div>
+  <div class="case-title">39 — all three controls are out of scope: aria-hidden, hidden, and type=submit</div>
   <div class="row">
     <input id="fc_case_39a" type="text" aria-hidden="true" />
     <input id="fc_case_39b" type="text" hidden />

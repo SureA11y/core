@@ -73,8 +73,15 @@ const meta = {
 function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
-  const isAccTreeEligible =
-    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+  // ACT e086e5 applies only to controls included in the accessibility tree, so
+  // a focusable control inside aria-hidden is out of scope; aria-hidden-focus
+  // reports that markup instead.
+  const isEligibleHelper =
+    helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+      ? helpers.isIncludedInAccessibilityTree
+      : helpers && typeof helpers.isAccTreeEligible === 'function'
+        ? helpers.isAccTreeEligible
+        : null;
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
 
@@ -84,6 +91,41 @@ function runInPage(ctx) {
     helpers && typeof helpers.getLabelMethod === 'function' ? helpers.getLabelMethod : null;
 
   const trim = (v) => (v == null ? '' : String(v)).trim();
+
+  // Roles with their own *-name-present rule; a control carrying one
+  // explicitly is skipped here so it is reported once.
+  const ROLE_OWNED_ELSEWHERE = [
+    'alertdialog',
+    'button',
+    'checkbox',
+    'combobox',
+    'dialog',
+    'grid',
+    'link',
+    'listbox',
+    'menu',
+    'menubar',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'meter',
+    'option',
+    'progressbar',
+    'radio',
+    'radiogroup',
+    'scrollbar',
+    'searchbox',
+    'slider',
+    'spinbutton',
+    'switch',
+    'tab',
+    'tablist',
+    'textbox',
+    'toolbar',
+    'tooltip',
+    'tree',
+    'treeitem'
+  ];
 
   const metrics = {
     applicableCount: 0,
@@ -108,9 +150,9 @@ function runInPage(ctx) {
   }
 
   function isEligibleAcc(el) {
-    if (!isAccTreeEligible) return true;
+    if (!isEligibleHelper) return true;
     try {
-      const r = isAccTreeEligible(el, ctx);
+      const r = isEligibleHelper(el, ctx);
       if (typeof r === 'boolean') return r;
       return !!(r && r.eligible);
     } catch {
@@ -192,6 +234,8 @@ function runInPage(ctx) {
     } catch {
       role = '';
     }
+
+    if (role && ROLE_OWNED_ELSEWHERE.indexOf(role) !== -1) continue;
 
     if (role === 'presentation' || role === 'none') {
       const fi = getFocusableInfo

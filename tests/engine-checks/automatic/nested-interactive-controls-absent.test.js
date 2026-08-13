@@ -62,6 +62,151 @@ test(`${RULE_ID}: an aria-hidden, non-focusable nested control is not flagged (i
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+// ---------------------------------------------------------------------------
+// Focusability gate: a nested widget-role descendant only counts when it is
+// operable (exposed to AT and platform-focusable). Composite widgets nest
+// managed, non-focusable children (option/tab/treeitem/menuitem/radio driven
+// by the container via roving focus or aria-activedescendant), which are not
+// reported.
+// ---------------------------------------------------------------------------
+
+test(`${RULE_ID}: pass for a listbox whose options are not independently focusable`, () => {
+  const html = `<!doctype html><html><body>
+    <div role="listbox" id="lb">
+      <div role="option" id="opt1">Home</div>
+      <div role="option" id="opt2">About</div>
+    </div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: Angular Material autocomplete listbox/option panel passes`, () => {
+  // A role="listbox" panel holding a role="option" custom element with no
+  // tabindex; focus stays on the input via aria-activedescendant.
+  const html = `<!doctype html><html><body>
+    <div role="listbox" class="mat-mdc-autocomplete-panel quick-search-autocomplete" id="mat-autocomplete-0" aria-labelledby="mat-mdc-form-field-label-0">
+      <mat-option role="option" class="mat-mdc-option mdc-list-item quick-search-autocomplete-option mat-mdc-option-active" id="mat-option-0" aria-selected="false" aria-disabled="false">
+        <span class="mdc-list-item__primary-text"><span> Home </span><br><span class="avq-body-small"> Home </span></span>
+        <div aria-hidden="true" mat-ripple="" class="mat-ripple mat-mdc-option-ripple mat-focus-indicator"></div>
+      </mat-option>
+    </div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: pass for other composite widgets with non-focusable managed children`, () => {
+  const composites = [
+    `<div role="tablist"><div role="tab">One</div><div role="tab">Two</div></div>`,
+    `<ul role="menu"><li role="menuitem">Open</li><li role="menuitemcheckbox">Wrap</li></ul>`,
+    `<ul role="tree"><li role="treeitem">Root<ul role="group"><li role="treeitem">Child</li></ul></li></ul>`,
+    `<div role="radiogroup"><span role="radio" aria-checked="false">A</span><span role="radio" aria-checked="true">B</span></div>`,
+    `<div role="combobox" aria-expanded="true"><div role="listbox"><div role="option">X</div></div></div>`
+  ];
+  for (const markup of composites) {
+    const html = `<!doctype html><html><body>${markup}</body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'pass', {
+      minOccurrences: 0,
+      maxOccurrences: 0
+    });
+  }
+});
+
+test(`${RULE_ID}: pass when a widget-role child is present but not focusable inside a control`, () => {
+  // role="option" with no tabindex nested in a button is a widget but not
+  // operable, so there is no nested *interactive* control.
+  const html = `<!doctype html><html><body><button id="b">Pick <span role="option">Home</span></button></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: pass when a plain focusable div (no widget role) is nested`, () => {
+  // A tabindex'd <div> with no widget role is focusable but not a control,
+  // so it is not a nested interactive control.
+  const html = `<!doctype html><html><body><a id="a" href="/x">Card <div tabindex="0">focus trap</div></a></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: pass when the only nested control is disabled (not focusable)`, () => {
+  const html = `<!doctype html><html><body><a id="a" href="/x">Cart <button disabled>Remove</button></a></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: pass for a listbox using roving tabindex on its options`, () => {
+  // Roving tabindex is one of the two standard composite-widget focus models:
+  // the active option carries tabindex="0" and the rest tabindex="-1". The
+  // container owns the option, so a focusable owned child is not a nested
+  // interactive control. (This is what Angular CDK Listbox emits.)
+  const html = `<!doctype html><html><body><div role="listbox" id="lb"><div role="option" tabindex="0">Home</div><div role="option" tabindex="-1">About</div></div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: Angular CDK segmented-button (listbox/option, roving tabindex) passes`, () => {
+  // Regression: a role="listbox" custom element whose role="option" children
+  // are managed with roving tabindex (active segment tabindex="0", others
+  // tabindex="-1") must not be flagged as nesting interactive controls.
+  const html = `<!doctype html><html><body>
+    <avq-segmented-button role="listbox" aria-label="Card style" class="cdk-listbox" id="cdk-listbox-1" tabindex="-1" aria-multiselectable="false" aria-orientation="horizontal">
+      <avq-segment role="option" value="elevated" class="cdk-option cdk-option-active" id="cdk-option-3" aria-selected="true" tabindex="0"><div class="avq-segment-button"><span>Default</span></div></avq-segment>
+      <avq-segment role="option" value="outlined" class="cdk-option" id="cdk-option-4" aria-selected="false" tabindex="-1"><div class="avq-segment-button"><span>Outlined</span></div></avq-segment>
+      <avq-segment role="option" value="filled" class="cdk-option" id="cdk-option-5" aria-selected="false" tabindex="-1"><div class="avq-segment-button"><span>Filled</span></div></avq-segment>
+    </avq-segmented-button>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: fail for an orphan focusable role=option with no owning listbox`, () => {
+  // The composite exemption requires a real container relationship. A
+  // role="option" with tabindex="0" that is NOT owned by a listbox/combobox
+  // is a focusable widget nested in a control, so it still counts.
+  const html = `<!doctype html><html><body><a id="a" href="/x">Card <span role="option" tabindex="0">Home</span></a></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+});
+
+test(`${RULE_ID}: fail when a genuinely nested control sits inside a listbox option`, () => {
+  // The exemption applies to the owned option itself, not to arbitrary
+  // focusable controls placed inside it. A real <button> inside an option is
+  // still a nested interactive control (attributed to the option).
+  const html = `<!doctype html><html><body><div role="listbox"><div role="option" id="opt" tabindex="0">Home <button>x</button></div></div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'opt'));
+});
+
+test(`${RULE_ID}: fail when a focusable role=button is nested in a link`, () => {
+  const html = `<!doctype html><html><body><a id="a" href="/x">Card <span role="button" tabindex="0">Delete</span></a></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+});
+
+test(`${RULE_ID}: fail when a native control is nested in a role=button container`, () => {
+  const html = `<!doctype html><html><body><div id="c" role="button" tabindex="0">Save <a href="/x">details</a></div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'c'));
+});
+
+test(`${RULE_ID}: nested chain attributes each control to its nearest operable ancestor`, () => {
+  // a[href] > button > select: the link is reported for the button, the
+  // button for the select; the link is NOT reported for the (deeper) select.
+  const html = `<!doctype html><html><body><a id="a" href="/x">x <button id="btn">y <select id="sel"><option>z</option></select></button></a></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+  assert.ok(hasOccurrenceForId(rule, 'btn'));
+  const linkOcc = rule.occurrences.find((o) => o.html.includes('id="a"'));
+  assert.deepStrictEqual(linkOcc.data.details.nestedElements, ['button']);
+});
+
 test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><body><button id="a"><input type="checkbox"></button></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });

@@ -22,6 +22,14 @@ module.exports = {
   inputImage_altPresent_summary_fail: 'Fehlendes alt-Attribut auf <input type="image">.',
   inputImage_altPresent_hint_fail:
     'Fügen Sie ein alt-Attribut hinzu (verwenden Sie alt="" nur, wenn ein separater zugänglicher Name bereitgestellt wird).',
+  inputImage_altPresent_summary_defaultName:
+    'Der zugaengliche Name ist der Browser-Standard fuer eine Bildschaltflaeche und sagt nichts aus.',
+  inputImage_altPresent_hint_defaultName:
+    'Ersetzen Sie ihn durch Text, der die Aktion beschreibt, zum Beispiel "Suchen".',
+  inputImage_altPresent_summary_emptyAlt:
+    'Ein leeres alt="" auf <input type="image"> laesst das Steuerelement ohne Namen.',
+  inputImage_altPresent_hint_emptyAlt:
+    'Beschreiben Sie die Aktion in alt, oder benennen Sie das Steuerelement mit aria-label oder aria-labelledby.',
   ariaHidden_programmaticFocus_review_title: 'Programmatischen Fokus bei aria-hidden überprüfen',
   ariaHidden_programmaticFocus_review_description:
     'Markiert Elemente, die aria-hidden sind, aber aufgrund von programmatischem Fokus (z. B. tabindex < 0) als geeignet gelten. Überprüfen Sie die beabsichtigte Fokusverwaltung und die Sichtbarkeit für assistive Technologien.',
@@ -625,6 +633,10 @@ module.exports = {
     '{{element}}: Die sichtbare Beschriftung „{{visibleLabel}}“ (aus {{labelSource}}) ist nicht im zugänglichen Namen enthalten (aus {{nameMechanism}}).',
   labelInName_hint_fail:
     'Aktualisieren Sie aria-label/aria-labelledby (oder den sichtbaren Beschriftungstext), damit der zugängliche Name den Wortlaut der sichtbaren Beschriftung enthält.',
+  labelInName_summary_cantTell:
+    '{{element}}: Die sichtbare Beschriftung „{{visibleLabel}}“ (aus {{labelSource}}) unterscheidet sich vom zugänglichen Namen (aus {{nameMechanism}}) nur durch eine Abkürzung oder eine Bindestrichschreibung.',
+  labelInName_hint_cantTell:
+    'Prüfen Sie manuell, ob beide Formulierungen übereinstimmen: Aus dem Markup lässt sich eine beabsichtigte Abkürzung nicht von einer Abweichung unterscheiden.',
 
   /* =========================
    * ARIA-Gültigkeitsfamilie
@@ -641,12 +653,17 @@ module.exports = {
     'Ersetzen Sie diese abstrakte Rolle durch eine konkrete Rolle, die zu dem Widget/der Struktur passt.',
 
   ariaDeprecatedRole_title:
-    'Das role-Attribut darf keine veraltete oder für Autoren untersagte ARIA-Rolle verwenden',
+    'Das role-Attribut sollte keine veraltete oder für Autoren nicht empfohlene ARIA-Rolle verwenden',
   ariaDeprecatedRole_description:
-    'Prüft, ob ein explizites role=""-Attribut keine durch die WAI-ARIA-Spezifikation als veraltet markierte Rolle verwendet, und keine Rolle, die ausschließlich für die interne Verwendung durch den User-Agent reserviert ist (z. B. role="generic").',
+    'Prüft, ob ein explizites role=""-Attribut keine durch die WAI-ARIA-Spezifikation als veraltet markierte Rolle verwendet, und keine Rolle, die für die interne Verwendung durch den User-Agent reserviert ist (z. B. role="generic").',
   ariaDeprecatedRole_summary_fail:
     'Dieses Element verwendet role="{{role}}", was Autoren nicht explizit deklarieren dürfen.',
   ariaDeprecatedRole_hint_fail: '{{guidance}}',
+  ariaDeprecatedRole_summary_cantTell:
+    'Dieses Element verwendet role="{{role}}", die in WAI-ARIA veraltet ist (weiterhin gültig, aber nicht empfohlen).',
+  ariaDeprecatedRole_summary_cantTell_discouraged:
+    'Dieses Element verwendet role="{{role}}", die User-Agents vorbehalten ist (weiterhin gültig, aber nicht empfohlen).',
+  ariaDeprecatedRole_hint_cantTell: '{{guidance}}',
 
   ariaValidAttr_title: 'aria-*-Attribute müssen echte, definierte ARIA-Attribute sein',
   ariaValidAttr_description:
@@ -670,6 +687,10 @@ module.exports = {
   ariaAllowedAttr_summary_fail: '{{attr}} ist bei role="{{role}}" nicht zulässig.',
   ariaAllowedAttr_hint_fail:
     'Entfernen Sie dieses Attribut, oder verwenden Sie eine Rolle, die es unterstützt.',
+  ariaAllowedAttr_summary_cantTell:
+    '{{attr}} ist bei role="{{role}}" veraltet (weiterhin zulässig, aber nicht empfohlen).',
+  ariaAllowedAttr_hint_cantTell:
+    'Dieses Attribut wurde in ARIA 1.2 aus dem globalen Satz entfernt; entfernen Sie es oder verwenden Sie eine Rolle, die es unterstützt, da eine künftige ARIA-Version es möglicherweise nicht mehr zulässt.',
 
   ariaProhibitedAttr_title:
     'ARIA-Benennungsattribute dürfen nicht bei Rollen verwendet werden, die sie untersagen',
@@ -900,6 +921,10 @@ module.exports = {
     'Dieses <{{element}}> ist mit {{labelCount}} Beschriftungen verknüpft.',
   formControlSingleLabel_hint_fail:
     'Behalten Sie nur ein <label> pro Formularelement (entweder umschließend oder über for/id referenziert).',
+  formControlSingleLabel_summary_cantTell:
+    'Dieses <{{element}}> hat ein beschriftendes <label> und zusätzlich eine leere <label>-Verknüpfung; prüfen Sie, wie es angesagt wird.',
+  formControlSingleLabel_hint_cantTell:
+    'Entfernen Sie das überflüssige leere <label>, sodass genau ein <label> mit dem Element verknüpft ist.',
 
   nestedInteractiveControlsAbsent_title:
     'Interaktive Formularelemente dürfen nicht verschachtelt sein',
@@ -914,10 +939,10 @@ module.exports = {
     'Die Seite muss eine Möglichkeit bieten, wiederkehrende Blöcke zu überspringen',
   bypassBlocksPresent_description:
     'Prüft, ob die Seite mindestens einen anerkannten Mechanismus nach WCAG 2.4.1 zum Überspringen wiederkehrender Blöcke hat: eine main-Landmarke, einen funktionierenden Anker-Link auf derselben Seite oder eine Überschrift.',
-  bypassBlocksPresent_summary_fail:
-    'Diese Seite hat keine anerkannte Möglichkeit, wiederkehrende Inhaltsblöcke zu überspringen.',
-  bypassBlocksPresent_hint_fail:
-    'Fügen Sie eine main-Landmarke (<main> oder role="main"), einen funktionierenden „Zum Inhalt springen“-Link oder Überschriften-Elemente hinzu, die assistive Technologien nutzen können, um wiederkehrende Inhalte zu überspringen.',
+  bypassBlocksPresent_summary_cantTell:
+    'Auf dieser Seite wurde keine anerkannte Möglichkeit erkannt, wiederkehrende Inhaltsblöcke zu überspringen – prüfen Sie, ob ein Überspring-Mechanismus vorhanden ist.',
+  bypassBlocksPresent_hint_cantTell:
+    'Bestätigen Sie, dass die Seite einen Überspring-Mechanismus bietet: eine main-Landmarke (<main> oder role="main"), einen funktionierenden „Zum Inhalt springen“-Link oder Überschriften-Elemente, die assistive Technologien nutzen können, um wiederkehrende Inhalte zu überspringen. (Ein Mechanismus kann vorübergehend verborgen sein – z. B. während ein modaler Dialog die Seite inert macht – oder seitenweit bereitgestellt werden; dies erfordert eine menschliche Bestätigung.)',
 
   landmarkBannerIsTopLevel_title: 'Die banner-Landmarke muss auf oberster Ebene liegen',
   landmarkBannerIsTopLevel_description:
@@ -1111,9 +1136,10 @@ module.exports = {
   htmlXmlLangMismatch_hint_fail:
     'Lassen Sie lang und xml:lang dieselbe Hauptsprache deklarieren, oder entfernen Sie das veraltete Attribut xml:lang.',
 
-  avoidInlineSpacing_title: 'Inline-Stile dürfen den Textabstand nicht mit !important erzwingen',
+  avoidInlineSpacing_title:
+    'Inline-Stile dürfen den Textabstand nicht unter den WCAG-Wert erzwingen',
   avoidInlineSpacing_description:
-    'Prüft, ob Inline-Stile line-height, letter-spacing oder word-spacing nicht mit !important setzen, was das Überschreiben des Textabstands durch den Nutzer blockiert.',
+    'Prüft, dass ein per !important erzwungener Wert für line-height, letter-spacing oder word-spacing WCAG 1.4.12 bereits erfüllt, sodass dem Nutzer nichts zu überschreiben bleibt.',
   avoidInlineSpacing_summary_fail:
     'Der Inline-Stil dieses Elements erzwingt {{properties}} mit !important und blockiert damit Überschreibungen des Textabstands durch den Nutzer.',
   avoidInlineSpacing_hint_fail:

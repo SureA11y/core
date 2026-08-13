@@ -113,3 +113,43 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-roles-valid-all-scenario
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
 });
+
+// role takes a fallback list: the first token the browser recognises wins, so
+// the rule fails only when no token names a concrete role (ACT 674b10).
+test(`${RULE_ID}: a fallback list passes when any token is a concrete role`, () => {
+  for (const role of ['searchfield searchbox', 'doc-biblioref link', 'link bogus']) {
+    const html = `<!doctype html><html><body><div role="${role}" aria-label="x">t</div></body></html>`;
+    assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'pass', {
+      maxOccurrences: 0
+    });
+  }
+});
+
+test(`${RULE_ID}: a fallback list fails when no token is a concrete role`, () => {
+  const html = `<!doctype html><html><body><div role="bogus alsobogus" aria-label="x">t</div></body></html>`;
+  assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 1
+  });
+});
+
+test(`${RULE_ID}: Digital Publishing and ARIA 1.3 roles are recognised`, () => {
+  for (const role of ['doc-biblioref', 'doc-abstract', 'comment', 'suggestion', 'text']) {
+    const html = `<!doctype html><html><body><div role="${role}" aria-label="x">t</div></body></html>`;
+    assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'pass', {
+      maxOccurrences: 0
+    });
+  }
+});
+
+test(`${RULE_ID}: notApplicable for a programmatically hidden element`, () => {
+  for (const markup of [
+    '<div aria-hidden="true" role="bogus">x</div>',
+    '<div style="display:none" role="bogus">x</div>',
+    '<div aria-hidden="true"><span role="bogus">x</span></div>'
+  ]) {
+    const html = `<!doctype html><html><body>${markup}</body></html>`;
+    assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'notApplicable', {
+      maxOccurrences: 0
+    });
+  }
+});

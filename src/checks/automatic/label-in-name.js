@@ -52,6 +52,56 @@ function runInPage(ctx) {
     return v.replace(/\s+/g, ' ').trim().toLowerCase();
   }
 
+  // WCAG 2.5.3's label-in-name comparison is over words, not characters: drop
+  // parenthesised text, case-fold and NFKD-normalise, then reduce every
+  // non-letter/digit to a space. `hyphensJoin` deletes hyphens instead of
+  // splitting on them, which distinguishes a real mismatch from one that is
+  // only a hyphenation difference.
+  function tokenize(s, hyphensJoin) {
+    let v = (s == null ? '' : String(s)).replace(/\([^)]*\)/g, ' ').toLowerCase();
+    try {
+      v = v.normalize('NFKD');
+    } catch {
+      // Realm without String#normalize: the word comparison below still holds.
+    }
+    if (hyphensJoin) v = v.replace(/[-‐-―−]/g, '');
+    return v
+      .replace(/[^\p{L}\p{N}]+/gu, ' ')
+      .split(' ')
+      .filter(Boolean);
+  }
+
+  // The label's words must appear adjacent and in order inside the name, so a
+  // scattered subsequence does not count. Words in `prefixable` may match a
+  // longer name word they start.
+  function containsWordRun(needle, hay, prefixable) {
+    if (!needle.length) return true;
+    for (let i = 0; i + needle.length <= hay.length; i++) {
+      let ok = true;
+      for (let j = 0; j < needle.length; j++) {
+        const want = needle[j];
+        const got = hay[i + j];
+        if (got === want) continue;
+        if (prefixable && prefixable.has(want) && got.indexOf(want) === 0) continue;
+        ok = false;
+        break;
+      }
+      if (ok) return true;
+    }
+    return false;
+  }
+
+  // A trailing period marks a word the author may have shortened ("Ave." for
+  // "Avenue"). Tokenizing removes the period, so collect these beforehand.
+  function abbreviatedWords(s) {
+    const out = new Set();
+    for (const w of (s == null ? '' : String(s)).split(/\s+/)) {
+      const m = /^([\p{L}\p{N}]+)\.$/u.exec(w);
+      if (m) out.add(m[1].toLowerCase());
+    }
+    return out;
+  }
+
   function getElementDescriptor(el) {
     const tag = el && el.tagName ? String(el.tagName).toLowerCase() : 'element';
     let role;
@@ -297,7 +347,23 @@ function runInPage(ctx) {
     const accName = acc && acc.value != null ? String(acc.value) : '';
     const accNorm = norm(accName);
 
-    const contains = !!(accNorm && visibleNorm && accNorm.indexOf(visibleNorm) !== -1);
+    const labelTokens = tokenize(visibleLabel, false);
+    const nameTokens = tokenize(accName, false);
+    const contains = containsWordRun(labelTokens, nameTokens, null);
+
+    // An abbreviation, or a word hyphenated differently in the two places, is
+    // not something markup settles: the author may have meant either. Report
+    // without asserting a defect instead of failing or staying silent.
+    let uncertainty = '';
+    if (!contains) {
+      if (containsWordRun(tokenize(visibleLabel, true), tokenize(accName, true), null)) {
+        uncertainty = 'HYPHENATION_DIFFERS';
+      } else {
+        const abbreviated = abbreviatedWords(visibleLabel);
+        if (abbreviated.size && containsWordRun(labelTokens, nameTokens, abbreviated))
+          uncertainty = 'POSSIBLE_ABBREVIATION';
+      }
+    }
 
     if (!contains) {
       const selectorOut = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
@@ -308,11 +374,16 @@ function runInPage(ctx) {
       occurrences.push({
         selector: selectorOut,
         html,
-        summary: 'Accessible name does not contain the visible label text.',
-        hint: 'Ensure the accessible name includes the visible text label (e.g., update aria-label/aria-labelledby to include the visible wording).',
+        ...(uncertainty ? { outcome: 'cantTell' } : null),
+        summary: uncertainty
+          ? 'Accessible name may not contain the visible label text.'
+          : 'Accessible name does not contain the visible label text.',
+        hint: uncertainty
+          ? 'Check by hand: the two differ only by an abbreviation or by hyphenation, which markup cannot settle.'
+          : 'Ensure the accessible name includes the visible text label (e.g., update aria-label/aria-labelledby to include the visible wording).',
         i18n: {
-          summaryKey: 'labelInName_summary_fail',
-          hintKey: 'labelInName_hint_fail',
+          summaryKey: uncertainty ? 'labelInName_summary_cantTell' : 'labelInName_summary_fail',
+          hintKey: uncertainty ? 'labelInName_hint_cantTell' : 'labelInName_hint_fail',
           params: {
             element: getElementDescriptor(el),
             visibleLabel: clipForSummary(visibleLabel),
@@ -322,10 +393,11 @@ function runInPage(ctx) {
         },
         data: {
           details: {
-            reasonCode: 'VISIBLE_LABEL_NOT_IN_ACCESSIBLE_NAME',
+            reasonCode: uncertainty || 'VISIBLE_LABEL_NOT_IN_ACCESSIBLE_NAME',
             visibleLabel,
             accessibleName: accName,
             normalized: { visibleLabel: visibleNorm, accessibleName: accNorm },
+            tokenized: { visibleLabel: labelTokens, accessibleName: nameTokens },
             labelSource: labelInfo && labelInfo.source ? labelInfo.source : 'none',
             nameMechanism: acc && acc.mechanism ? acc.mechanism : 'none'
           }
@@ -336,13 +408,15 @@ function runInPage(ctx) {
 
   if (applicableCount === 0)
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
-  if (occurrences.length)
+  if (occurrences.length) {
+    const anyFail = occurrences.some((o) => o.outcome !== 'cantTell');
     return {
       ruleId: rule.ruleId,
-      outcome: 'fail',
+      outcome: anyFail ? 'fail' : 'cantTell',
       severity: rule.defaultSeverity || 'minor',
       occurrences
     };
+  }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }
 

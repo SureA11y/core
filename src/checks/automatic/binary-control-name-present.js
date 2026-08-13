@@ -137,9 +137,16 @@ function runInPage(ctx) {
     return '';
   }
 
+  // Naming rules apply only to elements included in the accessibility tree
+  // (ACT c487ae and siblings), which excludes focusable aria-hidden content.
+  // aria-hidden-focus (ACT 6cfa84) covers that markup instead.
   function isEligibleAcc(helpers, el, ctx) {
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -153,8 +160,9 @@ function runInPage(ctx) {
   const occurrences = [];
   let applicableCount = 0;
 
-  const selector =
-    'input[type="checkbox"], input[type="radio"], [role="checkbox"], [role="radio"], [role="switch"]';
+  // Native checkbox/radio without an explicit role belongs to
+  // form-control-programmatic-label-present.
+  const selector = '[role="checkbox"], [role="radio"], [role="switch"]';
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
