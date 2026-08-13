@@ -13,22 +13,43 @@
  *   a[href], button, input (not hidden), select, textarea; or an explicit
  *   ARIA widget role: button, link, checkbox, radio, switch, tab, textbox,
  *   combobox, listbox, menuitem, menuitemcheckbox, menuitemradio, option,
- *   slider, spinbutton, searchbox, treeitem).
+ *   slider, spinbutton, searchbox, treeitem). The container is applicable
+ *   regardless of whether it is itself focusable — focusability is only
+ *   used to decide whether a *descendant* nests an interactive control.
  * @expectation
- *   The element does not contain, as a descendant, another element from
- *   that same interactive-control set (e.g. a <button> wrapping a
- *   <select>, or a link containing a checkbox). Nested interactive
- *   controls are not reliably announced or operable via assistive
- *   technology — activating the outer control and the inner one become
- *   ambiguous, and some AT only exposes one of the two.
+ *   The element does not contain, as a descendant, another *operable*
+ *   interactive control (e.g. a <button> wrapping a <select>, or a link
+ *   containing a checkbox). Nested interactive controls are not reliably
+ *   announced or operable via assistive technology — activating the outer
+ *   control and the inner one become ambiguous, and some AT only exposes
+ *   one of the two.
  * @implementation-notes
- * - Reports on the outer (containing) control, not the nested descendant —
- *   this engine considers the container the fixable unit ("move the nested
- *   control outside this element").
- * - A container can be reported once even with multiple nested
- *   descendants (listed together); a deeply nested chain (A > B > C, all
- *   interactive) reports both A and B as separate occurrences, since each
- *   genuinely contains a nested interactive control.
+ * - A descendant counts as a nested interactive control only when it is both
+ *   (a) a native interactive element or an explicit ARIA widget role and
+ *   (b) operable: exposed to the accessibility tree and platform-focusable
+ *   (natively focusable, or focusable via tabindex), per
+ *   helpers.getFocusableInfo, which accounts for contenteditable, :disabled,
+ *   inert, and invalid/negative tabindex.
+ * - Focusability, not role membership, is the discriminator. A widget-role
+ *   child that the container drives rather than exposes as its own focus
+ *   target carries no independent focus and creates no operability ambiguity:
+ *   a role="option" inside a listbox/combobox, a role="tab" inside a tablist,
+ *   a role="treeitem" inside a tree, a role="menuitem" inside a menu, or a
+ *   role="radio" inside a radiogroup, each managed via roving tabindex or
+ *   aria-activedescendant. A control that is itself focusable while nested in
+ *   another control does count: a <button> inside an <a href>, a focusable
+ *   role="button" inside a link, an editable field inside a control.
+ * - A disabled native control (<button disabled>, <input disabled>) and an
+ *   inert descendant are not focusable, so they do not nest an interactive
+ *   control; a display:none or aria-hidden descendant is not exposed to AT
+ *   and is likewise out of scope. aria-disabled leaves an element focusable,
+ *   so it still counts.
+ * - Occurrences report the outer (containing) control, the fixable unit
+ *   ("move the nested control outside this element"), not the descendant.
+ * - Only the shallowest operable descendants are attributed to a container.
+ *   In a chain A > B > C where all three are operable, A is reported for B
+ *   and B for C; A is not reported for C, whose nesting belongs to its
+ *   nearest operable ancestor B.
  */
 
 const id = 'nested-interactive-controls-absent';
@@ -92,6 +113,8 @@ function runInPage(ctx) {
 
   const isAccTreeEligible =
     helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+  const getFocusableInfo =
+    helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
 
   function isEligible(node) {
     if (!isAccTreeEligible) return true;
@@ -103,6 +126,58 @@ function runInPage(ctx) {
     }
   }
 
+  function matchesInteractive(node) {
+    return !!(
+      node &&
+      node.nodeType === 1 &&
+      typeof node.matches === 'function' &&
+      node.matches(INTERACTIVE_SELECTOR)
+    );
+  }
+
+  // Operable = a native-interactive / ARIA-widget element that is exposed to
+  // the accessibility tree and platform-focusable. A widget-role element with
+  // no independent focus (e.g. a role="option" with no tabindex, driven by
+  // its container via roving tabindex or aria-activedescendant) is not
+  // operable and does not nest an interactive control. When no focus model is
+  // available, role membership alone qualifies.
+  function isOperableInteractive(node) {
+    if (!matchesInteractive(node)) return false;
+    if (!isEligible(node)) return false;
+    if (!getFocusableInfo) return true;
+    try {
+      const info = getFocusableInfo(node, ctx);
+      return !!(info && info.focusable);
+    } catch {
+      return true;
+    }
+  }
+
+  // Shallowest operable interactive descendants of `root`. Traversal stops at
+  // each counted node instead of descending into it, so a control nested
+  // inside another operable control is attributed to its nearest operable
+  // ancestor rather than to every enclosing container. Eligibility is applied
+  // per node during the walk, so hidden or aria-hidden subtrees drop out.
+  function collectNestedOperable(root) {
+    const out = [];
+    const top = root && root.children;
+    if (!top || !top.length) return out;
+    const stack = [];
+    for (let i = top.length - 1; i >= 0; i--) stack.push(top[i]);
+    while (stack.length) {
+      const node = stack.pop();
+      if (node && node.nodeType === 1 && isOperableInteractive(node)) {
+        out.push(node);
+        continue; // do not descend into a counted control
+      }
+      const kids = node && node.children;
+      if (kids && kids.length) {
+        for (let i = kids.length - 1; i >= 0; i--) stack.push(kids[i]);
+      }
+    }
+    return out;
+  }
+
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(INTERACTIVE_SELECTOR)
     : helpers.queryAll(INTERACTIVE_SELECTOR);
@@ -111,30 +186,16 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.querySelectorAll) continue;
+    if (!el || el.nodeType !== 1) continue;
     if (!isEligible(el)) continue;
 
     applicableCount += 1;
 
-    // The nested search uses the raw native querySelectorAll (not
-    // helpers.queryAllSmart), so it isn't subject to that helper's
-    // default hidden-content policy at all -- not even hard CSS-based
-    // hiding, let alone aria-hidden. A nested descendant that is never
-    // actually rendered or exposed to AT (display:none, aria-hidden,
-    // etc.) creates no real ambiguity for ANY user, since it isn't there
-    // to be confused with the outer control.
-    let nested;
-    try {
-      nested = Array.from(el.querySelectorAll(INTERACTIVE_SELECTOR)).filter(isEligible);
-    } catch {
-      nested = [];
-    }
+    const nested = collectNestedOperable(el);
     if (!nested.length) continue;
 
     const nestedTags = nested.map((n) => (n && n.tagName ? n.tagName.toLowerCase() : 'unknown'));
-    const dedupedNestedTags = [
-      ...new Set(nested.map((n) => (n && n.tagName ? n.tagName.toLowerCase() : 'unknown')))
-    ];
+    const dedupedNestedTags = [...new Set(nestedTags)];
 
     const tag = el.tagName.toLowerCase();
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
