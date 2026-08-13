@@ -907,6 +907,10 @@ module.exports = {
     'Este <{{element}}> está asociado a {{labelCount}} etiquetas.',
   formControlSingleLabel_hint_fail:
     'Mantener solo una <label> por control de formulario (ya sea envolviéndolo o referenciándolo mediante for/id).',
+  formControlSingleLabel_summary_cantTell:
+    'Este <{{element}}> tiene una <label> que lo etiqueta más una asociación de <label> vacía adicional; verifique cómo se anuncia.',
+  formControlSingleLabel_hint_cantTell:
+    'Elimine la <label> vacía redundante para que solo una <label> quede asociada al control.',
 
   nestedInteractiveControlsAbsent_title: 'Los controles interactivos no deben estar anidados',
   nestedInteractiveControlsAbsent_description:

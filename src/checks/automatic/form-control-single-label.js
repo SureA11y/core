@@ -12,20 +12,29 @@
  *   Applies to labelable form controls (input, excluding
  *   hidden/submit/reset/button/image; select; textarea).
  * @expectation
- *   At most one <label> is associated with the control — either by
- *   wrapping it, or by a <label for="..."> pointing to its id
- *   (deduplicated: a label that both wraps the control and
- *   self-references it via for counts once). Multiple associated labels
- *   are ambiguous: many screen readers only announce one of them, and it
- *   is not deterministic which.
+ *   At most one <label> that can contribute to the control's accessible name
+ *   is associated with it — by wrapping it, or by a <label for="..."> on its
+ *   id (a label that both wraps and self-references via for counts once).
+ *   Graded by whether the surplus labels actually compete for the name:
+ *   - PASS when an override (aria-labelledby / aria-label) supersedes every
+ *     native <label>: the labels then contribute nothing to the name, so
+ *     they cannot be ambiguous. A visible-label-vs-name mismatch is SC 2.5.3
+ *     Label in Name's concern, not this rule's.
+ *   - FAIL when two or more non-empty labels compete and there is no
+ *     override: screen readers announce a non-deterministic subset.
+ *   - CANTTELL when one non-empty label is joined by empty label
+ *     association(s) and there is no override: the name usually resolves to
+ *     the real label, but handling of the empty association is not
+ *     guaranteed across user agents.
+ *   All-empty associations with no override are a missing-name case (the
+ *   sibling rule below), not an ambiguity, so this rule stays silent.
  * @implementation-notes
  * - Distinct, atomic decision from form-control-programmatic-label-present
- *   (that rule checks a label exists at all; this one checks there is at
- *   most one).
- * - A label that isn't accessibility-tree-eligible (display:none,
- *   aria-hidden, etc.) is excluded before counting: it can't contribute to
- *   the control's accessible name, so it can't create the ambiguity this
- *   rule exists to catch.
+ *   (that rule checks a label exists at all; this one checks at most one
+ *   matters). Whether a label contributes a name is decided by the shared
+ *   helpers.labelContributesAccessibleName, so the two rules agree.
+ * - Accessibility-tree-ineligible labels (display:none, aria-hidden, etc.)
+ *   are excluded before counting: they can't contribute to the name.
  */
 
 const id = 'form-control-single-label';
@@ -62,6 +71,12 @@ function runInPage(ctx) {
 
   const isAccTreeEligible =
     helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+  const getAriaNameInfo =
+    helpers && typeof helpers.getAriaNameInfo === 'function' ? helpers.getAriaNameInfo : null;
+  const labelContributesName =
+    helpers && typeof helpers.labelContributesAccessibleName === 'function'
+      ? helpers.labelContributesAccessibleName
+      : null;
 
   const selector =
     'input:not([type="hidden"]):not([type="submit"]):not([type="reset"]):not([type="button"]):not([type="image"]),select,textarea';
@@ -82,7 +97,8 @@ function runInPage(ctx) {
     labelsByFor.get(forValue).push(lab);
   }
 
-  const occurrences = [];
+  const failOccurrences = [];
+  const cantTellOccurrences = [];
   let applicableCount = 0;
 
   for (const el of nodes) {
@@ -111,42 +127,94 @@ function runInPage(ctx) {
 
     if (eligibleLabels.size <= 1) continue;
 
+    // An override (aria-labelledby / aria-label) supersedes every native
+    // <label>, so the labels contribute nothing to the accessible name and
+    // cannot compete.
+    const override = getAriaNameInfo ? getAriaNameInfo(el, ctx) : null;
+    if (override && override.present && override.value) continue;
+
+    // Without an override the labels feed the name; only labels with their
+    // own text compete for it.
+    const contributing = labelContributesName
+      ? [...eligibleLabels].filter((lab) => labelContributesName(lab))
+      : [...eligibleLabels];
+
     const tag = el.tagName.toLowerCase();
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
     const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This form control is associated with more than one <label>.',
-      hint: 'Keep only one <label> per form control (either wrapping it or referencing it via for/id).',
-      i18n: {
-        summaryKey: 'formControlSingleLabel_summary_fail',
-        hintKey: 'formControlSingleLabel_hint_fail',
-        params: { element: tag, labelCount: String(eligibleLabels.size) }
-      },
-      data: {
-        details: {
-          reasonCode: 'FORM_FIELD_MULTIPLE_LABELS',
-          element: tag,
-          labelCount: eligibleLabels.size
+    if (contributing.length >= 2) {
+      failOccurrences.push({
+        selector: stableSelector,
+        html,
+        summary: 'This form control is associated with more than one <label>.',
+        hint: 'Keep only one <label> per form control (either wrapping it or referencing it via for/id).',
+        occurrenceOutcome: 'fail',
+        i18n: {
+          summaryKey: 'formControlSingleLabel_summary_fail',
+          hintKey: 'formControlSingleLabel_hint_fail',
+          params: { element: tag, labelCount: String(contributing.length) }
+        },
+        data: {
+          details: {
+            reasonCode: 'FORM_FIELD_MULTIPLE_LABELS',
+            element: tag,
+            labelCount: contributing.length
+          }
         }
-      }
-    });
+      });
+    } else if (contributing.length === 1) {
+      cantTellOccurrences.push({
+        selector: stableSelector,
+        html,
+        summary:
+          'This form control has one labelling <label> plus an extra empty <label> association.',
+        hint: 'Remove the redundant empty <label> so exactly one <label> is associated with the control.',
+        occurrenceOutcome: 'cantTell',
+        i18n: {
+          summaryKey: 'formControlSingleLabel_summary_cantTell',
+          hintKey: 'formControlSingleLabel_hint_cantTell',
+          params: { element: tag, labelCount: String(eligibleLabels.size) }
+        },
+        data: {
+          details: {
+            reasonCode: 'FORM_FIELD_EXTRA_EMPTY_LABEL',
+            element: tag,
+            labelCount: eligibleLabels.size,
+            contributingLabelCount: contributing.length
+          }
+        }
+      });
+    }
+    // contributing.length === 0: no label carries text, so nothing competes
+    // for the name. A control left unnamed is form-control-programmatic-
+    // label-present's concern.
   }
 
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'moderate',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+
+  const resolved = helpers.resolveTieredOutcome
+    ? helpers.resolveTieredOutcome(
+        failOccurrences,
+        cantTellOccurrences,
+        rule.defaultSeverity || 'moderate'
+      )
+    : failOccurrences.length
+      ? {
+          outcome: 'fail',
+          severity: rule.defaultSeverity || 'moderate',
+          occurrences: failOccurrences
+        }
+      : cantTellOccurrences.length
+        ? {
+            outcome: 'cantTell',
+            severity: rule.defaultSeverity || 'moderate',
+            occurrences: cantTellOccurrences
+          }
+        : { outcome: 'pass', severity: 'minor', occurrences: [] };
+  return { ruleId: rule.ruleId, ...resolved };
 }
 
 module.exports = { id, meta, runInPage };
