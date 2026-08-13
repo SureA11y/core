@@ -5,6 +5,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 ## [Unreleased]
 
 ### Fixed
+- `landmark-banner-is-top-level` and `landmark-contentinfo-is-top-level` selected any roleless `<header>`/`<footer>` as a candidate, regardless of nesting — but per HTML-AAM those elements have no banner/contentinfo role at all once descended from `article`/`aside`/`main`/`nav`/`section`, so there was no landmark there to be "nested". Both now select through the same suppression-aware role lookup the rest of the file already used, which cut false positives sharply on a sample corpus (236/236 for banner, 1/2 for contentinfo). An explicit `role="banner"`/`role="contentinfo"` is unaffected and still flagged when genuinely nested.
 - `getContentNameInfo` let a descendant's `title` outrank its own text when computing a name from subtree content, so `<a title="T">Text</a>` could name itself `"T"` instead of `"Text"`. Content now wins over `title` unless the descendant's content is empty, matching Chrome and the accname spec. Same class of bug as the earlier `alt`-vs-`title` fix for image descendants, just never applied to the generic case.
 
 ## [1.4.0] - 2026-08-08
