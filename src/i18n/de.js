@@ -633,6 +633,10 @@ module.exports = {
     '{{element}}: Die sichtbare Beschriftung „{{visibleLabel}}“ (aus {{labelSource}}) ist nicht im zugänglichen Namen enthalten (aus {{nameMechanism}}).',
   labelInName_hint_fail:
     'Aktualisieren Sie aria-label/aria-labelledby (oder den sichtbaren Beschriftungstext), damit der zugängliche Name den Wortlaut der sichtbaren Beschriftung enthält.',
+  labelInName_summary_cantTell:
+    '{{element}}: Die sichtbare Beschriftung „{{visibleLabel}}“ (aus {{labelSource}}) unterscheidet sich vom zugänglichen Namen (aus {{nameMechanism}}) nur durch eine Abkürzung oder eine Bindestrichschreibung.',
+  labelInName_hint_cantTell:
+    'Prüfen Sie manuell, ob beide Formulierungen übereinstimmen: Aus dem Markup lässt sich eine beabsichtigte Abkürzung nicht von einer Abweichung unterscheiden.',
 
   /* =========================
    * ARIA-Gültigkeitsfamilie
