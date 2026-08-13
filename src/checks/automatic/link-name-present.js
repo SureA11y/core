@@ -69,28 +69,45 @@ function runInPage(ctx) {
     const nameInfo = helpers.getAccessibleNameInfo ? helpers.getAccessibleNameInfo(el, ctx) : null;
     const programmaticName = nameInfo && typeof nameInfo.value === 'string' ? nameInfo.value : '';
 
-    // A native <a href>/<area href> (or [role="link"]) whose role has been
-    // overridden to one of these roles is no longer semantically a link —
-    // per the WAI-ARIA Accessible Name and Description Computation spec
-    // these roles are name-from-author-only, and their rendered content
-    // represents a VALUE, not a NAME (see button-name-present.js's identical
-    // fix for a real-world example — <button role="combobox">List</button> —
-    // of the same class of bug on a different host tag).
     const role = el.getAttribute ? el.getAttribute('role') : null;
     const roleNorm = String(role || '')
       .replace(/\s+/g, ' ')
       .trim()
       .toLowerCase();
-    const VALUE_ROLES = [
-      'textbox',
-      'progressbar',
-      'scrollbar',
-      'slider',
-      'spinbutton',
-      'combobox',
-      'listbox'
+    // ARIA 1.2 "Name From: author, contents". Every other known role is
+    // name-from-author-only. An unknown role falls back to the implicit role.
+    const NAME_FROM_CONTENT_ROLES = [
+      'button',
+      'cell',
+      'checkbox',
+      'columnheader',
+      'gridcell',
+      'heading',
+      'link',
+      'menuitem',
+      'menuitemcheckbox',
+      'menuitemradio',
+      'option',
+      'radio',
+      'row',
+      'rowheader',
+      'switch',
+      'tab',
+      'tooltip',
+      'treeitem'
     ];
-    const isContentNameCandidate = !VALUE_ROLES.includes(roleNorm);
+    const isKnownRoleToken =
+      helpers && helpers.aria && typeof helpers.aria.isKnownRole === 'function'
+        ? (() => {
+            try {
+              return !!helpers.aria.isKnownRole(roleNorm);
+            } catch {
+              return false;
+            }
+          })()
+        : false;
+    const isContentNameCandidate =
+      !roleNorm || !isKnownRoleToken || NAME_FROM_CONTENT_ROLES.includes(roleNorm);
 
     const contentName =
       programmaticName.trim().length === 0 && isContentNameCandidate

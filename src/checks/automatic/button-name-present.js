@@ -104,24 +104,42 @@ function runInPage(ctx) {
       inputValueName = getInputButtonValueName(el);
     }
 
-    // A native <button> (or [role="button"]) whose role has been overridden to
-    // one of these roles is no longer semantically a button — per the WAI-ARIA
-    // Accessible Name and Description Computation spec these roles are
-    // name-from-author-only, and their rendered content represents a VALUE,
-    // not a NAME. E.g. <button role="combobox">List</button> where "List" is
-    // the combobox's currently selected value, not a label — crediting it as
-    // the accessible name would mask a missing name.
-    const VALUE_ROLES = [
-      'textbox',
-      'progressbar',
-      'scrollbar',
-      'slider',
-      'spinbutton',
-      'combobox',
-      'listbox'
+    // ARIA 1.2 "Name From: author, contents". Every other known role is
+    // name-from-author-only: <button role="combobox">List</button> exposes a
+    // value, not a label. An unknown role falls back to the implicit role.
+    const NAME_FROM_CONTENT_ROLES = [
+      'button',
+      'cell',
+      'checkbox',
+      'columnheader',
+      'gridcell',
+      'heading',
+      'link',
+      'menuitem',
+      'menuitemcheckbox',
+      'menuitemradio',
+      'option',
+      'radio',
+      'row',
+      'rowheader',
+      'switch',
+      'tab',
+      'tooltip',
+      'treeitem'
     ];
+    const isKnownRoleToken =
+      helpers && helpers.aria && typeof helpers.aria.isKnownRole === 'function'
+        ? (() => {
+            try {
+              return !!helpers.aria.isKnownRole(roleNorm);
+            } catch {
+              return false;
+            }
+          })()
+        : false;
     const isContentNameCandidate =
-      (tag === 'button' || role === 'button') && !VALUE_ROLES.includes(roleNorm);
+      (tag === 'button' || role === 'button') &&
+      (!roleNorm || !isKnownRoleToken || NAME_FROM_CONTENT_ROLES.includes(roleNorm));
     const contentName =
       !trustedProgrammaticName && !inputValueName && isContentNameCandidate
         ? getConservativeSubtreeText(el)

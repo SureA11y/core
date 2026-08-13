@@ -343,3 +343,15 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/button-name-present-all-scena
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
 });
+
+test(`${RULE_ID}: fail when role="alert" overrides <button> and only content is present`, () => {
+  const html = `<!doctype html><html><body><button role="alert" id="ba"><span>Saved</span></button></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+});
+
+test(`${RULE_ID}: an unrecognised role on a <button> still names from contents`, () => {
+  const html = `<!doctype html><html><body><button role="totally-not-a-role">Save changes</button></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
