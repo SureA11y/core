@@ -65,13 +65,23 @@ test(`${RULE_ID}: notApplicable when only ineligible canvases exist (aria-hidden
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: aria-hidden but tabbable (tabindex=0) is applicable and fails if no text alternative`, () => {
+test(`${RULE_ID}: notApplicable when an aria-hidden canvas is tabbable`, () => {
   const html = `<!doctype html><html><body>
     <canvas id="c_ah_tab" aria-hidden="true" tabindex="0"></canvas>
   </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
-  assert.ok(hasOccurrenceForId(rule, 'c_ah_tab'));
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: an aria-hidden canvas does not suppress a sibling outside the subtree`, () => {
+  const html = `<!doctype html><html><body>
+    <div aria-hidden="true"><canvas id="c_anc" tabindex="0"></canvas></div>
+    <canvas id="c_plain"></canvas>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'c_plain'));
+  assert.ok(!hasOccurrenceForId(rule, 'c_anc'));
 });
 
 test(`${RULE_ID}: aria-hidden but programmatic focus only (tabindex=-1) stays ineligible (=> notApplicable if only those)`, () => {
@@ -82,14 +92,13 @@ test(`${RULE_ID}: aria-hidden but programmatic focus only (tabindex=-1) stays in
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: IDREF-referenced (eligible element references aria-hidden canvas) becomes applicable and fails if unnamed`, () => {
+test(`${RULE_ID}: an IDREF reference does not re-expose an aria-hidden canvas`, () => {
   const html = `<!doctype html><html><body>
     <div id="host" aria-labelledby="c_ref">Host</div>
     <canvas id="c_ref" aria-hidden="true"></canvas>
   </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
-  assert.ok(hasOccurrenceForId(rule, 'c_ref'));
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: inert subtree is ineligible and does not cause pass (=> notApplicable when only inert canvases)`, () => {
@@ -113,18 +122,14 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/canvas-text-alternative-prese
 
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  // Crafted fixture: expect 9 fails (canvas_case_06 now correctly fails —
-  // <canvas> is not labelable, so label[for] is not a valid mechanism).
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 9, maxOccurrences: 9 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 7, maxOccurrences: 7 });
 
   const expectedFailIds = [
     'canvas_case_01',
     'canvas_case_06', // label[for] is not a valid mechanism for <canvas>
-    'canvas_case_10',
     'canvas_case_11',
     'canvas_case_12',
     'canvas_case_13',
-    'canvas_case_20',
     'canvas_case_21',
     'canvas_case_23' // descendant img[alt=""] is empty, not meaningful fallback
   ];
@@ -137,6 +142,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/canvas-text-alternative-prese
     'canvas_case_07', // aria-hidden ineligible
     'canvas_case_08', // display:none ineligible
     'canvas_case_09', // inert ineligible
+    'canvas_case_10', // aria-hidden, tabbable => hidden regardless of focusability
+    'canvas_case_20', // aria-hidden, IDREF-referenced => same
     'canvas_case_14', // template non-composed
     'canvas_case_15', // mixed: eligible w/ alt passes; ineligible doesn't fail
     'canvas_case_16', // aria-hidden + tabindex=-1 ineligible
