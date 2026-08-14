@@ -449,6 +449,10 @@ module.exports = {
     'L’élément aria-hidden {{element}} reçoit le focus mais le focus est immédiatement déplacé vers un autre élément. Vérifiez le comportement de sentinelle/piège de focus.',
   ariaHidden_focus_hint_cantTell_redirect:
     'Vérifiez qu’il s’agit d’un transfert intentionnel de sentinelle/piège de focus et que les utilisateurs clavier ne restent jamais sur une cible de focus masquée.',
+  ariaHidden_focus_summary_cantTell_modal:
+    'L’élément aria-hidden {{element}} contient {{focusableCount}} élément(s) focalisable(s) alors qu’une boîte de dialogue modale est ouverte. Si la modale conserve le focus clavier piégé, ils peuvent être inaccessibles ; vérifiez que le focus ne peut pas les atteindre.',
+  ariaHidden_focus_hint_cantTell_modal:
+    'Une boîte de dialogue modale semble ouverte. Préférez rendre l’arrière-plan inerte (ou un <dialog> natif ouvert avec showModal()) afin qu’il quitte l’ordre de tabulation, puis vérifiez que le focus clavier reste dans la boîte de dialogue.',
 
   // --- css-hidden-focus
   cssHidden_focus_title: 'Les éléments focalisables ne doivent pas être masqués visuellement',

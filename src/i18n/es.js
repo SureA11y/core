@@ -454,6 +454,10 @@ module.exports = {
     'El elemento aria-hidden {{element}} recibió el foco, pero el foco se movió de inmediato a otro elemento. Verificar el comportamiento de centinela/trampa de foco.',
   ariaHidden_focus_hint_cantTell_redirect:
     'Verificar que se trate de un traspaso intencionado de centinela/trampa de foco y que los usuarios de teclado nunca queden en objetivos de foco ocultos.',
+  ariaHidden_focus_summary_cantTell_modal:
+    'El elemento aria-hidden {{element}} contiene {{focusableCount}} elemento(s) enfocable(s) mientras hay un diálogo modal abierto. Si el modal mantiene atrapado el foco del teclado, pueden ser inalcanzables; verificar que el foco no pueda posarse en ellos.',
+  ariaHidden_focus_hint_cantTell_modal:
+    'Parece que hay un diálogo modal abierto. Es preferible volver inerte el fondo (o usar un <dialog> nativo abierto con showModal()) para que salga del orden de tabulación, y luego verificar que el foco del teclado permanezca dentro del diálogo.',
 
   // --- css-hidden-focus
   cssHidden_focus_title: 'Los elementos enfocables no deben estar ocultos visualmente',
