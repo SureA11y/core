@@ -415,6 +415,10 @@ module.exports = {
     'Target is too small and too close to another target, but may be exempt as part of an essential graphic or image-map region.',
   targetSizeMinimum_hint_cantTell_plausiblyEssential:
     'Verify whether this target’s size is genuinely essential to its function (e.g. part of an SVG/canvas/image map); if not, increase target size or spacing.',
+  targetSizeMinimum_summary_cantTell_inlineLinkRun:
+    'Target is smaller than 24×24 CSS px and close to another inline link in the same run of text, where the inline exception may apply.',
+  targetSizeMinimum_hint_cantTell_inlineLinkRun:
+    'Confirm whether these links form a run of inline text (which is exempt); otherwise increase the target size to at least 24×24 CSS px or add spacing.',
 
   targetSizeMinimum_notApplicable_noTargets:
     'No pointer-operable targets were eligible for evaluation.',

@@ -7496,6 +7496,8 @@ const I18N = {
     "targetSizeMinimum_hint_cantTell_ambiguousSpacing": "Überprüfen Sie manuell den effektiven Abstand zwischen diesem Ziel und seinem Nachbarn; vergrößern Sie Zielgröße oder Abstand, falls die Überlappung real ist.",
     "targetSizeMinimum_summary_cantTell_plausiblyEssential": "Das Ziel ist zu klein und zu nah an einem anderen Ziel, könnte aber als Teil einer essenziellen Grafik oder eines Image-Map-Bereichs ausgenommen sein.",
     "targetSizeMinimum_hint_cantTell_plausiblyEssential": "Prüfen Sie, ob die Größe dieses Ziels wirklich für seine Funktion essenziell ist (z. B. Teil eines SVG/Canvas/einer Image-Map); falls nicht, vergrößern Sie Zielgröße oder Abstand.",
+    "targetSizeMinimum_summary_cantTell_inlineLinkRun": "Das Ziel ist kleiner als 24×24 CSS-Pixel und liegt nah an einem anderen Inline-Link im selben Textfluss, wo die Inline-Ausnahme gelten kann.",
+    "targetSizeMinimum_hint_cantTell_inlineLinkRun": "Prüfen Sie, ob diese Links Teil eines Inline-Textflusses sind (der ausgenommen ist); andernfalls vergrößern Sie das Ziel auf mindestens 24×24 CSS-Pixel oder fügen Sie Abstand hinzu.",
     "targetSizeMinimum_notApplicable_noTargets": "Es gab keine per Zeiger bedienbaren Ziele, die für die Bewertung infrage kamen.",
     "targetSizeMinimum_pass_allOk": "Alle zutreffenden Zeigerziele erfüllen die Mindestgröße oder eine zulässige Ausnahme.",
     "ariaHidden_focus_title": "ARIA-hidden-Elemente dürfen nicht fokussierbar sein",
@@ -8127,6 +8129,8 @@ const I18N = {
     "targetSizeMinimum_hint_cantTell_ambiguousSpacing": "Manually verify the effective spacing between this target and its neighbor; increase target size or spacing if the overlap is real.",
     "targetSizeMinimum_summary_cantTell_plausiblyEssential": "Target is too small and too close to another target, but may be exempt as part of an essential graphic or image-map region.",
     "targetSizeMinimum_hint_cantTell_plausiblyEssential": "Verify whether this target’s size is genuinely essential to its function (e.g. part of an SVG/canvas/image map); if not, increase target size or spacing.",
+    "targetSizeMinimum_summary_cantTell_inlineLinkRun": "Target is smaller than 24×24 CSS px and close to another inline link in the same run of text, where the inline exception may apply.",
+    "targetSizeMinimum_hint_cantTell_inlineLinkRun": "Confirm whether these links form a run of inline text (which is exempt); otherwise increase the target size to at least 24×24 CSS px or add spacing.",
     "targetSizeMinimum_notApplicable_noTargets": "No pointer-operable targets were eligible for evaluation.",
     "targetSizeMinimum_pass_allOk": "All eligible pointer targets meet the minimum size or a permitted exception.",
     "ariaHidden_focus_title": "ARIA hidden elements must not be focusable",
@@ -8758,6 +8762,8 @@ const I18N = {
     "targetSizeMinimum_hint_cantTell_ambiguousSpacing": "Verificar manualmente el espaciado efectivo entre este objetivo y su vecino; aumentar el tamaño del objetivo o el espaciado si la superposición es real.",
     "targetSizeMinimum_summary_cantTell_plausiblyEssential": "El objetivo es demasiado pequeño y está demasiado cerca de otro objetivo, pero puede estar exento por formar parte de un gráfico esencial o una región de mapa de imagen.",
     "targetSizeMinimum_hint_cantTell_plausiblyEssential": "Verificar si el tamaño de este objetivo es realmente esencial para su función (por ejemplo, parte de un SVG/canvas/mapa de imagen); si no lo es, aumentar el tamaño del objetivo o el espaciado.",
+    "targetSizeMinimum_summary_cantTell_inlineLinkRun": "El objetivo es más pequeño que 24×24 px CSS y está cerca de otro enlace en línea dentro del mismo texto, donde puede aplicarse la excepción de contenido en línea.",
+    "targetSizeMinimum_hint_cantTell_inlineLinkRun": "Confirmar si estos enlaces forman parte de un texto en línea (que está exento); de lo contrario, aumentar el tamaño del objetivo a al menos 24×24 px CSS o agregar espaciado.",
     "targetSizeMinimum_notApplicable_noTargets": "Ningún objetivo operable por puntero era elegible para la evaluación.",
     "targetSizeMinimum_pass_allOk": "Todos los objetivos de puntero elegibles cumplen el tamaño mínimo o una excepción permitida.",
     "ariaHidden_focus_title": "Los elementos ocultos con ARIA no deben ser enfocables",
@@ -9389,6 +9395,8 @@ const I18N = {
     "targetSizeMinimum_hint_cantTell_ambiguousSpacing": "Vérifiez manuellement l’espacement effectif entre cette cible et sa voisine ; augmentez la taille de la cible ou l’espacement si le chevauchement est réel.",
     "targetSizeMinimum_summary_cantTell_plausiblyEssential": "La cible est trop petite et trop proche d’une autre cible, mais pourrait être exemptée en tant qu’élément essentiel d’une zone graphique ou d’une image cliquable.",
     "targetSizeMinimum_hint_cantTell_plausiblyEssential": "Vérifiez si la taille de cette cible est réellement essentielle à sa fonction (par ex. partie d’un SVG/canvas/plan d’image) ; sinon, augmentez la taille de la cible ou l’espacement.",
+    "targetSizeMinimum_summary_cantTell_inlineLinkRun": "La cible est plus petite que 24×24 px CSS et proche d’un autre lien en ligne dans le même texte, où l’exception de contenu en ligne peut s’appliquer.",
+    "targetSizeMinimum_hint_cantTell_inlineLinkRun": "Confirmez si ces liens font partie d’un texte en ligne (qui est exempté) ; sinon, augmentez la taille de la cible à au moins 24×24 px CSS ou ajoutez de l’espacement.",
     "targetSizeMinimum_notApplicable_noTargets": "Aucune cible activable par pointeur n’était éligible à l’évaluation.",
     "targetSizeMinimum_pass_allOk": "Toutes les cibles activables par pointeur respectent la taille minimale ou une exception autorisée.",
     "ariaHidden_focus_title": "Les éléments aria-hidden ne doivent pas être focalisables",
@@ -45505,12 +45513,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return '';
   }
 
-  function isInlineTextExceptionTarget(el) {
-    // SC 2.5.8 exception: target is in a sentence/block of text (inline)
-    // Deterministic heuristic:
-    // - must be a link-like target
-    // - must be rendered as inline/inline-*
-    // - must be inside a typical text container
+  // A link-like target (a[href] or role="link") rendered inline/inline-* and
+  // carrying visible text. This is the shape the SC 2.5.8 inline exception is
+  // about, without the surrounding-container requirement.
+  function isInlineLinkTarget(el) {
     try {
       if (!el || el.nodeType !== 1) return false;
 
@@ -45527,27 +45533,31 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
       const cs = getStyle(el);
       const display = cs && cs.display ? String(cs.display) : '';
-      if (!display) return false;
-
-      // Inline exception is for inline text runs; many design systems use inline-block for links,
-      // so treat inline-block variants as eligible for this exception.
+      // Many design systems use inline-block for links, so treat the
+      // inline-block variants as inline here too.
       const isInline =
         display === 'inline' ||
         display === 'inline-block' ||
         display === 'inline-flex' ||
         display === 'inline-grid' ||
         display === 'inline-table';
-
       if (!isInline) return false;
 
-      const t = (el.textContent || '').trim();
-      if (!t) return false;
+      return (el.textContent || '').trim().length > 0;
+    } catch {
+      return false;
+    }
+  }
 
-      // Require that it sits in a "text block" context
+  function isInlineTextExceptionTarget(el) {
+    // SC 2.5.8 exception: an inline link that sits inside a run of text.
+    try {
+      if (!isInlineLinkTarget(el)) return false;
+
       const textContainer = closest(el, 'p, li, dd, dt, blockquote, figcaption, caption, td, th');
       if (textContainer) return true;
 
-      // Fallback: sometimes links are inside spans within a paragraph-like region
+      // Links are often wrapped in an inline element inside the text block.
       const inlineContainer = closest(el, 'span, em, strong, small, label');
       if (inlineContainer) {
         const outerTextBlock = closest(
@@ -45982,6 +45992,34 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             details: {
               measured: { width: it.rect.width, height: it.rect.height },
               reasonCode: 'undersized-plausibly-essential',
+              conflictHitCount: info.hitCount,
+              conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null
+            }
+          }
+        });
+        continue;
+      }
+
+      // This target and its conflicting neighbor are both inline links in the
+      // same text run, where the SC 2.5.8 inline exception may apply. That
+      // can't be decided from geometry alone, so defer to manual review.
+      if (isInlineLinkTarget(it.el) && info.conflictEl && isInlineLinkTarget(info.conflictEl)) {
+        cantTellOccurrences.push({
+          selector: buildSelector(it.el),
+          html: htmlSnippet(it.el),
+          occurrenceOutcome: 'cantTell',
+          summary:
+            'Target is smaller than 24×24 CSS px and close to another inline link in the same run of text, where the inline exception may apply.',
+          hint: 'Confirm whether these links form a run of inline text (which is exempt); otherwise increase the target size to at least 24×24 CSS px or add spacing.',
+          i18n: {
+            summaryKey: 'targetSizeMinimum_summary_cantTell_inlineLinkRun',
+            hintKey: 'targetSizeMinimum_hint_cantTell_inlineLinkRun',
+            params: {}
+          },
+          data: {
+            details: {
+              measured: { width: it.rect.width, height: it.rect.height },
+              reasonCode: 'undersized-inline-link-run',
               conflictHitCount: info.hitCount,
               conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null
             }
@@ -47201,6 +47239,8 @@ const I18N = {
     "targetSizeMinimum_hint_cantTell_ambiguousSpacing": "Überprüfen Sie manuell den effektiven Abstand zwischen diesem Ziel und seinem Nachbarn; vergrößern Sie Zielgröße oder Abstand, falls die Überlappung real ist.",
     "targetSizeMinimum_summary_cantTell_plausiblyEssential": "Das Ziel ist zu klein und zu nah an einem anderen Ziel, könnte aber als Teil einer essenziellen Grafik oder eines Image-Map-Bereichs ausgenommen sein.",
     "targetSizeMinimum_hint_cantTell_plausiblyEssential": "Prüfen Sie, ob die Größe dieses Ziels wirklich für seine Funktion essenziell ist (z. B. Teil eines SVG/Canvas/einer Image-Map); falls nicht, vergrößern Sie Zielgröße oder Abstand.",
+    "targetSizeMinimum_summary_cantTell_inlineLinkRun": "Das Ziel ist kleiner als 24×24 CSS-Pixel und liegt nah an einem anderen Inline-Link im selben Textfluss, wo die Inline-Ausnahme gelten kann.",
+    "targetSizeMinimum_hint_cantTell_inlineLinkRun": "Prüfen Sie, ob diese Links Teil eines Inline-Textflusses sind (der ausgenommen ist); andernfalls vergrößern Sie das Ziel auf mindestens 24×24 CSS-Pixel oder fügen Sie Abstand hinzu.",
     "targetSizeMinimum_notApplicable_noTargets": "Es gab keine per Zeiger bedienbaren Ziele, die für die Bewertung infrage kamen.",
     "targetSizeMinimum_pass_allOk": "Alle zutreffenden Zeigerziele erfüllen die Mindestgröße oder eine zulässige Ausnahme.",
     "ariaHidden_focus_title": "ARIA-hidden-Elemente dürfen nicht fokussierbar sein",
@@ -47832,6 +47872,8 @@ const I18N = {
     "targetSizeMinimum_hint_cantTell_ambiguousSpacing": "Manually verify the effective spacing between this target and its neighbor; increase target size or spacing if the overlap is real.",
     "targetSizeMinimum_summary_cantTell_plausiblyEssential": "Target is too small and too close to another target, but may be exempt as part of an essential graphic or image-map region.",
     "targetSizeMinimum_hint_cantTell_plausiblyEssential": "Verify whether this target’s size is genuinely essential to its function (e.g. part of an SVG/canvas/image map); if not, increase target size or spacing.",
+    "targetSizeMinimum_summary_cantTell_inlineLinkRun": "Target is smaller than 24×24 CSS px and close to another inline link in the same run of text, where the inline exception may apply.",
+    "targetSizeMinimum_hint_cantTell_inlineLinkRun": "Confirm whether these links form a run of inline text (which is exempt); otherwise increase the target size to at least 24×24 CSS px or add spacing.",
     "targetSizeMinimum_notApplicable_noTargets": "No pointer-operable targets were eligible for evaluation.",
     "targetSizeMinimum_pass_allOk": "All eligible pointer targets meet the minimum size or a permitted exception.",
     "ariaHidden_focus_title": "ARIA hidden elements must not be focusable",
@@ -48463,6 +48505,8 @@ const I18N = {
     "targetSizeMinimum_hint_cantTell_ambiguousSpacing": "Verificar manualmente el espaciado efectivo entre este objetivo y su vecino; aumentar el tamaño del objetivo o el espaciado si la superposición es real.",
     "targetSizeMinimum_summary_cantTell_plausiblyEssential": "El objetivo es demasiado pequeño y está demasiado cerca de otro objetivo, pero puede estar exento por formar parte de un gráfico esencial o una región de mapa de imagen.",
     "targetSizeMinimum_hint_cantTell_plausiblyEssential": "Verificar si el tamaño de este objetivo es realmente esencial para su función (por ejemplo, parte de un SVG/canvas/mapa de imagen); si no lo es, aumentar el tamaño del objetivo o el espaciado.",
+    "targetSizeMinimum_summary_cantTell_inlineLinkRun": "El objetivo es más pequeño que 24×24 px CSS y está cerca de otro enlace en línea dentro del mismo texto, donde puede aplicarse la excepción de contenido en línea.",
+    "targetSizeMinimum_hint_cantTell_inlineLinkRun": "Confirmar si estos enlaces forman parte de un texto en línea (que está exento); de lo contrario, aumentar el tamaño del objetivo a al menos 24×24 px CSS o agregar espaciado.",
     "targetSizeMinimum_notApplicable_noTargets": "Ningún objetivo operable por puntero era elegible para la evaluación.",
     "targetSizeMinimum_pass_allOk": "Todos los objetivos de puntero elegibles cumplen el tamaño mínimo o una excepción permitida.",
     "ariaHidden_focus_title": "Los elementos ocultos con ARIA no deben ser enfocables",
@@ -49094,6 +49138,8 @@ const I18N = {
     "targetSizeMinimum_hint_cantTell_ambiguousSpacing": "Vérifiez manuellement l’espacement effectif entre cette cible et sa voisine ; augmentez la taille de la cible ou l’espacement si le chevauchement est réel.",
     "targetSizeMinimum_summary_cantTell_plausiblyEssential": "La cible est trop petite et trop proche d’une autre cible, mais pourrait être exemptée en tant qu’élément essentiel d’une zone graphique ou d’une image cliquable.",
     "targetSizeMinimum_hint_cantTell_plausiblyEssential": "Vérifiez si la taille de cette cible est réellement essentielle à sa fonction (par ex. partie d’un SVG/canvas/plan d’image) ; sinon, augmentez la taille de la cible ou l’espacement.",
+    "targetSizeMinimum_summary_cantTell_inlineLinkRun": "La cible est plus petite que 24×24 px CSS et proche d’un autre lien en ligne dans le même texte, où l’exception de contenu en ligne peut s’appliquer.",
+    "targetSizeMinimum_hint_cantTell_inlineLinkRun": "Confirmez si ces liens font partie d’un texte en ligne (qui est exempté) ; sinon, augmentez la taille de la cible à au moins 24×24 px CSS ou ajoutez de l’espacement.",
     "targetSizeMinimum_notApplicable_noTargets": "Aucune cible activable par pointeur n’était éligible à l’évaluation.",
     "targetSizeMinimum_pass_allOk": "Toutes les cibles activables par pointeur respectent la taille minimale ou une exception autorisée.",
     "ariaHidden_focus_title": "Les éléments aria-hidden ne doivent pas être focalisables",
@@ -85165,12 +85211,10 @@ const __a11yCoreCrossFrameApi = (function () {
     return '';
   }
 
-  function isInlineTextExceptionTarget(el) {
-    // SC 2.5.8 exception: target is in a sentence/block of text (inline)
-    // Deterministic heuristic:
-    // - must be a link-like target
-    // - must be rendered as inline/inline-*
-    // - must be inside a typical text container
+  // A link-like target (a[href] or role="link") rendered inline/inline-* and
+  // carrying visible text. This is the shape the SC 2.5.8 inline exception is
+  // about, without the surrounding-container requirement.
+  function isInlineLinkTarget(el) {
     try {
       if (!el || el.nodeType !== 1) return false;
 
@@ -85187,27 +85231,31 @@ const __a11yCoreCrossFrameApi = (function () {
 
       const cs = getStyle(el);
       const display = cs && cs.display ? String(cs.display) : '';
-      if (!display) return false;
-
-      // Inline exception is for inline text runs; many design systems use inline-block for links,
-      // so treat inline-block variants as eligible for this exception.
+      // Many design systems use inline-block for links, so treat the
+      // inline-block variants as inline here too.
       const isInline =
         display === 'inline' ||
         display === 'inline-block' ||
         display === 'inline-flex' ||
         display === 'inline-grid' ||
         display === 'inline-table';
-
       if (!isInline) return false;
 
-      const t = (el.textContent || '').trim();
-      if (!t) return false;
+      return (el.textContent || '').trim().length > 0;
+    } catch {
+      return false;
+    }
+  }
 
-      // Require that it sits in a "text block" context
+  function isInlineTextExceptionTarget(el) {
+    // SC 2.5.8 exception: an inline link that sits inside a run of text.
+    try {
+      if (!isInlineLinkTarget(el)) return false;
+
       const textContainer = closest(el, 'p, li, dd, dt, blockquote, figcaption, caption, td, th');
       if (textContainer) return true;
 
-      // Fallback: sometimes links are inside spans within a paragraph-like region
+      // Links are often wrapped in an inline element inside the text block.
       const inlineContainer = closest(el, 'span, em, strong, small, label');
       if (inlineContainer) {
         const outerTextBlock = closest(
@@ -85642,6 +85690,34 @@ const __a11yCoreCrossFrameApi = (function () {
             details: {
               measured: { width: it.rect.width, height: it.rect.height },
               reasonCode: 'undersized-plausibly-essential',
+              conflictHitCount: info.hitCount,
+              conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null
+            }
+          }
+        });
+        continue;
+      }
+
+      // This target and its conflicting neighbor are both inline links in the
+      // same text run, where the SC 2.5.8 inline exception may apply. That
+      // can't be decided from geometry alone, so defer to manual review.
+      if (isInlineLinkTarget(it.el) && info.conflictEl && isInlineLinkTarget(info.conflictEl)) {
+        cantTellOccurrences.push({
+          selector: buildSelector(it.el),
+          html: htmlSnippet(it.el),
+          occurrenceOutcome: 'cantTell',
+          summary:
+            'Target is smaller than 24×24 CSS px and close to another inline link in the same run of text, where the inline exception may apply.',
+          hint: 'Confirm whether these links form a run of inline text (which is exempt); otherwise increase the target size to at least 24×24 CSS px or add spacing.',
+          i18n: {
+            summaryKey: 'targetSizeMinimum_summary_cantTell_inlineLinkRun',
+            hintKey: 'targetSizeMinimum_hint_cantTell_inlineLinkRun',
+            params: {}
+          },
+          data: {
+            details: {
+              measured: { width: it.rect.width, height: it.rect.height },
+              reasonCode: 'undersized-inline-link-run',
               conflictHitCount: info.hitCount,
               conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null
             }
@@ -86861,6 +86937,8 @@ const I18N = {
     "targetSizeMinimum_hint_cantTell_ambiguousSpacing": "Überprüfen Sie manuell den effektiven Abstand zwischen diesem Ziel und seinem Nachbarn; vergrößern Sie Zielgröße oder Abstand, falls die Überlappung real ist.",
     "targetSizeMinimum_summary_cantTell_plausiblyEssential": "Das Ziel ist zu klein und zu nah an einem anderen Ziel, könnte aber als Teil einer essenziellen Grafik oder eines Image-Map-Bereichs ausgenommen sein.",
     "targetSizeMinimum_hint_cantTell_plausiblyEssential": "Prüfen Sie, ob die Größe dieses Ziels wirklich für seine Funktion essenziell ist (z. B. Teil eines SVG/Canvas/einer Image-Map); falls nicht, vergrößern Sie Zielgröße oder Abstand.",
+    "targetSizeMinimum_summary_cantTell_inlineLinkRun": "Das Ziel ist kleiner als 24×24 CSS-Pixel und liegt nah an einem anderen Inline-Link im selben Textfluss, wo die Inline-Ausnahme gelten kann.",
+    "targetSizeMinimum_hint_cantTell_inlineLinkRun": "Prüfen Sie, ob diese Links Teil eines Inline-Textflusses sind (der ausgenommen ist); andernfalls vergrößern Sie das Ziel auf mindestens 24×24 CSS-Pixel oder fügen Sie Abstand hinzu.",
     "targetSizeMinimum_notApplicable_noTargets": "Es gab keine per Zeiger bedienbaren Ziele, die für die Bewertung infrage kamen.",
     "targetSizeMinimum_pass_allOk": "Alle zutreffenden Zeigerziele erfüllen die Mindestgröße oder eine zulässige Ausnahme.",
     "ariaHidden_focus_title": "ARIA-hidden-Elemente dürfen nicht fokussierbar sein",
@@ -87492,6 +87570,8 @@ const I18N = {
     "targetSizeMinimum_hint_cantTell_ambiguousSpacing": "Manually verify the effective spacing between this target and its neighbor; increase target size or spacing if the overlap is real.",
     "targetSizeMinimum_summary_cantTell_plausiblyEssential": "Target is too small and too close to another target, but may be exempt as part of an essential graphic or image-map region.",
     "targetSizeMinimum_hint_cantTell_plausiblyEssential": "Verify whether this target’s size is genuinely essential to its function (e.g. part of an SVG/canvas/image map); if not, increase target size or spacing.",
+    "targetSizeMinimum_summary_cantTell_inlineLinkRun": "Target is smaller than 24×24 CSS px and close to another inline link in the same run of text, where the inline exception may apply.",
+    "targetSizeMinimum_hint_cantTell_inlineLinkRun": "Confirm whether these links form a run of inline text (which is exempt); otherwise increase the target size to at least 24×24 CSS px or add spacing.",
     "targetSizeMinimum_notApplicable_noTargets": "No pointer-operable targets were eligible for evaluation.",
     "targetSizeMinimum_pass_allOk": "All eligible pointer targets meet the minimum size or a permitted exception.",
     "ariaHidden_focus_title": "ARIA hidden elements must not be focusable",
@@ -88123,6 +88203,8 @@ const I18N = {
     "targetSizeMinimum_hint_cantTell_ambiguousSpacing": "Verificar manualmente el espaciado efectivo entre este objetivo y su vecino; aumentar el tamaño del objetivo o el espaciado si la superposición es real.",
     "targetSizeMinimum_summary_cantTell_plausiblyEssential": "El objetivo es demasiado pequeño y está demasiado cerca de otro objetivo, pero puede estar exento por formar parte de un gráfico esencial o una región de mapa de imagen.",
     "targetSizeMinimum_hint_cantTell_plausiblyEssential": "Verificar si el tamaño de este objetivo es realmente esencial para su función (por ejemplo, parte de un SVG/canvas/mapa de imagen); si no lo es, aumentar el tamaño del objetivo o el espaciado.",
+    "targetSizeMinimum_summary_cantTell_inlineLinkRun": "El objetivo es más pequeño que 24×24 px CSS y está cerca de otro enlace en línea dentro del mismo texto, donde puede aplicarse la excepción de contenido en línea.",
+    "targetSizeMinimum_hint_cantTell_inlineLinkRun": "Confirmar si estos enlaces forman parte de un texto en línea (que está exento); de lo contrario, aumentar el tamaño del objetivo a al menos 24×24 px CSS o agregar espaciado.",
     "targetSizeMinimum_notApplicable_noTargets": "Ningún objetivo operable por puntero era elegible para la evaluación.",
     "targetSizeMinimum_pass_allOk": "Todos los objetivos de puntero elegibles cumplen el tamaño mínimo o una excepción permitida.",
     "ariaHidden_focus_title": "Los elementos ocultos con ARIA no deben ser enfocables",
@@ -88754,6 +88836,8 @@ const I18N = {
     "targetSizeMinimum_hint_cantTell_ambiguousSpacing": "Vérifiez manuellement l’espacement effectif entre cette cible et sa voisine ; augmentez la taille de la cible ou l’espacement si le chevauchement est réel.",
     "targetSizeMinimum_summary_cantTell_plausiblyEssential": "La cible est trop petite et trop proche d’une autre cible, mais pourrait être exemptée en tant qu’élément essentiel d’une zone graphique ou d’une image cliquable.",
     "targetSizeMinimum_hint_cantTell_plausiblyEssential": "Vérifiez si la taille de cette cible est réellement essentielle à sa fonction (par ex. partie d’un SVG/canvas/plan d’image) ; sinon, augmentez la taille de la cible ou l’espacement.",
+    "targetSizeMinimum_summary_cantTell_inlineLinkRun": "La cible est plus petite que 24×24 px CSS et proche d’un autre lien en ligne dans le même texte, où l’exception de contenu en ligne peut s’appliquer.",
+    "targetSizeMinimum_hint_cantTell_inlineLinkRun": "Confirmez si ces liens font partie d’un texte en ligne (qui est exempté) ; sinon, augmentez la taille de la cible à au moins 24×24 px CSS ou ajoutez de l’espacement.",
     "targetSizeMinimum_notApplicable_noTargets": "Aucune cible activable par pointeur n’était éligible à l’évaluation.",
     "targetSizeMinimum_pass_allOk": "Toutes les cibles activables par pointeur respectent la taille minimale ou une exception autorisée.",
     "ariaHidden_focus_title": "Les éléments aria-hidden ne doivent pas être focalisables",

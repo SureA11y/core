@@ -28,7 +28,11 @@
  *   its own wrapping link/button) is one visual region, not two independent
  *   targets; that pattern is nested-interactive-controls-absent's
  *   concern, not a spacing one.
- * - Inline: a link inside a run of text (isInlineTextExceptionTarget).
+ * - Inline: a link inside a text-block container passes outright
+ *   (isInlineTextExceptionTarget). An inline link whose only spacing conflict
+ *   is another inline link in the same run is reported as cantTell
+ *   (isInlineLinkTarget) — the inline exception may cover it, but geometry
+ *   can't confirm that.
  * - User Agent Control: an unstyled native checkbox/radio, detected via
  *   `appearance` not being reset to `none` (see isUserAgentSizedControl) —
  *   scoped narrowly to checkbox/radio specifically, not every form control,
@@ -158,12 +162,10 @@ function runInPage(ctx) {
     return '';
   }
 
-  function isInlineTextExceptionTarget(el) {
-    // SC 2.5.8 exception: target is in a sentence/block of text (inline)
-    // Deterministic heuristic:
-    // - must be a link-like target
-    // - must be rendered as inline/inline-*
-    // - must be inside a typical text container
+  // A link-like target (a[href] or role="link") rendered inline/inline-* and
+  // carrying visible text. This is the shape the SC 2.5.8 inline exception is
+  // about, without the surrounding-container requirement.
+  function isInlineLinkTarget(el) {
     try {
       if (!el || el.nodeType !== 1) return false;
 
@@ -180,27 +182,31 @@ function runInPage(ctx) {
 
       const cs = getStyle(el);
       const display = cs && cs.display ? String(cs.display) : '';
-      if (!display) return false;
-
-      // Inline exception is for inline text runs; many design systems use inline-block for links,
-      // so treat inline-block variants as eligible for this exception.
+      // Many design systems use inline-block for links, so treat the
+      // inline-block variants as inline here too.
       const isInline =
         display === 'inline' ||
         display === 'inline-block' ||
         display === 'inline-flex' ||
         display === 'inline-grid' ||
         display === 'inline-table';
-
       if (!isInline) return false;
 
-      const t = (el.textContent || '').trim();
-      if (!t) return false;
+      return (el.textContent || '').trim().length > 0;
+    } catch {
+      return false;
+    }
+  }
 
-      // Require that it sits in a "text block" context
+  function isInlineTextExceptionTarget(el) {
+    // SC 2.5.8 exception: an inline link that sits inside a run of text.
+    try {
+      if (!isInlineLinkTarget(el)) return false;
+
       const textContainer = closest(el, 'p, li, dd, dt, blockquote, figcaption, caption, td, th');
       if (textContainer) return true;
 
-      // Fallback: sometimes links are inside spans within a paragraph-like region
+      // Links are often wrapped in an inline element inside the text block.
       const inlineContainer = closest(el, 'span, em, strong, small, label');
       if (inlineContainer) {
         const outerTextBlock = closest(
@@ -635,6 +641,34 @@ function runInPage(ctx) {
             details: {
               measured: { width: it.rect.width, height: it.rect.height },
               reasonCode: 'undersized-plausibly-essential',
+              conflictHitCount: info.hitCount,
+              conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null
+            }
+          }
+        });
+        continue;
+      }
+
+      // This target and its conflicting neighbor are both inline links in the
+      // same text run, where the SC 2.5.8 inline exception may apply. That
+      // can't be decided from geometry alone, so defer to manual review.
+      if (isInlineLinkTarget(it.el) && info.conflictEl && isInlineLinkTarget(info.conflictEl)) {
+        cantTellOccurrences.push({
+          selector: buildSelector(it.el),
+          html: htmlSnippet(it.el),
+          occurrenceOutcome: 'cantTell',
+          summary:
+            'Target is smaller than 24×24 CSS px and close to another inline link in the same run of text, where the inline exception may apply.',
+          hint: 'Confirm whether these links form a run of inline text (which is exempt); otherwise increase the target size to at least 24×24 CSS px or add spacing.',
+          i18n: {
+            summaryKey: 'targetSizeMinimum_summary_cantTell_inlineLinkRun',
+            hintKey: 'targetSizeMinimum_hint_cantTell_inlineLinkRun',
+            params: {}
+          },
+          data: {
+            details: {
+              measured: { width: it.rect.width, height: it.rect.height },
+              reasonCode: 'undersized-inline-link-run',
               conflictHitCount: info.hitCount,
               conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null
             }

@@ -175,6 +175,71 @@ test(`${RULE_ID}: inline link not in text container => evaluated normally`, () =
   assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
 });
 
+test(`${RULE_ID}: inline links in <nav> conflicting only with each other => cantTell (inline exception uncertain)`, () => {
+  const html = `<!doctype html><html><body>
+    <nav aria-label="quick links">
+      <a id="n1" href="#/a" style="display:inline" data-rect="100,100,10,10">One</a>
+      <span aria-hidden="true">|</span>
+      <a id="n2" href="#/b" style="display:inline" data-rect="120,100,10,10">Two</a>
+    </nav>
+  </body></html>`;
+  const result = run(html);
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
+  for (const occ of rule.occurrences) {
+    assert.strictEqual(occ.occurrenceOutcome, 'cantTell');
+    assert.strictEqual(occ.data.details.reasonCode, 'undersized-inline-link-run');
+    assert.strictEqual(occ.i18n.summaryKey, 'targetSizeMinimum_summary_cantTell_inlineLinkRun');
+    assert.strictEqual(occ.i18n.hintKey, 'targetSizeMinimum_hint_cantTell_inlineLinkRun');
+  }
+  assert.ok(rule.occurrences.some((o) => /#n1\b/.test(o.selector)));
+  assert.ok(rule.occurrences.some((o) => /#n2\b/.test(o.selector)));
+});
+
+test(`${RULE_ID}: pipe-separated inline links wrapping across lines => cantTell (reported nav pattern)`, () => {
+  const html = `<!doctype html><html><body>
+    <nav aria-label="quick links">
+      <a id="q1" href="#/ui" style="display:inline" data-rect="10,10,90,12">UI Elements</a>
+      <span aria-hidden="true">|</span>
+      <a id="q2" href="#/i18n" style="display:inline" data-rect="10,26,120,12">Internationalization</a>
+      <span aria-hidden="true">|</span>
+      <a id="q3" href="#/cy" style="display:inline" data-rect="10,42,110,12">Cypress Utilities</a>
+    </nav>
+  </body></html>`;
+  const result = run(html);
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 3, maxOccurrences: 3 });
+  for (const occ of rule.occurrences) {
+    assert.strictEqual(occ.data.details.reasonCode, 'undersized-inline-link-run');
+  }
+});
+
+test(`${RULE_ID}: inline link too close to a non-link target still fails (downgrade needs two inline links)`, () => {
+  const html = `<!doctype html><html><body>
+    <nav aria-label="tools">
+      <a id="lnk" href="#/a" style="display:inline" data-rect="100,100,10,10">Link</a>
+      <button id="btn" data-rect="120,100,10,10">B</button>
+    </nav>
+  </body></html>`;
+  const result = run(html);
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  for (const occ of rule.occurrences) {
+    assert.strictEqual(occ.data.details.reasonCode, 'undersized-and-too-close');
+  }
+});
+
+test(`${RULE_ID}: block-displayed links in <nav> too close => fail (not an inline run)`, () => {
+  const html = `<!doctype html><html><body>
+    <nav aria-label="menu">
+      <a id="b1" href="#/a" style="display:block" data-rect="100,100,10,10">One</a>
+      <a id="b2" href="#/b" style="display:block" data-rect="120,100,10,10">Two</a>
+    </nav>
+  </body></html>`;
+  const result = run(html);
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  for (const occ of rule.occurrences) {
+    assert.strictEqual(occ.data.details.reasonCode, 'undersized-and-too-close');
+  }
+});
+
 test(`${RULE_ID}: undersized targets within 24px by geometry => fail (distance check)`, () => {
   const html = `<!doctype html><html><body>
     <button id="a" data-rect="100,100,10,10">A</button>
