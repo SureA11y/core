@@ -430,6 +430,10 @@ module.exports = {
     'El objetivo es demasiado pequeño y está demasiado cerca de otro objetivo, pero puede estar exento por formar parte de un gráfico esencial o una región de mapa de imagen.',
   targetSizeMinimum_hint_cantTell_plausiblyEssential:
     'Verificar si el tamaño de este objetivo es realmente esencial para su función (por ejemplo, parte de un SVG/canvas/mapa de imagen); si no lo es, aumentar el tamaño del objetivo o el espaciado.',
+  targetSizeMinimum_summary_cantTell_inlineLinkRun:
+    'El objetivo es más pequeño que 24×24 px CSS y está cerca de otro enlace en línea dentro del mismo texto, donde puede aplicarse la excepción de contenido en línea.',
+  targetSizeMinimum_hint_cantTell_inlineLinkRun:
+    'Confirmar si estos enlaces forman parte de un texto en línea (que está exento); de lo contrario, aumentar el tamaño del objetivo a al menos 24×24 px CSS o agregar espaciado.',
 
   targetSizeMinimum_notApplicable_noTargets:
     'Ningún objetivo operable por puntero era elegible para la evaluación.',

@@ -426,6 +426,10 @@ module.exports = {
     'La cible est trop petite et trop proche d’une autre cible, mais pourrait être exemptée en tant qu’élément essentiel d’une zone graphique ou d’une image cliquable.',
   targetSizeMinimum_hint_cantTell_plausiblyEssential:
     'Vérifiez si la taille de cette cible est réellement essentielle à sa fonction (par ex. partie d’un SVG/canvas/plan d’image) ; sinon, augmentez la taille de la cible ou l’espacement.',
+  targetSizeMinimum_summary_cantTell_inlineLinkRun:
+    'La cible est plus petite que 24×24 px CSS et proche d’un autre lien en ligne dans le même texte, où l’exception de contenu en ligne peut s’appliquer.',
+  targetSizeMinimum_hint_cantTell_inlineLinkRun:
+    'Confirmez si ces liens font partie d’un texte en ligne (qui est exempté) ; sinon, augmentez la taille de la cible à au moins 24×24 px CSS ou ajoutez de l’espacement.',
   targetSizeMinimum_notApplicable_noTargets:
     'Aucune cible activable par pointeur n’était éligible à l’évaluation.',
   targetSizeMinimum_pass_allOk:

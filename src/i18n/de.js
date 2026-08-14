@@ -431,6 +431,10 @@ module.exports = {
     'Das Ziel ist zu klein und zu nah an einem anderen Ziel, könnte aber als Teil einer essenziellen Grafik oder eines Image-Map-Bereichs ausgenommen sein.',
   targetSizeMinimum_hint_cantTell_plausiblyEssential:
     'Prüfen Sie, ob die Größe dieses Ziels wirklich für seine Funktion essenziell ist (z. B. Teil eines SVG/Canvas/einer Image-Map); falls nicht, vergrößern Sie Zielgröße oder Abstand.',
+  targetSizeMinimum_summary_cantTell_inlineLinkRun:
+    'Das Ziel ist kleiner als 24×24 CSS-Pixel und liegt nah an einem anderen Inline-Link im selben Textfluss, wo die Inline-Ausnahme gelten kann.',
+  targetSizeMinimum_hint_cantTell_inlineLinkRun:
+    'Prüfen Sie, ob diese Links Teil eines Inline-Textflusses sind (der ausgenommen ist); andernfalls vergrößern Sie das Ziel auf mindestens 24×24 CSS-Pixel oder fügen Sie Abstand hinzu.',
 
   targetSizeMinimum_notApplicable_noTargets:
     'Es gab keine per Zeiger bedienbaren Ziele, die für die Bewertung infrage kamen.',
