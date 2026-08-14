@@ -439,6 +439,10 @@ module.exports = {
     'aria-hidden {{element}} received focus but focus moved immediately to another element. Verify sentinel/focus-trap behavior.',
   ariaHidden_focus_hint_cantTell_redirect:
     'Verify this is an intentional focus sentinel/focus-trap handoff and that keyboard users never remain on hidden focus targets.',
+  ariaHidden_focus_summary_cantTell_modal:
+    'aria-hidden {{element}} contains {{focusableCount}} focusable element(s) while a modal dialog is open. If the modal keeps keyboard focus trapped they may be unreachable; verify focus cannot land on them.',
+  ariaHidden_focus_hint_cantTell_modal:
+    'A modal dialog appears to be open. Prefer making the background inert (or a native <dialog> opened with showModal()) so it leaves the tab order, then verify keyboard focus stays within the dialog.',
 
   // --- css-hidden-focus
   cssHidden_focus_title: 'Focusable elements must not be visually hidden',

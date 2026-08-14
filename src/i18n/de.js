@@ -455,6 +455,10 @@ module.exports = {
     'aria-hidden {{element}} hat den Fokus erhalten, der Fokus wurde jedoch sofort zu einem anderen Element verschoben. Überprüfen Sie das Sentinel-/Fokus-Trap-Verhalten.',
   ariaHidden_focus_hint_cantTell_redirect:
     'Überprüfen Sie, ob es sich um eine beabsichtigte Fokus-Sentinel-/Fokus-Trap-Übergabe handelt und dass Tastaturnutzer niemals auf verborgenen Fokuszielen verbleiben.',
+  ariaHidden_focus_summary_cantTell_modal:
+    'aria-hidden {{element}} enthält {{focusableCount}} fokussierbare(s) Element(e), während ein modaler Dialog geöffnet ist. Wenn der Dialog den Tastaturfokus gefangen hält, sind sie möglicherweise nicht erreichbar; prüfen Sie, dass der Fokus nicht auf ihnen landen kann.',
+  ariaHidden_focus_hint_cantTell_modal:
+    'Ein modaler Dialog scheint geöffnet zu sein. Machen Sie den Hintergrund vorzugsweise inert (oder verwenden Sie ein natives <dialog>, das mit showModal() geöffnet wird), damit er die Tab-Reihenfolge verlässt, und prüfen Sie dann, dass der Tastaturfokus im Dialog bleibt.',
 
   // --- css-hidden-focus
   cssHidden_focus_title: 'Fokussierbare Elemente dürfen nicht visuell verborgen sein',

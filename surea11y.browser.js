@@ -9233,6 +9233,54 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return false;
   }
 
+  // An open modal is expected to trap focus, so a focusable background behind
+  // it may be unreachable; that can't be proven statically, so the finding is
+  // downgraded to cantTell instead of fail. A modal that is display:none is
+  // not open, so it does not count.
+  function isRenderedForModal(node) {
+    if (!node) return false;
+    if (!isDomVisibleEligible) return true;
+    try {
+      const vis = isDomVisibleEligible(node, ctx, {
+        visibilityMode: 'styleOnly',
+        disableGeometry: true
+      });
+      if (vis && vis.eligible === false) return false;
+    } catch {
+      // treat as rendered
+    }
+    return true;
+  }
+
+  // Native <dialog>, aria-modal="true", or a dialog/alertdialog role, so
+  // libraries that leave aria-modal off (e.g. Angular Material defaults to
+  // aria-modal="false") still count as an open modal.
+  function collectOpenModalCandidates() {
+    const nodes = qAll('dialog[open],[aria-modal="true"],[role="dialog"],[role="alertdialog"]');
+    const out = [];
+    for (let i = 0; i < nodes.length; i++) {
+      const n = nodes[i];
+      if (!n || !n.getAttribute) continue;
+      if (!isRenderedForModal(n)) continue;
+      out.push(n);
+    }
+    return out;
+  }
+
+  // Only a modal in a separate subtree is the "hidden background behind an
+  // open dialog" case. A modal inside the aria-hidden subtree (or an
+  // aria-hidden root inside the modal) is a genuine defect, so keep it a fail.
+  function hasSeparateOpenModal(rootEl, candidates) {
+    for (let i = 0; i < candidates.length; i++) {
+      const m = candidates[i];
+      if (!m || m === rootEl) continue;
+      if (isWithinComposedSubtree(m, rootEl)) continue;
+      if (isWithinComposedSubtree(rootEl, m)) continue;
+      return true;
+    }
+    return false;
+  }
+
   function getDeepActiveElement() {
     let cur = document && document.activeElement ? document.activeElement : null;
     let guard = 0;
@@ -9800,6 +9848,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     entry.rootIsFocusable = isActuallyFocusable(el);
   }
 
+  const modalCandidates = collectOpenModalCandidates();
+
   // 3) Report one occurrence per aria-hidden root that contains focusable content.
   const failOccurrences = [];
   const uncertainOccurrences = [];
@@ -9852,24 +9902,56 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         : `aria-hidden ${tagName} is focusable (${totalFocusable} focusable element(s)).`
       : `aria-hidden ${tagName} contains ${totalFocusable} focusable element(s).`;
 
-    const runtimeProbe = probeImmediateFocusRedirect(entry);
-    const downgradedToCantTell = !!(runtimeProbe && runtimeProbe.redirected);
+    // A modal takes precedence over the redirect probe; skip the probe when a
+    // modal already explains the background.
+    const modalOpenOutside = modalCandidates.length
+      ? hasSeparateOpenModal(el, modalCandidates)
+      : false;
 
-    const cantTellSummary = `aria-hidden ${tagName} received focus but focus moved immediately to another element. Verify sentinel/focus-trap behavior.`;
+    const runtimeProbe = modalOpenOutside ? null : probeImmediateFocusRedirect(entry);
+    const downgradedByRedirect = !!(runtimeProbe && runtimeProbe.redirected);
+    const downgradedByModal = modalOpenOutside;
+    const downgradedToCantTell = downgradedByModal || downgradedByRedirect;
+
+    const cantTellRedirectSummary = `aria-hidden ${tagName} received focus but focus moved immediately to another element. Verify sentinel/focus-trap behavior.`;
+    const cantTellModalSummary = `aria-hidden ${tagName} contains ${totalFocusable} focusable element(s) while a modal dialog is open. If the modal keeps keyboard focus trapped they may be unreachable; verify focus cannot land on them.`;
+
+    let occSummary;
+    let occHint;
+    let occSummaryKey;
+    let occHintKey;
+    let occReasonCode;
+
+    if (downgradedByModal) {
+      occSummary = cantTellModalSummary;
+      occHint =
+        'A modal dialog appears to be open. Prefer making the background inert (or a native <dialog> opened with showModal()) so it leaves the tab order, then verify keyboard focus stays within the dialog.';
+      occSummaryKey = 'ariaHidden_focus_summary_cantTell_modal';
+      occHintKey = 'ariaHidden_focus_hint_cantTell_modal';
+      occReasonCode = 'ariaHiddenFocusable_modalOpen_needsReview';
+    } else if (downgradedByRedirect) {
+      occSummary = cantTellRedirectSummary;
+      occHint =
+        'Verify this is an intentional focus sentinel/focus-trap handoff and that keyboard users never remain on hidden focus targets.';
+      occSummaryKey = 'ariaHidden_focus_summary_cantTell_redirect';
+      occHintKey = 'ariaHidden_focus_hint_cantTell_redirect';
+      occReasonCode = 'ariaHiddenFocusable_runtimeRedirect_needsReview';
+    } else {
+      occSummary = summaryText;
+      occHint =
+        'Remove focusability from descendants or remove aria-hidden; ensure focus and accessibility trees stay aligned.';
+      occSummaryKey = summaryKey;
+      occHintKey = 'ariaHidden_focus_hint_fail';
+      occReasonCode = reasonCode;
+    }
 
     const baseOccurrence = {
-      summary: downgradedToCantTell ? cantTellSummary : summaryText,
-      hint: downgradedToCantTell
-        ? 'Verify this is an intentional focus sentinel/focus-trap handoff and that keyboard users never remain on hidden focus targets.'
-        : 'Remove focusability from descendants or remove aria-hidden; ensure focus and accessibility trees stay aligned.',
+      summary: occSummary,
+      hint: occHint,
       occurrenceOutcome: downgradedToCantTell ? 'cantTell' : 'fail',
       i18n: {
-        summaryKey: downgradedToCantTell
-          ? 'ariaHidden_focus_summary_cantTell_redirect'
-          : summaryKey,
-        hintKey: downgradedToCantTell
-          ? 'ariaHidden_focus_hint_cantTell_redirect'
-          : 'ariaHidden_focus_hint_fail',
+        summaryKey: occSummaryKey,
+        hintKey: occHintKey,
         params: {
           element: tagName,
           focusableCount: String(totalFocusable),
@@ -9882,15 +9964,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       },
       data: {
         details: {
-          reasonCode: downgradedToCantTell
-            ? 'ariaHiddenFocusable_runtimeRedirect_needsReview'
-            : reasonCode,
+          reasonCode: occReasonCode,
           metrics: {
             focusableTotal: totalFocusable,
             focusableDescendants: descendantFocusable,
             rootIsFocusable: selfFocusable,
             offendersCaptured: entry.offenders.length,
-            visibilityHints: hintsArr.slice(0)
+            visibilityHints: hintsArr.slice(0),
+            modalOpen: !!downgradedByModal
           },
           runtimeProbe: runtimeProbe || null,
           offenders: entry.offenders.slice(0)
@@ -28463,6 +28544,8 @@ const I18N = {
     "ariaHidden_focus_hint_fail": "Entfernen Sie die Fokussierbarkeit der Nachfahren oder entfernen Sie aria-hidden; stellen Sie sicher, dass Fokus- und Accessibility-Baum übereinstimmen.",
     "ariaHidden_focus_summary_cantTell_redirect": "aria-hidden {{element}} hat den Fokus erhalten, der Fokus wurde jedoch sofort zu einem anderen Element verschoben. Überprüfen Sie das Sentinel-/Fokus-Trap-Verhalten.",
     "ariaHidden_focus_hint_cantTell_redirect": "Überprüfen Sie, ob es sich um eine beabsichtigte Fokus-Sentinel-/Fokus-Trap-Übergabe handelt und dass Tastaturnutzer niemals auf verborgenen Fokuszielen verbleiben.",
+    "ariaHidden_focus_summary_cantTell_modal": "aria-hidden {{element}} enthält {{focusableCount}} fokussierbare(s) Element(e), während ein modaler Dialog geöffnet ist. Wenn der Dialog den Tastaturfokus gefangen hält, sind sie möglicherweise nicht erreichbar; prüfen Sie, dass der Fokus nicht auf ihnen landen kann.",
+    "ariaHidden_focus_hint_cantTell_modal": "Ein modaler Dialog scheint geöffnet zu sein. Machen Sie den Hintergrund vorzugsweise inert (oder verwenden Sie ein natives <dialog>, das mit showModal() geöffnet wird), damit er die Tab-Reihenfolge verlässt, und prüfen Sie dann, dass der Tastaturfokus im Dialog bleibt.",
     "cssHidden_focus_title": "Fokussierbare Elemente dürfen nicht visuell verborgen sein",
     "cssHidden_focus_description": "Prüft, ob per Tastatur fokussierbare Elemente nicht durch CSS-Techniken visuell verborgen werden, die sie dennoch in der Tab-Reihenfolge belassen können.",
     "cssHidden_focus_summary_cantTell": "Das fokussierbare {{element}} ist visuell verborgen ({{visibilityHints}}).",
@@ -29092,6 +29175,8 @@ const I18N = {
     "ariaHidden_focus_hint_fail": "Remove focusability from descendants or remove aria-hidden; ensure focus and accessibility trees stay aligned.",
     "ariaHidden_focus_summary_cantTell_redirect": "aria-hidden {{element}} received focus but focus moved immediately to another element. Verify sentinel/focus-trap behavior.",
     "ariaHidden_focus_hint_cantTell_redirect": "Verify this is an intentional focus sentinel/focus-trap handoff and that keyboard users never remain on hidden focus targets.",
+    "ariaHidden_focus_summary_cantTell_modal": "aria-hidden {{element}} contains {{focusableCount}} focusable element(s) while a modal dialog is open. If the modal keeps keyboard focus trapped they may be unreachable; verify focus cannot land on them.",
+    "ariaHidden_focus_hint_cantTell_modal": "A modal dialog appears to be open. Prefer making the background inert (or a native <dialog> opened with showModal()) so it leaves the tab order, then verify keyboard focus stays within the dialog.",
     "cssHidden_focus_title": "Focusable elements must not be visually hidden",
     "cssHidden_focus_description": "Checks that keyboard-focusable elements are not visually hidden by CSS techniques that can leave them in the tab order.",
     "cssHidden_focus_summary_cantTell": "Focusable {{element}} is visually hidden ({{visibilityHints}}).",
@@ -29721,6 +29806,8 @@ const I18N = {
     "ariaHidden_focus_hint_fail": "Eliminar la capacidad de enfoque de los descendientes o eliminar aria-hidden; asegurarse de que el orden de foco y el árbol de accesibilidad permanezcan alineados.",
     "ariaHidden_focus_summary_cantTell_redirect": "El elemento aria-hidden {{element}} recibió el foco, pero el foco se movió de inmediato a otro elemento. Verificar el comportamiento de centinela/trampa de foco.",
     "ariaHidden_focus_hint_cantTell_redirect": "Verificar que se trate de un traspaso intencionado de centinela/trampa de foco y que los usuarios de teclado nunca queden en objetivos de foco ocultos.",
+    "ariaHidden_focus_summary_cantTell_modal": "El elemento aria-hidden {{element}} contiene {{focusableCount}} elemento(s) enfocable(s) mientras hay un diálogo modal abierto. Si el modal mantiene atrapado el foco del teclado, pueden ser inalcanzables; verificar que el foco no pueda posarse en ellos.",
+    "ariaHidden_focus_hint_cantTell_modal": "Parece que hay un diálogo modal abierto. Es preferible volver inerte el fondo (o usar un <dialog> nativo abierto con showModal()) para que salga del orden de tabulación, y luego verificar que el foco del teclado permanezca dentro del diálogo.",
     "cssHidden_focus_title": "Los elementos enfocables no deben estar ocultos visualmente",
     "cssHidden_focus_description": "Comprueba que los elementos enfocables por teclado no estén ocultos visualmente mediante técnicas CSS que puedan dejarlos en el orden de tabulación.",
     "cssHidden_focus_summary_cantTell": "El elemento enfocable {{element}} está oculto visualmente ({{visibilityHints}}).",
@@ -30350,6 +30437,8 @@ const I18N = {
     "ariaHidden_focus_hint_fail": "Supprimez la focalisation des descendants ou retirez aria-hidden ; assurez la cohérence entre l’ordre de focus et l’arbre d’accessibilité.",
     "ariaHidden_focus_summary_cantTell_redirect": "L’élément aria-hidden {{element}} reçoit le focus mais le focus est immédiatement déplacé vers un autre élément. Vérifiez le comportement de sentinelle/piège de focus.",
     "ariaHidden_focus_hint_cantTell_redirect": "Vérifiez qu’il s’agit d’un transfert intentionnel de sentinelle/piège de focus et que les utilisateurs clavier ne restent jamais sur une cible de focus masquée.",
+    "ariaHidden_focus_summary_cantTell_modal": "L’élément aria-hidden {{element}} contient {{focusableCount}} élément(s) focalisable(s) alors qu’une boîte de dialogue modale est ouverte. Si la modale conserve le focus clavier piégé, ils peuvent être inaccessibles ; vérifiez que le focus ne peut pas les atteindre.",
+    "ariaHidden_focus_hint_cantTell_modal": "Une boîte de dialogue modale semble ouverte. Préférez rendre l’arrière-plan inerte (ou un <dialog> natif ouvert avec showModal()) afin qu’il quitte l’ordre de tabulation, puis vérifiez que le focus clavier reste dans la boîte de dialogue.",
     "cssHidden_focus_title": "Les éléments focalisables ne doivent pas être masqués visuellement",
     "cssHidden_focus_description": "Vérifie que les éléments focalisables au clavier ne sont pas masqués visuellement par des techniques CSS pouvant les laisser dans l’ordre de tabulation.",
     "cssHidden_focus_summary_cantTell": "L’élément focalisable {{element}} est masqué visuellement ({{visibilityHints}}).",

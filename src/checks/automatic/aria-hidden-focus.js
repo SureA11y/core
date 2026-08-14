@@ -146,6 +146,54 @@ function runInPage(ctx) {
     return false;
   }
 
+  // An open modal is expected to trap focus, so a focusable background behind
+  // it may be unreachable; that can't be proven statically, so the finding is
+  // downgraded to cantTell instead of fail. A modal that is display:none is
+  // not open, so it does not count.
+  function isRenderedForModal(node) {
+    if (!node) return false;
+    if (!isDomVisibleEligible) return true;
+    try {
+      const vis = isDomVisibleEligible(node, ctx, {
+        visibilityMode: 'styleOnly',
+        disableGeometry: true
+      });
+      if (vis && vis.eligible === false) return false;
+    } catch {
+      // treat as rendered
+    }
+    return true;
+  }
+
+  // Native <dialog>, aria-modal="true", or a dialog/alertdialog role, so
+  // libraries that leave aria-modal off (e.g. Angular Material defaults to
+  // aria-modal="false") still count as an open modal.
+  function collectOpenModalCandidates() {
+    const nodes = qAll('dialog[open],[aria-modal="true"],[role="dialog"],[role="alertdialog"]');
+    const out = [];
+    for (let i = 0; i < nodes.length; i++) {
+      const n = nodes[i];
+      if (!n || !n.getAttribute) continue;
+      if (!isRenderedForModal(n)) continue;
+      out.push(n);
+    }
+    return out;
+  }
+
+  // Only a modal in a separate subtree is the "hidden background behind an
+  // open dialog" case. A modal inside the aria-hidden subtree (or an
+  // aria-hidden root inside the modal) is a genuine defect, so keep it a fail.
+  function hasSeparateOpenModal(rootEl, candidates) {
+    for (let i = 0; i < candidates.length; i++) {
+      const m = candidates[i];
+      if (!m || m === rootEl) continue;
+      if (isWithinComposedSubtree(m, rootEl)) continue;
+      if (isWithinComposedSubtree(rootEl, m)) continue;
+      return true;
+    }
+    return false;
+  }
+
   function getDeepActiveElement() {
     let cur = document && document.activeElement ? document.activeElement : null;
     let guard = 0;
@@ -713,6 +761,8 @@ function runInPage(ctx) {
     entry.rootIsFocusable = isActuallyFocusable(el);
   }
 
+  const modalCandidates = collectOpenModalCandidates();
+
   // 3) Report one occurrence per aria-hidden root that contains focusable content.
   const failOccurrences = [];
   const uncertainOccurrences = [];
@@ -765,24 +815,56 @@ function runInPage(ctx) {
         : `aria-hidden ${tagName} is focusable (${totalFocusable} focusable element(s)).`
       : `aria-hidden ${tagName} contains ${totalFocusable} focusable element(s).`;
 
-    const runtimeProbe = probeImmediateFocusRedirect(entry);
-    const downgradedToCantTell = !!(runtimeProbe && runtimeProbe.redirected);
+    // A modal takes precedence over the redirect probe; skip the probe when a
+    // modal already explains the background.
+    const modalOpenOutside = modalCandidates.length
+      ? hasSeparateOpenModal(el, modalCandidates)
+      : false;
 
-    const cantTellSummary = `aria-hidden ${tagName} received focus but focus moved immediately to another element. Verify sentinel/focus-trap behavior.`;
+    const runtimeProbe = modalOpenOutside ? null : probeImmediateFocusRedirect(entry);
+    const downgradedByRedirect = !!(runtimeProbe && runtimeProbe.redirected);
+    const downgradedByModal = modalOpenOutside;
+    const downgradedToCantTell = downgradedByModal || downgradedByRedirect;
+
+    const cantTellRedirectSummary = `aria-hidden ${tagName} received focus but focus moved immediately to another element. Verify sentinel/focus-trap behavior.`;
+    const cantTellModalSummary = `aria-hidden ${tagName} contains ${totalFocusable} focusable element(s) while a modal dialog is open. If the modal keeps keyboard focus trapped they may be unreachable; verify focus cannot land on them.`;
+
+    let occSummary;
+    let occHint;
+    let occSummaryKey;
+    let occHintKey;
+    let occReasonCode;
+
+    if (downgradedByModal) {
+      occSummary = cantTellModalSummary;
+      occHint =
+        'A modal dialog appears to be open. Prefer making the background inert (or a native <dialog> opened with showModal()) so it leaves the tab order, then verify keyboard focus stays within the dialog.';
+      occSummaryKey = 'ariaHidden_focus_summary_cantTell_modal';
+      occHintKey = 'ariaHidden_focus_hint_cantTell_modal';
+      occReasonCode = 'ariaHiddenFocusable_modalOpen_needsReview';
+    } else if (downgradedByRedirect) {
+      occSummary = cantTellRedirectSummary;
+      occHint =
+        'Verify this is an intentional focus sentinel/focus-trap handoff and that keyboard users never remain on hidden focus targets.';
+      occSummaryKey = 'ariaHidden_focus_summary_cantTell_redirect';
+      occHintKey = 'ariaHidden_focus_hint_cantTell_redirect';
+      occReasonCode = 'ariaHiddenFocusable_runtimeRedirect_needsReview';
+    } else {
+      occSummary = summaryText;
+      occHint =
+        'Remove focusability from descendants or remove aria-hidden; ensure focus and accessibility trees stay aligned.';
+      occSummaryKey = summaryKey;
+      occHintKey = 'ariaHidden_focus_hint_fail';
+      occReasonCode = reasonCode;
+    }
 
     const baseOccurrence = {
-      summary: downgradedToCantTell ? cantTellSummary : summaryText,
-      hint: downgradedToCantTell
-        ? 'Verify this is an intentional focus sentinel/focus-trap handoff and that keyboard users never remain on hidden focus targets.'
-        : 'Remove focusability from descendants or remove aria-hidden; ensure focus and accessibility trees stay aligned.',
+      summary: occSummary,
+      hint: occHint,
       occurrenceOutcome: downgradedToCantTell ? 'cantTell' : 'fail',
       i18n: {
-        summaryKey: downgradedToCantTell
-          ? 'ariaHidden_focus_summary_cantTell_redirect'
-          : summaryKey,
-        hintKey: downgradedToCantTell
-          ? 'ariaHidden_focus_hint_cantTell_redirect'
-          : 'ariaHidden_focus_hint_fail',
+        summaryKey: occSummaryKey,
+        hintKey: occHintKey,
         params: {
           element: tagName,
           focusableCount: String(totalFocusable),
@@ -795,15 +877,14 @@ function runInPage(ctx) {
       },
       data: {
         details: {
-          reasonCode: downgradedToCantTell
-            ? 'ariaHiddenFocusable_runtimeRedirect_needsReview'
-            : reasonCode,
+          reasonCode: occReasonCode,
           metrics: {
             focusableTotal: totalFocusable,
             focusableDescendants: descendantFocusable,
             rootIsFocusable: selfFocusable,
             offendersCaptured: entry.offenders.length,
-            visibilityHints: hintsArr.slice(0)
+            visibilityHints: hintsArr.slice(0),
+            modalOpen: !!downgradedByModal
           },
           runtimeProbe: runtimeProbe || null,
           offenders: entry.offenders.slice(0)

@@ -258,6 +258,95 @@ test(`${RULE_ID}: mixed independent roots keep per-occurrence outcome differenti
   assert.strictEqual(cantTellOccurrence.occurrenceOutcome, 'cantTell');
 });
 
+// ===== open-modal downgrade (fail -> cantTell) =====
+
+test(`${RULE_ID}: cantTell when a custom aria-modal="true" dialog is open behind an aria-hidden background`, () => {
+  const html = `<!doctype html><html><body>
+      <div id="ah_bg_modal" aria-hidden="true">
+        <a id="bg_link" href="#x">Background link</a>
+        <button id="bg_btn">Background button</button>
+      </div>
+      <div id="the_dialog" role="dialog" aria-modal="true">
+        <button>OK</button>
+      </div>
+    </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  const occ = getOccurrenceForId(rule, 'ah_bg_modal');
+  assert.ok(occ);
+  assert.strictEqual(occ.occurrenceOutcome, 'cantTell');
+  assert.strictEqual(occ.data.details.reasonCode, 'ariaHiddenFocusable_modalOpen_needsReview');
+  assert.strictEqual(occ.data.details.metrics.modalOpen, true);
+  assert.strictEqual(
+    occ.summary,
+    'aria-hidden div contains 2 focusable element(s) while a modal dialog is open. If the modal keeps keyboard focus trapped they may be unreachable; verify focus cannot land on them.'
+  );
+});
+
+test(`${RULE_ID}: cantTell when a native dialog[open] is present behind an aria-hidden background`, () => {
+  const html = `<!doctype html><html><body>
+      <div id="ah_bg_native" aria-hidden="true">
+        <a id="bg_link_native" href="#x">Background link</a>
+      </div>
+      <dialog id="native_dialog" open><button>Close</button></dialog>
+    </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  const occ = getOccurrenceForId(rule, 'ah_bg_native');
+  assert.ok(occ);
+  assert.strictEqual(occ.data.details.reasonCode, 'ariaHiddenFocusable_modalOpen_needsReview');
+});
+
+test(`${RULE_ID}: stays fail (not downgraded) when the open modal lives INSIDE the aria-hidden subtree`, () => {
+  // A modal that is itself inside the hidden subtree is genuinely broken
+  // (the dialog is being hidden), so this must remain a hard fail.
+  const html = `<!doctype html><html><body>
+      <div id="ah_bg_inner_modal" aria-hidden="true">
+        <div role="dialog" aria-modal="true">
+          <button id="inner_dialog_btn">OK</button>
+        </div>
+      </div>
+    </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const occ = getOccurrenceForId(rule, 'ah_bg_inner_modal');
+  assert.ok(occ);
+  assert.strictEqual(occ.occurrenceOutcome, 'fail');
+  assert.strictEqual(occ.data.details.metrics.modalOpen, false);
+});
+
+test(`${RULE_ID}: stays fail when the only aria-modal element is display:none (not actually open)`, () => {
+  const html = `<!doctype html><html><body>
+      <div id="ah_bg_hidden_modal" aria-hidden="true">
+        <a id="bg_link_hidden_modal" href="#x">Background link</a>
+      </div>
+      <div role="dialog" aria-modal="true" style="display:none">
+        <button>OK</button>
+      </div>
+    </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const occ = getOccurrenceForId(rule, 'ah_bg_hidden_modal');
+  assert.ok(occ);
+  assert.strictEqual(occ.occurrenceOutcome, 'fail');
+});
+
+test(`${RULE_ID}: cantTell for the Angular Material default (role="dialog" with aria-modal="false") behind an aria-hidden background`, () => {
+  const html = `<!doctype html><html><body>
+      <div id="ah_bg_mat" aria-hidden="true">
+        <a id="bg_link_mat" href="#x">Background link</a>
+      </div>
+      <div role="dialog" aria-modal="false">
+        <button>OK</button>
+      </div>
+    </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  const occ = getOccurrenceForId(rule, 'ah_bg_mat');
+  assert.ok(occ);
+  assert.strictEqual(occ.data.details.reasonCode, 'ariaHiddenFocusable_modalOpen_needsReview');
+});
+
 test(`${RULE_ID}: fail when aria-hidden native control itself is focusable (button)`, () => {
   const html = `<!doctype html><html><body>
       <button id="ah_btn" aria-hidden="true">Hidden button</button>
