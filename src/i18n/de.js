@@ -865,10 +865,10 @@ module.exports = {
   duplicateIdAria_title: 'Von ARIA referenzierte IDs müssen eindeutig sein',
   duplicateIdAria_description:
     'Prüft, ob jeder id-Wert, der durch ein ARIA-ID-Referenzattribut referenziert wird (aria-labelledby, aria-describedby, aria-owns, aria-controls, aria-activedescendant, aria-flowto, aria-errormessage, aria-details), im Dokument eindeutig ist.',
-  duplicateIdAria_summary_fail:
-    'Die id „{{id}}“ wird von einem ARIA-Attribut referenziert, wird aber von {{duplicateCount}} Elementen verwendet.',
-  duplicateIdAria_hint_fail:
-    'Machen Sie von ARIA-Attributen referenzierte ids innerhalb des Dokuments eindeutig.',
+  duplicateIdAria_summary_cantTell:
+    'Die id „{{id}}“ wird von einem ARIA-Attribut referenziert, wird aber von {{duplicateCount}} Elementen verwendet; die Referenz verweist auf das erste.',
+  duplicateIdAria_hint_cantTell:
+    'Prüfen Sie, ob das erste Element mit dieser id das beabsichtigte Ziel ist, oder machen Sie die id innerhalb des Dokuments eindeutig.',
 
   summaryNamePresent_title: 'Summary-Elemente haben einen zugänglichen Namen',
   summaryNamePresent_description:

@@ -15299,7 +15299,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
-  const occurrences = [];
+  const cantTellOccurrences = [];
 
   for (const refId of referencedIds) {
     const els = idMap.get(refId) || [];
@@ -15313,14 +15313,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         ? helpers.getOuterHtmlSnippet(el)
         : el.outerHTML || '';
 
-      occurrences.push({
+      cantTellOccurrences.push({
         selector: stableSelector,
         html,
-        summary: 'This id is referenced by an ARIA attribute but is used by more than one element.',
-        hint: 'Make ids referenced by ARIA attributes unique within the document.',
+        summary:
+          'This id is referenced by an ARIA attribute but is used by more than one element; the reference resolves to the first.',
+        hint: 'Confirm the first element carrying this id is the intended target, or make the id unique.',
         i18n: {
-          summaryKey: 'duplicateIdAria_summary_fail',
-          hintKey: 'duplicateIdAria_hint_fail',
+          summaryKey: 'duplicateIdAria_summary_cantTell',
+          hintKey: 'duplicateIdAria_hint_cantTell',
           params: { id: refId, duplicateCount: String(els.length) }
         },
         data: {
@@ -15337,15 +15338,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   if (referencedIds.size === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'serious',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+
+  const resolved = helpers.resolveTieredOutcome(
+    [],
+    cantTellOccurrences,
+    rule.defaultSeverity || 'serious'
+  );
+  return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "embed-text-alternative-present": { run: (function runInPage(ctx) {
   const { document, root, helpers, rule } = ctx;
@@ -28787,8 +28786,8 @@ const I18N = {
     "dlitemParentValid_hint_fail": "Platzieren Sie dieses <dt>/<dd> innerhalb eines <dl>, direkt oder in einem einzigen <div> verpackt.",
     "duplicateIdAria_title": "Von ARIA referenzierte IDs müssen eindeutig sein",
     "duplicateIdAria_description": "Prüft, ob jeder id-Wert, der durch ein ARIA-ID-Referenzattribut referenziert wird (aria-labelledby, aria-describedby, aria-owns, aria-controls, aria-activedescendant, aria-flowto, aria-errormessage, aria-details), im Dokument eindeutig ist.",
-    "duplicateIdAria_summary_fail": "Die id „{{id}}“ wird von einem ARIA-Attribut referenziert, wird aber von {{duplicateCount}} Elementen verwendet.",
-    "duplicateIdAria_hint_fail": "Machen Sie von ARIA-Attributen referenzierte ids innerhalb des Dokuments eindeutig.",
+    "duplicateIdAria_summary_cantTell": "Die id „{{id}}“ wird von einem ARIA-Attribut referenziert, wird aber von {{duplicateCount}} Elementen verwendet; die Referenz verweist auf das erste.",
+    "duplicateIdAria_hint_cantTell": "Prüfen Sie, ob das erste Element mit dieser id das beabsichtigte Ziel ist, oder machen Sie die id innerhalb des Dokuments eindeutig.",
     "summaryNamePresent_title": "Summary-Elemente haben einen zugänglichen Namen",
     "summaryNamePresent_description": "Prüft, ob <summary>-Elemente einen nicht leeren zugänglichen Namen aufweisen.",
     "summaryNamePresent_summary_fail": "Dieses Summary-Element hat keinen zugänglichen Namen.",
@@ -29420,8 +29419,8 @@ const I18N = {
     "dlitemParentValid_hint_fail": "Place this <dt>/<dd> inside a <dl>, directly or wrapped in a single <div>.",
     "duplicateIdAria_title": "IDs referenced by ARIA must be unique",
     "duplicateIdAria_description": "Checks that any id value referenced by an ARIA ID-reference attribute (aria-labelledby, aria-describedby, aria-owns, aria-controls, aria-activedescendant, aria-flowto, aria-errormessage, aria-details) is unique in the document.",
-    "duplicateIdAria_summary_fail": "The id \"{{id}}\" is referenced by an ARIA attribute but is used by {{duplicateCount}} elements.",
-    "duplicateIdAria_hint_fail": "Make ids referenced by ARIA attributes unique within the document.",
+    "duplicateIdAria_summary_cantTell": "The id \"{{id}}\" is referenced by an ARIA attribute but is used by {{duplicateCount}} elements; the reference resolves to the first one.",
+    "duplicateIdAria_hint_cantTell": "Confirm the first element carrying this id is the intended target, or make the id unique within the document.",
     "summaryNamePresent_title": "Summary elements have an accessible name",
     "summaryNamePresent_description": "Checks that <summary> elements expose a non-empty accessible name.",
     "summaryNamePresent_summary_fail": "This summary has no accessible name.",
@@ -30053,8 +30052,8 @@ const I18N = {
     "dlitemParentValid_hint_fail": "Colocar este <dt>/<dd> dentro de un <dl>, directamente o envuelto en un único <div>.",
     "duplicateIdAria_title": "Los IDs referenciados por ARIA deben ser únicos",
     "duplicateIdAria_description": "Comprueba que cualquier valor de id referenciado por un atributo de referencia de ID de ARIA (aria-labelledby, aria-describedby, aria-owns, aria-controls, aria-activedescendant, aria-flowto, aria-errormessage, aria-details) sea único en el documento.",
-    "duplicateIdAria_summary_fail": "El id \"{{id}}\" está referenciado por un atributo ARIA, pero lo usan {{duplicateCount}} elementos.",
-    "duplicateIdAria_hint_fail": "Hacer únicos dentro del documento los ids referenciados por atributos ARIA.",
+    "duplicateIdAria_summary_cantTell": "El id \"{{id}}\" está referenciado por un atributo ARIA, pero lo usan {{duplicateCount}} elementos; la referencia apunta al primero.",
+    "duplicateIdAria_hint_cantTell": "Comprobar que el primer elemento con ese id es el destino previsto, o hacer único el id dentro del documento.",
     "summaryNamePresent_title": "Los elementos <summary> tienen un nombre accesible",
     "summaryNamePresent_description": "Comprueba que los elementos <summary> expongan un nombre accesible no vacío.",
     "summaryNamePresent_summary_fail": "Este resumen no tiene nombre accesible.",
@@ -30686,8 +30685,8 @@ const I18N = {
     "dlitemParentValid_hint_fail": "Placez ce <dt>/<dd> à l’intérieur d’un <dl>, directement ou enveloppé dans un seul <div>.",
     "duplicateIdAria_title": "Les ID référencés par ARIA doivent être uniques",
     "duplicateIdAria_description": "Vérifie que toute valeur id référencée par un attribut de référence d’ID ARIA (aria-labelledby, aria-describedby, aria-owns, aria-controls, aria-activedescendant, aria-flowto, aria-errormessage, aria-details) est unique dans le document.",
-    "duplicateIdAria_summary_fail": "L’id « {{id}} » est référencé par un attribut ARIA mais est utilisé par {{duplicateCount}} éléments.",
-    "duplicateIdAria_hint_fail": "Rendez uniques dans le document les id référencés par des attributs ARIA.",
+    "duplicateIdAria_summary_cantTell": "L’id « {{id}} » est référencé par un attribut ARIA mais est utilisé par {{duplicateCount}} éléments ; la référence pointe vers le premier.",
+    "duplicateIdAria_hint_cantTell": "Vérifiez que le premier élément portant cet id est bien la cible attendue, ou rendez l’id unique dans le document.",
     "summaryNamePresent_title": "Les éléments summary ont un nom accessible",
     "summaryNamePresent_description": "Vérifie que les éléments <summary> exposent un nom accessible non vide.",
     "summaryNamePresent_summary_fail": "Ce summary n’a pas de nom accessible.",

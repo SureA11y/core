@@ -829,10 +829,10 @@ module.exports = {
   duplicateIdAria_title: 'Les ID référencés par ARIA doivent être uniques',
   duplicateIdAria_description:
     'Vérifie que toute valeur id référencée par un attribut de référence d’ID ARIA (aria-labelledby, aria-describedby, aria-owns, aria-controls, aria-activedescendant, aria-flowto, aria-errormessage, aria-details) est unique dans le document.',
-  duplicateIdAria_summary_fail:
-    'L’id « {{id}} » est référencé par un attribut ARIA mais est utilisé par {{duplicateCount}} éléments.',
-  duplicateIdAria_hint_fail:
-    'Rendez uniques dans le document les id référencés par des attributs ARIA.',
+  duplicateIdAria_summary_cantTell:
+    'L’id « {{id}} » est référencé par un attribut ARIA mais est utilisé par {{duplicateCount}} éléments ; la référence pointe vers le premier.',
+  duplicateIdAria_hint_cantTell:
+    'Vérifiez que le premier élément portant cet id est bien la cible attendue, ou rendez l’id unique dans le document.',
   summaryNamePresent_title: 'Les éléments summary ont un nom accessible',
   summaryNamePresent_description:
     'Vérifie que les éléments <summary> exposent un nom accessible non vide.',

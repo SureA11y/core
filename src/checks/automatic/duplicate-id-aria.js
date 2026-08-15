@@ -15,10 +15,10 @@
  *   attribute (i.e. at least one ARIA ID reference exists to resolve).
  * @expectation
  *   For every id value referenced by one of those attributes, exactly one
- *   element in the document carries that id. A duplicated id referenced by
- *   ARIA is ambiguous: assistive technologies cannot reliably determine
- *   which element the reference resolves to (typically the first, silently
- *   dropping the others).
+ *   element in the document carries that id. A duplicate does not break the
+ *   reference: it resolves to the first element in tree order, so the name is
+ *   still computed. Whether that element is the intended target depends on
+ *   author intent, which markup does not carry, so the outcome is cantTell.
  * @implementation-notes
  * - Scoped deliberately to ids referenced by ARIA, not the broader/
  *   deprecated page-wide duplicate-id check (see ROADMAP.md's "Skip" list).
@@ -107,7 +107,7 @@ function runInPage(ctx) {
     }
   }
 
-  const occurrences = [];
+  const cantTellOccurrences = [];
 
   for (const refId of referencedIds) {
     const els = idMap.get(refId) || [];
@@ -121,14 +121,15 @@ function runInPage(ctx) {
         ? helpers.getOuterHtmlSnippet(el)
         : el.outerHTML || '';
 
-      occurrences.push({
+      cantTellOccurrences.push({
         selector: stableSelector,
         html,
-        summary: 'This id is referenced by an ARIA attribute but is used by more than one element.',
-        hint: 'Make ids referenced by ARIA attributes unique within the document.',
+        summary:
+          'This id is referenced by an ARIA attribute but is used by more than one element; the reference resolves to the first.',
+        hint: 'Confirm the first element carrying this id is the intended target, or make the id unique.',
         i18n: {
-          summaryKey: 'duplicateIdAria_summary_fail',
-          hintKey: 'duplicateIdAria_hint_fail',
+          summaryKey: 'duplicateIdAria_summary_cantTell',
+          hintKey: 'duplicateIdAria_hint_cantTell',
           params: { id: refId, duplicateCount: String(els.length) }
         },
         data: {
@@ -145,15 +146,13 @@ function runInPage(ctx) {
   if (referencedIds.size === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'serious',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+
+  const resolved = helpers.resolveTieredOutcome(
+    [],
+    cantTellOccurrences,
+    rule.defaultSeverity || 'serious'
+  );
+  return { ruleId: rule.ruleId, ...resolved };
 }
 
 module.exports = { id, meta, runInPage };

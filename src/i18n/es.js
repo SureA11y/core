@@ -859,10 +859,10 @@ module.exports = {
   duplicateIdAria_title: 'Los IDs referenciados por ARIA deben ser únicos',
   duplicateIdAria_description:
     'Comprueba que cualquier valor de id referenciado por un atributo de referencia de ID de ARIA (aria-labelledby, aria-describedby, aria-owns, aria-controls, aria-activedescendant, aria-flowto, aria-errormessage, aria-details) sea único en el documento.',
-  duplicateIdAria_summary_fail:
-    'El id "{{id}}" está referenciado por un atributo ARIA, pero lo usan {{duplicateCount}} elementos.',
-  duplicateIdAria_hint_fail:
-    'Hacer únicos dentro del documento los ids referenciados por atributos ARIA.',
+  duplicateIdAria_summary_cantTell:
+    'El id "{{id}}" está referenciado por un atributo ARIA, pero lo usan {{duplicateCount}} elementos; la referencia apunta al primero.',
+  duplicateIdAria_hint_cantTell:
+    'Comprobar que el primer elemento con ese id es el destino previsto, o hacer único el id dentro del documento.',
 
   summaryNamePresent_title: 'Los elementos <summary> tienen un nombre accesible',
   summaryNamePresent_description:
