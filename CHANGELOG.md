@@ -7,6 +7,9 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 ### Changed
 - `target-size-minimum` now reports `cantTell` instead of `fail` when an undersized inline link's only spacing conflict is another inline link in the same run of text (e.g. pipe-separated links in a `<nav>`). The SC 2.5.8 inline exception ("the target is in a sentence or its size is otherwise constrained by the line-height of non-target text") plausibly covers such a link, but whether it applies isn't decidable from geometry — so the outcome shouldn't flip between `fail` and `pass` on the wrapping element's tag alone, which is exactly what happened before: the same links failed inside a `<nav>` yet passed inside a `<p>`, because the strict inline-text exception (`isInlineTextExceptionTarget`) requires a text-block container (`p`, `li`, `dd`, ...). The strict exception (link inside a text block → pass outright) is unchanged; the new middle tier is scoped narrowly by a shared `isInlineLinkTarget` helper (link-like, rendered inline/inline-*, with visible text) and only downgrades when both the target and its conflicting neighbor match, so an inline link crowding a `<button>` or a block-displayed nav link still fails. New `cantTell` locale strings (`targetSizeMinimum_summary_cantTell_inlineLinkRun`/`_hint_`) in all four locales; occurrences carry reason code `undersized-inline-link-run`.
 
+### Fixed
+- `duplicate-id-aria` reported duplicates that sat outside the scanned scope, so a run using `contextSelector` or `excludeSelectors` flagged elements it was never asked about — noise in component tests especially. Detection stays document-wide, since id uniqueness is a document property, but occurrences are now limited to the scanned scope.
+
 ## [1.4.1] - 2026-08-13
 
 ### Added

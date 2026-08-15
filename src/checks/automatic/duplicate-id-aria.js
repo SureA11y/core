@@ -23,7 +23,8 @@
  * - Scoped deliberately to ids referenced by ARIA, not the broader/
  *   deprecated page-wide duplicate-id check (see ROADMAP.md's "Skip" list).
  * - Document-wide by design: id uniqueness and ARIA id references are a
- *   whole-document property, not scoped to a sub-root.
+ *   whole-document property, not scoped to a sub-root. Reported occurrences are
+ *   limited to the scanned scope.
  */
 
 const id = 'duplicate-id-aria';
@@ -95,6 +96,17 @@ function runInPage(ctx) {
     }
   }
 
+  // Detection is document-wide; occurrences are limited to the scanned scope.
+  let inScope = null;
+  if (helpers && typeof helpers.queryAllSmart === 'function') {
+    try {
+      const scoped = helpers.queryAllSmart('[id]');
+      inScope = new Set(Array.isArray(scoped) ? scoped : Array.from(scoped || []));
+    } catch {
+      inScope = null;
+    }
+  }
+
   const occurrences = [];
 
   for (const refId of referencedIds) {
@@ -102,6 +114,8 @@ function runInPage(ctx) {
     if (els.length <= 1) continue;
 
     for (const el of els) {
+      if (inScope && !inScope.has(el)) continue;
+
       const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
       const html = helpers.getOuterHtmlSnippet
         ? helpers.getOuterHtmlSnippet(el)
