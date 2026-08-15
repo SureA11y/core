@@ -51,9 +51,8 @@
  *       unmounted SPA view).
  *   Both cases would produce false positives under a hard `fail`, which this
  *   engine reserves for high-confidence violations; `cantTell` routes them to
- *   human review instead. This mirrors how other tools treat 2.4.1 (e.g. axe
- *   marks the no-mechanism case "needs review" via reviewOnFail rather than
- *   failing it), and why no ACT rule hard-fails 2.4.1 by presence alone.
+ *   human review instead. No ACT rule hard-fails 2.4.1 by presence alone,
+ *   for the same reason.
  * - This rule intentionally checks presence, not position, for the
  *   same-page-anchor condition (b): a full bypass algorithm is heuristic
  *   (see ROADMAP.md's Tier 1a note on why this rule was
