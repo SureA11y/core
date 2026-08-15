@@ -33963,6 +33963,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  // Detection is document-wide; occurrences are limited to the scanned scope.
+  let inScope = null;
+  if (helpers && typeof helpers.queryAllSmart === 'function') {
+    try {
+      const scoped = helpers.queryAllSmart('[id]');
+      inScope = new Set(Array.isArray(scoped) ? scoped : Array.from(scoped || []));
+    } catch {
+      inScope = null;
+    }
+  }
+
   const occurrences = [];
 
   for (const refId of referencedIds) {
@@ -33970,6 +33981,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (els.length <= 1) continue;
 
     for (const el of els) {
+      if (inScope && !inScope.has(el)) continue;
+
       const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
       const html = helpers.getOuterHtmlSnippet
         ? helpers.getOuterHtmlSnippet(el)
@@ -73661,6 +73674,17 @@ const __a11yCoreCrossFrameApi = (function () {
     }
   }
 
+  // Detection is document-wide; occurrences are limited to the scanned scope.
+  let inScope = null;
+  if (helpers && typeof helpers.queryAllSmart === 'function') {
+    try {
+      const scoped = helpers.queryAllSmart('[id]');
+      inScope = new Set(Array.isArray(scoped) ? scoped : Array.from(scoped || []));
+    } catch {
+      inScope = null;
+    }
+  }
+
   const occurrences = [];
 
   for (const refId of referencedIds) {
@@ -73668,6 +73692,8 @@ const __a11yCoreCrossFrameApi = (function () {
     if (els.length <= 1) continue;
 
     for (const el of els) {
+      if (inScope && !inScope.has(el)) continue;
+
       const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
       const html = helpers.getOuterHtmlSnippet
         ? helpers.getOuterHtmlSnippet(el)

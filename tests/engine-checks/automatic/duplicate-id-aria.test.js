@@ -36,6 +36,35 @@ test(`${RULE_ID}: fail via aria-describedby`, () => {
   assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
 });
 
+const SPLIT_HTML =
+  `<!doctype html><html><body>` +
+  `<div id="w"><p id="a">inside</p><button aria-labelledby="a">x</button></div>` +
+  `<div id="o"><p id="a">outside</p></div>` +
+  `</body></html>`;
+
+test(`${RULE_ID}: contextSelector reports the in-scope duplicate only`, () => {
+  const result = runa11yCoreOnHtml(SPLIT_HTML, { runOnly: [RULE_ID], contextSelector: '#w' });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.match(rule.occurrences[0].html, /inside/);
+  assert.equal(rule.occurrences[0].data.details.duplicateCount, 2);
+});
+
+test(`${RULE_ID}: excludeSelectors keeps the excluded duplicate out of the occurrences`, () => {
+  const result = runa11yCoreOnHtml(SPLIT_HTML, { runOnly: [RULE_ID], excludeSelectors: ['#o'] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.match(rule.occurrences[0].html, /inside/);
+});
+
+test(`${RULE_ID}: pass when every duplicate lies outside the scanned scope`, () => {
+  const html =
+    `<!doctype html><html><body>` +
+    `<div id="w"><button aria-labelledby="a">x</button></div>` +
+    `<div id="o"><p id="a">one</p><p id="a">two</p></div>` +
+    `</body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], contextSelector: '#w' });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
 test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><body><div id="a">A</div><div id="a">A2</div><button aria-labelledby="a">x</button></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
