@@ -41,7 +41,7 @@ No code changes needed. Run `npm run i18n:new <locale>` to scaffold `src/i18n/<l
 
 - Keep commits focused — one logical change per commit, with a message explaining *why*, not just *what* (the diff already shows what).
 - Run the full test suite (`npm test`) before opening a PR; it must be green.
-- If your change affects a rule's documented scope relative to other engines, update that rule's implementation notes accordingly so the scope decision stays traceable.
+- If your change affects a rule's documented scope, update that rule's implementation notes accordingly so the scope decision stays traceable.
 
 ## Sign-off
 
