@@ -831,9 +831,10 @@ module.exports = {
   duplicateIdAria_title: 'IDs referenced by ARIA must be unique',
   duplicateIdAria_description:
     'Checks that any id value referenced by an ARIA ID-reference attribute (aria-labelledby, aria-describedby, aria-owns, aria-controls, aria-activedescendant, aria-flowto, aria-errormessage, aria-details) is unique in the document.',
-  duplicateIdAria_summary_fail:
-    'The id "{{id}}" is referenced by an ARIA attribute but is used by {{duplicateCount}} elements.',
-  duplicateIdAria_hint_fail: 'Make ids referenced by ARIA attributes unique within the document.',
+  duplicateIdAria_summary_cantTell:
+    'The id "{{id}}" is referenced by an ARIA attribute but is used by {{duplicateCount}} elements; the reference resolves to the first one.',
+  duplicateIdAria_hint_cantTell:
+    'Confirm the first element carrying this id is the intended target, or make the id unique within the document.',
 
   summaryNamePresent_title: 'Summary elements have an accessible name',
   summaryNamePresent_description:
