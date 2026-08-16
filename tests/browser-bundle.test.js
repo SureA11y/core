@@ -14,6 +14,9 @@ const BUNDLE_PATH = path.join(__dirname, '..', 'surea11y.browser.js');
 const bundleSource = fs.readFileSync(BUNDLE_PATH, 'utf8');
 const BUNDLE_FILE_URL = pathToFileURL(BUNDLE_PATH).href;
 
+const localeFileUrl = (locale) =>
+  pathToFileURL(path.join(__dirname, '..', `surea11y.i18n.${locale}.js`)).href;
+
 // Loads a page with a REAL `<script src="...">` tag pointing at the actual
 // built file on disk -- fetched by jsdom's own resource loader, not just
 // injected as inline text -- so this exercises exactly the instruction
@@ -21,11 +24,11 @@ const BUNDLE_FILE_URL = pathToFileURL(BUNDLE_PATH).href;
 // (`<script src="node_modules/@surea11y/core/surea11y.browser.js">`), not
 // an approximation of it. Async because a `src`-loaded script (unlike
 // inline `textContent`) only runs once jsdom has actually fetched it.
-function loadBundleViaScriptTag(html, pageUrl) {
-  const htmlWithScript = html.replace(
-    '</body>',
-    `<script src="${BUNDLE_FILE_URL}"></script></body>`
-  );
+function loadBundleViaScriptTag(html, pageUrl, locales = []) {
+  const scripts = [BUNDLE_FILE_URL, ...locales.map(localeFileUrl)]
+    .map((src) => `<script src="${src}"></script>`)
+    .join('');
+  const htmlWithScript = html.replace('</body>', `${scripts}</body>`);
 
   return new Promise((resolve, reject) => {
     const dom = new JSDOM(htmlWithScript, {
@@ -161,4 +164,121 @@ test("the bundle's scan result matches the Node-required runa11yCoreInPage for t
     Object.fromEntries(result.checksResults.map((r) => [r.ruleId, r.outcome]));
 
   assert.deepEqual(outcomesById(bundledResult), outcomesById(referenceResult));
+});
+
+const LOCALE_PAGE =
+  '<!doctype html><html><head><title>T</title></head><body><div role="generic">x</div></body></html>';
+
+function hintFrom(dom, engineOptions) {
+  const result = dom.window.a11ycore.runa11yCoreInPage(
+    'https://example.test/',
+    null,
+    engineOptions,
+    null
+  );
+  return result.checksResults.find((r) => r.ruleId === 'aria-deprecated-role').occurrences[0].hint;
+}
+
+test('the bundle carries English only', () => {
+  assert.equal(bundleSource.includes('Entfernen Sie sie'), false);
+  assert.equal(bundleSource.includes('Remove it —'), true);
+});
+
+test('without a side file, a non-English locale reports dictionary-not-loaded', async () => {
+  const dom = await loadBundleViaScriptTag(LOCALE_PAGE, 'https://example.test/');
+
+  const result = dom.window.a11ycore.runa11yCoreInPage(
+    'https://example.test/',
+    null,
+    { locale: 'de' },
+    null
+  );
+
+  assert.deepEqual(
+    { ...result.engine.locale },
+    {
+      requested: 'de',
+      resolved: 'en',
+      reason: 'dictionary-not-loaded'
+    }
+  );
+  assert.match(hintFrom(dom, { locale: 'de' }), /^Remove it/);
+
+  dom.window.close();
+});
+
+test('a locale the project does not ship is still unknown-locale, not dictionary-not-loaded', async () => {
+  const dom = await loadBundleViaScriptTag(LOCALE_PAGE, 'https://example.test/');
+
+  const result = dom.window.a11ycore.runa11yCoreInPage(
+    'https://example.test/',
+    null,
+    { locale: 'ja' },
+    null
+  );
+
+  assert.equal(result.engine.locale.reason, 'unknown-locale');
+
+  dom.window.close();
+});
+
+test('loading a locale side file makes that locale resolve and translate', async () => {
+  const dom = await loadBundleViaScriptTag(LOCALE_PAGE, 'https://example.test/', ['de']);
+
+  const result = dom.window.a11ycore.runa11yCoreInPage(
+    'https://example.test/',
+    null,
+    { locale: 'de' },
+    null
+  );
+
+  assert.deepEqual({ ...result.engine.locale }, { requested: 'de', resolved: 'de', reason: 'ok' });
+  assert.match(hintFrom(dom, { locale: 'de' }), /^Entfernen Sie/);
+
+  dom.window.close();
+});
+
+test('a registered locale still supports subtag fallback', async () => {
+  const dom = await loadBundleViaScriptTag(LOCALE_PAGE, 'https://example.test/', ['de']);
+
+  const result = dom.window.a11ycore.runa11yCoreInPage(
+    'https://example.test/',
+    null,
+    { locale: 'de-DE' },
+    null
+  );
+
+  assert.deepEqual(
+    { ...result.engine.locale },
+    {
+      requested: 'de-DE',
+      resolved: 'de',
+      reason: 'primary-subtag'
+    }
+  );
+
+  dom.window.close();
+});
+
+test('side files do not interfere with each other', async () => {
+  const dom = await loadBundleViaScriptTag(LOCALE_PAGE, 'https://example.test/', ['de', 'fr']);
+
+  assert.match(hintFrom(dom, { locale: 'de' }), /^Entfernen Sie/);
+  assert.match(hintFrom(dom, { locale: 'fr' }), /^Supprimez-le/);
+  assert.match(hintFrom(dom, { locale: 'en' }), /^Remove it/);
+
+  dom.window.close();
+});
+
+test('engineOptions.messages still wins over a registered side file', async () => {
+  const dom = await loadBundleViaScriptTag(LOCALE_PAGE, 'https://example.test/', ['de']);
+
+  const hint = hintFrom(dom, {
+    locale: 'de',
+    messages: { de: { ariaDeprecatedRole_guidance_generic: 'Eigene Übersetzung.' } }
+  });
+
+  assert.equal(hint, 'Eigene Übersetzung.');
+
+  dom.window.close();
 });

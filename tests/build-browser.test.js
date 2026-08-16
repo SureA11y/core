@@ -6,7 +6,8 @@ const assert = require('node:assert/strict');
 const {
   extractInPageRunnerSource,
   readEngineConstants,
-  generateBrowserBundle
+  generateBrowserBundle,
+  generateLocaleSideFile
 } = require('../scripts/build-browser.js');
 
 // A minimal, synthetic stand-in for src/core.js's real shape -- exercises
@@ -105,7 +106,26 @@ test('generateBrowserBundle produces a self-executing IIFE assigning window.a11y
 
   assert.match(bundle, /^\(function \(global\) \{/m);
   assert.match(bundle, /global\.a11ycore = \{/);
-  assert.match(bundle, /runa11yCoreInPage: runa11yCoreInPage/);
+  assert.match(bundle, /runa11yCoreInPage: function \(/);
+  assert.match(bundle, /registerMessages: function \(/);
   assert.equal(/\brequire\s*\(/.test(bundle), false);
   assert.equal(/\bmodule\.exports\b/.test(bundle), false);
+});
+
+test('generateLocaleSideFile registers its dictionary and refuses to run alone', () => {
+  const side = generateLocaleSideFile('de', { a: 'Ä' });
+
+  assert.match(side, /^\/\* SPDX-License-Identifier: MPL-2\.0 \*\//);
+  assert.match(side, /registerMessages\("de", \{"a":"Ä"\}\)/);
+  assert.deepEqual(JSON.parse(side.match(/registerMessages\("de", (\{.*\})\)/)[1]), { a: 'Ä' });
+  assert.match(side, /load surea11y\.browser\.js first/);
+  assert.equal(/\brequire\s*\(/.test(side), false);
+});
+
+test('generateLocaleSideFile escapes a dictionary value that could close the script', () => {
+  const side = generateLocaleSideFile('de', { a: '</script><script>x()' });
+  const call = side.split('\n').find((l) => l.includes('registerMessages('));
+
+  assert.equal(call.includes('</script>'), false);
+  assert.match(call, /\\u003c\/script>/);
 });
