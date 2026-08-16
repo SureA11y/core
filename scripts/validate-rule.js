@@ -357,14 +357,18 @@ function validateRunInPageSerialization(runInPage) {
     // Remove line comments // ...
     out = out.replace(/(^|[^:])\/\/.*$/gm, '$1 ');
 
-    // Remove template literals `...` (best-effort; does not evaluate ${} content)
-    out = out.replace(/`(?:\\[\s\S]|[^`\\])*`/g, ' ` ` ');
+    // Regex literals go first: one can contain a quote (/"/g) that would
+    // otherwise open a phantom string. Only a slash in expression position
+    // counts, so a division and a // comment are both left alone.
+    out = out.replace(
+      /(^|[=(,:[!&|?{};+\-*%~^]|\breturn\b|\btypeof\b)(\s*)\/(?![*/])(?:\\.|\[(?:\\.|[^\]\\])*\]|[^/\\\n])+\/[gimsuy]*/g,
+      '$1$2/ /'
+    );
 
-    // Remove single-quoted strings '...'
-    out = out.replace(/'(?:\\.|[^'\\])*'/g, " ' ' ");
-
-    // Remove double-quoted strings "..."
-    out = out.replace(/"(?:\\.|[^"\\])*"/g, ' " " ');
+    // Then all three string forms in one pass, so whichever quote opens first
+    // also closes the literal. Stripping them in sequence lets an apostrophe
+    // inside a double-quoted string swallow the code after it.
+    out = out.replace(/`(?:\\[\s\S]|[^`\\])*`|'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"/g, ' "" ');
 
     return out;
   }
@@ -545,12 +549,24 @@ function main() {
     assert.ok(hasOwn(mod, k), `module missing export: ${k}`);
   }
 
-  const keys = Object.keys(mod).sort();
+  // applicability is optional and 14 rules use it; anything else is a typo or
+  // a helper that should not be part of the module contract.
+  const allowed = new Set(['id', 'meta', 'runInPage', 'applicability']);
+  const unexpected = Object.keys(mod)
+    .filter((k) => !allowed.has(k))
+    .sort();
   assert.deepStrictEqual(
-    keys,
-    ['id', 'meta', 'runInPage'],
-    `module must export exactly id, meta, runInPage (got: ${keys.join(', ')})`
+    unexpected,
+    [],
+    `module exports more than id, meta, runInPage, applicability (got: ${unexpected.join(', ')})`
   );
+
+  if (hasOwn(mod, 'applicability')) {
+    assert.ok(
+      typeof mod.applicability === 'function',
+      'applicability, when exported, must be a function'
+    );
+  }
 
   // id
   assert.ok(isNonEmptyString(mod.id), 'id must be non-empty string');
