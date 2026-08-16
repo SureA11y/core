@@ -93,3 +93,42 @@ test("renderHtmlReport: WCAG rollup section reflects a real composite rule's con
   assert.match(report, new RegExp(expectedBreakdown.replace(/\//g, '\\/')));
   assert.match(report, new RegExp(composite.data.details.checksIds[0]));
 });
+
+test('renderHtmlReport: meta bar reports the locale the scan resolved to', () => {
+  const html =
+    '<!doctype html><html lang="en"><head><title>T</title></head><body><img src="x.png"></body></html>';
+  const report = renderHtmlReport(runa11yCoreOnHtml(html, { engineOptions: { locale: 'de' } }));
+
+  assert.match(report, /<b>de<\/b>locale/);
+  assert.doesNotMatch(report, /requested/);
+});
+
+test('renderHtmlReport: meta bar names the requested locale when it fell back', () => {
+  const html =
+    '<!doctype html><html lang="en"><head><title>T</title></head><body><img src="x.png"></body></html>';
+  const report = renderHtmlReport(runa11yCoreOnHtml(html, { engineOptions: { locale: 'ja' } }));
+
+  assert.match(report, /<b>en<\/b>locale \(requested ja\)/);
+});
+
+test('renderHtmlReport: a result from an engine without engine.locale gets no locale chip', () => {
+  const check = makeCheckResult({ ruleId: 'some-rule', outcome: 'pass', occurrences: [] });
+  const report = renderHtmlReport(makeScanResult([check]));
+
+  assert.doesNotMatch(report, /<\/b>locale/);
+});
+
+test('renderHtmlReport: a hostile locale string cannot break out of the meta bar', () => {
+  const check = makeCheckResult({ ruleId: 'some-rule', outcome: 'pass', occurrences: [] });
+  const result = makeScanResult([check]);
+  result.engine.locale = {
+    requested: '<img src=x onerror=alert(1)>',
+    resolved: 'en',
+    reason: 'unknown-locale'
+  };
+
+  const report = renderHtmlReport(result);
+
+  assert.doesNotMatch(report, /<img src=x onerror/);
+  assert.match(report, /&lt;img src=x onerror=alert\(1\)&gt;/);
+});
