@@ -4,6 +4,9 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ## [Unreleased]
 
+### Fixed
+- Ten German, Spanish and French strings for `inputImage-alt-present` had lost their diacritics (`zugaengliche`, `boton`, `controle`), and the French ones their apostrophes (`l action`). Only that rule's `defaultName` and `emptyAlt` variants were affected — the rest of each file is intact, and the same words appear correctly elsewhere. The two Spanish hints also now use the infinitive the other 98 hints use.
+
 ## [1.5.0] - 2026-08-16
 
 ### Added
