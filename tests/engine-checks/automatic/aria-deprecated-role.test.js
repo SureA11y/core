@@ -102,3 +102,30 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-deprecated-role-all-scen
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
 });
+
+// The ACT glossary's "programmatically hidden" predates inert and names only
+// display, visibility and aria-hidden. An inert subtree is out of the
+// accessibility tree entirely, so the same non-applicability reasoning holds.
+// No ACT test case for this rule uses inert, so matching ACT is unaffected.
+test(`${RULE_ID}: not applicable inside an inert subtree`, () => {
+  const hidden = `<!doctype html><html lang="en"><head><title>t</title></head><body><div inert><div id="x" role="directory">x</div></div></body></html>`;
+  const shown = hidden.replace('<div inert>', '<div>');
+
+  const hiddenResult = runa11yCoreOnHtml(hidden, { runOnly: [RULE_ID] });
+  assertRule(hiddenResult, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+
+  const shownResult = runa11yCoreOnHtml(shown, { runOnly: [RULE_ID] });
+  assert.notStrictEqual(
+    shownResult.checksResults.find((r) => r.ruleId === RULE_ID).outcome,
+    'notApplicable',
+    'the same markup outside inert is still judged'
+  );
+});
+
+test(`${RULE_ID}: inert on the element itself also removes it from scope`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><div id="x" inert role="directory">x</div></body></html>`;
+  assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'notApplicable', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
+});
