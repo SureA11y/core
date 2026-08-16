@@ -384,6 +384,25 @@ function getLocaleDict(engineOptions) {
   return (I18N && I18N[loc]) ? I18N[loc] : (I18N && I18N.en ? I18N.en : {});
 }
 
+// Reports which dictionary the run actually used, so a locale that fell back
+// to English is visible in the result rather than only in the wording.
+function resolveLocale(engineOptions) {
+  const requested = normalizeLocale(engineOptions && engineOptions.locale);
+  const dict = I18N ? I18N[requested] : null;
+  const en = (I18N && I18N.en) ? I18N.en : {};
+
+  if (!dict) return { requested: requested, resolved: 'en', reason: 'unknown-locale' };
+  if (dict === en) return { requested: requested, resolved: requested, reason: 'ok' };
+
+  for (const key in en) {
+    if (!(key in dict)) {
+      return { requested: requested, resolved: requested, reason: 'partial-dictionary' };
+    }
+  }
+
+  return { requested: requested, resolved: requested, reason: 'ok' };
+}
+
   function isTruthyMustache(val) {
     if (val === false || val === null || val === undefined) return false;
     if (typeof val === 'number') return val !== 0 && !Number.isNaN(val);

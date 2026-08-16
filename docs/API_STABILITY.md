@@ -6,7 +6,7 @@
 
 Removing, renaming, or changing the type/meaning of any of these is a **major** version bump:
 
-- Top-level result: `engine.tag`, `engine.schemaVersion`, `url`, `checksResults` (an array), `rulesResults` (an array).
+- Top-level result: `engine.tag`, `engine.schemaVersion`, `engine.locale` (the field and its `requested`/`resolved`/`reason` keys — the set of `reason` *values* is open and may gain entries in a minor), `url`, `checksResults` (an array), `rulesResults` (an array).
 - Each `checksResults[i]` / `rulesResults[i]` entry: `ruleId`, `outcome`, `outcomeNormalized`, `severity`, `confidence`, `type`, `title`, `description`, `meta` (including `meta.normativeMappings`, `meta.deprecated`/`.deprecation` — see below), `engineOptions`, `schemaVersion`.
 - Each occurrence (`occurrences[i]`): `selector`, `html`, `summary`, `hint`, `i18n`, `structuralPath`.
 - The rule **catalog** (`getChecksCatalog()`/`getRulesCatalog()`, a separate surface from a scan result — see `RULE_AUTHORING.md`): `ruleId`, `title`, `description`, `tags`, `wcagSc`, `normativeMappings`, `defaultSeverity`, `defaultConfidence`, `type`, `deprecated`/`.deprecation`. Note `tags` lives here, not on a per-scan `checksResults[i].meta` — the two surfaces intentionally carry different subsets of a rule's metadata.
@@ -41,7 +41,7 @@ Declaring this map is what lets the engine's internal file layout change without
 - **Minor**: adding a new stable field, adding a new rule to the catalog, or marking an existing rule `deprecated` (see below).
 - **Major**: removing or renaming a stable field, changing a stable field's type or meaning, or removing a rule ID once its deprecation notice period has passed. Paired with an `engine.schemaVersion` bump specifically when the *shape* changes (as opposed to package-level major bumps for other reasons, e.g. dropping support for an old Node version).
 
-`engine.schemaVersion` has been `"1.0.0"` since the engine's first release and has never needed a bump — nothing has changed a stable field's shape yet. Adding the `deprecated`/`deprecation` meta fields described below is purely additive (new optional fields, ignored safely by anything not looking for them), so it does **not** warrant a schema bump either — this is the policy's first real application.
+`engine.schemaVersion` has been `"1.0.0"` since the engine's first release and has never needed a bump — nothing has changed a stable field's shape yet. Adding the `deprecated`/`deprecation` meta fields described below is purely additive (new optional fields, ignored safely by anything not looking for them), so it does **not** warrant a schema bump either — this is the policy's first real application. `engine.locale` is the second: a new field next to the existing ones, with no change to any field a consumer already reads.
 
 ## Release cadence
 

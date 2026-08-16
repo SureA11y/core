@@ -9355,6 +9355,10 @@ const I18N = {
     "contrastMinimum_cantTell_engineFailure": "Le contraste minimum (AA) n’a pas pu être déterminé en raison d’une erreur interne du moteur ({{reasonCode}}).",
     "contrastEnhanced_title": "Le texte respecte le contraste renforcé (AAA)",
     "contrastEnhanced_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 7,0:1 (texte normal) ou 4,5:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
+    "contrastEnhanced_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant renforcé (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
+    "contrastEnhanced_pass_allAboveThreshold": "Tout le texte calculable respecte le contraste renforcé (AAA). Nœuds de texte éligibles : {{eligibleTextCount}}. Calculables : {{computableTextCount}}.",
+    "contrastEnhanced_notApplicable_noComputableText": "Aucun texte éligible n’avait un contraste calculable (nœuds de texte éligibles : {{eligibleTextCount}}). Voir la règle de calculabilité du contraste pour les détails.",
+    "contrastEnhanced_cantTell_engineFailure": "Le contraste renforcé (AAA) n’a pas pu être déterminé en raison d’une erreur interne du moteur ({{reasonCode}}).",
     "dom_textContrastMinimum_title": "Le texte doit avoir un contraste suffisant (minimum)",
     "dom_textContrastMinimum_description": "Vérifie le contraste du texte visible par rapport à son arrière-plan calculé selon WCAG 2.2 SC 1.4.3 (AA), en utilisant les styles rendus (taille/épaisseur) pour déterminer le ratio requis.",
     "dom_textContrastMinimum_summary_fail": "Contraste de texte insuffisant : {{contrastRatio}}:1 (minimum requis {{requiredRatio}}:1). Premier plan {{fgColor}} sur arrière-plan {{bgColor}}. Police {{fontSizePx}}px, graisse {{fontWeight}}{{#isBold}}, en gras{{/isBold}}{{#isLargeText}} (grand texte){{/isLargeText}}.",
@@ -9362,10 +9366,6 @@ const I18N = {
     "dom_textContrastMinimum_summary_pass": "Contraste de texte conforme : {{contrastRatio}}:1 (minimum requis {{requiredRatio}}:1). Premier plan {{fgColor}} sur arrière-plan {{bgColor}}. Police {{fontSizePx}}px, graisse {{fontWeight}}{{#isBold}}, en gras{{/isBold}}{{#isLargeText}} (grand texte){{/isLargeText}}.",
     "dom_textContrastMinimum_summary_cantTell": "Impossible de calculer fiablement le contraste du texte car l’arrière-plan effectif n’est pas déterminable de manière fiable (ex. image, dégradé, vidéo, canvas, transparence ou fusion complexes).",
     "dom_textContrastMinimum_hint_cantTell": "Vérifiez manuellement le contraste lorsque le texte est superposé à des images/dégradés/transparences ; assurez-vous qu’il respecte {{requiredRatio}}:1 selon la taille/épaisseur calculée.",
-    "contrastEnhanced_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant renforcé (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
-    "contrastEnhanced_pass_allAboveThreshold": "Tout le texte calculable respecte le contraste renforcé (AAA). Nœuds de texte éligibles : {{eligibleTextCount}}. Calculables : {{computableTextCount}}.",
-    "contrastEnhanced_notApplicable_noComputableText": "Aucun texte éligible n’avait un contraste calculable (nœuds de texte éligibles : {{eligibleTextCount}}). Voir la règle de calculabilité du contraste pour les détails.",
-    "contrastEnhanced_cantTell_engineFailure": "Le contraste renforcé (AAA) n’a pas pu être déterminé en raison d’une erreur interne du moteur ({{reasonCode}}).",
     "dom_textContrastEnhanced_title": "Le texte doit avoir un contraste suffisant (renforcé)",
     "dom_textContrastEnhanced_description": "Vérifie le contraste du texte visible par rapport à son arrière-plan calculé selon WCAG 2.2 SC 1.4.6 (AAA), en utilisant les styles rendus (taille/épaisseur) pour déterminer le ratio requis.",
     "dom_textContrastEnhanced_summary_fail": "Contraste de texte renforcé insuffisant : {{contrastRatio}}:1 (requis {{requiredRatio}}:1). Premier plan {{fgColor}} sur arrière-plan {{bgColor}}. Police {{fontSizePx}}px, graisse {{fontWeight}}{{#isBold}}, en gras{{/isBold}}{{#isLargeText}} (grand texte){{/isLargeText}}.",
@@ -9838,6 +9838,25 @@ function normalizeLocale(locale) {
 function getLocaleDict(engineOptions) {
   const loc = normalizeLocale(engineOptions && engineOptions.locale);
   return (I18N && I18N[loc]) ? I18N[loc] : (I18N && I18N.en ? I18N.en : {});
+}
+
+// Reports which dictionary the run actually used, so a locale that fell back
+// to English is visible in the result rather than only in the wording.
+function resolveLocale(engineOptions) {
+  const requested = normalizeLocale(engineOptions && engineOptions.locale);
+  const dict = I18N ? I18N[requested] : null;
+  const en = (I18N && I18N.en) ? I18N.en : {};
+
+  if (!dict) return { requested: requested, resolved: 'en', reason: 'unknown-locale' };
+  if (dict === en) return { requested: requested, resolved: requested, reason: 'ok' };
+
+  for (const key in en) {
+    if (!(key in dict)) {
+      return { requested: requested, resolved: requested, reason: 'partial-dictionary' };
+    }
+  }
+
+  return { requested: requested, resolved: requested, reason: 'ok' };
 }
 
   function isTruthyMustache(val) {
@@ -18420,7 +18439,11 @@ const runCore = (function runCore(
   }
 
   return {
-    engine: { tag: ENGINE_TAG, schemaVersion: SCHEMA_VERSION },
+    engine: {
+      tag: ENGINE_TAG,
+      schemaVersion: SCHEMA_VERSION,
+      locale: resolveLocale(engineOptionsResolved)
+    },
     url,
     title,
     timestamp,
@@ -49110,6 +49133,10 @@ const I18N = {
     "contrastMinimum_cantTell_engineFailure": "Le contraste minimum (AA) n’a pas pu être déterminé en raison d’une erreur interne du moteur ({{reasonCode}}).",
     "contrastEnhanced_title": "Le texte respecte le contraste renforcé (AAA)",
     "contrastEnhanced_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 7,0:1 (texte normal) ou 4,5:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
+    "contrastEnhanced_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant renforcé (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
+    "contrastEnhanced_pass_allAboveThreshold": "Tout le texte calculable respecte le contraste renforcé (AAA). Nœuds de texte éligibles : {{eligibleTextCount}}. Calculables : {{computableTextCount}}.",
+    "contrastEnhanced_notApplicable_noComputableText": "Aucun texte éligible n’avait un contraste calculable (nœuds de texte éligibles : {{eligibleTextCount}}). Voir la règle de calculabilité du contraste pour les détails.",
+    "contrastEnhanced_cantTell_engineFailure": "Le contraste renforcé (AAA) n’a pas pu être déterminé en raison d’une erreur interne du moteur ({{reasonCode}}).",
     "dom_textContrastMinimum_title": "Le texte doit avoir un contraste suffisant (minimum)",
     "dom_textContrastMinimum_description": "Vérifie le contraste du texte visible par rapport à son arrière-plan calculé selon WCAG 2.2 SC 1.4.3 (AA), en utilisant les styles rendus (taille/épaisseur) pour déterminer le ratio requis.",
     "dom_textContrastMinimum_summary_fail": "Contraste de texte insuffisant : {{contrastRatio}}:1 (minimum requis {{requiredRatio}}:1). Premier plan {{fgColor}} sur arrière-plan {{bgColor}}. Police {{fontSizePx}}px, graisse {{fontWeight}}{{#isBold}}, en gras{{/isBold}}{{#isLargeText}} (grand texte){{/isLargeText}}.",
@@ -49117,10 +49144,6 @@ const I18N = {
     "dom_textContrastMinimum_summary_pass": "Contraste de texte conforme : {{contrastRatio}}:1 (minimum requis {{requiredRatio}}:1). Premier plan {{fgColor}} sur arrière-plan {{bgColor}}. Police {{fontSizePx}}px, graisse {{fontWeight}}{{#isBold}}, en gras{{/isBold}}{{#isLargeText}} (grand texte){{/isLargeText}}.",
     "dom_textContrastMinimum_summary_cantTell": "Impossible de calculer fiablement le contraste du texte car l’arrière-plan effectif n’est pas déterminable de manière fiable (ex. image, dégradé, vidéo, canvas, transparence ou fusion complexes).",
     "dom_textContrastMinimum_hint_cantTell": "Vérifiez manuellement le contraste lorsque le texte est superposé à des images/dégradés/transparences ; assurez-vous qu’il respecte {{requiredRatio}}:1 selon la taille/épaisseur calculée.",
-    "contrastEnhanced_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant renforcé (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
-    "contrastEnhanced_pass_allAboveThreshold": "Tout le texte calculable respecte le contraste renforcé (AAA). Nœuds de texte éligibles : {{eligibleTextCount}}. Calculables : {{computableTextCount}}.",
-    "contrastEnhanced_notApplicable_noComputableText": "Aucun texte éligible n’avait un contraste calculable (nœuds de texte éligibles : {{eligibleTextCount}}). Voir la règle de calculabilité du contraste pour les détails.",
-    "contrastEnhanced_cantTell_engineFailure": "Le contraste renforcé (AAA) n’a pas pu être déterminé en raison d’une erreur interne du moteur ({{reasonCode}}).",
     "dom_textContrastEnhanced_title": "Le texte doit avoir un contraste suffisant (renforcé)",
     "dom_textContrastEnhanced_description": "Vérifie le contraste du texte visible par rapport à son arrière-plan calculé selon WCAG 2.2 SC 1.4.6 (AAA), en utilisant les styles rendus (taille/épaisseur) pour déterminer le ratio requis.",
     "dom_textContrastEnhanced_summary_fail": "Contraste de texte renforcé insuffisant : {{contrastRatio}}:1 (requis {{requiredRatio}}:1). Premier plan {{fgColor}} sur arrière-plan {{bgColor}}. Police {{fontSizePx}}px, graisse {{fontWeight}}{{#isBold}}, en gras{{/isBold}}{{#isLargeText}} (grand texte){{/isLargeText}}.",
@@ -49593,6 +49616,25 @@ function normalizeLocale(locale) {
 function getLocaleDict(engineOptions) {
   const loc = normalizeLocale(engineOptions && engineOptions.locale);
   return (I18N && I18N[loc]) ? I18N[loc] : (I18N && I18N.en ? I18N.en : {});
+}
+
+// Reports which dictionary the run actually used, so a locale that fell back
+// to English is visible in the result rather than only in the wording.
+function resolveLocale(engineOptions) {
+  const requested = normalizeLocale(engineOptions && engineOptions.locale);
+  const dict = I18N ? I18N[requested] : null;
+  const en = (I18N && I18N.en) ? I18N.en : {};
+
+  if (!dict) return { requested: requested, resolved: 'en', reason: 'unknown-locale' };
+  if (dict === en) return { requested: requested, resolved: requested, reason: 'ok' };
+
+  for (const key in en) {
+    if (!(key in dict)) {
+      return { requested: requested, resolved: requested, reason: 'partial-dictionary' };
+    }
+  }
+
+  return { requested: requested, resolved: requested, reason: 'ok' };
 }
 
   function isTruthyMustache(val) {
@@ -58175,7 +58217,11 @@ const runCore = (function runCore(
   }
 
   return {
-    engine: { tag: ENGINE_TAG, schemaVersion: SCHEMA_VERSION },
+    engine: {
+      tag: ENGINE_TAG,
+      schemaVersion: SCHEMA_VERSION,
+      locale: resolveLocale(engineOptionsResolved)
+    },
     url,
     title,
     timestamp,
@@ -88820,6 +88866,10 @@ const I18N = {
     "contrastMinimum_cantTell_engineFailure": "Le contraste minimum (AA) n’a pas pu être déterminé en raison d’une erreur interne du moteur ({{reasonCode}}).",
     "contrastEnhanced_title": "Le texte respecte le contraste renforcé (AAA)",
     "contrastEnhanced_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 7,0:1 (texte normal) ou 4,5:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
+    "contrastEnhanced_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant renforcé (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
+    "contrastEnhanced_pass_allAboveThreshold": "Tout le texte calculable respecte le contraste renforcé (AAA). Nœuds de texte éligibles : {{eligibleTextCount}}. Calculables : {{computableTextCount}}.",
+    "contrastEnhanced_notApplicable_noComputableText": "Aucun texte éligible n’avait un contraste calculable (nœuds de texte éligibles : {{eligibleTextCount}}). Voir la règle de calculabilité du contraste pour les détails.",
+    "contrastEnhanced_cantTell_engineFailure": "Le contraste renforcé (AAA) n’a pas pu être déterminé en raison d’une erreur interne du moteur ({{reasonCode}}).",
     "dom_textContrastMinimum_title": "Le texte doit avoir un contraste suffisant (minimum)",
     "dom_textContrastMinimum_description": "Vérifie le contraste du texte visible par rapport à son arrière-plan calculé selon WCAG 2.2 SC 1.4.3 (AA), en utilisant les styles rendus (taille/épaisseur) pour déterminer le ratio requis.",
     "dom_textContrastMinimum_summary_fail": "Contraste de texte insuffisant : {{contrastRatio}}:1 (minimum requis {{requiredRatio}}:1). Premier plan {{fgColor}} sur arrière-plan {{bgColor}}. Police {{fontSizePx}}px, graisse {{fontWeight}}{{#isBold}}, en gras{{/isBold}}{{#isLargeText}} (grand texte){{/isLargeText}}.",
@@ -88827,10 +88877,6 @@ const I18N = {
     "dom_textContrastMinimum_summary_pass": "Contraste de texte conforme : {{contrastRatio}}:1 (minimum requis {{requiredRatio}}:1). Premier plan {{fgColor}} sur arrière-plan {{bgColor}}. Police {{fontSizePx}}px, graisse {{fontWeight}}{{#isBold}}, en gras{{/isBold}}{{#isLargeText}} (grand texte){{/isLargeText}}.",
     "dom_textContrastMinimum_summary_cantTell": "Impossible de calculer fiablement le contraste du texte car l’arrière-plan effectif n’est pas déterminable de manière fiable (ex. image, dégradé, vidéo, canvas, transparence ou fusion complexes).",
     "dom_textContrastMinimum_hint_cantTell": "Vérifiez manuellement le contraste lorsque le texte est superposé à des images/dégradés/transparences ; assurez-vous qu’il respecte {{requiredRatio}}:1 selon la taille/épaisseur calculée.",
-    "contrastEnhanced_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant renforcé (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
-    "contrastEnhanced_pass_allAboveThreshold": "Tout le texte calculable respecte le contraste renforcé (AAA). Nœuds de texte éligibles : {{eligibleTextCount}}. Calculables : {{computableTextCount}}.",
-    "contrastEnhanced_notApplicable_noComputableText": "Aucun texte éligible n’avait un contraste calculable (nœuds de texte éligibles : {{eligibleTextCount}}). Voir la règle de calculabilité du contraste pour les détails.",
-    "contrastEnhanced_cantTell_engineFailure": "Le contraste renforcé (AAA) n’a pas pu être déterminé en raison d’une erreur interne du moteur ({{reasonCode}}).",
     "dom_textContrastEnhanced_title": "Le texte doit avoir un contraste suffisant (renforcé)",
     "dom_textContrastEnhanced_description": "Vérifie le contraste du texte visible par rapport à son arrière-plan calculé selon WCAG 2.2 SC 1.4.6 (AAA), en utilisant les styles rendus (taille/épaisseur) pour déterminer le ratio requis.",
     "dom_textContrastEnhanced_summary_fail": "Contraste de texte renforcé insuffisant : {{contrastRatio}}:1 (requis {{requiredRatio}}:1). Premier plan {{fgColor}} sur arrière-plan {{bgColor}}. Police {{fontSizePx}}px, graisse {{fontWeight}}{{#isBold}}, en gras{{/isBold}}{{#isLargeText}} (grand texte){{/isLargeText}}.",
@@ -89303,6 +89349,25 @@ function normalizeLocale(locale) {
 function getLocaleDict(engineOptions) {
   const loc = normalizeLocale(engineOptions && engineOptions.locale);
   return (I18N && I18N[loc]) ? I18N[loc] : (I18N && I18N.en ? I18N.en : {});
+}
+
+// Reports which dictionary the run actually used, so a locale that fell back
+// to English is visible in the result rather than only in the wording.
+function resolveLocale(engineOptions) {
+  const requested = normalizeLocale(engineOptions && engineOptions.locale);
+  const dict = I18N ? I18N[requested] : null;
+  const en = (I18N && I18N.en) ? I18N.en : {};
+
+  if (!dict) return { requested: requested, resolved: 'en', reason: 'unknown-locale' };
+  if (dict === en) return { requested: requested, resolved: requested, reason: 'ok' };
+
+  for (const key in en) {
+    if (!(key in dict)) {
+      return { requested: requested, resolved: requested, reason: 'partial-dictionary' };
+    }
+  }
+
+  return { requested: requested, resolved: requested, reason: 'ok' };
 }
 
   function isTruthyMustache(val) {
@@ -97885,7 +97950,11 @@ const runCore = (function runCore(
   }
 
   return {
-    engine: { tag: ENGINE_TAG, schemaVersion: SCHEMA_VERSION },
+    engine: {
+      tag: ENGINE_TAG,
+      schemaVersion: SCHEMA_VERSION,
+      locale: resolveLocale(engineOptionsResolved)
+    },
     url,
     title,
     timestamp,

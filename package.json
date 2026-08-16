@@ -92,6 +92,8 @@
     "validate:automatic-rules": "npm run build && node scripts/validate-all-rules.js src/checks/automatic",
     "validate:manual-rules": "npm run build && node scripts/validate-all-rules.js src/checks/manual",
     "i18n:new": "node scripts/i18n-scaffold.js",
+    "i18n:sync": "node scripts/i18n-sync.js",
+    "i18n:check": "node scripts/i18n-sync.js --check",
     "i18n:report": "node scripts/i18n-report.js"
   },
   "devDependencies": {
