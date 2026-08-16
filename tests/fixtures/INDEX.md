@@ -1,6 +1,6 @@
 # Fixture Index
 
-Generated: 2026-08-13T20:21:58.894Z
+Generated: 2026-08-16T09:44:20.733Z
 
 Every implemented rule should have a `tests/fixtures/<slug>-all-scenarios.html` scenario page (numbered `case_NN` blocks, each marked PASS/FAIL/CANTTELL in its `.case-title`) and a "fixture coverage" test in its `tests/engine-checks/**/<rule>.test.js` asserting the exact expected ids. See `docs/RULE_AUTHORING.md`.
 
