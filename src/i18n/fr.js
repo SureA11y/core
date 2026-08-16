@@ -142,13 +142,10 @@ module.exports = {
     'Ajoutez un <title> (et éventuellement <desc>) dans <image>, ou fournissez aria-label/aria-labelledby.',
   formControl_programmaticLabelPresent_title:
     'Les contrôles de formulaire doivent avoir un libellé programmatique',
-
   formControl_programmaticLabelPresent_description:
     'Vérifie que les contrôles de formulaire ont un libellé programmatique via <label>, aria-label ou aria-labelledby.',
-
   formControl_programmaticLabelPresent_summary_fail:
     'Le contrôle de formulaire n’a pas de libellé programmatique.',
-
   formControl_programmaticLabelPresent_hint_fail:
     'Associez un <label>, ou utilisez aria-label / aria-labelledby (placeholder/title ne sont pas des libellés).',
 
@@ -189,6 +186,7 @@ module.exports = {
     'Le libellé principal du champ provient de {{methodLabel}}.',
   formControl_programmaticLabelQuality_hint_cantTell:
     'Préférez un <label> persistant ou aria-labelledby. Évitez d’utiliser placeholder/title comme libellé principal.',
+
   html_lang_attr_title: 'La langue de la page est déclarée',
   html_lang_attr_description:
     'Vérifie que la langue par défaut de la page est déclarée de manière programmatique.',
@@ -198,7 +196,6 @@ module.exports = {
     'Ajoutez un attribut lang à l’élément <html> (par exemple : <html lang="fr">).',
 
   html_lang_attr_missing_empty: 'La langue par défaut de la page est déclarée mais vide.',
-
   html_lang_attr_hint_missing_empty:
     'Renseignez une valeur de langue valide dans l’attribut lang de l’élément <html> (par exemple : <html lang="fr">).',
 
@@ -206,7 +203,6 @@ module.exports = {
     'La langue par défaut de la page est déclarée, mais la valeur « {{lang}} » n’est pas une balise de langue valide.',
   html_lang_attr_hint_invalid:
     'Utilisez une balise de langue BCP 47 valide dans <html lang="…"> (par exemple : « fr », « en », « fr-FR »).',
-
   mediaTranscriptPresent_title:
     'Média temporel : preuve de transcription ou d’alternative textuelle',
 
@@ -224,7 +220,6 @@ module.exports = {
 
   mediaTranscriptPresent_hint_cantTell_unverified:
     'Aucune transcription ou autre alternative textuelle pour cet élément {element} n’est clairement établie sur la page.',
-
   pageTitlePresent_title: 'La page possède un titre non vide',
   pageTitlePresent_description:
     'Vérifie que la page contient un élément <title> non vide permettant d’identifier la page.',
@@ -241,6 +236,7 @@ module.exports = {
 
   pageTitlePresent_summary_fail_missing: 'La page ne contient pas d’élément <title>.',
   pageTitlePresent_summary_fail_empty: 'La page contient un élément <title> vide.',
+
   pageTitlePatterns_summary_cantTell_duplicateAcrossPages:
     'Plusieurs pages partagent le même titre, ce qui peut rendre plus difficile la distinction entre les pages ({{duplicateGroups}} groupes dupliqués sur {{pagesAnalyzed}} pages). Exemple : « {{exampleTitle}} ».',
 
@@ -264,6 +260,7 @@ module.exports = {
   contrastComputable_title: 'Le contraste des couleurs est calculable pour le texte rendu',
   contrastComputable_description:
     'Détermine si suffisamment d’informations sont disponibles pour calculer le contraste WCAG du texte visible (ex. pas de dégradés/images/modes de fusion rendant l’arrière-plan indéterminé).',
+
   contrastComputable_pass_allComputable:
     'Le contraste est calculable pour tout le texte éligible ({{eligibleTextCount}} nœud(s) de texte).',
 
@@ -324,6 +321,18 @@ module.exports = {
   contrastEnhanced_description:
     'Vérifie que le texte visible atteint un ratio de contraste d’au moins 7,0:1 (texte normal) ou 4,5:1 (grand texte), lorsque le contraste est calculable à partir du CSS.',
 
+  contrastEnhanced_fail_belowThreshold:
+    'L’élément présente un contraste de couleur insuffisant renforcé (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).',
+
+  contrastEnhanced_pass_allAboveThreshold:
+    'Tout le texte calculable respecte le contraste renforcé (AAA). Nœuds de texte éligibles : {{eligibleTextCount}}. Calculables : {{computableTextCount}}.',
+
+  contrastEnhanced_notApplicable_noComputableText:
+    'Aucun texte éligible n’avait un contraste calculable (nœuds de texte éligibles : {{eligibleTextCount}}). Voir la règle de calculabilité du contraste pour les détails.',
+
+  contrastEnhanced_cantTell_engineFailure:
+    'Le contraste renforcé (AAA) n’a pas pu être déterminé en raison d’une erreur interne du moteur ({{reasonCode}}).',
+
   // --- 1) Contraste du texte (Minimum) — WCAG 1.4.3 (AA)
   dom_textContrastMinimum_title: 'Le texte doit avoir un contraste suffisant (minimum)',
   dom_textContrastMinimum_description:
@@ -341,18 +350,6 @@ module.exports = {
     'Impossible de calculer fiablement le contraste du texte car l’arrière-plan effectif n’est pas déterminable de manière fiable (ex. image, dégradé, vidéo, canvas, transparence ou fusion complexes).',
   dom_textContrastMinimum_hint_cantTell:
     'Vérifiez manuellement le contraste lorsque le texte est superposé à des images/dégradés/transparences ; assurez-vous qu’il respecte {{requiredRatio}}:1 selon la taille/épaisseur calculée.',
-
-  contrastEnhanced_fail_belowThreshold:
-    'L’élément présente un contraste de couleur insuffisant renforcé (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).',
-
-  contrastEnhanced_pass_allAboveThreshold:
-    'Tout le texte calculable respecte le contraste renforcé (AAA). Nœuds de texte éligibles : {{eligibleTextCount}}. Calculables : {{computableTextCount}}.',
-
-  contrastEnhanced_notApplicable_noComputableText:
-    'Aucun texte éligible n’avait un contraste calculable (nœuds de texte éligibles : {{eligibleTextCount}}). Voir la règle de calculabilité du contraste pour les détails.',
-
-  contrastEnhanced_cantTell_engineFailure:
-    'Le contraste renforcé (AAA) n’a pas pu être déterminé en raison d’une erreur interne du moteur ({{reasonCode}}).',
 
   // --- 2) Contraste du texte (Renforcé) — WCAG 1.4.6 (AAA)
   dom_textContrastEnhanced_title: 'Le texte doit avoir un contraste suffisant (renforcé)',
@@ -394,6 +391,7 @@ module.exports = {
     'Tout le texte calculable respecte le contraste renforcé (AAA).',
   contrastMinimum_pass_allTextMeetsThreshold:
     'Tout le texte calculable respecte le contraste minimum (AA).',
+
   contrastComputable_cantTell_notComputable:
     'Le contraste ne peut pas être calculé pour ce texte ({{reasonCode}}).',
 
@@ -414,6 +412,7 @@ module.exports = {
   targetSizeMinimum_title: 'Les cibles activables au pointeur respectent la taille minimale (AA)',
   targetSizeMinimum_description:
     'Vérifie que les cibles activables au pointeur ont une zone cliquable effective d’au moins 24×24 pixels CSS, ou respectent une exception autorisée (par ex. un espacement suffisant).',
+
   targetSizeMinimum_summary_fail:
     'La cible est plus petite que 24×24 px CSS et est trop proche d’une autre cible.',
   targetSizeMinimum_hint_fail:
@@ -430,6 +429,7 @@ module.exports = {
     'La cible est plus petite que 24×24 px CSS et proche d’un autre lien en ligne dans le même texte, où l’exception de contenu en ligne peut s’appliquer.',
   targetSizeMinimum_hint_cantTell_inlineLinkRun:
     'Confirmez si ces liens font partie d’un texte en ligne (qui est exempté) ; sinon, augmentez la taille de la cible à au moins 24×24 px CSS ou ajoutez de l’espacement.',
+
   targetSizeMinimum_notApplicable_noTargets:
     'Aucune cible activable par pointeur n’était éligible à l’évaluation.',
   targetSizeMinimum_pass_allOk:
@@ -478,6 +478,7 @@ module.exports = {
   buttonNamePresent_summary_fail: 'Ce bouton n’a pas de nom accessible.',
   buttonNamePresent_hint_fail:
     'Fournissez un texte visible pour le bouton ou un mécanisme de nom accessible (par exemple aria-label) afin que les technologies d’assistance puissent identifier le bouton.',
+
   binaryControlNamePresent_title: 'Les contrôles binaires ont un nom accessible',
   binaryControlNamePresent_description:
     'Vérifie que les cases à cocher, les boutons radio et les interrupteurs exposent un nom accessible non vide.',
@@ -637,6 +638,7 @@ module.exports = {
     '{{element}} : le libellé visible « {{visibleLabel}} » (source : {{labelSource}}) ne diffère du nom accessible (source : {{nameMechanism}}) que par une abréviation ou une césure.',
   labelInName_hint_cantTell:
     'Vérifiez manuellement que les deux formulations correspondent : le balisage ne permet pas de distinguer une abréviation volontaire d’une incohérence.',
+
   ariaRolesValid_title: 'L’attribut role doit être un rôle ARIA valide et non abstrait',
   ariaRolesValid_description:
     'Vérifie qu’un attribut role="" explicite correspond à un rôle WAI-ARIA réel et non abstrait.',
@@ -647,6 +649,7 @@ module.exports = {
     'role="{{role}}" est un rôle ARIA abstrait, qui ne doit pas être utilisé directement.',
   ariaRolesValid_hint_abstract:
     'Remplacez ce rôle abstrait par un rôle concret adapté au composant/à la structure.',
+
   ariaDeprecatedRole_title:
     'L’attribut role ne devrait pas utiliser un rôle ARIA obsolète ou déconseillé aux auteurs',
   ariaDeprecatedRole_description:
@@ -659,12 +662,14 @@ module.exports = {
   ariaDeprecatedRole_summary_cantTell_discouraged:
     'Cet élément utilise role="{{role}}", qui est réservé aux agents utilisateurs (toujours valide, mais déconseillé).',
   ariaDeprecatedRole_hint_cantTell: '{{guidance}}',
+
   ariaValidAttr_title: 'Les attributs aria-* doivent être des attributs ARIA réels et définis',
   ariaValidAttr_description:
     'Vérifie que chaque nom d’attribut aria-* présent dans le DOM est un attribut réel défini par la spécification WAI-ARIA.',
   ariaValidAttr_summary_fail: '{{attr}} n’est pas un attribut ARIA reconnu.',
   ariaValidAttr_hint_fail:
     'Corrigez le nom de l’attribut (vérifiez les fautes de frappe), ou retirez-le s’il n’est pas nécessaire.',
+
   ariaValidAttrValue_title:
     'Les valeurs des attributs aria-* doivent correspondre à leur type déclaré',
   ariaValidAttrValue_description:
@@ -673,6 +678,7 @@ module.exports = {
     '{{attr}}="{{value}}" n’est pas une valeur valide pour cet attribut.',
   ariaValidAttrValue_hint_fail:
     'Utilisez une valeur correspondant au type attendu de l’attribut (consultez la spécification WAI-ARIA pour cet attribut).',
+
   ariaAllowedAttr_title: 'Les attributs aria-* doivent être autorisés pour le rôle de l’élément',
   ariaAllowedAttr_description:
     'Vérifie que chaque attribut aria-* reconnu présent sur un élément ayant un rôle explicite est soit globalement pris en charge, soit pris en charge par ce rôle.',
@@ -682,6 +688,7 @@ module.exports = {
     '{{attr}} est obsolète sur role="{{role}}" (toujours autorisé, mais déconseillé).',
   ariaAllowedAttr_hint_cantTell:
     'Cet attribut a été retiré de l’ensemble global d’ARIA en 1.2 ; retirez-le ou utilisez un rôle qui le prend en charge, car une future version d’ARIA pourrait l’interdire.',
+
   ariaProhibitedAttr_title:
     'Les attributs de nommage ARIA ne doivent pas être utilisés sur des rôles qui les interdisent',
   ariaProhibitedAttr_description:
@@ -697,17 +704,20 @@ module.exports = {
     "Cet élément {{element}} n'a aucun rôle, donc {{attr}} pourrait ne pas être exposé comme nom accessible par les technologies d'assistance — mais le contenu de l'élément en fournit déjà un.",
   ariaProhibitedAttr_hint_cantTell_roleless:
     'Vérifiez si le contenu textuel existant sert déjà de libellé à cet élément ; si oui, l\'attribut de nommage est redondant, sinon donnez à l\'élément un rôle prenant en charge le nommage (par ex. role="img").',
+
   ariaRequiredAttr_title: 'Les rôles avec un état/une propriété ARIA requis doivent le porter',
   ariaRequiredAttr_description:
     'Vérifie que les éléments ayant un rôle explicite portent chaque état/propriété aria-* requis, non ambigu et indépendant du contexte, pour ce rôle (ex. role="checkbox" doit avoir aria-checked).',
   ariaRequiredAttr_summary_fail: '{{attr}} est requis pour role="{{role}}", mais est absent.',
   ariaRequiredAttr_hint_fail: 'Ajoutez cet attribut avec une valeur valide pour ce rôle.',
+
   ariaAllowedRole_title: 'Le rôle explicite doit être autorisé pour son élément hôte',
   ariaAllowedRole_description:
     'Vérifie qu’un attribut role="" explicite fait partie des rôles que la spécification ARIA-in-HTML autorise pour l’élément hôte (ex. role="tab" n’est pas autorisé sur <nav>).',
   ariaAllowedRole_summary_fail: 'role="{{role}}" n’est pas autorisé sur <{{element}}>.',
   ariaAllowedRole_hint_fail:
     'Utilisez un rôle autorisé pour cet élément, ou changez l’élément hôte.',
+
   ariaRequiredChildren_title:
     'Les rôles conteneurs doivent posséder au moins un rôle enfant requis',
   ariaRequiredChildren_description:
@@ -716,6 +726,7 @@ module.exports = {
     'role="{{role}}" ne possède aucun enfant ayant l’un des rôles requis : {{requiredRoles}}.',
   ariaRequiredChildren_hint_fail:
     'Ajoutez un descendant (ou un élément référencé par aria-owns) ayant l’un des rôles possédés requis.',
+
   ariaProhibitedChildren_title:
     'Les rôles conteneurs ne doivent pas posséder d’enfant ayant un rôle interdit',
   ariaProhibitedChildren_description:
@@ -732,6 +743,7 @@ module.exports = {
     'Cet élément n’a pas de rôle explicite mais est nativement focalisable, ce qui en fait un véritable nœud de l’arbre d’accessibilité qui n’est pas un enfant possédé autorisé du conteneur englobant role="{{containerRole}}".',
   ariaProhibitedChildren_hint_fail_native_focusable:
     'Attribuez à cet élément role="presentation"/"none", retirez sa focalisabilité native (par ex. supprimez l’attribut href/tabindex à l’origine), ou déplacez-le hors du conteneur {{containerRole}}.',
+
   ariaRequiredParent_title:
     'Les rôles exigeant un rôle de contexte spécifique doivent se trouver dans ce contexte',
   ariaRequiredParent_description:
@@ -740,6 +752,7 @@ module.exports = {
     'role="{{role}}" exige un rôle de contexte parmi : {{requiredRoles}}, qui n’a pas été trouvé.',
   ariaRequiredParent_hint_fail:
     'Placez cet élément à l’intérieur d’un élément ayant un rôle de contexte acceptable (ou référencez-le depuis celui-ci via aria-owns).',
+
   deprecatedElements_title:
     'Les éléments obsolètes non interruptibles (<blink>, <marquee>) ne doivent pas être utilisés',
   deprecatedElements_description:
@@ -748,12 +761,14 @@ module.exports = {
     'Le contenu de <{{element}}> ne peut pas être mis en pause, arrêté ou masqué par l’utilisateur.',
   deprecatedElements_hint_fail:
     'Retirez cet élément ; utilisez à la place un contenu statique, ou une animation dotée d’un contrôle de pause/arrêt accessible à l’utilisateur.',
+
   iframeNamePresent_title: 'Les cadres ont un nom accessible',
   iframeNamePresent_description:
     'Vérifie que les éléments <iframe>/<frame> exposent un nom accessible non vide via aria-label, aria-labelledby, ou l’attribut title.',
   iframeNamePresent_summary_fail: 'Ce <{{element}}> n’a pas de nom accessible.',
   iframeNamePresent_hint_fail:
     'Ajoutez un attribut title (ou aria-label/aria-labelledby) décrivant le contenu ou l’objet du cadre.',
+
   iframeTitleUnique_title: 'Les titres de cadres doivent être uniques',
   iframeTitleUnique_description:
     'Vérifie qu’aucun <iframe>/<frame> dans le périmètre analysé ne partage la même valeur d’attribut title qu’un autre.',
@@ -761,6 +776,7 @@ module.exports = {
     'Le titre « {{title}} » de ce <{{element}}> n’est pas unique parmi les cadres de cette page.',
   iframeTitleUnique_hint_fail:
     'Donnez à chaque cadre un titre distinct décrivant son contenu ou son objet spécifique.',
+
   iframeFocusableContent_title:
     'Les cadres avec tabindex="-1" ne doivent pas contenir de contenu focalisable',
   iframeFocusableContent_description:
@@ -769,6 +785,7 @@ module.exports = {
     'Ce <{{element}}> a tabindex="-1" mais son contenu contient des éléments focalisables, qui restent accessibles au clavier.',
   iframeFocusableContent_hint_fail:
     'Retirez le contenu focalisable du cadre, ou retirez tabindex="-1" si le cadre est censé être accessible.',
+
   tableHeadersAttrValid_title:
     'L’attribut headers d’une cellule de tableau doit référencer des cellules d’en-tête valides',
   tableHeadersAttrValid_description:
@@ -777,6 +794,7 @@ module.exports = {
     'L’attribut headers de ce <{{element}}> référence des cellules d’en-tête invalides : {{invalidIds}}.',
   tableHeadersAttrValid_hint_fail:
     'Mettez à jour l’attribut headers afin que chaque id désigne un élément <th> du même tableau.',
+
   tableThHasDataCells_title: 'Les éléments <th> doivent décrire au moins une cellule de données',
   tableThHasDataCells_description:
     'Vérifie qu’un tableau contenant des éléments <th> contient aussi au moins une cellule de données <td> que ces en-têtes décrivent.',
@@ -784,6 +802,7 @@ module.exports = {
     'Ce tableau a des cellules d’en-tête mais aucune cellule de données à décrire.',
   tableThHasDataCells_hint_fail:
     'Ajoutez des cellules de données (<td>) au tableau, ou retirez les cellules d’en-tête si le tableau n’a pas de données.',
+
   ariaHiddenBody_title: 'Le <body> du document ne doit pas être aria-hidden',
   ariaHiddenBody_description:
     'Vérifie que <body> n’a pas aria-hidden="true", ce qui retirerait toute la page de l’arbre d’accessibilité.',
@@ -791,6 +810,7 @@ module.exports = {
     'Le corps du document a aria-hidden="true", ce qui masque toute la page aux technologies d’assistance.',
   ariaHiddenBody_hint_fail:
     'Retirez aria-hidden de <body>. Masquez des éléments spécifiques à la place, si c’était l’intention.',
+
   listChildrenValid_title: 'Les listes ne doivent contenir directement que des éléments de liste',
   listChildrenValid_description:
     'Vérifie que les éléments <ul>/<ol> n’ont comme enfants directs que <li>, <script> ou <template>.',
@@ -798,6 +818,7 @@ module.exports = {
     'Ce <{{element}}> contient un enfant direct qui n’est pas un élément de liste : {{invalidChildren}}.',
   listChildrenValid_hint_fail:
     'N’utilisez que <li> (ou <script>/<template>) comme enfants directs de <ul>/<ol> ; déplacez tout autre balisage à l’intérieur d’un <li>.',
+
   listitemParentValid_title:
     'Les éléments de liste doivent se trouver à l’intérieur d’un conteneur de liste',
   listitemParentValid_description:
@@ -806,6 +827,7 @@ module.exports = {
     'Le parent de cet élément de liste (<{{parentElement}}>) n’est pas un conteneur de liste.',
   listitemParentValid_hint_fail:
     'Placez ce <li> à l’intérieur d’un <ul>/<ol>, ou donnez à son parent role="list".',
+
   definitionListChildrenValid_title:
     'Les listes de définitions doivent être structurées correctement',
   definitionListChildrenValid_description:
@@ -818,6 +840,7 @@ module.exports = {
     'Cette liste de définitions n’a aucun groupe terme/définition <dt>/<dd>.',
   definitionListChildrenValid_hint_fail_noDtDd:
     'Ajoutez au moins une paire <dt>/<dd> à l’intérieur de ce <dl>.',
+
   dlitemParentValid_title:
     'Les éléments d’une liste de définitions doivent se trouver à l’intérieur d’une liste de définitions',
   dlitemParentValid_description:
@@ -826,6 +849,7 @@ module.exports = {
     'Le parent (<{{parentElement}}>) de ce <{{element}}> n’est pas une liste de définitions.',
   dlitemParentValid_hint_fail:
     'Placez ce <dt>/<dd> à l’intérieur d’un <dl>, directement ou enveloppé dans un seul <div>.',
+
   duplicateIdAria_title: 'Les ID référencés par ARIA doivent être uniques',
   duplicateIdAria_description:
     'Vérifie que toute valeur id référencée par un attribut de référence d’ID ARIA (aria-labelledby, aria-describedby, aria-owns, aria-controls, aria-activedescendant, aria-flowto, aria-errormessage, aria-details) est unique dans le document.',
@@ -833,12 +857,14 @@ module.exports = {
     'L’id « {{id}} » est référencé par un attribut ARIA mais est utilisé par {{duplicateCount}} éléments ; la référence pointe vers le premier.',
   duplicateIdAria_hint_cantTell:
     'Vérifiez que le premier élément portant cet id est bien la cible attendue, ou rendez l’id unique dans le document.',
+
   summaryNamePresent_title: 'Les éléments summary ont un nom accessible',
   summaryNamePresent_description:
     'Vérifie que les éléments <summary> exposent un nom accessible non vide.',
   summaryNamePresent_summary_fail: 'Ce summary n’a pas de nom accessible.',
   summaryNamePresent_hint_fail:
     'Fournissez un texte de summary qui ne soit pas masqué aux technologies d’assistance, ou fournissez aria-label ou aria-labelledby.',
+
   metaViewportZoomEnabled_title: 'La balise meta viewport ne doit pas désactiver le zoom',
   metaViewportZoomEnabled_description:
     'Vérifie que <meta name="viewport"> ne définit pas user-scalable=no ni maximum-scale en dessous de 2 (200 %).',
@@ -846,6 +872,7 @@ module.exports = {
     'Cette balise meta viewport restreint la capacité de l’utilisateur à zoomer ({{reasons}}).',
   metaViewportZoomEnabled_hint_fail:
     'Retirez user-scalable=no et tout maximum-scale inférieur à 2 du contenu de la balise meta viewport.',
+
   metaRefreshTimingAbsent_title: 'La page ne doit pas utiliser un rafraîchissement meta minuté',
   metaRefreshTimingAbsent_description:
     'Vérifie que <meta http-equiv="refresh"> n’impose pas un délai positif de 20 heures ou moins.',
@@ -853,24 +880,28 @@ module.exports = {
     'Cette page se rafraîchit automatiquement après {{delay}} secondes.',
   metaRefreshTimingAbsent_hint_fail:
     'Retirez le rafraîchissement meta minuté, ou proposez un moyen pour les utilisateurs de le désactiver, de le prolonger ou de le mettre en pause avant qu’il ne se déclenche.',
+
   meterNamePresent_title: 'Les éléments meter ont un nom accessible',
   meterNamePresent_description:
     'Vérifie que les éléments avec role="meter" exposent un nom accessible non vide.',
   meterNamePresent_summary_fail: 'Ce meter n’a pas de nom accessible.',
   meterNamePresent_hint_fail:
     'Fournissez aria-label, aria-labelledby ou un attribut title — le contenu textuel visible n’est pas exposé comme nom accessible de ce meter.',
+
   progressbarNamePresent_title: 'Les barres de progression ont un nom accessible',
   progressbarNamePresent_description:
     'Vérifie que les éléments avec role="progressbar" exposent un nom accessible non vide.',
   progressbarNamePresent_summary_fail: 'Cette barre de progression n’a pas de nom accessible.',
   progressbarNamePresent_hint_fail:
     'Fournissez aria-label, aria-labelledby ou un attribut title — le contenu textuel visible n’est pas exposé comme nom accessible de cette barre de progression.',
+
   tooltipNamePresent_title: 'Les infobulles ont un nom accessible',
   tooltipNamePresent_description:
     'Vérifie que les éléments avec role="tooltip" exposent un nom accessible non vide.',
   tooltipNamePresent_summary_fail: 'Cette infobulle n’a pas de nom accessible.',
   tooltipNamePresent_hint_fail:
     'Fournissez un texte pour l’infobulle qui ne soit pas masqué aux technologies d’assistance, ou fournissez aria-label ou aria-labelledby.',
+
   serverSideImageMapAbsent_title:
     'Les images ne doivent pas utiliser une carte d’image côté serveur',
   serverSideImageMapAbsent_description:
@@ -879,6 +910,7 @@ module.exports = {
     'Cette image utilise une carte d’image côté serveur, qui n’a pas d’équivalent utilisable au clavier.',
   serverSideImageMapAbsent_hint_fail:
     'Remplacez la carte d’image côté serveur (ismap) par une carte d’image côté client (<map>/<area>) ou par des liens/boutons accessibles distincts.',
+
   formControlSingleLabel_title:
     'Les contrôles de formulaire ne doivent pas avoir plusieurs étiquettes',
   formControlSingleLabel_description:
@@ -890,6 +922,7 @@ module.exports = {
     'Ce <{{element}}> a une <label> qui l’étiquette plus une association de <label> vide supplémentaire ; vérifiez comment il est annoncé.',
   formControlSingleLabel_hint_cantTell:
     'Supprimez la <label> vide redondante afin qu’une seule <label> soit associée au contrôle.',
+
   nestedInteractiveControlsAbsent_title: 'Les contrôles interactifs ne doivent pas être imbriqués',
   nestedInteractiveControlsAbsent_description:
     'Vérifie qu’un contrôle interactif (lien, bouton, contrôle de formulaire, ou rôle de widget ARIA) ne contient pas un autre contrôle interactif.',
@@ -897,6 +930,7 @@ module.exports = {
     'Ce <{{element}}> contient un ou plusieurs contrôles interactifs imbriqués : {{nestedElements}}.',
   nestedInteractiveControlsAbsent_hint_fail:
     'Déplacez le(s) contrôle(s) interactif(s) imbriqué(s) hors de cet élément ; les contrôles interactifs imbriqués ne sont pas utilisables de façon fiable via les technologies d’assistance.',
+
   bypassBlocksPresent_title: 'La page doit proposer un moyen de contourner les blocs répétés',
   bypassBlocksPresent_description:
     'Vérifie que la page dispose d’au moins un mécanisme reconnu de contournement des blocs répétés (WCAG 2.4.1) : un point de repère main, un lien d’ancrage fonctionnel vers la même page, ou un titre.',
@@ -904,6 +938,7 @@ module.exports = {
     'Aucun moyen reconnu de contourner les blocs de contenu répétés n’a été détecté sur cette page — vérifiez qu’un mécanisme de contournement existe.',
   bypassBlocksPresent_hint_cantTell:
     'Confirmez que la page propose un mécanisme de contournement : un point de repère main (<main> ou role="main"), un lien « aller au contenu » fonctionnel, ou des éléments de titre que les technologies d’assistance peuvent utiliser pour passer le contenu répété. (Un mécanisme peut être temporairement masqué — par exemple pendant qu’une boîte de dialogue modale rend la page inerte — ou fourni à l’échelle du site ; cela nécessite une confirmation humaine.)',
+
   landmarkBannerIsTopLevel_title: 'Le point de repère banner doit être de premier niveau',
   landmarkBannerIsTopLevel_description:
     'Vérifie que le point de repère banner (role="banner" ou un <header> non imbriqué) n’est pas imbriqué dans un autre point de repère.',
@@ -911,6 +946,7 @@ module.exports = {
     'Ce point de repère banner est imbriqué dans un autre point de repère.',
   landmarkBannerIsTopLevel_hint_cantTell:
     'Déplacez le point de repère banner (header/role="banner") afin qu’il ne soit contenu par aucun autre point de repère ; un banner doit être une région de premier niveau de la page.',
+
   landmarkContentinfoIsTopLevel_title: 'Le point de repère contentinfo doit être de premier niveau',
   landmarkContentinfoIsTopLevel_description:
     'Vérifie que le point de repère contentinfo (role="contentinfo" ou un <footer> non imbriqué) n’est pas imbriqué dans un autre point de repère.',
@@ -918,6 +954,7 @@ module.exports = {
     'Ce point de repère contentinfo est imbriqué dans un autre point de repère.',
   landmarkContentinfoIsTopLevel_hint_cantTell:
     'Déplacez le point de repère contentinfo (footer/role="contentinfo") afin qu’il ne soit contenu par aucun autre point de repère ; contentinfo doit être une région de premier niveau de la page.',
+
   landmarkMainIsTopLevel_title: 'Le point de repère main doit être de premier niveau',
   landmarkMainIsTopLevel_description:
     'Vérifie que le point de repère main (role="main" ou <main>) n’est pas imbriqué dans un autre point de repère.',
@@ -925,12 +962,14 @@ module.exports = {
     'Ce point de repère main est imbriqué dans un autre point de repère.',
   landmarkMainIsTopLevel_hint_cantTell:
     'Déplacez le point de repère main (<main>/role="main") afin qu’il ne soit contenu par aucun autre point de repère ; main doit être une région de premier niveau de la page.',
+
   landmarkNoDuplicateBanner_title: 'La page ne doit pas avoir plus d’un point de repère banner',
   landmarkNoDuplicateBanner_description:
     'Vérifie qu’au plus un point de repère banner (role="banner" ou un <header> non imbriqué) existe sur la page.',
   landmarkNoDuplicateBanner_summary_cantTell: 'Cette page a plus d’un point de repère banner.',
   landmarkNoDuplicateBanner_hint_cantTell:
     'Ne conservez qu’un seul point de repère banner (header/role="banner") par page.',
+
   landmarkNoDuplicateContentinfo_title:
     'La page ne doit pas avoir plus d’un point de repère contentinfo',
   landmarkNoDuplicateContentinfo_description:
@@ -939,18 +978,21 @@ module.exports = {
     'Cette page a plus d’un point de repère contentinfo.',
   landmarkNoDuplicateContentinfo_hint_cantTell:
     'Ne conservez qu’un seul point de repère contentinfo (footer/role="contentinfo") par page.',
+
   landmarkNoDuplicateMain_title: 'La page ne doit pas avoir plus d’un point de repère main',
   landmarkNoDuplicateMain_description:
     'Vérifie qu’au plus un point de repère main (role="main" ou <main>) existe sur la page.',
   landmarkNoDuplicateMain_summary_cantTell: 'Cette page a plus d’un point de repère main.',
   landmarkNoDuplicateMain_hint_cantTell:
     'Ne conservez qu’un seul point de repère main (<main>/role="main") par page.',
+
   landmarkOneMain_title: 'La page devrait avoir un point de repère main',
   landmarkOneMain_description:
     'Vérifie que la page a au moins un point de repère main (role="main" ou <main>).',
   landmarkOneMain_summary_cantTell_missing: 'Cette page n’a aucun point de repère main.',
   landmarkOneMain_hint_cantTell_missing:
     'Ajoutez un point de repère main (<main> ou role="main") autour du contenu principal de la page.',
+
   landmarkUnique_title:
     'Les points de repère partageant le même rôle doivent avoir des noms uniques',
   landmarkUnique_description:
@@ -961,12 +1003,14 @@ module.exports = {
     'Ce point de repère {{role}} n’a pas de nom accessible, et plus d’un point de repère {{role}} sans nom existe sur cette page.',
   landmarkUnique_hint_cantTell:
     'Donnez à chaque point de repère {{role}} un nom distinct via aria-label ou aria-labelledby.',
+
   emptyHeading_title: 'Les titres ne doivent pas être vides',
   emptyHeading_description:
     'Vérifie que les éléments de titre (<h1>-<h6> ou role="heading") ont un nom accessible non vide.',
   emptyHeading_summary_cantTell: 'Ce titre n’a pas de nom accessible.',
   emptyHeading_hint_cantTell:
     'Ajoutez du contenu textuel (ou aria-label/aria-labelledby) à ce titre, ou retirez-le s’il n’est pas nécessaire.',
+
   headingOrder_title: 'Les niveaux de titre ne doivent pas sauter un niveau',
   headingOrder_description:
     'Vérifie que les niveaux de titre n’augmentent que d’un niveau à la fois, dans l’ordre du document.',
@@ -974,22 +1018,26 @@ module.exports = {
     'Ce titre passe du niveau {{fromLevel}} au niveau {{toLevel}}, en sautant un niveau.',
   headingOrder_hint_cantTell:
     'Utilisez des niveaux de titre consécutifs (ne sautez pas de niveau en descendant dans la hiérarchie) afin que le plan du document reste prévisible.',
+
   pageHasHeadingOne_title: 'La page devrait avoir un titre de niveau un',
   pageHasHeadingOne_description:
     'Vérifie que la page a au moins un titre de niveau un (<h1> ou role="heading" avec aria-level="1").',
   pageHasHeadingOne_summary_cantTell: 'Cette page n’a aucun titre de niveau un.',
   pageHasHeadingOne_hint_cantTell:
     'Ajoutez un titre de niveau un (<h1> ou role="heading" aria-level="1") identifiant le contenu principal de la page.',
+
   accesskeys_title: 'Les valeurs accesskey doivent être uniques',
   accesskeys_description:
     'Vérifie qu’aucun élément de la page ne partage la même valeur d’attribut accesskey qu’un autre.',
   accesskeys_summary_cantTell:
     'L’accesskey de cet élément est partagée avec un autre élément de la page.',
   accesskeys_hint_cantTell: 'Rendez chaque valeur accesskey unique sur l’ensemble de la page.',
+
   scopeAttrValid_title: 'L’attribut scope doit avoir une valeur valide',
   scopeAttrValid_description: 'Vérifie que scope="..." vaut row, col, rowgroup, ou colgroup.',
   scopeAttrValid_summary_cantTell: 'Cette valeur d’attribut scope n’est pas reconnue.',
   scopeAttrValid_hint_cantTell: 'Utilisez row, col, rowgroup, ou colgroup pour l’attribut scope.',
+
   tabindex_title: 'tabindex ne devrait pas être supérieur à 0',
   tabindex_description:
     'Vérifie que les valeurs de tabindex sont égales à 0 ou négatives, jamais un nombre positif.',
@@ -997,6 +1045,7 @@ module.exports = {
     'Cet élément a un tabindex positif, ce qui modifie l’ordre naturel de tabulation.',
   tabindex_hint_cantTell:
     'Utilisez tabindex="0" (ou une valeur négative pour le retirer de l’ordre de tabulation) plutôt qu’un nombre positif ; corrigez l’ordre dans le DOM si un ordre de tabulation différent est nécessaire.',
+
   emptyTableHeader_title: 'Les cellules d’en-tête de tableau ne doivent pas être vides',
   emptyTableHeader_description:
     'Vérifie que les éléments <th> ont un contenu textuel visible — un en-tête nommé uniquement via aria-label/aria-labelledby est aussi signalé, car la prise en charge réelle par les lecteurs d’écran/navigateurs est incohérente.',
@@ -1008,6 +1057,7 @@ module.exports = {
     'Cette cellule d’en-tête de tableau n’a pas de texte visible — son seul nom accessible provient de aria-label/aria-labelledby, que des combinaisons réelles de lecteur d’écran/navigateur (ex. NVDA+Firefox, iOS VoiceOver+Safari) sont connues pour ignorer sur les éléments <th>.',
   emptyTableHeader_hint_cantTell_ariaOnly:
     'Ajoutez du contenu textuel visible à cette cellule d’en-tête (en plus de, ou à la place de, aria-label/aria-labelledby) — le texte visible est le seul mécanisme de nommage confirmé comme fonctionnel sur les lecteurs d’écran testés.',
+
   labelTitleOnly_title:
     'Les contrôles de formulaire ne devraient pas utiliser title comme seule étiquette',
   labelTitleOnly_description:
@@ -1016,6 +1066,7 @@ module.exports = {
     'Ce contrôle de formulaire repose sur l’attribut title comme seule étiquette.',
   labelTitleOnly_hint_cantTell:
     'Ajoutez une <label> visible (ou aria-label/aria-labelledby) en plus de, ou à la place de, l’attribut title.',
+
   imageRedundantAlt_title:
     'Le texte alt d’une image ne doit pas dupliquer le texte visible adjacent',
   imageRedundantAlt_description:
@@ -1024,12 +1075,14 @@ module.exports = {
     'Le texte alt de cette image duplique un autre texte visible juste à côté.',
   imageRedundantAlt_hint_cantTell:
     'Videz le texte alt (alt="") si l’image est purement décorative à côté du texte, ou supprimez la duplication redondante.',
+
   tableDuplicateName_title: 'La légende d’un tableau ne doit pas dupliquer son attribut summary',
   tableDuplicateName_description:
     'Vérifie que le texte de la <caption> d’un <table> n’est pas identique à son attribut summary (obsolète).',
   tableDuplicateName_summary_cantTell: 'La légende de ce tableau duplique son attribut summary.',
   tableDuplicateName_hint_cantTell:
     'Retirez l’attribut summary redondant, ou faites en sorte qu’il apporte une information différente de la légende.',
+
   metaViewportLarge_title: 'La balise meta viewport devrait permettre un zoom jusqu’à 500 %',
   metaViewportLarge_description:
     'Vérifie que <meta name="viewport"> ne définit pas user-scalable=no ni maximum-scale en dessous de 5 (500 %).',
@@ -1037,6 +1090,7 @@ module.exports = {
     'Cette balise meta viewport restreint le zoom en dessous de l’objectif de bonne pratique de 500 %.',
   metaViewportLarge_hint_cantTell:
     'Retirez user-scalable=no et augmentez maximum-scale à au moins 5 (500 %) si possible.',
+
   presentationRoleConflict_title:
     'Un rôle de présentation ne doit pas entrer en conflit avec un attribut ARIA global ou la focalisabilité',
   presentationRoleConflict_description:
@@ -1045,11 +1099,13 @@ module.exports = {
     'Cet élément role="{{role}}" a aussi une condition conflictuelle ({{attrs}}), qui restaure son rôle implicite et annule l’intention présentationnelle.',
   presentationRoleConflict_hint_cantTell:
     'Retirez le(s) attribut(s) de nommage conflictuel(s) et/ou la focalisabilité (tabindex/native) si l’élément doit rester présentationnel, ou retirez role="presentation"/"none" s’il doit être exposé aux technologies d’assistance.',
+
   region_title: 'Le contenu de la page devrait se trouver à l’intérieur d’un point de repère',
   region_description: 'Vérifie que le contenu sous <body> est contenu dans un point de repère.',
   region_summary_cantTell: 'Ce contenu n’est contenu dans aucun point de repère.',
   region_hint_cantTell:
     'Déplacez ce contenu à l’intérieur d’un point de repère (main, nav, aside, une section nommée, etc.).',
+
   skipLink_title: 'Un lien d’évitement doit avoir une cible qui se résout et qui est utilisable',
   skipLink_description:
     'Vérifie que le fragment href d’un lien « aller au... » se résout vers un élément réel et actuellement utilisable du document.',
@@ -1060,6 +1116,7 @@ module.exports = {
     'Ce lien d’évitement pointe vers une cible qui existe mais qui n’est pas actuellement utilisable.',
   skipLink_hint_unusableTarget_cantTell:
     'Faites pointer ce lien d’évitement vers une cible exposée et utilisable comme destination de navigation.',
+
   autocompleteValid_title: 'L’attribut autocomplete doit être une valeur d’auto-remplissage valide',
   autocompleteValid_description:
     'Vérifie qu’un attribut autocomplete non vide vaut « on »/« off » ou une liste de jetons d’auto-remplissage bien formée.',
@@ -1067,6 +1124,7 @@ module.exports = {
     'Cette valeur d’attribut autocomplete n’est pas une valeur d’auto-remplissage valide.',
   autocompleteValid_hint_fail:
     'Utilisez « on »/« off », ou une liste de jetons d’auto-remplissage valide (ex. « shipping street-address », « cc-number »).',
+
   htmlXmlLangMismatch_title: 'lang et xml:lang ne doivent pas se contredire',
   htmlXmlLangMismatch_description:
     'Vérifie que les attributs lang et xml:lang de l’élément <html> déclarent la même langue principale, lorsque les deux sont présents.',
@@ -1074,6 +1132,7 @@ module.exports = {
     'Les attributs lang (« {{lang}} ») et xml:lang (« {{xmlLang}} ») déclarent des langues différentes.',
   htmlXmlLangMismatch_hint_fail:
     'Faites en sorte que lang et xml:lang déclarent la même langue principale, ou retirez l’attribut obsolète xml:lang.',
+
   avoidInlineSpacing_title:
     'Un style en ligne ne doit pas forcer l’espacement du texte en dessous du seuil WCAG',
   avoidInlineSpacing_description:
@@ -1082,6 +1141,7 @@ module.exports = {
     'Le style en ligne de cet élément force {{properties}} avec !important, bloquant les surcharges d’espacement de texte par l’utilisateur.',
   avoidInlineSpacing_hint_fail:
     'Retirez !important de line-height/letter-spacing/word-spacing dans les styles en ligne afin que les utilisateurs puissent surcharger l’espacement du texte.',
+
   metaRefreshNoExceptions_title: 'La page ne doit utiliser aucun rafraîchissement meta (AAA)',
   metaRefreshNoExceptions_description:
     'Vérifie que <meta http-equiv="refresh"> n’est présent en aucun cas, quel que soit le délai — la variante plus stricte, de niveau AAA, de la vérification de niveau A qui ne porte que sur les délais positifs.',
@@ -1089,12 +1149,14 @@ module.exports = {
     'Cette page utilise un rafraîchissement meta, un changement de contexte automatique non initié par l’utilisateur.',
   metaRefreshNoExceptions_hint_fail:
     'Retirez le rafraîchissement meta ; déclenchez la redirection/le rafraîchissement uniquement en réponse à une action de l’utilisateur.',
+
   validLang_title: 'L’attribut lang d’un élément doit être syntaxiquement valide',
   validLang_description:
     'Vérifie que tout élément (autre que la racine <html>) ayant un attribut lang non vide utilise une étiquette de langue syntaxiquement valide.',
   validLang_summary_fail:
     'Cette valeur d’attribut lang (« {{value}} ») n’est pas une étiquette de langue syntaxiquement valide.',
   validLang_hint_fail: 'Utilisez une étiquette de langue BCP47 valide (ex. « fr », « es-MX »).',
+
   linkInTextBlock_title:
     'Les liens dans des blocs de texte doivent être distinguables du texte environnant sans se fier uniquement à la couleur',
   linkInTextBlock_description:
@@ -1103,6 +1165,7 @@ module.exports = {
     'Ce lien dans un bloc de texte se distingue du texte environnant uniquement par la couleur.',
   linkInTextBlock_hint_fail:
     'Ajoutez un soulignement, une différence de graisse/style de police, ou augmentez le contraste de couleur entre le lien et le texte environnant à au moins 3:1.',
+
   noAutoplayAudio_title:
     'Un audio en lecture automatique devrait proposer un mécanisme de pause/arrêt ou de contrôle du volume',
   noAutoplayAudio_description:
@@ -1111,6 +1174,7 @@ module.exports = {
     'Cet élément lit un audio automatiquement sans mécanisme natif de pause/arrêt ou de contrôle du volume.',
   noAutoplayAudio_hint_cantTell:
     'Si ce clip dure plus de 3 secondes, ajoutez un attribut controls (ou un mécanisme personnalisé équivalent) afin que les utilisateurs puissent le mettre en pause/l’arrêter ou contrôler son volume indépendamment du volume du système.',
+
   videoCaption_title: 'Une vidéo préenregistrée devrait proposer une piste de sous-titres',
   videoCaption_description:
     'Signale les éléments <video> sans enfant <track kind="captions"|"subtitles">, pour une revue manuelle visant à déterminer si la vidéo a une piste audio nécessitant des sous-titres.',
@@ -1118,6 +1182,7 @@ module.exports = {
     'Cette vidéo n’a aucune piste de sous-titres (captions ou subtitles).',
   videoCaption_hint_cantTell:
     'Si cette vidéo a une piste audio porteuse d’information, ajoutez un <track kind="captions" src="..."> avec le contenu sous-titré.',
+
   scrollableRegionFocusable_title:
     'Les régions défilantes sans contenu focalisable devraient être focalisables au clavier',
   scrollableRegionFocusable_description:
@@ -1126,6 +1191,7 @@ module.exports = {
     'Cet élément déclare overflow:auto/scroll, n’a aucun descendant focalisable, et n’est pas lui-même focalisable au clavier.',
   scrollableRegionFocusable_hint_cantTell:
     'Si le contenu de cette région déborde réellement, ajoutez tabindex="0" (et une étiquette adaptée) afin que les utilisateurs du clavier puissent la focaliser et faire défiler avec les flèches.',
+
   identicalLinksSamePurpose_title:
     'Les liens partageant le même nom accessible devraient mener à la même destination',
   identicalLinksSamePurpose_description:
@@ -1134,6 +1200,7 @@ module.exports = {
     'Ce lien partage un nom accessible avec d’autres liens de la page qui mènent à une destination différente.',
   identicalLinksSamePurpose_hint_cantTell:
     'Assurez-vous que les liens ayant le même texte servent le même objectif, ou rendez le texte du lien suffisamment distinct pour décrire chaque destination.',
+
   ariaBrailleEquivalent_title:
     'aria-braillelabel/aria-brailleroledescription doivent avoir un équivalent non braille',
   ariaBrailleEquivalent_description:
@@ -1142,6 +1209,7 @@ module.exports = {
     'Cet élément a {{attr}} mais pas {{requires}}, son équivalent non braille.',
   ariaBrailleEquivalent_hint_fail:
     '{{attr}} est un complément spécifique au braille, pas un remplacement — fournissez aussi {{requires}}.',
+
   ariaConditionalAttr_title:
     'aria-errormessage exige que aria-invalid soit défini à une valeur autre que false',
   ariaConditionalAttr_description:
@@ -1150,6 +1218,7 @@ module.exports = {
     'Cet élément a aria-errormessage mais aria-invalid est absent ou « false », donc le message d’erreur n’est pas exposé.',
   ariaConditionalAttr_hint_fail:
     'Définissez aria-invalid à « true » (ou « grammar »/« spelling ») chaque fois que aria-errormessage doit être exposé aux technologies d’assistance.',
+
   ariaCheckedStateMismatch_title:
     'L’aria-checked d’une case à cocher/d’un bouton radio natif devrait correspondre à son état réel',
   ariaCheckedStateMismatch_description:
@@ -1158,6 +1227,7 @@ module.exports = {
     'La valeur d’aria-checked de cet élément ne correspond pas à son état réel (coché/indéterminé).',
   ariaCheckedStateMismatch_hint_cantTell:
     'Définissez aria-checked pour qu’il corresponde à l’état réel de l’élément, ou retirez-le — une case à cocher/un bouton radio natif expose déjà cet état sans lui.',
+
   cssOrientationLock_title: 'Le CSS ne doit pas verrouiller la page à une seule orientation',
   cssOrientationLock_description:
     'Vérifie qu’aucune règle @media (orientation: portrait|landscape) ne définit un transform: rotate(...) sur la page, une technique connue pour contourner l’orientation de l’appareil.',
@@ -1165,12 +1235,14 @@ module.exports = {
     'Une media query « {{mediaText}} » fait pivoter « {{selectorText}} », verrouillant la page à une seule orientation.',
   cssOrientationLock_hint_fail:
     'Retirez la transformation rotate() de la media query d’orientation ; laissez la page répondre naturellement à l’orientation de l’appareil au lieu de forcer une rotation visuelle.',
+
   ariaText_title: 'Les éléments role="text" ne devraient avoir aucun descendant focalisable',
   ariaText_description:
     'Vérifie que les éléments ayant role="text" ne contiennent aucun descendant focalisable (lien, bouton, contrôle de formulaire, tabindex, iframe, ou contenteditable).',
   ariaText_summary_cantTell: 'Cet élément role="text" contient un descendant focalisable.',
   ariaText_hint_cantTell:
     'Retirez role="text" (ou retirez le descendant focalisable) — une région de « texte brut » ne devrait pas contenir de contenu focalisable.',
+
   focusOrderSemantics_title:
     'Les éléments ajoutés à l’ordre de tabulation devraient avoir une sémantique interactive',
   focusOrderSemantics_description:
@@ -1179,6 +1251,7 @@ module.exports = {
     'Cet élément est dans l’ordre de tabulation (tabindex="{{tabindex}}") mais a un rôle non interactif (« {{role}} »).',
   focusOrderSemantics_hint_cantTell:
     'Retirez tabindex si cet élément n’est pas censé être interactif, ou utilisez un rôle interactif correspondant à son comportement réel.',
+
   pAsHeading_title:
     'Un <p> stylé pour ressembler à un titre devrait probablement être un véritable titre',
   pAsHeading_description:
@@ -1187,6 +1260,7 @@ module.exports = {
     'Ce paragraphe est entièrement en gras et affiché à une taille évoquant un titre.',
   pAsHeading_hint_cantTell:
     'Si ce texte introduit une nouvelle section, utilisez un véritable élément de titre (<h1>-<h6> ou role="heading") plutôt que de styler un paragraphe pour qu’il y ressemble.',
+
   tableFakeCaption_title:
     'La première ligne d’un tableau ne devrait pas tenir lieu de véritable <caption>',
   tableFakeCaption_description:
@@ -1195,6 +1269,7 @@ module.exports = {
     'Ce tableau n’a pas de <caption>, mais sa première ligne est une cellule unique placée au-dessus de lignes à plusieurs cellules — elle fait peut-être office de légende factice.',
   tableFakeCaption_hint_cantTell:
     'Si cette cellule est censée décrire le tableau, utilisez un véritable élément <caption> plutôt qu’une cellule isolée en première ligne.',
+
   tdHasHeader_title: 'Les cellules de données des grands tableaux doivent avoir un en-tête associé',
   tdHasHeader_description:
     'Vérifie que chaque <td> d’un tableau grand et simple (sans colspan/rowspan) a un en-tête associé — via un attribut headers, un <th> de colonne implicite au-dessus, ou un <th> de ligne implicite à sa gauche.',
@@ -1202,6 +1277,7 @@ module.exports = {
     'Cette cellule de données n’a pas d’en-tête associé (pas d’attribut headers, pas de <th> de colonne au-dessus, pas de <th> de ligne à gauche).',
   tdHasHeader_hint_fail:
     'Ajoutez un attribut headers référençant le(s) id du/des <th> pertinent(s), ou restructurez le tableau afin que cette cellule ait un en-tête de ligne/colonne implicite.',
+
   mouseOnlyEventHandlers_title:
     'Les gestionnaires d’événements en ligne réservés au pointeur devraient avoir un équivalent accessible au clavier',
   mouseOnlyEventHandlers_description:
@@ -1210,6 +1286,7 @@ module.exports = {
     'Cet élément a {{attrs}} mais aucun gestionnaire équivalent accessible au clavier.',
   mouseOnlyEventHandlers_hint_cantTell:
     'Ajoutez onkeydown/onkeyup/onkeypress (ou onfocus/onblur pour un comportement déclenché au survol) afin que cette fonctionnalité soit aussi accessible au clavier.',
+
   linkNameQuality_title: 'Le texte des liens devrait être descriptif, pas générique',
   linkNameQuality_description:
     'Signale les liens dont le nom accessible complet est une formule connue comme non descriptive (ex. « cliquez ici », « en savoir plus », « plus »), pour une revue manuelle visant à déterminer si l’objet du lien est clair sans contexte supplémentaire.',

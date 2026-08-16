@@ -9,13 +9,13 @@
  * - This function is inlined into generated core.js (Node + in-page runner).
  * - It intentionally references shared runtime helpers that core.js defines:
  *   resolvePolicy, POLICY_CONTRACTS, resolveRuleDefI18n, ruleMatchesRunOnly,
- *   normalizeRuleResult, normalizeLocale, createDomHelpers, normalizeSelectorList,
+ *   normalizeRuleResult, normalizeLocale, resolveLocale, createDomHelpers, normalizeSelectorList,
  *   resolveContextRoots (src/core/dom-helpers.js -- also used by frame-scan.js),
  *   normalizeRuleMeta (src/core/rule-meta.js -- used for engineOptions.customRules).
  */
 
 /* global resolvePolicy, POLICY_CONTRACTS, resolveRuleDefI18n, ruleMatchesRunOnly,
-   normalizeRuleResult, normalizeLocale, createDomHelpers, normalizeSelectorList,
+   normalizeRuleResult, normalizeLocale, resolveLocale, createDomHelpers, normalizeSelectorList,
    resolveContextRoots, normalizeRuleMeta */
 
 function runCore(
@@ -769,7 +769,11 @@ function runCore(
   }
 
   return {
-    engine: { tag: ENGINE_TAG, schemaVersion: SCHEMA_VERSION },
+    engine: {
+      tag: ENGINE_TAG,
+      schemaVersion: SCHEMA_VERSION,
+      locale: resolveLocale(engineOptionsResolved)
+    },
     url,
     title,
     timestamp,
