@@ -196,32 +196,28 @@ function runInPage(ctx) {
   }
 
   const target = document.documentElement || document.body || null;
-  const stableSelector = helpers.buildSelector && target ? helpers.buildSelector(target) : 'html';
-  const html =
-    helpers.getOuterHtmlSnippet && target ? helpers.getOuterHtmlSnippet(target) : '<html>';
-
-  const occurrences = findings.map((f) => ({
-    selector: stableSelector,
-    html,
-    summary: f.selectorText
-      ? `A "${f.mediaText}" media query rotates "${f.selectorText}", locking the page to one orientation.`
-      : `A "${f.mediaText}" media query rotates an element with no readable selector, locking the page to one orientation.`,
-    hint: 'Remove the rotate() transform from the orientation media query; let the page respond naturally to device orientation instead of forcing a visual rotation.',
-    i18n: {
-      summaryKey: f.selectorText
-        ? 'cssOrientationLock_summary_fail'
-        : 'cssOrientationLock_summary_fail_unknownSelector',
-      hintKey: 'cssOrientationLock_hint_fail',
-      params: { mediaText: f.mediaText, selectorText: f.selectorText }
-    },
-    data: {
-      details: {
-        reasonCode: 'ORIENTATION_MEDIA_ROTATE_TRANSFORM',
-        mediaText: f.mediaText,
-        selectorText: f.selectorText
+  const occurrences = findings.map((f) =>
+    helpers.reportOccurrence(target, {
+      summary: f.selectorText
+        ? `A "${f.mediaText}" media query rotates "${f.selectorText}", locking the page to one orientation.`
+        : `A "${f.mediaText}" media query rotates an element with no readable selector, locking the page to one orientation.`,
+      hint: 'Remove the rotate() transform from the orientation media query; let the page respond naturally to device orientation instead of forcing a visual rotation.',
+      i18n: {
+        summaryKey: f.selectorText
+          ? 'cssOrientationLock_summary_fail'
+          : 'cssOrientationLock_summary_fail_unknownSelector',
+        hintKey: 'cssOrientationLock_hint_fail',
+        params: { mediaText: f.mediaText, selectorText: f.selectorText }
+      },
+      data: {
+        details: {
+          reasonCode: 'ORIENTATION_MEDIA_ROTATE_TRANSFORM',
+          mediaText: f.mediaText,
+          selectorText: f.selectorText
+        }
       }
-    }
-  }));
+    })
+  );
 
   return {
     ruleId: rule.ruleId,

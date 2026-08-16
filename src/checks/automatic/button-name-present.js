@@ -170,35 +170,30 @@ function runInPage(ctx) {
         ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
         : null;
 
-      const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-      const html = helpers.getOuterHtmlSnippet
-        ? helpers.getOuterHtmlSnippet(el)
-        : el.outerHTML || '';
-
-      occurrences.push({
-        selector: stableSelector,
-        html,
-        summary: 'This button has no accessible name.',
-        hint: 'Provide visible button text or a programmatic accessible-name mechanism (for example aria-label) so assistive technologies can identify the button.',
-        i18n: {
-          summaryKey: 'buttonNamePresent_summary_fail',
-          hintKey: 'buttonNamePresent_hint_fail',
-          params: { element: tag }
-        },
-        data: {
-          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
-          details: {
-            reasonCode: 'name_missing',
-            metrics: {
-              trustedProgrammaticNameLength: trustedProgrammaticName.length,
-              inputValueNameLength: inputValueName.length,
-              contentNameLength: contentName.length,
-              explicitProgrammatic: explicitProg ? 1 : 0
-            },
-            refs: { accessibleName: nameInfo || null }
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: 'This button has no accessible name.',
+          hint: 'Provide visible button text or a programmatic accessible-name mechanism (for example aria-label) so assistive technologies can identify the button.',
+          i18n: {
+            summaryKey: 'buttonNamePresent_summary_fail',
+            hintKey: 'buttonNamePresent_hint_fail',
+            params: { element: tag }
+          },
+          data: {
+            visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
+            details: {
+              reasonCode: 'name_missing',
+              metrics: {
+                trustedProgrammaticNameLength: trustedProgrammaticName.length,
+                inputValueNameLength: inputValueName.length,
+                contentNameLength: contentName.length,
+                explicitProgrammatic: explicitProg ? 1 : 0
+              },
+              refs: { accessibleName: nameInfo || null }
+            }
           }
-        }
-      });
+        })
+      );
     }
   }
 

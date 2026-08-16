@@ -139,39 +139,34 @@ function runInPage(ctx) {
         ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
         : null;
 
-      const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-      const html = helpers.getOuterHtmlSnippet
-        ? helpers.getOuterHtmlSnippet(el)
-        : el.outerHTML || '';
       const tag = (el.tagName || '').toLowerCase();
 
-      occurrences.push({
-        selector: stableSelector,
-        html,
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          // Human fallbacks (allowed)
+          summary: 'This link has no accessible name.',
+          hint: 'Provide link text or an accessible-name mechanism (for example aria-label) so assistive technologies can identify the link.',
 
-        // Human fallbacks (allowed)
-        summary: 'This link has no accessible name.',
-        hint: 'Provide link text or an accessible-name mechanism (for example aria-label) so assistive technologies can identify the link.',
+          // Validator requires these keys to exist in the English dictionary
+          i18n: {
+            summaryKey: 'linkNamePresent_summary_fail',
+            hintKey: 'linkNamePresent_hint_fail',
+            params: { element: tag }
+          },
 
-        // Validator requires these keys to exist in the English dictionary
-        i18n: {
-          summaryKey: 'linkNamePresent_summary_fail',
-          hintKey: 'linkNamePresent_hint_fail',
-          params: { element: tag }
-        },
-
-        data: {
-          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
-          details: {
-            reasonCode: 'name_missing',
-            metrics: {
-              programmaticNameLength: programmaticName.trim().length,
-              contentNameLength: contentName.trim().length
-            },
-            refs: { accessibleName: nameInfo || null }
+          data: {
+            visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
+            details: {
+              reasonCode: 'name_missing',
+              metrics: {
+                programmaticNameLength: programmaticName.trim().length,
+                contentNameLength: contentName.trim().length
+              },
+              refs: { accessibleName: nameInfo || null }
+            }
           }
-        }
-      });
+        })
+      );
     }
   }
 

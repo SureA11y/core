@@ -184,59 +184,51 @@ function runInPage(ctx) {
       const unusableByGeometry = !!geometryReasonCode;
       if (!unusableByAcc && !unusableByGeometry) continue;
 
-      const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-      const html = helpers.getOuterHtmlSnippet
-        ? helpers.getOuterHtmlSnippet(el)
-        : el.outerHTML || '';
-
-      occurrences.push({
-        selector: stableSelector,
-        html,
-        summary: 'This skip link points to a target that exists but is not currently usable.',
-        hint: 'Point this skip link to a target that is exposed and usable as a navigation destination.',
-        i18n: {
-          summaryKey: 'skipLink_summary_unusableTarget_cantTell',
-          hintKey: 'skipLink_hint_unusableTarget_cantTell',
-          params: { href }
-        },
-        data: {
-          details: {
-            reasonCode: 'SKIP_LINK_TARGET_UNUSABLE',
-            href,
-            unusableReasonCode: unusableByAcc ? 'ACC_TREE_INELIGIBLE' : geometryReasonCode,
-            targetSelector: helpers.buildSelector ? helpers.buildSelector(target) : null,
-            geometryCheckEnabled: geometrySupported
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: 'This skip link points to a target that exists but is not currently usable.',
+          hint: 'Point this skip link to a target that is exposed and usable as a navigation destination.',
+          i18n: {
+            summaryKey: 'skipLink_summary_unusableTarget_cantTell',
+            hintKey: 'skipLink_hint_unusableTarget_cantTell',
+            params: { href }
           },
-          visibilityFilter: {
-            targetSet: 'acc',
-            accEligible: accEligibility.eligible,
-            reasons: accEligibility.reasons
-          },
-          targetGeometry: geometryEligibility
-            ? { eligible: geometryEligibility.eligible, reasons: geometryEligibility.reasons }
-            : { eligible: null, reasons: [] }
-        }
-      });
+          data: {
+            details: {
+              reasonCode: 'SKIP_LINK_TARGET_UNUSABLE',
+              href,
+              unusableReasonCode: unusableByAcc ? 'ACC_TREE_INELIGIBLE' : geometryReasonCode,
+              targetSelector: helpers.buildSelector ? helpers.buildSelector(target) : null,
+              geometryCheckEnabled: geometrySupported
+            },
+            visibilityFilter: {
+              targetSet: 'acc',
+              accEligible: accEligibility.eligible,
+              reasons: accEligibility.reasons
+            },
+            targetGeometry: geometryEligibility
+              ? { eligible: geometryEligibility.eligible, reasons: geometryEligibility.reasons }
+              : { eligible: null, reasons: [] }
+          }
+        })
+      );
       continue;
     }
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: "This skip link's target does not exist.",
-      hint: "Point the skip link's href at an id that exists in the document, or add the missing target element.",
-      i18n: {
-        summaryKey: 'skipLink_summary_cantTell',
-        hintKey: 'skipLink_hint_cantTell',
-        params: { href }
-      },
-      data: {
-        details: { reasonCode: 'SKIP_LINK_TARGET_MISSING', href }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: "This skip link's target does not exist.",
+        hint: "Point the skip link's href at an id that exists in the document, or add the missing target element.",
+        i18n: {
+          summaryKey: 'skipLink_summary_cantTell',
+          hintKey: 'skipLink_hint_cantTell',
+          params: { href }
+        },
+        data: {
+          details: { reasonCode: 'SKIP_LINK_TARGET_MISSING', href }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {

@@ -121,23 +121,20 @@ function runInPage(ctx) {
     if (!(delay > 0)) continue;
     if (delay > EXEMPT_DELAY_SECONDS) continue; // WCAG 2.2.1 Exception 3 (>20 hours)
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This page refreshes itself automatically after a delay.',
-      hint: 'Remove the timed meta refresh, or provide a way for users to turn it off, extend it, or pause it before it triggers.',
-      i18n: {
-        summaryKey: 'metaRefreshTimingAbsent_summary_fail',
-        hintKey: 'metaRefreshTimingAbsent_hint_fail',
-        params: { delay: String(delay) }
-      },
-      data: {
-        details: { reasonCode: 'META_REFRESH_DELAYED', delay }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This page refreshes itself automatically after a delay.',
+        hint: 'Remove the timed meta refresh, or provide a way for users to turn it off, extend it, or pause it before it triggers.',
+        i18n: {
+          summaryKey: 'metaRefreshTimingAbsent_summary_fail',
+          hintKey: 'metaRefreshTimingAbsent_hint_fail',
+          params: { delay: String(delay) }
+        },
+        data: {
+          details: { reasonCode: 'META_REFRESH_DELAYED', delay }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {

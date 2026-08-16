@@ -73,23 +73,20 @@ function runInPage(ctx) {
 
     if (captionText.toLowerCase() !== summary.toLowerCase()) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: "This table's caption duplicates its summary attribute.",
-      hint: 'Remove the redundant summary attribute, or make it provide different information than the caption.',
-      i18n: {
-        summaryKey: 'tableDuplicateName_summary_cantTell',
-        hintKey: 'tableDuplicateName_hint_cantTell',
-        params: {}
-      },
-      data: {
-        details: { reasonCode: 'TABLE_CAPTION_SUMMARY_DUPLICATE' }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: "This table's caption duplicates its summary attribute.",
+        hint: 'Remove the redundant summary attribute, or make it provide different information than the caption.',
+        i18n: {
+          summaryKey: 'tableDuplicateName_summary_cantTell',
+          hintKey: 'tableDuplicateName_hint_cantTell',
+          params: {}
+        },
+        data: {
+          details: { reasonCode: 'TABLE_CAPTION_SUMMARY_DUPLICATE' }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {

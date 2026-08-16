@@ -135,28 +135,26 @@ function runInPage(ctx) {
           }
         })()
       : null;
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This progress bar has no accessible name.',
-      hint: "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this progress bar's accessible name.",
-      i18n: {
-        summaryKey: 'progressbarNamePresent_summary_fail',
-        hintKey: 'progressbarNamePresent_hint_fail',
-        params: {}
-      },
-      data: {
-        details: {
-          reasonCode: 'name_missing',
-          controlType: 'progressbar',
-          methodTried: res.method
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This progress bar has no accessible name.',
+        hint: "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this progress bar's accessible name.",
+        i18n: {
+          summaryKey: 'progressbarNamePresent_summary_fail',
+          hintKey: 'progressbarNamePresent_hint_fail',
+          params: {}
         },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+        data: {
+          details: {
+            reasonCode: 'name_missing',
+            controlType: 'progressbar',
+            methodTried: res.method
+          },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {

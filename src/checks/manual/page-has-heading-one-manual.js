@@ -126,19 +126,12 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  const stableSelector = helpers.buildSelector ? helpers.buildSelector(body) : 'body';
-  const html = helpers.getOuterHtmlSnippet
-    ? helpers.getOuterHtmlSnippet(body)
-    : (body.outerHTML || '').slice(0, 200);
-
   return {
     ruleId: rule.ruleId,
     outcome: 'cantTell',
     severity: rule.defaultSeverity || 'minor',
     occurrences: [
-      {
-        selector: stableSelector,
-        html,
+      helpers.reportOccurrence(body, {
         summary: 'This page has no level-one heading.',
         hint: 'Add a level-one heading (<h1> or role="heading" aria-level="1") that identifies the page\'s main content.',
         i18n: {
@@ -149,7 +142,7 @@ function runInPage(ctx) {
         data: {
           details: { reasonCode: 'HEADING_ONE_MISSING' }
         }
-      }
+      })
     ]
   };
 }

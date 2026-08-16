@@ -61,23 +61,20 @@ function runInPage(ctx) {
 
     if (VALID_SCOPES.has(raw.toLowerCase())) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This scope attribute value is not recognized.',
-      hint: 'Use one of row, col, rowgroup, or colgroup for the scope attribute.',
-      i18n: {
-        summaryKey: 'scopeAttrValid_summary_cantTell',
-        hintKey: 'scopeAttrValid_hint_cantTell',
-        params: { value: raw }
-      },
-      data: {
-        details: { reasonCode: 'SCOPE_ATTR_INVALID', value: raw }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This scope attribute value is not recognized.',
+        hint: 'Use one of row, col, rowgroup, or colgroup for the scope attribute.',
+        i18n: {
+          summaryKey: 'scopeAttrValid_summary_cantTell',
+          hintKey: 'scopeAttrValid_hint_cantTell',
+          params: { value: raw }
+        },
+        data: {
+          details: { reasonCode: 'SCOPE_ATTR_INVALID', value: raw }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {

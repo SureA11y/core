@@ -242,24 +242,22 @@ function runInPage(ctx) {
           }
         })()
       : null;
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This slider has no accessible name.',
-      hint: 'Provide a label, aria-label, or aria-labelledby so assistive technologies can identify the slider.',
-      i18n: {
-        summaryKey: 'sliderNamePresent_summary_fail',
-        hintKey: 'sliderNamePresent_hint_fail',
-        params: { kind }
-      },
-      data: {
-        details: { reasonCode: 'name_missing', controlType: kind, methodTried: res.method },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This slider has no accessible name.',
+        hint: 'Provide a label, aria-label, or aria-labelledby so assistive technologies can identify the slider.',
+        i18n: {
+          summaryKey: 'sliderNamePresent_summary_fail',
+          hintKey: 'sliderNamePresent_hint_fail',
+          params: { kind }
+        },
+        data: {
+          details: { reasonCode: 'name_missing', controlType: kind, methodTried: res.method },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {

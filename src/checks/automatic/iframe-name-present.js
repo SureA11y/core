@@ -88,24 +88,22 @@ function runInPage(ctx) {
         })()
       : null;
     const tag = el.tagName.toLowerCase();
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This frame has no accessible name.',
-      hint: 'Add a title attribute (or aria-label/aria-labelledby) describing the frame’s content or purpose.',
-      i18n: {
-        summaryKey: 'iframeNamePresent_summary_fail',
-        hintKey: 'iframeNamePresent_hint_fail',
-        params: { element: tag }
-      },
-      data: {
-        details: { reasonCode: 'IFRAME_NAME_MISSING', element: tag },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This frame has no accessible name.',
+        hint: 'Add a title attribute (or aria-label/aria-labelledby) describing the frame’s content or purpose.',
+        i18n: {
+          summaryKey: 'iframeNamePresent_summary_fail',
+          hintKey: 'iframeNamePresent_hint_fail',
+          params: { element: tag }
+        },
+        data: {
+          details: { reasonCode: 'IFRAME_NAME_MISSING', element: tag },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {

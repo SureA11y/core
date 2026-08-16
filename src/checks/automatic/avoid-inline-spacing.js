@@ -245,23 +245,21 @@ function runInPage(ctx) {
     if (!flagged.length) continue;
 
     const tag = el.tagName.toLowerCase();
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: `This element's inline style forces ${flagged.join(', ')} with !important below the WCAG text-spacing metric, so the user cannot raise it.`,
-      hint: 'Remove !important from line-height/letter-spacing/word-spacing in inline styles, or set a value that already meets the metric (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em).',
-      i18n: {
-        summaryKey: 'avoidInlineSpacing_summary_fail',
-        hintKey: 'avoidInlineSpacing_hint_fail',
-        params: { element: tag, properties: flagged.join(', ') }
-      },
-      data: {
-        details: { reasonCode: 'INLINE_SPACING_IMPORTANT', element: tag, properties: flagged }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: `This element's inline style forces ${flagged.join(', ')} with !important below the WCAG text-spacing metric, so the user cannot raise it.`,
+        hint: 'Remove !important from line-height/letter-spacing/word-spacing in inline styles, or set a value that already meets the metric (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em).',
+        i18n: {
+          summaryKey: 'avoidInlineSpacing_summary_fail',
+          hintKey: 'avoidInlineSpacing_hint_fail',
+          params: { element: tag, properties: flagged.join(', ') }
+        },
+        data: {
+          details: { reasonCode: 'INLINE_SPACING_IMPORTANT', element: tag, properties: flagged }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {

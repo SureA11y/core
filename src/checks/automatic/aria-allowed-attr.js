@@ -858,9 +858,6 @@ function runInPage(ctx) {
 
     if (!disallowed || !disallowed.length) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
     for (const name of disallowed) {
       // A property ARIA deprecated (rather than prohibited) on this role is
       // still allowed — surfaced as cantTell for the author to decide, not a
@@ -869,38 +866,38 @@ function runInPage(ctx) {
         typeof ariaHelpers.isDeprecatedAttr === 'function' &&
         ariaHelpers.isDeprecatedAttr(name, role);
       if (deprecated) {
-        cantTellOccurrences.push({
-          selector: stableSelector,
-          html,
-          summary: 'This ARIA attribute is deprecated for this element’s role.',
-          hint: 'It is still allowed but discouraged; remove it or use a role that supports it, as a future ARIA version may disallow it.',
-          occurrenceOutcome: 'cantTell',
+        cantTellOccurrences.push(
+          helpers.reportOccurrence(el, {
+            summary: 'This ARIA attribute is deprecated for this element’s role.',
+            hint: 'It is still allowed but discouraged; remove it or use a role that supports it, as a future ARIA version may disallow it.',
+            occurrenceOutcome: 'cantTell',
+            i18n: {
+              summaryKey: 'ariaAllowedAttr_summary_cantTell',
+              hintKey: 'ariaAllowedAttr_hint_cantTell',
+              params: { attr: name, role }
+            },
+            data: {
+              details: { reasonCode: 'ARIA_ATTR_DEPRECATED', attr: name, role }
+            }
+          })
+        );
+        continue;
+      }
+      failOccurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: 'This ARIA attribute is not permitted for this element’s role.',
+          hint: 'Remove this attribute, or use a role that supports it.',
+          occurrenceOutcome: 'fail',
           i18n: {
-            summaryKey: 'ariaAllowedAttr_summary_cantTell',
-            hintKey: 'ariaAllowedAttr_hint_cantTell',
+            summaryKey: 'ariaAllowedAttr_summary_fail',
+            hintKey: 'ariaAllowedAttr_hint_fail',
             params: { attr: name, role }
           },
           data: {
-            details: { reasonCode: 'ARIA_ATTR_DEPRECATED', attr: name, role }
+            details: { reasonCode: 'ARIA_ATTR_NOT_ALLOWED', attr: name, role }
           }
-        });
-        continue;
-      }
-      failOccurrences.push({
-        selector: stableSelector,
-        html,
-        summary: 'This ARIA attribute is not permitted for this element’s role.',
-        hint: 'Remove this attribute, or use a role that supports it.',
-        occurrenceOutcome: 'fail',
-        i18n: {
-          summaryKey: 'ariaAllowedAttr_summary_fail',
-          hintKey: 'ariaAllowedAttr_hint_fail',
-          params: { attr: name, role }
-        },
-        data: {
-          details: { reasonCode: 'ARIA_ATTR_NOT_ALLOWED', attr: name, role }
-        }
-      });
+        })
+      );
     }
   }
 

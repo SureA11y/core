@@ -117,30 +117,28 @@ function runInPage(ctx) {
     const hasKeyboardEquiv = KEYBOARD_EQUIV_ATTRS.some((a) => trim(el.getAttribute(a)));
     if (hasKeyboardEquiv) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
     const eligInfo = helpers.getEligibilityInfo
       ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
       : null;
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: `This element has ${presentMouseAttrs.join(', ')} but no keyboard-reachable equivalent handler.`,
-      hint: 'Add onkeydown/onkeyup/onkeypress (or onfocus/onblur for hover-triggered behavior) so this functionality is also reachable by keyboard.',
-      i18n: {
-        summaryKey: 'mouseOnlyEventHandlers_summary_cantTell',
-        hintKey: 'mouseOnlyEventHandlers_hint_cantTell',
-        params: { attrs: presentMouseAttrs.join(', ') }
-      },
-      data: {
-        details: {
-          reasonCode: 'MOUSE_ONLY_HANDLER_NO_KEYBOARD_EQUIVALENT',
-          mouseAttrs: presentMouseAttrs
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: `This element has ${presentMouseAttrs.join(', ')} but no keyboard-reachable equivalent handler.`,
+        hint: 'Add onkeydown/onkeyup/onkeypress (or onfocus/onblur for hover-triggered behavior) so this functionality is also reachable by keyboard.',
+        i18n: {
+          summaryKey: 'mouseOnlyEventHandlers_summary_cantTell',
+          hintKey: 'mouseOnlyEventHandlers_hint_cantTell',
+          params: { attrs: presentMouseAttrs.join(', ') }
         },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+        data: {
+          details: {
+            reasonCode: 'MOUSE_ONLY_HANDLER_NO_KEYBOARD_EQUIVALENT',
+            mouseAttrs: presentMouseAttrs
+          },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {

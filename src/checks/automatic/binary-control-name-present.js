@@ -272,28 +272,26 @@ function runInPage(ctx) {
           }
         })()
       : null;
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This control has no accessible name.',
-      hint: 'Provide a label, aria-label, aria-labelledby, or other accessible-name mechanism so assistive technologies can identify the control.',
-      i18n: {
-        summaryKey: 'binaryControlNamePresent_summary_fail',
-        hintKey: 'binaryControlNamePresent_hint_fail',
-        params: { controlType }
-      },
-      data: {
-        details: {
-          reasonCode: 'name_missing',
-          controlType,
-          methodTried: res.method
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This control has no accessible name.',
+        hint: 'Provide a label, aria-label, aria-labelledby, or other accessible-name mechanism so assistive technologies can identify the control.',
+        i18n: {
+          summaryKey: 'binaryControlNamePresent_summary_fail',
+          hintKey: 'binaryControlNamePresent_hint_fail',
+          params: { controlType }
         },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+        data: {
+          details: {
+            reasonCode: 'name_missing',
+            controlType,
+            methodTried: res.method
+          },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {

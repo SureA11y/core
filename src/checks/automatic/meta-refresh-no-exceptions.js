@@ -126,24 +126,21 @@ function runInPage(ctx) {
 
     applicableCount += 1;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary:
-        'This page uses a meta refresh, which is an automatic context change not initiated by the user.',
-      hint: 'Remove the meta refresh; trigger the redirect/refresh only in response to a user action instead.',
-      i18n: {
-        summaryKey: 'metaRefreshNoExceptions_summary_fail',
-        hintKey: 'metaRefreshNoExceptions_hint_fail',
-        params: {}
-      },
-      data: {
-        details: { reasonCode: 'META_REFRESH_PRESENT' }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary:
+          'This page uses a meta refresh, which is an automatic context change not initiated by the user.',
+        hint: 'Remove the meta refresh; trigger the redirect/refresh only in response to a user action instead.',
+        i18n: {
+          summaryKey: 'metaRefreshNoExceptions_summary_fail',
+          hintKey: 'metaRefreshNoExceptions_hint_fail',
+          params: {}
+        },
+        data: {
+          details: { reasonCode: 'META_REFRESH_PRESENT' }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {

@@ -94,23 +94,21 @@ function runInPage(ctx) {
     if (!nameInfo || nameInfo.mechanism !== 'title') continue;
 
     const tag = el.tagName.toLowerCase();
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This form control relies on the title attribute as its only label.',
-      hint: 'Add a visible <label> (or aria-label/aria-labelledby) in addition to, or instead of, the title attribute.',
-      i18n: {
-        summaryKey: 'labelTitleOnly_summary_cantTell',
-        hintKey: 'labelTitleOnly_hint_cantTell',
-        params: { element: tag }
-      },
-      data: {
-        details: { reasonCode: 'LABEL_TITLE_ONLY', element: tag }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This form control relies on the title attribute as its only label.',
+        hint: 'Add a visible <label> (or aria-label/aria-labelledby) in addition to, or instead of, the title attribute.',
+        i18n: {
+          summaryKey: 'labelTitleOnly_summary_cantTell',
+          hintKey: 'labelTitleOnly_hint_cantTell',
+          params: { element: tag }
+        },
+        data: {
+          details: { reasonCode: 'LABEL_TITLE_ONLY', element: tag }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {

@@ -119,29 +119,27 @@ function runInPage(ctx) {
 
     if (!missing.length) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
     const tag = (el.tagName || '').toLowerCase();
 
     for (const m of missing) {
-      occurrences.push({
-        selector: stableSelector,
-        html,
-        summary: `This element has ${m.attr} but no ${m.requires}, its non-braille equivalent.`,
-        hint: `${m.attr} is a Braille-specific supplement, not a replacement — also provide ${m.requires}.`,
-        i18n: {
-          summaryKey: 'ariaBrailleEquivalent_summary_fail',
-          hintKey: 'ariaBrailleEquivalent_hint_fail',
-          params: { element: tag, attr: m.attr, requires: m.requires }
-        },
-        data: {
-          details: {
-            reasonCode: 'BRAILLE_ATTR_WITHOUT_EQUIVALENT',
-            attr: m.attr,
-            requires: m.requires
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: `This element has ${m.attr} but no ${m.requires}, its non-braille equivalent.`,
+          hint: `${m.attr} is a Braille-specific supplement, not a replacement — also provide ${m.requires}.`,
+          i18n: {
+            summaryKey: 'ariaBrailleEquivalent_summary_fail',
+            hintKey: 'ariaBrailleEquivalent_hint_fail',
+            params: { element: tag, attr: m.attr, requires: m.requires }
+          },
+          data: {
+            details: {
+              reasonCode: 'BRAILLE_ATTR_WITHOUT_EQUIVALENT',
+              attr: m.attr,
+              requires: m.requires
+            }
           }
-        }
-      });
+        })
+      );
     }
   }
 

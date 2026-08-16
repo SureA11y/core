@@ -80,23 +80,21 @@ function runInPage(ctx) {
     if (valid) continue;
 
     const tag = el.tagName.toLowerCase();
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This description-list item is not contained by a <dl>.',
-      hint: 'Place this <dt>/<dd> inside a <dl>, directly or wrapped in a single <div>.',
-      i18n: {
-        summaryKey: 'dlitemParentValid_summary_fail',
-        hintKey: 'dlitemParentValid_hint_fail',
-        params: { element: tag, parentElement: parentTag }
-      },
-      data: {
-        details: { reasonCode: 'DLITEM_INVALID_PARENT', element: tag, parentElement: parentTag }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This description-list item is not contained by a <dl>.',
+        hint: 'Place this <dt>/<dd> inside a <dl>, directly or wrapped in a single <div>.',
+        i18n: {
+          summaryKey: 'dlitemParentValid_summary_fail',
+          hintKey: 'dlitemParentValid_hint_fail',
+          params: { element: tag, parentElement: parentTag }
+        },
+        data: {
+          details: { reasonCode: 'DLITEM_INVALID_PARENT', element: tag, parentElement: parentTag }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {

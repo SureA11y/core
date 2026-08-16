@@ -227,24 +227,26 @@ function runInPage(ctx) {
           }
         })()
       : null;
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This element has no accessible name.',
-      hint: "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this searchbox's accessible name.",
-      i18n: {
-        summaryKey: 'searchboxNamePresent_summary_fail',
-        hintKey: 'searchboxNamePresent_hint_fail',
-        params: { controlType: 'searchbox' }
-      },
-      data: {
-        details: { reasonCode: 'name_missing', controlType: 'searchbox', methodTried: res.method },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This element has no accessible name.',
+        hint: "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this searchbox's accessible name.",
+        i18n: {
+          summaryKey: 'searchboxNamePresent_summary_fail',
+          hintKey: 'searchboxNamePresent_hint_fail',
+          params: { controlType: 'searchbox' }
+        },
+        data: {
+          details: {
+            reasonCode: 'name_missing',
+            controlType: 'searchbox',
+            methodTried: res.method
+          },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {

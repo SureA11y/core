@@ -145,24 +145,22 @@ function runInPage(ctx) {
           }
         })()
       : null;
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This element has no accessible name.',
-      hint: 'Provide aria-label or aria-labelledby (preferred), or provide visible text that is not hidden from assistive technologies.',
-      i18n: {
-        summaryKey: 'treeitemNamePresent_summary_fail',
-        hintKey: 'treeitemNamePresent_hint_fail',
-        params: { controlType: 'treeitem' }
-      },
-      data: {
-        details: { reasonCode: 'name_missing', controlType: 'treeitem', methodTried: res.method },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This element has no accessible name.',
+        hint: 'Provide aria-label or aria-labelledby (preferred), or provide visible text that is not hidden from assistive technologies.',
+        i18n: {
+          summaryKey: 'treeitemNamePresent_summary_fail',
+          hintKey: 'treeitemNamePresent_hint_fail',
+          params: { controlType: 'treeitem' }
+        },
+        data: {
+          details: { reasonCode: 'name_missing', controlType: 'treeitem', methodTried: res.method },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {

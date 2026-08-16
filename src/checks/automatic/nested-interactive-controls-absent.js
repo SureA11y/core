@@ -267,27 +267,25 @@ function runInPage(ctx) {
     const dedupedNestedTags = [...new Set(nestedTags)];
 
     const tag = el.tagName.toLowerCase();
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This interactive control contains one or more other interactive controls.',
-      hint: 'Move the nested interactive control(s) outside this element; nested interactive controls are not reliably operable via assistive technology.',
-      i18n: {
-        summaryKey: 'nestedInteractiveControlsAbsent_summary_fail',
-        hintKey: 'nestedInteractiveControlsAbsent_hint_fail',
-        params: { element: tag, nestedElements: dedupedNestedTags.join(', ') }
-      },
-      data: {
-        details: {
-          reasonCode: 'NESTED_INTERACTIVE_CONTROL',
-          element: tag,
-          nestedElements: nestedTags
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This interactive control contains one or more other interactive controls.',
+        hint: 'Move the nested interactive control(s) outside this element; nested interactive controls are not reliably operable via assistive technology.',
+        i18n: {
+          summaryKey: 'nestedInteractiveControlsAbsent_summary_fail',
+          hintKey: 'nestedInteractiveControlsAbsent_hint_fail',
+          params: { element: tag, nestedElements: dedupedNestedTags.join(', ') }
+        },
+        data: {
+          details: {
+            reasonCode: 'NESTED_INTERACTIVE_CONTROL',
+            element: tag,
+            nestedElements: nestedTags
+          }
         }
-      }
-    });
+      })
+    );
   }
 
   if (applicableCount === 0) {

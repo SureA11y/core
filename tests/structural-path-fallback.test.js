@@ -17,7 +17,7 @@ const FALLBACK_COUNTER = 'structuralPath.selectorFallback';
 
 // Rules still building occurrences by hand. This must only ever go down: it
 // is the remaining migration, not an allowance for new rules.
-const HAND_BUILDING_RULES = 83;
+const HAND_BUILDING_RULES = 0;
 
 function ruleFiles() {
   return fs

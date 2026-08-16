@@ -84,15 +84,8 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
 
-  const stableSelector = helpers.buildSelector ? helpers.buildSelector(html) : 'html';
-  const htmlSnippet = helpers.getOuterHtmlSnippet
-    ? helpers.getOuterHtmlSnippet(html)
-    : (html.outerHTML || '').slice(0, 200);
-
   const occurrences = [
-    {
-      selector: stableSelector,
-      html: htmlSnippet,
+    helpers.reportOccurrence(html, {
       summary: `The lang ("${lang}") and xml:lang ("${xmlLang}") attributes declare different languages.`,
       hint: 'Make lang and xml:lang declare the same primary language, or remove the deprecated xml:lang attribute.',
       i18n: {
@@ -103,7 +96,7 @@ function runInPage(ctx) {
       data: {
         details: { reasonCode: 'HTML_XML_LANG_MISMATCH', lang, xmlLang }
       }
-    }
+    })
   ];
 
   return {

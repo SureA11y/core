@@ -129,24 +129,21 @@ function runInPage(ctx) {
 
     if (!missing.length) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
     for (const attr of missing) {
-      occurrences.push({
-        selector: stableSelector,
-        html,
-        summary: 'This attribute is required for this element’s role, but is missing.',
-        hint: 'Add this attribute with a valid value for this role.',
-        i18n: {
-          summaryKey: 'ariaRequiredAttr_summary_fail',
-          hintKey: 'ariaRequiredAttr_hint_fail',
-          params: { attr, role }
-        },
-        data: {
-          details: { reasonCode: 'ARIA_ATTR_REQUIRED_MISSING', attr, role }
-        }
-      });
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: 'This attribute is required for this element’s role, but is missing.',
+          hint: 'Add this attribute with a valid value for this role.',
+          i18n: {
+            summaryKey: 'ariaRequiredAttr_summary_fail',
+            hintKey: 'ariaRequiredAttr_hint_fail',
+            params: { attr, role }
+          },
+          data: {
+            details: { reasonCode: 'ARIA_ATTR_REQUIRED_MISSING', attr, role }
+          }
+        })
+      );
     }
   }
 

@@ -366,43 +366,38 @@ function runInPage(ctx) {
     }
 
     if (!contains) {
-      const selectorOut = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-      const html = helpers.getOuterHtmlSnippet
-        ? helpers.getOuterHtmlSnippet(el)
-        : el.outerHTML || '';
-
-      occurrences.push({
-        selector: selectorOut,
-        html,
-        ...(uncertainty ? { outcome: 'cantTell' } : null),
-        summary: uncertainty
-          ? 'Accessible name may not contain the visible label text.'
-          : 'Accessible name does not contain the visible label text.',
-        hint: uncertainty
-          ? 'Check by hand: the two differ only by an abbreviation or by hyphenation, which markup cannot settle.'
-          : 'Ensure the accessible name includes the visible text label (e.g., update aria-label/aria-labelledby to include the visible wording).',
-        i18n: {
-          summaryKey: uncertainty ? 'labelInName_summary_cantTell' : 'labelInName_summary_fail',
-          hintKey: uncertainty ? 'labelInName_hint_cantTell' : 'labelInName_hint_fail',
-          params: {
-            element: getElementDescriptor(el),
-            visibleLabel: clipForSummary(visibleLabel),
-            labelSource: labelInfo && labelInfo.source ? labelInfo.source : 'none',
-            nameMechanism: acc && acc.mechanism ? acc.mechanism : 'none'
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          ...(uncertainty ? { outcome: 'cantTell' } : null),
+          summary: uncertainty
+            ? 'Accessible name may not contain the visible label text.'
+            : 'Accessible name does not contain the visible label text.',
+          hint: uncertainty
+            ? 'Check by hand: the two differ only by an abbreviation or by hyphenation, which markup cannot settle.'
+            : 'Ensure the accessible name includes the visible text label (e.g., update aria-label/aria-labelledby to include the visible wording).',
+          i18n: {
+            summaryKey: uncertainty ? 'labelInName_summary_cantTell' : 'labelInName_summary_fail',
+            hintKey: uncertainty ? 'labelInName_hint_cantTell' : 'labelInName_hint_fail',
+            params: {
+              element: getElementDescriptor(el),
+              visibleLabel: clipForSummary(visibleLabel),
+              labelSource: labelInfo && labelInfo.source ? labelInfo.source : 'none',
+              nameMechanism: acc && acc.mechanism ? acc.mechanism : 'none'
+            }
+          },
+          data: {
+            details: {
+              reasonCode: uncertainty || 'VISIBLE_LABEL_NOT_IN_ACCESSIBLE_NAME',
+              visibleLabel,
+              accessibleName: accName,
+              normalized: { visibleLabel: visibleNorm, accessibleName: accNorm },
+              tokenized: { visibleLabel: labelTokens, accessibleName: nameTokens },
+              labelSource: labelInfo && labelInfo.source ? labelInfo.source : 'none',
+              nameMechanism: acc && acc.mechanism ? acc.mechanism : 'none'
+            }
           }
-        },
-        data: {
-          details: {
-            reasonCode: uncertainty || 'VISIBLE_LABEL_NOT_IN_ACCESSIBLE_NAME',
-            visibleLabel,
-            accessibleName: accName,
-            normalized: { visibleLabel: visibleNorm, accessibleName: accNorm },
-            tokenized: { visibleLabel: labelTokens, accessibleName: nameTokens },
-            labelSource: labelInfo && labelInfo.source ? labelInfo.source : 'none',
-            nameMechanism: acc && acc.mechanism ? acc.mechanism : 'none'
-          }
-        }
-      });
+        })
+      );
     }
   }
 

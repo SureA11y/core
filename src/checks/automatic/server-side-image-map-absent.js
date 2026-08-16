@@ -66,24 +66,21 @@ function runInPage(ctx) {
 
     applicableCount += 1;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary:
-        'This image uses a server-side image map, which has no keyboard-operable equivalent.',
-      hint: 'Replace the server-side image map (ismap) with a client-side image map (<map>/<area>) or separate accessible links/buttons.',
-      i18n: {
-        summaryKey: 'serverSideImageMapAbsent_summary_fail',
-        hintKey: 'serverSideImageMapAbsent_hint_fail',
-        params: {}
-      },
-      data: {
-        details: { reasonCode: 'SERVER_SIDE_IMAGE_MAP' }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary:
+          'This image uses a server-side image map, which has no keyboard-operable equivalent.',
+        hint: 'Replace the server-side image map (ismap) with a client-side image map (<map>/<area>) or separate accessible links/buttons.',
+        i18n: {
+          summaryKey: 'serverSideImageMapAbsent_summary_fail',
+          hintKey: 'serverSideImageMapAbsent_hint_fail',
+          params: {}
+        },
+        data: {
+          details: { reasonCode: 'SERVER_SIDE_IMAGE_MAP' }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {

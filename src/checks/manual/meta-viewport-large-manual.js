@@ -104,23 +104,20 @@ function runInPage(ctx) {
 
     if (!reasons.length) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This viewport meta tag restricts zoom below the 500% best-practice target.',
-      hint: 'Remove user-scalable=no and raise maximum-scale to at least 5 (500%) if possible.',
-      i18n: {
-        summaryKey: 'metaViewportLarge_summary_cantTell',
-        hintKey: 'metaViewportLarge_hint_cantTell',
-        params: { reasons: reasons.join(', ') }
-      },
-      data: {
-        details: { reasonCode: 'VIEWPORT_ZOOM_BELOW_500', reasons }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This viewport meta tag restricts zoom below the 500% best-practice target.',
+        hint: 'Remove user-scalable=no and raise maximum-scale to at least 5 (500%) if possible.',
+        i18n: {
+          summaryKey: 'metaViewportLarge_summary_cantTell',
+          hintKey: 'metaViewportLarge_hint_cantTell',
+          params: { reasons: reasons.join(', ') }
+        },
+        data: {
+          details: { reasonCode: 'VIEWPORT_ZOOM_BELOW_500', reasons }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {

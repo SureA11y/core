@@ -133,27 +133,25 @@ function runInPage(ctx) {
 
     if (!GENERIC_LINK_TEXT.has(normalized)) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
     const eligInfo = helpers.getEligibilityInfo
       ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
       : null;
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: `This link's accessible name ("${rawName.trim()}") is a generic, non-descriptive phrase.`,
-      hint: 'Make the link text itself describe its destination/purpose (e.g. "Download the 2026 pricing guide" instead of "Download"), or confirm the surrounding context already makes the purpose clear.',
-      i18n: {
-        summaryKey: 'linkNameQuality_summary_cantTell',
-        hintKey: 'linkNameQuality_hint_cantTell',
-        params: { name: rawName.trim() }
-      },
-      data: {
-        details: { reasonCode: 'GENERIC_LINK_TEXT', normalizedName: normalized },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: `This link's accessible name ("${rawName.trim()}") is a generic, non-descriptive phrase.`,
+        hint: 'Make the link text itself describe its destination/purpose (e.g. "Download the 2026 pricing guide" instead of "Download"), or confirm the surrounding context already makes the purpose clear.',
+        i18n: {
+          summaryKey: 'linkNameQuality_summary_cantTell',
+          hintKey: 'linkNameQuality_hint_cantTell',
+          params: { name: rawName.trim() }
+        },
+        data: {
+          details: { reasonCode: 'GENERIC_LINK_TEXT', normalizedName: normalized },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {

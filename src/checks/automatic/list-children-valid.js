@@ -122,23 +122,21 @@ function runInPage(ctx) {
     const dedupedInvalidTags = [...new Set(invalidTags)];
 
     const tag = el.tagName.toLowerCase();
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This list contains a direct child that is not a list item.',
-      hint: 'Only use <li> (or <script>/<template>) as direct children of <ul>/<ol>; move other markup inside an <li>.',
-      i18n: {
-        summaryKey: 'listChildrenValid_summary_fail',
-        hintKey: 'listChildrenValid_hint_fail',
-        params: { element: tag, invalidChildren: dedupedInvalidTags.join(', ') }
-      },
-      data: {
-        details: { reasonCode: 'LIST_INVALID_CHILD', element: tag, invalidChildren: invalidTags }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This list contains a direct child that is not a list item.',
+        hint: 'Only use <li> (or <script>/<template>) as direct children of <ul>/<ol>; move other markup inside an <li>.',
+        i18n: {
+          summaryKey: 'listChildrenValid_summary_fail',
+          hintKey: 'listChildrenValid_hint_fail',
+          params: { element: tag, invalidChildren: dedupedInvalidTags.join(', ') }
+        },
+        data: {
+          details: { reasonCode: 'LIST_INVALID_CHILD', element: tag, invalidChildren: invalidTags }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
