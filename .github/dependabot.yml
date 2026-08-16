@@ -1,0 +1,14 @@
+version: 2
+
+updates:
+  # Both packages generate committed tables, so an upstream release leaves
+  # those tables stale until they are regenerated. The generators' --check
+  # modes fail the build when that happens.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    allow:
+      - dependency-name: aria-query
+      - dependency-name: language-subtag-registry
+    open-pull-requests-limit: 5
