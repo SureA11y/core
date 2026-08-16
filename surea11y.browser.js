@@ -29048,14 +29048,38 @@ function lookupDict(locale, engineOptions) {
   return ownDict(getSuppliedMessages(engineOptions), locale) || ownDict(I18N, locale);
 }
 
-// Exact code first, then its primary subtag, so de-DE uses de when no de-DE
-// table exists. t() runs this per string, so the common case must not
-// allocate: only a code carrying a subtag reaches the split.
-function matchLocale(requested, engineOptions) {
-  if (lookupDict(requested, engineOptions)) return requested;
+// Locale codes are case-insensitive, so pt-br has to find pt-BR. Only reached
+// when the exact lookup misses, and the tables hold one entry per language.
+function matchIgnoringCase(table, locale) {
+  if (!table) return null;
 
-  const primary = requested.split('-')[0].toLowerCase();
-  return (primary !== requested && lookupDict(primary, engineOptions)) ? primary : null;
+  const lower = locale.toLowerCase();
+  for (const key in table) {
+    if (key.toLowerCase() === lower && ownDict(table, key)) return key;
+  }
+  return null;
+}
+
+function findLocaleKey(locale, engineOptions) {
+  if (lookupDict(locale, engineOptions)) return locale;
+
+  return (
+    matchIgnoringCase(getSuppliedMessages(engineOptions), locale) ||
+    matchIgnoringCase(I18N, locale)
+  );
+}
+
+// Exact code first, then its primary subtag, so de-DE uses de when no de-DE
+// table exists. t() runs this per string, and an exact hit returns before any
+// allocation or scan.
+function matchLocale(requested, engineOptions) {
+  const direct = findLocaleKey(requested, engineOptions);
+  if (direct) return direct;
+
+  const primary = requested.split('-')[0];
+  return primary.toLowerCase() === requested.toLowerCase()
+    ? null
+    : findLocaleKey(primary, engineOptions);
 }
 
 function getLocaleDict(engineOptions) {
@@ -29090,6 +29114,8 @@ function resolveLocale(engineOptions) {
   const en = (I18N && I18N.en) ? I18N.en : {};
   const dict = lookupDict(matched, engineOptions);
 
+  if (!dict) return { requested: requested, resolved: 'en', reason: 'unknown-locale' };
+
   if (dict !== en) {
     for (const key in en) {
       if (!(key in dict)) {
@@ -29098,10 +29124,12 @@ function resolveLocale(engineOptions) {
     }
   }
 
+  // Differing only in case is not a fallback -- the caller got the language
+  // they asked for.
   return {
     requested: requested,
     resolved: matched,
-    reason: matched === requested ? 'ok' : 'primary-subtag'
+    reason: matched.toLowerCase() === requested.toLowerCase() ? 'ok' : 'primary-subtag'
   };
 }
 
