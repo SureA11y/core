@@ -6,7 +6,11 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const { assertRule } = require('../../helpers/assertRule.js');
-const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
+const {
+  runa11yCoreOnHtml,
+  createDom,
+  runa11yCoreOnDom
+} = require('../../helpers/runDomRulesOnHtml.js');
 
 const RULE_ID = 'aria-roles-valid';
 
@@ -179,4 +183,27 @@ test(`${RULE_ID}: inert on the element itself also removes it from scope`, () =>
     minOccurrences: 0,
     maxOccurrences: 0
   });
+});
+
+// The hidden gate walks the composed tree. parentElement stops at a shadow
+// root, so a host carrying aria-hidden or inert would be invisible from
+// inside its own shadow content.
+test(`${RULE_ID}: a hidden shadow host suppresses its shadow content`, () => {
+  const build = (hostAttrs) => {
+    const dom = createDom(
+      '<!doctype html><html lang="en"><head><title>t</title></head><body>' +
+        '<div id="host" ' +
+        hostAttrs +
+        '></div></body></html>'
+    );
+    const host = dom.window.document.getElementById('host');
+    host.attachShadow({ mode: 'open' }).innerHTML = '<div id="inner" role="notarole">x</div>';
+    return runa11yCoreOnDom(dom, { runOnly: [RULE_ID] }).checksResults.find(
+      (r) => r.ruleId === RULE_ID
+    );
+  };
+
+  assert.notStrictEqual(build('').outcome, 'notApplicable', 'shadow content is judged normally');
+  assert.strictEqual(build('aria-hidden="true"').outcome, 'notApplicable');
+  assert.strictEqual(build('inert').outcome, 'notApplicable');
 });
