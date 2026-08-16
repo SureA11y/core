@@ -132,3 +132,38 @@ test('renderHtmlReport: a hostile locale string cannot break out of the meta bar
   assert.doesNotMatch(report, /<img src=x onerror/);
   assert.match(report, /&lt;img src=x onerror=alert\(1\)&gt;/);
 });
+
+// Escaping assertions prove the characters were transformed; this proves the
+// result: the report is opened from disk, so nothing an occurrence carries may
+// run when it is.
+test('renderHtmlReport: adversarial occurrence content cannot execute when the report is opened', () => {
+  const { JSDOM } = require('jsdom');
+
+  const payloads = [
+    '</script><script>window.__pwned=1</script>',
+    '<img src=x onerror="window.__pwned=1">',
+    '<svg onload="window.__pwned=1"></svg>',
+    '" onmouseover="window.__pwned=1',
+    '"}]</script><script>window.__pwned=1</script><script>[{"a":"',
+    '\\"}]</script><script>window.__pwned=1</script>'
+  ];
+
+  for (const payload of payloads) {
+    const occurrence = makeOccurrence({
+      selector: payload,
+      html: payload,
+      summary: payload,
+      hint: payload
+    });
+    const result = makeScanResult([makeCheckResult({ occurrences: [occurrence] })]);
+
+    const dom = new JSDOM(renderHtmlReport(result), { runScripts: 'dangerously' });
+    const handlers = [...dom.window.document.querySelectorAll('*')].filter((el) =>
+      [...el.attributes].some((a) => /^on/i.test(a.name))
+    );
+
+    assert.equal(dom.window.__pwned, undefined, `payload executed: ${payload}`);
+    assert.deepEqual(handlers, [], `payload produced an event handler: ${payload}`);
+    dom.window.close();
+  }
+});
