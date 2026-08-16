@@ -4159,6 +4159,10 @@ function createDomHelpers(opts) {
       document &&
       typeof document.querySelector === 'function'
     ) {
+      // A rule that reports its element never lands here. Counted so the
+      // cost of re-finding one shows up in perfStats, not just as a slow scan.
+      __perfInc('structuralPath.selectorFallback');
+
       let el;
       try {
         el = document.querySelector(selector);

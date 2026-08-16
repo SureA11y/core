@@ -167,6 +167,32 @@ const meta = {
 
 ---
 
+## 4.3 Reporting an occurrence
+
+Build occurrences with `helpers.reportOccurrence(element, { summary, hint, i18n, data })`
+rather than assembling the object by hand:
+
+```js
+occurrences.push(helpers.reportOccurrence(el, { summary: '…', hint: '…' }));
+```
+
+It attaches the element for the engine to finalize, which is how `selector`,
+`html` and `structuralPath` get filled in centrally instead of in each of the
+124 rules.
+
+**This is a performance contract, not just a convenience.** Every occurrence
+gets a `structuralPath`. Given the element, the engine computes it directly.
+Given only a hand-built occurrence, it re-finds the element with
+`document.querySelector(selector)` — one DOM query per occurrence. That is
+fine for a rule reporting a single document-level finding, and quadratic for
+one reporting many: `region` hand-built its occurrences and took four minutes
+on a thousand-element page, against under a second afterwards.
+
+`perfStats.counters['structuralPath.selectorFallback']` counts how often the
+engine had to re-find an element, so a slow rule can be spotted without
+guessing. `tests/structural-path-fallback.test.js` fails if that count starts
+growing with page size.
+
 ## 5) i18n in occurrences (repo reality)
 
 Occurrences also support i18n via keys + params.
