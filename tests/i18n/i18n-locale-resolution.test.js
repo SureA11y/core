@@ -12,8 +12,8 @@ const I18N_DIR = path.join(ROOT_DIR, 'src', 'i18n');
 
 const LOCALES = fs
   .readdirSync(I18N_DIR)
-  .filter((f) => f.endsWith('.js') && f !== 'en.js')
-  .map((f) => f.replace(/\.js$/, ''));
+  .filter((f) => f.endsWith('.json') && f !== 'en.json')
+  .map((f) => f.replace(/\.json$/, ''));
 
 const html =
   '<!doctype html><html><head><title>t</title></head><body><img src="x.png"></body></html>';

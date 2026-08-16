@@ -156,7 +156,7 @@ function runInPage(ctx) {
     for (const r of rules) {
       if (!r) continue;
       if (r.type === CSS_STYLE_RULE && isLockingRotation(r.style)) {
-        findings.push({ mediaText, selectorText: trim(r.selectorText) || '(unknown selector)' });
+        findings.push({ mediaText, selectorText: trim(r.selectorText) });
       }
     }
   }
@@ -203,10 +203,14 @@ function runInPage(ctx) {
   const occurrences = findings.map((f) => ({
     selector: stableSelector,
     html,
-    summary: `A "${f.mediaText}" media query rotates "${f.selectorText}", locking the page to one orientation.`,
+    summary: f.selectorText
+      ? `A "${f.mediaText}" media query rotates "${f.selectorText}", locking the page to one orientation.`
+      : `A "${f.mediaText}" media query rotates an element with no readable selector, locking the page to one orientation.`,
     hint: 'Remove the rotate() transform from the orientation media query; let the page respond naturally to device orientation instead of forcing a visual rotation.',
     i18n: {
-      summaryKey: 'cssOrientationLock_summary_fail',
+      summaryKey: f.selectorText
+        ? 'cssOrientationLock_summary_fail'
+        : 'cssOrientationLock_summary_fail_unknownSelector',
       hintKey: 'cssOrientationLock_hint_fail',
       params: { mediaText: f.mediaText, selectorText: f.selectorText }
     },

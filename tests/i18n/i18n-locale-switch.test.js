@@ -10,8 +10,8 @@ const { runa11yCoreOnHtml } = require('../helpers/runa11yCoreOnHtml');
 const I18N_DIR = path.join(__dirname, '..', '..', 'src', 'i18n');
 const LOCALES = fs
   .readdirSync(I18N_DIR)
-  .filter((f) => f.endsWith('.js') && f !== 'en.js')
-  .map((f) => f.replace(/\.js$/, ''));
+  .filter((f) => f.endsWith('.json') && f !== 'en.json')
+  .map((f) => f.replace(/\.json$/, ''));
 
 const html = `
   <!doctype html>

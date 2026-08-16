@@ -132,6 +132,10 @@ The build/runtime resolves i18n by:
 2) falling back to `en` if missing,
 3) falling back to the literal `title`/`description` strings if still missing.
 
+Add the key and its English text to `src/i18n/en.json`, then run
+`npm run i18n:sync` so every other locale picks it up. `npm test` fails if you
+forget. See [`I18N.md`](./I18N.md).
+
 #### `meta.tags`
 Tags are used for grouping/filtering. Typical tag families in this ruleset include:
 - WCAG tagging: `wcag2a`, `wcag111`
@@ -188,6 +192,29 @@ At normalization time, the engine:
 
 Translation strings use `{{paramName}}` placeholders.
 `params` is shallow-copied and passed into interpolation.
+
+**A param carries a value, never prose.** Element names, roles, attribute names,
+selectors, ids, counts and ratios are values: they read the same in every
+language, because the author will search their own source for them. An English
+word or sentence is not, and passing one means it stays English in every locale
+— with nothing to reveal it, since the key is present everywhere and coverage
+reports look complete.
+
+When a message varies by case, give each case its own key rather than
+interpolating the differing text:
+
+```js
+// wrong: the sentence lives in the rule, so no locale can reach it
+i18n: { hintKey: 'myRule_hint_fail', params: { advice: 'Replace it with role="list".' } }
+
+// right: one key per case, each translatable on its own
+i18n: { hintKey: 'myRule_hint_fail_directory', params: { role } }
+```
+
+`tests/i18n/i18n-translatable-strings.test.js` fails any dictionary value with
+no translatable text of its own, which catches the `"{{advice}}"` shape above.
+It cannot catch a param carrying prose into an otherwise-normal sentence, so
+that one is on you.
 
 ---
 

@@ -17,7 +17,7 @@ test('computeLocaleReport counts translated/missing/orphaned keys', () => {
   assert.equal(report.total, 3);
   assert.equal(report.translated, 1); // only "a" differs from English
   assert.equal(report.missing, 1); // "c" is absent from the locale
-  assert.deepEqual(report.orphaned, ['d']); // "d" is not a real en.js key
+  assert.deepEqual(report.orphaned, ['d']); // "d" is not a real en.json key
   assert.equal(report.percent, Math.round((1 / 3) * 1000) / 10);
 });
 
@@ -33,9 +33,12 @@ test('computeLocaleReport reports 0% for a freshly scaffolded locale (identical 
 
 test('generateReport scans every non-English locale file in the i18n directory', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'i18n-report-test-'));
-  fs.writeFileSync(path.join(dir, 'en.js'), `module.exports = { a: 'Hello', b: 'World' };`);
-  fs.writeFileSync(path.join(dir, 'fr.js'), `module.exports = { a: 'Bonjour', b: 'World' };`);
-  fs.writeFileSync(path.join(dir, 'de.js'), `module.exports = { a: 'Hallo', b: 'Welt' };`);
+  const write = (locale, dict) =>
+    fs.writeFileSync(path.join(dir, `${locale}.json`), JSON.stringify(dict, null, 2));
+
+  write('en', { a: 'Hello', b: 'World' });
+  write('fr', { a: 'Bonjour', b: 'World' });
+  write('de', { a: 'Hallo', b: 'Welt' });
 
   const rows = generateReport(dir);
   const byLocale = Object.fromEntries(rows.map((r) => [r.locale, r]));
