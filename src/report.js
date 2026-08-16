@@ -84,6 +84,19 @@ function getCardOutcome(ruleResult) {
   return hasCantTell ? 'cantTell' : ruleResult.outcome;
 }
 
+// Locale fallback is per-string and silent in the text itself, so a report
+// generated in a locale the engine does not carry reads as a normal English
+// one. A result from an older engine has no engine.locale and gets no chip.
+function renderLocaleChip(engine) {
+  const locale = engine && engine.locale;
+  if (!locale || typeof locale.resolved !== 'string' || !locale.resolved) return '';
+
+  const fellBack = locale.requested !== locale.resolved;
+  const label = fellBack ? `locale (requested ${esc(locale.requested)})` : 'locale';
+
+  return `<div><b>${esc(locale.resolved)}</b>${label}</div>`;
+}
+
 // One plain-language headline + one horizontal stacked bar + a legend with
 // icon+label+count (status color is never the only signal) -- the first
 // thing a reader sees; exhaustive detail lives in the collapsed
@@ -411,6 +424,7 @@ function renderHtmlReport(result, options = {}) {
   <div><b>${rows.length}</b>total occurrences</div>
   <div><b>${esc((result && result.engine && result.engine.tag) || '?')}</b>engine</div>
   <div><b>${esc((result && result.engine && result.engine.schemaVersion) || '?')}</b>schema version</div>
+  ${renderLocaleChip(result && result.engine)}
 </div>
 
 <main>
