@@ -10,9 +10,9 @@ const { spawnSync } = require('node:child_process');
 const ROOT_DIR = path.join(__dirname, '..');
 const VALIDATOR = path.join(ROOT_DIR, 'scripts', 'validate-rule.js');
 
-// skip-link-manual is the sample because it already contains the two shapes
-// that used to defeat the free-variable scan: an apostrophe inside a
-// double-quoted hint, and a regex literal built from a quote character.
+// skip-link-manual is the sample because it carries both shapes the
+// free-variable scan has to survive: an apostrophe inside a double-quoted
+// hint, and a regex literal built from a quote character.
 const SAMPLE = path.join(ROOT_DIR, 'src', 'checks', 'manual', 'skip-link-manual.js');
 const SAMPLE_SOURCE = fs.readFileSync(SAMPLE, 'utf8');
 

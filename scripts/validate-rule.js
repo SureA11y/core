@@ -549,8 +549,8 @@ function main() {
     assert.ok(hasOwn(mod, k), `module missing export: ${k}`);
   }
 
-  // applicability is optional and 14 rules use it; anything else is a typo or
-  // a helper that should not be part of the module contract.
+  // applicability is an optional part of the contract; anything else is a typo
+  // or a helper that should live inside runInPage.
   const allowed = new Set(['id', 'meta', 'runInPage', 'applicability']);
   const unexpected = Object.keys(mod)
     .filter((k) => !allowed.has(k))
