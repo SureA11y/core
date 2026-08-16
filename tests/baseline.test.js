@@ -210,3 +210,48 @@ test('buildBaselineEntries: aria-prohibited-attr mixed-tier page contributes onl
   assert.strictEqual(entries[0].ruleId, 'aria-prohibited-attr');
   assert.match(entries[0].html, /id="roleless_fail"/);
 });
+
+// A baseline records what a page looks like, not what the report reads like,
+// so switching language must not turn every known violation into a new one.
+test('matchBaseline: a baseline written in one locale matches a scan in another', () => {
+  const page =
+    '<!doctype html><html><head><title>t</title></head><body><img src="x.png"></body></html>';
+  const scan = (engineOptions) => runa11yCoreOnHtml(page, { engineOptions });
+
+  const germanBaseline = buildBaselineEntries(scan({ locale: 'de' }));
+  assert.ok(germanBaseline.length > 0, 'the fixture produces at least one fail occurrence');
+
+  assert.equal(matchBaseline(scan({ locale: 'en' }), germanBaseline).newCount, 0);
+  assert.equal(matchBaseline(scan({ locale: 'fr' }), germanBaseline).newCount, 0);
+  assert.equal(
+    matchBaseline(
+      scan({ locale: 'de', messages: { de: { img_altPresent_title: 'X' } } }),
+      germanBaseline
+    ).newCount,
+    0,
+    'a caller-supplied dictionary does not change baseline identity either'
+  );
+});
+
+// A broken baseline must report more, never fewer -- silently swallowing
+// violations because a file was malformed is the dangerous direction.
+test('matchBaseline: malformed baseline input degrades to treating everything as new', () => {
+  const page =
+    '<!doctype html><html><head><title>t</title></head><body><img src="x.png"></body></html>';
+  const result = runa11yCoreOnHtml(page, { engineOptions: {} });
+  const expected = buildBaselineEntries(result).length;
+
+  for (const entries of [null, undefined, { a: 1 }, [null], [{}], ['x']]) {
+    assert.equal(
+      matchBaseline(result, entries).newCount,
+      expected,
+      `entries ${JSON.stringify(entries)} should leave every occurrence new`
+    );
+  }
+});
+
+test('buildBaselineEntries: a malformed result yields no entries instead of throwing', () => {
+  for (const bad of [null, undefined, {}, { checksResults: 'x' }]) {
+    assert.deepEqual(buildBaselineEntries(bad), []);
+  }
+});
