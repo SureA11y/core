@@ -4,6 +4,8 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-08-16
+
 ### Added
 - `engine.locale` on the result records which dictionary a run actually used: `{ requested, resolved, reason }`, once per result. Locale fallback is graceful and per-string, so asking for a language the build doesn't carry has always produced fluent English with nothing in the output to say so; `reason` now distinguishes `ok`, `unknown-locale` (no dictionary for that code — a region subtag counts as its own locale) and `partial-dictionary` (dictionary used but missing keys). Purely additive, so `engine.schemaVersion` stays `"1.0.0"`. Documented in `docs/OUTPUT_SCHEMA.md` and `docs/API_STABILITY.md`.
 - `npm run i18n:sync` rewrites every non-English locale file against `en.json`: adds keys that are new (seeded with the English text), drops keys `en.json` no longer has, and leaves existing translations untouched. `npm run i18n:check` performs the same comparison without writing and exits non-zero on drift. Adding a rule string previously meant editing four files by hand, with a missed one falling back to English silently.
