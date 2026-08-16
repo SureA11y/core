@@ -30075,8 +30075,13 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         return { eligibleTextCount: 0, elements: [], visibilityMode };
       }
 
+      // Default on, opt out with includeShadowDom: false -- same contract as
+      // helpers.queryAllSmart. Part of the cache key: a scan that skipped
+      // shadow roots must not be reused by one that should not.
+      const includeShadowDom = !(engineOptions && engineOptions.includeShadowDom === false);
+
       const cache = __getSharedTextScanCache();
-      const cacheKey = `visibilityMode=${visibilityMode}`;
+      const cacheKey = `visibilityMode=${visibilityMode}|sd=${includeShadowDom ? 1 : 0}`;
       if (cache && cache.has(cacheKey)) return cache.get(cacheKey);
 
       // ctx.root is an array with multi-region contextSelector support
@@ -30088,9 +30093,42 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             ? ctx.root
             : [ctx.root]
           : [d.body || d.documentElement || d];
-      const walkRoots = walkRootsRaw
+      const lightRoots = walkRootsRaw
         .map((wr) => (wr && wr.nodeType === 9 ? wr.body || wr.documentElement || wr : wr))
         .filter(Boolean);
+
+      // A TreeWalker stops at a shadow boundary and querySelectorAll does not
+      // cross one either, so every open shadow root has to be walked as a root
+      // in its own right or the text inside a component is never seen at all.
+      function withShadowRoots(roots) {
+        if (!includeShadowDom) return roots;
+
+        const out = [];
+        const seen = new Set();
+        const queue = roots.slice();
+        let guard = 0;
+
+        while (queue.length && guard++ < 10000) {
+          const root = queue.shift();
+          if (!root || seen.has(root)) continue;
+          seen.add(root);
+          out.push(root);
+
+          let hosts;
+          try {
+            hosts = root.querySelectorAll ? root.querySelectorAll('*') : [];
+          } catch {
+            continue;
+          }
+          for (const el of hosts) {
+            if (el && el.shadowRoot && !seen.has(el.shadowRoot)) queue.push(el.shadowRoot);
+          }
+        }
+
+        return out;
+      }
+
+      const walkRoots = withShadowRoots(lightRoots);
 
       const SHOW_TEXT =
         w && w.NodeFilter && typeof w.NodeFilter.SHOW_TEXT === 'number'
