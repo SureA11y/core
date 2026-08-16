@@ -1,6 +1,6 @@
 {
   "name": "@surea11y/core",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "description": "Deterministic WCAG 2.2 accessibility engine that tells you what it can't tell you. Zero dependencies.",
   "keywords": [
     "accessibility",
