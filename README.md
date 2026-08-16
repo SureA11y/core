@@ -281,6 +281,22 @@ the same `runa11yCoreInPage` function described above — calling it runs a
 real scan against the page it's loaded into and returns the same result
 shape documented in [Understanding the Results](#understanding-the-results).
 
+The bundle carries English only, to keep the download from growing with
+every language added. For another language, load its file after the bundle:
+
+```html
+<script src="node_modules/@surea11y/core/surea11y.browser.js"></script>
+<script src="node_modules/@surea11y/core/surea11y.i18n.fr.js"></script>
+<script>
+  const result = a11ycore.runa11yCoreInPage(location.href, null, { locale: "fr" }, null);
+</script>
+```
+
+Ask for a language you haven't loaded and you get English rather than an
+error, with `result.engine.locale` saying so. The npm package is
+unaffected — `require("@surea11y/core")` has every locale built in. See
+[`docs/I18N.md`](./docs/I18N.md).
+
 `contextSelector`, `engineOptions`, and `runOnly` are the same three
 arguments described throughout this README and `docs/ENGINE_OPTIONS.md` —
 nothing about calling the engine changes just because it's loaded this
@@ -459,7 +475,8 @@ The repository is organised so that the accessibility engine, rule
 implementations and supporting infrastructure remain clearly separated.
 
 ```text
-surea11y.browser.js        # Generated standalone browser bundle
+surea11y.browser.js        # Generated standalone browser bundle (English)
+surea11y.i18n.<locale>.js  # Generated per-locale side files for that bundle
 
 src/
   index.js                 # Public API

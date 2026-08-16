@@ -35,11 +35,22 @@ function liftFunction(name) {
 // These close over the inlined I18N table, so they are lifted out of the built
 // engine to be exercised against dictionaries the shipped locales cannot
 // produce.
-function makeResolveLocale(i18n) {
-  const source = `${liftFunction('matchLocale')}\n${liftFunction('resolveLocale')}\nreturn resolveLocale;`;
+function makeResolveLocale(i18n, knownLocales) {
+  const source = [
+    'getSuppliedMessages',
+    'lookupDict',
+    'matchLocale',
+    'isKnownLocale',
+    'resolveLocale'
+  ]
+    .map(liftFunction)
+    .concat('return resolveLocale;')
+    .join('\n');
 
-  return new Function('I18N', 'normalizeLocale', source)(i18n, (locale) =>
-    typeof locale === 'string' && locale.trim() ? locale.trim() : 'en'
+  return new Function('I18N', 'KNOWN_LOCALES', 'normalizeLocale', source)(
+    i18n,
+    knownLocales || Object.keys(i18n || {}),
+    (locale) => (typeof locale === 'string' && locale.trim() ? locale.trim() : 'en')
   );
 }
 

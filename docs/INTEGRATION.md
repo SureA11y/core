@@ -107,7 +107,29 @@ Good for: a manual check against a page open in a real browser, a bookmarklet, o
 
 `a11ycore.runa11yCoreInPage` is the exact same function described in Pattern 2 above — the bundle exists only to solve *loading* it without `require`/a module system, not to add a separate API surface. It carries the same self-containment property (own inlined rule catalog, no free variables), which is what makes a plain `<script>` tag sufficient.
 
-Deliberately excluded from this bundle: `runa11yCoreAcrossFrames`/`a11yCoreEnableFrameResponder`. Cross-frame scanning needs the embedded frame to load the engine and opt in too (see "Cross-frame scanning" below) — not a fit for a single dropped-in script tag. Use the npm package directly if you need it.
+### Scanning in a language other than English
+
+The bundle carries English only. Every other locale ships beside it as its own file — load one after the bundle and that language becomes available:
+
+```html
+<script src="node_modules/@surea11y/core/surea11y.browser.js"></script>
+<script src="node_modules/@surea11y/core/surea11y.i18n.de.js"></script>
+<script>
+  const result = a11ycore.runa11yCoreInPage(location.href, null, { locale: 'de' }, null);
+</script>
+```
+
+Load as many as you need; each adds one language and they don't interfere. Order matters only in that the bundle has to come first — a side file loaded on its own throws with a message saying so.
+
+Ask for a locale whose file you haven't loaded and you get English, not an error, with `result.engine.locale.reason` set to `dictionary-not-loaded` so it's visible rather than silent. See [`I18N.md`](./I18N.md).
+
+Why the split: the bundle is fetched over the network, and every language would otherwise be paid for by every page whether used or not. Keeping English inline and the rest optional took roughly 280 KB off the download and stops it growing as languages are added. The Node package is unaffected — `require('@surea11y/core')` still has every locale built in.
+
+If you'd rather supply a dictionary yourself, `engineOptions.messages` takes `{ [locale]: { key: value } }` directly and wins over a loaded side file.
+
+### What the bundle leaves out
+
+Deliberately excluded: `runa11yCoreAcrossFrames`/`a11yCoreEnableFrameResponder`. Cross-frame scanning needs the embedded frame to load the engine and opt in too (see "Cross-frame scanning" below) — not a fit for a single dropped-in script tag. Use the npm package directly if you need it.
 
 ## Scoping a scan to part of the page
 
