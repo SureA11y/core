@@ -676,3 +676,80 @@ test(`${RULE_ID}: determinism (same input => same output)`, () => {
     assert.deepStrictEqual(r2, r1);
 });
 */
+
+// A TreeWalker stops at a shadow boundary and querySelectorAll does not cross
+// one, so text inside a component was never examined at all -- reported as
+// notApplicable rather than as an unresolvable contrast.
+const LOW_CONTRAST = '<p style="color:#aaa;background:#fff">low contrast text</p>';
+
+function contrastIn(build, engineOptions = {}) {
+  const dom = createDom(
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><div id="h"></div></body></html>'
+  );
+  build(dom.window.document.getElementById('h'));
+  const rule = runa11yCoreOnDom(dom, { engineOptions }).checksResults.find(
+    (r) => r.ruleId === 'contrast-minimum'
+  );
+  return { outcome: rule.outcome, count: (rule.occurrences || []).length };
+}
+
+test('contrast-minimum: text inside an open shadow root is checked', () => {
+  assert.deepStrictEqual(
+    contrastIn((host) => {
+      host.attachShadow({ mode: 'open' }).innerHTML = LOW_CONTRAST;
+    }),
+    { outcome: 'fail', count: 1 }
+  );
+});
+
+test('contrast-minimum: nested shadow roots are reached', () => {
+  assert.deepStrictEqual(
+    contrastIn((host) => {
+      const inner = host.attachShadow({ mode: 'open' });
+      inner.innerHTML = '<div id="h2"></div>';
+      inner.getElementById('h2').attachShadow({ mode: 'open' }).innerHTML = LOW_CONTRAST;
+    }),
+    { outcome: 'fail', count: 1 }
+  );
+});
+
+test('contrast-minimum: includeShadowDom false still skips shadow content', () => {
+  assert.deepStrictEqual(
+    contrastIn(
+      (host) => {
+        host.attachShadow({ mode: 'open' }).innerHTML = LOW_CONTRAST;
+      },
+      { includeShadowDom: false }
+    ),
+    { outcome: 'notApplicable', count: 0 }
+  );
+});
+
+test('contrast-minimum: a closed shadow root stays unreachable', () => {
+  assert.deepStrictEqual(
+    contrastIn((host) => {
+      host.attachShadow({ mode: 'closed' }).innerHTML = LOW_CONTRAST;
+    }),
+    { outcome: 'notApplicable', count: 0 }
+  );
+});
+
+test('contrast-minimum: text is counted once, not once per root', () => {
+  assert.deepStrictEqual(
+    contrastIn((host) => {
+      host.attachShadow({ mode: 'open' }).innerHTML = LOW_CONTRAST;
+      host.insertAdjacentHTML('afterend', LOW_CONTRAST);
+    }),
+    { outcome: 'fail', count: 2 },
+    'one occurrence per text node, shadow plus light'
+  );
+
+  assert.deepStrictEqual(
+    contrastIn((host) => {
+      host.attachShadow({ mode: 'open' }).innerHTML = '<slot></slot>';
+      host.innerHTML = LOW_CONTRAST;
+    }),
+    { outcome: 'fail', count: 1 },
+    'slotted content lives in the light tree and is walked once'
+  );
+});
