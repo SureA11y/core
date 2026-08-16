@@ -27833,6 +27833,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
       for (let n = el; n && n.getAttribute; n = n.parentElement) {
         if (String(n.getAttribute('aria-hidden') || '').toLowerCase() === 'true') return true;
+        if (n.hasAttribute && n.hasAttribute('inert')) return true;
       }
     } catch {
       return false;
@@ -30023,7 +30024,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   // Programmatically hidden per the ACT glossary: display:none, visibility not
-  // visible, or aria-hidden on the element or an ancestor.
+  // visible, or aria-hidden on the element or an ancestor. inert is treated
+  // the same although the glossary predates it -- an inert subtree is out of
+  // the accessibility tree entirely, so a role on it reaches no one.
   function isHidden(el) {
     try {
       if (typeof helpers.isDomVisibleEligible === 'function') {
@@ -30031,6 +30034,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
       for (let n = el; n && n.getAttribute; n = n.parentElement) {
         if (String(n.getAttribute('aria-hidden') || '').toLowerCase() === 'true') return true;
+        if (n.hasAttribute && n.hasAttribute('inert')) return true;
       }
     } catch {
       return false;
@@ -67699,6 +67703,7 @@ const __a11yCoreCrossFrameApi = (function () {
       }
       for (let n = el; n && n.getAttribute; n = n.parentElement) {
         if (String(n.getAttribute('aria-hidden') || '').toLowerCase() === 'true') return true;
+        if (n.hasAttribute && n.hasAttribute('inert')) return true;
       }
     } catch {
       return false;
@@ -69889,7 +69894,9 @@ const __a11yCoreCrossFrameApi = (function () {
   let applicableCount = 0;
 
   // Programmatically hidden per the ACT glossary: display:none, visibility not
-  // visible, or aria-hidden on the element or an ancestor.
+  // visible, or aria-hidden on the element or an ancestor. inert is treated
+  // the same although the glossary predates it -- an inert subtree is out of
+  // the accessibility tree entirely, so a role on it reaches no one.
   function isHidden(el) {
     try {
       if (typeof helpers.isDomVisibleEligible === 'function') {
@@ -69897,6 +69904,7 @@ const __a11yCoreCrossFrameApi = (function () {
       }
       for (let n = el; n && n.getAttribute; n = n.parentElement) {
         if (String(n.getAttribute('aria-hidden') || '').toLowerCase() === 'true') return true;
+        if (n.hasAttribute && n.hasAttribute('inert')) return true;
       }
     } catch {
       return false;

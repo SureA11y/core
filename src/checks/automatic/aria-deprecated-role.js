@@ -83,6 +83,7 @@ function runInPage(ctx) {
       }
       for (let n = el; n && n.getAttribute; n = n.parentElement) {
         if (String(n.getAttribute('aria-hidden') || '').toLowerCase() === 'true') return true;
+        if (n.hasAttribute && n.hasAttribute('inert')) return true;
       }
     } catch {
       return false;
