@@ -12,7 +12,7 @@ This document describes the standard the project holds itself to — the same on
 
 Follow [`docs/RULE_AUTHORING.md`](./docs/RULE_AUTHORING.md) literally — it's derived from the actual rule modules and build pipeline, not aspirational. In short, every rule needs:
 
-1. The exact module contract (`id`, `meta`, `runInPage(ctx)`, nothing else exported).
+1. The module contract: `id`, `meta`, `runInPage(ctx)`, plus an optional `applicability(ctx)`. Nothing else — a helper you need inside `runInPage` goes inside it, since the function is serialized and runs with no access to this module's scope.
 2. A scenario fixture (`tests/fixtures/<rule-slug>-all-scenarios.html`) covering every branch the rule's logic distinguishes, plus a fixture-coverage test. **This is not optional polish** — see `docs/RULE_AUTHORING.md` §11. A rule shipped without one is treated the same as a rule shipped without tests.
 3. Correct `meta.wcagSc`/`normativeMappings`/`coverage.facetsBySc` if the rule maps to a WCAG Success Criterion — run `npm run coverage` afterward to confirm the facet-coverage report picks it up.
 
