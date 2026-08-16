@@ -7,16 +7,14 @@ const ROOT_DIR = path.join(__dirname, '..');
 const I18N_DIR = path.join(ROOT_DIR, 'src', 'i18n');
 
 function loadLocaleDict(i18nDir, name) {
-  const abs = path.join(i18nDir, `${name}.js`);
-  delete require.cache[require.resolve(abs)];
-  return require(abs);
+  return JSON.parse(fs.readFileSync(path.join(i18nDir, `${name}.json`), 'utf8'));
 }
 
 function listLocaleNames(i18nDir) {
   return fs
     .readdirSync(i18nDir)
-    .filter((f) => f.endsWith('.js'))
-    .map((f) => f.replace(/\.js$/, ''));
+    .filter((f) => f.endsWith('.json'))
+    .map((f) => f.replace(/\.json$/, ''));
 }
 
 // Coverage is a heuristic: a key is counted as "translated" when its value
@@ -80,7 +78,7 @@ function main() {
     }
     if (row.orphaned.length > 0) {
       console.log(
-        `  orphaned keys (not in en.js, likely a typo or a stale key): ${row.orphaned.join(', ')}`
+        `  orphaned keys (not in en.json, likely a typo or a stale key): ${row.orphaned.join(', ')}`
       );
     }
   }

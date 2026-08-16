@@ -93,12 +93,22 @@ test('isAbstractRole / isDeprecatedRole / isKnownRole / isValidConcreteRole', ()
 
 test('getDeprecatedRoleGuidance: role-specific message, generic fallback otherwise', () => {
   const { helpers } = helpersFor('<div></div>');
-  assert.match(helpers.getDeprecatedRoleGuidance('directory'), /role="list"/);
-  assert.match(helpers.getDeprecatedRoleGuidance('GENERIC'), /user-agent-internal/);
-  assert.equal(
-    helpers.getDeprecatedRoleGuidance('not-deprecated'),
-    'Replace the deprecated role with its recommended replacement.'
-  );
+  assert.match(helpers.getDeprecatedRoleGuidance('directory').text, /role="list"/);
+  assert.match(helpers.getDeprecatedRoleGuidance('GENERIC').text, /user-agent-internal/);
+  assert.deepEqual(helpers.getDeprecatedRoleGuidance('not-deprecated'), {
+    key: 'ariaDeprecatedRole_guidance_default',
+    text: 'Replace the deprecated role with its recommended replacement.'
+  });
+});
+
+test('getDeprecatedRoleGuidance: every guidance key exists in the English dictionary', () => {
+  const { helpers } = helpersFor('<div></div>');
+  const enDict = require('../../src/i18n/en.json');
+
+  for (const role of ['directory', 'generic', 'not-deprecated']) {
+    const { key } = helpers.getDeprecatedRoleGuidance(role);
+    assert.equal(typeof enDict[key], 'string', `${key} is missing from en.json`);
+  }
 });
 
 // ===== ARIA attribute name/value-type lookups =====

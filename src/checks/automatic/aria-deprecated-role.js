@@ -117,7 +117,10 @@ function runInPage(ctx) {
     const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
     const guidance = ariaHelpers.getDeprecatedRoleGuidance
       ? ariaHelpers.getDeprecatedRoleGuidance(role)
-      : 'Replace the deprecated role with its recommended replacement.';
+      : {
+          key: 'ariaDeprecatedRole_guidance_default',
+          text: 'Replace the deprecated role with its recommended replacement.'
+        };
 
     if (prohibited) {
       // Author MUST NOT: the usage is non-conforming, not merely discouraged.
@@ -125,15 +128,15 @@ function runInPage(ctx) {
         selector: stableSelector,
         html,
         summary: `This element uses role="${role}", which authors must not explicitly declare.`,
-        hint: guidance,
+        hint: guidance.text,
         occurrenceOutcome: 'fail',
         i18n: {
           summaryKey: 'ariaDeprecatedRole_summary_fail',
-          hintKey: 'ariaDeprecatedRole_hint_fail',
-          params: { role, guidance }
+          hintKey: guidance.key,
+          params: { role }
         },
         data: {
-          details: { reasonCode: 'ARIA_ROLE_AUTHOR_PROHIBITED', role, guidance }
+          details: { reasonCode: 'ARIA_ROLE_AUTHOR_PROHIBITED', role, guidance: guidance.text }
         }
       });
     } else if (discouraged) {
@@ -142,15 +145,15 @@ function runInPage(ctx) {
         selector: stableSelector,
         html,
         summary: `This element uses role="${role}", which is reserved for user agents (still valid, but discouraged).`,
-        hint: guidance,
+        hint: guidance.text,
         occurrenceOutcome: 'cantTell',
         i18n: {
           summaryKey: 'ariaDeprecatedRole_summary_cantTell_discouraged',
-          hintKey: 'ariaDeprecatedRole_hint_cantTell',
-          params: { role, guidance }
+          hintKey: guidance.key,
+          params: { role }
         },
         data: {
-          details: { reasonCode: 'ARIA_ROLE_AUTHOR_DISCOURAGED', role, guidance }
+          details: { reasonCode: 'ARIA_ROLE_AUTHOR_DISCOURAGED', role, guidance: guidance.text }
         }
       });
     } else {
@@ -159,15 +162,15 @@ function runInPage(ctx) {
         selector: stableSelector,
         html,
         summary: `This element uses role="${role}", which is deprecated in WAI-ARIA.`,
-        hint: guidance,
+        hint: guidance.text,
         occurrenceOutcome: 'cantTell',
         i18n: {
           summaryKey: 'ariaDeprecatedRole_summary_cantTell',
-          hintKey: 'ariaDeprecatedRole_hint_cantTell',
-          params: { role, guidance }
+          hintKey: guidance.key,
+          params: { role }
         },
         data: {
-          details: { reasonCode: 'ARIA_ROLE_DEPRECATED', role, guidance }
+          details: { reasonCode: 'ARIA_ROLE_DEPRECATED', role, guidance: guidance.text }
         }
       });
     }

@@ -72,12 +72,12 @@ const CATALOGS_DIR = path.join(SRC_DIR, 'catalogs');
 const COMPOSITE_RULES_FILE = path.join(CATALOGS_DIR, 'composites.wcag.js');
 
 function isI18nLocaleFile(name) {
-  // supports en.js, fr.js, pt-BR.js, etc.
-  return typeof name === 'string' && /^[a-z]{2}(-[A-Za-z0-9]+)?\.(cjs|mjs|js)$/.test(name);
+  // supports en.json, fr.json, pt-BR.json, etc.
+  return typeof name === 'string' && /^[a-z]{2}(-[A-Za-z0-9]+)?\.json$/.test(name);
 }
 
 function localeFromFileName(name) {
-  return name.replace(/\.(cjs|mjs|js)$/, '');
+  return name.replace(/\.json$/, '');
 }
 
 function loadCompositeRulesCatalog() {
@@ -131,13 +131,7 @@ function loadAllTranslations() {
     const abs = path.join(I18N_DIR, file);
 
     try {
-      const mod = require(abs);
-
-      // Support both module.exports and export default
-      const dict =
-        mod && typeof mod === 'object' && mod.default && typeof mod.default === 'object'
-          ? mod.default
-          : mod;
+      const dict = JSON.parse(fs.readFileSync(abs, 'utf8'));
 
       out[locale] = dict && typeof dict === 'object' && !Array.isArray(dict) ? dict : {};
     } catch (e) {
