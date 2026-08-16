@@ -81,7 +81,7 @@ const engineOptions = {
   excludeSelectors: ['#cookie-banner', '.third-party-widget'],  // array or comma-separated string
   timestamp: '2026-07-20T12:00:00Z',  // optional — engine has no built-in clock, see OUTPUT_SCHEMA.md
   perfStats: false,                // default false — internal timing counters, debug-only shape
-  profileRules: false,             // default false — per-rule timing breakdown inside perfStats
+  profileRules: false,             // default false — per-rule timings; needs perfStats, and makes output non-deterministic
 
   contrast: {
     mode: 'strictConformance',     // 'strictConformance' (default) | 'auditorAssist'
@@ -132,7 +132,7 @@ const engineOptions = {
 | `output.includeSelector` / `.includeHtml` | Only affects the small number of rules (currently 4 of 125) that rely on the engine's automatic selector/HTML fill-in rather than building their own — most rules set `selector`/`html` themselves inside `runInPage` and are unaffected by this option. Not a reliable way to strip selectors/HTML from all output. |
 | `rules[ruleId]` | Passed through to that rule as `ctx.config`, and — for `excludeSelectors` specifically — read by the engine itself before the rule ever runs. See "Rule-scoped `excludeSelectors`" below. Any other key is passthrough only: **no shipped rule currently reads `ctx.config`** for anything besides `excludeSelectors`. |
 | `probes` | An optional, JSON-safe evidence object your host application can supply (depth- and size-capped by the engine before rules see it, via `ctx.inputs.probes`) — for future rules that might accept externally-supplied signals (e.g. real layout measurements a static DOM scan can't compute itself). Not consumed by any current rule. |
-| `perfStats` / `profileRules` | Debug-only. `perfStats: true` returns internal counters on the result's `perfStats` field; `profileRules: true` additionally adds a per-rule timing breakdown. Shape is not part of the stable output contract — don't build on it. |
+| `perfStats` / `profileRules` | Debug-only. `perfStats: true` returns internal counters on the result's `perfStats` field; `profileRules: true` **additionally** adds a per-rule timing breakdown there. `profileRules` on its own does nothing — `perfStats` is what creates the object the breakdown lives in. Shape is not part of the stable output contract — don't build on it. Note also that `profileRules` is the one option that makes output non-deterministic: counters are stable across identical runs, wall-clock timings are not. Leave it off if you diff results between runs. |
 | `pingWaitTime` / `frameWaitTime` | Only read by `runa11yCoreAcrossFrames` (see [`INTEGRATION.md`](./INTEGRATION.md#cross-frame-scanning-including-cross-origin)) — how long to wait for a child frame to answer a ping (default `500`ms) and a full run request (default `60000`ms) before treating it as unreachable. Ignored by `runDomRulesInPage`/`runa11yCoreInPage`. |
 
 ### Rule-scoped `excludeSelectors`
