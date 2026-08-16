@@ -18,13 +18,21 @@
  *   - summary
  *   - hint
  *
- * Recommended key convention:
- *   checks.<canonicalRuleId>.meta.title
- *   checks.<canonicalRuleId>.meta.description
- *   checks.<canonicalRuleId>.occurrence.<case>.summary
- *   checks.<canonicalRuleId>.occurrence.<case>.hint
+ * Key convention, as used by every rule in src/checks:
+ *   <ruleName>_title
+ *   <ruleName>_description
+ *   <ruleName>_summary_<outcome>[_<case>]
+ *   <ruleName>_hint_<outcome>[_<case>]
  *
- * Where <canonicalRuleId> is the engine-prefixed id (e.g. <kebab-id>).
+ * <ruleName> is the rule id in lowerCamelCase (target-size-minimum ->
+ * targetSizeMinimum); <outcome> is fail, pass or cantTell; <case> is an
+ * optional discriminator when one outcome has several messages, e.g.
+ * targetSizeMinimum_summary_cantTell_inlineLinkRun.
+ *
+ * Add the keys and their English text to src/i18n/en.json, then run
+ * `npm run i18n:sync` to seed every other locale. `npm test` fails if a
+ * locale is missing a key. A param carries a value, never prose -- see
+ * RULE_AUTHORING.md section 5.2.
  */
 
 /**
@@ -74,8 +82,8 @@ const meta = {
 
   // i18n keys (required when i18n provided)
   i18n: {
-    titleKey: 'checks.<kebab-id>.meta.title',
-    descriptionKey: 'checks.<kebab-id>.meta.description'
+    titleKey: '<ruleName>_title',
+    descriptionKey: '<ruleName>_description'
   }
 };
 
@@ -144,8 +152,8 @@ function runInPage(ctx) {
 
         // i18n keys (recommended)
         i18n: {
-          summaryKey: 'checks.' + rule.ruleId + '.occurrence.<case>.summary',
-          hintKey: 'checks.' + rule.ruleId + '.occurrence.<case>.hint',
+          summaryKey: '<ruleName>_summary_fail',
+          hintKey: '<ruleName>_hint_fail',
           params: {}
         }
       });
@@ -156,8 +164,8 @@ function runInPage(ctx) {
         summary: '<Needs human review (short)>',
         hint: '<What to verify>',
         i18n: {
-          summaryKey: 'checks.' + rule.ruleId + '.occurrence.<case>.summary',
-          hintKey: 'checks.' + rule.ruleId + '.occurrence.<case>.hint',
+          summaryKey: '<ruleName>_summary_cantTell',
+          hintKey: '<ruleName>_hint_cantTell',
           params: {}
         }
       });
