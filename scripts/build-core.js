@@ -292,7 +292,12 @@ function assertJsonSerializable(name, value) {
 /**
  * Generate src/core.js as a single CommonJS module.
  */
-function generateCore(mods, i18nAll, compositeRulesCatalog) {
+function generateCore(mods, i18nAll, compositeRulesCatalog, knownLocalesArg) {
+  // Defaults to the inlined set; the browser build inlines only en but still
+  // passes the full list, so an omitted table reports dictionary-not-loaded
+  // rather than pretending the language does not exist.
+  const knownLocales = (knownLocalesArg || Object.keys(i18nAll || { en: {} })).slice().sort();
+
   const defs = mods.map((m) => ({
     ruleId: m.ruleId,
     title: m.meta.title,
@@ -367,26 +372,54 @@ const DEFAULT_POLICY = {
 // Built-in message catalogs (inlined at build time)
 const I18N = ${jsStringify(i18nAll || { en: {} })};
 
+// Every locale the project ships, whether or not its table was inlined here.
+// Lets an absent dictionary be told apart from a language that does not exist.
+const KNOWN_LOCALES = ${jsStringify(knownLocales)};
+
 function normalizeLocale(locale) {
   if (typeof locale !== 'string') return 'en';
   const s = locale.trim();
   return s ? s : 'en';
 }
 
+// Dictionaries supplied by the caller. This function is serialized into the
+// page, so a table that was not compiled in can only arrive as data.
+function getSuppliedMessages(engineOptions) {
+  const supplied = engineOptions && engineOptions.messages;
+  return (supplied && typeof supplied === 'object' && !Array.isArray(supplied)) ? supplied : null;
+}
+
+function lookupDict(locale, engineOptions) {
+  const supplied = getSuppliedMessages(engineOptions);
+  if (supplied) {
+    const dict = supplied[locale];
+    if (dict && typeof dict === 'object' && !Array.isArray(dict)) return dict;
+  }
+  return (I18N && I18N[locale]) ? I18N[locale] : null;
+}
+
 // Exact code first, then its primary subtag, so de-DE uses de when no de-DE
-// table was built. t() runs this per string, so the common case must not
+// table exists. t() runs this per string, so the common case must not
 // allocate: only a code carrying a subtag reaches the split.
-function matchLocale(requested) {
-  if (!I18N) return null;
-  if (I18N[requested]) return requested;
+function matchLocale(requested, engineOptions) {
+  if (lookupDict(requested, engineOptions)) return requested;
 
   const primary = requested.split('-')[0].toLowerCase();
-  return (primary !== requested && I18N[primary]) ? primary : null;
+  return (primary !== requested && lookupDict(primary, engineOptions)) ? primary : null;
 }
 
 function getLocaleDict(engineOptions) {
-  const matched = matchLocale(normalizeLocale(engineOptions && engineOptions.locale));
-  return matched ? I18N[matched] : (I18N && I18N.en ? I18N.en : {});
+  const requested = normalizeLocale(engineOptions && engineOptions.locale);
+  const matched = matchLocale(requested, engineOptions);
+
+  return matched ? lookupDict(matched, engineOptions) : (I18N && I18N.en ? I18N.en : {});
+}
+
+function isKnownLocale(locale) {
+  if (KNOWN_LOCALES.indexOf(locale) !== -1) return true;
+
+  const primary = locale.split('-')[0].toLowerCase();
+  return primary !== locale && KNOWN_LOCALES.indexOf(primary) !== -1;
 }
 
 // Reports which dictionary the run actually used, so a locale that fell back
@@ -394,12 +427,18 @@ function getLocaleDict(engineOptions) {
 // with getLocaleDict, so the reported locale and the strings cannot disagree.
 function resolveLocale(engineOptions) {
   const requested = normalizeLocale(engineOptions && engineOptions.locale);
-  const matched = matchLocale(requested);
+  const matched = matchLocale(requested, engineOptions);
 
-  if (!matched) return { requested: requested, resolved: 'en', reason: 'unknown-locale' };
+  if (!matched) {
+    return {
+      requested: requested,
+      resolved: 'en',
+      reason: isKnownLocale(requested) ? 'dictionary-not-loaded' : 'unknown-locale'
+    };
+  }
 
   const en = (I18N && I18N.en) ? I18N.en : {};
-  const dict = I18N[matched];
+  const dict = lookupDict(matched, engineOptions);
 
   if (dict !== en) {
     for (const key in en) {
@@ -1201,11 +1240,21 @@ function main() {
 
   const compositeRulesCatalog = loadCompositeRulesCatalog();
 
-  const out = generateCore(mods, i18nAll, compositeRulesCatalog);
+  const out = generateCore(mods, i18nAll, compositeRulesCatalog, Object.keys(i18nAll));
 
   fs.writeFileSync(OUTPUT_FILE, `/* SPDX-License-Identifier: MPL-2.0 */\n\n${out}`, 'utf8');
 
   console.log(`[build-core] wrote ${path.relative(ROOT_DIR, OUTPUT_FILE)} (${mods.length} rules)`);
 }
 
-main();
+module.exports = {
+  I18N_DIR,
+  loadRuleModules,
+  loadAllTranslations,
+  loadCompositeRulesCatalog,
+  generateCore
+};
+
+if (require.main === module) {
+  main();
+}
