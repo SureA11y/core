@@ -24,16 +24,22 @@ function localeOf(engineOptions) {
 
 const CORE_SOURCE = fs.readFileSync(path.join(ROOT_DIR, 'src', 'core.js'), 'utf8');
 
-// resolveLocale closes over the inlined I18N table, so it is lifted out of the
-// built engine to be exercised against dictionaries the shipped locales cannot
+function liftFunction(name) {
+  const match = new RegExp(`^function ${name}\\([^)]*\\) \\{[\\s\\S]*?\\n\\}`, 'm').exec(
+    CORE_SOURCE
+  );
+  assert.ok(match, `${name} is not present in the built src/core.js`);
+  return match[0];
+}
+
+// These close over the inlined I18N table, so they are lifted out of the built
+// engine to be exercised against dictionaries the shipped locales cannot
 // produce.
 function makeResolveLocale(i18n) {
-  const match = /^function resolveLocale\(engineOptions\) \{[\s\S]*?\n\}/m.exec(CORE_SOURCE);
-  assert.ok(match, 'resolveLocale is not present in the built src/core.js');
+  const source = `${liftFunction('matchLocale')}\n${liftFunction('resolveLocale')}\nreturn resolveLocale;`;
 
-  return new Function('I18N', 'normalizeLocale', `${match[0]}\nreturn resolveLocale;`)(
-    i18n,
-    (locale) => (typeof locale === 'string' && locale.trim() ? locale.trim() : 'en')
+  return new Function('I18N', 'normalizeLocale', source)(i18n, (locale) =>
+    typeof locale === 'string' && locale.trim() ? locale.trim() : 'en'
   );
 }
 
@@ -68,12 +74,40 @@ test('engine.locale reports the fallback for a locale the build does not carry',
   });
 });
 
-test('engine.locale treats a region subtag as a locale of its own', () => {
+test('engine.locale falls back from a subtag to its primary language', () => {
   assert.deepEqual(localeOf({ locale: 'de-DE' }), {
     requested: 'de-DE',
+    resolved: 'de',
+    reason: 'primary-subtag'
+  });
+});
+
+test('engine.locale matches the primary subtag regardless of case', () => {
+  assert.deepEqual(localeOf({ locale: 'DE-de' }), {
+    requested: 'DE-de',
+    resolved: 'de',
+    reason: 'primary-subtag'
+  });
+});
+
+test('engine.locale still reports unknown when the primary language is absent too', () => {
+  assert.deepEqual(localeOf({ locale: 'pt-BR' }), {
+    requested: 'pt-BR',
     resolved: 'en',
     reason: 'unknown-locale'
   });
+});
+
+test('a subtag fallback returns the primary language strings, not English', () => {
+  const html =
+    '<!doctype html><html><head><title>t</title></head><body><div role="generic">x</div></body></html>';
+  const hintFor = (locale) =>
+    runa11yCoreOnHtml(html, { engineOptions: { locale } }).checksResults.find(
+      (r) => r.ruleId === 'aria-deprecated-role'
+    ).occurrences[0].hint;
+
+  assert.equal(hintFor('de-DE'), hintFor('de'));
+  assert.notEqual(hintFor('de-DE'), hintFor('en'));
 });
 
 test('engine.locale does not change the strings a run produces', () => {
@@ -128,4 +162,58 @@ test('every engine copy carries resolveLocale', () => {
 
   assert.equal(core.split('function resolveLocale(').length - 1, 3);
   assert.equal(bundle.split('function resolveLocale(').length - 1, 1);
+});
+
+test('resolveLocale prefers an exact match over the primary subtag', () => {
+  const resolveLocale = makeResolveLocale({
+    en: { a: 'A' },
+    de: { a: 'Ä' },
+    'de-DE': { a: 'Ä-DE' }
+  });
+
+  assert.deepEqual(resolveLocale({ locale: 'de-DE' }), {
+    requested: 'de-DE',
+    resolved: 'de-DE',
+    reason: 'ok'
+  });
+});
+
+test('resolveLocale reports a partial primary dictionary reached through a subtag', () => {
+  const resolveLocale = makeResolveLocale({ en: { a: 'A', b: 'B' }, de: { a: 'Ä' } });
+
+  assert.deepEqual(resolveLocale({ locale: 'de-DE' }), {
+    requested: 'de-DE',
+    resolved: 'de',
+    reason: 'partial-dictionary'
+  });
+});
+
+test('resolveLocale handles a subtag with more than one part', () => {
+  const resolveLocale = makeResolveLocale({ en: { a: 'A' }, de: { a: 'Ä' } });
+
+  assert.deepEqual(resolveLocale({ locale: 'de-DE-1996' }), {
+    requested: 'de-DE-1996',
+    resolved: 'de',
+    reason: 'primary-subtag'
+  });
+});
+
+test('resolveLocale treats an English subtag as a fallback to English', () => {
+  const resolveLocale = makeResolveLocale({ en: { a: 'A' } });
+
+  assert.deepEqual(resolveLocale({ locale: 'en-GB' }), {
+    requested: 'en-GB',
+    resolved: 'en',
+    reason: 'primary-subtag'
+  });
+});
+
+test('resolveLocale does not treat a bare primary code as a subtag match', () => {
+  const resolveLocale = makeResolveLocale({ en: { a: 'A' }, de: { a: 'Ä' } });
+
+  assert.deepEqual(resolveLocale({ locale: 'de' }), {
+    requested: 'de',
+    resolved: 'de',
+    reason: 'ok'
+  });
 });
