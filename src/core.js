@@ -17266,6 +17266,10 @@ const createDomHelpers = (function createDomHelpers(opts) {
       document &&
       typeof document.querySelector === 'function'
     ) {
+      // A rule that reports its element never lands here. Counted so the
+      // cost of re-finding one shows up in perfStats, not just as a slow scan.
+      __perfInc('structuralPath.selectorFallback');
+
       let el;
       try {
         el = document.querySelector(selector);
@@ -42939,14 +42943,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  // Report the element itself: without a node reference the engine re-finds
+  // each one with document.querySelector to build its structuralPath.
   const occurrences = collapsed.map((el) => {
     const tag = el.tagName ? lower(el.tagName) : '';
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    return {
-      selector: stableSelector,
-      html,
+    const partial = {
       summary: 'This content is not contained within a landmark region.',
       hint: 'Move this content inside a landmark region (main, nav, aside, a labeled section, etc.).',
       i18n: {
@@ -42957,6 +42958,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       data: {
         details: { reasonCode: 'CONTENT_OUTSIDE_LANDMARK', element: tag }
       }
+    };
+
+    if (helpers && typeof helpers.reportOccurrence === 'function') {
+      return helpers.reportOccurrence(el, partial);
+    }
+
+    return {
+      selector: helpers.buildSelector ? helpers.buildSelector(el) : 'html',
+      html: helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '',
+      ...partial
     };
   });
 
@@ -57241,6 +57252,10 @@ const createDomHelpers = (function createDomHelpers(opts) {
       document &&
       typeof document.querySelector === 'function'
     ) {
+      // A rule that reports its element never lands here. Counted so the
+      // cost of re-finding one shows up in perfStats, not just as a slow scan.
+      __perfInc('structuralPath.selectorFallback');
+
       let el;
       try {
         el = document.querySelector(selector);
@@ -82869,14 +82884,11 @@ const __a11yCoreCrossFrameApi = (function () {
     }
   }
 
+  // Report the element itself: without a node reference the engine re-finds
+  // each one with document.querySelector to build its structuralPath.
   const occurrences = collapsed.map((el) => {
     const tag = el.tagName ? lower(el.tagName) : '';
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    return {
-      selector: stableSelector,
-      html,
+    const partial = {
       summary: 'This content is not contained within a landmark region.',
       hint: 'Move this content inside a landmark region (main, nav, aside, a labeled section, etc.).',
       i18n: {
@@ -82887,6 +82899,16 @@ const __a11yCoreCrossFrameApi = (function () {
       data: {
         details: { reasonCode: 'CONTENT_OUTSIDE_LANDMARK', element: tag }
       }
+    };
+
+    if (helpers && typeof helpers.reportOccurrence === 'function') {
+      return helpers.reportOccurrence(el, partial);
+    }
+
+    return {
+      selector: helpers.buildSelector ? helpers.buildSelector(el) : 'html',
+      html: helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '',
+      ...partial
     };
   });
 
@@ -97171,6 +97193,10 @@ const createDomHelpers = (function createDomHelpers(opts) {
       document &&
       typeof document.querySelector === 'function'
     ) {
+      // A rule that reports its element never lands here. Counted so the
+      // cost of re-finding one shows up in perfStats, not just as a slow scan.
+      __perfInc('structuralPath.selectorFallback');
+
       let el;
       try {
         el = document.querySelector(selector);
