@@ -9036,7 +9036,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
     const guidance = ariaHelpers.getDeprecatedRoleGuidance
       ? ariaHelpers.getDeprecatedRoleGuidance(role)
-      : 'Replace the deprecated role with its recommended replacement.';
+      : {
+          key: 'ariaDeprecatedRole_guidance_default',
+          text: 'Replace the deprecated role with its recommended replacement.'
+        };
 
     if (prohibited) {
       // Author MUST NOT: the usage is non-conforming, not merely discouraged.
@@ -9044,15 +9047,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         selector: stableSelector,
         html,
         summary: `This element uses role="${role}", which authors must not explicitly declare.`,
-        hint: guidance,
+        hint: guidance.text,
         occurrenceOutcome: 'fail',
         i18n: {
           summaryKey: 'ariaDeprecatedRole_summary_fail',
-          hintKey: 'ariaDeprecatedRole_hint_fail',
-          params: { role, guidance }
+          hintKey: guidance.key,
+          params: { role }
         },
         data: {
-          details: { reasonCode: 'ARIA_ROLE_AUTHOR_PROHIBITED', role, guidance }
+          details: { reasonCode: 'ARIA_ROLE_AUTHOR_PROHIBITED', role, guidance: guidance.text }
         }
       });
     } else if (discouraged) {
@@ -9061,15 +9064,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         selector: stableSelector,
         html,
         summary: `This element uses role="${role}", which is reserved for user agents (still valid, but discouraged).`,
-        hint: guidance,
+        hint: guidance.text,
         occurrenceOutcome: 'cantTell',
         i18n: {
           summaryKey: 'ariaDeprecatedRole_summary_cantTell_discouraged',
-          hintKey: 'ariaDeprecatedRole_hint_cantTell',
-          params: { role, guidance }
+          hintKey: guidance.key,
+          params: { role }
         },
         data: {
-          details: { reasonCode: 'ARIA_ROLE_AUTHOR_DISCOURAGED', role, guidance }
+          details: { reasonCode: 'ARIA_ROLE_AUTHOR_DISCOURAGED', role, guidance: guidance.text }
         }
       });
     } else {
@@ -9078,15 +9081,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         selector: stableSelector,
         html,
         summary: `This element uses role="${role}", which is deprecated in WAI-ARIA.`,
-        hint: guidance,
+        hint: guidance.text,
         occurrenceOutcome: 'cantTell',
         i18n: {
           summaryKey: 'ariaDeprecatedRole_summary_cantTell',
-          hintKey: 'ariaDeprecatedRole_hint_cantTell',
-          params: { role, guidance }
+          hintKey: guidance.key,
+          params: { role }
         },
         data: {
-          details: { reasonCode: 'ARIA_ROLE_DEPRECATED', role, guidance }
+          details: { reasonCode: 'ARIA_ROLE_DEPRECATED', role, guidance: guidance.text }
         }
       });
     }
@@ -14821,7 +14824,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     for (const r of rules) {
       if (!r) continue;
       if (r.type === CSS_STYLE_RULE && isLockingRotation(r.style)) {
-        findings.push({ mediaText, selectorText: trim(r.selectorText) || '(unknown selector)' });
+        findings.push({ mediaText, selectorText: trim(r.selectorText) });
       }
     }
   }
@@ -14868,10 +14871,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = findings.map((f) => ({
     selector: stableSelector,
     html,
-    summary: `A "${f.mediaText}" media query rotates "${f.selectorText}", locking the page to one orientation.`,
+    summary: f.selectorText
+      ? `A "${f.mediaText}" media query rotates "${f.selectorText}", locking the page to one orientation.`
+      : `A "${f.mediaText}" media query rotates an element with no readable selector, locking the page to one orientation.`,
     hint: 'Remove the rotate() transform from the orientation media query; let the page respond naturally to device orientation instead of forcing a visual rotation.',
     i18n: {
-      summaryKey: 'cssOrientationLock_summary_fail',
+      summaryKey: f.selectorText
+        ? 'cssOrientationLock_summary_fail'
+        : 'cssOrientationLock_summary_fail_unknownSelector',
       hintKey: 'cssOrientationLock_hint_fail',
       params: { mediaText: f.mediaText, selectorText: f.selectorText }
     },
@@ -16464,20 +16471,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const reasonCode =
       method === 'title' ? 'label_from_title_primary' : 'label_from_placeholder_primary';
-    const methodLabel =
-      method === 'title'
-        ? 'title'
-        : method === 'placeholder'
-          ? 'placeholder'
-          : 'title or placeholder';
-
     const baseOccurrence = {
-      summary: 'Form control’s primary label is derived from title or placeholder.',
+      summary: `Form control’s primary label is derived from ${method}.`,
       hint: 'Prefer a persistent <label> or aria-labelledby. Avoid relying on placeholder/title as the primary label.',
       i18n: {
         summaryKey: 'formControl_programmaticLabelQuality_summary_cantTell',
         hintKey: 'formControl_programmaticLabelQuality_hint_cantTell',
-        params: { element: (el.tagName || '').toLowerCase(), method, methodLabel }
+        params: { element: (el.tagName || '').toLowerCase(), method }
       },
       data: {
         visibilityFilter: vf || { targetSet: 'acc', accEligible: null, reasons: [] },
@@ -28482,7 +28482,7 @@ const I18N = {
     "rules.img-alt-suspicious.occurrence.cantTell.hint": "Überprüfen Sie den Alternativtext. Vermeiden Sie Dateinamen, URLs, Platzhalter oder generische Begriffe, und stellen Sie sicher, dass die Textalternative den Zweck oder die Funktion des Bildes im Kontext beschreibt.",
     "formControl_programmaticLabelQuality_title": "Formularelemente sollten sich nicht auf placeholder oder title als primäre Beschriftung verlassen",
     "formControl_programmaticLabelQuality_description": "Markiert Formularelemente, deren berechneter zugänglicher Name sich auf placeholder oder title als primäre Beschriftungsmethode stützt. Bevorzugen Sie <label> oder aria-labelledby.",
-    "formControl_programmaticLabelQuality_summary_cantTell": "Die primäre Beschriftung des Formularelements stammt von {{methodLabel}}.",
+    "formControl_programmaticLabelQuality_summary_cantTell": "Die primäre Beschriftung des Formularelements stammt von {{method}}.",
     "formControl_programmaticLabelQuality_hint_cantTell": "Bevorzugen Sie ein dauerhaftes <label> oder aria-labelledby. Verlassen Sie sich nicht auf placeholder/title als primäre Beschriftung.",
     "html_lang_attr_title": "Die Sprache der Seite ist deklariert",
     "html_lang_attr_description": "Prüft, ob die Standardsprache der Seite programmatisch deklariert ist.",
@@ -28688,10 +28688,11 @@ const I18N = {
     "ariaDeprecatedRole_title": "Das role-Attribut sollte keine veraltete oder für Autoren nicht empfohlene ARIA-Rolle verwenden",
     "ariaDeprecatedRole_description": "Prüft, ob ein explizites role=\"\"-Attribut keine durch die WAI-ARIA-Spezifikation als veraltet markierte Rolle verwendet, und keine Rolle, die für die interne Verwendung durch den User-Agent reserviert ist (z. B. role=\"generic\").",
     "ariaDeprecatedRole_summary_fail": "Dieses Element verwendet role=\"{{role}}\", was Autoren nicht explizit deklarieren dürfen.",
-    "ariaDeprecatedRole_hint_fail": "{{guidance}}",
     "ariaDeprecatedRole_summary_cantTell": "Dieses Element verwendet role=\"{{role}}\", die in WAI-ARIA veraltet ist (weiterhin gültig, aber nicht empfohlen).",
     "ariaDeprecatedRole_summary_cantTell_discouraged": "Dieses Element verwendet role=\"{{role}}\", die User-Agents vorbehalten ist (weiterhin gültig, aber nicht empfohlen).",
-    "ariaDeprecatedRole_hint_cantTell": "{{guidance}}",
+    "ariaDeprecatedRole_guidance_directory": "Ersetzen Sie sie durch role=\"list\" (die empfohlene Ersetzung).",
+    "ariaDeprecatedRole_guidance_generic": "Entfernen Sie sie — diese Rolle ist für den user-agent-internen Gebrauch vorgesehen, nicht für Autoren. Verwenden Sie stattdessen role=\"presentation\"/\"none\", um die Semantik zu entfernen, eine semantische Rolle wie \"group\", um eine Gruppierung auszudrücken, oder schlicht ein gewöhnliches Element (das die implizite generic-Rolle bereits trägt).",
+    "ariaDeprecatedRole_guidance_default": "Ersetzen Sie die veraltete Rolle durch ihre empfohlene Ersetzung.",
     "ariaValidAttr_title": "aria-*-Attribute müssen echte, definierte ARIA-Attribute sein",
     "ariaValidAttr_description": "Prüft, ob jeder im DOM vorhandene aria-*-Attributname ein echtes, durch die WAI-ARIA-Spezifikation definiertes Attribut ist.",
     "ariaValidAttr_summary_fail": "{{attr}} ist kein erkanntes ARIA-Attribut.",
@@ -28978,6 +28979,7 @@ const I18N = {
     "cssOrientationLock_title": "CSS darf die Seite nicht auf eine einzige Ausrichtung festlegen",
     "cssOrientationLock_description": "Prüft, ob keine @media (orientation: portrait|landscape)-Regel ein transform: rotate(...) auf der Seite setzt, eine bekannte Technik, um die Geräteausrichtung zu umgehen.",
     "cssOrientationLock_summary_fail": "Eine Media Query „{{mediaText}}“ dreht „{{selectorText}}“ und legt die Seite damit auf eine Ausrichtung fest.",
+    "cssOrientationLock_summary_fail_unknownSelector": "Eine \"{{mediaText}}\"-Media-Query dreht ein Element ohne lesbaren Selektor und sperrt die Seite auf eine Ausrichtung.",
     "cssOrientationLock_hint_fail": "Entfernen Sie die rotate()-Transformation aus der Ausrichtungs-Media-Query; lassen Sie die Seite stattdessen natürlich auf die Geräteausrichtung reagieren, anstatt eine visuelle Drehung zu erzwingen.",
     "ariaText_title": "Elemente mit role=\"text\" sollten keine fokussierbaren Nachfahren haben",
     "ariaText_description": "Prüft, ob Elemente mit role=\"text\" keinen fokussierbaren Nachfahren enthalten (Link, Schaltfläche, Formularelement, tabindex, iframe oder contenteditable).",
@@ -29115,7 +29117,7 @@ const I18N = {
     "rules.img-alt-suspicious.occurrence.cantTell.hint": "Review the alt text. Avoid filenames, URLs, placeholders, or generic terms, and ensure the text alternative describes the image’s purpose or function in context.",
     "formControl_programmaticLabelQuality_title": "Form controls should not rely on placeholder or title as the primary label",
     "formControl_programmaticLabelQuality_description": "Flags form controls whose computed accessible name relies on placeholder or title as the primary labeling method. Prefer <label> or aria-labelledby.",
-    "formControl_programmaticLabelQuality_summary_cantTell": "Form control’s primary label is derived from {{methodLabel}}.",
+    "formControl_programmaticLabelQuality_summary_cantTell": "Form control’s primary label is derived from {{method}}.",
     "formControl_programmaticLabelQuality_hint_cantTell": "Prefer a persistent <label> or aria-labelledby. Avoid relying on placeholder/title as the primary label.",
     "html_lang_attr_title": "Page language is declared",
     "html_lang_attr_description": "Checks that the default language of the page is programmatically declared.",
@@ -29321,10 +29323,11 @@ const I18N = {
     "ariaDeprecatedRole_title": "role attribute should not use a deprecated or author-discouraged ARIA role",
     "ariaDeprecatedRole_description": "Checks that an explicit role=\"\" attribute does not use a role deprecated by the WAI-ARIA specification, or one reserved for user-agent-internal use (e.g. role=\"generic\").",
     "ariaDeprecatedRole_summary_fail": "This element uses role=\"{{role}}\", which authors must not explicitly declare.",
-    "ariaDeprecatedRole_hint_fail": "{{guidance}}",
     "ariaDeprecatedRole_summary_cantTell": "This element uses role=\"{{role}}\", which is deprecated in WAI-ARIA (still valid, but discouraged).",
     "ariaDeprecatedRole_summary_cantTell_discouraged": "This element uses role=\"{{role}}\", which is reserved for user agents (still valid, but discouraged).",
-    "ariaDeprecatedRole_hint_cantTell": "{{guidance}}",
+    "ariaDeprecatedRole_guidance_directory": "Replace it with role=\"list\" (its recommended replacement).",
+    "ariaDeprecatedRole_guidance_generic": "Remove it — this role is reserved for user-agent-internal use, not authors. Use role=\"presentation\"/\"none\" to strip semantics, a semantic role like \"group\" to convey grouping, or simply a plain element (which already carries the implicit generic role) instead.",
+    "ariaDeprecatedRole_guidance_default": "Replace the deprecated role with its recommended replacement.",
     "ariaValidAttr_title": "aria-* attributes must be real, defined ARIA attributes",
     "ariaValidAttr_description": "Checks that every aria-* attribute name present in the DOM is a real attribute defined by the WAI-ARIA specification.",
     "ariaValidAttr_summary_fail": "{{attr}} is not a recognized ARIA attribute.",
@@ -29611,6 +29614,7 @@ const I18N = {
     "cssOrientationLock_title": "CSS must not lock the page to a single orientation",
     "cssOrientationLock_description": "Checks that no @media (orientation: portrait|landscape) rule sets a transform: rotate(...) on the page, a known technique for defeating device orientation.",
     "cssOrientationLock_summary_fail": "A \"{{mediaText}}\" media query rotates \"{{selectorText}}\", locking the page to one orientation.",
+    "cssOrientationLock_summary_fail_unknownSelector": "A \"{{mediaText}}\" media query rotates an element with no readable selector, locking the page to one orientation.",
     "cssOrientationLock_hint_fail": "Remove the rotate() transform from the orientation media query; let the page respond naturally to device orientation instead of forcing a visual rotation.",
     "ariaText_title": "role=\"text\" elements should have no focusable descendants",
     "ariaText_description": "Checks that elements with role=\"text\" contain no focusable descendant (link, button, form control, tabindex, iframe, or contenteditable).",
@@ -29748,7 +29752,7 @@ const I18N = {
     "rules.img-alt-suspicious.occurrence.cantTell.hint": "Revisar el texto alt. Evitar nombres de archivo, URL, marcadores de posición o términos genéricos, y asegurarse de que la alternativa textual describa el propósito o la función de la imagen en su contexto.",
     "formControl_programmaticLabelQuality_title": "Los controles de formulario no deben depender de placeholder o title como etiqueta principal",
     "formControl_programmaticLabelQuality_description": "Señala controles de formulario cuyo nombre accesible calculado depende de placeholder o title como método de etiquetado principal. Se prefiere <label> o aria-labelledby.",
-    "formControl_programmaticLabelQuality_summary_cantTell": "La etiqueta principal del control de formulario proviene de {{methodLabel}}.",
+    "formControl_programmaticLabelQuality_summary_cantTell": "La etiqueta principal del control de formulario proviene de {{method}}.",
     "formControl_programmaticLabelQuality_hint_cantTell": "Preferir un <label> persistente o aria-labelledby. Evitar depender de placeholder/title como etiqueta principal.",
     "html_lang_attr_title": "El idioma de la página está declarado",
     "html_lang_attr_description": "Comprueba que el idioma predeterminado de la página esté declarado de forma programática.",
@@ -29954,10 +29958,11 @@ const I18N = {
     "ariaDeprecatedRole_title": "El atributo role no debería usar un rol ARIA obsoleto o desaconsejado para autores",
     "ariaDeprecatedRole_description": "Comprueba que un atributo role=\"\" explícito no use un rol obsoleto según la especificación WAI-ARIA, ni uno reservado para uso interno del agente de usuario (por ejemplo, role=\"generic\").",
     "ariaDeprecatedRole_summary_fail": "Este elemento usa role=\"{{role}}\", que los autores no deben declarar explícitamente.",
-    "ariaDeprecatedRole_hint_fail": "{{guidance}}",
     "ariaDeprecatedRole_summary_cantTell": "Este elemento usa role=\"{{role}}\", que está obsoleto en WAI-ARIA (todavía válido, pero desaconsejado).",
     "ariaDeprecatedRole_summary_cantTell_discouraged": "Este elemento usa role=\"{{role}}\", que está reservado para los agentes de usuario (todavía válido, pero desaconsejado).",
-    "ariaDeprecatedRole_hint_cantTell": "{{guidance}}",
+    "ariaDeprecatedRole_guidance_directory": "Reemplazarlo por role=\"list\" (su reemplazo recomendado).",
+    "ariaDeprecatedRole_guidance_generic": "Eliminarlo: este rol está reservado para uso interno de los agentes de usuario, no para los autores. Usar en su lugar role=\"presentation\"/\"none\" para quitar la semántica, un rol semántico como \"group\" para expresar agrupación, o simplemente un elemento corriente (que ya lleva el rol generic implícito).",
+    "ariaDeprecatedRole_guidance_default": "Reemplazar el rol obsoleto por su reemplazo recomendado.",
     "ariaValidAttr_title": "Los atributos aria-* deben ser atributos ARIA reales y definidos",
     "ariaValidAttr_description": "Comprueba que cada nombre de atributo aria-* presente en el DOM sea un atributo real definido por la especificación WAI-ARIA.",
     "ariaValidAttr_summary_fail": "{{attr}} no es un atributo ARIA reconocido.",
@@ -30244,6 +30249,7 @@ const I18N = {
     "cssOrientationLock_title": "El CSS no debe bloquear la página a una única orientación",
     "cssOrientationLock_description": "Comprueba que ninguna regla @media (orientation: portrait|landscape) establezca un transform: rotate(...) en la página, una técnica conocida para anular la orientación del dispositivo.",
     "cssOrientationLock_summary_fail": "Una media query \"{{mediaText}}\" rota \"{{selectorText}}\", bloqueando la página a una sola orientación.",
+    "cssOrientationLock_summary_fail_unknownSelector": "Una consulta de medios \"{{mediaText}}\" rota un elemento sin selector legible y bloquea la página en una sola orientación.",
     "cssOrientationLock_hint_fail": "Eliminar la transformación rotate() de la media query de orientación; dejar que la página responda de forma natural a la orientación del dispositivo en lugar de forzar una rotación visual.",
     "ariaText_title": "Los elementos con role=\"text\" no deberían tener descendientes enfocables",
     "ariaText_description": "Comprueba que los elementos con role=\"text\" no contengan ningún descendiente enfocable (enlace, botón, control de formulario, tabindex, iframe o contenteditable).",
@@ -30381,7 +30387,7 @@ const I18N = {
     "rules.img-alt-suspicious.occurrence.cantTell.hint": "Vérifiez le texte alternatif. Évitez les noms de fichiers, les URL, les textes fictifs ou les termes génériques, et assurez-vous que l’alternative textuelle décrit la fonction ou le contenu de l’image dans son contexte.",
     "formControl_programmaticLabelQuality_title": "Les champs de formulaire ne devraient pas dépendre du placeholder ou du title comme libellé principal",
     "formControl_programmaticLabelQuality_description": "Signale les champs de formulaire dont le nom accessible est principalement dérivé du placeholder ou de l’attribut title. Préférez un <label> ou aria-labelledby.",
-    "formControl_programmaticLabelQuality_summary_cantTell": "Le libellé principal du champ provient de {{methodLabel}}.",
+    "formControl_programmaticLabelQuality_summary_cantTell": "Le libellé principal du champ provient de {{method}}.",
     "formControl_programmaticLabelQuality_hint_cantTell": "Préférez un <label> persistant ou aria-labelledby. Évitez d’utiliser placeholder/title comme libellé principal.",
     "html_lang_attr_title": "La langue de la page est déclarée",
     "html_lang_attr_description": "Vérifie que la langue par défaut de la page est déclarée de manière programmatique.",
@@ -30587,10 +30593,11 @@ const I18N = {
     "ariaDeprecatedRole_title": "L’attribut role ne devrait pas utiliser un rôle ARIA obsolète ou déconseillé aux auteurs",
     "ariaDeprecatedRole_description": "Vérifie qu’un attribut role=\"\" explicite n’utilise pas un rôle rendu obsolète par la spécification WAI-ARIA, ni un rôle réservé à un usage interne à l’agent utilisateur (ex. role=\"generic\").",
     "ariaDeprecatedRole_summary_fail": "Cet élément utilise role=\"{{role}}\", que les auteurs ne doivent pas déclarer explicitement.",
-    "ariaDeprecatedRole_hint_fail": "{{guidance}}",
     "ariaDeprecatedRole_summary_cantTell": "Cet élément utilise role=\"{{role}}\", qui est obsolète dans WAI-ARIA (toujours valide, mais déconseillé).",
     "ariaDeprecatedRole_summary_cantTell_discouraged": "Cet élément utilise role=\"{{role}}\", qui est réservé aux agents utilisateurs (toujours valide, mais déconseillé).",
-    "ariaDeprecatedRole_hint_cantTell": "{{guidance}}",
+    "ariaDeprecatedRole_guidance_directory": "Remplacez-le par role=\"list\" (son remplacement recommandé).",
+    "ariaDeprecatedRole_guidance_generic": "Supprimez-le — ce rôle est réservé à un usage interne des agents utilisateurs, pas aux auteurs. Utilisez plutôt role=\"presentation\"/\"none\" pour retirer la sémantique, un rôle sémantique comme \"group\" pour exprimer un regroupement, ou simplement un élément ordinaire (qui porte déjà le rôle generic implicite).",
+    "ariaDeprecatedRole_guidance_default": "Remplacez le rôle obsolète par son remplacement recommandé.",
     "ariaValidAttr_title": "Les attributs aria-* doivent être des attributs ARIA réels et définis",
     "ariaValidAttr_description": "Vérifie que chaque nom d’attribut aria-* présent dans le DOM est un attribut réel défini par la spécification WAI-ARIA.",
     "ariaValidAttr_summary_fail": "{{attr}} n’est pas un attribut ARIA reconnu.",
@@ -30877,6 +30884,7 @@ const I18N = {
     "cssOrientationLock_title": "Le CSS ne doit pas verrouiller la page à une seule orientation",
     "cssOrientationLock_description": "Vérifie qu’aucune règle @media (orientation: portrait|landscape) ne définit un transform: rotate(...) sur la page, une technique connue pour contourner l’orientation de l’appareil.",
     "cssOrientationLock_summary_fail": "Une media query « {{mediaText}} » fait pivoter « {{selectorText}} », verrouillant la page à une seule orientation.",
+    "cssOrientationLock_summary_fail_unknownSelector": "Une media query \"{{mediaText}}\" fait pivoter un élément sans sélecteur lisible et verrouille la page dans une seule orientation.",
     "cssOrientationLock_hint_fail": "Retirez la transformation rotate() de la media query d’orientation ; laissez la page répondre naturellement à l’orientation de l’appareil au lieu de forcer une rotation visuelle.",
     "ariaText_title": "Les éléments role=\"text\" ne devraient avoir aucun descendant focalisable",
     "ariaText_description": "Vérifie que les éléments ayant role=\"text\" ne contiennent aucun descendant focalisable (lien, bouton, contrôle de formulaire, tabindex, iframe, ou contenteditable).",
@@ -33071,17 +33079,29 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     'aria-invalid'
   ]);
 
+  // Each entry carries the i18n key the occurrence hint resolves through and
+  // the English text behind it, which is the literal fallback.
   const DEPRECATED_ROLE_GUIDANCE = {
-    directory: 'Replace it with role="list" (its recommended replacement).',
-    generic:
-      'Remove it — this role is reserved for user-agent-internal use, not authors. Use role="presentation"/"none" to strip semantics, a semantic role like "group" to convey grouping, or simply a plain element (which already carries the implicit generic role) instead.'
+    directory: {
+      key: 'ariaDeprecatedRole_guidance_directory',
+      text: 'Replace it with role="list" (its recommended replacement).'
+    },
+    generic: {
+      key: 'ariaDeprecatedRole_guidance_generic',
+      text: 'Remove it — this role is reserved for user-agent-internal use, not authors. Use role="presentation"/"none" to strip semantics, a semantic role like "group" to convey grouping, or simply a plain element (which already carries the implicit generic role) instead.'
+    }
+  };
+
+  const DEFAULT_DEPRECATED_ROLE_GUIDANCE = {
+    key: 'ariaDeprecatedRole_guidance_default',
+    text: 'Replace the deprecated role with its recommended replacement.'
   };
 
   function getDeprecatedRoleGuidance(role) {
     const key = lower(role);
     return Object.prototype.hasOwnProperty.call(DEPRECATED_ROLE_GUIDANCE, key)
       ? DEPRECATED_ROLE_GUIDANCE[key]
-      : 'Replace the deprecated role with its recommended replacement.';
+      : DEFAULT_DEPRECATED_ROLE_GUIDANCE;
   }
 
   // -------------------------------------------------------------------

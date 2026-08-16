@@ -1,24 +1,14 @@
 'use strict';
 
 const fs = require('node:fs');
-const path = require('node:path');
 
 const {
   I18N_DIR,
+  localePath,
+  listLocales,
   loadDict,
-  readLayout,
-  mergeLayout,
-  serializeLocaleSource,
-  formatWithPrettier
+  serializeLocale
 } = require('./i18n-scaffold.js');
-
-function listLocales(i18nDir) {
-  return fs
-    .readdirSync(i18nDir)
-    .filter((f) => f.endsWith('.js') && f !== 'en.js')
-    .map((f) => f.replace(/\.js$/, ''))
-    .sort();
-}
 
 // Existing values are carried over untouched; a key new to English is seeded
 // with the English text, which is what i18n-report counts as untranslated.
@@ -41,19 +31,17 @@ function syncDict(enDict, localeDict) {
   return { dict, added, removed, untranslated };
 }
 
-async function syncLocale(locale, { i18nDir = I18N_DIR, check = false } = {}) {
-  const enPath = path.join(i18nDir, 'en.js');
-  const filePath = path.join(i18nDir, `${locale}.js`);
+function syncLocale(locale, { i18nDir = I18N_DIR, check = false } = {}) {
+  const filePath = localePath(locale, i18nDir);
 
   if (!fs.existsSync(filePath)) {
     throw new Error(
-      `src/i18n/${locale}.js does not exist — run \`npm run i18n:new ${locale}\` to create it.`
+      `src/i18n/${locale}.json does not exist — run \`npm run i18n:new ${locale}\` to create it.`
     );
   }
 
-  const result = syncDict(loadDict(enPath), loadDict(filePath));
-  const layout = mergeLayout(readLayout(enPath), readLayout(filePath));
-  const source = await formatWithPrettier(serializeLocaleSource(result.dict, layout), filePath);
+  const result = syncDict(loadDict(localePath('en', i18nDir)), loadDict(filePath));
+  const source = serializeLocale(result.dict);
   const changed = source !== fs.readFileSync(filePath, 'utf8');
 
   if (changed && !check) fs.writeFileSync(filePath, source, 'utf8');
@@ -61,35 +49,30 @@ async function syncLocale(locale, { i18nDir = I18N_DIR, check = false } = {}) {
   return { locale, filePath, changed, ...result };
 }
 
-async function syncAll({ i18nDir = I18N_DIR, locales, check = false } = {}) {
+function syncAll({ i18nDir = I18N_DIR, locales, check = false } = {}) {
   const targets = locales && locales.length ? locales : listLocales(i18nDir);
-  const results = [];
 
-  for (const locale of targets) {
-    results.push(await syncLocale(locale, { i18nDir, check }));
-  }
-
-  return results;
+  return targets.map((locale) => syncLocale(locale, { i18nDir, check }));
 }
 
 function describe(result, check) {
   const changes = [];
   if (result.added.length) changes.push(`${result.added.length} added`);
   if (result.removed.length) changes.push(`${result.removed.length} removed`);
-  if (result.changed && !changes.length) changes.push('reordered');
+  if (result.changed && !changes.length) changes.push('reformatted');
 
   const status = result.changed ? (check ? 'needs sync' : 'updated') : 'unchanged';
   const detail = changes.length ? ` (${changes.join(', ')})` : '';
   return `${result.locale.padEnd(6)} ${status}${detail}, ${result.untranslated.length} untranslated`;
 }
 
-async function main() {
+function main() {
   const args = process.argv.slice(2);
   const check = args.includes('--check');
   const locales = args.filter((a) => !a.startsWith('--'));
 
   try {
-    const results = await syncAll({ locales, check });
+    const results = syncAll({ locales, check });
 
     if (!results.length) {
       console.log('[i18n-sync] no non-English locale files found in src/i18n/.');
@@ -99,14 +82,14 @@ async function main() {
     for (const result of results) {
       console.log(`[i18n-sync] ${describe(result, check)}`);
       for (const key of result.removed) {
-        console.log(`  removed (no longer in en.js): ${key}`);
+        console.log(`  removed (no longer in en.json): ${key}`);
       }
     }
 
     const stale = results.filter((r) => r.changed);
     if (check && stale.length) {
       console.error(
-        `[i18n-sync] ${stale.map((r) => r.locale).join(', ')} out of sync with en.js — run \`npm run i18n:sync\`.`
+        `[i18n-sync] ${stale.map((r) => r.locale).join(', ')} out of sync with en.json — run \`npm run i18n:sync\`.`
       );
       process.exitCode = 1;
       return;
@@ -124,7 +107,7 @@ async function main() {
   }
 }
 
-module.exports = { listLocales, syncDict, syncLocale, syncAll };
+module.exports = { syncDict, syncLocale, syncAll };
 
 if (require.main === module) {
   main();

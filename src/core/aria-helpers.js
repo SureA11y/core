@@ -200,17 +200,29 @@ function createAriaHelpers(opts, shared) {
     'aria-invalid'
   ]);
 
+  // Each entry carries the i18n key the occurrence hint resolves through and
+  // the English text behind it, which is the literal fallback.
   const DEPRECATED_ROLE_GUIDANCE = {
-    directory: 'Replace it with role="list" (its recommended replacement).',
-    generic:
-      'Remove it — this role is reserved for user-agent-internal use, not authors. Use role="presentation"/"none" to strip semantics, a semantic role like "group" to convey grouping, or simply a plain element (which already carries the implicit generic role) instead.'
+    directory: {
+      key: 'ariaDeprecatedRole_guidance_directory',
+      text: 'Replace it with role="list" (its recommended replacement).'
+    },
+    generic: {
+      key: 'ariaDeprecatedRole_guidance_generic',
+      text: 'Remove it — this role is reserved for user-agent-internal use, not authors. Use role="presentation"/"none" to strip semantics, a semantic role like "group" to convey grouping, or simply a plain element (which already carries the implicit generic role) instead.'
+    }
+  };
+
+  const DEFAULT_DEPRECATED_ROLE_GUIDANCE = {
+    key: 'ariaDeprecatedRole_guidance_default',
+    text: 'Replace the deprecated role with its recommended replacement.'
   };
 
   function getDeprecatedRoleGuidance(role) {
     const key = lower(role);
     return Object.prototype.hasOwnProperty.call(DEPRECATED_ROLE_GUIDANCE, key)
       ? DEPRECATED_ROLE_GUIDANCE[key]
-      : 'Replace the deprecated role with its recommended replacement.';
+      : DEFAULT_DEPRECATED_ROLE_GUIDANCE;
   }
 
   // -------------------------------------------------------------------

@@ -41,7 +41,7 @@ Treat it as "needs a human to look" — it's neither pass nor fail by design. Mo
 
 ## "What happens if a locale is only partially translated?"
 
-Missing keys fall back to English per-string (never a blank or broken result), so a partial locale degrades gracefully rather than failing outright — see [`I18N.md`](./I18N.md) for the mechanism and current coverage. Both shipped locales (`en`, `fr`) are at full parity as of this writing, but that's not guaranteed to stay true automatically: adding a new rule adds a new key to `en.js`, and unless the same key is added to `fr.js` (or any other locale file you maintain), that string falls back to English until it is.
+Missing keys fall back to English per-string (never a blank or broken result), so a partial locale degrades gracefully rather than failing outright — see [`I18N.md`](./I18N.md) for the mechanism and current coverage. Both shipped locales (`en`, `fr`) are at full parity as of this writing, but that's not guaranteed to stay true automatically: adding a new rule adds a new key to `en.json`, and unless the same key is added to `fr.json` (or any other locale file you maintain), that string falls back to English until it is.
 
 ## "`runDomRulesInPage` vs `runa11yCoreInPage` — which one do I want?"
 

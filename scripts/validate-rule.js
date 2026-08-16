@@ -168,24 +168,13 @@ function loadEnDictionary(repoRoot) {
   const dir = path.join(repoRoot, 'src', 'i18n');
   assert.ok(fs.existsSync(dir), `Expected i18n directory at ${dir}`);
 
-  // Be tolerant: user mentioned en.s (likely typo); we accept en.js, en*.js
-  const files = fs
-    .readdirSync(dir)
-    .filter((f) => /^en.*\.js$/i.test(f))
-    .sort();
-  assert.ok(files.length > 0, `No English dictionary found in ${dir} (expected en*.js)`);
+  const enPath = path.join(dir, 'en.json');
+  assert.ok(fs.existsSync(enPath), `No English dictionary found at ${enPath}`);
 
-  // Prefer en.js if present, otherwise first en*.js.
-  const preferred = files.includes('en.js') ? 'en.js' : files[0];
-  const enPath = path.join(dir, preferred);
-
-  // Require as CommonJS; if your dictionaries are ESM, switch to dynamic import.
-  // In this repo, they are CommonJS-compatible.
-  const mod = require(enPath);
-  const dict = mod && (mod.default || mod);
+  const dict = JSON.parse(fs.readFileSync(enPath, 'utf8'));
   assert.ok(
-    dict && typeof dict === 'object',
-    `English dictionary must export an object: ${enPath}`
+    dict && typeof dict === 'object' && !Array.isArray(dict),
+    `English dictionary must be a JSON object: ${enPath}`
   );
 
   return { dict, enPath };

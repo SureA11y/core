@@ -185,20 +185,13 @@ function runInPage(ctx) {
 
     const reasonCode =
       method === 'title' ? 'label_from_title_primary' : 'label_from_placeholder_primary';
-    const methodLabel =
-      method === 'title'
-        ? 'title'
-        : method === 'placeholder'
-          ? 'placeholder'
-          : 'title or placeholder';
-
     const baseOccurrence = {
-      summary: 'Form control’s primary label is derived from title or placeholder.',
+      summary: `Form control’s primary label is derived from ${method}.`,
       hint: 'Prefer a persistent <label> or aria-labelledby. Avoid relying on placeholder/title as the primary label.',
       i18n: {
         summaryKey: 'formControl_programmaticLabelQuality_summary_cantTell',
         hintKey: 'formControl_programmaticLabelQuality_hint_cantTell',
-        params: { element: (el.tagName || '').toLowerCase(), method, methodLabel }
+        params: { element: (el.tagName || '').toLowerCase(), method }
       },
       data: {
         visibilityFilter: vf || { targetSet: 'acc', accEligible: null, reasons: [] },
