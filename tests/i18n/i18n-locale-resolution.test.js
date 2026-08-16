@@ -38,6 +38,7 @@ function liftFunction(name) {
 function makeResolveLocale(i18n, knownLocales) {
   const source = [
     'getSuppliedMessages',
+    'ownDict',
     'lookupDict',
     'matchLocale',
     'isKnownLocale',
@@ -227,4 +228,80 @@ test('resolveLocale does not treat a bare primary code as a subtag match', () =>
     resolved: 'de',
     reason: 'ok'
   });
+});
+
+// A bare property lookup would accept inherited names and report one as the
+// locale in use, which is exactly what engine.locale exists to rule out.
+for (const inherited of ['constructor', '__proto__', 'toString', 'valueOf', 'hasOwnProperty']) {
+  test(`engine.locale does not treat "${inherited}" as a locale`, () => {
+    assert.deepEqual(localeOf({ locale: inherited }), {
+      requested: inherited,
+      resolved: 'en',
+      reason: 'unknown-locale'
+    });
+  });
+}
+
+test('a supplied messages bag does not expose inherited names as dictionaries', () => {
+  assert.deepEqual(localeOf({ locale: '__proto__', messages: {} }), {
+    requested: '__proto__',
+    resolved: 'en',
+    reason: 'unknown-locale'
+  });
+});
+
+test('a supplied dictionary that is not a plain object is ignored', () => {
+  for (const bad of [['a'], 'text', 42, null]) {
+    assert.deepEqual(
+      localeOf({ locale: 'xx', messages: { xx: bad } }),
+      { requested: 'xx', resolved: 'en', reason: 'unknown-locale' },
+      `messages.xx = ${JSON.stringify(bad)} should be ignored`
+    );
+  }
+});
+
+test('a messages value that is not a plain object is ignored', () => {
+  for (const bad of [['de'], 'de', 42]) {
+    assert.deepEqual(localeOf({ locale: 'de', messages: bad }), {
+      requested: 'de',
+      resolved: 'de',
+      reason: 'ok'
+    });
+  }
+});
+
+test('a supplied dictionary wins over the built-in one', () => {
+  const resolveLocale = makeResolveLocale({ en: { a: 'A' }, de: { a: 'Ä' } });
+
+  assert.deepEqual(resolveLocale({ locale: 'de', messages: { de: { a: 'own' } } }), {
+    requested: 'de',
+    resolved: 'de',
+    reason: 'ok'
+  });
+});
+
+test('a supplied dictionary makes an otherwise unknown locale resolve', () => {
+  const resolveLocale = makeResolveLocale({ en: { a: 'A' } }, ['en', 'de']);
+
+  assert.deepEqual(resolveLocale({ locale: 'zz', messages: { zz: { a: 'Z' } } }), {
+    requested: 'zz',
+    resolved: 'zz',
+    reason: 'ok'
+  });
+});
+
+test('a locale the project ships but this build omits reports dictionary-not-loaded', () => {
+  const resolveLocale = makeResolveLocale({ en: { a: 'A' } }, ['en', 'de']);
+
+  assert.deepEqual(resolveLocale({ locale: 'de' }), {
+    requested: 'de',
+    resolved: 'en',
+    reason: 'dictionary-not-loaded'
+  });
+});
+
+test('a subtag of a shipped-but-omitted locale also reports dictionary-not-loaded', () => {
+  const resolveLocale = makeResolveLocale({ en: { a: 'A' } }, ['en', 'de']);
+
+  assert.equal(resolveLocale({ locale: 'de-DE' }).reason, 'dictionary-not-loaded');
 });
