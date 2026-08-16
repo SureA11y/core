@@ -42,6 +42,7 @@ function makeResolveLocale(i18n, knownLocales) {
     'lookupDict',
     'matchIgnoringCase',
     'findLocaleKey',
+    'ownString',
     'matchLocale',
     'isKnownLocale',
     'resolveLocale'
@@ -354,4 +355,42 @@ test('a supplied dictionary is matched case-insensitively too', () => {
     resolved: 'zh-Hant',
     reason: 'ok'
   });
+});
+
+// Overriding one string must not cost the caller the rest of that language.
+test('a partial supplied dictionary layers over the built-in one', () => {
+  const html =
+    '<!doctype html><html><head><title>t</title></head><body><img src="x.png"></body></html>';
+  const imgRule = (engineOptions) =>
+    runa11yCoreOnHtml(html, { engineOptions }).checksResults.find(
+      (r) => r.ruleId === 'img-alt-present'
+    );
+
+  const plain = imgRule({ locale: 'de' });
+  const overridden = imgRule({
+    locale: 'de',
+    messages: { de: { img_altPresent_title: 'HIJACKED' } }
+  });
+
+  assert.equal(overridden.title, 'HIJACKED');
+  assert.equal(overridden.description, plain.description, 'other German strings survive');
+  assert.notEqual(plain.description, '');
+});
+
+test('a partial supplied dictionary does not make the locale look incomplete', () => {
+  assert.equal(
+    localeOf({ locale: 'de', messages: { de: { img_altPresent_title: 'X' } } }).reason,
+    'ok'
+  );
+});
+
+test('resolveLocale counts supplied and built-in keys together for completeness', () => {
+  const resolveLocale = makeResolveLocale({ en: { a: 'A', b: 'B' }, de: { a: 'Ä' } });
+
+  assert.equal(resolveLocale({ locale: 'de' }).reason, 'partial-dictionary');
+  assert.equal(
+    resolveLocale({ locale: 'de', messages: { de: { b: 'Bö' } } }).reason,
+    'ok',
+    'the supplied key completes the built-in dictionary'
+  );
 });
