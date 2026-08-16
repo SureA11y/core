@@ -88,6 +88,7 @@
     "test:typography-helpers": "node tests/contrast-typography.test.js",
     "coverage": "node scripts/generate-wcag-coverage.js --rulesDir src/checks",
     "coverage:strict": "node scripts/generate-wcag-coverage.js --rulesDir src/checks --strictFacets",
+    "coverage:check": "node scripts/generate-wcag-coverage.js --rulesDir src/checks --check",
     "fixtures:index": "node scripts/generate-fixture-index.js",
     "docs:rule-catalog": "npm run build && node scripts/generate-rule-catalog.js",
     "validate:automatic-rules": "npm run build && node scripts/validate-all-rules.js src/checks/automatic",

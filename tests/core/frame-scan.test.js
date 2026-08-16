@@ -306,6 +306,51 @@ test(
       }
     });
 
+    // Every ping and run registers a pending entry keyed by request id. A path
+    // that settles without removing its entry leaks quietly and only shows up
+    // in a long-lived page, so this drives the timeout path too.
+    await t.test('the RPC registry is empty again after repeated scans', async () => {
+      const page = await browser.newPage();
+      await page.setContent(
+        '<!doctype html><html><body><img src="a.png">' +
+          '<iframe srcdoc="<html><body><img src=b.png></body></html>"></iframe>' +
+          '<iframe srcdoc="<html><body></body></html>"></iframe>' +
+          '</body></html>'
+      );
+      await page.addScriptTag({ content: CROSS_FRAME_CHUNK });
+
+      const responder = page.frames()[1];
+      await responder.addScriptTag({ content: CROSS_FRAME_CHUNK });
+      await responder.evaluate(() => {
+        window.a11yCoreEnableFrameResponder();
+      });
+
+      for (let i = 0; i < 3; i += 1) {
+        const result = await page.evaluate(() =>
+          window.runa11yCoreAcrossFrames(
+            null,
+            null,
+            { pingWaitTime: 200, frameWaitTime: 3000 },
+            null
+          )
+        );
+        assert.strictEqual(result.frames.length, 2);
+        assert.strictEqual(
+          result.frames.filter((f) => f.error).length,
+          1,
+          'the frame with no responder times out every run'
+        );
+      }
+
+      const pending = await page.evaluate(() => {
+        const registry = window.__a11yCoreFrameRpc__;
+        return registry && registry.pending ? registry.pending.size : -1;
+      });
+      assert.strictEqual(pending, 0, 'no pending RPC entry survives a settled scan');
+
+      await page.close();
+    });
+
     await t.test('a caller-supplied dictionary survives the hop to a child frame', async () => {
       const result = await scanWithResponder({
         locale: 'xx',

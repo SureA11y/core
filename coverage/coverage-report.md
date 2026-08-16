@@ -1,7 +1,5 @@
 # WCAG Coverage Report
 
-Generated: 2026-08-05T03:25:56.740Z
-
 Rules directory: `src/checks`
 Facets: `src/coverage/wcag-facets.js`
 
@@ -260,7 +258,7 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
-| avoid-inline-spacing | automatic | Inline style must not force text spacing with !important | src/checks/automatic/avoid-inline-spacing.js | avoid-inline-spacing |  |
+| avoid-inline-spacing | automatic | Inline style must not force text spacing below the WCAG metric | src/checks/automatic/avoid-inline-spacing.js | avoid-inline-spacing |  |
 
 ### 2.1.1
 
@@ -346,7 +344,7 @@ Automation mix: **full 0, partial 1, manual 0**.
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
-| bypass-blocks-present | automatic | Page must provide a way to bypass repeated blocks | src/checks/automatic/bypass-blocks-present.js | bypass-blocks-present |  |
+| bypass-blocks-present | manual | Page must provide a way to bypass repeated blocks | src/checks/manual/bypass-blocks-present-manual.js | bypass-blocks-present |  |
 
 ### 2.4.2
 
@@ -555,7 +553,7 @@ Automation mix: **full 39, partial 0, manual 2**.
 | aria-allowed-role | automatic | Explicit role must be permitted for its host element | src/checks/automatic/aria-allowed-role.js | aria-role-allowed-for-element |  |
 | aria-braille-equivalent | automatic | aria-braillelabel/aria-brailleroledescription must have a non-braille equivalent | src/checks/automatic/aria-braille-equivalent.js | aria-braille-equivalent |  |
 | aria-conditional-attr | automatic | aria-errormessage requires aria-invalid to be set to a non-false value | src/checks/automatic/aria-conditional-attr.js | aria-conditional-attr |  |
-| aria-deprecated-role | automatic | role attribute must not use a deprecated or author-prohibited ARIA role | src/checks/automatic/aria-deprecated-role.js | aria-role-not-deprecated |  |
+| aria-deprecated-role | automatic | role attribute should not use a deprecated or author-discouraged ARIA role | src/checks/automatic/aria-deprecated-role.js | aria-role-not-deprecated |  |
 | aria-hidden-body | automatic | The document &lt;body&gt; must not be aria-hidden | src/checks/automatic/aria-hidden-body.js | aria-hidden-body-absent |  |
 | aria-hidden-focus | automatic | ARIA hidden elements must not be focusable | src/checks/automatic/aria-hidden-focus.js | aria-hidden-focusable |  |
 | aria-prohibited-attr | automatic | ARIA naming attributes must not be used on roles that prohibit them | src/checks/automatic/aria-prohibited-attr.js | aria-attr-not-prohibited |  |
@@ -846,7 +844,7 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
-| avoid-inline-spacing | automatic | Inline style must not force text spacing with !important | src/checks/automatic/avoid-inline-spacing.js | avoid-inline-spacing |  |
+| avoid-inline-spacing | automatic | Inline style must not force text spacing below the WCAG metric | src/checks/automatic/avoid-inline-spacing.js | avoid-inline-spacing |  |
 
 ### 2.1.1
 
@@ -932,7 +930,7 @@ Automation mix: **full 0, partial 1, manual 0**.
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
-| bypass-blocks-present | automatic | Page must provide a way to bypass repeated blocks | src/checks/automatic/bypass-blocks-present.js | bypass-blocks-present |  |
+| bypass-blocks-present | manual | Page must provide a way to bypass repeated blocks | src/checks/manual/bypass-blocks-present-manual.js | bypass-blocks-present |  |
 
 ### 2.4.2
 
@@ -1141,7 +1139,7 @@ Automation mix: **full 39, partial 0, manual 2**.
 | aria-allowed-role | automatic | Explicit role must be permitted for its host element | src/checks/automatic/aria-allowed-role.js | aria-role-allowed-for-element |  |
 | aria-braille-equivalent | automatic | aria-braillelabel/aria-brailleroledescription must have a non-braille equivalent | src/checks/automatic/aria-braille-equivalent.js | aria-braille-equivalent |  |
 | aria-conditional-attr | automatic | aria-errormessage requires aria-invalid to be set to a non-false value | src/checks/automatic/aria-conditional-attr.js | aria-conditional-attr |  |
-| aria-deprecated-role | automatic | role attribute must not use a deprecated or author-prohibited ARIA role | src/checks/automatic/aria-deprecated-role.js | aria-role-not-deprecated |  |
+| aria-deprecated-role | automatic | role attribute should not use a deprecated or author-discouraged ARIA role | src/checks/automatic/aria-deprecated-role.js | aria-role-not-deprecated |  |
 | aria-hidden-body | automatic | The document &lt;body&gt; must not be aria-hidden | src/checks/automatic/aria-hidden-body.js | aria-hidden-body-absent |  |
 | aria-hidden-focus | automatic | ARIA hidden elements must not be focusable | src/checks/automatic/aria-hidden-focus.js | aria-hidden-focusable |  |
 | aria-prohibited-attr | automatic | ARIA naming attributes must not be used on roles that prohibit them | src/checks/automatic/aria-prohibited-attr.js | aria-attr-not-prohibited |  |

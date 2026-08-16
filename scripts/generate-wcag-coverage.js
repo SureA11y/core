@@ -527,12 +527,13 @@ function main() {
     incrementCoverageCounters(coverageCounters, r.wcagTagSignals || null, r.ruleId);
   }
 
-  // Build Markdown
-  const now = new Date().toISOString();
+  // Build Markdown. No timestamp: this file is committed, so a generation
+  // time would make every run a diff and hide the drift worth seeing. Git
+  // already records when it last changed.
   const displayRulesDir = path.relative(repoRoot, absRulesDir) || '.';
   const displayFacets = facetsFile ? path.relative(repoRoot, facetsFile) || facetsFile : null;
 
-  let md = `# WCAG Coverage Report\n\nGenerated: ${now}\n\nRules directory: \`${displayRulesDir}\`\n`;
+  let md = `# WCAG Coverage Report\n\nRules directory: \`${displayRulesDir}\`\n`;
   if (displayFacets) md += `Facets: \`${displayFacets}\`\n`;
   md += `\n`;
 
@@ -693,15 +694,13 @@ function main() {
     return mdSection;
   }
 
-  fs.mkdirSync(path.dirname(path.resolve(repoRoot, args.out)), { recursive: true });
-  fs.writeFileSync(path.resolve(repoRoot, args.out), md, 'utf8');
-  fs.writeFileSync(
-    path.resolve(repoRoot, args.json),
+  const mdPath = path.resolve(repoRoot, args.out);
+  const jsonPath = path.resolve(repoRoot, args.json);
+  const json =
     JSON.stringify(
       {
         rulesDir: displayRulesDir,
         facetsFile: displayFacets,
-        generatedAt: now,
         summary: {
           totalRules,
           wcagTagCoverage: coverageCounters
@@ -711,9 +710,24 @@ function main() {
       },
       null,
       2
-    ),
-    'utf8'
-  );
+    ) + '\n';
+
+  if (process.argv.includes('--check')) {
+    const readOrNull = (file) => (fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : null);
+
+    if (readOrNull(mdPath) !== md || readOrNull(jsonPath) !== json) {
+      // eslint-disable-next-line no-console
+      console.error(`Coverage report is stale. Run: npm run coverage`);
+      process.exit(1);
+    }
+    // eslint-disable-next-line no-console
+    console.log('[wcag-coverage] report is up to date.');
+    return;
+  }
+
+  fs.mkdirSync(path.dirname(mdPath), { recursive: true });
+  fs.writeFileSync(mdPath, md, 'utf8');
+  fs.writeFileSync(jsonPath, json, 'utf8');
 
   // eslint-disable-next-line no-console
   console.log(`[wcag-coverage] wrote ${args.out} and ${args.json}`);
