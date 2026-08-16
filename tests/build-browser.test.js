@@ -2,12 +2,16 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
 
 const {
   extractInPageRunnerSource,
   readEngineConstants,
   generateBrowserBundle,
-  generateLocaleSideFile
+  generateLocaleSideFile,
+  staleLocaleFiles
 } = require('../scripts/build-browser.js');
 
 // A minimal, synthetic stand-in for src/core.js's real shape -- exercises
@@ -128,4 +132,26 @@ test('generateLocaleSideFile escapes a dictionary value that could close the scr
 
   assert.equal(call.includes('</script>'), false);
   assert.match(call, /\\u003c\/script>/);
+});
+
+test('staleLocaleFiles lists side files for locales that no longer exist', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'build-browser-test-'));
+  for (const name of [
+    'surea11y.i18n.de.js',
+    'surea11y.i18n.zz.js',
+    'surea11y.browser.js',
+    'package.json'
+  ]) {
+    fs.writeFileSync(path.join(dir, name), '');
+  }
+
+  assert.deepEqual(staleLocaleFiles(new Set(['de']), dir), ['surea11y.i18n.zz.js']);
+});
+
+test('staleLocaleFiles keeps every side file that is still a locale', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'build-browser-test-'));
+  fs.writeFileSync(path.join(dir, 'surea11y.i18n.de.js'), '');
+  fs.writeFileSync(path.join(dir, 'surea11y.i18n.pt-BR.js'), '');
+
+  assert.deepEqual(staleLocaleFiles(new Set(['de', 'pt-BR']), dir), []);
 });

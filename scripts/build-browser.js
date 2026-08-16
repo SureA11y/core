@@ -152,6 +152,13 @@ function jsonForScript(value) {
   return JSON.stringify(value).replace(/</g, '\\u003c');
 }
 
+function staleLocaleFiles(wanted, rootDir = ROOT_DIR) {
+  return fs
+    .readdirSync(rootDir)
+    .filter((f) => /^surea11y\.i18n\.[^.]+\.js$/.test(f))
+    .filter((f) => !wanted.has(f.slice('surea11y.i18n.'.length, -'.js'.length)));
+}
+
 function generateLocaleSideFile(locale, dict) {
   return `/* SPDX-License-Identifier: MPL-2.0 */
 
@@ -196,7 +203,9 @@ function main() {
     `[build-browser] wrote ${path.relative(ROOT_DIR, OUTPUT_FILE)} (${(bundle.length / 1024).toFixed(0)} KB)`
   );
 
-  for (const locale of knownLocales.filter((l) => l !== 'en')) {
+  const wanted = new Set(knownLocales.filter((l) => l !== 'en'));
+
+  for (const locale of wanted) {
     const source = generateLocaleSideFile(locale, i18nAll[locale]);
     fs.writeFileSync(localeFileFor(locale), source, 'utf8');
     // eslint-disable-next-line no-console
@@ -204,13 +213,22 @@ function main() {
       `[build-browser] wrote ${path.relative(ROOT_DIR, localeFileFor(locale))} (${(source.length / 1024).toFixed(0)} KB)`
     );
   }
+
+  // A dropped locale would otherwise leave its side file behind, and `files`
+  // matches these by glob, so it would keep shipping.
+  for (const stale of staleLocaleFiles(wanted)) {
+    fs.unlinkSync(path.join(ROOT_DIR, stale));
+    // eslint-disable-next-line no-console
+    console.log(`[build-browser] removed ${stale} (no longer a locale)`);
+  }
 }
 
 module.exports = {
   extractInPageRunnerSource,
   readEngineConstants,
   generateBrowserBundle,
-  generateLocaleSideFile
+  generateLocaleSideFile,
+  staleLocaleFiles
 };
 
 if (require.main === module) {
