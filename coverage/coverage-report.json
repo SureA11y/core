@@ -1,7 +1,6 @@
 {
   "rulesDir": "src/checks",
   "facetsFile": "src/coverage/wcag-facets.js",
-  "generatedAt": "2026-08-05T03:25:56.740Z",
   "summary": {
     "totalRules": 125,
     "wcagTagCoverage": {
@@ -295,7 +294,7 @@
       ],
       "wcagScInformative": [],
       "type": "automatic",
-      "title": "role attribute must not use a deprecated or author-prohibited ARIA role",
+      "title": "role attribute should not use a deprecated or author-discouraged ARIA role",
       "tags": [
         "wcag2a",
         "wcag412",
@@ -949,7 +948,7 @@
       ],
       "wcagScInformative": [],
       "type": "automatic",
-      "title": "Inline style must not force text spacing with !important",
+      "title": "Inline style must not force text spacing below the WCAG metric",
       "tags": [
         "wcag21aa",
         "wcag1412",
@@ -1088,54 +1087,6 @@
         "facetsBySc": {
           "4.1.2": [
             "button-name-present"
-          ]
-        }
-      }
-    },
-    {
-      "file": "src/checks/automatic/bypass-blocks-present.js",
-      "ruleId": "bypass-blocks-present",
-      "wcagScNormative": [
-        "2.4.1"
-      ],
-      "wcagScAll": [
-        "2.4.1"
-      ],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "Page must provide a way to bypass repeated blocks",
-      "tags": [
-        "wcag2a",
-        "wcag241",
-        "navigation",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [
-          {
-            "tag": "wcag2a",
-            "version": "2.0",
-            "level": "A"
-          }
-        ],
-        "versions": [
-          "2.0"
-        ],
-        "cumulativeLevelsByVersion": {
-          "2.0": [
-            "A"
-          ]
-        },
-        "cumulativeLevelsAny": [
-          "A"
-        ]
-      },
-      "error": null,
-      "coverage": {
-        "facetsBySc": {
-          "2.4.1": [
-            "bypass-blocks-present"
           ]
         }
       }
@@ -4104,6 +4055,54 @@
       },
       "error": null,
       "coverage": {}
+    },
+    {
+      "file": "src/checks/manual/bypass-blocks-present-manual.js",
+      "ruleId": "bypass-blocks-present",
+      "wcagScNormative": [
+        "2.4.1"
+      ],
+      "wcagScAll": [
+        "2.4.1"
+      ],
+      "wcagScInformative": [],
+      "type": "manual",
+      "title": "Page must provide a way to bypass repeated blocks",
+      "tags": [
+        "wcag2a",
+        "wcag241",
+        "navigation",
+        "atomic",
+        "manual"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2a",
+            "version": "2.0",
+            "level": "A"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "2.4.1": [
+            "bypass-blocks-present"
+          ]
+        }
+      }
     },
     {
       "file": "src/checks/manual/canvas-text-alternative-quality-manual.js",
