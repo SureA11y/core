@@ -80,3 +80,41 @@ test('runOnly: include/exclude accept ids with and without ENGINE_TAG prefix', (
 
   assertRule(result, 'form-control-programmatic-label-present', 'fail', { minOccurrences: 1 });
 });
+
+// ENGINE_OPTIONS.md states the runOnly fields mirror their engineOptions
+// counterparts, and those have always taken a comma-separated string.
+const FILTER_PAGE =
+  '<!doctype html><html lang="en"><head><title>t</title></head><body><img src="x.png"><button></button></body></html>';
+
+function ranRuleIds(runOnly) {
+  return runa11yCoreOnHtml(FILTER_PAGE, { runOnly }).checksResults.map((r) => r.ruleId);
+}
+
+const ALL_RULE_COUNT = ranRuleIds(null).length;
+
+test('runOnly: includeRuleIds accepts a comma-separated string, not only an array', () => {
+  assert.deepStrictEqual(ranRuleIds({ includeRuleIds: 'img-alt-present' }), ['img-alt-present']);
+  assert.deepStrictEqual(
+    ranRuleIds({ includeRuleIds: 'img-alt-present, button-name-present' }).sort(),
+    ['button-name-present', 'img-alt-present']
+  );
+});
+
+test('runOnly: excludeRuleIds and tags accept a string too', () => {
+  assert.strictEqual(ranRuleIds({ excludeRuleIds: 'img-alt-present' }).length, ALL_RULE_COUNT - 1);
+  assert.ok(ranRuleIds({ tags: 'wcag111' }).length < ALL_RULE_COUNT);
+});
+
+test('runOnly: an empty or unusable filter value still means no filter', () => {
+  for (const runOnly of [
+    { includeRuleIds: '' },
+    { includeRuleIds: '  ,  ' },
+    { includeRuleIds: 42 }
+  ]) {
+    assert.strictEqual(ranRuleIds(runOnly).length, ALL_RULE_COUNT);
+  }
+});
+
+test('runOnly: a bare array is still ignored, as documented', () => {
+  assert.strictEqual(ranRuleIds(['img-alt-present']).length, ALL_RULE_COUNT);
+});
