@@ -15,6 +15,8 @@ Open `report.html` directly from disk. Works alongside any other output mode —
 - **WCAG rollup**: grouped by conformance level (A / AA / AAA), sourced directly from the engine's own `rulesResults[]` composite rollups (`docs/WCAG_CONFORMANCE.md`) — one row per Success Criterion, its outcome, a pass/fail/needs-review/n/a breakdown, and which atomic rules contributed. This is real engine data, not an invented grouping — the same rollup you'd get from the raw JSON's `rulesResults`.
 - **Full technical data** (collapsed by default): a scorecard (tiles per outcome) and a searchable, filterable (by outcome), paginated table of every individual occurrence across the whole scan.
 
+The meta bar under the header carries the rule count, occurrence count, engine tag, schema version, and the locale the scan resolved to. Locale fallback is per-string and invisible in the text itself, so a report requested in a language the engine does not carry reads as an ordinary English one — the chip names the requested locale alongside the resolved one when the two differ. See [`I18N.md`](./I18N.md).
+
 ## Library usage
 
 ```js
