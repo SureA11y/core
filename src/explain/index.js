@@ -2,11 +2,12 @@
 
 'use strict';
 
-// AI-assisted explanations -- optional, host-only post-processing layer.
-// See docs/ai-assisted-explanations.design.md. Never required by
-// scripts/build-core.js, never inlined into src/core.js, never runs inside
-// runInPage -- this file is plain Node code a consumer requires directly
-// (e.g. require('surea11y/src/explain')).
+// Optional, host-only post-processing layer for assisted explanations.
+// Groundwork, not yet released: absent from the package's `exports` map and
+// from `files`, so it neither ships nor resolves for a consumer today.
+// Never required by scripts/build-core.js, never inlined into src/core.js,
+// never runs inside runInPage -- plain Node code, required by path from
+// inside this repo.
 
 const { buildExplainGroups } = require('./group');
 
