@@ -438,6 +438,12 @@ function createDomHelpers(opts) {
           out.push(cur);
           cur = composedParent(cur);
         }
+        // Still more to walk: callers must not read "no blocking ancestor
+        // found" from a chain that never reached the root.
+        if (cur) {
+          out.truncated = true;
+          __perfInc('ancestorsIncludingSelf.truncated');
+        }
         __ancestorsIncludingSelfCache.set(n, out);
         return out;
       }
@@ -453,8 +459,24 @@ function createDomHelpers(opts) {
       out.push(cur);
       cur = composedParent(cur);
     }
+    if (cur) {
+      out.truncated = true;
+      __perfInc('ancestorsIncludingSelf.truncated');
+    }
     return out;
   };
+
+  // Whether the 200-step ancestor walk for this node stopped short of the
+  // root. A rule cannot see this, so normalization uses it to decide how much
+  // confidence an occurrence on that node deserves.
+  function hasTruncatedAncestorWalk(node) {
+    try {
+      if (!node || typeof node !== 'object') return false;
+      return ancestorsIncludingSelf(node).truncated === true;
+    } catch {
+      return false;
+    }
+  }
 
   function getClosestMap(el) {
     try {
@@ -4576,6 +4598,7 @@ function createDomHelpers(opts) {
     // see this function's own definition above for why assignedSlot
     // must win over parentNode.
     composedParent,
+    hasTruncatedAncestorWalk,
 
     // Perf counters (only populated when opts.perfStats === true)
     getPerfStats,

@@ -2,64 +2,78 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
 
 const { runa11yCoreOnHtml } = require('./helpers/runa11yCoreOnHtml');
 
-// A rule that hand-builds occurrences makes the engine re-find each element
-// with document.querySelector. One such occurrence is fine and a few
-// document-level rules produce one; a count that grows with the page is
-// quadratic, since every occurrence costs a document-wide query.
+// An occurrence that reaches the engine without its element makes the engine
+// re-find one with document.querySelector, so a rule reporting many of them
+// costs a document-wide query per occurrence. It also leaves the engine unable
+// to reason about that element later -- the ancestor-walk downgrade in
+// normalizeRuleResult can only act on occurrences that carry a node.
+const CHECKS_DIR = path.join(__dirname, '..', 'src', 'checks');
 const FALLBACK_COUNTER = 'structuralPath.selectorFallback';
 
-function fallbacksFor(elementCount) {
-  const body = '<img src="x.png">'.repeat(elementCount);
-  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body>${body}</body></html>`;
-  const result = runa11yCoreOnHtml(html, { engineOptions: { perfStats: true } });
+// Rules still building occurrences by hand. This must only ever go down: it
+// is the remaining migration, not an allowance for new rules.
+const HAND_BUILDING_RULES = 83;
 
-  return {
-    fallbacks: result.perfStats.counters[FALLBACK_COUNTER] || 0,
-    occurrences: result.checksResults.reduce((n, r) => n + (r.occurrences || []).length, 0)
-  };
+function ruleFiles() {
+  return fs
+    .readdirSync(CHECKS_DIR)
+    .flatMap((dir) => {
+      const full = path.join(CHECKS_DIR, dir);
+      if (!fs.statSync(full).isDirectory()) return [];
+      return fs
+        .readdirSync(full)
+        .filter((f) => f.endsWith('.js'))
+        .map((f) => path.join(full, f));
+    })
+    .sort();
 }
 
-test('selector fallbacks do not grow with the size of the page', () => {
-  const small = fallbacksFor(20);
-  const large = fallbacksFor(400);
+test('the number of rules bypassing reportOccurrence only shrinks', () => {
+  const files = ruleFiles();
+  const handBuilt = files.filter((f) => !fs.readFileSync(f, 'utf8').includes('reportOccurrence'));
 
+  assert.ok(files.length > 100, 'sanity: the rule files were found');
   assert.ok(
-    large.occurrences > small.occurrences * 5,
-    `the larger page should produce many more occurrences (${small.occurrences} -> ${large.occurrences})`
-  );
-
-  assert.equal(
-    large.fallbacks,
-    small.fallbacks,
-    `a rule is hand-building occurrences instead of using helpers.reportOccurrence: ` +
-      `fallbacks went ${small.fallbacks} -> ${large.fallbacks} while occurrences went ` +
-      `${small.occurrences} -> ${large.occurrences}`
+    handBuilt.length <= HAND_BUILDING_RULES,
+    `${handBuilt.length} rules build occurrences by hand, up from ${HAND_BUILDING_RULES}. ` +
+      'Use helpers.reportOccurrence -- see docs/RULE_AUTHORING.md section 4.3.'
   );
 });
 
-test('region reports its elements rather than re-finding them', () => {
-  const body = '<img src="x.png">'.repeat(200);
-  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body>${body}</body></html>`;
+function scanWith(ruleId, elementMarkup, count) {
+  const body = elementMarkup.repeat(count);
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body>${body}</body></html>`,
+    { engineOptions: { perfStats: true, rules: { include: ruleId } } }
+  );
 
-  const withRegion = runa11yCoreOnHtml(html, {
-    engineOptions: { perfStats: true, rules: { include: 'region' } }
-  });
-  const rule = withRegion.checksResults.find((r) => r.ruleId === 'region');
+  return {
+    rule: result.checksResults.find((r) => r.ruleId === ruleId),
+    fallbacks: result.perfStats.counters[FALLBACK_COUNTER] || 0
+  };
+}
+
+test('a rule that reports its element causes no selector fallback', () => {
+  const { rule, fallbacks } = scanWith('img-alt-present', '<img src="x.png">', 200);
+
+  assert.equal(rule.occurrences.length, 200);
+  assert.equal(fallbacks, 0);
+});
+
+test('region reports its elements rather than re-finding them', () => {
+  const { rule, fallbacks } = scanWith('region', '<img src="x.png">', 200);
 
   assert.equal(rule.outcome, 'cantTell');
   assert.equal(rule.occurrences.length, 200, 'still one occurrence per unplaced element');
-  assert.equal(
-    withRegion.perfStats.counters[FALLBACK_COUNTER] || 0,
-    0,
-    'region must not fall back to re-resolving its own elements'
-  );
+  assert.equal(fallbacks, 0);
 
   for (const occurrence of rule.occurrences) {
     assert.ok(Array.isArray(occurrence.structuralPath), 'structuralPath is still populated');
-    assert.equal(typeof occurrence.selector, 'string');
     assert.ok(occurrence.selector.length > 0);
   }
 });

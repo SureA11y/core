@@ -29709,12 +29709,23 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
   out.schemaVersion = schemaVersion;
 
   const occ = Array.isArray(out.occurrences) ? out.occurrences : [];
+  let __truncatedOccurrences = 0;
+  let __placedOccurrences = 0;
   out.occurrences = occ.map((item) => {
     const o = item && typeof item === 'object' ? { ...item } : {};
 
     // Engine-side finalization (only if rule reported a node)
     const node = o.__node || null;
     if (node) delete o.__node;
+
+    // A 200-step ancestor walk that stopped short cannot show the element is
+    // exposed, so a fail resting only on such elements is not certain enough.
+    if (node && helpers && typeof helpers.hasTruncatedAncestorWalk === 'function') {
+      try {
+        if (helpers.hasTruncatedAncestorWalk(node)) __truncatedOccurrences += 1;
+      } catch {}
+      __placedOccurrences += 1;
+    }
 
     if (needsDetails && node && helpers && typeof helpers === 'object') {
       if (includeSelector && (!o.selector || typeof o.selector !== 'string')) {
@@ -29776,6 +29787,21 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
 
     return o;
   });
+
+  // Downgrade only when every reported element was out of reach of its own
+  // walk. One element the engine could see through justifies the fail; the
+  // rest ride along as occurrences of it, same as any mixed-confidence result.
+  if (
+    out.outcome === 'fail' &&
+    __placedOccurrences > 0 &&
+    __truncatedOccurrences === __placedOccurrences
+  ) {
+    out.outcome = 'cantTell';
+    out.outcomeNormalized = 'cantTell';
+    out.error =
+      (out.error ? String(out.error) + ' | ' : '') +
+      'Ancestor walk hit its depth limit, so the engine could not confirm this content is exposed; coerced to cantTell.';
+  }
 
   if (raw && raw.error) out.error = String(raw.error);
 
@@ -32753,6 +32779,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
           out.push(cur);
           cur = composedParent(cur);
         }
+        // Still more to walk: callers must not read "no blocking ancestor
+        // found" from a chain that never reached the root.
+        if (cur) {
+          out.truncated = true;
+          __perfInc('ancestorsIncludingSelf.truncated');
+        }
         __ancestorsIncludingSelfCache.set(n, out);
         return out;
       }
@@ -32768,8 +32800,24 @@ const createDomHelpers = (function createDomHelpers(opts) {
       out.push(cur);
       cur = composedParent(cur);
     }
+    if (cur) {
+      out.truncated = true;
+      __perfInc('ancestorsIncludingSelf.truncated');
+    }
     return out;
   };
+
+  // Whether the 200-step ancestor walk for this node stopped short of the
+  // root. A rule cannot see this, so normalization uses it to decide how much
+  // confidence an occurrence on that node deserves.
+  function hasTruncatedAncestorWalk(node) {
+    try {
+      if (!node || typeof node !== 'object') return false;
+      return ancestorsIncludingSelf(node).truncated === true;
+    } catch {
+      return false;
+    }
+  }
 
   function getClosestMap(el) {
     try {
@@ -36891,6 +36939,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // see this function's own definition above for why assignedSlot
     // must win over parentNode.
     composedParent,
+    hasTruncatedAncestorWalk,
 
     // Perf counters (only populated when opts.perfStats === true)
     getPerfStats,
