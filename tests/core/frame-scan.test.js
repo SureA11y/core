@@ -256,5 +256,68 @@ test(
         await page.close();
       }
     );
+
+    // engineOptions is forwarded to every child frame, so a locale has to
+    // reach them as well -- otherwise a cross-frame scan would answer in two
+    // languages at once.
+    async function scanWithResponder(engineOptions) {
+      const page = await browser.newPage();
+      await page.setContent(
+        '<!doctype html><html><body><div role="generic">x</div>' +
+          '<iframe srcdoc="<html><body><div role=\'generic\'>y</div></body></html>"></iframe>' +
+          '</body></html>'
+      );
+      await page.addScriptTag({ content: CROSS_FRAME_CHUNK });
+
+      for (const frame of page.frames().slice(1)) {
+        await frame.addScriptTag({ content: CROSS_FRAME_CHUNK });
+        await frame.evaluate(() => {
+          window.a11yCoreEnableFrameResponder();
+        });
+      }
+
+      const result = await page.evaluate(
+        (options) => window.runa11yCoreAcrossFrames(null, null, options, null),
+        { pingWaitTime: 800, frameWaitTime: 8000, ...engineOptions }
+      );
+
+      await page.close();
+      return result;
+    }
+
+    function deprecatedRoleHint(frameResult) {
+      const rule = frameResult.checksResults.find((r) => r.ruleId === 'aria-deprecated-role');
+      return rule && rule.occurrences[0] ? rule.occurrences[0].hint : null;
+    }
+
+    await t.test('a locale reaches child frames, not just the top one', async () => {
+      const result = await scanWithResponder({ locale: 'de' });
+
+      assert.strictEqual(result.frames.length, 1);
+      assert.ok(!result.frames[0].error, 'child frame answered');
+
+      for (const frameResult of [result.topFrame, result.frames[0].topFrame]) {
+        assert.deepStrictEqual(frameResult.engine.locale, {
+          requested: 'de',
+          resolved: 'de',
+          reason: 'ok'
+        });
+        assert.match(deprecatedRoleHint(frameResult), /^Entfernen Sie/);
+      }
+    });
+
+    await t.test('a caller-supplied dictionary survives the hop to a child frame', async () => {
+      const result = await scanWithResponder({
+        locale: 'xx',
+        messages: { xx: { ariaDeprecatedRole_guidance_generic: 'SUPPLIED-XX' } }
+      });
+
+      assert.ok(!result.frames[0].error, 'child frame answered');
+
+      for (const frameResult of [result.topFrame, result.frames[0].topFrame]) {
+        assert.strictEqual(frameResult.engine.locale.resolved, 'xx');
+        assert.strictEqual(deprecatedRoleHint(frameResult), 'SUPPLIED-XX');
+      }
+    });
   }
 );
