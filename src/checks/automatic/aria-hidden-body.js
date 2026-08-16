@@ -86,15 +86,8 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
 
-  const stableSelector = helpers.buildSelector ? helpers.buildSelector(body) : 'body';
-  const html = helpers.getOuterHtmlSnippet
-    ? helpers.getOuterHtmlSnippet(body)
-    : (body.outerHTML || '').slice(0, 200);
-
   const occurrences = [
-    {
-      selector: stableSelector,
-      html,
+    helpers.reportOccurrence(body, {
       summary:
         'The document body has aria-hidden="true", which hides the entire page from assistive technologies.',
       hint: 'Remove aria-hidden from <body>. Hide specific elements instead, if that was the intent.',
@@ -106,7 +99,7 @@ function runInPage(ctx) {
       data: {
         details: { reasonCode: 'ARIA_HIDDEN_BODY' }
       }
-    }
+    })
   ];
 
   return {

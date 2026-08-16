@@ -125,8 +125,6 @@ function runInPage(ctx) {
       ariaHelpers.isAuthorProhibitedRole(role);
     if (!deprecated && !discouraged && !prohibited) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
     const guidance = ariaHelpers.getDeprecatedRoleGuidance
       ? ariaHelpers.getDeprecatedRoleGuidance(role)
       : {
@@ -136,55 +134,55 @@ function runInPage(ctx) {
 
     if (prohibited) {
       // Author MUST NOT: the usage is non-conforming, not merely discouraged.
-      failOccurrences.push({
-        selector: stableSelector,
-        html,
-        summary: `This element uses role="${role}", which authors must not explicitly declare.`,
-        hint: guidance.text,
-        occurrenceOutcome: 'fail',
-        i18n: {
-          summaryKey: 'ariaDeprecatedRole_summary_fail',
-          hintKey: guidance.key,
-          params: { role }
-        },
-        data: {
-          details: { reasonCode: 'ARIA_ROLE_AUTHOR_PROHIBITED', role, guidance: guidance.text }
-        }
-      });
+      failOccurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: `This element uses role="${role}", which authors must not explicitly declare.`,
+          hint: guidance.text,
+          occurrenceOutcome: 'fail',
+          i18n: {
+            summaryKey: 'ariaDeprecatedRole_summary_fail',
+            hintKey: guidance.key,
+            params: { role }
+          },
+          data: {
+            details: { reasonCode: 'ARIA_ROLE_AUTHOR_PROHIBITED', role, guidance: guidance.text }
+          }
+        })
+      );
     } else if (discouraged) {
       // Reserved for user-agent-internal use, at SHOULD NOT strength.
-      cantTellOccurrences.push({
-        selector: stableSelector,
-        html,
-        summary: `This element uses role="${role}", which is reserved for user agents (still valid, but discouraged).`,
-        hint: guidance.text,
-        occurrenceOutcome: 'cantTell',
-        i18n: {
-          summaryKey: 'ariaDeprecatedRole_summary_cantTell_discouraged',
-          hintKey: guidance.key,
-          params: { role }
-        },
-        data: {
-          details: { reasonCode: 'ARIA_ROLE_AUTHOR_DISCOURAGED', role, guidance: guidance.text }
-        }
-      });
+      cantTellOccurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: `This element uses role="${role}", which is reserved for user agents (still valid, but discouraged).`,
+          hint: guidance.text,
+          occurrenceOutcome: 'cantTell',
+          i18n: {
+            summaryKey: 'ariaDeprecatedRole_summary_cantTell_discouraged',
+            hintKey: guidance.key,
+            params: { role }
+          },
+          data: {
+            details: { reasonCode: 'ARIA_ROLE_AUTHOR_DISCOURAGED', role, guidance: guidance.text }
+          }
+        })
+      );
     } else {
       // Deprecated but still valid: surfaced for the author to decide.
-      cantTellOccurrences.push({
-        selector: stableSelector,
-        html,
-        summary: `This element uses role="${role}", which is deprecated in WAI-ARIA.`,
-        hint: guidance.text,
-        occurrenceOutcome: 'cantTell',
-        i18n: {
-          summaryKey: 'ariaDeprecatedRole_summary_cantTell',
-          hintKey: guidance.key,
-          params: { role }
-        },
-        data: {
-          details: { reasonCode: 'ARIA_ROLE_DEPRECATED', role, guidance: guidance.text }
-        }
-      });
+      cantTellOccurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: `This element uses role="${role}", which is deprecated in WAI-ARIA.`,
+          hint: guidance.text,
+          occurrenceOutcome: 'cantTell',
+          i18n: {
+            summaryKey: 'ariaDeprecatedRole_summary_cantTell',
+            hintKey: guidance.key,
+            params: { role }
+          },
+          data: {
+            details: { reasonCode: 'ARIA_ROLE_DEPRECATED', role, guidance: guidance.text }
+          }
+        })
+      );
     }
   }
 

@@ -253,27 +253,24 @@ function runInPage(ctx) {
 
     if (found) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This container role has no owned child with a required role.',
-      hint: 'Add a descendant (or aria-owns-referenced element) with one of the required owned roles.',
-      i18n: {
-        summaryKey: 'ariaRequiredChildren_summary_fail',
-        hintKey: 'ariaRequiredChildren_hint_fail',
-        params: { role, requiredRoles: requiredOwned.join(', ') }
-      },
-      data: {
-        details: {
-          reasonCode: 'ARIA_REQUIRED_CHILD_MISSING',
-          role,
-          requiredOwnedRoles: requiredOwned
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This container role has no owned child with a required role.',
+        hint: 'Add a descendant (or aria-owns-referenced element) with one of the required owned roles.',
+        i18n: {
+          summaryKey: 'ariaRequiredChildren_summary_fail',
+          hintKey: 'ariaRequiredChildren_hint_fail',
+          params: { role, requiredRoles: requiredOwned.join(', ') }
+        },
+        data: {
+          details: {
+            reasonCode: 'ARIA_REQUIRED_CHILD_MISSING',
+            role,
+            requiredOwnedRoles: requiredOwned
+          }
         }
-      }
-    });
+      })
+    );
   }
 
   if (applicableCount === 0) {

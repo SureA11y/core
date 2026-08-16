@@ -156,25 +156,21 @@ function runInPage(ctx) {
 
     for (const th of headers) {
       if (!th) continue;
-      const stableSelector = helpers.buildSelector ? helpers.buildSelector(th) : 'html';
-      const html = helpers.getOuterHtmlSnippet
-        ? helpers.getOuterHtmlSnippet(th)
-        : th.outerHTML || '';
 
-      occurrences.push({
-        selector: stableSelector,
-        html,
-        summary: 'This table has header cells but no data cells for them to describe.',
-        hint: 'Add data cells (<td>) to the table, or remove the header cells if the table has no data.',
-        i18n: {
-          summaryKey: 'tableThHasDataCells_summary_fail',
-          hintKey: 'tableThHasDataCells_hint_fail',
-          params: {}
-        },
-        data: {
-          details: { reasonCode: 'TABLE_TH_NO_DATA_CELLS' }
-        }
-      });
+      occurrences.push(
+        helpers.reportOccurrence(th, {
+          summary: 'This table has header cells but no data cells for them to describe.',
+          hint: 'Add data cells (<td>) to the table, or remove the header cells if the table has no data.',
+          i18n: {
+            summaryKey: 'tableThHasDataCells_summary_fail',
+            hintKey: 'tableThHasDataCells_hint_fail',
+            params: {}
+          },
+          data: {
+            details: { reasonCode: 'TABLE_TH_NO_DATA_CELLS' }
+          }
+        })
+      );
     }
   }
 

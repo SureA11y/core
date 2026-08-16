@@ -150,26 +150,21 @@ function runInPage(ctx) {
         if (hasColumnHeaderAbove(r, c)) continue;
         if (hasRowHeaderBefore(r, c)) continue;
 
-        const stableSelector = helpers.buildSelector ? helpers.buildSelector(cell) : 'html';
-        const html = helpers.getOuterHtmlSnippet
-          ? helpers.getOuterHtmlSnippet(cell)
-          : cell.outerHTML || '';
-
-        occurrences.push({
-          selector: stableSelector,
-          html,
-          summary:
-            'This data cell has no associated header (no headers attribute, no column <th> above it, no row <th> to its left).',
-          hint: 'Add a headers attribute referencing the relevant <th> id(s), or restructure the table so this cell has an implicit row/column header.',
-          i18n: {
-            summaryKey: 'tdHasHeader_summary_fail',
-            hintKey: 'tdHasHeader_hint_fail',
-            params: { row: String(r), column: String(c) }
-          },
-          data: {
-            details: { reasonCode: 'TD_NO_ASSOCIATED_HEADER', row: r, column: c }
-          }
-        });
+        occurrences.push(
+          helpers.reportOccurrence(cell, {
+            summary:
+              'This data cell has no associated header (no headers attribute, no column <th> above it, no row <th> to its left).',
+            hint: 'Add a headers attribute referencing the relevant <th> id(s), or restructure the table so this cell has an implicit row/column header.',
+            i18n: {
+              summaryKey: 'tdHasHeader_summary_fail',
+              hintKey: 'tdHasHeader_hint_fail',
+              params: { row: String(r), column: String(c) }
+            },
+            data: {
+              details: { reasonCode: 'TD_NO_ASSOCIATED_HEADER', row: r, column: c }
+            }
+          })
+        );
       }
     }
   }

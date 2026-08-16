@@ -140,51 +140,49 @@ function runInPage(ctx) {
       : [...eligibleLabels];
 
     const tag = el.tagName.toLowerCase();
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
     if (contributing.length >= 2) {
-      failOccurrences.push({
-        selector: stableSelector,
-        html,
-        summary: 'This form control is associated with more than one <label>.',
-        hint: 'Keep only one <label> per form control (either wrapping it or referencing it via for/id).',
-        occurrenceOutcome: 'fail',
-        i18n: {
-          summaryKey: 'formControlSingleLabel_summary_fail',
-          hintKey: 'formControlSingleLabel_hint_fail',
-          params: { element: tag, labelCount: String(contributing.length) }
-        },
-        data: {
-          details: {
-            reasonCode: 'FORM_FIELD_MULTIPLE_LABELS',
-            element: tag,
-            labelCount: contributing.length
+      failOccurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: 'This form control is associated with more than one <label>.',
+          hint: 'Keep only one <label> per form control (either wrapping it or referencing it via for/id).',
+          occurrenceOutcome: 'fail',
+          i18n: {
+            summaryKey: 'formControlSingleLabel_summary_fail',
+            hintKey: 'formControlSingleLabel_hint_fail',
+            params: { element: tag, labelCount: String(contributing.length) }
+          },
+          data: {
+            details: {
+              reasonCode: 'FORM_FIELD_MULTIPLE_LABELS',
+              element: tag,
+              labelCount: contributing.length
+            }
           }
-        }
-      });
+        })
+      );
     } else if (contributing.length === 1) {
-      cantTellOccurrences.push({
-        selector: stableSelector,
-        html,
-        summary:
-          'This form control has one labelling <label> plus an extra empty <label> association.',
-        hint: 'Remove the redundant empty <label> so exactly one <label> is associated with the control.',
-        occurrenceOutcome: 'cantTell',
-        i18n: {
-          summaryKey: 'formControlSingleLabel_summary_cantTell',
-          hintKey: 'formControlSingleLabel_hint_cantTell',
-          params: { element: tag, labelCount: String(eligibleLabels.size) }
-        },
-        data: {
-          details: {
-            reasonCode: 'FORM_FIELD_EXTRA_EMPTY_LABEL',
-            element: tag,
-            labelCount: eligibleLabels.size,
-            contributingLabelCount: contributing.length
+      cantTellOccurrences.push(
+        helpers.reportOccurrence(el, {
+          summary:
+            'This form control has one labelling <label> plus an extra empty <label> association.',
+          hint: 'Remove the redundant empty <label> so exactly one <label> is associated with the control.',
+          occurrenceOutcome: 'cantTell',
+          i18n: {
+            summaryKey: 'formControlSingleLabel_summary_cantTell',
+            hintKey: 'formControlSingleLabel_hint_cantTell',
+            params: { element: tag, labelCount: String(eligibleLabels.size) }
+          },
+          data: {
+            details: {
+              reasonCode: 'FORM_FIELD_EXTRA_EMPTY_LABEL',
+              element: tag,
+              labelCount: eligibleLabels.size,
+              contributingLabelCount: contributing.length
+            }
           }
-        }
-      });
+        })
+      );
     }
     // contributing.length === 0: no label carries text, so nothing competes
     // for the name. A control left unnamed is form-control-programmatic-

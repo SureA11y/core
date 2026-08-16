@@ -148,24 +148,22 @@ function runInPage(ctx) {
           }
         })()
       : null;
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This tooltip has no accessible name.',
-      hint: 'Provide tooltip text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.',
-      i18n: {
-        summaryKey: 'tooltipNamePresent_summary_fail',
-        hintKey: 'tooltipNamePresent_hint_fail',
-        params: {}
-      },
-      data: {
-        details: { reasonCode: 'name_missing', controlType: 'tooltip', methodTried: res.method },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This tooltip has no accessible name.',
+        hint: 'Provide tooltip text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.',
+        i18n: {
+          summaryKey: 'tooltipNamePresent_summary_fail',
+          hintKey: 'tooltipNamePresent_hint_fail',
+          params: {}
+        },
+        data: {
+          details: { reasonCode: 'name_missing', controlType: 'tooltip', methodTried: res.method },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {

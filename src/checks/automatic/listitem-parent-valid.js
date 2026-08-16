@@ -116,23 +116,20 @@ function runInPage(ctx) {
 
     if (valid) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This list item is not contained by a list container.',
-      hint: 'Place this <li> inside a <ul>/<ol>, or give its parent role="list".',
-      i18n: {
-        summaryKey: 'listitemParentValid_summary_fail',
-        hintKey: 'listitemParentValid_hint_fail',
-        params: { parentElement: parentTag }
-      },
-      data: {
-        details: { reasonCode: 'LISTITEM_INVALID_PARENT', parentElement: parentTag }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This list item is not contained by a list container.',
+        hint: 'Place this <li> inside a <ul>/<ol>, or give its parent role="list".',
+        i18n: {
+          summaryKey: 'listitemParentValid_summary_fail',
+          hintKey: 'listitemParentValid_hint_fail',
+          params: { parentElement: parentTag }
+        },
+        data: {
+          details: { reasonCode: 'LISTITEM_INVALID_PARENT', parentElement: parentTag }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {

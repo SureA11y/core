@@ -114,29 +114,26 @@ function runInPage(ctx) {
 
     if (normalizedAriaChecked === actualState) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary:
-        'This element’s aria-checked value does not match its actual checked/indeterminate state.',
-      hint: 'Set aria-checked to match the element’s real state, or remove it — a native checkbox/radio already exposes this state without it.',
-      i18n: {
-        summaryKey: 'ariaCheckedStateMismatch_summary_cantTell',
-        hintKey: 'ariaCheckedStateMismatch_hint_cantTell',
-        params: { ariaChecked: normalizedAriaChecked, actualState, type }
-      },
-      data: {
-        details: {
-          reasonCode: 'ARIA_CHECKED_STATE_MISMATCH',
-          ariaChecked: normalizedAriaChecked,
-          actualState,
-          type
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary:
+          'This element’s aria-checked value does not match its actual checked/indeterminate state.',
+        hint: 'Set aria-checked to match the element’s real state, or remove it — a native checkbox/radio already exposes this state without it.',
+        i18n: {
+          summaryKey: 'ariaCheckedStateMismatch_summary_cantTell',
+          hintKey: 'ariaCheckedStateMismatch_hint_cantTell',
+          params: { ariaChecked: normalizedAriaChecked, actualState, type }
+        },
+        data: {
+          details: {
+            reasonCode: 'ARIA_CHECKED_STATE_MISMATCH',
+            ariaChecked: normalizedAriaChecked,
+            actualState,
+            type
+          }
         }
-      }
-    });
+      })
+    );
   }
 
   if (applicableCount === 0) {

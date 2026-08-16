@@ -231,24 +231,22 @@ function runInPage(ctx) {
           }
         })()
       : null;
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This combobox has no accessible name.',
-      hint: "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this combobox's accessible name.",
-      i18n: {
-        summaryKey: 'comboboxNamePresent_summary_fail',
-        hintKey: 'comboboxNamePresent_hint_fail',
-        params: {}
-      },
-      data: {
-        details: { reasonCode: 'name_missing', controlType: 'combobox', methodTried: res.method },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This combobox has no accessible name.',
+        hint: "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this combobox's accessible name.",
+        i18n: {
+          summaryKey: 'comboboxNamePresent_summary_fail',
+          hintKey: 'comboboxNamePresent_hint_fail',
+          params: {}
+        },
+        data: {
+          details: { reasonCode: 'name_missing', controlType: 'combobox', methodTried: res.method },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {

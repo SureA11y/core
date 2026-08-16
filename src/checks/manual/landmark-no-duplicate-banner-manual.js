@@ -171,12 +171,7 @@ function runInPage(ctx) {
   }
 
   const occurrences = banners.map((el) => {
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    return {
-      selector: stableSelector,
-      html,
+    return helpers.reportOccurrence(el, {
       summary: 'This page has more than one banner landmark.',
       hint: 'Keep only one banner landmark (header/role="banner") per page.',
       i18n: {
@@ -187,7 +182,7 @@ function runInPage(ctx) {
       data: {
         details: { reasonCode: 'LANDMARK_DUPLICATE_BANNER', count: banners.length }
       }
-    };
+    });
   });
 
   return {

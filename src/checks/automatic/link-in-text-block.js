@@ -215,31 +215,29 @@ function runInPage(ctx) {
     const eligInfo = helpers.getEligibilityInfo
       ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
       : null;
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
     const tag = (el.tagName || '').toLowerCase();
     const ratioStr = c.round2 ? c.round2(ratio) : String(ratio);
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary:
-        'This link in a block of text relies on color alone to be distinguished from the surrounding text.',
-      hint: 'Add an underline, a font-weight/style difference, or increase the color contrast between the link and surrounding text to at least 3:1.',
-      i18n: {
-        summaryKey: 'linkInTextBlock_summary_fail',
-        hintKey: 'linkInTextBlock_hint_fail',
-        params: { element: tag, ratio: String(ratioStr), threshold: '3' }
-      },
-      data: {
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
-        details: {
-          reasonCode: 'COLOR_ONLY_DIFFERENTIATION',
-          metrics: { ratio, threshold: 3 },
-          colors: { linkForegroundHex: fgLinkHex, surroundingTextForegroundHex: fgParentHex }
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary:
+          'This link in a block of text relies on color alone to be distinguished from the surrounding text.',
+        hint: 'Add an underline, a font-weight/style difference, or increase the color contrast between the link and surrounding text to at least 3:1.',
+        i18n: {
+          summaryKey: 'linkInTextBlock_summary_fail',
+          hintKey: 'linkInTextBlock_hint_fail',
+          params: { element: tag, ratio: String(ratioStr), threshold: '3' }
+        },
+        data: {
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
+          details: {
+            reasonCode: 'COLOR_ONLY_DIFFERENTIATION',
+            metrics: { ratio, threshold: 3 },
+            colors: { linkForegroundHex: fgLinkHex, surroundingTextForegroundHex: fgParentHex }
+          }
         }
-      }
-    });
+      })
+    );
   }
 
   if (applicableCount === 0) {

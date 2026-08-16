@@ -193,23 +193,21 @@ function runInPage(ctx) {
     if (isValidAutocomplete(raw)) continue;
 
     const tag = el.tagName.toLowerCase();
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This autocomplete attribute value is not a valid autofill value.',
-      hint: 'Use "on"/"off", or a valid autofill token list (e.g. "shipping street-address", "cc-number").',
-      i18n: {
-        summaryKey: 'autocompleteValid_summary_fail',
-        hintKey: 'autocompleteValid_hint_fail',
-        params: { element: tag, value: raw }
-      },
-      data: {
-        details: { reasonCode: 'AUTOCOMPLETE_VALUE_INVALID', element: tag, value: raw }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This autocomplete attribute value is not a valid autofill value.',
+        hint: 'Use "on"/"off", or a valid autofill token list (e.g. "shipping street-address", "cc-number").',
+        i18n: {
+          summaryKey: 'autocompleteValid_summary_fail',
+          hintKey: 'autocompleteValid_hint_fail',
+          params: { element: tag, value: raw }
+        },
+        data: {
+          details: { reasonCode: 'AUTOCOMPLETE_VALUE_INVALID', element: tag, value: raw }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {

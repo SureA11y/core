@@ -121,9 +121,6 @@ function runInPage(ctx) {
         : null;
     if (!reasonCode) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
     const summary = invalidTags.length
       ? 'This description list contains a direct or wrapped child that is not part of a dt/dd group.'
       : 'This description list has no <dt>/<dd> term-definition group.';
@@ -131,24 +128,24 @@ function runInPage(ctx) {
       ? 'Only use <dt>/<dd> (optionally wrapped in one <div>), <script>, <template>, or <style> inside <dl>.'
       : 'Add at least one <dt>/<dd> pair inside this <dl>.';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary,
-      hint,
-      i18n: {
-        summaryKey: invalidTags.length
-          ? 'definitionListChildrenValid_summary_fail_invalidChild'
-          : 'definitionListChildrenValid_summary_fail_noDtDd',
-        hintKey: invalidTags.length
-          ? 'definitionListChildrenValid_hint_fail_invalidChild'
-          : 'definitionListChildrenValid_hint_fail_noDtDd',
-        params: { invalidChildren: dedupedInvalidTags.join(', ') }
-      },
-      data: {
-        details: { reasonCode, invalidChildren: invalidTags }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary,
+        hint,
+        i18n: {
+          summaryKey: invalidTags.length
+            ? 'definitionListChildrenValid_summary_fail_invalidChild'
+            : 'definitionListChildrenValid_summary_fail_noDtDd',
+          hintKey: invalidTags.length
+            ? 'definitionListChildrenValid_hint_fail_invalidChild'
+            : 'definitionListChildrenValid_hint_fail_noDtDd',
+          params: { invalidChildren: dedupedInvalidTags.join(', ') }
+        },
+        data: {
+          details: { reasonCode, invalidChildren: invalidTags }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {

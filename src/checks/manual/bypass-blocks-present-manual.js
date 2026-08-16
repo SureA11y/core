@@ -243,15 +243,8 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  const stableSelector = helpers.buildSelector ? helpers.buildSelector(body) : 'body';
-  const html = helpers.getOuterHtmlSnippet
-    ? helpers.getOuterHtmlSnippet(body)
-    : (body.outerHTML || '').slice(0, 200);
-
   const occurrences = [
-    {
-      selector: stableSelector,
-      html,
+    helpers.reportOccurrence(body, {
       summary:
         'No recognized way to bypass repeated blocks of content was detected on this page — verify a bypass mechanism exists.',
       hint: 'Confirm the page offers a bypass mechanism: a main landmark (<main> or role="main"), a working "skip to content" link, or heading elements that assistive technology can use to jump past repeated content. (A mechanism may be temporarily hidden — e.g. while a modal dialog makes the page inert — or provided on a per-site basis; this needs human confirmation.)',
@@ -264,7 +257,7 @@ function runInPage(ctx) {
         details: { reasonCode: 'BYPASS_MECHANISM_ABSENT' },
         visibilityFilter: { targetSet: 'acc', accEligible: null, reasons: [] }
       }
-    }
+    })
   ];
 
   return {

@@ -210,27 +210,24 @@ function runInPage(ctx) {
 
     if (hasContext) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This role requires a specific ancestor/owner context role, which was not found.',
-      hint: 'Place this element inside (or aria-owns-reference it from) an element with an acceptable context role.',
-      i18n: {
-        summaryKey: 'ariaRequiredParent_summary_fail',
-        hintKey: 'ariaRequiredParent_hint_fail',
-        params: { role, requiredRoles: requiredContext.join(', ') }
-      },
-      data: {
-        details: {
-          reasonCode: 'ARIA_REQUIRED_PARENT_MISSING',
-          role,
-          requiredContextRoles: requiredContext
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This role requires a specific ancestor/owner context role, which was not found.',
+        hint: 'Place this element inside (or aria-owns-reference it from) an element with an acceptable context role.',
+        i18n: {
+          summaryKey: 'ariaRequiredParent_summary_fail',
+          hintKey: 'ariaRequiredParent_hint_fail',
+          params: { role, requiredRoles: requiredContext.join(', ') }
+        },
+        data: {
+          details: {
+            reasonCode: 'ARIA_REQUIRED_PARENT_MISSING',
+            role,
+            requiredContextRoles: requiredContext
+          }
         }
-      }
-    });
+      })
+    );
   }
 
   if (applicableCount === 0) {

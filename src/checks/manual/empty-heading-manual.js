@@ -148,8 +148,6 @@ function runInPage(ctx) {
     const name = getAccessibleNameText(el);
     if (name) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
     const eligInfo = helpers.getEligibilityInfo
       ? (() => {
           try {
@@ -160,21 +158,21 @@ function runInPage(ctx) {
         })()
       : null;
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This heading has no accessible name.',
-      hint: 'Add text content (or aria-label/aria-labelledby) to this heading, or remove it if it is not needed.',
-      i18n: {
-        summaryKey: 'emptyHeading_summary_cantTell',
-        hintKey: 'emptyHeading_hint_cantTell',
-        params: {}
-      },
-      data: {
-        details: { reasonCode: 'HEADING_EMPTY' },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This heading has no accessible name.',
+        hint: 'Add text content (or aria-label/aria-labelledby) to this heading, or remove it if it is not needed.',
+        i18n: {
+          summaryKey: 'emptyHeading_summary_cantTell',
+          hintKey: 'emptyHeading_hint_cantTell',
+          params: {}
+        },
+        data: {
+          details: { reasonCode: 'HEADING_EMPTY' },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {

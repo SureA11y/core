@@ -171,28 +171,26 @@ function runInPage(ctx) {
       String(el.getAttribute('role') || '')
         .trim()
         .toLowerCase() || 'presentation';
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: `This role="${role}" element also has a conflicting condition (${parts.join(', ')}), which restores its implicit role and cancels the presentational intent.`,
-      hint: 'Remove the conflicting naming attribute(s) and/or focusability (tabindex/native) if the element should stay presentational, or remove role="presentation"/"none" if it should be exposed to assistive technology.',
-      i18n: {
-        summaryKey: 'presentationRoleConflict_summary_cantTell',
-        hintKey: 'presentationRoleConflict_hint_cantTell',
-        params: { role, attrs: parts.join(', ') }
-      },
-      data: {
-        details: {
-          reasonCode: 'PRESENTATION_ROLE_CONFLICT',
-          role,
-          conflictingAttrs: present,
-          focusable: isFocusable
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: `This role="${role}" element also has a conflicting condition (${parts.join(', ')}), which restores its implicit role and cancels the presentational intent.`,
+        hint: 'Remove the conflicting naming attribute(s) and/or focusability (tabindex/native) if the element should stay presentational, or remove role="presentation"/"none" if it should be exposed to assistive technology.',
+        i18n: {
+          summaryKey: 'presentationRoleConflict_summary_cantTell',
+          hintKey: 'presentationRoleConflict_hint_cantTell',
+          params: { role, attrs: parts.join(', ') }
+        },
+        data: {
+          details: {
+            reasonCode: 'PRESENTATION_ROLE_CONFLICT',
+            role,
+            conflictingAttrs: present,
+            focusable: isFocusable
+          }
         }
-      }
-    });
+      })
+    );
   }
 
   if (applicableCount === 0) {
