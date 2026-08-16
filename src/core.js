@@ -9914,6 +9914,24 @@ function getLocaleDict(engineOptions) {
   return matched ? lookupDict(matched, engineOptions) : (I18N && I18N.en ? I18N.en : {});
 }
 
+function ownString(dict, key) {
+  if (!dict || !Object.prototype.hasOwnProperty.call(dict, key)) return null;
+  return (typeof dict[key] === 'string' && dict[key]) ? dict[key] : null;
+}
+
+// A caller-supplied dictionary layers over the built-in one for the same
+// locale rather than replacing it, so overriding one string does not cost the
+// caller every other string in that language.
+function localeMessage(key, engineOptions) {
+  const matched = matchLocale(normalizeLocale(engineOptions && engineOptions.locale), engineOptions);
+  if (!matched) return null;
+
+  return (
+    ownString(ownDict(getSuppliedMessages(engineOptions), matched), key) ||
+    ownString(ownDict(I18N, matched), key)
+  );
+}
+
 function isKnownLocale(locale) {
   if (KNOWN_LOCALES.indexOf(locale) !== -1) return true;
 
@@ -9942,8 +9960,11 @@ function resolveLocale(engineOptions) {
   if (!dict) return { requested: requested, resolved: 'en', reason: 'unknown-locale' };
 
   if (dict !== en) {
+    const supplied = ownDict(getSuppliedMessages(engineOptions), matched);
+    const builtIn = ownDict(I18N, matched);
+
     for (const key in en) {
-      if (!(key in dict)) {
+      if (!ownString(supplied, key) && !ownString(builtIn, key)) {
         return { requested: requested, resolved: matched, reason: 'partial-dictionary' };
       }
     }
@@ -10055,16 +10076,12 @@ function resolveLocale(engineOptions) {
 function t(key, fallback, params, engineOptions) {
   if (typeof key !== 'string' || !key.trim()) return typeof fallback === 'string' ? fallback : '';
 
-  const dict = getLocaleDict(engineOptions);
-  const v = dict ? dict[key] : null;
+  const v = localeMessage(key, engineOptions);
 
   // fallback to English if missing in requested locale
-  const vEn = (I18N && I18N.en) ? I18N.en[key] : null;
+  const vEn = ownString(I18N && I18N.en, key);
 
-  const base =
-    (typeof v === 'string' && v) ? v :
-    (typeof vEn === 'string' && vEn) ? vEn :
-    (typeof fallback === 'string' ? fallback : '');
+  const base = v || vEn || (typeof fallback === 'string' ? fallback : '');
 
   return applyI18nParams(base, params);
 }
@@ -49803,6 +49820,24 @@ function getLocaleDict(engineOptions) {
   return matched ? lookupDict(matched, engineOptions) : (I18N && I18N.en ? I18N.en : {});
 }
 
+function ownString(dict, key) {
+  if (!dict || !Object.prototype.hasOwnProperty.call(dict, key)) return null;
+  return (typeof dict[key] === 'string' && dict[key]) ? dict[key] : null;
+}
+
+// A caller-supplied dictionary layers over the built-in one for the same
+// locale rather than replacing it, so overriding one string does not cost the
+// caller every other string in that language.
+function localeMessage(key, engineOptions) {
+  const matched = matchLocale(normalizeLocale(engineOptions && engineOptions.locale), engineOptions);
+  if (!matched) return null;
+
+  return (
+    ownString(ownDict(getSuppliedMessages(engineOptions), matched), key) ||
+    ownString(ownDict(I18N, matched), key)
+  );
+}
+
 function isKnownLocale(locale) {
   if (KNOWN_LOCALES.indexOf(locale) !== -1) return true;
 
@@ -49831,8 +49866,11 @@ function resolveLocale(engineOptions) {
   if (!dict) return { requested: requested, resolved: 'en', reason: 'unknown-locale' };
 
   if (dict !== en) {
+    const supplied = ownDict(getSuppliedMessages(engineOptions), matched);
+    const builtIn = ownDict(I18N, matched);
+
     for (const key in en) {
-      if (!(key in dict)) {
+      if (!ownString(supplied, key) && !ownString(builtIn, key)) {
         return { requested: requested, resolved: matched, reason: 'partial-dictionary' };
       }
     }
@@ -49944,16 +49982,12 @@ function resolveLocale(engineOptions) {
 function t(key, fallback, params, engineOptions) {
   if (typeof key !== 'string' || !key.trim()) return typeof fallback === 'string' ? fallback : '';
 
-  const dict = getLocaleDict(engineOptions);
-  const v = dict ? dict[key] : null;
+  const v = localeMessage(key, engineOptions);
 
   // fallback to English if missing in requested locale
-  const vEn = (I18N && I18N.en) ? I18N.en[key] : null;
+  const vEn = ownString(I18N && I18N.en, key);
 
-  const base =
-    (typeof v === 'string' && v) ? v :
-    (typeof vEn === 'string' && vEn) ? vEn :
-    (typeof fallback === 'string' ? fallback : '');
+  const base = v || vEn || (typeof fallback === 'string' ? fallback : '');
 
   return applyI18nParams(base, params);
 }
@@ -89647,6 +89681,24 @@ function getLocaleDict(engineOptions) {
   return matched ? lookupDict(matched, engineOptions) : (I18N && I18N.en ? I18N.en : {});
 }
 
+function ownString(dict, key) {
+  if (!dict || !Object.prototype.hasOwnProperty.call(dict, key)) return null;
+  return (typeof dict[key] === 'string' && dict[key]) ? dict[key] : null;
+}
+
+// A caller-supplied dictionary layers over the built-in one for the same
+// locale rather than replacing it, so overriding one string does not cost the
+// caller every other string in that language.
+function localeMessage(key, engineOptions) {
+  const matched = matchLocale(normalizeLocale(engineOptions && engineOptions.locale), engineOptions);
+  if (!matched) return null;
+
+  return (
+    ownString(ownDict(getSuppliedMessages(engineOptions), matched), key) ||
+    ownString(ownDict(I18N, matched), key)
+  );
+}
+
 function isKnownLocale(locale) {
   if (KNOWN_LOCALES.indexOf(locale) !== -1) return true;
 
@@ -89675,8 +89727,11 @@ function resolveLocale(engineOptions) {
   if (!dict) return { requested: requested, resolved: 'en', reason: 'unknown-locale' };
 
   if (dict !== en) {
+    const supplied = ownDict(getSuppliedMessages(engineOptions), matched);
+    const builtIn = ownDict(I18N, matched);
+
     for (const key in en) {
-      if (!(key in dict)) {
+      if (!ownString(supplied, key) && !ownString(builtIn, key)) {
         return { requested: requested, resolved: matched, reason: 'partial-dictionary' };
       }
     }
@@ -89788,16 +89843,12 @@ function resolveLocale(engineOptions) {
 function t(key, fallback, params, engineOptions) {
   if (typeof key !== 'string' || !key.trim()) return typeof fallback === 'string' ? fallback : '';
 
-  const dict = getLocaleDict(engineOptions);
-  const v = dict ? dict[key] : null;
+  const v = localeMessage(key, engineOptions);
 
   // fallback to English if missing in requested locale
-  const vEn = (I18N && I18N.en) ? I18N.en[key] : null;
+  const vEn = ownString(I18N && I18N.en, key);
 
-  const base =
-    (typeof v === 'string' && v) ? v :
-    (typeof vEn === 'string' && vEn) ? vEn :
-    (typeof fallback === 'string' ? fallback : '');
+  const base = v || vEn || (typeof fallback === 'string' ? fallback : '');
 
   return applyI18nParams(base, params);
 }
