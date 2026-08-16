@@ -29034,13 +29034,18 @@ function getSuppliedMessages(engineOptions) {
   return (supplied && typeof supplied === 'object' && !Array.isArray(supplied)) ? supplied : null;
 }
 
+// Own properties only. A bare lookup would accept inherited names, so
+// { locale: 'constructor' } or '__proto__' would resolve to something that is
+// not a dictionary and get reported as the locale in use.
+function ownDict(table, locale) {
+  if (!table || !Object.prototype.hasOwnProperty.call(table, locale)) return null;
+
+  const dict = table[locale];
+  return (dict && typeof dict === 'object' && !Array.isArray(dict)) ? dict : null;
+}
+
 function lookupDict(locale, engineOptions) {
-  const supplied = getSuppliedMessages(engineOptions);
-  if (supplied) {
-    const dict = supplied[locale];
-    if (dict && typeof dict === 'object' && !Array.isArray(dict)) return dict;
-  }
-  return (I18N && I18N[locale]) ? I18N[locale] : null;
+  return ownDict(getSuppliedMessages(engineOptions), locale) || ownDict(I18N, locale);
 }
 
 // Exact code first, then its primary subtag, so de-DE uses de when no de-DE
