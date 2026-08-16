@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
-const { generateScaffoldSource, scaffoldLocale } = require('../scripts/i18n-scaffold.js');
+const { serializeLocaleSource, scaffoldLocale } = require('../scripts/i18n-scaffold.js');
 
 function makeTmpI18nDir() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'i18n-scaffold-test-'));
@@ -17,9 +17,10 @@ function makeTmpI18nDir() {
   return dir;
 }
 
-test('generateScaffoldSource emits every en.js key with the English value as a placeholder', () => {
-  const source = generateScaffoldSource({ foo_title: 'Foo', 'a.b': 'Bar' });
-  assert.match(source, /^'use strict';/);
+test('serializeLocaleSource emits every en.js key with the English value as a placeholder', () => {
+  const source = serializeLocaleSource({ foo_title: 'Foo', 'a.b': 'Bar' });
+  assert.match(source, /^\/\* SPDX-License-Identifier: MPL-2\.0 \*\//);
+  assert.match(source, /'use strict';/);
   assert.match(source, /module\.exports = \{/);
 
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'i18n-scaffold-source-test-'));
@@ -40,11 +41,41 @@ test('scaffoldLocale writes a file with the same key count as en.js', async () =
   assert.deepEqual(written, { greeting: 'Hello', 'dotted.key': 'World' });
 });
 
-test('scaffoldLocale refuses to overwrite an existing locale file without --force', async () => {
+test('scaffoldLocale carries the licence header into the new locale file', async () => {
+  const dir = makeTmpI18nDir();
+  const { outPath } = await scaffoldLocale('de', { i18nDir: dir });
+
+  assert.match(fs.readFileSync(outPath, 'utf8'), /^\/\* SPDX-License-Identifier: MPL-2\.0 \*\//);
+});
+
+test('scaffoldLocale mirrors the key order and grouping of en.js', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'i18n-scaffold-layout-test-'));
+  fs.writeFileSync(
+    path.join(dir, 'en.js'),
+    [
+      `'use strict';`,
+      ``,
+      `module.exports = {`,
+      `  first: 'One',`,
+      ``,
+      `  // --- second section`,
+      `  second: 'Two',`,
+      `};`,
+      ``
+    ].join('\n')
+  );
+
+  const { outPath } = await scaffoldLocale('de', { i18nDir: dir });
+  const written = fs.readFileSync(outPath, 'utf8');
+
+  assert.match(written, /first: "One",\n\n {2}\/\/ --- second section\n {2}second: "Two"/);
+});
+
+test('scaffoldLocale points at i18n:sync instead of overwriting an existing locale', async () => {
   const dir = makeTmpI18nDir();
   await scaffoldLocale('de', { i18nDir: dir });
 
-  await assert.rejects(() => scaffoldLocale('de', { i18nDir: dir }), /already exists/);
+  await assert.rejects(() => scaffoldLocale('de', { i18nDir: dir }), /i18n:sync/);
 });
 
 test('scaffoldLocale overwrites when force is true', async () => {

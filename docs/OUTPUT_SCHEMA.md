@@ -15,7 +15,11 @@ This is the exact shape of the object returned by `runDomRulesInPage(...)` / `ru
 
 ```ts
 {
-  engine: { tag: string, schemaVersion: string },
+  engine: {
+    tag: string,
+    schemaVersion: string,
+    locale: { requested: string, resolved: string, reason: string }
+  },
   url: string | null,
   title: string | null,
   timestamp: string | null,
@@ -31,6 +35,8 @@ This is the exact shape of the object returned by `runDomRulesInPage(...)` / `ru
 |---|---|
 | `engine.tag` | The engine's own identity tag, currently `"a11ycore"`. Every rule (built-in or custom) carries it in `meta.tags` — rule `ruleId`s themselves are bare (no prefix). |
 | `engine.schemaVersion` | The result-schema version (`"1.0.0"`). Bump-worthy if this document's shape ever changes incompatibly — pin to it if you're parsing output programmatically. See [`API_STABILITY.md`](./API_STABILITY.md) for the full stable/unstable field list and version-bump policy. |
+| `engine.locale` | Which dictionary the run actually used. `requested` is your `engineOptions.locale` after trimming (`"en"` if you passed nothing or a non-string); `resolved` is the locale whose dictionary was used; `reason` explains the pairing. Because locale fallback is graceful and per-string, asking for a language the build does not carry produces English text rather than an error — this field is how you find that out without reading the strings. Reported once per result: a run uses one dictionary throughout. |
+| `engine.locale.reason` | `"ok"` — the requested dictionary was used and carries every key. `"unknown-locale"` — the build has no dictionary for that locale, so English was used (`resolved: "en"`); a region subtag counts as its own locale, so `"de-DE"` lands here even though `"de"` exists. `"partial-dictionary"` — the dictionary was used but is missing keys English has, so those individual strings fell back to English. Treat the set as open: new codes may be added as minor releases. |
 | `url` | The `pageUrl` argument you passed in, or `document.location.href` if you passed `null`/omitted it, or `null` if neither is available. |
 | `title` | `document.title` at scan time, or `null`. |
 | `timestamp` | **Not auto-generated.** Only set if you pass `engineOptions.timestamp` as a non-empty string — the engine has no built-in clock (deterministic-by-design). If you want a scan timestamp in the result, supply it yourself. |
@@ -185,7 +191,11 @@ const result = runDomRulesInPage(
 
 ```json
 {
-  "engine": { "tag": "a11ycore", "schemaVersion": "1.0.0" },
+  "engine": {
+    "tag": "a11ycore",
+    "schemaVersion": "1.0.0",
+    "locale": { "requested": "en", "resolved": "en", "reason": "ok" }
+  },
   "url": "https://example.test/",
   "title": "Example",
   "timestamp": null,
