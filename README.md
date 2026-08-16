@@ -1,7 +1,6 @@
 # @surea11y/core
 
-[![surea11y core](docs/assets/brand-tag-dark.svg#gh-dark-mode-only)](https://www.npmjs.com/package/@surea11y/core#gh-dark-mode-only)
-[![surea11y core](docs/assets/brand-tag-light.svg#gh-light-mode-only)](https://www.npmjs.com/package/@surea11y/core#gh-light-mode-only)
+<a href="https://www.npmjs.com/package/@surea11y/core"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/SureA11y/core/main/docs/assets/brand-tag-dark.svg"><img alt="surea11y core" src="https://raw.githubusercontent.com/SureA11y/core/main/docs/assets/brand-tag-light.svg"></picture></a>
 [![npm](https://img.shields.io/npm/v/@surea11y/core?style=flat-square&label=npm&labelColor=101413&color=3A4441)](https://www.npmjs.com/package/@surea11y/core)
 [![node](https://img.shields.io/node/v/@surea11y/core?style=flat-square&label=node&labelColor=101413&color=3A4441)](package.json)
 [![license](https://img.shields.io/badge/license-MPL--2.0-3A4441?style=flat-square&labelColor=101413)](LICENSE)
