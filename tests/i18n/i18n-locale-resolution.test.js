@@ -40,6 +40,8 @@ function makeResolveLocale(i18n, knownLocales) {
     'getSuppliedMessages',
     'ownDict',
     'lookupDict',
+    'matchIgnoringCase',
+    'findLocaleKey',
     'matchLocale',
     'isKnownLocale',
     'resolveLocale'
@@ -304,4 +306,52 @@ test('a subtag of a shipped-but-omitted locale also reports dictionary-not-loade
   const resolveLocale = makeResolveLocale({ en: { a: 'A' } }, ['en', 'de']);
 
   assert.equal(resolveLocale({ locale: 'de-DE' }).reason, 'dictionary-not-loaded');
+});
+
+test('a code differing only in case is not reported as a fallback', () => {
+  assert.deepEqual(localeOf({ locale: 'DE' }), {
+    requested: 'DE',
+    resolved: 'de',
+    reason: 'ok'
+  });
+});
+
+// Locale tags are case-insensitive, so a regional file has to be reachable
+// however the caller spells it.
+test('a regional dictionary is found whatever the case of the request', () => {
+  const i18n = { en: { a: 'A' }, 'pt-BR': { a: 'A-BR' } };
+
+  for (const requested of ['pt-BR', 'pt-br', 'PT-BR', 'Pt-Br']) {
+    assert.deepEqual(
+      makeResolveLocale(i18n)({ locale: requested }),
+      { requested, resolved: 'pt-BR', reason: 'ok' },
+      `${requested} should find pt-BR`
+    );
+  }
+});
+
+test('a regional request still falls back to its base language when present', () => {
+  const resolveLocale = makeResolveLocale({ en: { a: 'A' }, pt: { a: 'A-PT' } });
+
+  assert.deepEqual(resolveLocale({ locale: 'pt-BR' }), {
+    requested: 'pt-BR',
+    resolved: 'pt',
+    reason: 'primary-subtag'
+  });
+});
+
+test('a base-language request does not match a regional dictionary', () => {
+  const resolveLocale = makeResolveLocale({ en: { a: 'A' }, 'pt-BR': { a: 'A-BR' } });
+
+  assert.equal(resolveLocale({ locale: 'pt' }).reason, 'unknown-locale');
+});
+
+test('a supplied dictionary is matched case-insensitively too', () => {
+  const resolveLocale = makeResolveLocale({ en: { a: 'A' } }, ['en']);
+
+  assert.deepEqual(resolveLocale({ locale: 'ZH-hant', messages: { 'zh-Hant': { a: 'Z' } } }), {
+    requested: 'ZH-hant',
+    resolved: 'zh-Hant',
+    reason: 'ok'
+  });
 });
