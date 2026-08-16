@@ -188,3 +188,53 @@ test('excludeSelectors accepts comma-separated string selectors', () => {
 
   assertRule(result, 'img-alt-present', 'pass', { maxOccurrences: 0 });
 });
+
+const NESTED_PAGE = `
+  <!doctype html>
+  <html><head><title>t</title></head><body>
+    <div id="outer">
+      <div id="inner"><img src="a.png"></div>
+      <img src="b.png">
+    </div>
+    <img src="c.png">
+  </body></html>
+`;
+
+function imgOccurrences(contextSelector, engineOptions = {}) {
+  const rule = runa11yCoreOnHtml(NESTED_PAGE, {
+    contextSelector,
+    engineOptions
+  }).checksResults.find((r) => r.ruleId === 'img-alt-present');
+  return rule.outcome === 'fail' ? rule.occurrences.length : 0;
+}
+
+// Documented in ENGINE_OPTIONS.md: an unresolvable context widens to the whole
+// document rather than scanning nothing. Worth pinning precisely because it is
+// surprising -- a typo in a scoping selector quietly scans everything.
+test('contextSelector: a selector matching nothing falls back to the whole document', () => {
+  assert.strictEqual(imgOccurrences(null), 3);
+  assert.strictEqual(imgOccurrences('#does-not-exist'), 3);
+  assert.strictEqual(imgOccurrences([]), 3);
+  assert.strictEqual(imgOccurrences(['', '   ']), 3);
+});
+
+test('contextSelector: a malformed selector is ignored rather than throwing', () => {
+  assert.strictEqual(imgOccurrences('>>>bad'), 3, 'unusable on its own, so the scope widens');
+  assert.strictEqual(imgOccurrences(['#outer', '>>>bad']), 2, 'the usable selector still applies');
+});
+
+test('excludeSelectors: a malformed selector excludes nothing rather than throwing', () => {
+  assert.strictEqual(imgOccurrences('#outer', { excludeSelectors: ['>>>bad'] }), 2);
+  assert.strictEqual(imgOccurrences('#outer', { excludeSelectors: ['#does-not-exist'] }), 2);
+});
+
+test('excludeSelectors: excluding an ancestor of the context removes the context too', () => {
+  assert.strictEqual(imgOccurrences('#inner', { excludeSelectors: ['#outer'] }), 0);
+  assert.strictEqual(imgOccurrences('#inner', { excludeSelectors: ['#inner'] }), 0);
+});
+
+test('contextSelector: overlapping and duplicate regions report each element once', () => {
+  assert.strictEqual(imgOccurrences('#outer'), 2);
+  assert.strictEqual(imgOccurrences(['#outer', '#inner']), 2, 'nested region adds nothing new');
+  assert.strictEqual(imgOccurrences(['#outer', '#outer']), 2, 'the same region twice adds nothing');
+});

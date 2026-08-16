@@ -29,6 +29,8 @@ runDomRulesInPage(url, null, {}, {
 | `excludeTags` | `string[]` | Never run rules carrying any of these tags, applied after include. |
 | `includeMode` | `'and'` \| `'or'` | When **both** an ID include and a tag include are given: `'and'` (default) requires a rule to satisfy both; `'or'` runs a rule if it satisfies either. Irrelevant if you only use one dimension. |
 
+Each of these accepts either an array or a comma-separated string, matching the `engineOptions` form below — `includeRuleIds: 'img-alt-present, button-name-present'` and `includeRuleIds: ['img-alt-present', 'button-name-present']` are equivalent.
+
 Rule IDs are bare (no engine prefix), e.g. `'img-alt-present'`. For backward compatibility, matching also accepts a legacy `a11ycore-`-prefixed form of the same id (`'a11ycore-img-alt-present'`).
 
 A **legacy tag-filter shape** is also accepted as the whole `runOnly` value: `{ type: 'tag', values: ['wcag2a', 'wcag2aa'] }` — equivalent to `{ tags: ['wcag2a', 'wcag2aa'] }`.

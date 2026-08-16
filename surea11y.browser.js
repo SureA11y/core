@@ -29397,14 +29397,19 @@ function hasAnyRunOnlyKeys(runOnly) {
   const hasLegacyTag =
     runOnly.type === 'tag' && Array.isArray(runOnly.values) && runOnly.values.length > 0;
 
+  // parseCommaList accepts an array or a comma-separated string, so this gate
+  // has to as well -- ENGINE_OPTIONS.md states these fields mirror their
+  // engineOptions counterparts, which have always taken a string.
+  const hasEntries = (value) => parseCommaList(value).length > 0;
+
   const hasAnyFilters =
     hasLegacyTag ||
-    (Array.isArray(runOnly.tags) && runOnly.tags.length > 0) ||
-    (Array.isArray(runOnly.excludeTags) && runOnly.excludeTags.length > 0) ||
-    (Array.isArray(runOnly.includeRuleIds) && runOnly.includeRuleIds.length > 0) ||
-    (Array.isArray(runOnly.excludeRuleIds) && runOnly.excludeRuleIds.length > 0) ||
-    (Array.isArray(runOnly.includeTestIds) && runOnly.includeTestIds.length > 0) ||
-    (Array.isArray(runOnly.excludeTestIds) && runOnly.excludeTestIds.length > 0);
+    hasEntries(runOnly.tags) ||
+    hasEntries(runOnly.excludeTags) ||
+    hasEntries(runOnly.includeRuleIds) ||
+    hasEntries(runOnly.excludeRuleIds) ||
+    hasEntries(runOnly.includeTestIds) ||
+    hasEntries(runOnly.excludeTestIds);
 
   // IMPORTANT: includeMode by itself should NOT cause runOnly to take precedence.
   return hasAnyFilters;
