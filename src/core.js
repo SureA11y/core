@@ -9843,28 +9843,47 @@ function normalizeLocale(locale) {
   return s ? s : 'en';
 }
 
+// Exact code first, then its primary subtag, so de-DE uses de when no de-DE
+// table was built. t() runs this per string, so the common case must not
+// allocate: only a code carrying a subtag reaches the split.
+function matchLocale(requested) {
+  if (!I18N) return null;
+  if (I18N[requested]) return requested;
+
+  const primary = requested.split('-')[0].toLowerCase();
+  return (primary !== requested && I18N[primary]) ? primary : null;
+}
+
 function getLocaleDict(engineOptions) {
-  const loc = normalizeLocale(engineOptions && engineOptions.locale);
-  return (I18N && I18N[loc]) ? I18N[loc] : (I18N && I18N.en ? I18N.en : {});
+  const matched = matchLocale(normalizeLocale(engineOptions && engineOptions.locale));
+  return matched ? I18N[matched] : (I18N && I18N.en ? I18N.en : {});
 }
 
 // Reports which dictionary the run actually used, so a locale that fell back
-// to English is visible in the result rather than only in the wording.
+// is visible in the result rather than only in the wording. Shares matchLocale
+// with getLocaleDict, so the reported locale and the strings cannot disagree.
 function resolveLocale(engineOptions) {
   const requested = normalizeLocale(engineOptions && engineOptions.locale);
-  const dict = I18N ? I18N[requested] : null;
+  const matched = matchLocale(requested);
+
+  if (!matched) return { requested: requested, resolved: 'en', reason: 'unknown-locale' };
+
   const en = (I18N && I18N.en) ? I18N.en : {};
+  const dict = I18N[matched];
 
-  if (!dict) return { requested: requested, resolved: 'en', reason: 'unknown-locale' };
-  if (dict === en) return { requested: requested, resolved: requested, reason: 'ok' };
-
-  for (const key in en) {
-    if (!(key in dict)) {
-      return { requested: requested, resolved: requested, reason: 'partial-dictionary' };
+  if (dict !== en) {
+    for (const key in en) {
+      if (!(key in dict)) {
+        return { requested: requested, resolved: matched, reason: 'partial-dictionary' };
+      }
     }
   }
 
-  return { requested: requested, resolved: requested, reason: 'ok' };
+  return {
+    requested: requested,
+    resolved: matched,
+    reason: matched === requested ? 'ok' : 'primary-subtag'
+  };
 }
 
   function isTruthyMustache(val) {
@@ -49641,28 +49660,47 @@ function normalizeLocale(locale) {
   return s ? s : 'en';
 }
 
+// Exact code first, then its primary subtag, so de-DE uses de when no de-DE
+// table was built. t() runs this per string, so the common case must not
+// allocate: only a code carrying a subtag reaches the split.
+function matchLocale(requested) {
+  if (!I18N) return null;
+  if (I18N[requested]) return requested;
+
+  const primary = requested.split('-')[0].toLowerCase();
+  return (primary !== requested && I18N[primary]) ? primary : null;
+}
+
 function getLocaleDict(engineOptions) {
-  const loc = normalizeLocale(engineOptions && engineOptions.locale);
-  return (I18N && I18N[loc]) ? I18N[loc] : (I18N && I18N.en ? I18N.en : {});
+  const matched = matchLocale(normalizeLocale(engineOptions && engineOptions.locale));
+  return matched ? I18N[matched] : (I18N && I18N.en ? I18N.en : {});
 }
 
 // Reports which dictionary the run actually used, so a locale that fell back
-// to English is visible in the result rather than only in the wording.
+// is visible in the result rather than only in the wording. Shares matchLocale
+// with getLocaleDict, so the reported locale and the strings cannot disagree.
 function resolveLocale(engineOptions) {
   const requested = normalizeLocale(engineOptions && engineOptions.locale);
-  const dict = I18N ? I18N[requested] : null;
+  const matched = matchLocale(requested);
+
+  if (!matched) return { requested: requested, resolved: 'en', reason: 'unknown-locale' };
+
   const en = (I18N && I18N.en) ? I18N.en : {};
+  const dict = I18N[matched];
 
-  if (!dict) return { requested: requested, resolved: 'en', reason: 'unknown-locale' };
-  if (dict === en) return { requested: requested, resolved: requested, reason: 'ok' };
-
-  for (const key in en) {
-    if (!(key in dict)) {
-      return { requested: requested, resolved: requested, reason: 'partial-dictionary' };
+  if (dict !== en) {
+    for (const key in en) {
+      if (!(key in dict)) {
+        return { requested: requested, resolved: matched, reason: 'partial-dictionary' };
+      }
     }
   }
 
-  return { requested: requested, resolved: requested, reason: 'ok' };
+  return {
+    requested: requested,
+    resolved: matched,
+    reason: matched === requested ? 'ok' : 'primary-subtag'
+  };
 }
 
   function isTruthyMustache(val) {
@@ -89394,28 +89432,47 @@ function normalizeLocale(locale) {
   return s ? s : 'en';
 }
 
+// Exact code first, then its primary subtag, so de-DE uses de when no de-DE
+// table was built. t() runs this per string, so the common case must not
+// allocate: only a code carrying a subtag reaches the split.
+function matchLocale(requested) {
+  if (!I18N) return null;
+  if (I18N[requested]) return requested;
+
+  const primary = requested.split('-')[0].toLowerCase();
+  return (primary !== requested && I18N[primary]) ? primary : null;
+}
+
 function getLocaleDict(engineOptions) {
-  const loc = normalizeLocale(engineOptions && engineOptions.locale);
-  return (I18N && I18N[loc]) ? I18N[loc] : (I18N && I18N.en ? I18N.en : {});
+  const matched = matchLocale(normalizeLocale(engineOptions && engineOptions.locale));
+  return matched ? I18N[matched] : (I18N && I18N.en ? I18N.en : {});
 }
 
 // Reports which dictionary the run actually used, so a locale that fell back
-// to English is visible in the result rather than only in the wording.
+// is visible in the result rather than only in the wording. Shares matchLocale
+// with getLocaleDict, so the reported locale and the strings cannot disagree.
 function resolveLocale(engineOptions) {
   const requested = normalizeLocale(engineOptions && engineOptions.locale);
-  const dict = I18N ? I18N[requested] : null;
+  const matched = matchLocale(requested);
+
+  if (!matched) return { requested: requested, resolved: 'en', reason: 'unknown-locale' };
+
   const en = (I18N && I18N.en) ? I18N.en : {};
+  const dict = I18N[matched];
 
-  if (!dict) return { requested: requested, resolved: 'en', reason: 'unknown-locale' };
-  if (dict === en) return { requested: requested, resolved: requested, reason: 'ok' };
-
-  for (const key in en) {
-    if (!(key in dict)) {
-      return { requested: requested, resolved: requested, reason: 'partial-dictionary' };
+  if (dict !== en) {
+    for (const key in en) {
+      if (!(key in dict)) {
+        return { requested: requested, resolved: matched, reason: 'partial-dictionary' };
+      }
     }
   }
 
-  return { requested: requested, resolved: requested, reason: 'ok' };
+  return {
+    requested: requested,
+    resolved: matched,
+    reason: matched === requested ? 'ok' : 'primary-subtag'
+  };
 }
 
   function isTruthyMustache(val) {

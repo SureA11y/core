@@ -71,7 +71,7 @@ runDomRulesInPage(url, null, {
 
 ```js
 const engineOptions = {
-  locale: 'en',                    // default 'en'; falls back to 'en' per-string if a key is missing in the requested locale
+  locale: 'en',                    // default 'en'; de-DE falls back to de, then to en per string
   includeHiddenElements: false,    // default false — set true to evaluate hidden/collapsed subtrees too
   includeShadowDom: true,          // default true — opt OUT with `false` to skip open shadow roots
   fragment: false,                 // default false — set true when the scan target isn't a real page (see below)
@@ -115,7 +115,7 @@ const engineOptions = {
 
 | Option | Meaning |
 |---|---|
-| `locale` | Any string; resolution is per-string with graceful fallback (requested locale → `en` → the rule's literal English fallback text), so a partially-translated locale never produces missing text. Because that fallback is silent in the strings themselves, the result reports what actually happened in `engine.locale` — check it if you need to know whether you got the language you asked for. See [`I18N.md`](./I18N.md) for current locale coverage. |
+| `locale` | Any string. A code with a subtag falls back to its base language first, so `de-DE` uses `de`; failing that, English. Individual strings then fall back the same way (chosen locale → `en` → the rule's literal English text), so a partly-translated locale never produces missing text. All of that is silent in the strings themselves, so the result reports what actually happened in `engine.locale` — check it if you need to know whether you got the language you asked for. See [`I18N.md`](./I18N.md). |
 | `includeHiddenElements` | Default `false`: helper queries exclude elements hidden by structural/CSS mechanisms such as `display:none`, `[hidden]`, closed `<details>`, and hidden rendering-only host elements (with descendants excluded too). Set `true` to include those hidden/collapsed subtrees in evaluation (legacy/static-markup behavior). |
 | `includeShadowDom` | Default `true`: rules using `helpers.queryAllSmart` traverse into open shadow roots. Set `false` to scan only the light DOM. Closed shadow roots are never reachable either way (no DOM API exposes them). |
 | `fragment` | Default `false`. A handful of rules check for the presence of a property that exists once per real page — `page-title-present`, `html-lang-attr-present`, `html-xml-lang-mismatch`, `aria-hidden-body`, `css-orientation-lock`, `meta-refresh-no-exceptions`, `meta-refresh-timing-absent`, `meta-viewport-zoom-enabled`, `meta-viewport-large`, `page-title-patterns`, `region`, `bypass-blocks-present`, `landmark-one-main`, `page-has-heading-one` — and correctly report `notApplicable` for these once `contextSelector` has scoped a run narrower than the whole document (`document.documentElement` no longer among the resolved roots), since a scoped subtree was never expected to carry its own `<title>`/`<html lang>`/etc. Set `fragment: true` for the case that scoping alone can't detect: a scan target that's the *whole* given document but was never meant to represent a real page at all (e.g. a raw component snippet parsed on its own) — this forces the same `notApplicable` gating even when unscoped. See `RULE_AUTHORING.md` §11.2 ("Whole-document checks") for the underlying rule-authoring convention, and `helpers.isWholeDocumentScope()` (`src/core/dom-helpers.js`) for the mechanism these 14 rules gate on via their `applicability(ctx)` export. |
