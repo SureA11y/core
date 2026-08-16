@@ -9000,7 +9000,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (typeof helpers.isDomVisibleEligible === 'function') {
         if (!helpers.isDomVisibleEligible(el, ctx)) return true;
       }
-      for (let n = el; n && n.getAttribute; n = n.parentElement) {
+      // Walk the composed tree, not parentElement: that stops at a shadow
+      // root, so a host carrying aria-hidden or inert would never be seen
+      // from inside its own shadow content.
+      const up =
+        typeof helpers.composedParent === 'function'
+          ? helpers.composedParent
+          : (n) => n.parentElement;
+
+      // A shadow root has no getAttribute, so skip past it rather than
+      // stopping: the host one step further up is the node that matters.
+      for (let n = el; n; n = up(n)) {
+        if (!n.getAttribute) continue;
         if (String(n.getAttribute('aria-hidden') || '').toLowerCase() === 'true') return true;
         if (n.hasAttribute && n.hasAttribute('inert')) return true;
       }
@@ -11201,7 +11212,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (typeof helpers.isDomVisibleEligible === 'function') {
         if (!helpers.isDomVisibleEligible(el, ctx)) return true;
       }
-      for (let n = el; n && n.getAttribute; n = n.parentElement) {
+      // Walk the composed tree, not parentElement: that stops at a shadow
+      // root, so a host carrying aria-hidden or inert would never be seen
+      // from inside its own shadow content.
+      const up =
+        typeof helpers.composedParent === 'function'
+          ? helpers.composedParent
+          : (n) => n.parentElement;
+
+      // A shadow root has no getAttribute, so skip past it rather than
+      // stopping: the host one step further up is the node that matters.
+      for (let n = el; n; n = up(n)) {
+        if (!n.getAttribute) continue;
         if (String(n.getAttribute('aria-hidden') || '').toLowerCase() === 'true') return true;
         if (n.hasAttribute && n.hasAttribute('inert')) return true;
       }
