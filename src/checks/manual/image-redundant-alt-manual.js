@@ -111,23 +111,20 @@ function runInPage(ctx) {
 
     if (otherText.toLowerCase() !== alt.toLowerCase()) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: "This image's alt text duplicates other visible text right next to it.",
-      hint: 'Make the alt text empty (alt="") if the image is purely decorative alongside the text, or remove the redundant duplication.',
-      i18n: {
-        summaryKey: 'imageRedundantAlt_summary_cantTell',
-        hintKey: 'imageRedundantAlt_hint_cantTell',
-        params: { alt }
-      },
-      data: {
-        details: { reasonCode: 'IMAGE_ALT_REDUNDANT', alt }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: "This image's alt text duplicates other visible text right next to it.",
+        hint: 'Make the alt text empty (alt="") if the image is purely decorative alongside the text, or remove the redundant duplication.',
+        i18n: {
+          summaryKey: 'imageRedundantAlt_summary_cantTell',
+          hintKey: 'imageRedundantAlt_hint_cantTell',
+          params: { alt }
+        },
+        data: {
+          details: { reasonCode: 'IMAGE_ALT_REDUNDANT', alt }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {

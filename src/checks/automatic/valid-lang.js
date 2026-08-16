@@ -92,23 +92,21 @@ function runInPage(ctx) {
     if (isValidTag(raw)) continue;
 
     const tag = el.tagName.toLowerCase();
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: `This lang attribute value ("${raw}") is not a syntactically valid language tag.`,
-      hint: 'Use a valid BCP47 language tag (e.g. "fr", "es-MX").',
-      i18n: {
-        summaryKey: 'validLang_summary_fail',
-        hintKey: 'validLang_hint_fail',
-        params: { element: tag, value: raw }
-      },
-      data: {
-        details: { reasonCode: 'ELEMENT_LANG_INVALID', element: tag, value: raw }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: `This lang attribute value ("${raw}") is not a syntactically valid language tag.`,
+        hint: 'Use a valid BCP47 language tag (e.g. "fr", "es-MX").',
+        i18n: {
+          summaryKey: 'validLang_summary_fail',
+          hintKey: 'validLang_hint_fail',
+          params: { element: tag, value: raw }
+        },
+        data: {
+          details: { reasonCode: 'ELEMENT_LANG_INVALID', element: tag, value: raw }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {

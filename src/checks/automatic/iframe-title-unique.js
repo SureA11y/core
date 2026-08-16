@@ -89,30 +89,25 @@ function runInPage(ctx) {
 
     for (const el of els) {
       const tag = el.tagName.toLowerCase();
-      const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-      const html = helpers.getOuterHtmlSnippet
-        ? helpers.getOuterHtmlSnippet(el)
-        : el.outerHTML || '';
-
-      occurrences.push({
-        selector: stableSelector,
-        html,
-        summary: 'This frame’s title is not unique among the frames on this page.',
-        hint: 'Give each frame a distinct title describing its specific content or purpose.',
-        i18n: {
-          summaryKey: 'iframeTitleUnique_summary_fail',
-          hintKey: 'iframeTitleUnique_hint_fail',
-          params: { element: tag, title }
-        },
-        data: {
-          details: {
-            reasonCode: 'IFRAME_TITLE_DUPLICATE',
-            element: tag,
-            title,
-            duplicateCount: els.length
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: 'This frame’s title is not unique among the frames on this page.',
+          hint: 'Give each frame a distinct title describing its specific content or purpose.',
+          i18n: {
+            summaryKey: 'iframeTitleUnique_summary_fail',
+            hintKey: 'iframeTitleUnique_hint_fail',
+            params: { element: tag, title }
+          },
+          data: {
+            details: {
+              reasonCode: 'IFRAME_TITLE_DUPLICATE',
+              element: tag,
+              title,
+              duplicateCount: els.length
+            }
           }
-        }
-      });
+        })
+      );
     }
   }
 

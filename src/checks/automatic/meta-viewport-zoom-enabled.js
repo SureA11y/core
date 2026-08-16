@@ -131,23 +131,20 @@ function runInPage(ctx) {
 
     if (!reasons.length) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This viewport meta tag restricts the user’s ability to zoom.',
-      hint: 'Remove user-scalable=no and any maximum-scale below 2 from the viewport meta content.',
-      i18n: {
-        summaryKey: 'metaViewportZoomEnabled_summary_fail',
-        hintKey: 'metaViewportZoomEnabled_hint_fail',
-        params: { reasons: reasons.join(', ') }
-      },
-      data: {
-        details: { reasonCode: 'VIEWPORT_ZOOM_RESTRICTED', reasons }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This viewport meta tag restricts the user’s ability to zoom.',
+        hint: 'Remove user-scalable=no and any maximum-scale below 2 from the viewport meta content.',
+        i18n: {
+          summaryKey: 'metaViewportZoomEnabled_summary_fail',
+          hintKey: 'metaViewportZoomEnabled_hint_fail',
+          params: { reasons: reasons.join(', ') }
+        },
+        data: {
+          details: { reasonCode: 'VIEWPORT_ZOOM_RESTRICTED', reasons }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {

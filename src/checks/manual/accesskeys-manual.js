@@ -62,25 +62,24 @@ function runInPage(ctx) {
   for (const [key, els] of groups) {
     if (els.length <= 1) continue;
     for (const el of els) {
-      const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-      const html = helpers.getOuterHtmlSnippet
-        ? helpers.getOuterHtmlSnippet(el)
-        : el.outerHTML || '';
-
-      occurrences.push({
-        selector: stableSelector,
-        html,
-        summary: "This element's accesskey is shared with another element on the page.",
-        hint: 'Make each accesskey value unique across the page.',
-        i18n: {
-          summaryKey: 'accesskeys_summary_cantTell',
-          hintKey: 'accesskeys_hint_cantTell',
-          params: { accesskey: key, duplicateCount: String(els.length) }
-        },
-        data: {
-          details: { reasonCode: 'ACCESSKEY_DUPLICATE', accesskey: key, duplicateCount: els.length }
-        }
-      });
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: "This element's accesskey is shared with another element on the page.",
+          hint: 'Make each accesskey value unique across the page.',
+          i18n: {
+            summaryKey: 'accesskeys_summary_cantTell',
+            hintKey: 'accesskeys_hint_cantTell',
+            params: { accesskey: key, duplicateCount: String(els.length) }
+          },
+          data: {
+            details: {
+              reasonCode: 'ACCESSKEY_DUPLICATE',
+              accesskey: key,
+              duplicateCount: els.length
+            }
+          }
+        })
+      );
     }
   }
 

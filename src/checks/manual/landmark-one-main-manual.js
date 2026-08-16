@@ -123,19 +123,12 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  const stableSelector = helpers.buildSelector ? helpers.buildSelector(body) : 'body';
-  const html = helpers.getOuterHtmlSnippet
-    ? helpers.getOuterHtmlSnippet(body)
-    : (body.outerHTML || '').slice(0, 200);
-
   return {
     ruleId: rule.ruleId,
     outcome: 'cantTell',
     severity: rule.defaultSeverity || 'minor',
     occurrences: [
-      {
-        selector: stableSelector,
-        html,
+      helpers.reportOccurrence(body, {
         summary: 'This page has no main landmark.',
         hint: 'Add a main landmark (<main> or role="main") around the page\'s primary content.',
         i18n: {
@@ -146,7 +139,7 @@ function runInPage(ctx) {
         data: {
           details: { reasonCode: 'LANDMARK_MAIN_MISSING' }
         }
-      }
+      })
     ]
   };
 }

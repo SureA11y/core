@@ -86,24 +86,21 @@ function runInPage(ctx) {
 
     if (!invalidNames || !invalidNames.length) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
     for (const name of invalidNames) {
-      occurrences.push({
-        selector: stableSelector,
-        html,
-        summary: 'This element has an attribute that is not a recognized ARIA attribute.',
-        hint: 'Correct the attribute name (check for typos), or remove it if not needed.',
-        i18n: {
-          summaryKey: 'ariaValidAttr_summary_fail',
-          hintKey: 'ariaValidAttr_hint_fail',
-          params: { attr: name }
-        },
-        data: {
-          details: { reasonCode: 'ARIA_ATTR_INVALID', attr: name }
-        }
-      });
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: 'This element has an attribute that is not a recognized ARIA attribute.',
+          hint: 'Correct the attribute name (check for typos), or remove it if not needed.',
+          i18n: {
+            summaryKey: 'ariaValidAttr_summary_fail',
+            hintKey: 'ariaValidAttr_hint_fail',
+            params: { attr: name }
+          },
+          data: {
+            details: { reasonCode: 'ARIA_ATTR_INVALID', attr: name }
+          }
+        })
+      );
     }
   }
 

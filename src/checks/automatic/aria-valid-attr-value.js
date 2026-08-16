@@ -105,29 +105,26 @@ function runInPage(ctx) {
 
     if (!invalid || !invalid.length) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
     for (const item of invalid) {
-      occurrences.push({
-        selector: stableSelector,
-        html,
-        summary: 'This element has an ARIA attribute with an invalid value.',
-        hint: 'Use a value that matches the attribute’s expected type (see the WAI-ARIA specification for this attribute).',
-        i18n: {
-          summaryKey: 'ariaValidAttrValue_summary_fail',
-          hintKey: 'ariaValidAttrValue_hint_fail',
-          params: { attr: item.name, value: item.value }
-        },
-        data: {
-          details: {
-            reasonCode: 'ARIA_ATTR_VALUE_INVALID',
-            attr: item.name,
-            value: item.value,
-            valueReason: item.reason
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: 'This element has an ARIA attribute with an invalid value.',
+          hint: 'Use a value that matches the attribute’s expected type (see the WAI-ARIA specification for this attribute).',
+          i18n: {
+            summaryKey: 'ariaValidAttrValue_summary_fail',
+            hintKey: 'ariaValidAttrValue_hint_fail',
+            params: { attr: item.name, value: item.value }
+          },
+          data: {
+            details: {
+              reasonCode: 'ARIA_ATTR_VALUE_INVALID',
+              attr: item.name,
+              value: item.value,
+              valueReason: item.reason
+            }
           }
-        }
-      });
+        })
+      );
     }
   }
 

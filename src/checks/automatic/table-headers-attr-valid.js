@@ -104,23 +104,21 @@ function runInPage(ctx) {
     const dedupedInvalidIds = [...new Set(invalid.map((i) => i.id))];
 
     const tag = el.tagName.toLowerCase();
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This cell’s headers attribute references one or more invalid header cells.',
-      hint: 'Update the headers attribute so every id refers to a <th> element within the same table.',
-      i18n: {
-        summaryKey: 'tableHeadersAttrValid_summary_fail',
-        hintKey: 'tableHeadersAttrValid_hint_fail',
-        params: { element: tag, invalidIds: dedupedInvalidIds.join(', ') }
-      },
-      data: {
-        details: { reasonCode: 'TABLE_HEADERS_ATTR_INVALID', element: tag, invalid }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This cell’s headers attribute references one or more invalid header cells.',
+        hint: 'Update the headers attribute so every id refers to a <th> element within the same table.',
+        i18n: {
+          summaryKey: 'tableHeadersAttrValid_summary_fail',
+          hintKey: 'tableHeadersAttrValid_hint_fail',
+          params: { element: tag, invalidIds: dedupedInvalidIds.join(', ') }
+        },
+        data: {
+          details: { reasonCode: 'TABLE_HEADERS_ATTR_INVALID', element: tag, invalid }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {

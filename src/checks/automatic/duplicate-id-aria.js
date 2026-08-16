@@ -116,30 +116,25 @@ function runInPage(ctx) {
     for (const el of els) {
       if (inScope && !inScope.has(el)) continue;
 
-      const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-      const html = helpers.getOuterHtmlSnippet
-        ? helpers.getOuterHtmlSnippet(el)
-        : el.outerHTML || '';
-
-      cantTellOccurrences.push({
-        selector: stableSelector,
-        html,
-        summary:
-          'This id is referenced by an ARIA attribute but is used by more than one element; the reference resolves to the first.',
-        hint: 'Confirm the first element carrying this id is the intended target, or make the id unique.',
-        i18n: {
-          summaryKey: 'duplicateIdAria_summary_cantTell',
-          hintKey: 'duplicateIdAria_hint_cantTell',
-          params: { id: refId, duplicateCount: String(els.length) }
-        },
-        data: {
-          details: {
-            reasonCode: 'DUPLICATE_ID_ARIA_REFERENCED',
-            id: refId,
-            duplicateCount: els.length
+      cantTellOccurrences.push(
+        helpers.reportOccurrence(el, {
+          summary:
+            'This id is referenced by an ARIA attribute but is used by more than one element; the reference resolves to the first.',
+          hint: 'Confirm the first element carrying this id is the intended target, or make the id unique.',
+          i18n: {
+            summaryKey: 'duplicateIdAria_summary_cantTell',
+            hintKey: 'duplicateIdAria_hint_cantTell',
+            params: { id: refId, duplicateCount: String(els.length) }
+          },
+          data: {
+            details: {
+              reasonCode: 'DUPLICATE_ID_ARIA_REFERENCED',
+              id: refId,
+              duplicateCount: els.length
+            }
           }
-        }
-      });
+        })
+      );
     }
   }
 

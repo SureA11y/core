@@ -74,13 +74,10 @@ test('an exhausted walk is counted so it is not silent', () => {
 
 // Only rules that report their element can be downgraded: the engine has no
 // way to tell whether a hand-built occurrence sits on a reachable element.
-test('the downgrade reaches rules that report their element', () => {
+test('the downgrade reaches every rule that reports its element', () => {
   const deep = scan(250, 'aria-hidden="true"');
 
-  assert.equal(deep.outcomeOf('img-alt-present'), 'cantTell');
-  assert.equal(
-    deep.outcomeOf('button-name-present'),
-    'fail',
-    'button-name-present builds occurrences by hand, so it is still out of reach of the downgrade'
-  );
+  for (const ruleId of ['img-alt-present', 'button-name-present']) {
+    assert.equal(deep.outcomeOf(ruleId), 'cantTell', `${ruleId} still asserts an unverified fail`);
+  }
 });

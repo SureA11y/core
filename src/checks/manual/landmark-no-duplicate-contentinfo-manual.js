@@ -163,12 +163,7 @@ function runInPage(ctx) {
   }
 
   const occurrences = contentinfos.map((el) => {
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    return {
-      selector: stableSelector,
-      html,
+    return helpers.reportOccurrence(el, {
       summary: 'This page has more than one contentinfo landmark.',
       hint: 'Keep only one contentinfo landmark (footer/role="contentinfo") per page.',
       i18n: {
@@ -179,7 +174,7 @@ function runInPage(ctx) {
       data: {
         details: { reasonCode: 'LANDMARK_DUPLICATE_CONTENTINFO', count: contentinfos.length }
       }
-    };
+    });
   });
 
   return {

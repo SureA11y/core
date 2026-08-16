@@ -26117,25 +26117,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   for (const [key, els] of groups) {
     if (els.length <= 1) continue;
     for (const el of els) {
-      const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-      const html = helpers.getOuterHtmlSnippet
-        ? helpers.getOuterHtmlSnippet(el)
-        : el.outerHTML || '';
-
-      occurrences.push({
-        selector: stableSelector,
-        html,
-        summary: "This element's accesskey is shared with another element on the page.",
-        hint: 'Make each accesskey value unique across the page.',
-        i18n: {
-          summaryKey: 'accesskeys_summary_cantTell',
-          hintKey: 'accesskeys_hint_cantTell',
-          params: { accesskey: key, duplicateCount: String(els.length) }
-        },
-        data: {
-          details: { reasonCode: 'ACCESSKEY_DUPLICATE', accesskey: key, duplicateCount: els.length }
-        }
-      });
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: "This element's accesskey is shared with another element on the page.",
+          hint: 'Make each accesskey value unique across the page.',
+          i18n: {
+            summaryKey: 'accesskeys_summary_cantTell',
+            hintKey: 'accesskeys_hint_cantTell',
+            params: { accesskey: key, duplicateCount: String(els.length) }
+          },
+          data: {
+            details: {
+              reasonCode: 'ACCESSKEY_DUPLICATE',
+              accesskey: key,
+              duplicateCount: els.length
+            }
+          }
+        })
+      );
     }
   }
 
@@ -27534,9 +27533,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     if (!disallowed || !disallowed.length) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
     for (const name of disallowed) {
       // A property ARIA deprecated (rather than prohibited) on this role is
       // still allowed — surfaced as cantTell for the author to decide, not a
@@ -27545,38 +27541,38 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         typeof ariaHelpers.isDeprecatedAttr === 'function' &&
         ariaHelpers.isDeprecatedAttr(name, role);
       if (deprecated) {
-        cantTellOccurrences.push({
-          selector: stableSelector,
-          html,
-          summary: 'This ARIA attribute is deprecated for this element’s role.',
-          hint: 'It is still allowed but discouraged; remove it or use a role that supports it, as a future ARIA version may disallow it.',
-          occurrenceOutcome: 'cantTell',
+        cantTellOccurrences.push(
+          helpers.reportOccurrence(el, {
+            summary: 'This ARIA attribute is deprecated for this element’s role.',
+            hint: 'It is still allowed but discouraged; remove it or use a role that supports it, as a future ARIA version may disallow it.',
+            occurrenceOutcome: 'cantTell',
+            i18n: {
+              summaryKey: 'ariaAllowedAttr_summary_cantTell',
+              hintKey: 'ariaAllowedAttr_hint_cantTell',
+              params: { attr: name, role }
+            },
+            data: {
+              details: { reasonCode: 'ARIA_ATTR_DEPRECATED', attr: name, role }
+            }
+          })
+        );
+        continue;
+      }
+      failOccurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: 'This ARIA attribute is not permitted for this element’s role.',
+          hint: 'Remove this attribute, or use a role that supports it.',
+          occurrenceOutcome: 'fail',
           i18n: {
-            summaryKey: 'ariaAllowedAttr_summary_cantTell',
-            hintKey: 'ariaAllowedAttr_hint_cantTell',
+            summaryKey: 'ariaAllowedAttr_summary_fail',
+            hintKey: 'ariaAllowedAttr_hint_fail',
             params: { attr: name, role }
           },
           data: {
-            details: { reasonCode: 'ARIA_ATTR_DEPRECATED', attr: name, role }
+            details: { reasonCode: 'ARIA_ATTR_NOT_ALLOWED', attr: name, role }
           }
-        });
-        continue;
-      }
-      failOccurrences.push({
-        selector: stableSelector,
-        html,
-        summary: 'This ARIA attribute is not permitted for this element’s role.',
-        hint: 'Remove this attribute, or use a role that supports it.',
-        occurrenceOutcome: 'fail',
-        i18n: {
-          summaryKey: 'ariaAllowedAttr_summary_fail',
-          hintKey: 'ariaAllowedAttr_hint_fail',
-          params: { attr: name, role }
-        },
-        data: {
-          details: { reasonCode: 'ARIA_ATTR_NOT_ALLOWED', attr: name, role }
-        }
-      });
+        })
+      );
     }
   }
 
@@ -27619,24 +27615,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     if (info.allowed) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
     const tag = (el.tagName || '').toLowerCase();
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This role is not permitted on this element.',
-      hint: 'Use a role permitted for this element, or change the host element.',
-      i18n: {
-        summaryKey: 'ariaAllowedRole_summary_fail',
-        hintKey: 'ariaAllowedRole_hint_fail',
-        params: { role, element: tag }
-      },
-      data: {
-        details: { reasonCode: 'ARIA_ROLE_NOT_ALLOWED_FOR_ELEMENT', role, element: tag }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This role is not permitted on this element.',
+        hint: 'Use a role permitted for this element, or change the host element.',
+        i18n: {
+          summaryKey: 'ariaAllowedRole_summary_fail',
+          hintKey: 'ariaAllowedRole_hint_fail',
+          params: { role, element: tag }
+        },
+        data: {
+          details: { reasonCode: 'ARIA_ROLE_NOT_ALLOWED_FOR_ELEMENT', role, element: tag }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -27712,29 +27706,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     if (!missing.length) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
     const tag = (el.tagName || '').toLowerCase();
 
     for (const m of missing) {
-      occurrences.push({
-        selector: stableSelector,
-        html,
-        summary: `This element has ${m.attr} but no ${m.requires}, its non-braille equivalent.`,
-        hint: `${m.attr} is a Braille-specific supplement, not a replacement — also provide ${m.requires}.`,
-        i18n: {
-          summaryKey: 'ariaBrailleEquivalent_summary_fail',
-          hintKey: 'ariaBrailleEquivalent_hint_fail',
-          params: { element: tag, attr: m.attr, requires: m.requires }
-        },
-        data: {
-          details: {
-            reasonCode: 'BRAILLE_ATTR_WITHOUT_EQUIVALENT',
-            attr: m.attr,
-            requires: m.requires
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: `This element has ${m.attr} but no ${m.requires}, its non-braille equivalent.`,
+          hint: `${m.attr} is a Braille-specific supplement, not a replacement — also provide ${m.requires}.`,
+          i18n: {
+            summaryKey: 'ariaBrailleEquivalent_summary_fail',
+            hintKey: 'ariaBrailleEquivalent_hint_fail',
+            params: { element: tag, attr: m.attr, requires: m.requires }
+          },
+          data: {
+            details: {
+              reasonCode: 'BRAILLE_ATTR_WITHOUT_EQUIVALENT',
+              attr: m.attr,
+              requires: m.requires
+            }
           }
-        }
-      });
+        })
+      );
     }
   }
 
@@ -27797,29 +27789,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     if (normalizedAriaChecked === actualState) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary:
-        'This element’s aria-checked value does not match its actual checked/indeterminate state.',
-      hint: 'Set aria-checked to match the element’s real state, or remove it — a native checkbox/radio already exposes this state without it.',
-      i18n: {
-        summaryKey: 'ariaCheckedStateMismatch_summary_cantTell',
-        hintKey: 'ariaCheckedStateMismatch_hint_cantTell',
-        params: { ariaChecked: normalizedAriaChecked, actualState, type }
-      },
-      data: {
-        details: {
-          reasonCode: 'ARIA_CHECKED_STATE_MISMATCH',
-          ariaChecked: normalizedAriaChecked,
-          actualState,
-          type
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary:
+          'This element’s aria-checked value does not match its actual checked/indeterminate state.',
+        hint: 'Set aria-checked to match the element’s real state, or remove it — a native checkbox/radio already exposes this state without it.',
+        i18n: {
+          summaryKey: 'ariaCheckedStateMismatch_summary_cantTell',
+          hintKey: 'ariaCheckedStateMismatch_hint_cantTell',
+          params: { ariaChecked: normalizedAriaChecked, actualState, type }
+        },
+        data: {
+          details: {
+            reasonCode: 'ARIA_CHECKED_STATE_MISMATCH',
+            ariaChecked: normalizedAriaChecked,
+            actualState,
+            type
+          }
         }
-      }
-    });
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -27862,28 +27851,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const invalidValue = trim(el.getAttribute('aria-invalid')).toLowerCase();
     if (TRUTHY_INVALID_VALUES.has(invalidValue)) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
     const tag = (el.tagName || '').toLowerCase();
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary:
-        'This element has aria-errormessage but aria-invalid is missing or "false", so the error message is not exposed.',
-      hint: 'Set aria-invalid to "true" (or "grammar"/"spelling") whenever aria-errormessage should be exposed to assistive technology.',
-      i18n: {
-        summaryKey: 'ariaConditionalAttr_summary_fail',
-        hintKey: 'ariaConditionalAttr_hint_fail',
-        params: { element: tag, ariaInvalid: invalidValue || '(absent)' }
-      },
-      data: {
-        details: {
-          reasonCode: 'ARIA_ERRORMESSAGE_WITHOUT_TRUTHY_INVALID',
-          ariaInvalid: invalidValue
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary:
+          'This element has aria-errormessage but aria-invalid is missing or "false", so the error message is not exposed.',
+        hint: 'Set aria-invalid to "true" (or "grammar"/"spelling") whenever aria-errormessage should be exposed to assistive technology.',
+        i18n: {
+          summaryKey: 'ariaConditionalAttr_summary_fail',
+          hintKey: 'ariaConditionalAttr_hint_fail',
+          params: { element: tag, ariaInvalid: invalidValue || '(absent)' }
+        },
+        data: {
+          details: {
+            reasonCode: 'ARIA_ERRORMESSAGE_WITHOUT_TRUTHY_INVALID',
+            ariaInvalid: invalidValue
+          }
         }
-      }
-    });
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -27966,8 +27953,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       ariaHelpers.isAuthorProhibitedRole(role);
     if (!deprecated && !discouraged && !prohibited) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
     const guidance = ariaHelpers.getDeprecatedRoleGuidance
       ? ariaHelpers.getDeprecatedRoleGuidance(role)
       : {
@@ -27977,55 +27962,55 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     if (prohibited) {
       // Author MUST NOT: the usage is non-conforming, not merely discouraged.
-      failOccurrences.push({
-        selector: stableSelector,
-        html,
-        summary: `This element uses role="${role}", which authors must not explicitly declare.`,
-        hint: guidance.text,
-        occurrenceOutcome: 'fail',
-        i18n: {
-          summaryKey: 'ariaDeprecatedRole_summary_fail',
-          hintKey: guidance.key,
-          params: { role }
-        },
-        data: {
-          details: { reasonCode: 'ARIA_ROLE_AUTHOR_PROHIBITED', role, guidance: guidance.text }
-        }
-      });
+      failOccurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: `This element uses role="${role}", which authors must not explicitly declare.`,
+          hint: guidance.text,
+          occurrenceOutcome: 'fail',
+          i18n: {
+            summaryKey: 'ariaDeprecatedRole_summary_fail',
+            hintKey: guidance.key,
+            params: { role }
+          },
+          data: {
+            details: { reasonCode: 'ARIA_ROLE_AUTHOR_PROHIBITED', role, guidance: guidance.text }
+          }
+        })
+      );
     } else if (discouraged) {
       // Reserved for user-agent-internal use, at SHOULD NOT strength.
-      cantTellOccurrences.push({
-        selector: stableSelector,
-        html,
-        summary: `This element uses role="${role}", which is reserved for user agents (still valid, but discouraged).`,
-        hint: guidance.text,
-        occurrenceOutcome: 'cantTell',
-        i18n: {
-          summaryKey: 'ariaDeprecatedRole_summary_cantTell_discouraged',
-          hintKey: guidance.key,
-          params: { role }
-        },
-        data: {
-          details: { reasonCode: 'ARIA_ROLE_AUTHOR_DISCOURAGED', role, guidance: guidance.text }
-        }
-      });
+      cantTellOccurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: `This element uses role="${role}", which is reserved for user agents (still valid, but discouraged).`,
+          hint: guidance.text,
+          occurrenceOutcome: 'cantTell',
+          i18n: {
+            summaryKey: 'ariaDeprecatedRole_summary_cantTell_discouraged',
+            hintKey: guidance.key,
+            params: { role }
+          },
+          data: {
+            details: { reasonCode: 'ARIA_ROLE_AUTHOR_DISCOURAGED', role, guidance: guidance.text }
+          }
+        })
+      );
     } else {
       // Deprecated but still valid: surfaced for the author to decide.
-      cantTellOccurrences.push({
-        selector: stableSelector,
-        html,
-        summary: `This element uses role="${role}", which is deprecated in WAI-ARIA.`,
-        hint: guidance.text,
-        occurrenceOutcome: 'cantTell',
-        i18n: {
-          summaryKey: 'ariaDeprecatedRole_summary_cantTell',
-          hintKey: guidance.key,
-          params: { role }
-        },
-        data: {
-          details: { reasonCode: 'ARIA_ROLE_DEPRECATED', role, guidance: guidance.text }
-        }
-      });
+      cantTellOccurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: `This element uses role="${role}", which is deprecated in WAI-ARIA.`,
+          hint: guidance.text,
+          occurrenceOutcome: 'cantTell',
+          i18n: {
+            summaryKey: 'ariaDeprecatedRole_summary_cantTell',
+            hintKey: guidance.key,
+            params: { role }
+          },
+          data: {
+            details: { reasonCode: 'ARIA_ROLE_DEPRECATED', role, guidance: guidance.text }
+          }
+        })
+      );
     }
   }
 
@@ -28055,15 +28040,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
 
-  const stableSelector = helpers.buildSelector ? helpers.buildSelector(body) : 'body';
-  const html = helpers.getOuterHtmlSnippet
-    ? helpers.getOuterHtmlSnippet(body)
-    : (body.outerHTML || '').slice(0, 200);
-
   const occurrences = [
-    {
-      selector: stableSelector,
-      html,
+    helpers.reportOccurrence(body, {
       summary:
         'The document body has aria-hidden="true", which hides the entire page from assistive technologies.',
       hint: 'Remove aria-hidden from <body>. Hide specific elements instead, if that was the intent.',
@@ -28075,7 +28053,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       data: {
         details: { reasonCode: 'ARIA_HIDDEN_BODY' }
       }
-    }
+    })
   ];
 
   return {
@@ -28994,25 +28972,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     if (!present.length) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
     for (const attr of present) {
-      failOccurrences.push({
-        selector: stableSelector,
-        html,
-        occurrenceOutcome: 'fail',
-        summary: 'This attribute is prohibited on this element’s role.',
-        hint: 'Remove this attribute; this role must not carry an accessible name.',
-        i18n: {
-          summaryKey: 'ariaProhibitedAttr_summary_fail',
-          hintKey: 'ariaProhibitedAttr_hint_fail',
-          params: { attr, role }
-        },
-        data: {
-          details: { reasonCode: 'ARIA_ATTR_PROHIBITED', attr, role }
-        }
-      });
+      failOccurrences.push(
+        helpers.reportOccurrence(el, {
+          occurrenceOutcome: 'fail',
+          summary: 'This attribute is prohibited on this element’s role.',
+          hint: 'Remove this attribute; this role must not carry an accessible name.',
+          i18n: {
+            summaryKey: 'ariaProhibitedAttr_summary_fail',
+            hintKey: 'ariaProhibitedAttr_hint_fail',
+            params: { attr, role }
+          },
+          data: {
+            details: { reasonCode: 'ARIA_ATTR_PROHIBITED', attr, role }
+          }
+        })
+      );
     }
   }
 
@@ -29188,47 +29163,49 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       String(nameInfo.value || '').trim() !== ''
     );
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
     for (const attr of present) {
       if (hasContentFallback) {
-        cantTellOccurrences.push({
-          selector: stableSelector,
-          html,
-          occurrenceOutcome: 'cantTell',
-          summary: `This ${tag} has no role, so ${attr} may not be exposed as its accessible name by assistive technology — but the element's own content already provides one.`,
-          hint: 'Verify whether the existing text content already serves as this element’s label; if so the naming attribute is redundant, otherwise give the element a role that supports naming (e.g. role="img").',
-          i18n: {
-            summaryKey: 'ariaProhibitedAttr_summary_cantTell_roleless',
-            hintKey: 'ariaProhibitedAttr_hint_cantTell_roleless',
-            params: { attr, element: tag }
-          },
-          data: {
-            details: {
-              reasonCode: 'ARIA_ATTR_PROHIBITED_ROLELESS_NEEDS_REVIEW',
-              attr,
-              role: null,
-              element: tag
+        cantTellOccurrences.push(
+          helpers.reportOccurrence(el, {
+            occurrenceOutcome: 'cantTell',
+            summary: `This ${tag} has no role, so ${attr} may not be exposed as its accessible name by assistive technology — but the element's own content already provides one.`,
+            hint: 'Verify whether the existing text content already serves as this element’s label; if so the naming attribute is redundant, otherwise give the element a role that supports naming (e.g. role="img").',
+            i18n: {
+              summaryKey: 'ariaProhibitedAttr_summary_cantTell_roleless',
+              hintKey: 'ariaProhibitedAttr_hint_cantTell_roleless',
+              params: { attr, element: tag }
+            },
+            data: {
+              details: {
+                reasonCode: 'ARIA_ATTR_PROHIBITED_ROLELESS_NEEDS_REVIEW',
+                attr,
+                role: null,
+                element: tag
+              }
             }
-          }
-        });
+          })
+        );
       } else {
-        failOccurrences.push({
-          selector: stableSelector,
-          html,
-          occurrenceOutcome: 'fail',
-          summary: `This ${tag} has no role and no other accessible-name source, so ${attr} is not reliably exposed to assistive technology.`,
-          hint: 'Give this element a role that supports an accessible name (e.g. role="img"/"button"), or remove this attribute if it serves no purpose without one.',
-          i18n: {
-            summaryKey: 'ariaProhibitedAttr_summary_fail_roleless',
-            hintKey: 'ariaProhibitedAttr_hint_fail_roleless',
-            params: { attr, element: tag }
-          },
-          data: {
-            details: { reasonCode: 'ARIA_ATTR_PROHIBITED_ROLELESS', attr, role: null, element: tag }
-          }
-        });
+        failOccurrences.push(
+          helpers.reportOccurrence(el, {
+            occurrenceOutcome: 'fail',
+            summary: `This ${tag} has no role and no other accessible-name source, so ${attr} is not reliably exposed to assistive technology.`,
+            hint: 'Give this element a role that supports an accessible name (e.g. role="img"/"button"), or remove this attribute if it serves no purpose without one.',
+            i18n: {
+              summaryKey: 'ariaProhibitedAttr_summary_fail_roleless',
+              hintKey: 'ariaProhibitedAttr_hint_fail_roleless',
+              params: { attr, element: tag }
+            },
+            data: {
+              details: {
+                reasonCode: 'ARIA_ATTR_PROHIBITED_ROLELESS',
+                attr,
+                role: null,
+                element: tag
+              }
+            }
+          })
+        );
       }
     }
   }
@@ -29397,10 +29374,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     for (const entry of owned) {
       if (entry.role && requiredSet.has(entry.role)) continue;
 
-      const stableSelector = helpers.buildSelector ? helpers.buildSelector(entry.el) : 'html';
-      const html = helpers.getOuterHtmlSnippet
-        ? helpers.getOuterHtmlSnippet(entry.el)
-        : entry.el.outerHTML || '';
       const containerSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
 
       const isRoleless = !entry.role;
@@ -29427,29 +29400,33 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         hintKey = 'ariaProhibitedChildren_hint_fail';
       }
 
-      occurrences.push({
-        selector: stableSelector,
-        html,
-        summary,
-        hint,
-        i18n: {
-          summaryKey,
-          hintKey,
-          params: isRoleless
-            ? { attr: entry.attr, containerRole: role }
-            : { childRole: entry.role, containerRole: role, allowedRoles: requiredOwned.join(', ') }
-        },
-        data: {
-          details: {
-            reasonCode: isRoleless ? 'ARIA_PROHIBITED_CHILD_ROLELESS' : 'ARIA_PROHIBITED_CHILD',
-            childRole: entry.role,
-            attr: entry.attr,
-            containerRole: role,
-            containerSelector,
-            allowedOwnedRoles: requiredOwned
+      occurrences.push(
+        helpers.reportOccurrence(entry.el, {
+          summary,
+          hint,
+          i18n: {
+            summaryKey,
+            hintKey,
+            params: isRoleless
+              ? { attr: entry.attr, containerRole: role }
+              : {
+                  childRole: entry.role,
+                  containerRole: role,
+                  allowedRoles: requiredOwned.join(', ')
+                }
+          },
+          data: {
+            details: {
+              reasonCode: isRoleless ? 'ARIA_PROHIBITED_CHILD_ROLELESS' : 'ARIA_PROHIBITED_CHILD',
+              childRole: entry.role,
+              attr: entry.attr,
+              containerRole: role,
+              containerSelector,
+              allowedOwnedRoles: requiredOwned
+            }
           }
-        }
-      });
+        })
+      );
     }
   }
 
@@ -29521,24 +29498,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     if (!missing.length) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
     for (const attr of missing) {
-      occurrences.push({
-        selector: stableSelector,
-        html,
-        summary: 'This attribute is required for this element’s role, but is missing.',
-        hint: 'Add this attribute with a valid value for this role.',
-        i18n: {
-          summaryKey: 'ariaRequiredAttr_summary_fail',
-          hintKey: 'ariaRequiredAttr_hint_fail',
-          params: { attr, role }
-        },
-        data: {
-          details: { reasonCode: 'ARIA_ATTR_REQUIRED_MISSING', attr, role }
-        }
-      });
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: 'This attribute is required for this element’s role, but is missing.',
+          hint: 'Add this attribute with a valid value for this role.',
+          i18n: {
+            summaryKey: 'ariaRequiredAttr_summary_fail',
+            hintKey: 'ariaRequiredAttr_hint_fail',
+            params: { attr, role }
+          },
+          data: {
+            details: { reasonCode: 'ARIA_ATTR_REQUIRED_MISSING', attr, role }
+          }
+        })
+      );
     }
   }
 
@@ -29723,27 +29697,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     if (found) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This container role has no owned child with a required role.',
-      hint: 'Add a descendant (or aria-owns-referenced element) with one of the required owned roles.',
-      i18n: {
-        summaryKey: 'ariaRequiredChildren_summary_fail',
-        hintKey: 'ariaRequiredChildren_hint_fail',
-        params: { role, requiredRoles: requiredOwned.join(', ') }
-      },
-      data: {
-        details: {
-          reasonCode: 'ARIA_REQUIRED_CHILD_MISSING',
-          role,
-          requiredOwnedRoles: requiredOwned
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This container role has no owned child with a required role.',
+        hint: 'Add a descendant (or aria-owns-referenced element) with one of the required owned roles.',
+        i18n: {
+          summaryKey: 'ariaRequiredChildren_summary_fail',
+          hintKey: 'ariaRequiredChildren_hint_fail',
+          params: { role, requiredRoles: requiredOwned.join(', ') }
+        },
+        data: {
+          details: {
+            reasonCode: 'ARIA_REQUIRED_CHILD_MISSING',
+            role,
+            requiredOwnedRoles: requiredOwned
+          }
         }
-      }
-    });
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -29895,27 +29866,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     if (hasContext) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This role requires a specific ancestor/owner context role, which was not found.',
-      hint: 'Place this element inside (or aria-owns-reference it from) an element with an acceptable context role.',
-      i18n: {
-        summaryKey: 'ariaRequiredParent_summary_fail',
-        hintKey: 'ariaRequiredParent_hint_fail',
-        params: { role, requiredRoles: requiredContext.join(', ') }
-      },
-      data: {
-        details: {
-          reasonCode: 'ARIA_REQUIRED_PARENT_MISSING',
-          role,
-          requiredContextRoles: requiredContext
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This role requires a specific ancestor/owner context role, which was not found.',
+        hint: 'Place this element inside (or aria-owns-reference it from) an element with an acceptable context role.',
+        i18n: {
+          summaryKey: 'ariaRequiredParent_summary_fail',
+          hintKey: 'ariaRequiredParent_hint_fail',
+          params: { role, requiredRoles: requiredContext.join(', ') }
+        },
+        data: {
+          details: {
+            reasonCode: 'ARIA_REQUIRED_PARENT_MISSING',
+            role,
+            requiredContextRoles: requiredContext
+          }
         }
-      }
-    });
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -30178,27 +30146,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const role = tokens[0];
     const isKnown = tokens.some((t) => ariaHelpers.isKnownRole(t));
     const reasonCode = !isKnown ? 'ARIA_ROLE_INVALID' : 'ARIA_ROLE_ABSTRACT';
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: !isKnown
-        ? 'The role attribute value is not a recognized ARIA role.'
-        : 'The role attribute value is an abstract ARIA role, which must not be used directly.',
-      hint: !isKnown
-        ? 'Use a valid ARIA role token, or remove the role attribute if none applies.'
-        : 'Replace this abstract role with a concrete role appropriate for the widget/structure.',
-      i18n: {
-        summaryKey: !isKnown ? 'ariaRolesValid_summary_invalid' : 'ariaRolesValid_summary_abstract',
-        hintKey: !isKnown ? 'ariaRolesValid_hint_invalid' : 'ariaRolesValid_hint_abstract',
-        params: { role }
-      },
-      data: {
-        details: { reasonCode, role }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: !isKnown
+          ? 'The role attribute value is not a recognized ARIA role.'
+          : 'The role attribute value is an abstract ARIA role, which must not be used directly.',
+        hint: !isKnown
+          ? 'Use a valid ARIA role token, or remove the role attribute if none applies.'
+          : 'Replace this abstract role with a concrete role appropriate for the widget/structure.',
+        i18n: {
+          summaryKey: !isKnown
+            ? 'ariaRolesValid_summary_invalid'
+            : 'ariaRolesValid_summary_abstract',
+          hintKey: !isKnown ? 'ariaRolesValid_hint_invalid' : 'ariaRolesValid_hint_abstract',
+          params: { role }
+        },
+        data: {
+          details: { reasonCode, role }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -30312,24 +30280,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     if (!invalidNames || !invalidNames.length) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
     for (const name of invalidNames) {
-      occurrences.push({
-        selector: stableSelector,
-        html,
-        summary: 'This element has an attribute that is not a recognized ARIA attribute.',
-        hint: 'Correct the attribute name (check for typos), or remove it if not needed.',
-        i18n: {
-          summaryKey: 'ariaValidAttr_summary_fail',
-          hintKey: 'ariaValidAttr_hint_fail',
-          params: { attr: name }
-        },
-        data: {
-          details: { reasonCode: 'ARIA_ATTR_INVALID', attr: name }
-        }
-      });
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: 'This element has an attribute that is not a recognized ARIA attribute.',
+          hint: 'Correct the attribute name (check for typos), or remove it if not needed.',
+          i18n: {
+            summaryKey: 'ariaValidAttr_summary_fail',
+            hintKey: 'ariaValidAttr_hint_fail',
+            params: { attr: name }
+          },
+          data: {
+            details: { reasonCode: 'ARIA_ATTR_INVALID', attr: name }
+          }
+        })
+      );
     }
   }
 
@@ -30385,29 +30350,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     if (!invalid || !invalid.length) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
     for (const item of invalid) {
-      occurrences.push({
-        selector: stableSelector,
-        html,
-        summary: 'This element has an ARIA attribute with an invalid value.',
-        hint: 'Use a value that matches the attribute’s expected type (see the WAI-ARIA specification for this attribute).',
-        i18n: {
-          summaryKey: 'ariaValidAttrValue_summary_fail',
-          hintKey: 'ariaValidAttrValue_hint_fail',
-          params: { attr: item.name, value: item.value }
-        },
-        data: {
-          details: {
-            reasonCode: 'ARIA_ATTR_VALUE_INVALID',
-            attr: item.name,
-            value: item.value,
-            valueReason: item.reason
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: 'This element has an ARIA attribute with an invalid value.',
+          hint: 'Use a value that matches the attribute’s expected type (see the WAI-ARIA specification for this attribute).',
+          i18n: {
+            summaryKey: 'ariaValidAttrValue_summary_fail',
+            hintKey: 'ariaValidAttrValue_hint_fail',
+            params: { attr: item.name, value: item.value }
+          },
+          data: {
+            details: {
+              reasonCode: 'ARIA_ATTR_VALUE_INVALID',
+              attr: item.name,
+              value: item.value,
+              valueReason: item.reason
+            }
           }
-        }
-      });
+        })
+      );
     }
   }
 
@@ -30557,23 +30519,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (isValidAutocomplete(raw)) continue;
 
     const tag = el.tagName.toLowerCase();
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This autocomplete attribute value is not a valid autofill value.',
-      hint: 'Use "on"/"off", or a valid autofill token list (e.g. "shipping street-address", "cc-number").',
-      i18n: {
-        summaryKey: 'autocompleteValid_summary_fail',
-        hintKey: 'autocompleteValid_hint_fail',
-        params: { element: tag, value: raw }
-      },
-      data: {
-        details: { reasonCode: 'AUTOCOMPLETE_VALUE_INVALID', element: tag, value: raw }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This autocomplete attribute value is not a valid autofill value.',
+        hint: 'Use "on"/"off", or a valid autofill token list (e.g. "shipping street-address", "cc-number").',
+        i18n: {
+          summaryKey: 'autocompleteValid_summary_fail',
+          hintKey: 'autocompleteValid_hint_fail',
+          params: { element: tag, value: raw }
+        },
+        data: {
+          details: { reasonCode: 'AUTOCOMPLETE_VALUE_INVALID', element: tag, value: raw }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -30776,23 +30736,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!flagged.length) continue;
 
     const tag = el.tagName.toLowerCase();
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: `This element's inline style forces ${flagged.join(', ')} with !important below the WCAG text-spacing metric, so the user cannot raise it.`,
-      hint: 'Remove !important from line-height/letter-spacing/word-spacing in inline styles, or set a value that already meets the metric (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em).',
-      i18n: {
-        summaryKey: 'avoidInlineSpacing_summary_fail',
-        hintKey: 'avoidInlineSpacing_hint_fail',
-        params: { element: tag, properties: flagged.join(', ') }
-      },
-      data: {
-        details: { reasonCode: 'INLINE_SPACING_IMPORTANT', element: tag, properties: flagged }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: `This element's inline style forces ${flagged.join(', ')} with !important below the WCAG text-spacing metric, so the user cannot raise it.`,
+        hint: 'Remove !important from line-height/letter-spacing/word-spacing in inline styles, or set a value that already meets the metric (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em).',
+        i18n: {
+          summaryKey: 'avoidInlineSpacing_summary_fail',
+          hintKey: 'avoidInlineSpacing_hint_fail',
+          params: { element: tag, properties: flagged.join(', ') }
+        },
+        data: {
+          details: { reasonCode: 'INLINE_SPACING_IMPORTANT', element: tag, properties: flagged }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -31037,28 +30995,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           }
         })()
       : null;
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This control has no accessible name.',
-      hint: 'Provide a label, aria-label, aria-labelledby, or other accessible-name mechanism so assistive technologies can identify the control.',
-      i18n: {
-        summaryKey: 'binaryControlNamePresent_summary_fail',
-        hintKey: 'binaryControlNamePresent_hint_fail',
-        params: { controlType }
-      },
-      data: {
-        details: {
-          reasonCode: 'name_missing',
-          controlType,
-          methodTried: res.method
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This control has no accessible name.',
+        hint: 'Provide a label, aria-label, aria-labelledby, or other accessible-name mechanism so assistive technologies can identify the control.',
+        i18n: {
+          summaryKey: 'binaryControlNamePresent_summary_fail',
+          hintKey: 'binaryControlNamePresent_hint_fail',
+          params: { controlType }
         },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+        data: {
+          details: {
+            reasonCode: 'name_missing',
+            controlType,
+            methodTried: res.method
+          },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -31212,35 +31168,30 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
         : null;
 
-      const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-      const html = helpers.getOuterHtmlSnippet
-        ? helpers.getOuterHtmlSnippet(el)
-        : el.outerHTML || '';
-
-      occurrences.push({
-        selector: stableSelector,
-        html,
-        summary: 'This button has no accessible name.',
-        hint: 'Provide visible button text or a programmatic accessible-name mechanism (for example aria-label) so assistive technologies can identify the button.',
-        i18n: {
-          summaryKey: 'buttonNamePresent_summary_fail',
-          hintKey: 'buttonNamePresent_hint_fail',
-          params: { element: tag }
-        },
-        data: {
-          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
-          details: {
-            reasonCode: 'name_missing',
-            metrics: {
-              trustedProgrammaticNameLength: trustedProgrammaticName.length,
-              inputValueNameLength: inputValueName.length,
-              contentNameLength: contentName.length,
-              explicitProgrammatic: explicitProg ? 1 : 0
-            },
-            refs: { accessibleName: nameInfo || null }
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: 'This button has no accessible name.',
+          hint: 'Provide visible button text or a programmatic accessible-name mechanism (for example aria-label) so assistive technologies can identify the button.',
+          i18n: {
+            summaryKey: 'buttonNamePresent_summary_fail',
+            hintKey: 'buttonNamePresent_hint_fail',
+            params: { element: tag }
+          },
+          data: {
+            visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
+            details: {
+              reasonCode: 'name_missing',
+              metrics: {
+                trustedProgrammaticNameLength: trustedProgrammaticName.length,
+                inputValueNameLength: inputValueName.length,
+                contentNameLength: contentName.length,
+                explicitProgrammatic: explicitProg ? 1 : 0
+              },
+              refs: { accessibleName: nameInfo || null }
+            }
           }
-        }
-      });
+        })
+      );
     }
   }
 
@@ -31390,15 +31341,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  const stableSelector = helpers.buildSelector ? helpers.buildSelector(body) : 'body';
-  const html = helpers.getOuterHtmlSnippet
-    ? helpers.getOuterHtmlSnippet(body)
-    : (body.outerHTML || '').slice(0, 200);
-
   const occurrences = [
-    {
-      selector: stableSelector,
-      html,
+    helpers.reportOccurrence(body, {
       summary:
         'No recognized way to bypass repeated blocks of content was detected on this page — verify a bypass mechanism exists.',
       hint: 'Confirm the page offers a bypass mechanism: a main landmark (<main> or role="main"), a working "skip to content" link, or heading elements that assistive technology can use to jump past repeated content. (A mechanism may be temporarily hidden — e.g. while a modal dialog makes the page inert — or provided on a per-site basis; this needs human confirmation.)',
@@ -31411,7 +31355,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         details: { reasonCode: 'BYPASS_MECHANISM_ABSENT' },
         visibilityFilter: { targetSet: 'acc', accEligible: null, reasons: [] }
       }
-    }
+    })
   ];
 
   return {
@@ -31909,24 +31853,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           }
         })()
       : null;
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This combobox has no accessible name.',
-      hint: "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this combobox's accessible name.",
-      i18n: {
-        summaryKey: 'comboboxNamePresent_summary_fail',
-        hintKey: 'comboboxNamePresent_hint_fail',
-        params: {}
-      },
-      data: {
-        details: { reasonCode: 'name_missing', controlType: 'combobox', methodTried: res.method },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This combobox has no accessible name.',
+        hint: "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this combobox's accessible name.",
+        i18n: {
+          summaryKey: 'comboboxNamePresent_summary_fail',
+          hintKey: 'comboboxNamePresent_hint_fail',
+          params: {}
+        },
+        data: {
+          details: { reasonCode: 'name_missing', controlType: 'combobox', methodTried: res.method },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -33812,32 +33754,28 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   const target = document.documentElement || document.body || null;
-  const stableSelector = helpers.buildSelector && target ? helpers.buildSelector(target) : 'html';
-  const html =
-    helpers.getOuterHtmlSnippet && target ? helpers.getOuterHtmlSnippet(target) : '<html>';
-
-  const occurrences = findings.map((f) => ({
-    selector: stableSelector,
-    html,
-    summary: f.selectorText
-      ? `A "${f.mediaText}" media query rotates "${f.selectorText}", locking the page to one orientation.`
-      : `A "${f.mediaText}" media query rotates an element with no readable selector, locking the page to one orientation.`,
-    hint: 'Remove the rotate() transform from the orientation media query; let the page respond naturally to device orientation instead of forcing a visual rotation.',
-    i18n: {
-      summaryKey: f.selectorText
-        ? 'cssOrientationLock_summary_fail'
-        : 'cssOrientationLock_summary_fail_unknownSelector',
-      hintKey: 'cssOrientationLock_hint_fail',
-      params: { mediaText: f.mediaText, selectorText: f.selectorText }
-    },
-    data: {
-      details: {
-        reasonCode: 'ORIENTATION_MEDIA_ROTATE_TRANSFORM',
-        mediaText: f.mediaText,
-        selectorText: f.selectorText
+  const occurrences = findings.map((f) =>
+    helpers.reportOccurrence(target, {
+      summary: f.selectorText
+        ? `A "${f.mediaText}" media query rotates "${f.selectorText}", locking the page to one orientation.`
+        : `A "${f.mediaText}" media query rotates an element with no readable selector, locking the page to one orientation.`,
+      hint: 'Remove the rotate() transform from the orientation media query; let the page respond naturally to device orientation instead of forcing a visual rotation.',
+      i18n: {
+        summaryKey: f.selectorText
+          ? 'cssOrientationLock_summary_fail'
+          : 'cssOrientationLock_summary_fail_unknownSelector',
+        hintKey: 'cssOrientationLock_hint_fail',
+        params: { mediaText: f.mediaText, selectorText: f.selectorText }
+      },
+      data: {
+        details: {
+          reasonCode: 'ORIENTATION_MEDIA_ROTATE_TRANSFORM',
+          mediaText: f.mediaText,
+          selectorText: f.selectorText
+        }
       }
-    }
-  }));
+    })
+  );
 
   return {
     ruleId: rule.ruleId,
@@ -33908,9 +33846,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         : null;
     if (!reasonCode) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
     const summary = invalidTags.length
       ? 'This description list contains a direct or wrapped child that is not part of a dt/dd group.'
       : 'This description list has no <dt>/<dd> term-definition group.';
@@ -33918,24 +33853,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       ? 'Only use <dt>/<dd> (optionally wrapped in one <div>), <script>, <template>, or <style> inside <dl>.'
       : 'Add at least one <dt>/<dd> pair inside this <dl>.';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary,
-      hint,
-      i18n: {
-        summaryKey: invalidTags.length
-          ? 'definitionListChildrenValid_summary_fail_invalidChild'
-          : 'definitionListChildrenValid_summary_fail_noDtDd',
-        hintKey: invalidTags.length
-          ? 'definitionListChildrenValid_hint_fail_invalidChild'
-          : 'definitionListChildrenValid_hint_fail_noDtDd',
-        params: { invalidChildren: dedupedInvalidTags.join(', ') }
-      },
-      data: {
-        details: { reasonCode, invalidChildren: invalidTags }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary,
+        hint,
+        i18n: {
+          summaryKey: invalidTags.length
+            ? 'definitionListChildrenValid_summary_fail_invalidChild'
+            : 'definitionListChildrenValid_summary_fail_noDtDd',
+          hintKey: invalidTags.length
+            ? 'definitionListChildrenValid_hint_fail_invalidChild'
+            : 'definitionListChildrenValid_hint_fail_noDtDd',
+          params: { invalidChildren: dedupedInvalidTags.join(', ') }
+        },
+        data: {
+          details: { reasonCode, invalidChildren: invalidTags }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -33967,23 +33902,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     applicableCount += 1;
 
     const tag = el.tagName.toLowerCase();
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This element’s content cannot be paused, stopped, or hidden by the user.',
-      hint: 'Remove this element; use static content, or an animation with a user-facing pause/stop control, instead.',
-      i18n: {
-        summaryKey: 'deprecatedElements_summary_fail',
-        hintKey: 'deprecatedElements_hint_fail',
-        params: { element: tag }
-      },
-      data: {
-        details: { reasonCode: 'DEPRECATED_NON_STOPPABLE_ELEMENT', element: tag }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This element’s content cannot be paused, stopped, or hidden by the user.',
+        hint: 'Remove this element; use static content, or an animation with a user-facing pause/stop control, instead.',
+        i18n: {
+          summaryKey: 'deprecatedElements_summary_fail',
+          hintKey: 'deprecatedElements_hint_fail',
+          params: { element: tag }
+        },
+        data: {
+          details: { reasonCode: 'DEPRECATED_NON_STOPPABLE_ELEMENT', element: tag }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -34108,24 +34041,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           }
         })()
       : null;
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This dialog has no accessible name.',
-      hint: 'Provide aria-labelledby (preferred) or aria-label so assistive technologies can announce the dialog.',
-      i18n: {
-        summaryKey: 'dialogNamePresent_summary_fail',
-        hintKey: 'dialogNamePresent_hint_fail',
-        params: { role }
-      },
-      data: {
-        details: { reasonCode: 'name_missing', controlType: role, methodTried: res.method },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This dialog has no accessible name.',
+        hint: 'Provide aria-labelledby (preferred) or aria-label so assistive technologies can announce the dialog.',
+        i18n: {
+          summaryKey: 'dialogNamePresent_summary_fail',
+          hintKey: 'dialogNamePresent_hint_fail',
+          params: { role }
+        },
+        data: {
+          details: { reasonCode: 'name_missing', controlType: role, methodTried: res.method },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -34171,23 +34102,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (valid) continue;
 
     const tag = el.tagName.toLowerCase();
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This description-list item is not contained by a <dl>.',
-      hint: 'Place this <dt>/<dd> inside a <dl>, directly or wrapped in a single <div>.',
-      i18n: {
-        summaryKey: 'dlitemParentValid_summary_fail',
-        hintKey: 'dlitemParentValid_hint_fail',
-        params: { element: tag, parentElement: parentTag }
-      },
-      data: {
-        details: { reasonCode: 'DLITEM_INVALID_PARENT', element: tag, parentElement: parentTag }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This description-list item is not contained by a <dl>.',
+        hint: 'Place this <dt>/<dd> inside a <dl>, directly or wrapped in a single <div>.',
+        i18n: {
+          summaryKey: 'dlitemParentValid_summary_fail',
+          hintKey: 'dlitemParentValid_hint_fail',
+          params: { element: tag, parentElement: parentTag }
+        },
+        data: {
+          details: { reasonCode: 'DLITEM_INVALID_PARENT', element: tag, parentElement: parentTag }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -34263,30 +34192,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     for (const el of els) {
       if (inScope && !inScope.has(el)) continue;
 
-      const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-      const html = helpers.getOuterHtmlSnippet
-        ? helpers.getOuterHtmlSnippet(el)
-        : el.outerHTML || '';
-
-      cantTellOccurrences.push({
-        selector: stableSelector,
-        html,
-        summary:
-          'This id is referenced by an ARIA attribute but is used by more than one element; the reference resolves to the first.',
-        hint: 'Confirm the first element carrying this id is the intended target, or make the id unique.',
-        i18n: {
-          summaryKey: 'duplicateIdAria_summary_cantTell',
-          hintKey: 'duplicateIdAria_hint_cantTell',
-          params: { id: refId, duplicateCount: String(els.length) }
-        },
-        data: {
-          details: {
-            reasonCode: 'DUPLICATE_ID_ARIA_REFERENCED',
-            id: refId,
-            duplicateCount: els.length
+      cantTellOccurrences.push(
+        helpers.reportOccurrence(el, {
+          summary:
+            'This id is referenced by an ARIA attribute but is used by more than one element; the reference resolves to the first.',
+          hint: 'Confirm the first element carrying this id is the intended target, or make the id unique.',
+          i18n: {
+            summaryKey: 'duplicateIdAria_summary_cantTell',
+            hintKey: 'duplicateIdAria_hint_cantTell',
+            params: { id: refId, duplicateCount: String(els.length) }
+          },
+          data: {
+            details: {
+              reasonCode: 'DUPLICATE_ID_ARIA_REFERENCED',
+              id: refId,
+              duplicateCount: els.length
+            }
           }
-        }
-      });
+        })
+      );
     }
   }
 
@@ -34751,8 +34675,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const name = getAccessibleNameText(el);
     if (name) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
     const eligInfo = helpers.getEligibilityInfo
       ? (() => {
           try {
@@ -34763,21 +34685,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         })()
       : null;
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This heading has no accessible name.',
-      hint: 'Add text content (or aria-label/aria-labelledby) to this heading, or remove it if it is not needed.',
-      i18n: {
-        summaryKey: 'emptyHeading_summary_cantTell',
-        hintKey: 'emptyHeading_hint_cantTell',
-        params: {}
-      },
-      data: {
-        details: { reasonCode: 'HEADING_EMPTY' },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This heading has no accessible name.',
+        hint: 'Add text content (or aria-label/aria-labelledby) to this heading, or remove it if it is not needed.',
+        i18n: {
+          summaryKey: 'emptyHeading_summary_cantTell',
+          hintKey: 'emptyHeading_hint_cantTell',
+          params: {}
+        },
+        data: {
+          details: { reasonCode: 'HEADING_EMPTY' },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -34877,43 +34799,40 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     if (getVisibleText(el)) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
     const ariaName = getAriaOnlyName(el);
     if (ariaName) {
-      occurrences.push({
-        selector: stableSelector,
-        html,
-        summary:
-          'This table header cell has no visible text — its only accessible name comes from aria-label/aria-labelledby, which real screen-reader/browser combinations (e.g. NVDA+Firefox, iOS VoiceOver+Safari) are known to ignore on <th> elements.',
-        hint: 'Add visible text content to this header cell (in addition to, or instead of, aria-label/aria-labelledby) — visible text is the only naming mechanism confirmed to work across tested screen readers.',
-        i18n: {
-          summaryKey: 'emptyTableHeader_summary_cantTell_ariaOnly',
-          hintKey: 'emptyTableHeader_hint_cantTell_ariaOnly',
-          params: {}
-        },
-        data: {
-          details: { reasonCode: 'TABLE_HEADER_NAME_NOT_VISIBLE_TEXT', ariaName }
-        }
-      });
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          summary:
+            'This table header cell has no visible text — its only accessible name comes from aria-label/aria-labelledby, which real screen-reader/browser combinations (e.g. NVDA+Firefox, iOS VoiceOver+Safari) are known to ignore on <th> elements.',
+          hint: 'Add visible text content to this header cell (in addition to, or instead of, aria-label/aria-labelledby) — visible text is the only naming mechanism confirmed to work across tested screen readers.',
+          i18n: {
+            summaryKey: 'emptyTableHeader_summary_cantTell_ariaOnly',
+            hintKey: 'emptyTableHeader_hint_cantTell_ariaOnly',
+            params: {}
+          },
+          data: {
+            details: { reasonCode: 'TABLE_HEADER_NAME_NOT_VISIBLE_TEXT', ariaName }
+          }
+        })
+      );
       continue;
     }
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This table header cell has no accessible name.',
-      hint: 'Add text content (or aria-label/aria-labelledby) to this header cell, or remove it if it is not needed.',
-      i18n: {
-        summaryKey: 'emptyTableHeader_summary_cantTell',
-        hintKey: 'emptyTableHeader_hint_cantTell',
-        params: {}
-      },
-      data: {
-        details: { reasonCode: 'TABLE_HEADER_EMPTY' }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This table header cell has no accessible name.',
+        hint: 'Add text content (or aria-label/aria-labelledby) to this header cell, or remove it if it is not needed.',
+        i18n: {
+          summaryKey: 'emptyTableHeader_summary_cantTell',
+          hintKey: 'emptyTableHeader_hint_cantTell',
+          params: {}
+        },
+        data: {
+          details: { reasonCode: 'TABLE_HEADER_EMPTY' }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -35551,51 +35470,49 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       : [...eligibleLabels];
 
     const tag = el.tagName.toLowerCase();
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
     if (contributing.length >= 2) {
-      failOccurrences.push({
-        selector: stableSelector,
-        html,
-        summary: 'This form control is associated with more than one <label>.',
-        hint: 'Keep only one <label> per form control (either wrapping it or referencing it via for/id).',
-        occurrenceOutcome: 'fail',
-        i18n: {
-          summaryKey: 'formControlSingleLabel_summary_fail',
-          hintKey: 'formControlSingleLabel_hint_fail',
-          params: { element: tag, labelCount: String(contributing.length) }
-        },
-        data: {
-          details: {
-            reasonCode: 'FORM_FIELD_MULTIPLE_LABELS',
-            element: tag,
-            labelCount: contributing.length
+      failOccurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: 'This form control is associated with more than one <label>.',
+          hint: 'Keep only one <label> per form control (either wrapping it or referencing it via for/id).',
+          occurrenceOutcome: 'fail',
+          i18n: {
+            summaryKey: 'formControlSingleLabel_summary_fail',
+            hintKey: 'formControlSingleLabel_hint_fail',
+            params: { element: tag, labelCount: String(contributing.length) }
+          },
+          data: {
+            details: {
+              reasonCode: 'FORM_FIELD_MULTIPLE_LABELS',
+              element: tag,
+              labelCount: contributing.length
+            }
           }
-        }
-      });
+        })
+      );
     } else if (contributing.length === 1) {
-      cantTellOccurrences.push({
-        selector: stableSelector,
-        html,
-        summary:
-          'This form control has one labelling <label> plus an extra empty <label> association.',
-        hint: 'Remove the redundant empty <label> so exactly one <label> is associated with the control.',
-        occurrenceOutcome: 'cantTell',
-        i18n: {
-          summaryKey: 'formControlSingleLabel_summary_cantTell',
-          hintKey: 'formControlSingleLabel_hint_cantTell',
-          params: { element: tag, labelCount: String(eligibleLabels.size) }
-        },
-        data: {
-          details: {
-            reasonCode: 'FORM_FIELD_EXTRA_EMPTY_LABEL',
-            element: tag,
-            labelCount: eligibleLabels.size,
-            contributingLabelCount: contributing.length
+      cantTellOccurrences.push(
+        helpers.reportOccurrence(el, {
+          summary:
+            'This form control has one labelling <label> plus an extra empty <label> association.',
+          hint: 'Remove the redundant empty <label> so exactly one <label> is associated with the control.',
+          occurrenceOutcome: 'cantTell',
+          i18n: {
+            summaryKey: 'formControlSingleLabel_summary_cantTell',
+            hintKey: 'formControlSingleLabel_hint_cantTell',
+            params: { element: tag, labelCount: String(eligibleLabels.size) }
+          },
+          data: {
+            details: {
+              reasonCode: 'FORM_FIELD_EXTRA_EMPTY_LABEL',
+              element: tag,
+              labelCount: eligibleLabels.size,
+              contributingLabelCount: contributing.length
+            }
           }
-        }
-      });
+        })
+      );
     }
     // contributing.length === 0: no label carries text, so nothing competes
     // for the name. A control left unnamed is form-control-programmatic-
@@ -35704,29 +35621,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const { el, level } = headings[i];
 
     if (level > highestSoFar + 1) {
-      const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-      const html = helpers.getOuterHtmlSnippet
-        ? helpers.getOuterHtmlSnippet(el)
-        : el.outerHTML || '';
-
-      occurrences.push({
-        selector: stableSelector,
-        html,
-        summary: `This heading jumps from level ${highestSoFar} to level ${level}, skipping a level.`,
-        hint: 'Use consecutive heading levels (do not skip a level when going deeper) so the document outline stays predictable.',
-        i18n: {
-          summaryKey: 'headingOrder_summary_cantTell',
-          hintKey: 'headingOrder_hint_cantTell',
-          params: { fromLevel: String(highestSoFar), toLevel: String(level) }
-        },
-        data: {
-          details: {
-            reasonCode: 'HEADING_ORDER_SKIPPED_LEVEL',
-            fromLevel: highestSoFar,
-            toLevel: level
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: `This heading jumps from level ${highestSoFar} to level ${level}, skipping a level.`,
+          hint: 'Use consecutive heading levels (do not skip a level when going deeper) so the document outline stays predictable.',
+          i18n: {
+            summaryKey: 'headingOrder_summary_cantTell',
+            hintKey: 'headingOrder_hint_cantTell',
+            params: { fromLevel: String(highestSoFar), toLevel: String(level) }
+          },
+          data: {
+            details: {
+              reasonCode: 'HEADING_ORDER_SKIPPED_LEVEL',
+              fromLevel: highestSoFar,
+              toLevel: level
+            }
           }
-        }
-      });
+        })
+      );
     }
 
     if (level > highestSoFar) highestSoFar = level;
@@ -35862,15 +35774,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
 
-  const stableSelector = helpers.buildSelector ? helpers.buildSelector(html) : 'html';
-  const htmlSnippet = helpers.getOuterHtmlSnippet
-    ? helpers.getOuterHtmlSnippet(html)
-    : (html.outerHTML || '').slice(0, 200);
-
   const occurrences = [
-    {
-      selector: stableSelector,
-      html: htmlSnippet,
+    helpers.reportOccurrence(html, {
       summary: `The lang ("${lang}") and xml:lang ("${xmlLang}") attributes declare different languages.`,
       hint: 'Make lang and xml:lang declare the same primary language, or remove the deprecated xml:lang attribute.',
       i18n: {
@@ -35881,7 +35786,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       data: {
         details: { reasonCode: 'HTML_XML_LANG_MISMATCH', lang, xmlLang }
       }
-    }
+    })
   ];
 
   return {
@@ -36254,47 +36159,45 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!candidates.length) continue;
 
     const tag = el.tagName.toLowerCase();
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
     const shouldProbe = candidates.length === 1;
     const runtimeProbe = shouldProbe
       ? probeImmediateFocusRedirect(el, contentDoc, candidates[0])
       : null;
 
     if (runtimeProbe && runtimeProbe.redirected) {
-      cantTellOccurrences.push({
-        selector: stableSelector,
-        html,
-        summary:
-          'This frame has tabindex="-1" and a focusable candidate, but focus moves immediately to another target. Verify keyboard reachability in a real browser.',
-        hint: 'If this is an intentional focus handoff, ensure keyboard users cannot remain on hidden/intermediate frame content.',
-        i18n: null,
-        data: {
-          details: {
-            reasonCode: 'IFRAME_TABINDEX_NEGATIVE_CONTENT_RUNTIME_REDIRECT',
-            element: tag,
-            runtimeProbe
+      cantTellOccurrences.push(
+        helpers.reportOccurrence(el, {
+          summary:
+            'This frame has tabindex="-1" and a focusable candidate, but focus moves immediately to another target. Verify keyboard reachability in a real browser.',
+          hint: 'If this is an intentional focus handoff, ensure keyboard users cannot remain on hidden/intermediate frame content.',
+          i18n: null,
+          data: {
+            details: {
+              reasonCode: 'IFRAME_TABINDEX_NEGATIVE_CONTENT_RUNTIME_REDIRECT',
+              element: tag,
+              runtimeProbe
+            }
           }
-        }
-      });
+        })
+      );
       continue;
     }
 
-    failOccurrences.push({
-      selector: stableSelector,
-      html,
-      summary:
-        'This frame has tabindex="-1" but its content contains focusable elements, which remain reachable by keyboard.',
-      hint: 'Remove focusable content from the frame, or remove tabindex="-1" if the frame is meant to be reachable.',
-      i18n: {
-        summaryKey: 'iframeFocusableContent_summary_fail',
-        hintKey: 'iframeFocusableContent_hint_fail',
-        params: { element: tag }
-      },
-      data: {
-        details: { reasonCode: 'IFRAME_TABINDEX_NEGATIVE_CONTENT_FOCUSABLE', element: tag }
-      }
-    });
+    failOccurrences.push(
+      helpers.reportOccurrence(el, {
+        summary:
+          'This frame has tabindex="-1" but its content contains focusable elements, which remain reachable by keyboard.',
+        hint: 'Remove focusable content from the frame, or remove tabindex="-1" if the frame is meant to be reachable.',
+        i18n: {
+          summaryKey: 'iframeFocusableContent_summary_fail',
+          hintKey: 'iframeFocusableContent_hint_fail',
+          params: { element: tag }
+        },
+        data: {
+          details: { reasonCode: 'IFRAME_TABINDEX_NEGATIVE_CONTENT_FOCUSABLE', element: tag }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -36347,24 +36250,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         })()
       : null;
     const tag = el.tagName.toLowerCase();
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This frame has no accessible name.',
-      hint: 'Add a title attribute (or aria-label/aria-labelledby) describing the frame’s content or purpose.',
-      i18n: {
-        summaryKey: 'iframeNamePresent_summary_fail',
-        hintKey: 'iframeNamePresent_hint_fail',
-        params: { element: tag }
-      },
-      data: {
-        details: { reasonCode: 'IFRAME_NAME_MISSING', element: tag },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This frame has no accessible name.',
+        hint: 'Add a title attribute (or aria-label/aria-labelledby) describing the frame’s content or purpose.',
+        i18n: {
+          summaryKey: 'iframeNamePresent_summary_fail',
+          hintKey: 'iframeNamePresent_hint_fail',
+          params: { element: tag }
+        },
+        data: {
+          details: { reasonCode: 'IFRAME_NAME_MISSING', element: tag },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -36414,30 +36315,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     for (const el of els) {
       const tag = el.tagName.toLowerCase();
-      const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-      const html = helpers.getOuterHtmlSnippet
-        ? helpers.getOuterHtmlSnippet(el)
-        : el.outerHTML || '';
-
-      occurrences.push({
-        selector: stableSelector,
-        html,
-        summary: 'This frame’s title is not unique among the frames on this page.',
-        hint: 'Give each frame a distinct title describing its specific content or purpose.',
-        i18n: {
-          summaryKey: 'iframeTitleUnique_summary_fail',
-          hintKey: 'iframeTitleUnique_hint_fail',
-          params: { element: tag, title }
-        },
-        data: {
-          details: {
-            reasonCode: 'IFRAME_TITLE_DUPLICATE',
-            element: tag,
-            title,
-            duplicateCount: els.length
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: 'This frame’s title is not unique among the frames on this page.',
+          hint: 'Give each frame a distinct title describing its specific content or purpose.',
+          i18n: {
+            summaryKey: 'iframeTitleUnique_summary_fail',
+            hintKey: 'iframeTitleUnique_hint_fail',
+            params: { element: tag, title }
+          },
+          data: {
+            details: {
+              reasonCode: 'IFRAME_TITLE_DUPLICATE',
+              element: tag,
+              title,
+              duplicateCount: els.length
+            }
           }
-        }
-      });
+        })
+      );
     }
   }
 
@@ -36513,23 +36409,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     if (otherText.toLowerCase() !== alt.toLowerCase()) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: "This image's alt text duplicates other visible text right next to it.",
-      hint: 'Make the alt text empty (alt="") if the image is purely decorative alongside the text, or remove the redundant duplication.',
-      i18n: {
-        summaryKey: 'imageRedundantAlt_summary_cantTell',
-        hintKey: 'imageRedundantAlt_hint_cantTell',
-        params: { alt }
-      },
-      data: {
-        details: { reasonCode: 'IMAGE_ALT_REDUNDANT', alt }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: "This image's alt text duplicates other visible text right next to it.",
+        hint: 'Make the alt text empty (alt="") if the image is purely decorative alongside the text, or remove the redundant duplication.',
+        i18n: {
+          summaryKey: 'imageRedundantAlt_summary_cantTell',
+          hintKey: 'imageRedundantAlt_hint_cantTell',
+          params: { alt }
+        },
+        data: {
+          details: { reasonCode: 'IMAGE_ALT_REDUNDANT', alt }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -37840,43 +37733,38 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
 
     if (!contains) {
-      const selectorOut = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-      const html = helpers.getOuterHtmlSnippet
-        ? helpers.getOuterHtmlSnippet(el)
-        : el.outerHTML || '';
-
-      occurrences.push({
-        selector: selectorOut,
-        html,
-        ...(uncertainty ? { outcome: 'cantTell' } : null),
-        summary: uncertainty
-          ? 'Accessible name may not contain the visible label text.'
-          : 'Accessible name does not contain the visible label text.',
-        hint: uncertainty
-          ? 'Check by hand: the two differ only by an abbreviation or by hyphenation, which markup cannot settle.'
-          : 'Ensure the accessible name includes the visible text label (e.g., update aria-label/aria-labelledby to include the visible wording).',
-        i18n: {
-          summaryKey: uncertainty ? 'labelInName_summary_cantTell' : 'labelInName_summary_fail',
-          hintKey: uncertainty ? 'labelInName_hint_cantTell' : 'labelInName_hint_fail',
-          params: {
-            element: getElementDescriptor(el),
-            visibleLabel: clipForSummary(visibleLabel),
-            labelSource: labelInfo && labelInfo.source ? labelInfo.source : 'none',
-            nameMechanism: acc && acc.mechanism ? acc.mechanism : 'none'
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          ...(uncertainty ? { outcome: 'cantTell' } : null),
+          summary: uncertainty
+            ? 'Accessible name may not contain the visible label text.'
+            : 'Accessible name does not contain the visible label text.',
+          hint: uncertainty
+            ? 'Check by hand: the two differ only by an abbreviation or by hyphenation, which markup cannot settle.'
+            : 'Ensure the accessible name includes the visible text label (e.g., update aria-label/aria-labelledby to include the visible wording).',
+          i18n: {
+            summaryKey: uncertainty ? 'labelInName_summary_cantTell' : 'labelInName_summary_fail',
+            hintKey: uncertainty ? 'labelInName_hint_cantTell' : 'labelInName_hint_fail',
+            params: {
+              element: getElementDescriptor(el),
+              visibleLabel: clipForSummary(visibleLabel),
+              labelSource: labelInfo && labelInfo.source ? labelInfo.source : 'none',
+              nameMechanism: acc && acc.mechanism ? acc.mechanism : 'none'
+            }
+          },
+          data: {
+            details: {
+              reasonCode: uncertainty || 'VISIBLE_LABEL_NOT_IN_ACCESSIBLE_NAME',
+              visibleLabel,
+              accessibleName: accName,
+              normalized: { visibleLabel: visibleNorm, accessibleName: accNorm },
+              tokenized: { visibleLabel: labelTokens, accessibleName: nameTokens },
+              labelSource: labelInfo && labelInfo.source ? labelInfo.source : 'none',
+              nameMechanism: acc && acc.mechanism ? acc.mechanism : 'none'
+            }
           }
-        },
-        data: {
-          details: {
-            reasonCode: uncertainty || 'VISIBLE_LABEL_NOT_IN_ACCESSIBLE_NAME',
-            visibleLabel,
-            accessibleName: accName,
-            normalized: { visibleLabel: visibleNorm, accessibleName: accNorm },
-            tokenized: { visibleLabel: labelTokens, accessibleName: nameTokens },
-            labelSource: labelInfo && labelInfo.source ? labelInfo.source : 'none',
-            nameMechanism: acc && acc.mechanism ? acc.mechanism : 'none'
-          }
-        }
-      });
+        })
+      );
     }
   }
 
@@ -37940,23 +37828,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!nameInfo || nameInfo.mechanism !== 'title') continue;
 
     const tag = el.tagName.toLowerCase();
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This form control relies on the title attribute as its only label.',
-      hint: 'Add a visible <label> (or aria-label/aria-labelledby) in addition to, or instead of, the title attribute.',
-      i18n: {
-        summaryKey: 'labelTitleOnly_summary_cantTell',
-        hintKey: 'labelTitleOnly_hint_cantTell',
-        params: { element: tag }
-      },
-      data: {
-        details: { reasonCode: 'LABEL_TITLE_ONLY', element: tag }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This form control relies on the title attribute as its only label.',
+        hint: 'Add a visible <label> (or aria-label/aria-labelledby) in addition to, or instead of, the title attribute.',
+        i18n: {
+          summaryKey: 'labelTitleOnly_summary_cantTell',
+          hintKey: 'labelTitleOnly_hint_cantTell',
+          params: { element: tag }
+        },
+        data: {
+          details: { reasonCode: 'LABEL_TITLE_ONLY', element: tag }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -38123,23 +38009,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   for (const el of banners) {
     if (!hasLandmarkAncestor(el)) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This banner landmark is nested inside another landmark region.',
-      hint: 'Move the banner landmark (header/role="banner") so it is not contained by another landmark; a banner should be a top-level region of the page.',
-      i18n: {
-        summaryKey: 'landmarkBannerIsTopLevel_summary_cantTell',
-        hintKey: 'landmarkBannerIsTopLevel_hint_cantTell',
-        params: {}
-      },
-      data: {
-        details: { reasonCode: 'LANDMARK_BANNER_NOT_TOP_LEVEL' }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This banner landmark is nested inside another landmark region.',
+        hint: 'Move the banner landmark (header/role="banner") so it is not contained by another landmark; a banner should be a top-level region of the page.',
+        i18n: {
+          summaryKey: 'landmarkBannerIsTopLevel_summary_cantTell',
+          hintKey: 'landmarkBannerIsTopLevel_hint_cantTell',
+          params: {}
+        },
+        data: {
+          details: { reasonCode: 'LANDMARK_BANNER_NOT_TOP_LEVEL' }
+        }
+      })
+    );
   }
 
   if (occurrences.length) {
@@ -38306,23 +38189,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   for (const el of contentinfos) {
     if (!hasLandmarkAncestor(el)) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This contentinfo landmark is nested inside another landmark region.',
-      hint: 'Move the contentinfo landmark (footer/role="contentinfo") so it is not contained by another landmark; contentinfo should be a top-level region of the page.',
-      i18n: {
-        summaryKey: 'landmarkContentinfoIsTopLevel_summary_cantTell',
-        hintKey: 'landmarkContentinfoIsTopLevel_hint_cantTell',
-        params: {}
-      },
-      data: {
-        details: { reasonCode: 'LANDMARK_CONTENTINFO_NOT_TOP_LEVEL' }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This contentinfo landmark is nested inside another landmark region.',
+        hint: 'Move the contentinfo landmark (footer/role="contentinfo") so it is not contained by another landmark; contentinfo should be a top-level region of the page.',
+        i18n: {
+          summaryKey: 'landmarkContentinfoIsTopLevel_summary_cantTell',
+          hintKey: 'landmarkContentinfoIsTopLevel_hint_cantTell',
+          params: {}
+        },
+        data: {
+          details: { reasonCode: 'LANDMARK_CONTENTINFO_NOT_TOP_LEVEL' }
+        }
+      })
+    );
   }
 
   if (occurrences.length) {
@@ -38477,23 +38357,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   for (const el of mains) {
     if (!hasLandmarkAncestor(el)) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This main landmark is nested inside another landmark region.',
-      hint: 'Move the main landmark (<main>/role="main") so it is not contained by another landmark; main should be a top-level region of the page.',
-      i18n: {
-        summaryKey: 'landmarkMainIsTopLevel_summary_cantTell',
-        hintKey: 'landmarkMainIsTopLevel_hint_cantTell',
-        params: {}
-      },
-      data: {
-        details: { reasonCode: 'LANDMARK_MAIN_NOT_TOP_LEVEL' }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This main landmark is nested inside another landmark region.',
+        hint: 'Move the main landmark (<main>/role="main") so it is not contained by another landmark; main should be a top-level region of the page.',
+        i18n: {
+          summaryKey: 'landmarkMainIsTopLevel_summary_cantTell',
+          hintKey: 'landmarkMainIsTopLevel_hint_cantTell',
+          params: {}
+        },
+        data: {
+          details: { reasonCode: 'LANDMARK_MAIN_NOT_TOP_LEVEL' }
+        }
+      })
+    );
   }
 
   if (occurrences.length) {
@@ -38626,12 +38503,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   const occurrences = banners.map((el) => {
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    return {
-      selector: stableSelector,
-      html,
+    return helpers.reportOccurrence(el, {
       summary: 'This page has more than one banner landmark.',
       hint: 'Keep only one banner landmark (header/role="banner") per page.',
       i18n: {
@@ -38642,7 +38514,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       data: {
         details: { reasonCode: 'LANDMARK_DUPLICATE_BANNER', count: banners.length }
       }
-    };
+    });
   });
 
   return {
@@ -38772,12 +38644,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   const occurrences = contentinfos.map((el) => {
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    return {
-      selector: stableSelector,
-      html,
+    return helpers.reportOccurrence(el, {
       summary: 'This page has more than one contentinfo landmark.',
       hint: 'Keep only one contentinfo landmark (footer/role="contentinfo") per page.',
       i18n: {
@@ -38788,7 +38655,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       data: {
         details: { reasonCode: 'LANDMARK_DUPLICATE_CONTENTINFO', count: contentinfos.length }
       }
-    };
+    });
   });
 
   return {
@@ -38862,12 +38729,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   const occurrences = mains.map((el) => {
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    return {
-      selector: stableSelector,
-      html,
+    return helpers.reportOccurrence(el, {
       summary: 'This page has more than one main landmark.',
       hint: 'Keep only one main landmark (<main>/role="main") per page.',
       i18n: {
@@ -38878,7 +38740,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       data: {
         details: { reasonCode: 'LANDMARK_DUPLICATE_MAIN', count: mains.length }
       }
-    };
+    });
   });
 
   return {
@@ -38952,19 +38814,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  const stableSelector = helpers.buildSelector ? helpers.buildSelector(body) : 'body';
-  const html = helpers.getOuterHtmlSnippet
-    ? helpers.getOuterHtmlSnippet(body)
-    : (body.outerHTML || '').slice(0, 200);
-
   return {
     ruleId: rule.ruleId,
     outcome: 'cantTell',
     severity: rule.defaultSeverity || 'minor',
     occurrences: [
-      {
-        selector: stableSelector,
-        html,
+      helpers.reportOccurrence(body, {
         summary: 'This page has no main landmark.',
         hint: 'Add a main landmark (<main> or role="main") around the page\'s primary content.',
         i18n: {
@@ -38975,7 +38830,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         data: {
           details: { reasonCode: 'LANDMARK_MAIN_MISSING' }
         }
-      }
+      })
     ]
   };
 }), applicability: (function applicability(ctx) {
@@ -39150,34 +39005,29 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (group.length <= 1) continue;
 
       for (const { el } of group) {
-        const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-        const html = helpers.getOuterHtmlSnippet
-          ? helpers.getOuterHtmlSnippet(el)
-          : el.outerHTML || '';
-
-        occurrences.push({
-          selector: stableSelector,
-          html,
-          summary: normalizedName
-            ? `This ${role} landmark shares its accessible name with another ${role} landmark.`
-            : `This ${role} landmark has no accessible name, and more than one unnamed ${role} landmark exists on this page.`,
-          hint: `Give each ${role} landmark a distinct name via aria-label or aria-labelledby.`,
-          i18n: {
-            summaryKey: normalizedName
-              ? 'landmarkUnique_summary_cantTell_duplicateName'
-              : 'landmarkUnique_summary_cantTell_bothUnnamed',
-            hintKey: 'landmarkUnique_hint_cantTell',
-            params: { role }
-          },
-          data: {
-            details: {
-              reasonCode: 'LANDMARK_NOT_UNIQUE',
-              role,
-              name: normalizedName,
-              groupSize: group.length
+        occurrences.push(
+          helpers.reportOccurrence(el, {
+            summary: normalizedName
+              ? `This ${role} landmark shares its accessible name with another ${role} landmark.`
+              : `This ${role} landmark has no accessible name, and more than one unnamed ${role} landmark exists on this page.`,
+            hint: `Give each ${role} landmark a distinct name via aria-label or aria-labelledby.`,
+            i18n: {
+              summaryKey: normalizedName
+                ? 'landmarkUnique_summary_cantTell_duplicateName'
+                : 'landmarkUnique_summary_cantTell_bothUnnamed',
+              hintKey: 'landmarkUnique_hint_cantTell',
+              params: { role }
+            },
+            data: {
+              details: {
+                reasonCode: 'LANDMARK_NOT_UNIQUE',
+                role,
+                name: normalizedName,
+                groupSize: group.length
+              }
             }
-          }
-        });
+          })
+        );
       }
     }
   }
@@ -39321,31 +39171,29 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const eligInfo = helpers.getEligibilityInfo
       ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
       : null;
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
     const tag = (el.tagName || '').toLowerCase();
     const ratioStr = c.round2 ? c.round2(ratio) : String(ratio);
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary:
-        'This link in a block of text relies on color alone to be distinguished from the surrounding text.',
-      hint: 'Add an underline, a font-weight/style difference, or increase the color contrast between the link and surrounding text to at least 3:1.',
-      i18n: {
-        summaryKey: 'linkInTextBlock_summary_fail',
-        hintKey: 'linkInTextBlock_hint_fail',
-        params: { element: tag, ratio: String(ratioStr), threshold: '3' }
-      },
-      data: {
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
-        details: {
-          reasonCode: 'COLOR_ONLY_DIFFERENTIATION',
-          metrics: { ratio, threshold: 3 },
-          colors: { linkForegroundHex: fgLinkHex, surroundingTextForegroundHex: fgParentHex }
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary:
+          'This link in a block of text relies on color alone to be distinguished from the surrounding text.',
+        hint: 'Add an underline, a font-weight/style difference, or increase the color contrast between the link and surrounding text to at least 3:1.',
+        i18n: {
+          summaryKey: 'linkInTextBlock_summary_fail',
+          hintKey: 'linkInTextBlock_hint_fail',
+          params: { element: tag, ratio: String(ratioStr), threshold: '3' }
+        },
+        data: {
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
+          details: {
+            reasonCode: 'COLOR_ONLY_DIFFERENTIATION',
+            metrics: { ratio, threshold: 3 },
+            colors: { linkForegroundHex: fgLinkHex, surroundingTextForegroundHex: fgParentHex }
+          }
         }
-      }
-    });
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -39469,39 +39317,34 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
         : null;
 
-      const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-      const html = helpers.getOuterHtmlSnippet
-        ? helpers.getOuterHtmlSnippet(el)
-        : el.outerHTML || '';
       const tag = (el.tagName || '').toLowerCase();
 
-      occurrences.push({
-        selector: stableSelector,
-        html,
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          // Human fallbacks (allowed)
+          summary: 'This link has no accessible name.',
+          hint: 'Provide link text or an accessible-name mechanism (for example aria-label) so assistive technologies can identify the link.',
 
-        // Human fallbacks (allowed)
-        summary: 'This link has no accessible name.',
-        hint: 'Provide link text or an accessible-name mechanism (for example aria-label) so assistive technologies can identify the link.',
+          // Validator requires these keys to exist in the English dictionary
+          i18n: {
+            summaryKey: 'linkNamePresent_summary_fail',
+            hintKey: 'linkNamePresent_hint_fail',
+            params: { element: tag }
+          },
 
-        // Validator requires these keys to exist in the English dictionary
-        i18n: {
-          summaryKey: 'linkNamePresent_summary_fail',
-          hintKey: 'linkNamePresent_hint_fail',
-          params: { element: tag }
-        },
-
-        data: {
-          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
-          details: {
-            reasonCode: 'name_missing',
-            metrics: {
-              programmaticNameLength: programmaticName.trim().length,
-              contentNameLength: contentName.trim().length
-            },
-            refs: { accessibleName: nameInfo || null }
+          data: {
+            visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
+            details: {
+              reasonCode: 'name_missing',
+              metrics: {
+                programmaticNameLength: programmaticName.trim().length,
+                contentNameLength: contentName.trim().length
+              },
+              refs: { accessibleName: nameInfo || null }
+            }
           }
-        }
-      });
+        })
+      );
     }
   }
 
@@ -39584,27 +39427,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     if (!GENERIC_LINK_TEXT.has(normalized)) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
     const eligInfo = helpers.getEligibilityInfo
       ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
       : null;
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: `This link's accessible name ("${rawName.trim()}") is a generic, non-descriptive phrase.`,
-      hint: 'Make the link text itself describe its destination/purpose (e.g. "Download the 2026 pricing guide" instead of "Download"), or confirm the surrounding context already makes the purpose clear.',
-      i18n: {
-        summaryKey: 'linkNameQuality_summary_cantTell',
-        hintKey: 'linkNameQuality_hint_cantTell',
-        params: { name: rawName.trim() }
-      },
-      data: {
-        details: { reasonCode: 'GENERIC_LINK_TEXT', normalizedName: normalized },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: `This link's accessible name ("${rawName.trim()}") is a generic, non-descriptive phrase.`,
+        hint: 'Make the link text itself describe its destination/purpose (e.g. "Download the 2026 pricing guide" instead of "Download"), or confirm the surrounding context already makes the purpose clear.',
+        i18n: {
+          summaryKey: 'linkNameQuality_summary_cantTell',
+          hintKey: 'linkNameQuality_hint_cantTell',
+          params: { name: rawName.trim() }
+        },
+        data: {
+          details: { reasonCode: 'GENERIC_LINK_TEXT', normalizedName: normalized },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -39676,23 +39517,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const dedupedInvalidTags = [...new Set(invalidTags)];
 
     const tag = el.tagName.toLowerCase();
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This list contains a direct child that is not a list item.',
-      hint: 'Only use <li> (or <script>/<template>) as direct children of <ul>/<ol>; move other markup inside an <li>.',
-      i18n: {
-        summaryKey: 'listChildrenValid_summary_fail',
-        hintKey: 'listChildrenValid_hint_fail',
-        params: { element: tag, invalidChildren: dedupedInvalidTags.join(', ') }
-      },
-      data: {
-        details: { reasonCode: 'LIST_INVALID_CHILD', element: tag, invalidChildren: invalidTags }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This list contains a direct child that is not a list item.',
+        hint: 'Only use <li> (or <script>/<template>) as direct children of <ul>/<ol>; move other markup inside an <li>.',
+        i18n: {
+          summaryKey: 'listChildrenValid_summary_fail',
+          hintKey: 'listChildrenValid_hint_fail',
+          params: { element: tag, invalidChildren: dedupedInvalidTags.join(', ') }
+        },
+        data: {
+          details: { reasonCode: 'LIST_INVALID_CHILD', element: tag, invalidChildren: invalidTags }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -39905,24 +39744,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           }
         })()
       : null;
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This element has no accessible name.',
-      hint: "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this listbox's accessible name.",
-      i18n: {
-        summaryKey: 'listboxNamePresent_summary_fail',
-        hintKey: 'listboxNamePresent_hint_fail',
-        params: { controlType: 'listbox' }
-      },
-      data: {
-        details: { reasonCode: 'name_missing', controlType: 'listbox', methodTried: res.method },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This element has no accessible name.',
+        hint: "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this listbox's accessible name.",
+        i18n: {
+          summaryKey: 'listboxNamePresent_summary_fail',
+          hintKey: 'listboxNamePresent_hint_fail',
+          params: { controlType: 'listbox' }
+        },
+        data: {
+          details: { reasonCode: 'name_missing', controlType: 'listbox', methodTried: res.method },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -39983,23 +39820,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     if (valid) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This list item is not contained by a list container.',
-      hint: 'Place this <li> inside a <ul>/<ol>, or give its parent role="list".',
-      i18n: {
-        summaryKey: 'listitemParentValid_summary_fail',
-        hintKey: 'listitemParentValid_hint_fail',
-        params: { parentElement: parentTag }
-      },
-      data: {
-        details: { reasonCode: 'LISTITEM_INVALID_PARENT', parentElement: parentTag }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This list item is not contained by a list container.',
+        hint: 'Place this <li> inside a <ul>/<ol>, or give its parent role="list".',
+        i18n: {
+          summaryKey: 'listitemParentValid_summary_fail',
+          hintKey: 'listitemParentValid_hint_fail',
+          params: { parentElement: parentTag }
+        },
+        data: {
+          details: { reasonCode: 'LISTITEM_INVALID_PARENT', parentElement: parentTag }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -40522,24 +40356,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           }
         })()
       : null;
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This menu item has no accessible name.',
-      hint: 'Provide visible text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.',
-      i18n: {
-        summaryKey: 'menuitemNamePresent_summary_fail',
-        hintKey: 'menuitemNamePresent_hint_fail',
-        params: { role }
-      },
-      data: {
-        details: { reasonCode: 'name_missing', controlType: role, methodTried: res.method },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This menu item has no accessible name.',
+        hint: 'Provide visible text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.',
+        i18n: {
+          summaryKey: 'menuitemNamePresent_summary_fail',
+          hintKey: 'menuitemNamePresent_hint_fail',
+          params: { role }
+        },
+        data: {
+          details: { reasonCode: 'name_missing', controlType: role, methodTried: res.method },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -40602,24 +40434,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     applicableCount += 1;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary:
-        'This page uses a meta refresh, which is an automatic context change not initiated by the user.',
-      hint: 'Remove the meta refresh; trigger the redirect/refresh only in response to a user action instead.',
-      i18n: {
-        summaryKey: 'metaRefreshNoExceptions_summary_fail',
-        hintKey: 'metaRefreshNoExceptions_hint_fail',
-        params: {}
-      },
-      data: {
-        details: { reasonCode: 'META_REFRESH_PRESENT' }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary:
+          'This page uses a meta refresh, which is an automatic context change not initiated by the user.',
+        hint: 'Remove the meta refresh; trigger the redirect/refresh only in response to a user action instead.',
+        i18n: {
+          summaryKey: 'metaRefreshNoExceptions_summary_fail',
+          hintKey: 'metaRefreshNoExceptions_hint_fail',
+          params: {}
+        },
+        data: {
+          details: { reasonCode: 'META_REFRESH_PRESENT' }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -40692,23 +40521,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!(delay > 0)) continue;
     if (delay > EXEMPT_DELAY_SECONDS) continue; // WCAG 2.2.1 Exception 3 (>20 hours)
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This page refreshes itself automatically after a delay.',
-      hint: 'Remove the timed meta refresh, or provide a way for users to turn it off, extend it, or pause it before it triggers.',
-      i18n: {
-        summaryKey: 'metaRefreshTimingAbsent_summary_fail',
-        hintKey: 'metaRefreshTimingAbsent_hint_fail',
-        params: { delay: String(delay) }
-      },
-      data: {
-        details: { reasonCode: 'META_REFRESH_DELAYED', delay }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This page refreshes itself automatically after a delay.',
+        hint: 'Remove the timed meta refresh, or provide a way for users to turn it off, extend it, or pause it before it triggers.',
+        i18n: {
+          summaryKey: 'metaRefreshTimingAbsent_summary_fail',
+          hintKey: 'metaRefreshTimingAbsent_hint_fail',
+          params: { delay: String(delay) }
+        },
+        data: {
+          details: { reasonCode: 'META_REFRESH_DELAYED', delay }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -40776,23 +40602,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     if (!reasons.length) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This viewport meta tag restricts zoom below the 500% best-practice target.',
-      hint: 'Remove user-scalable=no and raise maximum-scale to at least 5 (500%) if possible.',
-      i18n: {
-        summaryKey: 'metaViewportLarge_summary_cantTell',
-        hintKey: 'metaViewportLarge_hint_cantTell',
-        params: { reasons: reasons.join(', ') }
-      },
-      data: {
-        details: { reasonCode: 'VIEWPORT_ZOOM_BELOW_500', reasons }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This viewport meta tag restricts zoom below the 500% best-practice target.',
+        hint: 'Remove user-scalable=no and raise maximum-scale to at least 5 (500%) if possible.',
+        i18n: {
+          summaryKey: 'metaViewportLarge_summary_cantTell',
+          hintKey: 'metaViewportLarge_hint_cantTell',
+          params: { reasons: reasons.join(', ') }
+        },
+        data: {
+          details: { reasonCode: 'VIEWPORT_ZOOM_BELOW_500', reasons }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -40880,23 +40703,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     if (!reasons.length) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This viewport meta tag restricts the user’s ability to zoom.',
-      hint: 'Remove user-scalable=no and any maximum-scale below 2 from the viewport meta content.',
-      i18n: {
-        summaryKey: 'metaViewportZoomEnabled_summary_fail',
-        hintKey: 'metaViewportZoomEnabled_hint_fail',
-        params: { reasons: reasons.join(', ') }
-      },
-      data: {
-        details: { reasonCode: 'VIEWPORT_ZOOM_RESTRICTED', reasons }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This viewport meta tag restricts the user’s ability to zoom.',
+        hint: 'Remove user-scalable=no and any maximum-scale below 2 from the viewport meta content.',
+        i18n: {
+          summaryKey: 'metaViewportZoomEnabled_summary_fail',
+          hintKey: 'metaViewportZoomEnabled_hint_fail',
+          params: { reasons: reasons.join(', ') }
+        },
+        data: {
+          details: { reasonCode: 'VIEWPORT_ZOOM_RESTRICTED', reasons }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -41017,24 +40837,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           }
         })()
       : null;
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This meter has no accessible name.',
-      hint: "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this meter's accessible name.",
-      i18n: {
-        summaryKey: 'meterNamePresent_summary_fail',
-        hintKey: 'meterNamePresent_hint_fail',
-        params: {}
-      },
-      data: {
-        details: { reasonCode: 'name_missing', controlType: 'meter', methodTried: res.method },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This meter has no accessible name.',
+        hint: "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this meter's accessible name.",
+        i18n: {
+          summaryKey: 'meterNamePresent_summary_fail',
+          hintKey: 'meterNamePresent_hint_fail',
+          params: {}
+        },
+        data: {
+          details: { reasonCode: 'name_missing', controlType: 'meter', methodTried: res.method },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -41093,30 +40911,28 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const hasKeyboardEquiv = KEYBOARD_EQUIV_ATTRS.some((a) => trim(el.getAttribute(a)));
     if (hasKeyboardEquiv) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
     const eligInfo = helpers.getEligibilityInfo
       ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
       : null;
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: `This element has ${presentMouseAttrs.join(', ')} but no keyboard-reachable equivalent handler.`,
-      hint: 'Add onkeydown/onkeyup/onkeypress (or onfocus/onblur for hover-triggered behavior) so this functionality is also reachable by keyboard.',
-      i18n: {
-        summaryKey: 'mouseOnlyEventHandlers_summary_cantTell',
-        hintKey: 'mouseOnlyEventHandlers_hint_cantTell',
-        params: { attrs: presentMouseAttrs.join(', ') }
-      },
-      data: {
-        details: {
-          reasonCode: 'MOUSE_ONLY_HANDLER_NO_KEYBOARD_EQUIVALENT',
-          mouseAttrs: presentMouseAttrs
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: `This element has ${presentMouseAttrs.join(', ')} but no keyboard-reachable equivalent handler.`,
+        hint: 'Add onkeydown/onkeyup/onkeypress (or onfocus/onblur for hover-triggered behavior) so this functionality is also reachable by keyboard.',
+        i18n: {
+          summaryKey: 'mouseOnlyEventHandlers_summary_cantTell',
+          hintKey: 'mouseOnlyEventHandlers_hint_cantTell',
+          params: { attrs: presentMouseAttrs.join(', ') }
         },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+        data: {
+          details: {
+            reasonCode: 'MOUSE_ONLY_HANDLER_NO_KEYBOARD_EQUIVALENT',
+            mouseAttrs: presentMouseAttrs
+          },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -41315,27 +41131,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const dedupedNestedTags = [...new Set(nestedTags)];
 
     const tag = el.tagName.toLowerCase();
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This interactive control contains one or more other interactive controls.',
-      hint: 'Move the nested interactive control(s) outside this element; nested interactive controls are not reliably operable via assistive technology.',
-      i18n: {
-        summaryKey: 'nestedInteractiveControlsAbsent_summary_fail',
-        hintKey: 'nestedInteractiveControlsAbsent_hint_fail',
-        params: { element: tag, nestedElements: dedupedNestedTags.join(', ') }
-      },
-      data: {
-        details: {
-          reasonCode: 'NESTED_INTERACTIVE_CONTROL',
-          element: tag,
-          nestedElements: nestedTags
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This interactive control contains one or more other interactive controls.',
+        hint: 'Move the nested interactive control(s) outside this element; nested interactive controls are not reliably operable via assistive technology.',
+        i18n: {
+          summaryKey: 'nestedInteractiveControlsAbsent_summary_fail',
+          hintKey: 'nestedInteractiveControlsAbsent_hint_fail',
+          params: { element: tag, nestedElements: dedupedNestedTags.join(', ') }
+        },
+        data: {
+          details: {
+            reasonCode: 'NESTED_INTERACTIVE_CONTROL',
+            element: tag,
+            nestedElements: nestedTags
+          }
         }
-      }
-    });
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -41897,24 +41711,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           }
         })()
       : null;
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This element has no accessible name.',
-      hint: 'Provide aria-label or aria-labelledby (preferred), or provide visible text that is not hidden from assistive technologies.',
-      i18n: {
-        summaryKey: 'optionNamePresent_summary_fail',
-        hintKey: 'optionNamePresent_hint_fail',
-        params: { controlType: 'option' }
-      },
-      data: {
-        details: { reasonCode: 'name_missing', controlType: 'option', methodTried: res.method },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This element has no accessible name.',
+        hint: 'Provide aria-label or aria-labelledby (preferred), or provide visible text that is not hidden from assistive technologies.',
+        i18n: {
+          summaryKey: 'optionNamePresent_summary_fail',
+          hintKey: 'optionNamePresent_hint_fail',
+          params: { controlType: 'option' }
+        },
+        data: {
+          details: { reasonCode: 'name_missing', controlType: 'option', methodTried: res.method },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -42107,19 +41919,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  const stableSelector = helpers.buildSelector ? helpers.buildSelector(body) : 'body';
-  const html = helpers.getOuterHtmlSnippet
-    ? helpers.getOuterHtmlSnippet(body)
-    : (body.outerHTML || '').slice(0, 200);
-
   return {
     ruleId: rule.ruleId,
     outcome: 'cantTell',
     severity: rule.defaultSeverity || 'minor',
     occurrences: [
-      {
-        selector: stableSelector,
-        html,
+      helpers.reportOccurrence(body, {
         summary: 'This page has no level-one heading.',
         hint: 'Add a level-one heading (<h1> or role="heading" aria-level="1") that identifies the page\'s main content.',
         i18n: {
@@ -42130,7 +41935,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         data: {
           details: { reasonCode: 'HEADING_ONE_MISSING' }
         }
-      }
+      })
     ]
   };
 }), applicability: (function applicability(ctx) {
@@ -42559,28 +42364,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       String(el.getAttribute('role') || '')
         .trim()
         .toLowerCase() || 'presentation';
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: `This role="${role}" element also has a conflicting condition (${parts.join(', ')}), which restores its implicit role and cancels the presentational intent.`,
-      hint: 'Remove the conflicting naming attribute(s) and/or focusability (tabindex/native) if the element should stay presentational, or remove role="presentation"/"none" if it should be exposed to assistive technology.',
-      i18n: {
-        summaryKey: 'presentationRoleConflict_summary_cantTell',
-        hintKey: 'presentationRoleConflict_hint_cantTell',
-        params: { role, attrs: parts.join(', ') }
-      },
-      data: {
-        details: {
-          reasonCode: 'PRESENTATION_ROLE_CONFLICT',
-          role,
-          conflictingAttrs: present,
-          focusable: isFocusable
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: `This role="${role}" element also has a conflicting condition (${parts.join(', ')}), which restores its implicit role and cancels the presentational intent.`,
+        hint: 'Remove the conflicting naming attribute(s) and/or focusability (tabindex/native) if the element should stay presentational, or remove role="presentation"/"none" if it should be exposed to assistive technology.',
+        i18n: {
+          summaryKey: 'presentationRoleConflict_summary_cantTell',
+          hintKey: 'presentationRoleConflict_hint_cantTell',
+          params: { role, attrs: parts.join(', ') }
+        },
+        data: {
+          details: {
+            reasonCode: 'PRESENTATION_ROLE_CONFLICT',
+            role,
+            conflictingAttrs: present,
+            focusable: isFocusable
+          }
         }
-      }
-    });
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -42701,28 +42504,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           }
         })()
       : null;
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This progress bar has no accessible name.',
-      hint: "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this progress bar's accessible name.",
-      i18n: {
-        summaryKey: 'progressbarNamePresent_summary_fail',
-        hintKey: 'progressbarNamePresent_hint_fail',
-        params: {}
-      },
-      data: {
-        details: {
-          reasonCode: 'name_missing',
-          controlType: 'progressbar',
-          methodTried: res.method
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This progress bar has no accessible name.',
+        hint: "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this progress bar's accessible name.",
+        i18n: {
+          summaryKey: 'progressbarNamePresent_summary_fail',
+          hintKey: 'progressbarNamePresent_hint_fail',
+          params: {}
         },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+        data: {
+          details: {
+            reasonCode: 'name_missing',
+            controlType: 'progressbar',
+            methodTried: res.method
+          },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -43255,23 +43056,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     if (VALID_SCOPES.has(raw.toLowerCase())) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This scope attribute value is not recognized.',
-      hint: 'Use one of row, col, rowgroup, or colgroup for the scope attribute.',
-      i18n: {
-        summaryKey: 'scopeAttrValid_summary_cantTell',
-        hintKey: 'scopeAttrValid_hint_cantTell',
-        params: { value: raw }
-      },
-      data: {
-        details: { reasonCode: 'SCOPE_ATTR_INVALID', value: raw }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This scope attribute value is not recognized.',
+        hint: 'Use one of row, col, rowgroup, or colgroup for the scope attribute.',
+        i18n: {
+          summaryKey: 'scopeAttrValid_summary_cantTell',
+          hintKey: 'scopeAttrValid_hint_cantTell',
+          params: { value: raw }
+        },
+        data: {
+          details: { reasonCode: 'SCOPE_ATTR_INVALID', value: raw }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -43598,24 +43396,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           }
         })()
       : null;
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This element has no accessible name.',
-      hint: "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this searchbox's accessible name.",
-      i18n: {
-        summaryKey: 'searchboxNamePresent_summary_fail',
-        hintKey: 'searchboxNamePresent_hint_fail',
-        params: { controlType: 'searchbox' }
-      },
-      data: {
-        details: { reasonCode: 'name_missing', controlType: 'searchbox', methodTried: res.method },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This element has no accessible name.',
+        hint: "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this searchbox's accessible name.",
+        i18n: {
+          summaryKey: 'searchboxNamePresent_summary_fail',
+          hintKey: 'searchboxNamePresent_hint_fail',
+          params: { controlType: 'searchbox' }
+        },
+        data: {
+          details: {
+            reasonCode: 'name_missing',
+            controlType: 'searchbox',
+            methodTried: res.method
+          },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -43646,24 +43446,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     applicableCount += 1;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary:
-        'This image uses a server-side image map, which has no keyboard-operable equivalent.',
-      hint: 'Replace the server-side image map (ismap) with a client-side image map (<map>/<area>) or separate accessible links/buttons.',
-      i18n: {
-        summaryKey: 'serverSideImageMapAbsent_summary_fail',
-        hintKey: 'serverSideImageMapAbsent_hint_fail',
-        params: {}
-      },
-      data: {
-        details: { reasonCode: 'SERVER_SIDE_IMAGE_MAP' }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary:
+          'This image uses a server-side image map, which has no keyboard-operable equivalent.',
+        hint: 'Replace the server-side image map (ismap) with a client-side image map (<map>/<area>) or separate accessible links/buttons.',
+        i18n: {
+          summaryKey: 'serverSideImageMapAbsent_summary_fail',
+          hintKey: 'serverSideImageMapAbsent_hint_fail',
+          params: {}
+        },
+        data: {
+          details: { reasonCode: 'SERVER_SIDE_IMAGE_MAP' }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -43808,59 +43605,51 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const unusableByGeometry = !!geometryReasonCode;
       if (!unusableByAcc && !unusableByGeometry) continue;
 
-      const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-      const html = helpers.getOuterHtmlSnippet
-        ? helpers.getOuterHtmlSnippet(el)
-        : el.outerHTML || '';
-
-      occurrences.push({
-        selector: stableSelector,
-        html,
-        summary: 'This skip link points to a target that exists but is not currently usable.',
-        hint: 'Point this skip link to a target that is exposed and usable as a navigation destination.',
-        i18n: {
-          summaryKey: 'skipLink_summary_unusableTarget_cantTell',
-          hintKey: 'skipLink_hint_unusableTarget_cantTell',
-          params: { href }
-        },
-        data: {
-          details: {
-            reasonCode: 'SKIP_LINK_TARGET_UNUSABLE',
-            href,
-            unusableReasonCode: unusableByAcc ? 'ACC_TREE_INELIGIBLE' : geometryReasonCode,
-            targetSelector: helpers.buildSelector ? helpers.buildSelector(target) : null,
-            geometryCheckEnabled: geometrySupported
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: 'This skip link points to a target that exists but is not currently usable.',
+          hint: 'Point this skip link to a target that is exposed and usable as a navigation destination.',
+          i18n: {
+            summaryKey: 'skipLink_summary_unusableTarget_cantTell',
+            hintKey: 'skipLink_hint_unusableTarget_cantTell',
+            params: { href }
           },
-          visibilityFilter: {
-            targetSet: 'acc',
-            accEligible: accEligibility.eligible,
-            reasons: accEligibility.reasons
-          },
-          targetGeometry: geometryEligibility
-            ? { eligible: geometryEligibility.eligible, reasons: geometryEligibility.reasons }
-            : { eligible: null, reasons: [] }
-        }
-      });
+          data: {
+            details: {
+              reasonCode: 'SKIP_LINK_TARGET_UNUSABLE',
+              href,
+              unusableReasonCode: unusableByAcc ? 'ACC_TREE_INELIGIBLE' : geometryReasonCode,
+              targetSelector: helpers.buildSelector ? helpers.buildSelector(target) : null,
+              geometryCheckEnabled: geometrySupported
+            },
+            visibilityFilter: {
+              targetSet: 'acc',
+              accEligible: accEligibility.eligible,
+              reasons: accEligibility.reasons
+            },
+            targetGeometry: geometryEligibility
+              ? { eligible: geometryEligibility.eligible, reasons: geometryEligibility.reasons }
+              : { eligible: null, reasons: [] }
+          }
+        })
+      );
       continue;
     }
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: "This skip link's target does not exist.",
-      hint: "Point the skip link's href at an id that exists in the document, or add the missing target element.",
-      i18n: {
-        summaryKey: 'skipLink_summary_cantTell',
-        hintKey: 'skipLink_hint_cantTell',
-        params: { href }
-      },
-      data: {
-        details: { reasonCode: 'SKIP_LINK_TARGET_MISSING', href }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: "This skip link's target does not exist.",
+        hint: "Point the skip link's href at an id that exists in the document, or add the missing target element.",
+        i18n: {
+          summaryKey: 'skipLink_summary_cantTell',
+          hintKey: 'skipLink_hint_cantTell',
+          params: { href }
+        },
+        data: {
+          details: { reasonCode: 'SKIP_LINK_TARGET_MISSING', href }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -44087,24 +43876,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           }
         })()
       : null;
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This slider has no accessible name.',
-      hint: 'Provide a label, aria-label, or aria-labelledby so assistive technologies can identify the slider.',
-      i18n: {
-        summaryKey: 'sliderNamePresent_summary_fail',
-        hintKey: 'sliderNamePresent_hint_fail',
-        params: { kind }
-      },
-      data: {
-        details: { reasonCode: 'name_missing', controlType: kind, methodTried: res.method },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This slider has no accessible name.',
+        hint: 'Provide a label, aria-label, or aria-labelledby so assistive technologies can identify the slider.',
+        i18n: {
+          summaryKey: 'sliderNamePresent_summary_fail',
+          hintKey: 'sliderNamePresent_hint_fail',
+          params: { kind }
+        },
+        data: {
+          details: { reasonCode: 'name_missing', controlType: kind, methodTried: res.method },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -44317,24 +44104,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           }
         })()
       : null;
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This element has no accessible name.',
-      hint: "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this spinbutton's accessible name.",
-      i18n: {
-        summaryKey: 'spinbuttonNamePresent_summary_fail',
-        hintKey: 'spinbuttonNamePresent_hint_fail',
-        params: { controlType: 'spinbutton' }
-      },
-      data: {
-        details: { reasonCode: 'name_missing', controlType: 'spinbutton', methodTried: res.method },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This element has no accessible name.',
+        hint: "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this spinbutton's accessible name.",
+        i18n: {
+          summaryKey: 'spinbuttonNamePresent_summary_fail',
+          hintKey: 'spinbuttonNamePresent_hint_fail',
+          params: { controlType: 'spinbutton' }
+        },
+        data: {
+          details: {
+            reasonCode: 'name_missing',
+            controlType: 'spinbutton',
+            methodTried: res.method
+          },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -44464,24 +44253,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           }
         })()
       : null;
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This summary has no accessible name.',
-      hint: 'Provide summary text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.',
-      i18n: {
-        summaryKey: 'summaryNamePresent_summary_fail',
-        hintKey: 'summaryNamePresent_hint_fail',
-        params: {}
-      },
-      data: {
-        details: { reasonCode: 'name_missing', controlType: 'summary', methodTried: res.method },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This summary has no accessible name.',
+        hint: 'Provide summary text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.',
+        i18n: {
+          summaryKey: 'summaryNamePresent_summary_fail',
+          hintKey: 'summaryNamePresent_hint_fail',
+          params: {}
+        },
+        data: {
+          details: { reasonCode: 'name_missing', controlType: 'summary', methodTried: res.method },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -45307,24 +45094,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           }
         })()
       : null;
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This tab has no accessible name.',
-      hint: 'Provide tab text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.',
-      i18n: {
-        summaryKey: 'tabNamePresent_summary_fail',
-        hintKey: 'tabNamePresent_hint_fail',
-        params: {}
-      },
-      data: {
-        details: { reasonCode: 'name_missing', controlType: 'tab', methodTried: res.method },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This tab has no accessible name.',
+        hint: 'Provide tab text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.',
+        i18n: {
+          summaryKey: 'tabNamePresent_summary_fail',
+          hintKey: 'tabNamePresent_hint_fail',
+          params: {}
+        },
+        data: {
+          details: { reasonCode: 'name_missing', controlType: 'tab', methodTried: res.method },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -45361,23 +45146,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     if (n <= 0) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This element has a positive tabindex, overriding the natural tab order.',
-      hint: 'Use tabindex="0" (or a negative value to remove from tab order) instead of a positive number; fix the DOM order if a different tab order is needed.',
-      i18n: {
-        summaryKey: 'tabindex_summary_cantTell',
-        hintKey: 'tabindex_hint_cantTell',
-        params: { value: String(n) }
-      },
-      data: {
-        details: { reasonCode: 'TABINDEX_POSITIVE', value: n }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This element has a positive tabindex, overriding the natural tab order.',
+        hint: 'Use tabindex="0" (or a negative value to remove from tab order) instead of a positive number; fix the DOM order if a different tab order is needed.',
+        i18n: {
+          summaryKey: 'tabindex_summary_cantTell',
+          hintKey: 'tabindex_hint_cantTell',
+          params: { value: String(n) }
+        },
+        data: {
+          details: { reasonCode: 'TABINDEX_POSITIVE', value: n }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -45422,23 +45204,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     if (captionText.toLowerCase() !== summary.toLowerCase()) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: "This table's caption duplicates its summary attribute.",
-      hint: 'Remove the redundant summary attribute, or make it provide different information than the caption.',
-      i18n: {
-        summaryKey: 'tableDuplicateName_summary_cantTell',
-        hintKey: 'tableDuplicateName_hint_cantTell',
-        params: {}
-      },
-      data: {
-        details: { reasonCode: 'TABLE_CAPTION_SUMMARY_DUPLICATE' }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: "This table's caption duplicates its summary attribute.",
+        hint: 'Remove the redundant summary attribute, or make it provide different information than the caption.',
+        i18n: {
+          summaryKey: 'tableDuplicateName_summary_cantTell',
+          hintKey: 'tableDuplicateName_hint_cantTell',
+          params: {}
+        },
+        data: {
+          details: { reasonCode: 'TABLE_CAPTION_SUMMARY_DUPLICATE' }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -45603,23 +45382,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const dedupedInvalidIds = [...new Set(invalid.map((i) => i.id))];
 
     const tag = el.tagName.toLowerCase();
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This cell’s headers attribute references one or more invalid header cells.',
-      hint: 'Update the headers attribute so every id refers to a <th> element within the same table.',
-      i18n: {
-        summaryKey: 'tableHeadersAttrValid_summary_fail',
-        hintKey: 'tableHeadersAttrValid_hint_fail',
-        params: { element: tag, invalidIds: dedupedInvalidIds.join(', ') }
-      },
-      data: {
-        details: { reasonCode: 'TABLE_HEADERS_ATTR_INVALID', element: tag, invalid }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This cell’s headers attribute references one or more invalid header cells.',
+        hint: 'Update the headers attribute so every id refers to a <th> element within the same table.',
+        i18n: {
+          summaryKey: 'tableHeadersAttrValid_summary_fail',
+          hintKey: 'tableHeadersAttrValid_hint_fail',
+          params: { element: tag, invalidIds: dedupedInvalidIds.join(', ') }
+        },
+        data: {
+          details: { reasonCode: 'TABLE_HEADERS_ATTR_INVALID', element: tag, invalid }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -45723,25 +45500,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     for (const th of headers) {
       if (!th) continue;
-      const stableSelector = helpers.buildSelector ? helpers.buildSelector(th) : 'html';
-      const html = helpers.getOuterHtmlSnippet
-        ? helpers.getOuterHtmlSnippet(th)
-        : th.outerHTML || '';
 
-      occurrences.push({
-        selector: stableSelector,
-        html,
-        summary: 'This table has header cells but no data cells for them to describe.',
-        hint: 'Add data cells (<td>) to the table, or remove the header cells if the table has no data.',
-        i18n: {
-          summaryKey: 'tableThHasDataCells_summary_fail',
-          hintKey: 'tableThHasDataCells_hint_fail',
-          params: {}
-        },
-        data: {
-          details: { reasonCode: 'TABLE_TH_NO_DATA_CELLS' }
-        }
-      });
+      occurrences.push(
+        helpers.reportOccurrence(th, {
+          summary: 'This table has header cells but no data cells for them to describe.',
+          hint: 'Add data cells (<td>) to the table, or remove the header cells if the table has no data.',
+          i18n: {
+            summaryKey: 'tableThHasDataCells_summary_fail',
+            hintKey: 'tableThHasDataCells_hint_fail',
+            params: {}
+          },
+          data: {
+            details: { reasonCode: 'TABLE_TH_NO_DATA_CELLS' }
+          }
+        })
+      );
     }
   }
 
@@ -45792,17 +45565,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (el && el.id) return `#${el.id}`;
     } catch {}
     return 'html';
-  }
-
-  function htmlSnippet(el) {
-    try {
-      if (helpers && typeof helpers.getOuterHtmlSnippet === 'function')
-        return helpers.getOuterHtmlSnippet(el);
-    } catch {}
-    try {
-      return el && el.outerHTML ? String(el.outerHTML) : '';
-    } catch {}
-    return '';
   }
 
   // A link-like target (a[href] or role="link") rendered inline/inline-* and
@@ -46239,27 +46001,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // the result once any other target on the page had a confident
       // fail (see helpers.resolveTieredOutcome's header comment). Now
       // reported as its own cantTell-tier occurrence instead.
-      cantTellOccurrences.push({
-        selector: buildSelector(it.el),
-        html: htmlSnippet(it.el),
-        occurrenceOutcome: 'cantTell',
-        summary:
-          'Target may be too small and too close to another target, but the overlap is near the detection threshold and could not be confidently measured.',
-        hint: 'Manually verify the effective spacing between this target and its neighbor; increase target size or spacing if the overlap is real.',
-        i18n: {
-          summaryKey: 'targetSizeMinimum_summary_cantTell_ambiguousSpacing',
-          hintKey: 'targetSizeMinimum_hint_cantTell_ambiguousSpacing',
-          params: {}
-        },
-        data: {
-          details: {
-            measured: { width: it.rect.width, height: it.rect.height },
-            reasonCode: 'undersized-ambiguous-spacing',
-            conflictHitCount: info.hitCount,
-            conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null
+      cantTellOccurrences.push(
+        helpers.reportOccurrence(it.el, {
+          occurrenceOutcome: 'cantTell',
+          summary:
+            'Target may be too small and too close to another target, but the overlap is near the detection threshold and could not be confidently measured.',
+          hint: 'Manually verify the effective spacing between this target and its neighbor; increase target size or spacing if the overlap is real.',
+          i18n: {
+            summaryKey: 'targetSizeMinimum_summary_cantTell_ambiguousSpacing',
+            hintKey: 'targetSizeMinimum_hint_cantTell_ambiguousSpacing',
+            params: {}
+          },
+          data: {
+            details: {
+              measured: { width: it.rect.width, height: it.rect.height },
+              reasonCode: 'undersized-ambiguous-spacing',
+              conflictHitCount: info.hitCount,
+              conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null
+            }
           }
-        }
-      });
+        })
+      );
       continue;
     }
 
@@ -46268,27 +46030,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         // Confident spacing conflict, but the target may be exempt as part
         // of an essential graphic/image-map region — same "previously
         // unrecoverable" gap as above, now reported instead of dropped.
-        cantTellOccurrences.push({
-          selector: buildSelector(it.el),
-          html: htmlSnippet(it.el),
-          occurrenceOutcome: 'cantTell',
-          summary:
-            'Target is too small and too close to another target, but may be exempt as part of an essential graphic or image-map region.',
-          hint: 'Verify whether this target’s size is genuinely essential to its function (e.g. part of an SVG/canvas/image map); if not, increase target size or spacing.',
-          i18n: {
-            summaryKey: 'targetSizeMinimum_summary_cantTell_plausiblyEssential',
-            hintKey: 'targetSizeMinimum_hint_cantTell_plausiblyEssential',
-            params: {}
-          },
-          data: {
-            details: {
-              measured: { width: it.rect.width, height: it.rect.height },
-              reasonCode: 'undersized-plausibly-essential',
-              conflictHitCount: info.hitCount,
-              conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null
+        cantTellOccurrences.push(
+          helpers.reportOccurrence(it.el, {
+            occurrenceOutcome: 'cantTell',
+            summary:
+              'Target is too small and too close to another target, but may be exempt as part of an essential graphic or image-map region.',
+            hint: 'Verify whether this target’s size is genuinely essential to its function (e.g. part of an SVG/canvas/image map); if not, increase target size or spacing.',
+            i18n: {
+              summaryKey: 'targetSizeMinimum_summary_cantTell_plausiblyEssential',
+              hintKey: 'targetSizeMinimum_hint_cantTell_plausiblyEssential',
+              params: {}
+            },
+            data: {
+              details: {
+                measured: { width: it.rect.width, height: it.rect.height },
+                reasonCode: 'undersized-plausibly-essential',
+                conflictHitCount: info.hitCount,
+                conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null
+              }
             }
-          }
-        });
+          })
+        );
         continue;
       }
 
@@ -46296,50 +46058,50 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // same text run, where the SC 2.5.8 inline exception may apply. That
       // can't be decided from geometry alone, so defer to manual review.
       if (isInlineLinkTarget(it.el) && info.conflictEl && isInlineLinkTarget(info.conflictEl)) {
-        cantTellOccurrences.push({
-          selector: buildSelector(it.el),
-          html: htmlSnippet(it.el),
-          occurrenceOutcome: 'cantTell',
-          summary:
-            'Target is smaller than 24×24 CSS px and close to another inline link in the same run of text, where the inline exception may apply.',
-          hint: 'Confirm whether these links form a run of inline text (which is exempt); otherwise increase the target size to at least 24×24 CSS px or add spacing.',
+        cantTellOccurrences.push(
+          helpers.reportOccurrence(it.el, {
+            occurrenceOutcome: 'cantTell',
+            summary:
+              'Target is smaller than 24×24 CSS px and close to another inline link in the same run of text, where the inline exception may apply.',
+            hint: 'Confirm whether these links form a run of inline text (which is exempt); otherwise increase the target size to at least 24×24 CSS px or add spacing.',
+            i18n: {
+              summaryKey: 'targetSizeMinimum_summary_cantTell_inlineLinkRun',
+              hintKey: 'targetSizeMinimum_hint_cantTell_inlineLinkRun',
+              params: {}
+            },
+            data: {
+              details: {
+                measured: { width: it.rect.width, height: it.rect.height },
+                reasonCode: 'undersized-inline-link-run',
+                conflictHitCount: info.hitCount,
+                conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null
+              }
+            }
+          })
+        );
+        continue;
+      }
+
+      failOccurrences.push(
+        helpers.reportOccurrence(it.el, {
+          occurrenceOutcome: 'fail',
+          summary: 'Target is too small and too close to another target.',
+          hint: 'Increase target size to at least 24 by 24 CSS pixels, or add sufficient spacing.',
           i18n: {
-            summaryKey: 'targetSizeMinimum_summary_cantTell_inlineLinkRun',
-            hintKey: 'targetSizeMinimum_hint_cantTell_inlineLinkRun',
+            summaryKey: 'targetSizeMinimum_summary_fail',
+            hintKey: 'targetSizeMinimum_hint_fail',
             params: {}
           },
           data: {
             details: {
               measured: { width: it.rect.width, height: it.rect.height },
-              reasonCode: 'undersized-inline-link-run',
+              reasonCode: 'undersized-and-too-close',
               conflictHitCount: info.hitCount,
               conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null
             }
           }
-        });
-        continue;
-      }
-
-      failOccurrences.push({
-        selector: buildSelector(it.el),
-        html: htmlSnippet(it.el),
-        occurrenceOutcome: 'fail',
-        summary: 'Target is too small and too close to another target.',
-        hint: 'Increase target size to at least 24 by 24 CSS pixels, or add sufficient spacing.',
-        i18n: {
-          summaryKey: 'targetSizeMinimum_summary_fail',
-          hintKey: 'targetSizeMinimum_hint_fail',
-          params: {}
-        },
-        data: {
-          details: {
-            measured: { width: it.rect.width, height: it.rect.height },
-            reasonCode: 'undersized-and-too-close',
-            conflictHitCount: info.hitCount,
-            conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null
-          }
-        }
-      });
+        })
+      );
     }
   }
 
@@ -46441,26 +46203,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         if (hasColumnHeaderAbove(r, c)) continue;
         if (hasRowHeaderBefore(r, c)) continue;
 
-        const stableSelector = helpers.buildSelector ? helpers.buildSelector(cell) : 'html';
-        const html = helpers.getOuterHtmlSnippet
-          ? helpers.getOuterHtmlSnippet(cell)
-          : cell.outerHTML || '';
-
-        occurrences.push({
-          selector: stableSelector,
-          html,
-          summary:
-            'This data cell has no associated header (no headers attribute, no column <th> above it, no row <th> to its left).',
-          hint: 'Add a headers attribute referencing the relevant <th> id(s), or restructure the table so this cell has an implicit row/column header.',
-          i18n: {
-            summaryKey: 'tdHasHeader_summary_fail',
-            hintKey: 'tdHasHeader_hint_fail',
-            params: { row: String(r), column: String(c) }
-          },
-          data: {
-            details: { reasonCode: 'TD_NO_ASSOCIATED_HEADER', row: r, column: c }
-          }
-        });
+        occurrences.push(
+          helpers.reportOccurrence(cell, {
+            summary:
+              'This data cell has no associated header (no headers attribute, no column <th> above it, no row <th> to its left).',
+            hint: 'Add a headers attribute referencing the relevant <th> id(s), or restructure the table so this cell has an implicit row/column header.',
+            i18n: {
+              summaryKey: 'tdHasHeader_summary_fail',
+              hintKey: 'tdHasHeader_hint_fail',
+              params: { row: String(r), column: String(c) }
+            },
+            data: {
+              details: { reasonCode: 'TD_NO_ASSOCIATED_HEADER', row: r, column: c }
+            }
+          })
+        );
       }
     }
   }
@@ -46675,24 +46432,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           }
         })()
       : null;
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This element has no accessible name.',
-      hint: "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this textbox's accessible name.",
-      i18n: {
-        summaryKey: 'textboxNamePresent_summary_fail',
-        hintKey: 'textboxNamePresent_hint_fail',
-        params: { controlType: 'textbox' }
-      },
-      data: {
-        details: { reasonCode: 'name_missing', controlType: 'textbox', methodTried: res.method },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This element has no accessible name.',
+        hint: "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this textbox's accessible name.",
+        i18n: {
+          summaryKey: 'textboxNamePresent_summary_fail',
+          hintKey: 'textboxNamePresent_hint_fail',
+          params: { controlType: 'textbox' }
+        },
+        data: {
+          details: { reasonCode: 'name_missing', controlType: 'textbox', methodTried: res.method },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -46826,24 +46581,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           }
         })()
       : null;
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This tooltip has no accessible name.',
-      hint: 'Provide tooltip text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.',
-      i18n: {
-        summaryKey: 'tooltipNamePresent_summary_fail',
-        hintKey: 'tooltipNamePresent_hint_fail',
-        params: {}
-      },
-      data: {
-        details: { reasonCode: 'name_missing', controlType: 'tooltip', methodTried: res.method },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This tooltip has no accessible name.',
+        hint: 'Provide tooltip text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.',
+        i18n: {
+          summaryKey: 'tooltipNamePresent_summary_fail',
+          hintKey: 'tooltipNamePresent_hint_fail',
+          params: {}
+        },
+        data: {
+          details: { reasonCode: 'name_missing', controlType: 'tooltip', methodTried: res.method },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -46974,24 +46727,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           }
         })()
       : null;
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This element has no accessible name.',
-      hint: 'Provide aria-label or aria-labelledby (preferred), or provide visible text that is not hidden from assistive technologies.',
-      i18n: {
-        summaryKey: 'treeitemNamePresent_summary_fail',
-        hintKey: 'treeitemNamePresent_hint_fail',
-        params: { controlType: 'treeitem' }
-      },
-      data: {
-        details: { reasonCode: 'name_missing', controlType: 'treeitem', methodTried: res.method },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This element has no accessible name.',
+        hint: 'Provide aria-label or aria-labelledby (preferred), or provide visible text that is not hidden from assistive technologies.',
+        i18n: {
+          summaryKey: 'treeitemNamePresent_summary_fail',
+          hintKey: 'treeitemNamePresent_hint_fail',
+          params: { controlType: 'treeitem' }
+        },
+        data: {
+          details: { reasonCode: 'name_missing', controlType: 'treeitem', methodTried: res.method },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -47044,23 +46795,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (isValidTag(raw)) continue;
 
     const tag = el.tagName.toLowerCase();
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: `This lang attribute value ("${raw}") is not a syntactically valid language tag.`,
-      hint: 'Use a valid BCP47 language tag (e.g. "fr", "es-MX").',
-      i18n: {
-        summaryKey: 'validLang_summary_fail',
-        hintKey: 'validLang_hint_fail',
-        params: { element: tag, value: raw }
-      },
-      data: {
-        details: { reasonCode: 'ELEMENT_LANG_INVALID', element: tag, value: raw }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: `This lang attribute value ("${raw}") is not a syntactically valid language tag.`,
+        hint: 'Use a valid BCP47 language tag (e.g. "fr", "es-MX").',
+        i18n: {
+          summaryKey: 'validLang_summary_fail',
+          hintKey: 'validLang_hint_fail',
+          params: { element: tag, value: raw }
+        },
+        data: {
+          details: { reasonCode: 'ELEMENT_LANG_INVALID', element: tag, value: raw }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -66107,25 +65856,24 @@ const __a11yCoreCrossFrameApi = (function () {
   for (const [key, els] of groups) {
     if (els.length <= 1) continue;
     for (const el of els) {
-      const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-      const html = helpers.getOuterHtmlSnippet
-        ? helpers.getOuterHtmlSnippet(el)
-        : el.outerHTML || '';
-
-      occurrences.push({
-        selector: stableSelector,
-        html,
-        summary: "This element's accesskey is shared with another element on the page.",
-        hint: 'Make each accesskey value unique across the page.',
-        i18n: {
-          summaryKey: 'accesskeys_summary_cantTell',
-          hintKey: 'accesskeys_hint_cantTell',
-          params: { accesskey: key, duplicateCount: String(els.length) }
-        },
-        data: {
-          details: { reasonCode: 'ACCESSKEY_DUPLICATE', accesskey: key, duplicateCount: els.length }
-        }
-      });
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: "This element's accesskey is shared with another element on the page.",
+          hint: 'Make each accesskey value unique across the page.',
+          i18n: {
+            summaryKey: 'accesskeys_summary_cantTell',
+            hintKey: 'accesskeys_hint_cantTell',
+            params: { accesskey: key, duplicateCount: String(els.length) }
+          },
+          data: {
+            details: {
+              reasonCode: 'ACCESSKEY_DUPLICATE',
+              accesskey: key,
+              duplicateCount: els.length
+            }
+          }
+        })
+      );
     }
   }
 
@@ -67524,9 +67272,6 @@ const __a11yCoreCrossFrameApi = (function () {
 
     if (!disallowed || !disallowed.length) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
     for (const name of disallowed) {
       // A property ARIA deprecated (rather than prohibited) on this role is
       // still allowed — surfaced as cantTell for the author to decide, not a
@@ -67535,38 +67280,38 @@ const __a11yCoreCrossFrameApi = (function () {
         typeof ariaHelpers.isDeprecatedAttr === 'function' &&
         ariaHelpers.isDeprecatedAttr(name, role);
       if (deprecated) {
-        cantTellOccurrences.push({
-          selector: stableSelector,
-          html,
-          summary: 'This ARIA attribute is deprecated for this element’s role.',
-          hint: 'It is still allowed but discouraged; remove it or use a role that supports it, as a future ARIA version may disallow it.',
-          occurrenceOutcome: 'cantTell',
+        cantTellOccurrences.push(
+          helpers.reportOccurrence(el, {
+            summary: 'This ARIA attribute is deprecated for this element’s role.',
+            hint: 'It is still allowed but discouraged; remove it or use a role that supports it, as a future ARIA version may disallow it.',
+            occurrenceOutcome: 'cantTell',
+            i18n: {
+              summaryKey: 'ariaAllowedAttr_summary_cantTell',
+              hintKey: 'ariaAllowedAttr_hint_cantTell',
+              params: { attr: name, role }
+            },
+            data: {
+              details: { reasonCode: 'ARIA_ATTR_DEPRECATED', attr: name, role }
+            }
+          })
+        );
+        continue;
+      }
+      failOccurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: 'This ARIA attribute is not permitted for this element’s role.',
+          hint: 'Remove this attribute, or use a role that supports it.',
+          occurrenceOutcome: 'fail',
           i18n: {
-            summaryKey: 'ariaAllowedAttr_summary_cantTell',
-            hintKey: 'ariaAllowedAttr_hint_cantTell',
+            summaryKey: 'ariaAllowedAttr_summary_fail',
+            hintKey: 'ariaAllowedAttr_hint_fail',
             params: { attr: name, role }
           },
           data: {
-            details: { reasonCode: 'ARIA_ATTR_DEPRECATED', attr: name, role }
+            details: { reasonCode: 'ARIA_ATTR_NOT_ALLOWED', attr: name, role }
           }
-        });
-        continue;
-      }
-      failOccurrences.push({
-        selector: stableSelector,
-        html,
-        summary: 'This ARIA attribute is not permitted for this element’s role.',
-        hint: 'Remove this attribute, or use a role that supports it.',
-        occurrenceOutcome: 'fail',
-        i18n: {
-          summaryKey: 'ariaAllowedAttr_summary_fail',
-          hintKey: 'ariaAllowedAttr_hint_fail',
-          params: { attr: name, role }
-        },
-        data: {
-          details: { reasonCode: 'ARIA_ATTR_NOT_ALLOWED', attr: name, role }
-        }
-      });
+        })
+      );
     }
   }
 
@@ -67609,24 +67354,22 @@ const __a11yCoreCrossFrameApi = (function () {
 
     if (info.allowed) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
     const tag = (el.tagName || '').toLowerCase();
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This role is not permitted on this element.',
-      hint: 'Use a role permitted for this element, or change the host element.',
-      i18n: {
-        summaryKey: 'ariaAllowedRole_summary_fail',
-        hintKey: 'ariaAllowedRole_hint_fail',
-        params: { role, element: tag }
-      },
-      data: {
-        details: { reasonCode: 'ARIA_ROLE_NOT_ALLOWED_FOR_ELEMENT', role, element: tag }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This role is not permitted on this element.',
+        hint: 'Use a role permitted for this element, or change the host element.',
+        i18n: {
+          summaryKey: 'ariaAllowedRole_summary_fail',
+          hintKey: 'ariaAllowedRole_hint_fail',
+          params: { role, element: tag }
+        },
+        data: {
+          details: { reasonCode: 'ARIA_ROLE_NOT_ALLOWED_FOR_ELEMENT', role, element: tag }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -67702,29 +67445,27 @@ const __a11yCoreCrossFrameApi = (function () {
 
     if (!missing.length) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
     const tag = (el.tagName || '').toLowerCase();
 
     for (const m of missing) {
-      occurrences.push({
-        selector: stableSelector,
-        html,
-        summary: `This element has ${m.attr} but no ${m.requires}, its non-braille equivalent.`,
-        hint: `${m.attr} is a Braille-specific supplement, not a replacement — also provide ${m.requires}.`,
-        i18n: {
-          summaryKey: 'ariaBrailleEquivalent_summary_fail',
-          hintKey: 'ariaBrailleEquivalent_hint_fail',
-          params: { element: tag, attr: m.attr, requires: m.requires }
-        },
-        data: {
-          details: {
-            reasonCode: 'BRAILLE_ATTR_WITHOUT_EQUIVALENT',
-            attr: m.attr,
-            requires: m.requires
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: `This element has ${m.attr} but no ${m.requires}, its non-braille equivalent.`,
+          hint: `${m.attr} is a Braille-specific supplement, not a replacement — also provide ${m.requires}.`,
+          i18n: {
+            summaryKey: 'ariaBrailleEquivalent_summary_fail',
+            hintKey: 'ariaBrailleEquivalent_hint_fail',
+            params: { element: tag, attr: m.attr, requires: m.requires }
+          },
+          data: {
+            details: {
+              reasonCode: 'BRAILLE_ATTR_WITHOUT_EQUIVALENT',
+              attr: m.attr,
+              requires: m.requires
+            }
           }
-        }
-      });
+        })
+      );
     }
   }
 
@@ -67787,29 +67528,26 @@ const __a11yCoreCrossFrameApi = (function () {
 
     if (normalizedAriaChecked === actualState) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary:
-        'This element’s aria-checked value does not match its actual checked/indeterminate state.',
-      hint: 'Set aria-checked to match the element’s real state, or remove it — a native checkbox/radio already exposes this state without it.',
-      i18n: {
-        summaryKey: 'ariaCheckedStateMismatch_summary_cantTell',
-        hintKey: 'ariaCheckedStateMismatch_hint_cantTell',
-        params: { ariaChecked: normalizedAriaChecked, actualState, type }
-      },
-      data: {
-        details: {
-          reasonCode: 'ARIA_CHECKED_STATE_MISMATCH',
-          ariaChecked: normalizedAriaChecked,
-          actualState,
-          type
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary:
+          'This element’s aria-checked value does not match its actual checked/indeterminate state.',
+        hint: 'Set aria-checked to match the element’s real state, or remove it — a native checkbox/radio already exposes this state without it.',
+        i18n: {
+          summaryKey: 'ariaCheckedStateMismatch_summary_cantTell',
+          hintKey: 'ariaCheckedStateMismatch_hint_cantTell',
+          params: { ariaChecked: normalizedAriaChecked, actualState, type }
+        },
+        data: {
+          details: {
+            reasonCode: 'ARIA_CHECKED_STATE_MISMATCH',
+            ariaChecked: normalizedAriaChecked,
+            actualState,
+            type
+          }
         }
-      }
-    });
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -67852,28 +67590,26 @@ const __a11yCoreCrossFrameApi = (function () {
     const invalidValue = trim(el.getAttribute('aria-invalid')).toLowerCase();
     if (TRUTHY_INVALID_VALUES.has(invalidValue)) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
     const tag = (el.tagName || '').toLowerCase();
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary:
-        'This element has aria-errormessage but aria-invalid is missing or "false", so the error message is not exposed.',
-      hint: 'Set aria-invalid to "true" (or "grammar"/"spelling") whenever aria-errormessage should be exposed to assistive technology.',
-      i18n: {
-        summaryKey: 'ariaConditionalAttr_summary_fail',
-        hintKey: 'ariaConditionalAttr_hint_fail',
-        params: { element: tag, ariaInvalid: invalidValue || '(absent)' }
-      },
-      data: {
-        details: {
-          reasonCode: 'ARIA_ERRORMESSAGE_WITHOUT_TRUTHY_INVALID',
-          ariaInvalid: invalidValue
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary:
+          'This element has aria-errormessage but aria-invalid is missing or "false", so the error message is not exposed.',
+        hint: 'Set aria-invalid to "true" (or "grammar"/"spelling") whenever aria-errormessage should be exposed to assistive technology.',
+        i18n: {
+          summaryKey: 'ariaConditionalAttr_summary_fail',
+          hintKey: 'ariaConditionalAttr_hint_fail',
+          params: { element: tag, ariaInvalid: invalidValue || '(absent)' }
+        },
+        data: {
+          details: {
+            reasonCode: 'ARIA_ERRORMESSAGE_WITHOUT_TRUTHY_INVALID',
+            ariaInvalid: invalidValue
+          }
         }
-      }
-    });
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -67956,8 +67692,6 @@ const __a11yCoreCrossFrameApi = (function () {
       ariaHelpers.isAuthorProhibitedRole(role);
     if (!deprecated && !discouraged && !prohibited) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
     const guidance = ariaHelpers.getDeprecatedRoleGuidance
       ? ariaHelpers.getDeprecatedRoleGuidance(role)
       : {
@@ -67967,55 +67701,55 @@ const __a11yCoreCrossFrameApi = (function () {
 
     if (prohibited) {
       // Author MUST NOT: the usage is non-conforming, not merely discouraged.
-      failOccurrences.push({
-        selector: stableSelector,
-        html,
-        summary: `This element uses role="${role}", which authors must not explicitly declare.`,
-        hint: guidance.text,
-        occurrenceOutcome: 'fail',
-        i18n: {
-          summaryKey: 'ariaDeprecatedRole_summary_fail',
-          hintKey: guidance.key,
-          params: { role }
-        },
-        data: {
-          details: { reasonCode: 'ARIA_ROLE_AUTHOR_PROHIBITED', role, guidance: guidance.text }
-        }
-      });
+      failOccurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: `This element uses role="${role}", which authors must not explicitly declare.`,
+          hint: guidance.text,
+          occurrenceOutcome: 'fail',
+          i18n: {
+            summaryKey: 'ariaDeprecatedRole_summary_fail',
+            hintKey: guidance.key,
+            params: { role }
+          },
+          data: {
+            details: { reasonCode: 'ARIA_ROLE_AUTHOR_PROHIBITED', role, guidance: guidance.text }
+          }
+        })
+      );
     } else if (discouraged) {
       // Reserved for user-agent-internal use, at SHOULD NOT strength.
-      cantTellOccurrences.push({
-        selector: stableSelector,
-        html,
-        summary: `This element uses role="${role}", which is reserved for user agents (still valid, but discouraged).`,
-        hint: guidance.text,
-        occurrenceOutcome: 'cantTell',
-        i18n: {
-          summaryKey: 'ariaDeprecatedRole_summary_cantTell_discouraged',
-          hintKey: guidance.key,
-          params: { role }
-        },
-        data: {
-          details: { reasonCode: 'ARIA_ROLE_AUTHOR_DISCOURAGED', role, guidance: guidance.text }
-        }
-      });
+      cantTellOccurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: `This element uses role="${role}", which is reserved for user agents (still valid, but discouraged).`,
+          hint: guidance.text,
+          occurrenceOutcome: 'cantTell',
+          i18n: {
+            summaryKey: 'ariaDeprecatedRole_summary_cantTell_discouraged',
+            hintKey: guidance.key,
+            params: { role }
+          },
+          data: {
+            details: { reasonCode: 'ARIA_ROLE_AUTHOR_DISCOURAGED', role, guidance: guidance.text }
+          }
+        })
+      );
     } else {
       // Deprecated but still valid: surfaced for the author to decide.
-      cantTellOccurrences.push({
-        selector: stableSelector,
-        html,
-        summary: `This element uses role="${role}", which is deprecated in WAI-ARIA.`,
-        hint: guidance.text,
-        occurrenceOutcome: 'cantTell',
-        i18n: {
-          summaryKey: 'ariaDeprecatedRole_summary_cantTell',
-          hintKey: guidance.key,
-          params: { role }
-        },
-        data: {
-          details: { reasonCode: 'ARIA_ROLE_DEPRECATED', role, guidance: guidance.text }
-        }
-      });
+      cantTellOccurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: `This element uses role="${role}", which is deprecated in WAI-ARIA.`,
+          hint: guidance.text,
+          occurrenceOutcome: 'cantTell',
+          i18n: {
+            summaryKey: 'ariaDeprecatedRole_summary_cantTell',
+            hintKey: guidance.key,
+            params: { role }
+          },
+          data: {
+            details: { reasonCode: 'ARIA_ROLE_DEPRECATED', role, guidance: guidance.text }
+          }
+        })
+      );
     }
   }
 
@@ -68045,15 +67779,8 @@ const __a11yCoreCrossFrameApi = (function () {
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
 
-  const stableSelector = helpers.buildSelector ? helpers.buildSelector(body) : 'body';
-  const html = helpers.getOuterHtmlSnippet
-    ? helpers.getOuterHtmlSnippet(body)
-    : (body.outerHTML || '').slice(0, 200);
-
   const occurrences = [
-    {
-      selector: stableSelector,
-      html,
+    helpers.reportOccurrence(body, {
       summary:
         'The document body has aria-hidden="true", which hides the entire page from assistive technologies.',
       hint: 'Remove aria-hidden from <body>. Hide specific elements instead, if that was the intent.',
@@ -68065,7 +67792,7 @@ const __a11yCoreCrossFrameApi = (function () {
       data: {
         details: { reasonCode: 'ARIA_HIDDEN_BODY' }
       }
-    }
+    })
   ];
 
   return {
@@ -68984,25 +68711,22 @@ const __a11yCoreCrossFrameApi = (function () {
 
     if (!present.length) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
     for (const attr of present) {
-      failOccurrences.push({
-        selector: stableSelector,
-        html,
-        occurrenceOutcome: 'fail',
-        summary: 'This attribute is prohibited on this element’s role.',
-        hint: 'Remove this attribute; this role must not carry an accessible name.',
-        i18n: {
-          summaryKey: 'ariaProhibitedAttr_summary_fail',
-          hintKey: 'ariaProhibitedAttr_hint_fail',
-          params: { attr, role }
-        },
-        data: {
-          details: { reasonCode: 'ARIA_ATTR_PROHIBITED', attr, role }
-        }
-      });
+      failOccurrences.push(
+        helpers.reportOccurrence(el, {
+          occurrenceOutcome: 'fail',
+          summary: 'This attribute is prohibited on this element’s role.',
+          hint: 'Remove this attribute; this role must not carry an accessible name.',
+          i18n: {
+            summaryKey: 'ariaProhibitedAttr_summary_fail',
+            hintKey: 'ariaProhibitedAttr_hint_fail',
+            params: { attr, role }
+          },
+          data: {
+            details: { reasonCode: 'ARIA_ATTR_PROHIBITED', attr, role }
+          }
+        })
+      );
     }
   }
 
@@ -69178,47 +68902,49 @@ const __a11yCoreCrossFrameApi = (function () {
       String(nameInfo.value || '').trim() !== ''
     );
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
     for (const attr of present) {
       if (hasContentFallback) {
-        cantTellOccurrences.push({
-          selector: stableSelector,
-          html,
-          occurrenceOutcome: 'cantTell',
-          summary: `This ${tag} has no role, so ${attr} may not be exposed as its accessible name by assistive technology — but the element's own content already provides one.`,
-          hint: 'Verify whether the existing text content already serves as this element’s label; if so the naming attribute is redundant, otherwise give the element a role that supports naming (e.g. role="img").',
-          i18n: {
-            summaryKey: 'ariaProhibitedAttr_summary_cantTell_roleless',
-            hintKey: 'ariaProhibitedAttr_hint_cantTell_roleless',
-            params: { attr, element: tag }
-          },
-          data: {
-            details: {
-              reasonCode: 'ARIA_ATTR_PROHIBITED_ROLELESS_NEEDS_REVIEW',
-              attr,
-              role: null,
-              element: tag
+        cantTellOccurrences.push(
+          helpers.reportOccurrence(el, {
+            occurrenceOutcome: 'cantTell',
+            summary: `This ${tag} has no role, so ${attr} may not be exposed as its accessible name by assistive technology — but the element's own content already provides one.`,
+            hint: 'Verify whether the existing text content already serves as this element’s label; if so the naming attribute is redundant, otherwise give the element a role that supports naming (e.g. role="img").',
+            i18n: {
+              summaryKey: 'ariaProhibitedAttr_summary_cantTell_roleless',
+              hintKey: 'ariaProhibitedAttr_hint_cantTell_roleless',
+              params: { attr, element: tag }
+            },
+            data: {
+              details: {
+                reasonCode: 'ARIA_ATTR_PROHIBITED_ROLELESS_NEEDS_REVIEW',
+                attr,
+                role: null,
+                element: tag
+              }
             }
-          }
-        });
+          })
+        );
       } else {
-        failOccurrences.push({
-          selector: stableSelector,
-          html,
-          occurrenceOutcome: 'fail',
-          summary: `This ${tag} has no role and no other accessible-name source, so ${attr} is not reliably exposed to assistive technology.`,
-          hint: 'Give this element a role that supports an accessible name (e.g. role="img"/"button"), or remove this attribute if it serves no purpose without one.',
-          i18n: {
-            summaryKey: 'ariaProhibitedAttr_summary_fail_roleless',
-            hintKey: 'ariaProhibitedAttr_hint_fail_roleless',
-            params: { attr, element: tag }
-          },
-          data: {
-            details: { reasonCode: 'ARIA_ATTR_PROHIBITED_ROLELESS', attr, role: null, element: tag }
-          }
-        });
+        failOccurrences.push(
+          helpers.reportOccurrence(el, {
+            occurrenceOutcome: 'fail',
+            summary: `This ${tag} has no role and no other accessible-name source, so ${attr} is not reliably exposed to assistive technology.`,
+            hint: 'Give this element a role that supports an accessible name (e.g. role="img"/"button"), or remove this attribute if it serves no purpose without one.',
+            i18n: {
+              summaryKey: 'ariaProhibitedAttr_summary_fail_roleless',
+              hintKey: 'ariaProhibitedAttr_hint_fail_roleless',
+              params: { attr, element: tag }
+            },
+            data: {
+              details: {
+                reasonCode: 'ARIA_ATTR_PROHIBITED_ROLELESS',
+                attr,
+                role: null,
+                element: tag
+              }
+            }
+          })
+        );
       }
     }
   }
@@ -69387,10 +69113,6 @@ const __a11yCoreCrossFrameApi = (function () {
     for (const entry of owned) {
       if (entry.role && requiredSet.has(entry.role)) continue;
 
-      const stableSelector = helpers.buildSelector ? helpers.buildSelector(entry.el) : 'html';
-      const html = helpers.getOuterHtmlSnippet
-        ? helpers.getOuterHtmlSnippet(entry.el)
-        : entry.el.outerHTML || '';
       const containerSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
 
       const isRoleless = !entry.role;
@@ -69417,29 +69139,33 @@ const __a11yCoreCrossFrameApi = (function () {
         hintKey = 'ariaProhibitedChildren_hint_fail';
       }
 
-      occurrences.push({
-        selector: stableSelector,
-        html,
-        summary,
-        hint,
-        i18n: {
-          summaryKey,
-          hintKey,
-          params: isRoleless
-            ? { attr: entry.attr, containerRole: role }
-            : { childRole: entry.role, containerRole: role, allowedRoles: requiredOwned.join(', ') }
-        },
-        data: {
-          details: {
-            reasonCode: isRoleless ? 'ARIA_PROHIBITED_CHILD_ROLELESS' : 'ARIA_PROHIBITED_CHILD',
-            childRole: entry.role,
-            attr: entry.attr,
-            containerRole: role,
-            containerSelector,
-            allowedOwnedRoles: requiredOwned
+      occurrences.push(
+        helpers.reportOccurrence(entry.el, {
+          summary,
+          hint,
+          i18n: {
+            summaryKey,
+            hintKey,
+            params: isRoleless
+              ? { attr: entry.attr, containerRole: role }
+              : {
+                  childRole: entry.role,
+                  containerRole: role,
+                  allowedRoles: requiredOwned.join(', ')
+                }
+          },
+          data: {
+            details: {
+              reasonCode: isRoleless ? 'ARIA_PROHIBITED_CHILD_ROLELESS' : 'ARIA_PROHIBITED_CHILD',
+              childRole: entry.role,
+              attr: entry.attr,
+              containerRole: role,
+              containerSelector,
+              allowedOwnedRoles: requiredOwned
+            }
           }
-        }
-      });
+        })
+      );
     }
   }
 
@@ -69511,24 +69237,21 @@ const __a11yCoreCrossFrameApi = (function () {
 
     if (!missing.length) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
     for (const attr of missing) {
-      occurrences.push({
-        selector: stableSelector,
-        html,
-        summary: 'This attribute is required for this element’s role, but is missing.',
-        hint: 'Add this attribute with a valid value for this role.',
-        i18n: {
-          summaryKey: 'ariaRequiredAttr_summary_fail',
-          hintKey: 'ariaRequiredAttr_hint_fail',
-          params: { attr, role }
-        },
-        data: {
-          details: { reasonCode: 'ARIA_ATTR_REQUIRED_MISSING', attr, role }
-        }
-      });
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: 'This attribute is required for this element’s role, but is missing.',
+          hint: 'Add this attribute with a valid value for this role.',
+          i18n: {
+            summaryKey: 'ariaRequiredAttr_summary_fail',
+            hintKey: 'ariaRequiredAttr_hint_fail',
+            params: { attr, role }
+          },
+          data: {
+            details: { reasonCode: 'ARIA_ATTR_REQUIRED_MISSING', attr, role }
+          }
+        })
+      );
     }
   }
 
@@ -69713,27 +69436,24 @@ const __a11yCoreCrossFrameApi = (function () {
 
     if (found) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This container role has no owned child with a required role.',
-      hint: 'Add a descendant (or aria-owns-referenced element) with one of the required owned roles.',
-      i18n: {
-        summaryKey: 'ariaRequiredChildren_summary_fail',
-        hintKey: 'ariaRequiredChildren_hint_fail',
-        params: { role, requiredRoles: requiredOwned.join(', ') }
-      },
-      data: {
-        details: {
-          reasonCode: 'ARIA_REQUIRED_CHILD_MISSING',
-          role,
-          requiredOwnedRoles: requiredOwned
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This container role has no owned child with a required role.',
+        hint: 'Add a descendant (or aria-owns-referenced element) with one of the required owned roles.',
+        i18n: {
+          summaryKey: 'ariaRequiredChildren_summary_fail',
+          hintKey: 'ariaRequiredChildren_hint_fail',
+          params: { role, requiredRoles: requiredOwned.join(', ') }
+        },
+        data: {
+          details: {
+            reasonCode: 'ARIA_REQUIRED_CHILD_MISSING',
+            role,
+            requiredOwnedRoles: requiredOwned
+          }
         }
-      }
-    });
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -69885,27 +69605,24 @@ const __a11yCoreCrossFrameApi = (function () {
 
     if (hasContext) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This role requires a specific ancestor/owner context role, which was not found.',
-      hint: 'Place this element inside (or aria-owns-reference it from) an element with an acceptable context role.',
-      i18n: {
-        summaryKey: 'ariaRequiredParent_summary_fail',
-        hintKey: 'ariaRequiredParent_hint_fail',
-        params: { role, requiredRoles: requiredContext.join(', ') }
-      },
-      data: {
-        details: {
-          reasonCode: 'ARIA_REQUIRED_PARENT_MISSING',
-          role,
-          requiredContextRoles: requiredContext
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This role requires a specific ancestor/owner context role, which was not found.',
+        hint: 'Place this element inside (or aria-owns-reference it from) an element with an acceptable context role.',
+        i18n: {
+          summaryKey: 'ariaRequiredParent_summary_fail',
+          hintKey: 'ariaRequiredParent_hint_fail',
+          params: { role, requiredRoles: requiredContext.join(', ') }
+        },
+        data: {
+          details: {
+            reasonCode: 'ARIA_REQUIRED_PARENT_MISSING',
+            role,
+            requiredContextRoles: requiredContext
+          }
         }
-      }
-    });
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -70168,27 +69885,27 @@ const __a11yCoreCrossFrameApi = (function () {
     const role = tokens[0];
     const isKnown = tokens.some((t) => ariaHelpers.isKnownRole(t));
     const reasonCode = !isKnown ? 'ARIA_ROLE_INVALID' : 'ARIA_ROLE_ABSTRACT';
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: !isKnown
-        ? 'The role attribute value is not a recognized ARIA role.'
-        : 'The role attribute value is an abstract ARIA role, which must not be used directly.',
-      hint: !isKnown
-        ? 'Use a valid ARIA role token, or remove the role attribute if none applies.'
-        : 'Replace this abstract role with a concrete role appropriate for the widget/structure.',
-      i18n: {
-        summaryKey: !isKnown ? 'ariaRolesValid_summary_invalid' : 'ariaRolesValid_summary_abstract',
-        hintKey: !isKnown ? 'ariaRolesValid_hint_invalid' : 'ariaRolesValid_hint_abstract',
-        params: { role }
-      },
-      data: {
-        details: { reasonCode, role }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: !isKnown
+          ? 'The role attribute value is not a recognized ARIA role.'
+          : 'The role attribute value is an abstract ARIA role, which must not be used directly.',
+        hint: !isKnown
+          ? 'Use a valid ARIA role token, or remove the role attribute if none applies.'
+          : 'Replace this abstract role with a concrete role appropriate for the widget/structure.',
+        i18n: {
+          summaryKey: !isKnown
+            ? 'ariaRolesValid_summary_invalid'
+            : 'ariaRolesValid_summary_abstract',
+          hintKey: !isKnown ? 'ariaRolesValid_hint_invalid' : 'ariaRolesValid_hint_abstract',
+          params: { role }
+        },
+        data: {
+          details: { reasonCode, role }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -70302,24 +70019,21 @@ const __a11yCoreCrossFrameApi = (function () {
 
     if (!invalidNames || !invalidNames.length) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
     for (const name of invalidNames) {
-      occurrences.push({
-        selector: stableSelector,
-        html,
-        summary: 'This element has an attribute that is not a recognized ARIA attribute.',
-        hint: 'Correct the attribute name (check for typos), or remove it if not needed.',
-        i18n: {
-          summaryKey: 'ariaValidAttr_summary_fail',
-          hintKey: 'ariaValidAttr_hint_fail',
-          params: { attr: name }
-        },
-        data: {
-          details: { reasonCode: 'ARIA_ATTR_INVALID', attr: name }
-        }
-      });
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: 'This element has an attribute that is not a recognized ARIA attribute.',
+          hint: 'Correct the attribute name (check for typos), or remove it if not needed.',
+          i18n: {
+            summaryKey: 'ariaValidAttr_summary_fail',
+            hintKey: 'ariaValidAttr_hint_fail',
+            params: { attr: name }
+          },
+          data: {
+            details: { reasonCode: 'ARIA_ATTR_INVALID', attr: name }
+          }
+        })
+      );
     }
   }
 
@@ -70375,29 +70089,26 @@ const __a11yCoreCrossFrameApi = (function () {
 
     if (!invalid || !invalid.length) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
     for (const item of invalid) {
-      occurrences.push({
-        selector: stableSelector,
-        html,
-        summary: 'This element has an ARIA attribute with an invalid value.',
-        hint: 'Use a value that matches the attribute’s expected type (see the WAI-ARIA specification for this attribute).',
-        i18n: {
-          summaryKey: 'ariaValidAttrValue_summary_fail',
-          hintKey: 'ariaValidAttrValue_hint_fail',
-          params: { attr: item.name, value: item.value }
-        },
-        data: {
-          details: {
-            reasonCode: 'ARIA_ATTR_VALUE_INVALID',
-            attr: item.name,
-            value: item.value,
-            valueReason: item.reason
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: 'This element has an ARIA attribute with an invalid value.',
+          hint: 'Use a value that matches the attribute’s expected type (see the WAI-ARIA specification for this attribute).',
+          i18n: {
+            summaryKey: 'ariaValidAttrValue_summary_fail',
+            hintKey: 'ariaValidAttrValue_hint_fail',
+            params: { attr: item.name, value: item.value }
+          },
+          data: {
+            details: {
+              reasonCode: 'ARIA_ATTR_VALUE_INVALID',
+              attr: item.name,
+              value: item.value,
+              valueReason: item.reason
+            }
           }
-        }
-      });
+        })
+      );
     }
   }
 
@@ -70547,23 +70258,21 @@ const __a11yCoreCrossFrameApi = (function () {
     if (isValidAutocomplete(raw)) continue;
 
     const tag = el.tagName.toLowerCase();
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This autocomplete attribute value is not a valid autofill value.',
-      hint: 'Use "on"/"off", or a valid autofill token list (e.g. "shipping street-address", "cc-number").',
-      i18n: {
-        summaryKey: 'autocompleteValid_summary_fail',
-        hintKey: 'autocompleteValid_hint_fail',
-        params: { element: tag, value: raw }
-      },
-      data: {
-        details: { reasonCode: 'AUTOCOMPLETE_VALUE_INVALID', element: tag, value: raw }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This autocomplete attribute value is not a valid autofill value.',
+        hint: 'Use "on"/"off", or a valid autofill token list (e.g. "shipping street-address", "cc-number").',
+        i18n: {
+          summaryKey: 'autocompleteValid_summary_fail',
+          hintKey: 'autocompleteValid_hint_fail',
+          params: { element: tag, value: raw }
+        },
+        data: {
+          details: { reasonCode: 'AUTOCOMPLETE_VALUE_INVALID', element: tag, value: raw }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -70766,23 +70475,21 @@ const __a11yCoreCrossFrameApi = (function () {
     if (!flagged.length) continue;
 
     const tag = el.tagName.toLowerCase();
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: `This element's inline style forces ${flagged.join(', ')} with !important below the WCAG text-spacing metric, so the user cannot raise it.`,
-      hint: 'Remove !important from line-height/letter-spacing/word-spacing in inline styles, or set a value that already meets the metric (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em).',
-      i18n: {
-        summaryKey: 'avoidInlineSpacing_summary_fail',
-        hintKey: 'avoidInlineSpacing_hint_fail',
-        params: { element: tag, properties: flagged.join(', ') }
-      },
-      data: {
-        details: { reasonCode: 'INLINE_SPACING_IMPORTANT', element: tag, properties: flagged }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: `This element's inline style forces ${flagged.join(', ')} with !important below the WCAG text-spacing metric, so the user cannot raise it.`,
+        hint: 'Remove !important from line-height/letter-spacing/word-spacing in inline styles, or set a value that already meets the metric (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em).',
+        i18n: {
+          summaryKey: 'avoidInlineSpacing_summary_fail',
+          hintKey: 'avoidInlineSpacing_hint_fail',
+          params: { element: tag, properties: flagged.join(', ') }
+        },
+        data: {
+          details: { reasonCode: 'INLINE_SPACING_IMPORTANT', element: tag, properties: flagged }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -71027,28 +70734,26 @@ const __a11yCoreCrossFrameApi = (function () {
           }
         })()
       : null;
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This control has no accessible name.',
-      hint: 'Provide a label, aria-label, aria-labelledby, or other accessible-name mechanism so assistive technologies can identify the control.',
-      i18n: {
-        summaryKey: 'binaryControlNamePresent_summary_fail',
-        hintKey: 'binaryControlNamePresent_hint_fail',
-        params: { controlType }
-      },
-      data: {
-        details: {
-          reasonCode: 'name_missing',
-          controlType,
-          methodTried: res.method
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This control has no accessible name.',
+        hint: 'Provide a label, aria-label, aria-labelledby, or other accessible-name mechanism so assistive technologies can identify the control.',
+        i18n: {
+          summaryKey: 'binaryControlNamePresent_summary_fail',
+          hintKey: 'binaryControlNamePresent_hint_fail',
+          params: { controlType }
         },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+        data: {
+          details: {
+            reasonCode: 'name_missing',
+            controlType,
+            methodTried: res.method
+          },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -71202,35 +70907,30 @@ const __a11yCoreCrossFrameApi = (function () {
         ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
         : null;
 
-      const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-      const html = helpers.getOuterHtmlSnippet
-        ? helpers.getOuterHtmlSnippet(el)
-        : el.outerHTML || '';
-
-      occurrences.push({
-        selector: stableSelector,
-        html,
-        summary: 'This button has no accessible name.',
-        hint: 'Provide visible button text or a programmatic accessible-name mechanism (for example aria-label) so assistive technologies can identify the button.',
-        i18n: {
-          summaryKey: 'buttonNamePresent_summary_fail',
-          hintKey: 'buttonNamePresent_hint_fail',
-          params: { element: tag }
-        },
-        data: {
-          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
-          details: {
-            reasonCode: 'name_missing',
-            metrics: {
-              trustedProgrammaticNameLength: trustedProgrammaticName.length,
-              inputValueNameLength: inputValueName.length,
-              contentNameLength: contentName.length,
-              explicitProgrammatic: explicitProg ? 1 : 0
-            },
-            refs: { accessibleName: nameInfo || null }
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: 'This button has no accessible name.',
+          hint: 'Provide visible button text or a programmatic accessible-name mechanism (for example aria-label) so assistive technologies can identify the button.',
+          i18n: {
+            summaryKey: 'buttonNamePresent_summary_fail',
+            hintKey: 'buttonNamePresent_hint_fail',
+            params: { element: tag }
+          },
+          data: {
+            visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
+            details: {
+              reasonCode: 'name_missing',
+              metrics: {
+                trustedProgrammaticNameLength: trustedProgrammaticName.length,
+                inputValueNameLength: inputValueName.length,
+                contentNameLength: contentName.length,
+                explicitProgrammatic: explicitProg ? 1 : 0
+              },
+              refs: { accessibleName: nameInfo || null }
+            }
           }
-        }
-      });
+        })
+      );
     }
   }
 
@@ -71380,15 +71080,8 @@ const __a11yCoreCrossFrameApi = (function () {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  const stableSelector = helpers.buildSelector ? helpers.buildSelector(body) : 'body';
-  const html = helpers.getOuterHtmlSnippet
-    ? helpers.getOuterHtmlSnippet(body)
-    : (body.outerHTML || '').slice(0, 200);
-
   const occurrences = [
-    {
-      selector: stableSelector,
-      html,
+    helpers.reportOccurrence(body, {
       summary:
         'No recognized way to bypass repeated blocks of content was detected on this page — verify a bypass mechanism exists.',
       hint: 'Confirm the page offers a bypass mechanism: a main landmark (<main> or role="main"), a working "skip to content" link, or heading elements that assistive technology can use to jump past repeated content. (A mechanism may be temporarily hidden — e.g. while a modal dialog makes the page inert — or provided on a per-site basis; this needs human confirmation.)',
@@ -71401,7 +71094,7 @@ const __a11yCoreCrossFrameApi = (function () {
         details: { reasonCode: 'BYPASS_MECHANISM_ABSENT' },
         visibilityFilter: { targetSet: 'acc', accEligible: null, reasons: [] }
       }
-    }
+    })
   ];
 
   return {
@@ -71899,24 +71592,22 @@ const __a11yCoreCrossFrameApi = (function () {
           }
         })()
       : null;
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This combobox has no accessible name.',
-      hint: "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this combobox's accessible name.",
-      i18n: {
-        summaryKey: 'comboboxNamePresent_summary_fail',
-        hintKey: 'comboboxNamePresent_hint_fail',
-        params: {}
-      },
-      data: {
-        details: { reasonCode: 'name_missing', controlType: 'combobox', methodTried: res.method },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This combobox has no accessible name.',
+        hint: "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this combobox's accessible name.",
+        i18n: {
+          summaryKey: 'comboboxNamePresent_summary_fail',
+          hintKey: 'comboboxNamePresent_hint_fail',
+          params: {}
+        },
+        data: {
+          details: { reasonCode: 'name_missing', controlType: 'combobox', methodTried: res.method },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -73802,32 +73493,28 @@ const __a11yCoreCrossFrameApi = (function () {
   }
 
   const target = document.documentElement || document.body || null;
-  const stableSelector = helpers.buildSelector && target ? helpers.buildSelector(target) : 'html';
-  const html =
-    helpers.getOuterHtmlSnippet && target ? helpers.getOuterHtmlSnippet(target) : '<html>';
-
-  const occurrences = findings.map((f) => ({
-    selector: stableSelector,
-    html,
-    summary: f.selectorText
-      ? `A "${f.mediaText}" media query rotates "${f.selectorText}", locking the page to one orientation.`
-      : `A "${f.mediaText}" media query rotates an element with no readable selector, locking the page to one orientation.`,
-    hint: 'Remove the rotate() transform from the orientation media query; let the page respond naturally to device orientation instead of forcing a visual rotation.',
-    i18n: {
-      summaryKey: f.selectorText
-        ? 'cssOrientationLock_summary_fail'
-        : 'cssOrientationLock_summary_fail_unknownSelector',
-      hintKey: 'cssOrientationLock_hint_fail',
-      params: { mediaText: f.mediaText, selectorText: f.selectorText }
-    },
-    data: {
-      details: {
-        reasonCode: 'ORIENTATION_MEDIA_ROTATE_TRANSFORM',
-        mediaText: f.mediaText,
-        selectorText: f.selectorText
+  const occurrences = findings.map((f) =>
+    helpers.reportOccurrence(target, {
+      summary: f.selectorText
+        ? `A "${f.mediaText}" media query rotates "${f.selectorText}", locking the page to one orientation.`
+        : `A "${f.mediaText}" media query rotates an element with no readable selector, locking the page to one orientation.`,
+      hint: 'Remove the rotate() transform from the orientation media query; let the page respond naturally to device orientation instead of forcing a visual rotation.',
+      i18n: {
+        summaryKey: f.selectorText
+          ? 'cssOrientationLock_summary_fail'
+          : 'cssOrientationLock_summary_fail_unknownSelector',
+        hintKey: 'cssOrientationLock_hint_fail',
+        params: { mediaText: f.mediaText, selectorText: f.selectorText }
+      },
+      data: {
+        details: {
+          reasonCode: 'ORIENTATION_MEDIA_ROTATE_TRANSFORM',
+          mediaText: f.mediaText,
+          selectorText: f.selectorText
+        }
       }
-    }
-  }));
+    })
+  );
 
   return {
     ruleId: rule.ruleId,
@@ -73898,9 +73585,6 @@ const __a11yCoreCrossFrameApi = (function () {
         : null;
     if (!reasonCode) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
     const summary = invalidTags.length
       ? 'This description list contains a direct or wrapped child that is not part of a dt/dd group.'
       : 'This description list has no <dt>/<dd> term-definition group.';
@@ -73908,24 +73592,24 @@ const __a11yCoreCrossFrameApi = (function () {
       ? 'Only use <dt>/<dd> (optionally wrapped in one <div>), <script>, <template>, or <style> inside <dl>.'
       : 'Add at least one <dt>/<dd> pair inside this <dl>.';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary,
-      hint,
-      i18n: {
-        summaryKey: invalidTags.length
-          ? 'definitionListChildrenValid_summary_fail_invalidChild'
-          : 'definitionListChildrenValid_summary_fail_noDtDd',
-        hintKey: invalidTags.length
-          ? 'definitionListChildrenValid_hint_fail_invalidChild'
-          : 'definitionListChildrenValid_hint_fail_noDtDd',
-        params: { invalidChildren: dedupedInvalidTags.join(', ') }
-      },
-      data: {
-        details: { reasonCode, invalidChildren: invalidTags }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary,
+        hint,
+        i18n: {
+          summaryKey: invalidTags.length
+            ? 'definitionListChildrenValid_summary_fail_invalidChild'
+            : 'definitionListChildrenValid_summary_fail_noDtDd',
+          hintKey: invalidTags.length
+            ? 'definitionListChildrenValid_hint_fail_invalidChild'
+            : 'definitionListChildrenValid_hint_fail_noDtDd',
+          params: { invalidChildren: dedupedInvalidTags.join(', ') }
+        },
+        data: {
+          details: { reasonCode, invalidChildren: invalidTags }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -73957,23 +73641,21 @@ const __a11yCoreCrossFrameApi = (function () {
     applicableCount += 1;
 
     const tag = el.tagName.toLowerCase();
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This element’s content cannot be paused, stopped, or hidden by the user.',
-      hint: 'Remove this element; use static content, or an animation with a user-facing pause/stop control, instead.',
-      i18n: {
-        summaryKey: 'deprecatedElements_summary_fail',
-        hintKey: 'deprecatedElements_hint_fail',
-        params: { element: tag }
-      },
-      data: {
-        details: { reasonCode: 'DEPRECATED_NON_STOPPABLE_ELEMENT', element: tag }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This element’s content cannot be paused, stopped, or hidden by the user.',
+        hint: 'Remove this element; use static content, or an animation with a user-facing pause/stop control, instead.',
+        i18n: {
+          summaryKey: 'deprecatedElements_summary_fail',
+          hintKey: 'deprecatedElements_hint_fail',
+          params: { element: tag }
+        },
+        data: {
+          details: { reasonCode: 'DEPRECATED_NON_STOPPABLE_ELEMENT', element: tag }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -74098,24 +73780,22 @@ const __a11yCoreCrossFrameApi = (function () {
           }
         })()
       : null;
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This dialog has no accessible name.',
-      hint: 'Provide aria-labelledby (preferred) or aria-label so assistive technologies can announce the dialog.',
-      i18n: {
-        summaryKey: 'dialogNamePresent_summary_fail',
-        hintKey: 'dialogNamePresent_hint_fail',
-        params: { role }
-      },
-      data: {
-        details: { reasonCode: 'name_missing', controlType: role, methodTried: res.method },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This dialog has no accessible name.',
+        hint: 'Provide aria-labelledby (preferred) or aria-label so assistive technologies can announce the dialog.',
+        i18n: {
+          summaryKey: 'dialogNamePresent_summary_fail',
+          hintKey: 'dialogNamePresent_hint_fail',
+          params: { role }
+        },
+        data: {
+          details: { reasonCode: 'name_missing', controlType: role, methodTried: res.method },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -74161,23 +73841,21 @@ const __a11yCoreCrossFrameApi = (function () {
     if (valid) continue;
 
     const tag = el.tagName.toLowerCase();
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This description-list item is not contained by a <dl>.',
-      hint: 'Place this <dt>/<dd> inside a <dl>, directly or wrapped in a single <div>.',
-      i18n: {
-        summaryKey: 'dlitemParentValid_summary_fail',
-        hintKey: 'dlitemParentValid_hint_fail',
-        params: { element: tag, parentElement: parentTag }
-      },
-      data: {
-        details: { reasonCode: 'DLITEM_INVALID_PARENT', element: tag, parentElement: parentTag }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This description-list item is not contained by a <dl>.',
+        hint: 'Place this <dt>/<dd> inside a <dl>, directly or wrapped in a single <div>.',
+        i18n: {
+          summaryKey: 'dlitemParentValid_summary_fail',
+          hintKey: 'dlitemParentValid_hint_fail',
+          params: { element: tag, parentElement: parentTag }
+        },
+        data: {
+          details: { reasonCode: 'DLITEM_INVALID_PARENT', element: tag, parentElement: parentTag }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -74253,30 +73931,25 @@ const __a11yCoreCrossFrameApi = (function () {
     for (const el of els) {
       if (inScope && !inScope.has(el)) continue;
 
-      const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-      const html = helpers.getOuterHtmlSnippet
-        ? helpers.getOuterHtmlSnippet(el)
-        : el.outerHTML || '';
-
-      cantTellOccurrences.push({
-        selector: stableSelector,
-        html,
-        summary:
-          'This id is referenced by an ARIA attribute but is used by more than one element; the reference resolves to the first.',
-        hint: 'Confirm the first element carrying this id is the intended target, or make the id unique.',
-        i18n: {
-          summaryKey: 'duplicateIdAria_summary_cantTell',
-          hintKey: 'duplicateIdAria_hint_cantTell',
-          params: { id: refId, duplicateCount: String(els.length) }
-        },
-        data: {
-          details: {
-            reasonCode: 'DUPLICATE_ID_ARIA_REFERENCED',
-            id: refId,
-            duplicateCount: els.length
+      cantTellOccurrences.push(
+        helpers.reportOccurrence(el, {
+          summary:
+            'This id is referenced by an ARIA attribute but is used by more than one element; the reference resolves to the first.',
+          hint: 'Confirm the first element carrying this id is the intended target, or make the id unique.',
+          i18n: {
+            summaryKey: 'duplicateIdAria_summary_cantTell',
+            hintKey: 'duplicateIdAria_hint_cantTell',
+            params: { id: refId, duplicateCount: String(els.length) }
+          },
+          data: {
+            details: {
+              reasonCode: 'DUPLICATE_ID_ARIA_REFERENCED',
+              id: refId,
+              duplicateCount: els.length
+            }
           }
-        }
-      });
+        })
+      );
     }
   }
 
@@ -74741,8 +74414,6 @@ const __a11yCoreCrossFrameApi = (function () {
     const name = getAccessibleNameText(el);
     if (name) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
     const eligInfo = helpers.getEligibilityInfo
       ? (() => {
           try {
@@ -74753,21 +74424,21 @@ const __a11yCoreCrossFrameApi = (function () {
         })()
       : null;
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This heading has no accessible name.',
-      hint: 'Add text content (or aria-label/aria-labelledby) to this heading, or remove it if it is not needed.',
-      i18n: {
-        summaryKey: 'emptyHeading_summary_cantTell',
-        hintKey: 'emptyHeading_hint_cantTell',
-        params: {}
-      },
-      data: {
-        details: { reasonCode: 'HEADING_EMPTY' },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This heading has no accessible name.',
+        hint: 'Add text content (or aria-label/aria-labelledby) to this heading, or remove it if it is not needed.',
+        i18n: {
+          summaryKey: 'emptyHeading_summary_cantTell',
+          hintKey: 'emptyHeading_hint_cantTell',
+          params: {}
+        },
+        data: {
+          details: { reasonCode: 'HEADING_EMPTY' },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -74867,43 +74538,40 @@ const __a11yCoreCrossFrameApi = (function () {
 
     if (getVisibleText(el)) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
     const ariaName = getAriaOnlyName(el);
     if (ariaName) {
-      occurrences.push({
-        selector: stableSelector,
-        html,
-        summary:
-          'This table header cell has no visible text — its only accessible name comes from aria-label/aria-labelledby, which real screen-reader/browser combinations (e.g. NVDA+Firefox, iOS VoiceOver+Safari) are known to ignore on <th> elements.',
-        hint: 'Add visible text content to this header cell (in addition to, or instead of, aria-label/aria-labelledby) — visible text is the only naming mechanism confirmed to work across tested screen readers.',
-        i18n: {
-          summaryKey: 'emptyTableHeader_summary_cantTell_ariaOnly',
-          hintKey: 'emptyTableHeader_hint_cantTell_ariaOnly',
-          params: {}
-        },
-        data: {
-          details: { reasonCode: 'TABLE_HEADER_NAME_NOT_VISIBLE_TEXT', ariaName }
-        }
-      });
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          summary:
+            'This table header cell has no visible text — its only accessible name comes from aria-label/aria-labelledby, which real screen-reader/browser combinations (e.g. NVDA+Firefox, iOS VoiceOver+Safari) are known to ignore on <th> elements.',
+          hint: 'Add visible text content to this header cell (in addition to, or instead of, aria-label/aria-labelledby) — visible text is the only naming mechanism confirmed to work across tested screen readers.',
+          i18n: {
+            summaryKey: 'emptyTableHeader_summary_cantTell_ariaOnly',
+            hintKey: 'emptyTableHeader_hint_cantTell_ariaOnly',
+            params: {}
+          },
+          data: {
+            details: { reasonCode: 'TABLE_HEADER_NAME_NOT_VISIBLE_TEXT', ariaName }
+          }
+        })
+      );
       continue;
     }
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This table header cell has no accessible name.',
-      hint: 'Add text content (or aria-label/aria-labelledby) to this header cell, or remove it if it is not needed.',
-      i18n: {
-        summaryKey: 'emptyTableHeader_summary_cantTell',
-        hintKey: 'emptyTableHeader_hint_cantTell',
-        params: {}
-      },
-      data: {
-        details: { reasonCode: 'TABLE_HEADER_EMPTY' }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This table header cell has no accessible name.',
+        hint: 'Add text content (or aria-label/aria-labelledby) to this header cell, or remove it if it is not needed.',
+        i18n: {
+          summaryKey: 'emptyTableHeader_summary_cantTell',
+          hintKey: 'emptyTableHeader_hint_cantTell',
+          params: {}
+        },
+        data: {
+          details: { reasonCode: 'TABLE_HEADER_EMPTY' }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -75541,51 +75209,49 @@ const __a11yCoreCrossFrameApi = (function () {
       : [...eligibleLabels];
 
     const tag = el.tagName.toLowerCase();
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
     if (contributing.length >= 2) {
-      failOccurrences.push({
-        selector: stableSelector,
-        html,
-        summary: 'This form control is associated with more than one <label>.',
-        hint: 'Keep only one <label> per form control (either wrapping it or referencing it via for/id).',
-        occurrenceOutcome: 'fail',
-        i18n: {
-          summaryKey: 'formControlSingleLabel_summary_fail',
-          hintKey: 'formControlSingleLabel_hint_fail',
-          params: { element: tag, labelCount: String(contributing.length) }
-        },
-        data: {
-          details: {
-            reasonCode: 'FORM_FIELD_MULTIPLE_LABELS',
-            element: tag,
-            labelCount: contributing.length
+      failOccurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: 'This form control is associated with more than one <label>.',
+          hint: 'Keep only one <label> per form control (either wrapping it or referencing it via for/id).',
+          occurrenceOutcome: 'fail',
+          i18n: {
+            summaryKey: 'formControlSingleLabel_summary_fail',
+            hintKey: 'formControlSingleLabel_hint_fail',
+            params: { element: tag, labelCount: String(contributing.length) }
+          },
+          data: {
+            details: {
+              reasonCode: 'FORM_FIELD_MULTIPLE_LABELS',
+              element: tag,
+              labelCount: contributing.length
+            }
           }
-        }
-      });
+        })
+      );
     } else if (contributing.length === 1) {
-      cantTellOccurrences.push({
-        selector: stableSelector,
-        html,
-        summary:
-          'This form control has one labelling <label> plus an extra empty <label> association.',
-        hint: 'Remove the redundant empty <label> so exactly one <label> is associated with the control.',
-        occurrenceOutcome: 'cantTell',
-        i18n: {
-          summaryKey: 'formControlSingleLabel_summary_cantTell',
-          hintKey: 'formControlSingleLabel_hint_cantTell',
-          params: { element: tag, labelCount: String(eligibleLabels.size) }
-        },
-        data: {
-          details: {
-            reasonCode: 'FORM_FIELD_EXTRA_EMPTY_LABEL',
-            element: tag,
-            labelCount: eligibleLabels.size,
-            contributingLabelCount: contributing.length
+      cantTellOccurrences.push(
+        helpers.reportOccurrence(el, {
+          summary:
+            'This form control has one labelling <label> plus an extra empty <label> association.',
+          hint: 'Remove the redundant empty <label> so exactly one <label> is associated with the control.',
+          occurrenceOutcome: 'cantTell',
+          i18n: {
+            summaryKey: 'formControlSingleLabel_summary_cantTell',
+            hintKey: 'formControlSingleLabel_hint_cantTell',
+            params: { element: tag, labelCount: String(eligibleLabels.size) }
+          },
+          data: {
+            details: {
+              reasonCode: 'FORM_FIELD_EXTRA_EMPTY_LABEL',
+              element: tag,
+              labelCount: eligibleLabels.size,
+              contributingLabelCount: contributing.length
+            }
           }
-        }
-      });
+        })
+      );
     }
     // contributing.length === 0: no label carries text, so nothing competes
     // for the name. A control left unnamed is form-control-programmatic-
@@ -75694,29 +75360,24 @@ const __a11yCoreCrossFrameApi = (function () {
     const { el, level } = headings[i];
 
     if (level > highestSoFar + 1) {
-      const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-      const html = helpers.getOuterHtmlSnippet
-        ? helpers.getOuterHtmlSnippet(el)
-        : el.outerHTML || '';
-
-      occurrences.push({
-        selector: stableSelector,
-        html,
-        summary: `This heading jumps from level ${highestSoFar} to level ${level}, skipping a level.`,
-        hint: 'Use consecutive heading levels (do not skip a level when going deeper) so the document outline stays predictable.',
-        i18n: {
-          summaryKey: 'headingOrder_summary_cantTell',
-          hintKey: 'headingOrder_hint_cantTell',
-          params: { fromLevel: String(highestSoFar), toLevel: String(level) }
-        },
-        data: {
-          details: {
-            reasonCode: 'HEADING_ORDER_SKIPPED_LEVEL',
-            fromLevel: highestSoFar,
-            toLevel: level
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: `This heading jumps from level ${highestSoFar} to level ${level}, skipping a level.`,
+          hint: 'Use consecutive heading levels (do not skip a level when going deeper) so the document outline stays predictable.',
+          i18n: {
+            summaryKey: 'headingOrder_summary_cantTell',
+            hintKey: 'headingOrder_hint_cantTell',
+            params: { fromLevel: String(highestSoFar), toLevel: String(level) }
+          },
+          data: {
+            details: {
+              reasonCode: 'HEADING_ORDER_SKIPPED_LEVEL',
+              fromLevel: highestSoFar,
+              toLevel: level
+            }
           }
-        }
-      });
+        })
+      );
     }
 
     if (level > highestSoFar) highestSoFar = level;
@@ -75852,15 +75513,8 @@ const __a11yCoreCrossFrameApi = (function () {
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
 
-  const stableSelector = helpers.buildSelector ? helpers.buildSelector(html) : 'html';
-  const htmlSnippet = helpers.getOuterHtmlSnippet
-    ? helpers.getOuterHtmlSnippet(html)
-    : (html.outerHTML || '').slice(0, 200);
-
   const occurrences = [
-    {
-      selector: stableSelector,
-      html: htmlSnippet,
+    helpers.reportOccurrence(html, {
       summary: `The lang ("${lang}") and xml:lang ("${xmlLang}") attributes declare different languages.`,
       hint: 'Make lang and xml:lang declare the same primary language, or remove the deprecated xml:lang attribute.',
       i18n: {
@@ -75871,7 +75525,7 @@ const __a11yCoreCrossFrameApi = (function () {
       data: {
         details: { reasonCode: 'HTML_XML_LANG_MISMATCH', lang, xmlLang }
       }
-    }
+    })
   ];
 
   return {
@@ -76244,47 +75898,45 @@ const __a11yCoreCrossFrameApi = (function () {
     if (!candidates.length) continue;
 
     const tag = el.tagName.toLowerCase();
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
     const shouldProbe = candidates.length === 1;
     const runtimeProbe = shouldProbe
       ? probeImmediateFocusRedirect(el, contentDoc, candidates[0])
       : null;
 
     if (runtimeProbe && runtimeProbe.redirected) {
-      cantTellOccurrences.push({
-        selector: stableSelector,
-        html,
-        summary:
-          'This frame has tabindex="-1" and a focusable candidate, but focus moves immediately to another target. Verify keyboard reachability in a real browser.',
-        hint: 'If this is an intentional focus handoff, ensure keyboard users cannot remain on hidden/intermediate frame content.',
-        i18n: null,
-        data: {
-          details: {
-            reasonCode: 'IFRAME_TABINDEX_NEGATIVE_CONTENT_RUNTIME_REDIRECT',
-            element: tag,
-            runtimeProbe
+      cantTellOccurrences.push(
+        helpers.reportOccurrence(el, {
+          summary:
+            'This frame has tabindex="-1" and a focusable candidate, but focus moves immediately to another target. Verify keyboard reachability in a real browser.',
+          hint: 'If this is an intentional focus handoff, ensure keyboard users cannot remain on hidden/intermediate frame content.',
+          i18n: null,
+          data: {
+            details: {
+              reasonCode: 'IFRAME_TABINDEX_NEGATIVE_CONTENT_RUNTIME_REDIRECT',
+              element: tag,
+              runtimeProbe
+            }
           }
-        }
-      });
+        })
+      );
       continue;
     }
 
-    failOccurrences.push({
-      selector: stableSelector,
-      html,
-      summary:
-        'This frame has tabindex="-1" but its content contains focusable elements, which remain reachable by keyboard.',
-      hint: 'Remove focusable content from the frame, or remove tabindex="-1" if the frame is meant to be reachable.',
-      i18n: {
-        summaryKey: 'iframeFocusableContent_summary_fail',
-        hintKey: 'iframeFocusableContent_hint_fail',
-        params: { element: tag }
-      },
-      data: {
-        details: { reasonCode: 'IFRAME_TABINDEX_NEGATIVE_CONTENT_FOCUSABLE', element: tag }
-      }
-    });
+    failOccurrences.push(
+      helpers.reportOccurrence(el, {
+        summary:
+          'This frame has tabindex="-1" but its content contains focusable elements, which remain reachable by keyboard.',
+        hint: 'Remove focusable content from the frame, or remove tabindex="-1" if the frame is meant to be reachable.',
+        i18n: {
+          summaryKey: 'iframeFocusableContent_summary_fail',
+          hintKey: 'iframeFocusableContent_hint_fail',
+          params: { element: tag }
+        },
+        data: {
+          details: { reasonCode: 'IFRAME_TABINDEX_NEGATIVE_CONTENT_FOCUSABLE', element: tag }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -76337,24 +75989,22 @@ const __a11yCoreCrossFrameApi = (function () {
         })()
       : null;
     const tag = el.tagName.toLowerCase();
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This frame has no accessible name.',
-      hint: 'Add a title attribute (or aria-label/aria-labelledby) describing the frame’s content or purpose.',
-      i18n: {
-        summaryKey: 'iframeNamePresent_summary_fail',
-        hintKey: 'iframeNamePresent_hint_fail',
-        params: { element: tag }
-      },
-      data: {
-        details: { reasonCode: 'IFRAME_NAME_MISSING', element: tag },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This frame has no accessible name.',
+        hint: 'Add a title attribute (or aria-label/aria-labelledby) describing the frame’s content or purpose.',
+        i18n: {
+          summaryKey: 'iframeNamePresent_summary_fail',
+          hintKey: 'iframeNamePresent_hint_fail',
+          params: { element: tag }
+        },
+        data: {
+          details: { reasonCode: 'IFRAME_NAME_MISSING', element: tag },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -76404,30 +76054,25 @@ const __a11yCoreCrossFrameApi = (function () {
 
     for (const el of els) {
       const tag = el.tagName.toLowerCase();
-      const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-      const html = helpers.getOuterHtmlSnippet
-        ? helpers.getOuterHtmlSnippet(el)
-        : el.outerHTML || '';
-
-      occurrences.push({
-        selector: stableSelector,
-        html,
-        summary: 'This frame’s title is not unique among the frames on this page.',
-        hint: 'Give each frame a distinct title describing its specific content or purpose.',
-        i18n: {
-          summaryKey: 'iframeTitleUnique_summary_fail',
-          hintKey: 'iframeTitleUnique_hint_fail',
-          params: { element: tag, title }
-        },
-        data: {
-          details: {
-            reasonCode: 'IFRAME_TITLE_DUPLICATE',
-            element: tag,
-            title,
-            duplicateCount: els.length
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: 'This frame’s title is not unique among the frames on this page.',
+          hint: 'Give each frame a distinct title describing its specific content or purpose.',
+          i18n: {
+            summaryKey: 'iframeTitleUnique_summary_fail',
+            hintKey: 'iframeTitleUnique_hint_fail',
+            params: { element: tag, title }
+          },
+          data: {
+            details: {
+              reasonCode: 'IFRAME_TITLE_DUPLICATE',
+              element: tag,
+              title,
+              duplicateCount: els.length
+            }
           }
-        }
-      });
+        })
+      );
     }
   }
 
@@ -76503,23 +76148,20 @@ const __a11yCoreCrossFrameApi = (function () {
 
     if (otherText.toLowerCase() !== alt.toLowerCase()) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: "This image's alt text duplicates other visible text right next to it.",
-      hint: 'Make the alt text empty (alt="") if the image is purely decorative alongside the text, or remove the redundant duplication.',
-      i18n: {
-        summaryKey: 'imageRedundantAlt_summary_cantTell',
-        hintKey: 'imageRedundantAlt_hint_cantTell',
-        params: { alt }
-      },
-      data: {
-        details: { reasonCode: 'IMAGE_ALT_REDUNDANT', alt }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: "This image's alt text duplicates other visible text right next to it.",
+        hint: 'Make the alt text empty (alt="") if the image is purely decorative alongside the text, or remove the redundant duplication.',
+        i18n: {
+          summaryKey: 'imageRedundantAlt_summary_cantTell',
+          hintKey: 'imageRedundantAlt_hint_cantTell',
+          params: { alt }
+        },
+        data: {
+          details: { reasonCode: 'IMAGE_ALT_REDUNDANT', alt }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -77830,43 +77472,38 @@ const __a11yCoreCrossFrameApi = (function () {
     }
 
     if (!contains) {
-      const selectorOut = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-      const html = helpers.getOuterHtmlSnippet
-        ? helpers.getOuterHtmlSnippet(el)
-        : el.outerHTML || '';
-
-      occurrences.push({
-        selector: selectorOut,
-        html,
-        ...(uncertainty ? { outcome: 'cantTell' } : null),
-        summary: uncertainty
-          ? 'Accessible name may not contain the visible label text.'
-          : 'Accessible name does not contain the visible label text.',
-        hint: uncertainty
-          ? 'Check by hand: the two differ only by an abbreviation or by hyphenation, which markup cannot settle.'
-          : 'Ensure the accessible name includes the visible text label (e.g., update aria-label/aria-labelledby to include the visible wording).',
-        i18n: {
-          summaryKey: uncertainty ? 'labelInName_summary_cantTell' : 'labelInName_summary_fail',
-          hintKey: uncertainty ? 'labelInName_hint_cantTell' : 'labelInName_hint_fail',
-          params: {
-            element: getElementDescriptor(el),
-            visibleLabel: clipForSummary(visibleLabel),
-            labelSource: labelInfo && labelInfo.source ? labelInfo.source : 'none',
-            nameMechanism: acc && acc.mechanism ? acc.mechanism : 'none'
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          ...(uncertainty ? { outcome: 'cantTell' } : null),
+          summary: uncertainty
+            ? 'Accessible name may not contain the visible label text.'
+            : 'Accessible name does not contain the visible label text.',
+          hint: uncertainty
+            ? 'Check by hand: the two differ only by an abbreviation or by hyphenation, which markup cannot settle.'
+            : 'Ensure the accessible name includes the visible text label (e.g., update aria-label/aria-labelledby to include the visible wording).',
+          i18n: {
+            summaryKey: uncertainty ? 'labelInName_summary_cantTell' : 'labelInName_summary_fail',
+            hintKey: uncertainty ? 'labelInName_hint_cantTell' : 'labelInName_hint_fail',
+            params: {
+              element: getElementDescriptor(el),
+              visibleLabel: clipForSummary(visibleLabel),
+              labelSource: labelInfo && labelInfo.source ? labelInfo.source : 'none',
+              nameMechanism: acc && acc.mechanism ? acc.mechanism : 'none'
+            }
+          },
+          data: {
+            details: {
+              reasonCode: uncertainty || 'VISIBLE_LABEL_NOT_IN_ACCESSIBLE_NAME',
+              visibleLabel,
+              accessibleName: accName,
+              normalized: { visibleLabel: visibleNorm, accessibleName: accNorm },
+              tokenized: { visibleLabel: labelTokens, accessibleName: nameTokens },
+              labelSource: labelInfo && labelInfo.source ? labelInfo.source : 'none',
+              nameMechanism: acc && acc.mechanism ? acc.mechanism : 'none'
+            }
           }
-        },
-        data: {
-          details: {
-            reasonCode: uncertainty || 'VISIBLE_LABEL_NOT_IN_ACCESSIBLE_NAME',
-            visibleLabel,
-            accessibleName: accName,
-            normalized: { visibleLabel: visibleNorm, accessibleName: accNorm },
-            tokenized: { visibleLabel: labelTokens, accessibleName: nameTokens },
-            labelSource: labelInfo && labelInfo.source ? labelInfo.source : 'none',
-            nameMechanism: acc && acc.mechanism ? acc.mechanism : 'none'
-          }
-        }
-      });
+        })
+      );
     }
   }
 
@@ -77930,23 +77567,21 @@ const __a11yCoreCrossFrameApi = (function () {
     if (!nameInfo || nameInfo.mechanism !== 'title') continue;
 
     const tag = el.tagName.toLowerCase();
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This form control relies on the title attribute as its only label.',
-      hint: 'Add a visible <label> (or aria-label/aria-labelledby) in addition to, or instead of, the title attribute.',
-      i18n: {
-        summaryKey: 'labelTitleOnly_summary_cantTell',
-        hintKey: 'labelTitleOnly_hint_cantTell',
-        params: { element: tag }
-      },
-      data: {
-        details: { reasonCode: 'LABEL_TITLE_ONLY', element: tag }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This form control relies on the title attribute as its only label.',
+        hint: 'Add a visible <label> (or aria-label/aria-labelledby) in addition to, or instead of, the title attribute.',
+        i18n: {
+          summaryKey: 'labelTitleOnly_summary_cantTell',
+          hintKey: 'labelTitleOnly_hint_cantTell',
+          params: { element: tag }
+        },
+        data: {
+          details: { reasonCode: 'LABEL_TITLE_ONLY', element: tag }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -78113,23 +77748,20 @@ const __a11yCoreCrossFrameApi = (function () {
   for (const el of banners) {
     if (!hasLandmarkAncestor(el)) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This banner landmark is nested inside another landmark region.',
-      hint: 'Move the banner landmark (header/role="banner") so it is not contained by another landmark; a banner should be a top-level region of the page.',
-      i18n: {
-        summaryKey: 'landmarkBannerIsTopLevel_summary_cantTell',
-        hintKey: 'landmarkBannerIsTopLevel_hint_cantTell',
-        params: {}
-      },
-      data: {
-        details: { reasonCode: 'LANDMARK_BANNER_NOT_TOP_LEVEL' }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This banner landmark is nested inside another landmark region.',
+        hint: 'Move the banner landmark (header/role="banner") so it is not contained by another landmark; a banner should be a top-level region of the page.',
+        i18n: {
+          summaryKey: 'landmarkBannerIsTopLevel_summary_cantTell',
+          hintKey: 'landmarkBannerIsTopLevel_hint_cantTell',
+          params: {}
+        },
+        data: {
+          details: { reasonCode: 'LANDMARK_BANNER_NOT_TOP_LEVEL' }
+        }
+      })
+    );
   }
 
   if (occurrences.length) {
@@ -78296,23 +77928,20 @@ const __a11yCoreCrossFrameApi = (function () {
   for (const el of contentinfos) {
     if (!hasLandmarkAncestor(el)) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This contentinfo landmark is nested inside another landmark region.',
-      hint: 'Move the contentinfo landmark (footer/role="contentinfo") so it is not contained by another landmark; contentinfo should be a top-level region of the page.',
-      i18n: {
-        summaryKey: 'landmarkContentinfoIsTopLevel_summary_cantTell',
-        hintKey: 'landmarkContentinfoIsTopLevel_hint_cantTell',
-        params: {}
-      },
-      data: {
-        details: { reasonCode: 'LANDMARK_CONTENTINFO_NOT_TOP_LEVEL' }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This contentinfo landmark is nested inside another landmark region.',
+        hint: 'Move the contentinfo landmark (footer/role="contentinfo") so it is not contained by another landmark; contentinfo should be a top-level region of the page.',
+        i18n: {
+          summaryKey: 'landmarkContentinfoIsTopLevel_summary_cantTell',
+          hintKey: 'landmarkContentinfoIsTopLevel_hint_cantTell',
+          params: {}
+        },
+        data: {
+          details: { reasonCode: 'LANDMARK_CONTENTINFO_NOT_TOP_LEVEL' }
+        }
+      })
+    );
   }
 
   if (occurrences.length) {
@@ -78467,23 +78096,20 @@ const __a11yCoreCrossFrameApi = (function () {
   for (const el of mains) {
     if (!hasLandmarkAncestor(el)) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This main landmark is nested inside another landmark region.',
-      hint: 'Move the main landmark (<main>/role="main") so it is not contained by another landmark; main should be a top-level region of the page.',
-      i18n: {
-        summaryKey: 'landmarkMainIsTopLevel_summary_cantTell',
-        hintKey: 'landmarkMainIsTopLevel_hint_cantTell',
-        params: {}
-      },
-      data: {
-        details: { reasonCode: 'LANDMARK_MAIN_NOT_TOP_LEVEL' }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This main landmark is nested inside another landmark region.',
+        hint: 'Move the main landmark (<main>/role="main") so it is not contained by another landmark; main should be a top-level region of the page.',
+        i18n: {
+          summaryKey: 'landmarkMainIsTopLevel_summary_cantTell',
+          hintKey: 'landmarkMainIsTopLevel_hint_cantTell',
+          params: {}
+        },
+        data: {
+          details: { reasonCode: 'LANDMARK_MAIN_NOT_TOP_LEVEL' }
+        }
+      })
+    );
   }
 
   if (occurrences.length) {
@@ -78616,12 +78242,7 @@ const __a11yCoreCrossFrameApi = (function () {
   }
 
   const occurrences = banners.map((el) => {
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    return {
-      selector: stableSelector,
-      html,
+    return helpers.reportOccurrence(el, {
       summary: 'This page has more than one banner landmark.',
       hint: 'Keep only one banner landmark (header/role="banner") per page.',
       i18n: {
@@ -78632,7 +78253,7 @@ const __a11yCoreCrossFrameApi = (function () {
       data: {
         details: { reasonCode: 'LANDMARK_DUPLICATE_BANNER', count: banners.length }
       }
-    };
+    });
   });
 
   return {
@@ -78762,12 +78383,7 @@ const __a11yCoreCrossFrameApi = (function () {
   }
 
   const occurrences = contentinfos.map((el) => {
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    return {
-      selector: stableSelector,
-      html,
+    return helpers.reportOccurrence(el, {
       summary: 'This page has more than one contentinfo landmark.',
       hint: 'Keep only one contentinfo landmark (footer/role="contentinfo") per page.',
       i18n: {
@@ -78778,7 +78394,7 @@ const __a11yCoreCrossFrameApi = (function () {
       data: {
         details: { reasonCode: 'LANDMARK_DUPLICATE_CONTENTINFO', count: contentinfos.length }
       }
-    };
+    });
   });
 
   return {
@@ -78852,12 +78468,7 @@ const __a11yCoreCrossFrameApi = (function () {
   }
 
   const occurrences = mains.map((el) => {
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    return {
-      selector: stableSelector,
-      html,
+    return helpers.reportOccurrence(el, {
       summary: 'This page has more than one main landmark.',
       hint: 'Keep only one main landmark (<main>/role="main") per page.',
       i18n: {
@@ -78868,7 +78479,7 @@ const __a11yCoreCrossFrameApi = (function () {
       data: {
         details: { reasonCode: 'LANDMARK_DUPLICATE_MAIN', count: mains.length }
       }
-    };
+    });
   });
 
   return {
@@ -78942,19 +78553,12 @@ const __a11yCoreCrossFrameApi = (function () {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  const stableSelector = helpers.buildSelector ? helpers.buildSelector(body) : 'body';
-  const html = helpers.getOuterHtmlSnippet
-    ? helpers.getOuterHtmlSnippet(body)
-    : (body.outerHTML || '').slice(0, 200);
-
   return {
     ruleId: rule.ruleId,
     outcome: 'cantTell',
     severity: rule.defaultSeverity || 'minor',
     occurrences: [
-      {
-        selector: stableSelector,
-        html,
+      helpers.reportOccurrence(body, {
         summary: 'This page has no main landmark.',
         hint: 'Add a main landmark (<main> or role="main") around the page\'s primary content.',
         i18n: {
@@ -78965,7 +78569,7 @@ const __a11yCoreCrossFrameApi = (function () {
         data: {
           details: { reasonCode: 'LANDMARK_MAIN_MISSING' }
         }
-      }
+      })
     ]
   };
 }), applicability: (function applicability(ctx) {
@@ -79140,34 +78744,29 @@ const __a11yCoreCrossFrameApi = (function () {
       if (group.length <= 1) continue;
 
       for (const { el } of group) {
-        const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-        const html = helpers.getOuterHtmlSnippet
-          ? helpers.getOuterHtmlSnippet(el)
-          : el.outerHTML || '';
-
-        occurrences.push({
-          selector: stableSelector,
-          html,
-          summary: normalizedName
-            ? `This ${role} landmark shares its accessible name with another ${role} landmark.`
-            : `This ${role} landmark has no accessible name, and more than one unnamed ${role} landmark exists on this page.`,
-          hint: `Give each ${role} landmark a distinct name via aria-label or aria-labelledby.`,
-          i18n: {
-            summaryKey: normalizedName
-              ? 'landmarkUnique_summary_cantTell_duplicateName'
-              : 'landmarkUnique_summary_cantTell_bothUnnamed',
-            hintKey: 'landmarkUnique_hint_cantTell',
-            params: { role }
-          },
-          data: {
-            details: {
-              reasonCode: 'LANDMARK_NOT_UNIQUE',
-              role,
-              name: normalizedName,
-              groupSize: group.length
+        occurrences.push(
+          helpers.reportOccurrence(el, {
+            summary: normalizedName
+              ? `This ${role} landmark shares its accessible name with another ${role} landmark.`
+              : `This ${role} landmark has no accessible name, and more than one unnamed ${role} landmark exists on this page.`,
+            hint: `Give each ${role} landmark a distinct name via aria-label or aria-labelledby.`,
+            i18n: {
+              summaryKey: normalizedName
+                ? 'landmarkUnique_summary_cantTell_duplicateName'
+                : 'landmarkUnique_summary_cantTell_bothUnnamed',
+              hintKey: 'landmarkUnique_hint_cantTell',
+              params: { role }
+            },
+            data: {
+              details: {
+                reasonCode: 'LANDMARK_NOT_UNIQUE',
+                role,
+                name: normalizedName,
+                groupSize: group.length
+              }
             }
-          }
-        });
+          })
+        );
       }
     }
   }
@@ -79311,31 +78910,29 @@ const __a11yCoreCrossFrameApi = (function () {
     const eligInfo = helpers.getEligibilityInfo
       ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
       : null;
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
     const tag = (el.tagName || '').toLowerCase();
     const ratioStr = c.round2 ? c.round2(ratio) : String(ratio);
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary:
-        'This link in a block of text relies on color alone to be distinguished from the surrounding text.',
-      hint: 'Add an underline, a font-weight/style difference, or increase the color contrast between the link and surrounding text to at least 3:1.',
-      i18n: {
-        summaryKey: 'linkInTextBlock_summary_fail',
-        hintKey: 'linkInTextBlock_hint_fail',
-        params: { element: tag, ratio: String(ratioStr), threshold: '3' }
-      },
-      data: {
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
-        details: {
-          reasonCode: 'COLOR_ONLY_DIFFERENTIATION',
-          metrics: { ratio, threshold: 3 },
-          colors: { linkForegroundHex: fgLinkHex, surroundingTextForegroundHex: fgParentHex }
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary:
+          'This link in a block of text relies on color alone to be distinguished from the surrounding text.',
+        hint: 'Add an underline, a font-weight/style difference, or increase the color contrast between the link and surrounding text to at least 3:1.',
+        i18n: {
+          summaryKey: 'linkInTextBlock_summary_fail',
+          hintKey: 'linkInTextBlock_hint_fail',
+          params: { element: tag, ratio: String(ratioStr), threshold: '3' }
+        },
+        data: {
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
+          details: {
+            reasonCode: 'COLOR_ONLY_DIFFERENTIATION',
+            metrics: { ratio, threshold: 3 },
+            colors: { linkForegroundHex: fgLinkHex, surroundingTextForegroundHex: fgParentHex }
+          }
         }
-      }
-    });
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -79459,39 +79056,34 @@ const __a11yCoreCrossFrameApi = (function () {
         ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
         : null;
 
-      const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-      const html = helpers.getOuterHtmlSnippet
-        ? helpers.getOuterHtmlSnippet(el)
-        : el.outerHTML || '';
       const tag = (el.tagName || '').toLowerCase();
 
-      occurrences.push({
-        selector: stableSelector,
-        html,
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          // Human fallbacks (allowed)
+          summary: 'This link has no accessible name.',
+          hint: 'Provide link text or an accessible-name mechanism (for example aria-label) so assistive technologies can identify the link.',
 
-        // Human fallbacks (allowed)
-        summary: 'This link has no accessible name.',
-        hint: 'Provide link text or an accessible-name mechanism (for example aria-label) so assistive technologies can identify the link.',
+          // Validator requires these keys to exist in the English dictionary
+          i18n: {
+            summaryKey: 'linkNamePresent_summary_fail',
+            hintKey: 'linkNamePresent_hint_fail',
+            params: { element: tag }
+          },
 
-        // Validator requires these keys to exist in the English dictionary
-        i18n: {
-          summaryKey: 'linkNamePresent_summary_fail',
-          hintKey: 'linkNamePresent_hint_fail',
-          params: { element: tag }
-        },
-
-        data: {
-          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
-          details: {
-            reasonCode: 'name_missing',
-            metrics: {
-              programmaticNameLength: programmaticName.trim().length,
-              contentNameLength: contentName.trim().length
-            },
-            refs: { accessibleName: nameInfo || null }
+          data: {
+            visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
+            details: {
+              reasonCode: 'name_missing',
+              metrics: {
+                programmaticNameLength: programmaticName.trim().length,
+                contentNameLength: contentName.trim().length
+              },
+              refs: { accessibleName: nameInfo || null }
+            }
           }
-        }
-      });
+        })
+      );
     }
   }
 
@@ -79574,27 +79166,25 @@ const __a11yCoreCrossFrameApi = (function () {
 
     if (!GENERIC_LINK_TEXT.has(normalized)) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
     const eligInfo = helpers.getEligibilityInfo
       ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
       : null;
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: `This link's accessible name ("${rawName.trim()}") is a generic, non-descriptive phrase.`,
-      hint: 'Make the link text itself describe its destination/purpose (e.g. "Download the 2026 pricing guide" instead of "Download"), or confirm the surrounding context already makes the purpose clear.',
-      i18n: {
-        summaryKey: 'linkNameQuality_summary_cantTell',
-        hintKey: 'linkNameQuality_hint_cantTell',
-        params: { name: rawName.trim() }
-      },
-      data: {
-        details: { reasonCode: 'GENERIC_LINK_TEXT', normalizedName: normalized },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: `This link's accessible name ("${rawName.trim()}") is a generic, non-descriptive phrase.`,
+        hint: 'Make the link text itself describe its destination/purpose (e.g. "Download the 2026 pricing guide" instead of "Download"), or confirm the surrounding context already makes the purpose clear.',
+        i18n: {
+          summaryKey: 'linkNameQuality_summary_cantTell',
+          hintKey: 'linkNameQuality_hint_cantTell',
+          params: { name: rawName.trim() }
+        },
+        data: {
+          details: { reasonCode: 'GENERIC_LINK_TEXT', normalizedName: normalized },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -79666,23 +79256,21 @@ const __a11yCoreCrossFrameApi = (function () {
     const dedupedInvalidTags = [...new Set(invalidTags)];
 
     const tag = el.tagName.toLowerCase();
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This list contains a direct child that is not a list item.',
-      hint: 'Only use <li> (or <script>/<template>) as direct children of <ul>/<ol>; move other markup inside an <li>.',
-      i18n: {
-        summaryKey: 'listChildrenValid_summary_fail',
-        hintKey: 'listChildrenValid_hint_fail',
-        params: { element: tag, invalidChildren: dedupedInvalidTags.join(', ') }
-      },
-      data: {
-        details: { reasonCode: 'LIST_INVALID_CHILD', element: tag, invalidChildren: invalidTags }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This list contains a direct child that is not a list item.',
+        hint: 'Only use <li> (or <script>/<template>) as direct children of <ul>/<ol>; move other markup inside an <li>.',
+        i18n: {
+          summaryKey: 'listChildrenValid_summary_fail',
+          hintKey: 'listChildrenValid_hint_fail',
+          params: { element: tag, invalidChildren: dedupedInvalidTags.join(', ') }
+        },
+        data: {
+          details: { reasonCode: 'LIST_INVALID_CHILD', element: tag, invalidChildren: invalidTags }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -79895,24 +79483,22 @@ const __a11yCoreCrossFrameApi = (function () {
           }
         })()
       : null;
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This element has no accessible name.',
-      hint: "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this listbox's accessible name.",
-      i18n: {
-        summaryKey: 'listboxNamePresent_summary_fail',
-        hintKey: 'listboxNamePresent_hint_fail',
-        params: { controlType: 'listbox' }
-      },
-      data: {
-        details: { reasonCode: 'name_missing', controlType: 'listbox', methodTried: res.method },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This element has no accessible name.',
+        hint: "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this listbox's accessible name.",
+        i18n: {
+          summaryKey: 'listboxNamePresent_summary_fail',
+          hintKey: 'listboxNamePresent_hint_fail',
+          params: { controlType: 'listbox' }
+        },
+        data: {
+          details: { reasonCode: 'name_missing', controlType: 'listbox', methodTried: res.method },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -79973,23 +79559,20 @@ const __a11yCoreCrossFrameApi = (function () {
 
     if (valid) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This list item is not contained by a list container.',
-      hint: 'Place this <li> inside a <ul>/<ol>, or give its parent role="list".',
-      i18n: {
-        summaryKey: 'listitemParentValid_summary_fail',
-        hintKey: 'listitemParentValid_hint_fail',
-        params: { parentElement: parentTag }
-      },
-      data: {
-        details: { reasonCode: 'LISTITEM_INVALID_PARENT', parentElement: parentTag }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This list item is not contained by a list container.',
+        hint: 'Place this <li> inside a <ul>/<ol>, or give its parent role="list".',
+        i18n: {
+          summaryKey: 'listitemParentValid_summary_fail',
+          hintKey: 'listitemParentValid_hint_fail',
+          params: { parentElement: parentTag }
+        },
+        data: {
+          details: { reasonCode: 'LISTITEM_INVALID_PARENT', parentElement: parentTag }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -80512,24 +80095,22 @@ const __a11yCoreCrossFrameApi = (function () {
           }
         })()
       : null;
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This menu item has no accessible name.',
-      hint: 'Provide visible text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.',
-      i18n: {
-        summaryKey: 'menuitemNamePresent_summary_fail',
-        hintKey: 'menuitemNamePresent_hint_fail',
-        params: { role }
-      },
-      data: {
-        details: { reasonCode: 'name_missing', controlType: role, methodTried: res.method },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This menu item has no accessible name.',
+        hint: 'Provide visible text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.',
+        i18n: {
+          summaryKey: 'menuitemNamePresent_summary_fail',
+          hintKey: 'menuitemNamePresent_hint_fail',
+          params: { role }
+        },
+        data: {
+          details: { reasonCode: 'name_missing', controlType: role, methodTried: res.method },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -80592,24 +80173,21 @@ const __a11yCoreCrossFrameApi = (function () {
 
     applicableCount += 1;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary:
-        'This page uses a meta refresh, which is an automatic context change not initiated by the user.',
-      hint: 'Remove the meta refresh; trigger the redirect/refresh only in response to a user action instead.',
-      i18n: {
-        summaryKey: 'metaRefreshNoExceptions_summary_fail',
-        hintKey: 'metaRefreshNoExceptions_hint_fail',
-        params: {}
-      },
-      data: {
-        details: { reasonCode: 'META_REFRESH_PRESENT' }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary:
+          'This page uses a meta refresh, which is an automatic context change not initiated by the user.',
+        hint: 'Remove the meta refresh; trigger the redirect/refresh only in response to a user action instead.',
+        i18n: {
+          summaryKey: 'metaRefreshNoExceptions_summary_fail',
+          hintKey: 'metaRefreshNoExceptions_hint_fail',
+          params: {}
+        },
+        data: {
+          details: { reasonCode: 'META_REFRESH_PRESENT' }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -80682,23 +80260,20 @@ const __a11yCoreCrossFrameApi = (function () {
     if (!(delay > 0)) continue;
     if (delay > EXEMPT_DELAY_SECONDS) continue; // WCAG 2.2.1 Exception 3 (>20 hours)
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This page refreshes itself automatically after a delay.',
-      hint: 'Remove the timed meta refresh, or provide a way for users to turn it off, extend it, or pause it before it triggers.',
-      i18n: {
-        summaryKey: 'metaRefreshTimingAbsent_summary_fail',
-        hintKey: 'metaRefreshTimingAbsent_hint_fail',
-        params: { delay: String(delay) }
-      },
-      data: {
-        details: { reasonCode: 'META_REFRESH_DELAYED', delay }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This page refreshes itself automatically after a delay.',
+        hint: 'Remove the timed meta refresh, or provide a way for users to turn it off, extend it, or pause it before it triggers.',
+        i18n: {
+          summaryKey: 'metaRefreshTimingAbsent_summary_fail',
+          hintKey: 'metaRefreshTimingAbsent_hint_fail',
+          params: { delay: String(delay) }
+        },
+        data: {
+          details: { reasonCode: 'META_REFRESH_DELAYED', delay }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -80766,23 +80341,20 @@ const __a11yCoreCrossFrameApi = (function () {
 
     if (!reasons.length) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This viewport meta tag restricts zoom below the 500% best-practice target.',
-      hint: 'Remove user-scalable=no and raise maximum-scale to at least 5 (500%) if possible.',
-      i18n: {
-        summaryKey: 'metaViewportLarge_summary_cantTell',
-        hintKey: 'metaViewportLarge_hint_cantTell',
-        params: { reasons: reasons.join(', ') }
-      },
-      data: {
-        details: { reasonCode: 'VIEWPORT_ZOOM_BELOW_500', reasons }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This viewport meta tag restricts zoom below the 500% best-practice target.',
+        hint: 'Remove user-scalable=no and raise maximum-scale to at least 5 (500%) if possible.',
+        i18n: {
+          summaryKey: 'metaViewportLarge_summary_cantTell',
+          hintKey: 'metaViewportLarge_hint_cantTell',
+          params: { reasons: reasons.join(', ') }
+        },
+        data: {
+          details: { reasonCode: 'VIEWPORT_ZOOM_BELOW_500', reasons }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -80870,23 +80442,20 @@ const __a11yCoreCrossFrameApi = (function () {
 
     if (!reasons.length) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This viewport meta tag restricts the user’s ability to zoom.',
-      hint: 'Remove user-scalable=no and any maximum-scale below 2 from the viewport meta content.',
-      i18n: {
-        summaryKey: 'metaViewportZoomEnabled_summary_fail',
-        hintKey: 'metaViewportZoomEnabled_hint_fail',
-        params: { reasons: reasons.join(', ') }
-      },
-      data: {
-        details: { reasonCode: 'VIEWPORT_ZOOM_RESTRICTED', reasons }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This viewport meta tag restricts the user’s ability to zoom.',
+        hint: 'Remove user-scalable=no and any maximum-scale below 2 from the viewport meta content.',
+        i18n: {
+          summaryKey: 'metaViewportZoomEnabled_summary_fail',
+          hintKey: 'metaViewportZoomEnabled_hint_fail',
+          params: { reasons: reasons.join(', ') }
+        },
+        data: {
+          details: { reasonCode: 'VIEWPORT_ZOOM_RESTRICTED', reasons }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -81007,24 +80576,22 @@ const __a11yCoreCrossFrameApi = (function () {
           }
         })()
       : null;
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This meter has no accessible name.',
-      hint: "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this meter's accessible name.",
-      i18n: {
-        summaryKey: 'meterNamePresent_summary_fail',
-        hintKey: 'meterNamePresent_hint_fail',
-        params: {}
-      },
-      data: {
-        details: { reasonCode: 'name_missing', controlType: 'meter', methodTried: res.method },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This meter has no accessible name.',
+        hint: "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this meter's accessible name.",
+        i18n: {
+          summaryKey: 'meterNamePresent_summary_fail',
+          hintKey: 'meterNamePresent_hint_fail',
+          params: {}
+        },
+        data: {
+          details: { reasonCode: 'name_missing', controlType: 'meter', methodTried: res.method },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -81083,30 +80650,28 @@ const __a11yCoreCrossFrameApi = (function () {
     const hasKeyboardEquiv = KEYBOARD_EQUIV_ATTRS.some((a) => trim(el.getAttribute(a)));
     if (hasKeyboardEquiv) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
     const eligInfo = helpers.getEligibilityInfo
       ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
       : null;
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: `This element has ${presentMouseAttrs.join(', ')} but no keyboard-reachable equivalent handler.`,
-      hint: 'Add onkeydown/onkeyup/onkeypress (or onfocus/onblur for hover-triggered behavior) so this functionality is also reachable by keyboard.',
-      i18n: {
-        summaryKey: 'mouseOnlyEventHandlers_summary_cantTell',
-        hintKey: 'mouseOnlyEventHandlers_hint_cantTell',
-        params: { attrs: presentMouseAttrs.join(', ') }
-      },
-      data: {
-        details: {
-          reasonCode: 'MOUSE_ONLY_HANDLER_NO_KEYBOARD_EQUIVALENT',
-          mouseAttrs: presentMouseAttrs
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: `This element has ${presentMouseAttrs.join(', ')} but no keyboard-reachable equivalent handler.`,
+        hint: 'Add onkeydown/onkeyup/onkeypress (or onfocus/onblur for hover-triggered behavior) so this functionality is also reachable by keyboard.',
+        i18n: {
+          summaryKey: 'mouseOnlyEventHandlers_summary_cantTell',
+          hintKey: 'mouseOnlyEventHandlers_hint_cantTell',
+          params: { attrs: presentMouseAttrs.join(', ') }
         },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+        data: {
+          details: {
+            reasonCode: 'MOUSE_ONLY_HANDLER_NO_KEYBOARD_EQUIVALENT',
+            mouseAttrs: presentMouseAttrs
+          },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -81305,27 +80870,25 @@ const __a11yCoreCrossFrameApi = (function () {
     const dedupedNestedTags = [...new Set(nestedTags)];
 
     const tag = el.tagName.toLowerCase();
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This interactive control contains one or more other interactive controls.',
-      hint: 'Move the nested interactive control(s) outside this element; nested interactive controls are not reliably operable via assistive technology.',
-      i18n: {
-        summaryKey: 'nestedInteractiveControlsAbsent_summary_fail',
-        hintKey: 'nestedInteractiveControlsAbsent_hint_fail',
-        params: { element: tag, nestedElements: dedupedNestedTags.join(', ') }
-      },
-      data: {
-        details: {
-          reasonCode: 'NESTED_INTERACTIVE_CONTROL',
-          element: tag,
-          nestedElements: nestedTags
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This interactive control contains one or more other interactive controls.',
+        hint: 'Move the nested interactive control(s) outside this element; nested interactive controls are not reliably operable via assistive technology.',
+        i18n: {
+          summaryKey: 'nestedInteractiveControlsAbsent_summary_fail',
+          hintKey: 'nestedInteractiveControlsAbsent_hint_fail',
+          params: { element: tag, nestedElements: dedupedNestedTags.join(', ') }
+        },
+        data: {
+          details: {
+            reasonCode: 'NESTED_INTERACTIVE_CONTROL',
+            element: tag,
+            nestedElements: nestedTags
+          }
         }
-      }
-    });
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -81887,24 +81450,22 @@ const __a11yCoreCrossFrameApi = (function () {
           }
         })()
       : null;
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This element has no accessible name.',
-      hint: 'Provide aria-label or aria-labelledby (preferred), or provide visible text that is not hidden from assistive technologies.',
-      i18n: {
-        summaryKey: 'optionNamePresent_summary_fail',
-        hintKey: 'optionNamePresent_hint_fail',
-        params: { controlType: 'option' }
-      },
-      data: {
-        details: { reasonCode: 'name_missing', controlType: 'option', methodTried: res.method },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This element has no accessible name.',
+        hint: 'Provide aria-label or aria-labelledby (preferred), or provide visible text that is not hidden from assistive technologies.',
+        i18n: {
+          summaryKey: 'optionNamePresent_summary_fail',
+          hintKey: 'optionNamePresent_hint_fail',
+          params: { controlType: 'option' }
+        },
+        data: {
+          details: { reasonCode: 'name_missing', controlType: 'option', methodTried: res.method },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -82097,19 +81658,12 @@ const __a11yCoreCrossFrameApi = (function () {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  const stableSelector = helpers.buildSelector ? helpers.buildSelector(body) : 'body';
-  const html = helpers.getOuterHtmlSnippet
-    ? helpers.getOuterHtmlSnippet(body)
-    : (body.outerHTML || '').slice(0, 200);
-
   return {
     ruleId: rule.ruleId,
     outcome: 'cantTell',
     severity: rule.defaultSeverity || 'minor',
     occurrences: [
-      {
-        selector: stableSelector,
-        html,
+      helpers.reportOccurrence(body, {
         summary: 'This page has no level-one heading.',
         hint: 'Add a level-one heading (<h1> or role="heading" aria-level="1") that identifies the page\'s main content.',
         i18n: {
@@ -82120,7 +81674,7 @@ const __a11yCoreCrossFrameApi = (function () {
         data: {
           details: { reasonCode: 'HEADING_ONE_MISSING' }
         }
-      }
+      })
     ]
   };
 }), applicability: (function applicability(ctx) {
@@ -82549,28 +82103,26 @@ const __a11yCoreCrossFrameApi = (function () {
       String(el.getAttribute('role') || '')
         .trim()
         .toLowerCase() || 'presentation';
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: `This role="${role}" element also has a conflicting condition (${parts.join(', ')}), which restores its implicit role and cancels the presentational intent.`,
-      hint: 'Remove the conflicting naming attribute(s) and/or focusability (tabindex/native) if the element should stay presentational, or remove role="presentation"/"none" if it should be exposed to assistive technology.',
-      i18n: {
-        summaryKey: 'presentationRoleConflict_summary_cantTell',
-        hintKey: 'presentationRoleConflict_hint_cantTell',
-        params: { role, attrs: parts.join(', ') }
-      },
-      data: {
-        details: {
-          reasonCode: 'PRESENTATION_ROLE_CONFLICT',
-          role,
-          conflictingAttrs: present,
-          focusable: isFocusable
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: `This role="${role}" element also has a conflicting condition (${parts.join(', ')}), which restores its implicit role and cancels the presentational intent.`,
+        hint: 'Remove the conflicting naming attribute(s) and/or focusability (tabindex/native) if the element should stay presentational, or remove role="presentation"/"none" if it should be exposed to assistive technology.',
+        i18n: {
+          summaryKey: 'presentationRoleConflict_summary_cantTell',
+          hintKey: 'presentationRoleConflict_hint_cantTell',
+          params: { role, attrs: parts.join(', ') }
+        },
+        data: {
+          details: {
+            reasonCode: 'PRESENTATION_ROLE_CONFLICT',
+            role,
+            conflictingAttrs: present,
+            focusable: isFocusable
+          }
         }
-      }
-    });
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -82691,28 +82243,26 @@ const __a11yCoreCrossFrameApi = (function () {
           }
         })()
       : null;
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This progress bar has no accessible name.',
-      hint: "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this progress bar's accessible name.",
-      i18n: {
-        summaryKey: 'progressbarNamePresent_summary_fail',
-        hintKey: 'progressbarNamePresent_hint_fail',
-        params: {}
-      },
-      data: {
-        details: {
-          reasonCode: 'name_missing',
-          controlType: 'progressbar',
-          methodTried: res.method
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This progress bar has no accessible name.',
+        hint: "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this progress bar's accessible name.",
+        i18n: {
+          summaryKey: 'progressbarNamePresent_summary_fail',
+          hintKey: 'progressbarNamePresent_hint_fail',
+          params: {}
         },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+        data: {
+          details: {
+            reasonCode: 'name_missing',
+            controlType: 'progressbar',
+            methodTried: res.method
+          },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -83245,23 +82795,20 @@ const __a11yCoreCrossFrameApi = (function () {
 
     if (VALID_SCOPES.has(raw.toLowerCase())) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This scope attribute value is not recognized.',
-      hint: 'Use one of row, col, rowgroup, or colgroup for the scope attribute.',
-      i18n: {
-        summaryKey: 'scopeAttrValid_summary_cantTell',
-        hintKey: 'scopeAttrValid_hint_cantTell',
-        params: { value: raw }
-      },
-      data: {
-        details: { reasonCode: 'SCOPE_ATTR_INVALID', value: raw }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This scope attribute value is not recognized.',
+        hint: 'Use one of row, col, rowgroup, or colgroup for the scope attribute.',
+        i18n: {
+          summaryKey: 'scopeAttrValid_summary_cantTell',
+          hintKey: 'scopeAttrValid_hint_cantTell',
+          params: { value: raw }
+        },
+        data: {
+          details: { reasonCode: 'SCOPE_ATTR_INVALID', value: raw }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -83588,24 +83135,26 @@ const __a11yCoreCrossFrameApi = (function () {
           }
         })()
       : null;
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This element has no accessible name.',
-      hint: "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this searchbox's accessible name.",
-      i18n: {
-        summaryKey: 'searchboxNamePresent_summary_fail',
-        hintKey: 'searchboxNamePresent_hint_fail',
-        params: { controlType: 'searchbox' }
-      },
-      data: {
-        details: { reasonCode: 'name_missing', controlType: 'searchbox', methodTried: res.method },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This element has no accessible name.',
+        hint: "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this searchbox's accessible name.",
+        i18n: {
+          summaryKey: 'searchboxNamePresent_summary_fail',
+          hintKey: 'searchboxNamePresent_hint_fail',
+          params: { controlType: 'searchbox' }
+        },
+        data: {
+          details: {
+            reasonCode: 'name_missing',
+            controlType: 'searchbox',
+            methodTried: res.method
+          },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -83636,24 +83185,21 @@ const __a11yCoreCrossFrameApi = (function () {
 
     applicableCount += 1;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary:
-        'This image uses a server-side image map, which has no keyboard-operable equivalent.',
-      hint: 'Replace the server-side image map (ismap) with a client-side image map (<map>/<area>) or separate accessible links/buttons.',
-      i18n: {
-        summaryKey: 'serverSideImageMapAbsent_summary_fail',
-        hintKey: 'serverSideImageMapAbsent_hint_fail',
-        params: {}
-      },
-      data: {
-        details: { reasonCode: 'SERVER_SIDE_IMAGE_MAP' }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary:
+          'This image uses a server-side image map, which has no keyboard-operable equivalent.',
+        hint: 'Replace the server-side image map (ismap) with a client-side image map (<map>/<area>) or separate accessible links/buttons.',
+        i18n: {
+          summaryKey: 'serverSideImageMapAbsent_summary_fail',
+          hintKey: 'serverSideImageMapAbsent_hint_fail',
+          params: {}
+        },
+        data: {
+          details: { reasonCode: 'SERVER_SIDE_IMAGE_MAP' }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -83798,59 +83344,51 @@ const __a11yCoreCrossFrameApi = (function () {
       const unusableByGeometry = !!geometryReasonCode;
       if (!unusableByAcc && !unusableByGeometry) continue;
 
-      const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-      const html = helpers.getOuterHtmlSnippet
-        ? helpers.getOuterHtmlSnippet(el)
-        : el.outerHTML || '';
-
-      occurrences.push({
-        selector: stableSelector,
-        html,
-        summary: 'This skip link points to a target that exists but is not currently usable.',
-        hint: 'Point this skip link to a target that is exposed and usable as a navigation destination.',
-        i18n: {
-          summaryKey: 'skipLink_summary_unusableTarget_cantTell',
-          hintKey: 'skipLink_hint_unusableTarget_cantTell',
-          params: { href }
-        },
-        data: {
-          details: {
-            reasonCode: 'SKIP_LINK_TARGET_UNUSABLE',
-            href,
-            unusableReasonCode: unusableByAcc ? 'ACC_TREE_INELIGIBLE' : geometryReasonCode,
-            targetSelector: helpers.buildSelector ? helpers.buildSelector(target) : null,
-            geometryCheckEnabled: geometrySupported
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: 'This skip link points to a target that exists but is not currently usable.',
+          hint: 'Point this skip link to a target that is exposed and usable as a navigation destination.',
+          i18n: {
+            summaryKey: 'skipLink_summary_unusableTarget_cantTell',
+            hintKey: 'skipLink_hint_unusableTarget_cantTell',
+            params: { href }
           },
-          visibilityFilter: {
-            targetSet: 'acc',
-            accEligible: accEligibility.eligible,
-            reasons: accEligibility.reasons
-          },
-          targetGeometry: geometryEligibility
-            ? { eligible: geometryEligibility.eligible, reasons: geometryEligibility.reasons }
-            : { eligible: null, reasons: [] }
-        }
-      });
+          data: {
+            details: {
+              reasonCode: 'SKIP_LINK_TARGET_UNUSABLE',
+              href,
+              unusableReasonCode: unusableByAcc ? 'ACC_TREE_INELIGIBLE' : geometryReasonCode,
+              targetSelector: helpers.buildSelector ? helpers.buildSelector(target) : null,
+              geometryCheckEnabled: geometrySupported
+            },
+            visibilityFilter: {
+              targetSet: 'acc',
+              accEligible: accEligibility.eligible,
+              reasons: accEligibility.reasons
+            },
+            targetGeometry: geometryEligibility
+              ? { eligible: geometryEligibility.eligible, reasons: geometryEligibility.reasons }
+              : { eligible: null, reasons: [] }
+          }
+        })
+      );
       continue;
     }
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: "This skip link's target does not exist.",
-      hint: "Point the skip link's href at an id that exists in the document, or add the missing target element.",
-      i18n: {
-        summaryKey: 'skipLink_summary_cantTell',
-        hintKey: 'skipLink_hint_cantTell',
-        params: { href }
-      },
-      data: {
-        details: { reasonCode: 'SKIP_LINK_TARGET_MISSING', href }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: "This skip link's target does not exist.",
+        hint: "Point the skip link's href at an id that exists in the document, or add the missing target element.",
+        i18n: {
+          summaryKey: 'skipLink_summary_cantTell',
+          hintKey: 'skipLink_hint_cantTell',
+          params: { href }
+        },
+        data: {
+          details: { reasonCode: 'SKIP_LINK_TARGET_MISSING', href }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -84077,24 +83615,22 @@ const __a11yCoreCrossFrameApi = (function () {
           }
         })()
       : null;
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This slider has no accessible name.',
-      hint: 'Provide a label, aria-label, or aria-labelledby so assistive technologies can identify the slider.',
-      i18n: {
-        summaryKey: 'sliderNamePresent_summary_fail',
-        hintKey: 'sliderNamePresent_hint_fail',
-        params: { kind }
-      },
-      data: {
-        details: { reasonCode: 'name_missing', controlType: kind, methodTried: res.method },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This slider has no accessible name.',
+        hint: 'Provide a label, aria-label, or aria-labelledby so assistive technologies can identify the slider.',
+        i18n: {
+          summaryKey: 'sliderNamePresent_summary_fail',
+          hintKey: 'sliderNamePresent_hint_fail',
+          params: { kind }
+        },
+        data: {
+          details: { reasonCode: 'name_missing', controlType: kind, methodTried: res.method },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -84307,24 +83843,26 @@ const __a11yCoreCrossFrameApi = (function () {
           }
         })()
       : null;
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This element has no accessible name.',
-      hint: "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this spinbutton's accessible name.",
-      i18n: {
-        summaryKey: 'spinbuttonNamePresent_summary_fail',
-        hintKey: 'spinbuttonNamePresent_hint_fail',
-        params: { controlType: 'spinbutton' }
-      },
-      data: {
-        details: { reasonCode: 'name_missing', controlType: 'spinbutton', methodTried: res.method },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This element has no accessible name.',
+        hint: "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this spinbutton's accessible name.",
+        i18n: {
+          summaryKey: 'spinbuttonNamePresent_summary_fail',
+          hintKey: 'spinbuttonNamePresent_hint_fail',
+          params: { controlType: 'spinbutton' }
+        },
+        data: {
+          details: {
+            reasonCode: 'name_missing',
+            controlType: 'spinbutton',
+            methodTried: res.method
+          },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -84454,24 +83992,22 @@ const __a11yCoreCrossFrameApi = (function () {
           }
         })()
       : null;
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This summary has no accessible name.',
-      hint: 'Provide summary text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.',
-      i18n: {
-        summaryKey: 'summaryNamePresent_summary_fail',
-        hintKey: 'summaryNamePresent_hint_fail',
-        params: {}
-      },
-      data: {
-        details: { reasonCode: 'name_missing', controlType: 'summary', methodTried: res.method },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This summary has no accessible name.',
+        hint: 'Provide summary text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.',
+        i18n: {
+          summaryKey: 'summaryNamePresent_summary_fail',
+          hintKey: 'summaryNamePresent_hint_fail',
+          params: {}
+        },
+        data: {
+          details: { reasonCode: 'name_missing', controlType: 'summary', methodTried: res.method },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -85297,24 +84833,22 @@ const __a11yCoreCrossFrameApi = (function () {
           }
         })()
       : null;
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This tab has no accessible name.',
-      hint: 'Provide tab text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.',
-      i18n: {
-        summaryKey: 'tabNamePresent_summary_fail',
-        hintKey: 'tabNamePresent_hint_fail',
-        params: {}
-      },
-      data: {
-        details: { reasonCode: 'name_missing', controlType: 'tab', methodTried: res.method },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This tab has no accessible name.',
+        hint: 'Provide tab text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.',
+        i18n: {
+          summaryKey: 'tabNamePresent_summary_fail',
+          hintKey: 'tabNamePresent_hint_fail',
+          params: {}
+        },
+        data: {
+          details: { reasonCode: 'name_missing', controlType: 'tab', methodTried: res.method },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -85351,23 +84885,20 @@ const __a11yCoreCrossFrameApi = (function () {
 
     if (n <= 0) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This element has a positive tabindex, overriding the natural tab order.',
-      hint: 'Use tabindex="0" (or a negative value to remove from tab order) instead of a positive number; fix the DOM order if a different tab order is needed.',
-      i18n: {
-        summaryKey: 'tabindex_summary_cantTell',
-        hintKey: 'tabindex_hint_cantTell',
-        params: { value: String(n) }
-      },
-      data: {
-        details: { reasonCode: 'TABINDEX_POSITIVE', value: n }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This element has a positive tabindex, overriding the natural tab order.',
+        hint: 'Use tabindex="0" (or a negative value to remove from tab order) instead of a positive number; fix the DOM order if a different tab order is needed.',
+        i18n: {
+          summaryKey: 'tabindex_summary_cantTell',
+          hintKey: 'tabindex_hint_cantTell',
+          params: { value: String(n) }
+        },
+        data: {
+          details: { reasonCode: 'TABINDEX_POSITIVE', value: n }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -85412,23 +84943,20 @@ const __a11yCoreCrossFrameApi = (function () {
 
     if (captionText.toLowerCase() !== summary.toLowerCase()) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: "This table's caption duplicates its summary attribute.",
-      hint: 'Remove the redundant summary attribute, or make it provide different information than the caption.',
-      i18n: {
-        summaryKey: 'tableDuplicateName_summary_cantTell',
-        hintKey: 'tableDuplicateName_hint_cantTell',
-        params: {}
-      },
-      data: {
-        details: { reasonCode: 'TABLE_CAPTION_SUMMARY_DUPLICATE' }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: "This table's caption duplicates its summary attribute.",
+        hint: 'Remove the redundant summary attribute, or make it provide different information than the caption.',
+        i18n: {
+          summaryKey: 'tableDuplicateName_summary_cantTell',
+          hintKey: 'tableDuplicateName_hint_cantTell',
+          params: {}
+        },
+        data: {
+          details: { reasonCode: 'TABLE_CAPTION_SUMMARY_DUPLICATE' }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -85593,23 +85121,21 @@ const __a11yCoreCrossFrameApi = (function () {
     const dedupedInvalidIds = [...new Set(invalid.map((i) => i.id))];
 
     const tag = el.tagName.toLowerCase();
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This cell’s headers attribute references one or more invalid header cells.',
-      hint: 'Update the headers attribute so every id refers to a <th> element within the same table.',
-      i18n: {
-        summaryKey: 'tableHeadersAttrValid_summary_fail',
-        hintKey: 'tableHeadersAttrValid_hint_fail',
-        params: { element: tag, invalidIds: dedupedInvalidIds.join(', ') }
-      },
-      data: {
-        details: { reasonCode: 'TABLE_HEADERS_ATTR_INVALID', element: tag, invalid }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This cell’s headers attribute references one or more invalid header cells.',
+        hint: 'Update the headers attribute so every id refers to a <th> element within the same table.',
+        i18n: {
+          summaryKey: 'tableHeadersAttrValid_summary_fail',
+          hintKey: 'tableHeadersAttrValid_hint_fail',
+          params: { element: tag, invalidIds: dedupedInvalidIds.join(', ') }
+        },
+        data: {
+          details: { reasonCode: 'TABLE_HEADERS_ATTR_INVALID', element: tag, invalid }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -85713,25 +85239,21 @@ const __a11yCoreCrossFrameApi = (function () {
 
     for (const th of headers) {
       if (!th) continue;
-      const stableSelector = helpers.buildSelector ? helpers.buildSelector(th) : 'html';
-      const html = helpers.getOuterHtmlSnippet
-        ? helpers.getOuterHtmlSnippet(th)
-        : th.outerHTML || '';
 
-      occurrences.push({
-        selector: stableSelector,
-        html,
-        summary: 'This table has header cells but no data cells for them to describe.',
-        hint: 'Add data cells (<td>) to the table, or remove the header cells if the table has no data.',
-        i18n: {
-          summaryKey: 'tableThHasDataCells_summary_fail',
-          hintKey: 'tableThHasDataCells_hint_fail',
-          params: {}
-        },
-        data: {
-          details: { reasonCode: 'TABLE_TH_NO_DATA_CELLS' }
-        }
-      });
+      occurrences.push(
+        helpers.reportOccurrence(th, {
+          summary: 'This table has header cells but no data cells for them to describe.',
+          hint: 'Add data cells (<td>) to the table, or remove the header cells if the table has no data.',
+          i18n: {
+            summaryKey: 'tableThHasDataCells_summary_fail',
+            hintKey: 'tableThHasDataCells_hint_fail',
+            params: {}
+          },
+          data: {
+            details: { reasonCode: 'TABLE_TH_NO_DATA_CELLS' }
+          }
+        })
+      );
     }
   }
 
@@ -85782,17 +85304,6 @@ const __a11yCoreCrossFrameApi = (function () {
       if (el && el.id) return `#${el.id}`;
     } catch {}
     return 'html';
-  }
-
-  function htmlSnippet(el) {
-    try {
-      if (helpers && typeof helpers.getOuterHtmlSnippet === 'function')
-        return helpers.getOuterHtmlSnippet(el);
-    } catch {}
-    try {
-      return el && el.outerHTML ? String(el.outerHTML) : '';
-    } catch {}
-    return '';
   }
 
   // A link-like target (a[href] or role="link") rendered inline/inline-* and
@@ -86229,27 +85740,27 @@ const __a11yCoreCrossFrameApi = (function () {
       // the result once any other target on the page had a confident
       // fail (see helpers.resolveTieredOutcome's header comment). Now
       // reported as its own cantTell-tier occurrence instead.
-      cantTellOccurrences.push({
-        selector: buildSelector(it.el),
-        html: htmlSnippet(it.el),
-        occurrenceOutcome: 'cantTell',
-        summary:
-          'Target may be too small and too close to another target, but the overlap is near the detection threshold and could not be confidently measured.',
-        hint: 'Manually verify the effective spacing between this target and its neighbor; increase target size or spacing if the overlap is real.',
-        i18n: {
-          summaryKey: 'targetSizeMinimum_summary_cantTell_ambiguousSpacing',
-          hintKey: 'targetSizeMinimum_hint_cantTell_ambiguousSpacing',
-          params: {}
-        },
-        data: {
-          details: {
-            measured: { width: it.rect.width, height: it.rect.height },
-            reasonCode: 'undersized-ambiguous-spacing',
-            conflictHitCount: info.hitCount,
-            conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null
+      cantTellOccurrences.push(
+        helpers.reportOccurrence(it.el, {
+          occurrenceOutcome: 'cantTell',
+          summary:
+            'Target may be too small and too close to another target, but the overlap is near the detection threshold and could not be confidently measured.',
+          hint: 'Manually verify the effective spacing between this target and its neighbor; increase target size or spacing if the overlap is real.',
+          i18n: {
+            summaryKey: 'targetSizeMinimum_summary_cantTell_ambiguousSpacing',
+            hintKey: 'targetSizeMinimum_hint_cantTell_ambiguousSpacing',
+            params: {}
+          },
+          data: {
+            details: {
+              measured: { width: it.rect.width, height: it.rect.height },
+              reasonCode: 'undersized-ambiguous-spacing',
+              conflictHitCount: info.hitCount,
+              conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null
+            }
           }
-        }
-      });
+        })
+      );
       continue;
     }
 
@@ -86258,27 +85769,27 @@ const __a11yCoreCrossFrameApi = (function () {
         // Confident spacing conflict, but the target may be exempt as part
         // of an essential graphic/image-map region — same "previously
         // unrecoverable" gap as above, now reported instead of dropped.
-        cantTellOccurrences.push({
-          selector: buildSelector(it.el),
-          html: htmlSnippet(it.el),
-          occurrenceOutcome: 'cantTell',
-          summary:
-            'Target is too small and too close to another target, but may be exempt as part of an essential graphic or image-map region.',
-          hint: 'Verify whether this target’s size is genuinely essential to its function (e.g. part of an SVG/canvas/image map); if not, increase target size or spacing.',
-          i18n: {
-            summaryKey: 'targetSizeMinimum_summary_cantTell_plausiblyEssential',
-            hintKey: 'targetSizeMinimum_hint_cantTell_plausiblyEssential',
-            params: {}
-          },
-          data: {
-            details: {
-              measured: { width: it.rect.width, height: it.rect.height },
-              reasonCode: 'undersized-plausibly-essential',
-              conflictHitCount: info.hitCount,
-              conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null
+        cantTellOccurrences.push(
+          helpers.reportOccurrence(it.el, {
+            occurrenceOutcome: 'cantTell',
+            summary:
+              'Target is too small and too close to another target, but may be exempt as part of an essential graphic or image-map region.',
+            hint: 'Verify whether this target’s size is genuinely essential to its function (e.g. part of an SVG/canvas/image map); if not, increase target size or spacing.',
+            i18n: {
+              summaryKey: 'targetSizeMinimum_summary_cantTell_plausiblyEssential',
+              hintKey: 'targetSizeMinimum_hint_cantTell_plausiblyEssential',
+              params: {}
+            },
+            data: {
+              details: {
+                measured: { width: it.rect.width, height: it.rect.height },
+                reasonCode: 'undersized-plausibly-essential',
+                conflictHitCount: info.hitCount,
+                conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null
+              }
             }
-          }
-        });
+          })
+        );
         continue;
       }
 
@@ -86286,50 +85797,50 @@ const __a11yCoreCrossFrameApi = (function () {
       // same text run, where the SC 2.5.8 inline exception may apply. That
       // can't be decided from geometry alone, so defer to manual review.
       if (isInlineLinkTarget(it.el) && info.conflictEl && isInlineLinkTarget(info.conflictEl)) {
-        cantTellOccurrences.push({
-          selector: buildSelector(it.el),
-          html: htmlSnippet(it.el),
-          occurrenceOutcome: 'cantTell',
-          summary:
-            'Target is smaller than 24×24 CSS px and close to another inline link in the same run of text, where the inline exception may apply.',
-          hint: 'Confirm whether these links form a run of inline text (which is exempt); otherwise increase the target size to at least 24×24 CSS px or add spacing.',
+        cantTellOccurrences.push(
+          helpers.reportOccurrence(it.el, {
+            occurrenceOutcome: 'cantTell',
+            summary:
+              'Target is smaller than 24×24 CSS px and close to another inline link in the same run of text, where the inline exception may apply.',
+            hint: 'Confirm whether these links form a run of inline text (which is exempt); otherwise increase the target size to at least 24×24 CSS px or add spacing.',
+            i18n: {
+              summaryKey: 'targetSizeMinimum_summary_cantTell_inlineLinkRun',
+              hintKey: 'targetSizeMinimum_hint_cantTell_inlineLinkRun',
+              params: {}
+            },
+            data: {
+              details: {
+                measured: { width: it.rect.width, height: it.rect.height },
+                reasonCode: 'undersized-inline-link-run',
+                conflictHitCount: info.hitCount,
+                conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null
+              }
+            }
+          })
+        );
+        continue;
+      }
+
+      failOccurrences.push(
+        helpers.reportOccurrence(it.el, {
+          occurrenceOutcome: 'fail',
+          summary: 'Target is too small and too close to another target.',
+          hint: 'Increase target size to at least 24 by 24 CSS pixels, or add sufficient spacing.',
           i18n: {
-            summaryKey: 'targetSizeMinimum_summary_cantTell_inlineLinkRun',
-            hintKey: 'targetSizeMinimum_hint_cantTell_inlineLinkRun',
+            summaryKey: 'targetSizeMinimum_summary_fail',
+            hintKey: 'targetSizeMinimum_hint_fail',
             params: {}
           },
           data: {
             details: {
               measured: { width: it.rect.width, height: it.rect.height },
-              reasonCode: 'undersized-inline-link-run',
+              reasonCode: 'undersized-and-too-close',
               conflictHitCount: info.hitCount,
               conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null
             }
           }
-        });
-        continue;
-      }
-
-      failOccurrences.push({
-        selector: buildSelector(it.el),
-        html: htmlSnippet(it.el),
-        occurrenceOutcome: 'fail',
-        summary: 'Target is too small and too close to another target.',
-        hint: 'Increase target size to at least 24 by 24 CSS pixels, or add sufficient spacing.',
-        i18n: {
-          summaryKey: 'targetSizeMinimum_summary_fail',
-          hintKey: 'targetSizeMinimum_hint_fail',
-          params: {}
-        },
-        data: {
-          details: {
-            measured: { width: it.rect.width, height: it.rect.height },
-            reasonCode: 'undersized-and-too-close',
-            conflictHitCount: info.hitCount,
-            conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null
-          }
-        }
-      });
+        })
+      );
     }
   }
 
@@ -86431,26 +85942,21 @@ const __a11yCoreCrossFrameApi = (function () {
         if (hasColumnHeaderAbove(r, c)) continue;
         if (hasRowHeaderBefore(r, c)) continue;
 
-        const stableSelector = helpers.buildSelector ? helpers.buildSelector(cell) : 'html';
-        const html = helpers.getOuterHtmlSnippet
-          ? helpers.getOuterHtmlSnippet(cell)
-          : cell.outerHTML || '';
-
-        occurrences.push({
-          selector: stableSelector,
-          html,
-          summary:
-            'This data cell has no associated header (no headers attribute, no column <th> above it, no row <th> to its left).',
-          hint: 'Add a headers attribute referencing the relevant <th> id(s), or restructure the table so this cell has an implicit row/column header.',
-          i18n: {
-            summaryKey: 'tdHasHeader_summary_fail',
-            hintKey: 'tdHasHeader_hint_fail',
-            params: { row: String(r), column: String(c) }
-          },
-          data: {
-            details: { reasonCode: 'TD_NO_ASSOCIATED_HEADER', row: r, column: c }
-          }
-        });
+        occurrences.push(
+          helpers.reportOccurrence(cell, {
+            summary:
+              'This data cell has no associated header (no headers attribute, no column <th> above it, no row <th> to its left).',
+            hint: 'Add a headers attribute referencing the relevant <th> id(s), or restructure the table so this cell has an implicit row/column header.',
+            i18n: {
+              summaryKey: 'tdHasHeader_summary_fail',
+              hintKey: 'tdHasHeader_hint_fail',
+              params: { row: String(r), column: String(c) }
+            },
+            data: {
+              details: { reasonCode: 'TD_NO_ASSOCIATED_HEADER', row: r, column: c }
+            }
+          })
+        );
       }
     }
   }
@@ -86665,24 +86171,22 @@ const __a11yCoreCrossFrameApi = (function () {
           }
         })()
       : null;
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This element has no accessible name.',
-      hint: "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this textbox's accessible name.",
-      i18n: {
-        summaryKey: 'textboxNamePresent_summary_fail',
-        hintKey: 'textboxNamePresent_hint_fail',
-        params: { controlType: 'textbox' }
-      },
-      data: {
-        details: { reasonCode: 'name_missing', controlType: 'textbox', methodTried: res.method },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This element has no accessible name.',
+        hint: "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this textbox's accessible name.",
+        i18n: {
+          summaryKey: 'textboxNamePresent_summary_fail',
+          hintKey: 'textboxNamePresent_hint_fail',
+          params: { controlType: 'textbox' }
+        },
+        data: {
+          details: { reasonCode: 'name_missing', controlType: 'textbox', methodTried: res.method },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -86816,24 +86320,22 @@ const __a11yCoreCrossFrameApi = (function () {
           }
         })()
       : null;
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This tooltip has no accessible name.',
-      hint: 'Provide tooltip text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.',
-      i18n: {
-        summaryKey: 'tooltipNamePresent_summary_fail',
-        hintKey: 'tooltipNamePresent_hint_fail',
-        params: {}
-      },
-      data: {
-        details: { reasonCode: 'name_missing', controlType: 'tooltip', methodTried: res.method },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This tooltip has no accessible name.',
+        hint: 'Provide tooltip text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.',
+        i18n: {
+          summaryKey: 'tooltipNamePresent_summary_fail',
+          hintKey: 'tooltipNamePresent_hint_fail',
+          params: {}
+        },
+        data: {
+          details: { reasonCode: 'name_missing', controlType: 'tooltip', methodTried: res.method },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -86964,24 +86466,22 @@ const __a11yCoreCrossFrameApi = (function () {
           }
         })()
       : null;
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This element has no accessible name.',
-      hint: 'Provide aria-label or aria-labelledby (preferred), or provide visible text that is not hidden from assistive technologies.',
-      i18n: {
-        summaryKey: 'treeitemNamePresent_summary_fail',
-        hintKey: 'treeitemNamePresent_hint_fail',
-        params: { controlType: 'treeitem' }
-      },
-      data: {
-        details: { reasonCode: 'name_missing', controlType: 'treeitem', methodTried: res.method },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This element has no accessible name.',
+        hint: 'Provide aria-label or aria-labelledby (preferred), or provide visible text that is not hidden from assistive technologies.',
+        i18n: {
+          summaryKey: 'treeitemNamePresent_summary_fail',
+          hintKey: 'treeitemNamePresent_hint_fail',
+          params: { controlType: 'treeitem' }
+        },
+        data: {
+          details: { reasonCode: 'name_missing', controlType: 'treeitem', methodTried: res.method },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {
@@ -87034,23 +86534,21 @@ const __a11yCoreCrossFrameApi = (function () {
     if (isValidTag(raw)) continue;
 
     const tag = el.tagName.toLowerCase();
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: `This lang attribute value ("${raw}") is not a syntactically valid language tag.`,
-      hint: 'Use a valid BCP47 language tag (e.g. "fr", "es-MX").',
-      i18n: {
-        summaryKey: 'validLang_summary_fail',
-        hintKey: 'validLang_hint_fail',
-        params: { element: tag, value: raw }
-      },
-      data: {
-        details: { reasonCode: 'ELEMENT_LANG_INVALID', element: tag, value: raw }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: `This lang attribute value ("${raw}") is not a syntactically valid language tag.`,
+        hint: 'Use a valid BCP47 language tag (e.g. "fr", "es-MX").',
+        i18n: {
+          summaryKey: 'validLang_summary_fail',
+          hintKey: 'validLang_hint_fail',
+          params: { element: tag, value: raw }
+        },
+        data: {
+          details: { reasonCode: 'ELEMENT_LANG_INVALID', element: tag, value: raw }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {

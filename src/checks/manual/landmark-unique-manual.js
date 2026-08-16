@@ -219,34 +219,29 @@ function runInPage(ctx) {
       if (group.length <= 1) continue;
 
       for (const { el } of group) {
-        const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-        const html = helpers.getOuterHtmlSnippet
-          ? helpers.getOuterHtmlSnippet(el)
-          : el.outerHTML || '';
-
-        occurrences.push({
-          selector: stableSelector,
-          html,
-          summary: normalizedName
-            ? `This ${role} landmark shares its accessible name with another ${role} landmark.`
-            : `This ${role} landmark has no accessible name, and more than one unnamed ${role} landmark exists on this page.`,
-          hint: `Give each ${role} landmark a distinct name via aria-label or aria-labelledby.`,
-          i18n: {
-            summaryKey: normalizedName
-              ? 'landmarkUnique_summary_cantTell_duplicateName'
-              : 'landmarkUnique_summary_cantTell_bothUnnamed',
-            hintKey: 'landmarkUnique_hint_cantTell',
-            params: { role }
-          },
-          data: {
-            details: {
-              reasonCode: 'LANDMARK_NOT_UNIQUE',
-              role,
-              name: normalizedName,
-              groupSize: group.length
+        occurrences.push(
+          helpers.reportOccurrence(el, {
+            summary: normalizedName
+              ? `This ${role} landmark shares its accessible name with another ${role} landmark.`
+              : `This ${role} landmark has no accessible name, and more than one unnamed ${role} landmark exists on this page.`,
+            hint: `Give each ${role} landmark a distinct name via aria-label or aria-labelledby.`,
+            i18n: {
+              summaryKey: normalizedName
+                ? 'landmarkUnique_summary_cantTell_duplicateName'
+                : 'landmarkUnique_summary_cantTell_bothUnnamed',
+              hintKey: 'landmarkUnique_hint_cantTell',
+              params: { role }
+            },
+            data: {
+              details: {
+                reasonCode: 'LANDMARK_NOT_UNIQUE',
+                role,
+                name: normalizedName,
+                groupSize: group.length
+              }
             }
-          }
-        });
+          })
+        );
       }
     }
   }

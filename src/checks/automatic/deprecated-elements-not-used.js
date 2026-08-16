@@ -72,23 +72,21 @@ function runInPage(ctx) {
     applicableCount += 1;
 
     const tag = el.tagName.toLowerCase();
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This element’s content cannot be paused, stopped, or hidden by the user.',
-      hint: 'Remove this element; use static content, or an animation with a user-facing pause/stop control, instead.',
-      i18n: {
-        summaryKey: 'deprecatedElements_summary_fail',
-        hintKey: 'deprecatedElements_hint_fail',
-        params: { element: tag }
-      },
-      data: {
-        details: { reasonCode: 'DEPRECATED_NON_STOPPABLE_ELEMENT', element: tag }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This element’s content cannot be paused, stopped, or hidden by the user.',
+        hint: 'Remove this element; use static content, or an animation with a user-facing pause/stop control, instead.',
+        i18n: {
+          summaryKey: 'deprecatedElements_summary_fail',
+          hintKey: 'deprecatedElements_hint_fail',
+          params: { element: tag }
+        },
+        data: {
+          details: { reasonCode: 'DEPRECATED_NON_STOPPABLE_ELEMENT', element: tag }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {

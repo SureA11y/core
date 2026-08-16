@@ -202,23 +202,20 @@ function runInPage(ctx) {
   for (const el of contentinfos) {
     if (!hasLandmarkAncestor(el)) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This contentinfo landmark is nested inside another landmark region.',
-      hint: 'Move the contentinfo landmark (footer/role="contentinfo") so it is not contained by another landmark; contentinfo should be a top-level region of the page.',
-      i18n: {
-        summaryKey: 'landmarkContentinfoIsTopLevel_summary_cantTell',
-        hintKey: 'landmarkContentinfoIsTopLevel_hint_cantTell',
-        params: {}
-      },
-      data: {
-        details: { reasonCode: 'LANDMARK_CONTENTINFO_NOT_TOP_LEVEL' }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This contentinfo landmark is nested inside another landmark region.',
+        hint: 'Move the contentinfo landmark (footer/role="contentinfo") so it is not contained by another landmark; contentinfo should be a top-level region of the page.',
+        i18n: {
+          summaryKey: 'landmarkContentinfoIsTopLevel_summary_cantTell',
+          hintKey: 'landmarkContentinfoIsTopLevel_hint_cantTell',
+          params: {}
+        },
+        data: {
+          details: { reasonCode: 'LANDMARK_CONTENTINFO_NOT_TOP_LEVEL' }
+        }
+      })
+    );
   }
 
   if (occurrences.length) {

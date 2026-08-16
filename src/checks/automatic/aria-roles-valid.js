@@ -120,27 +120,27 @@ function runInPage(ctx) {
     const role = tokens[0];
     const isKnown = tokens.some((t) => ariaHelpers.isKnownRole(t));
     const reasonCode = !isKnown ? 'ARIA_ROLE_INVALID' : 'ARIA_ROLE_ABSTRACT';
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: !isKnown
-        ? 'The role attribute value is not a recognized ARIA role.'
-        : 'The role attribute value is an abstract ARIA role, which must not be used directly.',
-      hint: !isKnown
-        ? 'Use a valid ARIA role token, or remove the role attribute if none applies.'
-        : 'Replace this abstract role with a concrete role appropriate for the widget/structure.',
-      i18n: {
-        summaryKey: !isKnown ? 'ariaRolesValid_summary_invalid' : 'ariaRolesValid_summary_abstract',
-        hintKey: !isKnown ? 'ariaRolesValid_hint_invalid' : 'ariaRolesValid_hint_abstract',
-        params: { role }
-      },
-      data: {
-        details: { reasonCode, role }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: !isKnown
+          ? 'The role attribute value is not a recognized ARIA role.'
+          : 'The role attribute value is an abstract ARIA role, which must not be used directly.',
+        hint: !isKnown
+          ? 'Use a valid ARIA role token, or remove the role attribute if none applies.'
+          : 'Replace this abstract role with a concrete role appropriate for the widget/structure.',
+        i18n: {
+          summaryKey: !isKnown
+            ? 'ariaRolesValid_summary_invalid'
+            : 'ariaRolesValid_summary_abstract',
+          hintKey: !isKnown ? 'ariaRolesValid_hint_invalid' : 'ariaRolesValid_hint_abstract',
+          params: { role }
+        },
+        data: {
+          details: { reasonCode, role }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {

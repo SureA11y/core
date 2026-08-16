@@ -82,24 +82,22 @@ function runInPage(ctx) {
 
     if (info.allowed) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
     const tag = (el.tagName || '').toLowerCase();
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This role is not permitted on this element.',
-      hint: 'Use a role permitted for this element, or change the host element.',
-      i18n: {
-        summaryKey: 'ariaAllowedRole_summary_fail',
-        hintKey: 'ariaAllowedRole_hint_fail',
-        params: { role, element: tag }
-      },
-      data: {
-        details: { reasonCode: 'ARIA_ROLE_NOT_ALLOWED_FOR_ELEMENT', role, element: tag }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This role is not permitted on this element.',
+        hint: 'Use a role permitted for this element, or change the host element.',
+        i18n: {
+          summaryKey: 'ariaAllowedRole_summary_fail',
+          hintKey: 'ariaAllowedRole_hint_fail',
+          params: { role, element: tag }
+        },
+        data: {
+          details: { reasonCode: 'ARIA_ROLE_NOT_ALLOWED_FOR_ELEMENT', role, element: tag }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {

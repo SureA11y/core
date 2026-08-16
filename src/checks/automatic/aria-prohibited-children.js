@@ -256,10 +256,6 @@ function runInPage(ctx) {
     for (const entry of owned) {
       if (entry.role && requiredSet.has(entry.role)) continue;
 
-      const stableSelector = helpers.buildSelector ? helpers.buildSelector(entry.el) : 'html';
-      const html = helpers.getOuterHtmlSnippet
-        ? helpers.getOuterHtmlSnippet(entry.el)
-        : entry.el.outerHTML || '';
       const containerSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
 
       const isRoleless = !entry.role;
@@ -286,29 +282,33 @@ function runInPage(ctx) {
         hintKey = 'ariaProhibitedChildren_hint_fail';
       }
 
-      occurrences.push({
-        selector: stableSelector,
-        html,
-        summary,
-        hint,
-        i18n: {
-          summaryKey,
-          hintKey,
-          params: isRoleless
-            ? { attr: entry.attr, containerRole: role }
-            : { childRole: entry.role, containerRole: role, allowedRoles: requiredOwned.join(', ') }
-        },
-        data: {
-          details: {
-            reasonCode: isRoleless ? 'ARIA_PROHIBITED_CHILD_ROLELESS' : 'ARIA_PROHIBITED_CHILD',
-            childRole: entry.role,
-            attr: entry.attr,
-            containerRole: role,
-            containerSelector,
-            allowedOwnedRoles: requiredOwned
+      occurrences.push(
+        helpers.reportOccurrence(entry.el, {
+          summary,
+          hint,
+          i18n: {
+            summaryKey,
+            hintKey,
+            params: isRoleless
+              ? { attr: entry.attr, containerRole: role }
+              : {
+                  childRole: entry.role,
+                  containerRole: role,
+                  allowedRoles: requiredOwned.join(', ')
+                }
+          },
+          data: {
+            details: {
+              reasonCode: isRoleless ? 'ARIA_PROHIBITED_CHILD_ROLELESS' : 'ARIA_PROHIBITED_CHILD',
+              childRole: entry.role,
+              attr: entry.attr,
+              containerRole: role,
+              containerSelector,
+              allowedOwnedRoles: requiredOwned
+            }
           }
-        }
-      });
+        })
+      );
     }
   }
 

@@ -125,29 +125,24 @@ function runInPage(ctx) {
     const { el, level } = headings[i];
 
     if (level > highestSoFar + 1) {
-      const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-      const html = helpers.getOuterHtmlSnippet
-        ? helpers.getOuterHtmlSnippet(el)
-        : el.outerHTML || '';
-
-      occurrences.push({
-        selector: stableSelector,
-        html,
-        summary: `This heading jumps from level ${highestSoFar} to level ${level}, skipping a level.`,
-        hint: 'Use consecutive heading levels (do not skip a level when going deeper) so the document outline stays predictable.',
-        i18n: {
-          summaryKey: 'headingOrder_summary_cantTell',
-          hintKey: 'headingOrder_hint_cantTell',
-          params: { fromLevel: String(highestSoFar), toLevel: String(level) }
-        },
-        data: {
-          details: {
-            reasonCode: 'HEADING_ORDER_SKIPPED_LEVEL',
-            fromLevel: highestSoFar,
-            toLevel: level
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: `This heading jumps from level ${highestSoFar} to level ${level}, skipping a level.`,
+          hint: 'Use consecutive heading levels (do not skip a level when going deeper) so the document outline stays predictable.',
+          i18n: {
+            summaryKey: 'headingOrder_summary_cantTell',
+            hintKey: 'headingOrder_hint_cantTell',
+            params: { fromLevel: String(highestSoFar), toLevel: String(level) }
+          },
+          data: {
+            details: {
+              reasonCode: 'HEADING_ORDER_SKIPPED_LEVEL',
+              fromLevel: highestSoFar,
+              toLevel: level
+            }
           }
-        }
-      });
+        })
+      );
     }
 
     if (level > highestSoFar) highestSoFar = level;

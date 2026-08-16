@@ -322,47 +322,45 @@ function runInPage(ctx) {
     if (!candidates.length) continue;
 
     const tag = el.tagName.toLowerCase();
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
     const shouldProbe = candidates.length === 1;
     const runtimeProbe = shouldProbe
       ? probeImmediateFocusRedirect(el, contentDoc, candidates[0])
       : null;
 
     if (runtimeProbe && runtimeProbe.redirected) {
-      cantTellOccurrences.push({
-        selector: stableSelector,
-        html,
-        summary:
-          'This frame has tabindex="-1" and a focusable candidate, but focus moves immediately to another target. Verify keyboard reachability in a real browser.',
-        hint: 'If this is an intentional focus handoff, ensure keyboard users cannot remain on hidden/intermediate frame content.',
-        i18n: null,
-        data: {
-          details: {
-            reasonCode: 'IFRAME_TABINDEX_NEGATIVE_CONTENT_RUNTIME_REDIRECT',
-            element: tag,
-            runtimeProbe
+      cantTellOccurrences.push(
+        helpers.reportOccurrence(el, {
+          summary:
+            'This frame has tabindex="-1" and a focusable candidate, but focus moves immediately to another target. Verify keyboard reachability in a real browser.',
+          hint: 'If this is an intentional focus handoff, ensure keyboard users cannot remain on hidden/intermediate frame content.',
+          i18n: null,
+          data: {
+            details: {
+              reasonCode: 'IFRAME_TABINDEX_NEGATIVE_CONTENT_RUNTIME_REDIRECT',
+              element: tag,
+              runtimeProbe
+            }
           }
-        }
-      });
+        })
+      );
       continue;
     }
 
-    failOccurrences.push({
-      selector: stableSelector,
-      html,
-      summary:
-        'This frame has tabindex="-1" but its content contains focusable elements, which remain reachable by keyboard.',
-      hint: 'Remove focusable content from the frame, or remove tabindex="-1" if the frame is meant to be reachable.',
-      i18n: {
-        summaryKey: 'iframeFocusableContent_summary_fail',
-        hintKey: 'iframeFocusableContent_hint_fail',
-        params: { element: tag }
-      },
-      data: {
-        details: { reasonCode: 'IFRAME_TABINDEX_NEGATIVE_CONTENT_FOCUSABLE', element: tag }
-      }
-    });
+    failOccurrences.push(
+      helpers.reportOccurrence(el, {
+        summary:
+          'This frame has tabindex="-1" but its content contains focusable elements, which remain reachable by keyboard.',
+        hint: 'Remove focusable content from the frame, or remove tabindex="-1" if the frame is meant to be reachable.',
+        i18n: {
+          summaryKey: 'iframeFocusableContent_summary_fail',
+          hintKey: 'iframeFocusableContent_hint_fail',
+          params: { element: tag }
+        },
+        data: {
+          details: { reasonCode: 'IFRAME_TABINDEX_NEGATIVE_CONTENT_FOCUSABLE', element: tag }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {

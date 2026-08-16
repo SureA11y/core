@@ -62,23 +62,20 @@ function runInPage(ctx) {
 
     if (n <= 0) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This element has a positive tabindex, overriding the natural tab order.',
-      hint: 'Use tabindex="0" (or a negative value to remove from tab order) instead of a positive number; fix the DOM order if a different tab order is needed.',
-      i18n: {
-        summaryKey: 'tabindex_summary_cantTell',
-        hintKey: 'tabindex_hint_cantTell',
-        params: { value: String(n) }
-      },
-      data: {
-        details: { reasonCode: 'TABINDEX_POSITIVE', value: n }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This element has a positive tabindex, overriding the natural tab order.',
+        hint: 'Use tabindex="0" (or a negative value to remove from tab order) instead of a positive number; fix the DOM order if a different tab order is needed.',
+        i18n: {
+          summaryKey: 'tabindex_summary_cantTell',
+          hintKey: 'tabindex_hint_cantTell',
+          params: { value: String(n) }
+        },
+        data: {
+          details: { reasonCode: 'TABINDEX_POSITIVE', value: n }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {

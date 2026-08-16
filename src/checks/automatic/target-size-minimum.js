@@ -151,17 +151,6 @@ function runInPage(ctx) {
     return 'html';
   }
 
-  function htmlSnippet(el) {
-    try {
-      if (helpers && typeof helpers.getOuterHtmlSnippet === 'function')
-        return helpers.getOuterHtmlSnippet(el);
-    } catch {}
-    try {
-      return el && el.outerHTML ? String(el.outerHTML) : '';
-    } catch {}
-    return '';
-  }
-
   // A link-like target (a[href] or role="link") rendered inline/inline-* and
   // carrying visible text. This is the shape the SC 2.5.8 inline exception is
   // about, without the surrounding-container requirement.
@@ -596,27 +585,27 @@ function runInPage(ctx) {
       // the result once any other target on the page had a confident
       // fail (see helpers.resolveTieredOutcome's header comment). Now
       // reported as its own cantTell-tier occurrence instead.
-      cantTellOccurrences.push({
-        selector: buildSelector(it.el),
-        html: htmlSnippet(it.el),
-        occurrenceOutcome: 'cantTell',
-        summary:
-          'Target may be too small and too close to another target, but the overlap is near the detection threshold and could not be confidently measured.',
-        hint: 'Manually verify the effective spacing between this target and its neighbor; increase target size or spacing if the overlap is real.',
-        i18n: {
-          summaryKey: 'targetSizeMinimum_summary_cantTell_ambiguousSpacing',
-          hintKey: 'targetSizeMinimum_hint_cantTell_ambiguousSpacing',
-          params: {}
-        },
-        data: {
-          details: {
-            measured: { width: it.rect.width, height: it.rect.height },
-            reasonCode: 'undersized-ambiguous-spacing',
-            conflictHitCount: info.hitCount,
-            conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null
+      cantTellOccurrences.push(
+        helpers.reportOccurrence(it.el, {
+          occurrenceOutcome: 'cantTell',
+          summary:
+            'Target may be too small and too close to another target, but the overlap is near the detection threshold and could not be confidently measured.',
+          hint: 'Manually verify the effective spacing between this target and its neighbor; increase target size or spacing if the overlap is real.',
+          i18n: {
+            summaryKey: 'targetSizeMinimum_summary_cantTell_ambiguousSpacing',
+            hintKey: 'targetSizeMinimum_hint_cantTell_ambiguousSpacing',
+            params: {}
+          },
+          data: {
+            details: {
+              measured: { width: it.rect.width, height: it.rect.height },
+              reasonCode: 'undersized-ambiguous-spacing',
+              conflictHitCount: info.hitCount,
+              conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null
+            }
           }
-        }
-      });
+        })
+      );
       continue;
     }
 
@@ -625,27 +614,27 @@ function runInPage(ctx) {
         // Confident spacing conflict, but the target may be exempt as part
         // of an essential graphic/image-map region — same "previously
         // unrecoverable" gap as above, now reported instead of dropped.
-        cantTellOccurrences.push({
-          selector: buildSelector(it.el),
-          html: htmlSnippet(it.el),
-          occurrenceOutcome: 'cantTell',
-          summary:
-            'Target is too small and too close to another target, but may be exempt as part of an essential graphic or image-map region.',
-          hint: 'Verify whether this target’s size is genuinely essential to its function (e.g. part of an SVG/canvas/image map); if not, increase target size or spacing.',
-          i18n: {
-            summaryKey: 'targetSizeMinimum_summary_cantTell_plausiblyEssential',
-            hintKey: 'targetSizeMinimum_hint_cantTell_plausiblyEssential',
-            params: {}
-          },
-          data: {
-            details: {
-              measured: { width: it.rect.width, height: it.rect.height },
-              reasonCode: 'undersized-plausibly-essential',
-              conflictHitCount: info.hitCount,
-              conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null
+        cantTellOccurrences.push(
+          helpers.reportOccurrence(it.el, {
+            occurrenceOutcome: 'cantTell',
+            summary:
+              'Target is too small and too close to another target, but may be exempt as part of an essential graphic or image-map region.',
+            hint: 'Verify whether this target’s size is genuinely essential to its function (e.g. part of an SVG/canvas/image map); if not, increase target size or spacing.',
+            i18n: {
+              summaryKey: 'targetSizeMinimum_summary_cantTell_plausiblyEssential',
+              hintKey: 'targetSizeMinimum_hint_cantTell_plausiblyEssential',
+              params: {}
+            },
+            data: {
+              details: {
+                measured: { width: it.rect.width, height: it.rect.height },
+                reasonCode: 'undersized-plausibly-essential',
+                conflictHitCount: info.hitCount,
+                conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null
+              }
             }
-          }
-        });
+          })
+        );
         continue;
       }
 
@@ -653,50 +642,50 @@ function runInPage(ctx) {
       // same text run, where the SC 2.5.8 inline exception may apply. That
       // can't be decided from geometry alone, so defer to manual review.
       if (isInlineLinkTarget(it.el) && info.conflictEl && isInlineLinkTarget(info.conflictEl)) {
-        cantTellOccurrences.push({
-          selector: buildSelector(it.el),
-          html: htmlSnippet(it.el),
-          occurrenceOutcome: 'cantTell',
-          summary:
-            'Target is smaller than 24×24 CSS px and close to another inline link in the same run of text, where the inline exception may apply.',
-          hint: 'Confirm whether these links form a run of inline text (which is exempt); otherwise increase the target size to at least 24×24 CSS px or add spacing.',
+        cantTellOccurrences.push(
+          helpers.reportOccurrence(it.el, {
+            occurrenceOutcome: 'cantTell',
+            summary:
+              'Target is smaller than 24×24 CSS px and close to another inline link in the same run of text, where the inline exception may apply.',
+            hint: 'Confirm whether these links form a run of inline text (which is exempt); otherwise increase the target size to at least 24×24 CSS px or add spacing.',
+            i18n: {
+              summaryKey: 'targetSizeMinimum_summary_cantTell_inlineLinkRun',
+              hintKey: 'targetSizeMinimum_hint_cantTell_inlineLinkRun',
+              params: {}
+            },
+            data: {
+              details: {
+                measured: { width: it.rect.width, height: it.rect.height },
+                reasonCode: 'undersized-inline-link-run',
+                conflictHitCount: info.hitCount,
+                conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null
+              }
+            }
+          })
+        );
+        continue;
+      }
+
+      failOccurrences.push(
+        helpers.reportOccurrence(it.el, {
+          occurrenceOutcome: 'fail',
+          summary: 'Target is too small and too close to another target.',
+          hint: 'Increase target size to at least 24 by 24 CSS pixels, or add sufficient spacing.',
           i18n: {
-            summaryKey: 'targetSizeMinimum_summary_cantTell_inlineLinkRun',
-            hintKey: 'targetSizeMinimum_hint_cantTell_inlineLinkRun',
+            summaryKey: 'targetSizeMinimum_summary_fail',
+            hintKey: 'targetSizeMinimum_hint_fail',
             params: {}
           },
           data: {
             details: {
               measured: { width: it.rect.width, height: it.rect.height },
-              reasonCode: 'undersized-inline-link-run',
+              reasonCode: 'undersized-and-too-close',
               conflictHitCount: info.hitCount,
               conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null
             }
           }
-        });
-        continue;
-      }
-
-      failOccurrences.push({
-        selector: buildSelector(it.el),
-        html: htmlSnippet(it.el),
-        occurrenceOutcome: 'fail',
-        summary: 'Target is too small and too close to another target.',
-        hint: 'Increase target size to at least 24 by 24 CSS pixels, or add sufficient spacing.',
-        i18n: {
-          summaryKey: 'targetSizeMinimum_summary_fail',
-          hintKey: 'targetSizeMinimum_hint_fail',
-          params: {}
-        },
-        data: {
-          details: {
-            measured: { width: it.rect.width, height: it.rect.height },
-            reasonCode: 'undersized-and-too-close',
-            conflictHitCount: info.hitCount,
-            conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null
-          }
-        }
-      });
+        })
+      );
     }
   }
 

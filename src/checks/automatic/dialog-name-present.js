@@ -140,24 +140,22 @@ function runInPage(ctx) {
           }
         })()
       : null;
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This dialog has no accessible name.',
-      hint: 'Provide aria-labelledby (preferred) or aria-label so assistive technologies can announce the dialog.',
-      i18n: {
-        summaryKey: 'dialogNamePresent_summary_fail',
-        hintKey: 'dialogNamePresent_hint_fail',
-        params: { role }
-      },
-      data: {
-        details: { reasonCode: 'name_missing', controlType: role, methodTried: res.method },
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This dialog has no accessible name.',
+        hint: 'Provide aria-labelledby (preferred) or aria-label so assistive technologies can announce the dialog.',
+        i18n: {
+          summaryKey: 'dialogNamePresent_summary_fail',
+          hintKey: 'dialogNamePresent_hint_fail',
+          params: { role }
+        },
+        data: {
+          details: { reasonCode: 'name_missing', controlType: role, methodTried: res.method },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (applicableCount === 0) {

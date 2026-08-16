@@ -86,28 +86,26 @@ function runInPage(ctx) {
     const invalidValue = trim(el.getAttribute('aria-invalid')).toLowerCase();
     if (TRUTHY_INVALID_VALUES.has(invalidValue)) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
     const tag = (el.tagName || '').toLowerCase();
 
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary:
-        'This element has aria-errormessage but aria-invalid is missing or "false", so the error message is not exposed.',
-      hint: 'Set aria-invalid to "true" (or "grammar"/"spelling") whenever aria-errormessage should be exposed to assistive technology.',
-      i18n: {
-        summaryKey: 'ariaConditionalAttr_summary_fail',
-        hintKey: 'ariaConditionalAttr_hint_fail',
-        params: { element: tag, ariaInvalid: invalidValue || '(absent)' }
-      },
-      data: {
-        details: {
-          reasonCode: 'ARIA_ERRORMESSAGE_WITHOUT_TRUTHY_INVALID',
-          ariaInvalid: invalidValue
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary:
+          'This element has aria-errormessage but aria-invalid is missing or "false", so the error message is not exposed.',
+        hint: 'Set aria-invalid to "true" (or "grammar"/"spelling") whenever aria-errormessage should be exposed to assistive technology.',
+        i18n: {
+          summaryKey: 'ariaConditionalAttr_summary_fail',
+          hintKey: 'ariaConditionalAttr_hint_fail',
+          params: { element: tag, ariaInvalid: invalidValue || '(absent)' }
+        },
+        data: {
+          details: {
+            reasonCode: 'ARIA_ERRORMESSAGE_WITHOUT_TRUTHY_INVALID',
+            ariaInvalid: invalidValue
+          }
         }
-      }
-    });
+      })
+    );
   }
 
   if (applicableCount === 0) {

@@ -192,23 +192,20 @@ function runInPage(ctx) {
   for (const el of mains) {
     if (!hasLandmarkAncestor(el)) continue;
 
-    const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
-
-    occurrences.push({
-      selector: stableSelector,
-      html,
-      summary: 'This main landmark is nested inside another landmark region.',
-      hint: 'Move the main landmark (<main>/role="main") so it is not contained by another landmark; main should be a top-level region of the page.',
-      i18n: {
-        summaryKey: 'landmarkMainIsTopLevel_summary_cantTell',
-        hintKey: 'landmarkMainIsTopLevel_hint_cantTell',
-        params: {}
-      },
-      data: {
-        details: { reasonCode: 'LANDMARK_MAIN_NOT_TOP_LEVEL' }
-      }
-    });
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This main landmark is nested inside another landmark region.',
+        hint: 'Move the main landmark (<main>/role="main") so it is not contained by another landmark; main should be a top-level region of the page.',
+        i18n: {
+          summaryKey: 'landmarkMainIsTopLevel_summary_cantTell',
+          hintKey: 'landmarkMainIsTopLevel_hint_cantTell',
+          params: {}
+        },
+        data: {
+          details: { reasonCode: 'LANDMARK_MAIN_NOT_TOP_LEVEL' }
+        }
+      })
+    );
   }
 
   if (occurrences.length) {
