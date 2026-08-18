@@ -268,3 +268,202 @@ test('renderSarifReport: aria-prohibited-attr mixed-tier occurrences produce bot
   assert.strictEqual(results.length, 2);
   assert.deepStrictEqual(results.map((r) => r.level).sort(), ['error', 'warning']);
 });
+
+// --- degraded and minimal inputs -------------------------------------------
+//
+// A SARIF log is written by CI, often from whatever a scan produced on a page
+// nobody controls. These cover the shapes the well-formed fixtures above never
+// produce -- a rule with no WCAG mapping, an occurrence with no hint, a result
+// object that is missing pieces entirely -- where the requirement is a valid
+// log, not an exception.
+
+test('renderSarifReport: a rule with no normative mappings still gets the base tags', () => {
+  for (const meta of [
+    null,
+    undefined,
+    {},
+    { normativeMappings: null },
+    { normativeMappings: [] }
+  ]) {
+    const result = makeScanResult([makeCheckResult({ meta })]);
+    const rule = parse(renderSarifReport(result, {})).runs[0].tool.driver.rules[0];
+    assert.deepStrictEqual(rule.properties.tags, ['accessibility', 'automatic']);
+  }
+});
+
+test('renderSarifReport: a malformed normative mapping is skipped, the valid ones are kept', () => {
+  const result = makeScanResult([
+    makeCheckResult({
+      meta: { normativeMappings: [null, {}, { requirement: '' }, { requirement: '4.1.2' }] }
+    })
+  ]);
+
+  const rule = parse(renderSarifReport(result, {})).runs[0].tool.driver.rules[0];
+  assert.deepStrictEqual(rule.properties.tags, ['accessibility', 'automatic', 'wcag-4.1.2']);
+});
+
+test('renderSarifReport: a manual rule is tagged manual', () => {
+  const result = makeScanResult([makeCheckResult({ type: 'manual', outcome: 'cantTell' })]);
+  const rule = parse(renderSarifReport(result, {})).runs[0].tool.driver.rules[0];
+  assert.ok(rule.properties.tags.includes('manual'));
+});
+
+test('renderSarifReport: a rule with no title or description falls back to its id', () => {
+  const result = makeScanResult([
+    makeCheckResult({ ruleId: 'bare-rule', title: null, description: null })
+  ]);
+
+  const rule = parse(renderSarifReport(result, {})).runs[0].tool.driver.rules[0];
+  assert.strictEqual(rule.shortDescription.text, 'bare-rule');
+  assert.strictEqual(rule.fullDescription.text, 'bare-rule');
+});
+
+test('renderSarifReport: a rule with a title but no description reuses the title', () => {
+  const result = makeScanResult([makeCheckResult({ title: 'Only a title', description: null })]);
+  const rule = parse(renderSarifReport(result, {})).runs[0].tool.driver.rules[0];
+  assert.strictEqual(rule.fullDescription.text, 'Only a title');
+});
+
+test('renderSarifReport: an occurrence with no hint uses the summary alone as the message', () => {
+  const result = makeScanResult([
+    makeCheckResult({ occurrences: [makeOccurrence({ summary: 'Missing alt.', hint: null })] })
+  ]);
+
+  const sarifResult = parse(renderSarifReport(result, {})).runs[0].results[0];
+  assert.strictEqual(sarifResult.message.text, 'Missing alt.');
+});
+
+test('renderSarifReport: an occurrence with no selector gets no logical location', () => {
+  const result = makeScanResult([
+    makeCheckResult({ occurrences: [makeOccurrence({ selector: null })] })
+  ]);
+
+  const location = parse(renderSarifReport(result, {})).runs[0].results[0].locations[0];
+  assert.strictEqual(location.logicalLocations, undefined);
+  assert.ok(location.physicalLocation);
+});
+
+test('renderSarifReport: a non-string occurrence html is reported as an empty string', () => {
+  const result = makeScanResult([
+    makeCheckResult({ occurrences: [makeOccurrence({ html: undefined })] })
+  ]);
+
+  const sarifResult = parse(renderSarifReport(result, {})).runs[0].results[0];
+  assert.strictEqual(sarifResult.properties.html, '');
+  assert.strictEqual(
+    sarifResult.partialFingerprints['surea11y/violation/v1'],
+    computeBaselineKey('img-alt-present', 'DEFAULT', '')
+  );
+});
+
+test('renderSarifReport: the same rule reported twice is declared once', () => {
+  const result = makeScanResult([
+    makeCheckResult({ occurrences: [makeOccurrence({ selector: 'img.a' })] }),
+    makeCheckResult({ occurrences: [makeOccurrence({ selector: 'img.b' })] })
+  ]);
+
+  const run = parse(renderSarifReport(result, {})).runs[0];
+  assert.strictEqual(run.tool.driver.rules.length, 1);
+  assert.strictEqual(run.results.length, 2);
+});
+
+test('renderSarifReport: checks and occurrences that are not usable are skipped, not fatal', () => {
+  const result = makeScanResult([
+    null,
+    makeCheckResult({ ruleId: 'no-occurrences-array', occurrences: 'nope' }),
+    makeCheckResult({ occurrences: [null, makeOccurrence()] })
+  ]);
+
+  const run = parse(renderSarifReport(result, {})).runs[0];
+  assert.deepStrictEqual(
+    run.tool.driver.rules.map((r) => r.id),
+    ['img-alt-present'],
+    'a check with no occurrences array is not even declared as a rule'
+  );
+  assert.strictEqual(run.results.length, 1);
+});
+
+test('renderSarifReport: a missing or malformed result still produces a valid empty log', () => {
+  for (const bad of [null, undefined, {}, { checksResults: null }, { checksResults: 'x' }]) {
+    const sarif = parse(renderSarifReport(bad, {}));
+    assert.strictEqual(sarif.version, '2.1.0');
+    assert.deepStrictEqual(sarif.runs[0].results, []);
+    assert.deepStrictEqual(sarif.runs[0].tool.driver.rules, []);
+  }
+});
+
+test('renderSarifReport: called with no options at all still names the tool', () => {
+  const driver = parse(renderSarifReport(makeScanResult([]))).runs[0].tool.driver;
+
+  assert.strictEqual(driver.name, 'surea11y');
+  assert.strictEqual(driver.version, '0.0.0');
+  assert.strictEqual(driver.informationUri, 'https://github.com/SureA11y/core');
+});
+
+test('renderSarifReport: toolVersion and informationUri are carried through when given', () => {
+  const driver = parse(
+    renderSarifReport(makeScanResult([]), {
+      toolVersion: '9.9.9',
+      informationUri: 'https://example.test/tool'
+    })
+  ).runs[0].tool.driver;
+
+  assert.strictEqual(driver.version, '9.9.9');
+  assert.strictEqual(driver.informationUri, 'https://example.test/tool');
+});
+
+test('renderSarifReport: a file:// url pointing at the cwd itself keeps the absolute path', () => {
+  const result = makeScanResult([makeCheckResult({})]);
+  result.url = `file://${process.cwd()}`;
+
+  const sarif = parse(renderSarifReport(result, {}));
+
+  // path.relative(cwd, cwd) is '' -- not a usable URI, so the absolute path
+  // stands in rather than an empty artifact location.
+  assert.strictEqual(
+    sarif.runs[0].results[0].locations[0].physicalLocation.artifactLocation.uri,
+    process.cwd()
+  );
+});
+
+test('renderSarifReport: a baseline entry with no reasonCode or html still filters its occurrence', () => {
+  const result = makeScanResult([
+    makeCheckResult({
+      occurrences: [makeOccurrence({ html: '', data: { details: null } })]
+    })
+  ]);
+
+  const sarif = parse(
+    renderSarifReport(result, { baselineEntries: [null, { ruleId: 'img-alt-present' }] })
+  );
+
+  assert.deepStrictEqual(sarif.runs[0].results, []);
+});
+
+test('renderSarifReport: a non-array baselineEntries filters nothing', () => {
+  const result = makeScanResult([makeCheckResult({})]);
+
+  for (const baselineEntries of [null, undefined, 'x', {}]) {
+    const sarif = parse(renderSarifReport(result, { baselineEntries }));
+    assert.strictEqual(sarif.runs[0].results.length, 1);
+  }
+});
+
+test('renderSarifReport: an occurrence carrying `outcome` instead of `occurrenceOutcome` is tiered by it', () => {
+  const result = makeScanResult([
+    makeCheckResult({
+      outcome: 'fail',
+      occurrences: [
+        makeOccurrence({ selector: '#a', occurrenceOutcome: undefined, outcome: 'fail' }),
+        makeOccurrence({ selector: '#b', occurrenceOutcome: undefined, outcome: 'cantTell' })
+      ]
+    })
+  ]);
+
+  const results = parse(renderSarifReport(result, {})).runs[0].results;
+
+  assert.deepStrictEqual(
+    results.map((r) => r.level),
+    ['error', 'warning']
+  );
+});

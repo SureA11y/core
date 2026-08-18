@@ -125,7 +125,10 @@ function patchTreeWalkerCounter(dom) {
 }
 
 function runAllThreeContrastRules(dom, engineOptions = {}) {
+  // entryPointParity: this file counts a single engine run's DOM API calls, so
+  // it must not be replayed through the second entry point.
   return runa11yCoreOnDom(dom, {
+    entryPointParity: false,
     engineOptions: {
       rules: RULES,
       ...engineOptions

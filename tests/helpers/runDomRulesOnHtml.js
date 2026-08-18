@@ -1,7 +1,8 @@
 'use strict';
 
 const { JSDOM } = require('jsdom');
-const { runa11yCoreInPage } = require('../../src/index.js');
+const { runa11yCoreInPage, runDomRulesInPage } = require('../../src/index.js');
+const { assertEntryPointParity } = require('./entryPointParity');
 
 function normalizeEngineOptions(opts = {}) {
   const engineOptions = { ...(opts.engineOptions || {}) };
@@ -21,6 +22,27 @@ function normalizeEngineOptions(opts = {}) {
 }
 
 /**
+ * Runs the scan through the in-page runner (whose result is what callers get
+ * back, computed first on a pristine DOM) and then through the Node/jsdom
+ * runner, asserting the two entry points agree. See ./entryPointParity.js for
+ * why both are exercised on every scenario.
+ *
+ * Pass `entryPointParity: false` to skip the second run. Only two kinds of
+ * test need that, and both because a second scan is not a no-op for them:
+ * tests that COUNT a single run's DOM API calls (tests/cache-tests/), and
+ * tests of rules that probe the page by mutating it -- iframe-focusable-content
+ * moves focus to detect a runtime focus redirect, which a replay can only
+ * observe once.
+ */
+function runBothEntryPoints(url, contextSelector, engineOptions, runOnly, entryPointParity) {
+  const inPageResult = runa11yCoreInPage(url, contextSelector, engineOptions, runOnly);
+  if (entryPointParity === false) return inPageResult;
+  const nodeResult = runDomRulesInPage(url, contextSelector, engineOptions, runOnly);
+  assertEntryPointParity(inPageResult, nodeResult);
+  return inPageResult;
+}
+
+/**
  * Backwards-compatible helper:
  * - Creates a fresh JSDOM per call
  * - Sets global.window/global.document
@@ -33,6 +55,7 @@ function runa11yCoreOnHtml(
     contextSelector = null,
     engineOptions = {},
     runOnly = null,
+    entryPointParity = true,
 
     // top-level conveniences (checks may pass these)
     excludeSelectors,
@@ -62,7 +85,13 @@ function runa11yCoreOnHtml(
 
   let result;
   try {
-    result = runa11yCoreInPage(url, contextSelector, normalizedEngineOptions, runOnly);
+    result = runBothEntryPoints(
+      url,
+      contextSelector,
+      normalizedEngineOptions,
+      runOnly,
+      entryPointParity
+    );
     return result;
   } finally {
     // Attach debug counters if available and enabled
@@ -119,6 +148,7 @@ function runa11yCoreOnDom(
     contextSelector = null,
     engineOptions = {},
     runOnly = null,
+    entryPointParity = true,
 
     // top-level conveniences (checks may pass these)
     excludeSelectors,
@@ -140,7 +170,13 @@ function runa11yCoreOnDom(
     rules
   });
 
-  return runa11yCoreInPage(url, contextSelector, normalizedEngineOptions, runOnly);
+  return runBothEntryPoints(
+    url,
+    contextSelector,
+    normalizedEngineOptions,
+    runOnly,
+    entryPointParity
+  );
 }
 
 module.exports = runa11yCoreOnHtml;

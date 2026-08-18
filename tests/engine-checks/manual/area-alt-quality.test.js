@@ -77,3 +77,34 @@ test(`${RULE_ID}: i18n (fr) rule title/description are localized`, () => {
     'Assurez-vous que le texte alt identifie la destination/l\u2019action de la zone dans son contexte.'
   );
 });
+
+// An <area> inside a used <map> is natively focusable regardless of tabindex,
+// so role="presentation"/"none" alone never excludes it here -- the same
+// documented outcome as area-alt-decorative's identical helper. Pinned so a
+// future change to the exclusion cannot silently start dropping <area>
+// elements from review.
+
+test(`${RULE_ID}: role="presentation" does not exclude an area in a used map`, () => {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><img src="x.png" usemap="#m" alt="Map"><map name="m"><area id="a1" role="presentation" shape="rect" coords="0,0,10,10" href="/x" alt="Go"></map></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'a1'));
+});
+
+test(`${RULE_ID}: role="none" does not exclude an area in a used map either`, () => {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><img src="x.png" usemap="#m" alt="Map"><map name="m"><area id="a1" role="none" shape="rect" coords="0,0,10,10" href="/x" alt="Go"></map></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+});
+
+test(`${RULE_ID}: a tabindex on a role="presentation" area changes nothing`, () => {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><img src="x.png" usemap="#m" alt="Map"><map name="m"><area id="a1" role="presentation" tabindex="0" shape="rect" coords="0,0,10,10" href="/x" alt="Go"></map></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+});

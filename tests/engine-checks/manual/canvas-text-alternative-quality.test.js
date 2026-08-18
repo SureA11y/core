@@ -80,3 +80,38 @@ test(`${RULE_ID}: i18n (fr) rule title/description are localized`, () => {
     'Confirmez que le texte de secours ou le nom accessible transmet la m\u00eame information/fonction que le contenu du canvas.'
   );
 });
+
+// role="presentation"/"none" exclusion (mirrors img-alt-present policy: exclude
+// only when the element is NOT focusable, since a focusable element stays in
+// the tab order and still needs a usable name). A <canvas> is not focusable on its own, so the exclusion applies until a tabindex puts it in the tab order.
+
+test(`${RULE_ID}: a non-focusable role="presentation" canvas is excluded from review`, () => {
+  const applicable = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><canvas id="canvas1" aria-label="Sales chart"></canvas></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(applicable, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><canvas id="canvas1" role="presentation" aria-label="Sales chart"></canvas></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: role="none" excludes the same way role="presentation" does`, () => {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><canvas id="canvas1" role="none" aria-label="Sales chart"></canvas></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: a focusable role="presentation" canvas is still reviewed`, () => {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><canvas id="canvas1" role="presentation" tabindex="0" aria-label="Sales chart"></canvas></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'canvas1'));
+});
