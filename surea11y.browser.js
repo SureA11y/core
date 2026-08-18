@@ -29894,23 +29894,65 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // ancestor chain (not just the text's immediate parent) so text nested inside
   // a disabled control, e.g. <button disabled><span>Label</span></button>, is
   // still recognized as inactive.
+  function isDisabledWidget(node) {
+    try {
+      if (typeof node.matches === 'function' && node.matches(':disabled')) return true;
+    } catch {}
+    try {
+      const ad = node.getAttribute
+        ? String(node.getAttribute('aria-disabled') || '')
+            .trim()
+            .toLowerCase()
+        : '';
+      if (ad === 'true') return true;
+    } catch {}
+    return false;
+  }
+
   function isInactiveUiComponent(el) {
     let node = el;
     let depth = 0;
+    let labelAncestor = null;
     while (node && node.nodeType === 1 && depth++ < 100) {
-      try {
-        if (typeof node.matches === 'function' && node.matches(':disabled')) return true;
-      } catch {}
-      try {
-        const ad = node.getAttribute
-          ? String(node.getAttribute('aria-disabled') || '')
-              .trim()
-              .toLowerCase()
-          : '';
-        if (ad === 'true') return true;
-      } catch {}
+      if (isDisabledWidget(node)) return true;
+      if (!labelAncestor && String(node.tagName || '').toLowerCase() === 'label') {
+        labelAncestor = node;
+      }
       node = node.parentElement;
     }
+
+    // WCAG 1.4.3/1.4.6 "disabled label" exception: text that forms the
+    // accessible name of a disabled widget has no contrast requirement
+    // either, even when the disabled control itself is a SIBLING of the
+    // text rather than an ancestor -- e.g. <label>My name<input disabled/>
+    // </label> (implicit/explicit native label association), or a
+    // <label id="x">...</label> referenced via aria-labelledby="x" from a
+    // separate aria-disabled widget. Only attempted when an enclosing
+    // <label> was actually found above, to avoid a document-wide query for
+    // the common case of plain text with no label ancestor at all.
+    if (labelAncestor) {
+      try {
+        const control =
+          typeof labelAncestor.control !== 'undefined'
+            ? labelAncestor.control
+            : labelAncestor.htmlFor && labelAncestor.ownerDocument
+              ? labelAncestor.ownerDocument.getElementById(labelAncestor.htmlFor)
+              : null;
+        if (control && isDisabledWidget(control)) return true;
+      } catch {}
+
+      try {
+        const doc = labelAncestor.ownerDocument;
+        const labelId = labelAncestor.id;
+        if (doc && labelId) {
+          const referrers = doc.querySelectorAll('[aria-labelledby~="' + labelId + '"]');
+          for (const ref of referrers) {
+            if (isDisabledWidget(ref)) return true;
+          }
+        }
+      } catch {}
+    }
+
     return false;
   }
 
@@ -30246,7 +30288,16 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     const w = Number(fontWeightNum);
     if (!Number.isFinite(size)) return false;
     if (size >= 24) return true;
-    if (size >= 18.6667 && Number.isFinite(w) && w >= 700) return true;
+    // WCAG's bold-large threshold is 14pt. Derived via parsePx('14pt')
+    // rather than a hardcoded decimal (e.g. "18.6667") or a hand-written
+    // reconversion: floating-point multiplication/division isn't
+    // associative, so (14*96)/72 and 14*(96/72) both equal ~18.6667 but
+    // differ in their last bit (18.666666666666668 vs 18.666666666666664)
+    // -- any value that isn't byte-identical to what parsePx('14pt')
+    // itself produces for a real `font-size: 14pt` can silently reject
+    // text sized exactly at the threshold.
+    const boldLargeThresholdPx = parsePx('14pt');
+    if (size >= boldLargeThresholdPx && Number.isFinite(w) && w >= 700) return true;
     return false;
   }
 
