@@ -168,7 +168,7 @@ test('button-name-present: input type=submit with value => pass', () => {
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test('button-name-present: input type=submit without value and no aria => fail', () => {
+test('button-name-present: input type=submit without value falls back to the UA default label "Submit" => pass', () => {
   const html = `
 <!doctype html><html><body>
   <input type="submit" />
@@ -181,7 +181,23 @@ test('button-name-present: input type=submit without value and no aria => fail',
   }
 
   const result = runa11yCoreOnHtml(html);
-  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test('button-name-present: input type=reset without value falls back to the UA default label "Reset" => pass', () => {
+  const html = `
+<!doctype html><html><body>
+  <input type="reset" />
+</body></html>
+  `;
+
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
+
+  const result = runa11yCoreOnHtml(html);
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test('button-name-present: role=button with text => pass', () => {
@@ -297,14 +313,13 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/button-name-present-all-scena
   }
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 13, maxOccurrences: 13 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 14, maxOccurrences: 14 });
 
   const expectedFailIds = [
     'btn_case_01',
     'btn_case_06',
     'btn_case_07',
     'btn_case_08',
-    'btn_case_10',
     'btn_case_12',
     'btn_case_14',
     'btn_case_16',
@@ -312,7 +327,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/button-name-present-all-scena
     'btn_case_23',
     'btn_case_26',
     'btn_case_28',
-    'btn_case_30'
+    'btn_case_30',
+    'btn_case_32',
+    'btn_case_33'
   ];
 
   const expectedNoOccIds = [
@@ -323,6 +340,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/button-name-present-all-scena
     'btn_case_04',
     'btn_case_05',
     'btn_case_09',
+    'btn_case_10',
     'btn_case_11',
     'btn_case_13',
     'btn_case_15',
@@ -333,7 +351,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/button-name-present-all-scena
     'btn_case_18f',
     'btn_case_18g',
     'btn_case_27',
-    'btn_case_29'
+    'btn_case_29',
+    'btn_case_31'
   ];
 
   for (const id of expectedFailIds) {
