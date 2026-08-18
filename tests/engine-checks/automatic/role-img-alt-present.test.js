@@ -185,15 +185,21 @@ test(`${RULE_ID}: notApplicable when only aria-hidden=true role=img exists (not 
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: aria-hidden=true but tabindex=0 stays applicable and fails if no label mechanism`, () => {
+test(`${RULE_ID}: notApplicable when an aria-hidden=true role=img is focusable (ACT 23a2a8 has no focusability carve-out)`, () => {
   const html = `<!doctype html><html><body>
     <span id="ah_focus" role="img" aria-hidden="true" tabindex="0"></span>
   </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
-  assert.ok(hasOccurrenceForId(rule, 'ah_focus'));
-  assert.strictEqual(getReasonCode(rule, 'ah_focus'), 'missingTextAlternative');
+test(`${RULE_ID}: notApplicable when an aria-hidden=true role=img is IDREF-referenced (ACT 23a2a8 has no IDREF carve-out)`, () => {
+  const html = `<!doctype html><html><body>
+    <div aria-labelledby="ah_idref">Host</div>
+    <span id="ah_idref" role="img" aria-hidden="true"></span>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: aria-hidden=true with tabindex=-1 is ineligible => notApplicable when only that exists`, () => {
@@ -293,7 +299,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/role-img-alt-present-all-scen
 
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 12, maxOccurrences: 12 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 10, maxOccurrences: 10 });
 
   const expectedFailIds = [
     'roleimg_case_01',
@@ -301,8 +307,6 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/role-img-alt-present-all-scen
     'roleimg_case_06',
     'roleimg_case_07',
     'roleimg_case_08',
-    'roleimg_case_15',
-    'roleimg_case_17',
     'roleimg_case_18',
     'roleimg_case_19',
     'roleimg_case_20',
@@ -320,7 +324,11 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/role-img-alt-present-all-scen
     'roleimg_case_12',
     'roleimg_case_13',
     'roleimg_case_14',
+    // ACT 23a2a8's "programmatically hidden" exemption has no carve-out for
+    // focusable (case_15) or IDREF-referenced (case_17) elements.
+    'roleimg_case_15',
     'roleimg_case_16',
+    'roleimg_case_17',
     'roleimg_case_22',
     'roleimg_case_23',
     'roleimg_case_24a',

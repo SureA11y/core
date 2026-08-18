@@ -165,14 +165,14 @@
     </div>
   </div>
 
-  <h2 id="exceptions">E. Exceptions that keep eligibility (focusable / IDREF)</h2>
+  <h2 id="exceptions">E. aria-hidden has no focusable/IDREF carve-out (ACT 23a2a8)</h2>
 
   <div class="case" id="case_15">
-    <div class="case-title">15 — FAIL (eligible): aria-hidden="true" but focusable (tabindex="0"), no mechanism</div>
+    <div class="case-title">15 — NEUTRAL/INELIGIBLE: aria-hidden="true" and focusable (tabindex="0")</div>
     <div class="row">
       <span class="icon">img</span>
       <span id="roleimg_case_15" role="img" aria-hidden="true" tabindex="0"></span>
-      <span>Focusable overrides aria-hidden eligibility; missing mechanism fails.</span>
+      <span>ACT 23a2a8's "programmatically hidden" exemption has no focusability carve-out; aria-hidden-focus reports this element instead.</span>
     </div>
   </div>
 
@@ -186,12 +186,12 @@
   </div>
 
   <div class="case" id="case_17">
-    <div class="case-title">17 — FAIL (eligible): IDREF-referenced aria-hidden element, no mechanism</div>
+    <div class="case-title">17 — NEUTRAL/INELIGIBLE: IDREF-referenced aria-hidden element</div>
     <div class="row">
       <div aria-labelledby="roleimg_case_17">Host references the icon by IDREF.</div>
       <span class="icon">img</span>
       <span id="roleimg_case_17" role="img" aria-hidden="true"></span>
-      <span>IDREF override makes it eligible; missing mechanism fails.</span>
+      <span>ACT 23a2a8's exemption has no IDREF carve-out either; duplicate-id-aria/label-in-name territory is separate from this rule.</span>
     </div>
   </div>
 
