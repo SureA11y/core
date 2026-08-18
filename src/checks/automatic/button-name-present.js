@@ -64,7 +64,16 @@ function runInPage(ctx) {
       const type = normalizeWs(el.getAttribute ? el.getAttribute('type') : '').toLowerCase();
       if (type !== 'button' && type !== 'submit' && type !== 'reset') return '';
       const vAttr = el.getAttribute ? el.getAttribute('value') : '';
-      return normalizeWs(vAttr != null ? vAttr : typeof el.value === 'string' ? el.value : '');
+      const explicit = normalizeWs(
+        vAttr != null ? vAttr : typeof el.value === 'string' ? el.value : ''
+      );
+      if (explicit) return explicit;
+      // HTML spec: input[type=submit]/[type=reset] with no `value` fall back
+      // to a UA-supplied default label ("Submit"/"Reset"), so they are never
+      // actually nameless -- unlike type=button, whose value defaults to "".
+      if (type === 'submit') return 'Submit';
+      if (type === 'reset') return 'Reset';
+      return '';
     } catch {
       return '';
     }
@@ -90,11 +99,65 @@ function runInPage(ctx) {
       typeof eligResult === 'boolean' ? eligResult : !!(eligResult && eligResult.eligible);
     if (!eligible) continue;
 
-    applicableCount += 1;
-
     const tag = (el.tagName || '').toLowerCase();
     const role = el.getAttribute ? el.getAttribute('role') : null;
     const roleNorm = normalizeWs(role).toLowerCase();
+
+    // role="none"/"presentation" removes this element from the accessibility
+    // tree as a button (WAI-ARIA Presentational Roles Conflict Resolution),
+    // UNLESS a conflicting global ARIA attribute or focusability restores
+    // its native/explicit role -- mirrors presentation-role-conflict-manual.js's
+    // detection logic. Kept local to this rule rather than routed through
+    // the shared eligibility helper: several other rules deliberately rely
+    // on that helper staying permissive for role="none" wrappers they walk
+    // through themselves (e.g. aria-prohibited-children's "transparent
+    // wrapper" traversal).
+    if (roleNorm === 'none' || roleNorm === 'presentation') {
+      const ariaHiddenTrue = el.getAttribute && el.getAttribute('aria-hidden') === 'true';
+      if (!ariaHiddenTrue) {
+        const GLOBAL_ARIA_ATTRS = [
+          'aria-atomic',
+          'aria-braillelabel',
+          'aria-brailleroledescription',
+          'aria-busy',
+          'aria-controls',
+          'aria-current',
+          'aria-describedby',
+          'aria-description',
+          'aria-details',
+          'aria-disabled',
+          'aria-dropeffect',
+          'aria-errormessage',
+          'aria-flowto',
+          'aria-grabbed',
+          'aria-haspopup',
+          'aria-hidden',
+          'aria-invalid',
+          'aria-keyshortcuts',
+          'aria-label',
+          'aria-labelledby',
+          'aria-live',
+          'aria-owns',
+          'aria-relevant',
+          'aria-roledescription'
+        ];
+        const hasConflict = GLOBAL_ARIA_ATTRS.some((a) =>
+          el.hasAttribute ? el.hasAttribute(a) : false
+        );
+        let isFocusable = false;
+        if (!hasConflict && helpers.getFocusableInfo) {
+          try {
+            const fi = helpers.getFocusableInfo(el, ctx);
+            isFocusable = !!(fi && fi.focusable);
+          } catch {
+            isFocusable = false;
+          }
+        }
+        if (!hasConflict && !isFocusable) continue;
+      }
+    }
+
+    applicableCount += 1;
 
     const nameInfo = helpers.getAccessibleNameInfo ? helpers.getAccessibleNameInfo(el, ctx) : null;
 

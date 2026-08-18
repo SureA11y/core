@@ -74,7 +74,7 @@
   </div>
 
   <div class="case" id="case_10">
-    <div class="case-title">10 — FAIL: input[type=submit] no value, no aria</div>
+    <div class="case-title">10 — PASS: input[type=submit] no value falls back to the UA default label "Submit"</div>
     <input type="submit" id="btn_case_10" />
   </div>
 
@@ -208,6 +208,24 @@
   <div class="case" id="case_30">
     <div class="case-title">30 — FAIL: native &lt;button role="listbox"&gt;, no programmatic name — same value-role class as case 28, different role</div>
     <button type="button" role="listbox" id="btn_case_30"><span>Item</span></button>
+  </div>
+
+  <h2>H. Presentational role conflict resolution (role="none"/"presentation")</h2>
+
+  <div class="case" id="case_31">
+    <div class="case-title">31 — NEUTRAL/INELIGIBLE: role="none", disabled (not focusable, no conflicting global ARIA attribute) — presentational role wins, removed from the accessibility tree as a button</div>
+    <button role="none" disabled id="btn_case_31"></button>
+  </div>
+
+  <div class="case" id="case_32">
+    <div class="case-title">32 — EXCEPTION: role="none" but focusable (no disabled/negative tabindex) — focusability restores the button role, missing name => FAIL</div>
+    <button role="none" id="btn_case_32"></button>
+  </div>
+
+  <div class="case" id="case_33">
+    <div class="case-title">33 — EXCEPTION: role="presentation" with a conflicting global ARIA attribute (aria-describedby) restores the button role, missing name => FAIL</div>
+    <button role="presentation" disabled aria-describedby="btn_case_33_desc" id="btn_case_33"></button>
+    <span id="btn_case_33_desc" hidden>Describes the button</span>
   </div>
 
   <p class="note">End of fixture.</p>
