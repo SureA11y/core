@@ -451,6 +451,65 @@ test(`${RULE_ID}: bold-large threshold boundary (18.6667px + weight 700) uses la
   assert.strictEqual(rule.occurrences[0].i18n.params.isLargeText, true);
 });
 
+test(`${RULE_ID}: 14pt bold text is recognized as large text (pt->px conversion, not just an exact px literal) => pass`, () => {
+  // Regression test for a floating-point precision bug: 14pt converts to
+  // 18.666666666666664px, which is LESS than a hardcoded "18.6667px"
+  // threshold literal, so text specified in pt (the common real-world
+  // case, unlike the boundary test above which uses an exact px literal)
+  // was incorrectly falling through to the 4.5:1 normal-text threshold.
+  // #000 on #666 is ~3.66:1 -- below 4.5:1, but above the large-text 3:1.
+  const html = `
+<!doctype html>
+<html style="background-color: rgb(255, 255, 255); opacity: 1">
+<head></head>
+<body style="background-color: rgb(255, 255, 255); opacity: 1">
+  <p style="color: #000; font-size: 14pt; font-weight: 700; background: #666;">
+    Some text in English
+  </p>
+</body></html>`;
+  const rule = assertRule(run(html), RULE_ID, 'pass', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.strictEqual(rule.occurrences[0].i18n.summaryKey, 'contrastMinimum_pass_allAboveThreshold');
+});
+
+test(`${RULE_ID}: text forming the accessible name of a disabled widget via a <label> is exempt (WCAG 1.4.3 Incidental exception) => pass`, () => {
+  const nativeLabelHtml = `
+<!doctype html>
+<html style="background-color: rgb(255, 255, 255); opacity: 1">
+<head></head>
+<body style="background-color: rgb(255, 255, 255); opacity: 1">
+  <label style="color:#888; background: white;">
+    My name
+    <input type="text" disabled />
+  </label>
+</body></html>`;
+  assertRule(run(nativeLabelHtml), RULE_ID, 'notApplicable', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
+
+  const ariaLabelledbyHtml = `
+<!doctype html>
+<html style="background-color: rgb(255, 255, 255); opacity: 1">
+<head></head>
+<body style="background-color: rgb(255, 255, 255); opacity: 1">
+  <label id="my_pets_name" style="color:#888; background: white;">
+    My pet's name
+  </label>
+  <div
+    role="textbox"
+    aria-labelledby="my_pets_name"
+    aria-disabled="true"
+    style="height:20px; width:100px; border:1px solid black;"
+  >
+    test
+  </div>
+</body></html>`;
+  assertRule(run(ariaLabelledbyHtml), RULE_ID, 'notApplicable', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
+});
+
 test(`${RULE_ID}: ANCESTOR opacity < 1 gates to notApplicable instead of a confidently wrong ratio`, () => {
   // The ancestor-opacity computability blocker (see contrast-computable) means
   // this rule must NOT compute a ratio for this element; overall outcome stays
