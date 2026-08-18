@@ -85,3 +85,38 @@ test(`${RULE_ID}: i18n (fr) rule title/description are localized`, () => {
     'Confirmez que l\u2019image est purement d\u00e9corative. Sinon, fournissez un texte alt pertinent.'
   );
 });
+
+// role="presentation"/"none" exclusion (mirrors img-alt-present policy: exclude
+// only when the element is NOT focusable, since a focusable element stays in
+// the tab order and still needs a usable name). An <img> is not focusable on its own, so the exclusion applies until a tabindex puts it in the tab order.
+
+test(`${RULE_ID}: a non-focusable role="presentation" img is excluded from review`, () => {
+  const applicable = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><img id="img1" src="x.png" alt=""></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(applicable, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><img id="img1" src="x.png" alt="" role="presentation"></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: role="none" excludes the same way role="presentation" does`, () => {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><img id="img1" src="x.png" alt="" role="none"></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: a focusable role="presentation" img is still reviewed`, () => {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><img id="img1" src="x.png" alt="" role="presentation" tabindex="0"></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'img1'));
+});

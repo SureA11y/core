@@ -254,3 +254,24 @@ test('normalizeRuleMeta: a non-object meta (e.g. undefined) normalizes to full d
   assert.equal(a.type, 'automatic');
   assert.deepEqual(a.tags, ['a11ycore']);
 });
+
+test('normalizeRuleMeta: a non-array normativeMappings derives no wcagSc instead of throwing', () => {
+  for (const normativeMappings of [null, undefined, 'x', {}, 3]) {
+    const normalized = normalizeRuleMeta('r', 'my-rule', { normativeMappings }, 'a11ycore');
+    assert.deepStrictEqual(normalized.normativeMappings, []);
+    assert.deepStrictEqual(normalized.wcagSc, []);
+  }
+});
+
+test('normalizeRuleMeta: a non-string description or helpUrl normalizes to an empty string', () => {
+  for (const bad of [null, undefined, 3, {}, []]) {
+    const normalized = normalizeRuleMeta(
+      'r',
+      'my-rule',
+      { description: bad, helpUrl: bad },
+      'a11ycore'
+    );
+    assert.strictEqual(normalized.description, '');
+    assert.strictEqual(normalized.helpUrl, '');
+  }
+});

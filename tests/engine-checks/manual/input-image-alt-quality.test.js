@@ -80,3 +80,39 @@ test(`${RULE_ID}: i18n (fr) rule title/description are localized`, () => {
     'Assurez-vous que le texte alt d\u00e9crit l\u2019action du contr\u00f4le (ex. \u00ab Rechercher \u00bb, \u00ab Envoyer \u00bb) dans son contexte.'
   );
 });
+
+// role="presentation"/"none" exclusion (mirrors img-alt-present policy: exclude
+// only when the element is NOT focusable, since a focusable element stays in
+// the tab order and still needs a usable name). An <input type="image"> is
+// natively focusable, so only a disabled one can ever reach the exclusion.
+
+test(`${RULE_ID}: a disabled role="presentation" image button is excluded from review`, () => {
+  const applicable = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><input id="s1" type="image" src="go.png" alt="Search" disabled></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(applicable, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><input id="s1" type="image" src="go.png" alt="Search" role="presentation" disabled></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: role="none" excludes a disabled image button the same way`, () => {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><input id="s1" type="image" src="go.png" alt="Search" role="none" disabled></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: an enabled role="presentation" image button is still reviewed`, () => {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><input id="s1" type="image" src="go.png" alt="Search" role="presentation"></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 's1'));
+});

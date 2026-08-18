@@ -75,7 +75,9 @@ test(`${RULE_ID}: cantTell when the only focusable candidate immediately redirec
     }, 0);
   });
 
-  const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID] });
+  // entryPointParity: this scenario's redirect handler fires once -- a second
+  // scan would find focus already moved, so the probe can only observe it once.
+  const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID], entryPointParity: false });
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'a'));
   assert.strictEqual(
@@ -235,7 +237,9 @@ test(`${RULE_ID}: cantTell when the redirect is scheduled via requestAnimationFr
     });
   });
 
-  const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID] });
+  // entryPointParity: this scenario's redirect handler fires once -- a second
+  // scan would find focus already moved, so the probe can only observe it once.
+  const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID], entryPointParity: false });
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.strictEqual(
     rule.occurrences[0].data.details.reasonCode,
@@ -258,7 +262,9 @@ test(`${RULE_ID}: cantTell when the redirect is scheduled via queueMicrotask`, (
     });
   });
 
-  const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID] });
+  // entryPointParity: this scenario's redirect handler fires once -- a second
+  // scan would find focus already moved, so the probe can only observe it once.
+  const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID], entryPointParity: false });
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.strictEqual(
     rule.occurrences[0].data.details.reasonCode,
@@ -312,7 +318,9 @@ test(`${RULE_ID}: redirect is still detected when focus({preventScroll}) throws 
     }, 0);
   });
 
-  const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID] });
+  // entryPointParity: this scenario's redirect handler fires once -- a second
+  // scan would find focus already moved, so the probe can only observe it once.
+  const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID], entryPointParity: false });
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.strictEqual(rule.occurrences[0].data.details.runtimeProbe.redirected, true);
 });

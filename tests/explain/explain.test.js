@@ -227,3 +227,91 @@ test('explain: calls the provider exactly once per invocation, batched, regardle
   await explain(result, { provider });
   assert.strictEqual(callCount, 1);
 });
+
+test('explain: object-map provider output may carry a { text, provider } value per group', async () => {
+  const result = makeScanResult([makeCheckResult({})]);
+  const provider = async (inputs) => ({
+    [inputs[0].groupKey]: { text: 'From the map shape.', provider: 'map-provider' }
+  });
+
+  const augmented = await explain(result, { provider, providerName: 'ignored-when-tagged' });
+  const explanation = augmented.checksResults[0].occurrences[0].explanation;
+
+  assert.strictEqual(explanation.text, 'From the map shape.');
+  assert.strictEqual(explanation.provider, 'map-provider');
+  assert.strictEqual(explanation.advisory, true);
+});
+
+test('explain: an object-map value with no usable text is ignored, not fabricated into an explanation', async () => {
+  const result = makeScanResult([makeCheckResult({})]);
+  const provider = async (inputs) => ({
+    [inputs[0].groupKey]: { provider: 'map-provider' }, // no text
+    'some-other-key': null
+  });
+
+  const augmented = await explain(result, { provider });
+  assert.strictEqual(augmented.checksResults[0].occurrences[0].explanation, undefined);
+});
+
+test('explain: an object-map value with a non-string provider falls back to the default naming', async () => {
+  const result = makeScanResult([makeCheckResult({})]);
+  const provider = async (inputs) => ({
+    [inputs[0].groupKey]: { text: 'Text only.', provider: 42 }
+  });
+
+  const augmented = await explain(result, { provider, providerName: 'named-host' });
+  assert.strictEqual(augmented.checksResults[0].occurrences[0].explanation.provider, 'named-host');
+});
+
+test('explain: a provider that returns nothing at all degrades the same way as a throw', async () => {
+  const result = makeScanResult([makeCheckResult({})]);
+
+  for (const raw of [null, undefined, 0, '', false]) {
+    const augmented = await explain(result, { provider: async () => raw });
+    assert.strictEqual(augmented.checksResults[0].occurrences[0].explanation, undefined);
+  }
+});
+
+test('explain: a budget of 0 never calls the provider and returns the clone unchanged', async () => {
+  const result = makeScanResult([makeCheckResult({})]);
+  let called = 0;
+  const provider = async () => {
+    called += 1;
+    return [];
+  };
+
+  const augmented = await explain(result, { provider, budget: 0 });
+
+  assert.strictEqual(called, 0);
+  assert.strictEqual(augmented.checksResults[0].occurrences[0].explanation, undefined);
+  assert.notStrictEqual(augmented, result, 'still a clone, never the input');
+});
+
+test('explain: a negative budget is treated as zero rather than slicing from the end', async () => {
+  const result = makeScanResult([makeCheckResult({})]);
+  let called = 0;
+
+  await explain(result, {
+    provider: async () => {
+      called += 1;
+      return [];
+    },
+    budget: -5
+  });
+
+  assert.strictEqual(called, 0);
+});
+
+test('explain: a check with no occurrences field is cloned without one being invented', async () => {
+  const withOccurrences = makeCheckResult({});
+  const withoutOccurrences = makeCheckResult({ ruleId: 'no-occurrences' });
+  delete withoutOccurrences.occurrences;
+
+  const result = makeScanResult([withoutOccurrences, withOccurrences]);
+  const provider = async (inputs) => inputs.map((i) => ({ groupKey: i.groupKey, text: 'ok' }));
+
+  const augmented = await explain(result, { provider });
+
+  assert.deepStrictEqual(augmented.checksResults[0].occurrences, []);
+  assert.strictEqual(augmented.checksResults[1].occurrences[0].explanation.text, 'ok');
+});

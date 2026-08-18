@@ -3,7 +3,12 @@
 const test = require('node:test');
 const assert = require('node:assert');
 
-const { buildBaselineEntries, matchBaseline, computeBaselineKey } = require('../src/baseline');
+const {
+  buildBaselineEntries,
+  matchBaseline,
+  computeBaselineKey,
+  getReasonCode
+} = require('../src/baseline');
 const { makeOccurrence, makeCheckResult, makeScanResult } = require('./explain/fake-result');
 const { runa11yCoreOnHtml } = require('./helpers/runDomRulesOnHtml.js');
 
@@ -254,4 +259,130 @@ test('buildBaselineEntries: a malformed result yields no entries instead of thro
   for (const bad of [null, undefined, {}, { checksResults: 'x' }]) {
     assert.deepEqual(buildBaselineEntries(bad), []);
   }
+});
+
+// --- identity and normalization edges -------------------------------------
+//
+// docs/BASELINE.md pins occurrence identity to ruleId + reasonCode + html, so
+// every way those three can arrive malformed or absent decides whether a real
+// violation is silently matched away. These cover the shapes the happy-path
+// tests above never produce.
+
+test('getReasonCode: any occurrence without a reasonCode reads as DEFAULT', () => {
+  for (const occurrence of [
+    null,
+    undefined,
+    {},
+    { data: null },
+    { data: {} },
+    { data: { details: null } },
+    { data: { details: {} } },
+    { data: { details: { reasonCode: '' } } }
+  ]) {
+    assert.equal(getReasonCode(occurrence), 'DEFAULT', JSON.stringify(occurrence));
+  }
+
+  assert.equal(
+    getReasonCode(makeOccurrence({ data: { details: { reasonCode: 'NO_ALT' } } })),
+    'NO_ALT'
+  );
+});
+
+test('buildBaselineEntries: a fail check with a non-array occurrences field contributes nothing', () => {
+  for (const occurrences of [null, undefined, 'x', {}, 3]) {
+    const result = makeScanResult([makeCheckResult({ outcome: 'fail', occurrences })]);
+    assert.deepEqual(buildBaselineEntries(result), []);
+  }
+});
+
+test('buildBaselineEntries: a non-string selector or html is recorded as an empty string', () => {
+  const check = makeCheckResult({
+    outcome: 'fail',
+    occurrences: [makeOccurrence({ selector: null, html: undefined })]
+  });
+
+  assert.deepEqual(buildBaselineEntries(makeScanResult([check])), [
+    { ruleId: 'img-alt-present', reasonCode: 'DEFAULT', selector: '', html: '' }
+  ]);
+});
+
+test('matchBaseline: an entry with no reasonCode matches an occurrence that has none either', () => {
+  const check = makeCheckResult({
+    outcome: 'fail',
+    occurrences: [makeOccurrence({ html: '<img src="x.png">', data: { details: null } })]
+  });
+  const result = makeScanResult([check]);
+
+  const summary = matchBaseline(result, [
+    { ruleId: 'img-alt-present', html: '<img src="x.png">' } // no reasonCode written
+  ]);
+
+  assert.equal(summary.knownCount, 1);
+  assert.equal(summary.newCount, 0);
+  assert.equal(summary.staleCount, 0);
+});
+
+test('matchBaseline: an entry with a non-string html matches an occurrence with no html', () => {
+  const check = makeCheckResult({
+    outcome: 'fail',
+    occurrences: [makeOccurrence({ html: null })]
+  });
+
+  const summary = matchBaseline(makeScanResult([check]), [
+    { ruleId: 'img-alt-present', reasonCode: 'DEFAULT', html: null }
+  ]);
+
+  assert.equal(summary.knownCount, 1);
+  assert.equal(summary.newCount, 0);
+});
+
+test('matchBaseline: an occurrence carrying `outcome` instead of `occurrenceOutcome` is still tiered', () => {
+  const check = makeCheckResult({
+    outcome: 'fail',
+    occurrences: [
+      makeOccurrence({ selector: 'img.fail', occurrenceOutcome: undefined, outcome: 'fail' }),
+      makeOccurrence({
+        selector: 'img.canttell',
+        occurrenceOutcome: undefined,
+        outcome: 'cantTell'
+      })
+    ]
+  });
+
+  const summary = matchBaseline(makeScanResult([check]), []);
+
+  assert.equal(summary.totalFail, 1, 'only the fail-tier occurrence gates the build');
+  assert.deepEqual(
+    summary.newOccurrences.map((o) => o.selector),
+    ['img.fail']
+  );
+});
+
+test('matchBaseline: a check with a non-array occurrences field is skipped, not thrown on', () => {
+  for (const occurrences of [null, undefined, 'x', {}]) {
+    const result = makeScanResult([makeCheckResult({ outcome: 'fail', occurrences })]);
+    assert.deepEqual(matchBaseline(result, []), {
+      totalFail: 0,
+      knownCount: 0,
+      newCount: 0,
+      newOccurrences: [],
+      staleCount: 0
+    });
+  }
+});
+
+test('buildBaselineEntries/matchBaseline: a null entry inside checksResults is skipped', () => {
+  const check = makeCheckResult({ outcome: 'fail', occurrences: [makeOccurrence()] });
+  const result = makeScanResult([null, undefined, check]);
+
+  assert.equal(buildBaselineEntries(result).length, 1);
+  assert.equal(matchBaseline(result, []).totalFail, 1);
+});
+
+test('buildBaselineEntries/matchBaseline: a null occurrence inside a fail check is skipped', () => {
+  const check = makeCheckResult({ outcome: 'fail', occurrences: [null, makeOccurrence()] });
+  const result = makeScanResult([check]);
+
+  assert.equal(buildBaselineEntries(result).length, 1);
+  assert.equal(matchBaseline(result, []).totalFail, 1);
 });

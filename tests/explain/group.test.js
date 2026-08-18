@@ -97,3 +97,35 @@ test('computeGroupKey: matches the shape documented in the design doc (ruleId|re
     'nested-interactive-controls-absent|NESTED_INTERACTIVE_CONTROL|a>span[role="button"]'
   );
 });
+
+test('buildExplainGroups: a missing or malformed result yields no groups instead of throwing', () => {
+  for (const bad of [null, undefined, {}, { checksResults: null }, { checksResults: 'x' }]) {
+    assert.deepStrictEqual(buildExplainGroups(bad), []);
+  }
+});
+
+test('buildExplainGroups: a check with no meta contributes an empty normativeMappings list', () => {
+  for (const meta of [null, undefined, {}, { normativeMappings: null }]) {
+    const check = makeCheckResult({ meta });
+    const groups = buildExplainGroups(makeScanResult([check]));
+    assert.strictEqual(groups.length, 1);
+    assert.deepStrictEqual(groups[0].normativeMappings, []);
+  }
+});
+
+test('buildExplainGroups: null checks and null occurrences are skipped', () => {
+  const check = makeCheckResult({ occurrences: [null, makeOccurrence(), undefined] });
+  const groups = buildExplainGroups(makeScanResult([null, check, undefined]));
+
+  assert.strictEqual(groups.length, 1);
+  assert.strictEqual(groups[0].occurrences.length, 1);
+});
+
+test('buildExplainGroups: a check with an empty or non-array occurrences list is skipped', () => {
+  for (const occurrences of [[], null, 'x', {}]) {
+    assert.deepStrictEqual(
+      buildExplainGroups(makeScanResult([makeCheckResult({ occurrences })])),
+      []
+    );
+  }
+});

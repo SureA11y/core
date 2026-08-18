@@ -86,3 +86,38 @@ test(`${RULE_ID}: i18n (fr) rule title/description are localized`, () => {
     'Assurez-vous que le texte alt exprime le but/l\u2019information de l\u2019image dans son contexte (ni redondant, ni nom de fichier).'
   );
 });
+
+// role="presentation"/"none" exclusion (mirrors img-alt-present policy: exclude
+// only when the element is NOT focusable, since a focusable element stays in
+// the tab order and still needs a usable name). An <img> is not focusable on its own, so the exclusion applies until a tabindex puts it in the tab order.
+
+test(`${RULE_ID}: a non-focusable role="presentation" img is excluded from review`, () => {
+  const applicable = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><img id="img1" src="x.png" alt="Company logo"></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(applicable, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><img id="img1" src="x.png" alt="Company logo" role="presentation"></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: role="none" excludes the same way role="presentation" does`, () => {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><img id="img1" src="x.png" alt="Company logo" role="none"></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: a focusable role="presentation" img is still reviewed`, () => {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><img id="img1" src="x.png" alt="Company logo" role="presentation" tabindex="0"></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'img1'));
+});
