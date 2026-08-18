@@ -4,6 +4,10 @@ const test = require('node:test');
 const assert = require('node:assert');
 
 const { createDom, runa11yCoreOnDom } = require('../helpers/runDomRulesOnHtml.js');
+
+// entryPointParity: false throughout -- this file asserts what a *single* engine
+// run does to the per-run caches, so the helper must not replay each scan through
+// the second entry point.
 const { assertRule } = require('../helpers/assertRule.js');
 
 const RULE_ID = 'bypass-blocks-present';
@@ -29,13 +33,13 @@ test('regression: bypass-blocks-present does not report stale occurrences[].html
 
   // Run 1: body has a <main>, so the rule finds a mechanism (notApplicable).
   document.body.innerHTML = '<main><img src="dummy.png" alt="Decorative square" /></main>';
-  const result1 = runa11yCoreOnDom(dom, { runOnly: [RULE_ID] });
+  const result1 = runa11yCoreOnDom(dom, { runOnly: [RULE_ID], entryPointParity: false });
   assertRule(result1, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 
   // Run 2: mutate the SAME document.body in place (same object reference,
   // different content) so no main/anchor/heading remains.
   document.body.innerHTML = '<img src="dummy.png" />';
-  const result2 = runa11yCoreOnDom(dom, { runOnly: [RULE_ID] });
+  const result2 = runa11yCoreOnDom(dom, { runOnly: [RULE_ID], entryPointParity: false });
   const rule2 = assertRule(result2, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
 
   // The reported html snippet must reflect THIS run's body, not run 1's
@@ -54,7 +58,7 @@ test('regression: window.__a11ycoreSharedCache is reset at the start of every ru
   const dom = createDom('<!doctype html><html><body><main>Content</main></body></html>');
   const { window } = dom;
 
-  runa11yCoreOnDom(dom, {});
+  runa11yCoreOnDom(dom, { entryPointParity: false });
   assert.ok(
     window.__a11ycoreSharedCache && window.__a11ycoreSharedCache.dom,
     'expected shared dom cache to be populated after run 1'
@@ -65,7 +69,7 @@ test('regression: window.__a11ycoreSharedCache is reset at the start of every ru
     'expected outerHtmlCache to be a WeakMap after run 1'
   );
 
-  runa11yCoreOnDom(dom, {});
+  runa11yCoreOnDom(dom, { entryPointParity: false });
   const outerHtmlCacheRun2 = window.__a11ycoreSharedCache.dom.outerHtmlCache;
 
   assert.notStrictEqual(
