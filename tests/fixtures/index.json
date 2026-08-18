@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-16T09:44:20.733Z",
+  "generatedAt": "2026-08-18T19:33:52.525Z",
   "summary": {
     "total": 125,
     "withFixture": 125,
@@ -489,12 +489,12 @@
       "testFile": "tests/engine-checks/automatic/button-name-present.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/button-name-present-all-scenarios.html",
-      "totalCases": 24,
+      "totalCases": 27,
       "caseCounts": {
-        "PASS": 9,
-        "FAIL": 12,
+        "PASS": 10,
+        "FAIL": 11,
         "CANTTELL": 0,
-        "OTHER": 3
+        "OTHER": 6
       }
     },
     {
@@ -1864,9 +1864,9 @@
       "totalCases": 25,
       "caseCounts": {
         "PASS": 5,
-        "FAIL": 12,
+        "FAIL": 10,
         "CANTTELL": 0,
-        "OTHER": 8
+        "OTHER": 10
       }
     },
     {
