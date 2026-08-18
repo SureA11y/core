@@ -42882,8 +42882,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
+  // ACT 23a2a8 (same rule as native img-alt-present) exempts programmatically
+  // hidden images and that glossary term has no focusability carve-out, so a
+  // tabbable/IDREF-referenced role="img" inside aria-hidden stays out of
+  // scope here too; aria-hidden-focus reports that markup instead.
   const isAccTreeEligible =
-    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+    helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+      ? helpers.isIncludedInAccessibilityTree
+      : helpers && typeof helpers.isAccTreeEligible === 'function'
+        ? helpers.isAccTreeEligible
+        : null;
 
   const getAccessibleNameInfo =
     helpers && typeof helpers.getAccessibleNameInfo === 'function'
@@ -42903,6 +42911,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         }
       })();
       if (elig && elig.eligible === false) continue;
+      // isIncludedInAccessibilityTree returns a plain boolean, not an
+      // {eligible, reasons} object like isAccTreeEligible's fallback shape.
+      if (typeof elig === 'boolean' && elig === false) continue;
     }
 
     applicableCount += 1;
@@ -82621,8 +82632,16 @@ const __a11yCoreCrossFrameApi = (function () {
   const occurrences = [];
   let applicableCount = 0;
 
+  // ACT 23a2a8 (same rule as native img-alt-present) exempts programmatically
+  // hidden images and that glossary term has no focusability carve-out, so a
+  // tabbable/IDREF-referenced role="img" inside aria-hidden stays out of
+  // scope here too; aria-hidden-focus reports that markup instead.
   const isAccTreeEligible =
-    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+    helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+      ? helpers.isIncludedInAccessibilityTree
+      : helpers && typeof helpers.isAccTreeEligible === 'function'
+        ? helpers.isAccTreeEligible
+        : null;
 
   const getAccessibleNameInfo =
     helpers && typeof helpers.getAccessibleNameInfo === 'function'
@@ -82642,6 +82661,9 @@ const __a11yCoreCrossFrameApi = (function () {
         }
       })();
       if (elig && elig.eligible === false) continue;
+      // isIncludedInAccessibilityTree returns a plain boolean, not an
+      // {eligible, reasons} object like isAccTreeEligible's fallback shape.
+      if (typeof elig === 'boolean' && elig === false) continue;
     }
 
     applicableCount += 1;

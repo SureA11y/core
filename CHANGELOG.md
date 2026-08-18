@@ -9,6 +9,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Fixed
 - Ten German, Spanish and French strings for `inputImage-alt-present` had lost their diacritics (`zugaengliche`, `boton`, `controle`), and the French ones their apostrophes (`l action`). Only that rule's `defaultName` and `emptyAlt` variants were affected — the rest of each file is intact, and the same words appear correctly elsewhere. The two Spanish hints also now use the infinitive the other 98 hints use.
+- `role-img-text-alternative-present` no longer flags a `role="img"` element that sits inside `aria-hidden="true"` just because it is focusable or IDREF-referenced. Its ACT counterpart (23a2a8) exempts any programmatically hidden element with no carve-out for either case — the same rule the sibling `img-alt-present`/`input-image-alt-present`/`object-text-alternative-present`/`canvas-text-alternative-present`/`form-control-programmatic-label-present` checks already follow. `aria-hidden-focus` already reports a focusable element in this position; this rule reporting it too was double coverage of a case ACT places out of its scope entirely.
 
 ## [1.5.0] - 2026-08-16
 
