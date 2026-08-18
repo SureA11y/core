@@ -4,6 +4,9 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ## [Unreleased]
 
+### Removed
+- `bin/surea11y-core.js`, the `bin` entry that pointed at it, and `tests/moved-cli-stub.test.js`. The stub existed so that the pre-1.4.0 `npx @surea11y/core scan ...` still shown in older documentation printed a redirect to `@surea11y/cli` instead of npm's opaque `could not determine executable to run`. That window was 1.0.0 through 1.3.0 — thirteen days on a package first published on 2026-07-26 — and no documentation in this repository has invoked core as a CLI since 1.4.0; every reference in `README.md`, `docs/CI_INTEGRATIONS.md` and `docs/LIMITATIONS.md` already names `@surea11y/cli`. The package now declares no binary at all, so nothing of core's is linked into `node_modules/.bin` and the collision the stub was carefully named around cannot arise. `format`/`format:check` drop their `bin/**/*.js` glob, which Prettier treats as an error once no file matches it.
+
 ### Fixed
 - Ten German, Spanish and French strings for `inputImage-alt-present` had lost their diacritics (`zugaengliche`, `boton`, `controle`), and the French ones their apostrophes (`l action`). Only that rule's `defaultName` and `emptyAlt` variants were affected — the rest of each file is intact, and the same words appear correctly elsewhere. The two Spanish hints also now use the infinitive the other 98 hints use.
 
