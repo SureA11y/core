@@ -18,8 +18,8 @@
  * to 84% line coverage just by running its EXISTING fixture through the
  * other entry point below -- zero new test cases).
  *
- * runDomRulesInPage (the Node/jsdom-direct entry point the CLI itself
- * uses, see bin/core.js) dispatches through real require() references
+ * runDomRulesInPage (the Node/jsdom-direct entry point the CLI in
+ * @surea11y/cli uses) dispatches through real require() references
  * (scripts/build-core.js's "implEntries" / RULE_IMPLS), so Node CAN
  * attribute coverage correctly there. Running every rule's own existing
  * fixture through it -- once, here -- fixes coverage attribution with no

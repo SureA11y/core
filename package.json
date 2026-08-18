@@ -25,9 +25,6 @@
     "vitest"
   ],
   "main": "src/index.js",
-  "bin": {
-    "surea11y-core": "bin/surea11y-core.js"
-  },
   "exports": {
     ".": "./src/index.js",
     "./baseline": "./src/baseline.js",
@@ -59,7 +56,6 @@
     "src/report.js",
     "src/sarif.js",
     "src/checks/**/*.js",
-    "bin/surea11y-core.js",
     "surea11y.browser.js",
     "surea11y.i18n.*.js",
     "docs/**/*.md",
@@ -74,8 +70,8 @@
   "scripts": {
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "format": "prettier --write \"src/**/*.js\" \"bin/**/*.js\" \"scripts/**/*.js\" \"tests/**/*.js\" \"eslint.config.js\"",
-    "format:check": "prettier --check \"src/**/*.js\" \"bin/**/*.js\" \"scripts/**/*.js\" \"tests/**/*.js\" \"eslint.config.js\"",
+    "format": "prettier --write \"src/**/*.js\" \"scripts/**/*.js\" \"tests/**/*.js\" \"eslint.config.js\"",
+    "format:check": "prettier --check \"src/**/*.js\" \"scripts/**/*.js\" \"tests/**/*.js\" \"eslint.config.js\"",
     "build": "node scripts/build-core.js && node scripts/build-browser.js",
     "pretest": "playwright install chromium",
     "test": "npm run format:check && npm run build && node scripts/run-tests.js",
