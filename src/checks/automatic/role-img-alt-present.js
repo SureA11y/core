@@ -9,9 +9,11 @@
  * @standard WCAG 2.2
  * @sc 1.1.1
  * @applicability
- *   Applies to elements with role="img" that are exposed to assistive technologies.
- *   Elements otherwise hidden from the accessibility tree remain applicable
- *   if they are focusable or referenced by IDREF relationships (per engine eligibility checks).
+ *   Applies to elements with role="img" that are included in the
+ *   accessibility tree (ACT 23a2a8's "programmatically hidden" exemption:
+ *   display:none/visibility:hidden/aria-hidden="true" on the element or an
+ *   ancestor, with no carve-out for focusable or IDREF-referenced elements —
+ *   aria-hidden-focus and duplicate-id-aria own those separately).
  * @expectation
  *   Each applicable element with role="img" has an accessible text alternative:
  *    - aria-label with a non-empty value; OR
@@ -101,8 +103,16 @@ function runInPage(ctx) {
   const occurrences = [];
   let applicableCount = 0;
 
+  // ACT 23a2a8 (same rule as native img-alt-present) exempts programmatically
+  // hidden images and that glossary term has no focusability carve-out, so a
+  // tabbable/IDREF-referenced role="img" inside aria-hidden stays out of
+  // scope here too; aria-hidden-focus reports that markup instead.
   const isAccTreeEligible =
-    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+    helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+      ? helpers.isIncludedInAccessibilityTree
+      : helpers && typeof helpers.isAccTreeEligible === 'function'
+        ? helpers.isAccTreeEligible
+        : null;
 
   const getAccessibleNameInfo =
     helpers && typeof helpers.getAccessibleNameInfo === 'function'
@@ -122,6 +132,9 @@ function runInPage(ctx) {
         }
       })();
       if (elig && elig.eligible === false) continue;
+      // isIncludedInAccessibilityTree returns a plain boolean, not an
+      // {eligible, reasons} object like isAccTreeEligible's fallback shape.
+      if (typeof elig === 'boolean' && elig === false) continue;
     }
 
     applicableCount += 1;
