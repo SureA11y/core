@@ -39458,7 +39458,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       .trim();
   }
 
-  const selector = 'a[href]';
+  const selector = 'a[href], area[href], [role="link"]';
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
@@ -79271,7 +79271,7 @@ const __a11yCoreCrossFrameApi = (function () {
       .trim();
   }
 
-  const selector = 'a[href]';
+  const selector = 'a[href], area[href], [role="link"]';
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);

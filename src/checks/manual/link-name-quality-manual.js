@@ -9,10 +9,11 @@
  * @standard WCAG 2.2
  * @sc 2.4.4
  * @applicability
- *   Elements matching `a[href]` with a non-empty computed accessible
- *   name (programmatic first, then "name from content" — same
- *   two-step resolution as `link-name-present`). Links with no name at
- *   all are `link-name-present`'s concern, not this rule's.
+ *   Elements matching `a[href], area[href], [role="link"]` with a
+ *   non-empty computed accessible name (programmatic first, then "name
+ *   from content" — same two-step resolution as `link-name-present`,
+ *   same selector too). Links with no name at all are
+ *   `link-name-present`'s concern, not this rule's.
  * @expectation
  *   The link's full accessible name, normalized (trimmed, case-folded,
  *   trailing punctuation stripped), is not an exact match for a known
@@ -101,7 +102,7 @@ function runInPage(ctx) {
       .trim();
   }
 
-  const selector = 'a[href]';
+  const selector = 'a[href], area[href], [role="link"]';
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);

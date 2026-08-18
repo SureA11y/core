@@ -3,10 +3,11 @@
 Cross-reference between the [W3C ACT Rules](https://act-rules.github.io/rules/) (as published at act-rules.github.io) and this repo's rule catalog (`docs/RULE_CATALOG.md`). Built by matching rule names/descriptions and WCAG SC; not machine-generated, so treat close calls as a starting point for review rather than ground truth.
 
 **Summary (117 active ACT rules, excludes 3 deprecated):**
-- **~58 have a direct or family match** in our automatic rules
-- **~10 have a match** in our manual rules only
+- **54 confirmed direct or family matches** in our automatic/manual rules (`scripts/data/act-rule-map.json` is the machine-readable version of the table below)
 - **~2** are covered structurally by our composite/rollup layer, not a named rule
-- **~47 are gaps** — no corresponding rule in this repo, listed in [Gaps](#gaps-no-corresponding-rule) below
+- **~50 are gaps** — no corresponding rule in this repo, listed in [Gaps](#gaps-no-corresponding-rule) below
+
+Being validated against ACT's own published test-case corpus (`scripts/act-testcase-check.js`) — matched-rule mismatches found so far are triaged as they're found (real bug vs. wrong mapping vs. scope difference); see "Judgment-call gaps found during test-case validation" below for the ones this has turned up so far. Two real rule bugs found and fixed this way: `button-name-present` wasn't crediting the UA-default label on `input[type=submit]`/`input[type=reset]` with no `value`, and wasn't honoring `role="none"`/`role="presentation"` conflict-resolution.
 
 We also have automatic rules with **no ACT counterpart at all** (see [Extra coverage](#extra-coverage-beyond-act)) — mostly a finer-grained decomposition of ACT's single "form field has accessible name" rule into one rule per ARIA widget role.
 
@@ -42,7 +43,6 @@ We also have automatic rules with **no ACT counterpart at all** (see [Extra cove
 | `bf051a` | HTML page lang attribute has valid language tag | `valid-lang` | partial (page-level case only) |
 | `c4a8a4` | HTML page title is descriptive | `page-title-patterns` (manual) | exact |
 | `cae760` | Iframe element has non-empty accessible name | `iframe-name-present` | exact |
-| `4b1c6c` | Iframes with identical accessible names have equivalent purpose | `iframe-title-unique` | partial |
 | `akn7bn` | Iframe with negative tabindex has no interactive content | `iframe-focusable-content` | exact |
 | `qt1vmo` | Image accessible name is descriptive | `img-alt-quality` (manual) | exact |
 | `59796f` | Image button has non-empty accessible name | `input-image-alt-present` | exact |
@@ -52,7 +52,6 @@ We also have automatic rules with **no ACT counterpart at all** (see [Extra cove
 | `78fd32` | Line height in style attrs not `!important` | `avoid-inline-spacing` | exact (combined rule) |
 | `9e45ec` | Word spacing in style attrs not `!important` | `avoid-inline-spacing` | exact (combined rule) |
 | `c487ae` | Link has non-empty accessible name | `link-name-present` | exact |
-| `5effbb` | Link in context is descriptive | `link-in-text-block` | partial |
 | `aizyf1` | Link is descriptive | `link-name-quality` (manual) | exact |
 | `fd3a94` | Links with identical names + same context, equivalent purpose | `identical-links-same-purpose` (manual) | exact |
 | `b20e66` | Links with identical accessible names, equivalent purpose | `identical-links-same-purpose` (manual) | exact |
@@ -89,6 +88,9 @@ Grouped by theme, with WCAG SC where ACT declares one:
 - `36b590` Error message describes invalid form field value (3.3.1)
 - `b49b2e` Heading is descriptive (full quality check; we only catch emptiness)
 
+**Context-aware link purpose:**
+- `5effbb` Link in context is descriptive (2.4.4) — see the judgment-call note below; needs `link-name-quality` to weigh surrounding context, not just the bare name
+
 **Motion/input (2.5.4, 2.1.4):**
 - `7677a9` / `c249d5` Device motion actuation has UI alternative / can be disabled
 - `ffbc54` No keyboard shortcut uses only printable characters
@@ -101,11 +103,16 @@ Grouped by theme, with WCAG SC where ACT declares one:
 - `46ca7f` Element marked as decorative is not exposed
 - `3e12e1` Block of repeated content is collapsible
 
+**Judgment-call gaps found during test-case validation:**
+- `4b1c6c` "Iframes with identical accessible names have equivalent purpose" was originally mapped to `iframe-title-unique`, but running ACT's own test cases against it exposed that they test different things: ACT's rule accepts a duplicate name when the two iframes point to equivalent content (same resource, mirrors, equivalent ads/sections) and only fails when duplicate-named iframes point to genuinely different content — a content-equivalence judgment call, the same class of check as our existing manual `identical-links-same-purpose`. `iframe-title-unique` instead flags *any* duplicate `title` attribute outright, deliberately and by design (see its own header comment) — a stricter, different, independently-valid check with no ACT counterpart of its own. Moved to "Extra coverage" below; `4b1c6c` itself stays a gap — closing it for real would mean a new manual `identical-iframes-same-purpose`-style rule, not a fix to `iframe-title-unique`.
+- `5effbb` "Link in context is descriptive" was originally mapped to `link-in-text-block` on a name-similarity guess ("link" + "context/text"); its real applicability/expectation (fetched directly from act-rules.github.io) is "the accessible name together with its programmatically determined link context describes the purpose of the link" — WCAG 2.4.4, the *context-aware* sibling of `aizyf1`/`link-name-quality`, completely unrelated to `link-in-text-block`'s WCAG 1.4.1 color-distinguishability check (which is itself correctly and deliberately scoped to `a[href]` only, per its own header comment — not a bug). `link-name-quality`'s own header comment already documents that it doesn't consider surrounding context ("this check does not verify whether surrounding context... makes the purpose clear"), so `5effbb` stays an explicit gap rather than a forced match — closing it would mean teaching `link-name-quality` to weigh adjacent text/`aria-describedby`, a real scope expansion, not a quick fix.
+- `identical-links-same-purpose`/`identical-links-same-purpose` (`fd3a94`, `b20e66`) are confirmed correct matches, but their `a[href]`-only scope (deliberate, using the DOM `.href` property for destination resolution) genuinely cannot cover `role="link"` elements without a real `href` — ACT's test corpus includes `<div role="link" tabindex="0" onclick="location='...'">`-style cases specifically to test this, and there is no static-DOM-readable destination for those (the target lives inside a JS string, not markup). This is a real, structural gap in the same family as the "dynamic/post-interaction state" limitation in `docs/LIMITATIONS.md`, not something to patch here.
+
 ## Extra coverage beyond ACT
 
 Rules in this repo with no ACT counterpart — mostly finer decomposition of ACT's single `e086e5` "form field has accessible name" rule into one rule per ARIA widget type, plus some ARIA-validity and structural rules ACT doesn't break out separately:
 
-`aria-hidden-body`, `aria-braille-equivalent`, `aria-conditional-attr`, `aria-deprecated-role`, `aria-prohibited-attr`, `aria-prohibited-children`, `aria-role-name-present`, `binary-control-name-present`, `canvas-text-alternative-present`, `combobox-name-present`, `contrast-computable`, `definition-list-children-valid`, `deprecated-elements-not-used`, `dialog-name-present`, `dlitem-parent-valid`, `duplicate-id-aria`, `embed-text-alternative-present`, `form-control-single-label`, `list-children-valid`, `listbox-name-present`, `listitem-parent-valid`, `meter-name-present`, `nested-interactive-controls-absent`, `option-name-present`, `progressbar-name-present`, `searchbox-name-present`, `server-side-image-map-absent`, `slider-name-present`, `spinbutton-name-present`, `summary-name-present`, `svg-image-text-alternative-present`, `tab-name-present`, `target-size-minimum`, `td-has-header`, `textbox-name-present`, `tooltip-name-present`, `treeitem-name-present`, `video-poster-text-alternative-present`, `area-alt-present`.
+`aria-hidden-body`, `aria-braille-equivalent`, `aria-conditional-attr`, `aria-deprecated-role`, `aria-prohibited-attr`, `aria-prohibited-children`, `aria-role-name-present`, `binary-control-name-present`, `canvas-text-alternative-present`, `combobox-name-present`, `contrast-computable`, `definition-list-children-valid`, `deprecated-elements-not-used`, `dialog-name-present`, `dlitem-parent-valid`, `duplicate-id-aria`, `embed-text-alternative-present`, `form-control-single-label`, `iframe-title-unique`, `list-children-valid`, `listbox-name-present`, `listitem-parent-valid`, `meter-name-present`, `nested-interactive-controls-absent`, `option-name-present`, `progressbar-name-present`, `searchbox-name-present`, `server-side-image-map-absent`, `slider-name-present`, `spinbutton-name-present`, `summary-name-present`, `svg-image-text-alternative-present`, `tab-name-present`, `target-size-minimum`, `td-has-header`, `textbox-name-present`, `tooltip-name-present`, `treeitem-name-present`, `video-poster-text-alternative-present`, `area-alt-present`.
 
 ## Next steps
 
