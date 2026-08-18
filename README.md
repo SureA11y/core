@@ -1,6 +1,7 @@
 # @surea11y/core
 
 <a href="https://www.npmjs.com/package/@surea11y/core"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/SureA11y/core/main/docs/assets/brand-tag-dark.svg"><img alt="surea11y core" src="https://raw.githubusercontent.com/SureA11y/core/main/docs/assets/brand-tag-light.svg"></picture></a>
+[![Test](https://github.com/SureA11y/core/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/SureA11y/core/actions/workflows/test.yml)
 [![npm](https://img.shields.io/npm/v/@surea11y/core?style=flat-square&label=npm&labelColor=101413&color=3A4441)](https://www.npmjs.com/package/@surea11y/core)
 [![node](https://img.shields.io/node/v/@surea11y/core?style=flat-square&label=node&labelColor=101413&color=3A4441)](package.json)
 [![license](https://img.shields.io/badge/license-MPL--2.0-3A4441?style=flat-square&labelColor=101413)](LICENSE)
