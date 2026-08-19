@@ -3011,6 +3011,42 @@ function createDomHelpers(opts) {
       }
     }
 
+    // The alt attribute is accname's own next naming source for img/area/
+    // input[type=image] -- ranked above title, below ARIA naming and real
+    // <label> association -- so this general-purpose function needs the
+    // same source getTextAlternativeInfo already applies specifically to
+    // these tags (kept as a direct attribute read here, not a call into
+    // getTextAlternativeInfo, since that function itself calls back into
+    // this one when alt is absent).
+    const tagForAlt = lower(el.tagName);
+    const typeForAlt = tagForAlt === 'input' ? lower(getAttr(el, 'type')) : '';
+    const isImageLikeForAlt =
+      tagForAlt === 'img' ||
+      tagForAlt === 'area' ||
+      (tagForAlt === 'input' && typeForAlt === 'image');
+    if (isImageLikeForAlt) {
+      const altText = trim(getAttr(el, 'alt'));
+      if (altText) {
+        const out = { present: true, value: altText, mechanism: 'alt', flags };
+        try {
+          if (__accessibleNameCacheByKey) {
+            const wm =
+              __accessibleNameCacheByKey.get(key) ||
+              (__accessibleNameCacheByKey.set(key, new WeakMap()),
+              __accessibleNameCacheByKey.get(key));
+            if (wm && wm instanceof WeakMap)
+              wm.set(el, {
+                present: true,
+                value: out.value,
+                mechanism: out.mechanism,
+                flags: out.flags.slice(0)
+              });
+          }
+        } catch {}
+        return out;
+      }
+    }
+
     // POLICY NOTE (revisit if ever reconsidered): title is accepted here as
     // a last-resort accessible-name source, matching HTML-AAM/accname. This
     // is a deliberate, spec-compliant choice -- but title is a genuinely
@@ -3314,6 +3350,37 @@ function createDomHelpers(opts) {
     let visitedCount = 0;
     let truncated = false;
 
+    // WAI-ARIA's Global States and Properties set -- used below to decide
+    // whether a role="presentation"/"none" image-like descendant has been
+    // restored to a real node by conflict resolution (same list as
+    // aria-required-parent.js/aria-prohibited-children.js's GLOBAL_ARIA_ATTRS).
+    const GLOBAL_ARIA_ATTRS_FOR_CONTENT_NAME = [
+      'aria-atomic',
+      'aria-braillelabel',
+      'aria-brailleroledescription',
+      'aria-busy',
+      'aria-controls',
+      'aria-current',
+      'aria-describedby',
+      'aria-description',
+      'aria-details',
+      'aria-disabled',
+      'aria-dropeffect',
+      'aria-errormessage',
+      'aria-flowto',
+      'aria-grabbed',
+      'aria-haspopup',
+      'aria-hidden',
+      'aria-invalid',
+      'aria-keyshortcuts',
+      'aria-label',
+      'aria-labelledby',
+      'aria-live',
+      'aria-owns',
+      'aria-relevant',
+      'aria-roledescription'
+    ];
+
     function isImageLikeNode(node) {
       const tag = lower(node.tagName);
       const type = tag === 'input' ? lower(getAttr(node, 'type')) : '';
@@ -3365,6 +3432,31 @@ function createDomHelpers(opts) {
       }
 
       if (isImageLikeNode(node)) {
+        // A role="presentation"/"none" image contributes nothing -- per
+        // ACT ffd0e9's own clarification, alt does not trigger
+        // Presentational Roles Conflict Resolution (it is not an ARIA
+        // attribute), so a plain conflict-resolution carve-out (global
+        // ARIA attribute present, or focusable) is what would restore it,
+        // same condition aria-required-parent.js's getRealContextRole
+        // and aria-prohibited-children.js already use for the analogous
+        // "roleless-but-included" boundary.
+        const presRole = lower(getAttr(node, 'role') || '').split(/\s+/)[0];
+        if (presRole === 'presentation' || presRole === 'none') {
+          let restored = false;
+          try {
+            restored = !!(getFocusableInfo(node, _ctx, opts) || {}).focusable;
+          } catch {}
+          if (!restored) {
+            for (const attr of GLOBAL_ARIA_ATTRS_FOR_CONTENT_NAME) {
+              if (getAttr(node, attr) != null) {
+                restored = true;
+                break;
+              }
+            }
+          }
+          if (!restored) return;
+        }
+
         // aria-labelledby/aria-label take priority over alt per the
         // accname spec (HTML-AAM), so they're checked first: an
         // <img alt="" aria-labelledby="..."> must contribute the
@@ -3687,12 +3779,18 @@ function createDomHelpers(opts) {
       metrics.top = top || null;
       metrics.textIndent = ti || null;
 
+      // em/rem convert to an approximate px value (root font-size 16px,
+      // the common default) so a value like "-999em" is correctly judged
+      // against the px threshold below instead of being compared as a
+      // bare number -999, which never crosses it regardless of unit.
       const parsePx = (s) => {
         if (!s || s === 'auto') return null;
-        const m = String(s).match(/-?\d+(\.\d+)?/);
+        const m = String(s).match(/-?\d+(\.\d+)?(em|rem|px)?/);
         if (!m) return null;
         const n = Number.parseFloat(m[0]);
-        return Number.isFinite(n) ? n : null;
+        if (!Number.isFinite(n)) return null;
+        const unit = m[2];
+        return unit === 'em' || unit === 'rem' ? n * 16 : n;
       };
 
       const l = parsePx(left);

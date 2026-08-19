@@ -12,7 +12,10 @@
  *   Applies to <table> elements that keep their table semantics and are included
  *   in the accessibility tree, and that contain at least one <th> which is
  *   visible, included in the accessibility tree, and not overridden by an
- *   explicit role other than rowheader/columnheader.
+ *   explicit role other than rowheader/columnheader. Also applies to the
+ *   ARIA-only equivalent: an element with role="grid"/"treegrid" (no
+ *   native <table> involved) that contains at least one in-scope
+ *   columnheader/rowheader-role element.
  * @expectation
  *   The table also contains at least one <td> somewhere in it.
  * @implementation-notes
@@ -149,6 +152,59 @@ function runInPage(ctx) {
     let hasDataCell;
     try {
       hasDataCell = table.querySelectorAll('td').length > 0;
+    } catch {
+      hasDataCell = false;
+    }
+    if (hasDataCell) continue;
+
+    for (const th of headers) {
+      if (!th) continue;
+
+      occurrences.push(
+        helpers.reportOccurrence(th, {
+          summary: 'This table has header cells but no data cells for them to describe.',
+          hint: 'Add data cells (<td>) to the table, or remove the header cells if the table has no data.',
+          i18n: {
+            summaryKey: 'tableThHasDataCells_summary_fail',
+            hintKey: 'tableThHasDataCells_hint_fail',
+            params: {}
+          },
+          data: {
+            details: { reasonCode: 'TABLE_TH_NO_DATA_CELLS' }
+          }
+        })
+      );
+    }
+  }
+
+  // ARIA-only equivalent: a role="grid"/"treegrid" container with no
+  // backing <table> at all. Same trivial "zero data cells anywhere" check,
+  // just keyed off ARIA roles instead of native tags -- a genuine
+  // columnheader/rowheader with zero gridcell/cell-role elements anywhere
+  // in the container is exactly as unambiguous as a <th>-only <table>.
+  const grids = helpers.queryAllSmart
+    ? helpers.queryAllSmart('[role="grid"], [role="treegrid"]')
+    : helpers.queryAll('[role="grid"], [role="treegrid"]');
+
+  for (const grid of grids) {
+    if (!grid || !grid.querySelectorAll) continue;
+    if (grid.tagName && grid.tagName.toLowerCase() === 'table') continue; // already handled above
+    if (!isIncludedInTree(grid)) continue;
+
+    let headerNodes;
+    try {
+      headerNodes = grid.querySelectorAll('[role="columnheader"], [role="rowheader"]');
+    } catch {
+      headerNodes = [];
+    }
+    const headers = Array.from(headerNodes).filter(isHeaderCellInScope);
+    if (!headers.length) continue;
+
+    applicableCount += 1;
+
+    let hasDataCell;
+    try {
+      hasDataCell = grid.querySelectorAll('[role="gridcell"], [role="cell"]').length > 0;
     } catch {
       hasDataCell = false;
     }
