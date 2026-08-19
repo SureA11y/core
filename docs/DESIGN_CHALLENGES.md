@@ -16,16 +16,6 @@ A running log of engine design decisions worth re-examining — cases where an e
 
 **Status:** open, unresolved as of 2026-08-19 — deprioritized pending a live ACT example that actually exercises it.
 
-### No rule covers `role="graphics-symbol"`/`"graphics-document"` on an SVG descendant, only the `<svg>` root itself
-
-**Decision as it stands:** `svg-text-alternative-present.js`'s own header comment already states: "Deliberately does NOT extend to arbitrary `role="graphics-symbol"` descendants nested inside an `<svg>` — this check's scope is the `<svg>` root only." `role-img-text-alternative-present.js` is scoped to `role="img"` only, not `graphics-symbol`/`graphics-document`.
-
-**Why it's being questioned:** ACT `7d6734`'s applicability is "any SVG element with an explicit role of img, graphics-document, or graphics-symbol" — "SVG element" meaning any element in the SVG namespace, not just the root `<svg>` tag; `graphics-symbol` is specifically meant for descendant shapes (ACT's own failed test case: `<svg><circle role="graphics-symbol" .../></svg>`, a root `<svg>` with no role at all, but a descendant circle carrying the role). Neither existing rule reaches this.
-
-**Why this hasn't been changed yet:** this is a real, if narrow, feature addition — a new selector for `role=img`/`graphics-symbol`/`graphics-document` anywhere in the SVG namespace, plus accessible-name computation for arbitrary SVG shape elements (which don't have the same native-tag semantics `<svg>` itself does) — not a quick extension of either existing rule's scope.
-
-**Status:** open, unresolved as of 2026-08-19; already self-acknowledged as out of scope in `svg-text-alternative-present.js`'s own comment before this pass.
-
 ### `valid-lang`'s applicability doesn't resolve which text actually inherits a given `lang` attribute
 
 **Decision as it stands:** `valid-lang.js` applies to any non-root element carrying a non-empty `lang` attribute, unconditionally, and validates that attribute's value as a language tag.
@@ -37,6 +27,16 @@ A running log of engine design decisions worth re-examining — cases where an e
 **Status:** open, unresolved as of 2026-08-19.
 
 ## Decided
+
+### No rule covered `role="graphics-symbol"`/`"graphics-document"` on an SVG descendant, only the `<svg>` root itself — fixed
+
+**Decision as it stands (before the fix):** `svg-text-alternative-present.js`'s own header comment stated: "Deliberately does NOT extend to arbitrary `role="graphics-symbol"` descendants nested inside an `<svg>` — this check's scope is the `<svg>` root only." `role-img-text-alternative-present.js` was scoped to `role="img"` only, not `graphics-symbol`/`graphics-document`. Confirmed against ACT `7d6734`'s live corpus (1/10 mismatch, its own failed example: `<svg><circle role="graphics-symbol" .../></svg>`, a root `<svg>` with no role at all but a descendant circle carrying the role).
+
+**Why it was questioned:** ACT `7d6734`'s applicability is "any SVG element with an explicit role of img, graphics-document, or graphics-symbol" — "SVG element" meaning any element in the SVG namespace, not just the root `<svg>` tag; `graphics-symbol` is specifically meant for descendant shapes. Neither existing rule reached this.
+
+**Decision (2026-08-19):** `role-img-text-alternative-present.js`'s selector widened from `[role="img" i]:not(img)` to also match `[role="graphics-symbol" i]`/`[role="graphics-document" i]` anywhere in the document — this already covers nested SVG shapes, since the rule was never scoped to a particular tag. Its existing aria-label/aria-labelledby/title checks needed no change; its SVG-first-child-`<title>` naming check (previously gated to `tag === 'svg'` only) was widened to any SVG-namespace element via `namespaceURI`, since SVG-AAM's title-child naming mechanism isn't root-specific either. `svg-text-alternative-present.js` keeps sole ownership of the `<svg>` root case (its own header comment updated to point at the sibling rule for descendants) — the two rules already had accepted, pre-existing double-coverage on a `role="img"`/`"graphics-document"` `<svg>` root (both fire on the same unnamed element), which this change doesn't newly introduce, only extends consistently to `graphics-document` alongside the existing `img` overlap.
+
+**Status:** resolved 2026-08-19 — `7d6734` runs clean (0/10).
 
 ### `img-alt-decorative` only considered `<img alt="">`, missing `aria-hidden`/`role=none` images and every svg/canvas case — fixed
 

@@ -288,6 +288,59 @@ test(`${RULE_ID}: fail still occurs for non-img role="img" missing aria-label/la
   assert.ok(!hasOccurrenceForId(rule, 'native_img'));
 });
 
+test(`${RULE_ID}: a nested role="graphics-symbol" with no name fails (ACT 7d6734 failed example)`, () => {
+  const html = `<!doctype html><html><body>
+    <svg xmlns="http://www.w3.org/2000/svg">
+      <circle id="c1" role="graphics-symbol" cx="50" cy="50" r="40"></circle>
+    </svg>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'c1'));
+  assert.equal(rule.occurrences[0].data.details.reasonCode, 'missingTextAlternative');
+});
+
+test(`${RULE_ID}: a nested role="graphics-symbol" named via aria-label passes (ACT 7d6734 passed example)`, () => {
+  const html = `<!doctype html><html><body>
+    <svg xmlns="http://www.w3.org/2000/svg">
+      <circle id="c1" role="graphics-symbol" aria-label="1 circle" cx="50" cy="50" r="40"></circle>
+    </svg>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: a nested role="graphics-symbol" named via a first-child <title> passes (SVG-AAM naming, not only for the <svg> root)`, () => {
+  const html = `<!doctype html><html><body>
+    <svg xmlns="http://www.w3.org/2000/svg">
+      <circle id="c1" role="graphics-symbol" cx="50" cy="50" r="40"><title>1 circle</title></circle>
+    </svg>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: role="graphics-object" (not one of the three named roles) is not applicable (ACT 7d6734 inapplicable example)`, () => {
+  const html = `<!doctype html><html><body>
+    <svg xmlns="http://www.w3.org/2000/svg">
+      <circle id="c1" role="graphics-object" cx="50" cy="50" r="40"></circle>
+    </svg>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: an unlabeled role="graphics-document" <svg> root also fails here (double coverage alongside svg-text-alternative-present, same as the existing role="img" root overlap)`, () => {
+  const html = `<!doctype html><html><body>
+    <svg id="s1" xmlns="http://www.w3.org/2000/svg" role="graphics-document">
+      <circle cx="50" cy="50" r="40"></circle>
+    </svg>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 's1'));
+});
+
 test(`${RULE_ID}: fixture coverage (tests/fixtures/role-img-alt-present-all-scenarios.html)`, () => {
   const fixturePath = path.join(
     __dirname,
@@ -349,10 +402,13 @@ test(`${RULE_ID}: i18n (en) title/description/occ strings are stable`, () => {
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions: { locale: 'en' } });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
 
-  assert.equal(rule.title, '[role="img"] must have an accessible text alternative');
+  assert.equal(
+    rule.title,
+    '[role="img"/"graphics-symbol"/"graphics-document"] must have an accessible text alternative'
+  );
   assert.equal(
     rule.description,
-    'Checks that elements with role="img" provide an accessible text alternative using aria-label, aria-labelledby, or a title attribute.'
+    'Checks that elements with role="img", "graphics-symbol" or "graphics-document" provide an accessible text alternative using aria-label, aria-labelledby, a title attribute, or (for SVG elements) a first-child <title>.'
   );
 
   const occ = rule.occurrences[0];
@@ -376,11 +432,11 @@ test(`${RULE_ID}: i18n (fr) falls back/uses fr strings once defined`, () => {
 
   assert.equal(
     rule.title,
-    'Les éléments avec role="img" doivent avoir une alternative textuelle accessible'
+    'Les éléments avec role="img"/"graphics-symbol"/"graphics-document" doivent avoir une alternative textuelle accessible'
   );
   assert.equal(
     rule.description,
-    'Vérifie que les éléments ayant le rôle "img" fournissent une alternative textuelle accessible via aria-label ou aria-labelledby.'
+    'Vérifie que les éléments ayant le rôle "img", "graphics-symbol" ou "graphics-document" fournissent une alternative textuelle accessible via aria-label, aria-labelledby, un attribut title, ou (pour les éléments SVG) un premier enfant <title>.'
   );
 
   const occ = rule.occurrences[0];
