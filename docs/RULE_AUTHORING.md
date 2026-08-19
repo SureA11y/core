@@ -177,8 +177,7 @@ occurrences.push(helpers.reportOccurrence(el, { summary: '…', hint: '…' }));
 ```
 
 It attaches the element for the engine to finalize, which is how `selector`,
-`html` and `structuralPath` get filled in centrally instead of in each of the
-124 rules.
+`html` and `structuralPath` get filled in centrally instead of in each rule.
 
 **This is a performance contract, not just a convenience.** Every occurrence
 gets a `structuralPath`. Given the element, the engine computes it directly.
@@ -347,6 +346,11 @@ Observed properties:
 ## 10) Structured doc comment block
 
 Keep the structured header comment (`@rule`, `@atomic`, `@summary`, `@standard`, `@sc`, `@applicability`, `@expectation`).
+
+`@applicability` and `@expectation` are consumer-facing: `scripts/generate-rule-catalog.js`
+reads them straight from the source and publishes them per rule in
+[`RULE_CATALOG.md`](./RULE_CATALOG.md#rule-reference). Write them for someone deciding
+whether a result applies to their page, and rerun `npm run docs:rule-catalog` after editing them.
 
 ---
 

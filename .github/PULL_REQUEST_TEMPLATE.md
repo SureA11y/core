@@ -19,7 +19,7 @@
 - [ ] `npm run build` — regenerated `src/core.js` (and `surea11y.browser.js`).
 - [ ] `npm test` — full suite green.
 - [ ] `npm run fixtures:index` — if a fixture was added or changed.
-- [ ] `npm run docs:rule-catalog` — if a rule's `meta` changed (regenerates `docs/RULE_CATALOG.md`).
+- [ ] `npm run docs:rule-catalog` — if a rule's `meta` or its `@applicability`/`@expectation` header prose changed (regenerates `docs/RULE_CATALOG.md`).
 - [ ] If this is a bug fix: root cause verified against a primary source (WAI-ARIA spec, HTML-AAM, direct probing of real browser/AT behavior) rather than guessed, and a regression test was added that would have caught it.
 - [ ] If this changes the shape of a scan result: checked `docs/API_STABILITY.md` for whether it's a patch/minor/major change.
 
