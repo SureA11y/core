@@ -18,6 +18,16 @@ A running log of engine design decisions worth re-examining — cases where an e
 
 ## Decided
 
+### `iframe-name-present` exempted every `role="none"`/`"presentation"` iframe from needing a name, regardless of focusability — fixed
+
+**Decision as it stands (before the fix):** the rule's own header comment already claimed this "matches ACT cae760," and the doc's mismatch table filed the one remaining `cae760` case entirely under a *different*, correctly-reasoned divergence (a `tabindex="-1"` iframe with no role, which ACT considers unreachable and out of scope, but this engine still evaluates). That framing missed a second, distinct mismatch hiding in the same ACT id.
+
+**Why it was questioned:** re-fetching `cae760`'s live corpus surfaced `<iframe title=" " role="none" src="...">` (no `tabindex` at all) expected **failed**, which this rule returned `notApplicable` for. ACT's own reasoning: "because iframe elements are part of sequential focus navigation, the explicit semantic role of none will be ignored, due to Presentational Roles Conflict Resolution." Unlike most elements, `<iframe>`/`<frame>` are natively focusable by default — no `tabindex` needed — so `role="none"` alone never actually removes one from the tab order, and the "decorative" marking doesn't stick.
+
+**Decision (2026-08-19):** the role="none"/"presentation" exemption now only applies when the iframe is also out of the tab order (an explicit negative `tabindex`). `helpers.getFocusableInfo` has no native-focusability entry for `iframe`/`frame` at all (it's an unusual element in that respect — most things need an explicit `tabindex` or a native-interactive tag), so focusability is computed locally in the rule instead of through the shared helper.
+
+**Status:** resolved 2026-08-19 — `cae760` drops from 2 to 1 mismatch; the one remaining case is the pre-existing, correctly-reasoned `tabindex="-1"`-without-role divergence, left as-is.
+
 ### `aria-valid-attr-value` treated an explicitly-empty non-idref value as invalid, and always required `aria-errormessage`'s target to exist — both fixed
 
 **Decision as it stands (before the fix):** `validateAttrValue`'s empty-value exemption (`allowEmpty`) only applied to `idref`/`idref-list` types; a bare boolean/tristate/number/token-list attribute with no value (`aria-checked` alone, `aria-relevant=""`) was validated against its type's value set and failed. Existence-checking on single-idref attributes applied uniformly to both `aria-activedescendant` and `aria-errormessage`. Confirmed against ACT `6a7281`'s live corpus (2/23 mismatches).
