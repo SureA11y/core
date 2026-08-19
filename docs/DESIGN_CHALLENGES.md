@@ -30,6 +30,26 @@ This is the exact inverse of what our header comment claims about the tradeoff (
 
 **Status:** open, unresolved as of 2026-08-19. `aria-prohibited-children.js` (the sibling rule) already implements the correct "boundary" concept — an owned entry that's a real (non-transparent) node stops the walk, including a roleless-but-globally-ARIA-attributed one — and would be the right model to port from.
 
+### The ARIA structure rules only evaluate containers that carry an explicit `role`
+
+**Decision as it stands:** `aria-required-children`, `aria-prohibited-children` and `aria-required-parent` all key their applicability off `getExplicitRole(el)` — an element with no `role=""` attribute is never evaluated as a container, however clear its native semantics.
+
+**Why it's being questioned:** ACT `bc4a75`'s failed-example 10 is `<ul><div></div><div></div></ul>`. A `<ul>` has the implicit `list` role, `<div>` resolves to `generic`, and `generic` is not among `list`'s required owned elements, so ACT fails it. Our rules report `notApplicable`: there is no `role` attribute anywhere in that markup to key off. The same blind spot covers every native container the engine already knows about — `<ul>`/`<ol>` (`list`), `<table>` (`table`), `<select>` (`listbox`/`combobox`), `<dl>` — and native markup is where these structures usually come from, so the rules are strictest exactly where authors already used ARIA and silent where they didn't.
+
+**Why this hasn't been changed yet:** `getContainmentRole` (`src/core/aria-helpers.js`) already resolves the native side of this for *children*, so the missing piece is applicability, not role resolution — but turning it on makes every `<ul>`, `<table>` and `<select>` on every page a container under test, which is a large behavior change on real-world markup (and one that runs straight into the two entries above: the native-role table's missing HTML-AAM context requirements, and the "any match" vs. "all owned" question). Worth doing after those two are settled, not before.
+
+**Status:** open, unresolved as of 2026-08-19.
+
+### `label-in-name` compares against accessibility-tree text, where ACT uses *visible* inner text
+
+**Decision as it stands:** `label-in-name.js` builds the element's visible label from text nodes whose parent is accessibility-tree eligible, which drops `aria-hidden` subtrees and keeps text that CSS has hidden visually. The `aria-hidden` half is deliberate and reasoned in the rule's own comment: an `<i aria-hidden="true">` icon-font ligature renders as a glyph, not as the literal word in the DOM, so counting its text would flag every icon-only button named by `aria-label`.
+
+**Why it's being questioned:** ACT `2ee8b8` is explicit that its "visible inner text" is a rendering property, not an accessibility-tree one, and three of its examples turn on the difference: `<a aria-label="Download specification">Download <span aria-hidden="true">gizmo</span> specification</a>` fails ACT (the word "gizmo" is on screen, whatever `aria-hidden` says) and passes here; a `clip-path: inset(50%)` visually-hidden span passes ACT (nothing is rendered) and fails here; and `<div style="display: inline">` children concatenate into one word for ACT ("ACT" from three inline divs) while we read them apart. All three point the same way — the label a sighted user speaks comes from what is painted, not from what the accessibility tree carries. The icon-font case the current behavior was built for is real, but `aria-hidden` is a coarse stand-in for it: the attribute says "don't expose this", not "this doesn't render as words".
+
+**Why this hasn't been changed yet:** "visible inner text" needs a real rendering model — per-node `display` resolution for the concatenation rule, plus the visually-hidden detection (`clip-path`, `clip`, 1px boxes, off-screen positioning) the engine's offscreen heuristic only partly covers. It's a shared-helper change with reach beyond this rule, and it lands next to the still-open icon-font question below, which is about the same expectation text.
+
+**Status:** open, unresolved as of 2026-08-19.
+
 ### `NATIVE_CONTAINMENT_ROLE_BY_ELEMENT` gives several native tags an unconditional implicit role, ignoring HTML-AAM's context requirement
 
 **Decision as it stands:** `src/core/aria-helpers.js`'s `NATIVE_CONTAINMENT_ROLE_BY_ELEMENT` table (used by `getContainmentRole`, the shared engine for `aria-required-parent`/`aria-required-children`/`aria-prohibited-children`) maps `li → listitem`, `tr → row`, `td → cell`, `th → columnheader`, `thead/tbody/tfoot → rowgroup`, `option → option` unconditionally — regardless of what actually contains the element.

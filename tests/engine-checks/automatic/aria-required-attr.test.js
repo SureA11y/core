@@ -128,6 +128,20 @@ test(`${RULE_ID}: aria-busy="false" does NOT exempt a missing required attribute
   assert.equal(rule.occurrences[0].data.details.attr, 'aria-checked');
 });
 
+test(`${RULE_ID}: fail when a focusable role="separator" has no aria-valuenow`, () => {
+  const html = `<!doctype html><html><body><p>a</p><div role="separator" tabindex="0" id="a"></div><p>b</p></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+  assert.strictEqual(rule.occurrences[0].data.details.attr, 'aria-valuenow');
+});
+
+test(`${RULE_ID}: a non-focusable role="separator" needs no aria-valuenow`, () => {
+  const html = `<!doctype html><html><body><div role="separator" id="a"></div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
 test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-required-attr-all-scenarios.html)`, () => {
   const fixturePath = path.join(
     __dirname,
@@ -138,9 +152,15 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-required-attr-all-scenar
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 4, maxOccurrences: 4 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 5, maxOccurrences: 5 });
 
-  const expectedFailIds = ['ara_case_02', 'ara_case_03', 'ara_case_07', 'ara_case_09'];
+  const expectedFailIds = [
+    'ara_case_02',
+    'ara_case_03',
+    'ara_case_07',
+    'ara_case_09',
+    'ara_case_15'
+  ];
   const expectedNoOccIds = [
     'ara_case_01',
     'ara_case_04',
@@ -151,7 +171,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-required-attr-all-scenar
     'ara_case_11',
     'ara_case_12',
     'ara_case_13',
-    'ara_case_14'
+    'ara_case_14',
+    'ara_case_16'
   ];
 
   for (const id of expectedFailIds) {

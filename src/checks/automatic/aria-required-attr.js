@@ -12,8 +12,8 @@
  *   Applies to elements with an explicit, valid, non-abstract role that is
  *   also one of the small set of roles with a documented, context-
  *   independent required state/property (checkbox, combobox, heading,
- *   menuitemcheckbox, menuitemradio, meter, radio, scrollbar, slider,
- *   switch) -- except when that explicit role is identical to the
+ *   menuitemcheckbox, menuitemradio, meter, radio, scrollbar, separator,
+ *   slider, switch) -- except when that explicit role is identical to the
  *   element's own native/implicit role (ACT 4e8ab6: e.g.
  *   <input type="checkbox" role="checkbox">, which is exempt because the
  *   native control's own state exposure already covers it; no aria-checked
@@ -31,7 +31,13 @@
  *   test corpus confirms the conditional trigger: a role="combobox" with
  *   aria-expanded="true" and no (or empty) aria-controls fails, so that
  *   specific combination is checked directly below rather than through
- *   REQUIRED_PROPS_BY_ROLE's unconditional table.
+ *   REQUIRED_PROPS_BY_ROLE's unconditional table. `separator`'s
+ *   `aria-valuenow` is conditional in the same way: a plain separator is a
+ *   structural divider that needs no value, but a focusable one is a
+ *   splitter the user can move, and WAI-ARIA requires the value then. ACT
+ *   4e8ab6 fails exactly that shape (`<div role="separator" tabindex="0">`
+ *   with no aria-valuenow), so focusability is read from
+ *   helpers.getFocusableInfo at the same point.
  * - Gated on isAccTreeEligible for the element itself: unlike a syntax-
  *   level check (attribute name/value validity), "does this element
  *   currently carry its required state attribute" is not fixed once
@@ -101,6 +107,21 @@ function runInPage(ctx) {
     }
   }
 
+  // Focusability decides whether a separator is a widget; the same helper
+  // aria-hidden-focus and nested-interactive-controls-absent rely on, so
+  // :disabled, inert and invalid tabindex values are already accounted for.
+  function isFocusable(el) {
+    const fn =
+      helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
+    if (!fn) return false;
+    try {
+      const info = fn(el, ctx);
+      return !!(info && info.focusable);
+    } catch {
+      return false;
+    }
+  }
+
   function isMarkedBusy(el) {
     const v = el.getAttribute('aria-busy');
     return v != null && String(v).trim().toLowerCase() === 'true';
@@ -133,6 +154,12 @@ function runInPage(ctx) {
     // displayed (aria-expanded="true") -- see this file's header comment.
     if (role === 'combobox' && String(el.getAttribute('aria-expanded') || '').trim() === 'true') {
       required.push('aria-controls');
+    }
+
+    // A separator only carries a value when it is focusable, i.e. a
+    // splitter the user can move -- see this file's header comment.
+    if (role === 'separator' && isFocusable(el)) {
+      required.push('aria-valuenow');
     }
 
     if (!required.length) continue;
