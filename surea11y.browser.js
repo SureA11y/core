@@ -15646,8 +15646,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // Whole-page-orientation-lock detection (see @implementation-notes): a
   // rotation near 0 or 180 degrees (mod 180) is a no-op or a flip, neither
   // of which changes portrait<->landscape, so it's NOT a lock; only a
-  // rotation near 90 or 270 degrees (mod 90, once the 0/180 case is
-  // excluded) is.
+  // rotation near 90 or 270 degrees is. "Near" is a tolerance window, not
+  // exact equality: a `rad`/`grad`/`turn` value converts to a 90-degree
+  // rotation with floating-point remainder (e.g. `1.5708rad` is
+  // 90.0000210...deg, never exactly 90), and ACT's own failed examples
+  // include a deliberately-inexact 92.5deg — both must still register as a
+  // lock, which exact-modulo-equality (`% 90 === 0`) never does.
+  const LOCK_TOLERANCE_DEG = 5;
   function isLockingRotation(styleDecl) {
     if (!styleDecl) return false;
     const transformVal =
@@ -15663,9 +15668,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     if (!degrees) return false;
 
-    const abs = Math.abs(degrees);
-    if (Math.abs(abs - 180) % 180 <= 0) return false; // near 0/180: not a lock
-    return Math.abs(abs - 90) % 90 <= 0; // near 90/270: a lock
+    // Normalize into [0, 180): a rotation and its mirror (rotation + 180)
+    // swap the same two axes, so only the position within one half-turn
+    // matters. A value near the 90-degree midpoint of that range is near
+    // 90 OR 270 in the original full-turn range.
+    const normalized = ((degrees % 180) + 180) % 180;
+    return Math.abs(normalized - 90) <= LOCK_TOLERANCE_DEG;
   }
 
   function isOrientationMedia(mediaText) {
