@@ -73,6 +73,15 @@ test(`${RULE_ID}: notApplicable when the only <main> is visually clipped off-scr
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+test(`${RULE_ID}: cantTell when the only heading is positioned off-screen (ACT 047fe0: heading navigation is not equivalent for sighted keyboard users if the heading isn't visible)`, () => {
+  const html = `<!doctype html><html><body>
+    <nav id="chapters-navigation"><ol><li><a>Chapter 1</a></li><li><a href="/chapter2.html">Chapter 2</a></li></ol></nav>
+    <div id="main"><h1 style="position:absolute;top:-9999px;left:-9999px;">Three Kingdoms</h1><p>Unity succeeds division.</p></div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+});
+
 test(`${RULE_ID}: cantTell when no landmark, anchor link, or heading exists`, () => {
   const html = `<!doctype html><html><body><nav>Nav</nav><div>Content</div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
