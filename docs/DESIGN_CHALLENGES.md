@@ -18,6 +18,16 @@ A running log of engine design decisions worth re-examining — cases where an e
 
 ## Decided
 
+### `contrast-minimum`/`contrast-enhanced` treated exact foreground/background color matches as a real (1:1) contrast failure — fixed
+
+**Decision as it stands (before the fix):** the docs described this as an accepted, permanent divergence: "ACT treats text whose color exactly matches its background as invisible; the contrast rules report the 1:1 ratio, since nothing in the markup separates 'invisible on purpose' from 'invisible by accident'."
+
+**Why it was questioned:** that framing conflates two different questions. Detecting authorial *intent* (was this meant to be hidden?) is genuinely undecidable from markup, and the engine is right not to guess at it. But ACT's own rule doesn't ask that question at all — its stated reasoning for the inapplicable case is purely factual: "this text is not visible because the foreground color is the same as the background color." Whether two fully-resolved, fully-opaque colors are bit-for-bit identical is a plain equality check, deterministic and intent-free, not a judgment call — the same class of fact as any other computability gate this engine already applies (gradients, filters, opacity).
+
+**Decision (2026-08-19):** added an `isSameColorAsBackground` gate to the shared text scan (`getTextScan` in `src/core/contrast-helpers.js`) that all three contrast rules (`contrast-computable`, `contrast-minimum`, `contrast-enhanced`) already use for applicability. It fires only when both the effective foreground and effective background resolve cleanly to a fully opaque color and those colors are identical — any gradient, image, or partial-opacity background is left untouched and still reaches the existing computability/ratio logic normally. A near-miss (e.g. `#fefefe` on `#ffffff`) is unaffected and still fails on ratio, guarded by a regression test.
+
+**Status:** resolved 2026-08-19 — `afw4f7` and `09o5cg` both drop one mismatch each (7→6, 6→5).
+
 ### `valid-lang`'s applicability didn't resolve which text actually inherits a given `lang` attribute — fixed
 
 **Decision as it stands (before the fix):** `valid-lang.js` applied to any non-root element carrying a non-empty `lang` attribute with *any* non-whitespace text anywhere in its subtree, unconditionally, and validated that attribute's value as a language tag. Confirmed against ACT `de46e4`'s live corpus (3/19 mismatches, exactly the three shapes below).

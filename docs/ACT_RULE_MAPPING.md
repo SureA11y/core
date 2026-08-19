@@ -7,7 +7,7 @@ Cross-reference between the [W3C ACT Rules](https://act-rules.github.io/rules/) 
 - **~2** are covered structurally by our composite/rollup layer, not a named rule
 - **~47 are gaps** — no corresponding rule in this repo, listed in [Gaps](#gaps-no-corresponding-rule) below
 
-**Every matched rule has now been run through ACT's own official test-case corpus** (`scripts/act-testcase-check.js`, 713 test cases across the 51-rule matched set of the time). Started at 86 mismatches; real bugs were fixed, mapping errors corrected, and every remaining mismatch triaged into a deliberate scope difference, a jsdom/environment limit, or a genuine open design question (tracked in [`docs/DESIGN_CHALLENGES.md`](./DESIGN_CHALLENGES.md)). A second pass then re-ran the whole corpus from a local checkout (see "Second pass" below) and repeated the exercise on what it turned up. Current state: **866 examples across the 57-rule matched set, 47 mismatches, all explained** below or in that file — see "Progress" further down for the full per-rule breakdown.
+**Every matched rule has now been run through ACT's own official test-case corpus** (`scripts/act-testcase-check.js`, 713 test cases across the 51-rule matched set of the time). Started at 86 mismatches; real bugs were fixed, mapping errors corrected, and every remaining mismatch triaged into a deliberate scope difference, a jsdom/environment limit, or a genuine open design question (tracked in [`docs/DESIGN_CHALLENGES.md`](./DESIGN_CHALLENGES.md)). A second pass then re-ran the whole corpus from a local checkout (see "Second pass" below) and repeated the exercise on what it turned up. Current state: **866 examples across the 57-rule matched set, 45 mismatches, all explained** below or in that file — see "Progress" further down for the full per-rule breakdown.
 
 Real rule bugs found and fixed this way, in rough chronological order:
 - `button-name-present` wasn't crediting the UA-default label on `input[type=submit]`/`input[type=reset]` with no `value`, and wasn't honoring `role="none"`/`role="presentation"` conflict-resolution.
@@ -64,7 +64,7 @@ Re-checked against the live rule page (not just the local checkout) and settled,
 - `aria-prohibited-children` was a real bug: it only treated `role="group"`/`role="rowgroup"` as transparent when the container's own required-owned set named `group`/`rowgroup`, so `role="list"` wrapping valid `listitem`s in a `role="group"` was wrongly flagged. Group/rowgroup are transparent unconditionally. `bc4a75` now runs clean.
 - `label-in-name` had no exemption for "non-text content" characters — ACT `2ee8b8`'s own failed examples for us, `<button aria-label="close">X</button>` and a Material-Icons-font-remapped `search`->magnifying-glass button, are both text standing in for an icon rather than literal words. The live corpus's actual 13 examples don't exercise the separately-claimed `aria-hidden`/visually-hidden/inline-concatenation divergence at all (unsubstantiated against current ground truth, likely a local-checkout artifact same as the `bc4a75` case) — that narrower part stays open in `docs/DESIGN_CHALLENGES.md` on its own merits, not as an ACT mismatch. `2ee8b8` now runs clean.
 
-Accepted divergences, documented in the table above: `8fc3b6` (an `<object>` rendering neither image, audio nor video is exempt from needing a name — what a `data` URL resolves to isn't knowable without fetching it) and `afw4f7` (ACT treats text whose color exactly matches its background as invisible; the contrast rules report the 1:1 ratio, since nothing in the markup separates "invisible on purpose" from "invisible by accident").
+Accepted divergence, documented in the table above: `8fc3b6` (an `<object>` rendering neither image, audio nor video is exempt from needing a name — what a `data` URL resolves to isn't knowable without fetching it). The `afw4f7`/`09o5cg` same-color note that used to sit here was a misreading, not a real limitation — see `docs/DESIGN_CHALLENGES.md`'s Decided section — and is fixed.
 
 We also have automatic rules with **no ACT counterpart at all** (see [Extra coverage](#extra-coverage-beyond-act)) — mostly a finer-grained decomposition of ACT's single "form field has accessible name" rule into one rule per ARIA widget role.
 
@@ -72,7 +72,7 @@ We also have automatic rules with **no ACT counterpart at all** (see [Extra cove
 
 **Clean (0 mismatches):** `5f99a7`, `80f0bf`, `4c31df`, `73f2c2`, `97a4e1`, `cf77f2`, `b40fd1`, `46ca7f`, `6cfa84`, `307n5z`, `4e8ab6`, `a25f45`, `ffd0e9`, `b5c3f8`, `2779a5`, `5b7ae0`, `bf051a`, `qt1vmo`, `59796f`, `23a2a8`, `24afc2`, `9e45ec`, `c487ae`, `m6b1q3`, `bc659a`, `bisz58`, `b4f0c3`, `674b10`, `0ssw9k`, `3ea0c8`, `5c01ea`, `bc4a75`, `2ee8b8`, `e88epe`, `7d6734`, `de46e4` (36 of 57 matched rules).
 
-**Remaining mismatches (47 total), all triaged:**
+**Remaining mismatches (45 total), all triaged:**
 
 | ACT ID | Mismatches | Category |
 |---|---|---|
@@ -91,7 +91,7 @@ We also have automatic rules with **no ACT counterpart at all** (see [Extra cove
 | `fd3a94`, `b20e66` | 1, 1 | deliberate, documented structural gap — `identical-links-same-purpose`'s `a[href]`-only destination resolution genuinely cannot cover a `role="link"` element whose target lives inside a JS string, not markup |
 | `b33eff` | 3 | env/harness limit — jsdom's CSS parser drops `@media(orientation)` rules using `rad` units or `matrix3d()` that a real browser's CSSOM parses fine |
 | `d0f69e` | 3 | deliberate, documented false-negative policy — `table-th-has-data-cells`'s own header comment explains it only catches the unambiguous "zero data cells anywhere" case, not real positional header-association (the new ARIA-grid coverage added during this pass is real but doesn't happen to close these 3 specific positional-mismatch cases) |
-| `09o5cg`, `afw4f7` | 6, 8 | environment-dependent — gradient/image backgrounds, Shadow DOM without `includeShadowDom`, `text-shadow` as a contrast aid, symbol-only text, one pixel-matching edge case (see `docs/LIMITATIONS.md`) — plus one deliberate divergence: ACT treats text whose color exactly matches its background as invisible and therefore inapplicable, while these rules report the 1:1 ratio, since nothing in the markup separates "invisible on purpose" from "invisible by accident" |
+| `09o5cg`, `afw4f7` | 5, 6 | environment-dependent — gradient/image backgrounds, Shadow DOM without `includeShadowDom`, `text-shadow` as a contrast aid, symbol-only text, one pixel-matching edge case (see `docs/LIMITATIONS.md`) |
 | `f51b46` | 1 | inherent limitation — `video-caption`'s own header comment states it can't verify a caption track's *content* accuracy, only that one is declared; genuinely a human-judgment task |
 | `8fc3b6` | 1 | inherent limitation — ACT exempts an `<object>` that renders neither image, audio nor video (its fallback content is shown instead); what a given `data` URL resolves to isn't knowable without fetching it, so `object-text-alternative-present` asks for a name regardless |
 
