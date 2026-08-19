@@ -314,6 +314,8 @@
   "labelInName_hint_fail": "Aktualisieren Sie aria-label/aria-labelledby (oder den sichtbaren Beschriftungstext), damit der zugängliche Name den Wortlaut der sichtbaren Beschriftung enthält.",
   "labelInName_summary_cantTell": "{{element}}: Die sichtbare Beschriftung „{{visibleLabel}}“ (aus {{labelSource}}) unterscheidet sich vom zugänglichen Namen (aus {{nameMechanism}}) nur durch eine Abkürzung oder eine Bindestrichschreibung.",
   "labelInName_hint_cantTell": "Prüfen Sie manuell, ob beide Formulierungen übereinstimmen: Aus dem Markup lässt sich eine beabsichtigte Abkürzung nicht von einer Abweichung unterscheiden.",
+  "labelInName_summary_cantTell_symbolic": "{{element}}: Die sichtbare Beschriftung „{{visibleLabel}}“ (aus {{labelSource}}) wird möglicherweise als Symbol oder Icon dargestellt statt als wörtlicher Text und muss daher nicht zwingend im zugänglichen Namen (aus {{nameMechanism}}) enthalten sein.",
+  "labelInName_hint_cantTell_symbolic": "Prüfen Sie manuell: Wird der sichtbare Text als Icon oder Symbol dargestellt, liegt kein Fehler vor; wird er als wörtliche Wörter dargestellt, ergänzen Sie den zugänglichen Namen entsprechend.",
   "ariaRolesValid_title": "Das role-Attribut muss eine gültige, nicht abstrakte ARIA-Rolle sein",
   "ariaRolesValid_description": "Prüft, ob ein explizites role=\"\"-Attribut zu einer echten, nicht abstrakten WAI-ARIA-Rolle aufgelöst wird.",
   "ariaRolesValid_summary_invalid": "role=\"{{role}}\" ist keine erkannte ARIA-Rolle.",
