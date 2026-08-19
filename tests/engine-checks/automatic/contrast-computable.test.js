@@ -95,7 +95,7 @@ function patchComputedStyleDefaults(dom) {
   };
 }
 
-function run(html, engineOptions = {}) {
+function run(html, engineOptions = {}, entryPointParity = true) {
   const dom = createDom(html);
   patchGeometry(dom);
   patchComputedStyleDefaults(dom);
@@ -105,7 +105,8 @@ function run(html, engineOptions = {}) {
       // Run only the rule under test to keep results stable.
       rules: [RULE_ID],
       ...engineOptions
-    }
+    },
+    entryPointParity
   });
 }
 
@@ -380,6 +381,57 @@ test(`${RULE_ID}: mix-blend-mode blocker => cantTell with reasonCode MIX_BLEND_M
   const occ = rule.occurrences[0];
   assert.strictEqual(occ.data.details.reasonCode, 'MIX_BLEND_MODE');
   assert.strictEqual(occ.i18n.summaryKey, 'contrastComputable_cantTell_mixBlendMode');
+});
+
+test(`${RULE_ID}: text-shadow blocker => cantTell with reasonCode TEXT_SHADOW (ACT afw4f7's own passed example: a shadow may rescue otherwise-low contrast)`, () => {
+  // entryPointParity: false -- jsdom's cssstyle has a confirmed bug where
+  // reading a computed text-shadow value a SECOND time on the same
+  // element (regardless of caller) returns a different, wrong result; the
+  // dual-entry-point replay this harness normally does for every test
+  // would spuriously fail on that jsdom bug alone, not a real divergence
+  // between the two entry points (both run the exact same generated
+  // logic -- see docs/DESIGN_CHALLENGES.md). Same category of exception
+  // as iframe-focusable-content's own runtime-focus-redirect tests.
+  const html = `
+<!doctype html>
+<html style="background-color: rgb(115, 115, 115); opacity: 1">
+<head></head>
+<body style="background-color: rgb(115, 115, 115); opacity: 1">
+  <p style="color: rgb(0, 0, 0); text-shadow: white 0 0 3px; opacity: 1">Hello</p>
+</body></html>`;
+
+  const result = run(html, {}, false);
+
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1 });
+  const occ = rule.occurrences[0];
+  assert.strictEqual(occ.data.details.reasonCode, 'TEXT_SHADOW');
+  assert.strictEqual(occ.i18n.summaryKey, 'contrastComputable_cantTell_textShadow');
+});
+
+test(`${RULE_ID}: no text-shadow declared at all => still pass (regression guard: jsdom's computed default for text-shadow is a fully-transparent color string, not the literal "none", and must not be mistaken for a real shadow)`, () => {
+  const html = `
+<!doctype html>
+<html style="background-color: rgb(255, 255, 255); opacity: 1">
+<head></head>
+<body style="background-color: rgb(255, 255, 255); opacity: 1">
+  <p style="color: rgb(17, 17, 17); opacity: 1">Hello</p>
+</body></html>`;
+
+  const result = run(html);
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 1, maxOccurrences: 1 });
+});
+
+test(`${RULE_ID}: an explicit text-shadow: none => still pass, not treated as a blocker`, () => {
+  const html = `
+<!doctype html>
+<html style="background-color: rgb(255, 255, 255); opacity: 1">
+<head></head>
+<body style="background-color: rgb(255, 255, 255); opacity: 1">
+  <p style="color: rgb(17, 17, 17); text-shadow: none; opacity: 1">Hello</p>
+</body></html>`;
+
+  const result = run(html);
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
 test(`${RULE_ID}: filter/backdrop-filter blocker => cantTell with reasonCode BACKGROUND_FILTER_OR_BACKDROP_FILTER`, () => {

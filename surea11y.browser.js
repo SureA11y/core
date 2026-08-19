@@ -13550,6 +13550,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         else summaryKey = 'contrastComputable_cantTell_filterOrBackdropFilter';
       } else if (rc === 'BACKGROUND_NOT_OPAQUE_AT_ROOT')
         summaryKey = 'contrastComputable_cantTell_rootNotOpaque';
+      else if (rc === 'TEXT_SHADOW') summaryKey = 'contrastComputable_cantTell_textShadow';
 
       const details = Object.assign(
         { reasonCode: rc },
@@ -30825,6 +30826,7 @@ const I18N = {
     "contrastComputable_cantTell_engineFailure": "Contrast computability could not be determined due to an internal engine error ({{reasonCode}}).",
     "contrastComputable_cantTell_backdropFilter": "Contrast is not computable because backdrop-filter is used ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_filterOrBackdropFilter": "Contrast is not computable because filter is used ({{blockerProperty}}={{blockerValue}}).",
+    "contrastComputable_cantTell_textShadow": "Contrast is not computable because a text-shadow is used, which may add contrast this calculation does not account for ({{blockerProperty}}={{blockerValue}}).",
     "contrastMinimum_title": "Text meets minimum color contrast (AA)",
     "contrastMinimum_description": "Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3:1 (large), when contrast is computable from CSS.",
     "contrastMinimum_fail_belowThreshold": "Element has insufficient color contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).",
@@ -32244,10 +32246,13 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   const __localHasBgImgCache = new WeakMap();
   const __localHasBlendModeCache = new WeakMap();
   const __localHasFilterCache = new WeakMap();
+  const __localTextShadowInfoCache = new WeakMap();
   const __hasBgImgCache = __getSharedWeakMapCache('__hasBgImgCache') || __localHasBgImgCache;
   const __hasBlendModeCache =
     __getSharedWeakMapCache('__hasBlendModeCache') || __localHasBlendModeCache;
   const __hasFilterCache = __getSharedWeakMapCache('__hasFilterCache') || __localHasFilterCache;
+  const __textShadowInfoCache =
+    __getSharedWeakMapCache('__textShadowInfoCache') || __localTextShadowInfoCache;
 
   // -------- Visibility mode resolution for getTextScan --------
 
@@ -33117,6 +33122,31 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
   }
 
+  // Takes the ALREADY-READ raw text-shadow string, never the style object
+  // -- see __textShadowInfoEl's header comment for why this property must
+  // only ever be read once per element.
+  function hasTextShadow(raw) {
+    try {
+      const v = raw == null ? '' : String(raw).trim();
+      if (!v || v.toLowerCase() === 'none') return false;
+      // jsdom's cssstyle serializes an absent/"none" text-shadow as a
+      // fully-transparent color string (e.g. "rgba(0, 0, 0, 0)") rather
+      // than the literal "none" it should be per spec, and truncates a
+      // real declared shadow down to just its color component (dropping
+      // the offset/blur lengths) -- so `v` here is sometimes a bare color.
+      // Parsing it as one and checking for zero alpha catches jsdom's
+      // "no shadow" default without mistaking it for a real one; a value
+      // that doesn't parse as a pure color (the real multi-value shorthand
+      // a real browser reports) falls through and is treated as a real
+      // shadow, the safe direction.
+      const c = parseCssColorToRgba(v);
+      if (c && typeof c.a === 'number' && c.a === 0) return false;
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   function __hasBackgroundImageOrGradientEl(el, cs) {
     try {
       if (!el || el.nodeType !== 1) return hasBackgroundImageOrGradient(cs);
@@ -33150,6 +33180,37 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       return v;
     } catch {
       return false;
+    }
+  }
+
+  // jsdom's cssstyle has a confirmed bug where reading a computed
+  // `text-shadow` value a SECOND time -- via any accessor (`.textShadow`
+  // or `getPropertyValue`), even from a freshly-requested
+  // CSSStyleDeclaration for the same element -- silently returns a
+  // different, "no shadow" result instead of the real declared value (see
+  // docs/LIMITATIONS.md). Reading it exactly once and caching the {has,
+  // value} pair here avoids compounding that with a second read from
+  // elsewhere in this same run (e.g. this function being called more than
+  // once for the same element). The shared cache this uses is
+  // deliberately reset at the start of every run (see dom-runner.js), so
+  // this does not — and is not relied on to — survive across two
+  // independent runs against the same window; a genuinely fresh jsdom
+  // window, or a real browser, is unaffected either way.
+  function __textShadowInfoEl(el, cs) {
+    try {
+      if (!el || el.nodeType !== 1) {
+        const raw = cs && cs.textShadow; // single read
+        const value = raw == null ? '' : String(raw);
+        return { has: hasTextShadow(value), value };
+      }
+      if (__textShadowInfoCache.has(el)) return __textShadowInfoCache.get(el);
+      const raw = cs && cs.textShadow; // single read, cached below -- never read again
+      const value = raw == null ? '' : String(raw);
+      const info = { has: hasTextShadow(value), value };
+      __textShadowInfoCache.set(el, info);
+      return info;
+    } catch {
+      return { has: false, value: '' };
     }
   }
 
@@ -33496,6 +33557,34 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           } catch (_e) {}
           return out;
         }
+      }
+
+      // text-shadow is a FOREGROUND property, already resolved by
+      // inheritance in `cs` on `el` itself -- unlike background-image/
+      // filter/blend-mode, it needs no ancestor walk, so it's checked once
+      // on `cur === el` rather than at every level. ACT afw4f7/09o5cg's
+      // own failed example (a low-contrast pair "rescued" by a contrasting
+      // text-shadow) gives no computation method for how a shadow affects
+      // the ratio, and this engine has no glyph-rendering model to derive
+      // one either -- rather than assert a confident fail that a real
+      // browser's rendering might contradict, this defers to manual
+      // review, the same shape as every other computability blocker here.
+      const textShadowInfo = cur === el ? __textShadowInfoEl(cur, cs) : null;
+      if (textShadowInfo && textShadowInfo.has) {
+        const out = {
+          ok: false,
+          reasonCode: 'TEXT_SHADOW',
+          blockerSelector: __getSimpleSelectorCached(
+            cur,
+            (cur.tagName || '').toLowerCase() || 'html'
+          ),
+          blockerProperty: 'text-shadow',
+          blockerValue: truncateCssValue(textShadowInfo.value, 80)
+        };
+        try {
+          if (el) __computabilityBlockerCache.set(el, out);
+        } catch (_e) {}
+        return out;
       }
 
       if (!paintOccluded && __hasBackgroundImageOrGradientEl(cur, cs)) {
