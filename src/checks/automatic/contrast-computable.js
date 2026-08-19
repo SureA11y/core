@@ -24,11 +24,13 @@
  *   every applicable text node: an effective background resolving to an
  *   opaque color, and a parsable foreground color. Where either cannot be —
  *   a background image or gradient, mix-blend-mode, a filter or
- *   backdrop-filter, ancestor opacity, a root background that never becomes
- *   opaque, or a color that does not parse — the result is cantTell naming
- *   the blocker. This rule is the one that reports that uncertainty, which
- *   is what lets contrast-minimum and contrast-enhanced stay silent on the
- *   same text instead of guessing at a ratio.
+ *   backdrop-filter, a text-shadow (which may add contrast this engine has
+ *   no glyph-rendering model to account for), ancestor opacity, a root
+ *   background that never becomes opaque, or a color that does not parse —
+ *   the result is cantTell naming the blocker. This rule is the one that
+ *   reports that uncertainty, which is what lets contrast-minimum and
+ *   contrast-enhanced stay silent on the same text instead of guessing at
+ *   a ratio.
  */
 
 const id = 'contrast-computable';
@@ -147,6 +149,7 @@ function runInPage(ctx) {
         else summaryKey = 'contrastComputable_cantTell_filterOrBackdropFilter';
       } else if (rc === 'BACKGROUND_NOT_OPAQUE_AT_ROOT')
         summaryKey = 'contrastComputable_cantTell_rootNotOpaque';
+      else if (rc === 'TEXT_SHADOW') summaryKey = 'contrastComputable_cantTell_textShadow';
 
       const details = Object.assign(
         { reasonCode: rc },

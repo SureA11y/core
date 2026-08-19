@@ -159,6 +159,7 @@
   "contrastComputable_cantTell_engineFailure": "La calculabilité du contraste n’a pas pu être déterminée en raison d’une erreur interne du moteur ({{reasonCode}}).",
   "contrastComputable_cantTell_backdropFilter": "Le contraste ne peut pas être calculé car la propriété backdrop-filter est utilisée ({{blockerProperty}}={{blockerValue}}).",
   "contrastComputable_cantTell_filterOrBackdropFilter": "Le contraste ne peut pas être calculé car une propriété filter ou backdrop-filter est utilisée ({{blockerProperty}}={{blockerValue}}).",
+  "contrastComputable_cantTell_textShadow": "Le contraste ne peut pas être calculé car une propriété text-shadow est utilisée, ce qui peut apporter un contraste que ce calcul ne prend pas en compte ({{blockerProperty}}={{blockerValue}}).",
   "contrastMinimum_title": "Le texte respecte le contraste minimum (AA)",
   "contrastMinimum_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 4,5:1 (texte normal) ou 3:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
   "contrastMinimum_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",

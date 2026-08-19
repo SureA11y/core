@@ -72,7 +72,7 @@ We also have automatic rules with **no ACT counterpart at all** (see [Extra cove
 
 **Clean (0 mismatches):** `5f99a7`, `80f0bf`, `4c31df`, `73f2c2`, `97a4e1`, `cf77f2`, `b40fd1`, `46ca7f`, `6cfa84`, `307n5z`, `4e8ab6`, `a25f45`, `ffd0e9`, `b5c3f8`, `2779a5`, `5b7ae0`, `bf051a`, `qt1vmo`, `59796f`, `23a2a8`, `24afc2`, `9e45ec`, `c487ae`, `m6b1q3`, `bc659a`, `bisz58`, `b4f0c3`, `674b10`, `0ssw9k`, `3ea0c8`, `5c01ea`, `bc4a75`, `2ee8b8`, `e88epe`, `7d6734`, `de46e4`, `6a7281`, `8fc3b6`, `akn7bn` (39 of 57 matched rules).
 
-**Remaining mismatches (36 total), all triaged:**
+**Remaining mismatches (35 total), all triaged:**
 
 | ACT ID | Mismatches | Category |
 |---|---|---|
@@ -90,7 +90,7 @@ We also have automatic rules with **no ACT counterpart at all** (see [Extra cove
 | `fd3a94`, `b20e66` | 1, 1 | deliberate, documented structural gap — `identical-links-same-purpose`'s `a[href]`-only destination resolution genuinely cannot cover a `role="link"` element whose target lives inside a JS string, not markup |
 | `b33eff` | 1 | deliberate, documented scope limit — `css-orientation-lock`'s own header comment states `matrix()`/`matrix3d()`/`rotate3d()` are not decomposed into an equivalent angle, a real matrix-decomposition feature deferred as higher-complexity/lower-value (same class as `table-th-has-data-cells`'s narrower positional-header algorithm) |
 | `d0f69e` | 3 | deliberate, documented false-negative policy — `table-th-has-data-cells`'s own header comment explains it only catches the unambiguous "zero data cells anywhere" case, not real positional header-association (the new ARIA-grid coverage added during this pass is real but doesn't happen to close these 3 specific positional-mismatch cases) |
-| `09o5cg`, `afw4f7` | 4, 5 | environment-dependent — gradient/image backgrounds, jsdom not executing inline `<script>` (same class as `ff89c9`, not really about `includeShadowDom`), `text-shadow` as a contrast aid (see `docs/LIMITATIONS.md`) |
+| `09o5cg`, `afw4f7` | 4, 4 | environment-dependent — gradient/image backgrounds not yet decomposed into solid contributing colors, and jsdom not executing inline `<script>` (same class as `ff89c9`, not really about `includeShadowDom`); the `text-shadow`-as-contrast-aid case is fixed (`contrast-computable` now reports `cantTell` for it, see `docs/LIMITATIONS.md` for the jsdom double-read bug this uncovered) |
 | `f51b46` | 1 | inherent limitation — `video-caption`'s own header comment states it can't verify a caption track's *content* accuracy, only that one is declared; genuinely a human-judgment task |
 
 ## Matched rules

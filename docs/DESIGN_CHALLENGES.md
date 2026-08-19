@@ -205,3 +205,13 @@ Two consequences, both accepted: the shared helper and its six rule-local copies
 One existing test changed meaning with it: a bare `<option>` under `role="listbox"`, outside any `<select>`, used to count as the listbox's owned child. It no longer carries a role, so it is transparent and a focusable element inside it becomes the listbox's own roleless owned entry. That is the same conditional ACT applies to `<li>`, so applying it to `<option>` too is the consistent reading — the alternative would have been to accept `role="listbox"` as native context for `<option>` while ACT explicitly refuses `role="list"` as context for `<li>`.
 
 **Status:** resolved 2026-08-19.
+
+### `contrast-computable` never treated `text-shadow` as a blocker, though ACT's own examples rely on one to rescue otherwise-failing contrast — fixed
+
+**Decision as it stood:** `getComputabilityBlocker` walked ancestors checking mix-blend-mode, filter/backdrop-filter, background-image/gradient, and ancestor opacity, but never looked at `text-shadow` on the text element itself.
+
+**Why it was questioned:** ACT `afw4f7`'s own passed example is `color: #AAA` text over a `#EEE`-ish background with a strong contrasting `text-shadow` outline — text that would normally fail the ratio test but passes because the shadow supplies enough perceptible contrast around each glyph. This engine has no glyph-rendering model to compute how a shadow affects the ratio, so asserting a confident `fail` there (as it previously did) contradicts a real browser's rendering; the correct answer is the same "defer to manual review" shape already used for every other computability blocker.
+
+**Decision (2026-08-19):** added a `text-shadow` check to `getComputabilityBlocker`, scoped to the text element itself (a foreground property already resolved by inheritance, unlike the ancestor-walked background properties). A declared shadow with non-zero alpha now reports `cantTell` with `reasonCode: 'TEXT_SHADOW'` instead of asserting pass/fail. Implementing this surfaced a confirmed jsdom (29.1.1) bug — reading computed `text-shadow` a second time on the same element silently returns a different, wrong value — worked around by reading it exactly once per element and caching the result (see `docs/LIMITATIONS.md`).
+
+**Status:** resolved 2026-08-19 — `afw4f7` drops from 5 to 4 mismatches, `09o5cg` from 5 to 4 (the remaining mismatches on both are the unrelated gradient-background and shadow-DOM-via-script cases, see `docs/ACT_RULE_MAPPING.md`).
