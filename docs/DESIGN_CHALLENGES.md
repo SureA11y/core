@@ -16,17 +16,17 @@ A running log of engine design decisions worth re-examining — cases where an e
 
 **Status:** open, unresolved as of 2026-08-19 — deprioritized pending a live ACT example that actually exercises it.
 
-### `valid-lang`'s applicability doesn't resolve which text actually inherits a given `lang` attribute
-
-**Decision as it stands:** `valid-lang.js` applies to any non-root element carrying a non-empty `lang` attribute, unconditionally, and validates that attribute's value as a language tag.
-
-**Why it's being questioned:** ACT `de46e4`'s applicability is narrower and more precise: it applies only when "there is some text inheriting its programmatic language from the element which is neither empty nor only whitespace." Three concrete gaps this exposes, each confirmed against a mismatching ACT test case: (a) an invalid `lang` on an element whose entire text content is re-scoped by a nested descendant's own (valid) `lang` attribute has no text actually governed by the invalid value, so it should pass, not fail; (b) `alt` text on a descendant counts as "governed text" too, which the current rule doesn't consider at all (a `lang`-only wrapper around an `<img alt="...">` with no other text is currently skipped as inapplicable, when it should be evaluated); (c) text that's present but not rendered/exposed (`display:none`) doesn't count as governed text either, and currently isn't excluded.
-
-**Why this hasn't been changed yet:** a real three-part applicability rewrite (ownership resolution through nested `lang` scopes, treating `alt` as governed text, and a visibility gate), not a one-line fix — though the visibility-gate piece (c) is the most contained of the three and could reasonably land on its own if only partial progress is wanted.
-
-**Status:** open, unresolved as of 2026-08-19.
-
 ## Decided
+
+### `valid-lang`'s applicability didn't resolve which text actually inherits a given `lang` attribute — fixed
+
+**Decision as it stands (before the fix):** `valid-lang.js` applied to any non-root element carrying a non-empty `lang` attribute with *any* non-whitespace text anywhere in its subtree, unconditionally, and validated that attribute's value as a language tag. Confirmed against ACT `de46e4`'s live corpus (3/19 mismatches, exactly the three shapes below).
+
+**Why it was questioned:** ACT `de46e4`'s applicability is narrower and more precise: it applies only when "there is some text inheriting its programmatic language from the element which is neither empty nor only whitespace." Three concrete gaps: (a) an invalid `lang` on an element whose entire text content is re-scoped by a nested descendant's own (valid) `lang` attribute has no text actually governed by the invalid value, so it should pass, not fail; (b) `alt` text on a descendant counts as "governed text" too; (c) text that's present but not rendered (`display:none`) doesn't count as governed text — but `aria-hidden` and offscreen positioning do *not* exempt text either, confirmed by ACT's own failed examples for both.
+
+**Decision (2026-08-19):** rewrote applicability around a `hasGovernedText` walk: recurses through the element's subtree, stopping at (not recursing into) any descendant that carries its own non-empty `lang` — that subtree governs itself, not the outer element — and counts a non-empty `alt` on `img`/`area`/`input[type=image]` the same as a text node. Only actual non-rendering (CSS `display:none`, the `hidden` attribute, via the existing `targetSet: 'dom'` eligibility check) excludes a node; `aria-hidden` and offscreen positioning are deliberately left alone, matching ACT's own failed examples for both.
+
+**Status:** resolved 2026-08-19 — `de46e4` runs clean (0/19).
 
 ### No rule covered `role="graphics-symbol"`/`"graphics-document"` on an SVG descendant, only the `<svg>` root itself — fixed
 

@@ -49,6 +49,81 @@ test(`${RULE_ID}: i18n default is English`, () => {
   assert.strictEqual(rule.title, 'Element lang attribute must be syntactically valid');
 });
 
+test(`${RULE_ID}: a nested descendant's own lang re-scopes all the text away from the invalid outer lang, so the outer element is not flagged (ACT de46e4 passed example)`, () => {
+  const html = `<!doctype html><html><body>
+    <article id="a" lang="invalid">
+      <div lang="en">They wandered into a strange Tiki bar.</div>
+    </article>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  assert.ok(!hasOccurrenceForId(rule, 'a'));
+});
+
+test(`${RULE_ID}: fails when a nested descendant re-scopes text to its OWN invalid lang, leaving the outer element's valid lang ungoverned but the inner one applicable (ACT de46e4 failed example)`, () => {
+  const html = `<!doctype html><html><body>
+    <article lang="en">
+      <div id="a" lang="invalid">They wandered into a strange Tiki bar.</div>
+    </article>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+});
+
+test(`${RULE_ID}: a non-empty alt attribute counts as governed text (ACT de46e4 passed/failed examples)`, () => {
+  const passing = runa11yCoreOnHtml(
+    `<!doctype html><html><body><div lang="EN"><img src="x.jpg" alt="Fireworks"></div></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(passing, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+
+  const failing = runa11yCoreOnHtml(
+    `<!doctype html><html><body><div id="a" lang="invalid"><img src="x.jpg" alt="Fireworks"></div></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  const rule = assertRule(failing, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+});
+
+test(`${RULE_ID}: an empty alt (decorative image) is not governed text, so no other content leaves the element notApplicable (ACT de46e4 inapplicable example)`, () => {
+  const html = `<!doctype html><html><body><div lang="invalid"><img src="x.jpg" alt=""></div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: display:none text is not governed text (ACT de46e4 inapplicable example)`, () => {
+  const html = `<!doctype html><html><body>
+    <p lang="hidden"><span style="display: none;">They wandered into a strange Tiki bar.</span></p>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: aria-hidden text still counts as governed text — only actual non-rendering exempts it (ACT de46e4 failed example)`, () => {
+  const html = `<!doctype html><html><body>
+    <article id="a" lang="english"><p aria-hidden="true">They wandered into a strange Tiki bar.</p></article>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+});
+
+test(`${RULE_ID}: offscreen text still counts as governed text — offscreen positioning doesn't exempt it either (ACT de46e4 failed example)`, () => {
+  const html = `<!doctype html><html><body>
+    <article id="a" lang="English"><p style="position: absolute; top: -9999px">They wandered into a strange Tiki bar.</p></article>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+});
+
+test(`${RULE_ID}: an element with no descendant text or alt at all is notApplicable`, () => {
+  const html = `<!doctype html><html><body><div lang="invalid"></div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
 test(`${RULE_ID}: fixture coverage (tests/fixtures/valid-lang-all-scenarios.html)`, () => {
   const fixturePath = path.join(__dirname, '../..', 'fixtures', 'valid-lang-all-scenarios.html');
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
