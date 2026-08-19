@@ -2,6 +2,34 @@
 
 'use strict';
 
+/**
+ * @check label-in-name
+ * @atomic true
+ * @summary A control's accessible name must contain its visible label text
+ * @standard WCAG 2.2
+ * @sc 2.5.3
+ * @applicability
+ *   Applies to controls that carry aria-label or aria-labelledby, are
+ *   visually rendered, and have visible label text this engine can extract
+ *   deterministically — from an associated <label>, from the control's own
+ *   rendered text, or from the elements aria-labelledby points at. The
+ *   candidates are <button>, <a href>, <summary>, non-hidden form controls,
+ *   and the button, link, checkbox, radio, switch, searchbox, tab, menuitem,
+ *   menuitemcheckbox, menuitemradio, option, treeitem and gridcell roles,
+ *   minus anything hidden or disabled. aria-hidden is deliberately not
+ *   excluded: it changes nothing about what is rendered on screen, which is
+ *   what this SC is about.
+ * @expectation
+ *   The accessible name contains the visible label's words, adjacent and in
+ *   order. The comparison is over words rather than characters:
+ *   parenthesised text is dropped, case is folded, text is NFKD-normalised,
+ *   and every non-letter/digit becomes a separator, so punctuation and
+ *   spacing differences never decide the outcome. Two shapes markup cannot
+ *   settle are reported as cantTell instead of fail — a word hyphenated
+ *   differently in the two places, and a visible word the author may have
+ *   abbreviated, marked by its trailing period.
+ */
+
 const id = 'label-in-name';
 
 const meta = {

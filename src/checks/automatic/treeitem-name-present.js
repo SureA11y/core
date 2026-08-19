@@ -2,6 +2,25 @@
 
 'use strict';
 
+/**
+ * @check treeitem-name-present
+ * @atomic true
+ * @summary Elements with role="treeitem" must have an accessible name
+ * @standard WCAG 2.2
+ * @sc 4.1.2
+ * @applicability
+ *   Applies to elements carrying role="treeitem" (the attribute must name
+ *   that role alone, not a fallback list) that are included in the
+ *   accessibility tree. An element with the matching implicit role but no
+ *   role attribute is out of scope.
+ * @expectation
+ *   The element has a non-empty accessible name from aria-label, from an
+ *   aria-labelledby that resolves to non-empty text, from title, or —
+ *   role="treeitem" being name-from-content — from its own subtree text,
+ *   where a descendant's own name (an <img alt>, aria-label or title) counts
+ *   as that descendant's contribution rather than only its text nodes.
+ */
+
 const id = 'treeitem-name-present';
 
 const meta = {

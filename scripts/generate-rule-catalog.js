@@ -195,6 +195,10 @@ function main() {
   const manual = rows.filter((r) => r.type === 'manual');
   const withSc = rows.filter((r) => r.wcagSc);
   const withProse = rows.filter((r) => r.applicability || r.expectation);
+  const proseNote =
+    withProse.length === rows.length
+      ? 'what it applies to and what it expects'
+      : `and, for the ${withProse.length} rules whose source documents them, what it applies to and what it expects`;
 
   function table(list) {
     const lines = [
@@ -245,7 +249,7 @@ Generated from the compiled engine's own catalog (\`getChecksCatalog()\`/\`getRu
 
 **${rows.length} rules total: ${automatic.length} automatic (WCAG-normative, can return \`fail\`), ${manual.length} manual (advisory/judgment-required, capped at \`cantTell\`). ${withSc.length} carry at least one formal WCAG Success Criterion mapping.**
 
-The tables below are an index; [rule reference](#rule-reference) carries each rule's description and, for the ${withProse.length} rules whose source documents them, what it applies to and what it expects.
+The tables below are an index; [rule reference](#rule-reference) carries each rule's description, ${proseNote}.
 
 See [\`OUTPUT_SCHEMA.md\`](./OUTPUT_SCHEMA.md) for what \`type\`/\`confidence\`/\`severity\` mean on a scan result, and [\`WCAG_CONFORMANCE.md\`](./WCAG_CONFORMANCE.md) for how these roll up to an SC-level conformance claim. For WCAG-facet-level coverage-gap tracking (which parts of an SC are and aren't automatable yet), see \`coverage/coverage-report.md\` instead — that one is organized by facet, this one by rule.
 

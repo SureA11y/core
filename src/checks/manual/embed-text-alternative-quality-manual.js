@@ -9,6 +9,14 @@
  * @standard WCAG 2.2
  * @sc 1.1.1
  * @type manual
+ * @applicability
+ *   Applies to <embed> elements that already carry a text alternative: a
+ *   non-empty aria-label, an aria-labelledby that resolves to non-empty
+ *   text, or a non-empty title. An aria-labelledby pointing at a missing id
+ *   resolves to nothing and so is not a text alternative to review; that
+ *   element is embed-text-alternative-present's failure. The element must be
+ *   included in the accessibility tree, and role="presentation"/"none" takes
+ *   it out of scope unless it is focusable, which restores its role.
  * @expectation
  *   Human review is required to confirm that the provided text alternative is accurate and appropriate.
  */

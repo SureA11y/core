@@ -2,6 +2,29 @@
 
 'use strict';
 
+/**
+ * @check button-name-present
+ * @atomic true
+ * @summary Buttons must have an accessible name
+ * @standard WCAG 2.2
+ * @sc 4.1.2
+ * @applicability
+ *   Applies to <button>, <input type="button">, <input type="submit">,
+ *   <input type="reset"> and elements with role="button", where the element
+ *   is included in the accessibility tree. role="presentation"/"none" takes
+ *   an element out of scope unless a global ARIA attribute or focusability
+ *   restores its role, per presentational roles conflict resolution.
+ * @expectation
+ *   The element has a non-empty accessible name. A programmatic name is
+ *   taken first (aria-labelledby, aria-label, an associated <label>, title).
+ *   Failing that, an <input> button falls back to its value attribute, and
+ *   type="submit"/type="reset" fall back to the user agent's own
+ *   "Submit"/"Reset" default, which is why those two are never nameless.
+ *   Failing both, a button whose role is name-from-content falls back to its
+ *   subtree text, counting each descendant's own name (an <img alt>,
+ *   aria-label or title) rather than only text nodes.
+ */
+
 // NOTE: Repo ruleId contract requires ENGINE_TAG prefix in the rule id.
 // File name intentionally has no prefix, per request.
 const id = 'button-name-present';

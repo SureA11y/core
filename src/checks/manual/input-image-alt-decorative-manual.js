@@ -9,6 +9,14 @@
  * @standard WCAG 2.2
  * @sc 1.1.1
  * @type manual
+ * @applicability
+ *   Applies to <input type="image"> elements whose alt attribute is present
+ *   but empty once trimmed, and which still carry a name from another
+ *   source: an ARIA name resolving to non-empty text, or a title. Without
+ *   that other name there is nothing to weigh the empty alt against, and the
+ *   control is input-image-alt-present's failure instead. The element must
+ *   be included in the accessibility tree, and role="presentation"/"none"
+ *   takes it out of scope unless it is focusable, which restores its role.
  * @expectation
  *   Human review is required to confirm that the provided text alternative is accurate and appropriate.
  */

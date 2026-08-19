@@ -11,6 +11,20 @@
  * - It does NOT treat descendant text content as a valid name source for these roles
  *   (to avoid false passes from labelled children inside composite widgets).
  * - Eligibility is based on helpers.isAccTreeEligible(node, ctx) per engine checks.
+ *
+ * @applicability
+ *   Applies to elements whose role attribute is exactly one of scrollbar,
+ *   toolbar, tablist, radiogroup, tree, grid, menu, menubar, meter or
+ *   progressbar, and that are included in the accessibility tree. The list
+ *   is a frozen allowlist rather than every role WAI-ARIA lets an author
+ *   name. meter and progressbar are also covered by meter-name-present and
+ *   progressbar-name-present, so those two roles are reported by both rules.
+ * @expectation
+ *   The element has a non-empty aria-label, an aria-labelledby that resolves
+ *   to non-empty text, or a non-empty title. Every role in the list is
+ *   name-from-author-only, so descendant text is deliberately not accepted:
+ *   a labelled child inside a composite widget would otherwise pass the
+ *   container that has no name of its own.
  */
 
 const id = 'aria-role-name-present';

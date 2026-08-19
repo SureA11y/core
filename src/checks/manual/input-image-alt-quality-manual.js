@@ -9,6 +9,11 @@
  * @standard WCAG 2.2
  * @sc 1.1.1
  * @type manual
+ * @applicability
+ *   Applies to <input type="image"> elements whose alt attribute is present
+ *   and non-empty — an image button whose alt is its label. The element must
+ *   be included in the accessibility tree, and role="presentation"/"none"
+ *   takes it out of scope unless it is focusable, which restores its role.
  * @expectation
  *   Human review is required to confirm that the provided text alternative is accurate and appropriate.
  */
