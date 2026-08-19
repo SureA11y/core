@@ -49,6 +49,20 @@ test(`${RULE_ID}: fail when the referenced element is not a table cell at all`, 
   assert.equal(rule.occurrences[0].data.details.invalid[0].reason, 'not-a-cell');
 });
 
+test(`${RULE_ID}: notApplicable when the table carries another explicit role`, () => {
+  // An explicit role replaces the native table role, so there is no table
+  // left for headers to describe.
+  const html = `<!doctype html><html><body><table role="heading" aria-level="1"><tr><td id="a" headers="a">World</td></tr></table></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: an unknown role token leaves the native table role in place`, () => {
+  const html = `<!doctype html><html><body><table role="bogus"><tr><td id="a" headers="nope">World</td></tr></table></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+});
+
 test(`${RULE_ID}: notApplicable when the table has role="presentation" (ACT a25f45)`, () => {
   const html = `<!doctype html><html><body><table role="presentation"><tr><td id="h1">Name</td></tr><tr><td id="a" headers="h1">Alice</td></tr></table></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
@@ -102,7 +116,13 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/table-headers-attr-valid-all-
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 4, maxOccurrences: 4 });
 
   const expectedFailIds = ['thav_case_02', 'thav_case_03', 'thav_case_04', 'thav_case_05'];
-  const expectedNoOccIds = ['thav_case_01', 'thav_case_06', 'thav_case_07', 'thav_case_08'];
+  const expectedNoOccIds = [
+    'thav_case_01',
+    'thav_case_06',
+    'thav_case_07',
+    'thav_case_08',
+    'thav_case_09'
+  ];
 
   for (const id of expectedFailIds) {
     assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);

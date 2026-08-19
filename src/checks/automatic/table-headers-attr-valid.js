@@ -10,9 +10,11 @@
  * @sc 1.3.1
  * @applicability
  *   Applies to <td>/<th> elements that carry a non-empty headers attribute,
- *   within a <table> that is itself visible and included in the
- *   accessibility tree (a table with role="presentation"/"none" is out of
- *   scope, matching ACT a25f45).
+ *   within a <table> whose semantic role is still table/grid/treegrid --
+ *   an explicit role of anything else (role="presentation"/"none", but
+ *   also role="heading" or any other real role) replaces the native table
+ *   semantics, leaving no table for headers to describe. Matches ACT
+ *   a25f45's applicability.
  * @expectation
  *   Every id token in the headers attribute resolves to an element that:
  *   (a) exists, (b) is a cell (<td> or <th>) of the same <table> as the
@@ -59,6 +61,23 @@ const meta = {
 function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
+  const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
+
+  // The role attribute holds a fallback list; the first token naming a real
+  // role wins, and unknown tokens are skipped over.
+  function getExplicitRole(el) {
+    const raw = el && el.getAttribute ? el.getAttribute('role') : null;
+    if (!raw) return '';
+    const tokens = String(raw).trim().toLowerCase().split(/\s+/);
+    for (const token of tokens) {
+      if (!token) continue;
+      if (token === 'presentation' || token === 'none') return token;
+      const known = ariaHelpers ? ariaHelpers.isValidConcreteRole(token) : true;
+      if (known) return token;
+    }
+    return '';
+  }
+
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('td[headers], th[headers]')
     : helpers.queryAll('td[headers], th[headers]');
@@ -76,13 +95,14 @@ function runInPage(ctx) {
 
     const table = el.closest ? el.closest('table') : null;
 
-    const tableRole =
-      table && table.getAttribute
-        ? String(table.getAttribute('role') || '')
-            .trim()
-            .toLowerCase()
-        : '';
-    if (tableRole === 'presentation' || tableRole === 'none') continue;
+    // An explicit role on the <table> replaces its native table role. Only
+    // the three roles that still describe a table keep the cell's headers
+    // attribute meaningful; anything else (presentation/none, heading, ...)
+    // takes the whole table out of scope. Unknown tokens name no role, so
+    // the native one stands.
+    const tableRole = table ? getExplicitRole(table) : '';
+    if (tableRole && tableRole !== 'table' && tableRole !== 'grid' && tableRole !== 'treegrid')
+      continue;
 
     applicableCount += 1;
 

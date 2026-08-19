@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-19T05:42:27.469Z",
+  "generatedAt": "2026-08-19T06:08:56.099Z",
   "summary": {
     "total": 126,
     "withFixture": 126,
@@ -282,12 +282,12 @@
       "testFile": "tests/engine-checks/automatic/aria-required-attr.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/aria-required-attr-all-scenarios.html",
-      "totalCases": 14,
+      "totalCases": 16,
       "caseCounts": {
         "PASS": 4,
-        "FAIL": 4,
+        "FAIL": 5,
         "CANTTELL": 0,
-        "OTHER": 6
+        "OTHER": 7
       }
     },
     {
@@ -1016,12 +1016,12 @@
       "testFile": "tests/engine-checks/automatic/iframe-name-present.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/iframe-name-present-all-scenarios.html",
-      "totalCases": 6,
+      "totalCases": 7,
       "caseCounts": {
         "PASS": 3,
         "FAIL": 2,
         "CANTTELL": 0,
-        "OTHER": 1
+        "OTHER": 2
       }
     },
     {
@@ -2177,12 +2177,12 @@
       "testFile": "tests/engine-checks/automatic/table-headers-attr-valid.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/table-headers-attr-valid-all-scenarios.html",
-      "totalCases": 8,
+      "totalCases": 9,
       "caseCounts": {
         "PASS": 2,
         "FAIL": 4,
         "CANTTELL": 0,
-        "OTHER": 2
+        "OTHER": 3
       }
     },
     {
