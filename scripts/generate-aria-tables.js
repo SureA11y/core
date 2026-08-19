@@ -12,7 +12,8 @@
  *
  * aria-query is a devDependency and the generated arrays are committed, so
  * the engine keeps zero runtime dependencies and table changes show up in
- * review diffs. The arrays live inside runInPage because build-core.js
+ * review diffs. Output is run through Prettier before it is written or
+ * compared, so `--check` measures the data and not the formatting. The arrays live inside runInPage because build-core.js
  * inlines only that function's own source text.
  *
  * aria-query is third party. Where it disagrees with ACT or the ARIA spec,
@@ -23,6 +24,10 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { roles, elementRoles } = require('aria-query');
+// The repo formats its sources with Prettier, so the generator formats what it
+// writes the same way. Without this the written file differs from the
+// committed one by whitespace alone, and --check reports every run as stale.
+const prettier = require('prettier');
 
 const RULE_PATH = path.join(__dirname, '..', 'src', 'checks', 'automatic', 'aria-allowed-attr.js');
 const HELPERS_PATH = path.join(__dirname, '..', 'src', 'core', 'aria-helpers.js');
@@ -310,14 +315,28 @@ function replaceBlock(source, begin, end, replacement) {
   return source.slice(0, start) + replacement + source.slice(stop + end.length);
 }
 
-function main() {
+const NAMING_RULE_PATHS = [
+  'src/checks/automatic/link-name-present.js',
+  'src/checks/automatic/button-name-present.js'
+];
+
+async function formatted(source, filepath) {
+  const options = (await prettier.resolveConfig(filepath)) || {};
+  return prettier.format(source, { ...options, filepath });
+}
+
+async function main() {
   const check = process.argv.includes('--check');
   const globals = globalAttrs();
   const table = roleAttrs(globals);
   const implicit = implicitRoles();
+  const nfc = nameFromContentRoles();
+
+  // path -> { before, after }, every file this generator owns a block in.
+  const files = new Map();
 
   let source = fs.readFileSync(RULE_PATH, 'utf8');
-  const before = source;
+  const ruleBefore = source;
   source = replaceBlock(source, BEGIN_GLOBAL, END_GLOBAL, renderGlobals(globals));
   source = replaceBlock(source, BEGIN_ROLES, END_ROLES, renderRoles(table));
   source = replaceBlock(
@@ -327,6 +346,7 @@ function main() {
     renderImplicit(implicit, nonGlobalAttrs(globals, table))
   );
   source = replaceBlock(source, BEGIN_ROLELESS, END_ROLELESS, renderRoleless(rolelessElements()));
+  files.set(RULE_PATH, { before: ruleBefore, after: source });
 
   let helpers = fs.readFileSync(HELPERS_PATH, 'utf8');
   const helpersBefore = helpers;
@@ -343,24 +363,11 @@ function main() {
     END_CONCRETE,
     renderRoleSet(BEGIN_CONCRETE, END_CONCRETE, 'CONCRETE_ROLES', sets.concrete)
   );
+  files.set(HELPERS_PATH, { before: helpersBefore, after: helpers });
 
-  if (check) {
-    if (before !== source || helpersBefore !== helpers) {
-      console.error('ARIA tables are stale. Run: node scripts/generate-aria-tables.js');
-      process.exit(1);
-    }
-    console.log('ARIA tables are up to date.');
-    return;
-  }
-
-  fs.writeFileSync(RULE_PATH, source);
-  fs.writeFileSync(HELPERS_PATH, helpers);
-
-  const nfc = nameFromContentRoles();
-  for (const rel of [
-    'src/checks/automatic/link-name-present.js',
-    'src/checks/automatic/button-name-present.js'
-  ]) {
+  // The naming rules were previously written but never checked, so a stale
+  // name-from-content block could not fail --check.
+  for (const rel of NAMING_RULE_PATHS) {
     const file = path.join(__dirname, '..', rel);
     const before = fs.readFileSync(file, 'utf8');
     const after = replaceBlock(
@@ -369,12 +376,38 @@ function main() {
       END_NAME_FROM_CONTENT,
       renderNameFromContent(nfc)
     );
-    fs.writeFileSync(file, after);
+    files.set(file, { before, after });
   }
+
+  for (const [file, entry] of files) {
+    entry.after = await formatted(entry.after, file);
+  }
+
+  if (check) {
+    const stale = [...files.entries()]
+      .filter(([, entry]) => entry.before !== entry.after)
+      .map(([file]) => path.relative(process.cwd(), file));
+    if (stale.length) {
+      console.error(
+        `ARIA tables are stale in ${stale.join(', ')}. Run: node scripts/generate-aria-tables.js`
+      );
+      process.exit(1);
+    }
+    console.log('ARIA tables are up to date.');
+    return;
+  }
+
+  for (const [file, entry] of files) {
+    if (entry.before !== entry.after) fs.writeFileSync(file, entry.after);
+  }
+
   console.log(`Wrote ${nfc.length} name-from-content role(s) into the naming rules`);
   console.log(
     `Wrote ${Object.keys(table).length} concrete role(s), ${globals.length} global attribute(s) and ${Object.keys(implicit).length} implicit-role mapping(s) into ${path.relative(process.cwd(), RULE_PATH)}`
   );
 }
 
-main();
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
