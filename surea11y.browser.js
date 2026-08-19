@@ -10560,7 +10560,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const role = ariaHelpers.getExplicitRole(el);
     if (!role || !ariaHelpers.isValidConcreteRole(role)) continue; // aria-roles-valid's concern
 
-    const required = ariaHelpers.getRequiredAttrsForRole(role);
+    // ACT 4e8ab6: an explicit role identical to the element's own native
+    // role is exempt -- the native control's own state exposure already
+    // covers it (e.g. <input type="checkbox" role="checkbox"> needs no
+    // aria-checked; the browser exposes .checked natively).
+    if (ariaHelpers.getNativeRoleForElement && ariaHelpers.getNativeRoleForElement(el) === role) {
+      continue;
+    }
+
+    const required = ariaHelpers.getRequiredAttrsForRole(role).slice();
+
+    // combobox's aria-controls is required only once the popup is actually
+    // displayed (aria-expanded="true") -- see this file's header comment.
+    if (role === 'combobox' && String(el.getAttribute('aria-expanded') || '').trim() === 'true') {
+      required.push('aria-controls');
+    }
+
     if (!required.length) continue;
 
     if (!isEligibleAcc(el)) continue; // not currently exposed to the accessibility tree
@@ -15794,11 +15809,58 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return raw.split(/\s+/)[0].toLowerCase();
   }
 
+  // Same Global States and Properties set used elsewhere in this engine
+  // (aria-required-parent.js, aria-prohibited-children.js) for the same
+  // presentational-roles-conflict-resolution concept: a native h1-h6
+  // marked role="none"/"presentation" still reverts to its native heading
+  // role when it carries a global ARIA attribute (even one with an empty
+  // value, like aria-label="" -- the attribute's presence is what
+  // triggers conflict resolution, not its value).
+  const GLOBAL_ARIA_ATTRS = [
+    'aria-atomic',
+    'aria-braillelabel',
+    'aria-brailleroledescription',
+    'aria-busy',
+    'aria-controls',
+    'aria-current',
+    'aria-describedby',
+    'aria-description',
+    'aria-details',
+    'aria-disabled',
+    'aria-dropeffect',
+    'aria-errormessage',
+    'aria-flowto',
+    'aria-grabbed',
+    'aria-haspopup',
+    'aria-hidden',
+    'aria-invalid',
+    'aria-keyshortcuts',
+    'aria-label',
+    'aria-labelledby',
+    'aria-live',
+    'aria-owns',
+    'aria-relevant',
+    'aria-roledescription'
+  ];
+
+  function hasGlobalAriaAttr(el) {
+    for (const attr of GLOBAL_ARIA_ATTRS) {
+      if (el.getAttribute && el.getAttribute(attr) != null) return true;
+    }
+    return false;
+  }
+
   function isHeading(el) {
-    const explicit = getExplicitRoleToken(el);
-    if (explicit) return explicit === 'heading';
     const tag = el.tagName ? el.tagName.toLowerCase() : '';
-    return /^h[1-6]$/.test(tag);
+    const isNativeHeadingTag = /^h[1-6]$/.test(tag);
+
+    const explicit = getExplicitRoleToken(el);
+    if (!explicit) return isNativeHeadingTag;
+    if (explicit === 'heading') return true;
+    if ((explicit === 'none' || explicit === 'presentation') && isNativeHeadingTag) {
+      return hasGlobalAriaAttr(el);
+    }
+    return false;
   }
 
   function getAccessibleNameText(el) {
@@ -17013,17 +17075,44 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       typeof eligResult === 'boolean' ? eligResult : !!(eligResult && eligResult.eligible);
     if (!eligible) continue;
 
+    // getAccessibleNameInfo alone only covers ARIA/label/title naming, not
+    // name-from-content -- a raw el.textContent fallback misses a link
+    // named only by a descendant image's alt text (e.g.
+    // <a href="..."><img alt="ACT rules"></a> has no text nodes at all).
+    // getContentNameInfo is the same content-aware helper link-name-present
+    // uses for exactly this reason.
     const nameInfo = helpers.getAccessibleNameInfo ? helpers.getAccessibleNameInfo(el, ctx) : null;
-    const rawName =
-      nameInfo && typeof nameInfo.value === 'string' && nameInfo.value.trim()
-        ? nameInfo.value
-        : el.textContent || '';
+    let rawName =
+      nameInfo && typeof nameInfo.value === 'string' && nameInfo.value.trim() ? nameInfo.value : '';
+    if (!rawName) {
+      const contentInfo = helpers.getContentNameInfo ? helpers.getContentNameInfo(el, ctx) : null;
+      rawName =
+        contentInfo && typeof contentInfo.value === 'string' && contentInfo.value.trim()
+          ? contentInfo.value
+          : el.textContent || '';
+    }
     const name = normName(rawName);
     if (!name) continue;
 
+    // `.href` on an SVG <a> is an SVGAnimatedString, not a plain string
+    // IDL property like HTMLAnchorElement.href -- `String(el.href)` would
+    // stringify the wrapper object itself, not its value, silently
+    // grouping every SVG link under the same bogus "destination". Fall
+    // back to the raw attribute, resolved against the document's base
+    // URL, whenever `.href` isn't already a usable string.
     let href;
     try {
-      href = String(el.href || '');
+      href = typeof el.href === 'string' ? el.href : '';
+      if (!href) {
+        const raw = el.getAttribute('href') || el.getAttribute('xlink:href') || '';
+        if (raw) {
+          try {
+            href = new URL(raw, el.ownerDocument.baseURI).href;
+          } catch {
+            href = raw;
+          }
+        }
+      }
     } catch {
       href = '';
     }
@@ -21631,9 +21720,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (el.closest && el.closest('noscript')) continue; // never applies with scripting enabled
     const raw = String(el.getAttribute('content') || '').trim();
     if (!raw) continue;
-    if (parseRefreshDelay(raw) === null) continue;
+    const delay = parseRefreshDelay(raw);
+    if (delay === null) continue;
 
+    // Only the first valid meta refresh in document order is ever acted
+    // on by a browser -- any later one is inert and stops being evaluated
+    // entirely once a winner has been found.
     applicableCount += 1;
+
+    if (delay === 0) break; // an immediate redirect is not a timed interruption
 
     occurrences.push(
       helpers.reportOccurrence(el, {
@@ -21650,6 +21745,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         }
       })
     );
+    break;
   }
 
   if (applicableCount === 0) {
@@ -21717,10 +21813,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const delay = parseRefreshDelay(raw);
     if (delay === null) continue;
 
+    // Only the first valid meta refresh in document order is ever acted
+    // on by a browser -- any later one is inert and stops being evaluated
+    // entirely once a winner has been found.
     applicableCount += 1;
 
-    if (!(delay > 0)) continue;
-    if (delay > EXEMPT_DELAY_SECONDS) continue; // WCAG 2.2.1 Exception 3 (>20 hours)
+    if (!(delay > 0)) break;
+    if (delay > EXEMPT_DELAY_SECONDS) break; // WCAG 2.2.1 Exception 3 (>20 hours)
 
     occurrences.push(
       helpers.reportOccurrence(el, {
@@ -21736,6 +21835,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         }
       })
     );
+    break;
   }
 
   if (applicableCount === 0) {
@@ -26733,6 +26833,59 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     let hasDataCell;
     try {
       hasDataCell = table.querySelectorAll('td').length > 0;
+    } catch {
+      hasDataCell = false;
+    }
+    if (hasDataCell) continue;
+
+    for (const th of headers) {
+      if (!th) continue;
+
+      occurrences.push(
+        helpers.reportOccurrence(th, {
+          summary: 'This table has header cells but no data cells for them to describe.',
+          hint: 'Add data cells (<td>) to the table, or remove the header cells if the table has no data.',
+          i18n: {
+            summaryKey: 'tableThHasDataCells_summary_fail',
+            hintKey: 'tableThHasDataCells_hint_fail',
+            params: {}
+          },
+          data: {
+            details: { reasonCode: 'TABLE_TH_NO_DATA_CELLS' }
+          }
+        })
+      );
+    }
+  }
+
+  // ARIA-only equivalent: a role="grid"/"treegrid" container with no
+  // backing <table> at all. Same trivial "zero data cells anywhere" check,
+  // just keyed off ARIA roles instead of native tags -- a genuine
+  // columnheader/rowheader with zero gridcell/cell-role elements anywhere
+  // in the container is exactly as unambiguous as a <th>-only <table>.
+  const grids = helpers.queryAllSmart
+    ? helpers.queryAllSmart('[role="grid"], [role="treegrid"]')
+    : helpers.queryAll('[role="grid"], [role="treegrid"]');
+
+  for (const grid of grids) {
+    if (!grid || !grid.querySelectorAll) continue;
+    if (grid.tagName && grid.tagName.toLowerCase() === 'table') continue; // already handled above
+    if (!isIncludedInTree(grid)) continue;
+
+    let headerNodes;
+    try {
+      headerNodes = grid.querySelectorAll('[role="columnheader"], [role="rowheader"]');
+    } catch {
+      headerNodes = [];
+    }
+    const headers = Array.from(headerNodes).filter(isHeaderCellInScope);
+    if (!headers.length) continue;
+
+    applicableCount += 1;
+
+    let hasDataCell;
+    try {
+      hasDataCell = grid.querySelectorAll('[role="gridcell"], [role="cell"]').length > 0;
     } catch {
       hasDataCell = false;
     }
@@ -35314,6 +35467,42 @@ const createDomHelpers = (function createDomHelpers(opts) {
       }
     }
 
+    // The alt attribute is accname's own next naming source for img/area/
+    // input[type=image] -- ranked above title, below ARIA naming and real
+    // <label> association -- so this general-purpose function needs the
+    // same source getTextAlternativeInfo already applies specifically to
+    // these tags (kept as a direct attribute read here, not a call into
+    // getTextAlternativeInfo, since that function itself calls back into
+    // this one when alt is absent).
+    const tagForAlt = lower(el.tagName);
+    const typeForAlt = tagForAlt === 'input' ? lower(getAttr(el, 'type')) : '';
+    const isImageLikeForAlt =
+      tagForAlt === 'img' ||
+      tagForAlt === 'area' ||
+      (tagForAlt === 'input' && typeForAlt === 'image');
+    if (isImageLikeForAlt) {
+      const altText = trim(getAttr(el, 'alt'));
+      if (altText) {
+        const out = { present: true, value: altText, mechanism: 'alt', flags };
+        try {
+          if (__accessibleNameCacheByKey) {
+            const wm =
+              __accessibleNameCacheByKey.get(key) ||
+              (__accessibleNameCacheByKey.set(key, new WeakMap()),
+              __accessibleNameCacheByKey.get(key));
+            if (wm && wm instanceof WeakMap)
+              wm.set(el, {
+                present: true,
+                value: out.value,
+                mechanism: out.mechanism,
+                flags: out.flags.slice(0)
+              });
+          }
+        } catch {}
+        return out;
+      }
+    }
+
     // POLICY NOTE (revisit if ever reconsidered): title is accepted here as
     // a last-resort accessible-name source, matching HTML-AAM/accname. This
     // is a deliberate, spec-compliant choice -- but title is a genuinely
@@ -35617,6 +35806,37 @@ const createDomHelpers = (function createDomHelpers(opts) {
     let visitedCount = 0;
     let truncated = false;
 
+    // WAI-ARIA's Global States and Properties set -- used below to decide
+    // whether a role="presentation"/"none" image-like descendant has been
+    // restored to a real node by conflict resolution (same list as
+    // aria-required-parent.js/aria-prohibited-children.js's GLOBAL_ARIA_ATTRS).
+    const GLOBAL_ARIA_ATTRS_FOR_CONTENT_NAME = [
+      'aria-atomic',
+      'aria-braillelabel',
+      'aria-brailleroledescription',
+      'aria-busy',
+      'aria-controls',
+      'aria-current',
+      'aria-describedby',
+      'aria-description',
+      'aria-details',
+      'aria-disabled',
+      'aria-dropeffect',
+      'aria-errormessage',
+      'aria-flowto',
+      'aria-grabbed',
+      'aria-haspopup',
+      'aria-hidden',
+      'aria-invalid',
+      'aria-keyshortcuts',
+      'aria-label',
+      'aria-labelledby',
+      'aria-live',
+      'aria-owns',
+      'aria-relevant',
+      'aria-roledescription'
+    ];
+
     function isImageLikeNode(node) {
       const tag = lower(node.tagName);
       const type = tag === 'input' ? lower(getAttr(node, 'type')) : '';
@@ -35668,6 +35888,31 @@ const createDomHelpers = (function createDomHelpers(opts) {
       }
 
       if (isImageLikeNode(node)) {
+        // A role="presentation"/"none" image contributes nothing -- per
+        // ACT ffd0e9's own clarification, alt does not trigger
+        // Presentational Roles Conflict Resolution (it is not an ARIA
+        // attribute), so a plain conflict-resolution carve-out (global
+        // ARIA attribute present, or focusable) is what would restore it,
+        // same condition aria-required-parent.js's getRealContextRole
+        // and aria-prohibited-children.js already use for the analogous
+        // "roleless-but-included" boundary.
+        const presRole = lower(getAttr(node, 'role') || '').split(/\s+/)[0];
+        if (presRole === 'presentation' || presRole === 'none') {
+          let restored = false;
+          try {
+            restored = !!(getFocusableInfo(node, _ctx, opts) || {}).focusable;
+          } catch {}
+          if (!restored) {
+            for (const attr of GLOBAL_ARIA_ATTRS_FOR_CONTENT_NAME) {
+              if (getAttr(node, attr) != null) {
+                restored = true;
+                break;
+              }
+            }
+          }
+          if (!restored) return;
+        }
+
         // aria-labelledby/aria-label take priority over alt per the
         // accname spec (HTML-AAM), so they're checked first: an
         // <img alt="" aria-labelledby="..."> must contribute the
@@ -35990,12 +36235,18 @@ const createDomHelpers = (function createDomHelpers(opts) {
       metrics.top = top || null;
       metrics.textIndent = ti || null;
 
+      // em/rem convert to an approximate px value (root font-size 16px,
+      // the common default) so a value like "-999em" is correctly judged
+      // against the px threshold below instead of being compared as a
+      // bare number -999, which never crosses it regardless of unit.
       const parsePx = (s) => {
         if (!s || s === 'auto') return null;
-        const m = String(s).match(/-?\d+(\.\d+)?/);
+        const m = String(s).match(/-?\d+(\.\d+)?(em|rem|px)?/);
         if (!m) return null;
         const n = Number.parseFloat(m[0]);
-        return Number.isFinite(n) ? n : null;
+        if (!Number.isFinite(n)) return null;
+        const unit = m[2];
+        return unit === 'em' || unit === 'rem' ? n * 16 : n;
       };
 
       const l = parsePx(left);

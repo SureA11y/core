@@ -9,8 +9,11 @@
  * @standard WCAG 2.2
  * @sc 2.2.1
  * @applicability
- *   Applies to <meta http-equiv="refresh"> elements that carry a non-empty
- *   content attribute with a parseable leading delay value.
+ *   Applies to the first <meta http-equiv="refresh"> element, in document
+ *   order, whose content attribute has a parseable leading delay value.
+ *   Per HTML's shared declarative refresh steps, a document only ever
+ *   acts on its first valid meta refresh; any later one (valid or not)
+ *   is inert markup a browser never processes, so it is not evaluated.
  * @expectation
  *   The delay is 0 (an immediate redirect, which users cannot be caught by
  *   mid-read), or exceeds 20 hours. Any other positive delay refreshes or
@@ -116,10 +119,13 @@ function runInPage(ctx) {
     const delay = parseRefreshDelay(raw);
     if (delay === null) continue;
 
+    // Only the first valid meta refresh in document order is ever acted
+    // on by a browser -- any later one is inert and stops being evaluated
+    // entirely once a winner has been found.
     applicableCount += 1;
 
-    if (!(delay > 0)) continue;
-    if (delay > EXEMPT_DELAY_SECONDS) continue; // WCAG 2.2.1 Exception 3 (>20 hours)
+    if (!(delay > 0)) break;
+    if (delay > EXEMPT_DELAY_SECONDS) break; // WCAG 2.2.1 Exception 3 (>20 hours)
 
     occurrences.push(
       helpers.reportOccurrence(el, {
@@ -135,6 +141,7 @@ function runInPage(ctx) {
         }
       })
     );
+    break;
   }
 
   if (applicableCount === 0) {

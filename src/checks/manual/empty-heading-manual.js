@@ -74,11 +74,58 @@ function runInPage(ctx) {
     return raw.split(/\s+/)[0].toLowerCase();
   }
 
+  // Same Global States and Properties set used elsewhere in this engine
+  // (aria-required-parent.js, aria-prohibited-children.js) for the same
+  // presentational-roles-conflict-resolution concept: a native h1-h6
+  // marked role="none"/"presentation" still reverts to its native heading
+  // role when it carries a global ARIA attribute (even one with an empty
+  // value, like aria-label="" -- the attribute's presence is what
+  // triggers conflict resolution, not its value).
+  const GLOBAL_ARIA_ATTRS = [
+    'aria-atomic',
+    'aria-braillelabel',
+    'aria-brailleroledescription',
+    'aria-busy',
+    'aria-controls',
+    'aria-current',
+    'aria-describedby',
+    'aria-description',
+    'aria-details',
+    'aria-disabled',
+    'aria-dropeffect',
+    'aria-errormessage',
+    'aria-flowto',
+    'aria-grabbed',
+    'aria-haspopup',
+    'aria-hidden',
+    'aria-invalid',
+    'aria-keyshortcuts',
+    'aria-label',
+    'aria-labelledby',
+    'aria-live',
+    'aria-owns',
+    'aria-relevant',
+    'aria-roledescription'
+  ];
+
+  function hasGlobalAriaAttr(el) {
+    for (const attr of GLOBAL_ARIA_ATTRS) {
+      if (el.getAttribute && el.getAttribute(attr) != null) return true;
+    }
+    return false;
+  }
+
   function isHeading(el) {
-    const explicit = getExplicitRoleToken(el);
-    if (explicit) return explicit === 'heading';
     const tag = el.tagName ? el.tagName.toLowerCase() : '';
-    return /^h[1-6]$/.test(tag);
+    const isNativeHeadingTag = /^h[1-6]$/.test(tag);
+
+    const explicit = getExplicitRoleToken(el);
+    if (!explicit) return isNativeHeadingTag;
+    if (explicit === 'heading') return true;
+    if ((explicit === 'none' || explicit === 'presentation') && isNativeHeadingTag) {
+      return hasGlobalAriaAttr(el);
+    }
+    return false;
   }
 
   function getAccessibleNameText(el) {
