@@ -42,6 +42,34 @@ test(`${RULE_ID}: pass when menuitems are wrapped in role="group" (group is itse
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+test(`${RULE_ID}: pass when listitems are wrapped in role="group" under role="list" (group is transparent for ANY container role, not only ones whose own required-owned set names "group" — ACT bc4a75)`, () => {
+  const html = `<!doctype html><html><body>
+    <div id="a" role="list">
+      <span role="listitem">Item 1</span>
+      <div role="group">
+        <span role="listitem">Item 2</span>
+        <span role="listitem">Item 3</span>
+      </div>
+    </div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: fail when a role="group" under role="list" owns a disallowed role="tab" (group is transparent, so its children are judged against list's own required-owned set)`, () => {
+  const html = `<!doctype html><html><body>
+    <div role="list">
+      <div role="group">
+        <span id="a" role="tab">Item 1</span>
+        <span role="tab">Item 2</span>
+      </div>
+    </div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+});
+
 test(`${RULE_ID}: pass when a role="none" wrapper hides an allowed menuitem (presentational wrappers are transparent)`, () => {
   const html = `<!doctype html><html><body>
     <ul id="a" role="menubar"><li role="none"><button role="menuitem">File</button></li></ul>

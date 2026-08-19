@@ -7,7 +7,7 @@ Cross-reference between the [W3C ACT Rules](https://act-rules.github.io/rules/) 
 - **~2** are covered structurally by our composite/rollup layer, not a named rule
 - **~47 are gaps** — no corresponding rule in this repo, listed in [Gaps](#gaps-no-corresponding-rule) below
 
-**Every matched rule has now been run through ACT's own official test-case corpus** (`scripts/act-testcase-check.js`, 713 test cases across the 51-rule matched set of the time). Started at 86 mismatches; real bugs were fixed, mapping errors corrected, and every remaining mismatch triaged into a deliberate scope difference, a jsdom/environment limit, or a genuine open design question (tracked in [`docs/DESIGN_CHALLENGES.md`](./DESIGN_CHALLENGES.md)). A second pass then re-ran the whole corpus from a local checkout (see "Second pass" below) and repeated the exercise on what it turned up. Current state: **866 examples across the 57-rule matched set, 61 mismatches, all explained** below or in that file — see "Progress" further down for the full per-rule breakdown.
+**Every matched rule has now been run through ACT's own official test-case corpus** (`scripts/act-testcase-check.js`, 713 test cases across the 51-rule matched set of the time). Started at 86 mismatches; real bugs were fixed, mapping errors corrected, and every remaining mismatch triaged into a deliberate scope difference, a jsdom/environment limit, or a genuine open design question (tracked in [`docs/DESIGN_CHALLENGES.md`](./DESIGN_CHALLENGES.md)). A second pass then re-ran the whole corpus from a local checkout (see "Second pass" below) and repeated the exercise on what it turned up. Current state: **866 examples across the 57-rule matched set, 60 mismatches, all explained** below or in that file — see "Progress" further down for the full per-rule breakdown.
 
 Real rule bugs found and fixed this way, in rough chronological order:
 - `button-name-present` wasn't crediting the UA-default label on `input[type=submit]`/`input[type=reset]` with no `value`, and wasn't honoring `role="none"`/`role="presentation"` conflict-resolution.
@@ -60,8 +60,11 @@ Real rule bugs, fixed:
 Mapping fix (data-only): `e086e5`'s family was missing `binary-control-name-present` and `menuitem-name-present`, so ACT's `checkbox`/`radio`/`switch`/`menuitemcheckbox`/`menuitemradio` cases looked uncovered when the rules for them already existed — the same shape as the `qt1vmo`/`23a2a8` misses above.
 
 New open design questions, logged in [`docs/DESIGN_CHALLENGES.md`](./DESIGN_CHALLENGES.md) rather than patched here:
-- `aria-required-children`/`aria-prohibited-children` only evaluate containers carrying an explicit `role`, so a native `<ul>` owning nothing but `<div>`s is never checked.
 - `label-in-name` compares against accessibility-tree text where ACT uses *visible* inner text; the two part ways on `aria-hidden` text (visible, ignored by us), visually-hidden text (invisible, counted by us) and inline-block concatenation.
+
+Re-checked against the live rule page (not just the local checkout) and settled, both in `docs/DESIGN_CHALLENGES.md`'s Decided section:
+- `aria-required-children`/`aria-prohibited-children` only evaluating containers with an explicit `role` isn't a gap — ACT `bc4a75`'s own Applicability text requires one, and its Inapplicable Example 2 is a bare `<ul><li>`.
+- `aria-prohibited-children` was a real bug: it only treated `role="group"`/`role="rowgroup"` as transparent when the container's own required-owned set named `group`/`rowgroup`, so `role="list"` wrapping valid `listitem`s in a `role="group"` was wrongly flagged. Group/rowgroup are transparent unconditionally. `bc4a75` now runs clean.
 
 Accepted divergences, documented in the table above: `8fc3b6` (an `<object>` rendering neither image, audio nor video is exempt from needing a name — what a `data` URL resolves to isn't knowable without fetching it) and `afw4f7` (ACT treats text whose color exactly matches its background as invisible; the contrast rules report the 1:1 ratio, since nothing in the markup separates "invisible on purpose" from "invisible by accident").
 
@@ -69,14 +72,13 @@ We also have automatic rules with **no ACT counterpart at all** (see [Extra cove
 
 ### Progress: full validation results, by ACT rule
 
-**Clean (0 mismatches):** `5f99a7`, `80f0bf`, `4c31df`, `73f2c2`, `97a4e1`, `cf77f2`, `b40fd1`, `46ca7f`, `6cfa84`, `307n5z`, `4e8ab6`, `a25f45`, `ffd0e9`, `b5c3f8`, `2779a5`, `5b7ae0`, `bf051a`, `qt1vmo`, `59796f`, `23a2a8`, `24afc2`, `9e45ec`, `c487ae`, `m6b1q3`, `bc659a`, `bisz58`, `b4f0c3`, `674b10`, `0ssw9k`, `3ea0c8`, `5c01ea` (31 of 57 matched rules).
+**Clean (0 mismatches):** `5f99a7`, `80f0bf`, `4c31df`, `73f2c2`, `97a4e1`, `cf77f2`, `b40fd1`, `46ca7f`, `6cfa84`, `307n5z`, `4e8ab6`, `a25f45`, `ffd0e9`, `b5c3f8`, `2779a5`, `5b7ae0`, `bf051a`, `qt1vmo`, `59796f`, `23a2a8`, `24afc2`, `9e45ec`, `c487ae`, `m6b1q3`, `bc659a`, `bisz58`, `b4f0c3`, `674b10`, `0ssw9k`, `3ea0c8`, `5c01ea`, `bc4a75` (32 of 57 matched rules).
 
-**Remaining mismatches (61 total), all triaged:**
+**Remaining mismatches (60 total), all triaged:**
 
 | ACT ID | Mismatches | Category |
 |---|---|---|
 | `ff89c9` | 1 | env/harness limit — jsdom doesn't execute inline `<script>`, so a runtime-created shadow root is invisible to the test fetcher (not the real engine, which runs after page scripts) |
-| `bc4a75` | 1 | open design question — see `docs/DESIGN_CHALLENGES.md`: applicability is limited to containers carrying an explicit `role`, so ACT's failed example 10 (`<ul><div></div></ul>`, an implicit `list` owning generic children) is never evaluated. The other three mismatches are gone — the native-role table now honours HTML-AAM's context requirements, and the exclusive "every owned child is allowed" half was never missing, just mapped to only one of the two rules that answer this ACT rule between them |
 | `6a7281` | 2 | deliberate scope — our idref-type validation extends beyond ACT's syntax-only check to also require the referenced id to exist (see `aria-valid-attr-value.js`'s own header comment); genuinely more useful, not a bug |
 | `aaa1bf` | 1 | inherent limitation — clip duration isn't knowable from static markup; no browser decodes media at scan time |
 | `ye5d6e`, `047fe0` | 1, 2 | deliberate leniency — whether repeated-boilerplate content wraps the skip target/heading is a cross-page judgment undecidable from one document; the rule's own header comment already reasons through this trade-off |
