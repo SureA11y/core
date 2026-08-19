@@ -437,6 +437,48 @@ function createContrastHelpers(opts, shared) {
         return inactive;
       };
 
+      // ACT afw4f7/09o5cg: text whose foreground color exactly matches its
+      // effective background is not "visible" at all (nothing distinguishes
+      // it from the background), so it's out of scope entirely -- not a
+      // fail, not cantTell, just not there. This is a plain equality check
+      // on fully-resolved, fully-opaque colors, not a guess at authorial
+      // intent: it only fires when both colors are cleanly computable, and
+      // leaves any gradient/image/partial-opacity background (which
+      // contrast-computable already reports as cantTell) untouched.
+      const contrastOptsForBg =
+        engineOptions && typeof engineOptions.contrast === 'object' && engineOptions.contrast
+          ? engineOptions.contrast
+          : {};
+      const bgResolveOpts = {
+        contrast: {
+          mode: contrastOptsForBg.mode === 'auditorAssist' ? 'auditorAssist' : 'strictConformance',
+          rootCanvasFallback:
+            typeof contrastOptsForBg.rootCanvasFallback === 'string' &&
+            contrastOptsForBg.rootCanvasFallback.trim()
+              ? contrastOptsForBg.rootCanvasFallback.trim()
+              : '#ffffff'
+        },
+        collectStack: false
+      };
+      const sameColorCache = new WeakMap();
+      const isSameColorAsBackground = (el) => {
+        if (sameColorCache.has(el)) return sameColorCache.get(el);
+        let same = false;
+        try {
+          const fg = computeEffectiveForeground(el);
+          if (fg && fg.rgba && fg.alpha === 1) {
+            const bg = computeEffectiveBackground(el, bgResolveOpts);
+            if (bg && bg.ok && bg.rgba && bg.alpha === 1) {
+              same = fg.rgba.r === bg.rgba.r && fg.rgba.g === bg.rgba.g && fg.rgba.b === bg.rgba.b;
+            }
+          }
+        } catch {
+          same = false;
+        }
+        sameColorCache.set(el, same);
+        return same;
+      };
+
       let node = null;
       let guard = 0;
       // Guards against double-counting text nodes reachable from more
@@ -473,6 +515,7 @@ function createContrastHelpers(opts, shared) {
           } catch {}
           if (!isVisibleEligible(el)) continue;
           if (isInactive(el)) continue;
+          if (isSameColorAsBackground(el)) continue;
 
           eligibleTextCount++;
 
@@ -516,6 +559,7 @@ function createContrastHelpers(opts, shared) {
           } catch {}
           if (!isVisibleEligible(el)) continue;
           if (isInactive(el)) continue;
+          if (isSameColorAsBackground(el)) continue;
 
           eligibleTextCount++;
 
