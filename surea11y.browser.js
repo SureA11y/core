@@ -5548,8 +5548,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "role-img-text-alternative-present",
-    "title": "[role=\"img\"] must have an accessible text alternative",
-    "description": "Checks that elements with role=\"img\" provide an accessible text alternative using aria-label, aria-labelledby, or a title attribute.",
+    "title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] must have an accessible text alternative",
+    "description": "Checks that elements with role=\"img\", \"graphics-symbol\" or \"graphics-document\" provide an accessible text alternative using aria-label, aria-labelledby, a title attribute, or (for SVG elements) a first-child <title>.",
     "i18n": {
       "titleKey": "roleImg_textAlternativePresent_title",
       "descriptionKey": "roleImg_textAlternativePresent_description"
@@ -26175,7 +26175,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const imgElements = (() => {
     // do not consider element "img" because it has its own rule
-    const sel = '[role="img" i]:not(img)';
+    const sel = '[role="img" i]:not(img), [role="graphics-symbol" i], [role="graphics-document" i]';
     try {
       return Array.from((queryAllSmart ? queryAllSmart(sel) : queryAll(sel)) || []);
     } catch {
@@ -26226,6 +26226,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     applicableCount += 1;
 
+    const matchedRole = (() => {
+      try {
+        return trim(el.getAttribute('role')).split(/\s+/)[0].toLowerCase();
+      } catch {
+        return 'img';
+      }
+    })();
+
     // Expectation: aria-label OR aria-labelledby. We use helper name-info when available,
     // but we also validate the source to keep this rule scoped/deterministic.
 
@@ -26265,12 +26273,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     // SVG-AAM's own accessible-name mechanism: a first-child <title>
     // element (not the HTML title attribute) is the standard way to name
-    // an inline <svg> -- a role="img" <svg> named only this way still has
-    // a real text alternative.
+    // any element in the SVG namespace, not only the <svg> root -- a
+    // role="graphics-symbol" <circle> named only this way still has a real
+    // text alternative, same as a role="img" <svg>.
     const svgTitleChildText = (() => {
       try {
-        const tag = (el.localName || el.tagName || '').toLowerCase();
-        if (tag !== 'svg') return '';
+        const isSvgNamespace = el.namespaceURI === 'http://www.w3.org/2000/svg';
+        if (!isSvgNamespace) return '';
         const first = el.firstElementChild;
         const firstTag = first ? (first.localName || first.tagName || '').toLowerCase() : '';
         if (firstTag !== 'title') return '';
@@ -26332,12 +26341,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
     const baseOccurrence = {
-      summary: 'Missing text alternative on element with role="img".',
-      hint: 'Provide aria-label or aria-labelledby (referencing non-empty text) to give this image a text alternative.',
+      summary: `Missing text alternative on element with role="${matchedRole}".`,
+      hint: 'Provide aria-label or aria-labelledby (referencing non-empty text) to give this element a text alternative.',
       i18n: {
         summaryKey: 'roleImg_textAlternativePresent_summary_fail',
         hintKey: 'roleImg_textAlternativePresent_hint_fail',
-        params: { role: 'img' }
+        params: { role: matchedRole }
       },
       data: {
         details: {
@@ -30694,9 +30703,9 @@ const I18N = {
     "contrastEnhanced_pass_allTextMeetsThreshold": "All computable text meets enhanced contrast (AAA).",
     "contrastMinimum_pass_allTextMeetsThreshold": "All computable text meets minimum contrast (AA).",
     "contrastComputable_cantTell_notComputable": "Contrast could not be computed for this text ({{reasonCode}}).",
-    "roleImg_textAlternativePresent_title": "[role=\"img\"] must have an accessible text alternative",
-    "roleImg_textAlternativePresent_description": "Checks that elements with role=\"img\" provide an accessible text alternative using aria-label, aria-labelledby, or a title attribute.",
-    "roleImg_textAlternativePresent_summary_fail": "The element with role=\"img\" does not have an accessible text alternative.",
+    "roleImg_textAlternativePresent_title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] must have an accessible text alternative",
+    "roleImg_textAlternativePresent_description": "Checks that elements with role=\"img\", \"graphics-symbol\" or \"graphics-document\" provide an accessible text alternative using aria-label, aria-labelledby, a title attribute, or (for SVG elements) a first-child <title>.",
+    "roleImg_textAlternativePresent_summary_fail": "The element with role=\"{{role}}\" does not have an accessible text alternative.",
     "roleImg_textAlternativePresent_hint_fail": "Provide a text alternative using aria-label, or aria-labelledby that references non-empty text.",
     "targetSizeMinimum_title": "Pointer targets must be at least 24x24px large, or leave sufficient distance to other targets",
     "targetSizeMinimum_description": "Checks that pointer-operable targets have an effective hit region of at least 24 by 24 CSS pixels, or meet an allowed exception (e.g. sufficient spacing).",

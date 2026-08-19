@@ -14,9 +14,12 @@
  *     - role="img", role="graphics-symbol", or role="graphics-document"
  *       on the SVG root element itself (the WAI-ARIA Graphics Module
  *       roles, alongside img). Deliberately does NOT extend to arbitrary
- *       role="graphics-symbol" descendants nested inside an <svg> — this
- *       check's scope is the <svg> root only; a broader feature, not
- *       attempted here.
+ *       role="img"/"graphics-symbol"/"graphics-document" descendants
+ *       nested inside an <svg> — this check's scope is the <svg> root
+ *       only; role-img-text-alternative-present covers those same three
+ *       roles on any other element, including nested SVG shapes (ACT
+ *       7d6734's own failed example: a bare `<svg>` root with a nested
+ *       `<circle role="graphics-symbol">`).
  *     - aria-label / aria-labelledby present
  *     - <title> or <desc> present (desc alone is an applicability signal only — see @expectation)
  *     - focusable/tabbable (e.g., tabindex, native focusability)
