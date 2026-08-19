@@ -25,7 +25,7 @@
 const id = 'contrast-minimum';
 
 const meta = {
-  title: 'Text must meet the minimum color contrast ratio',
+  title: 'Text meets minimum color contrast (AA)',
   description:
     'Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3:1 (large), when contrast is computable from CSS.',
   i18n: {

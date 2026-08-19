@@ -23,8 +23,8 @@
 const id = 'page-title-present';
 
 const meta = {
-  title: 'Page title is present and non-empty',
-  description: 'Checks that the document has a non-empty <title> element (WCAG 2.2 SC 2.4.2).',
+  title: 'Page has a non-empty title',
+  description: 'Checks that the page includes a non-empty <title> element.',
   i18n: {
     titleKey: 'pageTitlePresent_title',
     descriptionKey: 'pageTitlePresent_description'

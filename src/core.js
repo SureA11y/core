@@ -103,8 +103,8 @@ const CHECK_DEFS = [
   },
   {
     "ruleId": "area-alt-present",
-    "title": "&lt;area&gt; must have an alt attribute",
-    "description": "Checks that &lt;area&gt; elements provide an alt attribute to support a text alternative mechanism.",
+    "title": "<area> must have an alt attribute",
+    "description": "Checks that <area> elements provide an alt attribute to support a text alternative mechanism.",
     "i18n": {
       "titleKey": "area_altPresent_title",
       "descriptionKey": "area_altPresent_description"
@@ -732,7 +732,7 @@ const CHECK_DEFS = [
   {
     "ruleId": "aria-prohibited-children",
     "title": "Container roles must not own a child with a disallowed role",
-    "description": "Checks that every accessible-tree-owned child of a container role (list, listbox, menu, menubar, radiogroup, rowgroup, table, grid, treegrid, tablist, tree, row) has one of that role's allowed owned roles — the same set as its required owned roles.",
+    "description": "Checks that every accessible-tree-owned child of a container role (list, listbox, menu, menubar, radiogroup, rowgroup, table, grid, treegrid, tablist, tree, row) has one of that role's allowed owned roles.",
     "i18n": {
       "titleKey": "ariaProhibitedChildren_title",
       "descriptionKey": "ariaProhibitedChildren_description"
@@ -1723,7 +1723,7 @@ const CHECK_DEFS = [
   },
   {
     "ruleId": "contrast-enhanced",
-    "title": "Text must meet the enhanced color contrast ratio",
+    "title": "Text meets enhanced color contrast (AAA)",
     "description": "Checks that visible text has a contrast ratio of at least 7:1 (normal) or 4.5:1 (large), when contrast is computable from CSS.",
     "i18n": {
       "titleKey": "contrastEnhanced_title",
@@ -1780,7 +1780,7 @@ const CHECK_DEFS = [
   },
   {
     "ruleId": "contrast-minimum",
-    "title": "Text must meet the minimum color contrast ratio",
+    "title": "Text meets minimum color contrast (AA)",
     "description": "Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3:1 (large), when contrast is computable from CSS.",
     "i18n": {
       "titleKey": "contrastMinimum_title",
@@ -3597,7 +3597,7 @@ const CHECK_DEFS = [
   {
     "ruleId": "label-in-name",
     "title": "Label in Name: accessible name contains visible text",
-    "description": "Checks that when a control has a visible text label, the accessible name (from aria-label/aria-labelledby) contains that visible label text (WCAG 2.5.3).",
+    "description": "Checks that when a control has a visible text label, the accessible name contains that visible label text (WCAG 2.5.3).",
     "i18n": {
       "titleKey": "labelInName_title",
       "descriptionKey": "labelInName_description"
@@ -4216,8 +4216,8 @@ const CHECK_DEFS = [
   },
   {
     "ruleId": "listbox-name-present",
-    "title": "Accessible name is present",
-    "description": "Checks that elements expose a non-empty accessible name.",
+    "title": "Listboxes have an accessible name",
+    "description": "Checks that elements with role=\"listbox\" expose a non-empty accessible name.",
     "i18n": {
       "titleKey": "listboxNamePresent_title",
       "descriptionKey": "listboxNamePresent_description"
@@ -4439,8 +4439,8 @@ const CHECK_DEFS = [
   },
   {
     "ruleId": "media-alternative-transcript-evidence",
-    "title": "Time-based media: transcript / media alternative evidence",
-    "description": "Finds <audio>/<video> elements where a transcript or other text alternative is not strongly evidenced in-page. This rule is conservative and returns cantTell when evidence is missing or unverified.",
+    "title": "Time-based media: transcript or text alternative evidence",
+    "description": "Finds audio and video elements where a transcript or other text alternative is not strongly evidenced in the page content. This rule is conservative and reports cantTell when evidence is missing or cannot be verified.",
     "i18n": {
       "titleKey": "mediaTranscriptPresent_title",
       "descriptionKey": "mediaTranscriptPresent_description"
@@ -5088,8 +5088,8 @@ const CHECK_DEFS = [
   },
   {
     "ruleId": "option-name-present",
-    "title": "Accessible name is present",
-    "description": "Checks that elements expose a non-empty accessible name.",
+    "title": "Options have an accessible name",
+    "description": "Checks that elements with role=\"option\" expose a non-empty accessible name.",
     "i18n": {
       "titleKey": "optionNamePresent_title",
       "descriptionKey": "optionNamePresent_description"
@@ -5236,8 +5236,8 @@ const CHECK_DEFS = [
   },
   {
     "ruleId": "page-title-patterns",
-    "title": "Page title patterns that may indicate low descriptiveness",
-    "description": "Flags page titles that are likely too generic or templated as review signals (WCAG 2.2 SC 2.4.2). This rule is conservative and does not fail based on patterns alone.",
+    "title": "Page title patterns that may be insufficiently descriptive",
+    "description": "Identifies page title patterns that may indicate low descriptiveness, such as generic, duplicated, or overly templated titles. This rule provides review signals and does not fail automatically.",
     "i18n": {
       "titleKey": "pageTitlePatterns_title",
       "descriptionKey": "pageTitlePatterns_description"
@@ -5291,8 +5291,8 @@ const CHECK_DEFS = [
   },
   {
     "ruleId": "page-title-present",
-    "title": "Page title is present and non-empty",
-    "description": "Checks that the document has a non-empty <title> element (WCAG 2.2 SC 2.4.2).",
+    "title": "Page has a non-empty title",
+    "description": "Checks that the page includes a non-empty <title> element.",
     "i18n": {
       "titleKey": "pageTitlePresent_title",
       "descriptionKey": "pageTitlePresent_description"
@@ -5534,7 +5534,7 @@ const CHECK_DEFS = [
   {
     "ruleId": "role-img-text-alternative-present",
     "title": "[role=\"img\"] must have an accessible text alternative",
-    "description": "Checks that elements with role=\"img\" provide an accessible text alternative via aria-label, aria-labelledby, or a title attribute.",
+    "description": "Checks that elements with role=\"img\" provide an accessible text alternative using aria-label, aria-labelledby, or a title attribute.",
     "i18n": {
       "titleKey": "roleImg_textAlternativePresent_title",
       "descriptionKey": "roleImg_textAlternativePresent_description"
@@ -5694,8 +5694,8 @@ const CHECK_DEFS = [
   },
   {
     "ruleId": "searchbox-name-present",
-    "title": "Accessible name is present",
-    "description": "Checks that elements expose a non-empty accessible name.",
+    "title": "Searchboxes have an accessible name",
+    "description": "Checks that elements with role=\"searchbox\" expose a non-empty accessible name.",
     "i18n": {
       "titleKey": "searchboxNamePresent_title",
       "descriptionKey": "searchboxNamePresent_description"
@@ -5899,8 +5899,8 @@ const CHECK_DEFS = [
   },
   {
     "ruleId": "spinbutton-name-present",
-    "title": "Accessible name is present",
-    "description": "Checks that elements expose a non-empty accessible name.",
+    "title": "Spinbuttons have an accessible name",
+    "description": "Checks that elements with role=\"spinbutton\" expose a non-empty accessible name.",
     "i18n": {
       "titleKey": "spinbuttonNamePresent_title",
       "descriptionKey": "spinbuttonNamePresent_description"
@@ -6067,7 +6067,7 @@ const CHECK_DEFS = [
   {
     "ruleId": "svg-text-alternative-present",
     "title": "<svg> must provide a text alternative",
-    "description": "Checks that inline <svg> elements provide a text alternative via a <title> element or an ARIA name (a <desc> element alone does not count — it only contributes to the accessible description, not the name).",
+    "description": "Checks that inline <svg> elements provide a text alternative via a <title> element or an ARIA name (a <desc> element alone does not count).",
     "i18n": {
       "titleKey": "svg_textAltPresent_title",
       "descriptionKey": "svg_textAltPresent_description"
@@ -6473,7 +6473,7 @@ const CHECK_DEFS = [
   },
   {
     "ruleId": "target-size-minimum",
-    "title": "Pointer targets meet minimum size (AA)",
+    "title": "Pointer targets must be at least 24x24px large, or leave sufficient distance to other targets",
     "description": "Checks that pointer-operable targets have an effective hit region of at least 24 by 24 CSS pixels, or meet an allowed exception (e.g. sufficient spacing).",
     "i18n": {
       "titleKey": "targetSizeMinimum_title",
@@ -6585,8 +6585,8 @@ const CHECK_DEFS = [
   },
   {
     "ruleId": "textbox-name-present",
-    "title": "Accessible name is present",
-    "description": "Checks that elements expose a non-empty accessible name.",
+    "title": "Textboxes have an accessible name",
+    "description": "Checks that elements with role=\"textbox\" expose a non-empty accessible name.",
     "i18n": {
       "titleKey": "textboxNamePresent_title",
       "descriptionKey": "textboxNamePresent_description"
@@ -6696,8 +6696,8 @@ const CHECK_DEFS = [
   },
   {
     "ruleId": "treeitem-name-present",
-    "title": "Accessible name is present",
-    "description": "Checks that elements expose a non-empty accessible name.",
+    "title": "Tree items have an accessible name",
+    "description": "Checks that elements with role=\"treeitem\" expose a non-empty accessible name.",
     "i18n": {
       "titleKey": "treeitemNamePresent_title",
       "descriptionKey": "treeitemNamePresent_description"
@@ -7696,7 +7696,7 @@ const I18N = {
     "svgImage_textAltPresent_summary_fail": "Fehlende Textalternative auf SVG <image>.",
     "svgImage_textAltPresent_hint_fail": "Fügen Sie innerhalb von <image> ein <title> (und optional <desc>) hinzu, oder stellen Sie aria-label/aria-labelledby bereit.",
     "formControl_programmaticLabelPresent_title": "Formularelemente müssen eine programmatische Beschriftung haben",
-    "formControl_programmaticLabelPresent_description": "Prüft, ob Formularelemente eine programmatische Beschriftung über <label>, aria-label oder aria-labelledby haben.",
+    "formControl_programmaticLabelPresent_description": "Prüft, ob Formularelemente eine programmatische Beschriftung über <label>, aria-label, aria-labelledby, title oder placeholder haben.",
     "formControl_programmaticLabelPresent_summary_fail": "Dem Formularelement fehlt eine programmatische Beschriftung.",
     "formControl_programmaticLabelPresent_hint_fail": "Stellen Sie eine <label>-Zuordnung, aria-label oder aria-labelledby bereit (placeholder/title zählen nicht als Beschriftung).",
     "formControlAccessibleName_description": "Schlägt fehl, wenn ein zutreffendes Formularelement keinen zugänglichen Namen hat (z. B. label, aria-label, aria-labelledby).",
@@ -7742,7 +7742,7 @@ const I18N = {
     "mediaTranscriptPresent_summary_cantTell_unverified": "Für dieses zeitbasierte Medium ist möglicherweise eine Transkription oder eine andere Textalternative verfügbar, dies konnte jedoch anhand des Seiteninhalts nicht verifiziert werden.",
     "mediaTranscriptPresent_hint_cantTell_unverified": "Stellen Sie sicher, dass eine klar erkennbare Transkription oder eine andere Textalternative verfügbar und sichtbar oder programmatisch mit dem Medium auf der Seite verknüpft ist.",
     "pageTitlePresent_title": "Die Seite hat einen nicht leeren Titel",
-    "pageTitlePresent_description": "Prüft, ob die Seite ein nicht leeres <title>-Element enthält, das die Seite identifiziert.",
+    "pageTitlePresent_description": "Prüft, ob die Seite ein nicht leeres <title>-Element enthält.",
     "pageTitlePresent_summary_fail": "Die Seite hat keinen nicht leeren Titel.",
     "pageTitlePresent_hint_fail": "Fügen Sie ein <title>-Element mit Text hinzu, der das Thema oder den Zweck der Seite beschreibt.",
     "pageTitlePatterns_title": "Seitentitel-Muster, die möglicherweise unzureichend aussagekräftig sind",
@@ -7772,13 +7772,13 @@ const I18N = {
     "contrastComputable_cantTell_backdropFilter": "Der Kontrast ist nicht berechenbar, weil backdrop-filter verwendet wird ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_filterOrBackdropFilter": "Der Kontrast ist nicht berechenbar, weil filter verwendet wird ({{blockerProperty}}={{blockerValue}}).",
     "contrastMinimum_title": "Text erfüllt den Mindestfarbkontrast (AA)",
-    "contrastMinimum_description": "Prüft, ob sichtbarer Text ein Kontrastverhältnis von mindestens 4,5:1 (normal) oder 3,0:1 (groß) aufweist, sofern der Kontrast aus CSS berechenbar ist.",
+    "contrastMinimum_description": "Prüft, ob sichtbarer Text ein Kontrastverhältnis von mindestens 4,5:1 (normal) oder 3:1 (groß) aufweist, sofern der Kontrast aus CSS berechenbar ist.",
     "contrastMinimum_fail_belowThreshold": "Das Element weist einen unzureichenden Farbkontrast von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).",
     "contrastMinimum_pass_allAboveThreshold": "Der gesamte berechenbare Text erfüllt den Mindestkontrast (AA). Zutreffende Textknoten: {{eligibleTextCount}}. Berechenbar: {{computableTextCount}}.",
     "contrastMinimum_notApplicable_noComputableText": "Bei keinem zutreffenden Text war der Kontrast berechenbar (zutreffende Textknoten: {{eligibleTextCount}}). Details siehe Regel zur Kontrastberechenbarkeit.",
     "contrastMinimum_cantTell_engineFailure": "Der Mindestkontrast (AA) konnte aufgrund eines internen Engine-Fehlers nicht bestimmt werden ({{reasonCode}}).",
     "contrastEnhanced_title": "Text erfüllt den erweiterten Farbkontrast (AAA)",
-    "contrastEnhanced_description": "Prüft, ob sichtbarer Text ein Kontrastverhältnis von mindestens 7,0:1 (normal) oder 4,5:1 (groß) aufweist, sofern der Kontrast aus CSS berechenbar ist.",
+    "contrastEnhanced_description": "Prüft, ob sichtbarer Text ein Kontrastverhältnis von mindestens 7:1 (normal) oder 4,5:1 (groß) aufweist, sofern der Kontrast aus CSS berechenbar ist.",
     "contrastEnhanced_fail_belowThreshold": "Das Element weist einen unzureichenden Farbkontrast (AAA) von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).",
     "contrastEnhanced_pass_allAboveThreshold": "Der gesamte berechenbare Text erfüllt den erweiterten Kontrast (AAA). Zutreffende Textknoten: {{eligibleTextCount}}. Berechenbar: {{computableTextCount}}.",
     "contrastEnhanced_notApplicable_noComputableText": "Bei keinem zutreffenden Text war der Kontrast berechenbar (zutreffende Textknoten: {{eligibleTextCount}}). Details siehe Regel zur Kontrastberechenbarkeit.",
@@ -8005,7 +8005,7 @@ const I18N = {
     "iframeFocusableContent_summary_fail": "Dieses <{{element}}> hat tabindex=\"-1\", aber sein Inhalt enthält fokussierbare Elemente, die weiterhin per Tastatur erreichbar sind.",
     "iframeFocusableContent_hint_fail": "Entfernen Sie den fokussierbaren Inhalt aus dem Frame, oder entfernen Sie tabindex=\"-1\", falls der Frame erreichbar sein soll.",
     "tableHeadersAttrValid_title": "Das headers-Attribut einer Tabellenzelle muss auf gültige Kopfzellen verweisen",
-    "tableHeadersAttrValid_description": "Prüft, ob jede id im headers-Attribut eines <td>/<th> auf ein <th>-Element innerhalb derselben Tabelle aufgelöst wird (nicht fehlend, kein Nicht-th-Element, nicht sich selbst).",
+    "tableHeadersAttrValid_description": "Prüft, ob jede id im headers-Attribut eines <td>/<th> auf eine Zelle (<td> oder <th>) innerhalb derselben Tabelle aufgelöst wird (nicht fehlend, kein Element außer einer Zelle, nicht sich selbst).",
     "tableHeadersAttrValid_summary_fail": "Das headers-Attribut dieses <{{element}}> verweist auf ungültige Kopfzelle(n): {{invalidIds}}.",
     "tableHeadersAttrValid_hint_fail": "Aktualisieren Sie das headers-Attribut so, dass jede id auf ein <th>-Element innerhalb derselben Tabelle verweist.",
     "tableThHasDataCells_title": "<th>-Elemente müssen mindestens eine Datenzelle beschreiben",
@@ -8146,7 +8146,7 @@ const I18N = {
     "tabindex_summary_cantTell": "Dieses Element hat einen positiven tabindex, der die natürliche Tab-Reihenfolge überschreibt.",
     "tabindex_hint_cantTell": "Verwenden Sie tabindex=\"0\" (oder einen negativen Wert, um es aus der Tab-Reihenfolge zu entfernen) anstelle einer positiven Zahl; korrigieren Sie stattdessen die DOM-Reihenfolge, wenn eine andere Tab-Reihenfolge benötigt wird.",
     "emptyTableHeader_title": "Tabellen-Kopfzellen dürfen nicht leer sein",
-    "emptyTableHeader_description": "Prüft, ob <th>-Elemente sichtbaren Textinhalt haben — eine Kopfzelle, die nur über aria-label/aria-labelledby benannt ist, wird ebenfalls markiert, da die tatsächliche Unterstützung durch Screenreader/Browser dafür uneinheitlich ist.",
+    "emptyTableHeader_description": "Prüft, ob Kopfzellen (<th> oder ein beliebiges Element mit role=\"columnheader\"/\"rowheader\") sichtbaren Textinhalt haben — eine Kopfzelle, die nur über aria-label/aria-labelledby benannt ist, wird ebenfalls markiert, da die tatsächliche Unterstützung durch Screenreader/Browser dafür uneinheitlich ist.",
     "emptyTableHeader_summary_cantTell": "Diese Tabellen-Kopfzelle hat keinen zugänglichen Namen.",
     "emptyTableHeader_hint_cantTell": "Fügen Sie dieser Kopfzelle Textinhalt (oder aria-label/aria-labelledby) hinzu, oder entfernen Sie sie, wenn sie nicht benötigt wird.",
     "emptyTableHeader_summary_cantTell_ariaOnly": "Diese Tabellen-Kopfzelle hat keinen sichtbaren Text — ihr einziger zugänglicher Name stammt von aria-label/aria-labelledby, was bekanntermaßen von realen Screenreader-/Browser-Kombinationen (z. B. NVDA+Firefox, iOS VoiceOver+Safari) bei <th>-Elementen ignoriert wird.",
@@ -8359,7 +8359,7 @@ const I18N = {
     "svgImage_textAltPresent_summary_fail": "Missing text alternative on SVG <image>.",
     "svgImage_textAltPresent_hint_fail": "Add a <title> (and optionally <desc>) inside <image>, or provide aria-label/aria-labelledby.",
     "formControl_programmaticLabelPresent_title": "Form controls must have a programmatic label",
-    "formControl_programmaticLabelPresent_description": "Checks that form controls have a programmatic label via <label>, aria-label, or aria-labelledby.",
+    "formControl_programmaticLabelPresent_description": "Checks that form controls have a programmatic label via <label>, aria-label, aria-labelledby, title, or placeholder.",
     "formControl_programmaticLabelPresent_summary_fail": "Form control is missing a programmatic label.",
     "formControl_programmaticLabelPresent_hint_fail": "Provide a <label> association, aria-label, or aria-labelledby (placeholder/title do not count as labels).",
     "formControlAccessibleName_description": "Fails when an applicable form control has no accessible name (e.g., label, aria-label, aria-labelledby).",
@@ -8405,7 +8405,7 @@ const I18N = {
     "mediaTranscriptPresent_summary_cantTell_unverified": "A transcript or other text alternative may be available for this time-based media, but it could not be verified from the page content.",
     "mediaTranscriptPresent_hint_cantTell_unverified": "Ensure a clearly identified transcript or other text alternative is available and visibly or programmatically associated with the media on the page.",
     "pageTitlePresent_title": "Page has a non-empty title",
-    "pageTitlePresent_description": "Checks that the page includes a non-empty <title> element that identifies the page.",
+    "pageTitlePresent_description": "Checks that the page includes a non-empty <title> element.",
     "pageTitlePresent_summary_fail": "The page does not have a non-empty title.",
     "pageTitlePresent_hint_fail": "Add a <title> element with text that describes the page topic or purpose.",
     "pageTitlePatterns_title": "Page title patterns that may be insufficiently descriptive",
@@ -8435,13 +8435,13 @@ const I18N = {
     "contrastComputable_cantTell_backdropFilter": "Contrast is not computable because backdrop-filter is used ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_filterOrBackdropFilter": "Contrast is not computable because filter is used ({{blockerProperty}}={{blockerValue}}).",
     "contrastMinimum_title": "Text meets minimum color contrast (AA)",
-    "contrastMinimum_description": "Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3.0:1 (large), when contrast is computable from CSS.",
+    "contrastMinimum_description": "Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3:1 (large), when contrast is computable from CSS.",
     "contrastMinimum_fail_belowThreshold": "Element has insufficient color contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).",
     "contrastMinimum_pass_allAboveThreshold": "All computable text meets minimum contrast (AA). Eligible text nodes: {{eligibleTextCount}}. Computable: {{computableTextCount}}.",
     "contrastMinimum_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
     "contrastMinimum_cantTell_engineFailure": "Minimum contrast (AA) could not be determined due to an internal engine error ({{reasonCode}}).",
     "contrastEnhanced_title": "Text meets enhanced color contrast (AAA)",
-    "contrastEnhanced_description": "Checks that visible text has a contrast ratio of at least 7.0:1 (normal) or 4.5:1 (large), when contrast is computable from CSS.",
+    "contrastEnhanced_description": "Checks that visible text has a contrast ratio of at least 7:1 (normal) or 4.5:1 (large), when contrast is computable from CSS.",
     "contrastEnhanced_fail_belowThreshold": "Element has insufficient color contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).",
     "contrastEnhanced_pass_allAboveThreshold": "All computable text meets enhanced contrast (AAA). Eligible text nodes: {{eligibleTextCount}}. Computable: {{computableTextCount}}.",
     "contrastEnhanced_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
@@ -8668,7 +8668,7 @@ const I18N = {
     "iframeFocusableContent_summary_fail": "This <{{element}}> has tabindex=\"-1\" but its content contains focusable elements, which remain reachable by keyboard.",
     "iframeFocusableContent_hint_fail": "Remove focusable content from the frame, or remove tabindex=\"-1\" if the frame is meant to be reachable.",
     "tableHeadersAttrValid_title": "Table cell \"headers\" attribute must reference valid header cells",
-    "tableHeadersAttrValid_description": "Checks that each id in a <td>/<th> headers attribute resolves to a <th> element within the same table (not missing, not a non-th element, not itself).",
+    "tableHeadersAttrValid_description": "Checks that each id in a <td>/<th> headers attribute resolves to a cell (<td> or <th>) within the same table (not missing, not a non-cell element, not itself).",
     "tableHeadersAttrValid_summary_fail": "This <{{element}}>'s headers attribute references invalid header cell(s): {{invalidIds}}.",
     "tableHeadersAttrValid_hint_fail": "Update the headers attribute so every id refers to a <th> element within the same table.",
     "tableThHasDataCells_title": "<th> elements must describe at least one data cell",
@@ -8809,7 +8809,7 @@ const I18N = {
     "tabindex_summary_cantTell": "This element has a positive tabindex, overriding the natural tab order.",
     "tabindex_hint_cantTell": "Use tabindex=\"0\" (or a negative value to remove from tab order) instead of a positive number; fix the DOM order if a different tab order is needed.",
     "emptyTableHeader_title": "Table header cells must not be empty",
-    "emptyTableHeader_description": "Checks that <th> elements have visible text content — a header named only via aria-label/aria-labelledby is also flagged, since real screen-reader/browser support for that is inconsistent.",
+    "emptyTableHeader_description": "Checks that table header cells (<th>, or any element with role=\"columnheader\"/\"rowheader\") have visible text content — a header named only via aria-label/aria-labelledby is also flagged, since real screen-reader/browser support for that is inconsistent.",
     "emptyTableHeader_summary_cantTell": "This table header cell has no accessible name.",
     "emptyTableHeader_hint_cantTell": "Add text content (or aria-label/aria-labelledby) to this header cell, or remove it if it is not needed.",
     "emptyTableHeader_summary_cantTell_ariaOnly": "This table header cell has no visible text — its only accessible name comes from aria-label/aria-labelledby, which real screen-reader/browser combinations (e.g. NVDA+Firefox, iOS VoiceOver+Safari) are known to ignore on <th> elements.",
@@ -9022,7 +9022,7 @@ const I18N = {
     "svgImage_textAltPresent_summary_fail": "Falta la alternativa textual en el <image> de SVG.",
     "svgImage_textAltPresent_hint_fail": "Agregar un <title> (y opcionalmente un <desc>) dentro de <image>, o proporcionar aria-label/aria-labelledby.",
     "formControl_programmaticLabelPresent_title": "Los controles de formulario deben tener una etiqueta programática",
-    "formControl_programmaticLabelPresent_description": "Comprueba que los controles de formulario tengan una etiqueta programática mediante <label>, aria-label o aria-labelledby.",
+    "formControl_programmaticLabelPresent_description": "Comprueba que los controles de formulario tengan una etiqueta programática mediante <label>, aria-label, aria-labelledby, title o placeholder.",
     "formControl_programmaticLabelPresent_summary_fail": "Al control de formulario le falta una etiqueta programática.",
     "formControl_programmaticLabelPresent_hint_fail": "Proporcionar una asociación <label>, aria-label o aria-labelledby (placeholder/title no cuentan como etiquetas).",
     "formControlAccessibleName_description": "Falla cuando un control de formulario aplicable no tiene nombre accesible (por ejemplo, label, aria-label, aria-labelledby).",
@@ -9068,7 +9068,7 @@ const I18N = {
     "mediaTranscriptPresent_summary_cantTell_unverified": "Puede haber disponible una transcripción u otra alternativa textual para este medio basado en tiempo, pero no se pudo verificar a partir del contenido de la página.",
     "mediaTranscriptPresent_hint_cantTell_unverified": "Asegurarse de que una transcripción claramente identificada u otra alternativa textual esté disponible y asociada visible o programáticamente con el medio en la página.",
     "pageTitlePresent_title": "La página tiene un título no vacío",
-    "pageTitlePresent_description": "Comprueba que la página incluya un elemento <title> no vacío que la identifique.",
+    "pageTitlePresent_description": "Comprueba que la página incluya un elemento <title> no vacío.",
     "pageTitlePresent_summary_fail": "La página no tiene un título no vacío.",
     "pageTitlePresent_hint_fail": "Agregar un elemento <title> con texto que describa el tema o propósito de la página.",
     "pageTitlePatterns_title": "Patrones de título de página que pueden ser poco descriptivos",
@@ -9098,13 +9098,13 @@ const I18N = {
     "contrastComputable_cantTell_backdropFilter": "El contraste no es computable porque se usa backdrop-filter ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_filterOrBackdropFilter": "El contraste no es computable porque se usa filter ({{blockerProperty}}={{blockerValue}}).",
     "contrastMinimum_title": "El texto cumple el contraste de color mínimo (AA)",
-    "contrastMinimum_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 4.5:1 (normal) o 3.0:1 (grande), cuando el contraste es computable a partir de CSS.",
+    "contrastMinimum_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 4.5:1 (normal) o 3:1 (grande), cuando el contraste es computable a partir de CSS.",
     "contrastMinimum_fail_belowThreshold": "El elemento tiene un contraste de color insuficiente de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).",
     "contrastMinimum_pass_allAboveThreshold": "Todo el texto computable cumple el contraste mínimo (AA). Nodos de texto elegibles: {{eligibleTextCount}}. Computables: {{computableTextCount}}.",
     "contrastMinimum_notApplicable_noComputableText": "Ningún texto elegible tuvo contraste computable (nodos de texto elegibles: {{eligibleTextCount}}). Consultar la regla de computabilidad de contraste para más información.",
     "contrastMinimum_cantTell_engineFailure": "No se pudo determinar el contraste mínimo (AA) debido a un error interno del motor ({{reasonCode}}).",
     "contrastEnhanced_title": "El texto cumple el contraste de color mejorado (AAA)",
-    "contrastEnhanced_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 7.0:1 (normal) o 4.5:1 (grande), cuando el contraste es computable a partir de CSS.",
+    "contrastEnhanced_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 7:1 (normal) o 4.5:1 (grande), cuando el contraste es computable a partir de CSS.",
     "contrastEnhanced_fail_belowThreshold": "El elemento tiene un contraste de color insuficiente (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).",
     "contrastEnhanced_pass_allAboveThreshold": "Todo el texto computable cumple el contraste mejorado (AAA). Nodos de texto elegibles: {{eligibleTextCount}}. Computables: {{computableTextCount}}.",
     "contrastEnhanced_notApplicable_noComputableText": "Ningún texto elegible tuvo contraste computable (nodos de texto elegibles: {{eligibleTextCount}}). Consultar la regla de computabilidad de contraste para más información.",
@@ -9331,7 +9331,7 @@ const I18N = {
     "iframeFocusableContent_summary_fail": "Este <{{element}}> tiene tabindex=\"-1\" pero su contenido incluye elementos enfocables, que siguen siendo alcanzables por teclado.",
     "iframeFocusableContent_hint_fail": "Eliminar el contenido enfocable del marco, o eliminar tabindex=\"-1\" si el marco está pensado para ser alcanzable.",
     "tableHeadersAttrValid_title": "El atributo \"headers\" de la celda de tabla debe referenciar celdas de encabezado válidas",
-    "tableHeadersAttrValid_description": "Comprueba que cada id en un atributo headers de <td>/<th> se resuelva en un elemento <th> dentro de la misma tabla (que no falte, que no sea un elemento distinto de th, y que no sea él mismo).",
+    "tableHeadersAttrValid_description": "Comprueba que cada id en un atributo headers de <td>/<th> se resuelva en una celda (<td> o <th>) dentro de la misma tabla (que no falte, que no sea un elemento distinto de una celda, y que no sea ella misma).",
     "tableHeadersAttrValid_summary_fail": "El atributo headers de este <{{element}}> referencia celda(s) de encabezado no válida(s): {{invalidIds}}.",
     "tableHeadersAttrValid_hint_fail": "Actualizar el atributo headers para que cada id haga referencia a un elemento <th> dentro de la misma tabla.",
     "tableThHasDataCells_title": "Los elementos <th> deben describir al menos una celda de datos",
@@ -9472,7 +9472,7 @@ const I18N = {
     "tabindex_summary_cantTell": "Este elemento tiene un tabindex positivo, lo que sobrescribe el orden de tabulación natural.",
     "tabindex_hint_cantTell": "Usar tabindex=\"0\" (o un valor negativo para eliminarlo del orden de tabulación) en lugar de un número positivo; corregir el orden del DOM si se necesita un orden de tabulación diferente.",
     "emptyTableHeader_title": "Las celdas de encabezado de tabla no deben estar vacías",
-    "emptyTableHeader_description": "Comprueba que los elementos <th> tengan contenido de texto visible; un encabezado nombrado únicamente mediante aria-label/aria-labelledby también se señala, ya que el soporte real de lectores de pantalla/navegadores para eso es inconsistente.",
+    "emptyTableHeader_description": "Comprueba que las celdas de encabezado (<th>, o cualquier elemento con role=\"columnheader\"/\"rowheader\") tengan contenido de texto visible; un encabezado nombrado únicamente mediante aria-label/aria-labelledby también se señala, ya que el soporte real de lectores de pantalla/navegadores para eso es inconsistente.",
     "emptyTableHeader_summary_cantTell": "Esta celda de encabezado de tabla no tiene nombre accesible.",
     "emptyTableHeader_hint_cantTell": "Agregar contenido de texto (o aria-label/aria-labelledby) a esta celda de encabezado, o eliminarla si no es necesaria.",
     "emptyTableHeader_summary_cantTell_ariaOnly": "Esta celda de encabezado de tabla no tiene texto visible; su único nombre accesible proviene de aria-label/aria-labelledby, que se sabe que ciertas combinaciones reales de lector de pantalla/navegador (por ejemplo, NVDA+Firefox, iOS VoiceOver+Safari) ignoran en elementos <th>.",
@@ -9685,7 +9685,7 @@ const I18N = {
     "svgImage_textAltPresent_summary_fail": "Alternative textuelle manquante sur <image> (SVG).",
     "svgImage_textAltPresent_hint_fail": "Ajoutez un <title> (et éventuellement <desc>) dans <image>, ou fournissez aria-label/aria-labelledby.",
     "formControl_programmaticLabelPresent_title": "Les contrôles de formulaire doivent avoir un libellé programmatique",
-    "formControl_programmaticLabelPresent_description": "Vérifie que les contrôles de formulaire ont un libellé programmatique via <label>, aria-label ou aria-labelledby.",
+    "formControl_programmaticLabelPresent_description": "Vérifie que les contrôles de formulaire ont un libellé programmatique via <label>, aria-label, aria-labelledby, title ou placeholder.",
     "formControl_programmaticLabelPresent_summary_fail": "Le contrôle de formulaire n’a pas de libellé programmatique.",
     "formControl_programmaticLabelPresent_hint_fail": "Associez un <label>, ou utilisez aria-label / aria-labelledby (placeholder/title ne sont pas des libellés).",
     "formControlAccessibleName_description": "Échec lorsqu’un contrôle de formulaire applicable n’a pas de nom accessible (ex. label, aria-label, aria-labelledby).",
@@ -9731,7 +9731,7 @@ const I18N = {
     "mediaTranscriptPresent_summary_cantTell_unverified": "Une transcription ou une autre alternative textuelle peut être disponible pour ce média temporel, mais elle n’a pas pu être vérifiée à partir du contenu de la page.",
     "mediaTranscriptPresent_hint_cantTell_unverified": "Aucune transcription ou autre alternative textuelle pour cet élément {element} n’est clairement établie sur la page.",
     "pageTitlePresent_title": "La page possède un titre non vide",
-    "pageTitlePresent_description": "Vérifie que la page contient un élément <title> non vide permettant d’identifier la page.",
+    "pageTitlePresent_description": "Vérifie que la page contient un élément <title> non vide.",
     "pageTitlePresent_summary_fail": "La page ne possède pas de titre non vide.",
     "pageTitlePresent_hint_fail": "Ajouter un élément <title> contenant un texte décrivant le sujet ou l’objectif de la page.",
     "pageTitlePatterns_title": "Motifs de titres de page pouvant indiquer un manque de descriptivité",
@@ -9761,13 +9761,13 @@ const I18N = {
     "contrastComputable_cantTell_backdropFilter": "Le contraste ne peut pas être calculé car la propriété backdrop-filter est utilisée ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_filterOrBackdropFilter": "Le contraste ne peut pas être calculé car une propriété filter ou backdrop-filter est utilisée ({{blockerProperty}}={{blockerValue}}).",
     "contrastMinimum_title": "Le texte respecte le contraste minimum (AA)",
-    "contrastMinimum_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 4,5:1 (texte normal) ou 3,0:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
+    "contrastMinimum_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 4,5:1 (texte normal) ou 3:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
     "contrastMinimum_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
     "contrastMinimum_pass_allAboveThreshold": "Tout le texte calculable respecte le contraste minimum (AA). Nœuds de texte éligibles : {{eligibleTextCount}}. Calculables : {{computableTextCount}}.",
     "contrastMinimum_notApplicable_noComputableText": "Aucun texte éligible n’avait un contraste calculable (nœuds de texte éligibles : {{eligibleTextCount}}). Voir la règle de calculabilité du contraste pour les détails.",
     "contrastMinimum_cantTell_engineFailure": "Le contraste minimum (AA) n’a pas pu être déterminé en raison d’une erreur interne du moteur ({{reasonCode}}).",
     "contrastEnhanced_title": "Le texte respecte le contraste renforcé (AAA)",
-    "contrastEnhanced_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 7,0:1 (texte normal) ou 4,5:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
+    "contrastEnhanced_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 7:1 (texte normal) ou 4,5:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
     "contrastEnhanced_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant renforcé (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
     "contrastEnhanced_pass_allAboveThreshold": "Tout le texte calculable respecte le contraste renforcé (AAA). Nœuds de texte éligibles : {{eligibleTextCount}}. Calculables : {{computableTextCount}}.",
     "contrastEnhanced_notApplicable_noComputableText": "Aucun texte éligible n’avait un contraste calculable (nœuds de texte éligibles : {{eligibleTextCount}}). Voir la règle de calculabilité du contraste pour les détails.",
@@ -9994,7 +9994,7 @@ const I18N = {
     "iframeFocusableContent_summary_fail": "Ce <{{element}}> a tabindex=\"-1\" mais son contenu contient des éléments focalisables, qui restent accessibles au clavier.",
     "iframeFocusableContent_hint_fail": "Retirez le contenu focalisable du cadre, ou retirez tabindex=\"-1\" si le cadre est censé être accessible.",
     "tableHeadersAttrValid_title": "L’attribut headers d’une cellule de tableau doit référencer des cellules d’en-tête valides",
-    "tableHeadersAttrValid_description": "Vérifie que chaque id de l’attribut headers d’un <td>/<th> correspond à un élément <th> du même tableau (ni absent, ni un élément autre que th, ni lui-même).",
+    "tableHeadersAttrValid_description": "Vérifie que chaque id de l’attribut headers d’un <td>/<th> correspond à une cellule (<td> ou <th>) du même tableau (ni absente, ni un élément autre qu’une cellule, ni elle-même).",
     "tableHeadersAttrValid_summary_fail": "L’attribut headers de ce <{{element}}> référence des cellules d’en-tête invalides : {{invalidIds}}.",
     "tableHeadersAttrValid_hint_fail": "Mettez à jour l’attribut headers afin que chaque id désigne un élément <th> du même tableau.",
     "tableThHasDataCells_title": "Les éléments <th> doivent décrire au moins une cellule de données",
@@ -10135,7 +10135,7 @@ const I18N = {
     "tabindex_summary_cantTell": "Cet élément a un tabindex positif, ce qui modifie l’ordre naturel de tabulation.",
     "tabindex_hint_cantTell": "Utilisez tabindex=\"0\" (ou une valeur négative pour le retirer de l’ordre de tabulation) plutôt qu’un nombre positif ; corrigez l’ordre dans le DOM si un ordre de tabulation différent est nécessaire.",
     "emptyTableHeader_title": "Les cellules d’en-tête de tableau ne doivent pas être vides",
-    "emptyTableHeader_description": "Vérifie que les éléments <th> ont un contenu textuel visible — un en-tête nommé uniquement via aria-label/aria-labelledby est aussi signalé, car la prise en charge réelle par les lecteurs d’écran/navigateurs est incohérente.",
+    "emptyTableHeader_description": "Vérifie que les cellules d’en-tête (<th>, ou tout élément avec role=\"columnheader\"/\"rowheader\") ont un contenu textuel visible — un en-tête nommé uniquement via aria-label/aria-labelledby est aussi signalé, car la prise en charge réelle par les lecteurs d’écran/navigateurs est incohérente.",
     "emptyTableHeader_summary_cantTell": "Cette cellule d’en-tête de tableau n’a pas de nom accessible.",
     "emptyTableHeader_hint_cantTell": "Ajoutez du contenu textuel (ou aria-label/aria-labelledby) à cette cellule d’en-tête, ou retirez-la si elle n’est pas nécessaire.",
     "emptyTableHeader_summary_cantTell_ariaOnly": "Cette cellule d’en-tête de tableau n’a pas de texte visible — son seul nom accessible provient de aria-label/aria-labelledby, que des combinaisons réelles de lecteur d’écran/navigateur (ex. NVDA+Firefox, iOS VoiceOver+Safari) sont connues pour ignorer sur les éléments <th>.",
@@ -19661,8 +19661,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "area-alt-present",
-    "title": "&lt;area&gt; must have an alt attribute",
-    "description": "Checks that &lt;area&gt; elements provide an alt attribute to support a text alternative mechanism.",
+    "title": "<area> must have an alt attribute",
+    "description": "Checks that <area> elements provide an alt attribute to support a text alternative mechanism.",
     "i18n": {
       "titleKey": "area_altPresent_title",
       "descriptionKey": "area_altPresent_description"
@@ -20290,7 +20290,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "ruleId": "aria-prohibited-children",
     "title": "Container roles must not own a child with a disallowed role",
-    "description": "Checks that every accessible-tree-owned child of a container role (list, listbox, menu, menubar, radiogroup, rowgroup, table, grid, treegrid, tablist, tree, row) has one of that role's allowed owned roles — the same set as its required owned roles.",
+    "description": "Checks that every accessible-tree-owned child of a container role (list, listbox, menu, menubar, radiogroup, rowgroup, table, grid, treegrid, tablist, tree, row) has one of that role's allowed owned roles.",
     "i18n": {
       "titleKey": "ariaProhibitedChildren_title",
       "descriptionKey": "ariaProhibitedChildren_description"
@@ -21281,7 +21281,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "contrast-enhanced",
-    "title": "Text must meet the enhanced color contrast ratio",
+    "title": "Text meets enhanced color contrast (AAA)",
     "description": "Checks that visible text has a contrast ratio of at least 7:1 (normal) or 4.5:1 (large), when contrast is computable from CSS.",
     "i18n": {
       "titleKey": "contrastEnhanced_title",
@@ -21338,7 +21338,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "contrast-minimum",
-    "title": "Text must meet the minimum color contrast ratio",
+    "title": "Text meets minimum color contrast (AA)",
     "description": "Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3:1 (large), when contrast is computable from CSS.",
     "i18n": {
       "titleKey": "contrastMinimum_title",
@@ -23155,7 +23155,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "ruleId": "label-in-name",
     "title": "Label in Name: accessible name contains visible text",
-    "description": "Checks that when a control has a visible text label, the accessible name (from aria-label/aria-labelledby) contains that visible label text (WCAG 2.5.3).",
+    "description": "Checks that when a control has a visible text label, the accessible name contains that visible label text (WCAG 2.5.3).",
     "i18n": {
       "titleKey": "labelInName_title",
       "descriptionKey": "labelInName_description"
@@ -23774,8 +23774,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "listbox-name-present",
-    "title": "Accessible name is present",
-    "description": "Checks that elements expose a non-empty accessible name.",
+    "title": "Listboxes have an accessible name",
+    "description": "Checks that elements with role=\"listbox\" expose a non-empty accessible name.",
     "i18n": {
       "titleKey": "listboxNamePresent_title",
       "descriptionKey": "listboxNamePresent_description"
@@ -23997,8 +23997,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "media-alternative-transcript-evidence",
-    "title": "Time-based media: transcript / media alternative evidence",
-    "description": "Finds <audio>/<video> elements where a transcript or other text alternative is not strongly evidenced in-page. This rule is conservative and returns cantTell when evidence is missing or unverified.",
+    "title": "Time-based media: transcript or text alternative evidence",
+    "description": "Finds audio and video elements where a transcript or other text alternative is not strongly evidenced in the page content. This rule is conservative and reports cantTell when evidence is missing or cannot be verified.",
     "i18n": {
       "titleKey": "mediaTranscriptPresent_title",
       "descriptionKey": "mediaTranscriptPresent_description"
@@ -24646,8 +24646,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "option-name-present",
-    "title": "Accessible name is present",
-    "description": "Checks that elements expose a non-empty accessible name.",
+    "title": "Options have an accessible name",
+    "description": "Checks that elements with role=\"option\" expose a non-empty accessible name.",
     "i18n": {
       "titleKey": "optionNamePresent_title",
       "descriptionKey": "optionNamePresent_description"
@@ -24794,8 +24794,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "page-title-patterns",
-    "title": "Page title patterns that may indicate low descriptiveness",
-    "description": "Flags page titles that are likely too generic or templated as review signals (WCAG 2.2 SC 2.4.2). This rule is conservative and does not fail based on patterns alone.",
+    "title": "Page title patterns that may be insufficiently descriptive",
+    "description": "Identifies page title patterns that may indicate low descriptiveness, such as generic, duplicated, or overly templated titles. This rule provides review signals and does not fail automatically.",
     "i18n": {
       "titleKey": "pageTitlePatterns_title",
       "descriptionKey": "pageTitlePatterns_description"
@@ -24849,8 +24849,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "page-title-present",
-    "title": "Page title is present and non-empty",
-    "description": "Checks that the document has a non-empty <title> element (WCAG 2.2 SC 2.4.2).",
+    "title": "Page has a non-empty title",
+    "description": "Checks that the page includes a non-empty <title> element.",
     "i18n": {
       "titleKey": "pageTitlePresent_title",
       "descriptionKey": "pageTitlePresent_description"
@@ -25092,7 +25092,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "ruleId": "role-img-text-alternative-present",
     "title": "[role=\"img\"] must have an accessible text alternative",
-    "description": "Checks that elements with role=\"img\" provide an accessible text alternative via aria-label, aria-labelledby, or a title attribute.",
+    "description": "Checks that elements with role=\"img\" provide an accessible text alternative using aria-label, aria-labelledby, or a title attribute.",
     "i18n": {
       "titleKey": "roleImg_textAlternativePresent_title",
       "descriptionKey": "roleImg_textAlternativePresent_description"
@@ -25252,8 +25252,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "searchbox-name-present",
-    "title": "Accessible name is present",
-    "description": "Checks that elements expose a non-empty accessible name.",
+    "title": "Searchboxes have an accessible name",
+    "description": "Checks that elements with role=\"searchbox\" expose a non-empty accessible name.",
     "i18n": {
       "titleKey": "searchboxNamePresent_title",
       "descriptionKey": "searchboxNamePresent_description"
@@ -25457,8 +25457,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "spinbutton-name-present",
-    "title": "Accessible name is present",
-    "description": "Checks that elements expose a non-empty accessible name.",
+    "title": "Spinbuttons have an accessible name",
+    "description": "Checks that elements with role=\"spinbutton\" expose a non-empty accessible name.",
     "i18n": {
       "titleKey": "spinbuttonNamePresent_title",
       "descriptionKey": "spinbuttonNamePresent_description"
@@ -25625,7 +25625,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "ruleId": "svg-text-alternative-present",
     "title": "<svg> must provide a text alternative",
-    "description": "Checks that inline <svg> elements provide a text alternative via a <title> element or an ARIA name (a <desc> element alone does not count — it only contributes to the accessible description, not the name).",
+    "description": "Checks that inline <svg> elements provide a text alternative via a <title> element or an ARIA name (a <desc> element alone does not count).",
     "i18n": {
       "titleKey": "svg_textAltPresent_title",
       "descriptionKey": "svg_textAltPresent_description"
@@ -26031,7 +26031,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "target-size-minimum",
-    "title": "Pointer targets meet minimum size (AA)",
+    "title": "Pointer targets must be at least 24x24px large, or leave sufficient distance to other targets",
     "description": "Checks that pointer-operable targets have an effective hit region of at least 24 by 24 CSS pixels, or meet an allowed exception (e.g. sufficient spacing).",
     "i18n": {
       "titleKey": "targetSizeMinimum_title",
@@ -26143,8 +26143,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "textbox-name-present",
-    "title": "Accessible name is present",
-    "description": "Checks that elements expose a non-empty accessible name.",
+    "title": "Textboxes have an accessible name",
+    "description": "Checks that elements with role=\"textbox\" expose a non-empty accessible name.",
     "i18n": {
       "titleKey": "textboxNamePresent_title",
       "descriptionKey": "textboxNamePresent_description"
@@ -26254,8 +26254,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "treeitem-name-present",
-    "title": "Accessible name is present",
-    "description": "Checks that elements expose a non-empty accessible name.",
+    "title": "Tree items have an accessible name",
+    "description": "Checks that elements with role=\"treeitem\" expose a non-empty accessible name.",
     "i18n": {
       "titleKey": "treeitemNamePresent_title",
       "descriptionKey": "treeitemNamePresent_description"
@@ -49861,7 +49861,7 @@ const I18N = {
     "svgImage_textAltPresent_summary_fail": "Fehlende Textalternative auf SVG <image>.",
     "svgImage_textAltPresent_hint_fail": "Fügen Sie innerhalb von <image> ein <title> (und optional <desc>) hinzu, oder stellen Sie aria-label/aria-labelledby bereit.",
     "formControl_programmaticLabelPresent_title": "Formularelemente müssen eine programmatische Beschriftung haben",
-    "formControl_programmaticLabelPresent_description": "Prüft, ob Formularelemente eine programmatische Beschriftung über <label>, aria-label oder aria-labelledby haben.",
+    "formControl_programmaticLabelPresent_description": "Prüft, ob Formularelemente eine programmatische Beschriftung über <label>, aria-label, aria-labelledby, title oder placeholder haben.",
     "formControl_programmaticLabelPresent_summary_fail": "Dem Formularelement fehlt eine programmatische Beschriftung.",
     "formControl_programmaticLabelPresent_hint_fail": "Stellen Sie eine <label>-Zuordnung, aria-label oder aria-labelledby bereit (placeholder/title zählen nicht als Beschriftung).",
     "formControlAccessibleName_description": "Schlägt fehl, wenn ein zutreffendes Formularelement keinen zugänglichen Namen hat (z. B. label, aria-label, aria-labelledby).",
@@ -49907,7 +49907,7 @@ const I18N = {
     "mediaTranscriptPresent_summary_cantTell_unverified": "Für dieses zeitbasierte Medium ist möglicherweise eine Transkription oder eine andere Textalternative verfügbar, dies konnte jedoch anhand des Seiteninhalts nicht verifiziert werden.",
     "mediaTranscriptPresent_hint_cantTell_unverified": "Stellen Sie sicher, dass eine klar erkennbare Transkription oder eine andere Textalternative verfügbar und sichtbar oder programmatisch mit dem Medium auf der Seite verknüpft ist.",
     "pageTitlePresent_title": "Die Seite hat einen nicht leeren Titel",
-    "pageTitlePresent_description": "Prüft, ob die Seite ein nicht leeres <title>-Element enthält, das die Seite identifiziert.",
+    "pageTitlePresent_description": "Prüft, ob die Seite ein nicht leeres <title>-Element enthält.",
     "pageTitlePresent_summary_fail": "Die Seite hat keinen nicht leeren Titel.",
     "pageTitlePresent_hint_fail": "Fügen Sie ein <title>-Element mit Text hinzu, der das Thema oder den Zweck der Seite beschreibt.",
     "pageTitlePatterns_title": "Seitentitel-Muster, die möglicherweise unzureichend aussagekräftig sind",
@@ -49937,13 +49937,13 @@ const I18N = {
     "contrastComputable_cantTell_backdropFilter": "Der Kontrast ist nicht berechenbar, weil backdrop-filter verwendet wird ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_filterOrBackdropFilter": "Der Kontrast ist nicht berechenbar, weil filter verwendet wird ({{blockerProperty}}={{blockerValue}}).",
     "contrastMinimum_title": "Text erfüllt den Mindestfarbkontrast (AA)",
-    "contrastMinimum_description": "Prüft, ob sichtbarer Text ein Kontrastverhältnis von mindestens 4,5:1 (normal) oder 3,0:1 (groß) aufweist, sofern der Kontrast aus CSS berechenbar ist.",
+    "contrastMinimum_description": "Prüft, ob sichtbarer Text ein Kontrastverhältnis von mindestens 4,5:1 (normal) oder 3:1 (groß) aufweist, sofern der Kontrast aus CSS berechenbar ist.",
     "contrastMinimum_fail_belowThreshold": "Das Element weist einen unzureichenden Farbkontrast von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).",
     "contrastMinimum_pass_allAboveThreshold": "Der gesamte berechenbare Text erfüllt den Mindestkontrast (AA). Zutreffende Textknoten: {{eligibleTextCount}}. Berechenbar: {{computableTextCount}}.",
     "contrastMinimum_notApplicable_noComputableText": "Bei keinem zutreffenden Text war der Kontrast berechenbar (zutreffende Textknoten: {{eligibleTextCount}}). Details siehe Regel zur Kontrastberechenbarkeit.",
     "contrastMinimum_cantTell_engineFailure": "Der Mindestkontrast (AA) konnte aufgrund eines internen Engine-Fehlers nicht bestimmt werden ({{reasonCode}}).",
     "contrastEnhanced_title": "Text erfüllt den erweiterten Farbkontrast (AAA)",
-    "contrastEnhanced_description": "Prüft, ob sichtbarer Text ein Kontrastverhältnis von mindestens 7,0:1 (normal) oder 4,5:1 (groß) aufweist, sofern der Kontrast aus CSS berechenbar ist.",
+    "contrastEnhanced_description": "Prüft, ob sichtbarer Text ein Kontrastverhältnis von mindestens 7:1 (normal) oder 4,5:1 (groß) aufweist, sofern der Kontrast aus CSS berechenbar ist.",
     "contrastEnhanced_fail_belowThreshold": "Das Element weist einen unzureichenden Farbkontrast (AAA) von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).",
     "contrastEnhanced_pass_allAboveThreshold": "Der gesamte berechenbare Text erfüllt den erweiterten Kontrast (AAA). Zutreffende Textknoten: {{eligibleTextCount}}. Berechenbar: {{computableTextCount}}.",
     "contrastEnhanced_notApplicable_noComputableText": "Bei keinem zutreffenden Text war der Kontrast berechenbar (zutreffende Textknoten: {{eligibleTextCount}}). Details siehe Regel zur Kontrastberechenbarkeit.",
@@ -50170,7 +50170,7 @@ const I18N = {
     "iframeFocusableContent_summary_fail": "Dieses <{{element}}> hat tabindex=\"-1\", aber sein Inhalt enthält fokussierbare Elemente, die weiterhin per Tastatur erreichbar sind.",
     "iframeFocusableContent_hint_fail": "Entfernen Sie den fokussierbaren Inhalt aus dem Frame, oder entfernen Sie tabindex=\"-1\", falls der Frame erreichbar sein soll.",
     "tableHeadersAttrValid_title": "Das headers-Attribut einer Tabellenzelle muss auf gültige Kopfzellen verweisen",
-    "tableHeadersAttrValid_description": "Prüft, ob jede id im headers-Attribut eines <td>/<th> auf ein <th>-Element innerhalb derselben Tabelle aufgelöst wird (nicht fehlend, kein Nicht-th-Element, nicht sich selbst).",
+    "tableHeadersAttrValid_description": "Prüft, ob jede id im headers-Attribut eines <td>/<th> auf eine Zelle (<td> oder <th>) innerhalb derselben Tabelle aufgelöst wird (nicht fehlend, kein Element außer einer Zelle, nicht sich selbst).",
     "tableHeadersAttrValid_summary_fail": "Das headers-Attribut dieses <{{element}}> verweist auf ungültige Kopfzelle(n): {{invalidIds}}.",
     "tableHeadersAttrValid_hint_fail": "Aktualisieren Sie das headers-Attribut so, dass jede id auf ein <th>-Element innerhalb derselben Tabelle verweist.",
     "tableThHasDataCells_title": "<th>-Elemente müssen mindestens eine Datenzelle beschreiben",
@@ -50311,7 +50311,7 @@ const I18N = {
     "tabindex_summary_cantTell": "Dieses Element hat einen positiven tabindex, der die natürliche Tab-Reihenfolge überschreibt.",
     "tabindex_hint_cantTell": "Verwenden Sie tabindex=\"0\" (oder einen negativen Wert, um es aus der Tab-Reihenfolge zu entfernen) anstelle einer positiven Zahl; korrigieren Sie stattdessen die DOM-Reihenfolge, wenn eine andere Tab-Reihenfolge benötigt wird.",
     "emptyTableHeader_title": "Tabellen-Kopfzellen dürfen nicht leer sein",
-    "emptyTableHeader_description": "Prüft, ob <th>-Elemente sichtbaren Textinhalt haben — eine Kopfzelle, die nur über aria-label/aria-labelledby benannt ist, wird ebenfalls markiert, da die tatsächliche Unterstützung durch Screenreader/Browser dafür uneinheitlich ist.",
+    "emptyTableHeader_description": "Prüft, ob Kopfzellen (<th> oder ein beliebiges Element mit role=\"columnheader\"/\"rowheader\") sichtbaren Textinhalt haben — eine Kopfzelle, die nur über aria-label/aria-labelledby benannt ist, wird ebenfalls markiert, da die tatsächliche Unterstützung durch Screenreader/Browser dafür uneinheitlich ist.",
     "emptyTableHeader_summary_cantTell": "Diese Tabellen-Kopfzelle hat keinen zugänglichen Namen.",
     "emptyTableHeader_hint_cantTell": "Fügen Sie dieser Kopfzelle Textinhalt (oder aria-label/aria-labelledby) hinzu, oder entfernen Sie sie, wenn sie nicht benötigt wird.",
     "emptyTableHeader_summary_cantTell_ariaOnly": "Diese Tabellen-Kopfzelle hat keinen sichtbaren Text — ihr einziger zugänglicher Name stammt von aria-label/aria-labelledby, was bekanntermaßen von realen Screenreader-/Browser-Kombinationen (z. B. NVDA+Firefox, iOS VoiceOver+Safari) bei <th>-Elementen ignoriert wird.",
@@ -50524,7 +50524,7 @@ const I18N = {
     "svgImage_textAltPresent_summary_fail": "Missing text alternative on SVG <image>.",
     "svgImage_textAltPresent_hint_fail": "Add a <title> (and optionally <desc>) inside <image>, or provide aria-label/aria-labelledby.",
     "formControl_programmaticLabelPresent_title": "Form controls must have a programmatic label",
-    "formControl_programmaticLabelPresent_description": "Checks that form controls have a programmatic label via <label>, aria-label, or aria-labelledby.",
+    "formControl_programmaticLabelPresent_description": "Checks that form controls have a programmatic label via <label>, aria-label, aria-labelledby, title, or placeholder.",
     "formControl_programmaticLabelPresent_summary_fail": "Form control is missing a programmatic label.",
     "formControl_programmaticLabelPresent_hint_fail": "Provide a <label> association, aria-label, or aria-labelledby (placeholder/title do not count as labels).",
     "formControlAccessibleName_description": "Fails when an applicable form control has no accessible name (e.g., label, aria-label, aria-labelledby).",
@@ -50570,7 +50570,7 @@ const I18N = {
     "mediaTranscriptPresent_summary_cantTell_unverified": "A transcript or other text alternative may be available for this time-based media, but it could not be verified from the page content.",
     "mediaTranscriptPresent_hint_cantTell_unverified": "Ensure a clearly identified transcript or other text alternative is available and visibly or programmatically associated with the media on the page.",
     "pageTitlePresent_title": "Page has a non-empty title",
-    "pageTitlePresent_description": "Checks that the page includes a non-empty <title> element that identifies the page.",
+    "pageTitlePresent_description": "Checks that the page includes a non-empty <title> element.",
     "pageTitlePresent_summary_fail": "The page does not have a non-empty title.",
     "pageTitlePresent_hint_fail": "Add a <title> element with text that describes the page topic or purpose.",
     "pageTitlePatterns_title": "Page title patterns that may be insufficiently descriptive",
@@ -50600,13 +50600,13 @@ const I18N = {
     "contrastComputable_cantTell_backdropFilter": "Contrast is not computable because backdrop-filter is used ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_filterOrBackdropFilter": "Contrast is not computable because filter is used ({{blockerProperty}}={{blockerValue}}).",
     "contrastMinimum_title": "Text meets minimum color contrast (AA)",
-    "contrastMinimum_description": "Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3.0:1 (large), when contrast is computable from CSS.",
+    "contrastMinimum_description": "Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3:1 (large), when contrast is computable from CSS.",
     "contrastMinimum_fail_belowThreshold": "Element has insufficient color contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).",
     "contrastMinimum_pass_allAboveThreshold": "All computable text meets minimum contrast (AA). Eligible text nodes: {{eligibleTextCount}}. Computable: {{computableTextCount}}.",
     "contrastMinimum_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
     "contrastMinimum_cantTell_engineFailure": "Minimum contrast (AA) could not be determined due to an internal engine error ({{reasonCode}}).",
     "contrastEnhanced_title": "Text meets enhanced color contrast (AAA)",
-    "contrastEnhanced_description": "Checks that visible text has a contrast ratio of at least 7.0:1 (normal) or 4.5:1 (large), when contrast is computable from CSS.",
+    "contrastEnhanced_description": "Checks that visible text has a contrast ratio of at least 7:1 (normal) or 4.5:1 (large), when contrast is computable from CSS.",
     "contrastEnhanced_fail_belowThreshold": "Element has insufficient color contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).",
     "contrastEnhanced_pass_allAboveThreshold": "All computable text meets enhanced contrast (AAA). Eligible text nodes: {{eligibleTextCount}}. Computable: {{computableTextCount}}.",
     "contrastEnhanced_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
@@ -50833,7 +50833,7 @@ const I18N = {
     "iframeFocusableContent_summary_fail": "This <{{element}}> has tabindex=\"-1\" but its content contains focusable elements, which remain reachable by keyboard.",
     "iframeFocusableContent_hint_fail": "Remove focusable content from the frame, or remove tabindex=\"-1\" if the frame is meant to be reachable.",
     "tableHeadersAttrValid_title": "Table cell \"headers\" attribute must reference valid header cells",
-    "tableHeadersAttrValid_description": "Checks that each id in a <td>/<th> headers attribute resolves to a <th> element within the same table (not missing, not a non-th element, not itself).",
+    "tableHeadersAttrValid_description": "Checks that each id in a <td>/<th> headers attribute resolves to a cell (<td> or <th>) within the same table (not missing, not a non-cell element, not itself).",
     "tableHeadersAttrValid_summary_fail": "This <{{element}}>'s headers attribute references invalid header cell(s): {{invalidIds}}.",
     "tableHeadersAttrValid_hint_fail": "Update the headers attribute so every id refers to a <th> element within the same table.",
     "tableThHasDataCells_title": "<th> elements must describe at least one data cell",
@@ -50974,7 +50974,7 @@ const I18N = {
     "tabindex_summary_cantTell": "This element has a positive tabindex, overriding the natural tab order.",
     "tabindex_hint_cantTell": "Use tabindex=\"0\" (or a negative value to remove from tab order) instead of a positive number; fix the DOM order if a different tab order is needed.",
     "emptyTableHeader_title": "Table header cells must not be empty",
-    "emptyTableHeader_description": "Checks that <th> elements have visible text content — a header named only via aria-label/aria-labelledby is also flagged, since real screen-reader/browser support for that is inconsistent.",
+    "emptyTableHeader_description": "Checks that table header cells (<th>, or any element with role=\"columnheader\"/\"rowheader\") have visible text content — a header named only via aria-label/aria-labelledby is also flagged, since real screen-reader/browser support for that is inconsistent.",
     "emptyTableHeader_summary_cantTell": "This table header cell has no accessible name.",
     "emptyTableHeader_hint_cantTell": "Add text content (or aria-label/aria-labelledby) to this header cell, or remove it if it is not needed.",
     "emptyTableHeader_summary_cantTell_ariaOnly": "This table header cell has no visible text — its only accessible name comes from aria-label/aria-labelledby, which real screen-reader/browser combinations (e.g. NVDA+Firefox, iOS VoiceOver+Safari) are known to ignore on <th> elements.",
@@ -51187,7 +51187,7 @@ const I18N = {
     "svgImage_textAltPresent_summary_fail": "Falta la alternativa textual en el <image> de SVG.",
     "svgImage_textAltPresent_hint_fail": "Agregar un <title> (y opcionalmente un <desc>) dentro de <image>, o proporcionar aria-label/aria-labelledby.",
     "formControl_programmaticLabelPresent_title": "Los controles de formulario deben tener una etiqueta programática",
-    "formControl_programmaticLabelPresent_description": "Comprueba que los controles de formulario tengan una etiqueta programática mediante <label>, aria-label o aria-labelledby.",
+    "formControl_programmaticLabelPresent_description": "Comprueba que los controles de formulario tengan una etiqueta programática mediante <label>, aria-label, aria-labelledby, title o placeholder.",
     "formControl_programmaticLabelPresent_summary_fail": "Al control de formulario le falta una etiqueta programática.",
     "formControl_programmaticLabelPresent_hint_fail": "Proporcionar una asociación <label>, aria-label o aria-labelledby (placeholder/title no cuentan como etiquetas).",
     "formControlAccessibleName_description": "Falla cuando un control de formulario aplicable no tiene nombre accesible (por ejemplo, label, aria-label, aria-labelledby).",
@@ -51233,7 +51233,7 @@ const I18N = {
     "mediaTranscriptPresent_summary_cantTell_unverified": "Puede haber disponible una transcripción u otra alternativa textual para este medio basado en tiempo, pero no se pudo verificar a partir del contenido de la página.",
     "mediaTranscriptPresent_hint_cantTell_unverified": "Asegurarse de que una transcripción claramente identificada u otra alternativa textual esté disponible y asociada visible o programáticamente con el medio en la página.",
     "pageTitlePresent_title": "La página tiene un título no vacío",
-    "pageTitlePresent_description": "Comprueba que la página incluya un elemento <title> no vacío que la identifique.",
+    "pageTitlePresent_description": "Comprueba que la página incluya un elemento <title> no vacío.",
     "pageTitlePresent_summary_fail": "La página no tiene un título no vacío.",
     "pageTitlePresent_hint_fail": "Agregar un elemento <title> con texto que describa el tema o propósito de la página.",
     "pageTitlePatterns_title": "Patrones de título de página que pueden ser poco descriptivos",
@@ -51263,13 +51263,13 @@ const I18N = {
     "contrastComputable_cantTell_backdropFilter": "El contraste no es computable porque se usa backdrop-filter ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_filterOrBackdropFilter": "El contraste no es computable porque se usa filter ({{blockerProperty}}={{blockerValue}}).",
     "contrastMinimum_title": "El texto cumple el contraste de color mínimo (AA)",
-    "contrastMinimum_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 4.5:1 (normal) o 3.0:1 (grande), cuando el contraste es computable a partir de CSS.",
+    "contrastMinimum_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 4.5:1 (normal) o 3:1 (grande), cuando el contraste es computable a partir de CSS.",
     "contrastMinimum_fail_belowThreshold": "El elemento tiene un contraste de color insuficiente de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).",
     "contrastMinimum_pass_allAboveThreshold": "Todo el texto computable cumple el contraste mínimo (AA). Nodos de texto elegibles: {{eligibleTextCount}}. Computables: {{computableTextCount}}.",
     "contrastMinimum_notApplicable_noComputableText": "Ningún texto elegible tuvo contraste computable (nodos de texto elegibles: {{eligibleTextCount}}). Consultar la regla de computabilidad de contraste para más información.",
     "contrastMinimum_cantTell_engineFailure": "No se pudo determinar el contraste mínimo (AA) debido a un error interno del motor ({{reasonCode}}).",
     "contrastEnhanced_title": "El texto cumple el contraste de color mejorado (AAA)",
-    "contrastEnhanced_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 7.0:1 (normal) o 4.5:1 (grande), cuando el contraste es computable a partir de CSS.",
+    "contrastEnhanced_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 7:1 (normal) o 4.5:1 (grande), cuando el contraste es computable a partir de CSS.",
     "contrastEnhanced_fail_belowThreshold": "El elemento tiene un contraste de color insuficiente (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).",
     "contrastEnhanced_pass_allAboveThreshold": "Todo el texto computable cumple el contraste mejorado (AAA). Nodos de texto elegibles: {{eligibleTextCount}}. Computables: {{computableTextCount}}.",
     "contrastEnhanced_notApplicable_noComputableText": "Ningún texto elegible tuvo contraste computable (nodos de texto elegibles: {{eligibleTextCount}}). Consultar la regla de computabilidad de contraste para más información.",
@@ -51496,7 +51496,7 @@ const I18N = {
     "iframeFocusableContent_summary_fail": "Este <{{element}}> tiene tabindex=\"-1\" pero su contenido incluye elementos enfocables, que siguen siendo alcanzables por teclado.",
     "iframeFocusableContent_hint_fail": "Eliminar el contenido enfocable del marco, o eliminar tabindex=\"-1\" si el marco está pensado para ser alcanzable.",
     "tableHeadersAttrValid_title": "El atributo \"headers\" de la celda de tabla debe referenciar celdas de encabezado válidas",
-    "tableHeadersAttrValid_description": "Comprueba que cada id en un atributo headers de <td>/<th> se resuelva en un elemento <th> dentro de la misma tabla (que no falte, que no sea un elemento distinto de th, y que no sea él mismo).",
+    "tableHeadersAttrValid_description": "Comprueba que cada id en un atributo headers de <td>/<th> se resuelva en una celda (<td> o <th>) dentro de la misma tabla (que no falte, que no sea un elemento distinto de una celda, y que no sea ella misma).",
     "tableHeadersAttrValid_summary_fail": "El atributo headers de este <{{element}}> referencia celda(s) de encabezado no válida(s): {{invalidIds}}.",
     "tableHeadersAttrValid_hint_fail": "Actualizar el atributo headers para que cada id haga referencia a un elemento <th> dentro de la misma tabla.",
     "tableThHasDataCells_title": "Los elementos <th> deben describir al menos una celda de datos",
@@ -51637,7 +51637,7 @@ const I18N = {
     "tabindex_summary_cantTell": "Este elemento tiene un tabindex positivo, lo que sobrescribe el orden de tabulación natural.",
     "tabindex_hint_cantTell": "Usar tabindex=\"0\" (o un valor negativo para eliminarlo del orden de tabulación) en lugar de un número positivo; corregir el orden del DOM si se necesita un orden de tabulación diferente.",
     "emptyTableHeader_title": "Las celdas de encabezado de tabla no deben estar vacías",
-    "emptyTableHeader_description": "Comprueba que los elementos <th> tengan contenido de texto visible; un encabezado nombrado únicamente mediante aria-label/aria-labelledby también se señala, ya que el soporte real de lectores de pantalla/navegadores para eso es inconsistente.",
+    "emptyTableHeader_description": "Comprueba que las celdas de encabezado (<th>, o cualquier elemento con role=\"columnheader\"/\"rowheader\") tengan contenido de texto visible; un encabezado nombrado únicamente mediante aria-label/aria-labelledby también se señala, ya que el soporte real de lectores de pantalla/navegadores para eso es inconsistente.",
     "emptyTableHeader_summary_cantTell": "Esta celda de encabezado de tabla no tiene nombre accesible.",
     "emptyTableHeader_hint_cantTell": "Agregar contenido de texto (o aria-label/aria-labelledby) a esta celda de encabezado, o eliminarla si no es necesaria.",
     "emptyTableHeader_summary_cantTell_ariaOnly": "Esta celda de encabezado de tabla no tiene texto visible; su único nombre accesible proviene de aria-label/aria-labelledby, que se sabe que ciertas combinaciones reales de lector de pantalla/navegador (por ejemplo, NVDA+Firefox, iOS VoiceOver+Safari) ignoran en elementos <th>.",
@@ -51850,7 +51850,7 @@ const I18N = {
     "svgImage_textAltPresent_summary_fail": "Alternative textuelle manquante sur <image> (SVG).",
     "svgImage_textAltPresent_hint_fail": "Ajoutez un <title> (et éventuellement <desc>) dans <image>, ou fournissez aria-label/aria-labelledby.",
     "formControl_programmaticLabelPresent_title": "Les contrôles de formulaire doivent avoir un libellé programmatique",
-    "formControl_programmaticLabelPresent_description": "Vérifie que les contrôles de formulaire ont un libellé programmatique via <label>, aria-label ou aria-labelledby.",
+    "formControl_programmaticLabelPresent_description": "Vérifie que les contrôles de formulaire ont un libellé programmatique via <label>, aria-label, aria-labelledby, title ou placeholder.",
     "formControl_programmaticLabelPresent_summary_fail": "Le contrôle de formulaire n’a pas de libellé programmatique.",
     "formControl_programmaticLabelPresent_hint_fail": "Associez un <label>, ou utilisez aria-label / aria-labelledby (placeholder/title ne sont pas des libellés).",
     "formControlAccessibleName_description": "Échec lorsqu’un contrôle de formulaire applicable n’a pas de nom accessible (ex. label, aria-label, aria-labelledby).",
@@ -51896,7 +51896,7 @@ const I18N = {
     "mediaTranscriptPresent_summary_cantTell_unverified": "Une transcription ou une autre alternative textuelle peut être disponible pour ce média temporel, mais elle n’a pas pu être vérifiée à partir du contenu de la page.",
     "mediaTranscriptPresent_hint_cantTell_unverified": "Aucune transcription ou autre alternative textuelle pour cet élément {element} n’est clairement établie sur la page.",
     "pageTitlePresent_title": "La page possède un titre non vide",
-    "pageTitlePresent_description": "Vérifie que la page contient un élément <title> non vide permettant d’identifier la page.",
+    "pageTitlePresent_description": "Vérifie que la page contient un élément <title> non vide.",
     "pageTitlePresent_summary_fail": "La page ne possède pas de titre non vide.",
     "pageTitlePresent_hint_fail": "Ajouter un élément <title> contenant un texte décrivant le sujet ou l’objectif de la page.",
     "pageTitlePatterns_title": "Motifs de titres de page pouvant indiquer un manque de descriptivité",
@@ -51926,13 +51926,13 @@ const I18N = {
     "contrastComputable_cantTell_backdropFilter": "Le contraste ne peut pas être calculé car la propriété backdrop-filter est utilisée ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_filterOrBackdropFilter": "Le contraste ne peut pas être calculé car une propriété filter ou backdrop-filter est utilisée ({{blockerProperty}}={{blockerValue}}).",
     "contrastMinimum_title": "Le texte respecte le contraste minimum (AA)",
-    "contrastMinimum_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 4,5:1 (texte normal) ou 3,0:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
+    "contrastMinimum_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 4,5:1 (texte normal) ou 3:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
     "contrastMinimum_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
     "contrastMinimum_pass_allAboveThreshold": "Tout le texte calculable respecte le contraste minimum (AA). Nœuds de texte éligibles : {{eligibleTextCount}}. Calculables : {{computableTextCount}}.",
     "contrastMinimum_notApplicable_noComputableText": "Aucun texte éligible n’avait un contraste calculable (nœuds de texte éligibles : {{eligibleTextCount}}). Voir la règle de calculabilité du contraste pour les détails.",
     "contrastMinimum_cantTell_engineFailure": "Le contraste minimum (AA) n’a pas pu être déterminé en raison d’une erreur interne du moteur ({{reasonCode}}).",
     "contrastEnhanced_title": "Le texte respecte le contraste renforcé (AAA)",
-    "contrastEnhanced_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 7,0:1 (texte normal) ou 4,5:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
+    "contrastEnhanced_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 7:1 (texte normal) ou 4,5:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
     "contrastEnhanced_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant renforcé (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
     "contrastEnhanced_pass_allAboveThreshold": "Tout le texte calculable respecte le contraste renforcé (AAA). Nœuds de texte éligibles : {{eligibleTextCount}}. Calculables : {{computableTextCount}}.",
     "contrastEnhanced_notApplicable_noComputableText": "Aucun texte éligible n’avait un contraste calculable (nœuds de texte éligibles : {{eligibleTextCount}}). Voir la règle de calculabilité du contraste pour les détails.",
@@ -52159,7 +52159,7 @@ const I18N = {
     "iframeFocusableContent_summary_fail": "Ce <{{element}}> a tabindex=\"-1\" mais son contenu contient des éléments focalisables, qui restent accessibles au clavier.",
     "iframeFocusableContent_hint_fail": "Retirez le contenu focalisable du cadre, ou retirez tabindex=\"-1\" si le cadre est censé être accessible.",
     "tableHeadersAttrValid_title": "L’attribut headers d’une cellule de tableau doit référencer des cellules d’en-tête valides",
-    "tableHeadersAttrValid_description": "Vérifie que chaque id de l’attribut headers d’un <td>/<th> correspond à un élément <th> du même tableau (ni absent, ni un élément autre que th, ni lui-même).",
+    "tableHeadersAttrValid_description": "Vérifie que chaque id de l’attribut headers d’un <td>/<th> correspond à une cellule (<td> ou <th>) du même tableau (ni absente, ni un élément autre qu’une cellule, ni elle-même).",
     "tableHeadersAttrValid_summary_fail": "L’attribut headers de ce <{{element}}> référence des cellules d’en-tête invalides : {{invalidIds}}.",
     "tableHeadersAttrValid_hint_fail": "Mettez à jour l’attribut headers afin que chaque id désigne un élément <th> du même tableau.",
     "tableThHasDataCells_title": "Les éléments <th> doivent décrire au moins une cellule de données",
@@ -52300,7 +52300,7 @@ const I18N = {
     "tabindex_summary_cantTell": "Cet élément a un tabindex positif, ce qui modifie l’ordre naturel de tabulation.",
     "tabindex_hint_cantTell": "Utilisez tabindex=\"0\" (ou une valeur négative pour le retirer de l’ordre de tabulation) plutôt qu’un nombre positif ; corrigez l’ordre dans le DOM si un ordre de tabulation différent est nécessaire.",
     "emptyTableHeader_title": "Les cellules d’en-tête de tableau ne doivent pas être vides",
-    "emptyTableHeader_description": "Vérifie que les éléments <th> ont un contenu textuel visible — un en-tête nommé uniquement via aria-label/aria-labelledby est aussi signalé, car la prise en charge réelle par les lecteurs d’écran/navigateurs est incohérente.",
+    "emptyTableHeader_description": "Vérifie que les cellules d’en-tête (<th>, ou tout élément avec role=\"columnheader\"/\"rowheader\") ont un contenu textuel visible — un en-tête nommé uniquement via aria-label/aria-labelledby est aussi signalé, car la prise en charge réelle par les lecteurs d’écran/navigateurs est incohérente.",
     "emptyTableHeader_summary_cantTell": "Cette cellule d’en-tête de tableau n’a pas de nom accessible.",
     "emptyTableHeader_hint_cantTell": "Ajoutez du contenu textuel (ou aria-label/aria-labelledby) à cette cellule d’en-tête, ou retirez-la si elle n’est pas nécessaire.",
     "emptyTableHeader_summary_cantTell_ariaOnly": "Cette cellule d’en-tête de tableau n’a pas de texte visible — son seul nom accessible provient de aria-label/aria-labelledby, que des combinaisons réelles de lecteur d’écran/navigateur (ex. NVDA+Firefox, iOS VoiceOver+Safari) sont connues pour ignorer sur les éléments <th>.",
@@ -61786,8 +61786,8 @@ const __a11yCoreCrossFrameApi = (function () {
   },
   {
     "ruleId": "area-alt-present",
-    "title": "&lt;area&gt; must have an alt attribute",
-    "description": "Checks that &lt;area&gt; elements provide an alt attribute to support a text alternative mechanism.",
+    "title": "<area> must have an alt attribute",
+    "description": "Checks that <area> elements provide an alt attribute to support a text alternative mechanism.",
     "i18n": {
       "titleKey": "area_altPresent_title",
       "descriptionKey": "area_altPresent_description"
@@ -62415,7 +62415,7 @@ const __a11yCoreCrossFrameApi = (function () {
   {
     "ruleId": "aria-prohibited-children",
     "title": "Container roles must not own a child with a disallowed role",
-    "description": "Checks that every accessible-tree-owned child of a container role (list, listbox, menu, menubar, radiogroup, rowgroup, table, grid, treegrid, tablist, tree, row) has one of that role's allowed owned roles — the same set as its required owned roles.",
+    "description": "Checks that every accessible-tree-owned child of a container role (list, listbox, menu, menubar, radiogroup, rowgroup, table, grid, treegrid, tablist, tree, row) has one of that role's allowed owned roles.",
     "i18n": {
       "titleKey": "ariaProhibitedChildren_title",
       "descriptionKey": "ariaProhibitedChildren_description"
@@ -63406,7 +63406,7 @@ const __a11yCoreCrossFrameApi = (function () {
   },
   {
     "ruleId": "contrast-enhanced",
-    "title": "Text must meet the enhanced color contrast ratio",
+    "title": "Text meets enhanced color contrast (AAA)",
     "description": "Checks that visible text has a contrast ratio of at least 7:1 (normal) or 4.5:1 (large), when contrast is computable from CSS.",
     "i18n": {
       "titleKey": "contrastEnhanced_title",
@@ -63463,7 +63463,7 @@ const __a11yCoreCrossFrameApi = (function () {
   },
   {
     "ruleId": "contrast-minimum",
-    "title": "Text must meet the minimum color contrast ratio",
+    "title": "Text meets minimum color contrast (AA)",
     "description": "Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3:1 (large), when contrast is computable from CSS.",
     "i18n": {
       "titleKey": "contrastMinimum_title",
@@ -65280,7 +65280,7 @@ const __a11yCoreCrossFrameApi = (function () {
   {
     "ruleId": "label-in-name",
     "title": "Label in Name: accessible name contains visible text",
-    "description": "Checks that when a control has a visible text label, the accessible name (from aria-label/aria-labelledby) contains that visible label text (WCAG 2.5.3).",
+    "description": "Checks that when a control has a visible text label, the accessible name contains that visible label text (WCAG 2.5.3).",
     "i18n": {
       "titleKey": "labelInName_title",
       "descriptionKey": "labelInName_description"
@@ -65899,8 +65899,8 @@ const __a11yCoreCrossFrameApi = (function () {
   },
   {
     "ruleId": "listbox-name-present",
-    "title": "Accessible name is present",
-    "description": "Checks that elements expose a non-empty accessible name.",
+    "title": "Listboxes have an accessible name",
+    "description": "Checks that elements with role=\"listbox\" expose a non-empty accessible name.",
     "i18n": {
       "titleKey": "listboxNamePresent_title",
       "descriptionKey": "listboxNamePresent_description"
@@ -66122,8 +66122,8 @@ const __a11yCoreCrossFrameApi = (function () {
   },
   {
     "ruleId": "media-alternative-transcript-evidence",
-    "title": "Time-based media: transcript / media alternative evidence",
-    "description": "Finds <audio>/<video> elements where a transcript or other text alternative is not strongly evidenced in-page. This rule is conservative and returns cantTell when evidence is missing or unverified.",
+    "title": "Time-based media: transcript or text alternative evidence",
+    "description": "Finds audio and video elements where a transcript or other text alternative is not strongly evidenced in the page content. This rule is conservative and reports cantTell when evidence is missing or cannot be verified.",
     "i18n": {
       "titleKey": "mediaTranscriptPresent_title",
       "descriptionKey": "mediaTranscriptPresent_description"
@@ -66771,8 +66771,8 @@ const __a11yCoreCrossFrameApi = (function () {
   },
   {
     "ruleId": "option-name-present",
-    "title": "Accessible name is present",
-    "description": "Checks that elements expose a non-empty accessible name.",
+    "title": "Options have an accessible name",
+    "description": "Checks that elements with role=\"option\" expose a non-empty accessible name.",
     "i18n": {
       "titleKey": "optionNamePresent_title",
       "descriptionKey": "optionNamePresent_description"
@@ -66919,8 +66919,8 @@ const __a11yCoreCrossFrameApi = (function () {
   },
   {
     "ruleId": "page-title-patterns",
-    "title": "Page title patterns that may indicate low descriptiveness",
-    "description": "Flags page titles that are likely too generic or templated as review signals (WCAG 2.2 SC 2.4.2). This rule is conservative and does not fail based on patterns alone.",
+    "title": "Page title patterns that may be insufficiently descriptive",
+    "description": "Identifies page title patterns that may indicate low descriptiveness, such as generic, duplicated, or overly templated titles. This rule provides review signals and does not fail automatically.",
     "i18n": {
       "titleKey": "pageTitlePatterns_title",
       "descriptionKey": "pageTitlePatterns_description"
@@ -66974,8 +66974,8 @@ const __a11yCoreCrossFrameApi = (function () {
   },
   {
     "ruleId": "page-title-present",
-    "title": "Page title is present and non-empty",
-    "description": "Checks that the document has a non-empty <title> element (WCAG 2.2 SC 2.4.2).",
+    "title": "Page has a non-empty title",
+    "description": "Checks that the page includes a non-empty <title> element.",
     "i18n": {
       "titleKey": "pageTitlePresent_title",
       "descriptionKey": "pageTitlePresent_description"
@@ -67217,7 +67217,7 @@ const __a11yCoreCrossFrameApi = (function () {
   {
     "ruleId": "role-img-text-alternative-present",
     "title": "[role=\"img\"] must have an accessible text alternative",
-    "description": "Checks that elements with role=\"img\" provide an accessible text alternative via aria-label, aria-labelledby, or a title attribute.",
+    "description": "Checks that elements with role=\"img\" provide an accessible text alternative using aria-label, aria-labelledby, or a title attribute.",
     "i18n": {
       "titleKey": "roleImg_textAlternativePresent_title",
       "descriptionKey": "roleImg_textAlternativePresent_description"
@@ -67377,8 +67377,8 @@ const __a11yCoreCrossFrameApi = (function () {
   },
   {
     "ruleId": "searchbox-name-present",
-    "title": "Accessible name is present",
-    "description": "Checks that elements expose a non-empty accessible name.",
+    "title": "Searchboxes have an accessible name",
+    "description": "Checks that elements with role=\"searchbox\" expose a non-empty accessible name.",
     "i18n": {
       "titleKey": "searchboxNamePresent_title",
       "descriptionKey": "searchboxNamePresent_description"
@@ -67582,8 +67582,8 @@ const __a11yCoreCrossFrameApi = (function () {
   },
   {
     "ruleId": "spinbutton-name-present",
-    "title": "Accessible name is present",
-    "description": "Checks that elements expose a non-empty accessible name.",
+    "title": "Spinbuttons have an accessible name",
+    "description": "Checks that elements with role=\"spinbutton\" expose a non-empty accessible name.",
     "i18n": {
       "titleKey": "spinbuttonNamePresent_title",
       "descriptionKey": "spinbuttonNamePresent_description"
@@ -67750,7 +67750,7 @@ const __a11yCoreCrossFrameApi = (function () {
   {
     "ruleId": "svg-text-alternative-present",
     "title": "<svg> must provide a text alternative",
-    "description": "Checks that inline <svg> elements provide a text alternative via a <title> element or an ARIA name (a <desc> element alone does not count — it only contributes to the accessible description, not the name).",
+    "description": "Checks that inline <svg> elements provide a text alternative via a <title> element or an ARIA name (a <desc> element alone does not count).",
     "i18n": {
       "titleKey": "svg_textAltPresent_title",
       "descriptionKey": "svg_textAltPresent_description"
@@ -68156,7 +68156,7 @@ const __a11yCoreCrossFrameApi = (function () {
   },
   {
     "ruleId": "target-size-minimum",
-    "title": "Pointer targets meet minimum size (AA)",
+    "title": "Pointer targets must be at least 24x24px large, or leave sufficient distance to other targets",
     "description": "Checks that pointer-operable targets have an effective hit region of at least 24 by 24 CSS pixels, or meet an allowed exception (e.g. sufficient spacing).",
     "i18n": {
       "titleKey": "targetSizeMinimum_title",
@@ -68268,8 +68268,8 @@ const __a11yCoreCrossFrameApi = (function () {
   },
   {
     "ruleId": "textbox-name-present",
-    "title": "Accessible name is present",
-    "description": "Checks that elements expose a non-empty accessible name.",
+    "title": "Textboxes have an accessible name",
+    "description": "Checks that elements with role=\"textbox\" expose a non-empty accessible name.",
     "i18n": {
       "titleKey": "textboxNamePresent_title",
       "descriptionKey": "textboxNamePresent_description"
@@ -68379,8 +68379,8 @@ const __a11yCoreCrossFrameApi = (function () {
   },
   {
     "ruleId": "treeitem-name-present",
-    "title": "Accessible name is present",
-    "description": "Checks that elements expose a non-empty accessible name.",
+    "title": "Tree items have an accessible name",
+    "description": "Checks that elements with role=\"treeitem\" expose a non-empty accessible name.",
     "i18n": {
       "titleKey": "treeitemNamePresent_title",
       "descriptionKey": "treeitemNamePresent_description"
@@ -91981,7 +91981,7 @@ const I18N = {
     "svgImage_textAltPresent_summary_fail": "Fehlende Textalternative auf SVG <image>.",
     "svgImage_textAltPresent_hint_fail": "Fügen Sie innerhalb von <image> ein <title> (und optional <desc>) hinzu, oder stellen Sie aria-label/aria-labelledby bereit.",
     "formControl_programmaticLabelPresent_title": "Formularelemente müssen eine programmatische Beschriftung haben",
-    "formControl_programmaticLabelPresent_description": "Prüft, ob Formularelemente eine programmatische Beschriftung über <label>, aria-label oder aria-labelledby haben.",
+    "formControl_programmaticLabelPresent_description": "Prüft, ob Formularelemente eine programmatische Beschriftung über <label>, aria-label, aria-labelledby, title oder placeholder haben.",
     "formControl_programmaticLabelPresent_summary_fail": "Dem Formularelement fehlt eine programmatische Beschriftung.",
     "formControl_programmaticLabelPresent_hint_fail": "Stellen Sie eine <label>-Zuordnung, aria-label oder aria-labelledby bereit (placeholder/title zählen nicht als Beschriftung).",
     "formControlAccessibleName_description": "Schlägt fehl, wenn ein zutreffendes Formularelement keinen zugänglichen Namen hat (z. B. label, aria-label, aria-labelledby).",
@@ -92027,7 +92027,7 @@ const I18N = {
     "mediaTranscriptPresent_summary_cantTell_unverified": "Für dieses zeitbasierte Medium ist möglicherweise eine Transkription oder eine andere Textalternative verfügbar, dies konnte jedoch anhand des Seiteninhalts nicht verifiziert werden.",
     "mediaTranscriptPresent_hint_cantTell_unverified": "Stellen Sie sicher, dass eine klar erkennbare Transkription oder eine andere Textalternative verfügbar und sichtbar oder programmatisch mit dem Medium auf der Seite verknüpft ist.",
     "pageTitlePresent_title": "Die Seite hat einen nicht leeren Titel",
-    "pageTitlePresent_description": "Prüft, ob die Seite ein nicht leeres <title>-Element enthält, das die Seite identifiziert.",
+    "pageTitlePresent_description": "Prüft, ob die Seite ein nicht leeres <title>-Element enthält.",
     "pageTitlePresent_summary_fail": "Die Seite hat keinen nicht leeren Titel.",
     "pageTitlePresent_hint_fail": "Fügen Sie ein <title>-Element mit Text hinzu, der das Thema oder den Zweck der Seite beschreibt.",
     "pageTitlePatterns_title": "Seitentitel-Muster, die möglicherweise unzureichend aussagekräftig sind",
@@ -92057,13 +92057,13 @@ const I18N = {
     "contrastComputable_cantTell_backdropFilter": "Der Kontrast ist nicht berechenbar, weil backdrop-filter verwendet wird ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_filterOrBackdropFilter": "Der Kontrast ist nicht berechenbar, weil filter verwendet wird ({{blockerProperty}}={{blockerValue}}).",
     "contrastMinimum_title": "Text erfüllt den Mindestfarbkontrast (AA)",
-    "contrastMinimum_description": "Prüft, ob sichtbarer Text ein Kontrastverhältnis von mindestens 4,5:1 (normal) oder 3,0:1 (groß) aufweist, sofern der Kontrast aus CSS berechenbar ist.",
+    "contrastMinimum_description": "Prüft, ob sichtbarer Text ein Kontrastverhältnis von mindestens 4,5:1 (normal) oder 3:1 (groß) aufweist, sofern der Kontrast aus CSS berechenbar ist.",
     "contrastMinimum_fail_belowThreshold": "Das Element weist einen unzureichenden Farbkontrast von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).",
     "contrastMinimum_pass_allAboveThreshold": "Der gesamte berechenbare Text erfüllt den Mindestkontrast (AA). Zutreffende Textknoten: {{eligibleTextCount}}. Berechenbar: {{computableTextCount}}.",
     "contrastMinimum_notApplicable_noComputableText": "Bei keinem zutreffenden Text war der Kontrast berechenbar (zutreffende Textknoten: {{eligibleTextCount}}). Details siehe Regel zur Kontrastberechenbarkeit.",
     "contrastMinimum_cantTell_engineFailure": "Der Mindestkontrast (AA) konnte aufgrund eines internen Engine-Fehlers nicht bestimmt werden ({{reasonCode}}).",
     "contrastEnhanced_title": "Text erfüllt den erweiterten Farbkontrast (AAA)",
-    "contrastEnhanced_description": "Prüft, ob sichtbarer Text ein Kontrastverhältnis von mindestens 7,0:1 (normal) oder 4,5:1 (groß) aufweist, sofern der Kontrast aus CSS berechenbar ist.",
+    "contrastEnhanced_description": "Prüft, ob sichtbarer Text ein Kontrastverhältnis von mindestens 7:1 (normal) oder 4,5:1 (groß) aufweist, sofern der Kontrast aus CSS berechenbar ist.",
     "contrastEnhanced_fail_belowThreshold": "Das Element weist einen unzureichenden Farbkontrast (AAA) von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).",
     "contrastEnhanced_pass_allAboveThreshold": "Der gesamte berechenbare Text erfüllt den erweiterten Kontrast (AAA). Zutreffende Textknoten: {{eligibleTextCount}}. Berechenbar: {{computableTextCount}}.",
     "contrastEnhanced_notApplicable_noComputableText": "Bei keinem zutreffenden Text war der Kontrast berechenbar (zutreffende Textknoten: {{eligibleTextCount}}). Details siehe Regel zur Kontrastberechenbarkeit.",
@@ -92290,7 +92290,7 @@ const I18N = {
     "iframeFocusableContent_summary_fail": "Dieses <{{element}}> hat tabindex=\"-1\", aber sein Inhalt enthält fokussierbare Elemente, die weiterhin per Tastatur erreichbar sind.",
     "iframeFocusableContent_hint_fail": "Entfernen Sie den fokussierbaren Inhalt aus dem Frame, oder entfernen Sie tabindex=\"-1\", falls der Frame erreichbar sein soll.",
     "tableHeadersAttrValid_title": "Das headers-Attribut einer Tabellenzelle muss auf gültige Kopfzellen verweisen",
-    "tableHeadersAttrValid_description": "Prüft, ob jede id im headers-Attribut eines <td>/<th> auf ein <th>-Element innerhalb derselben Tabelle aufgelöst wird (nicht fehlend, kein Nicht-th-Element, nicht sich selbst).",
+    "tableHeadersAttrValid_description": "Prüft, ob jede id im headers-Attribut eines <td>/<th> auf eine Zelle (<td> oder <th>) innerhalb derselben Tabelle aufgelöst wird (nicht fehlend, kein Element außer einer Zelle, nicht sich selbst).",
     "tableHeadersAttrValid_summary_fail": "Das headers-Attribut dieses <{{element}}> verweist auf ungültige Kopfzelle(n): {{invalidIds}}.",
     "tableHeadersAttrValid_hint_fail": "Aktualisieren Sie das headers-Attribut so, dass jede id auf ein <th>-Element innerhalb derselben Tabelle verweist.",
     "tableThHasDataCells_title": "<th>-Elemente müssen mindestens eine Datenzelle beschreiben",
@@ -92431,7 +92431,7 @@ const I18N = {
     "tabindex_summary_cantTell": "Dieses Element hat einen positiven tabindex, der die natürliche Tab-Reihenfolge überschreibt.",
     "tabindex_hint_cantTell": "Verwenden Sie tabindex=\"0\" (oder einen negativen Wert, um es aus der Tab-Reihenfolge zu entfernen) anstelle einer positiven Zahl; korrigieren Sie stattdessen die DOM-Reihenfolge, wenn eine andere Tab-Reihenfolge benötigt wird.",
     "emptyTableHeader_title": "Tabellen-Kopfzellen dürfen nicht leer sein",
-    "emptyTableHeader_description": "Prüft, ob <th>-Elemente sichtbaren Textinhalt haben — eine Kopfzelle, die nur über aria-label/aria-labelledby benannt ist, wird ebenfalls markiert, da die tatsächliche Unterstützung durch Screenreader/Browser dafür uneinheitlich ist.",
+    "emptyTableHeader_description": "Prüft, ob Kopfzellen (<th> oder ein beliebiges Element mit role=\"columnheader\"/\"rowheader\") sichtbaren Textinhalt haben — eine Kopfzelle, die nur über aria-label/aria-labelledby benannt ist, wird ebenfalls markiert, da die tatsächliche Unterstützung durch Screenreader/Browser dafür uneinheitlich ist.",
     "emptyTableHeader_summary_cantTell": "Diese Tabellen-Kopfzelle hat keinen zugänglichen Namen.",
     "emptyTableHeader_hint_cantTell": "Fügen Sie dieser Kopfzelle Textinhalt (oder aria-label/aria-labelledby) hinzu, oder entfernen Sie sie, wenn sie nicht benötigt wird.",
     "emptyTableHeader_summary_cantTell_ariaOnly": "Diese Tabellen-Kopfzelle hat keinen sichtbaren Text — ihr einziger zugänglicher Name stammt von aria-label/aria-labelledby, was bekanntermaßen von realen Screenreader-/Browser-Kombinationen (z. B. NVDA+Firefox, iOS VoiceOver+Safari) bei <th>-Elementen ignoriert wird.",
@@ -92644,7 +92644,7 @@ const I18N = {
     "svgImage_textAltPresent_summary_fail": "Missing text alternative on SVG <image>.",
     "svgImage_textAltPresent_hint_fail": "Add a <title> (and optionally <desc>) inside <image>, or provide aria-label/aria-labelledby.",
     "formControl_programmaticLabelPresent_title": "Form controls must have a programmatic label",
-    "formControl_programmaticLabelPresent_description": "Checks that form controls have a programmatic label via <label>, aria-label, or aria-labelledby.",
+    "formControl_programmaticLabelPresent_description": "Checks that form controls have a programmatic label via <label>, aria-label, aria-labelledby, title, or placeholder.",
     "formControl_programmaticLabelPresent_summary_fail": "Form control is missing a programmatic label.",
     "formControl_programmaticLabelPresent_hint_fail": "Provide a <label> association, aria-label, or aria-labelledby (placeholder/title do not count as labels).",
     "formControlAccessibleName_description": "Fails when an applicable form control has no accessible name (e.g., label, aria-label, aria-labelledby).",
@@ -92690,7 +92690,7 @@ const I18N = {
     "mediaTranscriptPresent_summary_cantTell_unverified": "A transcript or other text alternative may be available for this time-based media, but it could not be verified from the page content.",
     "mediaTranscriptPresent_hint_cantTell_unverified": "Ensure a clearly identified transcript or other text alternative is available and visibly or programmatically associated with the media on the page.",
     "pageTitlePresent_title": "Page has a non-empty title",
-    "pageTitlePresent_description": "Checks that the page includes a non-empty <title> element that identifies the page.",
+    "pageTitlePresent_description": "Checks that the page includes a non-empty <title> element.",
     "pageTitlePresent_summary_fail": "The page does not have a non-empty title.",
     "pageTitlePresent_hint_fail": "Add a <title> element with text that describes the page topic or purpose.",
     "pageTitlePatterns_title": "Page title patterns that may be insufficiently descriptive",
@@ -92720,13 +92720,13 @@ const I18N = {
     "contrastComputable_cantTell_backdropFilter": "Contrast is not computable because backdrop-filter is used ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_filterOrBackdropFilter": "Contrast is not computable because filter is used ({{blockerProperty}}={{blockerValue}}).",
     "contrastMinimum_title": "Text meets minimum color contrast (AA)",
-    "contrastMinimum_description": "Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3.0:1 (large), when contrast is computable from CSS.",
+    "contrastMinimum_description": "Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3:1 (large), when contrast is computable from CSS.",
     "contrastMinimum_fail_belowThreshold": "Element has insufficient color contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).",
     "contrastMinimum_pass_allAboveThreshold": "All computable text meets minimum contrast (AA). Eligible text nodes: {{eligibleTextCount}}. Computable: {{computableTextCount}}.",
     "contrastMinimum_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
     "contrastMinimum_cantTell_engineFailure": "Minimum contrast (AA) could not be determined due to an internal engine error ({{reasonCode}}).",
     "contrastEnhanced_title": "Text meets enhanced color contrast (AAA)",
-    "contrastEnhanced_description": "Checks that visible text has a contrast ratio of at least 7.0:1 (normal) or 4.5:1 (large), when contrast is computable from CSS.",
+    "contrastEnhanced_description": "Checks that visible text has a contrast ratio of at least 7:1 (normal) or 4.5:1 (large), when contrast is computable from CSS.",
     "contrastEnhanced_fail_belowThreshold": "Element has insufficient color contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).",
     "contrastEnhanced_pass_allAboveThreshold": "All computable text meets enhanced contrast (AAA). Eligible text nodes: {{eligibleTextCount}}. Computable: {{computableTextCount}}.",
     "contrastEnhanced_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
@@ -92953,7 +92953,7 @@ const I18N = {
     "iframeFocusableContent_summary_fail": "This <{{element}}> has tabindex=\"-1\" but its content contains focusable elements, which remain reachable by keyboard.",
     "iframeFocusableContent_hint_fail": "Remove focusable content from the frame, or remove tabindex=\"-1\" if the frame is meant to be reachable.",
     "tableHeadersAttrValid_title": "Table cell \"headers\" attribute must reference valid header cells",
-    "tableHeadersAttrValid_description": "Checks that each id in a <td>/<th> headers attribute resolves to a <th> element within the same table (not missing, not a non-th element, not itself).",
+    "tableHeadersAttrValid_description": "Checks that each id in a <td>/<th> headers attribute resolves to a cell (<td> or <th>) within the same table (not missing, not a non-cell element, not itself).",
     "tableHeadersAttrValid_summary_fail": "This <{{element}}>'s headers attribute references invalid header cell(s): {{invalidIds}}.",
     "tableHeadersAttrValid_hint_fail": "Update the headers attribute so every id refers to a <th> element within the same table.",
     "tableThHasDataCells_title": "<th> elements must describe at least one data cell",
@@ -93094,7 +93094,7 @@ const I18N = {
     "tabindex_summary_cantTell": "This element has a positive tabindex, overriding the natural tab order.",
     "tabindex_hint_cantTell": "Use tabindex=\"0\" (or a negative value to remove from tab order) instead of a positive number; fix the DOM order if a different tab order is needed.",
     "emptyTableHeader_title": "Table header cells must not be empty",
-    "emptyTableHeader_description": "Checks that <th> elements have visible text content — a header named only via aria-label/aria-labelledby is also flagged, since real screen-reader/browser support for that is inconsistent.",
+    "emptyTableHeader_description": "Checks that table header cells (<th>, or any element with role=\"columnheader\"/\"rowheader\") have visible text content — a header named only via aria-label/aria-labelledby is also flagged, since real screen-reader/browser support for that is inconsistent.",
     "emptyTableHeader_summary_cantTell": "This table header cell has no accessible name.",
     "emptyTableHeader_hint_cantTell": "Add text content (or aria-label/aria-labelledby) to this header cell, or remove it if it is not needed.",
     "emptyTableHeader_summary_cantTell_ariaOnly": "This table header cell has no visible text — its only accessible name comes from aria-label/aria-labelledby, which real screen-reader/browser combinations (e.g. NVDA+Firefox, iOS VoiceOver+Safari) are known to ignore on <th> elements.",
@@ -93307,7 +93307,7 @@ const I18N = {
     "svgImage_textAltPresent_summary_fail": "Falta la alternativa textual en el <image> de SVG.",
     "svgImage_textAltPresent_hint_fail": "Agregar un <title> (y opcionalmente un <desc>) dentro de <image>, o proporcionar aria-label/aria-labelledby.",
     "formControl_programmaticLabelPresent_title": "Los controles de formulario deben tener una etiqueta programática",
-    "formControl_programmaticLabelPresent_description": "Comprueba que los controles de formulario tengan una etiqueta programática mediante <label>, aria-label o aria-labelledby.",
+    "formControl_programmaticLabelPresent_description": "Comprueba que los controles de formulario tengan una etiqueta programática mediante <label>, aria-label, aria-labelledby, title o placeholder.",
     "formControl_programmaticLabelPresent_summary_fail": "Al control de formulario le falta una etiqueta programática.",
     "formControl_programmaticLabelPresent_hint_fail": "Proporcionar una asociación <label>, aria-label o aria-labelledby (placeholder/title no cuentan como etiquetas).",
     "formControlAccessibleName_description": "Falla cuando un control de formulario aplicable no tiene nombre accesible (por ejemplo, label, aria-label, aria-labelledby).",
@@ -93353,7 +93353,7 @@ const I18N = {
     "mediaTranscriptPresent_summary_cantTell_unverified": "Puede haber disponible una transcripción u otra alternativa textual para este medio basado en tiempo, pero no se pudo verificar a partir del contenido de la página.",
     "mediaTranscriptPresent_hint_cantTell_unverified": "Asegurarse de que una transcripción claramente identificada u otra alternativa textual esté disponible y asociada visible o programáticamente con el medio en la página.",
     "pageTitlePresent_title": "La página tiene un título no vacío",
-    "pageTitlePresent_description": "Comprueba que la página incluya un elemento <title> no vacío que la identifique.",
+    "pageTitlePresent_description": "Comprueba que la página incluya un elemento <title> no vacío.",
     "pageTitlePresent_summary_fail": "La página no tiene un título no vacío.",
     "pageTitlePresent_hint_fail": "Agregar un elemento <title> con texto que describa el tema o propósito de la página.",
     "pageTitlePatterns_title": "Patrones de título de página que pueden ser poco descriptivos",
@@ -93383,13 +93383,13 @@ const I18N = {
     "contrastComputable_cantTell_backdropFilter": "El contraste no es computable porque se usa backdrop-filter ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_filterOrBackdropFilter": "El contraste no es computable porque se usa filter ({{blockerProperty}}={{blockerValue}}).",
     "contrastMinimum_title": "El texto cumple el contraste de color mínimo (AA)",
-    "contrastMinimum_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 4.5:1 (normal) o 3.0:1 (grande), cuando el contraste es computable a partir de CSS.",
+    "contrastMinimum_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 4.5:1 (normal) o 3:1 (grande), cuando el contraste es computable a partir de CSS.",
     "contrastMinimum_fail_belowThreshold": "El elemento tiene un contraste de color insuficiente de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).",
     "contrastMinimum_pass_allAboveThreshold": "Todo el texto computable cumple el contraste mínimo (AA). Nodos de texto elegibles: {{eligibleTextCount}}. Computables: {{computableTextCount}}.",
     "contrastMinimum_notApplicable_noComputableText": "Ningún texto elegible tuvo contraste computable (nodos de texto elegibles: {{eligibleTextCount}}). Consultar la regla de computabilidad de contraste para más información.",
     "contrastMinimum_cantTell_engineFailure": "No se pudo determinar el contraste mínimo (AA) debido a un error interno del motor ({{reasonCode}}).",
     "contrastEnhanced_title": "El texto cumple el contraste de color mejorado (AAA)",
-    "contrastEnhanced_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 7.0:1 (normal) o 4.5:1 (grande), cuando el contraste es computable a partir de CSS.",
+    "contrastEnhanced_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 7:1 (normal) o 4.5:1 (grande), cuando el contraste es computable a partir de CSS.",
     "contrastEnhanced_fail_belowThreshold": "El elemento tiene un contraste de color insuficiente (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).",
     "contrastEnhanced_pass_allAboveThreshold": "Todo el texto computable cumple el contraste mejorado (AAA). Nodos de texto elegibles: {{eligibleTextCount}}. Computables: {{computableTextCount}}.",
     "contrastEnhanced_notApplicable_noComputableText": "Ningún texto elegible tuvo contraste computable (nodos de texto elegibles: {{eligibleTextCount}}). Consultar la regla de computabilidad de contraste para más información.",
@@ -93616,7 +93616,7 @@ const I18N = {
     "iframeFocusableContent_summary_fail": "Este <{{element}}> tiene tabindex=\"-1\" pero su contenido incluye elementos enfocables, que siguen siendo alcanzables por teclado.",
     "iframeFocusableContent_hint_fail": "Eliminar el contenido enfocable del marco, o eliminar tabindex=\"-1\" si el marco está pensado para ser alcanzable.",
     "tableHeadersAttrValid_title": "El atributo \"headers\" de la celda de tabla debe referenciar celdas de encabezado válidas",
-    "tableHeadersAttrValid_description": "Comprueba que cada id en un atributo headers de <td>/<th> se resuelva en un elemento <th> dentro de la misma tabla (que no falte, que no sea un elemento distinto de th, y que no sea él mismo).",
+    "tableHeadersAttrValid_description": "Comprueba que cada id en un atributo headers de <td>/<th> se resuelva en una celda (<td> o <th>) dentro de la misma tabla (que no falte, que no sea un elemento distinto de una celda, y que no sea ella misma).",
     "tableHeadersAttrValid_summary_fail": "El atributo headers de este <{{element}}> referencia celda(s) de encabezado no válida(s): {{invalidIds}}.",
     "tableHeadersAttrValid_hint_fail": "Actualizar el atributo headers para que cada id haga referencia a un elemento <th> dentro de la misma tabla.",
     "tableThHasDataCells_title": "Los elementos <th> deben describir al menos una celda de datos",
@@ -93757,7 +93757,7 @@ const I18N = {
     "tabindex_summary_cantTell": "Este elemento tiene un tabindex positivo, lo que sobrescribe el orden de tabulación natural.",
     "tabindex_hint_cantTell": "Usar tabindex=\"0\" (o un valor negativo para eliminarlo del orden de tabulación) en lugar de un número positivo; corregir el orden del DOM si se necesita un orden de tabulación diferente.",
     "emptyTableHeader_title": "Las celdas de encabezado de tabla no deben estar vacías",
-    "emptyTableHeader_description": "Comprueba que los elementos <th> tengan contenido de texto visible; un encabezado nombrado únicamente mediante aria-label/aria-labelledby también se señala, ya que el soporte real de lectores de pantalla/navegadores para eso es inconsistente.",
+    "emptyTableHeader_description": "Comprueba que las celdas de encabezado (<th>, o cualquier elemento con role=\"columnheader\"/\"rowheader\") tengan contenido de texto visible; un encabezado nombrado únicamente mediante aria-label/aria-labelledby también se señala, ya que el soporte real de lectores de pantalla/navegadores para eso es inconsistente.",
     "emptyTableHeader_summary_cantTell": "Esta celda de encabezado de tabla no tiene nombre accesible.",
     "emptyTableHeader_hint_cantTell": "Agregar contenido de texto (o aria-label/aria-labelledby) a esta celda de encabezado, o eliminarla si no es necesaria.",
     "emptyTableHeader_summary_cantTell_ariaOnly": "Esta celda de encabezado de tabla no tiene texto visible; su único nombre accesible proviene de aria-label/aria-labelledby, que se sabe que ciertas combinaciones reales de lector de pantalla/navegador (por ejemplo, NVDA+Firefox, iOS VoiceOver+Safari) ignoran en elementos <th>.",
@@ -93970,7 +93970,7 @@ const I18N = {
     "svgImage_textAltPresent_summary_fail": "Alternative textuelle manquante sur <image> (SVG).",
     "svgImage_textAltPresent_hint_fail": "Ajoutez un <title> (et éventuellement <desc>) dans <image>, ou fournissez aria-label/aria-labelledby.",
     "formControl_programmaticLabelPresent_title": "Les contrôles de formulaire doivent avoir un libellé programmatique",
-    "formControl_programmaticLabelPresent_description": "Vérifie que les contrôles de formulaire ont un libellé programmatique via <label>, aria-label ou aria-labelledby.",
+    "formControl_programmaticLabelPresent_description": "Vérifie que les contrôles de formulaire ont un libellé programmatique via <label>, aria-label, aria-labelledby, title ou placeholder.",
     "formControl_programmaticLabelPresent_summary_fail": "Le contrôle de formulaire n’a pas de libellé programmatique.",
     "formControl_programmaticLabelPresent_hint_fail": "Associez un <label>, ou utilisez aria-label / aria-labelledby (placeholder/title ne sont pas des libellés).",
     "formControlAccessibleName_description": "Échec lorsqu’un contrôle de formulaire applicable n’a pas de nom accessible (ex. label, aria-label, aria-labelledby).",
@@ -94016,7 +94016,7 @@ const I18N = {
     "mediaTranscriptPresent_summary_cantTell_unverified": "Une transcription ou une autre alternative textuelle peut être disponible pour ce média temporel, mais elle n’a pas pu être vérifiée à partir du contenu de la page.",
     "mediaTranscriptPresent_hint_cantTell_unverified": "Aucune transcription ou autre alternative textuelle pour cet élément {element} n’est clairement établie sur la page.",
     "pageTitlePresent_title": "La page possède un titre non vide",
-    "pageTitlePresent_description": "Vérifie que la page contient un élément <title> non vide permettant d’identifier la page.",
+    "pageTitlePresent_description": "Vérifie que la page contient un élément <title> non vide.",
     "pageTitlePresent_summary_fail": "La page ne possède pas de titre non vide.",
     "pageTitlePresent_hint_fail": "Ajouter un élément <title> contenant un texte décrivant le sujet ou l’objectif de la page.",
     "pageTitlePatterns_title": "Motifs de titres de page pouvant indiquer un manque de descriptivité",
@@ -94046,13 +94046,13 @@ const I18N = {
     "contrastComputable_cantTell_backdropFilter": "Le contraste ne peut pas être calculé car la propriété backdrop-filter est utilisée ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_filterOrBackdropFilter": "Le contraste ne peut pas être calculé car une propriété filter ou backdrop-filter est utilisée ({{blockerProperty}}={{blockerValue}}).",
     "contrastMinimum_title": "Le texte respecte le contraste minimum (AA)",
-    "contrastMinimum_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 4,5:1 (texte normal) ou 3,0:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
+    "contrastMinimum_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 4,5:1 (texte normal) ou 3:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
     "contrastMinimum_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
     "contrastMinimum_pass_allAboveThreshold": "Tout le texte calculable respecte le contraste minimum (AA). Nœuds de texte éligibles : {{eligibleTextCount}}. Calculables : {{computableTextCount}}.",
     "contrastMinimum_notApplicable_noComputableText": "Aucun texte éligible n’avait un contraste calculable (nœuds de texte éligibles : {{eligibleTextCount}}). Voir la règle de calculabilité du contraste pour les détails.",
     "contrastMinimum_cantTell_engineFailure": "Le contraste minimum (AA) n’a pas pu être déterminé en raison d’une erreur interne du moteur ({{reasonCode}}).",
     "contrastEnhanced_title": "Le texte respecte le contraste renforcé (AAA)",
-    "contrastEnhanced_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 7,0:1 (texte normal) ou 4,5:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
+    "contrastEnhanced_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 7:1 (texte normal) ou 4,5:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
     "contrastEnhanced_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant renforcé (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
     "contrastEnhanced_pass_allAboveThreshold": "Tout le texte calculable respecte le contraste renforcé (AAA). Nœuds de texte éligibles : {{eligibleTextCount}}. Calculables : {{computableTextCount}}.",
     "contrastEnhanced_notApplicable_noComputableText": "Aucun texte éligible n’avait un contraste calculable (nœuds de texte éligibles : {{eligibleTextCount}}). Voir la règle de calculabilité du contraste pour les détails.",
@@ -94279,7 +94279,7 @@ const I18N = {
     "iframeFocusableContent_summary_fail": "Ce <{{element}}> a tabindex=\"-1\" mais son contenu contient des éléments focalisables, qui restent accessibles au clavier.",
     "iframeFocusableContent_hint_fail": "Retirez le contenu focalisable du cadre, ou retirez tabindex=\"-1\" si le cadre est censé être accessible.",
     "tableHeadersAttrValid_title": "L’attribut headers d’une cellule de tableau doit référencer des cellules d’en-tête valides",
-    "tableHeadersAttrValid_description": "Vérifie que chaque id de l’attribut headers d’un <td>/<th> correspond à un élément <th> du même tableau (ni absent, ni un élément autre que th, ni lui-même).",
+    "tableHeadersAttrValid_description": "Vérifie que chaque id de l’attribut headers d’un <td>/<th> correspond à une cellule (<td> ou <th>) du même tableau (ni absente, ni un élément autre qu’une cellule, ni elle-même).",
     "tableHeadersAttrValid_summary_fail": "L’attribut headers de ce <{{element}}> référence des cellules d’en-tête invalides : {{invalidIds}}.",
     "tableHeadersAttrValid_hint_fail": "Mettez à jour l’attribut headers afin que chaque id désigne un élément <th> du même tableau.",
     "tableThHasDataCells_title": "Les éléments <th> doivent décrire au moins une cellule de données",
@@ -94420,7 +94420,7 @@ const I18N = {
     "tabindex_summary_cantTell": "Cet élément a un tabindex positif, ce qui modifie l’ordre naturel de tabulation.",
     "tabindex_hint_cantTell": "Utilisez tabindex=\"0\" (ou une valeur négative pour le retirer de l’ordre de tabulation) plutôt qu’un nombre positif ; corrigez l’ordre dans le DOM si un ordre de tabulation différent est nécessaire.",
     "emptyTableHeader_title": "Les cellules d’en-tête de tableau ne doivent pas être vides",
-    "emptyTableHeader_description": "Vérifie que les éléments <th> ont un contenu textuel visible — un en-tête nommé uniquement via aria-label/aria-labelledby est aussi signalé, car la prise en charge réelle par les lecteurs d’écran/navigateurs est incohérente.",
+    "emptyTableHeader_description": "Vérifie que les cellules d’en-tête (<th>, ou tout élément avec role=\"columnheader\"/\"rowheader\") ont un contenu textuel visible — un en-tête nommé uniquement via aria-label/aria-labelledby est aussi signalé, car la prise en charge réelle par les lecteurs d’écran/navigateurs est incohérente.",
     "emptyTableHeader_summary_cantTell": "Cette cellule d’en-tête de tableau n’a pas de nom accessible.",
     "emptyTableHeader_hint_cantTell": "Ajoutez du contenu textuel (ou aria-label/aria-labelledby) à cette cellule d’en-tête, ou retirez-la si elle n’est pas nécessaire.",
     "emptyTableHeader_summary_cantTell_ariaOnly": "Cette cellule d’en-tête de tableau n’a pas de texte visible — son seul nom accessible provient de aria-label/aria-labelledby, que des combinaisons réelles de lecteur d’écran/navigateur (ex. NVDA+Firefox, iOS VoiceOver+Safari) sont connues pour ignorer sur les éléments <th>.",

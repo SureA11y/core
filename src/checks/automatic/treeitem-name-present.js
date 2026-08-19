@@ -24,8 +24,8 @@
 const id = 'treeitem-name-present';
 
 const meta = {
-  title: 'Accessible name is present',
-  description: 'Checks that elements expose a non-empty accessible name.',
+  title: 'Tree items have an accessible name',
+  description: 'Checks that elements with role="treeitem" expose a non-empty accessible name.',
   i18n: {
     titleKey: 'treeitemNamePresent_title',
     descriptionKey: 'treeitemNamePresent_description'

@@ -25,8 +25,8 @@
 const id = 'listbox-name-present';
 
 const meta = {
-  title: 'Accessible name is present',
-  description: 'Checks that elements expose a non-empty accessible name.',
+  title: 'Listboxes have an accessible name',
+  description: 'Checks that elements with role="listbox" expose a non-empty accessible name.',
   i18n: {
     titleKey: 'listboxNamePresent_title',
     descriptionKey: 'listboxNamePresent_description'

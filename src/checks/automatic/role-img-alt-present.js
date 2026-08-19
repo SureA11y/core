@@ -26,7 +26,7 @@ const id = 'role-img-text-alternative-present';
 const meta = {
   title: '[role="img"] must have an accessible text alternative',
   description:
-    'Checks that elements with role="img" provide an accessible text alternative via aria-label, aria-labelledby, or a title attribute.',
+    'Checks that elements with role="img" provide an accessible text alternative using aria-label, aria-labelledby, or a title attribute.',
   i18n: {
     titleKey: 'roleImg_textAlternativePresent_title',
     descriptionKey: 'roleImg_textAlternativePresent_description'

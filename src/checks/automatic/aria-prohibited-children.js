@@ -82,7 +82,7 @@ const id = 'aria-prohibited-children';
 const meta = {
   title: 'Container roles must not own a child with a disallowed role',
   description:
-    "Checks that every accessible-tree-owned child of a container role (list, listbox, menu, menubar, radiogroup, rowgroup, table, grid, treegrid, tablist, tree, row) has one of that role's allowed owned roles — the same set as its required owned roles.",
+    "Checks that every accessible-tree-owned child of a container role (list, listbox, menu, menubar, radiogroup, rowgroup, table, grid, treegrid, tablist, tree, row) has one of that role's allowed owned roles.",
   i18n: {
     titleKey: 'ariaProhibitedChildren_title',
     descriptionKey: 'ariaProhibitedChildren_description'

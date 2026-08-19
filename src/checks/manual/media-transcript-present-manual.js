@@ -18,10 +18,9 @@
 const id = 'media-alternative-transcript-evidence';
 
 const meta = {
-  title: 'Time-based media: transcript / media alternative evidence',
+  title: 'Time-based media: transcript or text alternative evidence',
   description:
-    'Finds <audio>/<video> elements where a transcript or other text alternative is not strongly evidenced in-page. ' +
-    'This rule is conservative and returns cantTell when evidence is missing or unverified.',
+    'Finds audio and video elements where a transcript or other text alternative is not strongly evidenced in the page content. This rule is conservative and reports cantTell when evidence is missing or cannot be verified.',
   i18n: {
     titleKey: 'mediaTranscriptPresent_title',
     descriptionKey: 'mediaTranscriptPresent_description'

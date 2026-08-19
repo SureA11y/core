@@ -118,8 +118,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "area-alt-present",
-    "title": "&lt;area&gt; must have an alt attribute",
-    "description": "Checks that &lt;area&gt; elements provide an alt attribute to support a text alternative mechanism.",
+    "title": "<area> must have an alt attribute",
+    "description": "Checks that <area> elements provide an alt attribute to support a text alternative mechanism.",
     "i18n": {
       "titleKey": "area_altPresent_title",
       "descriptionKey": "area_altPresent_description"
@@ -747,7 +747,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "ruleId": "aria-prohibited-children",
     "title": "Container roles must not own a child with a disallowed role",
-    "description": "Checks that every accessible-tree-owned child of a container role (list, listbox, menu, menubar, radiogroup, rowgroup, table, grid, treegrid, tablist, tree, row) has one of that role's allowed owned roles — the same set as its required owned roles.",
+    "description": "Checks that every accessible-tree-owned child of a container role (list, listbox, menu, menubar, radiogroup, rowgroup, table, grid, treegrid, tablist, tree, row) has one of that role's allowed owned roles.",
     "i18n": {
       "titleKey": "ariaProhibitedChildren_title",
       "descriptionKey": "ariaProhibitedChildren_description"
@@ -1738,7 +1738,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "contrast-enhanced",
-    "title": "Text must meet the enhanced color contrast ratio",
+    "title": "Text meets enhanced color contrast (AAA)",
     "description": "Checks that visible text has a contrast ratio of at least 7:1 (normal) or 4.5:1 (large), when contrast is computable from CSS.",
     "i18n": {
       "titleKey": "contrastEnhanced_title",
@@ -1795,7 +1795,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "contrast-minimum",
-    "title": "Text must meet the minimum color contrast ratio",
+    "title": "Text meets minimum color contrast (AA)",
     "description": "Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3:1 (large), when contrast is computable from CSS.",
     "i18n": {
       "titleKey": "contrastMinimum_title",
@@ -3612,7 +3612,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "ruleId": "label-in-name",
     "title": "Label in Name: accessible name contains visible text",
-    "description": "Checks that when a control has a visible text label, the accessible name (from aria-label/aria-labelledby) contains that visible label text (WCAG 2.5.3).",
+    "description": "Checks that when a control has a visible text label, the accessible name contains that visible label text (WCAG 2.5.3).",
     "i18n": {
       "titleKey": "labelInName_title",
       "descriptionKey": "labelInName_description"
@@ -4231,8 +4231,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "listbox-name-present",
-    "title": "Accessible name is present",
-    "description": "Checks that elements expose a non-empty accessible name.",
+    "title": "Listboxes have an accessible name",
+    "description": "Checks that elements with role=\"listbox\" expose a non-empty accessible name.",
     "i18n": {
       "titleKey": "listboxNamePresent_title",
       "descriptionKey": "listboxNamePresent_description"
@@ -4454,8 +4454,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "media-alternative-transcript-evidence",
-    "title": "Time-based media: transcript / media alternative evidence",
-    "description": "Finds <audio>/<video> elements where a transcript or other text alternative is not strongly evidenced in-page. This rule is conservative and returns cantTell when evidence is missing or unverified.",
+    "title": "Time-based media: transcript or text alternative evidence",
+    "description": "Finds audio and video elements where a transcript or other text alternative is not strongly evidenced in the page content. This rule is conservative and reports cantTell when evidence is missing or cannot be verified.",
     "i18n": {
       "titleKey": "mediaTranscriptPresent_title",
       "descriptionKey": "mediaTranscriptPresent_description"
@@ -5103,8 +5103,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "option-name-present",
-    "title": "Accessible name is present",
-    "description": "Checks that elements expose a non-empty accessible name.",
+    "title": "Options have an accessible name",
+    "description": "Checks that elements with role=\"option\" expose a non-empty accessible name.",
     "i18n": {
       "titleKey": "optionNamePresent_title",
       "descriptionKey": "optionNamePresent_description"
@@ -5251,8 +5251,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "page-title-patterns",
-    "title": "Page title patterns that may indicate low descriptiveness",
-    "description": "Flags page titles that are likely too generic or templated as review signals (WCAG 2.2 SC 2.4.2). This rule is conservative and does not fail based on patterns alone.",
+    "title": "Page title patterns that may be insufficiently descriptive",
+    "description": "Identifies page title patterns that may indicate low descriptiveness, such as generic, duplicated, or overly templated titles. This rule provides review signals and does not fail automatically.",
     "i18n": {
       "titleKey": "pageTitlePatterns_title",
       "descriptionKey": "pageTitlePatterns_description"
@@ -5306,8 +5306,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "page-title-present",
-    "title": "Page title is present and non-empty",
-    "description": "Checks that the document has a non-empty <title> element (WCAG 2.2 SC 2.4.2).",
+    "title": "Page has a non-empty title",
+    "description": "Checks that the page includes a non-empty <title> element.",
     "i18n": {
       "titleKey": "pageTitlePresent_title",
       "descriptionKey": "pageTitlePresent_description"
@@ -5549,7 +5549,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "ruleId": "role-img-text-alternative-present",
     "title": "[role=\"img\"] must have an accessible text alternative",
-    "description": "Checks that elements with role=\"img\" provide an accessible text alternative via aria-label, aria-labelledby, or a title attribute.",
+    "description": "Checks that elements with role=\"img\" provide an accessible text alternative using aria-label, aria-labelledby, or a title attribute.",
     "i18n": {
       "titleKey": "roleImg_textAlternativePresent_title",
       "descriptionKey": "roleImg_textAlternativePresent_description"
@@ -5709,8 +5709,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "searchbox-name-present",
-    "title": "Accessible name is present",
-    "description": "Checks that elements expose a non-empty accessible name.",
+    "title": "Searchboxes have an accessible name",
+    "description": "Checks that elements with role=\"searchbox\" expose a non-empty accessible name.",
     "i18n": {
       "titleKey": "searchboxNamePresent_title",
       "descriptionKey": "searchboxNamePresent_description"
@@ -5914,8 +5914,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "spinbutton-name-present",
-    "title": "Accessible name is present",
-    "description": "Checks that elements expose a non-empty accessible name.",
+    "title": "Spinbuttons have an accessible name",
+    "description": "Checks that elements with role=\"spinbutton\" expose a non-empty accessible name.",
     "i18n": {
       "titleKey": "spinbuttonNamePresent_title",
       "descriptionKey": "spinbuttonNamePresent_description"
@@ -6082,7 +6082,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "ruleId": "svg-text-alternative-present",
     "title": "<svg> must provide a text alternative",
-    "description": "Checks that inline <svg> elements provide a text alternative via a <title> element or an ARIA name (a <desc> element alone does not count — it only contributes to the accessible description, not the name).",
+    "description": "Checks that inline <svg> elements provide a text alternative via a <title> element or an ARIA name (a <desc> element alone does not count).",
     "i18n": {
       "titleKey": "svg_textAltPresent_title",
       "descriptionKey": "svg_textAltPresent_description"
@@ -6488,7 +6488,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "target-size-minimum",
-    "title": "Pointer targets meet minimum size (AA)",
+    "title": "Pointer targets must be at least 24x24px large, or leave sufficient distance to other targets",
     "description": "Checks that pointer-operable targets have an effective hit region of at least 24 by 24 CSS pixels, or meet an allowed exception (e.g. sufficient spacing).",
     "i18n": {
       "titleKey": "targetSizeMinimum_title",
@@ -6600,8 +6600,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "textbox-name-present",
-    "title": "Accessible name is present",
-    "description": "Checks that elements expose a non-empty accessible name.",
+    "title": "Textboxes have an accessible name",
+    "description": "Checks that elements with role=\"textbox\" expose a non-empty accessible name.",
     "i18n": {
       "titleKey": "textboxNamePresent_title",
       "descriptionKey": "textboxNamePresent_description"
@@ -6711,8 +6711,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "treeitem-name-present",
-    "title": "Accessible name is present",
-    "description": "Checks that elements expose a non-empty accessible name.",
+    "title": "Tree items have an accessible name",
+    "description": "Checks that elements with role=\"treeitem\" expose a non-empty accessible name.",
     "i18n": {
       "titleKey": "treeitemNamePresent_title",
       "descriptionKey": "treeitemNamePresent_description"
@@ -30318,7 +30318,7 @@ const I18N = {
     "svgImage_textAltPresent_summary_fail": "Missing text alternative on SVG <image>.",
     "svgImage_textAltPresent_hint_fail": "Add a <title> (and optionally <desc>) inside <image>, or provide aria-label/aria-labelledby.",
     "formControl_programmaticLabelPresent_title": "Form controls must have a programmatic label",
-    "formControl_programmaticLabelPresent_description": "Checks that form controls have a programmatic label via <label>, aria-label, or aria-labelledby.",
+    "formControl_programmaticLabelPresent_description": "Checks that form controls have a programmatic label via <label>, aria-label, aria-labelledby, title, or placeholder.",
     "formControl_programmaticLabelPresent_summary_fail": "Form control is missing a programmatic label.",
     "formControl_programmaticLabelPresent_hint_fail": "Provide a <label> association, aria-label, or aria-labelledby (placeholder/title do not count as labels).",
     "formControlAccessibleName_description": "Fails when an applicable form control has no accessible name (e.g., label, aria-label, aria-labelledby).",
@@ -30364,7 +30364,7 @@ const I18N = {
     "mediaTranscriptPresent_summary_cantTell_unverified": "A transcript or other text alternative may be available for this time-based media, but it could not be verified from the page content.",
     "mediaTranscriptPresent_hint_cantTell_unverified": "Ensure a clearly identified transcript or other text alternative is available and visibly or programmatically associated with the media on the page.",
     "pageTitlePresent_title": "Page has a non-empty title",
-    "pageTitlePresent_description": "Checks that the page includes a non-empty <title> element that identifies the page.",
+    "pageTitlePresent_description": "Checks that the page includes a non-empty <title> element.",
     "pageTitlePresent_summary_fail": "The page does not have a non-empty title.",
     "pageTitlePresent_hint_fail": "Add a <title> element with text that describes the page topic or purpose.",
     "pageTitlePatterns_title": "Page title patterns that may be insufficiently descriptive",
@@ -30394,13 +30394,13 @@ const I18N = {
     "contrastComputable_cantTell_backdropFilter": "Contrast is not computable because backdrop-filter is used ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_filterOrBackdropFilter": "Contrast is not computable because filter is used ({{blockerProperty}}={{blockerValue}}).",
     "contrastMinimum_title": "Text meets minimum color contrast (AA)",
-    "contrastMinimum_description": "Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3.0:1 (large), when contrast is computable from CSS.",
+    "contrastMinimum_description": "Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3:1 (large), when contrast is computable from CSS.",
     "contrastMinimum_fail_belowThreshold": "Element has insufficient color contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).",
     "contrastMinimum_pass_allAboveThreshold": "All computable text meets minimum contrast (AA). Eligible text nodes: {{eligibleTextCount}}. Computable: {{computableTextCount}}.",
     "contrastMinimum_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
     "contrastMinimum_cantTell_engineFailure": "Minimum contrast (AA) could not be determined due to an internal engine error ({{reasonCode}}).",
     "contrastEnhanced_title": "Text meets enhanced color contrast (AAA)",
-    "contrastEnhanced_description": "Checks that visible text has a contrast ratio of at least 7.0:1 (normal) or 4.5:1 (large), when contrast is computable from CSS.",
+    "contrastEnhanced_description": "Checks that visible text has a contrast ratio of at least 7:1 (normal) or 4.5:1 (large), when contrast is computable from CSS.",
     "contrastEnhanced_fail_belowThreshold": "Element has insufficient color contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).",
     "contrastEnhanced_pass_allAboveThreshold": "All computable text meets enhanced contrast (AAA). Eligible text nodes: {{eligibleTextCount}}. Computable: {{computableTextCount}}.",
     "contrastEnhanced_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
@@ -30627,7 +30627,7 @@ const I18N = {
     "iframeFocusableContent_summary_fail": "This <{{element}}> has tabindex=\"-1\" but its content contains focusable elements, which remain reachable by keyboard.",
     "iframeFocusableContent_hint_fail": "Remove focusable content from the frame, or remove tabindex=\"-1\" if the frame is meant to be reachable.",
     "tableHeadersAttrValid_title": "Table cell \"headers\" attribute must reference valid header cells",
-    "tableHeadersAttrValid_description": "Checks that each id in a <td>/<th> headers attribute resolves to a <th> element within the same table (not missing, not a non-th element, not itself).",
+    "tableHeadersAttrValid_description": "Checks that each id in a <td>/<th> headers attribute resolves to a cell (<td> or <th>) within the same table (not missing, not a non-cell element, not itself).",
     "tableHeadersAttrValid_summary_fail": "This <{{element}}>'s headers attribute references invalid header cell(s): {{invalidIds}}.",
     "tableHeadersAttrValid_hint_fail": "Update the headers attribute so every id refers to a <th> element within the same table.",
     "tableThHasDataCells_title": "<th> elements must describe at least one data cell",
@@ -30768,7 +30768,7 @@ const I18N = {
     "tabindex_summary_cantTell": "This element has a positive tabindex, overriding the natural tab order.",
     "tabindex_hint_cantTell": "Use tabindex=\"0\" (or a negative value to remove from tab order) instead of a positive number; fix the DOM order if a different tab order is needed.",
     "emptyTableHeader_title": "Table header cells must not be empty",
-    "emptyTableHeader_description": "Checks that <th> elements have visible text content — a header named only via aria-label/aria-labelledby is also flagged, since real screen-reader/browser support for that is inconsistent.",
+    "emptyTableHeader_description": "Checks that table header cells (<th>, or any element with role=\"columnheader\"/\"rowheader\") have visible text content — a header named only via aria-label/aria-labelledby is also flagged, since real screen-reader/browser support for that is inconsistent.",
     "emptyTableHeader_summary_cantTell": "This table header cell has no accessible name.",
     "emptyTableHeader_hint_cantTell": "Add text content (or aria-label/aria-labelledby) to this header cell, or remove it if it is not needed.",
     "emptyTableHeader_summary_cantTell_ariaOnly": "This table header cell has no visible text — its only accessible name comes from aria-label/aria-labelledby, which real screen-reader/browser combinations (e.g. NVDA+Firefox, iOS VoiceOver+Safari) are known to ignore on <th> elements.",
