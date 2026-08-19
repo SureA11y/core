@@ -19093,10 +19093,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   for (const el of nodes) {
     if (!el || !el.tagName) continue;
 
-    const roleAttr = el.getAttribute ? String(el.getAttribute('role') || '') : '';
-    const firstRoleToken = roleAttr.trim().toLowerCase().split(/\s+/)[0];
-    if ((firstRoleToken === 'none' || firstRoleToken === 'presentation') && !isFrameFocusable(el))
-      continue;
+    if (!isFrameFocusable(el)) continue;
 
     if (helpers.isAccTreeEligible) {
       const elig = helpers.isAccTreeEligible(el);
