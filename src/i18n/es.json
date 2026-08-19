@@ -340,6 +340,8 @@
   "ariaAllowedAttr_description": "Comprueba que cada atributo aria-* reconocido presente en un elemento con un rol explícito esté admitido globalmente o admitido por ese rol.",
   "ariaAllowedAttr_summary_fail": "{{attr}} no está permitido en role=\"{{role}}\".",
   "ariaAllowedAttr_hint_fail": "Eliminar este atributo, o usar un rol que lo admita.",
+  "ariaAllowedAttr_summary_fail_roleless": "<{{element}}> no tiene rol ARIA, así que nada admite en él el atributo {{attr}}.",
+  "ariaAllowedAttr_hint_fail_roleless": "Quitar {{attr}} o llevarlo a un elemento cuyo rol lo admita. Un atributo ARIA específico de rol en un elemento sin rol lo ignora la tecnología de apoyo.",
   "ariaAllowedAttr_summary_cantTell": "{{attr}} está obsoleto en role=\"{{role}}\" (todavía permitido, pero desaconsejado).",
   "ariaAllowedAttr_hint_cantTell": "Este atributo se eliminó del conjunto global de ARIA en 1.2; elimínelo o use un rol que lo admita, ya que una versión futura de ARIA podría no permitirlo.",
   "ariaProhibitedAttr_title": "Los atributos de nombrado ARIA no deben usarse en roles que los prohíban",
