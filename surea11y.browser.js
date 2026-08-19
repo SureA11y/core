@@ -18905,6 +18905,44 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return !Number.isNaN(n) && n < 0;
   }
 
+  // A `srcdoc` iframe's embedded document is same-origin by definition, but
+  // some environments (jsdom, notably) never populate `contentDocument`
+  // from the attribute at all. Parsing the attribute's own HTML string is a
+  // static, deterministic fallback that needs no rendering pipeline — it
+  // only kicks in when the live document looks empty, so a real browser's
+  // already-loaded contentDocument is always preferred untouched.
+  function parseSrcdocFallback(el) {
+    try {
+      const raw = el.getAttribute('srcdoc');
+      if (raw == null) return null;
+      const view = el.ownerDocument && el.ownerDocument.defaultView;
+      const DOMParserCtor = view && view.DOMParser;
+      if (!DOMParserCtor) return null;
+      return new DOMParserCtor().parseFromString(raw, 'text/html');
+    } catch {
+      return null;
+    }
+  }
+
+  // ACT akn7bn's own Expectation only cares about focusable content that is
+  // also *visible*: a 1x1 (or similar tracking-pixel-sized) iframe cannot
+  // render any perceptible content, whatever's focusable inside it. Scoped
+  // to the iframe's own HTML width/height attributes — a static, always-
+  // readable signal, unlike computed/rendered size, which needs real
+  // layout jsdom doesn't have (see docs/LIMITATIONS.md).
+  function isIframeVisiblyTiny(el) {
+    try {
+      const wAttr = el.getAttribute('width');
+      const hAttr = el.getAttribute('height');
+      if (wAttr == null || hAttr == null) return false;
+      const w = Number(String(wAttr).trim());
+      const h = Number(String(hAttr).trim());
+      return Number.isFinite(w) && Number.isFinite(h) && w <= 2 && h <= 2;
+    } catch {
+      return false;
+    }
+  }
+
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('iframe, frame')
     : helpers.queryAll('iframe, frame');
@@ -18923,12 +18961,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     } catch {
       contentDoc = null;
     }
+    const looksEmpty = !contentDoc || !contentDoc.body || !contentDoc.body.hasChildNodes();
+    if (looksEmpty && el.getAttribute('srcdoc') != null) {
+      const parsed = parseSrcdocFallback(el);
+      if (parsed) contentDoc = parsed;
+    }
     if (!contentDoc || !contentDoc.querySelectorAll) continue; // cross-origin/unreachable: no constraint asserted
 
     applicableCount += 1;
 
     const candidates = getFocusableCandidates(contentDoc);
     if (!candidates.length) continue;
+    if (isIframeVisiblyTiny(el)) continue; // ACT akn7bn: no visible content at all
 
     const tag = el.tagName.toLowerCase();
     const shouldProbe = candidates.length === 1;
