@@ -12910,9 +12910,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return false;
   }
 
+  // ACT 047fe0's own Expectation requires the heading to be visible, not
+  // only included in the accessibility tree — a screen-reader-only heading
+  // still leaves sighted keyboard users with no way to locate the start of
+  // non-repeated content. "Visible" per ACT's own glossary: making it fully
+  // transparent would change rendered pixels, which every CSS-only hiding
+  // technique (off-screen positioning, clip/clip-path, opacity:0, a
+  // zero-size overflow:hidden box) fails.
+  function isCssHidden(el) {
+    if (!helpers || typeof helpers.getVisibilityHintsInfo !== 'function') return false;
+    try {
+      const info = helpers.getVisibilityHintsInfo(el, ctx, {});
+      return !!(info && Array.isArray(info.hints) && info.hints.length > 0);
+    } catch {
+      return false;
+    }
+  }
+
   function hasHeading() {
     for (const el of queryAll('h1, h2, h3, h4, h5, h6, [role="heading"]')) {
-      if (el && isExposedToAt(el)) return true;
+      if (el && isExposedToAt(el) && !isCssHidden(el)) return true;
     }
     return false;
   }
