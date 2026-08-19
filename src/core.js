@@ -29807,6 +29807,50 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // these two roles.
   const GROUP_TRANSPARENT_FOR_ROLES = new Set(['listitem', 'treeitem']);
 
+  // The WAI-ARIA "Global States and Properties" set (same list as
+  // aria-prohibited-children.js's GLOBAL_ARIA_ATTRS — duplicated, not
+  // imported, since runInPage must be self-contained per
+  // scripts/build-core.js). A roleless ancestor carrying any of these is
+  // still "included in the accessibility tree" and is therefore a real
+  // (generic) parent, not a transparent one: ACT's ff89c9 test corpus
+  // covers exactly this with role="listitem" whose actual DOM parent is a
+  // roleless <div aria-live="polite">, itself inside a role="list" — the
+  // required-context chain is broken by that included-but-roleless div,
+  // even though a role="list" ancestor does exist further up.
+  const GLOBAL_ARIA_ATTRS = [
+    'aria-atomic',
+    'aria-braillelabel',
+    'aria-brailleroledescription',
+    'aria-busy',
+    'aria-controls',
+    'aria-current',
+    'aria-describedby',
+    'aria-description',
+    'aria-details',
+    'aria-disabled',
+    'aria-dropeffect',
+    'aria-errormessage',
+    'aria-flowto',
+    'aria-grabbed',
+    'aria-haspopup',
+    'aria-hidden',
+    'aria-invalid',
+    'aria-keyshortcuts',
+    'aria-label',
+    'aria-labelledby',
+    'aria-live',
+    'aria-owns',
+    'aria-relevant',
+    'aria-roledescription'
+  ];
+
+  function hasGlobalAriaAttr(el) {
+    for (const attr of GLOBAL_ARIA_ATTRS) {
+      if (el.getAttribute && el.getAttribute(attr) != null) return true;
+    }
+    return false;
+  }
+
   // A real ancestor role — not "no role at all" and not the two roles that
   // strip an element from the accessibility tree's parent/child chain
   // entirely (presentation/none) — stops the search. This is stricter than
@@ -29817,9 +29861,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // a further-up ancestor has the correct role. E.g. a <button role="tab">
   // inside a plain <li> (native listitem) inside <ul role="tablist"> fails:
   // the tablist is never the tab's accessible-tree parent, the listitem is.
+  //
+  // A roleless ancestor is normally transparent (it isn't a node in the
+  // accessibility tree at all), UNLESS it carries a global ARIA attribute
+  // -- that alone includes it in the tree as a real, roleless (generic)
+  // parent, which still blocks the search the same way a distinct real
+  // role would.
   function getRealContextRole(el) {
     const role = ariaHelpers.getContainmentRole(el);
-    if (!role || role === 'presentation' || role === 'none') return '';
+    if (!role || role === 'presentation' || role === 'none') {
+      return hasGlobalAriaAttr(el) ? 'generic' : '';
+    }
     return role;
   }
 
@@ -69671,6 +69723,50 @@ const __a11yCoreCrossFrameApi = (function () {
   // these two roles.
   const GROUP_TRANSPARENT_FOR_ROLES = new Set(['listitem', 'treeitem']);
 
+  // The WAI-ARIA "Global States and Properties" set (same list as
+  // aria-prohibited-children.js's GLOBAL_ARIA_ATTRS — duplicated, not
+  // imported, since runInPage must be self-contained per
+  // scripts/build-core.js). A roleless ancestor carrying any of these is
+  // still "included in the accessibility tree" and is therefore a real
+  // (generic) parent, not a transparent one: ACT's ff89c9 test corpus
+  // covers exactly this with role="listitem" whose actual DOM parent is a
+  // roleless <div aria-live="polite">, itself inside a role="list" — the
+  // required-context chain is broken by that included-but-roleless div,
+  // even though a role="list" ancestor does exist further up.
+  const GLOBAL_ARIA_ATTRS = [
+    'aria-atomic',
+    'aria-braillelabel',
+    'aria-brailleroledescription',
+    'aria-busy',
+    'aria-controls',
+    'aria-current',
+    'aria-describedby',
+    'aria-description',
+    'aria-details',
+    'aria-disabled',
+    'aria-dropeffect',
+    'aria-errormessage',
+    'aria-flowto',
+    'aria-grabbed',
+    'aria-haspopup',
+    'aria-hidden',
+    'aria-invalid',
+    'aria-keyshortcuts',
+    'aria-label',
+    'aria-labelledby',
+    'aria-live',
+    'aria-owns',
+    'aria-relevant',
+    'aria-roledescription'
+  ];
+
+  function hasGlobalAriaAttr(el) {
+    for (const attr of GLOBAL_ARIA_ATTRS) {
+      if (el.getAttribute && el.getAttribute(attr) != null) return true;
+    }
+    return false;
+  }
+
   // A real ancestor role — not "no role at all" and not the two roles that
   // strip an element from the accessibility tree's parent/child chain
   // entirely (presentation/none) — stops the search. This is stricter than
@@ -69681,9 +69777,17 @@ const __a11yCoreCrossFrameApi = (function () {
   // a further-up ancestor has the correct role. E.g. a <button role="tab">
   // inside a plain <li> (native listitem) inside <ul role="tablist"> fails:
   // the tablist is never the tab's accessible-tree parent, the listitem is.
+  //
+  // A roleless ancestor is normally transparent (it isn't a node in the
+  // accessibility tree at all), UNLESS it carries a global ARIA attribute
+  // -- that alone includes it in the tree as a real, roleless (generic)
+  // parent, which still blocks the search the same way a distinct real
+  // role would.
   function getRealContextRole(el) {
     const role = ariaHelpers.getContainmentRole(el);
-    if (!role || role === 'presentation' || role === 'none') return '';
+    if (!role || role === 'presentation' || role === 'none') {
+      return hasGlobalAriaAttr(el) ? 'generic' : '';
+    }
     return role;
   }
 
