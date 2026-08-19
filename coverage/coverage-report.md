@@ -5,19 +5,19 @@ Facets: `src/coverage/wcag-facets.js`
 
 ## Summary
 
-Total rules (loaded without error): **129**
+Total rules (loaded without error): **130**
 
 ### Coverage by WCAG Level (Version-agnostic, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| Any WCAG version | 105 | 18 | 5 |
+| Any WCAG version | 106 | 18 | 5 |
 
 ### Coverage by WCAG Level (Per version, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| WCAG 2.0 | 100 | 14 | 5 |
+| WCAG 2.0 | 101 | 14 | 5 |
 | WCAG 2.1 | 4 | 3 | 0 |
 | WCAG 2.2 | 1 | 1 | 0 |
 
@@ -28,7 +28,7 @@ Total rules (loaded without error): **129**
 | wcag21a | 1 |
 | wcag21aa | 3 |
 | wcag22aa | 1 |
-| wcag2a | 89 |
+| wcag2a | 90 |
 | wcag2aa | 10 |
 | wcag2aaa | 5 |
 
@@ -514,6 +514,19 @@ Automation mix: **full 2, partial 0, manual 0**.
 |---|---|---|---|---|---|
 | form-control-programmatic-label-present | automatic | Form controls must have a programmatic label | src/checks/automatic/form-control-programmatic-label-present.js | form-control-labels-or-instructions-present |  |
 | form-control-single-label | automatic | Form controls must not have multiple labels | src/checks/automatic/form-control-single-label.js | form-control-single-label |  |
+
+### 4.1.1
+
+Facet coverage: **1/1** facets covered.
+Automation mix: **full 1, partial 0, manual 0**.
+
+| Facet | Automation | Covered by |
+|---|---|---|
+| id-unique-page-wide | full | duplicate-id |
+
+| Rule ID | Type | Title | File | Facet | Notes |
+|---|---|---|---|---|---|
+| duplicate-id | automatic | IDs must be unique | src/checks/automatic/duplicate-id.js | id-unique-page-wide |  |
 
 ### 4.1.2
 
@@ -1119,6 +1132,19 @@ Automation mix: **full 2, partial 0, manual 0**.
 |---|---|---|---|---|---|
 | form-control-programmatic-label-present | automatic | Form controls must have a programmatic label | src/checks/automatic/form-control-programmatic-label-present.js | form-control-labels-or-instructions-present |  |
 | form-control-single-label | automatic | Form controls must not have multiple labels | src/checks/automatic/form-control-single-label.js | form-control-single-label |  |
+
+### 4.1.1
+
+Facet coverage: **1/1** facets covered.
+Automation mix: **full 1, partial 0, manual 0**.
+
+| Facet | Automation | Covered by |
+|---|---|---|
+| id-unique-page-wide | full | duplicate-id |
+
+| Rule ID | Type | Title | File | Facet | Notes |
+|---|---|---|---|---|---|
+| duplicate-id | automatic | IDs must be unique | src/checks/automatic/duplicate-id.js | id-unique-page-wide |  |
 
 ### 4.1.2
 

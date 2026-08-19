@@ -2222,6 +2222,61 @@ const CHECK_DEFS = [
     "mappings": null
   },
   {
+    "ruleId": "duplicate-id",
+    "title": "IDs must be unique",
+    "description": "Checks that every non-empty id attribute value is unique within its own document or shadow tree (WCAG 2.0/2.1 SC 4.1.1, removed in WCAG 2.2).",
+    "i18n": {
+      "titleKey": "duplicateId_title",
+      "descriptionKey": "duplicateId_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag411",
+      "wcag22-removed",
+      "structure",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "4.1.1"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.1",
+        "requirement": "4.1.1",
+        "title": "Parsing",
+        "conformanceLevel": "A"
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "4.1.1": [
+          "id-unique-page-wide"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
     "ruleId": "duplicate-id-aria",
     "title": "IDs referenced by ARIA must be unique",
     "description": "Checks that any id value referenced by an ARIA ID-reference attribute (aria-labelledby, aria-describedby, aria-owns, aria-controls, aria-activedescendant, aria-flowto, aria-errormessage, aria-details) is unique in the document.",
@@ -7289,6 +7344,20 @@ const COMPOSITE_RULES = [
     }
   },
   {
+    "id": "wcag-4.1.1-parsing",
+    "checksIds": [
+      "duplicate-id"
+    ],
+    "meta": {
+      "title": "Parsing",
+      "description": "Rollup of checks ensuring id values are unique. WCAG 2.0/2.1 only — SC 4.1.1 was removed in WCAG 2.2, so this composite carries the wcag22-removed tag.",
+      "wcagSc": [
+        "4.1.1"
+      ],
+      "level": "A"
+    }
+  },
+  {
     "id": "wcag-4.1.2-name",
     "checksIds": [
       "aria-role-name-present",
@@ -7441,6 +7510,7 @@ const RULE_IMPLS = {
   "deprecated-elements-not-used": { run: require("./checks/automatic/deprecated-elements-not-used.js").runInPage, applicability: require("./checks/automatic/deprecated-elements-not-used.js").applicability || null },
   "dialog-name-present": { run: require("./checks/automatic/dialog-name-present.js").runInPage, applicability: require("./checks/automatic/dialog-name-present.js").applicability || null },
   "dlitem-parent-valid": { run: require("./checks/automatic/dlitem-parent-valid.js").runInPage, applicability: require("./checks/automatic/dlitem-parent-valid.js").applicability || null },
+  "duplicate-id": { run: require("./checks/automatic/duplicate-id.js").runInPage, applicability: require("./checks/automatic/duplicate-id.js").applicability || null },
   "duplicate-id-aria": { run: require("./checks/automatic/duplicate-id-aria.js").runInPage, applicability: require("./checks/automatic/duplicate-id-aria.js").applicability || null },
   "embed-text-alternative-present": { run: require("./checks/automatic/embed-text-alternative-present.js").runInPage, applicability: require("./checks/automatic/embed-text-alternative-present.js").applicability || null },
   "embed-text-alternative-quality": { run: require("./checks/manual/embed-text-alternative-quality-manual.js").runInPage, applicability: require("./checks/manual/embed-text-alternative-quality-manual.js").applicability || null },
@@ -7962,6 +8032,10 @@ const I18N = {
     "dlitemParentValid_description": "Prüft, ob <dt>/<dd>-Elemente von einem <dl> enthalten sind, direkt oder über ein umschließendes <div>.",
     "dlitemParentValid_summary_fail": "Das übergeordnete Element (<{{parentElement}}>) dieses <{{element}}> ist keine Beschreibungsliste.",
     "dlitemParentValid_hint_fail": "Platzieren Sie dieses <dt>/<dd> innerhalb eines <dl>, direkt oder in einem einzigen <div> verpackt.",
+    "duplicateId_title": "IDs müssen eindeutig sein",
+    "duplicateId_description": "Prüft, dass jeder nicht leere Wert eines id-Attributs innerhalb seines eigenen Dokument- oder Shadow-Baums eindeutig ist (WCAG 2.0/2.1 SC 4.1.1, in WCAG 2.2 entfernt).",
+    "duplicateId_summary_fail": "Die ID „{{id}}“ wird an {{count}} Elementen im selben Baum verwendet.",
+    "duplicateId_hint_fail": "Geben Sie jedem Element eine eigene ID. Eine doppelte ID bricht <label for>, Sprungmarken, getElementById und jedes ID-Referenz-Attribut – alle greifen nur auf den ersten Treffer zu.",
     "duplicateIdAria_title": "Von ARIA referenzierte IDs müssen eindeutig sein",
     "duplicateIdAria_description": "Prüft, ob jeder id-Wert, der durch ein ARIA-ID-Referenzattribut referenziert wird (aria-labelledby, aria-describedby, aria-owns, aria-controls, aria-activedescendant, aria-flowto, aria-errormessage, aria-details), im Dokument eindeutig ist.",
     "duplicateIdAria_summary_cantTell": "Die id „{{id}}“ wird von einem ARIA-Attribut referenziert, wird aber von {{duplicateCount}} Elementen verwendet; die Referenz verweist auf das erste.",
@@ -8619,6 +8693,10 @@ const I18N = {
     "dlitemParentValid_description": "Checks that <dt>/<dd> elements are contained by a <dl>, directly or via one wrapping <div>.",
     "dlitemParentValid_summary_fail": "This <{{element}}>'s parent (<{{parentElement}}>) is not a description list.",
     "dlitemParentValid_hint_fail": "Place this <dt>/<dd> inside a <dl>, directly or wrapped in a single <div>.",
+    "duplicateId_title": "IDs must be unique",
+    "duplicateId_description": "Checks that every non-empty id attribute value is unique within its own document or shadow tree (WCAG 2.0/2.1 SC 4.1.1, removed in WCAG 2.2).",
+    "duplicateId_summary_fail": "The id \"{{id}}\" is used on {{count}} elements in the same tree.",
+    "duplicateId_hint_fail": "Give each element its own id. A duplicate breaks <label for>, fragment links, getElementById and every ID-reference attribute, all of which resolve to the first match only.",
     "duplicateIdAria_title": "IDs referenced by ARIA must be unique",
     "duplicateIdAria_description": "Checks that any id value referenced by an ARIA ID-reference attribute (aria-labelledby, aria-describedby, aria-owns, aria-controls, aria-activedescendant, aria-flowto, aria-errormessage, aria-details) is unique in the document.",
     "duplicateIdAria_summary_cantTell": "The id \"{{id}}\" is referenced by an ARIA attribute but is used by {{duplicateCount}} elements; the reference resolves to the first one.",
@@ -9276,6 +9354,10 @@ const I18N = {
     "dlitemParentValid_description": "Comprueba que los elementos <dt>/<dd> estén contenidos por un <dl>, directamente o mediante un único <div> envolvente.",
     "dlitemParentValid_summary_fail": "El padre (<{{parentElement}}>) de este <{{element}}> no es una lista de descripción.",
     "dlitemParentValid_hint_fail": "Colocar este <dt>/<dd> dentro de un <dl>, directamente o envuelto en un único <div>.",
+    "duplicateId_title": "Los ID deben ser únicos",
+    "duplicateId_description": "Comprueba que cada valor no vacío del atributo id es único dentro de su propio árbol de documento o de shadow DOM (WCAG 2.0/2.1 SC 4.1.1, eliminado en WCAG 2.2).",
+    "duplicateId_summary_fail": "El id «{{id}}» se usa en {{count}} elementos del mismo árbol.",
+    "duplicateId_hint_fail": "Dar a cada elemento su propio id. Un id duplicado rompe <label for>, los enlaces de fragmento, getElementById y todo atributo de referencia por id: todos resuelven solo a la primera coincidencia.",
     "duplicateIdAria_title": "Los IDs referenciados por ARIA deben ser únicos",
     "duplicateIdAria_description": "Comprueba que cualquier valor de id referenciado por un atributo de referencia de ID de ARIA (aria-labelledby, aria-describedby, aria-owns, aria-controls, aria-activedescendant, aria-flowto, aria-errormessage, aria-details) sea único en el documento.",
     "duplicateIdAria_summary_cantTell": "El id \"{{id}}\" está referenciado por un atributo ARIA, pero lo usan {{duplicateCount}} elementos; la referencia apunta al primero.",
@@ -9933,6 +10015,10 @@ const I18N = {
     "dlitemParentValid_description": "Vérifie que les éléments <dt>/<dd> sont contenus par un <dl>, directement ou via un <div> englobant.",
     "dlitemParentValid_summary_fail": "Le parent (<{{parentElement}}>) de ce <{{element}}> n’est pas une liste de définitions.",
     "dlitemParentValid_hint_fail": "Placez ce <dt>/<dd> à l’intérieur d’un <dl>, directement ou enveloppé dans un seul <div>.",
+    "duplicateId_title": "Les identifiants doivent être uniques",
+    "duplicateId_description": "Vérifie que chaque valeur non vide d’un attribut id est unique au sein de son propre arbre de document ou de shadow DOM (WCAG 2.0/2.1 SC 4.1.1, supprimé dans WCAG 2.2).",
+    "duplicateId_summary_fail": "L’identifiant « {{id}} » est utilisé sur {{count}} éléments du même arbre.",
+    "duplicateId_hint_fail": "Donnez à chaque élément son propre identifiant. Un doublon casse <label for>, les liens d’ancrage, getElementById et tout attribut de référence par identifiant : tous ne résolvent que la première correspondance.",
     "duplicateIdAria_title": "Les ID référencés par ARIA doivent être uniques",
     "duplicateIdAria_description": "Vérifie que toute valeur id référencée par un attribut de référence d’ID ARIA (aria-labelledby, aria-describedby, aria-owns, aria-controls, aria-activedescendant, aria-flowto, aria-errormessage, aria-details) est unique dans le document.",
     "duplicateIdAria_summary_cantTell": "L’id « {{id}} » est référencé par un attribut ARIA mais est utilisé par {{duplicateCount}} éléments ; la référence pointe vers le premier.",
@@ -21646,6 +21732,61 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "mappings": null
   },
   {
+    "ruleId": "duplicate-id",
+    "title": "IDs must be unique",
+    "description": "Checks that every non-empty id attribute value is unique within its own document or shadow tree (WCAG 2.0/2.1 SC 4.1.1, removed in WCAG 2.2).",
+    "i18n": {
+      "titleKey": "duplicateId_title",
+      "descriptionKey": "duplicateId_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag411",
+      "wcag22-removed",
+      "structure",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "4.1.1"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.1",
+        "requirement": "4.1.1",
+        "title": "Parsing",
+        "conformanceLevel": "A"
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "4.1.1": [
+          "id-unique-page-wide"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
     "ruleId": "duplicate-id-aria",
     "title": "IDs referenced by ARIA must be unique",
     "description": "Checks that any id value referenced by an ARIA ID-reference attribute (aria-labelledby, aria-describedby, aria-owns, aria-controls, aria-activedescendant, aria-flowto, aria-errormessage, aria-details) is unique in the document.",
@@ -26710,6 +26851,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "3.2.5"
       ],
       "level": "AAA"
+    }
+  },
+  {
+    "id": "wcag-4.1.1-parsing",
+    "checksIds": [
+      "duplicate-id"
+    ],
+    "meta": {
+      "title": "Parsing",
+      "description": "Rollup of checks ensuring id values are unique. WCAG 2.0/2.1 only — SC 4.1.1 was removed in WCAG 2.2, so this composite carries the wcag22-removed tag.",
+      "wcagSc": [
+        "4.1.1"
+      ],
+      "level": "A"
     }
   },
   {
@@ -35371,6 +35526,123 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       occurrences
     };
   }
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+}), applicability: null },
+    "duplicate-id": { run: (function runInPage(ctx) {
+  const { document, helpers, rule } = ctx;
+
+  // Detection spans the whole document; see the header comment on scope.
+  const all = new Set();
+  try {
+    const nodes = document.querySelectorAll ? document.querySelectorAll('[id]') : [];
+    for (const el of nodes) all.add(el);
+  } catch {
+    // no-throw: fall through to the helper-provided set below
+  }
+
+  const queryAllSmart =
+    helpers && typeof helpers.queryAllSmart === 'function' ? helpers.queryAllSmart : null;
+
+  // queryAllSmart reaches into open shadow roots when includeShadowDom is on,
+  // which document.querySelectorAll never does.
+  let inScope = null;
+  if (queryAllSmart) {
+    try {
+      const scoped = queryAllSmart('[id]');
+      const list = Array.isArray(scoped) ? scoped : Array.from(scoped || []);
+      inScope = new Set(list);
+      for (const el of list) all.add(el);
+    } catch {
+      inScope = null;
+    }
+  }
+
+  // Ids resolve within their own tree, so group by root before comparing.
+  function rootOf(el) {
+    try {
+      if (typeof el.getRootNode === 'function') return el.getRootNode();
+    } catch {
+      // fall through
+    }
+    return document;
+  }
+
+  const byRootAndId = new Map(); // root -> Map(idValue -> element[])
+  let applicableCount = 0;
+
+  for (const el of all) {
+    if (!el || el.nodeType !== 1 || !el.getAttribute) continue;
+    const value = String(el.getAttribute('id') || '').trim();
+    if (!value) continue;
+
+    applicableCount += 1;
+
+    const root = rootOf(el);
+    let idMap = byRootAndId.get(root);
+    if (!idMap) {
+      idMap = new Map();
+      byRootAndId.set(root, idMap);
+    }
+    const bucket = idMap.get(value);
+    if (bucket) bucket.push(el);
+    else idMap.set(value, [el]);
+  }
+
+  if (applicableCount === 0) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+
+  const occurrences = [];
+
+  for (const idMap of byRootAndId.values()) {
+    for (const [value, els] of idMap) {
+      if (els.length <= 1) continue;
+
+      for (const el of els) {
+        if (inScope && !inScope.has(el)) continue;
+
+        const eligInfo = helpers.getEligibilityInfo
+          ? (() => {
+              try {
+                return helpers.getEligibilityInfo(el, ctx, { targetSet: 'dom' });
+              } catch {
+                return null;
+              }
+            })()
+          : null;
+
+        occurrences.push(
+          helpers.reportOccurrence(el, {
+            summary: `The id "${value}" is used on ${els.length} elements in the same tree.`,
+            hint: 'Give each element its own id. A duplicate breaks <label for>, fragment links, getElementById and every ID-reference attribute, all of which resolve to the first match only.',
+            i18n: {
+              summaryKey: 'duplicateId_summary_fail',
+              hintKey: 'duplicateId_hint_fail',
+              params: { id: value, count: String(els.length) }
+            },
+            data: {
+              details: {
+                reasonCode: 'DUPLICATE_ID',
+                id: value,
+                count: els.length
+              },
+              visibilityFilter: eligInfo || { targetSet: 'dom', accEligible: null, reasons: [] }
+            }
+          })
+        );
+      }
+    }
+  }
+
+  if (occurrences.length) {
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'fail',
+      severity: rule.defaultSeverity || 'moderate',
+      occurrences
+    };
+  }
+
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "duplicate-id-aria": { run: (function runInPage(ctx) {
@@ -49830,6 +50102,10 @@ const I18N = {
     "dlitemParentValid_description": "Prüft, ob <dt>/<dd>-Elemente von einem <dl> enthalten sind, direkt oder über ein umschließendes <div>.",
     "dlitemParentValid_summary_fail": "Das übergeordnete Element (<{{parentElement}}>) dieses <{{element}}> ist keine Beschreibungsliste.",
     "dlitemParentValid_hint_fail": "Platzieren Sie dieses <dt>/<dd> innerhalb eines <dl>, direkt oder in einem einzigen <div> verpackt.",
+    "duplicateId_title": "IDs müssen eindeutig sein",
+    "duplicateId_description": "Prüft, dass jeder nicht leere Wert eines id-Attributs innerhalb seines eigenen Dokument- oder Shadow-Baums eindeutig ist (WCAG 2.0/2.1 SC 4.1.1, in WCAG 2.2 entfernt).",
+    "duplicateId_summary_fail": "Die ID „{{id}}“ wird an {{count}} Elementen im selben Baum verwendet.",
+    "duplicateId_hint_fail": "Geben Sie jedem Element eine eigene ID. Eine doppelte ID bricht <label for>, Sprungmarken, getElementById und jedes ID-Referenz-Attribut – alle greifen nur auf den ersten Treffer zu.",
     "duplicateIdAria_title": "Von ARIA referenzierte IDs müssen eindeutig sein",
     "duplicateIdAria_description": "Prüft, ob jeder id-Wert, der durch ein ARIA-ID-Referenzattribut referenziert wird (aria-labelledby, aria-describedby, aria-owns, aria-controls, aria-activedescendant, aria-flowto, aria-errormessage, aria-details), im Dokument eindeutig ist.",
     "duplicateIdAria_summary_cantTell": "Die id „{{id}}“ wird von einem ARIA-Attribut referenziert, wird aber von {{duplicateCount}} Elementen verwendet; die Referenz verweist auf das erste.",
@@ -50487,6 +50763,10 @@ const I18N = {
     "dlitemParentValid_description": "Checks that <dt>/<dd> elements are contained by a <dl>, directly or via one wrapping <div>.",
     "dlitemParentValid_summary_fail": "This <{{element}}>'s parent (<{{parentElement}}>) is not a description list.",
     "dlitemParentValid_hint_fail": "Place this <dt>/<dd> inside a <dl>, directly or wrapped in a single <div>.",
+    "duplicateId_title": "IDs must be unique",
+    "duplicateId_description": "Checks that every non-empty id attribute value is unique within its own document or shadow tree (WCAG 2.0/2.1 SC 4.1.1, removed in WCAG 2.2).",
+    "duplicateId_summary_fail": "The id \"{{id}}\" is used on {{count}} elements in the same tree.",
+    "duplicateId_hint_fail": "Give each element its own id. A duplicate breaks <label for>, fragment links, getElementById and every ID-reference attribute, all of which resolve to the first match only.",
     "duplicateIdAria_title": "IDs referenced by ARIA must be unique",
     "duplicateIdAria_description": "Checks that any id value referenced by an ARIA ID-reference attribute (aria-labelledby, aria-describedby, aria-owns, aria-controls, aria-activedescendant, aria-flowto, aria-errormessage, aria-details) is unique in the document.",
     "duplicateIdAria_summary_cantTell": "The id \"{{id}}\" is referenced by an ARIA attribute but is used by {{duplicateCount}} elements; the reference resolves to the first one.",
@@ -51144,6 +51424,10 @@ const I18N = {
     "dlitemParentValid_description": "Comprueba que los elementos <dt>/<dd> estén contenidos por un <dl>, directamente o mediante un único <div> envolvente.",
     "dlitemParentValid_summary_fail": "El padre (<{{parentElement}}>) de este <{{element}}> no es una lista de descripción.",
     "dlitemParentValid_hint_fail": "Colocar este <dt>/<dd> dentro de un <dl>, directamente o envuelto en un único <div>.",
+    "duplicateId_title": "Los ID deben ser únicos",
+    "duplicateId_description": "Comprueba que cada valor no vacío del atributo id es único dentro de su propio árbol de documento o de shadow DOM (WCAG 2.0/2.1 SC 4.1.1, eliminado en WCAG 2.2).",
+    "duplicateId_summary_fail": "El id «{{id}}» se usa en {{count}} elementos del mismo árbol.",
+    "duplicateId_hint_fail": "Dar a cada elemento su propio id. Un id duplicado rompe <label for>, los enlaces de fragmento, getElementById y todo atributo de referencia por id: todos resuelven solo a la primera coincidencia.",
     "duplicateIdAria_title": "Los IDs referenciados por ARIA deben ser únicos",
     "duplicateIdAria_description": "Comprueba que cualquier valor de id referenciado por un atributo de referencia de ID de ARIA (aria-labelledby, aria-describedby, aria-owns, aria-controls, aria-activedescendant, aria-flowto, aria-errormessage, aria-details) sea único en el documento.",
     "duplicateIdAria_summary_cantTell": "El id \"{{id}}\" está referenciado por un atributo ARIA, pero lo usan {{duplicateCount}} elementos; la referencia apunta al primero.",
@@ -51801,6 +52085,10 @@ const I18N = {
     "dlitemParentValid_description": "Vérifie que les éléments <dt>/<dd> sont contenus par un <dl>, directement ou via un <div> englobant.",
     "dlitemParentValid_summary_fail": "Le parent (<{{parentElement}}>) de ce <{{element}}> n’est pas une liste de définitions.",
     "dlitemParentValid_hint_fail": "Placez ce <dt>/<dd> à l’intérieur d’un <dl>, directement ou enveloppé dans un seul <div>.",
+    "duplicateId_title": "Les identifiants doivent être uniques",
+    "duplicateId_description": "Vérifie que chaque valeur non vide d’un attribut id est unique au sein de son propre arbre de document ou de shadow DOM (WCAG 2.0/2.1 SC 4.1.1, supprimé dans WCAG 2.2).",
+    "duplicateId_summary_fail": "L’identifiant « {{id}} » est utilisé sur {{count}} éléments du même arbre.",
+    "duplicateId_hint_fail": "Donnez à chaque élément son propre identifiant. Un doublon casse <label for>, les liens d’ancrage, getElementById et tout attribut de référence par identifiant : tous ne résolvent que la première correspondance.",
     "duplicateIdAria_title": "Les ID référencés par ARIA doivent être uniques",
     "duplicateIdAria_description": "Vérifie que toute valeur id référencée par un attribut de référence d’ID ARIA (aria-labelledby, aria-describedby, aria-owns, aria-controls, aria-activedescendant, aria-flowto, aria-errormessage, aria-details) est unique dans le document.",
     "duplicateIdAria_summary_cantTell": "L’id « {{id}} » est référencé par un attribut ARIA mais est utilisé par {{duplicateCount}} éléments ; la référence pointe vers le premier.",
@@ -63474,6 +63762,61 @@ const __a11yCoreCrossFrameApi = (function () {
     "mappings": null
   },
   {
+    "ruleId": "duplicate-id",
+    "title": "IDs must be unique",
+    "description": "Checks that every non-empty id attribute value is unique within its own document or shadow tree (WCAG 2.0/2.1 SC 4.1.1, removed in WCAG 2.2).",
+    "i18n": {
+      "titleKey": "duplicateId_title",
+      "descriptionKey": "duplicateId_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag411",
+      "wcag22-removed",
+      "structure",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "4.1.1"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.1",
+        "requirement": "4.1.1",
+        "title": "Parsing",
+        "conformanceLevel": "A"
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "4.1.1": [
+          "id-unique-page-wide"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
     "ruleId": "duplicate-id-aria",
     "title": "IDs referenced by ARIA must be unique",
     "description": "Checks that any id value referenced by an ARIA ID-reference attribute (aria-labelledby, aria-describedby, aria-owns, aria-controls, aria-activedescendant, aria-flowto, aria-errormessage, aria-details) is unique in the document.",
@@ -68534,6 +68877,20 @@ const __a11yCoreCrossFrameApi = (function () {
         "3.2.5"
       ],
       "level": "AAA"
+    }
+  },
+  {
+    "id": "wcag-4.1.1-parsing",
+    "checksIds": [
+      "duplicate-id"
+    ],
+    "meta": {
+      "title": "Parsing",
+      "description": "Rollup of checks ensuring id values are unique. WCAG 2.0/2.1 only — SC 4.1.1 was removed in WCAG 2.2, so this composite carries the wcag22-removed tag.",
+      "wcagSc": [
+        "4.1.1"
+      ],
+      "level": "A"
     }
   },
   {
@@ -77194,6 +77551,123 @@ const __a11yCoreCrossFrameApi = (function () {
       occurrences
     };
   }
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+}), applicability: null },
+    "duplicate-id": { run: (function runInPage(ctx) {
+  const { document, helpers, rule } = ctx;
+
+  // Detection spans the whole document; see the header comment on scope.
+  const all = new Set();
+  try {
+    const nodes = document.querySelectorAll ? document.querySelectorAll('[id]') : [];
+    for (const el of nodes) all.add(el);
+  } catch {
+    // no-throw: fall through to the helper-provided set below
+  }
+
+  const queryAllSmart =
+    helpers && typeof helpers.queryAllSmart === 'function' ? helpers.queryAllSmart : null;
+
+  // queryAllSmart reaches into open shadow roots when includeShadowDom is on,
+  // which document.querySelectorAll never does.
+  let inScope = null;
+  if (queryAllSmart) {
+    try {
+      const scoped = queryAllSmart('[id]');
+      const list = Array.isArray(scoped) ? scoped : Array.from(scoped || []);
+      inScope = new Set(list);
+      for (const el of list) all.add(el);
+    } catch {
+      inScope = null;
+    }
+  }
+
+  // Ids resolve within their own tree, so group by root before comparing.
+  function rootOf(el) {
+    try {
+      if (typeof el.getRootNode === 'function') return el.getRootNode();
+    } catch {
+      // fall through
+    }
+    return document;
+  }
+
+  const byRootAndId = new Map(); // root -> Map(idValue -> element[])
+  let applicableCount = 0;
+
+  for (const el of all) {
+    if (!el || el.nodeType !== 1 || !el.getAttribute) continue;
+    const value = String(el.getAttribute('id') || '').trim();
+    if (!value) continue;
+
+    applicableCount += 1;
+
+    const root = rootOf(el);
+    let idMap = byRootAndId.get(root);
+    if (!idMap) {
+      idMap = new Map();
+      byRootAndId.set(root, idMap);
+    }
+    const bucket = idMap.get(value);
+    if (bucket) bucket.push(el);
+    else idMap.set(value, [el]);
+  }
+
+  if (applicableCount === 0) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+
+  const occurrences = [];
+
+  for (const idMap of byRootAndId.values()) {
+    for (const [value, els] of idMap) {
+      if (els.length <= 1) continue;
+
+      for (const el of els) {
+        if (inScope && !inScope.has(el)) continue;
+
+        const eligInfo = helpers.getEligibilityInfo
+          ? (() => {
+              try {
+                return helpers.getEligibilityInfo(el, ctx, { targetSet: 'dom' });
+              } catch {
+                return null;
+              }
+            })()
+          : null;
+
+        occurrences.push(
+          helpers.reportOccurrence(el, {
+            summary: `The id "${value}" is used on ${els.length} elements in the same tree.`,
+            hint: 'Give each element its own id. A duplicate breaks <label for>, fragment links, getElementById and every ID-reference attribute, all of which resolve to the first match only.',
+            i18n: {
+              summaryKey: 'duplicateId_summary_fail',
+              hintKey: 'duplicateId_hint_fail',
+              params: { id: value, count: String(els.length) }
+            },
+            data: {
+              details: {
+                reasonCode: 'DUPLICATE_ID',
+                id: value,
+                count: els.length
+              },
+              visibilityFilter: eligInfo || { targetSet: 'dom', accEligible: null, reasons: [] }
+            }
+          })
+        );
+      }
+    }
+  }
+
+  if (occurrences.length) {
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'fail',
+      severity: rule.defaultSeverity || 'moderate',
+      occurrences
+    };
+  }
+
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "duplicate-id-aria": { run: (function runInPage(ctx) {
@@ -91653,6 +92127,10 @@ const I18N = {
     "dlitemParentValid_description": "Prüft, ob <dt>/<dd>-Elemente von einem <dl> enthalten sind, direkt oder über ein umschließendes <div>.",
     "dlitemParentValid_summary_fail": "Das übergeordnete Element (<{{parentElement}}>) dieses <{{element}}> ist keine Beschreibungsliste.",
     "dlitemParentValid_hint_fail": "Platzieren Sie dieses <dt>/<dd> innerhalb eines <dl>, direkt oder in einem einzigen <div> verpackt.",
+    "duplicateId_title": "IDs müssen eindeutig sein",
+    "duplicateId_description": "Prüft, dass jeder nicht leere Wert eines id-Attributs innerhalb seines eigenen Dokument- oder Shadow-Baums eindeutig ist (WCAG 2.0/2.1 SC 4.1.1, in WCAG 2.2 entfernt).",
+    "duplicateId_summary_fail": "Die ID „{{id}}“ wird an {{count}} Elementen im selben Baum verwendet.",
+    "duplicateId_hint_fail": "Geben Sie jedem Element eine eigene ID. Eine doppelte ID bricht <label for>, Sprungmarken, getElementById und jedes ID-Referenz-Attribut – alle greifen nur auf den ersten Treffer zu.",
     "duplicateIdAria_title": "Von ARIA referenzierte IDs müssen eindeutig sein",
     "duplicateIdAria_description": "Prüft, ob jeder id-Wert, der durch ein ARIA-ID-Referenzattribut referenziert wird (aria-labelledby, aria-describedby, aria-owns, aria-controls, aria-activedescendant, aria-flowto, aria-errormessage, aria-details), im Dokument eindeutig ist.",
     "duplicateIdAria_summary_cantTell": "Die id „{{id}}“ wird von einem ARIA-Attribut referenziert, wird aber von {{duplicateCount}} Elementen verwendet; die Referenz verweist auf das erste.",
@@ -92310,6 +92788,10 @@ const I18N = {
     "dlitemParentValid_description": "Checks that <dt>/<dd> elements are contained by a <dl>, directly or via one wrapping <div>.",
     "dlitemParentValid_summary_fail": "This <{{element}}>'s parent (<{{parentElement}}>) is not a description list.",
     "dlitemParentValid_hint_fail": "Place this <dt>/<dd> inside a <dl>, directly or wrapped in a single <div>.",
+    "duplicateId_title": "IDs must be unique",
+    "duplicateId_description": "Checks that every non-empty id attribute value is unique within its own document or shadow tree (WCAG 2.0/2.1 SC 4.1.1, removed in WCAG 2.2).",
+    "duplicateId_summary_fail": "The id \"{{id}}\" is used on {{count}} elements in the same tree.",
+    "duplicateId_hint_fail": "Give each element its own id. A duplicate breaks <label for>, fragment links, getElementById and every ID-reference attribute, all of which resolve to the first match only.",
     "duplicateIdAria_title": "IDs referenced by ARIA must be unique",
     "duplicateIdAria_description": "Checks that any id value referenced by an ARIA ID-reference attribute (aria-labelledby, aria-describedby, aria-owns, aria-controls, aria-activedescendant, aria-flowto, aria-errormessage, aria-details) is unique in the document.",
     "duplicateIdAria_summary_cantTell": "The id \"{{id}}\" is referenced by an ARIA attribute but is used by {{duplicateCount}} elements; the reference resolves to the first one.",
@@ -92967,6 +93449,10 @@ const I18N = {
     "dlitemParentValid_description": "Comprueba que los elementos <dt>/<dd> estén contenidos por un <dl>, directamente o mediante un único <div> envolvente.",
     "dlitemParentValid_summary_fail": "El padre (<{{parentElement}}>) de este <{{element}}> no es una lista de descripción.",
     "dlitemParentValid_hint_fail": "Colocar este <dt>/<dd> dentro de un <dl>, directamente o envuelto en un único <div>.",
+    "duplicateId_title": "Los ID deben ser únicos",
+    "duplicateId_description": "Comprueba que cada valor no vacío del atributo id es único dentro de su propio árbol de documento o de shadow DOM (WCAG 2.0/2.1 SC 4.1.1, eliminado en WCAG 2.2).",
+    "duplicateId_summary_fail": "El id «{{id}}» se usa en {{count}} elementos del mismo árbol.",
+    "duplicateId_hint_fail": "Dar a cada elemento su propio id. Un id duplicado rompe <label for>, los enlaces de fragmento, getElementById y todo atributo de referencia por id: todos resuelven solo a la primera coincidencia.",
     "duplicateIdAria_title": "Los IDs referenciados por ARIA deben ser únicos",
     "duplicateIdAria_description": "Comprueba que cualquier valor de id referenciado por un atributo de referencia de ID de ARIA (aria-labelledby, aria-describedby, aria-owns, aria-controls, aria-activedescendant, aria-flowto, aria-errormessage, aria-details) sea único en el documento.",
     "duplicateIdAria_summary_cantTell": "El id \"{{id}}\" está referenciado por un atributo ARIA, pero lo usan {{duplicateCount}} elementos; la referencia apunta al primero.",
@@ -93624,6 +94110,10 @@ const I18N = {
     "dlitemParentValid_description": "Vérifie que les éléments <dt>/<dd> sont contenus par un <dl>, directement ou via un <div> englobant.",
     "dlitemParentValid_summary_fail": "Le parent (<{{parentElement}}>) de ce <{{element}}> n’est pas une liste de définitions.",
     "dlitemParentValid_hint_fail": "Placez ce <dt>/<dd> à l’intérieur d’un <dl>, directement ou enveloppé dans un seul <div>.",
+    "duplicateId_title": "Les identifiants doivent être uniques",
+    "duplicateId_description": "Vérifie que chaque valeur non vide d’un attribut id est unique au sein de son propre arbre de document ou de shadow DOM (WCAG 2.0/2.1 SC 4.1.1, supprimé dans WCAG 2.2).",
+    "duplicateId_summary_fail": "L’identifiant « {{id}} » est utilisé sur {{count}} éléments du même arbre.",
+    "duplicateId_hint_fail": "Donnez à chaque élément son propre identifiant. Un doublon casse <label for>, les liens d’ancrage, getElementById et tout attribut de référence par identifiant : tous ne résolvent que la première correspondance.",
     "duplicateIdAria_title": "Les ID référencés par ARIA doivent être uniques",
     "duplicateIdAria_description": "Vérifie que toute valeur id référencée par un attribut de référence d’ID ARIA (aria-labelledby, aria-describedby, aria-owns, aria-controls, aria-activedescendant, aria-flowto, aria-errormessage, aria-details) est unique dans le document.",
     "duplicateIdAria_summary_cantTell": "L’id « {{id}} » est référencé par un attribut ARIA mais est utilisé par {{duplicateCount}} éléments ; la référence pointe vers le premier.",

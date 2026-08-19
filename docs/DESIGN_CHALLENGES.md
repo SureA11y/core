@@ -1,6 +1,6 @@
 # Design challenges
 
-A running log of engine design decisions worth re-examining — cases where an existing choice turned out to conflict with a ground-truth source (usually the W3C ACT rules test corpus), or just looks questionable on a second look. Not all of these are bugs; some are deliberate tradeoffs that deserve a second opinion before being either confirmed or overturned. Each entry: the decision as it stands, why it's being questioned, and current status.
+A running log of engine design decisions worth re-examining — cases where an existing choice turned out to conflict with a ground-truth source (usually the W3C ACT rules test corpus), or just looks questionable on a second look. Not all of these are bugs; some are deliberate tradeoffs that deserve a second opinion before being either confirmed or overturned. Each entry: the decision as it stands, why it's being questioned, and current status. Entries that have been settled move to [Decided](#decided) at the bottom, with the reasoning kept — a decision is only useful later if the argument behind it survives with it.
 
 ## Open
 
@@ -72,18 +72,6 @@ Confirmed via ACT `bc4a75` failed-example: `<div role="list"><li>Item 1</li><spa
 
 **Status:** open, unresolved as of 2026-08-19.
 
-### Page-wide duplicate-`id` checking was deliberately skipped once — worth revisiting now that we're chasing ACT gap `3ea0c8`
-
-**Decision as it stands:** `src/checks/automatic/duplicate-id-aria.js` only flags a duplicate `id` when it's referenced by an ARIA ID-reference attribute. Its header comment: "Scoped deliberately to ids referenced by ARIA, not the broader/deprecated page-wide duplicate-id check (see ROADMAP.md's 'Skip' list)." That `ROADMAP.md` no longer exists in the repo (not found in the working tree or as a tracked file in `git log` — likely a local planning doc that was never committed), so the original reasoning behind "skip" isn't recoverable verbatim, only the pointer to it.
-
-**Why it's being questioned:** while mining ACT's gap list (per the user's request to find gaps worth turning into new rules), `3ea0c8` "Id attribute value is unique" is exactly this broader page-wide check, and it's genuinely detectable with a simple, deterministic document-wide scan. Checked ACT's own SC mapping for it: `3ea0c8` maps to **WCAG 4.1.1 Parsing**, which the Working Group formally **removed in WCAG 2.2** (browsers/AT no longer depend on strict-parsing conformance the way they did when that SC was written) — and axe-core deprecated its own equivalent broad `duplicate-id` check around the same time, for the same reason. So the original "skip" call was well-founded *for WCAG 2.2 conformance scoring specifically*.
-
-That said, duplicate IDs are still a real, practical bug independent of which SC currently covers them: they break `<label for>` association, fragment navigation, and any `getElementById`/`querySelector('#...')` call, not just ARIA references — and this engine already supports WCAG-version-scoped tagging (`wcag2a`/`wcag21a`/`wcag22aa`-style tags, see `docs/ENGINE_OPTIONS.md`'s WCAG-version filtering). A page-wide duplicate-id rule could be added and tagged as WCAG 2.0/2.1-only (`wcag411`-style, excluded from WCAG 2.2 tag sets) rather than either fully skipped or wrongly counted against 2.2 conformance — the two options the original either/or "skip" decision didn't have room for.
-
-**Why this hasn't been changed yet:** this reverses (or at least meaningfully qualifies) a previous deliberate call, and the original full reasoning isn't recoverable — surfacing it for a decision rather than silently re-adding what was once deliberately removed.
-
-**Status:** open, awaiting a decision as of 2026-08-19.
-
 ### `img-alt-decorative` only considers `<img alt="">`, missing `aria-hidden`/`role=none` images and every svg/canvas case
 
 **Decision as it stands:** `src/checks/manual/img-alt-decorative-manual.js` is hard-scoped to a CSS selector matching only `img[alt=""]`/`img[alt^=" "]`/`img[alt$=" "]` — i.e. an `<img>` already marked (or nearly marked) decorative via `alt`.
@@ -104,16 +92,6 @@ That said, duplicate IDs are still a real, practical bug independent of which SC
 
 **Status:** open, unresolved as of 2026-08-19; already self-acknowledged as out of scope in `svg-text-alternative-present.js`'s own comment before this pass.
 
-### `<label for>`/wrapping association is applied to elements that aren't natively labelable, contradicting ACT
-
-**Decision as it stands:** the shared accessible-name helper (`getAccessibleNameInfo` in `src/core/dom-helpers.js`, ~line 2984) falls back to a `label[for]`/wrapping-`<label>` lookup by element `id` for *any* element, not just genuinely labelable native ones (`input`/`textarea`/`select`/`button`/`output`/`meter`/`progress`) — its own comment describes this as deliberate: "fallback for elements where `.labels` isn't natively available, e.g. a non-native-labelable element like `<div role="button" id="x">` still explicitly pointed at by `<label for="x">`." The same pattern is duplicated in `textbox-name-present.js`, `combobox-name-present.js`, `listbox-name-present.js`, `searchbox-name-present.js`, `slider-name-present.js`, and `spinbutton-name-present.js`.
-
-**Why it's being questioned:** ACT `e086e5`'s own test corpus fails a `<label>first name<div role="textbox"></div></label>` (and the `label[for]` equivalent) — a `<div role="textbox">` isn't a native HTML label target, and per HTML, `<label>` only creates a real accessible-name association with labelable elements. `textbox-name-present.js`'s own header comment even states the opposite of what the shared helper does: `role="textbox"` is "name-from-author-only... must NOT fall back to subtree content" — the intent was clearly to be strict here, but the `<label>` fallback undermines it.
-
-**Why this hasn't been changed yet:** this is a widely-shared helper (nearly every accessible-name-dependent rule in the engine goes through `getAccessibleNameInfo`) plus 6 duplicated rule-local copies of the same logic, and the current behavior reads as a deliberate (if ACT-noncompliant) AT-compat leniency choice rather than an oversight — some real screen readers may still announce a `<label for>` pointed at a non-labelable ARIA widget, which is presumably why it was added. Needs an explicit decision (does this engine prioritize strict ACT/spec conformance or real-AT-behavior leniency here?) before touching a helper this central.
-
-**Status:** open, awaiting a decision as of 2026-08-19.
-
 ### `label-in-name` has no exemption for icon-font glyphs or icon-standing-in characters
 
 **Decision as it stands:** `label-in-name.js` does a literal text-containment check between an element's visible text and its accessible name, with no exemption for visible text that is actually rendering as an icon rather than readable text.
@@ -133,3 +111,29 @@ That said, duplicate IDs are still a real, practical bug independent of which SC
 **Why this hasn't been changed yet:** a real three-part applicability rewrite (ownership resolution through nested `lang` scopes, treating `alt` as governed text, and a visibility gate), not a one-line fix — though the visibility-gate piece (c) is the most contained of the three and could reasonably land on its own if only partial progress is wanted.
 
 **Status:** open, unresolved as of 2026-08-19.
+
+## Decided
+
+### Page-wide duplicate-`id` checking was deliberately skipped once — now built, version-scoped
+
+**Decision as it stands:** `src/checks/automatic/duplicate-id-aria.js` only flags a duplicate `id` when it's referenced by an ARIA ID-reference attribute. Its header comment: "Scoped deliberately to ids referenced by ARIA, not the broader/deprecated page-wide duplicate-id check (see ROADMAP.md's 'Skip' list)." That `ROADMAP.md` no longer exists in the repo (not found in the working tree or as a tracked file in `git log` — likely a local planning doc that was never committed), so the original reasoning behind "skip" isn't recoverable verbatim, only the pointer to it.
+
+**Why it's being questioned:** while mining ACT's gap list (per the user's request to find gaps worth turning into new rules), `3ea0c8` "Id attribute value is unique" is exactly this broader page-wide check, and it's genuinely detectable with a simple, deterministic document-wide scan. Checked ACT's own SC mapping for it: `3ea0c8` maps to **WCAG 4.1.1 Parsing**, which the Working Group formally **removed in WCAG 2.2** (browsers/AT no longer depend on strict-parsing conformance the way they did when that SC was written) — and axe-core deprecated its own equivalent broad `duplicate-id` check around the same time, for the same reason. So the original "skip" call was well-founded *for WCAG 2.2 conformance scoring specifically*.
+
+That said, duplicate IDs are still a real, practical bug independent of which SC currently covers them: they break `<label for>` association, fragment navigation, and any `getElementById`/`querySelector('#...')` call, not just ARIA references — and this engine already supports WCAG-version-scoped tagging (`wcag2a`/`wcag21a`/`wcag22aa`-style tags, see `docs/ENGINE_OPTIONS.md`'s WCAG-version filtering). A page-wide duplicate-id rule could be added and tagged as WCAG 2.0/2.1-only (`wcag411`-style, excluded from WCAG 2.2 tag sets) rather than either fully skipped or wrongly counted against 2.2 conformance — the two options the original either/or "skip" decision didn't have room for.
+
+**Decision (2026-08-19):** build it, version-scoped. The new `duplicate-id` rule maps to SC 4.1.1 and carries `wcag2a` (its 2.0/2.1 origin) plus a new `wcag22-removed` tag; a consumer targeting WCAG 2.2 drops it with `excludeTags: ['wcag22-removed']`, one targeting 2.0 or 2.1 keeps a real 4.1.1 result. That is the third option the original either/or "skip" call did not have room for: the defect is real regardless of which SC covers it (`<label for>`, fragment navigation and `getElementById` all resolve to the first match), while the conformance arithmetic stays honest for every version. `src/coverage/wcag-version-map.js` gained `WCAG22_REMOVED_SCS`/`removedInVersion` so the removal is recorded next to the additions rather than living only in a rule comment.
+
+**Status:** resolved 2026-08-19 — `duplicate-id` ships, clean against all 10 of ACT `3ea0c8`'s examples.
+
+### `<label for>`/wrapping association is applied to elements that aren't natively labelable, contradicting ACT
+
+**Decision as it stands:** the shared accessible-name helper (`getAccessibleNameInfo` in `src/core/dom-helpers.js`, ~line 2984) falls back to a `label[for]`/wrapping-`<label>` lookup by element `id` for *any* element, not just genuinely labelable native ones (`input`/`textarea`/`select`/`button`/`output`/`meter`/`progress`) — its own comment describes this as deliberate: "fallback for elements where `.labels` isn't natively available, e.g. a non-native-labelable element like `<div role="button" id="x">` still explicitly pointed at by `<label for="x">`." The same pattern is duplicated in `textbox-name-present.js`, `combobox-name-present.js`, `listbox-name-present.js`, `searchbox-name-present.js`, `slider-name-present.js`, and `spinbutton-name-present.js`.
+
+**Why it's being questioned:** ACT `e086e5`'s own test corpus fails a `<label>first name<div role="textbox"></div></label>` (and the `label[for]` equivalent) — a `<div role="textbox">` isn't a native HTML label target, and per HTML, `<label>` only creates a real accessible-name association with labelable elements. `textbox-name-present.js`'s own header comment even states the opposite of what the shared helper does: `role="textbox"` is "name-from-author-only... must NOT fall back to subtree content" — the intent was clearly to be strict here, but the `<label>` fallback undermines it.
+
+**Decision (2026-08-19):** keep the leniency. The question was whether this engine follows the spec or follows what assistive technology actually does, and the answer here is what users experience: where a screen reader announces a `<label for>` pointed at a non-labelable ARIA widget, an engine that calls that name absent would report a missing name the user can hear perfectly well — a false positive, and the worst kind, since it sends an author to "fix" working markup. Reporting a name that some AT ignores is the safer error: it under-reports a real problem rather than inventing one, and the widget's own naming rules (`aria-label`/`aria-labelledby`) still apply on top.
+
+Two consequences, both accepted: the shared helper and its six rule-local copies stay as they are, and ACT `e086e5`'s two `<label>`-on-`role="textbox"` failed examples stay permanent mismatches — reclassified in `docs/ACT_RULE_MAPPING.md` from an open question to a deliberate divergence.
+
+**Status:** resolved 2026-08-19 — no code change; behaviour confirmed as intended.

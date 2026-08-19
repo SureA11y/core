@@ -28,6 +28,7 @@
   { "actId": "2779a5", "actName": "HTML page has non-empty title", "ourRuleIds": ["page-title-present"], "matchType": "exact" },
   { "actId": "5b7ae0", "actName": "HTML page lang and xml:lang attributes have matching values", "ourRuleIds": ["html-xml-lang-mismatch"], "matchType": "exact" },
   { "actId": "bf051a", "actName": "HTML page lang attribute has valid language tag", "ourRuleIds": ["html-lang-attr-present"], "matchType": "exact" },
+  { "actId": "3ea0c8", "actName": "Id attribute value is unique", "ourRuleIds": ["duplicate-id"], "matchType": "exact" },
   { "actId": "cae760", "actName": "Iframe element has non-empty accessible name", "ourRuleIds": ["iframe-name-present"], "matchType": "exact" },
   { "actId": "akn7bn", "actName": "Iframe with negative tabindex has no interactive elements", "ourRuleIds": ["iframe-focusable-content"], "matchType": "exact" },
   { "actId": "qt1vmo", "actName": "Image accessible name is descriptive", "ourRuleIds": ["img-alt-quality", "canvas-text-alternative-quality", "svg-text-alternative-quality"], "matchType": "family" },

@@ -2237,6 +2237,61 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "mappings": null
   },
   {
+    "ruleId": "duplicate-id",
+    "title": "IDs must be unique",
+    "description": "Checks that every non-empty id attribute value is unique within its own document or shadow tree (WCAG 2.0/2.1 SC 4.1.1, removed in WCAG 2.2).",
+    "i18n": {
+      "titleKey": "duplicateId_title",
+      "descriptionKey": "duplicateId_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag411",
+      "wcag22-removed",
+      "structure",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "4.1.1"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.1",
+        "requirement": "4.1.1",
+        "title": "Parsing",
+        "conformanceLevel": "A"
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "4.1.1": [
+          "id-unique-page-wide"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
     "ruleId": "duplicate-id-aria",
     "title": "IDs referenced by ARIA must be unique",
     "description": "Checks that any id value referenced by an ARIA ID-reference attribute (aria-labelledby, aria-describedby, aria-owns, aria-controls, aria-activedescendant, aria-flowto, aria-errormessage, aria-details) is unique in the document.",
@@ -7301,6 +7356,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "3.2.5"
       ],
       "level": "AAA"
+    }
+  },
+  {
+    "id": "wcag-4.1.1-parsing",
+    "checksIds": [
+      "duplicate-id"
+    ],
+    "meta": {
+      "title": "Parsing",
+      "description": "Rollup of checks ensuring id values are unique. WCAG 2.0/2.1 only — SC 4.1.1 was removed in WCAG 2.2, so this composite carries the wcag22-removed tag.",
+      "wcagSc": [
+        "4.1.1"
+      ],
+      "level": "A"
     }
   },
   {
@@ -15962,6 +16031,123 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       occurrences
     };
   }
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+}), applicability: null },
+    "duplicate-id": { run: (function runInPage(ctx) {
+  const { document, helpers, rule } = ctx;
+
+  // Detection spans the whole document; see the header comment on scope.
+  const all = new Set();
+  try {
+    const nodes = document.querySelectorAll ? document.querySelectorAll('[id]') : [];
+    for (const el of nodes) all.add(el);
+  } catch {
+    // no-throw: fall through to the helper-provided set below
+  }
+
+  const queryAllSmart =
+    helpers && typeof helpers.queryAllSmart === 'function' ? helpers.queryAllSmart : null;
+
+  // queryAllSmart reaches into open shadow roots when includeShadowDom is on,
+  // which document.querySelectorAll never does.
+  let inScope = null;
+  if (queryAllSmart) {
+    try {
+      const scoped = queryAllSmart('[id]');
+      const list = Array.isArray(scoped) ? scoped : Array.from(scoped || []);
+      inScope = new Set(list);
+      for (const el of list) all.add(el);
+    } catch {
+      inScope = null;
+    }
+  }
+
+  // Ids resolve within their own tree, so group by root before comparing.
+  function rootOf(el) {
+    try {
+      if (typeof el.getRootNode === 'function') return el.getRootNode();
+    } catch {
+      // fall through
+    }
+    return document;
+  }
+
+  const byRootAndId = new Map(); // root -> Map(idValue -> element[])
+  let applicableCount = 0;
+
+  for (const el of all) {
+    if (!el || el.nodeType !== 1 || !el.getAttribute) continue;
+    const value = String(el.getAttribute('id') || '').trim();
+    if (!value) continue;
+
+    applicableCount += 1;
+
+    const root = rootOf(el);
+    let idMap = byRootAndId.get(root);
+    if (!idMap) {
+      idMap = new Map();
+      byRootAndId.set(root, idMap);
+    }
+    const bucket = idMap.get(value);
+    if (bucket) bucket.push(el);
+    else idMap.set(value, [el]);
+  }
+
+  if (applicableCount === 0) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+
+  const occurrences = [];
+
+  for (const idMap of byRootAndId.values()) {
+    for (const [value, els] of idMap) {
+      if (els.length <= 1) continue;
+
+      for (const el of els) {
+        if (inScope && !inScope.has(el)) continue;
+
+        const eligInfo = helpers.getEligibilityInfo
+          ? (() => {
+              try {
+                return helpers.getEligibilityInfo(el, ctx, { targetSet: 'dom' });
+              } catch {
+                return null;
+              }
+            })()
+          : null;
+
+        occurrences.push(
+          helpers.reportOccurrence(el, {
+            summary: `The id "${value}" is used on ${els.length} elements in the same tree.`,
+            hint: 'Give each element its own id. A duplicate breaks <label for>, fragment links, getElementById and every ID-reference attribute, all of which resolve to the first match only.',
+            i18n: {
+              summaryKey: 'duplicateId_summary_fail',
+              hintKey: 'duplicateId_hint_fail',
+              params: { id: value, count: String(els.length) }
+            },
+            data: {
+              details: {
+                reasonCode: 'DUPLICATE_ID',
+                id: value,
+                count: els.length
+              },
+              visibilityFilter: eligInfo || { targetSet: 'dom', accEligible: null, reasons: [] }
+            }
+          })
+        );
+      }
+    }
+  }
+
+  if (occurrences.length) {
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'fail',
+      severity: rule.defaultSeverity || 'moderate',
+      occurrences
+    };
+  }
+
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "duplicate-id-aria": { run: (function runInPage(ctx) {
@@ -30421,6 +30607,10 @@ const I18N = {
     "dlitemParentValid_description": "Checks that <dt>/<dd> elements are contained by a <dl>, directly or via one wrapping <div>.",
     "dlitemParentValid_summary_fail": "This <{{element}}>'s parent (<{{parentElement}}>) is not a description list.",
     "dlitemParentValid_hint_fail": "Place this <dt>/<dd> inside a <dl>, directly or wrapped in a single <div>.",
+    "duplicateId_title": "IDs must be unique",
+    "duplicateId_description": "Checks that every non-empty id attribute value is unique within its own document or shadow tree (WCAG 2.0/2.1 SC 4.1.1, removed in WCAG 2.2).",
+    "duplicateId_summary_fail": "The id \"{{id}}\" is used on {{count}} elements in the same tree.",
+    "duplicateId_hint_fail": "Give each element its own id. A duplicate breaks <label for>, fragment links, getElementById and every ID-reference attribute, all of which resolve to the first match only.",
     "duplicateIdAria_title": "IDs referenced by ARIA must be unique",
     "duplicateIdAria_description": "Checks that any id value referenced by an ARIA ID-reference attribute (aria-labelledby, aria-describedby, aria-owns, aria-controls, aria-activedescendant, aria-flowto, aria-errormessage, aria-details) is unique in the document.",
     "duplicateIdAria_summary_cantTell": "The id \"{{id}}\" is referenced by an ARIA attribute but is used by {{duplicateCount}} elements; the reference resolves to the first one.",

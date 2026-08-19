@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-08-19T07:16:28.539Z",
+  "generatedAt": "2026-08-19T09:04:41.728Z",
   "summary": {
-    "total": 129,
-    "withFixture": 129,
+    "total": 130,
+    "withFixture": 130,
     "withoutFixture": 0
   },
   "rows": [
@@ -762,6 +762,25 @@
         "FAIL": 3,
         "CANTTELL": 0,
         "OTHER": 0
+      }
+    },
+    {
+      "ruleId": "duplicate-id",
+      "title": "IDs must be unique",
+      "type": "automatic",
+      "wcagSc": [
+        "4.1.1"
+      ],
+      "ruleFile": "src/checks/automatic/duplicate-id.js",
+      "testFile": "tests/engine-checks/automatic/duplicate-id.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/duplicate-id-all-scenarios.html",
+      "totalCases": 6,
+      "caseCounts": {
+        "PASS": 1,
+        "FAIL": 3,
+        "CANTTELL": 0,
+        "OTHER": 2
       }
     },
     {
