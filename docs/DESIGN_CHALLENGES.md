@@ -4,39 +4,13 @@ A running log of engine design decisions worth re-examining — cases where an e
 
 ## Open
 
-### `aria-required-children` uses "at least one acceptable owned role anywhere in the subtree", not ACT's stricter "only acceptable roles, recursively through group wrappers"
-
-**Decision as it stands:** `src/checks/automatic/aria-required-children.js` treats a container role's "required owned elements" check as satisfied by finding *any single* matching descendant anywhere in the full subtree. The header comment states this is deliberate: "any one qualifying descendant/owned element satisfies the requirement... the full subtree is scanned without excluding nested containers with their own differing role, favoring simplicity — this can only under-report (recall), never over-report."
-
-**Why it's being questioned:** Validating against ACT rule `bc4a75`'s own test corpus, its Expectation text reads: *"Each test target only owns elements with a semantic role from the required owned element list for the test target's semantic role."* That's an **exclusive/ALL check**, not an "at least one" check — and ACT's group-transparency rule recurses it: a `group` wrapper is transparent, but everything *that group in turn owns* must also be checked against the same acceptable-role list.
-
-Concretely, ACT's own failed-example 7 is:
-```html
-<div role="menu">
-  <div role="group">
-    <span role="menuitem">Item 1</span>
-    <div role="group">
-      <span role="treeitem">Item 1</span>
-      <span role="treeitem">Item 2</span>
-    </div>
-  </div>
-</div>
-```
-`menu`'s required-owned set includes `group`/`menuitem`/etc. The outer group directly owns a valid `menuitem` — under our current "any match anywhere" logic this passes. But ACT fails it: the outer group *also* owns a nested `group`, and that nested group's own owned elements (`treeitem`, `treeitem`) are not in the acceptable set, so the chain is invalid *despite* the sibling `menuitem` being fine. The comment on ACT's page is explicit: "ARIA group roles are allowed to own other elements with a group role, but those nested group nodes must still meet the requirements."
-
-This is the exact inverse of what our header comment claims about the tradeoff ("can only under-report, never over-report") — the real-world effect is the opposite: our rule will **miss real violations** whenever a container has a mix of valid and invalid owned elements, or an invalid item buried a level deeper than a valid sibling. A `role="list"` with one real `role="listitem"` plus a stray `role="button"` direct child would pass today; ACT says it should fail.
-
-**Why this hasn't been changed yet:** this is a real algorithm rewrite, not a narrow patch — moving from "scan the whole subtree for one match" to "walk the semantic-owned-children graph (direct children + group-transparent recursion, not arbitrary-depth descendants) and require every node in that graph to be acceptable" changes behavior broadly, including on real-world pages that mix valid/invalid owned content today. It could flip a meaningful number of currently-passing pages to failing. Needs a deliberate look (and probably a fixture pass) before landing, not a quick fix buried in a larger triage sweep.
-
-**Status:** open, unresolved as of 2026-08-19. `aria-prohibited-children.js` (the sibling rule) already implements the correct "boundary" concept — an owned entry that's a real (non-transparent) node stops the walk, including a roleless-but-globally-ARIA-attributed one — and would be the right model to port from.
-
 ### The ARIA structure rules only evaluate containers that carry an explicit `role`
 
 **Decision as it stands:** `aria-required-children`, `aria-prohibited-children` and `aria-required-parent` all key their applicability off `getExplicitRole(el)` — an element with no `role=""` attribute is never evaluated as a container, however clear its native semantics.
 
 **Why it's being questioned:** ACT `bc4a75`'s failed-example 10 is `<ul><div></div><div></div></ul>`. A `<ul>` has the implicit `list` role, `<div>` resolves to `generic`, and `generic` is not among `list`'s required owned elements, so ACT fails it. Our rules report `notApplicable`: there is no `role` attribute anywhere in that markup to key off. The same blind spot covers every native container the engine already knows about — `<ul>`/`<ol>` (`list`), `<table>` (`table`), `<select>` (`listbox`/`combobox`), `<dl>` — and native markup is where these structures usually come from, so the rules are strictest exactly where authors already used ARIA and silent where they didn't.
 
-**Why this hasn't been changed yet:** `getContainmentRole` (`src/core/aria-helpers.js`) already resolves the native side of this for *children*, so the missing piece is applicability, not role resolution — but turning it on makes every `<ul>`, `<table>` and `<select>` on every page a container under test, which is a large behavior change on real-world markup (and one that runs straight into the two entries above: the native-role table's missing HTML-AAM context requirements, and the "any match" vs. "all owned" question). Worth doing after those two are settled, not before.
+**Why this hasn't been changed yet:** `getContainmentRole` (`src/core/aria-helpers.js`) already resolves the native side of this for *children*, so the missing piece is applicability, not role resolution — but turning it on makes every `<ul>`, `<table>` and `<select>` on every page a container under test, which is a large behavior change on real-world markup. The two entries it was waiting on (the native-role table's missing HTML-AAM context requirements, and the "any match" vs. "all owned" question) are both settled as of 2026-08-19, so nothing blocks it now except its own blast radius. It is also the last thing between the engine and a clean `bc4a75`: ACT's failed example 10, `<ul><div></div><div></div></ul>`, is an implicit `list` owning generic children and is the one remaining mismatch on that rule.
 
 **Status:** open, unresolved as of 2026-08-19.
 
@@ -47,18 +21,6 @@ This is the exact inverse of what our header comment claims about the tradeoff (
 **Why it's being questioned:** ACT `2ee8b8` is explicit that its "visible inner text" is a rendering property, not an accessibility-tree one, and three of its examples turn on the difference: `<a aria-label="Download specification">Download <span aria-hidden="true">gizmo</span> specification</a>` fails ACT (the word "gizmo" is on screen, whatever `aria-hidden` says) and passes here; a `clip-path: inset(50%)` visually-hidden span passes ACT (nothing is rendered) and fails here; and `<div style="display: inline">` children concatenate into one word for ACT ("ACT" from three inline divs) while we read them apart. All three point the same way — the label a sighted user speaks comes from what is painted, not from what the accessibility tree carries. The icon-font case the current behavior was built for is real, but `aria-hidden` is a coarse stand-in for it: the attribute says "don't expose this", not "this doesn't render as words".
 
 **Why this hasn't been changed yet:** "visible inner text" needs a real rendering model — per-node `display` resolution for the concatenation rule, plus the visually-hidden detection (`clip-path`, `clip`, 1px boxes, off-screen positioning) the engine's offscreen heuristic only partly covers. It's a shared-helper change with reach beyond this rule, and it lands next to the still-open icon-font question below, which is about the same expectation text.
-
-**Status:** open, unresolved as of 2026-08-19.
-
-### `NATIVE_CONTAINMENT_ROLE_BY_ELEMENT` gives several native tags an unconditional implicit role, ignoring HTML-AAM's context requirement
-
-**Decision as it stands:** `src/core/aria-helpers.js`'s `NATIVE_CONTAINMENT_ROLE_BY_ELEMENT` table (used by `getContainmentRole`, the shared engine for `aria-required-parent`/`aria-required-children`/`aria-prohibited-children`) maps `li → listitem`, `tr → row`, `td → cell`, `th → columnheader`, `thead/tbody/tfoot → rowgroup`, `option → option` unconditionally — regardless of what actually contains the element.
-
-**Why it's being questioned:** per HTML-AAM, several of these are *context-dependent* implicit roles: `<li>` is only `listitem` when it's a descendant of `<ul>`, `<ol>`, or `<menu>`; `<option>` only has its implicit role inside `<select>`/`<datalist>`/`<optgroup>`; `<tr>`/`<td>`/`<th>`/`<thead>`/`<tbody>`/`<tfoot>` only get their table-family roles inside an actual table context. Outside that native-parent context, the element has no implicit role at all (effectively `generic`).
-
-Confirmed via ACT `bc4a75` failed-example: `<div role="list"><li>Item 1</li><span role="link">Item 2</span></div>` — ACT expects this to **fail** (the `<li>` isn't inside a real `<ul>`/`<ol>`/`<menu>`, so it has no implicit `listitem` role, so `list` has no valid owned element at all), but our engine currently treats the bare `<li>` as `listitem` unconditionally and passes it.
-
-**Why this hasn't been changed yet:** contained blast radius (only 3 consumers: the two ARIA structure rules above and `aria-prohibited-children`), but a real fix needs a native-parent-context check per tag (not a single flag), and should land as its own change with fixture coverage, not folded into an unrelated fix.
 
 **Status:** open, unresolved as of 2026-08-19.
 
@@ -139,3 +101,25 @@ Two consequences, both accepted: the shared helper and its six rule-local copies
 **Decision (2026-08-19):** separate the two. A generated `ROLELESS_ELEMENTS` set (`audio`, `video`) makes "no role in any context" an answer rather than a shrug, and every non-global ARIA attribute on one of those is reported. `div`/`span` joined the context-free table as `generic`, whose supported set is empty, so `<div aria-expanded="true">` is now reported too — the attribute announces nothing there, which is a real defect rather than a spec technicality. Context-dependent elements (`<a>`, `<section>`, `<td>`, ...) are still skipped rather than guessed at; that restraint is what the second entry above is about.
 
 **Status:** resolved 2026-08-19 — `5c01ea` now runs clean against all 17 of ACT's examples, and the rule's header comment describes what it does.
+
+### `aria-required-children` uses "at least one acceptable owned role", where ACT requires every owned role to be acceptable
+
+**Decision as it stood:** `aria-required-children` is satisfied by finding any single matching descendant, and its header comment called that a deliberate recall-over-precision trade-off. This entry read ACT `bc4a75`'s exclusive expectation against it and concluded the engine would miss any container mixing valid and invalid owned children — a `role="list"` holding one real `listitem` and a stray `role="button"`.
+
+**What was actually true:** the exclusive check exists, in `aria-prohibited-children`. This repo splits ACT's single rule into two atomic decisions — "does a required child exist" and "is every owned child allowed" — and the second one already walks the owned graph exclusively, with `group`/`rowgroup` transparency and boundary handling. ACT's failed example 6, the nested `group` owning `treeitem`s that this entry quoted in full, fails today; so does the mixed list. The entry compared ACT's rule against one half of the pair.
+
+**Decision (2026-08-19):** no algorithm rewrite. The defect was in the mapping, which pointed `bc4a75` at `aria-required-children` alone, so the corpus run measured half the coverage and reported the other half as missing. `bc4a75` is now a `family` match over both rules, and `aria-required-children`'s header says which half it owns, so the next reader does not repeat the inference.
+
+**Status:** resolved 2026-08-19 — `bc4a75` went from 4 mismatches to 1, the remainder being the implicit-container applicability entry below.
+
+### `NATIVE_CONTAINMENT_ROLE_BY_ELEMENT` gave several native tags an unconditional implicit role, ignoring HTML-AAM's context requirement
+
+**Decision as it stood:** `getContainmentRole` mapped `li → listitem`, `option → option`, `tr → row`, `td → cell`, `th → columnheader` and the row groups unconditionally, whatever contained them.
+
+**Why it was wrong:** HTML-AAM makes those roles conditional. An `<li>` is a `listitem` only as a child of `<ul>`, `<ol>` or `<menu>`; an `<option>` only inside `select`/`datalist`/`optgroup`; the table family only inside a real table. ACT `bc4a75` tests it directly: `<div role="list"><li>Item 1</li><span role="link">Item 2</span></div>` must fail, because with the `<li>` carrying no role the list owns nothing valid at all — and the engine passed it.
+
+**Decision (2026-08-19):** fixed. A `NATIVE_CONTAINMENT_CONTEXT` table records the containing tags each conditional role needs, split between HTML-AAM's "child of" conditions (`li`, `option`, the row groups) and its "descendant of a table" ones (`tr`, `td`, `th`), which sit inside a rowgroup in most real tables. The common CSS-reset shape `<ul role="list"><li>…</li></ul>` is untouched, since the `<li>`'s parent really is a `<ul>`.
+
+One existing test changed meaning with it: a bare `<option>` under `role="listbox"`, outside any `<select>`, used to count as the listbox's owned child. It no longer carries a role, so it is transparent and a focusable element inside it becomes the listbox's own roleless owned entry. That is the same conditional ACT applies to `<li>`, so applying it to `<option>` too is the consistent reading — the alternative would have been to accept `role="listbox"` as native context for `<option>` while ACT explicitly refuses `role="list"` as context for `<li>`.
+
+**Status:** resolved 2026-08-19.

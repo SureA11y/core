@@ -7,7 +7,7 @@ Cross-reference between the [W3C ACT Rules](https://act-rules.github.io/rules/) 
 - **~2** are covered structurally by our composite/rollup layer, not a named rule
 - **~47 are gaps** — no corresponding rule in this repo, listed in [Gaps](#gaps-no-corresponding-rule) below
 
-**Every matched rule has now been run through ACT's own official test-case corpus** (`scripts/act-testcase-check.js`, 713 test cases across the 51-rule matched set of the time). Started at 86 mismatches; real bugs were fixed, mapping errors corrected, and every remaining mismatch triaged into a deliberate scope difference, a jsdom/environment limit, or a genuine open design question (tracked in [`docs/DESIGN_CHALLENGES.md`](./DESIGN_CHALLENGES.md)). A second pass then re-ran the whole corpus from a local checkout (see "Second pass" below) and repeated the exercise on what it turned up. Current state: **866 examples across the 57-rule matched set, 64 mismatches, all explained** below or in that file — see "Progress" further down for the full per-rule breakdown.
+**Every matched rule has now been run through ACT's own official test-case corpus** (`scripts/act-testcase-check.js`, 713 test cases across the 51-rule matched set of the time). Started at 86 mismatches; real bugs were fixed, mapping errors corrected, and every remaining mismatch triaged into a deliberate scope difference, a jsdom/environment limit, or a genuine open design question (tracked in [`docs/DESIGN_CHALLENGES.md`](./DESIGN_CHALLENGES.md)). A second pass then re-ran the whole corpus from a local checkout (see "Second pass" below) and repeated the exercise on what it turned up. Current state: **866 examples across the 57-rule matched set, 61 mismatches, all explained** below or in that file — see "Progress" further down for the full per-rule breakdown.
 
 Real rule bugs found and fixed this way, in rough chronological order:
 - `button-name-present` wasn't crediting the UA-default label on `input[type=submit]`/`input[type=reset]` with no `value`, and wasn't honoring `role="none"`/`role="presentation"` conflict-resolution.
@@ -28,8 +28,10 @@ Real rule bugs found and fixed this way, in rough chronological order:
 - `empty-heading`: a heading whose only content is a `role="presentation"` image no longer gets that image's `alt` text as its name; a native heading tag marked `role="none"`/`"presentation"` but carrying a global ARIA attribute (even an empty one) is still evaluated as a heading, per conflict resolution.
 - `aria-required-attr`: an explicit role identical to an element's own native role is now exempt (e.g. `<input type="checkbox" role="checkbox">` needs no `aria-checked`); `role="combobox"` now requires `aria-controls` once `aria-expanded="true"`.
 - `aria-allowed-attr` had no answer for an element HTML-AAM maps to no ARIA role at all: `<audio controls aria-orientation="horizontal">` (ACT `5c01ea`'s own failed example) was skipped, because an empty implicit-role lookup was indistinguishable from "a role this table does not model". A generated `ROLELESS_ELEMENTS` set makes the absence itself the answer. `<div>`/`<span>` also joined the context-free table as `generic`, so a role-specific attribute on a bare div is now reported rather than passed over.
+- `getContainmentRole` handed several native tags an implicit role in every context, where HTML-AAM makes them conditional: `<li>` is a `listitem` only inside `<ul>`/`<ol>`/`<menu>`, `<option>` only inside `select`/`datalist`/`optgroup`, the table family only inside a real table. ACT `bc4a75` fails `<div role="list"><li>Item</li>…</div>` for exactly that reason and the engine passed it. The three rules built on that helper (`aria-required-children`, `aria-prohibited-children`, `aria-required-parent`) all inherit the fix.
 
 Mapping-table corrections found this way (data-only, no rule-code change):
+- `bc4a75` was mapped to `aria-required-children` alone, but this repo splits ACT's single question into two atomic decisions — "does a required child exist" and "is every owned child allowed", the second being `aria-prohibited-children`. Measuring one rule against a two-part expectation reported the missing half as an engine gap; it was a mapping gap. Now a family match.
 - `qt1vmo` and `23a2a8` were missing existing sibling rules from their `ourRuleIds` family (`canvas-text-alternative-quality`/`svg-text-alternative-quality`, and `role-img-text-alternative-present`, respectively) — the code to catch these cases already existed, just wasn't wired into the mapping.
 - `bf051a` was mapped to `valid-lang` (which deliberately skips the `<html>` element by design) instead of `html-lang-attr-present`, which actually validates it.
 - `b40fd1` was mapped to `region` (an unrelated best-practice check) instead of `bypass-blocks-present`, which already implements this exact WCAG 2.4.1 technique alongside its `cf77f2`/`ye5d6e`/`047fe0` siblings.
@@ -69,12 +71,12 @@ We also have automatic rules with **no ACT counterpart at all** (see [Extra cove
 
 **Clean (0 mismatches):** `5f99a7`, `80f0bf`, `4c31df`, `73f2c2`, `97a4e1`, `cf77f2`, `b40fd1`, `46ca7f`, `6cfa84`, `307n5z`, `4e8ab6`, `a25f45`, `ffd0e9`, `b5c3f8`, `2779a5`, `5b7ae0`, `bf051a`, `qt1vmo`, `59796f`, `23a2a8`, `24afc2`, `9e45ec`, `c487ae`, `m6b1q3`, `bc659a`, `bisz58`, `b4f0c3`, `674b10`, `0ssw9k`, `3ea0c8`, `5c01ea` (31 of 57 matched rules).
 
-**Remaining mismatches (64 total), all triaged:**
+**Remaining mismatches (61 total), all triaged:**
 
 | ACT ID | Mismatches | Category |
 |---|---|---|
 | `ff89c9` | 1 | env/harness limit — jsdom doesn't execute inline `<script>`, so a runtime-created shadow root is invisible to the test fetcher (not the real engine, which runs after page scripts) |
-| `bc4a75` | 4 | open design questions — see `docs/DESIGN_CHALLENGES.md` ("any match" vs. ACT's stricter "only acceptable, recursively through group"; native-role table ignoring HTML-AAM context requirements; applicability limited to containers with an explicit `role`, so a native `<ul>` owning invalid children is never checked) |
+| `bc4a75` | 1 | open design question — see `docs/DESIGN_CHALLENGES.md`: applicability is limited to containers carrying an explicit `role`, so ACT's failed example 10 (`<ul><div></div></ul>`, an implicit `list` owning generic children) is never evaluated. The other three mismatches are gone — the native-role table now honours HTML-AAM's context requirements, and the exclusive "every owned child is allowed" half was never missing, just mapped to only one of the two rules that answer this ACT rule between them |
 | `6a7281` | 2 | deliberate scope — our idref-type validation extends beyond ACT's syntax-only check to also require the referenced id to exist (see `aria-valid-attr-value.js`'s own header comment); genuinely more useful, not a bug |
 | `aaa1bf` | 1 | inherent limitation — clip duration isn't knowable from static markup; no browser decodes media at scan time |
 | `ye5d6e`, `047fe0` | 1, 2 | deliberate leniency — whether repeated-boilerplate content wraps the skip target/heading is a cross-page judgment undecidable from one document; the rule's own header comment already reasons through this trade-off |
@@ -103,7 +105,7 @@ We also have automatic rules with **no ACT counterpart at all** (see [Extra cove
 |---|---|---|---|
 | `5f99a7` | ARIA attribute is defined in WAI-ARIA | `aria-valid-attr` | exact |
 | `ff89c9` | ARIA required context role | `aria-required-parent` | exact |
-| `bc4a75` | ARIA required owned elements | `aria-required-children` | exact |
+| `bc4a75` | ARIA required owned elements | `aria-required-children`, `aria-prohibited-children` | family (we split by decision) |
 | `6a7281` | ARIA state or property has valid value | `aria-valid-attr-value` | exact |
 | `5c01ea` | ARIA state or property is permitted | `aria-allowed-attr` | exact |
 | `80f0bf` | Audio/video avoids autoplaying audio | `no-autoplay-audio` (manual) | family |

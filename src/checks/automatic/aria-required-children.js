@@ -30,6 +30,14 @@
  *   the requirement); the full subtree is scanned without excluding nested
  *   containers with their own differing role, favoring simplicity — this
  *   can only under-report (recall), never over-report (fail integrity).
+ * - "At least one required child exists" is the whole of this rule's
+ *   decision. Whether every owned child is ALLOWED is
+ *   aria-prohibited-children's, and that rule does walk the owned graph
+ *   exclusively, with group/rowgroup transparency. ACT bc4a75 asks both
+ *   questions at once, which is why the mapping lists the two rules as a
+ *   family: read on its own, this rule looks like it under-reports a
+ *   container mixing valid and invalid children, and the sibling is what
+ *   catches it.
  * - Gated on isAccTreeEligible for the container itself: unlike this
  *   file's sibling attribute/role-validity checks (e.g. aria-roles-valid),
  *   "does this container currently have a required child" is not a fact
