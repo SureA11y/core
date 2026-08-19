@@ -150,6 +150,35 @@ test(`${RULE_ID}: no visible eligible text => notApplicable`, () => {
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+test(`${RULE_ID}: text whose color exactly matches its background is not visible => notApplicable (ACT afw4f7's own inapplicable example)`, () => {
+  const html = `
+<!doctype html>
+<html><head><style>
+  html, body { background: #fff; }
+</style></head>
+<body>
+  <p style="color: white; background: white;">Hidden text</p>
+</body></html>`;
+
+  const result = run(html);
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: a low but non-matching contrast still fails (the same-color exemption doesn't swallow a real near-invisible defect)`, () => {
+  const html = `
+<!doctype html>
+<html><head><style>
+  html, body { background: #fff; }
+</style></head>
+<body>
+  <p id="a" style="color: #fefefe; background: #ffffff;">Barely different</p>
+</body></html>`;
+
+  const result = run(html);
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(rule.occurrences.some((o) => typeof o.html === 'string' && o.html.includes('id="a"')));
+});
+
 test(`${RULE_ID}: eligible text exists but none computable => notApplicable (noComputableText)`, () => {
   const html = `
 <!doctype html>
