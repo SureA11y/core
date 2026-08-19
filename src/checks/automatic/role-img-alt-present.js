@@ -5,28 +5,36 @@
 /**
  * @check role-img-text-alternative-present
  * @atomic true
- * @summary Accessible elements with role="img" must have an alternative text via aria-label or aria-labelledby
+ * @summary Accessible elements with role="img"/"graphics-symbol"/"graphics-document" must have a text alternative
  * @standard WCAG 2.2
  * @sc 1.1.1
  * @applicability
- *   Applies to elements with role="img" that are included in the
- *   accessibility tree (ACT 23a2a8's "programmatically hidden" exemption:
+ *   Applies to elements with role="img", role="graphics-symbol" or
+ *   role="graphics-document" that are included in the accessibility tree
+ *   (ACT 23a2a8's "programmatically hidden" exemption:
  *   display:none/visibility:hidden/aria-hidden="true" on the element or an
  *   ancestor, with no carve-out for focusable or IDREF-referenced elements —
- *   aria-hidden-focus and duplicate-id-aria own those separately).
+ *   aria-hidden-focus and duplicate-id-aria own those separately). Per ACT
+ *   7d6734, this reaches any element carrying one of these roles, not only
+ *   the <svg> root — e.g. a <circle role="graphics-symbol"> nested inside a
+ *   plain <svg>. The <svg> root itself is left to svg-text-alternative-present's
+ *   own (already ACT-clean) title/aria-name handling; the <img> tag is
+ *   excluded here since it has its own dedicated rule.
  * @expectation
- *   Each applicable element with role="img" has an accessible text alternative:
+ *   Each applicable element has an accessible text alternative:
  *    - aria-label with a non-empty value; OR
  *    - aria-labelledby referencing at least one existing element that contributes non-empty text; OR
- *    - a non-empty title attribute (last-resort accessible-name source per HTML-AAM).
+ *    - a non-empty title attribute (last-resort accessible-name source per HTML-AAM); OR
+ *    - for an SVG-namespace element, a non-empty first-child <title> (SVG-AAM's own naming mechanism, not only for the <svg> root).
  */
 
 const id = 'role-img-text-alternative-present';
 
 const meta = {
-  title: '[role="img"] must have an accessible text alternative',
+  title:
+    '[role="img"/"graphics-symbol"/"graphics-document"] must have an accessible text alternative',
   description:
-    'Checks that elements with role="img" provide an accessible text alternative using aria-label, aria-labelledby, or a title attribute.',
+    'Checks that elements with role="img", "graphics-symbol" or "graphics-document" provide an accessible text alternative using aria-label, aria-labelledby, a title attribute, or (for SVG elements) a first-child <title>.',
   i18n: {
     titleKey: 'roleImg_textAlternativePresent_title',
     descriptionKey: 'roleImg_textAlternativePresent_description'
@@ -88,7 +96,7 @@ function runInPage(ctx) {
 
   const imgElements = (() => {
     // do not consider element "img" because it has its own rule
-    const sel = '[role="img" i]:not(img)';
+    const sel = '[role="img" i]:not(img), [role="graphics-symbol" i], [role="graphics-document" i]';
     try {
       return Array.from((queryAllSmart ? queryAllSmart(sel) : queryAll(sel)) || []);
     } catch {
@@ -139,6 +147,14 @@ function runInPage(ctx) {
 
     applicableCount += 1;
 
+    const matchedRole = (() => {
+      try {
+        return trim(el.getAttribute('role')).split(/\s+/)[0].toLowerCase();
+      } catch {
+        return 'img';
+      }
+    })();
+
     // Expectation: aria-label OR aria-labelledby. We use helper name-info when available,
     // but we also validate the source to keep this rule scoped/deterministic.
 
@@ -178,12 +194,13 @@ function runInPage(ctx) {
 
     // SVG-AAM's own accessible-name mechanism: a first-child <title>
     // element (not the HTML title attribute) is the standard way to name
-    // an inline <svg> -- a role="img" <svg> named only this way still has
-    // a real text alternative.
+    // any element in the SVG namespace, not only the <svg> root -- a
+    // role="graphics-symbol" <circle> named only this way still has a real
+    // text alternative, same as a role="img" <svg>.
     const svgTitleChildText = (() => {
       try {
-        const tag = (el.localName || el.tagName || '').toLowerCase();
-        if (tag !== 'svg') return '';
+        const isSvgNamespace = el.namespaceURI === 'http://www.w3.org/2000/svg';
+        if (!isSvgNamespace) return '';
         const first = el.firstElementChild;
         const firstTag = first ? (first.localName || first.tagName || '').toLowerCase() : '';
         if (firstTag !== 'title') return '';
@@ -245,12 +262,12 @@ function runInPage(ctx) {
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
     const baseOccurrence = {
-      summary: 'Missing text alternative on element with role="img".',
-      hint: 'Provide aria-label or aria-labelledby (referencing non-empty text) to give this image a text alternative.',
+      summary: `Missing text alternative on element with role="${matchedRole}".`,
+      hint: 'Provide aria-label or aria-labelledby (referencing non-empty text) to give this element a text alternative.',
       i18n: {
         summaryKey: 'roleImg_textAlternativePresent_summary_fail',
         hintKey: 'roleImg_textAlternativePresent_hint_fail',
-        params: { role: 'img' }
+        params: { role: matchedRole }
       },
       data: {
         details: {

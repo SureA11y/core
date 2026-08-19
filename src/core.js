@@ -5533,8 +5533,8 @@ const CHECK_DEFS = [
   },
   {
     "ruleId": "role-img-text-alternative-present",
-    "title": "[role=\"img\"] must have an accessible text alternative",
-    "description": "Checks that elements with role=\"img\" provide an accessible text alternative using aria-label, aria-labelledby, or a title attribute.",
+    "title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] must have an accessible text alternative",
+    "description": "Checks that elements with role=\"img\", \"graphics-symbol\" or \"graphics-document\" provide an accessible text alternative using aria-label, aria-labelledby, a title attribute, or (for SVG elements) a first-child <title>.",
     "i18n": {
       "titleKey": "roleImg_textAlternativePresent_title",
       "descriptionKey": "roleImg_textAlternativePresent_description"
@@ -7807,9 +7807,9 @@ const I18N = {
     "contrastEnhanced_pass_allTextMeetsThreshold": "Der gesamte berechenbare Text erfüllt den erweiterten Kontrast (AAA).",
     "contrastMinimum_pass_allTextMeetsThreshold": "Der gesamte berechenbare Text erfüllt den Mindestkontrast (AA).",
     "contrastComputable_cantTell_notComputable": "Der Kontrast konnte für diesen Text nicht berechnet werden ({{reasonCode}}).",
-    "roleImg_textAlternativePresent_title": "[role=\"img\"] muss eine zugängliche Textalternative haben",
-    "roleImg_textAlternativePresent_description": "Prüft, ob Elemente mit role=\"img\" eine zugängliche Textalternative über aria-label, aria-labelledby oder ein title-Attribut bereitstellen.",
-    "roleImg_textAlternativePresent_summary_fail": "Das Element mit role=\"img\" hat keine zugängliche Textalternative.",
+    "roleImg_textAlternativePresent_title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] muss eine zugängliche Textalternative haben",
+    "roleImg_textAlternativePresent_description": "Prüft, ob Elemente mit role=\"img\", \"graphics-symbol\" oder \"graphics-document\" eine zugängliche Textalternative über aria-label, aria-labelledby, ein title-Attribut oder (bei SVG-Elementen) ein erstes <title>-Kindelement bereitstellen.",
+    "roleImg_textAlternativePresent_summary_fail": "Das Element mit role=\"{{role}}\" hat keine zugängliche Textalternative.",
     "roleImg_textAlternativePresent_hint_fail": "Stellen Sie eine Textalternative über aria-label oder aria-labelledby bereit, das auf nicht leeren Text verweist.",
     "targetSizeMinimum_title": "Zeigerziele müssen mindestens 24x24px groß sein oder ausreichend Abstand zu anderen Zielen einhalten",
     "targetSizeMinimum_description": "Prüft, ob per Zeiger bedienbare Ziele eine effektive Zielgröße von mindestens 24 mal 24 CSS-Pixel haben oder eine zulässige Ausnahme erfüllen (z. B. ausreichender Abstand).",
@@ -8472,9 +8472,9 @@ const I18N = {
     "contrastEnhanced_pass_allTextMeetsThreshold": "All computable text meets enhanced contrast (AAA).",
     "contrastMinimum_pass_allTextMeetsThreshold": "All computable text meets minimum contrast (AA).",
     "contrastComputable_cantTell_notComputable": "Contrast could not be computed for this text ({{reasonCode}}).",
-    "roleImg_textAlternativePresent_title": "[role=\"img\"] must have an accessible text alternative",
-    "roleImg_textAlternativePresent_description": "Checks that elements with role=\"img\" provide an accessible text alternative using aria-label, aria-labelledby, or a title attribute.",
-    "roleImg_textAlternativePresent_summary_fail": "The element with role=\"img\" does not have an accessible text alternative.",
+    "roleImg_textAlternativePresent_title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] must have an accessible text alternative",
+    "roleImg_textAlternativePresent_description": "Checks that elements with role=\"img\", \"graphics-symbol\" or \"graphics-document\" provide an accessible text alternative using aria-label, aria-labelledby, a title attribute, or (for SVG elements) a first-child <title>.",
+    "roleImg_textAlternativePresent_summary_fail": "The element with role=\"{{role}}\" does not have an accessible text alternative.",
     "roleImg_textAlternativePresent_hint_fail": "Provide a text alternative using aria-label, or aria-labelledby that references non-empty text.",
     "targetSizeMinimum_title": "Pointer targets must be at least 24x24px large, or leave sufficient distance to other targets",
     "targetSizeMinimum_description": "Checks that pointer-operable targets have an effective hit region of at least 24 by 24 CSS pixels, or meet an allowed exception (e.g. sufficient spacing).",
@@ -9137,9 +9137,9 @@ const I18N = {
     "contrastEnhanced_pass_allTextMeetsThreshold": "Todo el texto computable cumple el contraste mejorado (AAA).",
     "contrastMinimum_pass_allTextMeetsThreshold": "Todo el texto computable cumple el contraste mínimo (AA).",
     "contrastComputable_cantTell_notComputable": "No se pudo calcular el contraste para este texto ({{reasonCode}}).",
-    "roleImg_textAlternativePresent_title": "Los elementos con role=\"img\" deben tener una alternativa textual accesible",
-    "roleImg_textAlternativePresent_description": "Comprueba que los elementos con role=\"img\" proporcionen una alternativa textual accesible mediante aria-label, aria-labelledby o un atributo title.",
-    "roleImg_textAlternativePresent_summary_fail": "El elemento con role=\"img\" no tiene una alternativa textual accesible.",
+    "roleImg_textAlternativePresent_title": "Los elementos con role=\"img\"/\"graphics-symbol\"/\"graphics-document\" deben tener una alternativa textual accesible",
+    "roleImg_textAlternativePresent_description": "Comprueba que los elementos con role=\"img\", \"graphics-symbol\" o \"graphics-document\" proporcionen una alternativa textual accesible mediante aria-label, aria-labelledby, un atributo title o (en elementos SVG) un primer hijo <title>.",
+    "roleImg_textAlternativePresent_summary_fail": "El elemento con role=\"{{role}}\" no tiene una alternativa textual accesible.",
     "roleImg_textAlternativePresent_hint_fail": "Proporcionar una alternativa textual mediante aria-label, o aria-labelledby que haga referencia a texto no vacío.",
     "targetSizeMinimum_title": "Los objetivos de puntero deben tener al menos 24x24px de tamaño, o dejar suficiente distancia respecto a otros objetivos",
     "targetSizeMinimum_description": "Comprueba que los objetivos operables por puntero tengan una zona de contacto efectiva de al menos 24 por 24 píxeles CSS, o cumplan una excepción permitida (por ejemplo, espaciado suficiente).",
@@ -9802,9 +9802,9 @@ const I18N = {
     "contrastEnhanced_pass_allTextMeetsThreshold": "Tout le texte calculable respecte le contraste renforcé (AAA).",
     "contrastMinimum_pass_allTextMeetsThreshold": "Tout le texte calculable respecte le contraste minimum (AA).",
     "contrastComputable_cantTell_notComputable": "Le contraste ne peut pas être calculé pour ce texte ({{reasonCode}}).",
-    "roleImg_textAlternativePresent_title": "Les éléments avec role=\"img\" doivent avoir une alternative textuelle accessible",
-    "roleImg_textAlternativePresent_description": "Vérifie que les éléments ayant le rôle \"img\" fournissent une alternative textuelle accessible via aria-label ou aria-labelledby.",
-    "roleImg_textAlternativePresent_summary_fail": "L’élément avec le rôle \"img\" ne possède pas d’alternative textuelle accessible.",
+    "roleImg_textAlternativePresent_title": "Les éléments avec role=\"img\"/\"graphics-symbol\"/\"graphics-document\" doivent avoir une alternative textuelle accessible",
+    "roleImg_textAlternativePresent_description": "Vérifie que les éléments ayant le rôle \"img\", \"graphics-symbol\" ou \"graphics-document\" fournissent une alternative textuelle accessible via aria-label, aria-labelledby, un attribut title, ou (pour les éléments SVG) un premier enfant <title>.",
+    "roleImg_textAlternativePresent_summary_fail": "L’élément avec le rôle \"{{role}}\" ne possède pas d’alternative textuelle accessible.",
     "roleImg_textAlternativePresent_hint_fail": "Fournissez une alternative textuelle à l’aide de aria-label ou de aria-labelledby pointant vers un texte non vide.",
     "targetSizeMinimum_title": "Les cibles activables au pointeur respectent la taille minimale (AA)",
     "targetSizeMinimum_description": "Vérifie que les cibles activables au pointeur ont une zone cliquable effective d’au moins 24×24 pixels CSS, ou respectent une exception autorisée (par ex. un espacement suffisant).",
@@ -25099,8 +25099,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "role-img-text-alternative-present",
-    "title": "[role=\"img\"] must have an accessible text alternative",
-    "description": "Checks that elements with role=\"img\" provide an accessible text alternative using aria-label, aria-labelledby, or a title attribute.",
+    "title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] must have an accessible text alternative",
+    "description": "Checks that elements with role=\"img\", \"graphics-symbol\" or \"graphics-document\" provide an accessible text alternative using aria-label, aria-labelledby, a title attribute, or (for SVG elements) a first-child <title>.",
     "i18n": {
       "titleKey": "roleImg_textAlternativePresent_title",
       "descriptionKey": "roleImg_textAlternativePresent_description"
@@ -45726,7 +45726,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const imgElements = (() => {
     // do not consider element "img" because it has its own rule
-    const sel = '[role="img" i]:not(img)';
+    const sel = '[role="img" i]:not(img), [role="graphics-symbol" i], [role="graphics-document" i]';
     try {
       return Array.from((queryAllSmart ? queryAllSmart(sel) : queryAll(sel)) || []);
     } catch {
@@ -45777,6 +45777,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     applicableCount += 1;
 
+    const matchedRole = (() => {
+      try {
+        return trim(el.getAttribute('role')).split(/\s+/)[0].toLowerCase();
+      } catch {
+        return 'img';
+      }
+    })();
+
     // Expectation: aria-label OR aria-labelledby. We use helper name-info when available,
     // but we also validate the source to keep this rule scoped/deterministic.
 
@@ -45816,12 +45824,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     // SVG-AAM's own accessible-name mechanism: a first-child <title>
     // element (not the HTML title attribute) is the standard way to name
-    // an inline <svg> -- a role="img" <svg> named only this way still has
-    // a real text alternative.
+    // any element in the SVG namespace, not only the <svg> root -- a
+    // role="graphics-symbol" <circle> named only this way still has a real
+    // text alternative, same as a role="img" <svg>.
     const svgTitleChildText = (() => {
       try {
-        const tag = (el.localName || el.tagName || '').toLowerCase();
-        if (tag !== 'svg') return '';
+        const isSvgNamespace = el.namespaceURI === 'http://www.w3.org/2000/svg';
+        if (!isSvgNamespace) return '';
         const first = el.firstElementChild;
         const firstTag = first ? (first.localName || first.tagName || '').toLowerCase() : '';
         if (firstTag !== 'title') return '';
@@ -45883,12 +45892,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
     const baseOccurrence = {
-      summary: 'Missing text alternative on element with role="img".',
-      hint: 'Provide aria-label or aria-labelledby (referencing non-empty text) to give this image a text alternative.',
+      summary: `Missing text alternative on element with role="${matchedRole}".`,
+      hint: 'Provide aria-label or aria-labelledby (referencing non-empty text) to give this element a text alternative.',
       i18n: {
         summaryKey: 'roleImg_textAlternativePresent_summary_fail',
         hintKey: 'roleImg_textAlternativePresent_hint_fail',
-        params: { role: 'img' }
+        params: { role: matchedRole }
       },
       data: {
         details: {
@@ -50245,9 +50254,9 @@ const I18N = {
     "contrastEnhanced_pass_allTextMeetsThreshold": "Der gesamte berechenbare Text erfüllt den erweiterten Kontrast (AAA).",
     "contrastMinimum_pass_allTextMeetsThreshold": "Der gesamte berechenbare Text erfüllt den Mindestkontrast (AA).",
     "contrastComputable_cantTell_notComputable": "Der Kontrast konnte für diesen Text nicht berechnet werden ({{reasonCode}}).",
-    "roleImg_textAlternativePresent_title": "[role=\"img\"] muss eine zugängliche Textalternative haben",
-    "roleImg_textAlternativePresent_description": "Prüft, ob Elemente mit role=\"img\" eine zugängliche Textalternative über aria-label, aria-labelledby oder ein title-Attribut bereitstellen.",
-    "roleImg_textAlternativePresent_summary_fail": "Das Element mit role=\"img\" hat keine zugängliche Textalternative.",
+    "roleImg_textAlternativePresent_title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] muss eine zugängliche Textalternative haben",
+    "roleImg_textAlternativePresent_description": "Prüft, ob Elemente mit role=\"img\", \"graphics-symbol\" oder \"graphics-document\" eine zugängliche Textalternative über aria-label, aria-labelledby, ein title-Attribut oder (bei SVG-Elementen) ein erstes <title>-Kindelement bereitstellen.",
+    "roleImg_textAlternativePresent_summary_fail": "Das Element mit role=\"{{role}}\" hat keine zugängliche Textalternative.",
     "roleImg_textAlternativePresent_hint_fail": "Stellen Sie eine Textalternative über aria-label oder aria-labelledby bereit, das auf nicht leeren Text verweist.",
     "targetSizeMinimum_title": "Zeigerziele müssen mindestens 24x24px groß sein oder ausreichend Abstand zu anderen Zielen einhalten",
     "targetSizeMinimum_description": "Prüft, ob per Zeiger bedienbare Ziele eine effektive Zielgröße von mindestens 24 mal 24 CSS-Pixel haben oder eine zulässige Ausnahme erfüllen (z. B. ausreichender Abstand).",
@@ -50910,9 +50919,9 @@ const I18N = {
     "contrastEnhanced_pass_allTextMeetsThreshold": "All computable text meets enhanced contrast (AAA).",
     "contrastMinimum_pass_allTextMeetsThreshold": "All computable text meets minimum contrast (AA).",
     "contrastComputable_cantTell_notComputable": "Contrast could not be computed for this text ({{reasonCode}}).",
-    "roleImg_textAlternativePresent_title": "[role=\"img\"] must have an accessible text alternative",
-    "roleImg_textAlternativePresent_description": "Checks that elements with role=\"img\" provide an accessible text alternative using aria-label, aria-labelledby, or a title attribute.",
-    "roleImg_textAlternativePresent_summary_fail": "The element with role=\"img\" does not have an accessible text alternative.",
+    "roleImg_textAlternativePresent_title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] must have an accessible text alternative",
+    "roleImg_textAlternativePresent_description": "Checks that elements with role=\"img\", \"graphics-symbol\" or \"graphics-document\" provide an accessible text alternative using aria-label, aria-labelledby, a title attribute, or (for SVG elements) a first-child <title>.",
+    "roleImg_textAlternativePresent_summary_fail": "The element with role=\"{{role}}\" does not have an accessible text alternative.",
     "roleImg_textAlternativePresent_hint_fail": "Provide a text alternative using aria-label, or aria-labelledby that references non-empty text.",
     "targetSizeMinimum_title": "Pointer targets must be at least 24x24px large, or leave sufficient distance to other targets",
     "targetSizeMinimum_description": "Checks that pointer-operable targets have an effective hit region of at least 24 by 24 CSS pixels, or meet an allowed exception (e.g. sufficient spacing).",
@@ -51575,9 +51584,9 @@ const I18N = {
     "contrastEnhanced_pass_allTextMeetsThreshold": "Todo el texto computable cumple el contraste mejorado (AAA).",
     "contrastMinimum_pass_allTextMeetsThreshold": "Todo el texto computable cumple el contraste mínimo (AA).",
     "contrastComputable_cantTell_notComputable": "No se pudo calcular el contraste para este texto ({{reasonCode}}).",
-    "roleImg_textAlternativePresent_title": "Los elementos con role=\"img\" deben tener una alternativa textual accesible",
-    "roleImg_textAlternativePresent_description": "Comprueba que los elementos con role=\"img\" proporcionen una alternativa textual accesible mediante aria-label, aria-labelledby o un atributo title.",
-    "roleImg_textAlternativePresent_summary_fail": "El elemento con role=\"img\" no tiene una alternativa textual accesible.",
+    "roleImg_textAlternativePresent_title": "Los elementos con role=\"img\"/\"graphics-symbol\"/\"graphics-document\" deben tener una alternativa textual accesible",
+    "roleImg_textAlternativePresent_description": "Comprueba que los elementos con role=\"img\", \"graphics-symbol\" o \"graphics-document\" proporcionen una alternativa textual accesible mediante aria-label, aria-labelledby, un atributo title o (en elementos SVG) un primer hijo <title>.",
+    "roleImg_textAlternativePresent_summary_fail": "El elemento con role=\"{{role}}\" no tiene una alternativa textual accesible.",
     "roleImg_textAlternativePresent_hint_fail": "Proporcionar una alternativa textual mediante aria-label, o aria-labelledby que haga referencia a texto no vacío.",
     "targetSizeMinimum_title": "Los objetivos de puntero deben tener al menos 24x24px de tamaño, o dejar suficiente distancia respecto a otros objetivos",
     "targetSizeMinimum_description": "Comprueba que los objetivos operables por puntero tengan una zona de contacto efectiva de al menos 24 por 24 píxeles CSS, o cumplan una excepción permitida (por ejemplo, espaciado suficiente).",
@@ -52240,9 +52249,9 @@ const I18N = {
     "contrastEnhanced_pass_allTextMeetsThreshold": "Tout le texte calculable respecte le contraste renforcé (AAA).",
     "contrastMinimum_pass_allTextMeetsThreshold": "Tout le texte calculable respecte le contraste minimum (AA).",
     "contrastComputable_cantTell_notComputable": "Le contraste ne peut pas être calculé pour ce texte ({{reasonCode}}).",
-    "roleImg_textAlternativePresent_title": "Les éléments avec role=\"img\" doivent avoir une alternative textuelle accessible",
-    "roleImg_textAlternativePresent_description": "Vérifie que les éléments ayant le rôle \"img\" fournissent une alternative textuelle accessible via aria-label ou aria-labelledby.",
-    "roleImg_textAlternativePresent_summary_fail": "L’élément avec le rôle \"img\" ne possède pas d’alternative textuelle accessible.",
+    "roleImg_textAlternativePresent_title": "Les éléments avec role=\"img\"/\"graphics-symbol\"/\"graphics-document\" doivent avoir une alternative textuelle accessible",
+    "roleImg_textAlternativePresent_description": "Vérifie que les éléments ayant le rôle \"img\", \"graphics-symbol\" ou \"graphics-document\" fournissent une alternative textuelle accessible via aria-label, aria-labelledby, un attribut title, ou (pour les éléments SVG) un premier enfant <title>.",
+    "roleImg_textAlternativePresent_summary_fail": "L’élément avec le rôle \"{{role}}\" ne possède pas d’alternative textuelle accessible.",
     "roleImg_textAlternativePresent_hint_fail": "Fournissez une alternative textuelle à l’aide de aria-label ou de aria-labelledby pointant vers un texte non vide.",
     "targetSizeMinimum_title": "Les cibles activables au pointeur respectent la taille minimale (AA)",
     "targetSizeMinimum_description": "Vérifie que les cibles activables au pointeur ont une zone cliquable effective d’au moins 24×24 pixels CSS, ou respectent une exception autorisée (par ex. un espacement suffisant).",
@@ -67497,8 +67506,8 @@ const __a11yCoreCrossFrameApi = (function () {
   },
   {
     "ruleId": "role-img-text-alternative-present",
-    "title": "[role=\"img\"] must have an accessible text alternative",
-    "description": "Checks that elements with role=\"img\" provide an accessible text alternative using aria-label, aria-labelledby, or a title attribute.",
+    "title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] must have an accessible text alternative",
+    "description": "Checks that elements with role=\"img\", \"graphics-symbol\" or \"graphics-document\" provide an accessible text alternative using aria-label, aria-labelledby, a title attribute, or (for SVG elements) a first-child <title>.",
     "i18n": {
       "titleKey": "roleImg_textAlternativePresent_title",
       "descriptionKey": "roleImg_textAlternativePresent_description"
@@ -88119,7 +88128,7 @@ const __a11yCoreCrossFrameApi = (function () {
 
   const imgElements = (() => {
     // do not consider element "img" because it has its own rule
-    const sel = '[role="img" i]:not(img)';
+    const sel = '[role="img" i]:not(img), [role="graphics-symbol" i], [role="graphics-document" i]';
     try {
       return Array.from((queryAllSmart ? queryAllSmart(sel) : queryAll(sel)) || []);
     } catch {
@@ -88170,6 +88179,14 @@ const __a11yCoreCrossFrameApi = (function () {
 
     applicableCount += 1;
 
+    const matchedRole = (() => {
+      try {
+        return trim(el.getAttribute('role')).split(/\s+/)[0].toLowerCase();
+      } catch {
+        return 'img';
+      }
+    })();
+
     // Expectation: aria-label OR aria-labelledby. We use helper name-info when available,
     // but we also validate the source to keep this rule scoped/deterministic.
 
@@ -88209,12 +88226,13 @@ const __a11yCoreCrossFrameApi = (function () {
 
     // SVG-AAM's own accessible-name mechanism: a first-child <title>
     // element (not the HTML title attribute) is the standard way to name
-    // an inline <svg> -- a role="img" <svg> named only this way still has
-    // a real text alternative.
+    // any element in the SVG namespace, not only the <svg> root -- a
+    // role="graphics-symbol" <circle> named only this way still has a real
+    // text alternative, same as a role="img" <svg>.
     const svgTitleChildText = (() => {
       try {
-        const tag = (el.localName || el.tagName || '').toLowerCase();
-        if (tag !== 'svg') return '';
+        const isSvgNamespace = el.namespaceURI === 'http://www.w3.org/2000/svg';
+        if (!isSvgNamespace) return '';
         const first = el.firstElementChild;
         const firstTag = first ? (first.localName || first.tagName || '').toLowerCase() : '';
         if (firstTag !== 'title') return '';
@@ -88276,12 +88294,12 @@ const __a11yCoreCrossFrameApi = (function () {
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
     const baseOccurrence = {
-      summary: 'Missing text alternative on element with role="img".',
-      hint: 'Provide aria-label or aria-labelledby (referencing non-empty text) to give this image a text alternative.',
+      summary: `Missing text alternative on element with role="${matchedRole}".`,
+      hint: 'Provide aria-label or aria-labelledby (referencing non-empty text) to give this element a text alternative.',
       i18n: {
         summaryKey: 'roleImg_textAlternativePresent_summary_fail',
         hintKey: 'roleImg_textAlternativePresent_hint_fail',
-        params: { role: 'img' }
+        params: { role: matchedRole }
       },
       data: {
         details: {
@@ -92638,9 +92656,9 @@ const I18N = {
     "contrastEnhanced_pass_allTextMeetsThreshold": "Der gesamte berechenbare Text erfüllt den erweiterten Kontrast (AAA).",
     "contrastMinimum_pass_allTextMeetsThreshold": "Der gesamte berechenbare Text erfüllt den Mindestkontrast (AA).",
     "contrastComputable_cantTell_notComputable": "Der Kontrast konnte für diesen Text nicht berechnet werden ({{reasonCode}}).",
-    "roleImg_textAlternativePresent_title": "[role=\"img\"] muss eine zugängliche Textalternative haben",
-    "roleImg_textAlternativePresent_description": "Prüft, ob Elemente mit role=\"img\" eine zugängliche Textalternative über aria-label, aria-labelledby oder ein title-Attribut bereitstellen.",
-    "roleImg_textAlternativePresent_summary_fail": "Das Element mit role=\"img\" hat keine zugängliche Textalternative.",
+    "roleImg_textAlternativePresent_title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] muss eine zugängliche Textalternative haben",
+    "roleImg_textAlternativePresent_description": "Prüft, ob Elemente mit role=\"img\", \"graphics-symbol\" oder \"graphics-document\" eine zugängliche Textalternative über aria-label, aria-labelledby, ein title-Attribut oder (bei SVG-Elementen) ein erstes <title>-Kindelement bereitstellen.",
+    "roleImg_textAlternativePresent_summary_fail": "Das Element mit role=\"{{role}}\" hat keine zugängliche Textalternative.",
     "roleImg_textAlternativePresent_hint_fail": "Stellen Sie eine Textalternative über aria-label oder aria-labelledby bereit, das auf nicht leeren Text verweist.",
     "targetSizeMinimum_title": "Zeigerziele müssen mindestens 24x24px groß sein oder ausreichend Abstand zu anderen Zielen einhalten",
     "targetSizeMinimum_description": "Prüft, ob per Zeiger bedienbare Ziele eine effektive Zielgröße von mindestens 24 mal 24 CSS-Pixel haben oder eine zulässige Ausnahme erfüllen (z. B. ausreichender Abstand).",
@@ -93303,9 +93321,9 @@ const I18N = {
     "contrastEnhanced_pass_allTextMeetsThreshold": "All computable text meets enhanced contrast (AAA).",
     "contrastMinimum_pass_allTextMeetsThreshold": "All computable text meets minimum contrast (AA).",
     "contrastComputable_cantTell_notComputable": "Contrast could not be computed for this text ({{reasonCode}}).",
-    "roleImg_textAlternativePresent_title": "[role=\"img\"] must have an accessible text alternative",
-    "roleImg_textAlternativePresent_description": "Checks that elements with role=\"img\" provide an accessible text alternative using aria-label, aria-labelledby, or a title attribute.",
-    "roleImg_textAlternativePresent_summary_fail": "The element with role=\"img\" does not have an accessible text alternative.",
+    "roleImg_textAlternativePresent_title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] must have an accessible text alternative",
+    "roleImg_textAlternativePresent_description": "Checks that elements with role=\"img\", \"graphics-symbol\" or \"graphics-document\" provide an accessible text alternative using aria-label, aria-labelledby, a title attribute, or (for SVG elements) a first-child <title>.",
+    "roleImg_textAlternativePresent_summary_fail": "The element with role=\"{{role}}\" does not have an accessible text alternative.",
     "roleImg_textAlternativePresent_hint_fail": "Provide a text alternative using aria-label, or aria-labelledby that references non-empty text.",
     "targetSizeMinimum_title": "Pointer targets must be at least 24x24px large, or leave sufficient distance to other targets",
     "targetSizeMinimum_description": "Checks that pointer-operable targets have an effective hit region of at least 24 by 24 CSS pixels, or meet an allowed exception (e.g. sufficient spacing).",
@@ -93968,9 +93986,9 @@ const I18N = {
     "contrastEnhanced_pass_allTextMeetsThreshold": "Todo el texto computable cumple el contraste mejorado (AAA).",
     "contrastMinimum_pass_allTextMeetsThreshold": "Todo el texto computable cumple el contraste mínimo (AA).",
     "contrastComputable_cantTell_notComputable": "No se pudo calcular el contraste para este texto ({{reasonCode}}).",
-    "roleImg_textAlternativePresent_title": "Los elementos con role=\"img\" deben tener una alternativa textual accesible",
-    "roleImg_textAlternativePresent_description": "Comprueba que los elementos con role=\"img\" proporcionen una alternativa textual accesible mediante aria-label, aria-labelledby o un atributo title.",
-    "roleImg_textAlternativePresent_summary_fail": "El elemento con role=\"img\" no tiene una alternativa textual accesible.",
+    "roleImg_textAlternativePresent_title": "Los elementos con role=\"img\"/\"graphics-symbol\"/\"graphics-document\" deben tener una alternativa textual accesible",
+    "roleImg_textAlternativePresent_description": "Comprueba que los elementos con role=\"img\", \"graphics-symbol\" o \"graphics-document\" proporcionen una alternativa textual accesible mediante aria-label, aria-labelledby, un atributo title o (en elementos SVG) un primer hijo <title>.",
+    "roleImg_textAlternativePresent_summary_fail": "El elemento con role=\"{{role}}\" no tiene una alternativa textual accesible.",
     "roleImg_textAlternativePresent_hint_fail": "Proporcionar una alternativa textual mediante aria-label, o aria-labelledby que haga referencia a texto no vacío.",
     "targetSizeMinimum_title": "Los objetivos de puntero deben tener al menos 24x24px de tamaño, o dejar suficiente distancia respecto a otros objetivos",
     "targetSizeMinimum_description": "Comprueba que los objetivos operables por puntero tengan una zona de contacto efectiva de al menos 24 por 24 píxeles CSS, o cumplan una excepción permitida (por ejemplo, espaciado suficiente).",
@@ -94633,9 +94651,9 @@ const I18N = {
     "contrastEnhanced_pass_allTextMeetsThreshold": "Tout le texte calculable respecte le contraste renforcé (AAA).",
     "contrastMinimum_pass_allTextMeetsThreshold": "Tout le texte calculable respecte le contraste minimum (AA).",
     "contrastComputable_cantTell_notComputable": "Le contraste ne peut pas être calculé pour ce texte ({{reasonCode}}).",
-    "roleImg_textAlternativePresent_title": "Les éléments avec role=\"img\" doivent avoir une alternative textuelle accessible",
-    "roleImg_textAlternativePresent_description": "Vérifie que les éléments ayant le rôle \"img\" fournissent une alternative textuelle accessible via aria-label ou aria-labelledby.",
-    "roleImg_textAlternativePresent_summary_fail": "L’élément avec le rôle \"img\" ne possède pas d’alternative textuelle accessible.",
+    "roleImg_textAlternativePresent_title": "Les éléments avec role=\"img\"/\"graphics-symbol\"/\"graphics-document\" doivent avoir une alternative textuelle accessible",
+    "roleImg_textAlternativePresent_description": "Vérifie que les éléments ayant le rôle \"img\", \"graphics-symbol\" ou \"graphics-document\" fournissent une alternative textuelle accessible via aria-label, aria-labelledby, un attribut title, ou (pour les éléments SVG) un premier enfant <title>.",
+    "roleImg_textAlternativePresent_summary_fail": "L’élément avec le rôle \"{{role}}\" ne possède pas d’alternative textuelle accessible.",
     "roleImg_textAlternativePresent_hint_fail": "Fournissez une alternative textuelle à l’aide de aria-label ou de aria-labelledby pointant vers un texte non vide.",
     "targetSizeMinimum_title": "Les cibles activables au pointeur respectent la taille minimale (AA)",
     "targetSizeMinimum_description": "Vérifie que les cibles activables au pointeur ont une zone cliquable effective d’au moins 24×24 pixels CSS, ou respectent une exception autorisée (par ex. un espacement suffisant).",
