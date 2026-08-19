@@ -35,6 +35,34 @@ test(`${RULE_ID}: cantTell when same-name links lead to different destinations`,
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'SAME_NAME_DIFFERENT_DESTINATION');
 });
 
+test(`${RULE_ID}: cantTell for role="link" elements whose destination comes from an onclick location assignment (ACT fd3a94/b20e66's own failed example shape)`, () => {
+  const html = `<!doctype html><html><body>
+    <span role="link" tabindex="0" onclick="location='/about/contact.html'">Contact us</span>
+    <span role="link" tabindex="0" onclick="location='/admissions/contact.html'">Contact us</span>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
+  assert.equal(rule.occurrences[0].data.details.reasonCode, 'SAME_NAME_DIFFERENT_DESTINATION');
+});
+
+test(`${RULE_ID}: notApplicable for role="link" elements whose onclick location assignment resolves to the same destination`, () => {
+  const html = `<!doctype html><html><body>
+    <span role="link" tabindex="0" onclick="location='/contact.html'">Contact us</span>
+    <span role="link" tabindex="0" onclick="location.href='/contact.html'">Contact us</span>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: a role="link" element with no href and no recognizable onclick location is simply not resolved (not counted, not flagged)`, () => {
+  const html = `<!doctype html><html><body>
+    <span role="link" tabindex="0" onclick="doSomethingElse()">Contact us</span>
+    <a href="/contact">Contact us</a>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
 test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><body><a href="/a">Read more</a><a href="/b">Read more</a></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });

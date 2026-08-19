@@ -9,8 +9,8 @@
  * @standard WCAG 2.2
  * @sc 2.4.9
  * @applicability
- *   Any `a[href]` with a non-empty accessible name, grouped by that name
- *   (trimmed, whitespace-collapsed, case-folded).
+ *   Any `a[href]` or `[role="link"]` with a non-empty accessible name,
+ *   grouped by that name (trimmed, whitespace-collapsed, case-folded).
  * @expectation
  *   Within a page, links that share the same accessible name are expected
  *   to serve the same purpose (i.e. resolve to the same destination — the
@@ -25,6 +25,14 @@
  *   resolved to an absolute URL by the engine/browser), not the raw
  *   `href` attribute — so relative vs. absolute forms of the same target
  *   are correctly treated as identical.
+ * - A `role="link"` element with no `href` (ACT fd3a94/b20e66's own
+ *   `<span role="link" onclick="location='...'">`-style examples) falls
+ *   back to extracting the destination from a `location`/`location.href`
+ *   assignment or `location.assign(...)`/`location.replace(...)` call in
+ *   its `onclick` attribute — a literal string already present in
+ *   markup, not something that requires executing script. An unrecognized
+ *   onclick shape is simply not resolved (this rule is cantTell-capped,
+ *   so a missed destination costs recall, never a false fail).
  * - Only flags when a name group actually contains more than one
  *   distinct destination; a name reused for links that all point to the
  *   same place is not flagged.
@@ -66,9 +74,34 @@ function runInPage(ctx) {
     return (s == null ? '' : String(s)).replace(/\s+/g, ' ').trim().toLowerCase();
   }
 
+  // A location-assignment call in an onclick attribute is a literal
+  // string already present in markup (`location='...'`,
+  // `location.href='...'`, `window.location.assign('...')`, etc.) --
+  // reading it needs no script execution, just a regex over the
+  // attribute value.
+  const ONCLICK_LOCATION_RE =
+    /(?:window\s*\.\s*)?location(?:\s*\.\s*href)?\s*=\s*['"]([^'"]+)['"]|(?:window\s*\.\s*)?location\s*\.\s*(?:assign|replace)\s*\(\s*['"]([^'"]+)['"]/;
+
+  function resolveOnclickLocation(el) {
+    try {
+      const onclick = el.getAttribute('onclick') || '';
+      if (!onclick) return '';
+      const m = onclick.match(ONCLICK_LOCATION_RE);
+      const raw = m ? m[1] || m[2] : '';
+      if (!raw) return '';
+      try {
+        return new URL(raw, el.ownerDocument.baseURI).href;
+      } catch {
+        return raw;
+      }
+    } catch {
+      return '';
+    }
+  }
+
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('a[href]')
-    : helpers.queryAll('a[href]');
+    ? helpers.queryAllSmart('a[href], [role="link"]')
+    : helpers.queryAll('a[href], [role="link"]');
 
   const groups = new Map(); // normName -> [{ el, href }]
   let applicableCount = 0;
@@ -122,6 +155,7 @@ function runInPage(ctx) {
     } catch {
       href = '';
     }
+    if (!href) href = resolveOnclickLocation(el);
     if (!href) continue;
 
     applicableCount += 1;

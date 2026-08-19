@@ -18559,9 +18559,34 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return (s == null ? '' : String(s)).replace(/\s+/g, ' ').trim().toLowerCase();
   }
 
+  // A location-assignment call in an onclick attribute is a literal
+  // string already present in markup (`location='...'`,
+  // `location.href='...'`, `window.location.assign('...')`, etc.) --
+  // reading it needs no script execution, just a regex over the
+  // attribute value.
+  const ONCLICK_LOCATION_RE =
+    /(?:window\s*\.\s*)?location(?:\s*\.\s*href)?\s*=\s*['"]([^'"]+)['"]|(?:window\s*\.\s*)?location\s*\.\s*(?:assign|replace)\s*\(\s*['"]([^'"]+)['"]/;
+
+  function resolveOnclickLocation(el) {
+    try {
+      const onclick = el.getAttribute('onclick') || '';
+      if (!onclick) return '';
+      const m = onclick.match(ONCLICK_LOCATION_RE);
+      const raw = m ? m[1] || m[2] : '';
+      if (!raw) return '';
+      try {
+        return new URL(raw, el.ownerDocument.baseURI).href;
+      } catch {
+        return raw;
+      }
+    } catch {
+      return '';
+    }
+  }
+
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('a[href]')
-    : helpers.queryAll('a[href]');
+    ? helpers.queryAllSmart('a[href], [role="link"]')
+    : helpers.queryAll('a[href], [role="link"]');
 
   const groups = new Map(); // normName -> [{ el, href }]
   let applicableCount = 0;
@@ -18615,6 +18640,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     } catch {
       href = '';
     }
+    if (!href) href = resolveOnclickLocation(el);
     if (!href) continue;
 
     applicableCount += 1;
