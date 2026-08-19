@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-08-19T06:29:12.155Z",
+  "generatedAt": "2026-08-19T06:46:01.894Z",
   "summary": {
-    "total": 127,
-    "withFixture": 127,
+    "total": 128,
+    "withFixture": 128,
     "withoutFixture": 0
   },
   "rows": [
@@ -629,6 +629,25 @@
         "FAIL": 0,
         "CANTTELL": 0,
         "OTHER": 0
+      }
+    },
+    {
+      "ruleId": "css-focus-indicator-suppressed",
+      "title": "Focus indicator must not be removed without a replacement",
+      "type": "manual",
+      "wcagSc": [
+        "2.4.7"
+      ],
+      "ruleFile": "src/checks/manual/css-focus-indicator-suppressed-manual.js",
+      "testFile": "tests/engine-checks/manual/css-focus-indicator-suppressed.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/css-focus-indicator-suppressed-all-scenarios.html",
+      "totalCases": 12,
+      "caseCounts": {
+        "PASS": 4,
+        "FAIL": 0,
+        "CANTTELL": 5,
+        "OTHER": 3
       }
     },
     {
