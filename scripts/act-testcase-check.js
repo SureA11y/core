@@ -161,7 +161,7 @@ async function main() {
         let result;
         try {
           result = runa11yCoreOnHtml(html, {
-            runOnly: entry.ourRuleIds,
+            runOnly: { includeRuleIds: entry.ourRuleIds },
             entryPointParity: false
           });
         } catch (err) {

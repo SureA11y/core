@@ -183,6 +183,19 @@ test(`${RULE_ID}: fail when a slotted element's shadow-DOM ancestor still has no
   assert.ok(hasOccurrenceForId(rule, 'a'));
 });
 
+test(`${RULE_ID}: fail when the real parent is a roleless-but-globally-ARIA-attributed div, even though a role="list" ancestor exists further up (ACT ff89c9)`, () => {
+  const html = `<!doctype html><html><body>
+    <div role="list">
+      <div aria-live="polite">
+        <div id="a" role="listitem">List item 1</div>
+      </div>
+    </div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+});
+
 test(`${RULE_ID}: notApplicable when the element has the hidden attribute (not currently exposed to the accessibility tree)`, () => {
   const html = `<!doctype html><html><body><nav id="a" role="tab" hidden></nav></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
