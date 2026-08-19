@@ -19,6 +19,7 @@
   { "actId": "307n5z", "actName": "Element with presentational children has no focusable content", "ourRuleIds": ["presentational-children-focusable-absent"], "matchType": "exact" },
   { "actId": "4e8ab6", "actName": "Element with role attribute has required states and properties", "ourRuleIds": ["aria-required-attr"], "matchType": "exact" },
   { "actId": "oj04fd", "actName": "Element in sequential focus order has visible focus", "ourRuleIds": ["css-focus-indicator-suppressed"], "matchType": "partial" },
+  { "actId": "cc0f0a", "actName": "Form field label is descriptive", "ourRuleIds": ["form-control-label-quality"], "matchType": "partial" },
   { "actId": "e086e5", "actName": "Form field has non-empty accessible name", "ourRuleIds": ["form-control-programmatic-label-present", "textbox-name-present", "combobox-name-present", "listbox-name-present", "searchbox-name-present", "slider-name-present", "spinbutton-name-present", "binary-control-name-present", "menuitem-name-present"], "matchType": "family" },
   { "actId": "a25f45", "actName": "Headers attribute specified on a cell refers to cells in the same table element", "ourRuleIds": ["table-headers-attr-valid"], "matchType": "exact" },
   { "actId": "b49b2e", "actName": "Heading is descriptive", "ourRuleIds": ["heading-quality"], "matchType": "partial" },

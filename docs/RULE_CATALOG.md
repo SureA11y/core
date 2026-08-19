@@ -2,7 +2,7 @@
 
 Generated from the compiled engine's own catalog (`getChecksCatalog()`/`getRulesCatalog()`) — run `node scripts/generate-rule-catalog.js` after `npm run build` to regenerate this file whenever rules change. Do not hand-edit.
 
-**128 rules total: 77 automatic (WCAG-normative, can return `fail`), 51 manual (advisory/judgment-required, capped at `cantTell`). 104 carry at least one formal WCAG Success Criterion mapping.**
+**129 rules total: 77 automatic (WCAG-normative, can return `fail`), 52 manual (advisory/judgment-required, capped at `cantTell`). 105 carry at least one formal WCAG Success Criterion mapping.**
 
 See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`severity` mean on a scan result, and [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md) for how these roll up to an SC-level conformance claim. For WCAG-facet-level coverage-gap tracking (which parts of an SC are and aren't automatable yet), see `coverage/coverage-report.md` instead — that one is organized by facet, this one by rule.
 
@@ -88,7 +88,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | `valid-lang` | Element lang attribute must be syntactically valid | 3.1.2 | AA | high | moderate |
 | `video-poster-text-alternative-present` | &lt;video&gt; poster must have a text alternative | 1.1.1 | A | medium | serious |
 
-## Manual rules (51) — advisory, capped at `cantTell`
+## Manual rules (52) — advisory, capped at `cantTell`
 
 | Rule ID | Title | WCAG SC | Level | Confidence | Default severity |
 |---|---|---|---|---|---|
@@ -105,6 +105,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | `empty-heading` | Headings must not be empty | — | — | medium | minor |
 | `empty-table-header` | Table header cells must not be empty | — | — | medium | minor |
 | `focus-order-semantics` | Elements added to the tab order should have interactive semantics | — | — | medium | minor |
+| `form-control-label-quality` | Form field labels should be descriptive and distinguishable | 2.4.6 | AA | medium | minor |
 | `form-control-programmatic-label-quality` | Form controls should not rely on placeholder or title as the primary label | 4.1.2 | A | medium | moderate |
 | `heading-order` | Heading levels must not skip a level | — | — | medium | minor |
 | `heading-quality` | Heading text should be descriptive, not a placeholder | 2.4.6 | AA | medium | minor |
@@ -171,7 +172,7 @@ Composite rules aren't individually authored — they're generated rollups over 
 | `wcag-2.4.2-page-titled` | Page titled | 2.4.2 | A | 2 |
 | `wcag-2.4.3-focus-order` | Focus order | 2.4.3 | A | 1 |
 | `wcag-2.4.4-link-purpose-in-context` | Link Purpose (In Context) | 2.4.4 | A | 1 |
-| `wcag-2.4.6-headings-and-labels` | Headings and Labels | 2.4.6 | AA | 1 |
+| `wcag-2.4.6-headings-and-labels` | Headings and Labels | 2.4.6 | AA | 2 |
 | `wcag-2.4.7-focus-visible` | Focus visible | 2.4.7 | AA | 4 |
 | `wcag-2.4.9-link-purpose-link-only` | Link Purpose (Link Only) | 2.4.9 | AAA | 1 |
 | `wcag-2.5.3-label-in-name` | Label in name | 2.5.3 | A | 1 |
