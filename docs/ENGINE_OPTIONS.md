@@ -55,6 +55,18 @@ Since versions are cumulative (2.1 = 2.0 + new; 2.2 = 2.0 + 2.1 + new), select a
 { tags: ['wcag22a', 'wcag22aa', 'wcag22aaa'] }
 ```
 
+**One SC goes the other way.** WCAG 2.2 removed SC 4.1.1 Parsing — the only criterion ever dropped rather than added. A rule mapped to it carries its 2.0-origin tag (`wcag2a`) like any other baseline rule, plus `wcag22-removed`, and the version tag sets above therefore include it under a 2.2 target, where it does not belong. Exclude it explicitly:
+
+```js
+// WCAG 2.2 AA conformance, without the criterion 2.2 removed:
+{
+  tags: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22a', 'wcag22aa'],
+  excludeTags: ['wcag22-removed']
+}
+```
+
+`duplicate-id` is the only rule carrying that tag today. Left in, it still reports something real — a duplicate id breaks `<label for>`, fragment links and `getElementById` whatever the standard says — it just is not a 2.2 conformance failure.
+
 ### Via `engineOptions` (no `runOnly`)
 
 Same filtering, expressed as comma-separated strings (or arrays) nested in `engineOptions`:

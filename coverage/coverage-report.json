@@ -2,11 +2,11 @@
   "rulesDir": "src/checks",
   "facetsFile": "src/coverage/wcag-facets.js",
   "summary": {
-    "totalRules": 129,
+    "totalRules": 130,
     "wcagTagCoverage": {
       "byVersion": {
         "2.0": {
-          "A": 100,
+          "A": 101,
           "AA": 14,
           "AAA": 5
         },
@@ -22,12 +22,12 @@
         }
       },
       "anyVersion": {
-        "A": 105,
+        "A": 106,
         "AA": 18,
         "AAA": 5
       },
       "rawTagCounts": {
-        "wcag2a": 89,
+        "wcag2a": 90,
         "wcag2aa": 10,
         "wcag21aa": 3,
         "wcag2aaa": 5,
@@ -1656,6 +1656,55 @@
         "facetsBySc": {
           "4.1.2": [
             "duplicate-id-aria"
+          ]
+        }
+      }
+    },
+    {
+      "file": "src/checks/automatic/duplicate-id.js",
+      "ruleId": "duplicate-id",
+      "wcagScNormative": [
+        "4.1.1"
+      ],
+      "wcagScAll": [
+        "4.1.1"
+      ],
+      "wcagScInformative": [],
+      "type": "automatic",
+      "title": "IDs must be unique",
+      "tags": [
+        "wcag2a",
+        "wcag411",
+        "wcag22-removed",
+        "structure",
+        "atomic",
+        "automatic"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2a",
+            "version": "2.0",
+            "level": "A"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "4.1.1": [
+            "id-unique-page-wide"
           ]
         }
       }
@@ -6889,6 +6938,28 @@
         ]
       },
       {
+        "sc": "4.1.1",
+        "title": "Parsing (Obsolete and removed)",
+        "totalFacets": 1,
+        "coveredFacets": 1,
+        "uncoveredFacets": [],
+        "automationCounts": {
+          "full": 1
+        },
+        "missingFacetRules": [],
+        "unknownFacetIds": [],
+        "facets": [
+          {
+            "id": "id-unique-page-wide",
+            "label": "Every id value is unique within its own document or shadow tree",
+            "automation": "full",
+            "coveredBy": [
+              "duplicate-id"
+            ]
+          }
+        ]
+      },
+      {
         "sc": "4.1.2",
         "title": "Name, Role, Value",
         "totalFacets": 42,
@@ -8231,6 +8302,28 @@
             "automation": "full",
             "coveredBy": [
               "form-control-single-label"
+            ]
+          }
+        ]
+      },
+      {
+        "sc": "4.1.1",
+        "title": "Parsing (Obsolete and removed)",
+        "totalFacets": 1,
+        "coveredFacets": 1,
+        "uncoveredFacets": [],
+        "automationCounts": {
+          "full": 1
+        },
+        "missingFacetRules": [],
+        "unknownFacetIds": [],
+        "facets": [
+          {
+            "id": "id-unique-page-wide",
+            "label": "Every id value is unique within its own document or shadow tree",
+            "automation": "full",
+            "coveredBy": [
+              "duplicate-id"
             ]
           }
         ]

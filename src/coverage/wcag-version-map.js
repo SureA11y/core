@@ -8,10 +8,11 @@
  * PURPOSE
  * -------
  * WCAG 2.1 and 2.2 are each a superset of the version before them -- they add new
- * Success Criteria, never remove or renumber existing ones (with the sole exception
- * of 4.1.1 Parsing, deprecated/removed in 2.2, which this engine does not implement
- * as a rule either way). This module lists exactly which SCs were newly introduced in
- * each version; every SC not listed here is WCAG 2.0 baseline.
+ * Success Criteria, never remove or renumber existing ones, with the sole exception of
+ * 4.1.1 Parsing, removed in 2.2. This module lists exactly which SCs were newly
+ * introduced in each version; every SC not listed here is WCAG 2.0 baseline. The one
+ * removed SC is listed separately below, since a rule mapped to it is valid for a
+ * 2.0/2.1 conformance target and must not count against a 2.2 one.
  *
  * This is the single source of truth used by the rule-authoring consistency test
  * (`tests/coverage/wcag-version-tags.test.js`) to verify every rule's `meta.tags`
@@ -62,6 +63,17 @@ const WCAG22_NEW_SCS = [
   '3.3.9'   // Accessible Authentication (Enhanced) (AAA)
 ];
 
+// The only SC ever removed from WCAG: 4.1.1 Parsing, dropped in 2.2 because browsers
+// recover from the malformed markup it was written for. A rule mapped to it carries
+// the `wcag22-removed` tag alongside its `wcag2a` origin tag, so a 2.2 conformance run
+// can exclude it while a 2.0/2.1 run keeps it (see docs/ENGINE_OPTIONS.md).
+const WCAG22_REMOVED_SCS = ['4.1.1'];
+
+// The version an SC was removed in, or null if it is still current.
+function removedInVersion(sc) {
+  return WCAG22_REMOVED_SCS.includes(String(sc || '').trim()) ? '2.2' : null;
+}
+
 function introducedInVersion(sc) {
   const s = String(sc || '').trim();
   if (WCAG22_NEW_SCS.includes(s)) return '2.2';
@@ -79,4 +91,11 @@ function versionTagPrefixForScs(wcagScList) {
   return 'wcag2';
 }
 
-module.exports = { WCAG21_NEW_SCS, WCAG22_NEW_SCS, introducedInVersion, versionTagPrefixForScs };
+module.exports = {
+  WCAG21_NEW_SCS,
+  WCAG22_NEW_SCS,
+  WCAG22_REMOVED_SCS,
+  introducedInVersion,
+  removedInVersion,
+  versionTagPrefixForScs
+};

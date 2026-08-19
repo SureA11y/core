@@ -3,11 +3,11 @@
 Cross-reference between the [W3C ACT Rules](https://act-rules.github.io/rules/) (as published at act-rules.github.io) and this repo's rule catalog (`docs/RULE_CATALOG.md`). Built by matching rule names/descriptions and WCAG SC; not machine-generated, so treat close calls as a starting point for review rather than ground truth.
 
 **Summary (117 active ACT rules, excludes 3 deprecated):**
-- **56 confirmed direct or family matches** in our automatic/manual rules (`scripts/data/act-rule-map.json` is the machine-readable version of the table below)
+- **57 confirmed direct or family matches** in our automatic/manual rules (`scripts/data/act-rule-map.json` is the machine-readable version of the table below)
 - **~2** are covered structurally by our composite/rollup layer, not a named rule
-- **~48 are gaps** — no corresponding rule in this repo, listed in [Gaps](#gaps-no-corresponding-rule) below
+- **~47 are gaps** — no corresponding rule in this repo, listed in [Gaps](#gaps-no-corresponding-rule) below
 
-**Every matched rule has now been run through ACT's own official test-case corpus** (`scripts/act-testcase-check.js`, 713 test cases across the 51-rule matched set of the time). Started at 86 mismatches; real bugs were fixed, mapping errors corrected, and every remaining mismatch triaged into a deliberate scope difference, a jsdom/environment limit, or a genuine open design question (tracked in [`docs/DESIGN_CHALLENGES.md`](./DESIGN_CHALLENGES.md)). A second pass then re-ran the whole corpus from a local checkout (see "Second pass" below) and repeated the exercise on what it turned up. Current state: **856 examples across the 56-rule matched set, 65 mismatches, all explained** below or in that file — see "Progress" further down for the full per-rule breakdown.
+**Every matched rule has now been run through ACT's own official test-case corpus** (`scripts/act-testcase-check.js`, 713 test cases across the 51-rule matched set of the time). Started at 86 mismatches; real bugs were fixed, mapping errors corrected, and every remaining mismatch triaged into a deliberate scope difference, a jsdom/environment limit, or a genuine open design question (tracked in [`docs/DESIGN_CHALLENGES.md`](./DESIGN_CHALLENGES.md)). A second pass then re-ran the whole corpus from a local checkout (see "Second pass" below) and repeated the exercise on what it turned up. Current state: **866 examples across the 57-rule matched set, 65 mismatches, all explained** below or in that file — see "Progress" further down for the full per-rule breakdown.
 
 Real rule bugs found and fixed this way, in rough chronological order:
 - `button-name-present` wasn't crediting the UA-default label on `input[type=submit]`/`input[type=reset]` with no `value`, and wasn't honoring `role="none"`/`role="presentation"` conflict-resolution.
@@ -41,6 +41,7 @@ Gaps closed since:
 - `b49b2e` "Heading is descriptive" is now half-covered by the new `heading-quality` rule: a heading whose accessible name is a placeholder — a generic word ("Heading", "Untitled"), a numbered template slot ("Section 2"), a filename, or a URL — cannot describe anything, and that much is deterministic. Whether a well-formed heading is *about* the content after it is not, so the rule is `cantTell`-capped and `b49b2e` is mapped `partial`. Clean on all 6 passed and both inapplicable examples (no false positives); the 4 failed examples are all the topic-relevance shape.
 - `oj04fd` "Element in sequential focus order has visible focus" is now partly covered by the new `css-focus-indicator-suppressed` rule: it reads the page's own stylesheets for a `:focus`/`:focus-visible` rule that removes the outline, and reports the tab stops it matches unless some other focus rule draws a replacement for them. ACT's expectation is a pixel comparison between the focused and unfocused states, which no static check performs — and its passed examples paint their indicator from an `onfocus` handler onto a sibling — so the rule is `cantTell`-capped and the mapping is `partial`.
 - `cc0f0a` "Form field label is descriptive" is now partly covered by the new `form-control-label-quality` rule. Three shapes of a bad label are decidable from markup: a placeholder string, a label repeated on several fields with no *visible* heading, legend or row text telling them apart, and a label split between visible and hidden parts. The second and third are what ACT's own failed examples 4 and 5 test, and the rule catches both; the remaining four failures turn on the meaning of an ordinary word, so the mapping is `partial` and the rule is `cantTell`-capped.
+- `3ea0c8` "Id attribute value is unique" is closed by the new `duplicate-id` rule — clean against all 10 of ACT's examples, including the per-tree scoping that keeps the same id inside two different shadow roots from counting as a duplicate. It is the first rule in the catalog whose Success Criterion no longer exists in the current WCAG version, so it carries `wcag22-removed` alongside its `wcag2a` origin tag; see `docs/ENGINE_OPTIONS.md` for how a 2.2 conformance run excludes it.
 
 ### Second pass: the corpus read from a local checkout
 
@@ -65,7 +66,7 @@ We also have automatic rules with **no ACT counterpart at all** (see [Extra cove
 
 ### Progress: full validation results, by ACT rule
 
-**Clean (0 mismatches):** `5f99a7`, `80f0bf`, `4c31df`, `73f2c2`, `97a4e1`, `cf77f2`, `b40fd1`, `46ca7f`, `6cfa84`, `307n5z`, `4e8ab6`, `a25f45`, `ffd0e9`, `b5c3f8`, `2779a5`, `5b7ae0`, `bf051a`, `qt1vmo`, `59796f`, `23a2a8`, `24afc2`, `9e45ec`, `c487ae`, `m6b1q3`, `bc659a`, `bisz58`, `b4f0c3`, `674b10`, `0ssw9k` (29 of 56 matched rules).
+**Clean (0 mismatches):** `5f99a7`, `80f0bf`, `4c31df`, `73f2c2`, `97a4e1`, `cf77f2`, `b40fd1`, `46ca7f`, `6cfa84`, `307n5z`, `4e8ab6`, `a25f45`, `ffd0e9`, `b5c3f8`, `2779a5`, `5b7ae0`, `bf051a`, `qt1vmo`, `59796f`, `23a2a8`, `24afc2`, `9e45ec`, `c487ae`, `m6b1q3`, `bc659a`, `bisz58`, `b4f0c3`, `674b10`, `0ssw9k`, `3ea0c8` (30 of 57 matched rules).
 
 **Remaining mismatches (65 total), all triaged:**
 
@@ -78,7 +79,7 @@ We also have automatic rules with **no ACT counterpart at all** (see [Extra cove
 | `aaa1bf` | 1 | inherent limitation — clip duration isn't knowable from static markup; no browser decodes media at scan time |
 | `ye5d6e`, `047fe0` | 1, 2 | deliberate leniency — whether repeated-boilerplate content wraps the skip target/heading is a cross-page judgment undecidable from one document; the rule's own header comment already reasons through this trade-off |
 | `de46e4` | 3 | open design question — see `docs/DESIGN_CHALLENGES.md` (`valid-lang`'s applicability needs own-text-ownership resolution through nested `lang` scopes, `alt` counted as governed text, and a visibility gate) |
-| `e086e5` | 2 | open design question — see `docs/DESIGN_CHALLENGES.md` (`<label for>`/wrapping association applied to non-natively-labelable ARIA-widget elements) |
+| `e086e5` | 2 | deliberate divergence, decided 2026-08-19 — see `docs/DESIGN_CHALLENGES.md`'s "Decided" section: `<label for>`/wrapping association stays honoured on non-natively-labelable ARIA widgets, because a screen reader that announces such a label makes "no accessible name" a false positive. Real AT behaviour wins over the spec reading here |
 | `oj04fd` | 1 | env/harness limit — ACT's one failed example keeps its `outline: none` in a linked stylesheet, which the example runner does not fetch, so no focus rule is visible to parse at all. Inlining that same CSS reports the element (`tests/engine-checks/manual/css-focus-indicator-suppressed.test.js` pins it); a real page hands the engine its stylesheets through the CSSOM |
 | `cc0f0a` | 4 | inherent limitation — `form-control-label-quality` catches the three deterministic shapes (a placeholder label, a label repeated with no visible heading/legend/row telling the fields apart, a label split between visible and hidden parts, which covers ACT's failed examples 4 and 5). The remaining four fail on the meaning of a well-formed word — `<label>Menu</label>` over a first-name field — which no markup-level check reaches |
 | `b49b2e` | 4 | inherent limitation — `heading-quality` catches placeholder heading text (a generic word, a numbered template slot, a filename, a URL), which is the deterministic half of this rule; whether a well-formed heading actually describes the content after it is a reading-comprehension judgment, and all 4 of ACT's failed examples are exactly that shape ("Weather" over opening hours) |
@@ -129,6 +130,7 @@ We also have automatic rules with **no ACT counterpart at all** (see [Extra cove
 | `2779a5` | HTML page has non-empty title | `page-title-present` | exact |
 | `5b7ae0` | HTML page lang/xml:lang attributes match | `html-xml-lang-mismatch` | exact |
 | `bf051a` | HTML page lang attribute has valid language tag | `html-lang-attr-present` | exact |
+| `3ea0c8` | Id attribute value is unique | `duplicate-id` | exact |
 | `cae760` | Iframe element has non-empty accessible name | `iframe-name-present` | exact |
 | `akn7bn` | Iframe with negative tabindex has no interactive content | `iframe-focusable-content` | exact |
 | `qt1vmo` | Image accessible name is descriptive | `img-alt-quality`, `canvas-text-alternative-quality`, `svg-text-alternative-quality` (all manual) | family |
@@ -184,7 +186,6 @@ Grouped by theme, with WCAG SC where ACT declares one:
 
 **Structural/HTML validity:**
 - `e6952f` Attribute is not duplicated (raw HTML parsing-level check)
-- `3ea0c8` Id attribute value is unique (we only check `duplicate-id-aria`, i.e. IDs referenced by ARIA — not all IDs page-wide)
 - `efbfc7` Auto-updating text content can be paused/stopped/hidden (2.2.2, beyond meta-refresh)
 - `3e12e1` Block of repeated content is collapsible
 
@@ -212,7 +213,7 @@ The goal is maximum automation, not just parity with ACT's own scope — several
 - `c4a8a4` HTML page title is descriptive (title-vs-content relevance) — genuinely harder to heuristic than the others in this tier (needs some notion of "does this title's vocabulary overlap with the page's own content," not just a pattern/word list), so lower confidence within this tier.
 
 **Design decision needed before building (not purely a confidence question):**
-- `3ea0c8` Page-wide unique `id` — deterministic and high-value (duplicate IDs silently break `<label for>`, fragment navigation, and any `getElementById` call, not just ARIA references), but a page-wide version of this check was deliberately scoped out once before (see `docs/DESIGN_CHALLENGES.md`'s "Page-wide duplicate-`id` checking" entry) because its WCAG mapping (4.1.1 Parsing) was removed in WCAG 2.2. Worth building, tagged as WCAG 2.0/2.1-only rather than either fully skipped or wrongly counted against 2.2 conformance — flagged there for a decision rather than built silently here.
+- ~~`3ea0c8` Page-wide unique `id`~~ — built as `duplicate-id`, tagged `wcag2a` plus the new `wcag22-removed`, which a 2.2 conformance run excludes and a 2.0/2.1 run keeps. The decision that unblocked it, and the reasoning, are in `docs/DESIGN_CHALLENGES.md`'s "Decided" section; the tag is documented in `docs/ENGINE_OPTIONS.md`.
 
 **Lower confidence / needs a different technique than the rest of the engine:**
 - `e6952f` Attribute is not duplicated — only detectable from the raw HTML *text* (the DOM has already collapsed duplicate attributes by the time any DOM-based rule runs), a different input than every other rule in this engine uses. Feasible only where raw source is available (not guaranteed in every integration).
@@ -230,5 +231,5 @@ Rules in this repo with no ACT counterpart — mostly finer decomposition of ACT
 
 1. **Validate matched rules against ACT's official test cases** — done for the full matched set (see "Progress" above); re-run `scripts/act-testcase-check.js` after any future change to a matched rule to catch regressions.
 2. **Resolve the open design questions in `docs/DESIGN_CHALLENGES.md`** — these are the highest-value remaining item: each is a confirmed, understood defect or scope gap in an already-matched rule, just deferred because the fix is a real behavior change (not a quick patch) that deserves a deliberate look and fixture coverage before landing.
-3. **Build the highest-confidence automatable gaps** — `307n5z` and `46ca7f` are done (see above). `3ea0c8` (page-wide unique id) is equally deterministic but needs the WCAG-version-tagging decision in `docs/DESIGN_CHALLENGES.md` resolved first. `b49b2e` (heading quality), `oj04fd` (suppressed focus indicator) and `cc0f0a` (label-text relevance) are done too, which empties the manual/`cantTell` tier.
+3. **Build the highest-confidence automatable gaps** — `307n5z` and `46ca7f` are done (see above). `3ea0c8` (page-wide unique id) is done as well, once the WCAG-version-tagging question it was blocked on was decided. `b49b2e` (heading quality), `oj04fd` (suppressed focus indicator) and `cc0f0a` (label-text relevance) are done too, which empties the manual/`cantTell` tier.
 4. **Keyboard trap detection** (`80af7b`/`ebe86a`/`a1b64e`) remains a large, currently-unaddressed gap with no automated detection at all — likely needs a different technique (interaction simulation) than the rest of this engine's static-markup approach.
