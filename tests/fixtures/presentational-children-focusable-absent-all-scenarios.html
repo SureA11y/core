@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>presentational-children-focusable-absent — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>presentational-children-focusable-absent</code></h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>pcf_case_NN</code>.
+    Reports the element whose role makes its children presentational, not the focusable descendant.
+  </p>
+
+  <h2>A. No content in sequential focus navigation</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — PASS: button with text only</div>
+    <button id="pcf_case_01">Save</button>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — PASS: checkbox labelled by adjacent text, link kept outside</div>
+    <p id="terms">
+      <span role="checkbox" aria-checked="false" tabindex="0" aria-labelledby="terms" id="pcf_case_02">I agree to the</span>
+      <a href="/terms">terms of service</a>
+    </p>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — PASS: disabled input takes no tab stop</div>
+    <ul role="menu">
+      <li role="menuitemcheckbox" aria-checked="true" id="pcf_case_03">
+        <input type="checkbox" role="none" disabled checked />
+        Sort by Last Modified
+      </li>
+    </ul>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — PASS: anchor without href is not focusable</div>
+    <button id="pcf_case_04"><a>button/link</a></button>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — PASS: tabindex="-1" descendant is focusable but takes no tab stop</div>
+    <span role="img" aria-label="ASCII art" id="pcf_case_05">*** <span tabindex="-1">art</span> ***</span>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — PASS: display:none descendant is not rendered</div>
+    <button id="pcf_case_06">Save <a href="/details" style="display:none">details</a></button>
+  </div>
+
+  <h2>B. Content in sequential focus navigation</h2>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — FAIL: button containing a tabindex="0" span</div>
+    <button id="pcf_case_07">
+      Save
+      <span role="button" aria-label="save options" aria-expanded="false" tabindex="0">▼</span>
+    </button>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — FAIL: role=checkbox containing a link</div>
+    <p role="checkbox" aria-checked="false" tabindex="0" id="pcf_case_08">I agree to the <a href="/terms">terms of service</a></p>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — FAIL: role=menuitemcheckbox containing an enabled checkbox</div>
+    <ul role="menu">
+      <li role="menuitemcheckbox" aria-checked="true" id="pcf_case_09">
+        <input type="checkbox" checked />
+        Sort by Last Modified
+      </li>
+    </ul>
+  </div>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — FAIL: role=tab containing a link</div>
+    <ul role="tablist">
+      <li role="tab" id="pcf_case_10">
+        <a href="#panel">Tab 1</a>
+      </li>
+    </ul>
+  </div>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — FAIL: role=img containing a link</div>
+    <span role="img" aria-label="some ASCII art" id="pcf_case_11">****** This ASCII art ******* <a href="#">contains a link.</a></span>
+  </div>
+
+  <div class="case" id="case_12">
+    <div class="case-title">12 — FAIL: nested case reported on the inner role only</div>
+    <button id="pcf_case_12_outer">
+      Pick
+      <span role="tab" id="pcf_case_12"><a href="#one">One</a></span>
+    </button>
+  </div>
+
+  <h2>C. Roles without presentational children (skipped)</h2>
+
+  <div class="case" id="case_13">
+    <div class="case-title">13 — NEUTRAL: table cells hold links without any presentational-children role</div>
+    <table id="pcf_case_13">
+      <tbody>
+        <tr><td><a href="#cell">link in a data cell</a></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="case" id="case_14">
+    <div class="case-title">14 — NEUTRAL: link role has no presentational children</div>
+    <a href="https://w3.org" id="pcf_case_14"><span tabindex="0">W3C Website</span></a>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

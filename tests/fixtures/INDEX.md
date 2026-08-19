@@ -1,18 +1,18 @@
 # Fixture Index
 
-Generated: 2026-08-19T04:08:24.056Z
+Generated: 2026-08-19T05:42:27.469Z
 
 Every implemented rule should have a `tests/fixtures/<slug>-all-scenarios.html` scenario page (numbered `case_NN` blocks, each marked PASS/FAIL/CANTTELL in its `.case-title`) and a "fixture coverage" test in its `tests/engine-checks/**/<rule>.test.js` asserting the exact expected ids. See `docs/RULE_AUTHORING.md`.
 
 ## Summary
 
-Total rules: **125**. With fixture: **125**. Without fixture: **0**.
+Total rules: **126**. With fixture: **126**. Without fixture: **0**.
 
 ## Rules WITHOUT a fixture (0)
 
 None — every rule has a fixture.
 
-## Rules WITH a fixture (125)
+## Rules WITH a fixture (126)
 
 | Rule ID | Type | Fixture | Cases | PASS | FAIL | CANTTELL | OTHER |
 |---|---|---|---:|---:|---:|---:|---:|
@@ -112,7 +112,8 @@ None — every rule has a fixture.
 | page-has-heading-one | manual | `tests/fixtures/page-has-heading-one-all-scenarios.html` | 1 | 0 | 0 | 1 | 0 |
 | page-title-patterns | manual | `tests/fixtures/page-title-patterns-all-scenarios.html` | 1 | 0 | 0 | 1 | 0 |
 | page-title-present | automatic | `tests/fixtures/page-title-present-all-scenarios.html` | 1 | 0 | 1 | 0 | 0 |
-| presentation-role-conflict | manual | `tests/fixtures/presentation-role-conflict-all-scenarios.html` | 13 | 0 | 0 | 7 | 6 |
+| presentation-role-conflict | manual | `tests/fixtures/presentation-role-conflict-all-scenarios.html` | 15 | 0 | 0 | 8 | 7 |
+| presentational-children-focusable-absent | automatic | `tests/fixtures/presentational-children-focusable-absent-all-scenarios.html` | 14 | 6 | 6 | 0 | 2 |
 | progressbar-name-present | automatic | `tests/fixtures/progressbar-name-present-all-scenarios.html` | 8 | 3 | 4 | 0 | 1 |
 | region | manual | `tests/fixtures/region-all-scenarios.html` | 1 | 0 | 0 | 1 | 0 |
 | role-img-text-alternative-present | automatic | `tests/fixtures/role-img-alt-present-all-scenarios.html` | 25 | 5 | 10 | 0 | 10 |

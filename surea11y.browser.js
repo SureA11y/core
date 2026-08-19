@@ -5175,6 +5175,62 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "mappings": null
   },
   {
+    "ruleId": "presentational-children-focusable-absent",
+    "title": "Roles with presentational children must not contain focusable content",
+    "description": "Checks that an element whose role makes its children presentational (button, checkbox, img, option, radio, slider, switch, tab, ...) contains no descendant that takes a tab stop.",
+    "i18n": {
+      "titleKey": "presentationalChildrenFocusableAbsent_title",
+      "descriptionKey": "presentationalChildrenFocusableAbsent_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag412",
+      "aria",
+      "structure",
+      "focus",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "4.1.2"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "4.1.2",
+        "title": "Name, Role, Value",
+        "conformanceLevel": "A"
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "4.1.2": [
+          "presentational-children-focusable-absent"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
     "ruleId": "progressbar-name-present",
     "title": "Progress bars have an accessible name",
     "description": "Checks that elements with role=\"progressbar\" expose a non-empty accessible name.",
@@ -7115,6 +7171,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "aria-required-parent",
       "duplicate-id-aria",
       "nested-interactive-controls-absent",
+      "presentational-children-focusable-absent",
       "aria-braille-equivalent",
       "aria-conditional-attr",
       "aria-checked-state-mismatch"
@@ -23603,6 +23660,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const getFocusableInfo =
     helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
 
+  const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
+
+  // The role attribute holds a fallback list; the first token naming a real
+  // role wins, and unknown tokens are skipped over. Returns '' when the
+  // element has no role attribute or none of its tokens name a role — the
+  // cases where an <img alt=""> keeps the presentation role empty alt gives
+  // it.
+  function getEffectiveRoleToken(el) {
+    const raw = el.getAttribute ? el.getAttribute('role') : null;
+    if (!raw) return '';
+    const tokens = String(raw).trim().toLowerCase().split(/\s+/);
+    for (const token of tokens) {
+      if (!token) continue;
+      if (token === 'presentation' || token === 'none') return token;
+      const known = ariaHelpers ? ariaHelpers.isValidConcreteRole(token) : true;
+      if (known) return token;
+    }
+    return '';
+  }
+
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('[role="presentation"], [role="none"], img[alt=""]')
     : helpers.queryAll('[role="presentation"], [role="none"], img[alt=""]');
@@ -23612,6 +23689,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   for (const el of nodes) {
     if (!el || !el.getAttribute) continue;
+
+    // Only reachable via the img[alt=""] branch of the selector: an explicit
+    // role other than presentation/none overrides the presentation role that
+    // empty alt would confer, leaving no presentational intent to conflict
+    // with.
+    const roleToken = getEffectiveRoleToken(el);
+    if (roleToken && roleToken !== 'presentation' && roleToken !== 'none') continue;
 
     applicableCount += 1;
 
@@ -23659,12 +23743,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const parts = present.slice();
     if (isFocusable) parts.push('focusable');
 
-    // No explicit role attribute means this matched via the img[alt=""]
+    // No role token means this matched via the img[alt=""]
     // implicit-presentation case.
-    const role =
-      String(el.getAttribute('role') || '')
-        .trim()
-        .toLowerCase() || 'presentation';
+    const role = roleToken || 'presentation';
 
     occurrences.push(
       helpers.reportOccurrence(el, {
@@ -23699,6 +23780,246 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     };
   }
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+}), applicability: null },
+    "presentational-children-focusable-absent": { run: (function runInPage(ctx) {
+  const { helpers, rule } = ctx;
+
+  // Declared inside runInPage — see scripts/build-core.js header
+  // ("runInPage MUST be self-contained").
+  //
+  // WAI-ARIA roles with "Children Presentational: True", plus the two
+  // module roles that inherit the trait (doc-pagebreak from DPUB-ARIA,
+  // graphics-symbol from Graphics-ARIA).
+  const PRESENTATIONAL_CHILDREN_ROLES = [
+    'button',
+    'checkbox',
+    'doc-pagebreak',
+    'graphics-symbol',
+    'img',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'meter',
+    'option',
+    'progressbar',
+    'radio',
+    'scrollbar',
+    'separator',
+    'slider',
+    'switch',
+    'tab'
+  ];
+
+  // Native tags whose implicit role is in the set above and that can hold
+  // descendants — see the void-element note in the header comment.
+  const NATIVE_ROLE_BY_TAG = {
+    button: 'button',
+    meter: 'meter',
+    option: 'option',
+    progress: 'progressbar'
+  };
+
+  const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
+
+  const getFocusableInfo =
+    helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
+
+  const isDomVisibleEligible =
+    helpers && typeof helpers.isDomVisibleEligible === 'function'
+      ? helpers.isDomVisibleEligible
+      : null;
+
+  const getEligibilityInfo =
+    helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
+
+  const isAccTreeEligible =
+    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+
+  const roleSet = new Set(PRESENTATIONAL_CHILDREN_ROLES);
+
+  function lower(v) {
+    return (v == null ? '' : String(v)).trim().toLowerCase();
+  }
+
+  // The role attribute holds a fallback list; the first token that names a
+  // real role wins. A role="tab" resolves here, a role="figure tab" does
+  // not (figure wins and has no presentational children), and a list of
+  // nothing but unknown tokens falls back to the native role.
+  function getPresentationalChildrenRole(el) {
+    const raw = el.getAttribute ? el.getAttribute('role') : null;
+    if (raw) {
+      const tokens = lower(raw).split(/\s+/);
+      for (const token of tokens) {
+        if (!token) continue;
+        if (roleSet.has(token)) return token;
+        const known = ariaHelpers ? ariaHelpers.isValidConcreteRole(token) : true;
+        if (known) return '';
+      }
+    }
+    const tag = lower(el.tagName);
+    return Object.prototype.hasOwnProperty.call(NATIVE_ROLE_BY_TAG, tag)
+      ? NATIVE_ROLE_BY_TAG[tag]
+      : '';
+  }
+
+  function isExposed(node) {
+    if (!isAccTreeEligible) return true;
+    try {
+      const r = isAccTreeEligible(node, ctx);
+      if (typeof r === 'boolean') return r;
+      return !!(r && r.eligible);
+    } catch {
+      return true;
+    }
+  }
+
+  // Flat-tree ancestor walk, shared with every other rule via
+  // ctx.helpers.composedParent so a shadow host is crossed the same way here
+  // as elsewhere.
+  const composedParent =
+    helpers && typeof helpers.composedParent === 'function'
+      ? helpers.composedParent
+      : function (n) {
+          return n && n.parentElement ? n.parentElement : null;
+        };
+
+  // isAccTreeEligible deliberately keeps an aria-hidden element that holds
+  // tabbable content in the accessibility tree (reason
+  // "ariaHiddenOverriddenTabbable", modelling the browsers that expose it
+  // anyway) — which is precisely the shape aria-hidden-focus owns, so the
+  // attribute is checked on its own here rather than read off eligibility.
+  function inAriaHiddenSubtree(node) {
+    let cur = node;
+    let guard = 0;
+    while (cur && guard++ < 200) {
+      if (lower(cur.getAttribute && cur.getAttribute('aria-hidden')) === 'true') return true;
+      cur = composedParent(cur);
+    }
+    return false;
+  }
+
+  function isRendered(node) {
+    if (!isDomVisibleEligible) return true;
+    try {
+      const vis = isDomVisibleEligible(node, ctx, {
+        visibilityMode: 'styleOnly',
+        disableGeometry: true
+      });
+      return !(vis && vis.eligible === false);
+    } catch {
+      return true;
+    }
+  }
+
+  function isTabStop(node) {
+    if (!getFocusableInfo) return false;
+    try {
+      const info = getFocusableInfo(node, ctx);
+      return !!(info && info.tabbable);
+    } catch {
+      return false;
+    }
+  }
+
+  // Shallowest tab stops inside `root`, stopping at each one and at any
+  // nested presentational-children role, so every tab stop is attributed to
+  // the nearest role that removes it from the accessibility tree.
+  function collectTabStops(root) {
+    const out = [];
+    const top = root && root.children;
+    if (!top || !top.length) return out;
+    const stack = [];
+    for (let i = top.length - 1; i >= 0; i--) stack.push(top[i]);
+    while (stack.length) {
+      const node = stack.pop();
+      if (!node || node.nodeType !== 1) continue;
+      if (lower(node.getAttribute && node.getAttribute('aria-hidden')) === 'true') continue;
+      if (!isRendered(node)) continue;
+      if (isTabStop(node)) {
+        out.push(node);
+        continue;
+      }
+      // A nested role with presentational children owns whatever tab stops
+      // are inside it (it is examined as its own container in the main
+      // loop). It is only a boundary when it is not itself a tab stop —
+      // a focusable one lands focus inside THIS element and belongs here.
+      if (getPresentationalChildrenRole(node)) continue;
+      const kids = node.children;
+      if (kids && kids.length) {
+        for (let i = kids.length - 1; i >= 0; i--) stack.push(kids[i]);
+      }
+    }
+    return out;
+  }
+
+  const SELECTOR = '[role], button, meter, option, progress';
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart(SELECTOR)
+    : helpers.queryAll(SELECTOR);
+
+  const occurrences = [];
+  let applicableCount = 0;
+
+  for (const el of nodes) {
+    if (!el || el.nodeType !== 1) continue;
+
+    const role = getPresentationalChildrenRole(el);
+    if (!role) continue;
+    // A container that is hidden, or sits in an aria-hidden subtree, is
+    // aria-hidden-focus's concern — see the note on inAriaHiddenSubtree.
+    if (!isExposed(el) || inAriaHiddenSubtree(el)) continue;
+
+    applicableCount += 1;
+
+    const tabStops = collectTabStops(el);
+    if (!tabStops.length) continue;
+
+    const tabStopTags = tabStops.map((n) => (n && n.tagName ? lower(n.tagName) : 'unknown'));
+    const dedupedTabStopTags = [...new Set(tabStopTags)];
+
+    const eligInfo = getEligibilityInfo
+      ? (() => {
+          try {
+            return getEligibilityInfo(el, ctx, { targetSet: 'acc' });
+          } catch {
+            return null;
+          }
+        })()
+      : null;
+
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: `This role="${role}" element makes its children presentational, but it contains content that is still part of sequential focus navigation (${dedupedTabStopTags.join(', ')}).`,
+        hint: 'Move the focusable content outside this element, or remove the role that makes the children presentational — focus landing inside it has no role or name to announce.',
+        i18n: {
+          summaryKey: 'presentationalChildrenFocusableAbsent_summary_fail',
+          hintKey: 'presentationalChildrenFocusableAbsent_hint_fail',
+          params: { role, focusableElements: dedupedTabStopTags.join(', ') }
+        },
+        data: {
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
+          details: {
+            reasonCode: 'PRESENTATIONAL_CHILDREN_FOCUSABLE_CONTENT',
+            role,
+            element: lower(el.tagName),
+            focusableElements: tabStopTags
+          }
+        }
+      })
+    );
+  }
+
+  if (applicableCount === 0) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  if (occurrences.length) {
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'fail',
+      severity: rule.defaultSeverity || 'serious',
+      occurrences
+    };
+  }
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "progressbar-name-present": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
@@ -28924,6 +29245,10 @@ const I18N = {
     "nestedInteractiveControlsAbsent_description": "Checks that an interactive control (link, button, form control, or ARIA widget role) does not contain another interactive control.",
     "nestedInteractiveControlsAbsent_summary_fail": "This <{{element}}> contains one or more nested interactive controls: {{nestedElements}}.",
     "nestedInteractiveControlsAbsent_hint_fail": "Move the nested interactive control(s) outside this element; nested interactive controls are not reliably operable via assistive technology.",
+    "presentationalChildrenFocusableAbsent_title": "Roles with presentational children must not contain focusable content",
+    "presentationalChildrenFocusableAbsent_description": "Checks that an element whose role makes its children presentational (button, checkbox, img, option, radio, slider, switch, tab, ...) contains no descendant that takes a tab stop.",
+    "presentationalChildrenFocusableAbsent_summary_fail": "This role=\"{{role}}\" element makes its children presentational, but it contains content that is still part of sequential focus navigation ({{focusableElements}}).",
+    "presentationalChildrenFocusableAbsent_hint_fail": "Move the focusable content outside this element, or remove the role that makes the children presentational — focus landing inside it has no role or name to announce.",
     "bypassBlocksPresent_title": "Page must provide a way to bypass repeated blocks",
     "bypassBlocksPresent_description": "Checks that the page has at least one recognized WCAG 2.4.1 bypass-blocks mechanism: a main landmark, a working same-page anchor link, or a heading.",
     "bypassBlocksPresent_summary_cantTell": "No recognized way to bypass repeated blocks of content was detected on this page — verify a bypass mechanism exists.",
