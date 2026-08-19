@@ -23,12 +23,18 @@
  *   aria-label/aria-labelledby/label[for]/title without falling back to
  *   subtree text content — the right shape for this element.
  * - An iframe the author marked decorative (role="none"/"presentation") is
- *   out of scope, matching ACT cae760: the author's stated intent is that
- *   the frame carries nothing to announce, so demanding a name for it
- *   contradicts the markup rather than improving it. A global ARIA
- *   attribute or focusability on such an iframe restores its role and
- *   makes the marking a lie — that contradiction is
- *   presentation-role-conflict's report, not this rule's.
+ *   out of scope ONLY when it is not focusable. Unlike most elements,
+ *   <iframe>/<frame> are natively focusable by default (no tabindex
+ *   needed) — per ACT cae760's own reasoning, "because iframe elements are
+ *   part of sequential focus navigation, the explicit semantic role of
+ *   none will be ignored, due to Presentational Roles Conflict
+ *   Resolution." So role="none"/"presentation" only actually exempts a
+ *   frame when something also removes it from the tab order
+ *   (tabindex="-1" or negative); a plain `<iframe role="none">` with no
+ *   tabindex keeps its default native focusability and still needs a
+ *   name. helpers.getFocusableInfo doesn't model this (it has no native-
+ *   focusability entry for iframe/frame at all), so focusability is
+ *   computed locally here instead.
  */
 
 const id = 'iframe-name-present';
@@ -70,12 +76,28 @@ function runInPage(ctx) {
   const occurrences = [];
   let applicableCount = 0;
 
+  // <iframe>/<frame> are natively focusable by default (no tabindex
+  // needed), unlike most elements — only an explicit negative tabindex
+  // removes them from the tab order.
+  function isFrameFocusable(el) {
+    try {
+      const tabindexRaw = el.getAttribute ? el.getAttribute('tabindex') : null;
+      if (tabindexRaw == null) return true;
+      const n = Number(String(tabindexRaw).trim());
+      if (Number.isFinite(n) && n < 0) return false;
+      return true;
+    } catch {
+      return true;
+    }
+  }
+
   for (const el of nodes) {
     if (!el || !el.tagName) continue;
 
     const roleAttr = el.getAttribute ? String(el.getAttribute('role') || '') : '';
     const firstRoleToken = roleAttr.trim().toLowerCase().split(/\s+/)[0];
-    if (firstRoleToken === 'none' || firstRoleToken === 'presentation') continue;
+    if ((firstRoleToken === 'none' || firstRoleToken === 'presentation') && !isFrameFocusable(el))
+      continue;
 
     if (helpers.isAccTreeEligible) {
       const elig = helpers.isAccTreeEligible(el);
