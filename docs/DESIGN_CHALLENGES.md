@@ -225,3 +225,13 @@ One existing test changed meaning with it: a bare `<option>` under `role="listbo
 **Decision (2026-08-19):** widened the applicability selector to `a[href], [role="link"]`, and added a regex fallback (`resolveOnclickLocation`) that extracts a destination from a `location='...'`/`location.href='...'`/`location.assign('...')`/`location.replace('...')` pattern in the element's `onclick` attribute when it has no real `href`. This rule is `cantTell`-capped (never asserts `fail`), so an `onclick` shape the regex doesn't recognize simply isn't resolved — a recall cost, not a false-fail risk.
 
 **Status:** resolved 2026-08-19 — `fd3a94` and `b20e66` both run clean against the live ACT corpus (0/19, 0/21).
+
+### `iframe-name-present`'s focusability exemption was filed as a deliberate broader-than-ACT scope choice — actually an implementation accident, now fixed
+
+**Decision as it stood:** the mapping doc filed the remaining `cae760` mismatch as deliberate: "`iframe-name-present` doesn't exempt a `tabindex="-1"` iframe the way ACT's focus-reachability precondition does; arguably more useful for AT rotor/frame-list navigation, not just Tab order" — framed as an intentional, considered choice to go beyond ACT's own scope.
+
+**Why it was questioned:** re-reading ACT cae760's own Applicability text directly: "This rule applies to `iframe` elements that are included in the accessibility tree **and** that can be accessed by sequential focus navigation" — two independent, unconditional AND conditions, not a role-scoped exception. The codebase's own `isFrameFocusable()` exemption was written nested *inside* the `role="none"`/`"presentation"` branch (added specifically to fix the earlier presentational-conflict-resolution case), so it only ever fired for a decorative-marked iframe — a plain `<iframe tabindex="-1">` with no role at all, which is cae760's own passed/inapplicable example, fell straight through and still got flagged. The "arguably more useful for AT rotor navigation" rationale reads like a justification invented after the gap was noticed, not a decision made on its own merits before shipping.
+
+**Decision (2026-08-19):** the focusability check now gates applicability directly (`if (!isFrameFocusable(el)) continue;`), independent of role — matching cae760's own unconditional AND. A focusable `role="none"` iframe still needs a name (Presentational Roles Conflict Resolution correctly keeps applying there); a non-focusable iframe of any role, or no role, is now out of scope, matching the live rule exactly.
+
+**Status:** resolved 2026-08-19 — `cae760` runs clean against the live ACT corpus (0/10).

@@ -74,6 +74,12 @@ test(`${RULE_ID}: notApplicable for an iframe marked decorative AND out of the t
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+test(`${RULE_ID}: notApplicable for a plain iframe with tabindex="-1" and no role at all — ACT cae760's applicability requires accessibility-tree eligibility AND sequential focus navigation unconditionally, not only as a role="none" exception`, () => {
+  const html = `<!doctype html><html><body><iframe id="a" tabindex="-1" src="/x.html"></iframe></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
 test(`${RULE_ID}: fixture coverage (tests/fixtures/iframe-name-present-all-scenarios.html)`, () => {
   const fixturePath = path.join(
     __dirname,
@@ -92,7 +98,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/iframe-name-present-all-scena
     'ifn_case_02',
     'ifn_case_03',
     'ifn_case_06',
-    'ifn_case_08'
+    'ifn_case_08',
+    'ifn_case_09'
   ];
 
   for (const id of expectedFailIds) {
