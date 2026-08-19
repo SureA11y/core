@@ -9,6 +9,12 @@
  * @standard WCAG 2.2
  * @sc 1.1.1
  * @type manual
+ * @applicability
+ *   Applies to <area> elements whose alt attribute is present and non-empty.
+ *   The <area> must belong to a <map> that an <img usemap> actually
+ *   references, and both that <img> and the <area> itself must be included
+ *   in the accessibility tree; an <area> in an unused map is out of scope.
+ *   role="presentation"/"none" takes an element out unless it is focusable.
  * @expectation
  *   Human review is required to confirm that the provided text alternative is accurate and appropriate.
  */

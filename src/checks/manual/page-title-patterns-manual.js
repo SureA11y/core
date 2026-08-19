@@ -2,6 +2,30 @@
 
 'use strict';
 
+/**
+ * @check page-title-patterns
+ * @atomic true
+ * @summary Manual review: page titles that may not describe their page
+ * @standard WCAG 2.2
+ * @sc 2.4.2
+ * @applicability
+ *   Applies to a run over a whole document whose <title> resolves to
+ *   non-empty text; a missing or empty title is page-title-present's
+ *   failure, not a pattern to review. A run narrowed by contextSelector or
+ *   by engineOptions.fragment is notApplicable, as is a title matching none
+ *   of the patterns below.
+ * @expectation
+ *   The title carries none of the conservative low-descriptiveness signals:
+ *   one of the generic titles home, homepage, welcome, untitled, page or
+ *   document; fewer than eight characters; or a template shape pairing a
+ *   generic token with a brand, such as "Home | Brand". When the
+ *   crawl.pageTitles probe supplies at least ten pages, cross-page signals
+ *   are used instead: one title repeated across distinct URLs, or a prefix
+ *   or suffix of twelve characters or more shared across the set. Every
+ *   signal is reported as cantTell — whether a title describes its page is a
+ *   judgment, so the rule never fails on a pattern alone.
+ */
+
 const id = 'page-title-patterns';
 
 const meta = {

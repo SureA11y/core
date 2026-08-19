@@ -2,6 +2,24 @@
 
 'use strict';
 
+/**
+ * @check menuitem-name-present
+ * @atomic true
+ * @summary Menu items must have an accessible name
+ * @standard WCAG 2.2
+ * @sc 4.1.2
+ * @applicability
+ *   Applies to elements carrying role="menuitem", role="menuitemcheckbox" or
+ *   role="menuitemradio" (the attribute must name one of those roles alone,
+ *   not a fallback list) that are included in the accessibility tree.
+ * @expectation
+ *   The element has a non-empty accessible name from aria-label, from an
+ *   aria-labelledby that resolves to non-empty text, from title, or — all
+ *   three roles being name-from-content — from its own subtree text, where a
+ *   descendant's own name (an <img alt>, aria-label or title) counts as that
+ *   descendant's contribution rather than only its text nodes.
+ */
+
 const id = 'menuitem-name-present';
 
 const meta = {

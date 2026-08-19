@@ -2,6 +2,25 @@
 
 'use strict';
 
+/**
+ * @check meter-name-present
+ * @atomic true
+ * @summary Elements with role="meter" must have an accessible name
+ * @standard WCAG 2.2
+ * @sc 1.1.1
+ * @applicability
+ *   Applies to elements carrying role="meter" (the attribute must name that
+ *   role alone, not a fallback list) that are included in the accessibility
+ *   tree. An element with the matching implicit role but no role attribute
+ *   is out of scope.
+ * @expectation
+ *   The element has a non-empty accessible name from aria-label, from an
+ *   aria-labelledby that resolves to non-empty text, or from title.
+ *   role="meter" is name-from-author-only, so subtree text is never
+ *   accepted: text sitting inside a custom meter widget is not reliably
+ *   exposed as its name.
+ */
+
 const id = 'meter-name-present';
 
 const meta = {

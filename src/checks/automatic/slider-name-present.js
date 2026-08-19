@@ -2,6 +2,27 @@
 
 'use strict';
 
+/**
+ * @check slider-name-present
+ * @atomic true
+ * @summary Elements with role="slider" must have an accessible name
+ * @standard WCAG 2.2
+ * @sc 4.1.2
+ * @applicability
+ *   Applies to elements carrying role="slider" (the attribute must name that
+ *   role alone, not a fallback list) that are included in the accessibility
+ *   tree. An element with the matching implicit role but no role attribute
+ *   is out of scope. A native <input type="range"> without the role belongs
+ *   to form-control-programmatic-label-present.
+ * @expectation
+ *   The element has a non-empty accessible name from aria-label, from an
+ *   aria-labelledby that resolves to non-empty text, or from title.
+ *   role="slider" is name-from-author-only, so subtree text is never
+ *   accepted: text sitting inside a custom slider widget is not reliably
+ *   exposed as its name. On a labelable element (<input role="slider">) an
+ *   associated <label> counts as well.
+ */
+
 const id = 'slider-name-present';
 
 const meta = {

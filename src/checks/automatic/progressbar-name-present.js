@@ -2,6 +2,25 @@
 
 'use strict';
 
+/**
+ * @check progressbar-name-present
+ * @atomic true
+ * @summary Elements with role="progressbar" must have an accessible name
+ * @standard WCAG 2.2
+ * @sc 1.1.1
+ * @applicability
+ *   Applies to elements carrying role="progressbar" (the attribute must name
+ *   that role alone, not a fallback list) that are included in the
+ *   accessibility tree. An element with the matching implicit role but no
+ *   role attribute is out of scope.
+ * @expectation
+ *   The element has a non-empty accessible name from aria-label, from an
+ *   aria-labelledby that resolves to non-empty text, or from title.
+ *   role="progressbar" is name-from-author-only, so subtree text is never
+ *   accepted: text sitting inside a custom progressbar widget is not
+ *   reliably exposed as its name.
+ */
+
 const id = 'progressbar-name-present';
 
 const meta = {

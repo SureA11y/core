@@ -8,6 +8,25 @@
  * @summary Pointer-operable targets should be at least 24×24 CSS px (or meet an exception)
  * @standard WCAG 2.2
  * @sc 2.5.8
+ * @applicability
+ *   Applies to <button>, <summary>, <a href>, <area href>, <input>,
+ *   <select>, <textarea> and elements with role="button"/"link" that are
+ *   pointer-reachable: rendered, not suppressed by pointer-events:none, and
+ *   with a measurable box of non-zero size. Accessibility-tree exclusion is
+ *   deliberately not a filter — an aria-hidden control is still a target a
+ *   pointer can hit. <area> is matched but never actually evaluated, for the
+ *   reason given below.
+ * @expectation
+ *   Each target is at least 24 by 24 CSS pixels, or meets one of the SC
+ *   2.5.8 exceptions this rule can establish from geometry: spacing (a
+ *   24px-diameter circle centred on the target reaches no unrelated target),
+ *   the inline exception for a link inside a run of text, or user-agent
+ *   sizing (an unstyled native checkbox or radio, detected by appearance not
+ *   having been reset to none). An undersized target too close to a
+ *   neighbour fails. Where an exception may apply but geometry cannot
+ *   confirm it — two inline links in one run of text, or a target inside an
+ *   SVG, canvas or image map that may be essential — the result is cantTell
+ *   rather than a guess.
  *
  * Notes (engine intent):
  * - This rule is DOM-based and measures pointer hit regions available to sighted pointer users.

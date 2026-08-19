@@ -9,6 +9,14 @@
  * @standard WCAG 2.2
  * @sc 1.1.1
  * @type manual
+ * @applicability
+ *   Applies to <object> elements that already carry a text alternative:
+ *   fallback text content, a non-empty aria-label, an aria-labelledby that
+ *   resolves to non-empty text, or a non-empty title. An <object> with none
+ *   of those is object-text-alternative-present's failure, not a quality
+ *   question. The element must be included in the accessibility tree, and
+ *   role="presentation"/"none" takes it out of scope unless it is focusable,
+ *   which restores its role.
  * @expectation
  *   Human review is required to confirm that the provided text alternative is accurate and appropriate.
  */

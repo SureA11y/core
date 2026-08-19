@@ -2,6 +2,26 @@
 
 'use strict';
 
+/**
+ * @check spinbutton-name-present
+ * @atomic true
+ * @summary Elements with role="spinbutton" must have an accessible name
+ * @standard WCAG 2.2
+ * @sc 4.1.2
+ * @applicability
+ *   Applies to elements carrying role="spinbutton" (the attribute must name
+ *   that role alone, not a fallback list) that are included in the
+ *   accessibility tree. An element with the matching implicit role but no
+ *   role attribute is out of scope.
+ * @expectation
+ *   The element has a non-empty accessible name from aria-label, from an
+ *   aria-labelledby that resolves to non-empty text, or from title.
+ *   role="spinbutton" is name-from-author-only, so subtree text is never
+ *   accepted: text sitting inside a custom spinbutton widget is not reliably
+ *   exposed as its name. On a labelable element (<input role="spinbutton">)
+ *   an associated <label> counts as well.
+ */
+
 const id = 'spinbutton-name-present';
 
 const meta = {

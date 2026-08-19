@@ -2,6 +2,24 @@
 
 'use strict';
 
+/**
+ * @check dialog-name-present
+ * @atomic true
+ * @summary Elements with role="dialog"/"alertdialog" must have an accessible name
+ * @standard WCAG 2.2
+ * @sc 4.1.2
+ * @applicability
+ *   Applies to elements carrying role="dialog" or role="alertdialog" (the
+ *   attribute must name one of those roles alone, not a fallback list) that
+ *   are included in the accessibility tree. A native <dialog> without an
+ *   explicit role is out of scope.
+ * @expectation
+ *   The element has a non-empty accessible name from aria-label, from an
+ *   aria-labelledby that resolves to non-empty text, or from title. Both
+ *   roles are name-from-author-only, so the heading or body text inside the
+ *   dialog is not accepted as its name unless aria-labelledby points at it.
+ */
+
 const id = 'dialog-name-present';
 
 const meta = {
