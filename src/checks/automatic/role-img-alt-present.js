@@ -176,6 +176,24 @@ function runInPage(ctx) {
     })();
     const hasValidTitle = titleRaw !== null && trim(titleRaw).length > 0;
 
+    // SVG-AAM's own accessible-name mechanism: a first-child <title>
+    // element (not the HTML title attribute) is the standard way to name
+    // an inline <svg> -- a role="img" <svg> named only this way still has
+    // a real text alternative.
+    const svgTitleChildText = (() => {
+      try {
+        const tag = (el.localName || el.tagName || '').toLowerCase();
+        if (tag !== 'svg') return '';
+        const first = el.firstElementChild;
+        const firstTag = first ? (first.localName || first.tagName || '').toLowerCase() : '';
+        if (firstTag !== 'title') return '';
+        return trim(first.textContent);
+      } catch {
+        return '';
+      }
+    })();
+    const hasValidTitleSource = hasValidTitle || !!svgTitleChildText;
+
     let nameInfo = null;
 
     // Fast outcomes first (no helper needed)
@@ -183,19 +201,19 @@ function runInPage(ctx) {
     let hasName = false;
 
     if (!hasAriaLabelAttr && !hasAriaLabelledbyAttr) {
-      if (hasValidTitle) {
+      if (hasValidTitleSource) {
         hasName = true;
       } else {
         reasonCode = 'missingTextAlternative';
       }
     } else if (hasAriaLabelAttr && !hasValidAriaLabel) {
-      if (hasValidTitle) {
+      if (hasValidTitleSource) {
         hasName = true;
       } else {
         reasonCode = 'emptyAriaLabel';
       }
     } else if (hasAriaLabelledbyAttr && !hasValidAriaLabelledbyAttr) {
-      if (hasValidTitle) {
+      if (hasValidTitleSource) {
         hasName = true;
       } else {
         reasonCode = 'emptyAriaLabelledby';

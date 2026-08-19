@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-18T20:05:34.295Z",
+  "generatedAt": "2026-08-19T03:54:46.080Z",
   "summary": {
     "total": 125,
     "withFixture": 125,
@@ -2158,12 +2158,12 @@
       "testFile": "tests/engine-checks/automatic/table-headers-attr-valid.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/table-headers-attr-valid-all-scenarios.html",
-      "totalCases": 6,
+      "totalCases": 8,
       "caseCounts": {
-        "PASS": 1,
+        "PASS": 2,
         "FAIL": 4,
         "CANTTELL": 0,
-        "OTHER": 1
+        "OTHER": 2
       }
     },
     {

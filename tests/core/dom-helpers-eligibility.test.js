@@ -83,6 +83,14 @@ test('isAccTreeEligible: content inside a closed <details> is ineligible; conten
   assert.equal(summary.eligible, true);
 });
 
+test('isAccTreeEligible: a closed <details> element itself is eligible, even though its extra content is hidden', () => {
+  const { helpers, document } = helpersFor(
+    '<details id="d"><summary>Show</summary><p>hidden body</p></details>'
+  );
+  const r = helpers.isAccTreeEligible(byId(document, 'd'));
+  assert.equal(r.eligible, true);
+});
+
 test('isAccTreeEligible: content inside an OPEN <details> is eligible', () => {
   const { helpers, document } = helpersFor(
     '<details id="d" open><p id="p">visible body</p></details>'

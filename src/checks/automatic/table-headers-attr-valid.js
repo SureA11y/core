@@ -9,11 +9,16 @@
  * @standard WCAG 2.2
  * @sc 1.3.1
  * @applicability
- *   Applies to <td>/<th> elements that carry a non-empty headers attribute.
+ *   Applies to <td>/<th> elements that carry a non-empty headers attribute,
+ *   within a <table> that is itself visible and included in the
+ *   accessibility tree (a table with role="presentation"/"none" is out of
+ *   scope, matching ACT a25f45).
  * @expectation
  *   Every id token in the headers attribute resolves to an element that:
- *   (a) exists, (b) is a <th> element, (c) is inside the same <table> as
- *   the referencing cell, and (d) is not the cell itself.
+ *   (a) exists, (b) is a cell (<td> or <th>) of the same <table> as the
+ *   referencing cell, and (c) is not the cell itself. A <td> serving as a
+ *   header via role="columnheader"/"rowheader" is a valid target, same as
+ *   a plain <th> -- ACT a25f45 does not require the native tag.
  * @implementation-notes
  * - One occurrence per offending cell (not per bad token), listing every
  *   invalid reference.
@@ -27,7 +32,7 @@ const id = 'table-headers-attr-valid';
 const meta = {
   title: 'Table cell "headers" attribute must reference valid header cells',
   description:
-    'Checks that each id in a <td>/<th> headers attribute resolves to a <th> element within the same table (not missing, not a non-th element, not itself).',
+    'Checks that each id in a <td>/<th> headers attribute resolves to a cell (<td> or <th>) within the same table (not missing, not a non-cell element, not itself).',
   i18n: {
     titleKey: 'tableHeadersAttrValid_title',
     descriptionKey: 'tableHeadersAttrValid_description'
@@ -69,9 +74,18 @@ function runInPage(ctx) {
     const ids = raw.split(/\s+/).filter(Boolean);
     if (!ids.length) continue;
 
+    const table = el.closest ? el.closest('table') : null;
+
+    const tableRole =
+      table && table.getAttribute
+        ? String(table.getAttribute('role') || '')
+            .trim()
+            .toLowerCase()
+        : '';
+    if (tableRole === 'presentation' || tableRole === 'none') continue;
+
     applicableCount += 1;
 
-    const table = el.closest ? el.closest('table') : null;
     const invalid = [];
 
     for (const headerId of ids) {
@@ -90,8 +104,9 @@ function runInPage(ctx) {
         invalid.push({ id: headerId, reason: 'self-reference' });
         continue;
       }
-      if (!ref.tagName || ref.tagName.toLowerCase() !== 'th') {
-        invalid.push({ id: headerId, reason: 'not-a-th' });
+      const refTag = ref.tagName ? ref.tagName.toLowerCase() : '';
+      if (refTag !== 'th' && refTag !== 'td') {
+        invalid.push({ id: headerId, reason: 'not-a-cell' });
         continue;
       }
       if (table && (!ref.closest || ref.closest('table') !== table)) {
@@ -108,7 +123,7 @@ function runInPage(ctx) {
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This cell’s headers attribute references one or more invalid header cells.',
-        hint: 'Update the headers attribute so every id refers to a <th> element within the same table.',
+        hint: 'Update the headers attribute so every id refers to a cell (<td> or <th>) within the same table.',
         i18n: {
           summaryKey: 'tableHeadersAttrValid_summary_fail',
           hintKey: 'tableHeadersAttrValid_hint_fail',
