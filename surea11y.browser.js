@@ -3281,8 +3281,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "img-alt-decorative",
-    "title": "<img> with alt=\"\" must be decorative (manual review)",
-    "description": "Flags <img> elements with empty alt for human review that they are purely decorative.",
+    "title": "Excluded <img>/<canvas>/<svg> must be decorative (manual review)",
+    "description": "Flags <img>, <canvas> and <svg> elements excluded from the accessibility tree (aria-hidden, role=\"none\"/\"presentation\", empty alt, or an unlabeled svg/canvas) for human review that they are purely decorative.",
     "i18n": {
       "titleKey": "img_altDecorative_title",
       "descriptionKey": "img_altDecorative_description"
@@ -19216,56 +19216,207 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           }
         };
 
-  const isAccTreeEligible =
-    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+  const isIncludedInAccessibilityTree =
+    helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+      ? helpers.isIncludedInAccessibilityTree
+      : helpers && typeof helpers.isAccTreeEligible === 'function'
+        ? helpers.isAccTreeEligible
+        : null;
 
   const getFocusableInfo =
     helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
 
-  function isRolePresentationExcluded(el) {
-    const role = (() => {
+  const getAccessibleNameInfo =
+    helpers && typeof helpers.getAccessibleNameInfo === 'function'
+      ? helpers.getAccessibleNameInfo
+      : null;
+
+  const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
+
+  function trim(v) {
+    try {
+      return (v == null ? '' : String(v)).trim();
+    } catch {
+      return '';
+    }
+  }
+
+  function getExplicitRole(el) {
+    if (ariaHelpers && typeof ariaHelpers.getExplicitRole === 'function') {
       try {
-        return String(el.getAttribute('role') || '')
-          .trim()
-          .toLowerCase();
+        return ariaHelpers.getExplicitRole(el) || '';
       } catch {
         return '';
       }
-    })();
-    if (role !== 'presentation' && role !== 'none') return false;
+    }
+    try {
+      const raw = trim(el.getAttribute('role'));
+      return raw ? raw.split(/\s+/)[0].toLowerCase() : '';
+    } catch {
+      return '';
+    }
+  }
 
-    // Exclude only when NOT focusable (mirrors img-alt-present policy)
-    let focusable;
+  function isFocusable(el) {
     if (getFocusableInfo) {
-      const fi = (() => {
-        try {
-          return getFocusableInfo(el, ctx);
-        } catch {
-          return null;
-        }
-      })();
-      focusable = !!(fi && fi.focusable);
-    } else {
+      try {
+        const fi = getFocusableInfo(el, ctx);
+        return !!(fi && fi.focusable);
+      } catch {
+        return false;
+      }
+    }
+    try {
       const tabindex = el.getAttribute('tabindex');
-      focusable =
+      return (
         tabindex != null &&
         String(tabindex).trim() !== '' &&
-        !Number.isNaN(Number(String(tabindex).trim()));
+        !Number.isNaN(Number(String(tabindex).trim()))
+      );
+    } catch {
+      return false;
     }
-    return !focusable;
+  }
+
+  function isDomVisible(el) {
+    if (!el) return false;
+    if (helpers && helpers.isDomVisibleEligible)
+      return !!helpers.isDomVisibleEligible(el, ctx, { targetSet: 'dom' }).eligible;
+    if (helpers && helpers.getEligibilityInfo)
+      return !!helpers.getEligibilityInfo(el, ctx, { targetSet: 'dom' }).eligible;
+    return true;
+  }
+
+  // Same offscreen-hint pattern as avoid-inline-spacing.js.
+  function isOffscreen(el) {
+    if (!helpers || typeof helpers.getVisibilityHintsInfo !== 'function') return false;
+    try {
+      const info = helpers.getVisibilityHintsInfo(el, ctx, {});
+      return !!(info && Array.isArray(info.hints) && info.hints.indexOf('offscreen') !== -1);
+    } catch {
+      return false;
+    }
+  }
+
+  function hasAriaNamingAttr(el) {
+    try {
+      return el.getAttribute('aria-label') != null || el.getAttribute('aria-labelledby') != null;
+    } catch {
+      return false;
+    }
+  }
+
+  // Same first-child <title>/<desc> convention as svg-text-alternative-present.js.
+  function hasNonEmptyFirstChildTitleOrDesc(svg) {
+    try {
+      const first = svg.firstElementChild;
+      const tn = first ? (first.localName || first.tagName || '').toLowerCase() : '';
+      if (tn === 'title' || tn === 'desc') return !!trim(first.textContent);
+    } catch {
+      // ignore
+    }
+    return false;
+  }
+
+  // General exclusion: aria-hidden, inert, or otherwise not included per the
+  // shared eligibility model. Visibility is checked separately beforehand,
+  // so a display:none/hidden element never reaches this path.
+  function isGenerallyExcluded(el) {
+    if (!isIncludedInAccessibilityTree) return false;
+    try {
+      const r = isIncludedInAccessibilityTree(el, ctx);
+      if (typeof r === 'boolean') return !r;
+      return !(r && r.eligible !== false);
+    } catch {
+      return false;
+    }
+  }
+
+  // Presentational exclusion: explicit role="none"/"presentation", or (img
+  // only) the native alt="" marker — both overridden by focusability, per
+  // ARIA conflict resolution (a focusable element is never presentational).
+  function isPresentationallyExcluded(el, tag) {
+    const role = getExplicitRole(el);
+    let presentational = role === 'presentation' || role === 'none';
+    if (!presentational && tag === 'img') {
+      const alt = el.getAttribute('alt');
+      presentational = alt != null && trim(alt) === '';
+    }
+    if (!presentational) return false;
+    return !isFocusable(el);
+  }
+
+  // ACT e88epe's "ignored svg": an implicit graphics-document role (no
+  // explicit role, or role explicitly restated as graphics-document) with
+  // no accessible name and not focusable. An svg explicitly given role="img"
+  // /"graphics-symbol", an aria-name, a <title>/<desc>, or a tab stop is
+  // "included" — a naming question for svg-text-alternative-present, not
+  // this rule's "is it decorative" question.
+  function isIgnoredSvg(el) {
+    const role = getExplicitRole(el);
+    if (role && role !== 'graphics-document') return false;
+    if (hasAriaNamingAttr(el)) return false;
+    if (hasNonEmptyFirstChildTitleOrDesc(el)) return false;
+    if (isFocusable(el)) return false;
+    return true;
+  }
+
+  // ACT e88epe's "ignored canvas": no explicit role at all and no
+  // accessible name. Canvas fallback content as a naming mechanism is not
+  // modeled here (a separate, narrower question than this rule needs to
+  // settle — see docs/DESIGN_CHALLENGES.md).
+  function isIgnoredCanvas(el) {
+    const role = getExplicitRole(el);
+    if (role) return false;
+    if (hasAriaNamingAttr(el)) return false;
+    return true;
+  }
+
+  const AUTHOR_NAME_MECHANISMS = new Set(['aria-label', 'aria-labelledby', 'title', 'label']);
+
+  // ACT e88epe's own exception: never applies under an ancestor already
+  // named by the author. The common real case is an icon-only button
+  // (<button aria-label="Close"><svg>...</svg></button>) that already has a
+  // correct name from the button itself — whether the svg "is decorative"
+  // is moot, and flagging it would just be noise on ordinary icon usage.
+  function hasAncestorNamedFromAuthor(el) {
+    if (!getAccessibleNameInfo) return false;
+    const getComposedParent =
+      helpers && typeof helpers.composedParent === 'function'
+        ? helpers.composedParent
+        : (n) => (n && n.parentElement ? n.parentElement : null);
+
+    let cur = getComposedParent(el);
+    let guard = 0;
+    while (cur && guard++ < 200) {
+      if (cur.nodeType === 1) {
+        try {
+          const info = getAccessibleNameInfo(cur, ctx, { maxRefs: 8 });
+          if (
+            info &&
+            info.present &&
+            trim(info.value) &&
+            AUTHOR_NAME_MECHANISMS.has(info.mechanism)
+          )
+            return true;
+        } catch {
+          // ignore
+        }
+      }
+      cur = getComposedParent(cur);
+    }
+    return false;
   }
 
   const els = (() => {
-    // Only likely candidates:
-    // - alt="" (exact)
-    // - alt that starts/ends with space (to catch whitespace-only like "   ")
-    const sel = 'img[alt=""], img[alt^=" "], img[alt$=" "]';
+    const sel = 'img, canvas, svg';
     try {
       return Array.from((queryAllSmart ? queryAllSmart(sel) : queryAll(sel)) || []);
     } catch {
       return queryAll(sel);
     }
   })();
+
   const uniqueEls = [];
   const seen = new Set();
   for (const el of els) {
@@ -19275,7 +19426,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
-  if (!els.length) {
+  if (!uniqueEls.length) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
@@ -19283,39 +19434,33 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of uniqueEls) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !el.tagName) continue;
+    const tag = el.tagName.toLowerCase();
 
-    if (isAccTreeEligible) {
-      const elig = (() => {
-        try {
-          return isAccTreeEligible(el, ctx);
-        } catch {
-          return { eligible: true, reasons: [] };
-        }
-      })();
-      if (elig && elig.eligible === false) continue;
-    }
+    if (!isDomVisible(el)) continue;
+    if (isOffscreen(el)) continue;
 
-    if (isRolePresentationExcluded(el)) continue;
+    let excluded = isGenerallyExcluded(el);
+    if (!excluded) excluded = isPresentationallyExcluded(el, tag);
+    if (!excluded && tag === 'svg') excluded = isIgnoredSvg(el);
+    if (!excluded && tag === 'canvas') excluded = isIgnoredCanvas(el);
 
-    // Rule-specific applicability (only elements that already have a text alternative mechanism)
-    const rawAlt = el.getAttribute('alt');
-    if (rawAlt == null) continue;
-    if (String(rawAlt).trim() !== '') continue;
+    if (!excluded) continue;
+    if (hasAncestorNamedFromAuthor(el)) continue;
 
     applicableCount += 1;
 
     const baseOccurrence = {
-      summary: 'Review whether <img> is decorative (alt="").',
-      hint: 'Confirm the image is purely decorative. If it conveys information or function, provide meaningful alt text.',
+      summary: `Review whether this <${tag}> is decorative.`,
+      hint: 'Confirm the element is purely decorative. If it conveys information or function, give it a real text alternative (or an accessible name) instead of excluding it.',
       i18n: {
         summaryKey: 'img_altDecorative_summary_cantTell',
         hintKey: 'img_altDecorative_hint_cantTell',
-        params: { element: 'img' }
+        params: { element: tag }
       },
       data: {
         visibilityFilter: { targetSet: 'acc', accEligible: null, reasons: [] },
-        details: null
+        details: { reasonCode: 'EXCLUDED_ELEMENT_REVIEW', element: tag }
       }
     };
 
@@ -30393,10 +30538,10 @@ const I18N = {
     "img_altQuality_description": "Flags <img> elements with non-empty alt text for human review of appropriateness.",
     "img_altQuality_summary_cantTell": "Review alt text on <img> for accuracy and appropriateness.",
     "img_altQuality_hint_cantTell": "Ensure the alt text conveys the image’s purpose/information in context (not redundant, not filename-like).",
-    "img_altDecorative_title": "<img> with alt=\"\" must be decorative (manual review)",
-    "img_altDecorative_description": "Flags <img> elements with empty alt for human review that they are purely decorative.",
-    "img_altDecorative_summary_cantTell": "Review whether <img> is decorative (alt=\"\").",
-    "img_altDecorative_hint_cantTell": "Confirm the image is purely decorative. If it conveys information or function, provide meaningful alt text.",
+    "img_altDecorative_title": "Excluded <img>/<canvas>/<svg> must be decorative (manual review)",
+    "img_altDecorative_description": "Flags <img>, <canvas> and <svg> elements excluded from the accessibility tree (aria-hidden, role=\"none\"/\"presentation\", empty alt, or an unlabeled svg/canvas) for human review that they are purely decorative.",
+    "img_altDecorative_summary_cantTell": "Review whether this <{{element}}> is decorative.",
+    "img_altDecorative_hint_cantTell": "Confirm the element is purely decorative. If it conveys information or function, give it a real text alternative (or an accessible name) instead of excluding it.",
     "area_altQuality_title": "<area> alt text must be appropriate (manual review)",
     "area_altQuality_description": "Flags <area> elements with non-empty alt text for human review of appropriateness.",
     "area_altQuality_summary_cantTell": "Review alt text on <area> for accuracy and appropriateness.",
