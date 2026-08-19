@@ -20,6 +20,7 @@
   { "actId": "4e8ab6", "actName": "Element with role attribute has required states and properties", "ourRuleIds": ["aria-required-attr"], "matchType": "exact" },
   { "actId": "e086e5", "actName": "Form field has non-empty accessible name", "ourRuleIds": ["form-control-programmatic-label-present", "textbox-name-present", "combobox-name-present", "listbox-name-present", "searchbox-name-present", "slider-name-present", "spinbutton-name-present", "binary-control-name-present", "menuitem-name-present"], "matchType": "family" },
   { "actId": "a25f45", "actName": "Headers attribute specified on a cell refers to cells in the same table element", "ourRuleIds": ["table-headers-attr-valid"], "matchType": "exact" },
+  { "actId": "b49b2e", "actName": "Heading is descriptive", "ourRuleIds": ["heading-quality"], "matchType": "partial" },
   { "actId": "ffd0e9", "actName": "Heading has non-empty accessible name", "ourRuleIds": ["empty-heading"], "matchType": "family" },
   { "actId": "b5c3f8", "actName": "HTML page has lang attribute", "ourRuleIds": ["html-lang-attr-present"], "matchType": "exact" },
   { "actId": "2779a5", "actName": "HTML page has non-empty title", "ourRuleIds": ["page-title-present"], "matchType": "exact" },

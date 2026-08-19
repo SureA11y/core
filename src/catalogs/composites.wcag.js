@@ -227,6 +227,18 @@ module.exports = [
   },
 
   {
+    id: 'wcag-2.4.6-headings-and-labels',
+    checksIds: ['heading-quality'],
+    meta: {
+      title: 'Headings and Labels',
+      description:
+        'Rollup of checks flagging headings whose text is a placeholder rather than a description of the content that follows.',
+      wcagSc: ['2.4.6'],
+      level: 'AA'
+    }
+  },
+
+  {
     id: 'wcag-2.4.7-focus-visible',
     checksIds: ['aria-hidden-focus', 'css-hidden-focus', 'manual-review'],
     meta: {

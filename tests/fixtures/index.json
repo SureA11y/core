@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-08-19T06:08:56.099Z",
+  "generatedAt": "2026-08-19T06:29:12.155Z",
   "summary": {
-    "total": 126,
-    "withFixture": 126,
+    "total": 127,
+    "withFixture": 127,
     "withoutFixture": 0
   },
   "rows": [
@@ -927,6 +927,25 @@
         "FAIL": 0,
         "CANTTELL": 1,
         "OTHER": 0
+      }
+    },
+    {
+      "ruleId": "heading-quality",
+      "title": "Heading text should be descriptive, not a placeholder",
+      "type": "manual",
+      "wcagSc": [
+        "2.4.6"
+      ],
+      "ruleFile": "src/checks/manual/heading-quality-manual.js",
+      "testFile": "tests/engine-checks/manual/heading-quality.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/heading-quality-all-scenarios.html",
+      "totalCases": 12,
+      "caseCounts": {
+        "PASS": 4,
+        "FAIL": 0,
+        "CANTTELL": 6,
+        "OTHER": 2
       }
     },
     {
