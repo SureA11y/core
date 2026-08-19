@@ -25,6 +25,7 @@ These have no comparably safe heuristic at this engine's confidence bar (`fail` 
 - **Fine-grained time-based-media sub-checks** (WCAG 1.2.x has ~8 distinct ACT-rule-level cases beyond what's built) — audio/video content itself is fundamentally unverifiable from static markup; the two broadest, safest cases are covered (`media-alternative-transcript-evidence`, `video-caption`), the narrower ones are not, by design.
 - **Images-of-text content analysis** (WCAG 1.4.5/1.4.9) — would need OCR-equivalent image understanding; out of scope for a static-markup engine.
 - **Motion-actuation controls** (WCAG 2.5.4) — niche, low real-world incidence; not prioritized, not structurally impossible.
+- **`img-alt-decorative`'s two ACT e88epe edge cases** — an `<img>` whose current network request state isn't "completely available" (still loading, or broken), and a `<canvas>` that is fully transparent (nothing actually drawn on it), are both exempt from ACT's own applicability. Neither is decidable from a static DOM scan (no image decoding, no canvas pixel readback), so both are left in scope rather than exempted — a rare false positive a human reviewer dismisses at a glance, safer than silently under-reporting a real excluded/undecorative element.
 
 ## What this means in practice
 
