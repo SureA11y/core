@@ -7771,6 +7771,7 @@ const I18N = {
     "contrastComputable_cantTell_engineFailure": "Die Berechenbarkeit des Kontrasts konnte aufgrund eines internen Engine-Fehlers nicht bestimmt werden ({{reasonCode}}).",
     "contrastComputable_cantTell_backdropFilter": "Der Kontrast ist nicht berechenbar, weil backdrop-filter verwendet wird ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_filterOrBackdropFilter": "Der Kontrast ist nicht berechenbar, weil filter verwendet wird ({{blockerProperty}}={{blockerValue}}).",
+    "contrastComputable_cantTell_textShadow": "Der Kontrast ist nicht berechenbar, weil ein text-shadow verwendet wird, der zusätzlichen Kontrast liefern könnte, den diese Berechnung nicht berücksichtigt ({{blockerProperty}}={{blockerValue}}).",
     "contrastMinimum_title": "Text erfüllt den Mindestfarbkontrast (AA)",
     "contrastMinimum_description": "Prüft, ob sichtbarer Text ein Kontrastverhältnis von mindestens 4,5:1 (normal) oder 3:1 (groß) aufweist, sofern der Kontrast aus CSS berechenbar ist.",
     "contrastMinimum_fail_belowThreshold": "Das Element weist einen unzureichenden Farbkontrast von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).",
@@ -8436,6 +8437,7 @@ const I18N = {
     "contrastComputable_cantTell_engineFailure": "Contrast computability could not be determined due to an internal engine error ({{reasonCode}}).",
     "contrastComputable_cantTell_backdropFilter": "Contrast is not computable because backdrop-filter is used ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_filterOrBackdropFilter": "Contrast is not computable because filter is used ({{blockerProperty}}={{blockerValue}}).",
+    "contrastComputable_cantTell_textShadow": "Contrast is not computable because a text-shadow is used, which may add contrast this calculation does not account for ({{blockerProperty}}={{blockerValue}}).",
     "contrastMinimum_title": "Text meets minimum color contrast (AA)",
     "contrastMinimum_description": "Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3:1 (large), when contrast is computable from CSS.",
     "contrastMinimum_fail_belowThreshold": "Element has insufficient color contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).",
@@ -9101,6 +9103,7 @@ const I18N = {
     "contrastComputable_cantTell_engineFailure": "No se pudo determinar la computabilidad del contraste debido a un error interno del motor ({{reasonCode}}).",
     "contrastComputable_cantTell_backdropFilter": "El contraste no es computable porque se usa backdrop-filter ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_filterOrBackdropFilter": "El contraste no es computable porque se usa filter ({{blockerProperty}}={{blockerValue}}).",
+    "contrastComputable_cantTell_textShadow": "El contraste no es computable porque se usa text-shadow, que puede aportar contraste que este cálculo no tiene en cuenta ({{blockerProperty}}={{blockerValue}}).",
     "contrastMinimum_title": "El texto cumple el contraste de color mínimo (AA)",
     "contrastMinimum_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 4.5:1 (normal) o 3:1 (grande), cuando el contraste es computable a partir de CSS.",
     "contrastMinimum_fail_belowThreshold": "El elemento tiene un contraste de color insuficiente de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).",
@@ -9766,6 +9769,7 @@ const I18N = {
     "contrastComputable_cantTell_engineFailure": "La calculabilité du contraste n’a pas pu être déterminée en raison d’une erreur interne du moteur ({{reasonCode}}).",
     "contrastComputable_cantTell_backdropFilter": "Le contraste ne peut pas être calculé car la propriété backdrop-filter est utilisée ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_filterOrBackdropFilter": "Le contraste ne peut pas être calculé car une propriété filter ou backdrop-filter est utilisée ({{blockerProperty}}={{blockerValue}}).",
+    "contrastComputable_cantTell_textShadow": "Le contraste ne peut pas être calculé car une propriété text-shadow est utilisée, ce qui peut apporter un contraste que ce calcul ne prend pas en compte ({{blockerProperty}}={{blockerValue}}).",
     "contrastMinimum_title": "Le texte respecte le contraste minimum (AA)",
     "contrastMinimum_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 4,5:1 (texte normal) ou 3:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
     "contrastMinimum_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
@@ -11185,10 +11189,13 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   const __localHasBgImgCache = new WeakMap();
   const __localHasBlendModeCache = new WeakMap();
   const __localHasFilterCache = new WeakMap();
+  const __localTextShadowInfoCache = new WeakMap();
   const __hasBgImgCache = __getSharedWeakMapCache('__hasBgImgCache') || __localHasBgImgCache;
   const __hasBlendModeCache =
     __getSharedWeakMapCache('__hasBlendModeCache') || __localHasBlendModeCache;
   const __hasFilterCache = __getSharedWeakMapCache('__hasFilterCache') || __localHasFilterCache;
+  const __textShadowInfoCache =
+    __getSharedWeakMapCache('__textShadowInfoCache') || __localTextShadowInfoCache;
 
   // -------- Visibility mode resolution for getTextScan --------
 
@@ -12058,6 +12065,31 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
   }
 
+  // Takes the ALREADY-READ raw text-shadow string, never the style object
+  // -- see __textShadowInfoEl's header comment for why this property must
+  // only ever be read once per element.
+  function hasTextShadow(raw) {
+    try {
+      const v = raw == null ? '' : String(raw).trim();
+      if (!v || v.toLowerCase() === 'none') return false;
+      // jsdom's cssstyle serializes an absent/"none" text-shadow as a
+      // fully-transparent color string (e.g. "rgba(0, 0, 0, 0)") rather
+      // than the literal "none" it should be per spec, and truncates a
+      // real declared shadow down to just its color component (dropping
+      // the offset/blur lengths) -- so `v` here is sometimes a bare color.
+      // Parsing it as one and checking for zero alpha catches jsdom's
+      // "no shadow" default without mistaking it for a real one; a value
+      // that doesn't parse as a pure color (the real multi-value shorthand
+      // a real browser reports) falls through and is treated as a real
+      // shadow, the safe direction.
+      const c = parseCssColorToRgba(v);
+      if (c && typeof c.a === 'number' && c.a === 0) return false;
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   function __hasBackgroundImageOrGradientEl(el, cs) {
     try {
       if (!el || el.nodeType !== 1) return hasBackgroundImageOrGradient(cs);
@@ -12091,6 +12123,37 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       return v;
     } catch {
       return false;
+    }
+  }
+
+  // jsdom's cssstyle has a confirmed bug where reading a computed
+  // `text-shadow` value a SECOND time -- via any accessor (`.textShadow`
+  // or `getPropertyValue`), even from a freshly-requested
+  // CSSStyleDeclaration for the same element -- silently returns a
+  // different, "no shadow" result instead of the real declared value (see
+  // docs/LIMITATIONS.md). Reading it exactly once and caching the {has,
+  // value} pair here avoids compounding that with a second read from
+  // elsewhere in this same run (e.g. this function being called more than
+  // once for the same element). The shared cache this uses is
+  // deliberately reset at the start of every run (see dom-runner.js), so
+  // this does not — and is not relied on to — survive across two
+  // independent runs against the same window; a genuinely fresh jsdom
+  // window, or a real browser, is unaffected either way.
+  function __textShadowInfoEl(el, cs) {
+    try {
+      if (!el || el.nodeType !== 1) {
+        const raw = cs && cs.textShadow; // single read
+        const value = raw == null ? '' : String(raw);
+        return { has: hasTextShadow(value), value };
+      }
+      if (__textShadowInfoCache.has(el)) return __textShadowInfoCache.get(el);
+      const raw = cs && cs.textShadow; // single read, cached below -- never read again
+      const value = raw == null ? '' : String(raw);
+      const info = { has: hasTextShadow(value), value };
+      __textShadowInfoCache.set(el, info);
+      return info;
+    } catch {
+      return { has: false, value: '' };
     }
   }
 
@@ -12437,6 +12500,34 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           } catch (_e) {}
           return out;
         }
+      }
+
+      // text-shadow is a FOREGROUND property, already resolved by
+      // inheritance in `cs` on `el` itself -- unlike background-image/
+      // filter/blend-mode, it needs no ancestor walk, so it's checked once
+      // on `cur === el` rather than at every level. ACT afw4f7/09o5cg's
+      // own failed example (a low-contrast pair "rescued" by a contrasting
+      // text-shadow) gives no computation method for how a shadow affects
+      // the ratio, and this engine has no glyph-rendering model to derive
+      // one either -- rather than assert a confident fail that a real
+      // browser's rendering might contradict, this defers to manual
+      // review, the same shape as every other computability blocker here.
+      const textShadowInfo = cur === el ? __textShadowInfoEl(cur, cs) : null;
+      if (textShadowInfo && textShadowInfo.has) {
+        const out = {
+          ok: false,
+          reasonCode: 'TEXT_SHADOW',
+          blockerSelector: __getSimpleSelectorCached(
+            cur,
+            (cur.tagName || '').toLowerCase() || 'html'
+          ),
+          blockerProperty: 'text-shadow',
+          blockerValue: truncateCssValue(textShadowInfo.value, 80)
+        };
+        try {
+          if (el) __computabilityBlockerCache.set(el, out);
+        } catch (_e) {}
+        return out;
       }
 
       if (!paintOccluded && __hasBackgroundImageOrGradientEl(cur, cs)) {
@@ -33163,6 +33254,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         else summaryKey = 'contrastComputable_cantTell_filterOrBackdropFilter';
       } else if (rc === 'BACKGROUND_NOT_OPAQUE_AT_ROOT')
         summaryKey = 'contrastComputable_cantTell_rootNotOpaque';
+      else if (rc === 'TEXT_SHADOW') summaryKey = 'contrastComputable_cantTell_textShadow';
 
       const details = Object.assign(
         { reasonCode: rc },
@@ -50438,6 +50530,7 @@ const I18N = {
     "contrastComputable_cantTell_engineFailure": "Die Berechenbarkeit des Kontrasts konnte aufgrund eines internen Engine-Fehlers nicht bestimmt werden ({{reasonCode}}).",
     "contrastComputable_cantTell_backdropFilter": "Der Kontrast ist nicht berechenbar, weil backdrop-filter verwendet wird ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_filterOrBackdropFilter": "Der Kontrast ist nicht berechenbar, weil filter verwendet wird ({{blockerProperty}}={{blockerValue}}).",
+    "contrastComputable_cantTell_textShadow": "Der Kontrast ist nicht berechenbar, weil ein text-shadow verwendet wird, der zusätzlichen Kontrast liefern könnte, den diese Berechnung nicht berücksichtigt ({{blockerProperty}}={{blockerValue}}).",
     "contrastMinimum_title": "Text erfüllt den Mindestfarbkontrast (AA)",
     "contrastMinimum_description": "Prüft, ob sichtbarer Text ein Kontrastverhältnis von mindestens 4,5:1 (normal) oder 3:1 (groß) aufweist, sofern der Kontrast aus CSS berechenbar ist.",
     "contrastMinimum_fail_belowThreshold": "Das Element weist einen unzureichenden Farbkontrast von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).",
@@ -51103,6 +51196,7 @@ const I18N = {
     "contrastComputable_cantTell_engineFailure": "Contrast computability could not be determined due to an internal engine error ({{reasonCode}}).",
     "contrastComputable_cantTell_backdropFilter": "Contrast is not computable because backdrop-filter is used ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_filterOrBackdropFilter": "Contrast is not computable because filter is used ({{blockerProperty}}={{blockerValue}}).",
+    "contrastComputable_cantTell_textShadow": "Contrast is not computable because a text-shadow is used, which may add contrast this calculation does not account for ({{blockerProperty}}={{blockerValue}}).",
     "contrastMinimum_title": "Text meets minimum color contrast (AA)",
     "contrastMinimum_description": "Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3:1 (large), when contrast is computable from CSS.",
     "contrastMinimum_fail_belowThreshold": "Element has insufficient color contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).",
@@ -51768,6 +51862,7 @@ const I18N = {
     "contrastComputable_cantTell_engineFailure": "No se pudo determinar la computabilidad del contraste debido a un error interno del motor ({{reasonCode}}).",
     "contrastComputable_cantTell_backdropFilter": "El contraste no es computable porque se usa backdrop-filter ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_filterOrBackdropFilter": "El contraste no es computable porque se usa filter ({{blockerProperty}}={{blockerValue}}).",
+    "contrastComputable_cantTell_textShadow": "El contraste no es computable porque se usa text-shadow, que puede aportar contraste que este cálculo no tiene en cuenta ({{blockerProperty}}={{blockerValue}}).",
     "contrastMinimum_title": "El texto cumple el contraste de color mínimo (AA)",
     "contrastMinimum_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 4.5:1 (normal) o 3:1 (grande), cuando el contraste es computable a partir de CSS.",
     "contrastMinimum_fail_belowThreshold": "El elemento tiene un contraste de color insuficiente de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).",
@@ -52433,6 +52528,7 @@ const I18N = {
     "contrastComputable_cantTell_engineFailure": "La calculabilité du contraste n’a pas pu être déterminée en raison d’une erreur interne du moteur ({{reasonCode}}).",
     "contrastComputable_cantTell_backdropFilter": "Le contraste ne peut pas être calculé car la propriété backdrop-filter est utilisée ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_filterOrBackdropFilter": "Le contraste ne peut pas être calculé car une propriété filter ou backdrop-filter est utilisée ({{blockerProperty}}={{blockerValue}}).",
+    "contrastComputable_cantTell_textShadow": "Le contraste ne peut pas être calculé car une propriété text-shadow est utilisée, ce qui peut apporter un contraste que ce calcul ne prend pas en compte ({{blockerProperty}}={{blockerValue}}).",
     "contrastMinimum_title": "Le texte respecte le contraste minimum (AA)",
     "contrastMinimum_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 4,5:1 (texte normal) ou 3:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
     "contrastMinimum_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
@@ -53852,10 +53948,13 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   const __localHasBgImgCache = new WeakMap();
   const __localHasBlendModeCache = new WeakMap();
   const __localHasFilterCache = new WeakMap();
+  const __localTextShadowInfoCache = new WeakMap();
   const __hasBgImgCache = __getSharedWeakMapCache('__hasBgImgCache') || __localHasBgImgCache;
   const __hasBlendModeCache =
     __getSharedWeakMapCache('__hasBlendModeCache') || __localHasBlendModeCache;
   const __hasFilterCache = __getSharedWeakMapCache('__hasFilterCache') || __localHasFilterCache;
+  const __textShadowInfoCache =
+    __getSharedWeakMapCache('__textShadowInfoCache') || __localTextShadowInfoCache;
 
   // -------- Visibility mode resolution for getTextScan --------
 
@@ -54725,6 +54824,31 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
   }
 
+  // Takes the ALREADY-READ raw text-shadow string, never the style object
+  // -- see __textShadowInfoEl's header comment for why this property must
+  // only ever be read once per element.
+  function hasTextShadow(raw) {
+    try {
+      const v = raw == null ? '' : String(raw).trim();
+      if (!v || v.toLowerCase() === 'none') return false;
+      // jsdom's cssstyle serializes an absent/"none" text-shadow as a
+      // fully-transparent color string (e.g. "rgba(0, 0, 0, 0)") rather
+      // than the literal "none" it should be per spec, and truncates a
+      // real declared shadow down to just its color component (dropping
+      // the offset/blur lengths) -- so `v` here is sometimes a bare color.
+      // Parsing it as one and checking for zero alpha catches jsdom's
+      // "no shadow" default without mistaking it for a real one; a value
+      // that doesn't parse as a pure color (the real multi-value shorthand
+      // a real browser reports) falls through and is treated as a real
+      // shadow, the safe direction.
+      const c = parseCssColorToRgba(v);
+      if (c && typeof c.a === 'number' && c.a === 0) return false;
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   function __hasBackgroundImageOrGradientEl(el, cs) {
     try {
       if (!el || el.nodeType !== 1) return hasBackgroundImageOrGradient(cs);
@@ -54758,6 +54882,37 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       return v;
     } catch {
       return false;
+    }
+  }
+
+  // jsdom's cssstyle has a confirmed bug where reading a computed
+  // `text-shadow` value a SECOND time -- via any accessor (`.textShadow`
+  // or `getPropertyValue`), even from a freshly-requested
+  // CSSStyleDeclaration for the same element -- silently returns a
+  // different, "no shadow" result instead of the real declared value (see
+  // docs/LIMITATIONS.md). Reading it exactly once and caching the {has,
+  // value} pair here avoids compounding that with a second read from
+  // elsewhere in this same run (e.g. this function being called more than
+  // once for the same element). The shared cache this uses is
+  // deliberately reset at the start of every run (see dom-runner.js), so
+  // this does not — and is not relied on to — survive across two
+  // independent runs against the same window; a genuinely fresh jsdom
+  // window, or a real browser, is unaffected either way.
+  function __textShadowInfoEl(el, cs) {
+    try {
+      if (!el || el.nodeType !== 1) {
+        const raw = cs && cs.textShadow; // single read
+        const value = raw == null ? '' : String(raw);
+        return { has: hasTextShadow(value), value };
+      }
+      if (__textShadowInfoCache.has(el)) return __textShadowInfoCache.get(el);
+      const raw = cs && cs.textShadow; // single read, cached below -- never read again
+      const value = raw == null ? '' : String(raw);
+      const info = { has: hasTextShadow(value), value };
+      __textShadowInfoCache.set(el, info);
+      return info;
+    } catch {
+      return { has: false, value: '' };
     }
   }
 
@@ -55104,6 +55259,34 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           } catch (_e) {}
           return out;
         }
+      }
+
+      // text-shadow is a FOREGROUND property, already resolved by
+      // inheritance in `cs` on `el` itself -- unlike background-image/
+      // filter/blend-mode, it needs no ancestor walk, so it's checked once
+      // on `cur === el` rather than at every level. ACT afw4f7/09o5cg's
+      // own failed example (a low-contrast pair "rescued" by a contrasting
+      // text-shadow) gives no computation method for how a shadow affects
+      // the ratio, and this engine has no glyph-rendering model to derive
+      // one either -- rather than assert a confident fail that a real
+      // browser's rendering might contradict, this defers to manual
+      // review, the same shape as every other computability blocker here.
+      const textShadowInfo = cur === el ? __textShadowInfoEl(cur, cs) : null;
+      if (textShadowInfo && textShadowInfo.has) {
+        const out = {
+          ok: false,
+          reasonCode: 'TEXT_SHADOW',
+          blockerSelector: __getSimpleSelectorCached(
+            cur,
+            (cur.tagName || '').toLowerCase() || 'html'
+          ),
+          blockerProperty: 'text-shadow',
+          blockerValue: truncateCssValue(textShadowInfo.value, 80)
+        };
+        try {
+          if (el) __computabilityBlockerCache.set(el, out);
+        } catch (_e) {}
+        return out;
       }
 
       if (!paintOccluded && __hasBackgroundImageOrGradientEl(cur, cs)) {
@@ -75785,6 +75968,7 @@ const __a11yCoreCrossFrameApi = (function () {
         else summaryKey = 'contrastComputable_cantTell_filterOrBackdropFilter';
       } else if (rc === 'BACKGROUND_NOT_OPAQUE_AT_ROOT')
         summaryKey = 'contrastComputable_cantTell_rootNotOpaque';
+      else if (rc === 'TEXT_SHADOW') summaryKey = 'contrastComputable_cantTell_textShadow';
 
       const details = Object.assign(
         { reasonCode: rc },
@@ -93060,6 +93244,7 @@ const I18N = {
     "contrastComputable_cantTell_engineFailure": "Die Berechenbarkeit des Kontrasts konnte aufgrund eines internen Engine-Fehlers nicht bestimmt werden ({{reasonCode}}).",
     "contrastComputable_cantTell_backdropFilter": "Der Kontrast ist nicht berechenbar, weil backdrop-filter verwendet wird ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_filterOrBackdropFilter": "Der Kontrast ist nicht berechenbar, weil filter verwendet wird ({{blockerProperty}}={{blockerValue}}).",
+    "contrastComputable_cantTell_textShadow": "Der Kontrast ist nicht berechenbar, weil ein text-shadow verwendet wird, der zusätzlichen Kontrast liefern könnte, den diese Berechnung nicht berücksichtigt ({{blockerProperty}}={{blockerValue}}).",
     "contrastMinimum_title": "Text erfüllt den Mindestfarbkontrast (AA)",
     "contrastMinimum_description": "Prüft, ob sichtbarer Text ein Kontrastverhältnis von mindestens 4,5:1 (normal) oder 3:1 (groß) aufweist, sofern der Kontrast aus CSS berechenbar ist.",
     "contrastMinimum_fail_belowThreshold": "Das Element weist einen unzureichenden Farbkontrast von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).",
@@ -93725,6 +93910,7 @@ const I18N = {
     "contrastComputable_cantTell_engineFailure": "Contrast computability could not be determined due to an internal engine error ({{reasonCode}}).",
     "contrastComputable_cantTell_backdropFilter": "Contrast is not computable because backdrop-filter is used ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_filterOrBackdropFilter": "Contrast is not computable because filter is used ({{blockerProperty}}={{blockerValue}}).",
+    "contrastComputable_cantTell_textShadow": "Contrast is not computable because a text-shadow is used, which may add contrast this calculation does not account for ({{blockerProperty}}={{blockerValue}}).",
     "contrastMinimum_title": "Text meets minimum color contrast (AA)",
     "contrastMinimum_description": "Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3:1 (large), when contrast is computable from CSS.",
     "contrastMinimum_fail_belowThreshold": "Element has insufficient color contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).",
@@ -94390,6 +94576,7 @@ const I18N = {
     "contrastComputable_cantTell_engineFailure": "No se pudo determinar la computabilidad del contraste debido a un error interno del motor ({{reasonCode}}).",
     "contrastComputable_cantTell_backdropFilter": "El contraste no es computable porque se usa backdrop-filter ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_filterOrBackdropFilter": "El contraste no es computable porque se usa filter ({{blockerProperty}}={{blockerValue}}).",
+    "contrastComputable_cantTell_textShadow": "El contraste no es computable porque se usa text-shadow, que puede aportar contraste que este cálculo no tiene en cuenta ({{blockerProperty}}={{blockerValue}}).",
     "contrastMinimum_title": "El texto cumple el contraste de color mínimo (AA)",
     "contrastMinimum_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 4.5:1 (normal) o 3:1 (grande), cuando el contraste es computable a partir de CSS.",
     "contrastMinimum_fail_belowThreshold": "El elemento tiene un contraste de color insuficiente de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).",
@@ -95055,6 +95242,7 @@ const I18N = {
     "contrastComputable_cantTell_engineFailure": "La calculabilité du contraste n’a pas pu être déterminée en raison d’une erreur interne du moteur ({{reasonCode}}).",
     "contrastComputable_cantTell_backdropFilter": "Le contraste ne peut pas être calculé car la propriété backdrop-filter est utilisée ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_filterOrBackdropFilter": "Le contraste ne peut pas être calculé car une propriété filter ou backdrop-filter est utilisée ({{blockerProperty}}={{blockerValue}}).",
+    "contrastComputable_cantTell_textShadow": "Le contraste ne peut pas être calculé car une propriété text-shadow est utilisée, ce qui peut apporter un contraste que ce calcul ne prend pas en compte ({{blockerProperty}}={{blockerValue}}).",
     "contrastMinimum_title": "Le texte respecte le contraste minimum (AA)",
     "contrastMinimum_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 4,5:1 (texte normal) ou 3:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
     "contrastMinimum_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
@@ -96474,10 +96662,13 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   const __localHasBgImgCache = new WeakMap();
   const __localHasBlendModeCache = new WeakMap();
   const __localHasFilterCache = new WeakMap();
+  const __localTextShadowInfoCache = new WeakMap();
   const __hasBgImgCache = __getSharedWeakMapCache('__hasBgImgCache') || __localHasBgImgCache;
   const __hasBlendModeCache =
     __getSharedWeakMapCache('__hasBlendModeCache') || __localHasBlendModeCache;
   const __hasFilterCache = __getSharedWeakMapCache('__hasFilterCache') || __localHasFilterCache;
+  const __textShadowInfoCache =
+    __getSharedWeakMapCache('__textShadowInfoCache') || __localTextShadowInfoCache;
 
   // -------- Visibility mode resolution for getTextScan --------
 
@@ -97347,6 +97538,31 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
   }
 
+  // Takes the ALREADY-READ raw text-shadow string, never the style object
+  // -- see __textShadowInfoEl's header comment for why this property must
+  // only ever be read once per element.
+  function hasTextShadow(raw) {
+    try {
+      const v = raw == null ? '' : String(raw).trim();
+      if (!v || v.toLowerCase() === 'none') return false;
+      // jsdom's cssstyle serializes an absent/"none" text-shadow as a
+      // fully-transparent color string (e.g. "rgba(0, 0, 0, 0)") rather
+      // than the literal "none" it should be per spec, and truncates a
+      // real declared shadow down to just its color component (dropping
+      // the offset/blur lengths) -- so `v` here is sometimes a bare color.
+      // Parsing it as one and checking for zero alpha catches jsdom's
+      // "no shadow" default without mistaking it for a real one; a value
+      // that doesn't parse as a pure color (the real multi-value shorthand
+      // a real browser reports) falls through and is treated as a real
+      // shadow, the safe direction.
+      const c = parseCssColorToRgba(v);
+      if (c && typeof c.a === 'number' && c.a === 0) return false;
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   function __hasBackgroundImageOrGradientEl(el, cs) {
     try {
       if (!el || el.nodeType !== 1) return hasBackgroundImageOrGradient(cs);
@@ -97380,6 +97596,37 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       return v;
     } catch {
       return false;
+    }
+  }
+
+  // jsdom's cssstyle has a confirmed bug where reading a computed
+  // `text-shadow` value a SECOND time -- via any accessor (`.textShadow`
+  // or `getPropertyValue`), even from a freshly-requested
+  // CSSStyleDeclaration for the same element -- silently returns a
+  // different, "no shadow" result instead of the real declared value (see
+  // docs/LIMITATIONS.md). Reading it exactly once and caching the {has,
+  // value} pair here avoids compounding that with a second read from
+  // elsewhere in this same run (e.g. this function being called more than
+  // once for the same element). The shared cache this uses is
+  // deliberately reset at the start of every run (see dom-runner.js), so
+  // this does not — and is not relied on to — survive across two
+  // independent runs against the same window; a genuinely fresh jsdom
+  // window, or a real browser, is unaffected either way.
+  function __textShadowInfoEl(el, cs) {
+    try {
+      if (!el || el.nodeType !== 1) {
+        const raw = cs && cs.textShadow; // single read
+        const value = raw == null ? '' : String(raw);
+        return { has: hasTextShadow(value), value };
+      }
+      if (__textShadowInfoCache.has(el)) return __textShadowInfoCache.get(el);
+      const raw = cs && cs.textShadow; // single read, cached below -- never read again
+      const value = raw == null ? '' : String(raw);
+      const info = { has: hasTextShadow(value), value };
+      __textShadowInfoCache.set(el, info);
+      return info;
+    } catch {
+      return { has: false, value: '' };
     }
   }
 
@@ -97726,6 +97973,34 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           } catch (_e) {}
           return out;
         }
+      }
+
+      // text-shadow is a FOREGROUND property, already resolved by
+      // inheritance in `cs` on `el` itself -- unlike background-image/
+      // filter/blend-mode, it needs no ancestor walk, so it's checked once
+      // on `cur === el` rather than at every level. ACT afw4f7/09o5cg's
+      // own failed example (a low-contrast pair "rescued" by a contrasting
+      // text-shadow) gives no computation method for how a shadow affects
+      // the ratio, and this engine has no glyph-rendering model to derive
+      // one either -- rather than assert a confident fail that a real
+      // browser's rendering might contradict, this defers to manual
+      // review, the same shape as every other computability blocker here.
+      const textShadowInfo = cur === el ? __textShadowInfoEl(cur, cs) : null;
+      if (textShadowInfo && textShadowInfo.has) {
+        const out = {
+          ok: false,
+          reasonCode: 'TEXT_SHADOW',
+          blockerSelector: __getSimpleSelectorCached(
+            cur,
+            (cur.tagName || '').toLowerCase() || 'html'
+          ),
+          blockerProperty: 'text-shadow',
+          blockerValue: truncateCssValue(textShadowInfo.value, 80)
+        };
+        try {
+          if (el) __computabilityBlockerCache.set(el, out);
+        } catch (_e) {}
+        return out;
       }
 
       if (!paintOccluded && __hasBackgroundImageOrGradientEl(cur, cs)) {
