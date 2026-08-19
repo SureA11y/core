@@ -227,6 +227,44 @@ test(`${RULE_ID}: a hyphenation difference is cantTell rather than a failure`, (
   assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'HYPHENATION_DIFFERS');
 });
 
+test(`${RULE_ID}: a single symbolic character unrelated to the accessible name is cantTell rather than a failure (ACT 2ee8b8: "X" meaning "close")`, () => {
+  const html = `
+<!doctype html><html><body>
+  <button aria-label="close">X</button>
+</body></html>
+  `;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'POSSIBLE_SYMBOLIC_CHARACTER');
+});
+
+test(`${RULE_ID}: a single character that also appears in the accessible name still fails outright (real word-boundary mismatch, not a symbol)`, () => {
+  const html = `
+<!doctype html><html><body>
+  <a id="one" href="#" aria-label="1a">1</a>
+</body></html>
+  `;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.strictEqual(
+    rule.occurrences[0].data.details.reasonCode,
+    'VISIBLE_LABEL_NOT_IN_ACCESSIBLE_NAME'
+  );
+});
+
+test(`${RULE_ID}: visible text rendered through a known icon font is cantTell rather than a failure (ACT 2ee8b8: "search" rendered as a magnifying glass by Material Icons)`, () => {
+  const html = `
+<!doctype html><html><head>
+  <style>button { font-family: 'Material Icons'; }</style>
+</head><body>
+  <button aria-label="Find">search</button>
+</body></html>
+  `;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'POSSIBLE_ICON_FONT_GLYPH');
+});
+
 test(`${RULE_ID}: a real mismatch alongside an uncertain one still fails the rule`, () => {
   const html = `
 <!doctype html><html><body>
