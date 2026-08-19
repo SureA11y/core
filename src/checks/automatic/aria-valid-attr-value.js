@@ -15,9 +15,14 @@
  * @expectation
  *   Each attribute's value conforms to its WAI-ARIA-declared value type:
  *   boolean ("true"/"false"), tristate ("true"/"false"/"mixed"), a token
- *   from a fixed enumerated set, an integer, a real number, or an empty
- *   value or ID reference (list) that resolves to an existing element in
- *   the document.
+ *   from a fixed enumerated set, an integer, a real number, or an ID
+ *   reference (list) that resolves to an existing element in the document.
+ *   Per ACT 6a7281's own applicability ("any state or property that is
+ *   NOT empty"), an explicitly empty value — including a bare boolean-style
+ *   attribute with no "=value" at all, e.g. `aria-checked` alone — is out
+ *   of scope for every value type, not a violation: a common, deliberate
+ *   pattern in templated markup (e.g. React conditionally rendering
+ *   `aria-describedby={hasError ? errorId : ''}`).
  * @implementation-notes
  * - Not rule-gated on isAccTreeEligible: this remains a static-markup
  *   property, while engine-level hidden-subtree filtering still applies
@@ -27,14 +32,12 @@
  *   aria-controls, aria-owns, etc.) when NONE of the space-separated ids
  *   resolve — a partially-dangling list (some ids exist, some don't) is
  *   left unflagged (only invalidate when every token fails to resolve).
- *   Single-idref attributes (aria-activedescendant, aria-errormessage) are
- *   flagged whenever their one id doesn't resolve.
- * - An explicitly-EMPTY idref/idref-list value (e.g.
- *   `aria-describedby=""`) is valid, not a violation — `allowEmpty` holds
- *   for every idref/idref-list ARIA attribute. A common, deliberate pattern
- *   in templated markup (e.g. React conditionally rendering
- *   `aria-describedby={hasError ? errorId : ''}`); flagging it would be a
- *   false positive.
+ *   Of the two single-idref attributes, aria-activedescendant is flagged
+ *   whenever its one id doesn't resolve; aria-errormessage's existence is
+ *   deliberately never checked (format only) — ACT 6a7281's own Background
+ *   text names it as a non-required property whose target "may be created
+ *   in response to an event that may or may not happen" (a validation
+ *   error message rendered only once the error actually occurs).
  */
 
 const id = 'aria-valid-attr-value';

@@ -18,6 +18,16 @@ A running log of engine design decisions worth re-examining — cases where an e
 
 ## Decided
 
+### `aria-valid-attr-value` treated an explicitly-empty non-idref value as invalid, and always required `aria-errormessage`'s target to exist — both fixed
+
+**Decision as it stands (before the fix):** `validateAttrValue`'s empty-value exemption (`allowEmpty`) only applied to `idref`/`idref-list` types; a bare boolean/tristate/number/token-list attribute with no value (`aria-checked` alone, `aria-relevant=""`) was validated against its type's value set and failed. Existence-checking on single-idref attributes applied uniformly to both `aria-activedescendant` and `aria-errormessage`. Confirmed against ACT `6a7281`'s live corpus (2/23 mismatches).
+
+**Why it was questioned:** the doc previously filed this under "deliberate scope — our idref-type validation extends beyond ACT's syntax-only check... genuinely more useful, not a bug," covering only the `aria-errormessage` half. But ACT `6a7281`'s own Applicability text is a blanket rule for *every* value type: "any WAI-ARIA state or property that is **not empty**" — an empty value (including a bare attribute) is out of scope entirely, not specific to idrefs. And its own Background text names `aria-errormessage` specifically as a non-required property whose target "may be created in response to an event that may or may not happen" — a documented ACT exception, not something our stricter check improves on.
+
+**Decision (2026-08-19):** `validateAttrValue` now short-circuits to `{valid: true}` for any empty value before the type-specific switch, and the `idref` case exempts `aria-errormessage` (but not `aria-activedescendant`, which ACT gives no such carve-out) from existence-checking.
+
+**Status:** resolved 2026-08-19 — `6a7281` runs clean (0/23).
+
 ### `contrast-minimum`/`contrast-enhanced` treated exact foreground/background color matches as a real (1:1) contrast failure — fixed
 
 **Decision as it stands (before the fix):** the docs described this as an accepted, permanent divergence: "ACT treats text whose color exactly matches its background as invisible; the contrast rules report the 1:1 ratio, since nothing in the markup separates 'invisible on purpose' from 'invisible by accident'."
