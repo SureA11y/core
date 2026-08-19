@@ -240,7 +240,12 @@ module.exports = [
 
   {
     id: 'wcag-2.4.7-focus-visible',
-    checksIds: ['aria-hidden-focus', 'css-hidden-focus', 'manual-review'],
+    checksIds: [
+      'aria-hidden-focus',
+      'css-hidden-focus',
+      'css-focus-indicator-suppressed',
+      'manual-review'
+    ],
     meta: {
       title: 'Focus visible',
       description:

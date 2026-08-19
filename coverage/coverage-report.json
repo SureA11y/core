@@ -2,12 +2,12 @@
   "rulesDir": "src/checks",
   "facetsFile": "src/coverage/wcag-facets.js",
   "summary": {
-    "totalRules": 127,
+    "totalRules": 128,
     "wcagTagCoverage": {
       "byVersion": {
         "2.0": {
-          "A": 98,
-          "AA": 12,
+          "A": 99,
+          "AA": 13,
           "AAA": 5
         },
         "2.1": {
@@ -22,13 +22,13 @@
         }
       },
       "anyVersion": {
-        "A": 103,
-        "AA": 16,
+        "A": 104,
+        "AA": 17,
         "AAA": 5
       },
       "rawTagCounts": {
         "wcag2a": 89,
-        "wcag2aa": 8,
+        "wcag2aa": 9,
         "wcag21aa": 3,
         "wcag2aaa": 5,
         "wcag21a": 1,
@@ -4204,6 +4204,58 @@
       }
     },
     {
+      "file": "src/checks/manual/css-focus-indicator-suppressed-manual.js",
+      "ruleId": "css-focus-indicator-suppressed",
+      "wcagScNormative": [
+        "2.4.7"
+      ],
+      "wcagScAll": [
+        "2.4.7"
+      ],
+      "wcagScInformative": [],
+      "type": "manual",
+      "title": "Focus indicator must not be removed without a replacement",
+      "tags": [
+        "wcag2aa",
+        "wcag247",
+        "navigation",
+        "focus",
+        "css",
+        "atomic",
+        "manual"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2aa",
+            "version": "2.0",
+            "level": "AA"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A",
+            "AA"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A",
+          "AA"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "2.4.7": [
+            "focus-indicator-not-suppressed"
+          ]
+        }
+      }
+    },
+    {
       "file": "src/checks/manual/css-hidden-focus.js",
       "ruleId": "css-hidden-focus",
       "wcagScNormative": [
@@ -6575,11 +6627,12 @@
       {
         "sc": "2.4.7",
         "title": "Focus Visible",
-        "totalFacets": 1,
-        "coveredFacets": 1,
+        "totalFacets": 2,
+        "coveredFacets": 2,
         "uncoveredFacets": [],
         "automationCounts": {
-          "full": 1
+          "full": 1,
+          "manual": 1
         },
         "missingFacetRules": [
           "aria-hidden-focus",
@@ -6593,6 +6646,14 @@
             "automation": "full",
             "coveredBy": [
               "css-hidden-focus"
+            ]
+          },
+          {
+            "id": "focus-indicator-not-suppressed",
+            "label": "CSS does not remove the focus indicator without drawing a replacement",
+            "automation": "manual",
+            "coveredBy": [
+              "css-focus-indicator-suppressed"
             ]
           }
         ]
@@ -7905,11 +7966,12 @@
       {
         "sc": "2.4.7",
         "title": "Focus Visible",
-        "totalFacets": 1,
-        "coveredFacets": 1,
+        "totalFacets": 2,
+        "coveredFacets": 2,
         "uncoveredFacets": [],
         "automationCounts": {
-          "full": 1
+          "full": 1,
+          "manual": 1
         },
         "missingFacetRules": [
           "aria-hidden-focus",
@@ -7923,6 +7985,14 @@
             "automation": "full",
             "coveredBy": [
               "css-hidden-focus"
+            ]
+          },
+          {
+            "id": "focus-indicator-not-suppressed",
+            "label": "CSS does not remove the focus indicator without drawing a replacement",
+            "automation": "manual",
+            "coveredBy": [
+              "css-focus-indicator-suppressed"
             ]
           }
         ]

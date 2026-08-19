@@ -1,18 +1,18 @@
 # Fixture Index
 
-Generated: 2026-08-19T06:29:12.155Z
+Generated: 2026-08-19T06:46:01.894Z
 
 Every implemented rule should have a `tests/fixtures/<slug>-all-scenarios.html` scenario page (numbered `case_NN` blocks, each marked PASS/FAIL/CANTTELL in its `.case-title`) and a "fixture coverage" test in its `tests/engine-checks/**/<rule>.test.js` asserting the exact expected ids. See `docs/RULE_AUTHORING.md`.
 
 ## Summary
 
-Total rules: **127**. With fixture: **127**. Without fixture: **0**.
+Total rules: **128**. With fixture: **128**. Without fixture: **0**.
 
 ## Rules WITHOUT a fixture (0)
 
 None — every rule has a fixture.
 
-## Rules WITH a fixture (127)
+## Rules WITH a fixture (128)
 
 | Rule ID | Type | Fixture | Cases | PASS | FAIL | CANTTELL | OTHER |
 |---|---|---|---:|---:|---:|---:|---:|
@@ -49,6 +49,7 @@ None — every rule has a fixture.
 | contrast-computable | automatic | `tests/fixtures/contrast-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
 | contrast-enhanced | automatic | `tests/fixtures/contrast-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
 | contrast-minimum | automatic | `tests/fixtures/contrast-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
+| css-focus-indicator-suppressed | manual | `tests/fixtures/css-focus-indicator-suppressed-all-scenarios.html` | 12 | 4 | 0 | 5 | 3 |
 | css-hidden-focus | manual | `tests/fixtures/css-hidden-focus-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
 | css-orientation-lock | automatic | `tests/fixtures/css-orientation-lock-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
 | definition-list-children-valid | automatic | `tests/fixtures/definition-list-children-valid-all-scenarios.html` | 10 | 5 | 4 | 0 | 1 |

@@ -631,6 +631,11 @@ const FACETS = {
                 "id": "css-hidden-focusable",
                 "label": "tabbable element is visually hidden by CSS",
                 "automation": "full"
+            },
+            {
+                "id": "focus-indicator-not-suppressed",
+                "label": "CSS does not remove the focus indicator without drawing a replacement",
+                "automation": "manual"
             }
         ]
     },

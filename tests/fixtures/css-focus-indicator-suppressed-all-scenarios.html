@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>css-focus-indicator-suppressed — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+
+    /* Suppression with no replacement — the reported shape. */
+    .reset-only:focus { outline: none; }
+    .reset-zero:focus { outline: 0; }
+    .reset-visible:focus-visible { outline: none; }
+    .reset-offset:focus { outline: none; outline-offset: 4px; }
+    @media screen {
+      .reset-in-media:focus { outline: none; }
+    }
+
+    /* Suppression with a replacement in the same or another rule. */
+    .reset-shadow:focus { outline: none; box-shadow: 0 0 0 3px navy; }
+    .reset-then-outline:focus { outline: none; }
+    a.reset-then-outline:focus { outline: 2px solid navy; }
+    .reset-before:focus { outline: none; }
+    .reset-before:focus::before { content: "\25B8"; color: navy; }
+    .reset-sibling:focus { outline: none; }
+    .reset-sibling:focus + .indicator { background: navy; }
+
+    /* Not a suppression of the element's own indicator. */
+    .parent-focus:focus .child-link { outline: none; }
+    .within-only:focus-within { outline: none; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>css-focus-indicator-suppressed</code></h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>cfis_case_NN</code>.
+    The rule reads focus styles out of the page's own stylesheets, so every case
+    depends on the <code>&lt;style&gt;</code> block above.
+  </p>
+
+  <h2>A. Outline removed with no replacement</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — CANTTELL: outline: none on :focus</div>
+    <a class="reset-only" id="cfis_case_01" href="/pricing">Pricing</a>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — CANTTELL: outline: 0 on :focus</div>
+    <button class="reset-zero" id="cfis_case_02" type="button">Save</button>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — CANTTELL: outline: none on :focus-visible</div>
+    <button class="reset-visible" id="cfis_case_03" type="button">Delete</button>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — CANTTELL: outline-offset alone is not a replacement for a removed outline</div>
+    <a class="reset-offset" id="cfis_case_04" href="/terms">Terms</a>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — CANTTELL: suppression nested in a @media block</div>
+    <a class="reset-in-media" id="cfis_case_05" href="/contact">Contact</a>
+  </div>
+
+  <h2>B. Outline removed, replacement drawn</h2>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — PASS: box-shadow in the same rule</div>
+    <button class="reset-shadow" id="cfis_case_06" type="button">Send</button>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — PASS: a later rule restores a positive outline</div>
+    <a class="reset-then-outline" id="cfis_case_07" href="/about">About</a>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — PASS: replacement drawn as a ::before decoration</div>
+    <a class="reset-before" id="cfis_case_08" href="/help">Help</a>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — PASS: replacement painted on a sibling element</div>
+    <a class="reset-sibling" id="cfis_case_09" href="/status">Status</a><span class="indicator"></span>
+  </div>
+
+  <h2>C. Not this rule's concern</h2>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — NEUTRAL: the rule fires on an ancestor's focus, so it says nothing about this element's own indicator</div>
+    <div class="parent-focus" tabindex="0">
+      <a class="child-link" id="cfis_case_10" href="/docs">Docs</a>
+    </div>
+  </div>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — NEUTRAL: :focus-within is an ancestor selector, not a focus indicator for this element</div>
+    <a class="within-only" id="cfis_case_11" href="/blog">Blog</a>
+  </div>
+
+  <div class="case" id="case_12">
+    <div class="case-title">12 — NEUTRAL: tabindex="-1" keeps the element out of sequential focus navigation</div>
+    <a class="reset-only" id="cfis_case_12" href="/legacy" tabindex="-1">Legacy</a>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>
