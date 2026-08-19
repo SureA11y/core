@@ -8188,6 +8188,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     details: 'group',
     dfn: 'term',
     dialog: 'dialog',
+    div: 'generic',
     dt: 'term',
     em: 'emphasis',
     fieldset: 'group',
@@ -8212,6 +8213,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     p: 'paragraph',
     progress: 'progressbar',
     strong: 'strong',
+    span: 'generic',
     sub: 'subscript',
     sup: 'superscript',
     textarea: 'textbox',
@@ -8235,6 +8237,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const NON_GLOBAL_ARIA_ATTR_SELECTOR =
     '[aria-activedescendant], [aria-autocomplete], [aria-checked], [aria-colcount], [aria-colindex], [aria-colspan], [aria-disabled], [aria-errormessage], [aria-expanded], [aria-haspopup], [aria-invalid], [aria-level], [aria-modal], [aria-multiline], [aria-multiselectable], [aria-orientation], [aria-placeholder], [aria-posinset], [aria-pressed], [aria-readonly], [aria-required], [aria-rowcount], [aria-rowindex], [aria-rowspan], [aria-selected], [aria-setsize], [aria-sort], [aria-valuemax], [aria-valuemin], [aria-valuenow], [aria-valuetext]';
   // </generated:aria-implicit-roles>
+
+  // <generated:aria-roleless-elements>
+  const ROLELESS_ELEMENTS = new Set(['audio', 'video']);
+  // </generated:aria-roleless-elements>
 
   // <generated:aria-role-attrs>
   const SUPPORTED_ATTRS_BY_ROLE = {
@@ -8869,6 +8875,39 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const cantTellOccurrences = [];
   let applicableCount = 0;
 
+  // An element HTML-AAM maps to no role has nothing to support a
+  // role-specific attribute, so every non-global one present is reported.
+  // Returns how many recognized aria-* attributes it carried, for the
+  // applicable count.
+  function rolelessOccurrences(el, tag) {
+    let seen = 0;
+    const attrs = el.attributes;
+    for (let i = 0; i < attrs.length; i++) {
+      const name = String(attrs[i].name || '').toLowerCase();
+      if (name.slice(0, 5) !== 'aria-') continue;
+      if (!ariaHelpers.isValidAriaAttrName(name)) continue; // aria-valid-attr's concern
+
+      seen += 1;
+      if (globalSet.has(name)) continue;
+
+      failOccurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: `<${tag}> has no ARIA role, so nothing supports the ${name} attribute on it.`,
+          hint: `Remove ${name}, or move it to an element whose role supports it. A role-specific ARIA attribute on an element with no role is ignored by assistive technology.`,
+          i18n: {
+            summaryKey: 'ariaAllowedAttr_summary_fail_roleless',
+            hintKey: 'ariaAllowedAttr_hint_fail_roleless',
+            params: { attr: name, element: tag }
+          },
+          data: {
+            details: { reasonCode: 'ARIA_ATTR_NOT_ALLOWED_ROLELESS', attr: name, element: tag }
+          }
+        })
+      );
+    }
+    return seen;
+  }
+
   for (const el of nodes) {
     if (!el || !el.attributes) continue;
 
@@ -8887,6 +8926,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       role = Object.prototype.hasOwnProperty.call(IMPLICIT_ROLE_BY_ELEMENT, key)
         ? IMPLICIT_ROLE_BY_ELEMENT[key]
         : '';
+      // No role from either source: for a tag HTML-AAM maps to no role at
+      // all, that IS the answer — nothing supports a role-specific
+      // attribute here. Any other tag has a role this table does not model
+      // (context-dependent ones), so it stays out of scope.
+      if (!role && ROLELESS_ELEMENTS.has(tag)) {
+        applicableCount += rolelessOccurrences(el, tag);
+        continue;
+      }
     }
     if (!role || !ariaHelpers.isValidConcreteRole(role)) continue; // aria-roles-valid's concern
 
@@ -30527,6 +30574,8 @@ const I18N = {
     "ariaAllowedAttr_description": "Checks that every recognized aria-* attribute present on an element with an explicit role is either globally supported or supported by that role.",
     "ariaAllowedAttr_summary_fail": "{{attr}} is not permitted on role=\"{{role}}\".",
     "ariaAllowedAttr_hint_fail": "Remove this attribute, or use a role that supports it.",
+    "ariaAllowedAttr_summary_fail_roleless": "<{{element}}> has no ARIA role, so nothing supports the {{attr}} attribute on it.",
+    "ariaAllowedAttr_hint_fail_roleless": "Remove {{attr}}, or move it to an element whose role supports it. A role-specific ARIA attribute on an element with no role is ignored by assistive technology.",
     "ariaAllowedAttr_summary_cantTell": "{{attr}} is deprecated on role=\"{{role}}\" (still allowed, but discouraged).",
     "ariaAllowedAttr_hint_cantTell": "This attribute was removed from the ARIA global set in 1.2; remove it or use a role that supports it, as a future ARIA version may disallow it.",
     "ariaProhibitedAttr_title": "ARIA naming attributes must not be used on roles that prohibit them",

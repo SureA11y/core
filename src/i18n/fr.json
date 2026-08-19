@@ -340,6 +340,8 @@
   "ariaAllowedAttr_description": "Vérifie que chaque attribut aria-* reconnu présent sur un élément ayant un rôle explicite est soit globalement pris en charge, soit pris en charge par ce rôle.",
   "ariaAllowedAttr_summary_fail": "{{attr}} n’est pas autorisé sur role=\"{{role}}\".",
   "ariaAllowedAttr_hint_fail": "Retirez cet attribut, ou utilisez un rôle qui le prend en charge.",
+  "ariaAllowedAttr_summary_fail_roleless": "<{{element}}> n’a aucun rôle ARIA, donc rien n’y prend en charge l’attribut {{attr}}.",
+  "ariaAllowedAttr_hint_fail_roleless": "Supprimez {{attr}}, ou placez-le sur un élément dont le rôle le prend en charge. Un attribut ARIA spécifique à un rôle, sur un élément sans rôle, est ignoré par les technologies d’assistance.",
   "ariaAllowedAttr_summary_cantTell": "{{attr}} est obsolète sur role=\"{{role}}\" (toujours autorisé, mais déconseillé).",
   "ariaAllowedAttr_hint_cantTell": "Cet attribut a été retiré de l’ensemble global d’ARIA en 1.2 ; retirez-le ou utilisez un rôle qui le prend en charge, car une future version d’ARIA pourrait l’interdire.",
   "ariaProhibitedAttr_title": "Les attributs de nommage ARIA ne doivent pas être utilisés sur des rôles qui les interdisent",

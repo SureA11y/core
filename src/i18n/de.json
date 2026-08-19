@@ -340,6 +340,8 @@
   "ariaAllowedAttr_description": "Prüft, ob jedes erkannte aria-*-Attribut auf einem Element mit expliziter Rolle entweder global unterstützt wird oder von dieser Rolle unterstützt wird.",
   "ariaAllowedAttr_summary_fail": "{{attr}} ist bei role=\"{{role}}\" nicht zulässig.",
   "ariaAllowedAttr_hint_fail": "Entfernen Sie dieses Attribut, oder verwenden Sie eine Rolle, die es unterstützt.",
+  "ariaAllowedAttr_summary_fail_roleless": "<{{element}}> hat keine ARIA-Rolle, daher unterstützt hier nichts das Attribut {{attr}}.",
+  "ariaAllowedAttr_hint_fail_roleless": "Entfernen Sie {{attr}} oder setzen Sie es auf ein Element, dessen Rolle es unterstützt. Ein rollenspezifisches ARIA-Attribut auf einem Element ohne Rolle wird von assistiver Technologie ignoriert.",
   "ariaAllowedAttr_summary_cantTell": "{{attr}} ist bei role=\"{{role}}\" veraltet (weiterhin zulässig, aber nicht empfohlen).",
   "ariaAllowedAttr_hint_cantTell": "Dieses Attribut wurde in ARIA 1.2 aus dem globalen Satz entfernt; entfernen Sie es oder verwenden Sie eine Rolle, die es unterstützt, da eine künftige ARIA-Version es möglicherweise nicht mehr zulässt.",
   "ariaProhibitedAttr_title": "ARIA-Benennungsattribute dürfen nicht bei Rollen verwendet werden, die sie untersagen",

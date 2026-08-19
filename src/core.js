@@ -7952,6 +7952,8 @@ const I18N = {
     "ariaAllowedAttr_description": "Prüft, ob jedes erkannte aria-*-Attribut auf einem Element mit expliziter Rolle entweder global unterstützt wird oder von dieser Rolle unterstützt wird.",
     "ariaAllowedAttr_summary_fail": "{{attr}} ist bei role=\"{{role}}\" nicht zulässig.",
     "ariaAllowedAttr_hint_fail": "Entfernen Sie dieses Attribut, oder verwenden Sie eine Rolle, die es unterstützt.",
+    "ariaAllowedAttr_summary_fail_roleless": "<{{element}}> hat keine ARIA-Rolle, daher unterstützt hier nichts das Attribut {{attr}}.",
+    "ariaAllowedAttr_hint_fail_roleless": "Entfernen Sie {{attr}} oder setzen Sie es auf ein Element, dessen Rolle es unterstützt. Ein rollenspezifisches ARIA-Attribut auf einem Element ohne Rolle wird von assistiver Technologie ignoriert.",
     "ariaAllowedAttr_summary_cantTell": "{{attr}} ist bei role=\"{{role}}\" veraltet (weiterhin zulässig, aber nicht empfohlen).",
     "ariaAllowedAttr_hint_cantTell": "Dieses Attribut wurde in ARIA 1.2 aus dem globalen Satz entfernt; entfernen Sie es oder verwenden Sie eine Rolle, die es unterstützt, da eine künftige ARIA-Version es möglicherweise nicht mehr zulässt.",
     "ariaProhibitedAttr_title": "ARIA-Benennungsattribute dürfen nicht bei Rollen verwendet werden, die sie untersagen",
@@ -8613,6 +8615,8 @@ const I18N = {
     "ariaAllowedAttr_description": "Checks that every recognized aria-* attribute present on an element with an explicit role is either globally supported or supported by that role.",
     "ariaAllowedAttr_summary_fail": "{{attr}} is not permitted on role=\"{{role}}\".",
     "ariaAllowedAttr_hint_fail": "Remove this attribute, or use a role that supports it.",
+    "ariaAllowedAttr_summary_fail_roleless": "<{{element}}> has no ARIA role, so nothing supports the {{attr}} attribute on it.",
+    "ariaAllowedAttr_hint_fail_roleless": "Remove {{attr}}, or move it to an element whose role supports it. A role-specific ARIA attribute on an element with no role is ignored by assistive technology.",
     "ariaAllowedAttr_summary_cantTell": "{{attr}} is deprecated on role=\"{{role}}\" (still allowed, but discouraged).",
     "ariaAllowedAttr_hint_cantTell": "This attribute was removed from the ARIA global set in 1.2; remove it or use a role that supports it, as a future ARIA version may disallow it.",
     "ariaProhibitedAttr_title": "ARIA naming attributes must not be used on roles that prohibit them",
@@ -9274,6 +9278,8 @@ const I18N = {
     "ariaAllowedAttr_description": "Comprueba que cada atributo aria-* reconocido presente en un elemento con un rol explícito esté admitido globalmente o admitido por ese rol.",
     "ariaAllowedAttr_summary_fail": "{{attr}} no está permitido en role=\"{{role}}\".",
     "ariaAllowedAttr_hint_fail": "Eliminar este atributo, o usar un rol que lo admita.",
+    "ariaAllowedAttr_summary_fail_roleless": "<{{element}}> no tiene rol ARIA, así que nada admite en él el atributo {{attr}}.",
+    "ariaAllowedAttr_hint_fail_roleless": "Quitar {{attr}} o llevarlo a un elemento cuyo rol lo admita. Un atributo ARIA específico de rol en un elemento sin rol lo ignora la tecnología de apoyo.",
     "ariaAllowedAttr_summary_cantTell": "{{attr}} está obsoleto en role=\"{{role}}\" (todavía permitido, pero desaconsejado).",
     "ariaAllowedAttr_hint_cantTell": "Este atributo se eliminó del conjunto global de ARIA en 1.2; elimínelo o use un rol que lo admita, ya que una versión futura de ARIA podría no permitirlo.",
     "ariaProhibitedAttr_title": "Los atributos de nombrado ARIA no deben usarse en roles que los prohíban",
@@ -9935,6 +9941,8 @@ const I18N = {
     "ariaAllowedAttr_description": "Vérifie que chaque attribut aria-* reconnu présent sur un élément ayant un rôle explicite est soit globalement pris en charge, soit pris en charge par ce rôle.",
     "ariaAllowedAttr_summary_fail": "{{attr}} n’est pas autorisé sur role=\"{{role}}\".",
     "ariaAllowedAttr_hint_fail": "Retirez cet attribut, ou utilisez un rôle qui le prend en charge.",
+    "ariaAllowedAttr_summary_fail_roleless": "<{{element}}> n’a aucun rôle ARIA, donc rien n’y prend en charge l’attribut {{attr}}.",
+    "ariaAllowedAttr_hint_fail_roleless": "Supprimez {{attr}}, ou placez-le sur un élément dont le rôle le prend en charge. Un attribut ARIA spécifique à un rôle, sur un élément sans rôle, est ignoré par les technologies d’assistance.",
     "ariaAllowedAttr_summary_cantTell": "{{attr}} est obsolète sur role=\"{{role}}\" (toujours autorisé, mais déconseillé).",
     "ariaAllowedAttr_hint_cantTell": "Cet attribut a été retiré de l’ensemble global d’ARIA en 1.2 ; retirez-le ou utilisez un rôle qui le prend en charge, car une future version d’ARIA pourrait l’interdire.",
     "ariaProhibitedAttr_title": "Les attributs de nommage ARIA ne doivent pas être utilisés sur des rôles qui les interdisent",
@@ -27683,6 +27691,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     details: 'group',
     dfn: 'term',
     dialog: 'dialog',
+    div: 'generic',
     dt: 'term',
     em: 'emphasis',
     fieldset: 'group',
@@ -27707,6 +27716,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     p: 'paragraph',
     progress: 'progressbar',
     strong: 'strong',
+    span: 'generic',
     sub: 'subscript',
     sup: 'superscript',
     textarea: 'textbox',
@@ -27730,6 +27740,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const NON_GLOBAL_ARIA_ATTR_SELECTOR =
     '[aria-activedescendant], [aria-autocomplete], [aria-checked], [aria-colcount], [aria-colindex], [aria-colspan], [aria-disabled], [aria-errormessage], [aria-expanded], [aria-haspopup], [aria-invalid], [aria-level], [aria-modal], [aria-multiline], [aria-multiselectable], [aria-orientation], [aria-placeholder], [aria-posinset], [aria-pressed], [aria-readonly], [aria-required], [aria-rowcount], [aria-rowindex], [aria-rowspan], [aria-selected], [aria-setsize], [aria-sort], [aria-valuemax], [aria-valuemin], [aria-valuenow], [aria-valuetext]';
   // </generated:aria-implicit-roles>
+
+  // <generated:aria-roleless-elements>
+  const ROLELESS_ELEMENTS = new Set(['audio', 'video']);
+  // </generated:aria-roleless-elements>
 
   // <generated:aria-role-attrs>
   const SUPPORTED_ATTRS_BY_ROLE = {
@@ -28364,6 +28378,39 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const cantTellOccurrences = [];
   let applicableCount = 0;
 
+  // An element HTML-AAM maps to no role has nothing to support a
+  // role-specific attribute, so every non-global one present is reported.
+  // Returns how many recognized aria-* attributes it carried, for the
+  // applicable count.
+  function rolelessOccurrences(el, tag) {
+    let seen = 0;
+    const attrs = el.attributes;
+    for (let i = 0; i < attrs.length; i++) {
+      const name = String(attrs[i].name || '').toLowerCase();
+      if (name.slice(0, 5) !== 'aria-') continue;
+      if (!ariaHelpers.isValidAriaAttrName(name)) continue; // aria-valid-attr's concern
+
+      seen += 1;
+      if (globalSet.has(name)) continue;
+
+      failOccurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: `<${tag}> has no ARIA role, so nothing supports the ${name} attribute on it.`,
+          hint: `Remove ${name}, or move it to an element whose role supports it. A role-specific ARIA attribute on an element with no role is ignored by assistive technology.`,
+          i18n: {
+            summaryKey: 'ariaAllowedAttr_summary_fail_roleless',
+            hintKey: 'ariaAllowedAttr_hint_fail_roleless',
+            params: { attr: name, element: tag }
+          },
+          data: {
+            details: { reasonCode: 'ARIA_ATTR_NOT_ALLOWED_ROLELESS', attr: name, element: tag }
+          }
+        })
+      );
+    }
+    return seen;
+  }
+
   for (const el of nodes) {
     if (!el || !el.attributes) continue;
 
@@ -28382,6 +28429,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       role = Object.prototype.hasOwnProperty.call(IMPLICIT_ROLE_BY_ELEMENT, key)
         ? IMPLICIT_ROLE_BY_ELEMENT[key]
         : '';
+      // No role from either source: for a tag HTML-AAM maps to no role at
+      // all, that IS the answer — nothing supports a role-specific
+      // attribute here. Any other tag has a role this table does not model
+      // (context-dependent ones), so it stays out of scope.
+      if (!role && ROLELESS_ELEMENTS.has(tag)) {
+        applicableCount += rolelessOccurrences(el, tag);
+        continue;
+      }
     }
     if (!role || !ariaHelpers.isValidConcreteRole(role)) continue; // aria-roles-valid's concern
 
@@ -50022,6 +50077,8 @@ const I18N = {
     "ariaAllowedAttr_description": "Prüft, ob jedes erkannte aria-*-Attribut auf einem Element mit expliziter Rolle entweder global unterstützt wird oder von dieser Rolle unterstützt wird.",
     "ariaAllowedAttr_summary_fail": "{{attr}} ist bei role=\"{{role}}\" nicht zulässig.",
     "ariaAllowedAttr_hint_fail": "Entfernen Sie dieses Attribut, oder verwenden Sie eine Rolle, die es unterstützt.",
+    "ariaAllowedAttr_summary_fail_roleless": "<{{element}}> hat keine ARIA-Rolle, daher unterstützt hier nichts das Attribut {{attr}}.",
+    "ariaAllowedAttr_hint_fail_roleless": "Entfernen Sie {{attr}} oder setzen Sie es auf ein Element, dessen Rolle es unterstützt. Ein rollenspezifisches ARIA-Attribut auf einem Element ohne Rolle wird von assistiver Technologie ignoriert.",
     "ariaAllowedAttr_summary_cantTell": "{{attr}} ist bei role=\"{{role}}\" veraltet (weiterhin zulässig, aber nicht empfohlen).",
     "ariaAllowedAttr_hint_cantTell": "Dieses Attribut wurde in ARIA 1.2 aus dem globalen Satz entfernt; entfernen Sie es oder verwenden Sie eine Rolle, die es unterstützt, da eine künftige ARIA-Version es möglicherweise nicht mehr zulässt.",
     "ariaProhibitedAttr_title": "ARIA-Benennungsattribute dürfen nicht bei Rollen verwendet werden, die sie untersagen",
@@ -50683,6 +50740,8 @@ const I18N = {
     "ariaAllowedAttr_description": "Checks that every recognized aria-* attribute present on an element with an explicit role is either globally supported or supported by that role.",
     "ariaAllowedAttr_summary_fail": "{{attr}} is not permitted on role=\"{{role}}\".",
     "ariaAllowedAttr_hint_fail": "Remove this attribute, or use a role that supports it.",
+    "ariaAllowedAttr_summary_fail_roleless": "<{{element}}> has no ARIA role, so nothing supports the {{attr}} attribute on it.",
+    "ariaAllowedAttr_hint_fail_roleless": "Remove {{attr}}, or move it to an element whose role supports it. A role-specific ARIA attribute on an element with no role is ignored by assistive technology.",
     "ariaAllowedAttr_summary_cantTell": "{{attr}} is deprecated on role=\"{{role}}\" (still allowed, but discouraged).",
     "ariaAllowedAttr_hint_cantTell": "This attribute was removed from the ARIA global set in 1.2; remove it or use a role that supports it, as a future ARIA version may disallow it.",
     "ariaProhibitedAttr_title": "ARIA naming attributes must not be used on roles that prohibit them",
@@ -51344,6 +51403,8 @@ const I18N = {
     "ariaAllowedAttr_description": "Comprueba que cada atributo aria-* reconocido presente en un elemento con un rol explícito esté admitido globalmente o admitido por ese rol.",
     "ariaAllowedAttr_summary_fail": "{{attr}} no está permitido en role=\"{{role}}\".",
     "ariaAllowedAttr_hint_fail": "Eliminar este atributo, o usar un rol que lo admita.",
+    "ariaAllowedAttr_summary_fail_roleless": "<{{element}}> no tiene rol ARIA, así que nada admite en él el atributo {{attr}}.",
+    "ariaAllowedAttr_hint_fail_roleless": "Quitar {{attr}} o llevarlo a un elemento cuyo rol lo admita. Un atributo ARIA específico de rol en un elemento sin rol lo ignora la tecnología de apoyo.",
     "ariaAllowedAttr_summary_cantTell": "{{attr}} está obsoleto en role=\"{{role}}\" (todavía permitido, pero desaconsejado).",
     "ariaAllowedAttr_hint_cantTell": "Este atributo se eliminó del conjunto global de ARIA en 1.2; elimínelo o use un rol que lo admita, ya que una versión futura de ARIA podría no permitirlo.",
     "ariaProhibitedAttr_title": "Los atributos de nombrado ARIA no deben usarse en roles que los prohíban",
@@ -52005,6 +52066,8 @@ const I18N = {
     "ariaAllowedAttr_description": "Vérifie que chaque attribut aria-* reconnu présent sur un élément ayant un rôle explicite est soit globalement pris en charge, soit pris en charge par ce rôle.",
     "ariaAllowedAttr_summary_fail": "{{attr}} n’est pas autorisé sur role=\"{{role}}\".",
     "ariaAllowedAttr_hint_fail": "Retirez cet attribut, ou utilisez un rôle qui le prend en charge.",
+    "ariaAllowedAttr_summary_fail_roleless": "<{{element}}> n’a aucun rôle ARIA, donc rien n’y prend en charge l’attribut {{attr}}.",
+    "ariaAllowedAttr_hint_fail_roleless": "Supprimez {{attr}}, ou placez-le sur un élément dont le rôle le prend en charge. Un attribut ARIA spécifique à un rôle, sur un élément sans rôle, est ignoré par les technologies d’assistance.",
     "ariaAllowedAttr_summary_cantTell": "{{attr}} est obsolète sur role=\"{{role}}\" (toujours autorisé, mais déconseillé).",
     "ariaAllowedAttr_hint_cantTell": "Cet attribut a été retiré de l’ensemble global d’ARIA en 1.2 ; retirez-le ou utilisez un rôle qui le prend en charge, car une future version d’ARIA pourrait l’interdire.",
     "ariaProhibitedAttr_title": "Les attributs de nommage ARIA ne doivent pas être utilisés sur des rôles qui les interdisent",
@@ -69708,6 +69771,7 @@ const __a11yCoreCrossFrameApi = (function () {
     details: 'group',
     dfn: 'term',
     dialog: 'dialog',
+    div: 'generic',
     dt: 'term',
     em: 'emphasis',
     fieldset: 'group',
@@ -69732,6 +69796,7 @@ const __a11yCoreCrossFrameApi = (function () {
     p: 'paragraph',
     progress: 'progressbar',
     strong: 'strong',
+    span: 'generic',
     sub: 'subscript',
     sup: 'superscript',
     textarea: 'textbox',
@@ -69755,6 +69820,10 @@ const __a11yCoreCrossFrameApi = (function () {
   const NON_GLOBAL_ARIA_ATTR_SELECTOR =
     '[aria-activedescendant], [aria-autocomplete], [aria-checked], [aria-colcount], [aria-colindex], [aria-colspan], [aria-disabled], [aria-errormessage], [aria-expanded], [aria-haspopup], [aria-invalid], [aria-level], [aria-modal], [aria-multiline], [aria-multiselectable], [aria-orientation], [aria-placeholder], [aria-posinset], [aria-pressed], [aria-readonly], [aria-required], [aria-rowcount], [aria-rowindex], [aria-rowspan], [aria-selected], [aria-setsize], [aria-sort], [aria-valuemax], [aria-valuemin], [aria-valuenow], [aria-valuetext]';
   // </generated:aria-implicit-roles>
+
+  // <generated:aria-roleless-elements>
+  const ROLELESS_ELEMENTS = new Set(['audio', 'video']);
+  // </generated:aria-roleless-elements>
 
   // <generated:aria-role-attrs>
   const SUPPORTED_ATTRS_BY_ROLE = {
@@ -70389,6 +70458,39 @@ const __a11yCoreCrossFrameApi = (function () {
   const cantTellOccurrences = [];
   let applicableCount = 0;
 
+  // An element HTML-AAM maps to no role has nothing to support a
+  // role-specific attribute, so every non-global one present is reported.
+  // Returns how many recognized aria-* attributes it carried, for the
+  // applicable count.
+  function rolelessOccurrences(el, tag) {
+    let seen = 0;
+    const attrs = el.attributes;
+    for (let i = 0; i < attrs.length; i++) {
+      const name = String(attrs[i].name || '').toLowerCase();
+      if (name.slice(0, 5) !== 'aria-') continue;
+      if (!ariaHelpers.isValidAriaAttrName(name)) continue; // aria-valid-attr's concern
+
+      seen += 1;
+      if (globalSet.has(name)) continue;
+
+      failOccurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: `<${tag}> has no ARIA role, so nothing supports the ${name} attribute on it.`,
+          hint: `Remove ${name}, or move it to an element whose role supports it. A role-specific ARIA attribute on an element with no role is ignored by assistive technology.`,
+          i18n: {
+            summaryKey: 'ariaAllowedAttr_summary_fail_roleless',
+            hintKey: 'ariaAllowedAttr_hint_fail_roleless',
+            params: { attr: name, element: tag }
+          },
+          data: {
+            details: { reasonCode: 'ARIA_ATTR_NOT_ALLOWED_ROLELESS', attr: name, element: tag }
+          }
+        })
+      );
+    }
+    return seen;
+  }
+
   for (const el of nodes) {
     if (!el || !el.attributes) continue;
 
@@ -70407,6 +70509,14 @@ const __a11yCoreCrossFrameApi = (function () {
       role = Object.prototype.hasOwnProperty.call(IMPLICIT_ROLE_BY_ELEMENT, key)
         ? IMPLICIT_ROLE_BY_ELEMENT[key]
         : '';
+      // No role from either source: for a tag HTML-AAM maps to no role at
+      // all, that IS the answer — nothing supports a role-specific
+      // attribute here. Any other tag has a role this table does not model
+      // (context-dependent ones), so it stays out of scope.
+      if (!role && ROLELESS_ELEMENTS.has(tag)) {
+        applicableCount += rolelessOccurrences(el, tag);
+        continue;
+      }
     }
     if (!role || !ariaHelpers.isValidConcreteRole(role)) continue; // aria-roles-valid's concern
 
@@ -92047,6 +92157,8 @@ const I18N = {
     "ariaAllowedAttr_description": "Prüft, ob jedes erkannte aria-*-Attribut auf einem Element mit expliziter Rolle entweder global unterstützt wird oder von dieser Rolle unterstützt wird.",
     "ariaAllowedAttr_summary_fail": "{{attr}} ist bei role=\"{{role}}\" nicht zulässig.",
     "ariaAllowedAttr_hint_fail": "Entfernen Sie dieses Attribut, oder verwenden Sie eine Rolle, die es unterstützt.",
+    "ariaAllowedAttr_summary_fail_roleless": "<{{element}}> hat keine ARIA-Rolle, daher unterstützt hier nichts das Attribut {{attr}}.",
+    "ariaAllowedAttr_hint_fail_roleless": "Entfernen Sie {{attr}} oder setzen Sie es auf ein Element, dessen Rolle es unterstützt. Ein rollenspezifisches ARIA-Attribut auf einem Element ohne Rolle wird von assistiver Technologie ignoriert.",
     "ariaAllowedAttr_summary_cantTell": "{{attr}} ist bei role=\"{{role}}\" veraltet (weiterhin zulässig, aber nicht empfohlen).",
     "ariaAllowedAttr_hint_cantTell": "Dieses Attribut wurde in ARIA 1.2 aus dem globalen Satz entfernt; entfernen Sie es oder verwenden Sie eine Rolle, die es unterstützt, da eine künftige ARIA-Version es möglicherweise nicht mehr zulässt.",
     "ariaProhibitedAttr_title": "ARIA-Benennungsattribute dürfen nicht bei Rollen verwendet werden, die sie untersagen",
@@ -92708,6 +92820,8 @@ const I18N = {
     "ariaAllowedAttr_description": "Checks that every recognized aria-* attribute present on an element with an explicit role is either globally supported or supported by that role.",
     "ariaAllowedAttr_summary_fail": "{{attr}} is not permitted on role=\"{{role}}\".",
     "ariaAllowedAttr_hint_fail": "Remove this attribute, or use a role that supports it.",
+    "ariaAllowedAttr_summary_fail_roleless": "<{{element}}> has no ARIA role, so nothing supports the {{attr}} attribute on it.",
+    "ariaAllowedAttr_hint_fail_roleless": "Remove {{attr}}, or move it to an element whose role supports it. A role-specific ARIA attribute on an element with no role is ignored by assistive technology.",
     "ariaAllowedAttr_summary_cantTell": "{{attr}} is deprecated on role=\"{{role}}\" (still allowed, but discouraged).",
     "ariaAllowedAttr_hint_cantTell": "This attribute was removed from the ARIA global set in 1.2; remove it or use a role that supports it, as a future ARIA version may disallow it.",
     "ariaProhibitedAttr_title": "ARIA naming attributes must not be used on roles that prohibit them",
@@ -93369,6 +93483,8 @@ const I18N = {
     "ariaAllowedAttr_description": "Comprueba que cada atributo aria-* reconocido presente en un elemento con un rol explícito esté admitido globalmente o admitido por ese rol.",
     "ariaAllowedAttr_summary_fail": "{{attr}} no está permitido en role=\"{{role}}\".",
     "ariaAllowedAttr_hint_fail": "Eliminar este atributo, o usar un rol que lo admita.",
+    "ariaAllowedAttr_summary_fail_roleless": "<{{element}}> no tiene rol ARIA, así que nada admite en él el atributo {{attr}}.",
+    "ariaAllowedAttr_hint_fail_roleless": "Quitar {{attr}} o llevarlo a un elemento cuyo rol lo admita. Un atributo ARIA específico de rol en un elemento sin rol lo ignora la tecnología de apoyo.",
     "ariaAllowedAttr_summary_cantTell": "{{attr}} está obsoleto en role=\"{{role}}\" (todavía permitido, pero desaconsejado).",
     "ariaAllowedAttr_hint_cantTell": "Este atributo se eliminó del conjunto global de ARIA en 1.2; elimínelo o use un rol que lo admita, ya que una versión futura de ARIA podría no permitirlo.",
     "ariaProhibitedAttr_title": "Los atributos de nombrado ARIA no deben usarse en roles que los prohíban",
@@ -94030,6 +94146,8 @@ const I18N = {
     "ariaAllowedAttr_description": "Vérifie que chaque attribut aria-* reconnu présent sur un élément ayant un rôle explicite est soit globalement pris en charge, soit pris en charge par ce rôle.",
     "ariaAllowedAttr_summary_fail": "{{attr}} n’est pas autorisé sur role=\"{{role}}\".",
     "ariaAllowedAttr_hint_fail": "Retirez cet attribut, ou utilisez un rôle qui le prend en charge.",
+    "ariaAllowedAttr_summary_fail_roleless": "<{{element}}> n’a aucun rôle ARIA, donc rien n’y prend en charge l’attribut {{attr}}.",
+    "ariaAllowedAttr_hint_fail_roleless": "Supprimez {{attr}}, ou placez-le sur un élément dont le rôle le prend en charge. Un attribut ARIA spécifique à un rôle, sur un élément sans rôle, est ignoré par les technologies d’assistance.",
     "ariaAllowedAttr_summary_cantTell": "{{attr}} est obsolète sur role=\"{{role}}\" (toujours autorisé, mais déconseillé).",
     "ariaAllowedAttr_hint_cantTell": "Cet attribut a été retiré de l’ensemble global d’ARIA en 1.2 ; retirez-le ou utilisez un rôle qui le prend en charge, car une future version d’ARIA pourrait l’interdire.",
     "ariaProhibitedAttr_title": "Les attributs de nommage ARIA ne doivent pas être utilisés sur des rôles qui les interdisent",
