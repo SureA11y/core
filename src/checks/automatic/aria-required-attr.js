@@ -13,19 +13,25 @@
  *   also one of the small set of roles with a documented, context-
  *   independent required state/property (checkbox, combobox, heading,
  *   menuitemcheckbox, menuitemradio, meter, radio, scrollbar, slider,
- *   switch).
+ *   switch) -- except when that explicit role is identical to the
+ *   element's own native/implicit role (ACT 4e8ab6: e.g.
+ *   <input type="checkbox" role="checkbox">, which is exempt because the
+ *   native control's own state exposure already covers it; no aria-checked
+ *   is required. helpers.aria.getNativeRoleForElement resolves this).
  * @expectation
  *   Every required aria-* attribute for that role is present (and non-empty).
  * @implementation-notes
  * - Deliberately scoped to REQUIRED_PROPS_BY_ROLE in src/core/aria-helpers.js,
  *   which only lists a required property when the spec is unambiguous and
  *   context-independent — see that file's header for the rationale.
- * - `meter`'s `aria-valuenow` is required. Deliberately NOT required:
- *   `progressbar`'s `aria-valuenow` (a legitimately indeterminate
- *   progressbar omits it) and `combobox`'s `aria-controls` (conditional per
- *   MDN's combobox role page — only required once the popup is actually
- *   displayed, not unconditionally). See src/core/aria-helpers.js's
- *   REQUIRED_PROPS_BY_ROLE comment for the full reasoning.
+ * - `meter`'s `aria-valuenow` is required. Deliberately NOT required
+ *   unconditionally: `progressbar`'s `aria-valuenow` (a legitimately
+ *   indeterminate progressbar omits it) and `combobox`'s `aria-controls`
+ *   (only required once the popup is actually displayed). ACT 4e8ab6's own
+ *   test corpus confirms the conditional trigger: a role="combobox" with
+ *   aria-expanded="true" and no (or empty) aria-controls fails, so that
+ *   specific combination is checked directly below rather than through
+ *   REQUIRED_PROPS_BY_ROLE's unconditional table.
  * - Gated on isAccTreeEligible for the element itself: unlike a syntax-
  *   level check (attribute name/value validity), "does this element
  *   currently carry its required state attribute" is not fixed once
@@ -113,7 +119,22 @@ function runInPage(ctx) {
     const role = ariaHelpers.getExplicitRole(el);
     if (!role || !ariaHelpers.isValidConcreteRole(role)) continue; // aria-roles-valid's concern
 
-    const required = ariaHelpers.getRequiredAttrsForRole(role);
+    // ACT 4e8ab6: an explicit role identical to the element's own native
+    // role is exempt -- the native control's own state exposure already
+    // covers it (e.g. <input type="checkbox" role="checkbox"> needs no
+    // aria-checked; the browser exposes .checked natively).
+    if (ariaHelpers.getNativeRoleForElement && ariaHelpers.getNativeRoleForElement(el) === role) {
+      continue;
+    }
+
+    const required = ariaHelpers.getRequiredAttrsForRole(role).slice();
+
+    // combobox's aria-controls is required only once the popup is actually
+    // displayed (aria-expanded="true") -- see this file's header comment.
+    if (role === 'combobox' && String(el.getAttribute('aria-expanded') || '').trim() === 'true') {
+      required.push('aria-controls');
+    }
+
     if (!required.length) continue;
 
     if (!isEligibleAcc(el)) continue; // not currently exposed to the accessibility tree

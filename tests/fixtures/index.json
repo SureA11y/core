@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-19T03:54:46.080Z",
+  "generatedAt": "2026-08-19T04:08:24.056Z",
   "summary": {
     "total": 125,
     "withFixture": 125,
@@ -1378,8 +1378,8 @@
       "fixtureFile": "tests/fixtures/link-name-present-all-scenarios.html",
       "totalCases": 19,
       "caseCounts": {
-        "PASS": 11,
-        "FAIL": 6,
+        "PASS": 12,
+        "FAIL": 5,
         "CANTTELL": 0,
         "OTHER": 2
       }

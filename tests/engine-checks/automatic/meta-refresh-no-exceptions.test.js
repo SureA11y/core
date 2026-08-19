@@ -16,11 +16,10 @@ test(`${RULE_ID}: notApplicable when there is no meta refresh tag`, () => {
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail even when delay is 0`, () => {
+test(`${RULE_ID}: pass when delay is 0 (immediate redirect, not a timed interruption -- ACT bisz58)`, () => {
   const html = `<!doctype html><html><head><meta http-equiv="refresh" content="0;url=https://example.com"></head><body></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
-  assert.equal(rule.occurrences[0].data.details.reasonCode, 'META_REFRESH_PRESENT');
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: fail when delay is positive`, () => {
@@ -40,7 +39,7 @@ test(`${RULE_ID}: notApplicable for a meta refresh nested inside noscript`, () =
 });
 
 test(`${RULE_ID}: i18n default is English`, () => {
-  const html = `<!doctype html><html><head><meta http-equiv="refresh" content="0"></head><body></body></html>`;
+  const html = `<!doctype html><html><head><meta http-equiv="refresh" content="5"></head><body></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
   assert.strictEqual(rule.title, 'Page must not use a meta refresh at all (AAA)');

@@ -9,20 +9,24 @@
  * @standard WCAG 2.2
  * @sc 2.2.4, 3.2.5
  * @applicability
- *   Applies to any <meta http-equiv="refresh"> element with a non-empty
- *   content attribute.
+ *   Applies to the first <meta http-equiv="refresh"> element, in document
+ *   order, with a valid content attribute — per HTML's shared declarative
+ *   refresh steps, a document only ever acts on its first valid meta
+ *   refresh, so a later one (valid or not) is inert and out of scope.
  * @expectation
- *   No meta refresh is present, regardless of delay. This is the
- *   stricter AAA-level counterpart of meta-refresh-timing-absent
- *   (the A-level rule, which only forbids a positive delay and allows
- *   delay="0" as an immediate redirect). At AAA, WCAG 2.2.4
- *   (Interruptions) and 3.2.5 (Change on Request) require that automatic
- *   context changes — including an immediate meta-refresh redirect —
- *   happen only at the user's request, with no exception for a zero
- *   delay.
+ *   Running the shared declarative refresh steps against that element's
+ *   content value results in a delay of exactly 0. An immediate (delay=0)
+ *   redirect still passes at AAA, same as the A-level rule — there is
+ *   nothing for a user to be interrupted mid-read by when nothing is
+ *   displayed first. Any positive delay fails, with none of the A-level
+ *   rule's >20-hour exemption: at AAA, WCAG 2.2.4 (Interruptions) and
+ *   3.2.5 (Change on Request) require that a *timed* automatic context
+ *   change happen only at the user's request, regardless of how long the
+ *   timer is.
  * @implementation-notes
- * - Distinct, atomic decision from meta-refresh-timing-absent:
- *   that rule's delay="0" pass case is this rule's fail case.
+ * - Distinct, atomic decision from meta-refresh-timing-absent: that
+ *   rule's >20-hour exemption for a positive delay is this rule's fail
+ *   case (no exemption at AAA) — but delay=0 passes in both rules.
  * - A <meta> nested inside <noscript> is excluded: it only ever takes
  *   effect when scripting is disabled, which is never the case for any
  *   context capable of running accessibility tooling in the first place
@@ -122,9 +126,15 @@ function runInPage(ctx) {
     if (el.closest && el.closest('noscript')) continue; // never applies with scripting enabled
     const raw = String(el.getAttribute('content') || '').trim();
     if (!raw) continue;
-    if (parseRefreshDelay(raw) === null) continue;
+    const delay = parseRefreshDelay(raw);
+    if (delay === null) continue;
 
+    // Only the first valid meta refresh in document order is ever acted
+    // on by a browser -- any later one is inert and stops being evaluated
+    // entirely once a winner has been found.
     applicableCount += 1;
+
+    if (delay === 0) break; // an immediate redirect is not a timed interruption
 
     occurrences.push(
       helpers.reportOccurrence(el, {
@@ -141,6 +151,7 @@ function runInPage(ctx) {
         }
       })
     );
+    break;
   }
 
   if (applicableCount === 0) {

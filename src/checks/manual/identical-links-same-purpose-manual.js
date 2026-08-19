@@ -81,17 +81,44 @@ function runInPage(ctx) {
       typeof eligResult === 'boolean' ? eligResult : !!(eligResult && eligResult.eligible);
     if (!eligible) continue;
 
+    // getAccessibleNameInfo alone only covers ARIA/label/title naming, not
+    // name-from-content -- a raw el.textContent fallback misses a link
+    // named only by a descendant image's alt text (e.g.
+    // <a href="..."><img alt="ACT rules"></a> has no text nodes at all).
+    // getContentNameInfo is the same content-aware helper link-name-present
+    // uses for exactly this reason.
     const nameInfo = helpers.getAccessibleNameInfo ? helpers.getAccessibleNameInfo(el, ctx) : null;
-    const rawName =
-      nameInfo && typeof nameInfo.value === 'string' && nameInfo.value.trim()
-        ? nameInfo.value
-        : el.textContent || '';
+    let rawName =
+      nameInfo && typeof nameInfo.value === 'string' && nameInfo.value.trim() ? nameInfo.value : '';
+    if (!rawName) {
+      const contentInfo = helpers.getContentNameInfo ? helpers.getContentNameInfo(el, ctx) : null;
+      rawName =
+        contentInfo && typeof contentInfo.value === 'string' && contentInfo.value.trim()
+          ? contentInfo.value
+          : el.textContent || '';
+    }
     const name = normName(rawName);
     if (!name) continue;
 
+    // `.href` on an SVG <a> is an SVGAnimatedString, not a plain string
+    // IDL property like HTMLAnchorElement.href -- `String(el.href)` would
+    // stringify the wrapper object itself, not its value, silently
+    // grouping every SVG link under the same bogus "destination". Fall
+    // back to the raw attribute, resolved against the document's base
+    // URL, whenever `.href` isn't already a usable string.
     let href;
     try {
-      href = String(el.href || '');
+      href = typeof el.href === 'string' ? el.href : '';
+      if (!href) {
+        const raw = el.getAttribute('href') || el.getAttribute('xlink:href') || '';
+        if (raw) {
+          try {
+            href = new URL(raw, el.ownerDocument.baseURI).href;
+          } catch {
+            href = raw;
+          }
+        }
+      }
     } catch {
       href = '';
     }
