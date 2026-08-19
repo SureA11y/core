@@ -159,14 +159,29 @@ test(`${RULE_ID}: pass when a natively-focusable descendant sits several DOM lev
 // owned value, so a bare instance of those tags isn't part of this bug
 // class — omitted deliberately, not an oversight.
 
-test(`${RULE_ID}: pass when a focusable descendant sits inside a bare <option> (no role="" attribute) under role="listbox" — the <option>'s implicit option role is the real owned child`, () => {
+test(`${RULE_ID}: pass when a focusable descendant sits inside a role="option" child of role="listbox" — the option is the real owned child`, () => {
   const html = `<!doctype html><html><body>
     <div role="listbox">
-      <option><span id="a" tabindex="0">Nested focusable, should not be reported</span></option>
+      <div role="option"><span id="a" tabindex="0">Nested focusable, should not be reported</span></div>
     </div>
   </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: a bare <option> outside a select carries no implicit role, so it is transparent`, () => {
+  // HTML-AAM gives <option> its role only inside select/datalist/optgroup —
+  // the same conditional ACT bc4a75 applies to a bare <li> outside a list.
+  // With no role of its own the option is a transparent wrapper, so the
+  // focusable span inside it is the listbox's own roleless owned entry.
+  const html = `<!doctype html><html><body>
+    <div role="listbox">
+      <option><span id="a" tabindex="0">Focusable</span></option>
+    </div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'ARIA_PROHIBITED_CHILD_ROLELESS');
 });
 
 test(`${RULE_ID}: pass when a bare <tbody> (no role="" attribute, tabindex for keyboard-scrollable table body — a real, common pattern) sits under role="table" — the <tbody>'s implicit rowgroup role is itself one of table's allowed owned roles, so it's a transparent group, not a roleless-focusable violation (uses a real <table> so the HTML parser doesn't silently drop <tbody>/<tr>/<td>, which are parse-error-ignored outside real table context)`, () => {

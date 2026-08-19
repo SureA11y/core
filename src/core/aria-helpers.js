@@ -843,6 +843,42 @@ function createAriaHelpers(opts, shared) {
     'input[type=radio]': 'radio'
   };
 
+  // Several of the roles above are conditional in HTML-AAM: the element only
+  // carries them inside the native structure they belong to. An <li> loose in
+  // a <div> is not a listitem, and ACT bc4a75 turns on exactly that —
+  // `<div role="list"><li>Item</li><span role="link">x</span></div>` fails,
+  // because the list owns no valid child at all once the <li> stops counting.
+  // `directParent` distinguishes HTML-AAM's "child of" conditions (li, option,
+  // the row groups) from its "descendant of a table" ones (tr, td, th), which
+  // sit inside a rowgroup in most real tables.
+  const NATIVE_CONTAINMENT_CONTEXT = {
+    li: { tags: ['ul', 'ol', 'menu'], directParent: true },
+    option: { tags: ['select', 'datalist', 'optgroup'], directParent: true },
+    thead: { tags: ['table'], directParent: true },
+    tbody: { tags: ['table'], directParent: true },
+    tfoot: { tags: ['table'], directParent: true },
+    tr: { tags: ['table'], directParent: false },
+    td: { tags: ['table'], directParent: false },
+    th: { tags: ['table'], directParent: false }
+  };
+
+  // Walks light-DOM parents only. A slotted element whose native container
+  // lives in a shadow tree therefore reads as out of context; the containment
+  // rules already treat shadow boundaries as their own scope, and no ACT
+  // example covers the crossing.
+  function hasNativeContext(el, context) {
+    const tags = context.tags;
+    let cur = el && el.parentElement ? el.parentElement : null;
+    let guard = 0;
+    while (cur && guard++ < 200) {
+      const tag = lower(cur.tagName || '');
+      if (tags.indexOf(tag) !== -1) return true;
+      if (context.directParent) return false;
+      cur = cur.parentElement;
+    }
+    return false;
+  }
+
   function isElement(el) {
     return !!(el && el.nodeType === 1);
   }
@@ -1158,9 +1194,13 @@ function createAriaHelpers(opts, shared) {
         : '';
     }
 
-    return Object.prototype.hasOwnProperty.call(NATIVE_CONTAINMENT_ROLE_BY_ELEMENT, tag)
-      ? NATIVE_CONTAINMENT_ROLE_BY_ELEMENT[tag]
-      : '';
+    if (!Object.prototype.hasOwnProperty.call(NATIVE_CONTAINMENT_ROLE_BY_ELEMENT, tag)) return '';
+
+    // A conditional role only holds inside the structure HTML-AAM names.
+    const context = NATIVE_CONTAINMENT_CONTEXT[tag];
+    if (context && !hasNativeContext(el, context)) return '';
+
+    return NATIVE_CONTAINMENT_ROLE_BY_ELEMENT[tag];
   }
 
   return {

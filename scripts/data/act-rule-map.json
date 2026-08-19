@@ -1,7 +1,7 @@
 [
   { "actId": "5f99a7", "actName": "ARIA attribute is defined in WAI-ARIA", "ourRuleIds": ["aria-valid-attr"], "matchType": "exact" },
   { "actId": "ff89c9", "actName": "ARIA required context role", "ourRuleIds": ["aria-required-parent"], "matchType": "exact" },
-  { "actId": "bc4a75", "actName": "ARIA required owned elements", "ourRuleIds": ["aria-required-children"], "matchType": "exact" },
+  { "actId": "bc4a75", "actName": "ARIA required owned elements", "ourRuleIds": ["aria-required-children", "aria-prohibited-children"], "matchType": "family" },
   { "actId": "6a7281", "actName": "ARIA state or property has valid value", "ourRuleIds": ["aria-valid-attr-value"], "matchType": "exact" },
   { "actId": "5c01ea", "actName": "ARIA state or property is permitted", "ourRuleIds": ["aria-allowed-attr"], "matchType": "exact" },
   { "actId": "80f0bf", "actName": "Audio or video element avoids automatically playing audio", "ourRuleIds": ["no-autoplay-audio"], "matchType": "family" },
