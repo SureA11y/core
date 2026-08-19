@@ -590,7 +590,7 @@ Determines whether sufficient information is available to compute WCAG color con
 
 automatic · WCAG 1.4.6 (AAA) · confidence high · default severity serious
 
-Checks that visible text has a contrast ratio of at least 7.0:1 (normal) or 4.5:1 (large), when contrast is computable from CSS.
+Checks that visible text has a contrast ratio of at least 7:1 (normal) or 4.5:1 (large), when contrast is computable from CSS.
 
 **Applies to.** Applies to the visible text contrast-computable applies to — see that rule for the eligibility gates — narrowed to text whose background and foreground are actually computable. Eligible text that is not computable leaves this rule notApplicable rather than cantTell: reporting that uncertainty belongs to contrast-computable, so the two never report the same text twice.
 
@@ -602,7 +602,7 @@ Checks that visible text has a contrast ratio of at least 7.0:1 (normal) or 4.5:
 
 automatic · WCAG 1.4.3 (AA) · confidence high · default severity serious
 
-Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3.0:1 (large), when contrast is computable from CSS.
+Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3:1 (large), when contrast is computable from CSS.
 
 **Applies to.** Applies to the visible text contrast-computable applies to — see that rule for the eligibility gates — narrowed to text whose background and foreground are actually computable. Eligible text that is not computable leaves this rule notApplicable rather than cantTell: reporting that uncertainty belongs to contrast-computable, so the two never report the same text twice.
 
@@ -771,7 +771,7 @@ Checks that heading elements (&lt;h1&gt;-&lt;h6&gt; or role="heading") have a no
 
 manual · no formal WCAG SC mapping · confidence medium · default severity minor
 
-Checks that &lt;th&gt; elements have visible text content — a header named only via aria-label/aria-labelledby is also flagged, since real screen-reader/browser support for that is inconsistent.
+Checks that table header cells (&lt;th&gt;, or any element with role="columnheader"/"rowheader") have visible text content — a header named only via aria-label/aria-labelledby is also flagged, since real screen-reader/browser support for that is inconsistent.
 
 **Applies to.** Applies to &lt;th&gt; elements that don't carry a conflicting explicit role, plus any element (native &lt;th&gt; or not) with role="columnheader" or role="rowheader" (`th:not([role]), [role="columnheader"], [role="rowheader"]`): a &lt;th&gt; that explicitly restates role="columnheader"/"rowheader" is still covered via the second clause, but a &lt;th role="presentation"&gt; (no longer meaningfully a header) is correctly excluded, and an ARIA-role-only header (e.g. a &lt;div role="columnheader"&gt; in a role="grid"/role="table" widget) is caught too.
 
@@ -807,7 +807,7 @@ Flags a visible form-field label that is a placeholder ("Label", "Field"), or th
 
 automatic · WCAG 1.3.1, 3.3.2, 4.1.2 (A) · confidence medium · default severity serious
 
-Checks that form controls have a programmatic label via &lt;label&gt;, aria-label, or aria-labelledby.
+Checks that form controls have a programmatic label via &lt;label&gt;, aria-label, aria-labelledby, title, or placeholder.
 
 **Applies to.** Applies to &lt;input&gt;, &lt;select&gt; and &lt;textarea&gt; elements included in the accessibility tree, excluding the input types hidden, submit, reset, button and image, which take their name from a value or alt attribute rather than from a label. A control carrying an explicit ARIA widget role is out of scope — button, checkbox, combobox, listbox, textbox, slider and the rest of ROLE_OWNED_ELSEWHERE each have a naming rule of their own — and role="presentation"/"none" removes a control unless it is still tabbable.
 
@@ -1457,7 +1457,7 @@ Identifies page title patterns that may indicate low descriptiveness, such as ge
 
 automatic · WCAG 2.4.2 (A) · confidence high · default severity serious
 
-Checks that the page includes a non-empty &lt;title&gt; element that identifies the page.
+Checks that the page includes a non-empty &lt;title&gt; element.
 
 **Applies to.** Applies to a run over a whole document. A run narrowed by contextSelector, or by engineOptions.fragment, is notApplicable: whether the page has a title is not a property any subtree can answer.
 
@@ -1737,7 +1737,7 @@ Flags tables with no &lt;caption&gt; whose first row has a single non-empty cell
 
 automatic · WCAG 1.3.1 (A) · confidence high · default severity serious
 
-Checks that each id in a &lt;td&gt;/&lt;th&gt; headers attribute resolves to a &lt;th&gt; element within the same table (not missing, not a non-th element, not itself).
+Checks that each id in a &lt;td&gt;/&lt;th&gt; headers attribute resolves to a cell (&lt;td&gt; or &lt;th&gt;) within the same table (not missing, not a non-cell element, not itself).
 
 **Applies to.** Applies to &lt;td&gt;/&lt;th&gt; elements that carry a non-empty headers attribute, within a &lt;table&gt; whose semantic role is still table/grid/treegrid -- an explicit role of anything else (role="presentation"/"none", but also role="heading" or any other real role) replaces the native table semantics, leaving no table for headers to describe. Matches ACT a25f45's applicability.
 

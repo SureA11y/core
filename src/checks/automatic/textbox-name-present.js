@@ -25,8 +25,8 @@
 const id = 'textbox-name-present';
 
 const meta = {
-  title: 'Accessible name is present',
-  description: 'Checks that elements expose a non-empty accessible name.',
+  title: 'Textboxes have an accessible name',
+  description: 'Checks that elements with role="textbox" expose a non-empty accessible name.',
   i18n: {
     titleKey: 'textboxNamePresent_title',
     descriptionKey: 'textboxNamePresent_description'

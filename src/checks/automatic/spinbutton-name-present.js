@@ -25,8 +25,8 @@
 const id = 'spinbutton-name-present';
 
 const meta = {
-  title: 'Accessible name is present',
-  description: 'Checks that elements expose a non-empty accessible name.',
+  title: 'Spinbuttons have an accessible name',
+  description: 'Checks that elements with role="spinbutton" expose a non-empty accessible name.',
   i18n: {
     titleKey: 'spinbuttonNamePresent_title',
     descriptionKey: 'spinbuttonNamePresent_description'

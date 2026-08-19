@@ -25,7 +25,7 @@
 const id = 'contrast-enhanced';
 
 const meta = {
-  title: 'Text must meet the enhanced color contrast ratio',
+  title: 'Text meets enhanced color contrast (AAA)',
   description:
     'Checks that visible text has a contrast ratio of at least 7:1 (normal) or 4.5:1 (large), when contrast is computable from CSS.',
   i18n: {

@@ -189,6 +189,21 @@ function validateI18nKeyExists(dict, key, context) {
   );
 }
 
+// The catalog (docs/RULE_CATALOG.md, getChecksCatalog()) publishes the
+// dictionary text, while meta.title/meta.description are only the fallback for
+// a locale that has no entry. Letting the two say different things means the
+// fallback quietly describes a different rule than the one consumers read
+// about, which is how several rules ended up documented as "Accessible name is
+// present" in source and role-specific in the catalog.
+function validateI18nMatchesMeta(dict, key, value, context) {
+  assert.strictEqual(
+    value,
+    dict[key],
+    `${context}: must match the English dictionary text for ${key}. ` +
+      `Update whichever is wrong (and the other locales, if the English text changed).`
+  );
+}
+
 function extractI18nKeysFromSource(runFilePath) {
   // Conservative extraction: find string literals assigned to *Key properties.
   // This catches the real-world pattern used in your rule family:
@@ -601,6 +616,14 @@ function main() {
   // Validate meta i18n keys exist
   validateI18nKeyExists(enDict, mod.meta.i18n.titleKey, 'meta.i18n.titleKey');
   validateI18nKeyExists(enDict, mod.meta.i18n.descriptionKey, 'meta.i18n.descriptionKey');
+
+  validateI18nMatchesMeta(enDict, mod.meta.i18n.titleKey, mod.meta.title, 'meta.title');
+  validateI18nMatchesMeta(
+    enDict,
+    mod.meta.i18n.descriptionKey,
+    mod.meta.description,
+    'meta.description'
+  );
 
   // Validate i18n keys referenced in source (static extraction)
   const { keys: staticKeys } = extractI18nKeysFromSource(ruleAbsPath);

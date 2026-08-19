@@ -40,7 +40,7 @@ const id = 'svg-text-alternative-present';
 const meta = {
   title: '<svg> must provide a text alternative',
   description:
-    'Checks that inline <svg> elements provide a text alternative via a <title> element or an ARIA name (a <desc> element alone does not count — it only contributes to the accessible description, not the name).',
+    'Checks that inline <svg> elements provide a text alternative via a <title> element or an ARIA name (a <desc> element alone does not count).',
   i18n: {
     titleKey: 'svg_textAltPresent_title',
     descriptionKey: 'svg_textAltPresent_description'

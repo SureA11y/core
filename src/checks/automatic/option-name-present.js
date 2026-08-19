@@ -24,8 +24,8 @@
 const id = 'option-name-present';
 
 const meta = {
-  title: 'Accessible name is present',
-  description: 'Checks that elements expose a non-empty accessible name.',
+  title: 'Options have an accessible name',
+  description: 'Checks that elements with role="option" expose a non-empty accessible name.',
   i18n: {
     titleKey: 'optionNamePresent_title',
     descriptionKey: 'optionNamePresent_description'
