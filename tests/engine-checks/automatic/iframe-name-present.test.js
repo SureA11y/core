@@ -61,10 +61,15 @@ test(`${RULE_ID}: i18n default is English`, () => {
   assert.strictEqual(rule.title, 'Frames have an accessible name');
 });
 
-test(`${RULE_ID}: notApplicable for an iframe marked decorative`, () => {
-  // role="none"/"presentation" states that the frame carries nothing to
-  // announce, so there is no name to demand of it.
+test(`${RULE_ID}: fail for an iframe marked decorative with no tabindex — natively focusable by default, so role="none" doesn't stick (ACT cae760)`, () => {
   const html = `<!doctype html><html><body><iframe id="a" role="none" src="/x.html"></iframe></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+});
+
+test(`${RULE_ID}: notApplicable for an iframe marked decorative AND out of the tab order (role="none" + tabindex="-1")`, () => {
+  const html = `<!doctype html><html><body><iframe id="a" role="none" tabindex="-1" src="/x.html"></iframe></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
@@ -79,15 +84,15 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/iframe-name-present-all-scena
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 3, maxOccurrences: 3 });
 
-  const expectedFailIds = ['ifn_case_04', 'ifn_case_05'];
+  const expectedFailIds = ['ifn_case_04', 'ifn_case_05', 'ifn_case_07'];
   const expectedNoOccIds = [
     'ifn_case_01',
     'ifn_case_02',
     'ifn_case_03',
     'ifn_case_06',
-    'ifn_case_07'
+    'ifn_case_08'
   ];
 
   for (const id of expectedFailIds) {

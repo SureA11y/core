@@ -18979,12 +18979,28 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
+  // <iframe>/<frame> are natively focusable by default (no tabindex
+  // needed), unlike most elements — only an explicit negative tabindex
+  // removes them from the tab order.
+  function isFrameFocusable(el) {
+    try {
+      const tabindexRaw = el.getAttribute ? el.getAttribute('tabindex') : null;
+      if (tabindexRaw == null) return true;
+      const n = Number(String(tabindexRaw).trim());
+      if (Number.isFinite(n) && n < 0) return false;
+      return true;
+    } catch {
+      return true;
+    }
+  }
+
   for (const el of nodes) {
     if (!el || !el.tagName) continue;
 
     const roleAttr = el.getAttribute ? String(el.getAttribute('role') || '') : '';
     const firstRoleToken = roleAttr.trim().toLowerCase().split(/\s+/)[0];
-    if (firstRoleToken === 'none' || firstRoleToken === 'presentation') continue;
+    if ((firstRoleToken === 'none' || firstRoleToken === 'presentation') && !isFrameFocusable(el))
+      continue;
 
     if (helpers.isAccTreeEligible) {
       const elig = helpers.isAccTreeEligible(el);
