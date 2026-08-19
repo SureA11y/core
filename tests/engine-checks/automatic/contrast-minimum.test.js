@@ -179,6 +179,35 @@ test(`${RULE_ID}: a low but non-matching contrast still fails (the same-color ex
   assert.ok(rule.occurrences.some((o) => typeof o.html === 'string' && o.html.includes('id="a"')));
 });
 
+test(`${RULE_ID}: text made only of punctuation/symbol characters is out of scope => notApplicable (ACT afw4f7's own passed example: "does not express anything in human language")`, () => {
+  const html = `
+<!doctype html>
+<html><head><style>
+  html, body { background: #fff; }
+</style></head>
+<body>
+  <p style="color: #000; background: #666;">----=====++++++++___________***********%%%%%%%%%%%±±±±@@@@@@@@</p>
+</body></html>`;
+
+  const result = run(html);
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: digits-only text still counts as human-language content and is still checked`, () => {
+  const html = `
+<!doctype html>
+<html><head><style>
+  html, body { background: #fff; }
+</style></head>
+<body>
+  <p id="a" style="color: #000; background: #666;">42</p>
+</body></html>`;
+
+  const result = run(html);
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(rule.occurrences.some((o) => typeof o.html === 'string' && o.html.includes('id="a"')));
+});
+
 test(`${RULE_ID}: eligible text exists but none computable => notApplicable (noComputableText)`, () => {
   const html = `
 <!doctype html>

@@ -370,7 +370,17 @@ function createContrastHelpers(opts, shared) {
           ? w.NodeFilter.SHOW_TEXT
           : 4;
 
-      const isNonEmptyText = (t) => t != null && /\S/.test(String(t));
+      // ACT afw4f7/09o5cg's own applicability is scoped to text that
+      // "expresses something in human language" — a string of pure
+      // punctuation/symbol characters, with no letter or digit at all,
+      // isn't language and is out of scope entirely, not a violation. Their
+      // own passed example is exactly that: a paragraph of nothing but
+      // punctuation/symbol glyphs.
+      const isNonEmptyText = (t) => {
+        if (t == null) return false;
+        const s = String(t);
+        return /\S/.test(s) && /[\p{L}\p{N}]/u.test(s);
+      };
 
       const elToCount = new WeakMap();
       const elements = [];
