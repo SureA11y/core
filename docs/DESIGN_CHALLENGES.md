@@ -18,6 +18,16 @@ A running log of engine design decisions worth re-examining — cases where an e
 
 ## Decided
 
+### `css-orientation-lock` required an EXACT 90/270-degree rotation, when its own comments already claimed "approximately" — fixed
+
+**Decision as it stands (before the fix):** `isLockingRotation`'s comment claimed to flag "~90/~270 degrees," but the actual code did `Math.abs(abs - 90) % 90 <= 0` — modulo of a non-negative number is `<= 0` only when it's exactly `0`, so this only ever matched a rotation that was an exact multiple of 90. The 3 live mismatches this produced were filed as a single "env/harness limit — jsdom's CSS parser drops `@media(orientation)` rules using `rad` units or `matrix3d()`."
+
+**Why it was questioned:** directly parsing both cited stylesheets with jsdom (outside this engine entirely) showed jsdom parses `rotate(1.5708rad)` and `matrix3d(...)` correctly — `style.transform` comes back with both intact. Neither is a jsdom limitation. What's actually happening: `1.5708rad` converts to `90.0000210...` degrees (floating-point remainder from the radian conversion), and ACT's own failed example uses a deliberately-inexact `92.5deg` — both are "approximately 90" in every practical sense, but neither is `=== 90`, so the exact-modulo check silently passed both.
+
+**Decision (2026-08-19):** replaced the exact-equality check with a real tolerance window (±5 degrees) around the normalized position, fixing both the floating-point case and the deliberately-inexact one — the "not a jsdom limitation" 2 of the original 3 mismatches. The third, `matrix3d()`, genuinely is a documented, deliberate scope limit (this rule doesn't decompose transform matrices into an equivalent angle) and stays as-is — that reasoning was already correct, just miscategorized as "jsdom" alongside the two that weren't.
+
+**Status:** resolved 2026-08-19 — `b33eff` drops from 3 to 1 mismatch (the accepted `matrix3d()` case).
+
 ### `iframe-focusable-content` never resolved a `srcdoc` iframe's content, and never exempted tiny "tracking pixel" iframes — both fixed
 
 **Decision as it stands (before the fix):** the rule's `contentDoc = el.contentDocument || null` resolution was the only path to an embedded document; it was documented as an "env/harness limit — jsdom doesn't populate `iframe.contentDocument` from a `srcdoc` attribute; a real browser does," implying nothing could be done about it in this codebase specifically.
