@@ -2,6 +2,35 @@
 
 'use strict';
 
+/**
+ * @check contrast-computable
+ * @atomic true
+ * @summary Color contrast must be computable from CSS for rendered text
+ * @standard WCAG 2.2
+ * @sc 1.4.3
+ * @sc 1.4.6
+ * @applicability
+ *   Applies to every visible text node in scope, plus the label of <input
+ *   type="button">/[type="submit"]/[type="reset"], which is rendered from
+ *   the value attribute and so is invisible to a text-node walk. Text counts
+ *   only when its element is DOM-visible under the run's visibility mode, is
+ *   not clipped out of sight by the sr-only technique (clip or clip-path),
+ *   and belongs neither to a disabled control nor to the label of one —
+ *   WCAG's inactive-user-interface-component exception. Subtrees excluded
+ *   via engineOptions.excludeSelectors are skipped, and open shadow roots
+ *   are walked as roots in their own right.
+ * @expectation
+ *   Both sides of the contrast calculation can be established from CSS for
+ *   every applicable text node: an effective background resolving to an
+ *   opaque color, and a parsable foreground color. Where either cannot be —
+ *   a background image or gradient, mix-blend-mode, a filter or
+ *   backdrop-filter, ancestor opacity, a root background that never becomes
+ *   opaque, or a color that does not parse — the result is cantTell naming
+ *   the blocker. This rule is the one that reports that uncertainty, which
+ *   is what lets contrast-minimum and contrast-enhanced stay silent on the
+ *   same text instead of guessing at a ratio.
+ */
+
 const id = 'contrast-computable';
 
 const meta = {

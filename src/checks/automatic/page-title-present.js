@@ -2,6 +2,24 @@
 
 'use strict';
 
+/**
+ * @check page-title-present
+ * @atomic true
+ * @summary The document must have a non-empty title
+ * @standard WCAG 2.2
+ * @sc 2.4.2
+ * @applicability
+ *   Applies to a run over a whole document. A run narrowed by
+ *   contextSelector, or by engineOptions.fragment, is notApplicable: whether
+ *   the page has a title is not a property any subtree can answer.
+ * @expectation
+ *   The document has a <title> element, and document.title with whitespace
+ *   collapsed is non-empty. The element is looked for anywhere in the
+ *   document, not only inside <head>: a <title> the parser leaves outside
+ *   <head> is still the document title in every browser. Whether that title
+ *   describes the page is page-title-patterns' question.
+ */
+
 const id = 'page-title-present';
 
 const meta = {

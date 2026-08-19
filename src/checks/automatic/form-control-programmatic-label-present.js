@@ -19,6 +19,23 @@
  * accessible name (4.1.2) all at once. This rule was originally only wired
  * to 4.1.2, even though its own `tags` already listed wcag131/wcag332 and
  * wcag-facets.js already had matching facet ids under those SCs.
+ *
+ * @applicability
+ *   Applies to <input>, <select> and <textarea> elements included in the
+ *   accessibility tree, excluding the input types hidden, submit, reset,
+ *   button and image, which take their name from a value or alt attribute
+ *   rather than from a label. A control carrying
+ *   an explicit ARIA widget role is out of scope — button, checkbox,
+ *   combobox, listbox, textbox, slider and the rest of ROLE_OWNED_ELSEWHERE
+ *   each have a naming rule of their own — and role="presentation"/"none"
+ *   removes a control unless it is still tabbable.
+ * @expectation
+ *   Each applicable control carries a programmatic label by one of the
+ *   mechanisms helpers.getLabelMethod resolves, in its priority order: an
+ *   associated <label>, aria-labelledby, aria-label, title, then
+ *   placeholder. Any of the five satisfies this rule. Whether the weaker two
+ *   are an appropriate primary label is a separate question, asked by
+ *   form-control-programmatic-label-quality.
  */
 
 const id = 'form-control-programmatic-label-present';

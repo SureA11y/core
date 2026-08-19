@@ -4,7 +4,23 @@
 
 /**
  * @check manual-review
- * Manual review for keyboard navigation and focus order.
+ * @atomic true
+ * @summary Manual review of keyboard navigation and focus order
+ * @standard WCAG 2.2
+ * @sc 2.1.1
+ * @sc 2.4.3
+ * @sc 2.4.7
+ * @type manual
+ * @applicability
+ *   Applies to every run, whatever the page contains. Keyboard operability
+ *   and focus order are properties of the page as a whole, and no markup
+ *   pattern rules the question out.
+ * @expectation
+ *   Always cantTell, carrying one occurrence at the scan root. Whether focus
+ *   can leave every component, whether the tab order follows the reading
+ *   order, and whether the focus indicator stays visible in use all need a
+ *   person driving the page. The rule exists so that need is stated in the
+ *   results rather than left for the reader to remember.
  */
 
 const id = 'manual-review';

@@ -9,6 +9,14 @@
  * @standard WCAG 2.2
  * @sc 1.1.1
  * @type manual
+ * @applicability
+ *   Applies to <canvas> elements that already carry a text alternative:
+ *   fallback content inside the element, an ARIA name, or a title. A
+ *   <canvas> with none of those has no alternative whose quality could be
+ *   judged — it is canvas-text-alternative-present's failure. The element
+ *   must be included in the accessibility tree, and
+ *   role="presentation"/"none" takes it out of scope unless it is focusable,
+ *   which restores its role.
  * @expectation
  *   Human review is required to confirm that the provided text alternative is accurate and appropriate.
  */

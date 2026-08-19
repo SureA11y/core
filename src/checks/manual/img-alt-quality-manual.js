@@ -9,6 +9,13 @@
  * @standard WCAG 2.2
  * @sc 1.1.1
  * @type manual
+ * @applicability
+ *   Applies to <img> elements whose alt attribute is present and non-empty.
+ *   The element must be included in the accessibility tree, and
+ *   role="presentation"/"none" takes it out of scope unless it is focusable,
+ *   which restores its role. An <img> with no alt at all is
+ *   img-alt-present's failure, and one with alt="" is img-alt-decorative's
+ *   review.
  * @expectation
  *   Human review is required to confirm that the provided text alternative is accurate and appropriate.
  */

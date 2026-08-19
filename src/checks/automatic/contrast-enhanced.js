@@ -2,6 +2,26 @@
 
 'use strict';
 
+/**
+ * @check contrast-enhanced
+ * @atomic true
+ * @summary Text must meet the WCAG AAA contrast ratio for its size
+ * @standard WCAG 2.2
+ * @sc 1.4.6
+ * @applicability
+ *   Applies to the visible text contrast-computable applies to — see that
+ *   rule for the eligibility gates — narrowed to text whose background and
+ *   foreground are actually computable. Eligible text that is not computable
+ *   leaves this rule notApplicable rather than cantTell: reporting that
+ *   uncertainty belongs to contrast-computable, so the two never report the
+ *   same text twice.
+ * @expectation
+ *   Every computable text node reaches the ratio SC 1.4.6 requires for its
+ *   size: 4.5:1 for large text, 7:1 for everything else. Text is large at
+ *   24px or more, or at 14pt (about 18.667px) or more when the computed font
+ *   weight is 700 or higher.
+ */
+
 const id = 'contrast-enhanced';
 
 const meta = {

@@ -2,6 +2,28 @@
 
 'use strict';
 
+/**
+ * @check binary-control-name-present
+ * @atomic true
+ * @summary Checkboxes, radios and switches must have an accessible name
+ * @standard WCAG 2.2
+ * @sc 4.1.2
+ * @applicability
+ *   Applies to elements carrying role="checkbox", role="radio" or
+ *   role="switch" (the attribute must name one of those roles alone, not a
+ *   fallback list) that are included in the accessibility tree. A native
+ *   <input type="checkbox">/<input type="radio"> is in scope only when it
+ *   carries one of those roles explicitly; without a role attribute it
+ *   belongs to form-control-programmatic-label-present.
+ * @expectation
+ *   The control has a non-empty accessible name from aria-label, from an
+ *   aria-labelledby that resolves to non-empty text, or from title. A native
+ *   checkbox or radio additionally accepts an associated <label> — the
+ *   labels API, a wrapping <label>, or label[for], with at most four labels
+ *   read for determinism — and any other element accepts its own subtree
+ *   text, those roles being name-from-content.
+ */
+
 const id = 'binary-control-name-present';
 
 const meta = {

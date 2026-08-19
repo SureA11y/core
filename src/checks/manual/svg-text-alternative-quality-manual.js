@@ -9,6 +9,15 @@
  * @standard WCAG 2.2
  * @sc 1.1.1
  * @type manual
+ * @applicability
+ *   Applies to inline <svg> elements that already carry a text alternative:
+ *   non-empty <title> or <desc> text, a non-empty aria-label, or an
+ *   aria-labelledby that resolves to non-empty text. <desc> counts here as
+ *   something to review even though it never contributes to the accessible
+ *   name — that distinction is svg-text-alternative-present's. The element
+ *   must be included in the accessibility tree, and
+ *   role="presentation"/"none" takes it out of scope unless it is focusable,
+ *   which restores its role.
  * @expectation
  *   Human review is required to confirm that the provided text alternative is accurate and appropriate.
  */

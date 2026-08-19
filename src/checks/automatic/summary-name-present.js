@@ -2,6 +2,22 @@
 
 'use strict';
 
+/**
+ * @check summary-name-present
+ * @atomic true
+ * @summary <summary> elements must have an accessible name
+ * @standard WCAG 2.2
+ * @sc 4.1.2
+ * @applicability
+ *   Applies to <summary> elements included in the accessibility tree,
+ *   wherever they appear — a <summary> outside a <details> is still matched.
+ * @expectation
+ *   The element has a non-empty accessible name from aria-label, from an
+ *   aria-labelledby that resolves to non-empty text, from title, or from its
+ *   own subtree text, where a descendant's own name (an <img alt>,
+ *   aria-label or title) counts as that descendant's contribution.
+ */
+
 const id = 'summary-name-present';
 
 const meta = {
