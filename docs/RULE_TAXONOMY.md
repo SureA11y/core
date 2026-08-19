@@ -24,7 +24,7 @@ Manual rules MUST NOT make normative failure decisions.
 ### 1.2 Intent
 Encoded by: **rule id suffix**
 
-Illustrative intents (from the image-alternatives family used as the running example in §2, not an exhaustive list — the ruleset's 125 rules use dozens of distinct suffixes; `docs/RULE_CATALOG.md` is the generated, always-current list):
+Illustrative intents (from the image-alternatives family used as the running example in §2, not an exhaustive list — the ruleset's 130 rules use dozens of distinct suffixes; `docs/RULE_CATALOG.md` is the generated, always-current list):
 
 - `present`
     - Verifies that a required **mechanism exists**
@@ -43,7 +43,7 @@ Intent determines whether a rule can be automatic.
 ### 1.3 Target Family
 Encoded by: **rule id prefix**
 
-Illustrative families, from the image-alternatives cluster (WCAG 1.1.1) used as the running example in §2 — not an exhaustive list. The ruleset's 125 rules span dozens of families (`aria-*`, `contrast-*`, `dialog-*`, `iframe-*`, `label-*`, `link-*`, `list-*`, `landmark-*`, and more); see `docs/RULE_CATALOG.md` for the generated, always-current list:
+Illustrative families, from the image-alternatives cluster (WCAG 1.1.1) used as the running example in §2 — not an exhaustive list. The ruleset's 130 rules span dozens of families (`aria-*`, `contrast-*`, `dialog-*`, `iframe-*`, `label-*`, `link-*`, `list-*`, `landmark-*`, and more); see `docs/RULE_CATALOG.md` for the generated, always-current list:
 
 - `img`
 - `area`
