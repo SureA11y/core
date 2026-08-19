@@ -7,7 +7,7 @@ Cross-reference between the [W3C ACT Rules](https://act-rules.github.io/rules/) 
 - **~2** are covered structurally by our composite/rollup layer, not a named rule
 - **~51 are gaps** — no corresponding rule in this repo, listed in [Gaps](#gaps-no-corresponding-rule) below
 
-**Every matched rule has now been run through ACT's own official test-case corpus** (`scripts/act-testcase-check.js`, 713 test cases across the 51-rule matched set of the time). Started at 86 mismatches; real bugs were fixed, mapping errors corrected, and every remaining mismatch triaged into a deliberate scope difference, a jsdom/environment limit, or a genuine open design question (tracked in [`docs/DESIGN_CHALLENGES.md`](./DESIGN_CHALLENGES.md)). Current state: **49 mismatches remain, all explained** below or in that file — see "Progress" further down for the full per-rule breakdown.
+**Every matched rule has now been run through ACT's own official test-case corpus** (`scripts/act-testcase-check.js`, 713 test cases across the 51-rule matched set of the time). Started at 86 mismatches; real bugs were fixed, mapping errors corrected, and every remaining mismatch triaged into a deliberate scope difference, a jsdom/environment limit, or a genuine open design question (tracked in [`docs/DESIGN_CHALLENGES.md`](./DESIGN_CHALLENGES.md)). A second pass then re-ran the whole corpus from a local checkout (see "Second pass" below) and repeated the exercise on what it turned up. Current state: **821 examples across the 53-rule matched set, 56 mismatches, all explained** below or in that file — see "Progress" further down for the full per-rule breakdown.
 
 Real rule bugs found and fixed this way, in rough chronological order:
 - `button-name-present` wasn't crediting the UA-default label on `input[type=submit]`/`input[type=reset]` with no `value`, and wasn't honoring `role="none"`/`role="presentation"` conflict-resolution.
@@ -39,20 +39,37 @@ Gaps closed since:
 - `307n5z` "Element with presentational children has no focusable content" is now implemented by the new `presentational-children-focusable-absent` rule. The gap entry it replaces described the wrong mechanism — it read the rule as being about an explicit `role="presentation"`/`"none"` attribute, which is the exact misreading ACT's own Background section warns against. The rule is about the *implicit* presentational-children trait a role carries (`button`, `checkbox`, `img`, `option`, `tab`, ...): those roles drop their whole subtree from the accessibility tree, so a descendant that still takes a tab stop receives focus with no role and no name. Clean against all 11 of ACT's examples.
 - `46ca7f` "Element marked as decorative is not exposed" needed no new rule at all: `presentation-role-conflict` already implements it, end to end, and was simply never mapped — the gap entry was a mapping miss, same class as the `qt1vmo`/`23a2a8` misses above. It runs clean against all 10 of ACT's examples, and the one scope difference the corpus exposed (an `<img alt="">` carrying an explicit role of its own is not "marked as decorative", since the explicit role wins over the presentation role empty alt would confer) is now fixed in the rule.
 
-These two were validated against the examples read straight out of a local checkout of the `act-rules/act-rules.github.io` repository rather than the generated per-case pages `scripts/act-testcase-check.js` fetches: act-rules.github.io is unreachable from the environment this pass ran in. Same corpus, different entry point — running the manifest's existing entries through it reproduces the published per-rule results (`97a4e1` clean, `6cfa84` clean, `d0f69e` 3 mismatches, ...), which is what makes the two new results trustworthy.
+### Second pass: the corpus read from a local checkout
+
+act-rules.github.io is unreachable from the environment this pass ran in, so the examples were read straight out of a local checkout of the `act-rules/act-rules.github.io` repository (`_rules/*.md`) instead of the generated per-case pages `scripts/act-testcase-check.js` fetches. Same corpus, different entry point: running the manifest's existing entries through it reproduces the published per-rule results (`97a4e1` clean, `6cfa84` clean, `d0f69e` 3 mismatches, ...), which is what makes the new results trustworthy.
+
+It carries 821 examples against the 713 test-case pages the first pass fetched. The gap is not explained from here — the published pages can't be diffed against without network access — so everything it surfaced beyond the 49 already-triaged mismatches was read on its own merits rather than assumed to be a regression. What it found, in four groups:
+
+Real rule bugs, fixed:
+- `table-headers-attr-valid` only took a table out of scope for `role="presentation"`/`"none"`. Any explicit role replaces the native table semantics, so `<table role="heading">` has no table for a cell's `headers` attribute to describe either — the applicability now keeps only `table`/`grid`/`treegrid`, matching ACT a25f45.
+- `aria-required-attr` never required `aria-valuenow` on a `separator`. A plain separator is a structural divider that needs no value, but a focusable one is a splitter the user can move, and WAI-ARIA requires the value then — the same conditional shape as `combobox`'s `aria-controls`, which the rule already handles.
+- `iframe-name-present` demanded a name from an iframe the author had marked decorative with `role="none"`/`"presentation"`. ACT cae760 excludes those outright, and the contradiction between "decorative" and a restored role is `presentation-role-conflict`'s report, not this rule's.
+
+Mapping fix (data-only): `e086e5`'s family was missing `binary-control-name-present` and `menuitem-name-present`, so ACT's `checkbox`/`radio`/`switch`/`menuitemcheckbox`/`menuitemradio` cases looked uncovered when the rules for them already existed — the same shape as the `qt1vmo`/`23a2a8` misses above.
+
+New open design questions, logged in [`docs/DESIGN_CHALLENGES.md`](./DESIGN_CHALLENGES.md) rather than patched here:
+- `aria-required-children`/`aria-prohibited-children` only evaluate containers carrying an explicit `role`, so a native `<ul>` owning nothing but `<div>`s is never checked.
+- `label-in-name` compares against accessibility-tree text where ACT uses *visible* inner text; the two part ways on `aria-hidden` text (visible, ignored by us), visually-hidden text (invisible, counted by us) and inline-block concatenation.
+
+Accepted divergences, documented in the table above: `8fc3b6` (an `<object>` rendering neither image, audio nor video is exempt from needing a name — what a `data` URL resolves to isn't knowable without fetching it) and `afw4f7` (ACT treats text whose color exactly matches its background as invisible; the contrast rules report the 1:1 ratio, since nothing in the markup separates "invisible on purpose" from "invisible by accident").
 
 We also have automatic rules with **no ACT counterpart at all** (see [Extra coverage](#extra-coverage-beyond-act)) — mostly a finer-grained decomposition of ACT's single "form field has accessible name" rule into one rule per ARIA widget role.
 
 ### Progress: full validation results, by ACT rule
 
-**Clean (0 mismatches):** `5f99a7`, `80f0bf`, `4c31df`, `73f2c2`, `97a4e1`, `cf77f2`, `b40fd1`, `6cfa84`, `4e8ab6`, `a25f45`, `ffd0e9`, `b5c3f8`, `2779a5`, `5b7ae0`, `bf051a`, `qt1vmo`, `59796f`, `23a2a8`, `24afc2`, `9e45ec`, `c487ae`, `m6b1q3`, `bc659a`, `bisz58`, `b4f0c3`, `8fc3b6`, `674b10`, `0ssw9k`, `307n5z`, `46ca7f` (30 of 53 matched rules).
+**Clean (0 mismatches):** `5f99a7`, `80f0bf`, `4c31df`, `73f2c2`, `97a4e1`, `cf77f2`, `b40fd1`, `46ca7f`, `6cfa84`, `307n5z`, `4e8ab6`, `a25f45`, `ffd0e9`, `b5c3f8`, `2779a5`, `5b7ae0`, `bf051a`, `qt1vmo`, `59796f`, `23a2a8`, `24afc2`, `9e45ec`, `c487ae`, `m6b1q3`, `bc659a`, `bisz58`, `b4f0c3`, `674b10`, `0ssw9k` (29 of 53 matched rules).
 
-**Remaining mismatches (49 total), all triaged:**
+**Remaining mismatches (56 total), all triaged:**
 
 | ACT ID | Mismatches | Category |
 |---|---|---|
 | `ff89c9` | 1 | env/harness limit — jsdom doesn't execute inline `<script>`, so a runtime-created shadow root is invisible to the test fetcher (not the real engine, which runs after page scripts) |
-| `bc4a75` | 2 | open design questions — see `docs/DESIGN_CHALLENGES.md` ("any match" vs. ACT's stricter "only acceptable, recursively through group"; native-role table ignoring HTML-AAM context requirements) |
+| `bc4a75` | 4 | open design questions — see `docs/DESIGN_CHALLENGES.md` ("any match" vs. ACT's stricter "only acceptable, recursively through group"; native-role table ignoring HTML-AAM context requirements; applicability limited to containers with an explicit `role`, so a native `<ul>` owning invalid children is never checked) |
 | `6a7281` | 2 | deliberate scope — our idref-type validation extends beyond ACT's syntax-only check to also require the referenced id to exist (see `aria-valid-attr-value.js`'s own header comment); genuinely more useful, not a bug |
 | `5c01ea` | 1 | open design question — see `docs/DESIGN_CHALLENGES.md` (`aria-allowed-attr` skips implicit-role elements entirely) |
 | `aaa1bf` | 1 | inherent limitation — clip duration isn't knowable from static markup; no browser decodes media at scan time |
@@ -68,9 +85,10 @@ We also have automatic rules with **no ACT counterpart at all** (see [Extra cove
 | `b33eff` | 3 | env/harness limit — jsdom's CSS parser drops `@media(orientation)` rules using `rad` units or `matrix3d()` that a real browser's CSSOM parses fine |
 | `7d6734` | 1 | open design question — see `docs/DESIGN_CHALLENGES.md` (no rule covers `role="graphics-symbol"`/`"graphics-document"` on an arbitrary SVG descendant, only the `<svg>` root itself) |
 | `d0f69e` | 3 | deliberate, documented false-negative policy — `table-th-has-data-cells`'s own header comment explains it only catches the unambiguous "zero data cells anywhere" case, not real positional header-association (the new ARIA-grid coverage added during this pass is real but doesn't happen to close these 3 specific positional-mismatch cases) |
-| `09o5cg`, `afw4f7` | 6, 7 | environment-dependent — gradient/image backgrounds, Shadow DOM without `includeShadowDom`, `text-shadow` as a contrast aid, symbol-only text, one pixel-matching edge case (see `docs/LIMITATIONS.md`) |
+| `09o5cg`, `afw4f7` | 6, 8 | environment-dependent — gradient/image backgrounds, Shadow DOM without `includeShadowDom`, `text-shadow` as a contrast aid, symbol-only text, one pixel-matching edge case (see `docs/LIMITATIONS.md`) — plus one deliberate divergence: ACT treats text whose color exactly matches its background as invisible and therefore inapplicable, while these rules report the 1:1 ratio, since nothing in the markup separates "invisible on purpose" from "invisible by accident" |
 | `f51b46` | 1 | inherent limitation — `video-caption`'s own header comment states it can't verify a caption track's *content* accuracy, only that one is declared; genuinely a human-judgment task |
-| `2ee8b8` | 2 | open design question — see `docs/DESIGN_CHALLENGES.md` (`label-in-name` has no icon-font/non-text-content exemption for a visible glyph character standing in for an icon) |
+| `2ee8b8` | 5 | open design questions — see `docs/DESIGN_CHALLENGES.md` (`label-in-name` has no icon-font/non-text-content exemption for a visible glyph character standing in for an icon; and it compares against accessibility-tree text rather than ACT's *visible* inner text, which differs on `aria-hidden` text, visually-hidden text and inline-block concatenation) |
+| `8fc3b6` | 1 | inherent limitation — ACT exempts an `<object>` that renders neither image, audio nor video (its fallback content is shown instead); what a given `data` URL resolves to isn't knowable without fetching it, so `object-text-alternative-present` asks for a name regardless |
 
 ## Matched rules
 

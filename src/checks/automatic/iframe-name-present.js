@@ -10,7 +10,8 @@
  * @sc 4.1.2
  * @applicability
  *   Applies to <iframe>/<frame> elements that are eligible for the
- *   accessibility tree (isAccTreeEligible).
+ *   accessibility tree (isAccTreeEligible) and are not marked as
+ *   decorative with role="none"/"presentation".
  * @expectation
  *   The element has a non-empty accessible name via aria-labelledby,
  *   aria-label, or the title attribute. Unlike most interactive elements,
@@ -21,6 +22,13 @@
  * - Uses helpers.getAccessibleNameInfo, which already stops at
  *   aria-label/aria-labelledby/label[for]/title without falling back to
  *   subtree text content — the right shape for this element.
+ * - An iframe the author marked decorative (role="none"/"presentation") is
+ *   out of scope, matching ACT cae760: the author's stated intent is that
+ *   the frame carries nothing to announce, so demanding a name for it
+ *   contradicts the markup rather than improving it. A global ARIA
+ *   attribute or focusability on such an iframe restores its role and
+ *   makes the marking a lie — that contradiction is
+ *   presentation-role-conflict's report, not this rule's.
  */
 
 const id = 'iframe-name-present';
@@ -64,6 +72,10 @@ function runInPage(ctx) {
 
   for (const el of nodes) {
     if (!el || !el.tagName) continue;
+
+    const roleAttr = el.getAttribute ? String(el.getAttribute('role') || '') : '';
+    const firstRoleToken = roleAttr.trim().toLowerCase().split(/\s+/)[0];
+    if (firstRoleToken === 'none' || firstRoleToken === 'presentation') continue;
 
     if (helpers.isAccTreeEligible) {
       const elig = helpers.isAccTreeEligible(el);

@@ -29749,6 +29749,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  // Focusability decides whether a separator is a widget; the same helper
+  // aria-hidden-focus and nested-interactive-controls-absent rely on, so
+  // :disabled, inert and invalid tabindex values are already accounted for.
+  function isFocusable(el) {
+    const fn =
+      helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
+    if (!fn) return false;
+    try {
+      const info = fn(el, ctx);
+      return !!(info && info.focusable);
+    } catch {
+      return false;
+    }
+  }
+
   function isMarkedBusy(el) {
     const v = el.getAttribute('aria-busy');
     return v != null && String(v).trim().toLowerCase() === 'true';
@@ -29781,6 +29796,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // displayed (aria-expanded="true") -- see this file's header comment.
     if (role === 'combobox' && String(el.getAttribute('aria-expanded') || '').trim() === 'true') {
       required.push('aria-controls');
+    }
+
+    // A separator only carries a value when it is focusable, i.e. a
+    // splitter the user can move -- see this file's header comment.
+    if (role === 'separator' && isFocusable(el)) {
+      required.push('aria-valuenow');
     }
 
     if (!required.length) continue;
@@ -36715,6 +36736,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   for (const el of nodes) {
     if (!el || !el.tagName) continue;
+
+    const roleAttr = el.getAttribute ? String(el.getAttribute('role') || '') : '';
+    const firstRoleToken = roleAttr.trim().toLowerCase().split(/\s+/)[0];
+    if (firstRoleToken === 'none' || firstRoleToken === 'presentation') continue;
 
     if (helpers.isAccTreeEligible) {
       const elig = helpers.isAccTreeEligible(el);
@@ -46133,6 +46158,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "table-headers-attr-valid": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
+  const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
+
+  // The role attribute holds a fallback list; the first token naming a real
+  // role wins, and unknown tokens are skipped over.
+  function getExplicitRole(el) {
+    const raw = el && el.getAttribute ? el.getAttribute('role') : null;
+    if (!raw) return '';
+    const tokens = String(raw).trim().toLowerCase().split(/\s+/);
+    for (const token of tokens) {
+      if (!token) continue;
+      if (token === 'presentation' || token === 'none') return token;
+      const known = ariaHelpers ? ariaHelpers.isValidConcreteRole(token) : true;
+      if (known) return token;
+    }
+    return '';
+  }
+
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('td[headers], th[headers]')
     : helpers.queryAll('td[headers], th[headers]');
@@ -46150,13 +46192,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const table = el.closest ? el.closest('table') : null;
 
-    const tableRole =
-      table && table.getAttribute
-        ? String(table.getAttribute('role') || '')
-            .trim()
-            .toLowerCase()
-        : '';
-    if (tableRole === 'presentation' || tableRole === 'none') continue;
+    // An explicit role on the <table> replaces its native table role. Only
+    // the three roles that still describe a table keep the cell's headers
+    // attribute meaningful; anything else (presentation/none, heading, ...)
+    // takes the whole table out of scope. Unknown tokens name no role, so
+    // the native one stands.
+    const tableRole = table ? getExplicitRole(table) : '';
+    if (tableRole && tableRole !== 'table' && tableRole !== 'grid' && tableRole !== 'treegrid')
+      continue;
 
     applicableCount += 1;
 
@@ -70294,6 +70337,21 @@ const __a11yCoreCrossFrameApi = (function () {
     }
   }
 
+  // Focusability decides whether a separator is a widget; the same helper
+  // aria-hidden-focus and nested-interactive-controls-absent rely on, so
+  // :disabled, inert and invalid tabindex values are already accounted for.
+  function isFocusable(el) {
+    const fn =
+      helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
+    if (!fn) return false;
+    try {
+      const info = fn(el, ctx);
+      return !!(info && info.focusable);
+    } catch {
+      return false;
+    }
+  }
+
   function isMarkedBusy(el) {
     const v = el.getAttribute('aria-busy');
     return v != null && String(v).trim().toLowerCase() === 'true';
@@ -70326,6 +70384,12 @@ const __a11yCoreCrossFrameApi = (function () {
     // displayed (aria-expanded="true") -- see this file's header comment.
     if (role === 'combobox' && String(el.getAttribute('aria-expanded') || '').trim() === 'true') {
       required.push('aria-controls');
+    }
+
+    // A separator only carries a value when it is focusable, i.e. a
+    // splitter the user can move -- see this file's header comment.
+    if (role === 'separator' && isFocusable(el)) {
+      required.push('aria-valuenow');
     }
 
     if (!required.length) continue;
@@ -77260,6 +77324,10 @@ const __a11yCoreCrossFrameApi = (function () {
 
   for (const el of nodes) {
     if (!el || !el.tagName) continue;
+
+    const roleAttr = el.getAttribute ? String(el.getAttribute('role') || '') : '';
+    const firstRoleToken = roleAttr.trim().toLowerCase().split(/\s+/)[0];
+    if (firstRoleToken === 'none' || firstRoleToken === 'presentation') continue;
 
     if (helpers.isAccTreeEligible) {
       const elig = helpers.isAccTreeEligible(el);
@@ -86678,6 +86746,23 @@ const __a11yCoreCrossFrameApi = (function () {
     "table-headers-attr-valid": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
+  const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
+
+  // The role attribute holds a fallback list; the first token naming a real
+  // role wins, and unknown tokens are skipped over.
+  function getExplicitRole(el) {
+    const raw = el && el.getAttribute ? el.getAttribute('role') : null;
+    if (!raw) return '';
+    const tokens = String(raw).trim().toLowerCase().split(/\s+/);
+    for (const token of tokens) {
+      if (!token) continue;
+      if (token === 'presentation' || token === 'none') return token;
+      const known = ariaHelpers ? ariaHelpers.isValidConcreteRole(token) : true;
+      if (known) return token;
+    }
+    return '';
+  }
+
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('td[headers], th[headers]')
     : helpers.queryAll('td[headers], th[headers]');
@@ -86695,13 +86780,14 @@ const __a11yCoreCrossFrameApi = (function () {
 
     const table = el.closest ? el.closest('table') : null;
 
-    const tableRole =
-      table && table.getAttribute
-        ? String(table.getAttribute('role') || '')
-            .trim()
-            .toLowerCase()
-        : '';
-    if (tableRole === 'presentation' || tableRole === 'none') continue;
+    // An explicit role on the <table> replaces its native table role. Only
+    // the three roles that still describe a table keep the cell's headers
+    // attribute meaningful; anything else (presentation/none, heading, ...)
+    // takes the whole table out of scope. Unknown tokens name no role, so
+    // the native one stands.
+    const tableRole = table ? getExplicitRole(table) : '';
+    if (tableRole && tableRole !== 'table' && tableRole !== 'grid' && tableRole !== 'treegrid')
+      continue;
 
     applicableCount += 1;
 
