@@ -157,13 +157,21 @@ function runInPage(ctx) {
     // From here: applicable
     applicableCount += 1;
 
-    // alt attribute presence check (empty allowed)
-    let hasAlt;
+    // alt attribute presence check. A literally empty alt ("") is the
+    // HTML decorative marker and always satisfies this check. A present
+    // alt that is non-empty but trims to nothing (a lone space, a tab)
+    // does not get that treatment: per HTML-AAM the img-role conflict-
+    // resolution flip to presentation only triggers on the literal empty
+    // string, so the element keeps its img role while its computed
+    // accessible name is empty -- a real failure, not a decorative image.
+    let rawAlt;
     try {
-      hasAlt = el.getAttribute('alt') !== null;
+      rawAlt = el.getAttribute('alt');
     } catch {
-      hasAlt = false;
+      rawAlt = null;
     }
+    const isWhitespaceOnlyAlt = rawAlt !== null && rawAlt !== '' && trim(rawAlt) === '';
+    const hasAlt = rawAlt !== null && !isWhitespaceOnlyAlt;
     if (hasAlt) continue;
 
     // aria-label / aria-labelledby is also a valid, standards-recognized

@@ -1,6 +1,6 @@
 # Fixture Index
 
-Generated: 2026-08-18T20:05:34.295Z
+Generated: 2026-08-19T03:54:46.080Z
 
 Every implemented rule should have a `tests/fixtures/<slug>-all-scenarios.html` scenario page (numbered `case_NN` blocks, each marked PASS/FAIL/CANTTELL in its `.case-title`) and a "fixture coverage" test in its `tests/engine-checks/**/<rule>.test.js` asserting the exact expected ids. See `docs/RULE_AUTHORING.md`.
 
@@ -131,7 +131,7 @@ None — every rule has a fixture.
 | tabindex | manual | `tests/fixtures/tabindex-all-scenarios.html` | 3 | 0 | 0 | 1 | 2 |
 | table-duplicate-name | manual | `tests/fixtures/table-duplicate-name-all-scenarios.html` | 2 | 0 | 0 | 1 | 1 |
 | table-fake-caption | manual | `tests/fixtures/table-fake-caption-all-scenarios.html` | 4 | 0 | 0 | 1 | 3 |
-| table-headers-attr-valid | automatic | `tests/fixtures/table-headers-attr-valid-all-scenarios.html` | 6 | 1 | 4 | 0 | 1 |
+| table-headers-attr-valid | automatic | `tests/fixtures/table-headers-attr-valid-all-scenarios.html` | 8 | 2 | 4 | 0 | 2 |
 | table-th-has-data-cells | automatic | `tests/fixtures/table-th-has-data-cells-all-scenarios.html` | 4 | 1 | 2 | 0 | 1 |
 | target-size-minimum | automatic | `tests/fixtures/target-size-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
 | td-has-header | automatic | `tests/fixtures/td-has-header-all-scenarios.html` | 5 | 0 | 1 | 0 | 4 |

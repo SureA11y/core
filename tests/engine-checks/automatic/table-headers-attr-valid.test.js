@@ -36,11 +36,23 @@ test(`${RULE_ID}: fail when a referenced id does not exist`, () => {
   assert.equal(rule.occurrences[0].data.details.invalid[0].reason, 'missing');
 });
 
-test(`${RULE_ID}: fail when the referenced element is not a <th>`, () => {
+test(`${RULE_ID}: pass when the referenced element is a plain <td> (any cell counts, not just <th> -- ACT a25f45)`, () => {
   const html = `<!doctype html><html><body><table><tr><td id="h1">Name</td></tr><tr><td id="a" headers="h1">Alice</td></tr></table></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: fail when the referenced element is not a table cell at all`, () => {
+  const html = `<!doctype html><html><body><table><caption id="h1">Report</caption><tr><td id="a" headers="h1">Alice</td></tr></table></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
-  assert.equal(rule.occurrences[0].data.details.invalid[0].reason, 'not-a-th');
+  assert.equal(rule.occurrences[0].data.details.invalid[0].reason, 'not-a-cell');
+});
+
+test(`${RULE_ID}: notApplicable when the table has role="presentation" (ACT a25f45)`, () => {
+  const html = `<!doctype html><html><body><table role="presentation"><tr><td id="h1">Name</td></tr><tr><td id="a" headers="h1">Alice</td></tr></table></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: fail when the referenced th is in a different table`, () => {
@@ -90,7 +102,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/table-headers-attr-valid-all-
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 4, maxOccurrences: 4 });
 
   const expectedFailIds = ['thav_case_02', 'thav_case_03', 'thav_case_04', 'thav_case_05'];
-  const expectedNoOccIds = ['thav_case_01', 'thav_case_06'];
+  const expectedNoOccIds = ['thav_case_01', 'thav_case_06', 'thav_case_07', 'thav_case_08'];
 
   for (const id of expectedFailIds) {
     assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);
