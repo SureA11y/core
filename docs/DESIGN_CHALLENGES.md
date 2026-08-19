@@ -18,6 +18,16 @@ A running log of engine design decisions worth re-examining — cases where an e
 
 ## Decided
 
+### `bypass-blocks-present`'s heading mechanism credited a screen-reader-only heading, when ACT requires it to be visible — fixed
+
+**Decision as it stands (before the fix):** `hasHeading()` credited any `<h1>`-`<h6>`/`[role="heading"]` that was included in the accessibility tree — an off-screen-positioned, clipped, opacity:0, or zero-size-overflow-hidden heading counted the same as a fully visible one. This mismatch was never individually triaged; it sat inside `ye5d6e`/`047fe0`'s combined "1, 2" mismatch count, both filed under one blanket "deliberate leniency" reason that only actually described a *different* shape (a heading positioned inside the repeated content it's supposed to be an escape from).
+
+**Why it was questioned:** re-fetching `047fe0`'s live corpus surfaced a case that reason doesn't cover at all: `<h1 class="off-screen">` inside `<div id="main">`, correctly positioned *after* the repeated nav — ACT still expects **failed**. Its own Expectation text requires the heading to be both "included in the accessibility tree" *and* "[visible](#visible)" — a screen-reader-only heading gives sighted keyboard users no equivalent way to locate the start of non-repeated content, which is exactly the gap `047fe0` is checking for.
+
+**Decision (2026-08-19):** `hasHeading()` now also requires the heading to carry no CSS-hiding hint (`helpers.getVisibilityHintsInfo` — off-screen, clipped, opacity:0, zero-size-overflow-hidden). The sibling `hasMainLandmark()`/`hasWorkingAnchorLink()` checks are deliberately untouched — `cf77f2`'s own live text doesn't carry the same visibility requirement for a `<main>` landmark, confirmed by an existing regression test that pins a clipped-but-accessible `<main>` as still credited.
+
+**Status:** resolved 2026-08-19 — verified directly (`tests/engine-checks/manual/bypass-blocks-present.test.js` pins the case with the CSS inlined, since the real ACT test case defines it via an external stylesheet jsdom's test fetcher can't load, an env/harness limit of the same class as `oj04fd`). The corpus checker's own count for `047fe0` stays at 2 (the fixed case can't register as clean through the harness limitation; the other, unrelated mismatch is the genuine, still-open positional-judgment gap).
+
 ### `iframe-name-present` exempted every `role="none"`/`"presentation"` iframe from needing a name, regardless of focusability — fixed
 
 **Decision as it stands (before the fix):** the rule's own header comment already claimed this "matches ACT cae760," and the doc's mismatch table filed the one remaining `cae760` case entirely under a *different*, correctly-reasoned divergence (a `tabindex="-1"` iframe with no role, which ACT considers unreachable and out of scope, but this engine still evaluates). That framing missed a second, distinct mismatch hiding in the same ACT id.
