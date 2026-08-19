@@ -7,7 +7,7 @@ Cross-reference between the [W3C ACT Rules](https://act-rules.github.io/rules/) 
 - **~2** are covered structurally by our composite/rollup layer, not a named rule
 - **~47 are gaps** — no corresponding rule in this repo, listed in [Gaps](#gaps-no-corresponding-rule) below
 
-**Every matched rule has now been run through ACT's own official test-case corpus** (`scripts/act-testcase-check.js`, 713 test cases across the 51-rule matched set of the time). Started at 86 mismatches; real bugs were fixed, mapping errors corrected, and every remaining mismatch triaged into a deliberate scope difference, a jsdom/environment limit, or a genuine open design question (tracked in [`docs/DESIGN_CHALLENGES.md`](./DESIGN_CHALLENGES.md)). A second pass then re-ran the whole corpus from a local checkout (see "Second pass" below) and repeated the exercise on what it turned up. Current state: **866 examples across the 57-rule matched set, 41 mismatches, all explained** below or in that file — see "Progress" further down for the full per-rule breakdown.
+**Every matched rule has now been run through ACT's own official test-case corpus** (`scripts/act-testcase-check.js`, 713 test cases across the 51-rule matched set of the time). Started at 86 mismatches; real bugs were fixed, mapping errors corrected, and every remaining mismatch triaged into a deliberate scope difference, a jsdom/environment limit, or a genuine open design question (tracked in [`docs/DESIGN_CHALLENGES.md`](./DESIGN_CHALLENGES.md)). A second pass then re-ran the whole corpus from a local checkout (see "Second pass" below) and repeated the exercise on what it turned up. Current state: **866 examples across the 57-rule matched set, 40 mismatches, all explained** below or in that file — see "Progress" further down for the full per-rule breakdown.
 
 Real rule bugs found and fixed this way, in rough chronological order:
 - `button-name-present` wasn't crediting the UA-default label on `input[type=submit]`/`input[type=reset]` with no `value`, and wasn't honoring `role="none"`/`role="presentation"` conflict-resolution.
@@ -70,9 +70,9 @@ We also have automatic rules with **no ACT counterpart at all** (see [Extra cove
 
 ### Progress: full validation results, by ACT rule
 
-**Clean (0 mismatches):** `5f99a7`, `80f0bf`, `4c31df`, `73f2c2`, `97a4e1`, `cf77f2`, `b40fd1`, `46ca7f`, `6cfa84`, `307n5z`, `4e8ab6`, `a25f45`, `ffd0e9`, `b5c3f8`, `2779a5`, `5b7ae0`, `bf051a`, `qt1vmo`, `59796f`, `23a2a8`, `24afc2`, `9e45ec`, `c487ae`, `m6b1q3`, `bc659a`, `bisz58`, `b4f0c3`, `674b10`, `0ssw9k`, `3ea0c8`, `5c01ea`, `bc4a75`, `2ee8b8`, `e88epe`, `7d6734`, `de46e4`, `6a7281`, `8fc3b6` (38 of 57 matched rules).
+**Clean (0 mismatches):** `5f99a7`, `80f0bf`, `4c31df`, `73f2c2`, `97a4e1`, `cf77f2`, `b40fd1`, `46ca7f`, `6cfa84`, `307n5z`, `4e8ab6`, `a25f45`, `ffd0e9`, `b5c3f8`, `2779a5`, `5b7ae0`, `bf051a`, `qt1vmo`, `59796f`, `23a2a8`, `24afc2`, `9e45ec`, `c487ae`, `m6b1q3`, `bc659a`, `bisz58`, `b4f0c3`, `674b10`, `0ssw9k`, `3ea0c8`, `5c01ea`, `bc4a75`, `2ee8b8`, `e88epe`, `7d6734`, `de46e4`, `6a7281`, `8fc3b6`, `akn7bn` (39 of 57 matched rules).
 
-**Remaining mismatches (41 total), all triaged:**
+**Remaining mismatches (40 total), all triaged:**
 
 | ACT ID | Mismatches | Category |
 |---|---|---|
@@ -85,7 +85,6 @@ We also have automatic rules with **no ACT counterpart at all** (see [Extra cove
 | `cc0f0a` | 4 | inherent limitation — `form-control-label-quality` catches the three deterministic shapes (a placeholder label, a label repeated with no visible heading/legend/row telling the fields apart, a label split between visible and hidden parts, which covers ACT's failed examples 4 and 5). The remaining four fail on the meaning of a well-formed word — `<label>Menu</label>` over a first-name field — which no markup-level check reaches |
 | `b49b2e` | 4 | inherent limitation — `heading-quality` catches placeholder heading text (a generic word, a numbered template slot, a filename, a URL), which is the deterministic half of this rule; whether a well-formed heading actually describes the content after it is a reading-comprehension judgment, and all 4 of ACT's failed examples are exactly that shape ("Weather" over opening hours) |
 | `cae760` | 1 | deliberate, broader-than-ACT scope — `iframe-name-present` doesn't exempt a `tabindex="-1"` iframe the way ACT's focus-reachability precondition does; arguably more useful for AT rotor/frame-list navigation, not just Tab order |
-| `akn7bn` | 1 | env/harness limit — jsdom doesn't populate `iframe.contentDocument` from a `srcdoc` attribute; a real browser does |
 | `78fd32` | 1 | deliberate, documented limitation — `avoid-inline-spacing`'s own header comment already states it can't detect "text that never soft-wraps" without real layout |
 | `aizyf1` | 2 | deliberate, documented trade-off — `link-name-quality`'s own header comment states it matches an exact curated phrase list only, favoring precision over recall |
 | `fd3a94`, `b20e66` | 1, 1 | deliberate, documented structural gap — `identical-links-same-purpose`'s `a[href]`-only destination resolution genuinely cannot cover a `role="link"` element whose target lives inside a JS string, not markup |
