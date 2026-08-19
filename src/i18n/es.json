@@ -314,6 +314,8 @@
   "labelInName_hint_fail": "Actualizar aria-label/aria-labelledby (o el texto de la etiqueta visible) para que el nombre accesible incluya el texto de la etiqueta visible.",
   "labelInName_summary_cantTell": "{{element}}: la etiqueta visible \"{{visibleLabel}}\" (de {{labelSource}}) se diferencia del nombre accesible (de {{nameMechanism}}) solo por una abreviatura o por la separación con guion.",
   "labelInName_hint_cantTell": "Comprobar manualmente si ambas redacciones coinciden: el marcado no permite distinguir una abreviatura intencionada de una discrepancia.",
+  "labelInName_summary_cantTell_symbolic": "{{element}}: la etiqueta visible \"{{visibleLabel}}\" (de {{labelSource}}) puede representarse como un icono o símbolo en lugar de texto literal, por lo que puede no ser necesario que aparezca en el nombre accesible (de {{nameMechanism}}).",
+  "labelInName_hint_cantTell_symbolic": "Comprobar manualmente: si el texto visible se representa como un icono o símbolo, no es un error; si se representa como palabras literales, actualizar el nombre accesible para incluirlas.",
   "ariaRolesValid_title": "El atributo role debe ser un rol ARIA válido y no abstracto",
   "ariaRolesValid_description": "Comprueba que un atributo role=\"\" explícito se resuelva en un rol WAI-ARIA real y no abstracto.",
   "ariaRolesValid_summary_invalid": "role=\"{{role}}\" no es un rol ARIA reconocido.",

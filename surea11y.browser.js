@@ -20407,7 +20407,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function getVisibleTextLabelInfo(el) {
-    // Returns { text, source } where source helps reporting.
+    // Returns { text, source, sourceElements } where source helps reporting
+    // and sourceElements (the actual DOM nodes the visible text came from)
+    // lets the icon-font check below look at the right element's own style.
     // Source policy (deterministic):
     // 1) <label> association for form controls
     // 2) visible text inside the element
@@ -20422,18 +20424,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (isFormControl) {
       const labels = getAssociatedLabelElements(el);
       const labelParts = [];
+      const contributing = [];
       for (const l of labels) {
         if (!l || !isDomVisible(l)) continue;
         const t = collectVisibleTextUnder(l);
-        if (t) labelParts.push(t);
+        if (t) {
+          labelParts.push(t);
+          contributing.push(l);
+        }
       }
       const joined = labelParts.join(' ').replace(/\s+/g, ' ').trim();
-      if (joined) return { text: joined, source: 'label' };
+      if (joined) return { text: joined, source: 'label', sourceElements: contributing };
     }
 
     // 2) Text inside the control itself
     text = collectVisibleTextUnder(el);
-    if (text) return { text, source: 'self' };
+    if (text) return { text, source: 'self', sourceElements: [el] };
 
     // 3) aria-labelledby referenced visible text (only if refs exist and are visible)
     try {
@@ -20441,20 +20447,115 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (idrefs && helpers.resolveIdRefs) {
         const r = helpers.resolveIdRefs(idrefs, ctx, { maxRefs: 8 });
         const parts = [];
+        const contributing = [];
         for (const ref of r && Array.isArray(r.refs) ? r.refs : []) {
           if (!ref || !ref.tagName) continue;
           if (!isDomVisible(ref)) continue;
           const t = collectVisibleTextUnder(ref);
-          if (t) parts.push(t);
+          if (t) {
+            parts.push(t);
+            contributing.push(ref);
+          }
         }
         const joined = parts.join(' ').replace(/\s+/g, ' ').trim();
-        if (joined) return { text: joined, source: 'aria-labelledby' };
+        if (joined)
+          return { text: joined, source: 'aria-labelledby', sourceElements: contributing };
       }
     } catch {
       // ignore
     }
 
-    return { text: '', source };
+    return { text: '', source, sourceElements: [] };
+  }
+
+  // Curated real-world icon-font family names. These fonts remap ordinary
+  // word glyphs to unrelated symbols via ligatures/PUA codepoints, so the
+  // DOM text is real words but nothing readable actually renders — ACT
+  // 2ee8b8's own passed example is exactly this (a button's DOM text
+  // "search" rendered as a magnifying-glass icon by "Material Icons").
+  // Same curated-list tradeoff as link-name-quality's phrase list.
+  const ICON_FONT_FAMILIES = new Set([
+    'material icons',
+    'material icons outlined',
+    'material icons round',
+    'material icons sharp',
+    'material icons two tone',
+    'material symbols outlined',
+    'material symbols rounded',
+    'material symbols sharp',
+    'font awesome 5 free',
+    'font awesome 5 brands',
+    'font awesome 5 pro',
+    'font awesome 6 free',
+    'font awesome 6 brands',
+    'font awesome 6 pro',
+    'fontawesome',
+    'glyphicons halflings',
+    'ionicons',
+    'icomoon',
+    'bootstrap-icons',
+    'bootstrap icons',
+    'feather'
+  ]);
+
+  // Same two-tier lookup as avoid-inline-spacing.js's computedStyleOf:
+  // helpers.computedStyle isn't actually part of the public helpers API
+  // (it's internal to dom-helpers.js), so the realm's own getComputedStyle
+  // is what actually resolves a stylesheet-declared font-family.
+  function computedStyleOf(node) {
+    if (helpers && typeof helpers.computedStyle === 'function') {
+      try {
+        const cs = helpers.computedStyle(node);
+        if (cs) return cs;
+      } catch {
+        // fall through to the realm's own view
+      }
+    }
+    try {
+      const view = node.ownerDocument && node.ownerDocument.defaultView;
+      if (view && typeof view.getComputedStyle === 'function') return view.getComputedStyle(node);
+    } catch {
+      // no computed style available
+    }
+    return null;
+  }
+
+  function isIconFontElement(node) {
+    if (!node) return false;
+    const cs = computedStyleOf(node);
+    if (!cs) return false;
+    let family = '';
+    try {
+      family =
+        cs.fontFamily || (cs.getPropertyValue ? cs.getPropertyValue('font-family') : '') || '';
+    } catch {
+      family = '';
+    }
+    if (!family) return false;
+    const names = String(family)
+      .split(',')
+      .map((s) =>
+        s
+          .trim()
+          .replace(/^['"]|['"]$/g, '')
+          .toLowerCase()
+      );
+    return names.some((n) => ICON_FONT_FAMILIES.has(n));
+  }
+
+  // ACT 2ee8b8's own passed example `<button aria-label="close">X</button>`:
+  // a single character standing in for an icon ("x" meaning "close") is
+  // "non-text content" per the rule's own background text, which names no
+  // algorithmic test for it. Scoped narrowly to a whole visible label of
+  // exactly one character that doesn't even appear inside the accessible
+  // name: "x" has no relation at all to "close", which is the icon-glyph
+  // shape. A single character that DOES appear in the name (e.g. visible
+  // "1" against aria-label "1a") is a real word-boundary mismatch, not a
+  // symbol standing in for something else, and still fails outright.
+  function isSingleSymbolicCharacter(text, accessibleNameNorm) {
+    const t = norm(text);
+    if (!t || Array.from(t).length !== 1) return false;
+    return accessibleNameNorm.indexOf(t) === -1;
   }
 
   for (const el of nodes) {
@@ -20485,19 +20586,29 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const nameTokens = tokenize(accName, false);
     const contains = containsWordRun(labelTokens, nameTokens, null);
 
-    // An abbreviation, or a word hyphenated differently in the two places, is
-    // not something markup settles: the author may have meant either. Report
-    // without asserting a defect instead of failing or staying silent.
+    // An abbreviation, a word hyphenated differently, or visible text that
+    // may not be literal text at all (an icon-font glyph, a single symbolic
+    // character) is not something markup settles: the author may have meant
+    // either. Report without asserting a defect instead of failing or
+    // staying silent.
     let uncertainty = '';
     if (!contains) {
       if (containsWordRun(tokenize(visibleLabel, true), tokenize(accName, true), null)) {
         uncertainty = 'HYPHENATION_DIFFERS';
       } else {
         const abbreviated = abbreviatedWords(visibleLabel);
-        if (abbreviated.size && containsWordRun(labelTokens, nameTokens, abbreviated))
+        if (abbreviated.size && containsWordRun(labelTokens, nameTokens, abbreviated)) {
           uncertainty = 'POSSIBLE_ABBREVIATION';
+        } else if ((labelInfo.sourceElements || []).some(isIconFontElement)) {
+          uncertainty = 'POSSIBLE_ICON_FONT_GLYPH';
+        } else if (isSingleSymbolicCharacter(visibleLabel, accNorm)) {
+          uncertainty = 'POSSIBLE_SYMBOLIC_CHARACTER';
+        }
       }
     }
+
+    const isSymbolicUncertainty =
+      uncertainty === 'POSSIBLE_ICON_FONT_GLYPH' || uncertainty === 'POSSIBLE_SYMBOLIC_CHARACTER';
 
     if (!contains) {
       occurrences.push(
@@ -20506,12 +20617,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           summary: uncertainty
             ? 'Accessible name may not contain the visible label text.'
             : 'Accessible name does not contain the visible label text.',
-          hint: uncertainty
-            ? 'Check by hand: the two differ only by an abbreviation or by hyphenation, which markup cannot settle.'
-            : 'Ensure the accessible name includes the visible text label (e.g., update aria-label/aria-labelledby to include the visible wording).',
+          hint: !uncertainty
+            ? 'Ensure the accessible name includes the visible text label (e.g., update aria-label/aria-labelledby to include the visible wording).'
+            : isSymbolicUncertainty
+              ? 'Check by hand: the visible text may render as an icon or symbol rather than literal words, which markup cannot settle.'
+              : 'Check by hand: the two differ only by an abbreviation or by hyphenation, which markup cannot settle.',
           i18n: {
-            summaryKey: uncertainty ? 'labelInName_summary_cantTell' : 'labelInName_summary_fail',
-            hintKey: uncertainty ? 'labelInName_hint_cantTell' : 'labelInName_hint_fail',
+            summaryKey: !uncertainty
+              ? 'labelInName_summary_fail'
+              : isSymbolicUncertainty
+                ? 'labelInName_summary_cantTell_symbolic'
+                : 'labelInName_summary_cantTell',
+            hintKey: !uncertainty
+              ? 'labelInName_hint_fail'
+              : isSymbolicUncertainty
+                ? 'labelInName_hint_cantTell_symbolic'
+                : 'labelInName_hint_cantTell',
             params: {
               element: getElementDescriptor(el),
               visibleLabel: clipForSummary(visibleLabel),
@@ -30547,6 +30668,8 @@ const I18N = {
     "labelInName_hint_fail": "Update aria-label/aria-labelledby (or the visible label text) so the accessible name includes the visible label wording.",
     "labelInName_summary_cantTell": "{{element}}: visible label \"{{visibleLabel}}\" (from {{labelSource}}) differs from the accessible name (from {{nameMechanism}}) only by an abbreviation or by hyphenation.",
     "labelInName_hint_cantTell": "Check by hand whether the two wordings match: markup cannot tell an intended abbreviation from a mismatch.",
+    "labelInName_summary_cantTell_symbolic": "{{element}}: visible label \"{{visibleLabel}}\" (from {{labelSource}}) may render as an icon or symbol rather than literal text, so it may not need to appear in the accessible name (from {{nameMechanism}}).",
+    "labelInName_hint_cantTell_symbolic": "Check by hand: if the visible text renders as an icon or symbol, this is not a defect; if it renders as literal words, update the accessible name to include them.",
     "ariaRolesValid_title": "role attribute must be a valid, non-abstract ARIA role",
     "ariaRolesValid_description": "Checks that an explicit role=\"\" attribute resolves to a real, non-abstract WAI-ARIA role.",
     "ariaRolesValid_summary_invalid": "role=\"{{role}}\" is not a recognized ARIA role.",

@@ -10,9 +10,11 @@ A running log of engine design decisions worth re-examining — cases where an e
 
 **Why it's being questioned:** ACT `2ee8b8` is explicit that its "visible inner text" is a rendering property, not an accessibility-tree one, and three of its examples turn on the difference: `<a aria-label="Download specification">Download <span aria-hidden="true">gizmo</span> specification</a>` fails ACT (the word "gizmo" is on screen, whatever `aria-hidden` says) and passes here; a `clip-path: inset(50%)` visually-hidden span passes ACT (nothing is rendered) and fails here; and `<div style="display: inline">` children concatenate into one word for ACT ("ACT" from three inline divs) while we read them apart. All three point the same way — the label a sighted user speaks comes from what is painted, not from what the accessibility tree carries. The icon-font case the current behavior was built for is real, but `aria-hidden` is a coarse stand-in for it: the attribute says "don't expose this", not "this doesn't render as words".
 
-**Why this hasn't been changed yet:** "visible inner text" needs a real rendering model — per-node `display` resolution for the concatenation rule, plus the visually-hidden detection (`clip-path`, `clip`, 1px boxes, off-screen positioning) the engine's offscreen heuristic only partly covers. It's a shared-helper change with reach beyond this rule, and it lands next to the still-open icon-font question below, which is about the same expectation text.
+**Why this hasn't been changed yet:** "visible inner text" needs a real rendering model — per-node `display` resolution for the concatenation rule, plus the visually-hidden detection (`clip-path`, `clip`, 1px boxes, off-screen positioning) the engine's offscreen heuristic only partly covers. It's a shared-helper change with reach beyond this rule.
 
-**Status:** open, unresolved as of 2026-08-19.
+**Caveat added 2026-08-19:** re-fetching ACT `2ee8b8`'s live rule page while closing the icon-font entry below turned up only 13 published examples, none of them the `aria-hidden`/`clip-path`/inline-concatenation shapes described above — those specific claims don't currently reproduce against the live corpus (same stale-local-checkout pattern as the `bc4a75` applicability question, now in Decided). The architectural critique (accessibility-tree text vs. true rendered text) may still be sound, but it is currently untested by ACT ground truth rather than confirmed by it.
+
+**Status:** open, unresolved as of 2026-08-19 — deprioritized pending a live ACT example that actually exercises it.
 
 ### `img-alt-decorative` only considers `<img alt="">`, missing `aria-hidden`/`role=none` images and every svg/canvas case
 
@@ -34,16 +36,6 @@ A running log of engine design decisions worth re-examining — cases where an e
 
 **Status:** open, unresolved as of 2026-08-19; already self-acknowledged as out of scope in `svg-text-alternative-present.js`'s own comment before this pass.
 
-### `label-in-name` has no exemption for icon-font glyphs or icon-standing-in characters
-
-**Decision as it stands:** `label-in-name.js` does a literal text-containment check between an element's visible text and its accessible name, with no exemption for visible text that is actually rendering as an icon rather than readable text.
-
-**Why it's being questioned:** ACT `2ee8b8`'s own expectation text includes an explicit carve-out: visible text must be contained in the accessible name "except for characters in the text nodes used to express non-text content." Its own two failed-example fixes: `<button aria-label="close">X</button>` (a visible "X" glyph standing in for a close icon — ACT: "the 'x' text node is non-text content") and `<button aria-label="Find">search</button>` styled with an icon font (`font-family: 'Material Icons'`) that remaps the literal word "search" to render as a magnifying-glass glyph — the DOM text says "search" but nothing readable actually renders.
-
-**Why this hasn't been changed yet:** needs two distinct heuristics, of different reliability: (a) icon-font detection via a curated `font-family` name list — tractable, same class of curated-list tradeoff as `link-name-quality`'s phrase list; and (b) a policy for short/symbolic glyph-only visible text in general — much fuzzier, with real risk of wrongly exempting a genuine one-word label if done carelessly. Needs its own deliberate design pass, not a quick patch.
-
-**Status:** open, unresolved as of 2026-08-19.
-
 ### `valid-lang`'s applicability doesn't resolve which text actually inherits a given `lang` attribute
 
 **Decision as it stands:** `valid-lang.js` applies to any non-root element carrying a non-empty `lang` attribute, unconditionally, and validates that attribute's value as a language tag.
@@ -55,6 +47,16 @@ A running log of engine design decisions worth re-examining — cases where an e
 **Status:** open, unresolved as of 2026-08-19.
 
 ## Decided
+
+### `label-in-name` had no exemption for icon-font glyphs or icon-standing-in characters — fixed
+
+**Decision as it stands (before the fix):** `label-in-name.js` did a literal text-containment check between an element's visible text and its accessible name, with no exemption for visible text that is actually rendering as an icon rather than readable text.
+
+**Why it was questioned:** ACT `2ee8b8`'s own expectation text includes an explicit carve-out: visible text must be contained in the accessible name "except for characters in the text nodes used to express non-text content." Its own two failed-example fixes: `<button aria-label="close">X</button>` (a visible "X" glyph standing in for a close icon — ACT: "the 'x' text node is non-text content") and `<button aria-label="Find">search</button>` styled with an icon font (`font-family: 'Material Icons'`) that remaps the literal word "search" to render as a magnifying-glass glyph.
+
+**Decision (2026-08-19):** fixed with two narrow heuristics. (a) A curated `font-family` name list (Material Icons/Symbols, Font Awesome, Ionicons, Glyphicons, IcoMoon, Bootstrap Icons, Feather, ...) catches the icon-font-remap shape, same curated-list tradeoff as `link-name-quality`'s phrase list. (b) A whole visible label of exactly one character that doesn't even appear inside the accessible name catches the "X" shape — scoped to "doesn't appear in the name at all" specifically so a real word-boundary mismatch (visible `"1"` against `aria-label="1a"`, where "1" *is* a substring of the name) still fails outright rather than being swept into the exemption; an existing test guards exactly this distinction. ACT does not itself define an algorithmic test for "non-text content" (confirmed by fetching the rule's own Background/Assumptions text), so both heuristics report `cantTell` rather than a silent pass, surfacing the case for a human look instead of asserting or hiding a possible defect.
+
+**Status:** resolved 2026-08-19 — `2ee8b8` runs clean (0/13).
 
 ### The ARIA structure rules only evaluate containers that carry an explicit `role` — not a bug
 

@@ -314,6 +314,8 @@
   "labelInName_hint_fail": "Update aria-label/aria-labelledby (or the visible label text) so the accessible name includes the visible label wording.",
   "labelInName_summary_cantTell": "{{element}}: visible label \"{{visibleLabel}}\" (from {{labelSource}}) differs from the accessible name (from {{nameMechanism}}) only by an abbreviation or by hyphenation.",
   "labelInName_hint_cantTell": "Check by hand whether the two wordings match: markup cannot tell an intended abbreviation from a mismatch.",
+  "labelInName_summary_cantTell_symbolic": "{{element}}: visible label \"{{visibleLabel}}\" (from {{labelSource}}) may render as an icon or symbol rather than literal text, so it may not need to appear in the accessible name (from {{nameMechanism}}).",
+  "labelInName_hint_cantTell_symbolic": "Check by hand: if the visible text renders as an icon or symbol, this is not a defect; if it renders as literal words, update the accessible name to include them.",
   "ariaRolesValid_title": "role attribute must be a valid, non-abstract ARIA role",
   "ariaRolesValid_description": "Checks that an explicit role=\"\" attribute resolves to a real, non-abstract WAI-ARIA role.",
   "ariaRolesValid_summary_invalid": "role=\"{{role}}\" is not a recognized ARIA role.",
