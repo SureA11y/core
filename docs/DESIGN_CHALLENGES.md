@@ -16,16 +16,6 @@ A running log of engine design decisions worth re-examining — cases where an e
 
 **Status:** open, unresolved as of 2026-08-19 — deprioritized pending a live ACT example that actually exercises it.
 
-### `img-alt-decorative` only considers `<img alt="">`, missing `aria-hidden`/`role=none` images and every svg/canvas case
-
-**Decision as it stands:** `src/checks/manual/img-alt-decorative-manual.js` is hard-scoped to a CSS selector matching only `img[alt=""]`/`img[alt^=" "]`/`img[alt$=" "]` — i.e. an `<img>` already marked (or nearly marked) decorative via `alt`.
-
-**Why it's being questioned:** ACT `e88epe`'s own applicability, fetched directly, is much broader: "any `img`, `canvas` or `svg` element that is visible and" excluded from the accessibility tree by *any* mechanism — `aria-hidden`, `role="none"`/`"presentation"`, an `svg` with `role="graphics-document"` and an empty name, or a `canvas` with no explicit role and an empty name — asking the reviewer to confirm the hidden element really is purely decorative (the rule explicitly notes the common "icon marked decorative because its text alternative sits next to it" pattern, which is a *valid* conforming case, not an automatic pass/fail either way — genuinely a `cantTell` question). All 4 of ACT's own failed-example test cases for this rule use `aria-hidden="true"`, `role="none"`, an unlabeled decorative `<svg>`, and an unlabeled `<canvas>` drawn via script — none of which our current selector reaches at all.
-
-**Why this hasn't been changed yet:** not a narrow selector tweak — needs new logic for 4 different "excluded from the accessibility tree" mechanisms across 3 element types, plus real thought about false-positive noise: a huge fraction of `aria-hidden` icons on the real web are legitimately decorative, so widening the selector naively risks flagging a large fraction of ordinary icon usage for manual review, drowning out the cases that actually need a human look.
-
-**Status:** open, unresolved as of 2026-08-19.
-
 ### No rule covers `role="graphics-symbol"`/`"graphics-document"` on an SVG descendant, only the `<svg>` root itself
 
 **Decision as it stands:** `svg-text-alternative-present.js`'s own header comment already states: "Deliberately does NOT extend to arbitrary `role="graphics-symbol"` descendants nested inside an `<svg>` — this check's scope is the `<svg>` root only." `role-img-text-alternative-present.js` is scoped to `role="img"` only, not `graphics-symbol`/`graphics-document`.
@@ -47,6 +37,16 @@ A running log of engine design decisions worth re-examining — cases where an e
 **Status:** open, unresolved as of 2026-08-19.
 
 ## Decided
+
+### `img-alt-decorative` only considered `<img alt="">`, missing `aria-hidden`/`role=none` images and every svg/canvas case — fixed
+
+**Decision as it stands (before the fix):** `src/checks/manual/img-alt-decorative-manual.js` was hard-scoped to a CSS selector matching only `img[alt=""]`/`img[alt^=" "]`/`img[alt$=" "]` — i.e. an `<img>` already marked (or nearly marked) decorative via `alt`. Confirmed against ACT `e88epe`'s live corpus (4/20 mismatches, all four of its own failed examples: `aria-hidden="true"` with a non-empty `alt`, `role="none"` with a non-empty `alt`, an unlabeled decorative `<svg>`, an unlabeled `<canvas>` drawn via script).
+
+**Why it was questioned:** ACT `e88epe`'s own applicability, fetched directly, is much broader: "any `img`, `canvas` or `svg` element that is visible and" excluded from the accessibility tree by *any* mechanism — `aria-hidden`, `role="none"`/`"presentation"`, an `svg` with an implicit/explicit `graphics-document` role and an empty name, or a `canvas` with no explicit role and an empty name.
+
+**Decision (2026-08-19):** rewritten around the direction ACT actually asks for — instead of a narrow "already-marked-decorative" selector, the rule now selects visible `img`/`canvas`/`svg` elements and asks whether each is *excluded* from the accessibility tree (`isIncludedInAccessibilityTree` for aria-hidden/inert; an explicit `role="none"`/`"presentation"` or `<img alt="">` not overridden by focusability, matching the same conflict-resolution convention already used by `svg-text-alternative-present.js`; an unlabeled `<svg>`'s implicit `graphics-document` role reusing that same file's `hasIntent` boundary; an unlabeled `<canvas>` with no explicit role). The noise-reduction concern is handled by ACT's own exception: an element is skipped entirely when any ancestor already has an author-supplied name (`aria-label`/`aria-labelledby`/`title`/`<label>`) — the common real case of an icon-only button already named via `aria-label`, where whether the icon itself "is decorative" is moot. Two of ACT's own applicability carve-outs (an `<img>` mid-load/broken, a fully-transparent `<canvas>`) aren't decidable from a static scan and are accepted as a documented limitation (`docs/LIMITATIONS.md`) rather than chased further — a rare, low-cost false positive a reviewer dismisses at a glance.
+
+**Status:** resolved 2026-08-19 — `e88epe` runs clean (0/20).
 
 ### `label-in-name` had no exemption for icon-font glyphs or icon-standing-in characters — fixed
 

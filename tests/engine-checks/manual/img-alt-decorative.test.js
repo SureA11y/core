@@ -32,17 +32,28 @@ test(`${RULE_ID}: cantTell when at least one applicable element triggers manual 
   const html = fs.readFileSync(fixturePath, 'utf8');
 
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 3, maxOccurrences: 3 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 8, maxOccurrences: 8 });
 
-  const expected = ['img_d_01', 'img_d_05', 'img_d_08'];
+  const expected = [
+    'img_d_01',
+    'img_d_04',
+    'img_d_08',
+    'img_d_10',
+    'img_d_11',
+    'img_d_12',
+    'svg_d_01',
+    'canvas_d_01'
+  ];
   const notExpected = [
     'img_d_02',
     'img_d_03',
-    'img_d_04',
+    'img_d_05',
     'img_d_06',
     'img_d_07',
     'img_d_09',
-    'img_d_10'
+    'svg_d_02',
+    'svg_d_03',
+    'canvas_d_02'
   ];
 
   for (const id of expected) {
@@ -54,13 +65,7 @@ test(`${RULE_ID}: cantTell when at least one applicable element triggers manual 
 });
 
 test(`${RULE_ID}: i18n (fr) rule title/description are localized`, () => {
-  const fixturePath = path.join(
-    __dirname,
-    '../..',
-    'fixtures',
-    'img-alt-decorative-manual-all-scenarios.html'
-  );
-  const html = fs.readFileSync(fixturePath, 'utf8');
+  const html = `<!doctype html><html><body><img id="a" alt="" src="x.png"></body></html>`;
 
   const result = runa11yCoreOnHtml(html, {
     runOnly: [RULE_ID],
@@ -71,52 +76,115 @@ test(`${RULE_ID}: i18n (fr) rule title/description are localized`, () => {
 
   assert.strictEqual(
     rule.title,
-    '<img> avec alt="" : d\u00e9coratif \u00e0 confirmer (revue manuelle)'
+    'Les <img>/<canvas>/<svg> exclus doivent être décoratifs (revue manuelle)'
   );
   assert.strictEqual(
     rule.description,
-    'Signale les \u00e9l\u00e9ments <img> dont l\u2019attribut alt est vide afin de confirmer qu\u2019ils sont purement d\u00e9coratifs.'
+    'Signale les éléments <img>, <canvas> et <svg> exclus de l’arbre d’accessibilité (aria-hidden, role="none"/"presentation", alt vide, ou un svg/canvas sans étiquette) afin de confirmer qu’ils sont purement décoratifs.'
   );
 
   const occ = rule.occurrences[0];
-  assert.strictEqual(occ.summary, 'V\u00e9rifiez si <img> est d\u00e9coratif (alt="").');
-  assert.strictEqual(
-    occ.hint,
-    'Confirmez que l\u2019image est purement d\u00e9corative. Sinon, fournissez un texte alt pertinent.'
-  );
+  assert.strictEqual(occ.summary, 'Vérifiez si ce <img> est décoratif.');
 });
 
-// role="presentation"/"none" exclusion (mirrors img-alt-present policy: exclude
-// only when the element is NOT focusable, since a focusable element stays in
-// the tab order and still needs a usable name). An <img> is not focusable on its own, so the exclusion applies until a tabindex puts it in the tab order.
+// role="presentation"/"none" is one of ACT e88epe's own exclusion mechanisms
+// (its own failed examples use non-empty alt with aria-hidden/role="none"),
+// so it is now flagged the same as alt="" — the opposite direction from
+// before this rule widened, when role="presentation"/"none" was treated as
+// an applicability *exclusion* instead of one of the review triggers.
 
-test(`${RULE_ID}: a non-focusable role="presentation" img is excluded from review`, () => {
-  const applicable = runa11yCoreOnHtml(
-    `<!doctype html><html lang="en"><head><title>t</title></head><body><img id="img1" src="x.png" alt=""></body></html>`,
-    { runOnly: [RULE_ID] }
-  );
-  assertRule(applicable, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
-
+test(`${RULE_ID}: a non-focusable role="presentation" img is reviewed even with a non-empty alt`, () => {
   const result = runa11yCoreOnHtml(
-    `<!doctype html><html lang="en"><head><title>t</title></head><body><img id="img1" src="x.png" alt="" role="presentation"></body></html>`,
-    { runOnly: [RULE_ID] }
-  );
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
-});
-
-test(`${RULE_ID}: role="none" excludes the same way role="presentation" does`, () => {
-  const result = runa11yCoreOnHtml(
-    `<!doctype html><html lang="en"><head><title>t</title></head><body><img id="img1" src="x.png" alt="" role="none"></body></html>`,
-    { runOnly: [RULE_ID] }
-  );
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
-});
-
-test(`${RULE_ID}: a focusable role="presentation" img is still reviewed`, () => {
-  const result = runa11yCoreOnHtml(
-    `<!doctype html><html lang="en"><head><title>t</title></head><body><img id="img1" src="x.png" alt="" role="presentation" tabindex="0"></body></html>`,
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><img id="img1" src="x.png" alt="W3C logo" role="presentation"></body></html>`,
     { runOnly: [RULE_ID] }
   );
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'img1'));
+});
+
+test(`${RULE_ID}: role="none" excludes the same way role="presentation" does`, () => {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><img id="img1" src="x.png" alt="W3C logo" role="none"></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'img1'));
+});
+
+test(`${RULE_ID}: a focusable role="presentation" img is NOT reviewed here (presentation-role-conflict owns that contradiction)`, () => {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><img id="img1" src="x.png" alt="" role="presentation" tabindex="0"></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: aria-hidden excludes an img regardless of a non-empty alt (ACT e88epe failed example)`, () => {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><img id="img1" src="x.png" alt="W3C logo" aria-hidden="true"></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'img1'));
+});
+
+test(`${RULE_ID}: an unlabeled <svg> with no naming intent is reviewed (implicit graphics-document role, ACT e88epe failed example)`, () => {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><svg id="svg1" viewBox="0 0 10 10"><path d="M0 0h10v10H0z"/></svg></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'svg1'));
+});
+
+test(`${RULE_ID}: an <svg> with an explicit role="img" and aria-label is not reviewed (a naming question, not this rule's)`, () => {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><svg id="svg1" role="img" aria-label="Star"><path d="M0 0h10v10H0z"/></svg></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: an unlabeled <canvas> with no explicit role is reviewed (ACT e88epe failed example)`, () => {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><canvas id="canvas1" width="60" height="60"></canvas></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'canvas1'));
+});
+
+test(`${RULE_ID}: a <canvas> with an explicit role and aria-label is not reviewed`, () => {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><canvas id="canvas1" role="img" aria-label="Chart" width="60" height="60"></canvas></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: an unlabeled svg inside an ancestor already named by the author is not reviewed (ACT e88epe's own exception)`, () => {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body>
+      <a href="/" aria-label="SVG star"><svg id="svg1" viewBox="0 0 10 10"><path d="M0 0h10v10H0z"/></svg></a>
+    </body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: an inert img is reviewed (inert removes it from the accessibility tree, same as aria-hidden)`, () => {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><div inert><img id="img1" alt="" src="x.png"></div></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'img1'));
+});
+
+test(`${RULE_ID}: a display:none img is not applicable (not visible at all)`, () => {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><img id="img1" alt="" src="x.png" style="display:none"></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
