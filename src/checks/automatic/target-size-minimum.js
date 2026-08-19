@@ -83,7 +83,8 @@
 const id = 'target-size-minimum';
 
 const meta = {
-  title: 'Pointer targets meet minimum size (AA)',
+  title:
+    'Pointer targets must be at least 24x24px large, or leave sufficient distance to other targets',
   description:
     'Checks that pointer-operable targets have an effective hit region of at least 24 by 24 CSS pixels, or meet an allowed exception (e.g. sufficient spacing).',
   i18n: {

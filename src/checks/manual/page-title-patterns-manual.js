@@ -29,10 +29,9 @@
 const id = 'page-title-patterns';
 
 const meta = {
-  title: 'Page title patterns that may indicate low descriptiveness',
+  title: 'Page title patterns that may be insufficiently descriptive',
   description:
-    'Flags page titles that are likely too generic or templated as review signals (WCAG 2.2 SC 2.4.2). ' +
-    'This rule is conservative and does not fail based on patterns alone.',
+    'Identifies page title patterns that may indicate low descriptiveness, such as generic, duplicated, or overly templated titles. This rule provides review signals and does not fail automatically.',
   i18n: {
     titleKey: 'pageTitlePatterns_title',
     descriptionKey: 'pageTitlePatterns_description'

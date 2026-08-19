@@ -21,9 +21,9 @@
 const id = 'area-alt-present';
 
 const meta = {
-  title: '&lt;area&gt; must have an alt attribute',
+  title: '<area> must have an alt attribute',
   description:
-    'Checks that &lt;area&gt; elements provide an alt attribute to support a text alternative mechanism.',
+    'Checks that <area> elements provide an alt attribute to support a text alternative mechanism.',
   i18n: {
     titleKey: 'area_altPresent_title',
     descriptionKey: 'area_altPresent_description'

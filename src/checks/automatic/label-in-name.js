@@ -35,7 +35,7 @@ const id = 'label-in-name';
 const meta = {
   title: 'Label in Name: accessible name contains visible text',
   description:
-    'Checks that when a control has a visible text label, the accessible name (from aria-label/aria-labelledby) contains that visible label text (WCAG 2.5.3).',
+    'Checks that when a control has a visible text label, the accessible name contains that visible label text (WCAG 2.5.3).',
   i18n: {
     titleKey: 'labelInName_title',
     descriptionKey: 'labelInName_description'
