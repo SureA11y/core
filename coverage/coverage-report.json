@@ -2,11 +2,11 @@
   "rulesDir": "src/checks",
   "facetsFile": "src/coverage/wcag-facets.js",
   "summary": {
-    "totalRules": 125,
+    "totalRules": 126,
     "wcagTagCoverage": {
       "byVersion": {
         "2.0": {
-          "A": 96,
+          "A": 97,
           "AA": 11,
           "AAA": 5
         },
@@ -22,12 +22,12 @@
         }
       },
       "anyVersion": {
-        "A": 101,
+        "A": 102,
         "AA": 15,
         "AAA": 5
       },
       "rawTagCounts": {
-        "wcag2a": 88,
+        "wcag2a": 89,
         "wcag2aa": 7,
         "wcag21aa": 3,
         "wcag2aaa": 5,
@@ -2909,6 +2909,56 @@
         "facetsBySc": {
           "2.4.2": [
             "page-title-present"
+          ]
+        }
+      }
+    },
+    {
+      "file": "src/checks/automatic/presentational-children-focusable-absent.js",
+      "ruleId": "presentational-children-focusable-absent",
+      "wcagScNormative": [
+        "4.1.2"
+      ],
+      "wcagScAll": [
+        "4.1.2"
+      ],
+      "wcagScInformative": [],
+      "type": "automatic",
+      "title": "Roles with presentational children must not contain focusable content",
+      "tags": [
+        "wcag2a",
+        "wcag412",
+        "aria",
+        "structure",
+        "focus",
+        "atomic",
+        "automatic"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2a",
+            "version": "2.0",
+            "level": "A"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "4.1.2": [
+            "presentational-children-focusable-absent"
           ]
         }
       }
@@ -6646,11 +6696,11 @@
       {
         "sc": "4.1.2",
         "title": "Name, Role, Value",
-        "totalFacets": 41,
-        "coveredFacets": 41,
+        "totalFacets": 42,
+        "coveredFacets": 42,
         "uncoveredFacets": [],
         "automationCounts": {
-          "full": 39,
+          "full": 40,
           "manual": 2
         },
         "missingFacetRules": [],
@@ -6958,6 +7008,14 @@
             "automation": "full",
             "coveredBy": [
               "nested-interactive-controls-absent"
+            ]
+          },
+          {
+            "id": "presentational-children-focusable-absent",
+            "label": "Roles with presentational children contain no content in sequential focus navigation",
+            "automation": "full",
+            "coveredBy": [
+              "presentational-children-focusable-absent"
             ]
           },
           {
@@ -7946,11 +8004,11 @@
       {
         "sc": "4.1.2",
         "title": "Name, Role, Value",
-        "totalFacets": 41,
-        "coveredFacets": 41,
+        "totalFacets": 42,
+        "coveredFacets": 42,
         "uncoveredFacets": [],
         "automationCounts": {
-          "full": 39,
+          "full": 40,
           "manual": 2
         },
         "missingFacetRules": [],
@@ -8258,6 +8316,14 @@
             "automation": "full",
             "coveredBy": [
               "nested-interactive-controls-absent"
+            ]
+          },
+          {
+            "id": "presentational-children-focusable-absent",
+            "label": "Roles with presentational children contain no content in sequential focus navigation",
+            "automation": "full",
+            "coveredBy": [
+              "presentational-children-focusable-absent"
             ]
           },
           {

@@ -51,6 +51,22 @@ test(`${RULE_ID}: cantTell when role="presentation" is on a natively focusable e
   assert.equal(rule.occurrences[0].data.details.focusable, true);
 });
 
+test(`${RULE_ID}: notApplicable for an <img alt=""> with an explicit role of its own`, () => {
+  // The explicit role wins over the presentation role empty alt would
+  // confer, so there is no presentational intent for aria-label to cancel.
+  const html = `<!doctype html><html><body><img id="a" src="x.png" alt="" role="img" aria-label="Logo"></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: an <img alt=""> whose role tokens are all unknown stays in scope`, () => {
+  const html = `<!doctype html><html><body><img id="a" src="x.png" alt="" role="bogus" aria-label="Logo"></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+  assert.equal(rule.occurrences[0].data.details.role, 'presentation');
+});
+
 test(`${RULE_ID}: cantTell when role="none" has tabindex="0"`, () => {
   const html = `<!doctype html><html><body><div id="a" role="none" tabindex="0"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
@@ -146,7 +162,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/presentation-role-conflict-al
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 7, maxOccurrences: 7 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 8, maxOccurrences: 8 });
   for (const id of [
     'prc_case_02',
     'prc_case_03',
@@ -154,7 +170,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/presentation-role-conflict-al
     'prc_case_05',
     'prc_case_07',
     'prc_case_10',
-    'prc_case_13'
+    'prc_case_13',
+    'prc_case_15'
   ]) {
     assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);
   }
@@ -164,7 +181,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/presentation-role-conflict-al
     'prc_case_08',
     'prc_case_09',
     'prc_case_11',
-    'prc_case_12'
+    'prc_case_12',
+    'prc_case_14'
   ]) {
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }

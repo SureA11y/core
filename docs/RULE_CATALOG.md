@@ -2,11 +2,11 @@
 
 Generated from the compiled engine's own catalog (`getChecksCatalog()`/`getRulesCatalog()`) — run `node scripts/generate-rule-catalog.js` after `npm run build` to regenerate this file whenever rules change. Do not hand-edit.
 
-**125 rules total: 76 automatic (WCAG-normative, can return `fail`), 49 manual (advisory/judgment-required, capped at `cantTell`). 101 carry at least one formal WCAG Success Criterion mapping.**
+**126 rules total: 77 automatic (WCAG-normative, can return `fail`), 49 manual (advisory/judgment-required, capped at `cantTell`). 102 carry at least one formal WCAG Success Criterion mapping.**
 
 See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`severity` mean on a scan result, and [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md) for how these roll up to an SC-level conformance claim. For WCAG-facet-level coverage-gap tracking (which parts of an SC are and aren't automatable yet), see `coverage/coverage-report.md` instead — that one is organized by facet, this one by rule.
 
-## Automatic rules (76) — can return `fail`
+## Automatic rules (77) — can return `fail`
 
 | Rule ID | Title | WCAG SC | Level | Confidence | Default severity |
 |---|---|---|---|---|---|
@@ -67,6 +67,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | `object-text-alternative-present` | &lt;object&gt; must provide a text alternative | 1.1.1 | A | high | serious |
 | `option-name-present` | Options have an accessible name | 4.1.2 | A | high | serious |
 | `page-title-present` | Page has a non-empty title | 2.4.2 | A | high | serious |
+| `presentational-children-focusable-absent` | Roles with presentational children must not contain focusable content | 4.1.2 | A | high | serious |
 | `progressbar-name-present` | Progress bars have an accessible name | 1.1.1 | A | high | serious |
 | `role-img-text-alternative-present` | [role="img"] must have an accessible text alternative | 1.1.1 | A | high | serious |
 | `searchbox-name-present` | Searchboxes have an accessible name | 4.1.2 | A | high | serious |
@@ -176,5 +177,5 @@ Composite rules aren't individually authored — they're generated rollups over 
 | `wcag-3.1.2-language-of-parts` | Language of Parts | 3.1.2 | AA | 1 |
 | `wcag-3.2.5-change-on-request` | Change on Request | 3.2.5 | AAA | 1 |
 | `wcag-3.3.2-labels-or-instructions` | Labels or Instructions | 3.3.2 | A | 2 |
-| `wcag-4.1.2-aria-validity` | Name, role, value: ARIA validity | 4.1.2 | A | 16 |
+| `wcag-4.1.2-aria-validity` | Name, role, value: ARIA validity | 4.1.2 | A | 17 |
 | `wcag-4.1.2-name` | Name, role, value: accessible name | 4.1.2 | A | 23 |

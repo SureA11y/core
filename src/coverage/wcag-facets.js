@@ -1055,6 +1055,11 @@ const FACETS = {
                 "automation": "full"
             },
             {
+                "id": "presentational-children-focusable-absent",
+                "label": "Roles with presentational children contain no content in sequential focus navigation",
+                "automation": "full"
+            },
+            {
                 "id": "aria-braille-equivalent",
                 "label": "aria-braillelabel/aria-brailleroledescription have a non-braille equivalent",
                 "automation": "full"

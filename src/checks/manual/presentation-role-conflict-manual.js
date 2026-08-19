@@ -9,9 +9,10 @@
  * @standard Best Practices (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
  * @applicability
  *   Applies to elements with an explicit role="presentation" or
- *   role="none", OR an <img alt=""> (empty alt gives an <img> an implicit
- *   presentation role per HTML-AAM, even with no explicit role attribute
- *   at all — `img[alt=''], [role="none"], [role="presentation"]`).
+ *   role="none", OR an <img alt=""> carrying no explicit role of its own
+ *   (empty alt gives an <img> an implicit presentation role per HTML-AAM,
+ *   even with no explicit role attribute at all — `img[alt=''],
+ *   [role="none"], [role="presentation"]`).
  * @expectation
  *   The element does not also carry a WAI-ARIA *global* state/property
  *   (aria-label, aria-hidden, aria-describedby, aria-live, aria-current,
@@ -50,6 +51,12 @@
  * - Focusability is computed via helpers.getFocusableInfo (native +
  *   tabindex), same helper aria-hidden-focus already relies on — a
  *   `:disabled` or otherwise non-focusable element is not flagged.
+ * - An `<img alt="">` carrying an explicit role of its own (e.g. `<img
+ *   alt="" role="img" aria-label="Logo">`) is out of scope: the explicit
+ *   role wins over the presentation role empty alt would otherwise confer,
+ *   so nothing presentational is left to conflict with. An explicit role
+ *   whose tokens are all unknown confers nothing either, and the empty alt
+ *   still applies.
  */
 
 const id = 'presentation-role-conflict';
@@ -109,6 +116,26 @@ function runInPage(ctx) {
   const getFocusableInfo =
     helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
 
+  const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
+
+  // The role attribute holds a fallback list; the first token naming a real
+  // role wins, and unknown tokens are skipped over. Returns '' when the
+  // element has no role attribute or none of its tokens name a role — the
+  // cases where an <img alt=""> keeps the presentation role empty alt gives
+  // it.
+  function getEffectiveRoleToken(el) {
+    const raw = el.getAttribute ? el.getAttribute('role') : null;
+    if (!raw) return '';
+    const tokens = String(raw).trim().toLowerCase().split(/\s+/);
+    for (const token of tokens) {
+      if (!token) continue;
+      if (token === 'presentation' || token === 'none') return token;
+      const known = ariaHelpers ? ariaHelpers.isValidConcreteRole(token) : true;
+      if (known) return token;
+    }
+    return '';
+  }
+
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('[role="presentation"], [role="none"], img[alt=""]')
     : helpers.queryAll('[role="presentation"], [role="none"], img[alt=""]');
@@ -118,6 +145,13 @@ function runInPage(ctx) {
 
   for (const el of nodes) {
     if (!el || !el.getAttribute) continue;
+
+    // Only reachable via the img[alt=""] branch of the selector: an explicit
+    // role other than presentation/none overrides the presentation role that
+    // empty alt would confer, leaving no presentational intent to conflict
+    // with.
+    const roleToken = getEffectiveRoleToken(el);
+    if (roleToken && roleToken !== 'presentation' && roleToken !== 'none') continue;
 
     applicableCount += 1;
 
@@ -165,12 +199,9 @@ function runInPage(ctx) {
     const parts = present.slice();
     if (isFocusable) parts.push('focusable');
 
-    // No explicit role attribute means this matched via the img[alt=""]
+    // No role token means this matched via the img[alt=""]
     // implicit-presentation case.
-    const role =
-      String(el.getAttribute('role') || '')
-        .trim()
-        .toLowerCase() || 'presentation';
+    const role = roleToken || 'presentation';
 
     occurrences.push(
       helpers.reportOccurrence(el, {

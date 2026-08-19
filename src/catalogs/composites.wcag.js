@@ -406,6 +406,7 @@ module.exports = [
       'aria-required-parent',
       'duplicate-id-aria',
       'nested-interactive-controls-absent',
+      'presentational-children-focusable-absent',
       'aria-braille-equivalent',
       'aria-conditional-attr',
       'aria-checked-state-mismatch'

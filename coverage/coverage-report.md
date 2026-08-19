@@ -5,19 +5,19 @@ Facets: `src/coverage/wcag-facets.js`
 
 ## Summary
 
-Total rules (loaded without error): **125**
+Total rules (loaded without error): **126**
 
 ### Coverage by WCAG Level (Version-agnostic, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| Any WCAG version | 101 | 15 | 5 |
+| Any WCAG version | 102 | 15 | 5 |
 
 ### Coverage by WCAG Level (Per version, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| WCAG 2.0 | 96 | 11 | 5 |
+| WCAG 2.0 | 97 | 11 | 5 |
 | WCAG 2.1 | 4 | 3 | 0 |
 | WCAG 2.2 | 1 | 1 | 0 |
 
@@ -28,7 +28,7 @@ Total rules (loaded without error): **125**
 | wcag21a | 1 |
 | wcag21aa | 3 |
 | wcag22aa | 1 |
-| wcag2a | 88 |
+| wcag2a | 89 |
 | wcag2aa | 7 |
 | wcag2aaa | 5 |
 
@@ -500,8 +500,8 @@ Automation mix: **full 2, partial 0, manual 0**.
 
 ### 4.1.2
 
-Facet coverage: **41/41** facets covered.
-Automation mix: **full 39, partial 0, manual 2**.
+Facet coverage: **42/42** facets covered.
+Automation mix: **full 40, partial 0, manual 2**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
@@ -543,6 +543,7 @@ Automation mix: **full 39, partial 0, manual 2**.
 | summary-name-present | full | summary-name-present |
 | tooltip-name-present | full | tooltip-name-present |
 | nested-interactive-controls-absent | full | nested-interactive-controls-absent |
+| presentational-children-focusable-absent | full | presentational-children-focusable-absent |
 | aria-braille-equivalent | full | aria-braille-equivalent |
 | aria-conditional-attr | full | aria-conditional-attr |
 | aria-checked-state-mismatch | manual | aria-checked-state-mismatch |
@@ -578,6 +579,7 @@ Automation mix: **full 39, partial 0, manual 2**.
 | menuitem-name-present | automatic | Menu items have an accessible name | src/checks/automatic/menuitem-name-present.js | menuitem-name-present |  |
 | nested-interactive-controls-absent | automatic | Interactive controls must not be nested | src/checks/automatic/nested-interactive-controls-absent.js | nested-interactive-controls-absent |  |
 | option-name-present | automatic | Accessible name is present | src/checks/automatic/option-name-present.js | option-name-present |  |
+| presentational-children-focusable-absent | automatic | Roles with presentational children must not contain focusable content | src/checks/automatic/presentational-children-focusable-absent.js | presentational-children-focusable-absent |  |
 | searchbox-name-present | automatic | Accessible name is present | src/checks/automatic/searchbox-name-present.js | searchbox-name-present |  |
 | slider-name-present | automatic | Sliders have an accessible name | src/checks/automatic/slider-name-present.js | slider-name-present |  |
 | spinbutton-name-present | automatic | Accessible name is present | src/checks/automatic/spinbutton-name-present.js | spinbutton-name-present |  |
@@ -1086,8 +1088,8 @@ Automation mix: **full 2, partial 0, manual 0**.
 
 ### 4.1.2
 
-Facet coverage: **41/41** facets covered.
-Automation mix: **full 39, partial 0, manual 2**.
+Facet coverage: **42/42** facets covered.
+Automation mix: **full 40, partial 0, manual 2**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
@@ -1129,6 +1131,7 @@ Automation mix: **full 39, partial 0, manual 2**.
 | summary-name-present | full | summary-name-present |
 | tooltip-name-present | full | tooltip-name-present |
 | nested-interactive-controls-absent | full | nested-interactive-controls-absent |
+| presentational-children-focusable-absent | full | presentational-children-focusable-absent |
 | aria-braille-equivalent | full | aria-braille-equivalent |
 | aria-conditional-attr | full | aria-conditional-attr |
 | aria-checked-state-mismatch | manual | aria-checked-state-mismatch |
@@ -1164,6 +1167,7 @@ Automation mix: **full 39, partial 0, manual 2**.
 | menuitem-name-present | automatic | Menu items have an accessible name | src/checks/automatic/menuitem-name-present.js | menuitem-name-present |  |
 | nested-interactive-controls-absent | automatic | Interactive controls must not be nested | src/checks/automatic/nested-interactive-controls-absent.js | nested-interactive-controls-absent |  |
 | option-name-present | automatic | Accessible name is present | src/checks/automatic/option-name-present.js | option-name-present |  |
+| presentational-children-focusable-absent | automatic | Roles with presentational children must not contain focusable content | src/checks/automatic/presentational-children-focusable-absent.js | presentational-children-focusable-absent |  |
 | searchbox-name-present | automatic | Accessible name is present | src/checks/automatic/searchbox-name-present.js | searchbox-name-present |  |
 | slider-name-present | automatic | Sliders have an accessible name | src/checks/automatic/slider-name-present.js | slider-name-present |  |
 | spinbutton-name-present | automatic | Accessible name is present | src/checks/automatic/spinbutton-name-present.js | spinbutton-name-present |  |
