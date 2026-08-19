@@ -102,6 +102,28 @@
     <div role="buton" aria-label="Hello" id="aaa_case_06"></div>
   </div>
 
+  <h2>E. Judged by a role the element has without declaring one</h2>
+
+  <div class="case" id="case_15">
+    <div class="case-title">15 — FAIL: an element HTML-AAM maps to no role at all supports no role-specific attribute</div>
+    <audio src="clip.mp3" controls aria-orientation="horizontal" id="aaa_case_15"></audio>
+  </div>
+
+  <div class="case" id="case_16">
+    <div class="case-title">16 — NEUTRAL: a global attribute is fine on an element with no role</div>
+    <video aria-label="Intro film" id="aaa_case_16"></video>
+  </div>
+
+  <div class="case" id="case_17">
+    <div class="case-title">17 — FAIL: the generic role a bare &lt;div&gt; carries supports nothing role-specific</div>
+    <div aria-expanded="true" id="aaa_case_17">Panel</div>
+  </div>
+
+  <div class="case" id="case_18">
+    <div class="case-title">18 — NEUTRAL: an element whose implicit role depends on context is left alone</div>
+    <a href="/pricing" aria-checked="true" id="aaa_case_18">Pricing</a>
+  </div>
+
   <p class="note">End of fixture.</p>
 </body>
 </html>

@@ -32,6 +32,8 @@ const END_GLOBAL = '  // </generated:aria-global-attrs>';
 const BEGIN_ROLES = '  // <generated:aria-role-attrs>';
 const BEGIN_IMPLICIT = '  // <generated:aria-implicit-roles>';
 const END_IMPLICIT = '  // </generated:aria-implicit-roles>';
+const BEGIN_ROLELESS = '  // <generated:aria-roleless-elements>';
+const END_ROLELESS = '  // </generated:aria-roleless-elements>';
 const BEGIN_ABSTRACT = '  // <generated:aria-abstract-roles>';
 const END_ABSTRACT = '  // </generated:aria-abstract-roles>';
 const BEGIN_NAME_FROM_CONTENT = '    // <generated:aria-name-from-content>';
@@ -123,6 +125,7 @@ const CONTEXT_FREE_ELEMENTS = [
   'details',
   'dfn',
   'dialog',
+  'div',
   'dt',
   'em',
   'fieldset',
@@ -147,6 +150,7 @@ const CONTEXT_FREE_ELEMENTS = [
   'p',
   'progress',
   'strong',
+  'span',
   'sub',
   'sup',
   'textarea',
@@ -173,6 +177,37 @@ const INPUT_ROLES = {
   reset: 'button',
   image: 'button'
 };
+
+// Elements HTML-AAM maps to no ARIA role at all, in any context — not
+// `generic`, not `presentation`: nothing. A role-specific ARIA attribute on one
+// of these is supported by nothing, which is what ACT 5c01ea's failed example 2
+// (`<audio controls aria-orientation="horizontal">`) turns on. Hand-listed
+// because their absence is the fact being encoded, and absence cannot be read
+// out of aria-query; verified below against it so a package that starts
+// supplying a role for them breaks the build rather than the rule.
+const ROLELESS_ELEMENTS = ['audio', 'video'];
+
+function rolelessElements() {
+  const named = new Set();
+  for (const [concept] of elementRoles.entries()) named.add(concept.name);
+  const nowMapped = ROLELESS_ELEMENTS.filter((e) => named.has(e));
+  if (nowMapped.length) {
+    throw new Error(
+      `aria-query now supplies a role for elements listed as roleless: ${nowMapped.join(', ')}`
+    );
+  }
+  return [...ROLELESS_ELEMENTS].sort();
+}
+
+function renderRoleless(list) {
+  return [
+    BEGIN_ROLELESS,
+    '  const ROLELESS_ELEMENTS = new Set([',
+    ...list.map((e) => `    '${e}',`),
+    '  ]);',
+    END_ROLELESS
+  ].join('\n');
+}
 
 function implicitRoles() {
   const allowed = new Set(CONTEXT_FREE_ELEMENTS);
@@ -291,6 +326,7 @@ function main() {
     END_IMPLICIT,
     renderImplicit(implicit, nonGlobalAttrs(globals, table))
   );
+  source = replaceBlock(source, BEGIN_ROLELESS, END_ROLELESS, renderRoleless(rolelessElements()));
 
   let helpers = fs.readFileSync(HELPERS_PATH, 'utf8');
   const helpersBefore = helpers;

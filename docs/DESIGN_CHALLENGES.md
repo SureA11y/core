@@ -62,16 +62,6 @@ Confirmed via ACT `bc4a75` failed-example: `<div role="list"><li>Item 1</li><spa
 
 **Status:** open, unresolved as of 2026-08-19.
 
-### `aria-allowed-attr` only checks elements with an *explicit* `role` attribute, skipping native/implicit-role elements entirely
-
-**Decision as it stands:** `src/checks/automatic/aria-allowed-attr.js` is deliberately scoped to elements carrying an explicit `role="..."` attribute; its header comment says: "Only evaluated for elements with an explicit role, since the global set already covers implicit-role elements without asserting anything role-specific; scope kept deliberately narrow to avoid false positives on implicit-role ARIA-in-HTML edge cases not modeled here."
-
-**Why it's being questioned:** ACT `5c01ea`'s own failed test case is `<audio src="..." controls aria-orientation="horizontal"></audio>` — no explicit role at all. `<audio>` has no ARIA role mapping, and `aria-orientation` isn't a global ARIA attribute, so this should fail — and does, per ACT. Our rule reports `notApplicable` because there's no explicit `role` attribute to key off of. This is a real, common real-world bug shape (role-specific ARIA attributes stapled onto native elements like `<audio>`, `<input type="text">`, `<img>`, etc. without an explicit role) that the rule currently cannot catch at all, for any native element.
-
-**Why this hasn't been changed yet:** a full fix needs a comprehensive native-tag → implicit-role table for every applicable HTML element (not just the ones a sibling rule already models in `NATIVE_ROLE_BY_ELEMENT_KEY`, which only covers roughly two dozen tags used for `aria-allowed-role`'s override-validity checks and doesn't include `<audio>`/`<video>`/many others) plus careful handling of context-dependent implicit roles (see the entry above) to avoid new false positives. Real scope expansion, not a quick fix.
-
-**Status:** open, unresolved as of 2026-08-19.
-
 ### `img-alt-decorative` only considers `<img alt="">`, missing `aria-hidden`/`role=none` images and every svg/canvas case
 
 **Decision as it stands:** `src/checks/manual/img-alt-decorative-manual.js` is hard-scoped to a CSS selector matching only `img[alt=""]`/`img[alt^=" "]`/`img[alt$=" "]` — i.e. an `<img>` already marked (or nearly marked) decorative via `alt`.
@@ -137,3 +127,15 @@ That said, duplicate IDs are still a real, practical bug independent of which SC
 Two consequences, both accepted: the shared helper and its six rule-local copies stay as they are, and ACT `e086e5`'s two `<label>`-on-`role="textbox"` failed examples stay permanent mismatches — reclassified in `docs/ACT_RULE_MAPPING.md` from an open question to a deliberate divergence.
 
 **Status:** resolved 2026-08-19 — no code change; behaviour confirmed as intended.
+
+### `aria-allowed-attr` only checks elements with an *explicit* `role` attribute — the entry was written from a stale comment
+
+**Decision as it stood:** `src/checks/automatic/aria-allowed-attr.js`'s header comment said the rule was deliberately scoped to elements carrying an explicit `role="..."`, and this entry took it at its word.
+
+**What was actually true:** the comment was out of date when the entry was written. An implicit-role path had already landed on 2026-08-13 (`cdf9a13`), with a generated `IMPLICIT_ROLE_BY_ELEMENT` table gated on elements whose role is the same in every context, and the rule had been judging `<p aria-level="2">` and friends ever since. The entry described the documentation, not the code — a reminder that a header comment is evidence of intent, not of behaviour, and that the check is one `runa11yCoreOnHtml` call away.
+
+**What the real remaining gap was:** elements HTML-AAM maps to *no* role at all. ACT `5c01ea`'s failed example 2 is `<audio controls aria-orientation="horizontal">`: `audio` has no role, so no role-specific attribute is supported on it, and the rule skipped it because the implicit-role lookup came back empty — indistinguishable, in the old code, from "a role this table does not model".
+
+**Decision (2026-08-19):** separate the two. A generated `ROLELESS_ELEMENTS` set (`audio`, `video`) makes "no role in any context" an answer rather than a shrug, and every non-global ARIA attribute on one of those is reported. `div`/`span` joined the context-free table as `generic`, whose supported set is empty, so `<div aria-expanded="true">` is now reported too — the attribute announces nothing there, which is a real defect rather than a spec technicality. Context-dependent elements (`<a>`, `<section>`, `<td>`, ...) are still skipped rather than guessed at; that restraint is what the second entry above is about.
+
+**Status:** resolved 2026-08-19 — `5c01ea` now runs clean against all 17 of ACT's examples, and the rule's header comment describes what it does.

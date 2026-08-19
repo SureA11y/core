@@ -281,16 +281,23 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-allowed-attr-all-scenari
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  // 5 fail occurrences (case_04 carries two) + 1 cantTell (case_14, a
-  // deprecated-but-allowed attr) => resolves to fail overall, 6 occurrences.
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 6, maxOccurrences: 6 });
+  // 7 fail occurrences (case_04 carries two) + 1 cantTell (case_14, a
+  // deprecated-but-allowed attr) => resolves to fail overall, 8 occurrences.
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 8, maxOccurrences: 8 });
 
   const outcomeForId = (id) =>
     (rule.occurrences || []).find(
       (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
     )?.occurrenceOutcome;
 
-  const expectedFailIds = ['aaa_case_03', 'aaa_case_04', 'aaa_case_05', 'aaa_case_13'];
+  const expectedFailIds = [
+    'aaa_case_03',
+    'aaa_case_04',
+    'aaa_case_05',
+    'aaa_case_13',
+    'aaa_case_15',
+    'aaa_case_17'
+  ];
   assert.ok(hasOccurrenceForId(rule, 'aaa_case_14'), 'Expected occurrence for aaa_case_14');
   assert.strictEqual(outcomeForId('aaa_case_14'), 'cantTell');
   const expectedNoOccIds = [
@@ -306,7 +313,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-allowed-attr-all-scenari
     'aaa_case_11',
     'aaa_case_12a',
     'aaa_case_12b',
-    'aaa_case_12c'
+    'aaa_case_12c',
+    'aaa_case_16',
+    'aaa_case_18'
   ];
 
   for (const id of expectedFailIds) {
@@ -366,8 +375,61 @@ test(`${RULE_ID}: elements whose implicit role depends on context stay out of sc
   }
 });
 
-test(`${RULE_ID}: an element with no implicit role mapping is skipped`, () => {
-  const html = `<!doctype html><html><body><div aria-checked="true">x</div></body></html>`;
+test(`${RULE_ID}: an element whose role is context-dependent is skipped`, () => {
+  // <a>'s role depends on href, <td>'s on whether the table is a layout
+  // table, so neither is in the context-free table and neither is guessed at.
+  for (const body of [
+    '<a href="/x" aria-checked="true">x</a>',
+    '<table><tr><td aria-checked="true">x</td></tr></table>'
+  ]) {
+    const html = `<!doctype html><html><body>${body}</body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
+test(`${RULE_ID}: a generic element does not support a role-specific attribute`, () => {
+  // <div>/<span> resolve to the generic role, whose supported set is empty.
+  for (const body of ['<div aria-checked="true">x</div>', '<span aria-expanded="true">x</span>']) {
+    const html = `<!doctype html><html><body>${body}</body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+    assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'ARIA_ATTR_NOT_ALLOWED');
+    assert.strictEqual(rule.occurrences[0].data.details.role, 'generic');
+  }
+});
+
+test(`${RULE_ID}: a global attribute is fine on a generic element`, () => {
+  const html = `<!doctype html><html><body><div aria-label="Panel">x</div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+// ---------------------------------------------------------------------------
+// Elements HTML-AAM maps to no role at all: nothing supports a role-specific
+// attribute on them. ACT 5c01ea's failed example 2 is exactly this shape.
+// ---------------------------------------------------------------------------
+
+test(`${RULE_ID}: an element with no ARIA role supports no role-specific attribute`, () => {
+  const html = `<!doctype html><html><body><audio src="/a.mp3" controls aria-orientation="horizontal"></audio></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const details = rule.occurrences[0].data.details;
+  assert.strictEqual(details.reasonCode, 'ARIA_ATTR_NOT_ALLOWED_ROLELESS');
+  assert.strictEqual(details.attr, 'aria-orientation');
+  assert.strictEqual(details.element, 'audio');
+});
+
+test(`${RULE_ID}: a global attribute is fine on an element with no role`, () => {
+  const html = `<!doctype html><html><body><video aria-label="Intro"></video></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: an explicit role on a roleless element is judged against that role`, () => {
+  // role="tab" supports aria-selected, so the same element passes once a role
+  // that supports the attribute is declared.
+  const html = `<!doctype html><html><body><video role="tab" aria-selected="true"></video></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
