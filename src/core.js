@@ -2672,6 +2672,62 @@ const CHECK_DEFS = [
     "mappings": null
   },
   {
+    "ruleId": "heading-quality",
+    "title": "Heading text should be descriptive, not a placeholder",
+    "description": "Flags headings whose accessible name is a placeholder rather than a description of the content that follows: a generic word (\"Heading\", \"Untitled\"), a numbered template slot (\"Section 2\"), a filename, or a URL.",
+    "i18n": {
+      "titleKey": "headingQuality_title",
+      "descriptionKey": "headingQuality_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2aa",
+      "wcag246",
+      "headings",
+      "structure",
+      "quality",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "2.4.6"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.4.6",
+        "title": "Headings and Labels",
+        "conformanceLevel": "AA"
+      }
+    ],
+    "defaultSeverity": "minor",
+    "defaultConfidence": "medium",
+    "type": "manual",
+    "coverage": {
+      "facetsBySc": {
+        "2.4.6": [
+          "heading-text-descriptive-evidence"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "operable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
     "ruleId": "html-lang-attr-present",
     "title": "Page language is declared",
     "description": "Checks that the default language of the page is programmatically declared.",
@@ -6948,6 +7004,20 @@ const COMPOSITE_RULES = [
     }
   },
   {
+    "id": "wcag-2.4.6-headings-and-labels",
+    "checksIds": [
+      "heading-quality"
+    ],
+    "meta": {
+      "title": "Headings and Labels",
+      "description": "Rollup of checks flagging headings whose text is a placeholder rather than a description of the content that follows.",
+      "wcagSc": [
+        "2.4.6"
+      ],
+      "level": "AA"
+    }
+  },
+  {
     "id": "wcag-2.4.7-focus-visible",
     "checksIds": [
       "aria-hidden-focus",
@@ -7266,6 +7336,7 @@ const RULE_IMPLS = {
   "form-control-programmatic-label-quality": { run: require("./checks/manual/form-control-programmatic-label-quality-manual.js").runInPage, applicability: require("./checks/manual/form-control-programmatic-label-quality-manual.js").applicability || null },
   "form-control-single-label": { run: require("./checks/automatic/form-control-single-label.js").runInPage, applicability: require("./checks/automatic/form-control-single-label.js").applicability || null },
   "heading-order": { run: require("./checks/manual/heading-order-manual.js").runInPage, applicability: require("./checks/manual/heading-order-manual.js").applicability || null },
+  "heading-quality": { run: require("./checks/manual/heading-quality-manual.js").runInPage, applicability: require("./checks/manual/heading-quality-manual.js").applicability || null },
   "html-lang-attr-present": { run: require("./checks/automatic/language-page-present.js").runInPage, applicability: require("./checks/automatic/language-page-present.js").applicability || null },
   "html-xml-lang-mismatch": { run: require("./checks/automatic/html-xml-lang-mismatch.js").runInPage, applicability: require("./checks/automatic/html-xml-lang-mismatch.js").applicability || null },
   "identical-links-same-purpose": { run: require("./checks/manual/identical-links-same-purpose-manual.js").runInPage, applicability: require("./checks/manual/identical-links-same-purpose-manual.js").applicability || null },
@@ -7987,6 +8058,12 @@ const I18N = {
     "mouseOnlyEventHandlers_description": "Markiert Elemente mit einem nur für den Zeiger bestimmten Inline-Event-Handler (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) ohne per Tastatur erreichbares Äquivalent (onkeydown/onkeyup/onkeypress/onfocus/onblur), zur manuellen Überprüfung.",
     "mouseOnlyEventHandlers_summary_cantTell": "Dieses Element hat {{attrs}}, aber keinen entsprechenden, per Tastatur erreichbaren Handler.",
     "mouseOnlyEventHandlers_hint_cantTell": "Fügen Sie onkeydown/onkeyup/onkeypress (oder onfocus/onblur für durch Hover ausgelöstes Verhalten) hinzu, damit diese Funktionalität auch per Tastatur erreichbar ist.",
+    "headingQuality_title": "Überschriftentext sollte beschreibend sein, kein Platzhalter",
+    "headingQuality_description": "Meldet Überschriften, deren zugänglicher Name ein Platzhalter statt einer Beschreibung des folgenden Inhalts ist: ein allgemeines Wort („Überschrift“, „Ohne Titel“), ein nummerierter Vorlagenplatz („Abschnitt 2“), ein Dateiname oder eine URL.",
+    "headingQuality_summary_cantTell_placeholder": "Der zugängliche Name dieser Überschrift („{{name}}“) ist ein Platzhalter und keine Beschreibung des eingeleiteten Inhalts.",
+    "headingQuality_summary_cantTell_filename": "Der zugängliche Name dieser Überschrift („{{name}}“) ist ein Dateiname und keine Beschreibung des eingeleiteten Inhalts.",
+    "headingQuality_summary_cantTell_url": "Der zugängliche Name dieser Überschrift („{{name}}“) ist eine URL und keine Beschreibung des eingeleiteten Inhalts.",
+    "headingQuality_hint_cantTell": "Formulieren Sie die Überschrift so um, dass sie Thema oder Zweck des folgenden Inhalts benennt.",
     "linkNameQuality_title": "Der Linktext sollte aussagekräftig sein, nicht generisch",
     "linkNameQuality_description": "Markiert Links, deren vollständiger zugänglicher Name eine bekannte, wenig aussagekräftige Formulierung ist (z. B. „hier klicken“, „mehr erfahren“, „mehr“), zur manuellen Überprüfung, ob der Zweck ohne zusätzlichen Kontext klar ist.",
     "linkNameQuality_summary_cantTell": "Der zugängliche Name dieses Links („{{name}}“) ist eine generische, wenig aussagekräftige Formulierung.",
@@ -8626,6 +8703,12 @@ const I18N = {
     "mouseOnlyEventHandlers_description": "Flags elements with an inline pointer-only event handler (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) and no keyboard-reachable equivalent (onkeydown/onkeyup/onkeypress/onfocus/onblur), for manual review.",
     "mouseOnlyEventHandlers_summary_cantTell": "This element has {{attrs}} but no keyboard-reachable equivalent handler.",
     "mouseOnlyEventHandlers_hint_cantTell": "Add onkeydown/onkeyup/onkeypress (or onfocus/onblur for hover-triggered behavior) so this functionality is also reachable by keyboard.",
+    "headingQuality_title": "Heading text should be descriptive, not a placeholder",
+    "headingQuality_description": "Flags headings whose accessible name is a placeholder rather than a description of the content that follows: a generic word (\"Heading\", \"Untitled\"), a numbered template slot (\"Section 2\"), a filename, or a URL.",
+    "headingQuality_summary_cantTell_placeholder": "This heading's accessible name (\"{{name}}\") is a placeholder rather than a description of the content it introduces.",
+    "headingQuality_summary_cantTell_filename": "This heading's accessible name (\"{{name}}\") is a filename rather than a description of the content it introduces.",
+    "headingQuality_summary_cantTell_url": "This heading's accessible name (\"{{name}}\") is a URL rather than a description of the content it introduces.",
+    "headingQuality_hint_cantTell": "Rewrite the heading so it names the topic or purpose of the content that follows it.",
     "linkNameQuality_title": "Link text should be descriptive, not generic",
     "linkNameQuality_description": "Flags links whose full accessible name is a known non-descriptive phrase (e.g. \"click here\", \"read more\", \"more\"), for manual review of whether the purpose is clear without additional context.",
     "linkNameQuality_summary_cantTell": "This link's accessible name (\"{{name}}\") is a generic, non-descriptive phrase.",
@@ -9265,6 +9348,12 @@ const I18N = {
     "mouseOnlyEventHandlers_description": "Señala elementos con un controlador de eventos en línea exclusivo de puntero (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) y sin un controlador equivalente alcanzable por teclado (onkeydown/onkeyup/onkeypress/onfocus/onblur), para su revisión manual.",
     "mouseOnlyEventHandlers_summary_cantTell": "Este elemento tiene {{attrs}} pero ningún controlador equivalente alcanzable por teclado.",
     "mouseOnlyEventHandlers_hint_cantTell": "Agregar onkeydown/onkeyup/onkeypress (o onfocus/onblur para comportamiento activado por hover) para que esta funcionalidad también sea alcanzable por teclado.",
+    "headingQuality_title": "El texto del encabezado debe ser descriptivo, no un marcador de posición",
+    "headingQuality_description": "Señala encabezados cuyo nombre accesible es un marcador de posición en lugar de una descripción del contenido que sigue: una palabra genérica («Encabezado», «Sin título»), una ranura numerada de plantilla («Sección 2»), un nombre de archivo o una URL.",
+    "headingQuality_summary_cantTell_placeholder": "El nombre accesible de este encabezado («{{name}}») es un marcador de posición, no una descripción del contenido que introduce.",
+    "headingQuality_summary_cantTell_filename": "El nombre accesible de este encabezado («{{name}}») es un nombre de archivo, no una descripción del contenido que introduce.",
+    "headingQuality_summary_cantTell_url": "El nombre accesible de este encabezado («{{name}}») es una URL, no una descripción del contenido que introduce.",
+    "headingQuality_hint_cantTell": "Reescribir el encabezado para que nombre el tema o el propósito del contenido que le sigue.",
     "linkNameQuality_title": "El texto del enlace debe ser descriptivo, no genérico",
     "linkNameQuality_description": "Señala enlaces cuyo nombre accesible completo es una frase no descriptiva conocida (por ejemplo, \"haz clic aquí\", \"leer más\", \"más\"), para su revisión manual sobre si el propósito queda claro sin contexto adicional.",
     "linkNameQuality_summary_cantTell": "El nombre accesible de este enlace (\"{{name}}\") es una frase genérica y no descriptiva.",
@@ -9904,6 +9993,12 @@ const I18N = {
     "mouseOnlyEventHandlers_description": "Signale les éléments ayant un gestionnaire d’événement en ligne réservé au pointeur (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) sans équivalent accessible au clavier (onkeydown/onkeyup/onkeypress/onfocus/onblur), pour une revue manuelle.",
     "mouseOnlyEventHandlers_summary_cantTell": "Cet élément a {{attrs}} mais aucun gestionnaire équivalent accessible au clavier.",
     "mouseOnlyEventHandlers_hint_cantTell": "Ajoutez onkeydown/onkeyup/onkeypress (ou onfocus/onblur pour un comportement déclenché au survol) afin que cette fonctionnalité soit aussi accessible au clavier.",
+    "headingQuality_title": "Le texte du titre doit être descriptif, pas un texte de remplacement",
+    "headingQuality_description": "Signale les titres dont le nom accessible est un texte de remplacement plutôt qu’une description du contenu qui suit : un mot générique (« Titre », « Sans titre »), un emplacement de gabarit numéroté (« Section 2 »), un nom de fichier ou une URL.",
+    "headingQuality_summary_cantTell_placeholder": "Le nom accessible de ce titre (« {{name}} ») est un texte de remplacement, pas une description du contenu qu’il introduit.",
+    "headingQuality_summary_cantTell_filename": "Le nom accessible de ce titre (« {{name}} ») est un nom de fichier, pas une description du contenu qu’il introduit.",
+    "headingQuality_summary_cantTell_url": "Le nom accessible de ce titre (« {{name}} ») est une URL, pas une description du contenu qu’il introduit.",
+    "headingQuality_hint_cantTell": "Reformulez le titre pour qu’il nomme le sujet ou l’objectif du contenu qui suit.",
     "linkNameQuality_title": "Le texte des liens devrait être descriptif, pas générique",
     "linkNameQuality_description": "Signale les liens dont le nom accessible complet est une formule connue comme non descriptive (ex. « cliquez ici », « en savoir plus », « plus »), pour une revue manuelle visant à déterminer si l’objet du lien est clair sans contexte supplémentaire.",
     "linkNameQuality_summary_cantTell": "Le nom accessible de ce lien (« {{name}} ») est une formule générique et non descriptive.",
@@ -21837,6 +21932,62 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "mappings": null
   },
   {
+    "ruleId": "heading-quality",
+    "title": "Heading text should be descriptive, not a placeholder",
+    "description": "Flags headings whose accessible name is a placeholder rather than a description of the content that follows: a generic word (\"Heading\", \"Untitled\"), a numbered template slot (\"Section 2\"), a filename, or a URL.",
+    "i18n": {
+      "titleKey": "headingQuality_title",
+      "descriptionKey": "headingQuality_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2aa",
+      "wcag246",
+      "headings",
+      "structure",
+      "quality",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "2.4.6"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.4.6",
+        "title": "Headings and Labels",
+        "conformanceLevel": "AA"
+      }
+    ],
+    "defaultSeverity": "minor",
+    "defaultConfidence": "medium",
+    "type": "manual",
+    "coverage": {
+      "facetsBySc": {
+        "2.4.6": [
+          "heading-text-descriptive-evidence"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "operable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
     "ruleId": "html-lang-attr-present",
     "title": "Page language is declared",
     "description": "Checks that the default language of the page is programmatically declared.",
@@ -26110,6 +26261,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "2.4.4"
       ],
       "level": "A"
+    }
+  },
+  {
+    "id": "wcag-2.4.6-headings-and-labels",
+    "checksIds": [
+      "heading-quality"
+    ],
+    "meta": {
+      "title": "Headings and Labels",
+      "description": "Rollup of checks flagging headings whose text is a placeholder rather than a description of the content that follows.",
+      "wcagSc": [
+        "2.4.6"
+      ],
+      "level": "AA"
     }
   },
   {
@@ -36135,6 +36300,264 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       occurrences
     };
   }
+  return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+}), applicability: null },
+    "heading-quality": { run: (function runInPage(ctx) {
+  const { document, helpers, rule } = ctx;
+
+  // Declared inside runInPage — see scripts/build-core.js header
+  // ("runInPage MUST be self-contained").
+  const PLACEHOLDER_HEADING_TEXT = new Set([
+    'heading',
+    'header',
+    'headline',
+    'subheading',
+    'sub heading',
+    'sub-heading',
+    'title',
+    'subtitle',
+    'sub title',
+    'untitled',
+    'section',
+    'new section',
+    'chapter',
+    'content',
+    'main content',
+    'text',
+    'sample text',
+    'placeholder',
+    'placeholder text',
+    'lorem ipsum',
+    'insert title here',
+    'your title here',
+    'add a title',
+    'tbd',
+    'to be defined',
+    'todo',
+    'to do',
+    'n/a',
+    'test',
+    'example',
+    'default'
+  ]);
+
+  // A numbered template slot left as authored: "Heading 2", "Section 3",
+  // "Chapter #1". The word alone is already in the set above; this catches
+  // the same words carrying an index.
+  const NUMBERED_PLACEHOLDER =
+    /^(heading|header|headline|subheading|title|subtitle|section|chapter|part|step)\s*[-#:.]?\s*\d+$/;
+
+  const FILENAME_LIKE =
+    /^[\w\s\-.,()[\]]+\.(png|jpe?g|gif|svg|webp|avif|bmp|ico|tiff?|pdf|docx?|xlsx?|pptx?|html?|txt|csv|zip)$/;
+
+  const URL_LIKE = /^(https?:\/\/|www\.)\S+$/;
+
+  function normalizeWs(s) {
+    return String(s || '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function normalize(s) {
+    return normalizeWs(s)
+      .toLowerCase()
+      .replace(/[.,;:!?]+$/g, '')
+      .trim();
+  }
+
+  function getExplicitRoleToken(el) {
+    const raw = normalizeWs(el.getAttribute && el.getAttribute('role'));
+    if (!raw) return '';
+    return raw.split(/\s+/)[0].toLowerCase();
+  }
+
+  // The WAI-ARIA Global States and Properties set, same list and same
+  // purpose as empty-heading's copy: a native h1-h6 marked
+  // role="none"/"presentation" reverts to its heading role when it carries
+  // any of these, the attribute's presence being what triggers conflict
+  // resolution, not its value.
+  const GLOBAL_ARIA_ATTRS = [
+    'aria-atomic',
+    'aria-braillelabel',
+    'aria-brailleroledescription',
+    'aria-busy',
+    'aria-controls',
+    'aria-current',
+    'aria-describedby',
+    'aria-description',
+    'aria-details',
+    'aria-disabled',
+    'aria-dropeffect',
+    'aria-errormessage',
+    'aria-flowto',
+    'aria-grabbed',
+    'aria-haspopup',
+    'aria-hidden',
+    'aria-invalid',
+    'aria-keyshortcuts',
+    'aria-label',
+    'aria-labelledby',
+    'aria-live',
+    'aria-owns',
+    'aria-relevant',
+    'aria-roledescription'
+  ];
+
+  function hasGlobalAriaAttr(el) {
+    for (const attr of GLOBAL_ARIA_ATTRS) {
+      if (el.getAttribute && el.getAttribute(attr) != null) return true;
+    }
+    return false;
+  }
+
+  function isHeading(el) {
+    const tag = el.tagName ? el.tagName.toLowerCase() : '';
+    const isNativeHeadingTag = /^h[1-6]$/.test(tag);
+
+    const explicit = getExplicitRoleToken(el);
+    if (!explicit) return isNativeHeadingTag;
+    if (explicit === 'heading') return true;
+    if ((explicit === 'none' || explicit === 'presentation') && isNativeHeadingTag) {
+      return hasGlobalAriaAttr(el);
+    }
+    return false;
+  }
+
+  // Same name resolution empty-heading uses, so the two rules agree on
+  // what a heading is called: aria-label, then aria-labelledby, then the
+  // shared accname-aligned "name from content" helper, then title.
+  function getAccessibleNameText(el) {
+    const al = normalizeWs(el.getAttribute && el.getAttribute('aria-label'));
+    if (al) return al;
+
+    const alb = normalizeWs(el.getAttribute && el.getAttribute('aria-labelledby'));
+    if (alb) {
+      const parts = [];
+      for (const refId of alb.split(/\s+/).filter(Boolean)) {
+        try {
+          const ref = document.getElementById(refId);
+          if (ref) {
+            const t = normalizeWs(ref.textContent);
+            if (t) parts.push(t);
+          }
+        } catch {
+          // ignore an unusable reference
+        }
+      }
+      const joined = normalizeWs(parts.join(' '));
+      if (joined) return joined;
+    }
+
+    if (helpers && typeof helpers.getContentNameInfo === 'function') {
+      try {
+        const info = helpers.getContentNameInfo(el, ctx);
+        if (info && info.present && info.value) return normalizeWs(info.value);
+      } catch {
+        // fall through to title
+      }
+    }
+
+    return normalizeWs(el.getAttribute && el.getAttribute('title'));
+  }
+
+  const isAccTreeEligible =
+    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+
+  function isEligible(el) {
+    if (!isAccTreeEligible) return true;
+    try {
+      const r = isAccTreeEligible(el, ctx);
+      if (typeof r === 'boolean') return r;
+      return !!(r && r.eligible);
+    } catch {
+      return true;
+    }
+  }
+
+  function classify(normalized) {
+    if (PLACEHOLDER_HEADING_TEXT.has(normalized) || NUMBERED_PLACEHOLDER.test(normalized)) {
+      return 'PLACEHOLDER_HEADING_TEXT';
+    }
+    if (URL_LIKE.test(normalized)) return 'URL_LIKE_HEADING';
+    if (FILENAME_LIKE.test(normalized)) return 'FILENAME_LIKE_HEADING';
+    return '';
+  }
+
+  const SUMMARY_KEY_BY_REASON = {
+    PLACEHOLDER_HEADING_TEXT: 'headingQuality_summary_cantTell_placeholder',
+    FILENAME_LIKE_HEADING: 'headingQuality_summary_cantTell_filename',
+    URL_LIKE_HEADING: 'headingQuality_summary_cantTell_url'
+  };
+
+  const selector = 'h1, h2, h3, h4, h5, h6, [role]';
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart(selector)
+    : helpers.queryAll(selector);
+
+  const occurrences = [];
+  let applicableCount = 0;
+
+  for (const el of nodes) {
+    if (!el || !el.getAttribute) continue;
+    if (!isHeading(el)) continue;
+    if (!isEligible(el)) continue;
+
+    const rawName = getAccessibleNameText(el);
+    const normalized = normalize(rawName);
+    if (!normalized) continue; // no name at all: empty-heading's concern.
+
+    applicableCount += 1;
+
+    const reasonCode = classify(normalized);
+    if (!reasonCode) continue;
+
+    const eligInfo = helpers.getEligibilityInfo
+      ? (() => {
+          try {
+            return helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' });
+          } catch {
+            return null;
+          }
+        })()
+      : null;
+
+    const name = normalizeWs(rawName);
+    const summaryByReason = {
+      PLACEHOLDER_HEADING_TEXT: `This heading's accessible name ("${name}") is a placeholder rather than a description of the content it introduces.`,
+      FILENAME_LIKE_HEADING: `This heading's accessible name ("${name}") is a filename rather than a description of the content it introduces.`,
+      URL_LIKE_HEADING: `This heading's accessible name ("${name}") is a URL rather than a description of the content it introduces.`
+    };
+
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: summaryByReason[reasonCode],
+        hint: 'Rewrite the heading so it names the topic or purpose of the content that follows it.',
+        i18n: {
+          summaryKey: SUMMARY_KEY_BY_REASON[reasonCode],
+          hintKey: 'headingQuality_hint_cantTell',
+          params: { name }
+        },
+        data: {
+          details: { reasonCode, name, normalizedName: normalized },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
+  }
+
+  if (applicableCount === 0) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+
+  if (occurrences.length) {
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'minor',
+      occurrences
+    };
+  }
+
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "html-lang-attr-present": { run: (function runInPage(ctx) {
@@ -48620,6 +49043,12 @@ const I18N = {
     "mouseOnlyEventHandlers_description": "Markiert Elemente mit einem nur für den Zeiger bestimmten Inline-Event-Handler (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) ohne per Tastatur erreichbares Äquivalent (onkeydown/onkeyup/onkeypress/onfocus/onblur), zur manuellen Überprüfung.",
     "mouseOnlyEventHandlers_summary_cantTell": "Dieses Element hat {{attrs}}, aber keinen entsprechenden, per Tastatur erreichbaren Handler.",
     "mouseOnlyEventHandlers_hint_cantTell": "Fügen Sie onkeydown/onkeyup/onkeypress (oder onfocus/onblur für durch Hover ausgelöstes Verhalten) hinzu, damit diese Funktionalität auch per Tastatur erreichbar ist.",
+    "headingQuality_title": "Überschriftentext sollte beschreibend sein, kein Platzhalter",
+    "headingQuality_description": "Meldet Überschriften, deren zugänglicher Name ein Platzhalter statt einer Beschreibung des folgenden Inhalts ist: ein allgemeines Wort („Überschrift“, „Ohne Titel“), ein nummerierter Vorlagenplatz („Abschnitt 2“), ein Dateiname oder eine URL.",
+    "headingQuality_summary_cantTell_placeholder": "Der zugängliche Name dieser Überschrift („{{name}}“) ist ein Platzhalter und keine Beschreibung des eingeleiteten Inhalts.",
+    "headingQuality_summary_cantTell_filename": "Der zugängliche Name dieser Überschrift („{{name}}“) ist ein Dateiname und keine Beschreibung des eingeleiteten Inhalts.",
+    "headingQuality_summary_cantTell_url": "Der zugängliche Name dieser Überschrift („{{name}}“) ist eine URL und keine Beschreibung des eingeleiteten Inhalts.",
+    "headingQuality_hint_cantTell": "Formulieren Sie die Überschrift so um, dass sie Thema oder Zweck des folgenden Inhalts benennt.",
     "linkNameQuality_title": "Der Linktext sollte aussagekräftig sein, nicht generisch",
     "linkNameQuality_description": "Markiert Links, deren vollständiger zugänglicher Name eine bekannte, wenig aussagekräftige Formulierung ist (z. B. „hier klicken“, „mehr erfahren“, „mehr“), zur manuellen Überprüfung, ob der Zweck ohne zusätzlichen Kontext klar ist.",
     "linkNameQuality_summary_cantTell": "Der zugängliche Name dieses Links („{{name}}“) ist eine generische, wenig aussagekräftige Formulierung.",
@@ -49259,6 +49688,12 @@ const I18N = {
     "mouseOnlyEventHandlers_description": "Flags elements with an inline pointer-only event handler (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) and no keyboard-reachable equivalent (onkeydown/onkeyup/onkeypress/onfocus/onblur), for manual review.",
     "mouseOnlyEventHandlers_summary_cantTell": "This element has {{attrs}} but no keyboard-reachable equivalent handler.",
     "mouseOnlyEventHandlers_hint_cantTell": "Add onkeydown/onkeyup/onkeypress (or onfocus/onblur for hover-triggered behavior) so this functionality is also reachable by keyboard.",
+    "headingQuality_title": "Heading text should be descriptive, not a placeholder",
+    "headingQuality_description": "Flags headings whose accessible name is a placeholder rather than a description of the content that follows: a generic word (\"Heading\", \"Untitled\"), a numbered template slot (\"Section 2\"), a filename, or a URL.",
+    "headingQuality_summary_cantTell_placeholder": "This heading's accessible name (\"{{name}}\") is a placeholder rather than a description of the content it introduces.",
+    "headingQuality_summary_cantTell_filename": "This heading's accessible name (\"{{name}}\") is a filename rather than a description of the content it introduces.",
+    "headingQuality_summary_cantTell_url": "This heading's accessible name (\"{{name}}\") is a URL rather than a description of the content it introduces.",
+    "headingQuality_hint_cantTell": "Rewrite the heading so it names the topic or purpose of the content that follows it.",
     "linkNameQuality_title": "Link text should be descriptive, not generic",
     "linkNameQuality_description": "Flags links whose full accessible name is a known non-descriptive phrase (e.g. \"click here\", \"read more\", \"more\"), for manual review of whether the purpose is clear without additional context.",
     "linkNameQuality_summary_cantTell": "This link's accessible name (\"{{name}}\") is a generic, non-descriptive phrase.",
@@ -49898,6 +50333,12 @@ const I18N = {
     "mouseOnlyEventHandlers_description": "Señala elementos con un controlador de eventos en línea exclusivo de puntero (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) y sin un controlador equivalente alcanzable por teclado (onkeydown/onkeyup/onkeypress/onfocus/onblur), para su revisión manual.",
     "mouseOnlyEventHandlers_summary_cantTell": "Este elemento tiene {{attrs}} pero ningún controlador equivalente alcanzable por teclado.",
     "mouseOnlyEventHandlers_hint_cantTell": "Agregar onkeydown/onkeyup/onkeypress (o onfocus/onblur para comportamiento activado por hover) para que esta funcionalidad también sea alcanzable por teclado.",
+    "headingQuality_title": "El texto del encabezado debe ser descriptivo, no un marcador de posición",
+    "headingQuality_description": "Señala encabezados cuyo nombre accesible es un marcador de posición en lugar de una descripción del contenido que sigue: una palabra genérica («Encabezado», «Sin título»), una ranura numerada de plantilla («Sección 2»), un nombre de archivo o una URL.",
+    "headingQuality_summary_cantTell_placeholder": "El nombre accesible de este encabezado («{{name}}») es un marcador de posición, no una descripción del contenido que introduce.",
+    "headingQuality_summary_cantTell_filename": "El nombre accesible de este encabezado («{{name}}») es un nombre de archivo, no una descripción del contenido que introduce.",
+    "headingQuality_summary_cantTell_url": "El nombre accesible de este encabezado («{{name}}») es una URL, no una descripción del contenido que introduce.",
+    "headingQuality_hint_cantTell": "Reescribir el encabezado para que nombre el tema o el propósito del contenido que le sigue.",
     "linkNameQuality_title": "El texto del enlace debe ser descriptivo, no genérico",
     "linkNameQuality_description": "Señala enlaces cuyo nombre accesible completo es una frase no descriptiva conocida (por ejemplo, \"haz clic aquí\", \"leer más\", \"más\"), para su revisión manual sobre si el propósito queda claro sin contexto adicional.",
     "linkNameQuality_summary_cantTell": "El nombre accesible de este enlace (\"{{name}}\") es una frase genérica y no descriptiva.",
@@ -50537,6 +50978,12 @@ const I18N = {
     "mouseOnlyEventHandlers_description": "Signale les éléments ayant un gestionnaire d’événement en ligne réservé au pointeur (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) sans équivalent accessible au clavier (onkeydown/onkeyup/onkeypress/onfocus/onblur), pour une revue manuelle.",
     "mouseOnlyEventHandlers_summary_cantTell": "Cet élément a {{attrs}} mais aucun gestionnaire équivalent accessible au clavier.",
     "mouseOnlyEventHandlers_hint_cantTell": "Ajoutez onkeydown/onkeyup/onkeypress (ou onfocus/onblur pour un comportement déclenché au survol) afin que cette fonctionnalité soit aussi accessible au clavier.",
+    "headingQuality_title": "Le texte du titre doit être descriptif, pas un texte de remplacement",
+    "headingQuality_description": "Signale les titres dont le nom accessible est un texte de remplacement plutôt qu’une description du contenu qui suit : un mot générique (« Titre », « Sans titre »), un emplacement de gabarit numéroté (« Section 2 »), un nom de fichier ou une URL.",
+    "headingQuality_summary_cantTell_placeholder": "Le nom accessible de ce titre (« {{name}} ») est un texte de remplacement, pas une description du contenu qu’il introduit.",
+    "headingQuality_summary_cantTell_filename": "Le nom accessible de ce titre (« {{name}} ») est un nom de fichier, pas une description du contenu qu’il introduit.",
+    "headingQuality_summary_cantTell_url": "Le nom accessible de ce titre (« {{name}} ») est une URL, pas une description du contenu qu’il introduit.",
+    "headingQuality_hint_cantTell": "Reformulez le titre pour qu’il nomme le sujet ou l’objectif du contenu qui suit.",
     "linkNameQuality_title": "Le texte des liens devrait être descriptif, pas générique",
     "linkNameQuality_description": "Signale les liens dont le nom accessible complet est une formule connue comme non descriptive (ex. « cliquez ici », « en savoir plus », « plus »), pour une revue manuelle visant à déterminer si l’objet du lien est clair sans contexte supplémentaire.",
     "linkNameQuality_summary_cantTell": "Le nom accessible de ce lien (« {{name}} ») est une formule générique et non descriptive.",
@@ -62430,6 +62877,62 @@ const __a11yCoreCrossFrameApi = (function () {
     "mappings": null
   },
   {
+    "ruleId": "heading-quality",
+    "title": "Heading text should be descriptive, not a placeholder",
+    "description": "Flags headings whose accessible name is a placeholder rather than a description of the content that follows: a generic word (\"Heading\", \"Untitled\"), a numbered template slot (\"Section 2\"), a filename, or a URL.",
+    "i18n": {
+      "titleKey": "headingQuality_title",
+      "descriptionKey": "headingQuality_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2aa",
+      "wcag246",
+      "headings",
+      "structure",
+      "quality",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "2.4.6"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.4.6",
+        "title": "Headings and Labels",
+        "conformanceLevel": "AA"
+      }
+    ],
+    "defaultSeverity": "minor",
+    "defaultConfidence": "medium",
+    "type": "manual",
+    "coverage": {
+      "facetsBySc": {
+        "2.4.6": [
+          "heading-text-descriptive-evidence"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "operable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
     "ruleId": "html-lang-attr-present",
     "title": "Page language is declared",
     "description": "Checks that the default language of the page is programmatically declared.",
@@ -66699,6 +67202,20 @@ const __a11yCoreCrossFrameApi = (function () {
         "2.4.4"
       ],
       "level": "A"
+    }
+  },
+  {
+    "id": "wcag-2.4.6-headings-and-labels",
+    "checksIds": [
+      "heading-quality"
+    ],
+    "meta": {
+      "title": "Headings and Labels",
+      "description": "Rollup of checks flagging headings whose text is a placeholder rather than a description of the content that follows.",
+      "wcagSc": [
+        "2.4.6"
+      ],
+      "level": "AA"
     }
   },
   {
@@ -76723,6 +77240,264 @@ const __a11yCoreCrossFrameApi = (function () {
       occurrences
     };
   }
+  return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+}), applicability: null },
+    "heading-quality": { run: (function runInPage(ctx) {
+  const { document, helpers, rule } = ctx;
+
+  // Declared inside runInPage — see scripts/build-core.js header
+  // ("runInPage MUST be self-contained").
+  const PLACEHOLDER_HEADING_TEXT = new Set([
+    'heading',
+    'header',
+    'headline',
+    'subheading',
+    'sub heading',
+    'sub-heading',
+    'title',
+    'subtitle',
+    'sub title',
+    'untitled',
+    'section',
+    'new section',
+    'chapter',
+    'content',
+    'main content',
+    'text',
+    'sample text',
+    'placeholder',
+    'placeholder text',
+    'lorem ipsum',
+    'insert title here',
+    'your title here',
+    'add a title',
+    'tbd',
+    'to be defined',
+    'todo',
+    'to do',
+    'n/a',
+    'test',
+    'example',
+    'default'
+  ]);
+
+  // A numbered template slot left as authored: "Heading 2", "Section 3",
+  // "Chapter #1". The word alone is already in the set above; this catches
+  // the same words carrying an index.
+  const NUMBERED_PLACEHOLDER =
+    /^(heading|header|headline|subheading|title|subtitle|section|chapter|part|step)\s*[-#:.]?\s*\d+$/;
+
+  const FILENAME_LIKE =
+    /^[\w\s\-.,()[\]]+\.(png|jpe?g|gif|svg|webp|avif|bmp|ico|tiff?|pdf|docx?|xlsx?|pptx?|html?|txt|csv|zip)$/;
+
+  const URL_LIKE = /^(https?:\/\/|www\.)\S+$/;
+
+  function normalizeWs(s) {
+    return String(s || '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function normalize(s) {
+    return normalizeWs(s)
+      .toLowerCase()
+      .replace(/[.,;:!?]+$/g, '')
+      .trim();
+  }
+
+  function getExplicitRoleToken(el) {
+    const raw = normalizeWs(el.getAttribute && el.getAttribute('role'));
+    if (!raw) return '';
+    return raw.split(/\s+/)[0].toLowerCase();
+  }
+
+  // The WAI-ARIA Global States and Properties set, same list and same
+  // purpose as empty-heading's copy: a native h1-h6 marked
+  // role="none"/"presentation" reverts to its heading role when it carries
+  // any of these, the attribute's presence being what triggers conflict
+  // resolution, not its value.
+  const GLOBAL_ARIA_ATTRS = [
+    'aria-atomic',
+    'aria-braillelabel',
+    'aria-brailleroledescription',
+    'aria-busy',
+    'aria-controls',
+    'aria-current',
+    'aria-describedby',
+    'aria-description',
+    'aria-details',
+    'aria-disabled',
+    'aria-dropeffect',
+    'aria-errormessage',
+    'aria-flowto',
+    'aria-grabbed',
+    'aria-haspopup',
+    'aria-hidden',
+    'aria-invalid',
+    'aria-keyshortcuts',
+    'aria-label',
+    'aria-labelledby',
+    'aria-live',
+    'aria-owns',
+    'aria-relevant',
+    'aria-roledescription'
+  ];
+
+  function hasGlobalAriaAttr(el) {
+    for (const attr of GLOBAL_ARIA_ATTRS) {
+      if (el.getAttribute && el.getAttribute(attr) != null) return true;
+    }
+    return false;
+  }
+
+  function isHeading(el) {
+    const tag = el.tagName ? el.tagName.toLowerCase() : '';
+    const isNativeHeadingTag = /^h[1-6]$/.test(tag);
+
+    const explicit = getExplicitRoleToken(el);
+    if (!explicit) return isNativeHeadingTag;
+    if (explicit === 'heading') return true;
+    if ((explicit === 'none' || explicit === 'presentation') && isNativeHeadingTag) {
+      return hasGlobalAriaAttr(el);
+    }
+    return false;
+  }
+
+  // Same name resolution empty-heading uses, so the two rules agree on
+  // what a heading is called: aria-label, then aria-labelledby, then the
+  // shared accname-aligned "name from content" helper, then title.
+  function getAccessibleNameText(el) {
+    const al = normalizeWs(el.getAttribute && el.getAttribute('aria-label'));
+    if (al) return al;
+
+    const alb = normalizeWs(el.getAttribute && el.getAttribute('aria-labelledby'));
+    if (alb) {
+      const parts = [];
+      for (const refId of alb.split(/\s+/).filter(Boolean)) {
+        try {
+          const ref = document.getElementById(refId);
+          if (ref) {
+            const t = normalizeWs(ref.textContent);
+            if (t) parts.push(t);
+          }
+        } catch {
+          // ignore an unusable reference
+        }
+      }
+      const joined = normalizeWs(parts.join(' '));
+      if (joined) return joined;
+    }
+
+    if (helpers && typeof helpers.getContentNameInfo === 'function') {
+      try {
+        const info = helpers.getContentNameInfo(el, ctx);
+        if (info && info.present && info.value) return normalizeWs(info.value);
+      } catch {
+        // fall through to title
+      }
+    }
+
+    return normalizeWs(el.getAttribute && el.getAttribute('title'));
+  }
+
+  const isAccTreeEligible =
+    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+
+  function isEligible(el) {
+    if (!isAccTreeEligible) return true;
+    try {
+      const r = isAccTreeEligible(el, ctx);
+      if (typeof r === 'boolean') return r;
+      return !!(r && r.eligible);
+    } catch {
+      return true;
+    }
+  }
+
+  function classify(normalized) {
+    if (PLACEHOLDER_HEADING_TEXT.has(normalized) || NUMBERED_PLACEHOLDER.test(normalized)) {
+      return 'PLACEHOLDER_HEADING_TEXT';
+    }
+    if (URL_LIKE.test(normalized)) return 'URL_LIKE_HEADING';
+    if (FILENAME_LIKE.test(normalized)) return 'FILENAME_LIKE_HEADING';
+    return '';
+  }
+
+  const SUMMARY_KEY_BY_REASON = {
+    PLACEHOLDER_HEADING_TEXT: 'headingQuality_summary_cantTell_placeholder',
+    FILENAME_LIKE_HEADING: 'headingQuality_summary_cantTell_filename',
+    URL_LIKE_HEADING: 'headingQuality_summary_cantTell_url'
+  };
+
+  const selector = 'h1, h2, h3, h4, h5, h6, [role]';
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart(selector)
+    : helpers.queryAll(selector);
+
+  const occurrences = [];
+  let applicableCount = 0;
+
+  for (const el of nodes) {
+    if (!el || !el.getAttribute) continue;
+    if (!isHeading(el)) continue;
+    if (!isEligible(el)) continue;
+
+    const rawName = getAccessibleNameText(el);
+    const normalized = normalize(rawName);
+    if (!normalized) continue; // no name at all: empty-heading's concern.
+
+    applicableCount += 1;
+
+    const reasonCode = classify(normalized);
+    if (!reasonCode) continue;
+
+    const eligInfo = helpers.getEligibilityInfo
+      ? (() => {
+          try {
+            return helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' });
+          } catch {
+            return null;
+          }
+        })()
+      : null;
+
+    const name = normalizeWs(rawName);
+    const summaryByReason = {
+      PLACEHOLDER_HEADING_TEXT: `This heading's accessible name ("${name}") is a placeholder rather than a description of the content it introduces.`,
+      FILENAME_LIKE_HEADING: `This heading's accessible name ("${name}") is a filename rather than a description of the content it introduces.`,
+      URL_LIKE_HEADING: `This heading's accessible name ("${name}") is a URL rather than a description of the content it introduces.`
+    };
+
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: summaryByReason[reasonCode],
+        hint: 'Rewrite the heading so it names the topic or purpose of the content that follows it.',
+        i18n: {
+          summaryKey: SUMMARY_KEY_BY_REASON[reasonCode],
+          hintKey: 'headingQuality_hint_cantTell',
+          params: { name }
+        },
+        data: {
+          details: { reasonCode, name, normalizedName: normalized },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
+  }
+
+  if (applicableCount === 0) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+
+  if (occurrences.length) {
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'minor',
+      occurrences
+    };
+  }
+
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "html-lang-attr-present": { run: (function runInPage(ctx) {
@@ -89208,6 +89983,12 @@ const I18N = {
     "mouseOnlyEventHandlers_description": "Markiert Elemente mit einem nur für den Zeiger bestimmten Inline-Event-Handler (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) ohne per Tastatur erreichbares Äquivalent (onkeydown/onkeyup/onkeypress/onfocus/onblur), zur manuellen Überprüfung.",
     "mouseOnlyEventHandlers_summary_cantTell": "Dieses Element hat {{attrs}}, aber keinen entsprechenden, per Tastatur erreichbaren Handler.",
     "mouseOnlyEventHandlers_hint_cantTell": "Fügen Sie onkeydown/onkeyup/onkeypress (oder onfocus/onblur für durch Hover ausgelöstes Verhalten) hinzu, damit diese Funktionalität auch per Tastatur erreichbar ist.",
+    "headingQuality_title": "Überschriftentext sollte beschreibend sein, kein Platzhalter",
+    "headingQuality_description": "Meldet Überschriften, deren zugänglicher Name ein Platzhalter statt einer Beschreibung des folgenden Inhalts ist: ein allgemeines Wort („Überschrift“, „Ohne Titel“), ein nummerierter Vorlagenplatz („Abschnitt 2“), ein Dateiname oder eine URL.",
+    "headingQuality_summary_cantTell_placeholder": "Der zugängliche Name dieser Überschrift („{{name}}“) ist ein Platzhalter und keine Beschreibung des eingeleiteten Inhalts.",
+    "headingQuality_summary_cantTell_filename": "Der zugängliche Name dieser Überschrift („{{name}}“) ist ein Dateiname und keine Beschreibung des eingeleiteten Inhalts.",
+    "headingQuality_summary_cantTell_url": "Der zugängliche Name dieser Überschrift („{{name}}“) ist eine URL und keine Beschreibung des eingeleiteten Inhalts.",
+    "headingQuality_hint_cantTell": "Formulieren Sie die Überschrift so um, dass sie Thema oder Zweck des folgenden Inhalts benennt.",
     "linkNameQuality_title": "Der Linktext sollte aussagekräftig sein, nicht generisch",
     "linkNameQuality_description": "Markiert Links, deren vollständiger zugänglicher Name eine bekannte, wenig aussagekräftige Formulierung ist (z. B. „hier klicken“, „mehr erfahren“, „mehr“), zur manuellen Überprüfung, ob der Zweck ohne zusätzlichen Kontext klar ist.",
     "linkNameQuality_summary_cantTell": "Der zugängliche Name dieses Links („{{name}}“) ist eine generische, wenig aussagekräftige Formulierung.",
@@ -89847,6 +90628,12 @@ const I18N = {
     "mouseOnlyEventHandlers_description": "Flags elements with an inline pointer-only event handler (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) and no keyboard-reachable equivalent (onkeydown/onkeyup/onkeypress/onfocus/onblur), for manual review.",
     "mouseOnlyEventHandlers_summary_cantTell": "This element has {{attrs}} but no keyboard-reachable equivalent handler.",
     "mouseOnlyEventHandlers_hint_cantTell": "Add onkeydown/onkeyup/onkeypress (or onfocus/onblur for hover-triggered behavior) so this functionality is also reachable by keyboard.",
+    "headingQuality_title": "Heading text should be descriptive, not a placeholder",
+    "headingQuality_description": "Flags headings whose accessible name is a placeholder rather than a description of the content that follows: a generic word (\"Heading\", \"Untitled\"), a numbered template slot (\"Section 2\"), a filename, or a URL.",
+    "headingQuality_summary_cantTell_placeholder": "This heading's accessible name (\"{{name}}\") is a placeholder rather than a description of the content it introduces.",
+    "headingQuality_summary_cantTell_filename": "This heading's accessible name (\"{{name}}\") is a filename rather than a description of the content it introduces.",
+    "headingQuality_summary_cantTell_url": "This heading's accessible name (\"{{name}}\") is a URL rather than a description of the content it introduces.",
+    "headingQuality_hint_cantTell": "Rewrite the heading so it names the topic or purpose of the content that follows it.",
     "linkNameQuality_title": "Link text should be descriptive, not generic",
     "linkNameQuality_description": "Flags links whose full accessible name is a known non-descriptive phrase (e.g. \"click here\", \"read more\", \"more\"), for manual review of whether the purpose is clear without additional context.",
     "linkNameQuality_summary_cantTell": "This link's accessible name (\"{{name}}\") is a generic, non-descriptive phrase.",
@@ -90486,6 +91273,12 @@ const I18N = {
     "mouseOnlyEventHandlers_description": "Señala elementos con un controlador de eventos en línea exclusivo de puntero (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) y sin un controlador equivalente alcanzable por teclado (onkeydown/onkeyup/onkeypress/onfocus/onblur), para su revisión manual.",
     "mouseOnlyEventHandlers_summary_cantTell": "Este elemento tiene {{attrs}} pero ningún controlador equivalente alcanzable por teclado.",
     "mouseOnlyEventHandlers_hint_cantTell": "Agregar onkeydown/onkeyup/onkeypress (o onfocus/onblur para comportamiento activado por hover) para que esta funcionalidad también sea alcanzable por teclado.",
+    "headingQuality_title": "El texto del encabezado debe ser descriptivo, no un marcador de posición",
+    "headingQuality_description": "Señala encabezados cuyo nombre accesible es un marcador de posición en lugar de una descripción del contenido que sigue: una palabra genérica («Encabezado», «Sin título»), una ranura numerada de plantilla («Sección 2»), un nombre de archivo o una URL.",
+    "headingQuality_summary_cantTell_placeholder": "El nombre accesible de este encabezado («{{name}}») es un marcador de posición, no una descripción del contenido que introduce.",
+    "headingQuality_summary_cantTell_filename": "El nombre accesible de este encabezado («{{name}}») es un nombre de archivo, no una descripción del contenido que introduce.",
+    "headingQuality_summary_cantTell_url": "El nombre accesible de este encabezado («{{name}}») es una URL, no una descripción del contenido que introduce.",
+    "headingQuality_hint_cantTell": "Reescribir el encabezado para que nombre el tema o el propósito del contenido que le sigue.",
     "linkNameQuality_title": "El texto del enlace debe ser descriptivo, no genérico",
     "linkNameQuality_description": "Señala enlaces cuyo nombre accesible completo es una frase no descriptiva conocida (por ejemplo, \"haz clic aquí\", \"leer más\", \"más\"), para su revisión manual sobre si el propósito queda claro sin contexto adicional.",
     "linkNameQuality_summary_cantTell": "El nombre accesible de este enlace (\"{{name}}\") es una frase genérica y no descriptiva.",
@@ -91125,6 +91918,12 @@ const I18N = {
     "mouseOnlyEventHandlers_description": "Signale les éléments ayant un gestionnaire d’événement en ligne réservé au pointeur (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) sans équivalent accessible au clavier (onkeydown/onkeyup/onkeypress/onfocus/onblur), pour une revue manuelle.",
     "mouseOnlyEventHandlers_summary_cantTell": "Cet élément a {{attrs}} mais aucun gestionnaire équivalent accessible au clavier.",
     "mouseOnlyEventHandlers_hint_cantTell": "Ajoutez onkeydown/onkeyup/onkeypress (ou onfocus/onblur pour un comportement déclenché au survol) afin que cette fonctionnalité soit aussi accessible au clavier.",
+    "headingQuality_title": "Le texte du titre doit être descriptif, pas un texte de remplacement",
+    "headingQuality_description": "Signale les titres dont le nom accessible est un texte de remplacement plutôt qu’une description du contenu qui suit : un mot générique (« Titre », « Sans titre »), un emplacement de gabarit numéroté (« Section 2 »), un nom de fichier ou une URL.",
+    "headingQuality_summary_cantTell_placeholder": "Le nom accessible de ce titre (« {{name}} ») est un texte de remplacement, pas une description du contenu qu’il introduit.",
+    "headingQuality_summary_cantTell_filename": "Le nom accessible de ce titre (« {{name}} ») est un nom de fichier, pas une description du contenu qu’il introduit.",
+    "headingQuality_summary_cantTell_url": "Le nom accessible de ce titre (« {{name}} ») est une URL, pas une description du contenu qu’il introduit.",
+    "headingQuality_hint_cantTell": "Reformulez le titre pour qu’il nomme le sujet ou l’objectif du contenu qui suit.",
     "linkNameQuality_title": "Le texte des liens devrait être descriptif, pas générique",
     "linkNameQuality_description": "Signale les liens dont le nom accessible complet est une formule connue comme non descriptive (ex. « cliquez ici », « en savoir plus », « plus »), pour une revue manuelle visant à déterminer si l’objet du lien est clair sans contexte supplémentaire.",
     "linkNameQuality_summary_cantTell": "Le nom accessible de ce lien (« {{name}} ») est une formule générique et non descriptive.",

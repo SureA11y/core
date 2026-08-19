@@ -2,12 +2,12 @@
   "rulesDir": "src/checks",
   "facetsFile": "src/coverage/wcag-facets.js",
   "summary": {
-    "totalRules": 126,
+    "totalRules": 127,
     "wcagTagCoverage": {
       "byVersion": {
         "2.0": {
-          "A": 97,
-          "AA": 11,
+          "A": 98,
+          "AA": 12,
           "AAA": 5
         },
         "2.1": {
@@ -22,13 +22,13 @@
         }
       },
       "anyVersion": {
-        "A": 102,
-        "AA": 15,
+        "A": 103,
+        "AA": 16,
         "AAA": 5
       },
       "rawTagCounts": {
         "wcag2a": 89,
-        "wcag2aa": 7,
+        "wcag2aa": 8,
         "wcag21aa": 3,
         "wcag2aaa": 5,
         "wcag21a": 1,
@@ -4451,6 +4451,58 @@
       "coverage": {}
     },
     {
+      "file": "src/checks/manual/heading-quality-manual.js",
+      "ruleId": "heading-quality",
+      "wcagScNormative": [
+        "2.4.6"
+      ],
+      "wcagScAll": [
+        "2.4.6"
+      ],
+      "wcagScInformative": [],
+      "type": "manual",
+      "title": "Heading text should be descriptive, not a placeholder",
+      "tags": [
+        "wcag2aa",
+        "wcag246",
+        "headings",
+        "structure",
+        "quality",
+        "atomic",
+        "manual"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2aa",
+            "version": "2.0",
+            "level": "AA"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A",
+            "AA"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A",
+          "AA"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "2.4.6": [
+            "heading-text-descriptive-evidence"
+          ]
+        }
+      }
+    },
+    {
       "file": "src/checks/manual/identical-links-same-purpose-manual.js",
       "ruleId": "identical-links-same-purpose",
       "wcagScNormative": [
@@ -6499,6 +6551,28 @@
         ]
       },
       {
+        "sc": "2.4.6",
+        "title": "Headings and Labels",
+        "totalFacets": 1,
+        "coveredFacets": 1,
+        "uncoveredFacets": [],
+        "automationCounts": {
+          "manual": 1
+        },
+        "missingFacetRules": [],
+        "unknownFacetIds": [],
+        "facets": [
+          {
+            "id": "heading-text-descriptive-evidence",
+            "label": "Heading text is a description of the content that follows, not a placeholder",
+            "automation": "manual",
+            "coveredBy": [
+              "heading-quality"
+            ]
+          }
+        ]
+      },
+      {
         "sc": "2.4.7",
         "title": "Focus Visible",
         "totalFacets": 1,
@@ -7802,6 +7876,28 @@
             "automation": "manual",
             "coveredBy": [
               "link-name-quality"
+            ]
+          }
+        ]
+      },
+      {
+        "sc": "2.4.6",
+        "title": "Headings and Labels",
+        "totalFacets": 1,
+        "coveredFacets": 1,
+        "uncoveredFacets": [],
+        "automationCounts": {
+          "manual": 1
+        },
+        "missingFacetRules": [],
+        "unknownFacetIds": [],
+        "facets": [
+          {
+            "id": "heading-text-descriptive-evidence",
+            "label": "Heading text is a description of the content that follows, not a placeholder",
+            "automation": "manual",
+            "coveredBy": [
+              "heading-quality"
             ]
           }
         ]

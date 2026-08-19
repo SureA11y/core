@@ -5,19 +5,19 @@ Facets: `src/coverage/wcag-facets.js`
 
 ## Summary
 
-Total rules (loaded without error): **126**
+Total rules (loaded without error): **127**
 
 ### Coverage by WCAG Level (Version-agnostic, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| Any WCAG version | 102 | 15 | 5 |
+| Any WCAG version | 103 | 16 | 5 |
 
 ### Coverage by WCAG Level (Per version, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| WCAG 2.0 | 97 | 11 | 5 |
+| WCAG 2.0 | 98 | 12 | 5 |
 | WCAG 2.1 | 4 | 3 | 0 |
 | WCAG 2.2 | 1 | 1 | 0 |
 
@@ -29,7 +29,7 @@ Total rules (loaded without error): **126**
 | wcag21aa | 3 |
 | wcag22aa | 1 |
 | wcag2a | 89 |
-| wcag2aa | 7 |
+| wcag2aa | 8 |
 | wcag2aaa | 5 |
 
 ## SC Coverage (A) — Enforced requirements only (normativeMappings)
@@ -386,6 +386,19 @@ Automation mix: **full 0, partial 0, manual 1**.
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | link-name-quality | manual | Link text should be descriptive, not generic | src/checks/manual/link-name-quality-manual.js | link-text-descriptive-evidence |  |
+
+### 2.4.6
+
+Facet coverage: **1/1** facets covered.
+Automation mix: **full 0, partial 0, manual 1**.
+
+| Facet | Automation | Covered by |
+|---|---|---|
+| heading-text-descriptive-evidence | manual | heading-quality |
+
+| Rule ID | Type | Title | File | Facet | Notes |
+|---|---|---|---|---|---|
+| heading-quality | manual | Heading text should be descriptive, not a placeholder | src/checks/manual/heading-quality-manual.js | heading-text-descriptive-evidence |  |
 
 ### 2.4.7
 
@@ -974,6 +987,19 @@ Automation mix: **full 0, partial 0, manual 1**.
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | link-name-quality | manual | Link text should be descriptive, not generic | src/checks/manual/link-name-quality-manual.js | link-text-descriptive-evidence |  |
+
+### 2.4.6
+
+Facet coverage: **1/1** facets covered.
+Automation mix: **full 0, partial 0, manual 1**.
+
+| Facet | Automation | Covered by |
+|---|---|---|
+| heading-text-descriptive-evidence | manual | heading-quality |
+
+| Rule ID | Type | Title | File | Facet | Notes |
+|---|---|---|---|---|---|
+| heading-quality | manual | Heading text should be descriptive, not a placeholder | src/checks/manual/heading-quality-manual.js | heading-text-descriptive-evidence |  |
 
 ### 2.4.7
 

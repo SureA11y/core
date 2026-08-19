@@ -3,11 +3,11 @@
 Cross-reference between the [W3C ACT Rules](https://act-rules.github.io/rules/) (as published at act-rules.github.io) and this repo's rule catalog (`docs/RULE_CATALOG.md`). Built by matching rule names/descriptions and WCAG SC; not machine-generated, so treat close calls as a starting point for review rather than ground truth.
 
 **Summary (117 active ACT rules, excludes 3 deprecated):**
-- **53 confirmed direct or family matches** in our automatic/manual rules (`scripts/data/act-rule-map.json` is the machine-readable version of the table below)
+- **54 confirmed direct or family matches** in our automatic/manual rules (`scripts/data/act-rule-map.json` is the machine-readable version of the table below)
 - **~2** are covered structurally by our composite/rollup layer, not a named rule
-- **~51 are gaps** — no corresponding rule in this repo, listed in [Gaps](#gaps-no-corresponding-rule) below
+- **~50 are gaps** — no corresponding rule in this repo, listed in [Gaps](#gaps-no-corresponding-rule) below
 
-**Every matched rule has now been run through ACT's own official test-case corpus** (`scripts/act-testcase-check.js`, 713 test cases across the 51-rule matched set of the time). Started at 86 mismatches; real bugs were fixed, mapping errors corrected, and every remaining mismatch triaged into a deliberate scope difference, a jsdom/environment limit, or a genuine open design question (tracked in [`docs/DESIGN_CHALLENGES.md`](./DESIGN_CHALLENGES.md)). A second pass then re-ran the whole corpus from a local checkout (see "Second pass" below) and repeated the exercise on what it turned up. Current state: **821 examples across the 53-rule matched set, 56 mismatches, all explained** below or in that file — see "Progress" further down for the full per-rule breakdown.
+**Every matched rule has now been run through ACT's own official test-case corpus** (`scripts/act-testcase-check.js`, 713 test cases across the 51-rule matched set of the time). Started at 86 mismatches; real bugs were fixed, mapping errors corrected, and every remaining mismatch triaged into a deliberate scope difference, a jsdom/environment limit, or a genuine open design question (tracked in [`docs/DESIGN_CHALLENGES.md`](./DESIGN_CHALLENGES.md)). A second pass then re-ran the whole corpus from a local checkout (see "Second pass" below) and repeated the exercise on what it turned up. Current state: **833 examples across the 54-rule matched set, 60 mismatches, all explained** below or in that file — see "Progress" further down for the full per-rule breakdown.
 
 Real rule bugs found and fixed this way, in rough chronological order:
 - `button-name-present` wasn't crediting the UA-default label on `input[type=submit]`/`input[type=reset]` with no `value`, and wasn't honoring `role="none"`/`role="presentation"` conflict-resolution.
@@ -38,6 +38,7 @@ Mapping-table corrections found this way (data-only, no rule-code change):
 Gaps closed since:
 - `307n5z` "Element with presentational children has no focusable content" is now implemented by the new `presentational-children-focusable-absent` rule. The gap entry it replaces described the wrong mechanism — it read the rule as being about an explicit `role="presentation"`/`"none"` attribute, which is the exact misreading ACT's own Background section warns against. The rule is about the *implicit* presentational-children trait a role carries (`button`, `checkbox`, `img`, `option`, `tab`, ...): those roles drop their whole subtree from the accessibility tree, so a descendant that still takes a tab stop receives focus with no role and no name. Clean against all 11 of ACT's examples.
 - `46ca7f` "Element marked as decorative is not exposed" needed no new rule at all: `presentation-role-conflict` already implements it, end to end, and was simply never mapped — the gap entry was a mapping miss, same class as the `qt1vmo`/`23a2a8` misses above. It runs clean against all 10 of ACT's examples, and the one scope difference the corpus exposed (an `<img alt="">` carrying an explicit role of its own is not "marked as decorative", since the explicit role wins over the presentation role empty alt would confer) is now fixed in the rule.
+- `b49b2e` "Heading is descriptive" is now half-covered by the new `heading-quality` rule: a heading whose accessible name is a placeholder — a generic word ("Heading", "Untitled"), a numbered template slot ("Section 2"), a filename, or a URL — cannot describe anything, and that much is deterministic. Whether a well-formed heading is *about* the content after it is not, so the rule is `cantTell`-capped and `b49b2e` is mapped `partial`. Clean on all 6 passed and both inapplicable examples (no false positives); the 4 failed examples are all the topic-relevance shape.
 
 ### Second pass: the corpus read from a local checkout
 
@@ -62,9 +63,9 @@ We also have automatic rules with **no ACT counterpart at all** (see [Extra cove
 
 ### Progress: full validation results, by ACT rule
 
-**Clean (0 mismatches):** `5f99a7`, `80f0bf`, `4c31df`, `73f2c2`, `97a4e1`, `cf77f2`, `b40fd1`, `46ca7f`, `6cfa84`, `307n5z`, `4e8ab6`, `a25f45`, `ffd0e9`, `b5c3f8`, `2779a5`, `5b7ae0`, `bf051a`, `qt1vmo`, `59796f`, `23a2a8`, `24afc2`, `9e45ec`, `c487ae`, `m6b1q3`, `bc659a`, `bisz58`, `b4f0c3`, `674b10`, `0ssw9k` (29 of 53 matched rules).
+**Clean (0 mismatches):** `5f99a7`, `80f0bf`, `4c31df`, `73f2c2`, `97a4e1`, `cf77f2`, `b40fd1`, `46ca7f`, `6cfa84`, `307n5z`, `4e8ab6`, `a25f45`, `ffd0e9`, `b5c3f8`, `2779a5`, `5b7ae0`, `bf051a`, `qt1vmo`, `59796f`, `23a2a8`, `24afc2`, `9e45ec`, `c487ae`, `m6b1q3`, `bc659a`, `bisz58`, `b4f0c3`, `674b10`, `0ssw9k` (29 of 54 matched rules).
 
-**Remaining mismatches (56 total), all triaged:**
+**Remaining mismatches (60 total), all triaged:**
 
 | ACT ID | Mismatches | Category |
 |---|---|---|
@@ -76,6 +77,7 @@ We also have automatic rules with **no ACT counterpart at all** (see [Extra cove
 | `ye5d6e`, `047fe0` | 1, 2 | deliberate leniency — whether repeated-boilerplate content wraps the skip target/heading is a cross-page judgment undecidable from one document; the rule's own header comment already reasons through this trade-off |
 | `de46e4` | 3 | open design question — see `docs/DESIGN_CHALLENGES.md` (`valid-lang`'s applicability needs own-text-ownership resolution through nested `lang` scopes, `alt` counted as governed text, and a visibility gate) |
 | `e086e5` | 2 | open design question — see `docs/DESIGN_CHALLENGES.md` (`<label for>`/wrapping association applied to non-natively-labelable ARIA-widget elements) |
+| `b49b2e` | 4 | inherent limitation — `heading-quality` catches placeholder heading text (a generic word, a numbered template slot, a filename, a URL), which is the deterministic half of this rule; whether a well-formed heading actually describes the content after it is a reading-comprehension judgment, and all 4 of ACT's failed examples are exactly that shape ("Weather" over opening hours) |
 | `cae760` | 1 | deliberate, broader-than-ACT scope — `iframe-name-present` doesn't exempt a `tabindex="-1"` iframe the way ACT's focus-reachability precondition does; arguably more useful for AT rotor/frame-list navigation, not just Tab order |
 | `akn7bn` | 1 | env/harness limit — jsdom doesn't populate `iframe.contentDocument` from a `srcdoc` attribute; a real browser does |
 | `e88epe` | 4 | open design question — see `docs/DESIGN_CHALLENGES.md` (`img-alt-decorative` has no coverage for `aria-hidden`/`role=none` images or any svg/canvas decorative-appropriateness review) |
@@ -116,6 +118,7 @@ We also have automatic rules with **no ACT counterpart at all** (see [Extra cove
 | `e086e5` | Form field has non-empty accessible name | `form-control-programmatic-label-present`, `textbox-name-present`, `combobox-name-present`, `listbox-name-present`, `searchbox-name-present`, `slider-name-present`, `spinbutton-name-present` | family (we split by widget role) |
 | `a25f45` | Headers attribute refers to cells in same table | `table-headers-attr-valid` | exact |
 | `ffd0e9` | Heading has non-empty accessible name | `empty-heading` (manual) | family |
+| `b49b2e` | Heading is descriptive | `heading-quality` (manual) | partial |
 | `b5c3f8` | HTML page has lang attribute | `html-lang-attr-present` | exact |
 | `2779a5` | HTML page has non-empty title | `page-title-present` | exact |
 | `5b7ae0` | HTML page lang/xml:lang attributes match | `html-xml-lang-mismatch` | exact |
@@ -164,7 +167,6 @@ Grouped by theme, with WCAG SC where ACT declares one:
 - `0va7u6` HTML graphics contain no text (1.4.5, images of text)
 - `59br37` Zoomed text node not clipped by CSS overflow (1.4.10, reflow)
 - `36b590` Error message describes invalid form field value (3.3.1)
-- `b49b2e` Heading is descriptive (full quality check; we only catch emptiness)
 - `cc0f0a` Form field label is descriptive (3.3.2) — `form-control-programmatic-label-quality` only catches a weak *primary mechanism* (title/placeholder instead of a real label), never whether a properly-associated label's *text* actually describes the field; see the judgment-call note below
 - `c4a8a4` HTML page title is descriptive (2.4.2) — `page-title-patterns` only catches generic/templated title *patterns*, never whether a plausible-looking title actually matches the page's content; see the judgment-call note below
 - `oj04fd` Element in sequential focus order has visible focus (2.4.7) — no rule evaluates whether a normally-visible element's `:focus`/`:focus-visible` indicator is suppressed by CSS (`outline: none` with no replacement); see the judgment-call note below — a plausible new-rule candidate (parsing `:focus`-family rules for a suppressed outline), though real-CSS-parsing accuracy would need care
@@ -199,7 +201,7 @@ The goal is maximum automation, not just parity with ACT's own scope — several
 - ~~`46ca7f` Element marked as decorative is not exposed~~ — no new rule needed; the existing `presentation-role-conflict` already implements it (mapping miss, not a coverage gap).
 
 **Medium confidence, new manual/`cantTell` rule (same pattern as existing quality checks):**
-- `b49b2e` Heading is descriptive (full quality check, not just non-empty) — we only catch emptiness (`empty-heading`). A `heading-quality` manual rule modeled directly on the existing `img-alt-quality`/`page-title-patterns`/`link-name-quality` heuristics (flag placeholder/generic text like "Heading", filename-looking strings, single characters) would follow an established, low-risk pattern in this codebase.
+- ~~`b49b2e` Heading is descriptive~~ — closed by the new `heading-quality` rule, modelled on `link-name-quality`'s curated-phrase heuristic. It reaches the placeholder half only (see the mismatch table above), so `b49b2e` is a partial match rather than an exact one. One thing the original plan here got wrong: it proposed flagging single characters, and ACT's own passed example is `<h1>A</h1>` above a glossary — length carries no signal for headings, unlike page titles.
 - `5effbb` Link in context is descriptive — already the clearest scope-expansion candidate (see the judgment-call note above): teach `link-name-quality` to weigh adjacent text/`aria-describedby` context, not a brand-new rule.
 - `oj04fd` Focus indicator suppressed via CSS — parse `:focus`/`:focus-visible` rules for `outline: none`/`outline: 0` with no compensating style (box-shadow, border change, background change). Real-CSS-parsing accuracy needs care (the exact same class of jsdom-CSSOM limitation already hit for `css-orientation-lock`, see `b33eff` above), so this is medium- not high-confidence despite being conceptually deterministic.
 - `cc0f0a` Form field label is descriptive (label *text* relevance, not just mechanism) — same curated-heuristic pattern as `heading-quality` above; would sit alongside `form-control-programmatic-label-quality`, not replace it.
@@ -224,5 +226,5 @@ Rules in this repo with no ACT counterpart — mostly finer decomposition of ACT
 
 1. **Validate matched rules against ACT's official test cases** — done for the full matched set (see "Progress" above); re-run `scripts/act-testcase-check.js` after any future change to a matched rule to catch regressions.
 2. **Resolve the open design questions in `docs/DESIGN_CHALLENGES.md`** — these are the highest-value remaining item: each is a confirmed, understood defect or scope gap in an already-matched rule, just deferred because the fix is a real behavior change (not a quick patch) that deserves a deliberate look and fixture coverage before landing.
-3. **Build the highest-confidence automatable gaps** — `307n5z` and `46ca7f` are done (see above). `3ea0c8` (page-wide unique id) is equally deterministic but needs the WCAG-version-tagging decision in `docs/DESIGN_CHALLENGES.md` resolved first. The next tier down (`b49b2e` heading quality, `oj04fd` suppressed focus indicator, `cc0f0a` label-text relevance) is manual/`cantTell` work modelled on the existing quality checks.
+3. **Build the highest-confidence automatable gaps** — `307n5z` and `46ca7f` are done (see above). `3ea0c8` (page-wide unique id) is equally deterministic but needs the WCAG-version-tagging decision in `docs/DESIGN_CHALLENGES.md` resolved first. `b49b2e` (heading quality) is done too; what remains in the manual/`cantTell` tier is `oj04fd` (suppressed focus indicator) and `cc0f0a` (label-text relevance).
 4. **Keyboard trap detection** (`80af7b`/`ebe86a`/`a1b64e`) remains a large, currently-unaddressed gap with no automated detection at all — likely needs a different technique (interaction simulation) than the rest of this engine's static-markup approach.
