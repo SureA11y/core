@@ -20,8 +20,10 @@
  *   still computed. Whether that element is the intended target depends on
  *   author intent, which markup does not carry, so the outcome is cantTell.
  * @implementation-notes
- * - Scoped deliberately to ids referenced by ARIA, not the broader/
- *   deprecated page-wide duplicate-id check (see ROADMAP.md's "Skip" list).
+ * - Scoped deliberately to ids referenced by ARIA. The page-wide check
+ *   lives in its own rule, `duplicate-id`, mapped to the WCAG 2.0/2.1 SC
+ *   4.1.1 that WCAG 2.2 removed; the two overlap on referenced ids and
+ *   answer different questions there (see that rule's header).
  * - Document-wide by design: id uniqueness and ARIA id references are a
  *   whole-document property, not scoped to a sub-root. Reported occurrences are
  *   limited to the scanned scope.

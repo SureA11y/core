@@ -874,7 +874,13 @@ const FACETS = {
     "4.1.1": {
         "title": "Parsing (Obsolete and removed)",
         "level": null,
-        "facets": []
+        "facets": [
+            {
+                "id": "id-unique-page-wide",
+                "label": "Every id value is unique within its own document or shadow tree",
+                "automation": "full"
+            }
+        ]
     },
     "4.1.2": {
         "title": "Name, Role, Value",

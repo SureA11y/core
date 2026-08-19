@@ -1,18 +1,18 @@
 # Fixture Index
 
-Generated: 2026-08-19T07:16:28.539Z
+Generated: 2026-08-19T09:04:41.728Z
 
 Every implemented rule should have a `tests/fixtures/<slug>-all-scenarios.html` scenario page (numbered `case_NN` blocks, each marked PASS/FAIL/CANTTELL in its `.case-title`) and a "fixture coverage" test in its `tests/engine-checks/**/<rule>.test.js` asserting the exact expected ids. See `docs/RULE_AUTHORING.md`.
 
 ## Summary
 
-Total rules: **129**. With fixture: **129**. Without fixture: **0**.
+Total rules: **130**. With fixture: **130**. Without fixture: **0**.
 
 ## Rules WITHOUT a fixture (0)
 
 None — every rule has a fixture.
 
-## Rules WITH a fixture (129)
+## Rules WITH a fixture (130)
 
 | Rule ID | Type | Fixture | Cases | PASS | FAIL | CANTTELL | OTHER |
 |---|---|---|---:|---:|---:|---:|---:|
@@ -56,6 +56,7 @@ None — every rule has a fixture.
 | deprecated-elements-not-used | automatic | `tests/fixtures/deprecated-elements-not-used-all-scenarios.html` | 3 | 0 | 2 | 0 | 1 |
 | dialog-name-present | automatic | `tests/fixtures/dialog-name-present-all-scenarios.html` | 21 | 4 | 6 | 0 | 11 |
 | dlitem-parent-valid | automatic | `tests/fixtures/dlitem-parent-valid-all-scenarios.html` | 5 | 2 | 3 | 0 | 0 |
+| duplicate-id | automatic | `tests/fixtures/duplicate-id-all-scenarios.html` | 6 | 1 | 3 | 0 | 2 |
 | duplicate-id-aria | automatic | `tests/fixtures/duplicate-id-aria-all-scenarios.html` | 5 | 1 | 3 | 0 | 1 |
 | embed-text-alternative-present | automatic | `tests/fixtures/embed-text-alternative-present-all-scenarios.html` | 15 | 3 | 6 | 0 | 6 |
 | embed-text-alternative-quality | manual | `tests/fixtures/embed-text-alternative-quality-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
