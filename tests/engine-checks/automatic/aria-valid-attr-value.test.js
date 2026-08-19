@@ -119,6 +119,24 @@ test(`${RULE_ID}: fail when a single-idref attribute references a non-existent i
   assert.equal(rule.occurrences[0].data.details.valueReason, 'idref-not-found');
 });
 
+test(`${RULE_ID}: aria-errormessage referencing a non-existent id is not flagged (ACT 6a7281: the target may be created only once the error actually occurs)`, () => {
+  const html = `<!doctype html><html><body><div role="textbox" aria-errormessage="does_not_exist" aria-label="A textbox"></div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: a bare boolean/tristate attribute with no "=value" at all is out of scope, not invalid (ACT 6a7281: applicability requires a non-empty value)`, () => {
+  const html = `<!doctype html><html><body><div role="checkbox" aria-checked>Accept terms</div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: an empty token-list value is out of scope, not invalid`, () => {
+  const html = `<!doctype html><html><body><div id="a" aria-relevant=""></div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
 test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><body><div id="a" aria-hidden="yes"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });

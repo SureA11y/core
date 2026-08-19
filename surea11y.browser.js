@@ -34440,13 +34440,22 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
 
     const v = trim(rawValue);
 
+    // ACT 6a7281's own applicability: "any WAI-ARIA state or property that
+    // is not empty" — an explicitly empty value, including a bare boolean-
+    // style attribute with no "=value" at all (e.g. `aria-checked` alone),
+    // is out of this rule's scope entirely for every value type, not a
+    // violation. Empty idrefs/idref-lists are additionally a common,
+    // deliberate pattern in templated markup (e.g.
+    // `aria-describedby={hasError ? errorId : ''}`).
+    if (v.length === 0) return { valid: true, reason: '' };
+
     switch (type) {
       case 'boolean': {
         const ok = v === 'true' || v === 'false';
         return { valid: ok, reason: ok ? '' : 'expected-true-false' };
       }
       case 'boolean-undefined': {
-        const ok = v === 'true' || v === 'false' || v === 'undefined' || v === '';
+        const ok = v === 'true' || v === 'false' || v === 'undefined';
         return { valid: ok, reason: ok ? '' : 'expected-true-false-undefined' };
       }
       case 'tristate': {
@@ -34458,7 +34467,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
         return { valid: ok, reason: ok ? '' : 'expected-integer' };
       }
       case 'number': {
-        const ok = v !== '' && Number.isFinite(Number(v));
+        const ok = Number.isFinite(Number(v));
         return { valid: ok, reason: ok ? '' : 'expected-number' };
       }
       case 'token': {
@@ -34471,26 +34480,25 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
         const set = ATTR_TOKEN_SETS[lower(name)];
         if (!set) return { valid: true, reason: 'no-token-set-defined' };
         const parts = v.split(/\s+/).filter(Boolean).map(lower);
-        if (!parts.length) return { valid: false, reason: 'empty-token-list' };
         const ok = parts.every((p) => set.has(p));
         return { valid: ok, reason: ok ? '' : 'invalid-token' };
       }
       case 'idref': {
-        // An explicitly-empty value is valid, not "expected-single-idref".
-        // Empty idrefs are a common, deliberate pattern in templated
-        // markup (e.g. `aria-describedby={hasError ? errorId : ''}`), so
-        // flagging them would be a false positive.
-        if (v.length === 0) return { valid: true, reason: '' };
         const formatOk = !/\s/.test(v);
         if (!formatOk) return { valid: false, reason: 'expected-single-idref' };
+        // ACT 6a7281's own Background: aria-errormessage is a non-required
+        // property whose target commonly doesn't exist yet — an HTML
+        // element with that id "may be created in response to an event
+        // that may or may not happen" — so existence is deliberately not
+        // checked for this one attribute, format only. aria-activedescendant
+        // has no such carve-out in ACT's own text and keeps the existence
+        // check.
+        if (lower(name) === 'aria-errormessage') return { valid: true, reason: '' };
         if (!idExists(v)) return { valid: false, reason: 'idref-not-found' };
         return { valid: true, reason: '' };
       }
       case 'idref-list': {
         const parts = v.split(/\s+/).filter(Boolean);
-        // Same allowEmpty rationale as the 'idref' case above — an
-        // empty idref-list value is valid, not "empty-idref-list".
-        if (!parts.length) return { valid: true, reason: '' };
         // Only flag when NONE of the referenced ids resolve — a
         // partially-dangling list (some ids exist, some don't) is left
         // unflagged.

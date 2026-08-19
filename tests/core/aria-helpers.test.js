@@ -170,7 +170,9 @@ test('validateAttrValue: number', () => {
   const { helpers } = helpersFor('<div></div>');
   assert.equal(helpers.validateAttrValue('aria-valuenow', '3.5').valid, true);
   assert.equal(helpers.validateAttrValue('aria-valuenow', '-2').valid, true);
-  assert.equal(helpers.validateAttrValue('aria-valuenow', '').valid, false);
+  // ACT 6a7281: applicability requires a non-empty value, so an empty
+  // value is out of scope (valid: true), not an invalid number.
+  assert.equal(helpers.validateAttrValue('aria-valuenow', '').valid, true);
   assert.equal(helpers.validateAttrValue('aria-valuenow', 'nan-ish').valid, false);
 });
 
@@ -185,7 +187,9 @@ test('validateAttrValue: token', () => {
 test('validateAttrValue: token-list', () => {
   const { helpers } = helpersFor('<div></div>');
   assert.equal(helpers.validateAttrValue('aria-relevant', 'additions text').valid, true);
-  assert.equal(helpers.validateAttrValue('aria-relevant', '').valid, false);
+  // ACT 6a7281: applicability requires a non-empty value, so an empty
+  // token-list is out of scope (valid: true), not an invalid list.
+  assert.equal(helpers.validateAttrValue('aria-relevant', '').valid, true);
   assert.equal(helpers.validateAttrValue('aria-relevant', 'additions bogus').valid, false);
 });
 
