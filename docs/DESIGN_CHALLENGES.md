@@ -18,6 +18,16 @@ A running log of engine design decisions worth re-examining — cases where an e
 
 ## Decided
 
+### `iframe-focusable-content` never resolved a `srcdoc` iframe's content, and never exempted tiny "tracking pixel" iframes — both fixed
+
+**Decision as it stands (before the fix):** the rule's `contentDoc = el.contentDocument || null` resolution was the only path to an embedded document; it was documented as an "env/harness limit — jsdom doesn't populate `iframe.contentDocument` from a `srcdoc` attribute; a real browser does," implying nothing could be done about it in this codebase specifically.
+
+**Why it was questioned:** that framing only holds for the test-fetcher's own jsdom instance. This library's own Node/jsdom integration path (`docs/INTEGRATION.md` Pattern 1) is a real, documented way consumers run this engine — and jsdom's `srcdoc` gap affects them identically, not just this repo's test harness. `el.getAttribute('srcdoc')` is a plain string this engine can read and parse itself, independent of whatever the host DOM implementation does with it.
+
+**Decision (2026-08-19):** two changes, both scoped to this rule. (1) When the live `contentDocument` looks empty and a `srcdoc` attribute is present, its HTML string is parsed via `DOMParser` as a static fallback — no rendering pipeline needed, and every downstream helper in this file (`isRenderedInDoc`, `probeImmediateFocusRedirect`) already degrades gracefully when handed a detached, `defaultView`-less document. (2) Fixing that surfaced a second, previously-masked gap: ACT akn7bn's own Expectation requires the focusable content to also be *visible*, and a `width`/`height` ≤ 2px iframe (the "tracking pixel" pattern, ACT's own passed example) can't render anything perceptible — that exemption is now checked via the iframe's own HTML attributes, a static signal that doesn't need real layout.
+
+**Status:** resolved 2026-08-19 — `akn7bn` runs clean (0/6).
+
 ### `bypass-blocks-present`'s heading mechanism credited a screen-reader-only heading, when ACT requires it to be visible — fixed
 
 **Decision as it stands (before the fix):** `hasHeading()` credited any `<h1>`-`<h6>`/`[role="heading"]` that was included in the accessibility tree — an off-screen-positioned, clipped, opacity:0, or zero-size-overflow-hidden heading counted the same as a fully visible one. This mismatch was never individually triaged; it sat inside `ye5d6e`/`047fe0`'s combined "1, 2" mismatch count, both filed under one blanket "deliberate leniency" reason that only actually described a *different* shape (a heading positioned inside the repeated content it's supposed to be an escape from).

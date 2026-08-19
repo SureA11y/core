@@ -60,6 +60,32 @@ test(`${RULE_ID}: fail when the negative-tabindex frame's content contains a foc
   );
 });
 
+test(`${RULE_ID}: fail when a srcdoc iframe's own contentDocument stays empty — the srcdoc attribute string is parsed directly (ACT akn7bn: jsdom never populates contentDocument from srcdoc)`, () => {
+  const html = `<!doctype html><html><body><iframe tabindex="-1" id="a" srcdoc="&lt;a href='/'&gt;Home&lt;/a&gt;"></iframe></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+});
+
+test(`${RULE_ID}: pass for a srcdoc iframe with no focusable content — the parsed fallback finds nothing either`, () => {
+  const html = `<!doctype html><html><body><iframe tabindex="-1" id="a" srcdoc="&lt;p&gt;static text&lt;/p&gt;"></iframe></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: pass for a 1x1 "tracking pixel" iframe even though its content is focusable — too small to render any perceptible content (ACT akn7bn)`, () => {
+  const html = `<!doctype html><html><body><iframe tabindex="-1" id="a" width="1" height="1" srcdoc="&lt;a href='/'&gt;Home&lt;/a&gt;"></iframe></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: still fails for a normal-sized iframe with an explicit width/height (the tiny-iframe exemption doesn't over-fire)`, () => {
+  const html = `<!doctype html><html><body><iframe tabindex="-1" id="a" width="300" height="150" srcdoc="&lt;a href='/'&gt;Home&lt;/a&gt;"></iframe></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+});
+
 test(`${RULE_ID}: cantTell when the only focusable candidate immediately redirects focus`, () => {
   const dom = createDom(
     `<!doctype html><html><body>
