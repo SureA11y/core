@@ -18,6 +18,16 @@ A running log of engine design decisions worth re-examining — cases where an e
 
 ## Decided
 
+### `contrast-minimum`/`contrast-enhanced` treated symbol-only text as real text needing a contrast ratio — fixed
+
+**Decision as it stands (before the fix):** the shared text scan's applicability gate (`isNonEmptyText` in `getTextScan()`, `src/core/contrast-helpers.js`) only checked for non-whitespace characters — a text node made entirely of punctuation/symbol glyphs (`----=====+++...±±±±@@@@@@@@`) counted the same as real words.
+
+**Why it was questioned:** ACT `afw4f7`/`09o5cg`'s own applicability is scoped to text that "expresses something in human language," and their own passed example for the "environment-dependent" bucket this was filed under is exactly a paragraph of pure symbols — nothing environment-dependent about it, a plain applicability gap.
+
+**Decision (2026-08-19):** `isNonEmptyText` now also requires at least one Unicode letter or number (`\p{L}`/`\p{N}`) somewhere in the text node, applied at both the text-node walk and the `<input type=submit|button|reset>` value-attribute path that shares the same gate. Digits-only text (`"42"`) still counts and is still checked — only text with zero letters or digits at all is exempt.
+
+**Status:** resolved 2026-08-19 — `afw4f7` drops from 6 to 5 mismatches, `09o5cg` from 5 to 4.
+
 ### `css-orientation-lock` required an EXACT 90/270-degree rotation, when its own comments already claimed "approximately" — fixed
 
 **Decision as it stands (before the fix):** `isLockingRotation`'s comment claimed to flag "~90/~270 degrees," but the actual code did `Math.abs(abs - 90) % 90 <= 0` — modulo of a non-negative number is `<= 0` only when it's exactly `0`, so this only ever matched a rotation that was an exact multiple of 90. The 3 live mismatches this produced were filed as a single "env/harness limit — jsdom's CSS parser drops `@media(orientation)` rules using `rad` units or `matrix3d()`."
