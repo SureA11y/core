@@ -81,6 +81,16 @@
     <button role="presentation" aria-hidden="true" id="prc_case_13">Click</button>
   </div>
 
+  <div class="case" id="case_14">
+    <div class="case-title">14 — NEUTRAL: &lt;img alt=""&gt; with an explicit role of its own (the explicit role wins over the presentation role empty alt would confer, so nothing presentational is left to conflict with)</div>
+    <img src="x.png" alt="" role="img" aria-label="Logo" id="prc_case_14">
+  </div>
+
+  <div class="case" id="case_15">
+    <div class="case-title">15 — CANTTELL: &lt;img alt=""&gt; whose role attribute names no real role (an unknown token confers nothing, so the empty alt still gives it the presentation role)</div>
+    <img src="x.png" alt="" role="bogus" aria-label="Logo" id="prc_case_15">
+  </div>
+
   <p class="note">End of fixture.</p>
 </body>
 </html>
