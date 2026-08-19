@@ -44,19 +44,126 @@ function levelFromTags(tags) {
   return '';
 }
 
-// Escapes markdown-table-breaking characters: `|` (cell delimiter) and
-// `<`/`>` (HTML tags). Several rule titles legitimately contain literal
-// HTML element names — <area>, <canvas>, <th>, <caption>, etc. — and
-// left unescaped, a markdown-to-HTML renderer (GitHub, VS Code's preview,
-// any HTML-aware viewer) parses them as real tags, not text. <th>/<caption>
-// are the worst case: real table-structural elements nested inside this
-// table's own <td>, which can visibly corrupt the surrounding row: found
-// while reviewing this file directly, not guessed.
-function escapePipes(s) {
+// Several rule titles and their prose legitimately contain literal HTML
+// element names — <area>, <canvas>, <th>, <caption>, etc. — and left
+// unescaped, a markdown-to-HTML renderer (GitHub, VS Code's preview, any
+// HTML-aware viewer) parses them as real tags, not text. <th>/<caption> are
+// the worst case: real table-structural elements nested inside a <td>, which
+// can visibly corrupt the surrounding row.
+function escapeAngles(s) {
   return String(s == null ? '' : s)
-    .replace(/\|/g, '\\|')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
+}
+
+// Same, plus the `|` cell delimiter, for text going into a markdown table.
+function escapePipes(s) {
+  return escapeAngles(s).replace(/\|/g, '\\|');
+}
+
+function listRuleFiles(dirAbs) {
+  if (!fs.existsSync(dirAbs)) return [];
+  const out = [];
+  for (const ent of fs.readdirSync(dirAbs, { withFileTypes: true })) {
+    const full = path.join(dirAbs, ent.name);
+    if (ent.isDirectory()) out.push(...listRuleFiles(full));
+    else if (ent.isFile() && ent.name.endsWith('.js') && !ent.name.endsWith('.test.js'))
+      out.push(full);
+  }
+  return out;
+}
+
+// Captures a tag's body, whether it starts on the tag line or the line after,
+// up to the next tag or the end of the comment. Anchored at the start of a
+// comment line, so an "@expectation" mentioned mid-sentence is not mistaken
+// for the tag itself.
+function jsdocTag(source, tag) {
+  const start = new RegExp(`^[ \\t]*\\*[ \\t]*@${tag}\\b[ \\t]*(.*)$`, 'm').exec(source);
+  if (!start) return '';
+
+  const lines = [start[1]];
+
+  for (const line of source
+    .slice(start.index + start[0].length)
+    .split('\n')
+    .slice(1)) {
+    if (/^[ \t]*\*[ \t]*@\w/.test(line) || /\*\//.test(line)) break;
+    lines.push(line.replace(/^[ \t]*\*[ \t]?/, ''));
+  }
+
+  return reflow(lines);
+}
+
+// Rule prose is hard-wrapped to fit the source file, so continuation lines are
+// joined back into the paragraph or list item they belong to. A line indented
+// past the bullet above it continues that item; one that is not ends the list.
+function reflow(lines) {
+  const body = lines.filter((l) => l.trim());
+  if (!body.length) return '';
+
+  const indentOf = (l) => l.match(/^ */)[0].length;
+  const isBullet = (l) => /^ *- /.test(l);
+
+  const bullets = body.filter(isBullet);
+  const bulletBase = bullets.length ? Math.min(...bullets.map(indentOf)) : 0;
+
+  const items = [];
+  let openItem = -1;
+
+  for (const line of body) {
+    const indent = indentOf(line);
+    const text = line.trim();
+
+    if (isBullet(line)) {
+      items.push({ text: ' '.repeat(Math.max(0, indent - bulletBase)) + text, bullet: true });
+      openItem = indent;
+    } else if (openItem >= 0 && indent > openItem) {
+      items[items.length - 1].text += ' ' + text;
+    } else if (openItem >= 0) {
+      items.push({ text, bullet: false });
+      openItem = -1;
+    } else if (items.length) {
+      items[items.length - 1].text += ' ' + text;
+    } else {
+      items.push({ text, bullet: false });
+    }
+  }
+
+  // Blank lines everywhere except between the items of one list, which stays
+  // tight.
+  const out = [];
+  for (let i = 0; i < items.length; i++) {
+    if (i && (!items[i].bullet || !items[i - 1].bullet)) out.push('');
+    out.push(items[i].text);
+  }
+
+  return out.join('\n');
+}
+
+// The per-rule prose (@applicability/@expectation) lives only in each rule
+// module's header comment — normalizeRuleMeta never copies it into meta, so
+// the compiled catalog reports both as empty strings. Read it from source,
+// keyed by the id the module actually exports.
+function readRuleProse(rulesDir) {
+  const prose = new Map();
+
+  for (const file of listRuleFiles(rulesDir)) {
+    let mod;
+    try {
+      mod = require(file);
+    } catch {
+      continue;
+    }
+    if (!mod || typeof mod.id !== 'string' || typeof mod.runInPage !== 'function') continue;
+
+    const source = fs.readFileSync(file, 'utf8');
+    prose.set(mod.id, {
+      applicability: jsdocTag(source, 'applicability'),
+      expectation: jsdocTag(source, 'expectation')
+    });
+  }
+
+  return prose;
 }
 
 function main() {
@@ -67,22 +174,27 @@ function main() {
   const core = require(path.join(repoRoot, 'src/core.js'));
   const catalog = core.getChecksCatalog();
   const composites = core.getRulesCatalog();
+  const prose = readRuleProse(path.join(repoRoot, 'src/checks'));
 
   const rows = catalog
     .map((r) => ({
       ruleId: r.ruleId,
       title: r.title,
+      description: r.description || '',
       type: r.type,
       wcagSc: Array.isArray(r.wcagSc) ? r.wcagSc.join(', ') : '',
       level: levelFromTags(r.tags),
       confidence: r.defaultConfidence,
-      severity: r.defaultSeverity
+      severity: r.defaultSeverity,
+      applicability: (prose.get(r.ruleId) || {}).applicability || '',
+      expectation: (prose.get(r.ruleId) || {}).expectation || ''
     }))
     .sort((a, b) => a.ruleId.localeCompare(b.ruleId));
 
   const automatic = rows.filter((r) => r.type === 'automatic');
   const manual = rows.filter((r) => r.type === 'manual');
   const withSc = rows.filter((r) => r.wcagSc);
+  const withProse = rows.filter((r) => r.applicability || r.expectation);
 
   function table(list) {
     const lines = [
@@ -91,10 +203,32 @@ function main() {
     ];
     for (const r of list) {
       lines.push(
-        `| \`${r.ruleId}\` | ${escapePipes(r.title)} | ${r.wcagSc || '—'} | ${r.level || '—'} | ${r.confidence} | ${r.severity} |`
+        `| [\`${r.ruleId}\`](#${r.ruleId}) | ${escapePipes(r.title)} | ${r.wcagSc || '—'} | ${r.level || '—'} | ${r.confidence} | ${r.severity} |`
       );
     }
     return lines.join('\n');
+  }
+
+  // A label reads better on its own line when the prose runs to more than one
+  // paragraph or carries a list.
+  function proseBlock(label, text) {
+    if (!text) return '';
+    const body = escapeAngles(text);
+    return body.includes('\n') ? `**${label}**\n\n${body}` : `**${label}** ${body}`;
+  }
+
+  function reference(r) {
+    const sc = r.wcagSc ? `WCAG ${r.wcagSc} (${r.level || '—'})` : 'no formal WCAG SC mapping';
+
+    const parts = [
+      `**${escapeAngles(r.title)}**`,
+      `${r.type} · ${sc} · confidence ${r.confidence} · default severity ${r.severity}`,
+      escapeAngles(r.description),
+      proseBlock('Applies to.', r.applicability),
+      proseBlock('Expectation.', r.expectation)
+    ].filter(Boolean);
+
+    return `### \`${r.ruleId}\`\n\n${parts.join('\n\n')}`;
   }
 
   const compositeLines = composites
@@ -102,14 +236,16 @@ function main() {
     .sort((a, b) => a.id.localeCompare(b.id))
     .map(
       (c) =>
-        `| \`${c.id}\` | ${escapePipes(c.meta && c.meta.title)} | ${((c.meta && c.meta.wcagSc) || []).join(', ') || '—'} | ${(c.meta && c.meta.level) || '—'} | ${c.checksIds.length} |`
+        `| \`${c.id}\` | ${escapePipes(c.meta && c.meta.title)} | ${escapePipes((c.meta && c.meta.description) || '')} | ${((c.meta && c.meta.wcagSc) || []).join(', ') || '—'} | ${(c.meta && c.meta.level) || '—'} | ${c.checksIds.length} |`
     );
 
   const md = `# Rule catalog
 
-Generated from the compiled engine's own catalog (\`getChecksCatalog()\`/\`getRulesCatalog()\`) — run \`node scripts/generate-rule-catalog.js\` after \`npm run build\` to regenerate this file whenever rules change. Do not hand-edit.
+Generated from the compiled engine's own catalog (\`getChecksCatalog()\`/\`getRulesCatalog()\`) and each rule's source header — run \`node scripts/generate-rule-catalog.js\` after \`npm run build\` to regenerate this file whenever rules change. Do not hand-edit.
 
 **${rows.length} rules total: ${automatic.length} automatic (WCAG-normative, can return \`fail\`), ${manual.length} manual (advisory/judgment-required, capped at \`cantTell\`). ${withSc.length} carry at least one formal WCAG Success Criterion mapping.**
+
+The tables below are an index; [rule reference](#rule-reference) carries each rule's description and, for the ${withProse.length} rules whose source documents them, what it applies to and what it expects.
 
 See [\`OUTPUT_SCHEMA.md\`](./OUTPUT_SCHEMA.md) for what \`type\`/\`confidence\`/\`severity\` mean on a scan result, and [\`WCAG_CONFORMANCE.md\`](./WCAG_CONFORMANCE.md) for how these roll up to an SC-level conformance claim. For WCAG-facet-level coverage-gap tracking (which parts of an SC are and aren't automatable yet), see \`coverage/coverage-report.md\` instead — that one is organized by facet, this one by rule.
 
@@ -125,9 +261,15 @@ ${table(manual)}
 
 Composite rules aren't individually authored — they're generated rollups over the atomic rules above, one per WCAG Success Criterion with automatable coverage. See [\`WCAG_CONFORMANCE.md\`](./WCAG_CONFORMANCE.md) for rollup semantics.
 
-| Composite ID | Title | WCAG SC | Level | # atomic rules rolled up |
-|---|---|---|---|---|
+| Composite ID | Title | Description | WCAG SC | Level | # atomic rules rolled up |
+|---|---|---|---|---|---|
 ${compositeLines.join('\n')}
+
+## Rule reference
+
+Every atomic rule, alphabetically. "Applies to" is the rule's precondition — when it returns \`notApplicable\` — and "Expectation" is the condition it decides once it does apply.
+
+${rows.map(reference).join('\n\n')}
 `;
 
   fs.writeFileSync(outPath, md);
