@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>heading-quality — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>heading-quality</code></h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>hq_case_NN</code>.
+    Headings with no accessible name at all belong to <code>empty-heading</code> and are not repeated here.
+  </p>
+
+  <h2>A. Descriptive headings</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — PASS: heading naming its topic</div>
+    <h3 id="hq_case_01">Opening hours</h3>
+    <p>We are open Monday through Friday from 10 to 16.</p>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — PASS: single character heading over a glossary (short is not a signal)</div>
+    <h3 id="hq_case_02">A</h3>
+    <dl>
+      <dt>airplane</dt>
+      <dd>a powered flying vehicle with fixed wings.</dd>
+    </dl>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — PASS: placeholder word inside a real phrase (exact match only)</div>
+    <h3 id="hq_case_03">Heading into the storm season</h3>
+    <p>Preparations for the coming months.</p>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — PASS: role=heading named by aria-label</div>
+    <span role="heading" aria-level="3" aria-label="Delivery options" id="hq_case_04">Delivery options</span>
+    <p>Standard and express delivery are available.</p>
+  </div>
+
+  <h2>B. Placeholder headings</h2>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — CANTTELL: generic placeholder word</div>
+    <h3 id="hq_case_05">Heading</h3>
+    <p>We are open Monday through Friday from 10 to 16.</p>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — CANTTELL: numbered template slot</div>
+    <h3 id="hq_case_06">Section 2</h3>
+    <p>Returns are accepted within 30 days.</p>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — CANTTELL: untitled, with trailing punctuation stripped before matching</div>
+    <h3 id="hq_case_07">Untitled.</h3>
+    <p>Draft content.</p>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — CANTTELL: filename as heading text</div>
+    <h3 id="hq_case_08">annual-report-2026.pdf</h3>
+    <p>Download the report below.</p>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — CANTTELL: URL as heading text</div>
+    <h3 id="hq_case_09">https://example.com/pricing</h3>
+    <p>Current pricing for all plans.</p>
+  </div>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — CANTTELL: role=heading whose aria-label is a placeholder</div>
+    <span role="heading" aria-level="3" aria-label="Lorem ipsum" id="hq_case_10">Pricing</span>
+    <p>Current pricing for all plans.</p>
+  </div>
+
+  <h2>C. Out of scope</h2>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — NEUTRAL/INELIGIBLE: placeholder heading hidden from the accessibility tree</div>
+    <h3 id="hq_case_11" hidden>Heading</h3>
+  </div>
+
+  <div class="case" id="case_12">
+    <div class="case-title">12 — NEUTRAL: placeholder text on an element that is not a heading</div>
+    <p id="hq_case_12">Heading</p>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

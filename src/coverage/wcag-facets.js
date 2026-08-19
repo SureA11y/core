@@ -615,7 +615,13 @@ const FACETS = {
     "2.4.6": {
         "title": "Headings and Labels",
         "level": "AA",
-        "facets": []
+        "facets": [
+            {
+                "id": "heading-text-descriptive-evidence",
+                "label": "Heading text is a description of the content that follows, not a placeholder",
+                "automation": "manual"
+            }
+        ]
     },
     "2.4.7": {
         "title": "Focus Visible",
