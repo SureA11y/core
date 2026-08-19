@@ -2501,6 +2501,62 @@ const CHECK_DEFS = [
     "mappings": null
   },
   {
+    "ruleId": "form-control-label-quality",
+    "title": "Form field labels should be descriptive and distinguishable",
+    "description": "Flags a visible form-field label that is a placeholder (\"Label\", \"Field\"), or that repeats another field's label with no visible context — heading, legend, or row — telling the two apart.",
+    "i18n": {
+      "titleKey": "formControlLabelQuality_title",
+      "descriptionKey": "formControlLabelQuality_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2aa",
+      "wcag246",
+      "forms",
+      "labels",
+      "quality",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "2.4.6"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.4.6",
+        "title": "Headings and Labels",
+        "conformanceLevel": "AA"
+      }
+    ],
+    "defaultSeverity": "minor",
+    "defaultConfidence": "medium",
+    "type": "manual",
+    "coverage": {
+      "facetsBySc": {
+        "2.4.6": [
+          "form-control-label-descriptive-evidence"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "operable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
     "ruleId": "form-control-programmatic-label-present",
     "title": "Form controls must have a programmatic label",
     "description": "Checks that form controls have a programmatic label via <label>, aria-label, aria-labelledby, title, or placeholder.",
@@ -7062,7 +7118,8 @@ const COMPOSITE_RULES = [
   {
     "id": "wcag-2.4.6-headings-and-labels",
     "checksIds": [
-      "heading-quality"
+      "heading-quality",
+      "form-control-label-quality"
     ],
     "meta": {
       "title": "Headings and Labels",
@@ -7390,6 +7447,7 @@ const RULE_IMPLS = {
   "empty-heading": { run: require("./checks/manual/empty-heading-manual.js").runInPage, applicability: require("./checks/manual/empty-heading-manual.js").applicability || null },
   "empty-table-header": { run: require("./checks/manual/empty-table-header-manual.js").runInPage, applicability: require("./checks/manual/empty-table-header-manual.js").applicability || null },
   "focus-order-semantics": { run: require("./checks/manual/focus-order-semantics-manual.js").runInPage, applicability: require("./checks/manual/focus-order-semantics-manual.js").applicability || null },
+  "form-control-label-quality": { run: require("./checks/manual/form-control-label-quality-manual.js").runInPage, applicability: require("./checks/manual/form-control-label-quality-manual.js").applicability || null },
   "form-control-programmatic-label-present": { run: require("./checks/automatic/form-control-programmatic-label-present.js").runInPage, applicability: require("./checks/automatic/form-control-programmatic-label-present.js").applicability || null },
   "form-control-programmatic-label-quality": { run: require("./checks/manual/form-control-programmatic-label-quality-manual.js").runInPage, applicability: require("./checks/manual/form-control-programmatic-label-quality-manual.js").applicability || null },
   "form-control-single-label": { run: require("./checks/automatic/form-control-single-label.js").runInPage, applicability: require("./checks/automatic/form-control-single-label.js").applicability || null },
@@ -7587,6 +7645,14 @@ const I18N = {
     "rules.img-alt-suspicious.meta.description": "Identifiziert Bilder, deren Alternativtext gängigen verdächtigen Mustern entspricht (z. B. Dateinamen, URLs, Platzhaltern oder generischen Begriffen), und erfordert eine manuelle Überprüfung.",
     "rules.img-alt-suspicious.occurrence.cantTell.summary": "Der Alternativtext des Bildes wirkt verdächtig („{{alt}}“ ähnelt {{pattern}}) und erfordert eine Überprüfung.",
     "rules.img-alt-suspicious.occurrence.cantTell.hint": "Überprüfen Sie den Alternativtext. Vermeiden Sie Dateinamen, URLs, Platzhalter oder generische Begriffe, und stellen Sie sicher, dass die Textalternative den Zweck oder die Funktion des Bildes im Kontext beschreibt.",
+    "formControlLabelQuality_title": "Beschriftungen von Formularfeldern sollten beschreibend und unterscheidbar sein",
+    "formControlLabelQuality_description": "Meldet eine sichtbare Feldbeschriftung, die ein Platzhalter ist („Beschriftung“, „Feld“) oder die Beschriftung eines anderen Feldes wiederholt, ohne dass ein sichtbarer Kontext – Überschrift, Legende oder Zeile – beide unterscheidet.",
+    "formControlLabelQuality_summary_cantTell_placeholder": "Die sichtbare Beschriftung dieses Feldes („{{label}}“) ist ein Platzhalter und beschreibt nicht, wofür das Feld da ist.",
+    "formControlLabelQuality_summary_cantTell_duplicate": "Die sichtbare Beschriftung dieses Feldes („{{label}}“) teilt sich mit {{count}} weiteren Feld(ern), ohne dass eine sichtbare Überschrift, Legende oder Zeilenbeschriftung sie unterscheidet.",
+    "formControlLabelQuality_hint_cantTell_placeholder": "Ersetzen Sie die Beschriftung durch eine, die die erfasste Information benennt.",
+    "formControlLabelQuality_summary_cantTell_partiallyHidden": "Die Beschriftung dieses Feldes ist geteilt: Sichtbar ist „{{label}}“, während {{hiddenCount}} weitere Teil(e) der Beschriftung optisch verborgen sind.",
+    "formControlLabelQuality_hint_cantTell_partiallyHidden": "Prüfen Sie, ob der sichtbare Teil allein das Feld benennt, oder machen Sie den Rest der Beschriftung sichtbar.",
+    "formControlLabelQuality_hint_cantTell_duplicate": "Geben Sie jedem Feld eine eigene Beschriftung oder bringen Sie den unterscheidenden Kontext auf den Bildschirm – eine sichtbare Überschrift oder eine Fieldset-Legende über jeder Gruppe.",
     "formControl_programmaticLabelQuality_title": "Formularelemente sollten sich nicht auf placeholder oder title als primäre Beschriftung verlassen",
     "formControl_programmaticLabelQuality_description": "Markiert Formularelemente, deren berechneter zugänglicher Name sich auf placeholder oder title als primäre Beschriftungsmethode stützt. Bevorzugen Sie <label> oder aria-labelledby.",
     "formControl_programmaticLabelQuality_summary_cantTell": "Die primäre Beschriftung des Formularelements stammt von {{method}}.",
@@ -8236,6 +8302,14 @@ const I18N = {
     "rules.img-alt-suspicious.meta.description": "Identifies images whose alt text matches common suspicious patterns (such as filenames, URLs, placeholders, or generic terms) and requires manual verification.",
     "rules.img-alt-suspicious.occurrence.cantTell.summary": "Image alt text appears suspicious (\"{{alt}}\" looks like {{pattern}}) and requires verification.",
     "rules.img-alt-suspicious.occurrence.cantTell.hint": "Review the alt text. Avoid filenames, URLs, placeholders, or generic terms, and ensure the text alternative describes the image’s purpose or function in context.",
+    "formControlLabelQuality_title": "Form field labels should be descriptive and distinguishable",
+    "formControlLabelQuality_description": "Flags a visible form-field label that is a placeholder (\"Label\", \"Field\"), or that repeats another field's label with no visible context — heading, legend, or row — telling the two apart.",
+    "formControlLabelQuality_summary_cantTell_placeholder": "This field's visible label (\"{{label}}\") is a placeholder rather than a description of what the field is for.",
+    "formControlLabelQuality_summary_cantTell_duplicate": "This field's visible label (\"{{label}}\") is shared with {{count}} other field(s), with no visible heading, legend or row text telling them apart.",
+    "formControlLabelQuality_hint_cantTell_placeholder": "Replace the label with one naming the information the field collects.",
+    "formControlLabelQuality_summary_cantTell_partiallyHidden": "This field's label is split: \"{{label}}\" is what renders, while {{hiddenCount}} other part(s) of the label are hidden from sight.",
+    "formControlLabelQuality_hint_cantTell_partiallyHidden": "Confirm the visible part alone identifies the field, or make the rest of the label visible.",
+    "formControlLabelQuality_hint_cantTell_duplicate": "Give each field a label of its own, or put the distinguishing context on screen — a visible heading or a fieldset legend above each group.",
     "formControl_programmaticLabelQuality_title": "Form controls should not rely on placeholder or title as the primary label",
     "formControl_programmaticLabelQuality_description": "Flags form controls whose computed accessible name relies on placeholder or title as the primary labeling method. Prefer <label> or aria-labelledby.",
     "formControl_programmaticLabelQuality_summary_cantTell": "Form control’s primary label is derived from {{method}}.",
@@ -8885,6 +8959,14 @@ const I18N = {
     "rules.img-alt-suspicious.meta.description": "Identifica imágenes cuyo texto alt coincide con patrones sospechosos comunes (como nombres de archivo, URL, marcadores de posición o términos genéricos) y requiere verificación manual.",
     "rules.img-alt-suspicious.occurrence.cantTell.summary": "El texto alt de la imagen parece sospechoso (\"{{alt}}\" parece {{pattern}}) y requiere verificación.",
     "rules.img-alt-suspicious.occurrence.cantTell.hint": "Revisar el texto alt. Evitar nombres de archivo, URL, marcadores de posición o términos genéricos, y asegurarse de que la alternativa textual describa el propósito o la función de la imagen en su contexto.",
+    "formControlLabelQuality_title": "Las etiquetas de los campos de formulario deben ser descriptivas y distinguibles",
+    "formControlLabelQuality_description": "Señala una etiqueta visible de campo que es un marcador de posición («Etiqueta», «Campo») o que repite la etiqueta de otro campo sin que ningún contexto visible —encabezado, leyenda o fila— los distinga.",
+    "formControlLabelQuality_summary_cantTell_placeholder": "La etiqueta visible de este campo («{{label}}») es un marcador de posición y no describe para qué sirve el campo.",
+    "formControlLabelQuality_summary_cantTell_duplicate": "La etiqueta visible de este campo («{{label}}») se comparte con {{count}} campo(s) más, sin que ningún encabezado, leyenda o texto de fila visible los distinga.",
+    "formControlLabelQuality_hint_cantTell_placeholder": "Sustituir la etiqueta por una que nombre la información que recoge el campo.",
+    "formControlLabelQuality_summary_cantTell_partiallyHidden": "La etiqueta de este campo está dividida: se muestra «{{label}}», mientras que {{hiddenCount}} parte(s) más de la etiqueta quedan ocultas a la vista.",
+    "formControlLabelQuality_hint_cantTell_partiallyHidden": "Comprobar que la parte visible por sí sola identifica el campo, o hacer visible el resto de la etiqueta.",
+    "formControlLabelQuality_hint_cantTell_duplicate": "Dar a cada campo una etiqueta propia, o llevar a la pantalla el contexto que los distingue: un encabezado visible o una leyenda de fieldset sobre cada grupo.",
     "formControl_programmaticLabelQuality_title": "Los controles de formulario no deben depender de placeholder o title como etiqueta principal",
     "formControl_programmaticLabelQuality_description": "Señala controles de formulario cuyo nombre accesible calculado depende de placeholder o title como método de etiquetado principal. Se prefiere <label> o aria-labelledby.",
     "formControl_programmaticLabelQuality_summary_cantTell": "La etiqueta principal del control de formulario proviene de {{method}}.",
@@ -9534,6 +9616,14 @@ const I18N = {
     "rules.img-alt-suspicious.meta.description": "Identifie les images dont le texte alternatif correspond à des motifs suspects courants (nom de fichier, URL, texte fictif ou terme générique) et nécessite une vérification manuelle.",
     "rules.img-alt-suspicious.occurrence.cantTell.summary": "Le texte alternatif de l’image semble suspect (« {{alt}} » ressemble à {{pattern}}) et nécessite une vérification.",
     "rules.img-alt-suspicious.occurrence.cantTell.hint": "Vérifiez le texte alternatif. Évitez les noms de fichiers, les URL, les textes fictifs ou les termes génériques, et assurez-vous que l’alternative textuelle décrit la fonction ou le contenu de l’image dans son contexte.",
+    "formControlLabelQuality_title": "Les étiquettes des champs de formulaire doivent être descriptives et distinctes",
+    "formControlLabelQuality_description": "Signale une étiquette visible de champ qui est un texte de remplacement (« Étiquette », « Champ ») ou qui reprend l’étiquette d’un autre champ sans qu’aucun contexte visible — titre, légende ou ligne — ne les distingue.",
+    "formControlLabelQuality_summary_cantTell_placeholder": "L’étiquette visible de ce champ (« {{label}} ») est un texte de remplacement et ne décrit pas à quoi sert le champ.",
+    "formControlLabelQuality_summary_cantTell_duplicate": "L’étiquette visible de ce champ (« {{label}} ») est partagée avec {{count}} autre(s) champ(s), sans qu’aucun titre, légende ou texte de ligne visible ne les distingue.",
+    "formControlLabelQuality_hint_cantTell_placeholder": "Remplacez l’étiquette par une étiquette nommant l’information que le champ recueille.",
+    "formControlLabelQuality_summary_cantTell_partiallyHidden": "L’étiquette de ce champ est scindée : « {{label}} » est ce qui s’affiche, tandis que {{hiddenCount}} autre(s) partie(s) de l’étiquette restent invisibles.",
+    "formControlLabelQuality_hint_cantTell_partiallyHidden": "Vérifiez que la partie visible suffit à identifier le champ, ou rendez le reste de l’étiquette visible.",
+    "formControlLabelQuality_hint_cantTell_duplicate": "Donnez à chaque champ sa propre étiquette, ou affichez le contexte qui les distingue : un titre visible ou une légende de fieldset au-dessus de chaque groupe.",
     "formControl_programmaticLabelQuality_title": "Les champs de formulaire ne devraient pas dépendre du placeholder ou du title comme libellé principal",
     "formControl_programmaticLabelQuality_description": "Signale les champs de formulaire dont le nom accessible est principalement dérivé du placeholder ou de l’attribut title. Préférez un <label> ou aria-labelledby.",
     "formControl_programmaticLabelQuality_summary_cantTell": "Le libellé principal du champ provient de {{method}}.",
@@ -21835,6 +21925,62 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "mappings": null
   },
   {
+    "ruleId": "form-control-label-quality",
+    "title": "Form field labels should be descriptive and distinguishable",
+    "description": "Flags a visible form-field label that is a placeholder (\"Label\", \"Field\"), or that repeats another field's label with no visible context — heading, legend, or row — telling the two apart.",
+    "i18n": {
+      "titleKey": "formControlLabelQuality_title",
+      "descriptionKey": "formControlLabelQuality_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2aa",
+      "wcag246",
+      "forms",
+      "labels",
+      "quality",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "2.4.6"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.4.6",
+        "title": "Headings and Labels",
+        "conformanceLevel": "AA"
+      }
+    ],
+    "defaultSeverity": "minor",
+    "defaultConfidence": "medium",
+    "type": "manual",
+    "coverage": {
+      "facetsBySc": {
+        "2.4.6": [
+          "form-control-label-descriptive-evidence"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "operable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
     "ruleId": "form-control-programmatic-label-present",
     "title": "Form controls must have a programmatic label",
     "description": "Checks that form controls have a programmatic label via <label>, aria-label, aria-labelledby, title, or placeholder.",
@@ -26396,7 +26542,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "id": "wcag-2.4.6-headings-and-labels",
     "checksIds": [
-      "heading-quality"
+      "heading-quality",
+      "form-control-label-quality"
     ],
     "meta": {
       "title": "Headings and Labels",
@@ -36074,6 +36221,365 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+
+  if (occurrences.length) {
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'minor',
+      occurrences
+    };
+  }
+
+  return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+}), applicability: null },
+    "form-control-label-quality": { run: (function runInPage(ctx) {
+  const { document, helpers, rule } = ctx;
+
+  // Declared inside runInPage — see scripts/build-core.js header
+  // ("runInPage MUST be self-contained").
+  const PLACEHOLDER_LABEL_TEXT = new Set([
+    'label',
+    'field',
+    'form field',
+    'input',
+    'input field',
+    'text',
+    'text field',
+    'enter text',
+    'type here',
+    'value',
+    'placeholder',
+    'untitled',
+    'tbd',
+    'todo',
+    'to do',
+    'n/a',
+    'test',
+    'example',
+    'default'
+  ]);
+
+  const FIELD_SELECTOR = [
+    'input:not([type="hidden"]):not([type="submit"]):not([type="reset"]):not([type="button"]):not([type="image"])',
+    'select',
+    'textarea',
+    '[role="checkbox"]',
+    '[role="combobox"]',
+    '[role="listbox"]',
+    '[role="menuitemcheckbox"]',
+    '[role="menuitemradio"]',
+    '[role="radio"]',
+    '[role="searchbox"]',
+    '[role="slider"]',
+    '[role="spinbutton"]',
+    '[role="switch"]',
+    '[role="textbox"]'
+  ].join(', ');
+
+  const ROW_SELECTOR = 'tr, [role="row"], li, [role="listitem"]';
+  const HEADING_SELECTOR = 'h1, h2, h3, h4, h5, h6, [role="heading"]';
+
+  function normalizeWs(s) {
+    return String(s || '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function normalize(s) {
+    return normalizeWs(s)
+      .toLowerCase()
+      .replace(/[.,;:!?*]+$/g, '')
+      .trim();
+  }
+
+  const isDomVisibleEligible =
+    helpers && typeof helpers.isDomVisibleEligible === 'function'
+      ? helpers.isDomVisibleEligible
+      : null;
+  const getVisibilityHintsInfo =
+    helpers && typeof helpers.getVisibilityHintsInfo === 'function'
+      ? helpers.getVisibilityHintsInfo
+      : null;
+
+  const HIDING_HINTS = ['offscreen', 'clipped', 'opacityZero', 'zeroSize'];
+
+  // ACT's "visible": rendered, and not hidden by one of the visually-hidden
+  // CSS patterns. A label the user cannot read provides no visual context,
+  // however well it is wired up programmatically.
+  function isVisible(el) {
+    if (!el) return false;
+    if (isDomVisibleEligible) {
+      try {
+        const vis = isDomVisibleEligible(el, ctx, {
+          visibilityMode: 'styleOnly',
+          disableGeometry: true
+        });
+        if (vis && vis.eligible === false) return false;
+      } catch {
+        // treat as rendered
+      }
+    }
+    if (getVisibilityHintsInfo) {
+      try {
+        const info = getVisibilityHintsInfo(el, ctx);
+        const hints = (info && info.hints) || [];
+        for (const hint of HIDING_HINTS) {
+          if (hints.indexOf(hint) !== -1) return false;
+        }
+      } catch {
+        // treat as visible
+      }
+    }
+    return true;
+  }
+
+  function resolveIdRefs(el, attr) {
+    const raw = normalizeWs(el.getAttribute && el.getAttribute(attr));
+    if (!raw) return [];
+    const out = [];
+    for (const refId of raw.split(/\s+/).filter(Boolean)) {
+      try {
+        const ref = document.getElementById(refId);
+        if (ref) out.push(ref);
+      } catch {
+        // ignore an unusable reference
+      }
+    }
+    return out;
+  }
+
+  function getNativeLabels(el) {
+    const labels = [];
+    try {
+      if (el.labels && el.labels.length) {
+        for (const label of el.labels) labels.push(label);
+        return labels;
+      }
+    } catch {
+      // fall through to the manual lookup
+    }
+    const idVal = normalizeWs(el.getAttribute && el.getAttribute('id'));
+    if (idVal) {
+      try {
+        for (const label of document.querySelectorAll('label[for]')) {
+          if (normalizeWs(label.getAttribute('for')) === idVal) labels.push(label);
+        }
+      } catch {
+        // ignore
+      }
+    }
+    try {
+      const wrapping = el.closest ? el.closest('label') : null;
+      if (wrapping && labels.indexOf(wrapping) === -1) labels.push(wrapping);
+    } catch {
+      // ignore
+    }
+    return labels;
+  }
+
+  // The programmatic labels of a field, per ACT: aria-labelledby targets when
+  // present, otherwise the <label> elements associated with it. aria-label is
+  // deliberately absent — see the header comment.
+  function getVisibleLabelText(el) {
+    const referenced = resolveIdRefs(el, 'aria-labelledby');
+    const labels = referenced.length ? referenced : getNativeLabels(el);
+    const parts = [];
+    let hiddenParts = 0;
+    for (const label of labels) {
+      const text = normalizeWs(label.textContent);
+      if (!text) continue;
+      if (isVisible(label)) parts.push(text);
+      else hiddenParts += 1;
+    }
+    return { text: normalizeWs(parts.join(' ')), hiddenParts };
+  }
+
+  const headings = (() => {
+    try {
+      return Array.prototype.slice.call(document.querySelectorAll(HEADING_SELECTOR));
+    } catch {
+      return [];
+    }
+  })();
+
+  function precedes(a, b) {
+    try {
+      // DOCUMENT_POSITION_PRECEDING (2) on b relative to a.
+      return !!(b.compareDocumentPosition(a) & 2);
+    } catch {
+      return false;
+    }
+  }
+
+  function nearestVisibleHeadingText(el) {
+    for (let i = headings.length - 1; i >= 0; i--) {
+      const heading = headings[i];
+      if (!precedes(heading, el)) continue;
+      if (!isVisible(heading)) continue;
+      const text = normalizeWs(heading.textContent);
+      if (text) return text;
+    }
+    return '';
+  }
+
+  function fieldsetLegendText(el) {
+    let fieldset = null;
+    try {
+      fieldset = el.closest ? el.closest('fieldset') : null;
+    } catch {
+      fieldset = null;
+    }
+    while (fieldset) {
+      let legend = null;
+      try {
+        legend = fieldset.querySelector('legend');
+      } catch {
+        legend = null;
+      }
+      if (legend && isVisible(legend)) {
+        const text = normalizeWs(legend.textContent);
+        if (text) return text;
+      }
+      try {
+        fieldset = fieldset.parentElement ? fieldset.parentElement.closest('fieldset') : null;
+      } catch {
+        fieldset = null;
+      }
+    }
+    return '';
+  }
+
+  // A table row or list item carries its own context — the product name a
+  // repeated "Quantity" field belongs to — so it takes part in the key.
+  function rowContextText(el, labelText) {
+    let row = null;
+    try {
+      row = el.closest ? el.closest(ROW_SELECTOR) : null;
+    } catch {
+      row = null;
+    }
+    if (!row || !isVisible(row)) return '';
+    const text = normalizeWs(row.textContent);
+    if (!text) return '';
+    return normalizeWs(text.split(labelText).join(' '));
+  }
+
+  function contextKey(el, labelText) {
+    const group = fieldsetLegendText(el) || nearestVisibleHeadingText(el);
+    return `${normalize(group)}##${normalize(rowContextText(el, labelText))}`;
+  }
+
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart(FIELD_SELECTOR)
+    : helpers.queryAll(FIELD_SELECTOR);
+
+  const fields = [];
+  for (const el of nodes) {
+    if (!el || el.nodeType !== 1) continue;
+    if (!isVisible(el)) continue;
+
+    const label = getVisibleLabelText(el);
+    const labelText = label.text;
+    if (!labelText) continue; // no visible label to judge — a different rule's concern
+
+    fields.push({
+      el,
+      labelText,
+      normalized: normalize(labelText),
+      hiddenParts: label.hiddenParts
+    });
+  }
+
+  if (!fields.length) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+
+  // Group by label text plus the visible context that would tell two
+  // same-named fields apart.
+  const byKey = new Map();
+  for (const field of fields) {
+    field.key = `${field.normalized}||${contextKey(field.el, field.labelText)}`;
+    const bucket = byKey.get(field.key);
+    if (bucket) bucket.push(field);
+    else byKey.set(field.key, [field]);
+  }
+
+  const occurrences = [];
+
+  for (const field of fields) {
+    const isPlaceholder = PLACEHOLDER_LABEL_TEXT.has(field.normalized);
+    const shared = byKey.get(field.key) || [];
+    const isDuplicate = shared.length > 1;
+    const isPartiallyHidden = field.hiddenParts > 0;
+
+    if (!isPlaceholder && !isDuplicate && !isPartiallyHidden) continue;
+
+    const reasonCode = isPlaceholder
+      ? 'PLACEHOLDER_LABEL_TEXT'
+      : isDuplicate
+        ? 'DUPLICATE_LABEL_TEXT'
+        : 'PARTIALLY_HIDDEN_LABEL';
+
+    const eligInfo = helpers.getEligibilityInfo
+      ? (() => {
+          try {
+            return helpers.getEligibilityInfo(field.el, ctx, { targetSet: 'acc' });
+          } catch {
+            return null;
+          }
+        })()
+      : null;
+
+    const summaryByReason = {
+      PLACEHOLDER_LABEL_TEXT: `This field's visible label ("${field.labelText}") is a placeholder rather than a description of what the field is for.`,
+      DUPLICATE_LABEL_TEXT: `This field's visible label ("${field.labelText}") is shared with ${shared.length - 1} other field(s), with no visible heading, legend or row text telling them apart.`,
+      PARTIALLY_HIDDEN_LABEL: `This field's label is split: "${field.labelText}" is what renders, while ${field.hiddenParts} other part(s) of the label are hidden from sight.`
+    };
+    const hintByReason = {
+      PLACEHOLDER_LABEL_TEXT:
+        'Replace the label with one naming the information the field collects.',
+      DUPLICATE_LABEL_TEXT:
+        'Give each field a label of its own, or put the distinguishing context on screen — a visible heading or a fieldset legend above each group.',
+      PARTIALLY_HIDDEN_LABEL:
+        'Confirm the visible part alone identifies the field, or make the rest of the label visible.'
+    };
+    const SUMMARY_KEY_BY_REASON = {
+      PLACEHOLDER_LABEL_TEXT: 'formControlLabelQuality_summary_cantTell_placeholder',
+      DUPLICATE_LABEL_TEXT: 'formControlLabelQuality_summary_cantTell_duplicate',
+      PARTIALLY_HIDDEN_LABEL: 'formControlLabelQuality_summary_cantTell_partiallyHidden'
+    };
+    const HINT_KEY_BY_REASON = {
+      PLACEHOLDER_LABEL_TEXT: 'formControlLabelQuality_hint_cantTell_placeholder',
+      DUPLICATE_LABEL_TEXT: 'formControlLabelQuality_hint_cantTell_duplicate',
+      PARTIALLY_HIDDEN_LABEL: 'formControlLabelQuality_hint_cantTell_partiallyHidden'
+    };
+
+    occurrences.push(
+      helpers.reportOccurrence(field.el, {
+        summary: summaryByReason[reasonCode],
+        hint: hintByReason[reasonCode],
+        i18n: {
+          summaryKey: SUMMARY_KEY_BY_REASON[reasonCode],
+          hintKey: HINT_KEY_BY_REASON[reasonCode],
+          params: {
+            label: field.labelText,
+            count: String(shared.length - 1),
+            hiddenCount: String(field.hiddenParts)
+          }
+        },
+        data: {
+          details: {
+            reasonCode,
+            label: field.labelText,
+            sharedWith: isDuplicate ? shared.length - 1 : 0,
+            hiddenLabelParts: field.hiddenParts
+          },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (occurrences.length) {
@@ -49007,6 +49513,14 @@ const I18N = {
     "rules.img-alt-suspicious.meta.description": "Identifiziert Bilder, deren Alternativtext gängigen verdächtigen Mustern entspricht (z. B. Dateinamen, URLs, Platzhaltern oder generischen Begriffen), und erfordert eine manuelle Überprüfung.",
     "rules.img-alt-suspicious.occurrence.cantTell.summary": "Der Alternativtext des Bildes wirkt verdächtig („{{alt}}“ ähnelt {{pattern}}) und erfordert eine Überprüfung.",
     "rules.img-alt-suspicious.occurrence.cantTell.hint": "Überprüfen Sie den Alternativtext. Vermeiden Sie Dateinamen, URLs, Platzhalter oder generische Begriffe, und stellen Sie sicher, dass die Textalternative den Zweck oder die Funktion des Bildes im Kontext beschreibt.",
+    "formControlLabelQuality_title": "Beschriftungen von Formularfeldern sollten beschreibend und unterscheidbar sein",
+    "formControlLabelQuality_description": "Meldet eine sichtbare Feldbeschriftung, die ein Platzhalter ist („Beschriftung“, „Feld“) oder die Beschriftung eines anderen Feldes wiederholt, ohne dass ein sichtbarer Kontext – Überschrift, Legende oder Zeile – beide unterscheidet.",
+    "formControlLabelQuality_summary_cantTell_placeholder": "Die sichtbare Beschriftung dieses Feldes („{{label}}“) ist ein Platzhalter und beschreibt nicht, wofür das Feld da ist.",
+    "formControlLabelQuality_summary_cantTell_duplicate": "Die sichtbare Beschriftung dieses Feldes („{{label}}“) teilt sich mit {{count}} weiteren Feld(ern), ohne dass eine sichtbare Überschrift, Legende oder Zeilenbeschriftung sie unterscheidet.",
+    "formControlLabelQuality_hint_cantTell_placeholder": "Ersetzen Sie die Beschriftung durch eine, die die erfasste Information benennt.",
+    "formControlLabelQuality_summary_cantTell_partiallyHidden": "Die Beschriftung dieses Feldes ist geteilt: Sichtbar ist „{{label}}“, während {{hiddenCount}} weitere Teil(e) der Beschriftung optisch verborgen sind.",
+    "formControlLabelQuality_hint_cantTell_partiallyHidden": "Prüfen Sie, ob der sichtbare Teil allein das Feld benennt, oder machen Sie den Rest der Beschriftung sichtbar.",
+    "formControlLabelQuality_hint_cantTell_duplicate": "Geben Sie jedem Feld eine eigene Beschriftung oder bringen Sie den unterscheidenden Kontext auf den Bildschirm – eine sichtbare Überschrift oder eine Fieldset-Legende über jeder Gruppe.",
     "formControl_programmaticLabelQuality_title": "Formularelemente sollten sich nicht auf placeholder oder title als primäre Beschriftung verlassen",
     "formControl_programmaticLabelQuality_description": "Markiert Formularelemente, deren berechneter zugänglicher Name sich auf placeholder oder title als primäre Beschriftungsmethode stützt. Bevorzugen Sie <label> oder aria-labelledby.",
     "formControl_programmaticLabelQuality_summary_cantTell": "Die primäre Beschriftung des Formularelements stammt von {{method}}.",
@@ -49656,6 +50170,14 @@ const I18N = {
     "rules.img-alt-suspicious.meta.description": "Identifies images whose alt text matches common suspicious patterns (such as filenames, URLs, placeholders, or generic terms) and requires manual verification.",
     "rules.img-alt-suspicious.occurrence.cantTell.summary": "Image alt text appears suspicious (\"{{alt}}\" looks like {{pattern}}) and requires verification.",
     "rules.img-alt-suspicious.occurrence.cantTell.hint": "Review the alt text. Avoid filenames, URLs, placeholders, or generic terms, and ensure the text alternative describes the image’s purpose or function in context.",
+    "formControlLabelQuality_title": "Form field labels should be descriptive and distinguishable",
+    "formControlLabelQuality_description": "Flags a visible form-field label that is a placeholder (\"Label\", \"Field\"), or that repeats another field's label with no visible context — heading, legend, or row — telling the two apart.",
+    "formControlLabelQuality_summary_cantTell_placeholder": "This field's visible label (\"{{label}}\") is a placeholder rather than a description of what the field is for.",
+    "formControlLabelQuality_summary_cantTell_duplicate": "This field's visible label (\"{{label}}\") is shared with {{count}} other field(s), with no visible heading, legend or row text telling them apart.",
+    "formControlLabelQuality_hint_cantTell_placeholder": "Replace the label with one naming the information the field collects.",
+    "formControlLabelQuality_summary_cantTell_partiallyHidden": "This field's label is split: \"{{label}}\" is what renders, while {{hiddenCount}} other part(s) of the label are hidden from sight.",
+    "formControlLabelQuality_hint_cantTell_partiallyHidden": "Confirm the visible part alone identifies the field, or make the rest of the label visible.",
+    "formControlLabelQuality_hint_cantTell_duplicate": "Give each field a label of its own, or put the distinguishing context on screen — a visible heading or a fieldset legend above each group.",
     "formControl_programmaticLabelQuality_title": "Form controls should not rely on placeholder or title as the primary label",
     "formControl_programmaticLabelQuality_description": "Flags form controls whose computed accessible name relies on placeholder or title as the primary labeling method. Prefer <label> or aria-labelledby.",
     "formControl_programmaticLabelQuality_summary_cantTell": "Form control’s primary label is derived from {{method}}.",
@@ -50305,6 +50827,14 @@ const I18N = {
     "rules.img-alt-suspicious.meta.description": "Identifica imágenes cuyo texto alt coincide con patrones sospechosos comunes (como nombres de archivo, URL, marcadores de posición o términos genéricos) y requiere verificación manual.",
     "rules.img-alt-suspicious.occurrence.cantTell.summary": "El texto alt de la imagen parece sospechoso (\"{{alt}}\" parece {{pattern}}) y requiere verificación.",
     "rules.img-alt-suspicious.occurrence.cantTell.hint": "Revisar el texto alt. Evitar nombres de archivo, URL, marcadores de posición o términos genéricos, y asegurarse de que la alternativa textual describa el propósito o la función de la imagen en su contexto.",
+    "formControlLabelQuality_title": "Las etiquetas de los campos de formulario deben ser descriptivas y distinguibles",
+    "formControlLabelQuality_description": "Señala una etiqueta visible de campo que es un marcador de posición («Etiqueta», «Campo») o que repite la etiqueta de otro campo sin que ningún contexto visible —encabezado, leyenda o fila— los distinga.",
+    "formControlLabelQuality_summary_cantTell_placeholder": "La etiqueta visible de este campo («{{label}}») es un marcador de posición y no describe para qué sirve el campo.",
+    "formControlLabelQuality_summary_cantTell_duplicate": "La etiqueta visible de este campo («{{label}}») se comparte con {{count}} campo(s) más, sin que ningún encabezado, leyenda o texto de fila visible los distinga.",
+    "formControlLabelQuality_hint_cantTell_placeholder": "Sustituir la etiqueta por una que nombre la información que recoge el campo.",
+    "formControlLabelQuality_summary_cantTell_partiallyHidden": "La etiqueta de este campo está dividida: se muestra «{{label}}», mientras que {{hiddenCount}} parte(s) más de la etiqueta quedan ocultas a la vista.",
+    "formControlLabelQuality_hint_cantTell_partiallyHidden": "Comprobar que la parte visible por sí sola identifica el campo, o hacer visible el resto de la etiqueta.",
+    "formControlLabelQuality_hint_cantTell_duplicate": "Dar a cada campo una etiqueta propia, o llevar a la pantalla el contexto que los distingue: un encabezado visible o una leyenda de fieldset sobre cada grupo.",
     "formControl_programmaticLabelQuality_title": "Los controles de formulario no deben depender de placeholder o title como etiqueta principal",
     "formControl_programmaticLabelQuality_description": "Señala controles de formulario cuyo nombre accesible calculado depende de placeholder o title como método de etiquetado principal. Se prefiere <label> o aria-labelledby.",
     "formControl_programmaticLabelQuality_summary_cantTell": "La etiqueta principal del control de formulario proviene de {{method}}.",
@@ -50954,6 +51484,14 @@ const I18N = {
     "rules.img-alt-suspicious.meta.description": "Identifie les images dont le texte alternatif correspond à des motifs suspects courants (nom de fichier, URL, texte fictif ou terme générique) et nécessite une vérification manuelle.",
     "rules.img-alt-suspicious.occurrence.cantTell.summary": "Le texte alternatif de l’image semble suspect (« {{alt}} » ressemble à {{pattern}}) et nécessite une vérification.",
     "rules.img-alt-suspicious.occurrence.cantTell.hint": "Vérifiez le texte alternatif. Évitez les noms de fichiers, les URL, les textes fictifs ou les termes génériques, et assurez-vous que l’alternative textuelle décrit la fonction ou le contenu de l’image dans son contexte.",
+    "formControlLabelQuality_title": "Les étiquettes des champs de formulaire doivent être descriptives et distinctes",
+    "formControlLabelQuality_description": "Signale une étiquette visible de champ qui est un texte de remplacement (« Étiquette », « Champ ») ou qui reprend l’étiquette d’un autre champ sans qu’aucun contexte visible — titre, légende ou ligne — ne les distingue.",
+    "formControlLabelQuality_summary_cantTell_placeholder": "L’étiquette visible de ce champ (« {{label}} ») est un texte de remplacement et ne décrit pas à quoi sert le champ.",
+    "formControlLabelQuality_summary_cantTell_duplicate": "L’étiquette visible de ce champ (« {{label}} ») est partagée avec {{count}} autre(s) champ(s), sans qu’aucun titre, légende ou texte de ligne visible ne les distingue.",
+    "formControlLabelQuality_hint_cantTell_placeholder": "Remplacez l’étiquette par une étiquette nommant l’information que le champ recueille.",
+    "formControlLabelQuality_summary_cantTell_partiallyHidden": "L’étiquette de ce champ est scindée : « {{label}} » est ce qui s’affiche, tandis que {{hiddenCount}} autre(s) partie(s) de l’étiquette restent invisibles.",
+    "formControlLabelQuality_hint_cantTell_partiallyHidden": "Vérifiez que la partie visible suffit à identifier le champ, ou rendez le reste de l’étiquette visible.",
+    "formControlLabelQuality_hint_cantTell_duplicate": "Donnez à chaque champ sa propre étiquette, ou affichez le contexte qui les distingue : un titre visible ou une légende de fieldset au-dessus de chaque groupe.",
     "formControl_programmaticLabelQuality_title": "Les champs de formulaire ne devraient pas dépendre du placeholder ou du title comme libellé principal",
     "formControl_programmaticLabelQuality_description": "Signale les champs de formulaire dont le nom accessible est principalement dérivé du placeholder ou de l’attribut title. Préférez un <label> ou aria-labelledby.",
     "formControl_programmaticLabelQuality_summary_cantTell": "Le libellé principal du champ provient de {{method}}.",
@@ -63215,6 +63753,62 @@ const __a11yCoreCrossFrameApi = (function () {
     "mappings": null
   },
   {
+    "ruleId": "form-control-label-quality",
+    "title": "Form field labels should be descriptive and distinguishable",
+    "description": "Flags a visible form-field label that is a placeholder (\"Label\", \"Field\"), or that repeats another field's label with no visible context — heading, legend, or row — telling the two apart.",
+    "i18n": {
+      "titleKey": "formControlLabelQuality_title",
+      "descriptionKey": "formControlLabelQuality_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2aa",
+      "wcag246",
+      "forms",
+      "labels",
+      "quality",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "2.4.6"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.4.6",
+        "title": "Headings and Labels",
+        "conformanceLevel": "AA"
+      }
+    ],
+    "defaultSeverity": "minor",
+    "defaultConfidence": "medium",
+    "type": "manual",
+    "coverage": {
+      "facetsBySc": {
+        "2.4.6": [
+          "form-control-label-descriptive-evidence"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "operable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
     "ruleId": "form-control-programmatic-label-present",
     "title": "Form controls must have a programmatic label",
     "description": "Checks that form controls have a programmatic label via <label>, aria-label, aria-labelledby, title, or placeholder.",
@@ -67772,7 +68366,8 @@ const __a11yCoreCrossFrameApi = (function () {
   {
     "id": "wcag-2.4.6-headings-and-labels",
     "checksIds": [
-      "heading-quality"
+      "heading-quality",
+      "form-control-label-quality"
     ],
     "meta": {
       "title": "Headings and Labels",
@@ -77449,6 +78044,365 @@ const __a11yCoreCrossFrameApi = (function () {
 
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+
+  if (occurrences.length) {
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'minor',
+      occurrences
+    };
+  }
+
+  return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+}), applicability: null },
+    "form-control-label-quality": { run: (function runInPage(ctx) {
+  const { document, helpers, rule } = ctx;
+
+  // Declared inside runInPage — see scripts/build-core.js header
+  // ("runInPage MUST be self-contained").
+  const PLACEHOLDER_LABEL_TEXT = new Set([
+    'label',
+    'field',
+    'form field',
+    'input',
+    'input field',
+    'text',
+    'text field',
+    'enter text',
+    'type here',
+    'value',
+    'placeholder',
+    'untitled',
+    'tbd',
+    'todo',
+    'to do',
+    'n/a',
+    'test',
+    'example',
+    'default'
+  ]);
+
+  const FIELD_SELECTOR = [
+    'input:not([type="hidden"]):not([type="submit"]):not([type="reset"]):not([type="button"]):not([type="image"])',
+    'select',
+    'textarea',
+    '[role="checkbox"]',
+    '[role="combobox"]',
+    '[role="listbox"]',
+    '[role="menuitemcheckbox"]',
+    '[role="menuitemradio"]',
+    '[role="radio"]',
+    '[role="searchbox"]',
+    '[role="slider"]',
+    '[role="spinbutton"]',
+    '[role="switch"]',
+    '[role="textbox"]'
+  ].join(', ');
+
+  const ROW_SELECTOR = 'tr, [role="row"], li, [role="listitem"]';
+  const HEADING_SELECTOR = 'h1, h2, h3, h4, h5, h6, [role="heading"]';
+
+  function normalizeWs(s) {
+    return String(s || '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function normalize(s) {
+    return normalizeWs(s)
+      .toLowerCase()
+      .replace(/[.,;:!?*]+$/g, '')
+      .trim();
+  }
+
+  const isDomVisibleEligible =
+    helpers && typeof helpers.isDomVisibleEligible === 'function'
+      ? helpers.isDomVisibleEligible
+      : null;
+  const getVisibilityHintsInfo =
+    helpers && typeof helpers.getVisibilityHintsInfo === 'function'
+      ? helpers.getVisibilityHintsInfo
+      : null;
+
+  const HIDING_HINTS = ['offscreen', 'clipped', 'opacityZero', 'zeroSize'];
+
+  // ACT's "visible": rendered, and not hidden by one of the visually-hidden
+  // CSS patterns. A label the user cannot read provides no visual context,
+  // however well it is wired up programmatically.
+  function isVisible(el) {
+    if (!el) return false;
+    if (isDomVisibleEligible) {
+      try {
+        const vis = isDomVisibleEligible(el, ctx, {
+          visibilityMode: 'styleOnly',
+          disableGeometry: true
+        });
+        if (vis && vis.eligible === false) return false;
+      } catch {
+        // treat as rendered
+      }
+    }
+    if (getVisibilityHintsInfo) {
+      try {
+        const info = getVisibilityHintsInfo(el, ctx);
+        const hints = (info && info.hints) || [];
+        for (const hint of HIDING_HINTS) {
+          if (hints.indexOf(hint) !== -1) return false;
+        }
+      } catch {
+        // treat as visible
+      }
+    }
+    return true;
+  }
+
+  function resolveIdRefs(el, attr) {
+    const raw = normalizeWs(el.getAttribute && el.getAttribute(attr));
+    if (!raw) return [];
+    const out = [];
+    for (const refId of raw.split(/\s+/).filter(Boolean)) {
+      try {
+        const ref = document.getElementById(refId);
+        if (ref) out.push(ref);
+      } catch {
+        // ignore an unusable reference
+      }
+    }
+    return out;
+  }
+
+  function getNativeLabels(el) {
+    const labels = [];
+    try {
+      if (el.labels && el.labels.length) {
+        for (const label of el.labels) labels.push(label);
+        return labels;
+      }
+    } catch {
+      // fall through to the manual lookup
+    }
+    const idVal = normalizeWs(el.getAttribute && el.getAttribute('id'));
+    if (idVal) {
+      try {
+        for (const label of document.querySelectorAll('label[for]')) {
+          if (normalizeWs(label.getAttribute('for')) === idVal) labels.push(label);
+        }
+      } catch {
+        // ignore
+      }
+    }
+    try {
+      const wrapping = el.closest ? el.closest('label') : null;
+      if (wrapping && labels.indexOf(wrapping) === -1) labels.push(wrapping);
+    } catch {
+      // ignore
+    }
+    return labels;
+  }
+
+  // The programmatic labels of a field, per ACT: aria-labelledby targets when
+  // present, otherwise the <label> elements associated with it. aria-label is
+  // deliberately absent — see the header comment.
+  function getVisibleLabelText(el) {
+    const referenced = resolveIdRefs(el, 'aria-labelledby');
+    const labels = referenced.length ? referenced : getNativeLabels(el);
+    const parts = [];
+    let hiddenParts = 0;
+    for (const label of labels) {
+      const text = normalizeWs(label.textContent);
+      if (!text) continue;
+      if (isVisible(label)) parts.push(text);
+      else hiddenParts += 1;
+    }
+    return { text: normalizeWs(parts.join(' ')), hiddenParts };
+  }
+
+  const headings = (() => {
+    try {
+      return Array.prototype.slice.call(document.querySelectorAll(HEADING_SELECTOR));
+    } catch {
+      return [];
+    }
+  })();
+
+  function precedes(a, b) {
+    try {
+      // DOCUMENT_POSITION_PRECEDING (2) on b relative to a.
+      return !!(b.compareDocumentPosition(a) & 2);
+    } catch {
+      return false;
+    }
+  }
+
+  function nearestVisibleHeadingText(el) {
+    for (let i = headings.length - 1; i >= 0; i--) {
+      const heading = headings[i];
+      if (!precedes(heading, el)) continue;
+      if (!isVisible(heading)) continue;
+      const text = normalizeWs(heading.textContent);
+      if (text) return text;
+    }
+    return '';
+  }
+
+  function fieldsetLegendText(el) {
+    let fieldset = null;
+    try {
+      fieldset = el.closest ? el.closest('fieldset') : null;
+    } catch {
+      fieldset = null;
+    }
+    while (fieldset) {
+      let legend = null;
+      try {
+        legend = fieldset.querySelector('legend');
+      } catch {
+        legend = null;
+      }
+      if (legend && isVisible(legend)) {
+        const text = normalizeWs(legend.textContent);
+        if (text) return text;
+      }
+      try {
+        fieldset = fieldset.parentElement ? fieldset.parentElement.closest('fieldset') : null;
+      } catch {
+        fieldset = null;
+      }
+    }
+    return '';
+  }
+
+  // A table row or list item carries its own context — the product name a
+  // repeated "Quantity" field belongs to — so it takes part in the key.
+  function rowContextText(el, labelText) {
+    let row = null;
+    try {
+      row = el.closest ? el.closest(ROW_SELECTOR) : null;
+    } catch {
+      row = null;
+    }
+    if (!row || !isVisible(row)) return '';
+    const text = normalizeWs(row.textContent);
+    if (!text) return '';
+    return normalizeWs(text.split(labelText).join(' '));
+  }
+
+  function contextKey(el, labelText) {
+    const group = fieldsetLegendText(el) || nearestVisibleHeadingText(el);
+    return `${normalize(group)}##${normalize(rowContextText(el, labelText))}`;
+  }
+
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart(FIELD_SELECTOR)
+    : helpers.queryAll(FIELD_SELECTOR);
+
+  const fields = [];
+  for (const el of nodes) {
+    if (!el || el.nodeType !== 1) continue;
+    if (!isVisible(el)) continue;
+
+    const label = getVisibleLabelText(el);
+    const labelText = label.text;
+    if (!labelText) continue; // no visible label to judge — a different rule's concern
+
+    fields.push({
+      el,
+      labelText,
+      normalized: normalize(labelText),
+      hiddenParts: label.hiddenParts
+    });
+  }
+
+  if (!fields.length) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+
+  // Group by label text plus the visible context that would tell two
+  // same-named fields apart.
+  const byKey = new Map();
+  for (const field of fields) {
+    field.key = `${field.normalized}||${contextKey(field.el, field.labelText)}`;
+    const bucket = byKey.get(field.key);
+    if (bucket) bucket.push(field);
+    else byKey.set(field.key, [field]);
+  }
+
+  const occurrences = [];
+
+  for (const field of fields) {
+    const isPlaceholder = PLACEHOLDER_LABEL_TEXT.has(field.normalized);
+    const shared = byKey.get(field.key) || [];
+    const isDuplicate = shared.length > 1;
+    const isPartiallyHidden = field.hiddenParts > 0;
+
+    if (!isPlaceholder && !isDuplicate && !isPartiallyHidden) continue;
+
+    const reasonCode = isPlaceholder
+      ? 'PLACEHOLDER_LABEL_TEXT'
+      : isDuplicate
+        ? 'DUPLICATE_LABEL_TEXT'
+        : 'PARTIALLY_HIDDEN_LABEL';
+
+    const eligInfo = helpers.getEligibilityInfo
+      ? (() => {
+          try {
+            return helpers.getEligibilityInfo(field.el, ctx, { targetSet: 'acc' });
+          } catch {
+            return null;
+          }
+        })()
+      : null;
+
+    const summaryByReason = {
+      PLACEHOLDER_LABEL_TEXT: `This field's visible label ("${field.labelText}") is a placeholder rather than a description of what the field is for.`,
+      DUPLICATE_LABEL_TEXT: `This field's visible label ("${field.labelText}") is shared with ${shared.length - 1} other field(s), with no visible heading, legend or row text telling them apart.`,
+      PARTIALLY_HIDDEN_LABEL: `This field's label is split: "${field.labelText}" is what renders, while ${field.hiddenParts} other part(s) of the label are hidden from sight.`
+    };
+    const hintByReason = {
+      PLACEHOLDER_LABEL_TEXT:
+        'Replace the label with one naming the information the field collects.',
+      DUPLICATE_LABEL_TEXT:
+        'Give each field a label of its own, or put the distinguishing context on screen — a visible heading or a fieldset legend above each group.',
+      PARTIALLY_HIDDEN_LABEL:
+        'Confirm the visible part alone identifies the field, or make the rest of the label visible.'
+    };
+    const SUMMARY_KEY_BY_REASON = {
+      PLACEHOLDER_LABEL_TEXT: 'formControlLabelQuality_summary_cantTell_placeholder',
+      DUPLICATE_LABEL_TEXT: 'formControlLabelQuality_summary_cantTell_duplicate',
+      PARTIALLY_HIDDEN_LABEL: 'formControlLabelQuality_summary_cantTell_partiallyHidden'
+    };
+    const HINT_KEY_BY_REASON = {
+      PLACEHOLDER_LABEL_TEXT: 'formControlLabelQuality_hint_cantTell_placeholder',
+      DUPLICATE_LABEL_TEXT: 'formControlLabelQuality_hint_cantTell_duplicate',
+      PARTIALLY_HIDDEN_LABEL: 'formControlLabelQuality_hint_cantTell_partiallyHidden'
+    };
+
+    occurrences.push(
+      helpers.reportOccurrence(field.el, {
+        summary: summaryByReason[reasonCode],
+        hint: hintByReason[reasonCode],
+        i18n: {
+          summaryKey: SUMMARY_KEY_BY_REASON[reasonCode],
+          hintKey: HINT_KEY_BY_REASON[reasonCode],
+          params: {
+            label: field.labelText,
+            count: String(shared.length - 1),
+            hiddenCount: String(field.hiddenParts)
+          }
+        },
+        data: {
+          details: {
+            reasonCode,
+            label: field.labelText,
+            sharedWith: isDuplicate ? shared.length - 1 : 0,
+            hiddenLabelParts: field.hiddenParts
+          },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
   }
 
   if (occurrences.length) {
@@ -90382,6 +91336,14 @@ const I18N = {
     "rules.img-alt-suspicious.meta.description": "Identifiziert Bilder, deren Alternativtext gängigen verdächtigen Mustern entspricht (z. B. Dateinamen, URLs, Platzhaltern oder generischen Begriffen), und erfordert eine manuelle Überprüfung.",
     "rules.img-alt-suspicious.occurrence.cantTell.summary": "Der Alternativtext des Bildes wirkt verdächtig („{{alt}}“ ähnelt {{pattern}}) und erfordert eine Überprüfung.",
     "rules.img-alt-suspicious.occurrence.cantTell.hint": "Überprüfen Sie den Alternativtext. Vermeiden Sie Dateinamen, URLs, Platzhalter oder generische Begriffe, und stellen Sie sicher, dass die Textalternative den Zweck oder die Funktion des Bildes im Kontext beschreibt.",
+    "formControlLabelQuality_title": "Beschriftungen von Formularfeldern sollten beschreibend und unterscheidbar sein",
+    "formControlLabelQuality_description": "Meldet eine sichtbare Feldbeschriftung, die ein Platzhalter ist („Beschriftung“, „Feld“) oder die Beschriftung eines anderen Feldes wiederholt, ohne dass ein sichtbarer Kontext – Überschrift, Legende oder Zeile – beide unterscheidet.",
+    "formControlLabelQuality_summary_cantTell_placeholder": "Die sichtbare Beschriftung dieses Feldes („{{label}}“) ist ein Platzhalter und beschreibt nicht, wofür das Feld da ist.",
+    "formControlLabelQuality_summary_cantTell_duplicate": "Die sichtbare Beschriftung dieses Feldes („{{label}}“) teilt sich mit {{count}} weiteren Feld(ern), ohne dass eine sichtbare Überschrift, Legende oder Zeilenbeschriftung sie unterscheidet.",
+    "formControlLabelQuality_hint_cantTell_placeholder": "Ersetzen Sie die Beschriftung durch eine, die die erfasste Information benennt.",
+    "formControlLabelQuality_summary_cantTell_partiallyHidden": "Die Beschriftung dieses Feldes ist geteilt: Sichtbar ist „{{label}}“, während {{hiddenCount}} weitere Teil(e) der Beschriftung optisch verborgen sind.",
+    "formControlLabelQuality_hint_cantTell_partiallyHidden": "Prüfen Sie, ob der sichtbare Teil allein das Feld benennt, oder machen Sie den Rest der Beschriftung sichtbar.",
+    "formControlLabelQuality_hint_cantTell_duplicate": "Geben Sie jedem Feld eine eigene Beschriftung oder bringen Sie den unterscheidenden Kontext auf den Bildschirm – eine sichtbare Überschrift oder eine Fieldset-Legende über jeder Gruppe.",
     "formControl_programmaticLabelQuality_title": "Formularelemente sollten sich nicht auf placeholder oder title als primäre Beschriftung verlassen",
     "formControl_programmaticLabelQuality_description": "Markiert Formularelemente, deren berechneter zugänglicher Name sich auf placeholder oder title als primäre Beschriftungsmethode stützt. Bevorzugen Sie <label> oder aria-labelledby.",
     "formControl_programmaticLabelQuality_summary_cantTell": "Die primäre Beschriftung des Formularelements stammt von {{method}}.",
@@ -91031,6 +91993,14 @@ const I18N = {
     "rules.img-alt-suspicious.meta.description": "Identifies images whose alt text matches common suspicious patterns (such as filenames, URLs, placeholders, or generic terms) and requires manual verification.",
     "rules.img-alt-suspicious.occurrence.cantTell.summary": "Image alt text appears suspicious (\"{{alt}}\" looks like {{pattern}}) and requires verification.",
     "rules.img-alt-suspicious.occurrence.cantTell.hint": "Review the alt text. Avoid filenames, URLs, placeholders, or generic terms, and ensure the text alternative describes the image’s purpose or function in context.",
+    "formControlLabelQuality_title": "Form field labels should be descriptive and distinguishable",
+    "formControlLabelQuality_description": "Flags a visible form-field label that is a placeholder (\"Label\", \"Field\"), or that repeats another field's label with no visible context — heading, legend, or row — telling the two apart.",
+    "formControlLabelQuality_summary_cantTell_placeholder": "This field's visible label (\"{{label}}\") is a placeholder rather than a description of what the field is for.",
+    "formControlLabelQuality_summary_cantTell_duplicate": "This field's visible label (\"{{label}}\") is shared with {{count}} other field(s), with no visible heading, legend or row text telling them apart.",
+    "formControlLabelQuality_hint_cantTell_placeholder": "Replace the label with one naming the information the field collects.",
+    "formControlLabelQuality_summary_cantTell_partiallyHidden": "This field's label is split: \"{{label}}\" is what renders, while {{hiddenCount}} other part(s) of the label are hidden from sight.",
+    "formControlLabelQuality_hint_cantTell_partiallyHidden": "Confirm the visible part alone identifies the field, or make the rest of the label visible.",
+    "formControlLabelQuality_hint_cantTell_duplicate": "Give each field a label of its own, or put the distinguishing context on screen — a visible heading or a fieldset legend above each group.",
     "formControl_programmaticLabelQuality_title": "Form controls should not rely on placeholder or title as the primary label",
     "formControl_programmaticLabelQuality_description": "Flags form controls whose computed accessible name relies on placeholder or title as the primary labeling method. Prefer <label> or aria-labelledby.",
     "formControl_programmaticLabelQuality_summary_cantTell": "Form control’s primary label is derived from {{method}}.",
@@ -91680,6 +92650,14 @@ const I18N = {
     "rules.img-alt-suspicious.meta.description": "Identifica imágenes cuyo texto alt coincide con patrones sospechosos comunes (como nombres de archivo, URL, marcadores de posición o términos genéricos) y requiere verificación manual.",
     "rules.img-alt-suspicious.occurrence.cantTell.summary": "El texto alt de la imagen parece sospechoso (\"{{alt}}\" parece {{pattern}}) y requiere verificación.",
     "rules.img-alt-suspicious.occurrence.cantTell.hint": "Revisar el texto alt. Evitar nombres de archivo, URL, marcadores de posición o términos genéricos, y asegurarse de que la alternativa textual describa el propósito o la función de la imagen en su contexto.",
+    "formControlLabelQuality_title": "Las etiquetas de los campos de formulario deben ser descriptivas y distinguibles",
+    "formControlLabelQuality_description": "Señala una etiqueta visible de campo que es un marcador de posición («Etiqueta», «Campo») o que repite la etiqueta de otro campo sin que ningún contexto visible —encabezado, leyenda o fila— los distinga.",
+    "formControlLabelQuality_summary_cantTell_placeholder": "La etiqueta visible de este campo («{{label}}») es un marcador de posición y no describe para qué sirve el campo.",
+    "formControlLabelQuality_summary_cantTell_duplicate": "La etiqueta visible de este campo («{{label}}») se comparte con {{count}} campo(s) más, sin que ningún encabezado, leyenda o texto de fila visible los distinga.",
+    "formControlLabelQuality_hint_cantTell_placeholder": "Sustituir la etiqueta por una que nombre la información que recoge el campo.",
+    "formControlLabelQuality_summary_cantTell_partiallyHidden": "La etiqueta de este campo está dividida: se muestra «{{label}}», mientras que {{hiddenCount}} parte(s) más de la etiqueta quedan ocultas a la vista.",
+    "formControlLabelQuality_hint_cantTell_partiallyHidden": "Comprobar que la parte visible por sí sola identifica el campo, o hacer visible el resto de la etiqueta.",
+    "formControlLabelQuality_hint_cantTell_duplicate": "Dar a cada campo una etiqueta propia, o llevar a la pantalla el contexto que los distingue: un encabezado visible o una leyenda de fieldset sobre cada grupo.",
     "formControl_programmaticLabelQuality_title": "Los controles de formulario no deben depender de placeholder o title como etiqueta principal",
     "formControl_programmaticLabelQuality_description": "Señala controles de formulario cuyo nombre accesible calculado depende de placeholder o title como método de etiquetado principal. Se prefiere <label> o aria-labelledby.",
     "formControl_programmaticLabelQuality_summary_cantTell": "La etiqueta principal del control de formulario proviene de {{method}}.",
@@ -92329,6 +93307,14 @@ const I18N = {
     "rules.img-alt-suspicious.meta.description": "Identifie les images dont le texte alternatif correspond à des motifs suspects courants (nom de fichier, URL, texte fictif ou terme générique) et nécessite une vérification manuelle.",
     "rules.img-alt-suspicious.occurrence.cantTell.summary": "Le texte alternatif de l’image semble suspect (« {{alt}} » ressemble à {{pattern}}) et nécessite une vérification.",
     "rules.img-alt-suspicious.occurrence.cantTell.hint": "Vérifiez le texte alternatif. Évitez les noms de fichiers, les URL, les textes fictifs ou les termes génériques, et assurez-vous que l’alternative textuelle décrit la fonction ou le contenu de l’image dans son contexte.",
+    "formControlLabelQuality_title": "Les étiquettes des champs de formulaire doivent être descriptives et distinctes",
+    "formControlLabelQuality_description": "Signale une étiquette visible de champ qui est un texte de remplacement (« Étiquette », « Champ ») ou qui reprend l’étiquette d’un autre champ sans qu’aucun contexte visible — titre, légende ou ligne — ne les distingue.",
+    "formControlLabelQuality_summary_cantTell_placeholder": "L’étiquette visible de ce champ (« {{label}} ») est un texte de remplacement et ne décrit pas à quoi sert le champ.",
+    "formControlLabelQuality_summary_cantTell_duplicate": "L’étiquette visible de ce champ (« {{label}} ») est partagée avec {{count}} autre(s) champ(s), sans qu’aucun titre, légende ou texte de ligne visible ne les distingue.",
+    "formControlLabelQuality_hint_cantTell_placeholder": "Remplacez l’étiquette par une étiquette nommant l’information que le champ recueille.",
+    "formControlLabelQuality_summary_cantTell_partiallyHidden": "L’étiquette de ce champ est scindée : « {{label}} » est ce qui s’affiche, tandis que {{hiddenCount}} autre(s) partie(s) de l’étiquette restent invisibles.",
+    "formControlLabelQuality_hint_cantTell_partiallyHidden": "Vérifiez que la partie visible suffit à identifier le champ, ou rendez le reste de l’étiquette visible.",
+    "formControlLabelQuality_hint_cantTell_duplicate": "Donnez à chaque champ sa propre étiquette, ou affichez le contexte qui les distingue : un titre visible ou une légende de fieldset au-dessus de chaque groupe.",
     "formControl_programmaticLabelQuality_title": "Les champs de formulaire ne devraient pas dépendre du placeholder ou du title comme libellé principal",
     "formControl_programmaticLabelQuality_description": "Signale les champs de formulaire dont le nom accessible est principalement dérivé du placeholder ou de l’attribut title. Préférez un <label> ou aria-labelledby.",
     "formControl_programmaticLabelQuality_summary_cantTell": "Le libellé principal du champ provient de {{method}}.",

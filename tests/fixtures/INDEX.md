@@ -1,18 +1,18 @@
 # Fixture Index
 
-Generated: 2026-08-19T06:46:01.894Z
+Generated: 2026-08-19T07:16:28.539Z
 
 Every implemented rule should have a `tests/fixtures/<slug>-all-scenarios.html` scenario page (numbered `case_NN` blocks, each marked PASS/FAIL/CANTTELL in its `.case-title`) and a "fixture coverage" test in its `tests/engine-checks/**/<rule>.test.js` asserting the exact expected ids. See `docs/RULE_AUTHORING.md`.
 
 ## Summary
 
-Total rules: **128**. With fixture: **128**. Without fixture: **0**.
+Total rules: **129**. With fixture: **129**. Without fixture: **0**.
 
 ## Rules WITHOUT a fixture (0)
 
 None — every rule has a fixture.
 
-## Rules WITH a fixture (128)
+## Rules WITH a fixture (129)
 
 | Rule ID | Type | Fixture | Cases | PASS | FAIL | CANTTELL | OTHER |
 |---|---|---|---:|---:|---:|---:|---:|
@@ -62,6 +62,7 @@ None — every rule has a fixture.
 | empty-heading | manual | `tests/fixtures/empty-heading-all-scenarios.html` | 10 | 0 | 0 | 3 | 7 |
 | empty-table-header | manual | `tests/fixtures/empty-table-header-all-scenarios.html` | 6 | 0 | 0 | 4 | 2 |
 | focus-order-semantics | manual | `tests/fixtures/focus-order-semantics-all-scenarios.html` | 6 | 0 | 0 | 2 | 4 |
+| form-control-label-quality | manual | `tests/fixtures/form-control-label-quality-all-scenarios.html` | 11 | 5 | 0 | 5 | 1 |
 | form-control-programmatic-label-present | automatic | `tests/fixtures/form-control-programmatic-label-all-scenarios.html` | 41 | 13 | 10 | 0 | 18 |
 | form-control-programmatic-label-quality | manual | `tests/fixtures/form-control-programmatic-label-quality-manual-all-scenarios.html` | 14 | 0 | 0 | 0 | 14 |
 | form-control-single-label | automatic | `tests/fixtures/form-control-single-label-all-scenarios.html` | 9 | 5 | 2 | 1 | 1 |

@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-08-19T06:46:01.894Z",
+  "generatedAt": "2026-08-19T07:16:28.539Z",
   "summary": {
-    "total": 128,
-    "withFixture": 128,
+    "total": 129,
+    "withFixture": 129,
     "withoutFixture": 0
   },
   "rows": [
@@ -870,6 +870,25 @@
         "FAIL": 0,
         "CANTTELL": 2,
         "OTHER": 4
+      }
+    },
+    {
+      "ruleId": "form-control-label-quality",
+      "title": "Form field labels should be descriptive and distinguishable",
+      "type": "manual",
+      "wcagSc": [
+        "2.4.6"
+      ],
+      "ruleFile": "src/checks/manual/form-control-label-quality-manual.js",
+      "testFile": "tests/engine-checks/manual/form-control-label-quality.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/form-control-label-quality-all-scenarios.html",
+      "totalCases": 11,
+      "caseCounts": {
+        "PASS": 5,
+        "FAIL": 0,
+        "CANTTELL": 5,
+        "OTHER": 1
       }
     },
     {

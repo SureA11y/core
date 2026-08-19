@@ -228,7 +228,7 @@ module.exports = [
 
   {
     id: 'wcag-2.4.6-headings-and-labels',
-    checksIds: ['heading-quality'],
+    checksIds: ['heading-quality', 'form-control-label-quality'],
     meta: {
       title: 'Headings and Labels',
       description:

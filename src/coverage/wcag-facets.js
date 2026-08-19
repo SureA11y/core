@@ -620,6 +620,11 @@ const FACETS = {
                 "id": "heading-text-descriptive-evidence",
                 "label": "Heading text is a description of the content that follows, not a placeholder",
                 "automation": "manual"
+            },
+            {
+                "id": "form-control-label-descriptive-evidence",
+                "label": "Form field label text describes the field and is not repeated without visible context",
+                "automation": "manual"
             }
         ]
     },

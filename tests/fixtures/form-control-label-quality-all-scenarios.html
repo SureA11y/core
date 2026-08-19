@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>form-control-label-quality — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    h3 { font-size: 14px; margin: 14px 0 8px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+    .offscreen { position: absolute; top: -9999px; left: -9999px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>form-control-label-quality</code></h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>fclq_case_NN</code>.
+    Fields with no visible programmatic label at all are out of scope — that is
+    <code>form-control-programmatic-label-present</code>'s and
+    <code>form-control-programmatic-label-quality</code>'s ground.
+  </p>
+
+  <h2>A. Descriptive, distinguishable labels</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — PASS: wrapping label naming the field</div>
+    <label>First name: <input id="fclq_case_01" type="text" name="fname" /></label>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — PASS: label[for] naming the field</div>
+    <label for="fclq_case_02">Date of birth:</label>
+    <input id="fclq_case_02" type="date" name="dob" />
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — PASS: repeated labels separated by visible headings</div>
+    <h3>Shipping</h3>
+    <label>Name <input id="fclq_case_03" type="text" name="shipping-name" /></label>
+    <h3>Billing</h3>
+    <label>Name <input id="fclq_case_03b" type="text" name="billing-name" /></label>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — PASS: repeated labels separated by visible fieldset legends</div>
+    <fieldset>
+      <legend>Home address</legend>
+      <label>Street <input id="fclq_case_04" type="text" name="home-street" /></label>
+    </fieldset>
+    <fieldset>
+      <legend>Work address</legend>
+      <label>Street <input id="fclq_case_04b" type="text" name="work-street" /></label>
+    </fieldset>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — PASS: repeated field per table row, told apart by the row's own text</div>
+    <table>
+      <tr><td>Widget</td><td><label>Quantity <input id="fclq_case_05" type="number" name="widget-qty" /></label></td></tr>
+      <tr><td>Gadget</td><td><label>Quantity <input id="fclq_case_05b" type="number" name="gadget-qty" /></label></td></tr>
+    </table>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — NEUTRAL: named by aria-label only, so there is no visible label to judge</div>
+    <input id="fclq_case_06" type="text" aria-label="Postcode" name="postcode" />
+  </div>
+
+  <h2>B. Placeholder label text</h2>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — CANTTELL: label left as "Label"</div>
+    <label>Label <input id="fclq_case_07" type="text" name="f1" /></label>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — CANTTELL: label left as "Enter text"</div>
+    <label for="fclq_case_08">Enter text</label>
+    <input id="fclq_case_08" type="text" name="f2" />
+  </div>
+
+  <h2>C. Repeated label with no visible context</h2>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — CANTTELL: two "Search" fields with nothing visible telling them apart</div>
+    <label>Search <input id="fclq_case_09" type="text" name="search-header" /></label>
+    <label>Search <input id="fclq_case_09b" type="text" name="search-footer" /></label>
+  </div>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — CANTTELL: repeated labels whose only differentiator is positioned off screen</div>
+    <fieldset>
+      <h3 class="offscreen">Shipping address</h3>
+      <label>Town <input id="fclq_case_10" type="text" name="shipping-town" /></label>
+    </fieldset>
+    <fieldset>
+      <h3 class="offscreen">Billing address</h3>
+      <label>Town <input id="fclq_case_10b" type="text" name="billing-town" /></label>
+    </fieldset>
+  </div>
+
+  <h2>D. Label split between visible and hidden parts</h2>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — CANTTELL: only "Go" renders; the descriptive half of the label is display:none</div>
+    <span id="fclq_hidden_label" style="display: none">Search</span>
+    <input id="fclq_case_11" type="text" name="q" aria-labelledby="fclq_visible_label fclq_hidden_label" />
+    <button id="fclq_visible_label" type="button">Go</button>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

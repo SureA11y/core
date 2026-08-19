@@ -5,19 +5,19 @@ Facets: `src/coverage/wcag-facets.js`
 
 ## Summary
 
-Total rules (loaded without error): **128**
+Total rules (loaded without error): **129**
 
 ### Coverage by WCAG Level (Version-agnostic, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| Any WCAG version | 104 | 17 | 5 |
+| Any WCAG version | 105 | 18 | 5 |
 
 ### Coverage by WCAG Level (Per version, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| WCAG 2.0 | 99 | 13 | 5 |
+| WCAG 2.0 | 100 | 14 | 5 |
 | WCAG 2.1 | 4 | 3 | 0 |
 | WCAG 2.2 | 1 | 1 | 0 |
 
@@ -29,7 +29,7 @@ Total rules (loaded without error): **128**
 | wcag21aa | 3 |
 | wcag22aa | 1 |
 | wcag2a | 89 |
-| wcag2aa | 9 |
+| wcag2aa | 10 |
 | wcag2aaa | 5 |
 
 ## SC Coverage (A) — Enforced requirements only (normativeMappings)
@@ -389,15 +389,17 @@ Automation mix: **full 0, partial 0, manual 1**.
 
 ### 2.4.6
 
-Facet coverage: **1/1** facets covered.
-Automation mix: **full 0, partial 0, manual 1**.
+Facet coverage: **2/2** facets covered.
+Automation mix: **full 0, partial 0, manual 2**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | heading-text-descriptive-evidence | manual | heading-quality |
+| form-control-label-descriptive-evidence | manual | form-control-label-quality |
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
+| form-control-label-quality | manual | Form field labels should be descriptive and distinguishable | src/checks/manual/form-control-label-quality-manual.js | form-control-label-descriptive-evidence |  |
 | heading-quality | manual | Heading text should be descriptive, not a placeholder | src/checks/manual/heading-quality-manual.js | heading-text-descriptive-evidence |  |
 
 ### 2.4.7
@@ -992,15 +994,17 @@ Automation mix: **full 0, partial 0, manual 1**.
 
 ### 2.4.6
 
-Facet coverage: **1/1** facets covered.
-Automation mix: **full 0, partial 0, manual 1**.
+Facet coverage: **2/2** facets covered.
+Automation mix: **full 0, partial 0, manual 2**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | heading-text-descriptive-evidence | manual | heading-quality |
+| form-control-label-descriptive-evidence | manual | form-control-label-quality |
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
+| form-control-label-quality | manual | Form field labels should be descriptive and distinguishable | src/checks/manual/form-control-label-quality-manual.js | form-control-label-descriptive-evidence |  |
 | heading-quality | manual | Heading text should be descriptive, not a placeholder | src/checks/manual/heading-quality-manual.js | heading-text-descriptive-evidence |  |
 
 ### 2.4.7

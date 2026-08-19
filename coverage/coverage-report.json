@@ -2,12 +2,12 @@
   "rulesDir": "src/checks",
   "facetsFile": "src/coverage/wcag-facets.js",
   "summary": {
-    "totalRules": 128,
+    "totalRules": 129,
     "wcagTagCoverage": {
       "byVersion": {
         "2.0": {
-          "A": 99,
-          "AA": 13,
+          "A": 100,
+          "AA": 14,
           "AAA": 5
         },
         "2.1": {
@@ -22,13 +22,13 @@
         }
       },
       "anyVersion": {
-        "A": 104,
-        "AA": 17,
+        "A": 105,
+        "AA": 18,
         "AAA": 5
       },
       "rawTagCounts": {
         "wcag2a": 89,
-        "wcag2aa": 9,
+        "wcag2aa": 10,
         "wcag21aa": 3,
         "wcag2aaa": 5,
         "wcag21a": 1,
@@ -4429,6 +4429,58 @@
       "coverage": {}
     },
     {
+      "file": "src/checks/manual/form-control-label-quality-manual.js",
+      "ruleId": "form-control-label-quality",
+      "wcagScNormative": [
+        "2.4.6"
+      ],
+      "wcagScAll": [
+        "2.4.6"
+      ],
+      "wcagScInformative": [],
+      "type": "manual",
+      "title": "Form field labels should be descriptive and distinguishable",
+      "tags": [
+        "wcag2aa",
+        "wcag246",
+        "forms",
+        "labels",
+        "quality",
+        "atomic",
+        "manual"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2aa",
+            "version": "2.0",
+            "level": "AA"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A",
+            "AA"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A",
+          "AA"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "2.4.6": [
+            "form-control-label-descriptive-evidence"
+          ]
+        }
+      }
+    },
+    {
       "file": "src/checks/manual/form-control-programmatic-label-quality-manual.js",
       "ruleId": "form-control-programmatic-label-quality",
       "wcagScNormative": [
@@ -6605,11 +6657,11 @@
       {
         "sc": "2.4.6",
         "title": "Headings and Labels",
-        "totalFacets": 1,
-        "coveredFacets": 1,
+        "totalFacets": 2,
+        "coveredFacets": 2,
         "uncoveredFacets": [],
         "automationCounts": {
-          "manual": 1
+          "manual": 2
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -6620,6 +6672,14 @@
             "automation": "manual",
             "coveredBy": [
               "heading-quality"
+            ]
+          },
+          {
+            "id": "form-control-label-descriptive-evidence",
+            "label": "Form field label text describes the field and is not repeated without visible context",
+            "automation": "manual",
+            "coveredBy": [
+              "form-control-label-quality"
             ]
           }
         ]
@@ -7944,11 +8004,11 @@
       {
         "sc": "2.4.6",
         "title": "Headings and Labels",
-        "totalFacets": 1,
-        "coveredFacets": 1,
+        "totalFacets": 2,
+        "coveredFacets": 2,
         "uncoveredFacets": [],
         "automationCounts": {
-          "manual": 1
+          "manual": 2
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -7959,6 +8019,14 @@
             "automation": "manual",
             "coveredBy": [
               "heading-quality"
+            ]
+          },
+          {
+            "id": "form-control-label-descriptive-evidence",
+            "label": "Form field label text describes the field and is not repeated without visible context",
+            "automation": "manual",
+            "coveredBy": [
+              "form-control-label-quality"
             ]
           }
         ]
