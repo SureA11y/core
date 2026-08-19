@@ -10723,9 +10723,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const MAX_DEPTH = 40;
 
   // Collects this container's owned-role entries, pruning role="none"/
-  // "presentation" and required-matching "group"/"rowgroup" wrappers as
-  // transparent (recursing through them), and stopping at the first
-  // non-transparent role boundary otherwise — see header comment. A
+  // "presentation" and "group"/"rowgroup" wrappers as transparent
+  // (recursing through them unconditionally — see header comment), and
+  // stopping at the first non-transparent role boundary otherwise. A
   // roleless descendant is ALSO a non-transparent boundary (an owned
   // entry with role: null, which can never satisfy a required-role set)
   // when it carries a global aria-* attribute or is focusable.
@@ -10734,7 +10734,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // containment tags (li, tr, td, ...), so a bare <li>/<tr>/... is a real
   // listitem/row boundary, not a transparent wrapper the walk should pass
   // through.
-  function collectOwnedRoles(el, requiredSet, out, depth) {
+  function collectOwnedRoles(el, out, depth) {
     if (depth > MAX_DEPTH) return;
     const kids = el.children ? Array.prototype.slice.call(el.children) : [];
     for (const kid of kids) {
@@ -10743,8 +10743,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
       const kidRole = ariaHelpers.getContainmentRole(kid);
       const isPresentational = kidRole === 'presentation' || kidRole === 'none';
-      const isTransparentGroup =
-        (kidRole === 'group' || kidRole === 'rowgroup') && requiredSet.has(kidRole);
+      const isTransparentGroup = kidRole === 'group' || kidRole === 'rowgroup';
 
       if (!kidRole && !isPresentational) {
         const globalAttr = getGlobalAriaAttr(kid);
@@ -10771,7 +10770,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
 
       if (!kidRole || isPresentational || isTransparentGroup) {
-        collectOwnedRoles(kid, requiredSet, out, depth + 1);
+        collectOwnedRoles(kid, out, depth + 1);
         continue;
       }
 
@@ -10804,7 +10803,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const requiredSet = new Set(requiredOwned);
     const owned = [];
-    collectOwnedRoles(el, requiredSet, owned, 0);
+    collectOwnedRoles(el, owned, 0);
 
     for (const entry of owned) {
       if (entry.role && requiredSet.has(entry.role)) continue;
