@@ -16,11 +16,11 @@
  * @expectation
  *   Every accessible-tree-owned descendant of the container (after
  *   pruning role="none"/"presentation" elements and any "group"/
- *   "rowgroup" wrapper whose role is itself one of the required roles —
- *   both are structurally transparent, same as WAI-ARIA's own
- *   accessibility-tree construction) has a role from that same required-
- *   owned set. Nothing else is a structurally valid direct child of a
- *   composite/container role.
+ *   "rowgroup" wrapper — both always transparent for owned-element
+ *   matching, per WAI-ARIA, regardless of whether "group"/"rowgroup" is
+ *   itself in the container's own required-owned-roles set) has a role
+ *   from that same required-owned set. Nothing else is a structurally
+ *   valid direct child of a composite/container role.
  * @implementation-notes
  * - A distinct atomic decision from aria-required-children (see that
  *   rule): "does at least one required child exist" vs "is every owned
@@ -48,6 +48,12 @@
  *   own owned-role entry against the outer container (and, separately,
  *   gets its own applicability pass as a container in the same rule run)
  *   — its descendants are never misattributed to the outer container.
+ *   "group"/"rowgroup" are always transparent instead, for any container
+ *   role, not only the few (menu, menubar, tree) whose own required-owned
+ *   set names "group" as an acceptable leaf role — confirmed by ACT
+ *   bc4a75's own examples, e.g. a `role="list"` (no "group" in its
+ *   required-owned set) still treating a `role="group"` wrapper as
+ *   transparent.
  * - Child-role resolution uses `ariaHelpers.getContainmentRole` (explicit
  *   role, falling back to the native-tag map — li/tr/td/th/tbody/ul/ol/
  *   table/select/input[type=radio]), the same resolution
@@ -170,9 +176,9 @@ function runInPage(ctx) {
   const MAX_DEPTH = 40;
 
   // Collects this container's owned-role entries, pruning role="none"/
-  // "presentation" and required-matching "group"/"rowgroup" wrappers as
-  // transparent (recursing through them), and stopping at the first
-  // non-transparent role boundary otherwise — see header comment. A
+  // "presentation" and "group"/"rowgroup" wrappers as transparent
+  // (recursing through them unconditionally — see header comment), and
+  // stopping at the first non-transparent role boundary otherwise. A
   // roleless descendant is ALSO a non-transparent boundary (an owned
   // entry with role: null, which can never satisfy a required-role set)
   // when it carries a global aria-* attribute or is focusable.
@@ -181,7 +187,7 @@ function runInPage(ctx) {
   // containment tags (li, tr, td, ...), so a bare <li>/<tr>/... is a real
   // listitem/row boundary, not a transparent wrapper the walk should pass
   // through.
-  function collectOwnedRoles(el, requiredSet, out, depth) {
+  function collectOwnedRoles(el, out, depth) {
     if (depth > MAX_DEPTH) return;
     const kids = el.children ? Array.prototype.slice.call(el.children) : [];
     for (const kid of kids) {
@@ -190,8 +196,7 @@ function runInPage(ctx) {
 
       const kidRole = ariaHelpers.getContainmentRole(kid);
       const isPresentational = kidRole === 'presentation' || kidRole === 'none';
-      const isTransparentGroup =
-        (kidRole === 'group' || kidRole === 'rowgroup') && requiredSet.has(kidRole);
+      const isTransparentGroup = kidRole === 'group' || kidRole === 'rowgroup';
 
       if (!kidRole && !isPresentational) {
         const globalAttr = getGlobalAriaAttr(kid);
@@ -218,7 +223,7 @@ function runInPage(ctx) {
       }
 
       if (!kidRole || isPresentational || isTransparentGroup) {
-        collectOwnedRoles(kid, requiredSet, out, depth + 1);
+        collectOwnedRoles(kid, out, depth + 1);
         continue;
       }
 
@@ -251,7 +256,7 @@ function runInPage(ctx) {
 
     const requiredSet = new Set(requiredOwned);
     const owned = [];
-    collectOwnedRoles(el, requiredSet, owned, 0);
+    collectOwnedRoles(el, owned, 0);
 
     for (const entry of owned) {
       if (entry.role && requiredSet.has(entry.role)) continue;
