@@ -796,8 +796,13 @@ function createDomHelpers(opts) {
       if (!isElement(node)) return false;
       const summary = node.closest && node.closest('summary');
       if (summary && summary.contains(node)) return false;
+      // closest() matches the node itself, so a plain <details> element
+      // being asked about its own eligibility would otherwise match its
+      // own closest('details') and get judged against its own open state.
+      // A closed <details> only hides its extra content, not the <details>
+      // element (or its <summary>) that stays on the page as the toggle.
       const details = node.closest && node.closest('details');
-      if (details && !details.hasAttribute('open')) return true;
+      if (details && details !== node && !details.hasAttribute('open')) return true;
     } catch {}
     return false;
   }

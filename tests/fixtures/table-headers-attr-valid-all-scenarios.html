@@ -32,6 +32,14 @@
     </table>
   </div>
 
+  <div class="case" id="case_07">
+    <div class="case-title">07 — PASS: headers references a plain td used as a header (any cell counts, not just th)</div>
+    <table>
+      <tr><td id="thav_h7" role="columnheader">Name</td></tr>
+      <tr><td id="thav_case_07" headers="thav_h7">Grape</td></tr>
+    </table>
+  </div>
+
   <h2>B. Invalid</h2>
 
   <div class="case" id="case_02">
@@ -43,9 +51,9 @@
   </div>
 
   <div class="case" id="case_03">
-    <div class="case-title">03 — FAIL: headers references a td, not a th</div>
+    <div class="case-title">03 — FAIL: headers references a non-cell element (a caption, not a td/th)</div>
     <table>
-      <tr><td id="thav_notth">Not a header</td></tr>
+      <caption id="thav_notth">Not a header</caption>
       <tr><td id="thav_case_03" headers="thav_notth">Cherry</td></tr>
     </table>
   </div>
@@ -71,6 +79,14 @@
     <div class="case-title">06 — NEUTRAL: td with no headers attribute</div>
     <table>
       <tr><td id="thav_case_06">Fig</td></tr>
+    </table>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — NEUTRAL: table has role="presentation", out of scope</div>
+    <table role="presentation">
+      <tr><td id="thav_h8">Name</td></tr>
+      <tr><td id="thav_case_08" headers="thav_h8">Honeydew</td></tr>
     </table>
   </div>
 

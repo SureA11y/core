@@ -6085,7 +6085,7 @@ const CHECK_DEFS = [
   {
     "ruleId": "table-headers-attr-valid",
     "title": "Table cell \"headers\" attribute must reference valid header cells",
-    "description": "Checks that each id in a <td>/<th> headers attribute resolves to a <th> element within the same table (not missing, not a non-th element, not itself).",
+    "description": "Checks that each id in a <td>/<th> headers attribute resolves to a cell (<td> or <th>) within the same table (not missing, not a non-cell element, not itself).",
     "i18n": {
       "titleKey": "tableHeadersAttrValid_title",
       "descriptionKey": "tableHeadersAttrValid_description"
@@ -13980,8 +13980,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
       if (!isElement(node)) return false;
       const summary = node.closest && node.closest('summary');
       if (summary && summary.contains(node)) return false;
+      // closest() matches the node itself, so a plain <details> element
+      // being asked about its own eligibility would otherwise match its
+      // own closest('details') and get judged against its own open state.
+      // A closed <details> only hides its extra content, not the <details>
+      // element (or its <summary>) that stays on the page as the toggle.
       const details = node.closest && node.closest('details');
-      if (details && !details.hasAttribute('open')) return true;
+      if (details && details !== node && !details.hasAttribute('open')) return true;
     } catch {}
     return false;
   }
@@ -25073,7 +25078,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "ruleId": "table-headers-attr-valid",
     "title": "Table cell \"headers\" attribute must reference valid header cells",
-    "description": "Checks that each id in a <td>/<th> headers attribute resolves to a <th> element within the same table (not missing, not a non-th element, not itself).",
+    "description": "Checks that each id in a <td>/<th> headers attribute resolves to a cell (<td> or <th>) within the same table (not missing, not a non-cell element, not itself).",
     "i18n": {
       "titleKey": "tableHeadersAttrValid_title",
       "descriptionKey": "tableHeadersAttrValid_description"
@@ -36845,13 +36850,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // From here: applicable
     applicableCount += 1;
 
-    // alt attribute presence check (empty allowed)
-    let hasAlt;
+    // alt attribute presence check. A literally empty alt ("") is the
+    // HTML decorative marker and always satisfies this check. A present
+    // alt that is non-empty but trims to nothing (a lone space, a tab)
+    // does not get that treatment: per HTML-AAM the img-role conflict-
+    // resolution flip to presentation only triggers on the literal empty
+    // string, so the element keeps its img role while its computed
+    // accessible name is empty -- a real failure, not a decorative image.
+    let rawAlt;
     try {
-      hasAlt = el.getAttribute('alt') !== null;
+      rawAlt = el.getAttribute('alt');
     } catch {
-      hasAlt = false;
+      rawAlt = null;
     }
+    const isWhitespaceOnlyAlt = rawAlt !== null && rawAlt !== '' && trim(rawAlt) === '';
+    const hasAlt = rawAlt !== null && !isWhitespaceOnlyAlt;
     if (hasAlt) continue;
 
     // aria-label / aria-labelledby is also a valid, standards-recognized
@@ -43121,6 +43134,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     })();
     const hasValidTitle = titleRaw !== null && trim(titleRaw).length > 0;
 
+    // SVG-AAM's own accessible-name mechanism: a first-child <title>
+    // element (not the HTML title attribute) is the standard way to name
+    // an inline <svg> -- a role="img" <svg> named only this way still has
+    // a real text alternative.
+    const svgTitleChildText = (() => {
+      try {
+        const tag = (el.localName || el.tagName || '').toLowerCase();
+        if (tag !== 'svg') return '';
+        const first = el.firstElementChild;
+        const firstTag = first ? (first.localName || first.tagName || '').toLowerCase() : '';
+        if (firstTag !== 'title') return '';
+        return trim(first.textContent);
+      } catch {
+        return '';
+      }
+    })();
+    const hasValidTitleSource = hasValidTitle || !!svgTitleChildText;
+
     let nameInfo = null;
 
     // Fast outcomes first (no helper needed)
@@ -43128,19 +43159,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     let hasName = false;
 
     if (!hasAriaLabelAttr && !hasAriaLabelledbyAttr) {
-      if (hasValidTitle) {
+      if (hasValidTitleSource) {
         hasName = true;
       } else {
         reasonCode = 'missingTextAlternative';
       }
     } else if (hasAriaLabelAttr && !hasValidAriaLabel) {
-      if (hasValidTitle) {
+      if (hasValidTitleSource) {
         hasName = true;
       } else {
         reasonCode = 'emptyAriaLabel';
       }
     } else if (hasAriaLabelledbyAttr && !hasValidAriaLabelledbyAttr) {
-      if (hasValidTitle) {
+      if (hasValidTitleSource) {
         hasName = true;
       } else {
         reasonCode = 'emptyAriaLabelledby';
@@ -45524,9 +45555,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const ids = raw.split(/\s+/).filter(Boolean);
     if (!ids.length) continue;
 
+    const table = el.closest ? el.closest('table') : null;
+
+    const tableRole =
+      table && table.getAttribute
+        ? String(table.getAttribute('role') || '')
+            .trim()
+            .toLowerCase()
+        : '';
+    if (tableRole === 'presentation' || tableRole === 'none') continue;
+
     applicableCount += 1;
 
-    const table = el.closest ? el.closest('table') : null;
     const invalid = [];
 
     for (const headerId of ids) {
@@ -45545,8 +45585,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         invalid.push({ id: headerId, reason: 'self-reference' });
         continue;
       }
-      if (!ref.tagName || ref.tagName.toLowerCase() !== 'th') {
-        invalid.push({ id: headerId, reason: 'not-a-th' });
+      const refTag = ref.tagName ? ref.tagName.toLowerCase() : '';
+      if (refTag !== 'th' && refTag !== 'td') {
+        invalid.push({ id: headerId, reason: 'not-a-cell' });
         continue;
       }
       if (table && (!ref.closest || ref.closest('table') !== table)) {
@@ -45563,7 +45604,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This cell’s headers attribute references one or more invalid header cells.',
-        hint: 'Update the headers attribute so every id refers to a <th> element within the same table.',
+        hint: 'Update the headers attribute so every id refers to a cell (<td> or <th>) within the same table.',
         i18n: {
           summaryKey: 'tableHeadersAttrValid_summary_fail',
           hintKey: 'tableHeadersAttrValid_hint_fail',
@@ -53941,8 +53982,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
       if (!isElement(node)) return false;
       const summary = node.closest && node.closest('summary');
       if (summary && summary.contains(node)) return false;
+      // closest() matches the node itself, so a plain <details> element
+      // being asked about its own eligibility would otherwise match its
+      // own closest('details') and get judged against its own open state.
+      // A closed <details> only hides its extra content, not the <details>
+      // element (or its <summary>) that stays on the page as the toggle.
       const details = node.closest && node.closest('details');
-      if (details && !details.hasAttribute('open')) return true;
+      if (details && details !== node && !details.hasAttribute('open')) return true;
     } catch {}
     return false;
   }
@@ -64994,7 +65040,7 @@ const __a11yCoreCrossFrameApi = (function () {
   {
     "ruleId": "table-headers-attr-valid",
     "title": "Table cell \"headers\" attribute must reference valid header cells",
-    "description": "Checks that each id in a <td>/<th> headers attribute resolves to a <th> element within the same table (not missing, not a non-th element, not itself).",
+    "description": "Checks that each id in a <td>/<th> headers attribute resolves to a cell (<td> or <th>) within the same table (not missing, not a non-cell element, not itself).",
     "i18n": {
       "titleKey": "tableHeadersAttrValid_title",
       "descriptionKey": "tableHeadersAttrValid_description"
@@ -76761,13 +76807,21 @@ const __a11yCoreCrossFrameApi = (function () {
     // From here: applicable
     applicableCount += 1;
 
-    // alt attribute presence check (empty allowed)
-    let hasAlt;
+    // alt attribute presence check. A literally empty alt ("") is the
+    // HTML decorative marker and always satisfies this check. A present
+    // alt that is non-empty but trims to nothing (a lone space, a tab)
+    // does not get that treatment: per HTML-AAM the img-role conflict-
+    // resolution flip to presentation only triggers on the literal empty
+    // string, so the element keeps its img role while its computed
+    // accessible name is empty -- a real failure, not a decorative image.
+    let rawAlt;
     try {
-      hasAlt = el.getAttribute('alt') !== null;
+      rawAlt = el.getAttribute('alt');
     } catch {
-      hasAlt = false;
+      rawAlt = null;
     }
+    const isWhitespaceOnlyAlt = rawAlt !== null && rawAlt !== '' && trim(rawAlt) === '';
+    const hasAlt = rawAlt !== null && !isWhitespaceOnlyAlt;
     if (hasAlt) continue;
 
     // aria-label / aria-labelledby is also a valid, standards-recognized
@@ -83037,6 +83091,24 @@ const __a11yCoreCrossFrameApi = (function () {
     })();
     const hasValidTitle = titleRaw !== null && trim(titleRaw).length > 0;
 
+    // SVG-AAM's own accessible-name mechanism: a first-child <title>
+    // element (not the HTML title attribute) is the standard way to name
+    // an inline <svg> -- a role="img" <svg> named only this way still has
+    // a real text alternative.
+    const svgTitleChildText = (() => {
+      try {
+        const tag = (el.localName || el.tagName || '').toLowerCase();
+        if (tag !== 'svg') return '';
+        const first = el.firstElementChild;
+        const firstTag = first ? (first.localName || first.tagName || '').toLowerCase() : '';
+        if (firstTag !== 'title') return '';
+        return trim(first.textContent);
+      } catch {
+        return '';
+      }
+    })();
+    const hasValidTitleSource = hasValidTitle || !!svgTitleChildText;
+
     let nameInfo = null;
 
     // Fast outcomes first (no helper needed)
@@ -83044,19 +83116,19 @@ const __a11yCoreCrossFrameApi = (function () {
     let hasName = false;
 
     if (!hasAriaLabelAttr && !hasAriaLabelledbyAttr) {
-      if (hasValidTitle) {
+      if (hasValidTitleSource) {
         hasName = true;
       } else {
         reasonCode = 'missingTextAlternative';
       }
     } else if (hasAriaLabelAttr && !hasValidAriaLabel) {
-      if (hasValidTitle) {
+      if (hasValidTitleSource) {
         hasName = true;
       } else {
         reasonCode = 'emptyAriaLabel';
       }
     } else if (hasAriaLabelledbyAttr && !hasValidAriaLabelledbyAttr) {
-      if (hasValidTitle) {
+      if (hasValidTitleSource) {
         hasName = true;
       } else {
         reasonCode = 'emptyAriaLabelledby';
@@ -85440,9 +85512,18 @@ const __a11yCoreCrossFrameApi = (function () {
     const ids = raw.split(/\s+/).filter(Boolean);
     if (!ids.length) continue;
 
+    const table = el.closest ? el.closest('table') : null;
+
+    const tableRole =
+      table && table.getAttribute
+        ? String(table.getAttribute('role') || '')
+            .trim()
+            .toLowerCase()
+        : '';
+    if (tableRole === 'presentation' || tableRole === 'none') continue;
+
     applicableCount += 1;
 
-    const table = el.closest ? el.closest('table') : null;
     const invalid = [];
 
     for (const headerId of ids) {
@@ -85461,8 +85542,9 @@ const __a11yCoreCrossFrameApi = (function () {
         invalid.push({ id: headerId, reason: 'self-reference' });
         continue;
       }
-      if (!ref.tagName || ref.tagName.toLowerCase() !== 'th') {
-        invalid.push({ id: headerId, reason: 'not-a-th' });
+      const refTag = ref.tagName ? ref.tagName.toLowerCase() : '';
+      if (refTag !== 'th' && refTag !== 'td') {
+        invalid.push({ id: headerId, reason: 'not-a-cell' });
         continue;
       }
       if (table && (!ref.closest || ref.closest('table') !== table)) {
@@ -85479,7 +85561,7 @@ const __a11yCoreCrossFrameApi = (function () {
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This cell’s headers attribute references one or more invalid header cells.',
-        hint: 'Update the headers attribute so every id refers to a <th> element within the same table.',
+        hint: 'Update the headers attribute so every id refers to a cell (<td> or <th>) within the same table.',
         i18n: {
           summaryKey: 'tableHeadersAttrValid_summary_fail',
           hintKey: 'tableHeadersAttrValid_hint_fail',
@@ -93857,8 +93939,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
       if (!isElement(node)) return false;
       const summary = node.closest && node.closest('summary');
       if (summary && summary.contains(node)) return false;
+      // closest() matches the node itself, so a plain <details> element
+      // being asked about its own eligibility would otherwise match its
+      // own closest('details') and get judged against its own open state.
+      // A closed <details> only hides its extra content, not the <details>
+      // element (or its <summary>) that stays on the page as the toggle.
       const details = node.closest && node.closest('details');
-      if (details && !details.hasAttribute('open')) return true;
+      if (details && details !== node && !details.hasAttribute('open')) return true;
     } catch {}
     return false;
   }
