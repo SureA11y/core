@@ -67,7 +67,7 @@ Uncovered facets: text-alternative-mechanism, functional-nontext-name, decorativ
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
-| area-alt-present | automatic | &amp;lt;area&amp;gt; must have an alt attribute | src/checks/automatic/area-alt-present.js | area-alt-attr-present |  |
+| area-alt-present | automatic | &lt;area&gt; must have an alt attribute | src/checks/automatic/area-alt-present.js | area-alt-attr-present |  |
 | canvas-text-alternative-present | automatic | &lt;canvas&gt; must provide a text alternative | src/checks/automatic/canvas-text-alternative-present.js | canvas-text-alternative-present |  |
 | embed-text-alternative-present | automatic | &lt;embed&gt; must provide a text alternative | src/checks/automatic/embed-text-alternative-present.js | embed-text-alternative-present |  |
 | img-alt-present | automatic | &lt;img&gt; must have an alt attribute | src/checks/automatic/img-alt-present.js | img-alt-attr-present |  |
@@ -75,7 +75,7 @@ Uncovered facets: text-alternative-mechanism, functional-nontext-name, decorativ
 | meter-name-present | automatic | Meters have an accessible name | src/checks/automatic/meter-name-present.js | meter-name-present |  |
 | object-text-alternative-present | automatic | &lt;object&gt; must provide a text alternative | src/checks/automatic/object-text-alternative-present.js | object-text-alternative-present |  |
 | progressbar-name-present | automatic | Progress bars have an accessible name | src/checks/automatic/progressbar-name-present.js | progressbar-name-present |  |
-| role-img-text-alternative-present | automatic | [role="img"] must have an accessible text alternative | src/checks/automatic/role-img-alt-present.js | role-img-text-alternative-present |  |
+| role-img-text-alternative-present | automatic | [role="img"/"graphics-symbol"/"graphics-document"] must have an accessible text alternative | src/checks/automatic/role-img-alt-present.js | role-img-text-alternative-present |  |
 | svg-image-text-alternative-present | automatic | SVG &lt;image&gt; must have a text alternative | src/checks/automatic/svg-image-text-alternative-present.js | svg-image-text-alt-present |  |
 | svg-text-alternative-present | automatic | &lt;svg&gt; must provide a text alternative | src/checks/automatic/svg-text-alternative-present.js | svg-text-alternative-present |  |
 | video-poster-text-alternative-present | automatic | &lt;video&gt; poster must have a text alternative | src/checks/automatic/video-poster-text-alternative-present.js | video-poster-text-alt-present |  |
@@ -83,7 +83,7 @@ Uncovered facets: text-alternative-mechanism, functional-nontext-name, decorativ
 | area-alt-quality | manual | &lt;area&gt; alt text must be appropriate (manual review) | src/checks/manual/area-alt-quality-manual.js | text-alternative-quality |  |
 | canvas-text-alternative-quality | manual | &lt;canvas&gt; text alternative must be appropriate (manual review) | src/checks/manual/canvas-text-alternative-quality-manual.js | text-alternative-quality |  |
 | embed-text-alternative-quality | manual | &lt;embed&gt; text alternative must be appropriate (manual review) | src/checks/manual/embed-text-alternative-quality-manual.js | text-alternative-quality |  |
-| img-alt-decorative | manual | &lt;img&gt; with alt="" must be decorative (manual review) | src/checks/manual/img-alt-decorative-manual.js | text-alternative-quality |  |
+| img-alt-decorative | manual | Excluded &lt;img&gt;/&lt;canvas&gt;/&lt;svg&gt; must be decorative (manual review) | src/checks/manual/img-alt-decorative-manual.js | text-alternative-quality |  |
 | img-alt-quality | manual | &lt;img&gt; alt text must be appropriate (manual review) | src/checks/manual/img-alt-quality-manual.js | text-alternative-quality |  |
 | input-image-alt-decorative | manual | &lt;input type="image"&gt; with alt="" must be appropriate (manual review) | src/checks/manual/input-image-alt-decorative-manual.js | text-alternative-quality |  |
 | input-image-alt-quality | manual | &lt;input type="image"&gt; alt text must be appropriate (manual review) | src/checks/manual/input-image-alt-quality-manual.js | text-alternative-quality |  |
@@ -101,7 +101,7 @@ Automation mix: **full 0, partial 1, manual 0**.
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
-| media-alternative-transcript-evidence | manual | Time-based media: transcript / media alternative evidence | src/checks/manual/media-transcript-present-manual.js | transcript-evidence |  |
+| media-alternative-transcript-evidence | manual | Time-based media: transcript or text alternative evidence | src/checks/manual/media-transcript-present-manual.js | transcript-evidence |  |
 
 ### 1.2.2
 
@@ -217,7 +217,7 @@ Automation mix: **full 0, partial 2, manual 0**.
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | contrast-computable | automatic | Color contrast is computable for rendered text | src/checks/automatic/contrast-computable.js | contrast-computability-143 |  |
-| contrast-minimum | automatic | Text must meet the minimum color contrast ratio | src/checks/automatic/contrast-minimum.js | contrast-minimum-text |  |
+| contrast-minimum | automatic | Text meets minimum color contrast (AA) | src/checks/automatic/contrast-minimum.js | contrast-minimum-text |  |
 
 ### 1.4.4
 
@@ -245,7 +245,7 @@ Automation mix: **full 0, partial 2, manual 0**.
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | contrast-computable | automatic | Color contrast is computable for rendered text | src/checks/automatic/contrast-computable.js | contrast-computability-146 |  |
-| contrast-enhanced | automatic | Text must meet the enhanced color contrast ratio | src/checks/automatic/contrast-enhanced.js | contrast-enhanced-text |  |
+| contrast-enhanced | automatic | Text meets enhanced color contrast (AAA) | src/checks/automatic/contrast-enhanced.js | contrast-enhanced-text |  |
 
 ### 1.4.12
 
@@ -358,8 +358,8 @@ Automation mix: **full 1, partial 1, manual 0**.
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
-| page-title-present | automatic | Page title is present and non-empty | src/checks/automatic/page-title-present.js | page-title-present |  |
-| page-title-patterns | manual | Page title patterns that may indicate low descriptiveness | src/checks/manual/page-title-patterns-manual.js | page-title-patterns |  |
+| page-title-present | automatic | Page has a non-empty title | src/checks/automatic/page-title-present.js | page-title-present |  |
+| page-title-patterns | manual | Page title patterns that may be insufficiently descriptive | src/checks/manual/page-title-patterns-manual.js | page-title-patterns |  |
 
 ### 2.4.3
 
@@ -457,7 +457,7 @@ Automation mix: **full 0, partial 1, manual 0**.
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
-| target-size-minimum | automatic | Pointer targets meet minimum size (AA) | src/checks/automatic/target-size-minimum.js | target-size-minimum-pointer |  |
+| target-size-minimum | automatic | Pointer targets must be at least 24x24px large, or leave sufficient distance to other targets | src/checks/automatic/target-size-minimum.js | target-size-minimum-pointer |  |
 
 ### 3.1.1
 
@@ -605,19 +605,19 @@ Automation mix: **full 40, partial 0, manual 2**.
 | iframe-name-present | automatic | Frames have an accessible name | src/checks/automatic/iframe-name-present.js | iframe-name-present |  |
 | iframe-title-unique | automatic | Frame titles must be unique | src/checks/automatic/iframe-title-unique.js | iframe-title-unique |  |
 | link-name-present | automatic | Links have an accessible name | src/checks/automatic/link-name-present.js | link-name-present |  |
-| listbox-name-present | automatic | Accessible name is present | src/checks/automatic/listbox-name-present.js | listbox-name-present |  |
+| listbox-name-present | automatic | Listboxes have an accessible name | src/checks/automatic/listbox-name-present.js | listbox-name-present |  |
 | menuitem-name-present | automatic | Menu items have an accessible name | src/checks/automatic/menuitem-name-present.js | menuitem-name-present |  |
 | nested-interactive-controls-absent | automatic | Interactive controls must not be nested | src/checks/automatic/nested-interactive-controls-absent.js | nested-interactive-controls-absent |  |
-| option-name-present | automatic | Accessible name is present | src/checks/automatic/option-name-present.js | option-name-present |  |
+| option-name-present | automatic | Options have an accessible name | src/checks/automatic/option-name-present.js | option-name-present |  |
 | presentational-children-focusable-absent | automatic | Roles with presentational children must not contain focusable content | src/checks/automatic/presentational-children-focusable-absent.js | presentational-children-focusable-absent |  |
-| searchbox-name-present | automatic | Accessible name is present | src/checks/automatic/searchbox-name-present.js | searchbox-name-present |  |
+| searchbox-name-present | automatic | Searchboxes have an accessible name | src/checks/automatic/searchbox-name-present.js | searchbox-name-present |  |
 | slider-name-present | automatic | Sliders have an accessible name | src/checks/automatic/slider-name-present.js | slider-name-present |  |
-| spinbutton-name-present | automatic | Accessible name is present | src/checks/automatic/spinbutton-name-present.js | spinbutton-name-present |  |
+| spinbutton-name-present | automatic | Spinbuttons have an accessible name | src/checks/automatic/spinbutton-name-present.js | spinbutton-name-present |  |
 | summary-name-present | automatic | Summary elements have an accessible name | src/checks/automatic/summary-name-present.js | summary-name-present |  |
 | tab-name-present | automatic | Tabs have an accessible name | src/checks/automatic/tab-name-present.js | tab-name-present |  |
-| textbox-name-present | automatic | Accessible name is present | src/checks/automatic/textbox-name-present.js | textbox-name-present |  |
+| textbox-name-present | automatic | Textboxes have an accessible name | src/checks/automatic/textbox-name-present.js | textbox-name-present |  |
 | tooltip-name-present | automatic | Tooltips have an accessible name | src/checks/automatic/tooltip-name-present.js | tooltip-name-present |  |
-| treeitem-name-present | automatic | Accessible name is present | src/checks/automatic/treeitem-name-present.js | treeitem-name-present |  |
+| treeitem-name-present | automatic | Tree items have an accessible name | src/checks/automatic/treeitem-name-present.js | treeitem-name-present |  |
 | aria-checked-state-mismatch | manual | Native checkbox/radio aria-checked should match its actual state | src/checks/manual/aria-checked-state-mismatch-manual.js | aria-checked-state-mismatch |  |
 | form-control-programmatic-label-quality | manual | Form controls should not rely on placeholder or title as the primary label | src/checks/manual/form-control-programmatic-label-quality-manual.js | form-control-name-quality |  |
 
@@ -685,7 +685,7 @@ Uncovered facets: text-alternative-mechanism, functional-nontext-name, decorativ
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
-| area-alt-present | automatic | &amp;lt;area&amp;gt; must have an alt attribute | src/checks/automatic/area-alt-present.js | area-alt-attr-present |  |
+| area-alt-present | automatic | &lt;area&gt; must have an alt attribute | src/checks/automatic/area-alt-present.js | area-alt-attr-present |  |
 | canvas-text-alternative-present | automatic | &lt;canvas&gt; must provide a text alternative | src/checks/automatic/canvas-text-alternative-present.js | canvas-text-alternative-present |  |
 | embed-text-alternative-present | automatic | &lt;embed&gt; must provide a text alternative | src/checks/automatic/embed-text-alternative-present.js | embed-text-alternative-present |  |
 | img-alt-present | automatic | &lt;img&gt; must have an alt attribute | src/checks/automatic/img-alt-present.js | img-alt-attr-present |  |
@@ -693,7 +693,7 @@ Uncovered facets: text-alternative-mechanism, functional-nontext-name, decorativ
 | meter-name-present | automatic | Meters have an accessible name | src/checks/automatic/meter-name-present.js | meter-name-present |  |
 | object-text-alternative-present | automatic | &lt;object&gt; must provide a text alternative | src/checks/automatic/object-text-alternative-present.js | object-text-alternative-present |  |
 | progressbar-name-present | automatic | Progress bars have an accessible name | src/checks/automatic/progressbar-name-present.js | progressbar-name-present |  |
-| role-img-text-alternative-present | automatic | [role="img"] must have an accessible text alternative | src/checks/automatic/role-img-alt-present.js | role-img-text-alternative-present |  |
+| role-img-text-alternative-present | automatic | [role="img"/"graphics-symbol"/"graphics-document"] must have an accessible text alternative | src/checks/automatic/role-img-alt-present.js | role-img-text-alternative-present |  |
 | svg-image-text-alternative-present | automatic | SVG &lt;image&gt; must have a text alternative | src/checks/automatic/svg-image-text-alternative-present.js | svg-image-text-alt-present |  |
 | svg-text-alternative-present | automatic | &lt;svg&gt; must provide a text alternative | src/checks/automatic/svg-text-alternative-present.js | svg-text-alternative-present |  |
 | video-poster-text-alternative-present | automatic | &lt;video&gt; poster must have a text alternative | src/checks/automatic/video-poster-text-alternative-present.js | video-poster-text-alt-present |  |
@@ -701,7 +701,7 @@ Uncovered facets: text-alternative-mechanism, functional-nontext-name, decorativ
 | area-alt-quality | manual | &lt;area&gt; alt text must be appropriate (manual review) | src/checks/manual/area-alt-quality-manual.js | text-alternative-quality |  |
 | canvas-text-alternative-quality | manual | &lt;canvas&gt; text alternative must be appropriate (manual review) | src/checks/manual/canvas-text-alternative-quality-manual.js | text-alternative-quality |  |
 | embed-text-alternative-quality | manual | &lt;embed&gt; text alternative must be appropriate (manual review) | src/checks/manual/embed-text-alternative-quality-manual.js | text-alternative-quality |  |
-| img-alt-decorative | manual | &lt;img&gt; with alt="" must be decorative (manual review) | src/checks/manual/img-alt-decorative-manual.js | text-alternative-quality |  |
+| img-alt-decorative | manual | Excluded &lt;img&gt;/&lt;canvas&gt;/&lt;svg&gt; must be decorative (manual review) | src/checks/manual/img-alt-decorative-manual.js | text-alternative-quality |  |
 | img-alt-quality | manual | &lt;img&gt; alt text must be appropriate (manual review) | src/checks/manual/img-alt-quality-manual.js | text-alternative-quality |  |
 | input-image-alt-decorative | manual | &lt;input type="image"&gt; with alt="" must be appropriate (manual review) | src/checks/manual/input-image-alt-decorative-manual.js | text-alternative-quality |  |
 | input-image-alt-quality | manual | &lt;input type="image"&gt; alt text must be appropriate (manual review) | src/checks/manual/input-image-alt-quality-manual.js | text-alternative-quality |  |
@@ -719,7 +719,7 @@ Automation mix: **full 0, partial 1, manual 0**.
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
-| media-alternative-transcript-evidence | manual | Time-based media: transcript / media alternative evidence | src/checks/manual/media-transcript-present-manual.js | transcript-evidence |  |
+| media-alternative-transcript-evidence | manual | Time-based media: transcript or text alternative evidence | src/checks/manual/media-transcript-present-manual.js | transcript-evidence |  |
 
 ### 1.2.2
 
@@ -835,7 +835,7 @@ Automation mix: **full 0, partial 2, manual 0**.
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | contrast-computable | automatic | Color contrast is computable for rendered text | src/checks/automatic/contrast-computable.js | contrast-computability-143 |  |
-| contrast-minimum | automatic | Text must meet the minimum color contrast ratio | src/checks/automatic/contrast-minimum.js | contrast-minimum-text |  |
+| contrast-minimum | automatic | Text meets minimum color contrast (AA) | src/checks/automatic/contrast-minimum.js | contrast-minimum-text |  |
 
 ### 1.4.4
 
@@ -863,7 +863,7 @@ Automation mix: **full 0, partial 2, manual 0**.
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | contrast-computable | automatic | Color contrast is computable for rendered text | src/checks/automatic/contrast-computable.js | contrast-computability-146 |  |
-| contrast-enhanced | automatic | Text must meet the enhanced color contrast ratio | src/checks/automatic/contrast-enhanced.js | contrast-enhanced-text |  |
+| contrast-enhanced | automatic | Text meets enhanced color contrast (AAA) | src/checks/automatic/contrast-enhanced.js | contrast-enhanced-text |  |
 
 ### 1.4.12
 
@@ -976,8 +976,8 @@ Automation mix: **full 1, partial 1, manual 0**.
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
-| page-title-present | automatic | Page title is present and non-empty | src/checks/automatic/page-title-present.js | page-title-present |  |
-| page-title-patterns | manual | Page title patterns that may indicate low descriptiveness | src/checks/manual/page-title-patterns-manual.js | page-title-patterns |  |
+| page-title-present | automatic | Page has a non-empty title | src/checks/automatic/page-title-present.js | page-title-present |  |
+| page-title-patterns | manual | Page title patterns that may be insufficiently descriptive | src/checks/manual/page-title-patterns-manual.js | page-title-patterns |  |
 
 ### 2.4.3
 
@@ -1075,7 +1075,7 @@ Automation mix: **full 0, partial 1, manual 0**.
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
-| target-size-minimum | automatic | Pointer targets meet minimum size (AA) | src/checks/automatic/target-size-minimum.js | target-size-minimum-pointer |  |
+| target-size-minimum | automatic | Pointer targets must be at least 24x24px large, or leave sufficient distance to other targets | src/checks/automatic/target-size-minimum.js | target-size-minimum-pointer |  |
 
 ### 3.1.1
 
@@ -1223,19 +1223,19 @@ Automation mix: **full 40, partial 0, manual 2**.
 | iframe-name-present | automatic | Frames have an accessible name | src/checks/automatic/iframe-name-present.js | iframe-name-present |  |
 | iframe-title-unique | automatic | Frame titles must be unique | src/checks/automatic/iframe-title-unique.js | iframe-title-unique |  |
 | link-name-present | automatic | Links have an accessible name | src/checks/automatic/link-name-present.js | link-name-present |  |
-| listbox-name-present | automatic | Accessible name is present | src/checks/automatic/listbox-name-present.js | listbox-name-present |  |
+| listbox-name-present | automatic | Listboxes have an accessible name | src/checks/automatic/listbox-name-present.js | listbox-name-present |  |
 | menuitem-name-present | automatic | Menu items have an accessible name | src/checks/automatic/menuitem-name-present.js | menuitem-name-present |  |
 | nested-interactive-controls-absent | automatic | Interactive controls must not be nested | src/checks/automatic/nested-interactive-controls-absent.js | nested-interactive-controls-absent |  |
-| option-name-present | automatic | Accessible name is present | src/checks/automatic/option-name-present.js | option-name-present |  |
+| option-name-present | automatic | Options have an accessible name | src/checks/automatic/option-name-present.js | option-name-present |  |
 | presentational-children-focusable-absent | automatic | Roles with presentational children must not contain focusable content | src/checks/automatic/presentational-children-focusable-absent.js | presentational-children-focusable-absent |  |
-| searchbox-name-present | automatic | Accessible name is present | src/checks/automatic/searchbox-name-present.js | searchbox-name-present |  |
+| searchbox-name-present | automatic | Searchboxes have an accessible name | src/checks/automatic/searchbox-name-present.js | searchbox-name-present |  |
 | slider-name-present | automatic | Sliders have an accessible name | src/checks/automatic/slider-name-present.js | slider-name-present |  |
-| spinbutton-name-present | automatic | Accessible name is present | src/checks/automatic/spinbutton-name-present.js | spinbutton-name-present |  |
+| spinbutton-name-present | automatic | Spinbuttons have an accessible name | src/checks/automatic/spinbutton-name-present.js | spinbutton-name-present |  |
 | summary-name-present | automatic | Summary elements have an accessible name | src/checks/automatic/summary-name-present.js | summary-name-present |  |
 | tab-name-present | automatic | Tabs have an accessible name | src/checks/automatic/tab-name-present.js | tab-name-present |  |
-| textbox-name-present | automatic | Accessible name is present | src/checks/automatic/textbox-name-present.js | textbox-name-present |  |
+| textbox-name-present | automatic | Textboxes have an accessible name | src/checks/automatic/textbox-name-present.js | textbox-name-present |  |
 | tooltip-name-present | automatic | Tooltips have an accessible name | src/checks/automatic/tooltip-name-present.js | tooltip-name-present |  |
-| treeitem-name-present | automatic | Accessible name is present | src/checks/automatic/treeitem-name-present.js | treeitem-name-present |  |
+| treeitem-name-present | automatic | Tree items have an accessible name | src/checks/automatic/treeitem-name-present.js | treeitem-name-present |  |
 | aria-checked-state-mismatch | manual | Native checkbox/radio aria-checked should match its actual state | src/checks/manual/aria-checked-state-mismatch-manual.js | aria-checked-state-mismatch |  |
 | form-control-programmatic-label-quality | manual | Form controls should not rely on placeholder or title as the primary label | src/checks/manual/form-control-programmatic-label-quality-manual.js | form-control-name-quality |  |
 

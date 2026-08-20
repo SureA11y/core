@@ -25,17 +25,33 @@ A composite's `data.details.contributors` array (see [`OUTPUT_SCHEMA.md`](./OUTP
 
 ## Targeting a conformance level (A / AA / AAA)
 
-Pass `runOnly.tags` (or `engineOptions.tags.include`) with one of `wcag2a`, `wcag2aa`, `wcag2aaa`:
+Pass `runOnly.tags` (or `engineOptions.tags.include`) with the level tags you want:
 
 ```js
-runDomRulesInPage(url, null, {}, { tags: ['wcag2aa'] });
+// WCAG 2.0 A and AA. Both tags are required: they are not cumulative.
+runDomRulesInPage(url, null, {}, { tags: ['wcag2a', 'wcag2aa'] });
 ```
 
-This does two things at once:
-- **Filters atomic rules** to ones tagged at or under that level (a `wcag2aa`-tagged rule also carries `wcag2a`, since AA is cumulative on top of A — WCAG conformance is always defined this way).
-- **Suppresses composites above the target level** — e.g. requesting `wcag2aa` will not return a `rulesResults` entry for an AAA-only SC's composite, even if some AAA-level atomic rules happen to be tagged loosely. This is `inferTargetLevelFromRunOnly`/`isAllowedByTargetLevel` in the runner — see `src/core/dom-runner.js` if you need the exact precedence logic.
+**Level tags do not nest, and this is the easiest thing to get wrong here.** A rule
+carries one level tag per Success Criterion it maps to, and nothing more: a rule
+mapped only to an AA criterion is tagged `wcag2aa` and *not* `wcag2a`. Asking for
+`{ tags: ['wcag2aa'] }` on its own therefore runs the 10 rules mapped to a 2.0 AA
+criterion, not the ~100 that make up an A + AA target. List every level you mean.
 
-Omit `tags` entirely (the default) and every rule at every level runs, with no composite suppression.
+The same applies across WCAG versions — a criterion introduced in 2.1 or 2.2 carries
+only its own origin tag — so a full conformance target is a union of tag sets. See
+[`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#filtering-by-wcag-version-21-vs-22) for the
+ready-made sets per version, including the one criterion WCAG 2.2 removed rather than
+added.
+
+Composites, unlike atomic rules, *are* filtered cumulatively. The runner reads the
+highest level named in `tags` and drops every composite above it, so requesting
+`['wcag2a', 'wcag2aa']` returns no `rulesResults` entry for an AAA-only SC. That is
+`inferTargetLevelFromRunOnly`/`isAllowedByTargetLevel` in `src/core/dom-runner.js` if
+you need the exact precedence.
+
+Omit `tags` entirely (the default) and every rule at every level runs, with no composite
+suppression.
 
 ## What this engine cannot tell you
 

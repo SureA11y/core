@@ -32,4 +32,4 @@ require('fs').writeFileSync('report.html', html);
 
 ## Scope
 
-This is a single-scan report — one point-in-time snapshot, not a dashboard tracking results across many scans over time. Multi-run history/trend tracking is a separate, larger concern (see the project roadmap's "Enterprise/compliance features" — historical trend tracking across scans) and isn't part of this tool.
+This is a single-scan report — one point-in-time snapshot, not a dashboard tracking results across many scans over time. Tracking results across many runs is a separate, larger concern and isn't part of this tool: keep the JSON from each scan and diff it yourself, or feed SARIF to a dashboard that already does history ([`SARIF.md`](./SARIF.md)).
