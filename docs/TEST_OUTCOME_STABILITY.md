@@ -59,9 +59,9 @@ Avoid asserting on full `outerHTML` or formatting-dependent strings unless absol
 
 ---
 
-## ✅ Test Change Gate (Agent-Enforced Checklist)
+## ✅ Test change checklist
 
-Before modifying any test, the agent or contributor must complete and validate:
+Before modifying any test, work through the following:
 
 ### 1. Rule Classification
 Each affected rule is categorized as:
@@ -136,9 +136,9 @@ Maintain:
 
 Only the following **normative automatic rules** are approved as anchors for engine-mechanics tests (unless explicitly updated):
 
-- `form-control-accessible-name`
-- `img-alt-attr-present`
-- `svg-role-img-name`
+- `form-control-programmatic-label-present`
+- `img-alt-present`
+- `svg-text-alternative-present`
 
 ---
 

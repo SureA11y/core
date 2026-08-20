@@ -48,7 +48,7 @@
       ],
       "wcagScInformative": [],
       "type": "automatic",
-      "title": "&lt;area&gt; must have an alt attribute",
+      "title": "<area> must have an alt attribute",
       "tags": [
         "wcag2a",
         "wcag111",
@@ -1268,7 +1268,7 @@
       ],
       "wcagScInformative": [],
       "type": "automatic",
-      "title": "Text must meet the enhanced color contrast ratio",
+      "title": "Text meets enhanced color contrast (AAA)",
       "tags": [
         "wcag2aaa",
         "wcag146",
@@ -1323,7 +1323,7 @@
       ],
       "wcagScInformative": [],
       "type": "automatic",
-      "title": "Text must meet the minimum color contrast ratio",
+      "title": "Text meets minimum color contrast (AA)",
       "tags": [
         "wcag2aa",
         "wcag143",
@@ -2423,7 +2423,7 @@
       ],
       "wcagScInformative": [],
       "type": "automatic",
-      "title": "Accessible name is present",
+      "title": "Listboxes have an accessible name",
       "tags": [
         "wcag2a",
         "wcag412",
@@ -2874,7 +2874,7 @@
       ],
       "wcagScInformative": [],
       "type": "automatic",
-      "title": "Accessible name is present",
+      "title": "Options have an accessible name",
       "tags": [
         "wcag2a",
         "wcag412",
@@ -2924,7 +2924,7 @@
       ],
       "wcagScInformative": [],
       "type": "automatic",
-      "title": "Page title is present and non-empty",
+      "title": "Page has a non-empty title",
       "tags": [
         "wcag2a",
         "wcag242",
@@ -3072,7 +3072,7 @@
       ],
       "wcagScInformative": [],
       "type": "automatic",
-      "title": "[role=\"img\"] must have an accessible text alternative",
+      "title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] must have an accessible text alternative",
       "tags": [
         "wcag2a",
         "wcag111",
@@ -3122,7 +3122,7 @@
       ],
       "wcagScInformative": [],
       "type": "automatic",
-      "title": "Accessible name is present",
+      "title": "Searchboxes have an accessible name",
       "tags": [
         "wcag2a",
         "wcag412",
@@ -3271,7 +3271,7 @@
       ],
       "wcagScInformative": [],
       "type": "automatic",
-      "title": "Accessible name is present",
+      "title": "Spinbuttons have an accessible name",
       "tags": [
         "wcag2a",
         "wcag412",
@@ -3618,7 +3618,7 @@
       ],
       "wcagScInformative": [],
       "type": "automatic",
-      "title": "Pointer targets meet minimum size (AA)",
+      "title": "Pointer targets must be at least 24x24px large, or leave sufficient distance to other targets",
       "tags": [
         "wcag22aa",
         "wcag258",
@@ -3720,7 +3720,7 @@
       ],
       "wcagScInformative": [],
       "type": "automatic",
-      "title": "Accessible name is present",
+      "title": "Textboxes have an accessible name",
       "tags": [
         "wcag2a",
         "wcag412",
@@ -3819,7 +3819,7 @@
       ],
       "wcagScInformative": [],
       "type": "automatic",
-      "title": "Accessible name is present",
+      "title": "Tree items have an accessible name",
       "tags": [
         "wcag2a",
         "wcag412",
@@ -4742,7 +4742,7 @@
       ],
       "wcagScInformative": [],
       "type": "manual",
-      "title": "<img> with alt=\"\" must be decorative (manual review)",
+      "title": "Excluded <img>/<canvas>/<svg> must be decorative (manual review)",
       "tags": [
         "wcag2a",
         "wcag111",
@@ -5203,7 +5203,7 @@
       ],
       "wcagScInformative": [],
       "type": "manual",
-      "title": "Time-based media: transcript / media alternative evidence",
+      "title": "Time-based media: transcript or text alternative evidence",
       "tags": [
         "wcag2a",
         "wcag121",
@@ -5492,7 +5492,7 @@
       ],
       "wcagScInformative": [],
       "type": "manual",
-      "title": "Page title patterns that may indicate low descriptiveness",
+      "title": "Page title patterns that may be insufficiently descriptive",
       "tags": [
         "wcag2a",
         "wcag242",
