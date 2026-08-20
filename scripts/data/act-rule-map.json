@@ -40,6 +40,7 @@
   { "actId": "9e45ec", "actName": "Word spacing in style attributes is not !important", "ourRuleIds": ["avoid-inline-spacing"], "matchType": "exact" },
   { "actId": "c487ae", "actName": "Link has non-empty accessible name", "ourRuleIds": ["link-name-present"], "matchType": "exact" },
   { "actId": "aizyf1", "actName": "Link is descriptive", "ourRuleIds": ["link-name-quality"], "matchType": "exact" },
+  { "actId": "5effbb", "actName": "Link in context is descriptive", "ourRuleIds": ["link-name-quality"], "matchType": "partial" },
   { "actId": "fd3a94", "actName": "Links with identical accessible names and same context serve equivalent purpose", "ourRuleIds": ["identical-links-same-purpose"], "matchType": "exact" },
   { "actId": "b20e66", "actName": "Links with identical accessible names have equivalent purpose", "ourRuleIds": ["identical-links-same-purpose"], "matchType": "exact" },
   { "actId": "m6b1q3", "actName": "Menuitem has non-empty accessible name", "ourRuleIds": ["menuitem-name-present"], "matchType": "exact" },
