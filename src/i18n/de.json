@@ -660,7 +660,9 @@
   "headingQuality_summary_cantTell_url": "Der zugängliche Name dieser Überschrift („{{name}}“) ist eine URL und keine Beschreibung des eingeleiteten Inhalts.",
   "headingQuality_hint_cantTell": "Formulieren Sie die Überschrift so um, dass sie Thema oder Zweck des folgenden Inhalts benennt.",
   "linkNameQuality_title": "Der Linktext sollte aussagekräftig sein, nicht generisch",
-  "linkNameQuality_description": "Markiert Links, deren vollständiger zugänglicher Name eine bekannte, wenig aussagekräftige Formulierung ist (z. B. „hier klicken“, „mehr erfahren“, „mehr“), zur manuellen Überprüfung, ob der Zweck ohne zusätzlichen Kontext klar ist.",
+  "linkNameQuality_description": "Markiert Links, deren vollständiger zugänglicher Name eine bekannte, wenig aussagekräftige Formulierung ist (z. B. „hier klicken“, „mehr erfahren“, „mehr“) oder ein reiner Dateiformat-Name (z. B. „HTML“, „PDF“) ohne umgebenden Kontext, der das Ziel benennt, zur manuellen Überprüfung, ob der Zweck klar ist.",
   "linkNameQuality_summary_cantTell": "Der zugängliche Name dieses Links („{{name}}“) ist eine generische, wenig aussagekräftige Formulierung.",
-  "linkNameQuality_hint_cantTell": "Lassen Sie den Linktext selbst sein Ziel/seinen Zweck beschreiben (z. B. „Preisliste 2026 herunterladen“ statt „Herunterladen“), oder bestätigen Sie, dass der umgebende Kontext den Zweck bereits klar macht."
+  "linkNameQuality_hint_cantTell": "Lassen Sie den Linktext selbst sein Ziel/seinen Zweck beschreiben (z. B. „Preisliste 2026 herunterladen“ statt „Herunterladen“), oder bestätigen Sie, dass der umgebende Kontext den Zweck bereits klar macht.",
+  "linkNameQuality_summary_cantTell_formatName": "Der zugängliche Name dieses Links („{{name}}“) benennt ein Dateiformat/-typ, aber nicht das zugehörige Dokument.",
+  "linkNameQuality_hint_cantTell_formatName": "Nennen Sie das Dokument im Linktext oder in nahegelegenem Text/einer zugehörigen Überschrift (z. B. „Jahresbericht herunterladen (HTML)“ statt nur „HTML“)."
 }

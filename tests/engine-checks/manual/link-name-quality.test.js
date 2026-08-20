@@ -61,6 +61,74 @@ test(`${RULE_ID}: i18n default is English`, () => {
   assert.strictEqual(rule.title, 'Link text should be descriptive, not generic');
 });
 
+test(`${RULE_ID}: cantTell when a bare format name has no adjacent context`, () => {
+  const html = `<!doctype html><html><body>
+    <ul>
+      <li><a href="/book.html">HTML</a></li>
+      <li><a href="/book.epub">EPUB</a></li>
+    </ul>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
+  assert.equal(rule.occurrences[0].data.details.reasonCode, 'AMBIGUOUS_FORMAT_NAME');
+});
+
+test(`${RULE_ID}: not flagged when an outer list item names the subject of a nested format-name list`, () => {
+  const html = `<!doctype html><html><body>
+    <ul>
+      <li>
+        Ulysses
+        <ul>
+          <li><a href="/book.html">HTML</a></li>
+          <li><a href="/book.epub">EPUB</a></li>
+        </ul>
+      </li>
+    </ul>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: not flagged when a preceding table header names the row subject`, () => {
+  const html = `<!doctype html><html><body>
+    <table>
+      <tr><th colspan="2">Ulysses</th></tr>
+      <tr><td><a href="/book.html">HTML</a></td><td><a href="/book.epub">EPUB</a></td></tr>
+    </table>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: a table header present in the link's own row does not excuse a generic-phrase link elsewhere in that row`, () => {
+  const html = `<!doctype html><html><body>
+    <table>
+      <tr><th colspan="3">Books</th></tr>
+      <tr><td>Ulysses</td><td><a href="/x">Download</a></td><td>1.61MB</td></tr>
+    </table>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.equal(rule.occurrences[0].data.details.reasonCode, 'GENERIC_LINK_TEXT');
+});
+
+test(`${RULE_ID}: not flagged when the enclosing paragraph names the subject before a generic phrase`, () => {
+  const html = `<!doctype html><html><body>
+    <p>Download the 2026 pricing guide in <a href="/x">HTML</a></p>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: not flagged when aria-describedby resolves to real text`, () => {
+  const html = `<!doctype html><html><body>
+    <h2 id="rule">Button has accessible name</h2>
+    <a href="/x" aria-describedby="rule">More</a>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
 test(`${RULE_ID}: fixture coverage (tests/fixtures/link-name-quality-all-scenarios.html)`, () => {
   const fixturePath = path.join(
     __dirname,
