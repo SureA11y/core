@@ -36,7 +36,17 @@ A running log of engine design decisions worth re-examining — cases where an e
 
 **Decision (2026-08-19):** replaced the exact-equality check with a real tolerance window (±5 degrees) around the normalized position, fixing both the floating-point case and the deliberately-inexact one — the "not a jsdom limitation" 2 of the original 3 mismatches. The third, `matrix3d()`, genuinely is a documented, deliberate scope limit (this rule doesn't decompose transform matrices into an equivalent angle) and stays as-is — that reasoning was already correct, just miscategorized as "jsdom" alongside the two that weren't.
 
-**Status:** resolved 2026-08-19 — `b33eff` drops from 3 to 1 mismatch (the accepted `matrix3d()` case).
+**Status:** resolved 2026-08-19 — `b33eff` drops from 3 to 1 mismatch (the `matrix3d()` case, accepted at the time; later closed too, see below).
+
+### `css-orientation-lock` deferred `matrix()`/`matrix3d()`/`rotate3d()` entirely, though the remaining case is an unambiguous pure rotation — fixed
+
+**Decision as it stood:** the entry above accepted `matrix3d()` as a genuine, deliberate scope limit: decomposing a general 3D transform matrix into an equivalent rotation angle was filed alongside `table-th-has-data-cells`'s narrower positional-header algorithm as "higher-complexity/lower-value" work.
+
+**Why it was questioned:** the one live mismatch this produced, ACT's own `transform: matrix3d(0, -1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)`, isn't a general 3D matrix at all — its 3rd/4th columns match the identity (no translation, no perspective, no rotation around another axis) and its top-left 2x2 block is a unit-length, orthogonal rotation. That combination has exactly one equivalent angle, computable with `atan2`, not a decomposition that could be ambiguous or require a guess.
+
+**Decision (2026-08-19):** `rotateDegreesFromTransform` now also parses `rotate3d(x, y, z, angle)` directly (trivial when x/y are ~0 and z is ~±1) and `matrix()`/`matrix3d()` via a 2x2 rotation check (`decomposeMatrix2dRotation`) and, for `matrix3d`, an identity check on the other two columns first (`decomposeMatrix3dZRotation`). Anything that isn't a pure Z rotation — scale, skew, translation, perspective, a rotation combined with another axis — contributes 0 degrees, same as an unrecognized value; the rule still never guesses at an angle a general transform doesn't uniquely have.
+
+**Status:** resolved 2026-08-19 — `b33eff` runs clean (0/10).
 
 ### `iframe-focusable-content` never resolved a `srcdoc` iframe's content, and never exempted tiny "tracking pixel" iframes — both fixed
 
