@@ -139,6 +139,46 @@ test('isAccTreeEligible: visibility:visible on a descendant re-renders it under 
   assert.equal(r.eligible, true);
 });
 
+test('isAccTreeEligible: content-visibility:hidden on an ancestor blocks the whole subtree', () => {
+  const { helpers, document } = helpersFor(
+    '<div id="wrap" style="content-visibility:hidden"><span id="s">x</span></div>'
+  );
+  const r = helpers.isAccTreeEligible(byId(document, 's'));
+  assert.equal(r.eligible, false);
+  assert.deepEqual(r.reasons, ['contentVisibilityHidden']);
+});
+
+test('isAccTreeEligible: content-visibility:hidden on the element ITSELF does not block it (it skips the contents, not the element carrying it)', () => {
+  const { helpers, document } = helpersFor(
+    '<button id="b" style="content-visibility:hidden">Save</button>'
+  );
+  const r = helpers.isAccTreeEligible(byId(document, 'b'));
+  assert.equal(r.eligible, true);
+});
+
+test('isAccTreeEligible: content-visibility:auto does not block -- it defers rendering off-screen, it does not hide', () => {
+  const { helpers, document } = helpersFor(
+    '<div style="content-visibility:auto"><span id="s">x</span></div>'
+  );
+  const r = helpers.isAccTreeEligible(byId(document, 's'));
+  assert.equal(r.eligible, true);
+});
+
+test('isAccTreeEligible: the self exemption for content-visibility:hidden does not leak into the shared ancestor cache, in either call order', () => {
+  // The blocker cache is keyed by ancestor and shared by every node that
+  // walks through it, so it has to keep meaning "this element hides its
+  // descendants" whichever node asked first.
+  const markup = '<div id="wrap" style="content-visibility:hidden"><span id="s">x</span></div>';
+
+  const a = helpersFor(markup);
+  assert.equal(a.helpers.isAccTreeEligible(byId(a.document, 'wrap')).eligible, true);
+  assert.equal(a.helpers.isAccTreeEligible(byId(a.document, 's')).eligible, false);
+
+  const b = helpersFor(markup);
+  assert.equal(b.helpers.isAccTreeEligible(byId(b.document, 's')).eligible, false);
+  assert.equal(b.helpers.isAccTreeEligible(byId(b.document, 'wrap')).eligible, true);
+});
+
 test('isAccTreeEligible: aria-hidden="true" blocks by default', () => {
   const { helpers, document } = helpersFor('<div id="d" aria-hidden="true">x</div>');
   const r = helpers.isAccTreeEligible(byId(document, 'd'));
@@ -536,6 +576,15 @@ test('queryAllSmart: [inert] combined with a display:none ancestor is filtered o
   const { helpers } = helpersFor('<div inert style="display:none"><button id="b">x</button></div>');
   const found = helpers.queryAllSmart('button').map((el) => el.id);
   assert.deepEqual(found, []);
+});
+
+test('queryAllSmart: content inside a content-visibility:hidden ancestor is filtered out, while the element carrying the declaration stays', () => {
+  const { helpers } = helpersFor(
+    '<div style="content-visibility:hidden"><button id="inside">x</button></div>' +
+      '<button id="carrier" style="content-visibility:hidden">Save</button>'
+  );
+  const found = helpers.queryAllSmart('button').map((el) => el.id);
+  assert.deepEqual(found, ['carrier']);
 });
 
 // ===== reportOccurrence =====
