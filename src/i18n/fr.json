@@ -660,7 +660,9 @@
   "headingQuality_summary_cantTell_url": "Le nom accessible de ce titre (« {{name}} ») est une URL, pas une description du contenu qu’il introduit.",
   "headingQuality_hint_cantTell": "Reformulez le titre pour qu’il nomme le sujet ou l’objectif du contenu qui suit.",
   "linkNameQuality_title": "Le texte des liens devrait être descriptif, pas générique",
-  "linkNameQuality_description": "Signale les liens dont le nom accessible complet est une formule connue comme non descriptive (ex. « cliquez ici », « en savoir plus », « plus »), pour une revue manuelle visant à déterminer si l’objet du lien est clair sans contexte supplémentaire.",
+  "linkNameQuality_description": "Signale les liens dont le nom accessible complet est une formule connue comme non descriptive (ex. « cliquez ici », « en savoir plus », « plus ») ou un simple nom de format de fichier (ex. « HTML », « PDF ») sans contexte proche indiquant le document concerné, pour une revue manuelle visant à déterminer si l’objet du lien est clair.",
   "linkNameQuality_summary_cantTell": "Le nom accessible de ce lien (« {{name}} ») est une formule générique et non descriptive.",
-  "linkNameQuality_hint_cantTell": "Faites en sorte que le texte du lien lui-même décrive sa destination/son objet (ex. « Télécharger le guide tarifaire 2026 » plutôt que « Télécharger »), ou confirmez que le contexte environnant rend déjà l’objet clair."
+  "linkNameQuality_hint_cantTell": "Faites en sorte que le texte du lien lui-même décrive sa destination/son objet (ex. « Télécharger le guide tarifaire 2026 » plutôt que « Télécharger »), ou confirmez que le contexte environnant rend déjà l’objet clair.",
+  "linkNameQuality_summary_cantTell_formatName": "Le nom accessible de ce lien (« {{name}} ») indique un format/type de fichier, mais pas le document auquel il appartient.",
+  "linkNameQuality_hint_cantTell_formatName": "Nommez le document dans le texte du lien ou dans le texte/titre proche auquel le lien est associé (ex. « Télécharger le rapport annuel (HTML) » plutôt qu’un simple « HTML »)."
 }

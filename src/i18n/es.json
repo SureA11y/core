@@ -660,7 +660,9 @@
   "headingQuality_summary_cantTell_url": "El nombre accesible de este encabezado («{{name}}») es una URL, no una descripción del contenido que introduce.",
   "headingQuality_hint_cantTell": "Reescribir el encabezado para que nombre el tema o el propósito del contenido que le sigue.",
   "linkNameQuality_title": "El texto del enlace debe ser descriptivo, no genérico",
-  "linkNameQuality_description": "Señala enlaces cuyo nombre accesible completo es una frase no descriptiva conocida (por ejemplo, \"haz clic aquí\", \"leer más\", \"más\"), para su revisión manual sobre si el propósito queda claro sin contexto adicional.",
+  "linkNameQuality_description": "Señala enlaces cuyo nombre accesible completo es una frase no descriptiva conocida (por ejemplo, \"haz clic aquí\", \"leer más\", \"más\") o un nombre de formato de archivo aislado (por ejemplo, \"HTML\", \"PDF\") sin contexto cercano que indique a qué documento pertenece, para su revisión manual sobre si el propósito es claro.",
   "linkNameQuality_summary_cantTell": "El nombre accesible de este enlace (\"{{name}}\") es una frase genérica y no descriptiva.",
-  "linkNameQuality_hint_cantTell": "Hacer que el propio texto del enlace describa su destino/propósito (por ejemplo, \"Descargar la guía de precios 2026\" en lugar de \"Descargar\"), o confirmar que el contexto circundante ya deja claro el propósito."
+  "linkNameQuality_hint_cantTell": "Hacer que el propio texto del enlace describa su destino/propósito (por ejemplo, \"Descargar la guía de precios 2026\" en lugar de \"Descargar\"), o confirmar que el contexto circundante ya deja claro el propósito.",
+  "linkNameQuality_summary_cantTell_formatName": "El nombre accesible de este enlace (\"{{name}}\") indica un formato/tipo de archivo, pero no el documento al que pertenece.",
+  "linkNameQuality_hint_cantTell_formatName": "Indique el documento en el texto del enlace o en el texto/encabezado cercano asociado al enlace (por ejemplo, \"Descargar el informe anual (HTML)\" en lugar de un simple \"HTML\")."
 }
