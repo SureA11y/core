@@ -52,7 +52,16 @@ function runInPage(ctx) { /* see Runtime Contract */ }
 module.exports = { id, meta, runInPage };
 ```
 
-No other exports.
+One optional fourth export: `applicability(ctx)`, a predicate the engine calls before
+`runInPage` to decide whether the rule is in scope for this run at all. Fourteen rules
+use it today (see §11.2). Export it alongside the other three when you need it:
+
+```js
+module.exports = { id, meta, runInPage, applicability };
+```
+
+Nothing else. `npm run validate:rules` enforces exactly this set, and rejects a fifth
+export.
 
 ---
 
@@ -78,7 +87,7 @@ Examples observed:
 
 ## 4) Meta Contract (all keys used by current rules)
 
-Every rule defines a `meta` object. In the rule set you uploaded, the union of meta keys is:
+Every rule defines a `meta` object. Across the shipped ruleset, the union of meta keys is:
 
 ### 4.1 Required top-level keys
 
@@ -267,15 +276,19 @@ const nodes = helpers.queryAllSmart
   : helpers.queryAll('img');
 ```
 
-Shadow traversal is opt-in via engine option:
+Shadow traversal is on by default. It is the caller who opts out:
 ```js
-engineOptions: { includeShadowDom: true }
+engineOptions: { includeShadowDom: false }   // light DOM only
 ```
+So write the rule assuming open shadow roots are in scope; `queryAllSmart` honours the
+caller's choice for you. Closed roots are unreachable either way.
 
 ### 6.2 Reporting note for Shadow DOM
 
-Selectors do not pierce shadow boundaries, so a `selector` may not uniquely locate nodes in Shadow DOM.
-Therefore: **always include `html` in occurrences**.
+Selectors do not pierce shadow boundaries, so a `selector` may not uniquely locate a node
+inside a shadow root — which is why `html` matters as the "which element" signal there.
+You get both for free by reporting the element through `helpers.reportOccurrence` (§4.3);
+there is nothing extra to do for shadow DOM specifically.
 
 ---
 
@@ -289,7 +302,8 @@ data: {
 }
 ```
 
-This is consistent across your uploaded rule family.
+Pass the `eligInfo` you already computed for the element; the fallback object above is
+for the case where a rule has none to give.
 
 ---
 
@@ -318,34 +332,43 @@ Manual:
 
 ---
 
-## 9) Occurrence object shape (repo reality)
+## 9) Occurrence object shape
 
-Typical pattern:
+Report the element and let the engine finish the object (§4.3):
 
 ```js
-occurrences.push({
-  selector,
-  html,
-  summary: '…',
-  hint: '…',
-  i18n: { summaryKey: '…', hintKey: '…', params: { element: 'img' } },
-  data: { visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] } }
-});
+occurrences.push(
+  helpers.reportOccurrence(el, {
+    summary: '…',
+    hint: '…',
+    i18n: { summaryKey: '…', hintKey: '…', params: { element: 'img' } },
+    data: { visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] } }
+  })
+);
 ```
 
-Observed properties:
-- `selector` (or sometimes `selectorStr`)
-- `html`
+What a rule supplies:
 - `summary`
 - `hint`
 - `i18n` (`summaryKey`, `hintKey`, `params`)
 - `data` (includes `visibilityFilter`)
 
+What the engine fills in from the reported element:
+- `selector`
+- `html`
+- `structuralPath`
+
+Setting `selector`/`html` yourself still works and still wins — a handful of rules whose
+finding is not a single element (the contrast rules report text runs) do exactly that. It
+is the exception, not the pattern to copy.
+
 ---
 
 ## 10) Structured doc comment block
 
-Keep the structured header comment (`@rule`, `@atomic`, `@summary`, `@standard`, `@sc`, `@applicability`, `@expectation`).
+Keep the structured header comment (`@check`, `@atomic`, `@summary`, `@standard`, `@sc`,
+`@applicability`, `@expectation`). The id goes on `@check` — `@rule` is not a tag this
+repo uses. `docs/RULE_TEMPLATE.js` has the full block to copy.
 
 `@applicability` and `@expectation` are consumer-facing: `scripts/generate-rule-catalog.js`
 reads them straight from the source and publishes them per rule in
@@ -456,8 +479,9 @@ After adding or changing any fixture, regenerate the index:
 npm run fixtures:index
 ```
 
-This writes `tests/fixtures/INDEX.md` (human-readable) and `tests/fixtures/index.json`
+This writes `tests/fixtures/INDEX.md` (human-readable), `tests/fixtures/index.json`
 (machine-readable — every rule, its fixture path, and parsed pass/fail/cantTell case
-counts, for external tooling to enumerate and load fixtures directly). Commit both
+counts, for external tooling to enumerate and load fixtures directly) and
+`tests/fixtures/index.html` (the same listing as a browsable page). Commit all three
 alongside the fixture and test changes. A rule shipped without its fixture is treated
 the same as a rule shipped without tests — not done.

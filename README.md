@@ -342,7 +342,8 @@ A simplified example looks like this:
 {
   "engine": {
     "tag": "a11ycore",
-    "schemaVersion": "1.0.0"
+    "schemaVersion": "1.0.0",
+    "locale": { "requested": "en", "resolved": "en", "reason": "ok" }
   },
   "url": "https://example.com/",
   "checksResults": [
@@ -419,7 +420,12 @@ and progressively explore more advanced features.
 | `docs/TROUBLESHOOTING.md` | Frequently asked questions and common issues. |
 | `docs/RULE_AUTHORING.md` | Writing custom accessibility rules. |
 | `docs/RULE_TAXONOMY.md` | Rule categorization model. |
+| `docs/ACT_RULE_MAPPING.md` | Which ACT rules this engine implements, which it doesn't, and where the two deliberately differ. |
+| `docs/DESIGN_CHALLENGES.md` | Open and settled design questions, each with the reasoning behind the call. |
+| `docs/ARIA_DEPRECATION.md` | How deprecated ARIA roles and attributes are graded, and how to apply a later spec revision. |
 | `CONTRIBUTING.md` | Contributing guidelines. |
+| `GOVERNANCE.md` | Who decides what, and the license commitment. |
+| `SUPPORT.md` | Where to ask, and what response to expect. |
 | `SECURITY.md` | Security policy and vulnerability reporting. |
 | `CHANGELOG.md` | Release history. |
 
@@ -481,6 +487,9 @@ surea11y.i18n.<locale>.js  # Generated per-locale side files for that bundle
 src/
   index.js                 # Public API
   core.js                  # Generated runtime bundle
+  baseline.js              # Baseline entry point (@surea11y/core/baseline)
+  report.js                # HTML report entry point (@surea11y/core/report)
+  sarif.js                 # SARIF entry point (@surea11y/core/sarif)
 
   checks/
     automatic/             # Deterministic automated rules
@@ -488,19 +497,30 @@ src/
 
   core/                    # Shared engine runtime
   policy/                  # Policy implementations
-  i18n/                    # Localized messages
+  i18n/                    # Localized messages (JSON, one file per locale)
   coverage/                # WCAG coverage definitions
   catalogs/                # Composite rule catalogs
+  explain/                 # Occurrence grouping, internal
 
 scripts/
-  build-core.js            # Generates the runtime bundle
+  build-core.js            # Generates src/core.js
+  build-browser.js         # Generates the browser bundle and its locale side files
+  generate-*.js            # Generated docs and data tables (each supports --check)
+  validate-*.js            # Rule module contract checks
+  i18n-*.js                # Locale scaffolding, sync and coverage reporting
 
+coverage/                  # Generated WCAG facet coverage report
 docs/                      # Project documentation
 
 tests/
-  fixtures/                # Rule fixtures
-  engine-checks/           # Engine and rule tests
+  fixtures/                # Rule fixtures, plus the generated fixture index
+  engine-checks/           # Per-rule tests
+  core/ helpers/ i18n/     # Engine internals, shared test helpers, locale tests
 ```
+
+Everything under `src/` other than the entry points above is internal — see
+[`docs/API_STABILITY.md`](./docs/API_STABILITY.md) for what the `exports` map
+actually promises.
 
 This separation allows the engine to evolve independently from framework
 integrations while keeping the rule authoring experience consistent.

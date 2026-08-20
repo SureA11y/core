@@ -20,12 +20,18 @@ After adding/changing a rule:
 
 ```sh
 npm run build              # regenerate src/core.js
+npm run validate:rules     # rule module contract (exports, meta, no free variables in runInPage)
 npm test                   # full suite must be green
 npm run coverage           # if the rule touches WCAG facet coverage
 npm run test:coverage      # code line/branch coverage (Node's built-in test runner) -- not the same thing as `coverage` above
 npm run fixtures:index     # if you added/changed a fixture
 npm run docs:rule-catalog  # regenerate docs/RULE_CATALOG.md
 ```
+
+`coverage`, `fixtures:index` and `docs:rule-catalog` write generated files that are
+committed, so run them and commit the result rather than leaving the tree stale.
+`npm run coverage:check` reports the same drift without writing, which is the form to
+reach for if you just want to know.
 
 Note on coverage: `tests/node-runtime-parity.test.js` runs every rule's own fixture through `runDomRulesInPage` (the Node/require-based entry point), separately from the `runa11yCoreInPage` self-contained-bundle path nearly every other test uses (see that file's own header comment for why both exist and why coverage needs both) — don't remove it thinking it's a duplicate of the per-rule fixture-coverage test.
 
