@@ -69,6 +69,42 @@ test(`${RULE_ID}: fail when the rotation is 1.5708rad — converts to 90.0000210
   assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
+test(`${RULE_ID}: fail when a matrix3d() is a pure -90deg Z rotation (ACT b33eff's own failed example)`, () => {
+  const html = `<!doctype html><html><head><style>@media (orientation: landscape) { body { transform: matrix3d(0, -1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1); } }</style></head><body>Page Content</body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+});
+
+test(`${RULE_ID}: fail when a 2D matrix() is a pure 90deg rotation`, () => {
+  const html = `<!doctype html><html><head><style>@media (orientation: landscape) { body { transform: matrix(0, 1, -1, 0, 0, 0); } }</style></head><body></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+});
+
+test(`${RULE_ID}: fail when rotate3d() rotates purely around the Z axis by 90deg`, () => {
+  const html = `<!doctype html><html><head><style>@media (orientation: landscape) { body { transform: rotate3d(0, 0, 1, 90deg); } }</style></head><body></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+});
+
+test(`${RULE_ID}: pass when matrix3d() also carries translation (not a pure rotation, not decomposed)`, () => {
+  const html = `<!doctype html><html><head><style>@media (orientation: landscape) { body { transform: matrix3d(0, -1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 10, 0, 0, 1); } }</style></head><body></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: pass when matrix() carries scale, not a pure rotation`, () => {
+  const html = `<!doctype html><html><head><style>@media (orientation: landscape) { body { transform: matrix(0, 2, -2, 0, 0, 0); } }</style></head><body></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: pass when rotate3d() rotates around a non-Z axis`, () => {
+  const html = `<!doctype html><html><head><style>@media (orientation: landscape) { body { transform: rotate3d(1, 0, 0, 90deg); } }</style></head><body></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
 test(`${RULE_ID}: pass when the rotation is 180deg (a flip, not an orientation lock)`, () => {
   const html = `<!doctype html><html><head><style>@media (orientation: landscape) { html { transform: rotate(180deg); } }</style></head><body></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
