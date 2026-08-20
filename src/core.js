@@ -15692,7 +15692,16 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
       if (!cssKnown) {
         const cs = computedStyle(a);
-        cssBlock = cs && cs.display === 'none' ? 'displayNone' : null;
+        if (cs && cs.display === 'none') cssBlock = 'displayNone';
+        // content-visibility:hidden skips the element's contents the same
+        // way display:none does -- they are not rendered, not exposed to
+        // the accessibility tree, not focusable and not findable in the
+        // page. It does not inherit, so a descendant's own computed value
+        // stays "visible" and this walk is the only way to see it; that is
+        // why visibility, which does inherit, is read off the node instead
+        // (below) rather than resolved here.
+        else if (cs && cs.contentVisibility === 'hidden') cssBlock = 'contentVisibilityHidden';
+        else cssBlock = null;
 
         try {
           if (__ancBlockCache) {
@@ -15708,8 +15717,16 @@ const createDomHelpers = (function createDomHelpers(opts) {
         }
       }
 
-      if (cssBlock === 'displayNone')
-        return __cacheAndReturn({ eligible: false, reasons: ['displayNone'] });
+      // The element carrying content-visibility:hidden keeps its own box:
+      // it still paints, still takes focus and is still in the
+      // accessibility tree -- only its subtree is skipped. The cached value
+      // above answers "does this ancestor hide its descendants", which is
+      // what every other node walking through `a` needs, so the self case
+      // is corrected on read instead, exactly as the hidden="until-found"
+      // override does in the structural walk above.
+      if (cssBlock === 'contentVisibilityHidden' && a === node) cssBlock = null;
+
+      if (cssBlock) return __cacheAndReturn({ eligible: false, reasons: [cssBlock] });
     }
 
     // visibility IS inherited (and thus invertible): a descendant with an
@@ -58670,7 +58687,16 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
       if (!cssKnown) {
         const cs = computedStyle(a);
-        cssBlock = cs && cs.display === 'none' ? 'displayNone' : null;
+        if (cs && cs.display === 'none') cssBlock = 'displayNone';
+        // content-visibility:hidden skips the element's contents the same
+        // way display:none does -- they are not rendered, not exposed to
+        // the accessibility tree, not focusable and not findable in the
+        // page. It does not inherit, so a descendant's own computed value
+        // stays "visible" and this walk is the only way to see it; that is
+        // why visibility, which does inherit, is read off the node instead
+        // (below) rather than resolved here.
+        else if (cs && cs.contentVisibility === 'hidden') cssBlock = 'contentVisibilityHidden';
+        else cssBlock = null;
 
         try {
           if (__ancBlockCache) {
@@ -58686,8 +58712,16 @@ const createDomHelpers = (function createDomHelpers(opts) {
         }
       }
 
-      if (cssBlock === 'displayNone')
-        return __cacheAndReturn({ eligible: false, reasons: ['displayNone'] });
+      // The element carrying content-visibility:hidden keeps its own box:
+      // it still paints, still takes focus and is still in the
+      // accessibility tree -- only its subtree is skipped. The cached value
+      // above answers "does this ancestor hide its descendants", which is
+      // what every other node walking through `a` needs, so the self case
+      // is corrected on read instead, exactly as the hidden="until-found"
+      // override does in the structural walk above.
+      if (cssBlock === 'contentVisibilityHidden' && a === node) cssBlock = null;
+
+      if (cssBlock) return __cacheAndReturn({ eligible: false, reasons: [cssBlock] });
     }
 
     // visibility IS inherited (and thus invertible): a descendant with an
@@ -101603,7 +101637,16 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
       if (!cssKnown) {
         const cs = computedStyle(a);
-        cssBlock = cs && cs.display === 'none' ? 'displayNone' : null;
+        if (cs && cs.display === 'none') cssBlock = 'displayNone';
+        // content-visibility:hidden skips the element's contents the same
+        // way display:none does -- they are not rendered, not exposed to
+        // the accessibility tree, not focusable and not findable in the
+        // page. It does not inherit, so a descendant's own computed value
+        // stays "visible" and this walk is the only way to see it; that is
+        // why visibility, which does inherit, is read off the node instead
+        // (below) rather than resolved here.
+        else if (cs && cs.contentVisibility === 'hidden') cssBlock = 'contentVisibilityHidden';
+        else cssBlock = null;
 
         try {
           if (__ancBlockCache) {
@@ -101619,8 +101662,16 @@ const createDomHelpers = (function createDomHelpers(opts) {
         }
       }
 
-      if (cssBlock === 'displayNone')
-        return __cacheAndReturn({ eligible: false, reasons: ['displayNone'] });
+      // The element carrying content-visibility:hidden keeps its own box:
+      // it still paints, still takes focus and is still in the
+      // accessibility tree -- only its subtree is skipped. The cached value
+      // above answers "does this ancestor hide its descendants", which is
+      // what every other node walking through `a` needs, so the self case
+      // is corrected on read instead, exactly as the hidden="until-found"
+      // override does in the structural walk above.
+      if (cssBlock === 'contentVisibilityHidden' && a === node) cssBlock = null;
+
+      if (cssBlock) return __cacheAndReturn({ eligible: false, reasons: [cssBlock] });
     }
 
     // visibility IS inherited (and thus invertible): a descendant with an

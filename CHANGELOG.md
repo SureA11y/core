@@ -19,6 +19,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 - `bin/surea11y-core.js` and its `bin` entry, unused since the CLI moved to `@surea11y/cli` in 1.4.0.
 
 ### Fixed
+- `isAccTreeEligible` ignored `content-visibility: hidden`, so content the browser skips entirely — no accessibility tree, no focus, no find-in-page — stayed in every rule's candidate list and could be reported as a failure. It blocks the subtree now, like `display:none`, using the `contentVisibilityHidden` reason `isDomVisibleEligible` already reported. The element carrying the declaration is unaffected: it hides its contents, not itself, so it stays in scope.
 - `contrast-minimum`/`contrast-enhanced` stopped requiring a contrast ratio for text made entirely of punctuation or symbols; digit-only text is still checked.
 - `contrast-computable` treats a declared `text-shadow` as a computability blocker (`cantTell`) instead of asserting pass or fail — a strong shadow can rescue contrast that would otherwise fail.
 - `contrast-minimum`/`contrast-enhanced` stopped reporting a failure when text's foreground color exactly matches its background; that text isn't visible in the first place.
