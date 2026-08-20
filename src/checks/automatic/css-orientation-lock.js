@@ -27,12 +27,13 @@
  *   lock. Compute the actual rotation angle and only flag ~90/~270 degrees,
  *   excluding ~0/~180 (a no-op or a flip, neither of which changes
  *   portrait<->landscape).
- * - Only `rotate`/`rotateZ` (transform functions) and the standalone CSS
- *   `rotate` property are parsed for degrees, from the two sources
- *   `style.transform`/`style.rotate`; `matrix()`/`matrix3d()`/`rotate3d()`
- *   are not decomposed into an equivalent angle (deliberately deferred as
- *   the same class of higher-complexity/lower-value work deferred elsewhere,
- *   e.g. `table-th-has-data-cells`'s narrower positional-header algorithm).
+ * - `rotate`/`rotateZ`, the standalone CSS `rotate` property, and
+ *   `rotate3d(x, y, z, angle)`/`matrix()`/`matrix3d()` are all parsed for
+ *   degrees. The matrix forms only yield an angle when they resolve to a
+ *   pure rotation about the Z axis (no scale, skew, translation, or
+ *   rotation combined with another axis) — anything else contributes 0,
+ *   same as an unrecognized value, rather than guessing at an angle a
+ *   general 3D matrix doesn't uniquely have.
  * - Cross-origin stylesheets throw on `.cssRules` access (browser
  *   security model) and are skipped — same class of limitation as any
  *   check that can only see same-origin/inspectable content (compare
@@ -107,17 +108,85 @@ function runInPage(ctx) {
     return value; // deg
   }
 
-  // Sums the degrees of every rotate()/rotateZ() function found in a
-  // transform value (a real transform can legitimately compose more than
-  // one, e.g. "translate(-50%) rotate(90deg)").
+  function parseNumberList(argsStr) {
+    return trim(argsStr)
+      .split(',')
+      .map((s) => parseFloat(s.trim()));
+  }
+
+  // A 2D linear map (a, b, c, d) -- the first four arguments of
+  // `matrix(a, b, c, d, e, f)`, or the top-left of `matrix3d`'s 4x4 --
+  // is a pure rotation only when its columns are unit length and
+  // orthogonal (no scale/skew/reflection): a = cos(theta), b = sin(theta),
+  // c = -sin(theta), d = cos(theta). Returns degrees, or null when the
+  // map isn't a pure rotation.
+  function decomposeMatrix2dRotation(a, b, c, d) {
+    const EPS = 1e-3;
+    if (Math.abs(a - d) > EPS || Math.abs(b + c) > EPS) return null;
+    if (Math.abs(a * a + b * b - 1) > EPS) return null;
+    if (Math.abs(a * d - b * c - 1) > EPS) return null;
+    return (Math.atan2(b, a) * 180) / Math.PI;
+  }
+
+  // The 16 column-major values of `matrix3d(...)` represent a pure Z-axis
+  // rotation only when the 3rd/4th columns still match the identity (no
+  // translation, perspective, or rotation around another axis) and the
+  // top-left 2x2 block is a pure 2D rotation.
+  function decomposeMatrix3dZRotation(v) {
+    if (v.length !== 16 || !v.every(Number.isFinite)) return null;
+    const EPS = 1e-3;
+    const near = (x, t) => Math.abs(x - t) < EPS;
+    if (!(near(v[2], 0) && near(v[3], 0) && near(v[6], 0) && near(v[7], 0))) return null;
+    if (!(near(v[8], 0) && near(v[9], 0) && near(v[10], 1) && near(v[11], 0))) return null;
+    if (!(near(v[12], 0) && near(v[13], 0) && near(v[14], 0) && near(v[15], 1))) return null;
+    return decomposeMatrix2dRotation(v[0], v[1], v[4], v[5]);
+  }
+
+  // Sums the degrees of every rotate()/rotateZ()/rotate3d()/matrix()/
+  // matrix3d() function found in a transform value (a real transform can
+  // legitimately compose more than one, e.g. "translate(-50%)
+  // rotate(90deg)"). The matrix forms only contribute when they decompose
+  // to a pure Z rotation; anything else contributes 0, same as no match.
   function rotateDegreesFromTransform(t) {
     if (!t) return 0;
     let total = 0;
-    const re = /rotate(?:Z)?\s*\(([^)]*)\)/gi;
     let m;
-    while ((m = re.exec(t)) !== null) {
+
+    const rotateRe = /rotate(?:Z)?\s*\(([^)]*)\)/gi;
+    while ((m = rotateRe.exec(t)) !== null) {
       total += angleToDegrees(m[1]);
     }
+
+    const rotate3dRe = /rotate3d\s*\(([^)]*)\)/gi;
+    while ((m = rotate3dRe.exec(t)) !== null) {
+      const parts = m[1].split(',');
+      if (parts.length !== 4) continue;
+      const x = parseFloat(parts[0]);
+      const y = parseFloat(parts[1]);
+      const z = parseFloat(parts[2]);
+      const deg = angleToDegrees(parts[3]);
+      if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z) || !deg) continue;
+      const EPS = 1e-3;
+      if (Math.abs(x) < EPS && Math.abs(y) < EPS && Math.abs(Math.abs(z) - 1) < EPS) {
+        total += z < 0 ? -deg : deg;
+      }
+    }
+
+    const matrixRe = /matrix\s*\(([^)]*)\)/gi;
+    while ((m = matrixRe.exec(t)) !== null) {
+      const vals = parseNumberList(m[1]);
+      if (vals.length === 6 && vals.every(Number.isFinite)) {
+        const deg = decomposeMatrix2dRotation(vals[0], vals[1], vals[2], vals[3]);
+        if (deg != null) total += deg;
+      }
+    }
+
+    const matrix3dRe = /matrix3d\s*\(([^)]*)\)/gi;
+    while ((m = matrix3dRe.exec(t)) !== null) {
+      const deg = decomposeMatrix3dZRotation(parseNumberList(m[1]));
+      if (deg != null) total += deg;
+    }
+
     return total;
   }
 
