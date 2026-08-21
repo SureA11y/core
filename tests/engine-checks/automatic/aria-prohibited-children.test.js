@@ -301,6 +301,108 @@ test(`${RULE_ID}: notApplicable (not pass) when the container has the hidden att
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+// --- Roleless wrappers hold ITEMS, and an item's own content is not the
+// container's child. A component library routinely buries the real item
+// several roleless levels down, so the walk descends to find it; these guard
+// that the descent doesn't also drag the item's sibling content up into the
+// container's owned set.
+
+test(`${RULE_ID}: pass for the Angular Material card-radio shape — a roleless card wrapper holds the radio, and a role="separator" in the same card body is the card's content, not an owned child of the radiogroup`, () => {
+  const html = `<!doctype html><html><body>
+    <mat-radio-group role="radiogroup" aria-label="Select broker exposure card">
+      <div class="mdc-layout-grid"><div class="mdc-layout-grid__inner">
+        <avq-card class="avq-card">
+          <div class="avq-card-body">
+            <avq-card-header>
+              <mat-radio-button id="mat-radio-0">
+                <div class="mdc-form-field"><div class="mdc-radio">
+                  <input type="radio" id="mat-radio-0-input" name="g" value="1" tabindex="0">
+                </div></div>
+              </mat-radio-button>
+            </avq-card-header>
+            <avq-card-content>
+              <div class="avq-display-flex">
+                <div class="col">Exposure warning delta</div>
+                <mat-divider id="a" role="separator" aria-orientation="vertical"></mat-divider>
+                <div class="col">Trade stop delta</div>
+              </div>
+            </avq-card-content>
+          </div>
+        </avq-card>
+      </div></div>
+    </mat-radio-group>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: pass when a roleless wrapper holds tabs alongside a role="button" — the button is the wrapper's content, not an owned child of the tablist`, () => {
+  const html = `<!doctype html><html><body>
+    <div role="tablist" aria-label="Sections">
+      <div class="tab-strip">
+        <div role="tab">A</div>
+        <div id="a" role="button" tabindex="0">scroll right</div>
+      </div>
+    </div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: pass when a roleless row wrapper holds an option alongside a role="img" icon`, () => {
+  const html = `<!doctype html><html><body>
+    <div role="listbox" aria-label="Country">
+      <div class="row">
+        <span id="a" role="img" aria-label="flag"></span>
+        <div role="option">Spain</div>
+      </div>
+    </div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: fail when a roleless wrapper holds NO allowed item — it is interposed content, not an item wrapper, so what it does hold is still reported`, () => {
+  const html = `<!doctype html><html><body>
+    <div role="list">
+      <span role="listitem">Item</span>
+      <div class="toolbar"><div id="a" role="button" tabindex="0">Add</div></div>
+    </div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+});
+
+test(`${RULE_ID}: fail when a role="presentation" wrapper holds an item alongside a disallowed role — presentational elements really are removed from the accessibility tree and their children promoted, so the disallowed role IS an owned child (unlike a roleless wrapper, which stays in the tree as a generic node)`, () => {
+  const html = `<!doctype html><html><body>
+    <div role="list">
+      <div role="presentation">
+        <span role="listitem">Item</span>
+        <div id="a" role="button" tabindex="0">Add</div>
+      </div>
+    </div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+});
+
+test(`${RULE_ID}: an item wrapper suppresses only its OWN subtree — a genuinely stray direct child of the same container is still reported`, () => {
+  const html = `<!doctype html><html><body>
+    <div role="radiogroup" aria-label="Plan">
+      <div class="card">
+        <input type="radio" name="p" value="1">
+        <div role="separator"></div>
+      </div>
+      <div id="a" role="button" tabindex="0">Compare plans</div>
+    </div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+});
+
 test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><body><ul role="menubar"><li id="a" role="region"></li></ul></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
@@ -318,7 +420,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-prohibited-children-all-
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 6, maxOccurrences: 6 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 7, maxOccurrences: 7 });
 
   for (const id of [
     'apc_case_06_child',
@@ -326,7 +428,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-prohibited-children-all-
     'apc_case_08_child',
     'apc_case_10_child',
     'apc_case_11_child',
-    'apc_case_12_child'
+    'apc_case_12_child',
+    'apc_case_18_child'
   ]) {
     assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);
   }
@@ -338,7 +441,11 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-prohibited-children-all-
     'apc_case_05',
     'apc_case_09',
     'apc_case_13',
-    'apc_case_15'
+    'apc_case_15',
+    'apc_case_16',
+    'apc_case_16_child',
+    'apc_case_17',
+    'apc_case_17_child'
   ]) {
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }

@@ -30455,15 +30455,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // "presentation" and "group"/"rowgroup" wrappers as transparent
   // (recursing through them unconditionally — see header comment), and
   // stopping at the first non-transparent role boundary otherwise. A
-  // roleless descendant is ALSO a non-transparent boundary (an owned
-  // entry with role: null, which can never satisfy a required-role set)
-  // when it carries a global aria-* attribute or is focusable.
+  // roleless wrapper is transparent too, but only as a way to reach the
+  // items buried inside it: once one is found there, the rest of that
+  // wrapper's subtree belongs to the item, not to this container (see the
+  // roleless branch below). A roleless descendant is a non-transparent
+  // boundary (an owned entry with role: null, which can never satisfy a
+  // required-role set) when it carries a global aria-* attribute or is
+  // focusable.
   // kidRole comes from getContainmentRole, not getExplicitRole: "roleless"
   // here means neither an explicit role="" NOR one of the native
   // containment tags (li, tr, td, ...), so a bare <li>/<tr>/... is a real
   // listitem/row boundary, not a transparent wrapper the walk should pass
   // through.
-  function collectOwnedRoles(el, out, depth) {
+  function collectOwnedRoles(el, out, depth, requiredSet) {
     if (depth > MAX_DEPTH) return;
     const kids = el.children ? Array.prototype.slice.call(el.children) : [];
     for (const kid of kids) {
@@ -30498,8 +30502,37 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         }
       }
 
-      if (!kidRole || isPresentational || isTransparentGroup) {
-        collectOwnedRoles(kid, out, depth + 1);
+      if (isPresentational || isTransparentGroup) {
+        // role="none"/"presentation" really is removed from the accessibility
+        // tree, and its children are promoted to this container — so whatever
+        // is inside genuinely becomes an owned child. group/rowgroup stay
+        // unconditionally transparent for the reason in the header comment.
+        collectOwnedRoles(kid, out, depth + 1, requiredSet);
+        continue;
+      }
+
+      if (!kidRole) {
+        // A roleless wrapper is NOT removed from the accessibility tree: it is
+        // exposed as a generic node, so strictly speaking nothing inside it is
+        // this container's child at all. The walk descends anyway, because a
+        // component library routinely buries the real item several roleless
+        // levels down (an Angular Material card whose radio sits at
+        // card > header > mat-radio-button > div > div > input[type=radio]),
+        // and refusing to descend would report every such container as
+        // missing its items.
+        //
+        // That leniency has to run one way only. If the wrapper turns out to
+        // hold a required item, the wrapper is an item wrapper and everything
+        // else inside it is the ITEM's content, not the container's children:
+        // a mat-divider sitting in the card body beside the radio is not an
+        // owned child of the radiogroup, and reporting it as one is a false
+        // positive on ordinary component markup. Only the items are collected
+        // in that case. A wrapper holding no item at all is pure interposed
+        // content, so everything found in it is still reported.
+        const nested = [];
+        collectOwnedRoles(kid, nested, depth + 1, requiredSet);
+        const items = nested.filter((entry) => entry.role && requiredSet.has(entry.role));
+        for (const entry of items.length ? items : nested) out.push(entry);
         continue;
       }
 
@@ -30532,7 +30565,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const requiredSet = new Set(requiredOwned);
     const owned = [];
-    collectOwnedRoles(el, owned, 0);
+    collectOwnedRoles(el, owned, 0, requiredSet);
 
     for (const entry of owned) {
       if (entry.role && requiredSet.has(entry.role)) continue;
@@ -73398,15 +73431,19 @@ const __a11yCoreCrossFrameApi = (function () {
   // "presentation" and "group"/"rowgroup" wrappers as transparent
   // (recursing through them unconditionally — see header comment), and
   // stopping at the first non-transparent role boundary otherwise. A
-  // roleless descendant is ALSO a non-transparent boundary (an owned
-  // entry with role: null, which can never satisfy a required-role set)
-  // when it carries a global aria-* attribute or is focusable.
+  // roleless wrapper is transparent too, but only as a way to reach the
+  // items buried inside it: once one is found there, the rest of that
+  // wrapper's subtree belongs to the item, not to this container (see the
+  // roleless branch below). A roleless descendant is a non-transparent
+  // boundary (an owned entry with role: null, which can never satisfy a
+  // required-role set) when it carries a global aria-* attribute or is
+  // focusable.
   // kidRole comes from getContainmentRole, not getExplicitRole: "roleless"
   // here means neither an explicit role="" NOR one of the native
   // containment tags (li, tr, td, ...), so a bare <li>/<tr>/... is a real
   // listitem/row boundary, not a transparent wrapper the walk should pass
   // through.
-  function collectOwnedRoles(el, out, depth) {
+  function collectOwnedRoles(el, out, depth, requiredSet) {
     if (depth > MAX_DEPTH) return;
     const kids = el.children ? Array.prototype.slice.call(el.children) : [];
     for (const kid of kids) {
@@ -73441,8 +73478,37 @@ const __a11yCoreCrossFrameApi = (function () {
         }
       }
 
-      if (!kidRole || isPresentational || isTransparentGroup) {
-        collectOwnedRoles(kid, out, depth + 1);
+      if (isPresentational || isTransparentGroup) {
+        // role="none"/"presentation" really is removed from the accessibility
+        // tree, and its children are promoted to this container — so whatever
+        // is inside genuinely becomes an owned child. group/rowgroup stay
+        // unconditionally transparent for the reason in the header comment.
+        collectOwnedRoles(kid, out, depth + 1, requiredSet);
+        continue;
+      }
+
+      if (!kidRole) {
+        // A roleless wrapper is NOT removed from the accessibility tree: it is
+        // exposed as a generic node, so strictly speaking nothing inside it is
+        // this container's child at all. The walk descends anyway, because a
+        // component library routinely buries the real item several roleless
+        // levels down (an Angular Material card whose radio sits at
+        // card > header > mat-radio-button > div > div > input[type=radio]),
+        // and refusing to descend would report every such container as
+        // missing its items.
+        //
+        // That leniency has to run one way only. If the wrapper turns out to
+        // hold a required item, the wrapper is an item wrapper and everything
+        // else inside it is the ITEM's content, not the container's children:
+        // a mat-divider sitting in the card body beside the radio is not an
+        // owned child of the radiogroup, and reporting it as one is a false
+        // positive on ordinary component markup. Only the items are collected
+        // in that case. A wrapper holding no item at all is pure interposed
+        // content, so everything found in it is still reported.
+        const nested = [];
+        collectOwnedRoles(kid, nested, depth + 1, requiredSet);
+        const items = nested.filter((entry) => entry.role && requiredSet.has(entry.role));
+        for (const entry of items.length ? items : nested) out.push(entry);
         continue;
       }
 
@@ -73475,7 +73541,7 @@ const __a11yCoreCrossFrameApi = (function () {
 
     const requiredSet = new Set(requiredOwned);
     const owned = [];
-    collectOwnedRoles(el, owned, 0);
+    collectOwnedRoles(el, owned, 0, requiredSet);
 
     for (const entry of owned) {
       if (entry.role && requiredSet.has(entry.role)) continue;
