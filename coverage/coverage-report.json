@@ -702,7 +702,7 @@
       ],
       "wcagScInformative": [],
       "type": "automatic",
-      "title": "ARIA widget/container roles have an accessible name",
+      "title": "ARIA roles that require an accessible name have one",
       "tags": [
         "wcag2a",
         "wcag412",

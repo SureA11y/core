@@ -3,7 +3,8 @@
 'use strict';
 
 /**
- * Generic name-presence rule for selected ARIA composite/widget roles that should expose an accessible name.
+ * Generic name-presence rule for the ARIA roles WAI-ARIA *requires* an
+ * accessible name for.
  *
  * Notes:
  * - This rule intentionally focuses on author-provided naming mechanisms:
@@ -11,17 +12,23 @@
  * - It does NOT treat descendant text content as a valid name source for these roles
  *   (to avoid false passes from labelled children inside composite widgets).
  * - Eligibility is based on helpers.isAccTreeEligible(node, ctx) per engine checks.
+ * - The role set is generated from aria-query by
+ *   scripts/generate-aria-tables.js; see that script for why each role is in
+ *   or out, and for the name-required roles no rule covers yet.
  *
  * @applicability
- *   Applies to elements whose role attribute is exactly one of scrollbar,
- *   toolbar, tablist, radiogroup, tree, grid, menu, menubar, meter or
- *   progressbar, and that are included in the accessibility tree. The list
- *   is a frozen allowlist rather than every role WAI-ARIA lets an author
- *   name. meter and progressbar are also covered by meter-name-present and
- *   progressbar-name-present, so those two roles are reported by both rules.
+ *   Applies to elements whose role attribute is exactly one of grid, meter,
+ *   progressbar, radiogroup or tree, and that are included in the
+ *   accessibility tree. Membership is decided by WAI-ARIA's own "Accessible
+ *   Name Required: True" characteristic, not by whether a role merely permits
+ *   a name: tablist, toolbar, menu, menubar and scrollbar are name-from-author
+ *   roles the spec does not require a name for, and are deliberately out of
+ *   scope. meter and progressbar are also covered by meter-name-present and
+ *   progressbar-name-present, which map to SC 1.1.1; this rule is what gives
+ *   those two roles their 4.1.2 coverage.
  * @expectation
  *   The element has a non-empty aria-label, an aria-labelledby that resolves
- *   to non-empty text, or a non-empty title. Every role in the list is
+ *   to non-empty text, or a non-empty title. Every role in the set is
  *   name-from-author-only, so descendant text is deliberately not accepted:
  *   a labelled child inside a composite widget would otherwise pass the
  *   container that has no name of its own.
@@ -30,9 +37,9 @@
 const id = 'aria-role-name-present';
 
 const meta = {
-  title: 'ARIA widget/container roles have an accessible name',
+  title: 'ARIA roles that require an accessible name have one',
   description:
-    'Checks that selected ARIA widget/container roles expose a non-empty accessible name.',
+    'Checks that the ARIA roles WAI-ARIA requires an accessible name for expose a non-empty one.',
   i18n: {
     titleKey: 'ariaRoleNamePresent_title',
     descriptionKey: 'ariaRoleNamePresent_description'
@@ -129,23 +136,16 @@ function runInPage(ctx) {
     }
   };
 
-  // Frozen allowlist of roles to check in this generic rule.
-  // (Keep this small, explicit, and standards-based for determinism.)
-  const roleSet = new Set([
-    'scrollbar',
-    'toolbar',
-    'tablist',
-    'radiogroup',
-    'tree',
-    'grid',
-    'menu',
-    'menubar',
-    'meter',
-    'progressbar'
-  ]);
+  // Roles WAI-ARIA marks "Accessible Name Required: True" and names from the
+  // author only. Generated from aria-query by scripts/generate-aria-tables.js:
+  // a role that merely *allows* an author name (tablist, toolbar, menu,
+  // menubar, scrollbar) is not a 4.1.2 failure when unnamed and is not listed.
+  // <generated:aria-name-required-roles>
+  const NAME_REQUIRED_ROLES = new Set(['grid', 'meter', 'progressbar', 'radiogroup', 'tree']);
+  // </generated:aria-name-required-roles>
 
-  const selector =
-    '[role="scrollbar"],[role="toolbar"],[role="tablist"],[role="radiogroup"],[role="tree"],[role="grid"],[role="menu"],[role="menubar"],[role="meter"],[role="progressbar"]';
+  // Derived from the set above so the two cannot drift apart.
+  const selector = [...NAME_REQUIRED_ROLES].map((r) => `[role="${r}"]`).join(',');
 
   const nodes = (() => {
     try {
@@ -175,7 +175,7 @@ function runInPage(ctx) {
         return '';
       }
     })();
-    if (!roleSet.has(role)) continue;
+    if (!NAME_REQUIRED_ROLES.has(role)) continue;
 
     if (!isEligible(el)) continue;
 
