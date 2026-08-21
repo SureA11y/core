@@ -403,6 +403,102 @@ test(`${RULE_ID}: an item wrapper suppresses only its OWN subtree — a genuinel
   assert.ok(hasOccurrenceForId(rule, 'a'));
 });
 
+// --- "Required owned elements" is what a container MUST contain, not the
+// exhaustive list of what it MAY contain. ALLOWED_EXTRA_OWNED_ROLES carries the
+// difference; scripts/generate-aria-tables.js documents and validates each
+// entry.
+
+test(`${RULE_ID}: pass for a role="separator" between menuitems — ARIA defines separator as "a divider that separates and distinguishes sections of content or groups of menuitems", and the APG menu pattern uses them`, () => {
+  const html = `<!doctype html><html><body>
+    <div role="menu" aria-label="Edit">
+      <div role="menuitem">Cut</div>
+      <div id="a" role="separator"></div>
+      <div role="menuitem">Paste</div>
+    </div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: pass for a role="separator" in a menubar`, () => {
+  const html = `<!doctype html><html><body>
+    <div role="menubar" aria-label="Main"><div role="menuitem">File</div><div role="separator"></div></div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: pass for a role="caption" on a table and on a grid — ARIA gives caption the Required Context Roles figure/grid/table, so prohibiting it there contradicted the engine's own REQUIRED_CONTEXT_ROLE table`, () => {
+  const html = `<!doctype html><html><body>
+    <div role="table" aria-label="Results">
+      <div role="caption">Q3 results</div>
+      <div role="row"><div role="cell">1</div></div>
+    </div>
+    <div role="grid" aria-label="Orders">
+      <div role="caption">Open orders</div>
+      <div role="row"><div role="gridcell">1</div></div>
+    </div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: fail for a role="separator" under role="list"/"listbox"/"tablist" — the menuitem carve-out is per container role, and <ul>/<ol> admit only <li>`, () => {
+  for (const [container, item] of [
+    ['list', 'listitem'],
+    ['listbox', 'option'],
+    ['tablist', 'tab']
+  ]) {
+    const html = `<!doctype html><html><body>
+      <div role="${container}" aria-label="c">
+        <div role="${item}">Item</div>
+        <div id="a" role="separator"></div>
+      </div>
+    </body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+    assert.ok(
+      hasOccurrenceForId(rule, 'a'),
+      `Expected a separator occurrence under role="${container}"`
+    );
+  }
+});
+
+test(`${RULE_ID}: fail for a role="caption" under role="treegrid" — aria-query gives caption the context figure/grid/table only, and extending it to treegrid would be this repo's judgement rather than ARIA's`, () => {
+  const html = `<!doctype html><html><body>
+    <div role="treegrid" aria-label="Files">
+      <div id="a" role="caption">Files</div>
+      <div role="row"><div role="gridcell">1</div></div>
+    </div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+});
+
+test(`${RULE_ID}: an allowed-but-not-required role does NOT make a roleless wrapper an item wrapper — a wrapper holding only a separator is still interposed content under a container that prohibits separators`, () => {
+  const html = `<!doctype html><html><body>
+    <div role="list">
+      <div role="listitem">Item</div>
+      <div class="w"><div id="a" role="separator"></div></div>
+    </div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+});
+
+test(`${RULE_ID}: the reported allowed-roles list includes the allowed-but-not-required roles, not just the required ones`, () => {
+  const html = `<!doctype html><html><body>
+    <div role="menu" aria-label="Edit"><div role="menuitem">Cut</div><div id="a" role="button" tabindex="0">x</div></div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const occ = (rule.occurrences || []).find((o) => o.html && o.html.includes('id="a"'));
+  assert.ok(occ.data.details.allowedOwnedRoles.includes('separator'));
+  assert.ok(occ.data.details.allowedOwnedRoles.includes('menuitem'));
+});
+
 test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><body><ul role="menubar"><li id="a" role="region"></li></ul></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
@@ -420,7 +516,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-prohibited-children-all-
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 7, maxOccurrences: 7 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 8, maxOccurrences: 8 });
 
   for (const id of [
     'apc_case_06_child',
@@ -429,7 +525,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-prohibited-children-all-
     'apc_case_10_child',
     'apc_case_11_child',
     'apc_case_12_child',
-    'apc_case_18_child'
+    'apc_case_18_child',
+    'apc_case_21_child'
   ]) {
     assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);
   }
@@ -445,7 +542,11 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-prohibited-children-all-
     'apc_case_16',
     'apc_case_16_child',
     'apc_case_17',
-    'apc_case_17_child'
+    'apc_case_17_child',
+    'apc_case_19',
+    'apc_case_19_child',
+    'apc_case_20',
+    'apc_case_20_child'
   ]) {
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
