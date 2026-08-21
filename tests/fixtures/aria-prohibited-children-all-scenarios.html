@@ -75,6 +75,42 @@
     </ul>
   </div>
 
+  <div class="case" id="case_16">
+    <div class="case-title">16 — PASS: a roleless card wrapper holds the radio, so the role="separator" in the same card body is the card's own content, not an owned child of the radiogroup (the Angular Material card-radio shape: the walk must descend several roleless levels to reach the input, and must not drag the card's other content up with it)</div>
+    <mat-radio-group role="radiogroup" aria-label="Select broker exposure card" id="apc_case_16">
+      <div class="mdc-layout-grid__inner">
+        <avq-card class="avq-card">
+          <div class="avq-card-body">
+            <avq-card-header>
+              <mat-radio-button>
+                <div class="mdc-form-field"><div class="mdc-radio">
+                  <input type="radio" name="broker" value="1" tabindex="0">
+                </div></div>
+              </mat-radio-button>
+            </avq-card-header>
+            <avq-card-content>
+              <div class="avq-display-flex">
+                <div class="col">Exposure warning delta</div>
+                <mat-divider id="apc_case_16_child" role="separator" aria-orientation="vertical"></mat-divider>
+                <div class="col">Trade stop delta</div>
+              </div>
+            </avq-card-content>
+          </div>
+        </avq-card>
+      </div>
+    </mat-radio-group>
+  </div>
+
+  <div class="case" id="case_17">
+    <div class="case-title">17 — PASS: a roleless tab-strip wrapper holds the tabs, so the role="button" beside them is the wrapper's content, not an owned child of the tablist</div>
+    <div role="tablist" aria-label="Sections" id="apc_case_17">
+      <div class="tab-strip">
+        <div role="tab">Overview</div>
+        <div id="apc_case_17_child" role="button" tabindex="0">Scroll right</div>
+      </div>
+    </div>
+  </div>
+
   <h2>B. Invalid</h2>
 
   <div class="case" id="case_06">
@@ -127,6 +163,14 @@
     </ul>
   </div>
 
+
+  <div class="case" id="case_18">
+    <div class="case-title">18 — FAIL: a roleless wrapper that holds NO allowed item is interposed content, not an item wrapper, so the disallowed role inside it is still an owned child of the list</div>
+    <div role="list" id="apc_case_18">
+      <span role="listitem">Item</span>
+      <div class="toolbar"><div id="apc_case_18_child" role="button" tabindex="0">Add</div></div>
+    </div>
+  </div>
 
   <h2>C. Not applicable (skipped, not counted)</h2>
 

@@ -1,6 +1,6 @@
 # Fixture Index
 
-Generated: 2026-08-21T11:52:05.629Z
+Generated: 2026-08-21T12:24:17.465Z
 
 Every implemented rule should have a `tests/fixtures/<slug>-all-scenarios.html` scenario page (numbered `case_NN` blocks, each marked PASS/FAIL/CANTTELL in its `.case-title`) and a "fixture coverage" test in its `tests/engine-checks/**/<rule>.test.js` asserting the exact expected ids. See `docs/RULE_AUTHORING.md`.
 
@@ -29,7 +29,7 @@ None — every rule has a fixture.
 | aria-hidden-body | automatic | `tests/fixtures/aria-hidden-body-all-scenarios.html` | 1 | 0 | 1 | 0 | 0 |
 | aria-hidden-focus | automatic | `tests/fixtures/aria-hidden-focus-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
 | aria-prohibited-attr | automatic | `tests/fixtures/aria-prohibited-attr-all-scenarios.html` | 15 | 2 | 9 | 0 | 4 |
-| aria-prohibited-children | automatic | `tests/fixtures/aria-prohibited-children-all-scenarios.html` | 14 | 6 | 6 | 0 | 2 |
+| aria-prohibited-children | automatic | `tests/fixtures/aria-prohibited-children-all-scenarios.html` | 17 | 8 | 7 | 0 | 2 |
 | aria-required-attr | automatic | `tests/fixtures/aria-required-attr-all-scenarios.html` | 16 | 4 | 5 | 0 | 7 |
 | aria-required-children | automatic | `tests/fixtures/aria-required-children-all-scenarios.html` | 8 | 3 | 1 | 0 | 4 |
 | aria-required-parent | automatic | `tests/fixtures/aria-required-parent-all-scenarios.html` | 11 | 6 | 2 | 0 | 3 |
