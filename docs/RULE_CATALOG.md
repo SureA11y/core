@@ -25,7 +25,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`aria-required-attr`](#aria-required-attr) | Roles with a required ARIA state/property must carry it | 4.1.2 | A | high | serious |
 | [`aria-required-children`](#aria-required-children) | Container roles must own at least one required child role | 4.1.2 | A | medium | moderate |
 | [`aria-required-parent`](#aria-required-parent) | Roles requiring a specific context role must be in that context | 4.1.2 | A | medium | moderate |
-| [`aria-role-name-present`](#aria-role-name-present) | ARIA widget/container roles have an accessible name | 4.1.2 | A | high | serious |
+| [`aria-role-name-present`](#aria-role-name-present) | ARIA roles that require an accessible name have one | 4.1.2 | A | high | serious |
 | [`aria-roles-valid`](#aria-roles-valid) | role attribute must be a valid, non-abstract ARIA role | 4.1.2 | A | high | serious |
 | [`aria-valid-attr`](#aria-valid-attr) | aria-* attributes must be real, defined ARIA attributes | 4.1.2 | A | high | serious |
 | [`aria-valid-attr-value`](#aria-valid-attr-value) | aria-* attribute values must match their declared type | 4.1.2 | A | high | serious |
@@ -418,15 +418,15 @@ Checks that roles with a documented "required context role" entry (listitem, opt
 
 ### `aria-role-name-present`
 
-**ARIA widget/container roles have an accessible name**
+**ARIA roles that require an accessible name have one**
 
 automatic · WCAG 4.1.2 (A) · confidence high · default severity serious
 
-Checks that selected ARIA widget/container roles expose a non-empty accessible name.
+Checks that the ARIA roles WAI-ARIA requires an accessible name for expose a non-empty one.
 
-**Applies to.** Applies to elements whose role attribute is exactly one of scrollbar, toolbar, tablist, radiogroup, tree, grid, menu, menubar, meter or progressbar, and that are included in the accessibility tree. The list is a frozen allowlist rather than every role WAI-ARIA lets an author name. meter and progressbar are also covered by meter-name-present and progressbar-name-present, so those two roles are reported by both rules.
+**Applies to.** Applies to elements whose role attribute is exactly one of grid, meter, progressbar, radiogroup or tree, and that are included in the accessibility tree. Membership is decided by WAI-ARIA's own "Accessible Name Required: True" characteristic, not by whether a role merely permits a name: tablist, toolbar, menu, menubar and scrollbar are name-from-author roles the spec does not require a name for, and are deliberately out of scope. meter and progressbar are also covered by meter-name-present and progressbar-name-present, which map to SC 1.1.1; this rule is what gives those two roles their 4.1.2 coverage.
 
-**Expectation.** The element has a non-empty aria-label, an aria-labelledby that resolves to non-empty text, or a non-empty title. Every role in the list is name-from-author-only, so descendant text is deliberately not accepted: a labelled child inside a composite widget would otherwise pass the container that has no name of its own.
+**Expectation.** The element has a non-empty aria-label, an aria-labelledby that resolves to non-empty text, or a non-empty title. Every role in the set is name-from-author-only, so descendant text is deliberately not accepted: a labelled child inside a composite widget would otherwise pass the container that has no name of its own.
 
 ### `aria-roles-valid`
 

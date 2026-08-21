@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-19T09:30:42.846Z",
+  "generatedAt": "2026-08-21T11:52:05.629Z",
   "summary": {
     "total": 130,
     "withFixture": 130,
@@ -44,7 +44,7 @@
     },
     {
       "ruleId": "area-alt-present",
-      "title": "&lt;area&gt; must have an alt attribute",
+      "title": "<area> must have an alt attribute",
       "type": "automatic",
       "wcagSc": [
         "1.1.1"
@@ -330,7 +330,7 @@
     },
     {
       "ruleId": "aria-role-name-present",
-      "title": "ARIA widget/container roles have an accessible name",
+      "title": "ARIA roles that require an accessible name have one",
       "type": "automatic",
       "wcagSc": [
         "4.1.2"
@@ -339,12 +339,12 @@
       "testFile": "tests/engine-checks/automatic/aria-role-name-present.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/aria-role-name-present-all-scenarios.html",
-      "totalCases": 31,
+      "totalCases": 27,
       "caseCounts": {
-        "PASS": 11,
-        "FAIL": 12,
+        "PASS": 6,
+        "FAIL": 8,
         "CANTTELL": 0,
-        "OTHER": 8
+        "OTHER": 13
       }
     },
     {
@@ -595,7 +595,7 @@
     },
     {
       "ruleId": "contrast-enhanced",
-      "title": "Text must meet the enhanced color contrast ratio",
+      "title": "Text meets enhanced color contrast (AAA)",
       "type": "automatic",
       "wcagSc": [
         "1.4.6"
@@ -614,7 +614,7 @@
     },
     {
       "ruleId": "contrast-minimum",
-      "title": "Text must meet the minimum color contrast ratio",
+      "title": "Text meets minimum color contrast (AA)",
       "type": "automatic",
       "wcagSc": [
         "1.4.3"
@@ -1092,12 +1092,12 @@
       "testFile": "tests/engine-checks/automatic/iframe-name-present.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/iframe-name-present-all-scenarios.html",
-      "totalCases": 7,
+      "totalCases": 9,
       "caseCounts": {
         "PASS": 3,
-        "FAIL": 2,
+        "FAIL": 3,
         "CANTTELL": 0,
-        "OTHER": 2
+        "OTHER": 3
       }
     },
     {
@@ -1138,7 +1138,7 @@
     },
     {
       "ruleId": "img-alt-decorative",
-      "title": "<img> with alt=\"\" must be decorative (manual review)",
+      "title": "Excluded <img>/<canvas>/<svg> must be decorative (manual review)",
       "type": "manual",
       "wcagSc": [
         "1.1.1"
@@ -1500,7 +1500,7 @@
     },
     {
       "ruleId": "listbox-name-present",
-      "title": "Accessible name is present",
+      "title": "Listboxes have an accessible name",
       "type": "automatic",
       "wcagSc": [
         "4.1.2"
@@ -1555,7 +1555,7 @@
     },
     {
       "ruleId": "media-alternative-transcript-evidence",
-      "title": "Time-based media: transcript / media alternative evidence",
+      "title": "Time-based media: transcript or text alternative evidence",
       "type": "manual",
       "wcagSc": [
         "1.2.1"
@@ -1782,7 +1782,7 @@
     },
     {
       "ruleId": "option-name-present",
-      "title": "Accessible name is present",
+      "title": "Options have an accessible name",
       "type": "automatic",
       "wcagSc": [
         "4.1.2"
@@ -1837,7 +1837,7 @@
     },
     {
       "ruleId": "page-title-patterns",
-      "title": "Page title patterns that may indicate low descriptiveness",
+      "title": "Page title patterns that may be insufficiently descriptive",
       "type": "manual",
       "wcagSc": [
         "2.4.2"
@@ -1856,7 +1856,7 @@
     },
     {
       "ruleId": "page-title-present",
-      "title": "Page title is present and non-empty",
+      "title": "Page has a non-empty title",
       "type": "automatic",
       "wcagSc": [
         "2.4.2"
@@ -1947,7 +1947,7 @@
     },
     {
       "ruleId": "role-img-text-alternative-present",
-      "title": "[role=\"img\"] must have an accessible text alternative",
+      "title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] must have an accessible text alternative",
       "type": "automatic",
       "wcagSc": [
         "1.1.1"
@@ -2003,7 +2003,7 @@
     },
     {
       "ruleId": "searchbox-name-present",
-      "title": "Accessible name is present",
+      "title": "Searchboxes have an accessible name",
       "type": "automatic",
       "wcagSc": [
         "4.1.2"
@@ -2077,7 +2077,7 @@
     },
     {
       "ruleId": "spinbutton-name-present",
-      "title": "Accessible name is present",
+      "title": "Spinbuttons have an accessible name",
       "type": "automatic",
       "wcagSc": [
         "4.1.2"
@@ -2282,7 +2282,7 @@
     },
     {
       "ruleId": "target-size-minimum",
-      "title": "Pointer targets meet minimum size (AA)",
+      "title": "Pointer targets must be at least 24x24px large, or leave sufficient distance to other targets",
       "type": "automatic",
       "wcagSc": [
         "2.5.8"
@@ -2320,7 +2320,7 @@
     },
     {
       "ruleId": "textbox-name-present",
-      "title": "Accessible name is present",
+      "title": "Textboxes have an accessible name",
       "type": "automatic",
       "wcagSc": [
         "4.1.2"
@@ -2358,7 +2358,7 @@
     },
     {
       "ruleId": "treeitem-name-present",
-      "title": "Accessible name is present",
+      "title": "Tree items have an accessible name",
       "type": "automatic",
       "wcagSc": [
         "4.1.2"

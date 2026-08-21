@@ -4,7 +4,8 @@
 
 /**
  * Regenerates the ARIA global and per-role attribute tables inside
- * src/checks/automatic/aria-allowed-attr.js from aria-query.
+ * src/checks/automatic/aria-allowed-attr.js, and the name-required role set
+ * inside src/checks/automatic/aria-role-name-present.js, from aria-query.
  *
  * Usage:
  *   node scripts/generate-aria-tables.js
@@ -31,6 +32,14 @@ const prettier = require('prettier');
 
 const RULE_PATH = path.join(__dirname, '..', 'src', 'checks', 'automatic', 'aria-allowed-attr.js');
 const HELPERS_PATH = path.join(__dirname, '..', 'src', 'core', 'aria-helpers.js');
+const NAME_REQUIRED_RULE_PATH = path.join(
+  __dirname,
+  '..',
+  'src',
+  'checks',
+  'automatic',
+  'aria-role-name-present.js'
+);
 
 const BEGIN_GLOBAL = '  // <generated:aria-global-attrs>';
 const END_GLOBAL = '  // </generated:aria-global-attrs>';
@@ -45,6 +54,8 @@ const BEGIN_NAME_FROM_CONTENT = '    // <generated:aria-name-from-content>';
 const END_NAME_FROM_CONTENT = '    // </generated:aria-name-from-content>';
 const BEGIN_CONCRETE = '  // <generated:aria-concrete-roles>';
 const END_CONCRETE = '  // </generated:aria-concrete-roles>';
+const BEGIN_NAME_REQUIRED = '  // <generated:aria-name-required-roles>';
+const END_NAME_REQUIRED = '  // </generated:aria-name-required-roles>';
 
 // ARIA 1.3 roles aria-query does not carry yet. Dropping them would report a
 // valid role as unrecognised.
@@ -214,6 +225,58 @@ function renderRoleless(list) {
   ].join('\n');
 }
 
+// Roles the generic aria-role-name-present rule owns: WAI-ARIA marks each one
+// "Accessible Name Required: True" and names it from the author only, so an
+// unnamed instance is a real SC 4.1.2 failure and not an authoring preference.
+// The distinction that matters here is required vs. merely allowed: tablist,
+// toolbar, menu, menubar and scrollbar are all name-from-author roles the spec
+// does NOT require a name for, and the rule used to fail them anyway.
+//
+// Hand-listed because membership is a scope decision, not a spec fact --
+// aria-query cannot say which roles another rule already owns. Every entry is
+// verified against it below, so a role that stops requiring a name, or gains a
+// name-from-contents path, breaks the build instead of the rule.
+//
+// Name-required roles deliberately absent, already owned by a dedicated rule:
+//   alertdialog, dialog  dialog-name-present
+//   combobox             combobox-name-present
+//   img                  img-alt-present / role-img-alt-present
+//   listbox              listbox-name-present
+//   region               region-manual
+//   searchbox            searchbox-name-present
+//   slider               slider-name-present
+//   spinbutton           spinbutton-name-present
+//   textbox              textbox-name-present
+// meter and progressbar have dedicated rules too, but those map to SC 1.1.1;
+// keeping both here is what gives the two roles any 4.1.2 coverage at all.
+//
+// Name-required roles with no rule anywhere yet -- a real gap, tracked in
+// docs/DESIGN_CHALLENGES.md rather than closed here, because each one means new
+// failures on existing scans and deserves its own change:
+//   application, marquee, table, tabpanel, treegrid
+//   doc-biblioentry, doc-pagebreak, doc-part (DPUB), graphics-document,
+//   graphics-symbol (Graphics module)
+const NAME_REQUIRED_ROLES = ['grid', 'meter', 'progressbar', 'radiogroup', 'tree'];
+
+function nameRequiredRoles() {
+  for (const name of NAME_REQUIRED_ROLES) {
+    const def = roles.get(name);
+    if (!def) {
+      throw new Error(`aria-query no longer defines the role: ${name}`);
+    }
+    if (!def.accessibleNameRequired) {
+      throw new Error(`aria-query no longer requires an accessible name for role: ${name}`);
+    }
+    if ((def.nameFrom || []).includes('contents')) {
+      throw new Error(
+        `role ${name} now takes its name from contents; aria-role-name-present never accepts ` +
+          'subtree text, so it can no longer own this role'
+      );
+    }
+  }
+  return [...NAME_REQUIRED_ROLES].sort();
+}
+
 function implicitRoles() {
   const allowed = new Set(CONTEXT_FREE_ELEMENTS);
   const bySource = new Map();
@@ -364,6 +427,22 @@ async function main() {
     renderRoleSet(BEGIN_CONCRETE, END_CONCRETE, 'CONCRETE_ROLES', sets.concrete)
   );
   files.set(HELPERS_PATH, { before: helpersBefore, after: helpers });
+
+  const nameRequiredBefore = fs.readFileSync(NAME_REQUIRED_RULE_PATH, 'utf8');
+  files.set(NAME_REQUIRED_RULE_PATH, {
+    before: nameRequiredBefore,
+    after: replaceBlock(
+      nameRequiredBefore,
+      BEGIN_NAME_REQUIRED,
+      END_NAME_REQUIRED,
+      renderRoleSet(
+        BEGIN_NAME_REQUIRED,
+        END_NAME_REQUIRED,
+        'NAME_REQUIRED_ROLES',
+        nameRequiredRoles()
+      )
+    )
+  });
 
   // The naming rules were previously written but never checked, so a stale
   // name-from-content block could not fail --check.
