@@ -592,7 +592,7 @@ Automation mix: **full 40, partial 0, manual 2**.
 | aria-required-attr | automatic | Roles with a required ARIA state/property must carry it | src/checks/automatic/aria-required-attr.js | aria-attr-required-for-role |  |
 | aria-required-children | automatic | Container roles must own at least one required child role | src/checks/automatic/aria-required-children.js | aria-role-required-owned-children |  |
 | aria-required-parent | automatic | Roles requiring a specific context role must be in that context | src/checks/automatic/aria-required-parent.js | aria-role-required-context-parent |  |
-| aria-role-name-present | automatic | ARIA widget/container roles have an accessible name | src/checks/automatic/aria-role-name-present.js | aria-role-name-present |  |
+| aria-role-name-present | automatic | ARIA roles that require an accessible name have one | src/checks/automatic/aria-role-name-present.js | aria-role-name-present |  |
 | aria-roles-valid | automatic | role attribute must be a valid, non-abstract ARIA role | src/checks/automatic/aria-roles-valid.js | aria-role-valid |  |
 | aria-valid-attr-value | automatic | aria-* attribute values must match their declared type | src/checks/automatic/aria-valid-attr-value.js | aria-attr-value-valid |  |
 | aria-valid-attr | automatic | aria-* attributes must be real, defined ARIA attributes | src/checks/automatic/aria-valid-attr.js | aria-attr-name-valid |  |
@@ -1210,7 +1210,7 @@ Automation mix: **full 40, partial 0, manual 2**.
 | aria-required-attr | automatic | Roles with a required ARIA state/property must carry it | src/checks/automatic/aria-required-attr.js | aria-attr-required-for-role |  |
 | aria-required-children | automatic | Container roles must own at least one required child role | src/checks/automatic/aria-required-children.js | aria-role-required-owned-children |  |
 | aria-required-parent | automatic | Roles requiring a specific context role must be in that context | src/checks/automatic/aria-required-parent.js | aria-role-required-context-parent |  |
-| aria-role-name-present | automatic | ARIA widget/container roles have an accessible name | src/checks/automatic/aria-role-name-present.js | aria-role-name-present |  |
+| aria-role-name-present | automatic | ARIA roles that require an accessible name have one | src/checks/automatic/aria-role-name-present.js | aria-role-name-present |  |
 | aria-roles-valid | automatic | role attribute must be a valid, non-abstract ARIA role | src/checks/automatic/aria-roles-valid.js | aria-role-valid |  |
 | aria-valid-attr-value | automatic | aria-* attribute values must match their declared type | src/checks/automatic/aria-valid-attr-value.js | aria-attr-value-valid |  |
 | aria-valid-attr | automatic | aria-* attributes must be real, defined ARIA attributes | src/checks/automatic/aria-valid-attr.js | aria-attr-name-valid |  |

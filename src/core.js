@@ -951,8 +951,8 @@ const CHECK_DEFS = [
   },
   {
     "ruleId": "aria-role-name-present",
-    "title": "ARIA widget/container roles have an accessible name",
-    "description": "Checks that selected ARIA widget/container roles expose a non-empty accessible name.",
+    "title": "ARIA roles that require an accessible name have one",
+    "description": "Checks that the ARIA roles WAI-ARIA requires an accessible name for expose a non-empty one.",
     "i18n": {
       "titleKey": "ariaRoleNamePresent_title",
       "descriptionKey": "ariaRoleNamePresent_description"
@@ -7898,8 +7898,8 @@ const I18N = {
     "treeitemNamePresent_description": "Prüft, ob Elemente mit role=\"treeitem\" einen nicht leeren zugänglichen Namen aufweisen.",
     "treeitemNamePresent_summary_fail": "Dieser Baumeintrag hat keinen zugänglichen Namen.",
     "treeitemNamePresent_hint_fail": "Stellen Sie einen Baumeintrag-Text bereit, der nicht vor assistiven Technologien verborgen ist, oder stellen Sie aria-label oder aria-labelledby bereit.",
-    "ariaRoleNamePresent_title": "ARIA-Widget-/Container-Rollen haben einen zugänglichen Namen",
-    "ariaRoleNamePresent_description": "Prüft, ob bestimmte ARIA-Widget-/Container-Rollen einen nicht leeren zugänglichen Namen aufweisen.",
+    "ariaRoleNamePresent_title": "ARIA-Rollen, die einen zugänglichen Namen erfordern, haben einen",
+    "ariaRoleNamePresent_description": "Prüft, ob die ARIA-Rollen, für die WAI-ARIA einen zugänglichen Namen vorschreibt, einen nicht leeren Namen aufweisen.",
     "ariaRoleNamePresent_summary_fail": "Dieses Element hat keinen zugänglichen Namen.",
     "ariaRoleNamePresent_hint_fail": "Stellen Sie aria-label oder aria-labelledby bereit (bevorzugt), oder ein nicht leeres title-Attribut.",
     "composite_rollup_summary": "Ergebnis der zusammengesetzten Regel: {{reasonCode}} ({{testCount}} Prüfungen)",
@@ -8566,8 +8566,8 @@ const I18N = {
     "treeitemNamePresent_description": "Checks that elements with role=\"treeitem\" expose a non-empty accessible name.",
     "treeitemNamePresent_summary_fail": "This tree item has no accessible name.",
     "treeitemNamePresent_hint_fail": "Provide tree item text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.",
-    "ariaRoleNamePresent_title": "ARIA widget/container roles have an accessible name",
-    "ariaRoleNamePresent_description": "Checks that selected ARIA widget/container roles expose a non-empty accessible name.",
+    "ariaRoleNamePresent_title": "ARIA roles that require an accessible name have one",
+    "ariaRoleNamePresent_description": "Checks that the ARIA roles WAI-ARIA requires an accessible name for expose a non-empty one.",
     "ariaRoleNamePresent_summary_fail": "This element has no accessible name.",
     "ariaRoleNamePresent_hint_fail": "Provide aria-label or aria-labelledby (preferred), or a non-empty title attribute.",
     "composite_rollup_summary": "Composite rule result: {{reasonCode}} ({{testCount}} checks)",
@@ -9234,8 +9234,8 @@ const I18N = {
     "treeitemNamePresent_description": "Comprueba que los elementos con role=\"treeitem\" expongan un nombre accesible no vacío.",
     "treeitemNamePresent_summary_fail": "Este elemento de árbol no tiene nombre accesible.",
     "treeitemNamePresent_hint_fail": "Proporcionar texto de elemento de árbol que no esté oculto a las tecnologías de asistencia, o proporcionar aria-label o aria-labelledby.",
-    "ariaRoleNamePresent_title": "Los roles ARIA de widget/contenedor tienen un nombre accesible",
-    "ariaRoleNamePresent_description": "Comprueba que determinados roles ARIA de widget/contenedor expongan un nombre accesible no vacío.",
+    "ariaRoleNamePresent_title": "Los roles ARIA que requieren un nombre accesible lo tienen",
+    "ariaRoleNamePresent_description": "Comprueba que los roles ARIA para los que WAI-ARIA exige un nombre accesible expongan uno no vacío.",
     "ariaRoleNamePresent_summary_fail": "Este elemento no tiene nombre accesible.",
     "ariaRoleNamePresent_hint_fail": "Proporcionar aria-label o aria-labelledby (preferido), o un atributo title no vacío.",
     "composite_rollup_summary": "Resultado de regla compuesta: {{reasonCode}} ({{testCount}} comprobaciones)",
@@ -9902,8 +9902,8 @@ const I18N = {
     "treeitemNamePresent_description": "Vérifie que les éléments avec role=\"treeitem\" exposent un nom accessible non vide.",
     "treeitemNamePresent_summary_fail": "Cet élément d’arborescence n’a pas de nom accessible.",
     "treeitemNamePresent_hint_fail": "Fournissez un texte d’élément d’arborescence qui n’est pas masqué aux technologies d’assistance, ou fournissez aria-label ou aria-labelledby.",
-    "ariaRoleNamePresent_title": "Les rôles ARIA de type widget/conteneur ont un nom accessible",
-    "ariaRoleNamePresent_description": "Vérifie que certains rôles ARIA de type widget/conteneur exposent un nom accessible non vide.",
+    "ariaRoleNamePresent_title": "Les rôles ARIA qui exigent un nom accessible en ont un",
+    "ariaRoleNamePresent_description": "Vérifie que les rôles ARIA pour lesquels WAI-ARIA exige un nom accessible exposent un nom non vide.",
     "ariaRoleNamePresent_summary_fail": "Cet élément n’a pas de nom accessible.",
     "ariaRoleNamePresent_hint_fail": "Fournissez aria-label ou aria-labelledby (préféré), ou un attribut title non vide.",
     "composite_rollup_summary": "Résultat de la règle composite : {{reasonCode}} ({{testCount}} contrôles)",
@@ -20695,8 +20695,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "aria-role-name-present",
-    "title": "ARIA widget/container roles have an accessible name",
-    "description": "Checks that selected ARIA widget/container roles expose a non-empty accessible name.",
+    "title": "ARIA roles that require an accessible name have one",
+    "description": "Checks that the ARIA roles WAI-ARIA requires an accessible name for expose a non-empty one.",
     "i18n": {
       "titleKey": "ariaRoleNamePresent_title",
       "descriptionKey": "ariaRoleNamePresent_description"
@@ -31219,23 +31219,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   };
 
-  // Frozen allowlist of roles to check in this generic rule.
-  // (Keep this small, explicit, and standards-based for determinism.)
-  const roleSet = new Set([
-    'scrollbar',
-    'toolbar',
-    'tablist',
-    'radiogroup',
-    'tree',
-    'grid',
-    'menu',
-    'menubar',
-    'meter',
-    'progressbar'
-  ]);
+  // Roles WAI-ARIA marks "Accessible Name Required: True" and names from the
+  // author only. Generated from aria-query by scripts/generate-aria-tables.js:
+  // a role that merely *allows* an author name (tablist, toolbar, menu,
+  // menubar, scrollbar) is not a 4.1.2 failure when unnamed and is not listed.
+  // <generated:aria-name-required-roles>
+  const NAME_REQUIRED_ROLES = new Set(['grid', 'meter', 'progressbar', 'radiogroup', 'tree']);
+  // </generated:aria-name-required-roles>
 
-  const selector =
-    '[role="scrollbar"],[role="toolbar"],[role="tablist"],[role="radiogroup"],[role="tree"],[role="grid"],[role="menu"],[role="menubar"],[role="meter"],[role="progressbar"]';
+  // Derived from the set above so the two cannot drift apart.
+  const selector = [...NAME_REQUIRED_ROLES].map((r) => `[role="${r}"]`).join(',');
 
   const nodes = (() => {
     try {
@@ -31265,7 +31258,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         return '';
       }
     })();
-    if (!roleSet.has(role)) continue;
+    if (!NAME_REQUIRED_ROLES.has(role)) continue;
 
     if (!isEligible(el)) continue;
 
@@ -50893,8 +50886,8 @@ const I18N = {
     "treeitemNamePresent_description": "Prüft, ob Elemente mit role=\"treeitem\" einen nicht leeren zugänglichen Namen aufweisen.",
     "treeitemNamePresent_summary_fail": "Dieser Baumeintrag hat keinen zugänglichen Namen.",
     "treeitemNamePresent_hint_fail": "Stellen Sie einen Baumeintrag-Text bereit, der nicht vor assistiven Technologien verborgen ist, oder stellen Sie aria-label oder aria-labelledby bereit.",
-    "ariaRoleNamePresent_title": "ARIA-Widget-/Container-Rollen haben einen zugänglichen Namen",
-    "ariaRoleNamePresent_description": "Prüft, ob bestimmte ARIA-Widget-/Container-Rollen einen nicht leeren zugänglichen Namen aufweisen.",
+    "ariaRoleNamePresent_title": "ARIA-Rollen, die einen zugänglichen Namen erfordern, haben einen",
+    "ariaRoleNamePresent_description": "Prüft, ob die ARIA-Rollen, für die WAI-ARIA einen zugänglichen Namen vorschreibt, einen nicht leeren Namen aufweisen.",
     "ariaRoleNamePresent_summary_fail": "Dieses Element hat keinen zugänglichen Namen.",
     "ariaRoleNamePresent_hint_fail": "Stellen Sie aria-label oder aria-labelledby bereit (bevorzugt), oder ein nicht leeres title-Attribut.",
     "composite_rollup_summary": "Ergebnis der zusammengesetzten Regel: {{reasonCode}} ({{testCount}} Prüfungen)",
@@ -51561,8 +51554,8 @@ const I18N = {
     "treeitemNamePresent_description": "Checks that elements with role=\"treeitem\" expose a non-empty accessible name.",
     "treeitemNamePresent_summary_fail": "This tree item has no accessible name.",
     "treeitemNamePresent_hint_fail": "Provide tree item text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.",
-    "ariaRoleNamePresent_title": "ARIA widget/container roles have an accessible name",
-    "ariaRoleNamePresent_description": "Checks that selected ARIA widget/container roles expose a non-empty accessible name.",
+    "ariaRoleNamePresent_title": "ARIA roles that require an accessible name have one",
+    "ariaRoleNamePresent_description": "Checks that the ARIA roles WAI-ARIA requires an accessible name for expose a non-empty one.",
     "ariaRoleNamePresent_summary_fail": "This element has no accessible name.",
     "ariaRoleNamePresent_hint_fail": "Provide aria-label or aria-labelledby (preferred), or a non-empty title attribute.",
     "composite_rollup_summary": "Composite rule result: {{reasonCode}} ({{testCount}} checks)",
@@ -52229,8 +52222,8 @@ const I18N = {
     "treeitemNamePresent_description": "Comprueba que los elementos con role=\"treeitem\" expongan un nombre accesible no vacío.",
     "treeitemNamePresent_summary_fail": "Este elemento de árbol no tiene nombre accesible.",
     "treeitemNamePresent_hint_fail": "Proporcionar texto de elemento de árbol que no esté oculto a las tecnologías de asistencia, o proporcionar aria-label o aria-labelledby.",
-    "ariaRoleNamePresent_title": "Los roles ARIA de widget/contenedor tienen un nombre accesible",
-    "ariaRoleNamePresent_description": "Comprueba que determinados roles ARIA de widget/contenedor expongan un nombre accesible no vacío.",
+    "ariaRoleNamePresent_title": "Los roles ARIA que requieren un nombre accesible lo tienen",
+    "ariaRoleNamePresent_description": "Comprueba que los roles ARIA para los que WAI-ARIA exige un nombre accesible expongan uno no vacío.",
     "ariaRoleNamePresent_summary_fail": "Este elemento no tiene nombre accesible.",
     "ariaRoleNamePresent_hint_fail": "Proporcionar aria-label o aria-labelledby (preferido), o un atributo title no vacío.",
     "composite_rollup_summary": "Resultado de regla compuesta: {{reasonCode}} ({{testCount}} comprobaciones)",
@@ -52897,8 +52890,8 @@ const I18N = {
     "treeitemNamePresent_description": "Vérifie que les éléments avec role=\"treeitem\" exposent un nom accessible non vide.",
     "treeitemNamePresent_summary_fail": "Cet élément d’arborescence n’a pas de nom accessible.",
     "treeitemNamePresent_hint_fail": "Fournissez un texte d’élément d’arborescence qui n’est pas masqué aux technologies d’assistance, ou fournissez aria-label ou aria-labelledby.",
-    "ariaRoleNamePresent_title": "Les rôles ARIA de type widget/conteneur ont un nom accessible",
-    "ariaRoleNamePresent_description": "Vérifie que certains rôles ARIA de type widget/conteneur exposent un nom accessible non vide.",
+    "ariaRoleNamePresent_title": "Les rôles ARIA qui exigent un nom accessible en ont un",
+    "ariaRoleNamePresent_description": "Vérifie que les rôles ARIA pour lesquels WAI-ARIA exige un nom accessible exposent un nom non vide.",
     "ariaRoleNamePresent_summary_fail": "Cet élément n’a pas de nom accessible.",
     "ariaRoleNamePresent_hint_fail": "Fournissez aria-label ou aria-labelledby (préféré), ou un attribut title non vide.",
     "composite_rollup_summary": "Résultat de la règle composite : {{reasonCode}} ({{testCount}} contrôles)",
@@ -63650,8 +63643,8 @@ const __a11yCoreCrossFrameApi = (function () {
   },
   {
     "ruleId": "aria-role-name-present",
-    "title": "ARIA widget/container roles have an accessible name",
-    "description": "Checks that selected ARIA widget/container roles expose a non-empty accessible name.",
+    "title": "ARIA roles that require an accessible name have one",
+    "description": "Checks that the ARIA roles WAI-ARIA requires an accessible name for expose a non-empty one.",
     "i18n": {
       "titleKey": "ariaRoleNamePresent_title",
       "descriptionKey": "ariaRoleNamePresent_description"
@@ -74169,23 +74162,16 @@ const __a11yCoreCrossFrameApi = (function () {
     }
   };
 
-  // Frozen allowlist of roles to check in this generic rule.
-  // (Keep this small, explicit, and standards-based for determinism.)
-  const roleSet = new Set([
-    'scrollbar',
-    'toolbar',
-    'tablist',
-    'radiogroup',
-    'tree',
-    'grid',
-    'menu',
-    'menubar',
-    'meter',
-    'progressbar'
-  ]);
+  // Roles WAI-ARIA marks "Accessible Name Required: True" and names from the
+  // author only. Generated from aria-query by scripts/generate-aria-tables.js:
+  // a role that merely *allows* an author name (tablist, toolbar, menu,
+  // menubar, scrollbar) is not a 4.1.2 failure when unnamed and is not listed.
+  // <generated:aria-name-required-roles>
+  const NAME_REQUIRED_ROLES = new Set(['grid', 'meter', 'progressbar', 'radiogroup', 'tree']);
+  // </generated:aria-name-required-roles>
 
-  const selector =
-    '[role="scrollbar"],[role="toolbar"],[role="tablist"],[role="radiogroup"],[role="tree"],[role="grid"],[role="menu"],[role="menubar"],[role="meter"],[role="progressbar"]';
+  // Derived from the set above so the two cannot drift apart.
+  const selector = [...NAME_REQUIRED_ROLES].map((r) => `[role="${r}"]`).join(',');
 
   const nodes = (() => {
     try {
@@ -74215,7 +74201,7 @@ const __a11yCoreCrossFrameApi = (function () {
         return '';
       }
     })();
-    if (!roleSet.has(role)) continue;
+    if (!NAME_REQUIRED_ROLES.has(role)) continue;
 
     if (!isEligible(el)) continue;
 
@@ -93843,8 +93829,8 @@ const I18N = {
     "treeitemNamePresent_description": "Prüft, ob Elemente mit role=\"treeitem\" einen nicht leeren zugänglichen Namen aufweisen.",
     "treeitemNamePresent_summary_fail": "Dieser Baumeintrag hat keinen zugänglichen Namen.",
     "treeitemNamePresent_hint_fail": "Stellen Sie einen Baumeintrag-Text bereit, der nicht vor assistiven Technologien verborgen ist, oder stellen Sie aria-label oder aria-labelledby bereit.",
-    "ariaRoleNamePresent_title": "ARIA-Widget-/Container-Rollen haben einen zugänglichen Namen",
-    "ariaRoleNamePresent_description": "Prüft, ob bestimmte ARIA-Widget-/Container-Rollen einen nicht leeren zugänglichen Namen aufweisen.",
+    "ariaRoleNamePresent_title": "ARIA-Rollen, die einen zugänglichen Namen erfordern, haben einen",
+    "ariaRoleNamePresent_description": "Prüft, ob die ARIA-Rollen, für die WAI-ARIA einen zugänglichen Namen vorschreibt, einen nicht leeren Namen aufweisen.",
     "ariaRoleNamePresent_summary_fail": "Dieses Element hat keinen zugänglichen Namen.",
     "ariaRoleNamePresent_hint_fail": "Stellen Sie aria-label oder aria-labelledby bereit (bevorzugt), oder ein nicht leeres title-Attribut.",
     "composite_rollup_summary": "Ergebnis der zusammengesetzten Regel: {{reasonCode}} ({{testCount}} Prüfungen)",
@@ -94511,8 +94497,8 @@ const I18N = {
     "treeitemNamePresent_description": "Checks that elements with role=\"treeitem\" expose a non-empty accessible name.",
     "treeitemNamePresent_summary_fail": "This tree item has no accessible name.",
     "treeitemNamePresent_hint_fail": "Provide tree item text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.",
-    "ariaRoleNamePresent_title": "ARIA widget/container roles have an accessible name",
-    "ariaRoleNamePresent_description": "Checks that selected ARIA widget/container roles expose a non-empty accessible name.",
+    "ariaRoleNamePresent_title": "ARIA roles that require an accessible name have one",
+    "ariaRoleNamePresent_description": "Checks that the ARIA roles WAI-ARIA requires an accessible name for expose a non-empty one.",
     "ariaRoleNamePresent_summary_fail": "This element has no accessible name.",
     "ariaRoleNamePresent_hint_fail": "Provide aria-label or aria-labelledby (preferred), or a non-empty title attribute.",
     "composite_rollup_summary": "Composite rule result: {{reasonCode}} ({{testCount}} checks)",
@@ -95179,8 +95165,8 @@ const I18N = {
     "treeitemNamePresent_description": "Comprueba que los elementos con role=\"treeitem\" expongan un nombre accesible no vacío.",
     "treeitemNamePresent_summary_fail": "Este elemento de árbol no tiene nombre accesible.",
     "treeitemNamePresent_hint_fail": "Proporcionar texto de elemento de árbol que no esté oculto a las tecnologías de asistencia, o proporcionar aria-label o aria-labelledby.",
-    "ariaRoleNamePresent_title": "Los roles ARIA de widget/contenedor tienen un nombre accesible",
-    "ariaRoleNamePresent_description": "Comprueba que determinados roles ARIA de widget/contenedor expongan un nombre accesible no vacío.",
+    "ariaRoleNamePresent_title": "Los roles ARIA que requieren un nombre accesible lo tienen",
+    "ariaRoleNamePresent_description": "Comprueba que los roles ARIA para los que WAI-ARIA exige un nombre accesible expongan uno no vacío.",
     "ariaRoleNamePresent_summary_fail": "Este elemento no tiene nombre accesible.",
     "ariaRoleNamePresent_hint_fail": "Proporcionar aria-label o aria-labelledby (preferido), o un atributo title no vacío.",
     "composite_rollup_summary": "Resultado de regla compuesta: {{reasonCode}} ({{testCount}} comprobaciones)",
@@ -95847,8 +95833,8 @@ const I18N = {
     "treeitemNamePresent_description": "Vérifie que les éléments avec role=\"treeitem\" exposent un nom accessible non vide.",
     "treeitemNamePresent_summary_fail": "Cet élément d’arborescence n’a pas de nom accessible.",
     "treeitemNamePresent_hint_fail": "Fournissez un texte d’élément d’arborescence qui n’est pas masqué aux technologies d’assistance, ou fournissez aria-label ou aria-labelledby.",
-    "ariaRoleNamePresent_title": "Les rôles ARIA de type widget/conteneur ont un nom accessible",
-    "ariaRoleNamePresent_description": "Vérifie que certains rôles ARIA de type widget/conteneur exposent un nom accessible non vide.",
+    "ariaRoleNamePresent_title": "Les rôles ARIA qui exigent un nom accessible en ont un",
+    "ariaRoleNamePresent_description": "Vérifie que les rôles ARIA pour lesquels WAI-ARIA exige un nom accessible exposent un nom non vide.",
     "ariaRoleNamePresent_summary_fail": "Cet élément n’a pas de nom accessible.",
     "ariaRoleNamePresent_hint_fail": "Fournissez aria-label ou aria-labelledby (préféré), ou un attribut title non vide.",
     "composite_rollup_summary": "Résultat de la règle composite : {{reasonCode}} ({{testCount}} contrôles)",

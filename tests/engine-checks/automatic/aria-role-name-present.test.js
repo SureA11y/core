@@ -39,10 +39,36 @@ test('aria-role-name-present: no applicable elements => notApplicable', () => {
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test('aria-role-name-present: role=toolbar missing name => fail', () => {
+// WAI-ARIA marks tablist, toolbar, menu, menubar and scrollbar "Accessible
+// Name Required: False" -- an author may name them, and the APG recommends it
+// for a tablist, but an unnamed one is not an SC 4.1.2 failure. They are out
+// of this rule's applicability entirely, so an unnamed one is notApplicable
+// rather than pass: the rule has no verdict to give about them.
+test('aria-role-name-present: role=tablist missing name => notApplicable (name allowed, not required)', () => {
+  const html = `
+<!doctype html><html><body>
+  <div role="tablist">
+    <div role="tab" aria-label="Overview"></div>
+  </div>
+</body></html>
+  `;
+
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
+
+  const result = runa11yCoreOnHtml(html);
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test('aria-role-name-present: toolbar/menu/menubar/scrollbar missing name => notApplicable', () => {
   const html = `
 <!doctype html><html><body>
   <div role="toolbar"></div>
+  <div role="menu"></div>
+  <div role="menubar"></div>
+  <div role="scrollbar"></div>
 </body></html>
   `;
 
@@ -52,32 +78,14 @@ test('aria-role-name-present: role=toolbar missing name => fail', () => {
   }
 
   const result = runa11yCoreOnHtml(html);
-  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test('aria-role-name-present: role=toolbar aria-label => pass', () => {
+test('aria-role-name-present: role=grid aria-labelledby => pass', () => {
   const html = `
 <!doctype html><html><body>
-  <div role="toolbar" aria-label="Editor tools"></div>
-</body></html>
-  `;
-
-  if (!runa11yCoreOnHtml || !assertRule) {
-    assert.ok(true);
-    return;
-  }
-
-  const result = runa11yCoreOnHtml(html);
-  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
-});
-
-test('aria-role-name-present: role=tablist aria-labelledby => pass', () => {
-  const html = `
-<!doctype html><html><body>
-  <h2 id="t1">Account tabs</h2>
-  <div role="tablist" aria-labelledby="t1">
-    <div role="tab" aria-label="Overview"></div>
-  </div>
+  <h2 id="t1">Recent orders</h2>
+  <div role="grid" aria-labelledby="t1"></div>
 </body></html>
   `;
 
@@ -126,8 +134,8 @@ test('aria-role-name-present: multiple roles mixed => fail with >=2 occurrences'
   const html = `
 <!doctype html><html><body>
   <div role="grid"></div>
-  <div role="menu" aria-label="Main menu"></div>
-  <div role="menubar"></div>
+  <div role="radiogroup"></div>
+  <div role="tree" aria-label="File browser"></div>
 </body></html>
   `;
 
@@ -140,11 +148,31 @@ test('aria-role-name-present: multiple roles mixed => fail with >=2 occurrences'
   assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
 });
 
-test('aria-role-name-present: role=scrollbar labelledby hidden text => pass', () => {
+test('aria-role-name-present: unnamed not-required roles do not add occurrences to a fail', () => {
   const html = `
 <!doctype html><html><body>
-  <span id="lbl" aria-hidden="true">Scroll</span>
-  <div role="scrollbar" aria-labelledby="lbl"></div>
+  <div role="grid"></div>
+  <div role="tablist"></div>
+  <div role="toolbar"></div>
+</body></html>
+  `;
+
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
+
+  const result = runa11yCoreOnHtml(html);
+  // Only the grid is reported: the tablist and toolbar are out of scope, not
+  // silently passing occurrences.
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+});
+
+test('aria-role-name-present: role=tree labelledby hidden text => pass', () => {
+  const html = `
+<!doctype html><html><body>
+  <span id="lbl" aria-hidden="true">File browser</span>
+  <div role="tree" aria-labelledby="lbl"></div>
 </body></html>
   `;
 
@@ -444,7 +472,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-role-name-present-all-sc
   }
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 14, maxOccurrences: 14 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 10, maxOccurrences: 10 });
 
   const expectedFailIds = [
     'role_case_01',
@@ -452,15 +480,11 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-role-name-present-all-sc
     'role_case_05',
     'role_case_07',
     'role_case_09',
-    'role_case_11',
+    'role_case_12',
     'role_case_13',
-    'role_case_15',
-    'role_case_17',
-    'role_case_19',
-    'role_case_22',
-    'role_case_23',
-    'role_case_25',
-    'role_case_29'
+    'role_case_14',
+    'role_case_16',
+    'role_case_20'
   ];
 
   const expectedNoOccIds = [
@@ -469,18 +493,19 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-role-name-present-all-sc
     'role_case_06',
     'role_case_08',
     'role_case_10',
-    'role_case_12',
-    'role_case_14',
-    'role_case_16',
+    'role_case_11',
+    'role_case_15',
+    'role_case_17',
     'role_case_18',
-    'role_case_20',
+    'role_case_19',
     'role_case_21',
+    'role_case_22',
+    // Section G: name allowed but not required, so out of applicability.
+    'role_case_23',
     'role_case_24',
+    'role_case_25',
     'role_case_26',
-    'role_case_27',
-    'role_case_28',
-    'role_case_30',
-    'role_case_31'
+    'role_case_27'
   ];
 
   for (const id of expectedFailIds) {
@@ -488,5 +513,59 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-role-name-present-all-sc
   }
   for (const id of expectedNoOccIds) {
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
+  }
+});
+
+// The rule's whole applicability is now one spec fact: WAI-ARIA's "Accessible
+// Name Required: True" characteristic. Reading the generated block back out of
+// the source and re-deriving it from aria-query is what keeps that honest --
+// scripts/generate-aria-tables.js writes the block, but nothing in CI runs its
+// --check, so without this the set could be hand-edited back to a hand-picked
+// allowlist (the defect this rule was fixed for) with the suite still green.
+test("aria-role-name-present: the generated role set is exactly ARIA's name-required roles", () => {
+  let roles;
+  try {
+    ({ roles } = require('aria-query'));
+  } catch {
+    // aria-query is a devDependency; skip when running outside the repo.
+    assert.ok(true);
+    return;
+  }
+
+  const source = fs.readFileSync(
+    path.join(__dirname, '..', '..', '..', 'src', 'checks', 'automatic', `${RULE_ID}.js`),
+    'utf8'
+  );
+  const block = source.match(
+    /\/\/ <generated:aria-name-required-roles>([\s\S]*?)\/\/ <\/generated:aria-name-required-roles>/
+  );
+  assert.ok(block, 'generated:aria-name-required-roles block not found');
+
+  const listed = [...block[1].matchAll(/'([a-z-]+)'/g)].map((m) => m[1]);
+  assert.ok(listed.length > 0, 'generated role set is empty');
+
+  for (const role of listed) {
+    const def = roles.get(role);
+    assert.ok(def, `aria-query no longer defines role: ${role}`);
+    assert.equal(
+      def.accessibleNameRequired,
+      true,
+      `${role} is listed but WAI-ARIA does not require an accessible name for it`
+    );
+    assert.equal(
+      (def.nameFrom || []).includes('contents'),
+      false,
+      `${role} can take its name from contents, which this rule never accepts`
+    );
+  }
+
+  // The roles this rule used to fail: allowed to have a name, not required to.
+  for (const role of ['tablist', 'toolbar', 'menu', 'menubar', 'scrollbar']) {
+    assert.equal(
+      roles.get(role).accessibleNameRequired,
+      false,
+      `${role} now requires an accessible name and should be reconsidered for this rule`
+    );
+    assert.equal(listed.includes(role), false, `${role} must not be in the name-required set`);
   }
 });

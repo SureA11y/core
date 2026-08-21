@@ -966,8 +966,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "aria-role-name-present",
-    "title": "ARIA widget/container roles have an accessible name",
-    "description": "Checks that selected ARIA widget/container roles expose a non-empty accessible name.",
+    "title": "ARIA roles that require an accessible name have one",
+    "description": "Checks that the ARIA roles WAI-ARIA requires an accessible name for expose a non-empty one.",
     "i18n": {
       "titleKey": "ariaRoleNamePresent_title",
       "descriptionKey": "ariaRoleNamePresent_description"
@@ -11490,23 +11490,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   };
 
-  // Frozen allowlist of roles to check in this generic rule.
-  // (Keep this small, explicit, and standards-based for determinism.)
-  const roleSet = new Set([
-    'scrollbar',
-    'toolbar',
-    'tablist',
-    'radiogroup',
-    'tree',
-    'grid',
-    'menu',
-    'menubar',
-    'meter',
-    'progressbar'
-  ]);
+  // Roles WAI-ARIA marks "Accessible Name Required: True" and names from the
+  // author only. Generated from aria-query by scripts/generate-aria-tables.js:
+  // a role that merely *allows* an author name (tablist, toolbar, menu,
+  // menubar, scrollbar) is not a 4.1.2 failure when unnamed and is not listed.
+  // <generated:aria-name-required-roles>
+  const NAME_REQUIRED_ROLES = new Set(['grid', 'meter', 'progressbar', 'radiogroup', 'tree']);
+  // </generated:aria-name-required-roles>
 
-  const selector =
-    '[role="scrollbar"],[role="toolbar"],[role="tablist"],[role="radiogroup"],[role="tree"],[role="grid"],[role="menu"],[role="menubar"],[role="meter"],[role="progressbar"]';
+  // Derived from the set above so the two cannot drift apart.
+  const selector = [...NAME_REQUIRED_ROLES].map((r) => `[role="${r}"]`).join(',');
 
   const nodes = (() => {
     try {
@@ -11536,7 +11529,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         return '';
       }
     })();
-    if (!roleSet.has(role)) continue;
+    if (!NAME_REQUIRED_ROLES.has(role)) continue;
 
     if (!isEligible(el)) continue;
 
@@ -31164,8 +31157,8 @@ const I18N = {
     "treeitemNamePresent_description": "Checks that elements with role=\"treeitem\" expose a non-empty accessible name.",
     "treeitemNamePresent_summary_fail": "This tree item has no accessible name.",
     "treeitemNamePresent_hint_fail": "Provide tree item text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.",
-    "ariaRoleNamePresent_title": "ARIA widget/container roles have an accessible name",
-    "ariaRoleNamePresent_description": "Checks that selected ARIA widget/container roles expose a non-empty accessible name.",
+    "ariaRoleNamePresent_title": "ARIA roles that require an accessible name have one",
+    "ariaRoleNamePresent_description": "Checks that the ARIA roles WAI-ARIA requires an accessible name for expose a non-empty one.",
     "ariaRoleNamePresent_summary_fail": "This element has no accessible name.",
     "ariaRoleNamePresent_hint_fail": "Provide aria-label or aria-labelledby (preferred), or a non-empty title attribute.",
     "composite_rollup_summary": "Composite rule result: {{reasonCode}} ({{testCount}} checks)",
