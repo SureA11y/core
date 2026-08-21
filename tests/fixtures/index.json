@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-21T12:24:17.465Z",
+  "generatedAt": "2026-08-21T12:44:58.629Z",
   "summary": {
     "total": 130,
     "withFixture": 130,
@@ -263,10 +263,10 @@
       "testFile": "tests/engine-checks/automatic/aria-prohibited-children.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/aria-prohibited-children-all-scenarios.html",
-      "totalCases": 17,
+      "totalCases": 20,
       "caseCounts": {
-        "PASS": 8,
-        "FAIL": 7,
+        "PASS": 10,
+        "FAIL": 8,
         "CANTTELL": 0,
         "OTHER": 2
       }

@@ -20,7 +20,11 @@
  *   matching, per WAI-ARIA, regardless of whether "group"/"rowgroup" is
  *   itself in the container's own required-owned-roles set) has a role
  *   from that same required-owned set. Nothing else is a structurally
- *   valid direct child of a composite/container role. A roleless wrapper
+ *   valid direct child of a composite/container role, where "allowed" is
+ *   the container's required-owned roles plus the small
+ *   ALLOWED_EXTRA_OWNED_ROLES set of roles it may own without being
+ *   required to (a separator between menu items, a caption on a grid). A
+ *   roleless wrapper
  *   is descended into to reach the items a component library buries
  *   inside it, but once one is found there the rest of that wrapper's
  *   subtree is the item's own content and is not judged against the
@@ -30,9 +34,16 @@
  *   rule): "does at least one required child exist" vs "is every owned
  *   child one of the allowed roles" — split per this repo's "one rule =
  *   one normative decision" principle.
- * - The "allowed owned roles" set is exactly REQUIRED_OWNED_ROLES, not a
- *   separately authored, broader list: an owned element is allowed only if
- *   its role is literally in the container's required set.
+ * - The "allowed owned roles" set is REQUIRED_OWNED_ROLES plus
+ *   ALLOWED_EXTRA_OWNED_ROLES, because WAI-ARIA's "Required Owned
+ *   Elements" says what a container MUST contain, not the exhaustive list
+ *   of what it MAY contain. The extra table is deliberately small and each
+ *   entry needs a source — ARIA giving the child a Required Context Role
+ *   that names this container (caption in table/grid), or the child role's
+ *   own definition placing it there (separator in menu/menubar) — recorded
+ *   and validated in scripts/generate-aria-tables.js. The two sets are
+ *   used for different questions: only a REQUIRED role makes a roleless
+ *   wrapper an item wrapper, while the allowed set decides the verdict.
  * - A ROLELESS descendant that has any global WAI-ARIA attribute or is
  *   focusable is also flagged: it's treated as an owned entry with
  *   `role: null`, which can never match a container's required-owned-roles
@@ -194,6 +205,22 @@ function runInPage(ctx) {
     return null;
   }
 
+  // Roles a container may own beyond its REQUIRED owned elements. WAI-ARIA's
+  // "Required Owned Elements" says what a container must contain, not the
+  // exhaustive list of what it may contain; using the required set as both
+  // reported a separator between menu items, and a caption on a grid, as
+  // prohibited children. Generated from scripts/generate-aria-tables.js, which
+  // documents the source for every entry and validates each against
+  // aria-query's Required Context Role data.
+  // <generated:aria-allowed-extra-owned-roles>
+  const ALLOWED_EXTRA_OWNED_ROLES = {
+    grid: ['caption'],
+    menu: ['separator'],
+    menubar: ['separator'],
+    table: ['caption']
+  };
+  // </generated:aria-allowed-extra-owned-roles>
+
   const MAX_DEPTH = 40;
 
   // Collects this container's owned-role entries, pruning role="none"/
@@ -308,12 +335,19 @@ function runInPage(ctx) {
 
     applicableCount += 1;
 
+    // Two different sets, deliberately. requiredSet drives the item-wrapper
+    // detection in collectOwnedRoles: only a REQUIRED role makes a roleless
+    // wrapper an item wrapper, so a wrapper holding nothing but a separator is
+    // still interposed content. allowedRoles decides the verdict, and includes
+    // the roles a container may own without being required to.
     const requiredSet = new Set(requiredOwned);
+    const allowedRoles = requiredOwned.concat(ALLOWED_EXTRA_OWNED_ROLES[role] || []);
+    const allowedSet = new Set(allowedRoles);
     const owned = [];
     collectOwnedRoles(el, owned, 0, requiredSet);
 
     for (const entry of owned) {
-      if (entry.role && requiredSet.has(entry.role)) continue;
+      if (entry.role && allowedSet.has(entry.role)) continue;
 
       const containerSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
 
@@ -336,7 +370,7 @@ function runInPage(ctx) {
         hintKey = 'ariaProhibitedChildren_hint_fail_roleless';
       } else {
         summary = `This element has role="${entry.role}", which is not an allowed owned child of the enclosing role="${role}" container.`;
-        hint = `Remove or change this role so it matches one of the container's allowed owned roles (${requiredOwned.join(', ')}), or move this element outside the ${role} container.`;
+        hint = `Remove or change this role so it matches one of the container's allowed owned roles (${allowedRoles.join(', ')}), or move this element outside the ${role} container.`;
         summaryKey = 'ariaProhibitedChildren_summary_fail';
         hintKey = 'ariaProhibitedChildren_hint_fail';
       }
@@ -353,7 +387,7 @@ function runInPage(ctx) {
               : {
                   childRole: entry.role,
                   containerRole: role,
-                  allowedRoles: requiredOwned.join(', ')
+                  allowedRoles: allowedRoles.join(', ')
                 }
           },
           data: {
@@ -363,7 +397,7 @@ function runInPage(ctx) {
               attr: entry.attr,
               containerRole: role,
               containerSelector,
-              allowedOwnedRoles: requiredOwned
+              allowedOwnedRoles: allowedRoles
             }
           }
         })
