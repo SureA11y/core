@@ -46,6 +46,8 @@ No code changes needed. Run `npm run i18n:new <locale>` to scaffold `src/i18n/<l
 ## Commit and PR conventions
 
 - Keep commits focused — one logical change per commit, with a message explaining *why*, not just *what* (the diff already shows what).
+- Keep the message tight: a sentence or two on the cause and the fix. If several files changed for the same reason, one short line per file is enough — don't walk through the mechanism the diff already shows.
+- Write the explanation in your own words each time rather than reusing the same phrasing commit after commit (e.g. always citing a source the same way, always closing with the same test-count line). Bugs differ; say what's different about this one.
 - Run the full test suite (`npm test`) before opening a PR; it must be green.
 - If your change affects a rule's documented scope, update that rule's implementation notes accordingly so the scope decision stays traceable.
 
