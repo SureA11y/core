@@ -111,6 +111,23 @@
     </div>
   </div>
 
+  <div class="case" id="case_19">
+    <div class="case-title">19 — PASS: a role="separator" between menuitems is an allowed-but-not-required owned child ("Required Owned Elements" says what a menu must contain, not all it may contain; ARIA defines separator as a divider between "groups of menuitems")</div>
+    <div role="menu" aria-label="Edit" id="apc_case_19">
+      <div role="menuitem">Cut</div>
+      <div id="apc_case_19_child" role="separator"></div>
+      <div role="menuitem">Paste</div>
+    </div>
+  </div>
+
+  <div class="case" id="case_20">
+    <div class="case-title">20 — PASS: a role="caption" on a role="grid" — ARIA gives caption the Required Context Roles figure/grid/table, so prohibiting it here contradicted the engine's own required-context table</div>
+    <div role="grid" aria-label="Orders" id="apc_case_20">
+      <div id="apc_case_20_child" role="caption">Open orders</div>
+      <div role="row"><div role="gridcell">1</div></div>
+    </div>
+  </div>
+
   <h2>B. Invalid</h2>
 
   <div class="case" id="case_06">
@@ -169,6 +186,14 @@
     <div role="list" id="apc_case_18">
       <span role="listitem">Item</span>
       <div class="toolbar"><div id="apc_case_18_child" role="button" tabindex="0">Add</div></div>
+    </div>
+  </div>
+
+  <div class="case" id="case_21">
+    <div class="case-title">21 — FAIL: a role="separator" under role="list" is still prohibited — the carve-out is per container role, and &lt;ul&gt;/&lt;ol&gt; admit only &lt;li&gt;</div>
+    <div role="list" id="apc_case_21">
+      <span role="listitem">Item</span>
+      <div id="apc_case_21_child" role="separator"></div>
     </div>
   </div>
 

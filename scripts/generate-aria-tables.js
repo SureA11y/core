@@ -32,6 +32,14 @@ const prettier = require('prettier');
 
 const RULE_PATH = path.join(__dirname, '..', 'src', 'checks', 'automatic', 'aria-allowed-attr.js');
 const HELPERS_PATH = path.join(__dirname, '..', 'src', 'core', 'aria-helpers.js');
+const PROHIBITED_CHILDREN_RULE_PATH = path.join(
+  __dirname,
+  '..',
+  'src',
+  'checks',
+  'automatic',
+  'aria-prohibited-children.js'
+);
 const NAME_REQUIRED_RULE_PATH = path.join(
   __dirname,
   '..',
@@ -56,6 +64,8 @@ const BEGIN_CONCRETE = '  // <generated:aria-concrete-roles>';
 const END_CONCRETE = '  // </generated:aria-concrete-roles>';
 const BEGIN_NAME_REQUIRED = '  // <generated:aria-name-required-roles>';
 const END_NAME_REQUIRED = '  // </generated:aria-name-required-roles>';
+const BEGIN_ALLOWED_EXTRA = '  // <generated:aria-allowed-extra-owned-roles>';
+const END_ALLOWED_EXTRA = '  // </generated:aria-allowed-extra-owned-roles>';
 
 // ARIA 1.3 roles aria-query does not carry yet. Dropping them would report a
 // valid role as unrecognised.
@@ -277,6 +287,100 @@ function nameRequiredRoles() {
   return [...NAME_REQUIRED_ROLES].sort();
 }
 
+// Roles a container may own even though they are not among its REQUIRED owned
+// elements. WAI-ARIA's "Required Owned Elements" answers what a container MUST
+// contain, not the exhaustive list of what it MAY contain, and
+// aria-prohibited-children previously used the required set as though it were
+// both -- so a separator between menu items, and a caption on a grid, were
+// reported as prohibited children.
+//
+// Two sources, and an entry needs one of them:
+//   1. ARIA gives the child role a Required Context Role naming this
+//      container. That is the spec stating the child belongs here, so
+//      prohibiting it contradicts ARIA's own data. `caption` (Required
+//      Context Role: figure, grid, table) is the case: the engine's own
+//      REQUIRED_CONTEXT_ROLE table says a caption must be in a table/grid
+//      while this rule said it may not. Checked mechanically below.
+//   2. The role's own spec definition says it belongs there. `separator` is
+//      defined as "a divider that separates and distinguishes sections of
+//      content or groups of menuitems", and the WAI-ARIA Authoring Practices
+//      menu and menubar patterns use separators throughout. separator has no
+//      Required Context Role at all (it may appear anywhere), so source 1
+//      cannot express this and it is listed by hand.
+//
+// Deliberately NOT added:
+//   treegrid: caption   aria-query gives caption's context as figure/grid/
+//                       table only. treegrid subclasses grid, so this may
+//                       well be a spec gap, but adding it would be this
+//                       repo's judgement rather than ARIA's -- the validator
+//                       below rejects it on purpose.
+//   rowgroup: rowheader aria-query lists rowgroup in rowheader's context, but
+//                       HTML has no counterpart (a <th> must live in a <tr>)
+//                       and the ARIA spec's own rowheader definition is row.
+//                       Per this file's header, the spec wins over the
+//                       package; left out until it can be checked against the
+//                       spec directly.
+//   list: separator     a separator is not a legal child of <ul>/<ol>, which
+//                       admit only <li> plus script-supporting elements, and
+//                       no spec text extends the menuitem carve-out to lists.
+const ALLOWED_EXTRA_OWNED_ROLES = {
+  grid: ['caption'],
+  menu: ['separator'],
+  menubar: ['separator'],
+  table: ['caption']
+};
+
+function allowedExtraOwnedRoles() {
+  const out = {};
+  for (const container of Object.keys(ALLOWED_EXTRA_OWNED_ROLES).sort()) {
+    const containerDef = roles.get(container);
+    if (!containerDef) {
+      throw new Error(`aria-query no longer defines the container role: ${container}`);
+    }
+    const required = new Set(
+      (containerDef.requiredOwnedElements || [])
+        .map((path) => path[path.length - 1])
+        .filter(Boolean)
+    );
+    const extras = [...ALLOWED_EXTRA_OWNED_ROLES[container]].sort();
+    for (const child of extras) {
+      const childDef = roles.get(child);
+      if (!childDef) {
+        throw new Error(`aria-query no longer defines the role: ${child}`);
+      }
+      if (childDef.abstract) {
+        throw new Error(`abstract role listed as an allowed owned child: ${child}`);
+      }
+      if (required.has(child)) {
+        throw new Error(
+          `${child} is already a required owned element of ${container}; drop the redundant entry`
+        );
+      }
+      // Source 1: a child that declares required context roles must name this
+      // container among them. A child with no context requirement at all
+      // (separator) is unconstrained by ARIA and rests on source 2 instead.
+      const context = childDef.requiredContextRole || childDef.requireContextRole || [];
+      if (context.length && !context.includes(container)) {
+        throw new Error(
+          `${child} may not be owned by ${container}: ARIA's Required Context Role for ${child} ` +
+            `is ${context.join(', ')}`
+        );
+      }
+    }
+    out[container] = extras;
+  }
+  return out;
+}
+
+function renderAllowedExtra(table) {
+  const lines = [BEGIN_ALLOWED_EXTRA, '  const ALLOWED_EXTRA_OWNED_ROLES = {'];
+  for (const container of Object.keys(table)) {
+    lines.push(`    ${container}: [${table[container].map((r) => `'${r}'`).join(', ')}],`);
+  }
+  lines.push('  };', END_ALLOWED_EXTRA);
+  return lines.join('\n');
+}
+
 function implicitRoles() {
   const allowed = new Set(CONTEXT_FREE_ELEMENTS);
   const bySource = new Map();
@@ -441,6 +545,17 @@ async function main() {
         'NAME_REQUIRED_ROLES',
         nameRequiredRoles()
       )
+    )
+  });
+
+  const prohibitedBefore = fs.readFileSync(PROHIBITED_CHILDREN_RULE_PATH, 'utf8');
+  files.set(PROHIBITED_CHILDREN_RULE_PATH, {
+    before: prohibitedBefore,
+    after: replaceBlock(
+      prohibitedBefore,
+      BEGIN_ALLOWED_EXTRA,
+      END_ALLOWED_EXTRA,
+      renderAllowedExtra(allowedExtraOwnedRoles())
     )
   });
 
