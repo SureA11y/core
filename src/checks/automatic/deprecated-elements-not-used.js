@@ -15,7 +15,7 @@
  *   or hide it.
  * @expectation
  *   Neither element is present. Since their movement can never be paused,
- *   stopped, or hidden by the user, presence is itself the violation — this
+ *   stopped, or hidden by the user, presence is itself the violation. This
  *   rule has no partial-pass case (it reports only when the element is
  *   found).
  * @implementation-notes

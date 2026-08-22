@@ -16,17 +16,16 @@
  *   level of wrapping div is allowed, matching how authors commonly group
  *   dt/dd pairs). If the flattened set contains any <dt> or <dd> at all, it
  *   must contain BOTH (an unbalanced dt-without-dd or dd-without-dt is
- *   invalid) — a flattened set with neither is vacuously fine, not a
+ *   invalid). A flattened set with neither is vacuously fine, not a
  *   violation (see implementation-notes). Any other direct or wrapped child
  *   breaks the description-list semantics assistive technologies rely on.
  * @implementation-notes
- * - Only one level of <div> wrapping is flattened — a <div> nested inside
+ * - Only one level of <div> wrapping is flattened, a <div> nested inside
  *   another wrapping <div> is not flattened further and its contents are
  *   reported invalid.
  * - The dt/dd pairing is only required "when not empty". A flattened set
- *   with NEITHER dt nor dd
- *   — whether from an empty wrapping <div>, only <script>/<template>/
- *   <style> content, or a genuinely childless <dl> — is not flagged; only
+ *   with NEITHER dt nor dd, whether from an empty wrapping <div>, only
+ *   <script>/<template>/<style> content, or a childless <dl>, is not flagged; only
  *   an unbalanced dt/dd pairing is a real structural problem.
  * - Distinct, atomic decision from dlitem-parent-valid (the
  *   inverse relationship: does a given <dt>/<dd> have a valid parent).
@@ -64,7 +63,7 @@ const meta = {
 function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
-  // Declared inside runInPage — see scripts/build-core.js header
+  // Declared inside runInPage, see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
   const PASSTHROUGH_TAGS = new Set(['dt', 'dd', 'script', 'template', 'style']);
 
@@ -109,8 +108,8 @@ function runInPage(ctx) {
     }
     const dedupedInvalidTags = [...new Set(invalidTags)];
 
-    // The dt/dd pairing is only required "when not empty" — a <dl> with
-    // NEITHER dt nor dd (whether genuinely childless after flattening, only
+    // The dt/dd pairing is only required "when not empty", a <dl> with
+    // NEITHER dt nor dd (whether childless after flattening, only
     // passthrough script/template/style content, or an empty wrapping div)
     // is vacuously fine, not a violation. Only an UNBALANCED pairing (dt
     // present without any dd, or vice versa) is a real structural problem.

@@ -12,7 +12,7 @@
  *   Applies to <ul>/<ol> elements that have at least one direct element
  *   child.
  * @expectation
- *   Every direct element child is <li>, <script>, or <template> — UNLESS it
+ *   Every direct element child is <li>, <script>, or <template>. UNLESS it
  *   has an explicit `role` attribute, in which case the explicit role wins
  *   over the tag entirely: a child is valid iff that role is "listitem"
  *   (so `<li role="presentation">`/`<li role="menuitem">` are invalid
@@ -20,19 +20,19 @@
  *   given `role="listitem"` is valid). A wrapper <div> used for styling
  *   (no role at all) still breaks list semantics the same as before.
  * @implementation-notes
- * - Checked via el.children, which already excludes text/comment nodes —
+ * - Checked via el.children, which already excludes text/comment nodes,
  *   no whitespace-node filtering needed.
  * - Distinct, atomic decision from listitem-parent-valid (the
  *   inverse relationship: does a given <li> have a valid parent).
  * - Direct children that are not exposed to the accessibility tree (e.g.
  *   display:none, [hidden], aria-hidden="true") are excluded from
- *   consideration entirely — an element not reachable by assistive
+ *   consideration entirely. An element not reachable by assistive
  *   technology can't break the list semantics a screen reader announces.
  *   Common cases: a stray `<input type="hidden">` as a direct <ul> child
  *   (UA-stylesheet display:none by spec), or `<span style="display:none">`
  *   hydration markers interleaved with real `<li>`s.
  * - Explicit-role-overrides-tag: if a child has an explicit role, only
- *   `['listitem']` is consulted — the tag name is never checked. Only
+ *   `['listitem']` is consulted, the tag name is never checked. Only
  *   without an explicit role does the tag name matter. Catches cases a
  *   tag-only check misses: `<li role="none">` hosting a list's own
  *   visually-hidden label, `<li role="menuitem">` menu items, or a real
@@ -71,7 +71,7 @@ const meta = {
 function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
-  // Declared inside runInPage — see scripts/build-core.js header
+  // Declared inside runInPage, see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
   const ALLOWED_CHILD_TAGS = new Set(['li', 'script', 'template']);
 
@@ -111,7 +111,7 @@ function runInPage(ctx) {
       const roleAttr = child.getAttribute ? String(child.getAttribute('role') || '').trim() : '';
       const explicitRole = roleAttr ? (roleAttr.split(/\s+/)[0] || '').toLowerCase() : '';
 
-      // An explicit role always wins over the tag — see header comment.
+      // An explicit role always wins over the tag, see header comment.
       const valid = explicitRole ? explicitRole === 'listitem' : ALLOWED_CHILD_TAGS.has(tag);
 
       if (!valid) invalidTags.push(tag);

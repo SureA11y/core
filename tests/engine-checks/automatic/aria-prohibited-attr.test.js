@@ -111,7 +111,7 @@ test(`${RULE_ID}: fail when aria-labelledby is on a roleless div with no content
   assert.equal(rule.occurrences[0].data.details.attr, 'aria-labelledby');
 });
 
-test(`${RULE_ID}: fail when aria-label is on a span carrying an INVALID role="" token (not a recognized ARIA role) with no content fallback — must not be silently skipped as "has a real role"`, () => {
+test(`${RULE_ID}: fail when aria-label is on a span carrying an INVALID role="" token (not a recognized ARIA role) with no content fallback, must not be silently skipped as "has a real role"`, () => {
   const html = `<!doctype html><html><body><span id="a" role="totally-bogus-not-a-real-role" aria-label="icon-only" class="icon-x"></span></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
@@ -147,7 +147,7 @@ test(`${RULE_ID}: mixed fail + cantTell occurrences on one page preserve per-occ
   assert.strictEqual(failOccurrence.occurrenceOutcome, 'fail');
 });
 
-test(`${RULE_ID}: pass (exempted, not notApplicable — the rule did evaluate this candidate) when a roleless span with aria-label sits inside a widget-type role`, () => {
+test(`${RULE_ID}: pass (exempted, not notApplicable: the rule did evaluate this candidate) when a roleless span with aria-label sits inside a widget-type role`, () => {
   const html = `<!doctype html><html><body><div role="slider" aria-valuenow="5"><span id="a" aria-label="thumb"></span></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
@@ -187,7 +187,7 @@ test(`${RULE_ID}: notApplicable when aria-label is on a custom element that also
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: notApplicable for a spec-reserved hyphenated (non-custom-element) tag like <missing-glyph> — not misclassified as an autonomous custom element`, () => {
+test(`${RULE_ID}: notApplicable for a spec-reserved hyphenated (non-custom-element) tag like <missing-glyph>, not misclassified as an autonomous custom element`, () => {
   const html = `<!doctype html><html><body><missing-glyph id="a" aria-label="Fallback glyph"></missing-glyph></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
@@ -203,7 +203,7 @@ test(`${RULE_ID}: a roleless element with hidden="until-found" is still evaluate
   assert.ok(hasOccurrenceForId(rule, 'panel'));
 });
 
-test(`${RULE_ID}: notApplicable when the SAME roleless element instead has a plain [hidden] attribute (not "until-found") — the panel itself stays excluded`, () => {
+test(`${RULE_ID}: notApplicable when the SAME roleless element instead has a plain [hidden] attribute (not "until-found"), the panel itself stays excluded`, () => {
   const html = `<!doctype html><html><body>
     <button id="btn_panel">Question</button>
     <div id="panel" hidden aria-labelledby="btn_panel">Some real answer content here.</div>

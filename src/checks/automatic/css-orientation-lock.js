@@ -9,13 +9,13 @@
  * @standard WCAG 2.2
  * @sc 1.3.4
  * @applicability
- *   Any accessible (same-document, non-cross-origin) stylesheet — inline
+ *   Any accessible (same-document, non-cross-origin) stylesheet, inline
  *   `<style>` blocks and same-origin `<link>` stylesheets already loaded
  *   into `document.styleSheets`.
  * @expectation
  *   No `@media (orientation: portrait)` or `@media (orientation:
  *   landscape)` block sets a `transform`/`-webkit-transform`/`rotate`
- *   rotation of approximately 90 degrees (mod 180, i.e. ~90 or ~270) —
+ *   rotation of approximately 90 degrees (mod 180, i.e. ~90 or ~270),
  *   the well-known technique for visually forcing one orientation
  *   regardless of the device's actual orientation, which defeats WCAG
  *   1.3.4's requirement that content not restrict its view to a single
@@ -31,11 +31,11 @@
  *   `rotate3d(x, y, z, angle)`/`matrix()`/`matrix3d()` are all parsed for
  *   degrees. The matrix forms only yield an angle when they resolve to a
  *   pure rotation about the Z axis (no scale, skew, translation, or
- *   rotation combined with another axis) — anything else contributes 0,
+ *   rotation combined with another axis). Anything else contributes 0,
  *   same as an unrecognized value, rather than guessing at an angle a
  *   general 3D matrix doesn't uniquely have.
  * - Cross-origin stylesheets throw on `.cssRules` access (browser
- *   security model) and are skipped — same class of limitation as any
+ *   security model) and are skipped, same class of limitation as any
  *   check that can only see same-origin/inspectable content (compare
  *   `iframe-focusable-content`).
  * - Not per-element: this is a whole-document/whole-stylesheet concern,
@@ -197,7 +197,7 @@ function runInPage(ctx) {
   // exact equality: a `rad`/`grad`/`turn` value converts to a 90-degree
   // rotation with floating-point remainder (e.g. `1.5708rad` is
   // 90.0000210...deg, never exactly 90), and ACT's own failed examples
-  // include a deliberately-inexact 92.5deg — both must still register as a
+  // include a -inexact 92.5deg, both must still register as a
   // lock, which exact-modulo-equality (`% 90 === 0`) never does.
   const LOCK_TOLERANCE_DEG = 5;
   function isLockingRotation(styleDecl) {

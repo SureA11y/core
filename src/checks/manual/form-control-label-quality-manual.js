@@ -9,11 +9,11 @@
  * @standard WCAG 2.2
  * @sc 2.4.6
  * @applicability
- *   Visible form fields — native `input` (excluding hidden and the
+ *   Visible form fields: native `input` (excluding hidden and the
  *   button-like types), `select`, `textarea`, or an element with one of
  *   the ARIA widget roles ACT cc0f0a lists (checkbox, combobox, listbox,
  *   menuitemcheckbox, menuitemradio, radio, searchbox, slider,
- *   spinbutton, switch, textbox) — that carry a visible programmatic
+ *   spinbutton, switch, textbox) that carry a visible programmatic
  *   label: a `<label>` association, or the elements `aria-labelledby`
  *   points at. A field named only by `aria-label`/`title` has no visible
  *   label to judge and is out of scope here (its labelling mechanism is
@@ -22,9 +22,9 @@
  * @expectation
  *   The visible label text (a) is not a placeholder left in the markup
  *   ("label", "field", "enter text", ...), (b) is not shared with another
- *   field that no visible context tells apart — the same "Name" twice,
+ *   field that no visible context tells apart (the same "Name" twice,
  *   with nothing visible on screen saying which is shipping and which is
- *   billing — and (c) is the whole of the field's programmatic label, not
+ *   billing), and (c) is the whole of the field's programmatic label, not
  *   the visible fragment of a label whose descriptive part is hidden.
  * @implementation-notes
  * - Authored as `type: 'manual'` (cantTell-capped, never fail). Whether a
@@ -33,7 +33,7 @@
  *   of the word alone, which no markup-level check can reach. What is
  *   deterministic is a placeholder string, a label repeated with no
  *   visible differentiator, and a label split between visible and hidden
- *   parts — the three shapes this rule reports.
+ *   parts: the three shapes this rule reports.
  * - Only PROGRAMMATIC labels count, per ACT: a `<label>` or the targets
  *   of `aria-labelledby`. `aria-label` is invisible text, so it can carry
  *   no visual context and is not what a sighted user reads.
@@ -47,8 +47,8 @@
  *   context nearest the field: its `<fieldset>`'s visible `<legend>`, or
  *   failing that the nearest visible heading before it. A row of a table
  *   or a list item contributes its own text too, which is what keeps a
- *   repeated "Quantity" field in a product table — differentiated by the
- *   product name in the same row — from being reported.
+ *   repeated "Quantity" field in a product table (differentiated by the
+ *   product name in the same row) from being reported.
  * - Two fields conflict only when their label text AND their context are
  *   both identical. Same label under two different visible headings is
  *   ACT's passed example 5 and is not reported.
@@ -66,7 +66,7 @@ const id = 'form-control-label-quality';
 const meta = {
   title: 'Form field labels should be descriptive and distinguishable',
   description:
-    'Flags a visible form-field label that is a placeholder ("Label", "Field"), or that repeats another field\'s label with no visible context — heading, legend, or row — telling the two apart.',
+    'Flags a visible form-field label that is a placeholder ("Label", "Field"), or that repeats another field\'s label with no visible context (heading, legend, or row) telling the two apart.',
   i18n: {
     titleKey: 'formControlLabelQuality_title',
     descriptionKey: 'formControlLabelQuality_description'
@@ -93,7 +93,7 @@ const meta = {
 function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
-  // Declared inside runInPage — see scripts/build-core.js header
+  // Declared inside runInPage; see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
   const PLACEHOLDER_LABEL_TEXT = new Set([
     'label',
@@ -237,7 +237,7 @@ function runInPage(ctx) {
 
   // The programmatic labels of a field, per ACT: aria-labelledby targets when
   // present, otherwise the <label> elements associated with it. aria-label is
-  // deliberately absent — see the header comment.
+  // left out on purpose; see the header comment.
   function getVisibleLabelText(el) {
     const referenced = resolveIdRefs(el, 'aria-labelledby');
     const labels = referenced.length ? referenced : getNativeLabels(el);
@@ -307,8 +307,8 @@ function runInPage(ctx) {
     return '';
   }
 
-  // A table row or list item carries its own context — the product name a
-  // repeated "Quantity" field belongs to — so it takes part in the key.
+  // A table row or list item carries its own context (the product name a
+  // repeated "Quantity" field belongs to), so it takes part in the key.
   function rowContextText(el, labelText) {
     let row = null;
     try {
@@ -338,7 +338,7 @@ function runInPage(ctx) {
 
     const label = getVisibleLabelText(el);
     const labelText = label.text;
-    if (!labelText) continue; // no visible label to judge — a different rule's concern
+    if (!labelText) continue; // no visible label to judge, a different rule's concern
 
     fields.push({
       el,
@@ -397,7 +397,7 @@ function runInPage(ctx) {
       PLACEHOLDER_LABEL_TEXT:
         'Replace the label with one naming the information the field collects.',
       DUPLICATE_LABEL_TEXT:
-        'Give each field a label of its own, or put the distinguishing context on screen — a visible heading or a fieldset legend above each group.',
+        'Give each field a label of its own, or put the distinguishing context on screen: a visible heading or a fieldset legend above each group.',
       PARTIALLY_HIDDEN_LABEL:
         'Confirm the visible part alone identifies the field, or make the rest of the label visible.'
     };

@@ -24,16 +24,16 @@
  *   e.g. aria-helpers.js getExplicitRole).
  * - An explicit role on the parent WINS over its tag name, in either
  *   direction: a <ul role="menu"> no longer exposes role "list" (its own
- *   native role is fully replaced by the explicit one — the same "any
+ *   native role is fully replaced by the explicit one, the same "any
  *   explicit role overrides the element's native role" ARIA principle
  *   applied elsewhere in this engine), so an <li> inside it is invalid
  *   despite the <ul> tag (e.g. `<ul role="menu"><li>...`). Conversely
  *   role="presentation"/"none" on the parent is still a valid
- *   (list-semantics-suppressing) parent — the accepted parent roles are
+ *   (list-semantics-suppressing) parent, the accepted parent roles are
  *   presentation, none, and list.
  * - The SAME "explicit role wins" principle applies to the <li> ELEMENT
  *   ITSELF: an <li role="tab">/role="menuitem">/role="presentation"> etc.
- *   is exposed to AT with that role, never "listitem" — the whole point
+ *   is exposed to AT with that role, never "listitem". The whole point
  *   of this check (list items need a valid list-container parent) doesn't
  *   apply when the element isn't claiming listitem semantics in the first
  *   place. Any `<li>` with an explicit `role` attribute is excluded from
@@ -108,7 +108,7 @@ function runInPage(ctx) {
     let valid;
     if (explicitRole) {
       // An explicit role always wins over the tag's native role, in either
-      // direction — see the header comment.
+      // direction, see the header comment.
       valid = explicitRole === 'list' || explicitRole === 'presentation' || explicitRole === 'none';
     } else {
       valid = parentTag === 'ul' || parentTag === 'ol';

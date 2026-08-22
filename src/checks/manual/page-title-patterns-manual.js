@@ -22,7 +22,7 @@
  *   crawl.pageTitles probe supplies at least ten pages, cross-page signals
  *   are used instead: one title repeated across distinct URLs, or a prefix
  *   or suffix of twelve characters or more shared across the set. Every
- *   signal is reported as cantTell — whether a title describes its page is a
+ *   signal is reported as cantTell: whether a title describes its page is a
  *   judgment, so the rule never fails on a pattern alone.
  */
 

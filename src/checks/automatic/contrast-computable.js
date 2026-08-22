@@ -15,18 +15,18 @@
  *   the value attribute and so is invisible to a text-node walk. Text counts
  *   only when its element is DOM-visible under the run's visibility mode, is
  *   not clipped out of sight by the sr-only technique (clip or clip-path),
- *   and belongs neither to a disabled control nor to the label of one —
+ *   and belongs neither to a disabled control nor to the label of one,
  *   WCAG's inactive-user-interface-component exception. Subtrees excluded
  *   via engineOptions.excludeSelectors are skipped, and open shadow roots
  *   are walked as roots in their own right.
  * @expectation
  *   Both sides of the contrast calculation can be established from CSS for
  *   every applicable text node: an effective background resolving to an
- *   opaque color, and a parsable foreground color. Where either cannot be —
+ *   opaque color, and a parsable foreground color. Where either cannot be,
  *   a background image or gradient, mix-blend-mode, a filter or
  *   backdrop-filter, a text-shadow (which may add contrast this engine has
  *   no glyph-rendering model to account for), ancestor opacity, a root
- *   background that never becomes opaque, or a color that does not parse —
+ *   background that never becomes opaque, or a color that does not parse,
  *   the result is cantTell naming the blocker. This rule is the one that
  *   reports that uncertainty, which is what lets contrast-minimum and
  *   contrast-enhanced stay silent on the same text instead of guessing at

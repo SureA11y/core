@@ -22,13 +22,13 @@
  *   be possible.
  * @implementation-notes
  * - An unparseable content value (no leading numeric delay) is not
- *   flagged — this rule only reports a clearly-detected timed refresh,
+ *   flagged, this rule only reports a clearly-detected timed refresh,
  *   matching this engine's no-false-positives policy.
  * - WCAG 2.2.1 Exception 3 exempts time limits longer than 20 hours (the
  *   rationale being that a delay this long gives users enough real-world
  *   time to act, so "adjustable" ceases to be a meaningful requirement).
  *   A delay over 72000 seconds is therefore not flagged.
- * - A <meta> nested inside <noscript> is excluded — see
+ * - A <meta> nested inside <noscript> is excluded, see
  *   meta-refresh-no-exceptions's header comment for why.
  */
 
@@ -112,7 +112,7 @@ function runInPage(ctx) {
 
   for (const el of nodes) {
     if (!el || !el.getAttribute) continue;
-    if (el.closest && el.closest('noscript')) continue; // never applies with scripting enabled — see meta-refresh-no-exceptions.js's header comment
+    if (el.closest && el.closest('noscript')) continue; // never applies with scripting enabled, see meta-refresh-no-exceptions.js's header comment
     const raw = String(el.getAttribute('content') || '').trim();
     if (!raw) continue;
 

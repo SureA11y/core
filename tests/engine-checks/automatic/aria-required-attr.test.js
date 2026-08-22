@@ -91,13 +91,13 @@ test(`${RULE_ID}: pass when role="meter" has aria-valuenow present`, () => {
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: notApplicable when role="progressbar" has no aria-valuenow (deliberately NOT required — an indeterminate progressbar legitimately omits it)`, () => {
+test(`${RULE_ID}: notApplicable when role="progressbar" has no aria-valuenow (not required on purpose, an indeterminate progressbar legitimately omits it)`, () => {
   const html = `<!doctype html><html><body><div id="a" role="progressbar"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: pass for role="combobox" with aria-expanded present but no aria-controls (aria-controls deliberately NOT required unconditionally — only required once the popup is displayed, per MDN's combobox role page; adding it here would risk a false fail)`, () => {
+test(`${RULE_ID}: pass for role="combobox" with aria-expanded present but no aria-controls (aria-controls is not required unconditionally, only once the popup is displayed, per MDN's combobox role page; adding it here would risk a false fail)`, () => {
   const html = `<!doctype html><html><body><div id="a" role="combobox" aria-expanded="false"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });

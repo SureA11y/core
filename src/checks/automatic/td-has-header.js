@@ -11,7 +11,7 @@
  * @applicability
  *   `<table>` elements with at least 4 rows and at least 4 columns
  *   (a "large" table, where implicit row/column header association is
- *   genuinely useful — small tables are usually self-evident), and with
+ *   useful; small tables are usually self-evident), and with
  *   NO `colspan`/`rowspan` anywhere in the table.
  * @expectation
  *   Every `<td>` has an associated header, via one of:
@@ -22,14 +22,14 @@
  *       earlier row, OR
  *     - an implicit row header: some `<th>` earlier in the same row.
  * @implementation-notes
- * - Closes the gap `table-th-has-data-cells` deliberately deferred (see
+ * - Closes the gap `table-th-has-data-cells` deferred (see
  *   that rule's own implementation notes): this is the fuller positional
- *   header-association algorithm, but still intentionally scoped —
+ *   header-association algorithm, but still intentionally scoped,
  *   tables with any `colspan`/`rowspan` are skipped entirely (marked
  *   `notApplicable`) rather than risk a wrong column-index computation
  *   producing a false `fail`.
  * - The `headers`-attribute branch does not itself validate that the
- *   referenced ids exist or point at `<th>` elements — that's already
+ *   referenced ids exist or point at `<th>` elements, that's already
  *   `table-headers-attr-valid`'s job.
  */
 
@@ -38,7 +38,7 @@ const id = 'td-has-header';
 const meta = {
   title: 'Data cells in large tables must have an associated header',
   description:
-    'Checks that every <td> in a large, simple (no colspan/rowspan) table has an associated header — via a headers attribute, an implicit column <th> above it, or an implicit row <th> to its left.',
+    'Checks that every <td> in a large, simple (no colspan/rowspan) table has an associated header, via a headers attribute, an implicit column <th> above it, or an implicit row <th> to its left.',
   i18n: {
     titleKey: 'tdHasHeader_title',
     descriptionKey: 'tdHasHeader_description'

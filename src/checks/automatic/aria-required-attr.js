@@ -21,10 +21,10 @@
  * @expectation
  *   Every required aria-* attribute for that role is present (and non-empty).
  * @implementation-notes
- * - Deliberately scoped to REQUIRED_PROPS_BY_ROLE in src/core/aria-helpers.js,
+ * - Scoped to REQUIRED_PROPS_BY_ROLE in src/core/aria-helpers.js,
  *   which only lists a required property when the spec is unambiguous and
- *   context-independent — see that file's header for the rationale.
- * - `meter`'s `aria-valuenow` is required. Deliberately NOT required
+ *   context-independent, see that file's header for the rationale.
+ * - `meter`'s `aria-valuenow` is required. NOT required
  *   unconditionally: `progressbar`'s `aria-valuenow` (a legitimately
  *   indeterminate progressbar omits it) and `combobox`'s `aria-controls`
  *   (only required once the popup is actually displayed). ACT 4e8ab6's own
@@ -41,7 +41,7 @@
  * - Gated on isAccTreeEligible for the element itself: unlike a syntax-
  *   level check (attribute name/value validity), "does this element
  *   currently carry its required state attribute" is not fixed once
- *   written — checkbox/switch/radio's aria-checked and slider/scrollbar's
+ *   written, checkbox/switch/radio's aria-checked and slider/scrollbar's
  *   aria-valuenow are exactly the kind of live-widget-state attribute
  *   component libraries set during hydration/mount, at the same moment
  *   the element becomes exposed. Same false-positive shape as

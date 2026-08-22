@@ -136,7 +136,7 @@ test('hasLandmarkScopingAncestor: does not climb past the scanned root (scope-bo
 });
 
 test("landmark-banner-is-top-level: a real page's outer <nav> does not leak into a #widget-scoped scan", () => {
-  // Explicit role="banner" (rather than a bare <header>) deliberately isolates
+  // Explicit role="banner" (rather than a bare <header>) isolates
   // hasLandmarkAncestor's own bug from hasLandmarkScopingAncestor's separate
   // mechanism: <nav> is itself one of the sectioning-content tags that
   // suppresses a bare <header>'s implicit "banner" role, so a <header> would
@@ -145,7 +145,7 @@ test("landmark-banner-is-top-level: a real page's outer <nav> does not leak into
   const html =
     '<!doctype html><html><body><nav><div id="widget"><div role="banner" id="b">Site</div></div></nav></body></html>';
 
-  // Unscoped: the explicit banner is genuinely nested inside a real <nav> landmark -- a real finding.
+  // Unscoped: the explicit banner is actually nested inside a real <nav> landmark -- a real finding.
   const unscoped = runa11yCoreOnHtml(html, { runOnly: ['landmark-banner-is-top-level'] });
   assertRule(unscoped, 'landmark-banner-is-top-level', 'cantTell', {
     minOccurrences: 1,

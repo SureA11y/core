@@ -10,13 +10,13 @@
  * @sc 2.2.4, 3.2.5
  * @applicability
  *   Applies to the first <meta http-equiv="refresh"> element, in document
- *   order, with a valid content attribute — per HTML's shared declarative
+ *   order, with a valid content attribute, per HTML's shared declarative
  *   refresh steps, a document only ever acts on its first valid meta
  *   refresh, so a later one (valid or not) is inert and out of scope.
  * @expectation
  *   Running the shared declarative refresh steps against that element's
  *   content value results in a delay of exactly 0. An immediate (delay=0)
- *   redirect still passes at AAA, same as the A-level rule — there is
+ *   redirect still passes at AAA, same as the A-level rule. There is
  *   nothing for a user to be interrupted mid-read by when nothing is
  *   displayed first. Any positive delay fails, with none of the A-level
  *   rule's >20-hour exemption: at AAA, WCAG 2.2.4 (Interruptions) and
@@ -26,7 +26,7 @@
  * @implementation-notes
  * - Distinct, atomic decision from meta-refresh-timing-absent: that
  *   rule's >20-hour exemption for a positive delay is this rule's fail
- *   case (no exemption at AAA) — but delay=0 passes in both rules.
+ *   case (no exemption at AAA), but delay=0 passes in both rules.
  * - A <meta> nested inside <noscript> is excluded: it only ever takes
  *   effect when scripting is disabled, which is never the case for any
  *   context capable of running accessibility tooling in the first place
@@ -39,7 +39,7 @@ const id = 'meta-refresh-no-exceptions';
 const meta = {
   title: 'Page must not use a meta refresh at all (AAA)',
   description:
-    'Checks that <meta http-equiv="refresh"> is not present at all, regardless of delay — the stricter AAA-level counterpart of the A-level positive-delay-only check.',
+    'Checks that <meta http-equiv="refresh"> is not present at all, regardless of delay. This is the stricter AAA-level counterpart of the A-level positive-delay-only check.',
   i18n: {
     titleKey: 'metaRefreshNoExceptions_title',
     descriptionKey: 'metaRefreshNoExceptions_description'

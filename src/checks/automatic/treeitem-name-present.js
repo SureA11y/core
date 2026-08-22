@@ -15,8 +15,8 @@
  *   role attribute is out of scope.
  * @expectation
  *   The element has a non-empty accessible name from aria-label, from an
- *   aria-labelledby that resolves to non-empty text, from title, or —
- *   role="treeitem" being name-from-content — from its own subtree text,
+ *   aria-labelledby that resolves to non-empty text, from title, or,
+ *   role="treeitem" being name-from-content, from its own subtree text,
  *   where a descendant's own name (an <img alt>, aria-label or title) counts
  *   as that descendant's contribution rather than only its text nodes.
  */
@@ -70,7 +70,7 @@ function runInPage(ctx) {
   }
 
   function getConservativeSubtreeText(document, container) {
-    // "Name from content" — recurses into descendants and uses each one's
+    // "Name from content", recurses into descendants and uses each one's
     // own accessible name (img alt, aria-label/aria-labelledby, title) when
     // it has one, not just literal text nodes. See getContentNameInfo's
     // header comment in src/core/dom-helpers.js for the full rationale
@@ -89,7 +89,7 @@ function runInPage(ctx) {
     const raw = getAttr(el, 'aria-labelledby');
     if (!raw) return '';
     // Delegates to the shared getTextFromIdRefs helper instead of computing
-    // name-from-content of the referenced element — see dialog-name-
+    // name-from-content of the referenced element, see dialog-name-
     // present.js's identical fix for the full rationale (an <iframe>
     // aria-labelledby target's only name source is its title attribute,
     // which name-from-content alone can never see).

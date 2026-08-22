@@ -14,13 +14,13 @@
  * @expectation
  *   `aria-checked` is redundant on a native checkbox/radio (the role's
  *   checked state is already exposed natively), but when an author sets
- *   it explicitly it should agree with the element's actual state —
+ *   it explicitly it should agree with the element's actual state,
  *   otherwise assistive technology is told something different from what
  *   a sighted user perceives.
  * @implementation-notes
- * - Deliberately authored as `type: 'manual'` (cantTell-capped, never
- *   fail), unlike most ARIA-validity rules in this file family. This
- *   engine analyzes STATIC markup only (no script execution) — `.checked`
+ * - Authored as `type: 'manual'` (cantTell-capped, never fail), unlike
+ *   most ARIA-validity rules in this file family. This engine analyzes
+ *   STATIC markup only (no script execution), so `.checked`
  *   reliably reflects the static `checked` attribute for freshly-parsed
  *   markup, but a very common, entirely legitimate real-world pattern is a
  *   JS-hydrated widget whose server-rendered HTML intentionally ships
@@ -118,7 +118,7 @@ function runInPage(ctx) {
       helpers.reportOccurrence(el, {
         summary:
           'This element’s aria-checked value does not match its actual checked/indeterminate state.',
-        hint: 'Set aria-checked to match the element’s real state, or remove it — a native checkbox/radio already exposes this state without it.',
+        hint: 'Set aria-checked to match the element’s real state, or remove it; a native checkbox/radio already exposes this state without it.',
         i18n: {
           summaryKey: 'ariaCheckedStateMismatch_summary_cantTell',
           hintKey: 'ariaCheckedStateMismatch_hint_cantTell',

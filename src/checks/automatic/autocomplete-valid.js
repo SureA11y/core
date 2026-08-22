@@ -26,7 +26,7 @@
  *   order) with the full fixed field-name vocabulary from the HTML
  *   Standard, rather than validating every field-specific constraint
  *   (e.g. which contact-modality tokens are legal for which field
- *   names) — matches this engine's established "deliberately scoped"
+ *   names), matches this engine's established "scoped"
  *   precedent (see aria-helpers.js) for keeping high-confidence fail
  *   without reimplementing the entire spec.
  */
@@ -63,7 +63,7 @@ const meta = {
 function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
-  // Declared inside runInPage — see scripts/build-core.js header
+  // Declared inside runInPage, see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
   const FIELD_NAMES = new Set([
     'name',

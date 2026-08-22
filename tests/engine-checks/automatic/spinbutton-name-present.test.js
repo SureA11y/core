@@ -155,7 +155,7 @@ test('spinbutton-name-present: aria-labelledby pointing at an <iframe> falls bac
 test("spinbutton-name-present: label association with empty content falls back to the label's own title attribute => pass", () => {
   // getLabelText previously stopped at content-only
   // (getConservativeSubtreeText) when resolving a native <label for> whose
-  // content is empty, never checking the label's own title attribute — the
+  // content is empty, never checking the label's own title attribute, the
   // same final-fallback step the general accname algorithm applies to any
   // element being asked for its name.
   const html = `<!doctype html><html><body><label for='a' title='Search'></label><div id='a' role='spinbutton'></div></body></html>`;

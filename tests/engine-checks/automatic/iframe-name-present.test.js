@@ -61,7 +61,7 @@ test(`${RULE_ID}: i18n default is English`, () => {
   assert.strictEqual(rule.title, 'Frames have an accessible name');
 });
 
-test(`${RULE_ID}: fail for an iframe marked decorative with no tabindex — natively focusable by default, so role="none" doesn't stick (ACT cae760)`, () => {
+test(`${RULE_ID}: fail for an iframe marked decorative with no tabindex: natively focusable by default, so role="none" doesn't stick (ACT cae760)`, () => {
   const html = `<!doctype html><html><body><iframe id="a" role="none" src="/x.html"></iframe></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
@@ -74,7 +74,7 @@ test(`${RULE_ID}: notApplicable for an iframe marked decorative AND out of the t
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: notApplicable for a plain iframe with tabindex="-1" and no role at all — ACT cae760's applicability requires accessibility-tree eligibility AND sequential focus navigation unconditionally, not only as a role="none" exception`, () => {
+test(`${RULE_ID}: notApplicable for a plain iframe with tabindex="-1" and no role at all: ACT cae760's applicability requires accessibility-tree eligibility AND sequential focus navigation unconditionally, not only as a role="none" exception`, () => {
   const html = `<!doctype html><html><body><iframe id="a" tabindex="-1" src="/x.html"></iframe></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });

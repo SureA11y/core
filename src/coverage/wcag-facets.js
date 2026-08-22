@@ -199,7 +199,7 @@ const FACETS = {
         "facets": [
             {
                 "id": "video-captions-track-evidence",
-                "label": "<video> declares a captions/subtitles <track> (evidence only — cannot verify audio content)",
+                "label": "<video> declares a captions/subtitles <track> (evidence only: cannot verify audio content)",
                 "automation": "manual"
             }
         ]
@@ -360,7 +360,7 @@ const FACETS = {
         "facets": [
             {
                 "id": "no-autoplay-audio-evidence",
-                "label": "Autoplaying unmuted audio/video has a controls mechanism (evidence only — clip duration is not statically knowable)",
+                "label": "Autoplaying unmuted audio/video has a controls mechanism (evidence only: clip duration is not statically knowable)",
                 "automation": "manual"
             }
         ]
@@ -470,12 +470,12 @@ const FACETS = {
             },
             {
                 "id": "scrollable-region-focusable-evidence",
-                "label": "A CSS-scrollable region with no focusable descendant is itself keyboard-focusable (evidence only — actual overflow not statically knowable)",
+                "label": "A CSS-scrollable region with no focusable descendant is itself keyboard-focusable (evidence only: actual overflow not statically knowable)",
                 "automation": "manual"
             },
             {
                 "id": "mouse-only-event-handlers-evidence",
-                "label": "Pointer-only inline event handlers have a keyboard-reachable equivalent (evidence only — JS-attached listeners are not statically visible)",
+                "label": "Pointer-only inline event handlers have a keyboard-reachable equivalent (evidence only: JS-attached listeners are not statically visible)",
                 "automation": "manual"
             }
         ]
@@ -491,7 +491,7 @@ const FACETS = {
         "facets": [
             {
                 "id": "scrollable-region-focusable-evidence",
-                "label": "A CSS-scrollable region with no focusable descendant is itself keyboard-focusable (evidence only — actual overflow not statically knowable)",
+                "label": "A CSS-scrollable region with no focusable descendant is itself keyboard-focusable (evidence only: actual overflow not statically knowable)",
                 "automation": "manual"
             }
         ]
@@ -602,7 +602,7 @@ const FACETS = {
         "facets": [
             {
                 "id": "link-text-descriptive-evidence",
-                "label": "Link text is not a known non-descriptive/generic phrase (evidence only — surrounding-context sufficiency not verified)",
+                "label": "Link text is not a known non-descriptive/generic phrase (evidence only: surrounding-context sufficiency not verified)",
                 "automation": "manual"
             }
         ]
@@ -1093,7 +1093,7 @@ const FACETS = {
             },
             {
                 "id": "aria-checked-state-mismatch",
-                "label": "Native checkbox/radio aria-checked matches its actual checked/indeterminate state (evidence only — static markup can't rule out later JS hydration)",
+                "label": "Native checkbox/radio aria-checked matches its actual checked/indeterminate state (evidence only: static markup can't rule out later JS hydration)",
                 "automation": "manual"
             }
         ]

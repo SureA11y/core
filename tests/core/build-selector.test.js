@@ -79,7 +79,7 @@ test('buildSelector: disambiguates an ancestor in the middle of several same-tag
 });
 
 // Regression test for a bug in the CSS-identifier-escaping fallback used
-// when window.CSS.escape is unavailable — which is jsdom's actual situation
+// when window.CSS.escape is unavailable, which is jsdom's actual situation
 // (jsdom does not implement CSS.escape), so this fallback is not
 // a rare edge case, it's the one path exercised by every selector this
 // engine ever builds. The old fallback only escaped individual disallowed
@@ -88,7 +88,7 @@ test('buildSelector: disambiguates an ancestor in the middle of several same-tag
 // invalid selector fragment. buildSelectorUncached's own el.matches()
 // verification then threw (silently caught) and fell back to
 // buildSimpleSelector's bare-tag-name selector for every element anchored
-// under that ancestor — a near-total loss of selector fidelity, since a
+// under that ancestor: a near-total loss of selector fidelity, since a
 // bare tag name resolves to the *first* matching element on the whole page,
 // not the one actually flagged.
 test('buildSelector: an ancestor id starting with a digit produces a valid, resolving selector', () => {
@@ -138,7 +138,7 @@ test('buildSelector: a hyphen-then-digit-leading id (e.g. "-1foo") resolves uniq
 // structurally-identical regions (e.g. two ".widget" wrappers with the same
 // internal markup) then produced the *same* selector string for their
 // respective buttons, since the climb stopped at the same relative depth in
-// each region — resolving to multiple elements instead of one, and pointing
+// each region: resolving to multiple elements instead of one, and pointing
 // at the wrong element for at least one occurrence. The fix keeps climbing
 // past a matched root when more than one root is in play, all the way to
 // the true (singular) document root, same as the no-contextSelector path.
@@ -182,12 +182,12 @@ test('buildSelector: multi-region contextSelector does not collide selectors acr
 // string. A CSS attribute selector requires an exact match against the
 // real (untrimmed) DOM attribute, so whenever the real attribute had
 // leading/trailing whitespace, the built selector could never match its
-// own element — el.matches(candidate) correctly returned false, and the
+// own element: el.matches(candidate) correctly returned false, and the
 // element fell through to buildSimpleSelector's bare-tag-name fallback.
 // A real-world shape: several role="region" promo cards have a templated
 // aria-label ending in a trailing ", " (string-concatenation artifact),
 // which degraded 7 otherwise-uniquely-anchorable elements to the bare
-// selector "header" — a selector that resolves to the *first* <header> on
+// selector "header", a selector that resolves to the *first* <header> on
 // the whole page (the site banner), not any of the 7 actual elements.
 test('buildSelector: an aria-label anchor with leading/trailing whitespace on the target itself resolves uniquely', () => {
   const { helpers, document } = helpersFor(`<!doctype html><html><body>
@@ -257,7 +257,7 @@ test('buildSelector: an id with leading/trailing whitespace resolves uniquely vi
 // fallback used once every other anchor strategy fails) independently
 // re-implemented id/data-testid/name anchoring and embedded the *trimmed*
 // attribute value in the selector string while only checking (not using)
-// the trimmed value for id/data-testid — so an element whose id, testid, or
+// the trimmed value for id/data-testid, so an element whose id, testid, or
 // name attribute had leading/trailing whitespace got a selector that could
 // never match it, silently pointing at nothing (or the wrong element) for
 // any caller that re-resolves the string via querySelector.

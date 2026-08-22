@@ -13,7 +13,7 @@
  * @expectation
  *   The image does not use ismap at all. Server-side image maps depend on
  *   the browser sending click coordinates to the server, which has no
- *   keyboard-operable equivalent — there is no way to determine or expose
+ *   keyboard-operable equivalent, there is no way to determine or expose
  *   individual clickable regions to assistive technology or keyboard
  *   users. Client-side image maps (<map>/<area>, each with real href/alt)
  *   are the accessible alternative and are not flagged by this rule.

@@ -13,7 +13,7 @@
  *   attribute.
  * @expectation
  *   No two frames in scope share the same (trimmed, case-sensitive) title
- *   attribute value — a duplicate title prevents assistive technology
+ *   attribute value, a duplicate title prevents assistive technology
  *   users from telling frames apart when scanning by name.
  * @implementation-notes
  * - Distinct, atomic decision from iframe-name-present (presence):

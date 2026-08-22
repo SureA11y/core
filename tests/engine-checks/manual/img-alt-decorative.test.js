@@ -89,9 +89,8 @@ test(`${RULE_ID}: i18n (fr) rule title/description are localized`, () => {
 
 // role="presentation"/"none" is one of ACT e88epe's own exclusion mechanisms
 // (its own failed examples use non-empty alt with aria-hidden/role="none"),
-// so it is now flagged the same as alt="" — the opposite direction from
-// before this rule widened, when role="presentation"/"none" was treated as
-// an applicability *exclusion* instead of one of the review triggers.
+// so it's flagged the same as alt="": one of the review triggers, not an
+// applicability exclusion.
 
 test(`${RULE_ID}: a non-focusable role="presentation" img is reviewed even with a non-empty alt`, () => {
   const result = runa11yCoreOnHtml(

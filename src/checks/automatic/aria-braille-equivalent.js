@@ -27,7 +27,7 @@
  * - `aria-braillelabel`/`aria-brailleroledescription` do not participate
  *   in the standard accessible-name computation, so
  *   `helpers.getAccessibleNameInfo` already reflects only the "regular"
- *   (non-braille) name — no special-casing needed there.
+ *   (non-braille) name, no special-casing needed there.
  */
 
 const id = 'aria-braille-equivalent';
@@ -67,7 +67,7 @@ function runInPage(ctx) {
   }
 
   function getConservativeSubtreeText(container) {
-    // "Name from content" — recurses into descendants and uses each one's
+    // "Name from content", recurses into descendants and uses each one's
     // own accessible name (img alt, aria-label/aria-labelledby, title) when
     // it has one, not just literal text nodes. See getContentNameInfo's
     // header comment in src/core/dom-helpers.js for the full rationale
@@ -125,7 +125,7 @@ function runInPage(ctx) {
       occurrences.push(
         helpers.reportOccurrence(el, {
           summary: `This element has ${m.attr} but no ${m.requires}, its non-braille equivalent.`,
-          hint: `${m.attr} is a Braille-specific supplement, not a replacement — also provide ${m.requires}.`,
+          hint: `${m.attr} is a Braille-specific supplement, not a replacement, so also provide ${m.requires}.`,
           i18n: {
             summaryKey: 'ariaBrailleEquivalent_summary_fail',
             hintKey: 'ariaBrailleEquivalent_hint_fail',

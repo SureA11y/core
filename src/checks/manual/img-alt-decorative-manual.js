@@ -19,7 +19,7 @@
  *   focusability), or an unlabeled <canvas> with no explicit role at all.
  *   Per ACT e88epe, an element is skipped entirely when any ancestor
  *   already has an author-supplied name (aria-label, aria-labelledby,
- *   title, or an associated <label>) — that ancestor's name is what
+ *   title, or an associated <label>), that ancestor's name is what
  *   matters, not this element's exclusion (the common real case: an
  *   icon-only button already named via aria-label).
  * @expectation
@@ -196,7 +196,7 @@ function runInPage(ctx) {
   }
 
   // Presentational exclusion: explicit role="none"/"presentation", or (img
-  // only) the native alt="" marker — both overridden by focusability, per
+  // only) the native alt="" marker. Both are overridden by focusability, per
   // ARIA conflict resolution (a focusable element is never presentational).
   function isPresentationallyExcluded(el, tag) {
     const role = getExplicitRole(el);
@@ -213,7 +213,7 @@ function runInPage(ctx) {
   // explicit role, or role explicitly restated as graphics-document) with
   // no accessible name and not focusable. An svg explicitly given role="img"
   // /"graphics-symbol", an aria-name, a <title>/<desc>, or a tab stop is
-  // "included" — a naming question for svg-text-alternative-present, not
+  // "included", a naming question for svg-text-alternative-present, not
   // this rule's "is it decorative" question.
   function isIgnoredSvg(el) {
     const role = getExplicitRole(el);
@@ -227,7 +227,7 @@ function runInPage(ctx) {
   // ACT e88epe's "ignored canvas": no explicit role at all and no
   // accessible name. Canvas fallback content as a naming mechanism is not
   // modeled here (a separate, narrower question than this rule needs to
-  // settle — see docs/DESIGN_CHALLENGES.md).
+  // settle; see docs/DESIGN_CHALLENGES.md).
   function isIgnoredCanvas(el) {
     const role = getExplicitRole(el);
     if (role) return false;
@@ -240,8 +240,8 @@ function runInPage(ctx) {
   // ACT e88epe's own exception: never applies under an ancestor already
   // named by the author. The common real case is an icon-only button
   // (<button aria-label="Close"><svg>...</svg></button>) that already has a
-  // correct name from the button itself — whether the svg "is decorative"
-  // is moot, and flagging it would just be noise on ordinary icon usage.
+  // correct name from the button itself. Whether the svg "is decorative"
+  // is moot there, and flagging it would just be noise on ordinary icon usage.
   function hasAncestorNamedFromAuthor(el) {
     if (!getAccessibleNameInfo) return false;
     const getComposedParent =

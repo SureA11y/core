@@ -10,7 +10,7 @@ const { createDomHelpers } = require('../../src/core/dom-helpers.js');
 // A rule that collects two independent confidence tiers in one run (some
 // findings confident enough for `fail`, others only `cantTell`) used to
 // hand-roll "if failOccurrences.length return fail(failOccurrences); else
-// if cantTellOccurrences.length return cantTell(cantTellOccurrences)" —
+// if cantTellOccurrences.length return cantTell(cantTellOccurrences)",
 // which silently discards every cantTell-tier finding whenever at least
 // one fail-tier finding also exists on the same page. Found in
 // aria-prohibited-attr's roleless-naming widening, then confirmed as the

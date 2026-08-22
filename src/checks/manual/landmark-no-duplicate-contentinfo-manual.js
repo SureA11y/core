@@ -6,18 +6,18 @@
  * @check landmark-no-duplicate-contentinfo
  * @atomic true
  * @summary A page must not have more than one contentinfo landmark
- * @standard Best Practices (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
  *   Applies whenever the page contains at least one contentinfo landmark
  *   (explicit role="contentinfo", or an implicit, non-nested <footer>).
  * @expectation
- *   At most one contentinfo landmark exists on the page — mirrors
+ *   At most one contentinfo landmark exists on the page, mirroring
  *   landmark-no-duplicate-banner's rationale for contentinfo.
  * @implementation-notes
- * - Not WCAG-normative — authored as an advisory, cantTell-capped
+ * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent.
- * - Only landmarks actually exposed to assistive technology can collide —
+ * - Only landmarks actually exposed to assistive technology can collide,
  *   same as the sibling banner/main rules, avoiding hidden-duplicate false
  *   positives.
  */
@@ -74,7 +74,7 @@ function runInPage(ctx) {
 
   // Delegates to the shared helpers.hasLandmarkScopingAncestor for the
   // question "does this element sit inside a sectioning-content/<main>
-  // ancestor that suppresses its conditional implicit role" — role-aware
+  // ancestor that suppresses its conditional implicit role": role-aware
   // (an ancestor's bare TAG only counts when it carries no role attribute
   // at all; an explicit role="dialog"-style override no longer suppresses)
   // rather than a local tag-only copy. See that function's header comment
@@ -93,7 +93,7 @@ function runInPage(ctx) {
     if (tag === 'main') return 'main';
     if (tag === 'nav') return 'navigation';
     if (tag === 'aside') {
-      // A named <aside> is never suppressed, even when nested — it keeps
+      // A named <aside> is never suppressed, even when nested. It keeps
       // "complementary" when it has an accessible name, even inside
       // sectioning content. Matches landmark-unique's precedent.
       if (!hasSectioningAncestor(el, false)) return 'complementary';

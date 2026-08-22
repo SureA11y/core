@@ -107,7 +107,7 @@ function runInPage(ctx) {
 
   // getLabelMethod is provided by the shared dom-helpers bundle that
   // dom-runner.js always constructs for every rule execution (built-in or
-  // custom) — see createDomHelpers's own getLabelMethod, which implements
+  // custom); see createDomHelpers's own getLabelMethod, which implements
   // this exact <label>/aria-labelledby/aria-label/title/placeholder
   // priority order. No local reimplementation is needed as a fallback.
   function getLabelMethodSafe(el) {
@@ -232,7 +232,7 @@ function runInPage(ctx) {
     };
   }
 
-  // Manual rules may only emit cantTell/notApplicable (never pass/fail) —
+  // Manual rules may only emit cantTell/notApplicable (never pass/fail):
   // no applicable control relied on a weak (title/placeholder) primary
   // label, so there is nothing to flag for review.
   return {

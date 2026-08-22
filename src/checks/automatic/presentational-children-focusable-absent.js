@@ -12,7 +12,7 @@
  *   Applies to elements whose semantic role is one of the WAI-ARIA roles
  *   defined as having presentational children (button, checkbox, img,
  *   menuitemcheckbox, menuitemradio, meter, option, progressbar, radio,
- *   scrollbar, separator, slider, switch, tab — plus doc-pagebreak and
+ *   scrollbar, separator, slider, switch, tab, plus doc-pagebreak and
  *   graphics-symbol from the DPUB-ARIA/Graphics-ARIA modules, which
  *   inherit the same trait). The role can be explicit (role="tab") or
  *   native (<button>, <meter>, <progress>, <option>).
@@ -23,8 +23,8 @@
  *   receives focus with no role and no name to announce.
  * @implementation-notes
  * - "Presentational children" is the implicit, role-driven mechanism from
- *   WAI-ARIA §5.2.7, NOT an explicit role="presentation"/"none" attribute
- *   — an element carrying that attribute has a semantic role of
+ *   WAI-ARIA §5.2.7, NOT an explicit role="presentation"/"none" attribute.
+ *   An element carrying that attribute has a semantic role of
  *   presentation/none, which is not in the list above, so it is out of
  *   scope here (presentation-role-conflict covers that case).
  * - Only tab stops count, not everything focusable: a descendant with
@@ -39,8 +39,8 @@
  *   ever exist to report. Including them would only inflate the applicable
  *   count.
  * - The walk stops at each reported tab stop, and at a nested element that
- *   has a presentational-children role of its own without being a tab stop
- *   — that one owns whatever is inside it, and is examined as its own
+ *   has a presentational-children role of its own without being a tab stop,
+ *   that one owns whatever is inside it, and is examined as its own
  *   container. A tab stop therefore lands on the nearest role that dropped
  *   it from the accessibility tree, the element an author would fix, rather
  *   than on every enclosing one. A nested role that IS a tab stop
@@ -51,8 +51,8 @@
  *   accessibility-tree node) as its own normative decision. Non-rendered
  *   descendants (display:none, hidden, visibility:hidden) take no tab stop
  *   at all and are skipped.
- * - Browsers implement presentational children inconsistently — some
- *   expose the descendants anyway, especially when they are focusable — so
+ * - Browsers implement presentational children inconsistently, some
+ *   expose the descendants anyway, especially when they are focusable, so
  *   the announced result varies by browser. The markup contradiction is
  *   the same in every one of them, which is what this rule reports.
  */
@@ -89,7 +89,7 @@ const meta = {
 function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
-  // Declared inside runInPage — see scripts/build-core.js header
+  // Declared inside runInPage, see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
   //
   // WAI-ARIA roles with "Children Presentational: True", plus the two
@@ -115,7 +115,7 @@ function runInPage(ctx) {
   ];
 
   // Native tags whose implicit role is in the set above and that can hold
-  // descendants — see the void-element note in the header comment.
+  // descendants, see the void-element note in the header comment.
   const NATIVE_ROLE_BY_TAG = {
     button: 'button',
     meter: 'meter',
@@ -187,10 +187,10 @@ function runInPage(ctx) {
           return n && n.parentElement ? n.parentElement : null;
         };
 
-  // isAccTreeEligible deliberately keeps an aria-hidden element that holds
+  // isAccTreeEligible keeps an aria-hidden element that holds
   // tabbable content in the accessibility tree (reason
   // "ariaHiddenOverriddenTabbable", modelling the browsers that expose it
-  // anyway) — which is precisely the shape aria-hidden-focus owns, so the
+  // anyway), which is precisely the shape aria-hidden-focus owns, so the
   // attribute is checked on its own here rather than read off eligibility.
   function inAriaHiddenSubtree(node) {
     let cur = node;
@@ -245,7 +245,7 @@ function runInPage(ctx) {
       }
       // A nested role with presentational children owns whatever tab stops
       // are inside it (it is examined as its own container in the main
-      // loop). It is only a boundary when it is not itself a tab stop —
+      // loop). It is only a boundary when it is not itself a tab stop,
       // a focusable one lands focus inside THIS element and belongs here.
       if (getPresentationalChildrenRole(node)) continue;
       const kids = node.children;
@@ -270,7 +270,7 @@ function runInPage(ctx) {
     const role = getPresentationalChildrenRole(el);
     if (!role) continue;
     // A container that is hidden, or sits in an aria-hidden subtree, is
-    // aria-hidden-focus's concern — see the note on inAriaHiddenSubtree.
+    // aria-hidden-focus's concern, see the note on inAriaHiddenSubtree.
     if (!isExposed(el) || inAriaHiddenSubtree(el)) continue;
 
     applicableCount += 1;
@@ -294,7 +294,7 @@ function runInPage(ctx) {
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: `This role="${role}" element makes its children presentational, but it contains content that is still part of sequential focus navigation (${dedupedTabStopTags.join(', ')}).`,
-        hint: 'Move the focusable content outside this element, or remove the role that makes the children presentational — focus landing inside it has no role or name to announce.',
+        hint: 'Move the focusable content outside this element, or remove the role that makes the children presentational, since focus landing inside it has no role or name to announce.',
         i18n: {
           summaryKey: 'presentationalChildrenFocusableAbsent_summary_fail',
           hintKey: 'presentationalChildrenFocusableAbsent_hint_fail',

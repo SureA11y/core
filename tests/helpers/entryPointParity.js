@@ -29,7 +29,7 @@
  * re-embedded copy actually lives), never back to the original rule file, so
  * per-rule-file coverage reflected only the single fixture run through
  * runDomRulesInPage. Driving each existing scenario through both entry points
- * reports what those scenarios genuinely cover.
+ * reports what those scenarios actually cover.
  *
  * The in-page result is what callers get back, and it is computed FIRST, on a
  * pristine DOM -- the parity run must never change what a test observes.

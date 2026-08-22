@@ -14,7 +14,7 @@
  *   non-empty <title> or <desc> text, a non-empty aria-label, or an
  *   aria-labelledby that resolves to non-empty text. <desc> counts here as
  *   something to review even though it never contributes to the accessible
- *   name — that distinction is svg-text-alternative-present's. The element
+ *   name: that distinction is svg-text-alternative-present's. The element
  *   must be included in the accessibility tree, and
  *   role="presentation"/"none" takes it out of scope unless it is focusable,
  *   which restores its role.

@@ -493,7 +493,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/contrast-all-scenarios.html)`
     'eligible_zero_size_text',
     'eligible_enabled_button_fail',
     // <input type="submit"|"button">'s visible label comes from the
-    // value attribute, not a DOM text node — must still be evaluated
+    // value attribute, not a DOM text node, and must still be evaluated
     // (see contrast-helpers.js's getTextScan).
     'eligible_submit_input_fail',
     'eligible_button_input_fail'

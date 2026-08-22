@@ -90,7 +90,7 @@ test(`${RULE_ID}: fail when applicable <svg role="img"> has no title/desc and no
   assert.ok(hasOccurrenceForId(rule, 'bad1'));
 });
 
-test(`${RULE_ID}: fail when applicable <svg role="img"> has only <desc> (no <title>/aria name) — SVG-AAM §7.1: desc only contributes to the accessible description, never the name`, () => {
+test(`${RULE_ID}: fail when applicable <svg role="img"> has only <desc> (no <title>/aria name): SVG-AAM §7.1 says desc only contributes to the accessible description, never the name`, () => {
   const html = `<!doctype html><html><body>
     <svg id="desc_only" role="img" xmlns="http://www.w3.org/2000/svg"><desc>Settings icon</desc></svg>
   </body></html>`;
@@ -257,7 +257,7 @@ test(`${RULE_ID}: i18n default is English`, () => {
   assert.strictEqual(occ.summary, 'Missing text alternative for <svg>.');
   assert.strictEqual(
     occ.hint,
-    'Provide a <title> element with text, or an ARIA name (aria-label/aria-labelledby) — a <desc> element alone does not provide an accessible name.'
+    'Provide a <title> element with text, or an ARIA name (aria-label/aria-labelledby); a <desc> element alone does not provide an accessible name.'
   );
 });
 

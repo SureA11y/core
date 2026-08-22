@@ -31,7 +31,7 @@ function toPromptInput(group) {
   };
 }
 
-// §4.4's output contract is deliberately loose: accepts an array of
+// §4.4's output contract stays loose on purpose: accepts an array of
 // { groupKey, text, provider? }, or a plain object map keyed by groupKey
 // (value either a string or a { text, provider? } object). Anything that
 // doesn't match either shape is ignored, not thrown on -- a malformed

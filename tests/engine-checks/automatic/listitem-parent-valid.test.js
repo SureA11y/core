@@ -47,7 +47,7 @@ test(`${RULE_ID}: fail when li's parent is a <ul> with an explicit role="menu" (
   assert.ok(hasOccurrenceForId(rule, 'a'));
 });
 
-test(`${RULE_ID}: pass when li's parent is a <ul> with an explicit role="presentation" (list semantics deliberately suppressed)`, () => {
+test(`${RULE_ID}: pass when li's parent is a <ul> with an explicit role="presentation" (list semantics suppressed on purpose)`, () => {
   const html = `<!doctype html><html><body><ul role="presentation"><li id="a">item</li></ul></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
@@ -73,7 +73,7 @@ test(`${RULE_ID}: reports one occurrence per orphaned li`, () => {
   assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
 });
 
-test(`${RULE_ID}: notApplicable when li has its own explicit role="tab" with an invalid parent — the explicit role overrides the li's native "listitem" role entirely, so there's no listitem semantics to validate a parent for (real pattern: tablist widgets built on <li>, e.g. Docusaurus tabs)`, () => {
+test(`${RULE_ID}: notApplicable when li has its own explicit role="tab" with an invalid parent: the explicit role overrides the li's native "listitem" role entirely, so there's no listitem semantics to validate a parent for (real pattern: tablist widgets built on <li>, e.g. Docusaurus tabs)`, () => {
   const html = `<!doctype html><html><body><div role="tablist"><li id="a" role="tab">Tab</li></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });

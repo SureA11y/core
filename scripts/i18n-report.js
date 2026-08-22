@@ -22,7 +22,7 @@ function listLocaleNames(i18nDir) {
 // with every value identical to English, so this reports 0% until real
 // translations replace the placeholders. A handful of strings may legitimately
 // stay identical across languages (e.g. a bare "ARIA"), so this slightly
-// undercounts in practice — treat it as a progress signal, not a precise metric.
+// undercounts in practice, so treat it as a progress signal, not a precise metric.
 function computeLocaleReport(enDict, localeDict) {
   const enKeys = Object.keys(enDict);
   const localeKeySet = new Set(Object.keys(localeDict));

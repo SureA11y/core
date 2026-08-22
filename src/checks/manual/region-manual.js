@@ -6,10 +6,10 @@
  * @check region
  * @atomic true
  * @summary Page content should be contained within a landmark region
- * @standard Best Practices (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
  *   Applies to any element under <body> that directly carries visible text
- *   (or other own content — see @implementation-notes) and is not itself a
+ *   (or other own content, see @implementation-notes) and is not itself a
  *   landmark, live region, dialog, button, <svg>, <iframe>/<frame>, or a
  *   resolvable skip-link.
  * @expectation
@@ -18,14 +18,14 @@
  *   search), so assistive technology users navigating by landmark do not
  *   miss content that was never placed inside one.
  * @implementation-notes
- * - Not WCAG-normative — authored as an advisory, cantTell-capped
+ * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent and the landmark-
  *   detection model.
  * - Recursive tree walk, not a direct-<body>-children-only scan: a
  *   direct-children-only scope is nearly inert on the single most common
  *   real-world page shape, a modern framework's single root mount div
- *   (`<body><div id="root">...everything...</div></body>`) — that shape
+ *   (`<body><div id="root">...everything...</div></body>`). That shape
  *   gives at most one candidate for the entire page and either misses
  *   every real gap inside it or collapses the whole page into one
  *   undifferentiated report.
@@ -37,30 +37,30 @@
  *        live region, dialog, button, <svg>, <iframe>/<frame>, or a
  *        resolvable skip-link), mark it and every ancestor up to <body> as
  *        "has a stopper" and don't recurse further into it (an <iframe>/
- *        <frame> is additionally reported as its own occurrence — its
+ *        <frame> is additionally reported as its own occurrence, since its
  *        content is opaque to this engine, so from the outer page's
  *        perspective it IS unplaced content).
  *     3. Otherwise, if the node has OWN content (a direct child text node,
- *        being an inherently visual element, or an aria-label) — checked
- *        non-recursively, so a plain wrapper <div> with only nested
- *        children never short-circuits the walk into its descendants —
+ *        being an inherently visual element, or an aria-label), checked
+ *        non-recursively so a plain wrapper <div> with only nested
+ *        children never short-circuits the walk into its descendants,
  *        collect it as a candidate and stop recursing into it.
  *     4. Otherwise recurse into its element children.
  *   Each collected candidate is then walked back UP through parents while
  *   the parent has no "stopper" marker and isn't <body> itself, collapsing
  *   contiguous unplaced content into one occurrence per real gap instead
- *   of reporting every individual text-bearing leaf — this is what keeps
+ *   of reporting every individual text-bearing leaf. This is what keeps
  *   the walk from being noisy on ordinary pages that mix landmarked and
  *   stray content.
  * - "Stopper" exemptions (button, dialog, <svg>, resolvable skip-links)
- *   are a deliberate scope choice, not an oversight: these
+ *   are a scope choice, not an oversight: these
  *   are extremely common real-world patterns (floating action buttons,
  *   modal dialogs, decorative/icon SVGs, "skip to content" links) that
  *   aren't the kind of "content organization" gap this rule exists to
  *   catch, and flagging them would reintroduce the false-positive noise
  *   the original narrow scope was trying to avoid.
- * - The "own content" check for aria-label deliberately does NOT resolve
- *   aria-labelledby — a known, narrow scope gap (an element named only via aria-labelledby, with no
+ * - The "own content" check for aria-label does NOT resolve
+ *   aria-labelledby, a known, narrow scope gap (an element named only via aria-labelledby, with no
  *   own text/aria-label, and no other content anywhere in its subtree,
  *   could be silently skipped) accepted to avoid a full accessible-name
  *   computation (recursive itself) inside an already-recursive structural
@@ -137,11 +137,11 @@ function runInPage(ctx) {
 
   // Delegates to the shared helpers.hasLandmarkScopingAncestor for the
   // question "does this element sit inside a sectioning-content/<main>
-  // ancestor that suppresses its conditional implicit role" — role-aware
+  // ancestor that suppresses its conditional implicit role": role-aware
   // (an ancestor's bare TAG only counts when it carries no role attribute
   // at all; an explicit role="dialog"-style override no longer suppresses)
   // rather than a local tag-only copy. See that function's header comment
-  // in src/core/aria-helpers.js for the full algorithm — e.g. an
+  // in src/core/aria-helpers.js for the full algorithm, e.g. an
   // <aside role="dialog"> containing its own <header>, where the <header>
   // keeps its banner role.
   function hasSectioningAncestor(el, includeMain) {
@@ -189,7 +189,7 @@ function runInPage(ctx) {
   const SKIP_TAGS = new Set(['script', 'style', 'template', 'noscript', 'link', 'meta', 'title']);
 
   // Roles/attributes that make an element its own self-contained
-  // announced area — not literally a WAI-ARIA landmark, but not "content
+  // announced area: not literally a WAI-ARIA landmark, but not "content
   // that needs a landmark" either.
   const LIVE_REGION_ROLES = new Set(['alert', 'status', 'log', 'marquee', 'timer']);
 
@@ -217,8 +217,8 @@ function runInPage(ctx) {
     return false;
   }
 
-  // A "skip to content" link is deliberately placed outside the main
-  // content flow at the very top of the page — exempting it (when its
+  // A "skip to content" link is placed outside the main content flow
+  // on purpose, at the very top of the page. Exempting it (when its
   // fragment actually resolves to a real target, not a dead "#"
   // placeholder) avoids flagging a helpful, common accessibility pattern
   // as the very thing this rule is meant to catch.
@@ -249,8 +249,8 @@ function runInPage(ctx) {
 
   const VISUAL_CONTENT_TAGS = new Set(['img', 'video', 'audio', 'canvas', 'object', 'embed']);
 
-  // Non-recursive "does THIS element, on its own, carry content" check —
-  // deliberately mirrors only the direct-content half of getContentNameInfo,
+  // Non-recursive "does THIS element, on its own, carry content" check.
+  // Mirrors only the direct-content half of getContentNameInfo on purpose,
   // not a full name-from-content recursion: the whole point is to keep
   // recursing through plain wrapper elements (a framework's root mount
   // <div> included) until reaching the actual content-bearing node, rather

@@ -6,19 +6,19 @@
  * @check label-title-only
  * @atomic true
  * @summary Form controls should not rely on the title attribute as their only label
- * @standard Best Practices (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
  *   Applies to labelable form controls (input, excluding
  *   hidden/submit/reset/button/image; select; textarea) that have a
  *   non-empty title attribute.
  * @expectation
- *   The control also has a real label — a wrapping/associated <label>,
- *   aria-label, or aria-labelledby — rather than depending on the title
+ *   The control also has a real label (a wrapping/associated <label>,
+ *   aria-label, or aria-labelledby), rather than depending on the title
  *   attribute alone. A title-only tooltip is not reliably exposed by all
  *   assistive technology and is not visible at all until hover/focus,
  *   unlike a persistent visible label.
  * @implementation-notes
- * - Not WCAG-normative — authored as an advisory, cantTell-capped
+ * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent.
  * - Distinct from form-control-programmatic-label-present (that

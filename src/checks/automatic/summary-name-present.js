@@ -10,7 +10,7 @@
  * @sc 4.1.2
  * @applicability
  *   Applies to <summary> elements included in the accessibility tree,
- *   wherever they appear — a <summary> outside a <details> is still matched.
+ *   wherever they appear, a <summary> outside a <details> is still matched.
  * @expectation
  *   The element has a non-empty accessible name from aria-label, from an
  *   aria-labelledby that resolves to non-empty text, from title, or from its
@@ -67,7 +67,7 @@ function runInPage(ctx) {
   }
 
   function getConservativeSubtreeText(document, container) {
-    // "Name from content" — recurses into descendants and uses each one's
+    // "Name from content", recurses into descendants and uses each one's
     // own accessible name (img alt, aria-label/aria-labelledby, title) when
     // it has one, not just literal text nodes. See getContentNameInfo's
     // header comment in src/core/dom-helpers.js for the full rationale
@@ -86,7 +86,7 @@ function runInPage(ctx) {
     const raw = getAttr(el, 'aria-labelledby');
     if (!raw) return '';
     // Delegates to the shared getTextFromIdRefs helper instead of computing
-    // name-from-content of the referenced element — see dialog-name-
+    // name-from-content of the referenced element, see dialog-name-
     // present.js's identical fix for the full rationale (an <iframe>
     // aria-labelledby target's only name source is its title attribute,
     // which name-from-content alone can never see).

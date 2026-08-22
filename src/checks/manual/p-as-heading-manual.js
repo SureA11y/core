@@ -17,18 +17,18 @@
  *   Text styled to visually read as a heading (bold, larger-than-body
  *   size, short) should be marked up with a real heading element
  *   (`<h1>`-`<h6>` or `role="heading"`) so its structural role is
- *   programmatically determinable — the same 1.3.1 concern as any other
+ *   programmatically determinable, the same 1.3.1 concern as any other
  *   "structure conveyed through presentation only" issue.
  * @implementation-notes
  * - This is a stylistic heuristic (bold + large + short), not a
- *   deterministic structural check — a short bold sentence is not
+ *   deterministic structural check: a short bold sentence is not
  *   necessarily wrong as a `<p>`. Authored as `type: 'manual'`
  *   (cantTell-capped, never fail) to avoid false-flagging legitimate
  *   emphasis, matching this repo's other heuristic-heavy Tier 2/3
  *   rules (e.g. `scrollable-region-focusable`).
  * - Uses an absolute 18px size threshold rather than comparing against
- *   surrounding text (unlike `link-in-text-block`) — deliberately
- *   simpler, since "looks like a heading" is closer to an absolute
+ *   surrounding text (unlike `link-in-text-block`); it's simpler on
+ *   purpose, since "looks like a heading" is closer to an absolute
  *   judgment than a relative-contrast one.
  */
 

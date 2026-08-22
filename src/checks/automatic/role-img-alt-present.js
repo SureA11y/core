@@ -13,10 +13,10 @@
  *   role="graphics-document" that are included in the accessibility tree
  *   (ACT 23a2a8's "programmatically hidden" exemption:
  *   display:none/visibility:hidden/aria-hidden="true" on the element or an
- *   ancestor, with no carve-out for focusable or IDREF-referenced elements —
+ *   ancestor, with no carve-out for focusable or IDREF-referenced elements,
  *   aria-hidden-focus and duplicate-id-aria own those separately). Per ACT
  *   7d6734, this reaches any element carrying one of these roles, not only
- *   the <svg> root — e.g. a <circle role="graphics-symbol"> nested inside a
+ *   the <svg> root, e.g. a <circle role="graphics-symbol"> nested inside a
  *   plain <svg>. The <svg> root itself is left to svg-text-alternative-present's
  *   own (already ACT-clean) title/aria-name handling; the <img> tag is
  *   excluded here since it has its own dedicated rule.

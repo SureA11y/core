@@ -19,7 +19,7 @@
  *   ancestor/owner's aria-owns) whose effective role is one of the
  *   acceptable context roles for this element's role.
  * @implementation-notes
- * - Deliberately scoped to REQUIRED_CONTEXT_ROLE in src/core/aria-helpers.js
+ * - Scoped to REQUIRED_CONTEXT_ROLE in src/core/aria-helpers.js
  *   (see that file's header for the conservative-scope rationale); roles
  *   with an explicitly empty entry (e.g. tabpanel) are left unconstrained.
  * - Context-role matching uses ariaHelpers.getContainmentRole, which
@@ -34,8 +34,8 @@
  *   independent path via a reverse lookup over the search root.
  * - Gated on isAccTreeEligible for the element itself. The ancestor-role
  *   walk itself doesn't care about visibility (a hidden ancestor's role is
- *   still found by plain DOM/composed-tree containment, so a genuinely
- *   correctly-nested-but-hidden widget was never at risk here) — the
+ *   still found by plain DOM/composed-tree containment, so a
+ *   correctly-nested-but-hidden widget was never at risk here), the
  *   remaining false-positive shape is an element whose required ancestor
  *   context doesn't exist YET because it (and its wrapping context) are
  *   assembled together at reveal time (e.g. a portal-rendered item staged
@@ -96,18 +96,18 @@ function runInPage(ctx) {
   }
 
   // Roles that may host a nested listitem/treeitem group without breaking
-  // the required-context chain — the group role is transparent for exactly
+  // the required-context chain, the group role is transparent for exactly
   // these two roles.
   const GROUP_TRANSPARENT_FOR_ROLES = new Set(['listitem', 'treeitem']);
 
   // The WAI-ARIA "Global States and Properties" set (same list as
-  // aria-prohibited-children.js's GLOBAL_ARIA_ATTRS — duplicated, not
+  // aria-prohibited-children.js's GLOBAL_ARIA_ATTRS, duplicated, not
   // imported, since runInPage must be self-contained per
   // scripts/build-core.js). A roleless ancestor carrying any of these is
   // still "included in the accessibility tree" and is therefore a real
   // (generic) parent, not a transparent one: ACT's ff89c9 test corpus
   // covers exactly this with role="listitem" whose actual DOM parent is a
-  // roleless <div aria-live="polite">, itself inside a role="list" — the
+  // roleless <div aria-live="polite">, itself inside a role="list", the
   // required-context chain is broken by that included-but-roleless div,
   // even though a role="list" ancestor does exist further up.
   const GLOBAL_ARIA_ATTRS = [
@@ -144,9 +144,9 @@ function runInPage(ctx) {
     return false;
   }
 
-  // A real ancestor role — not "no role at all" and not the two roles that
+  // A real ancestor role, not "no role at all" and not the two roles that
   // strip an element from the accessibility tree's parent/child chain
-  // entirely (presentation/none) — stops the search. This is stricter than
+  // entirely (presentation/none), stops the search. This is stricter than
   // "any ancestor with the right role anywhere up the tree": the
   // required-context relationship is about the accessibility tree's actual
   // PARENT, so an intervening ancestor with its OWN distinct real role
@@ -168,13 +168,13 @@ function runInPage(ctx) {
     return role;
   }
 
-  // Flat-tree ancestor walk (ctx.helpers.composedParent — assignedSlot wins
+  // Flat-tree ancestor walk (ctx.helpers.composedParent, assignedSlot wins
   // over parentNode, then shadow host). A slotted light-DOM element's real
   // rendered ancestor is whatever the shadow tree wraps its <slot> in (e.g.
   // a role="list" container), not its own light-DOM parentElement.
   // composedParent can return a non-Element node (a ShadowRoot, nodeType
   // 11) when climbing out of a shadow tree that has no further light-DOM
-  // parent — skip those and keep climbing rather than treating them as a
+  // parent, skip those and keep climbing rather than treating them as a
   // (roleless) context.
   const getComposedParent =
     helpers && typeof helpers.composedParent === 'function'

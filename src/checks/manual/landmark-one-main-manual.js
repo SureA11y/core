@@ -6,24 +6,24 @@
  * @check landmark-one-main
  * @atomic true
  * @summary The page should have a main landmark
- * @standard Best Practices (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
- *   Always applicable to any HTML document with a <body> element —
+ *   Always applicable to any HTML document with a <body> element:
  *   "does the page have a main landmark" is a whole-page concern,
  *   matching bypass-blocks-present's pattern of evaluating the
  *   document directly.
  * @expectation
  *   At least one main landmark (role="main" or <main>), exposed to
- *   assistive technology, exists on the page — a page with none gives
+ *   assistive technology, exists on the page. A page with none gives
  *   AT users no landmark to jump straight to for the primary content.
  * @implementation-notes
- * - Not WCAG-normative — authored as an advisory, cantTell-capped
+ * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent.
  * - Presence-only: a plain descendant-exists test. It does NOT flag more
  *   than one main. "More than one main" is a separate rule,
- *   `landmark-no-duplicate-main`, already implemented — deliberately not
- *   duplicated here, since a page can genuinely have two visible `<main>`
+ *   `landmark-no-duplicate-main`, already implemented and not
+ *   duplicated here, since a page can legitimately have two visible `<main>`
  *   elements, which is out of scope for "does a main landmark exist," not
  *   a violation this rule should report.
  * - Filters candidates through `isAccTreeEligible` (hidden/aria-hidden/

@@ -68,7 +68,7 @@ function runInPage(ctx) {
   }
 
   function getConservativeSubtreeText(container) {
-    // "Name from content" — recurses into descendants and uses each one's
+    // "Name from content", recurses into descendants and uses each one's
     // own accessible name (img alt, aria-label/aria-labelledby, title) when
     // it has one, not just literal text nodes. See getContentNameInfo's
     // header comment in src/core/dom-helpers.js for the full rationale
@@ -131,7 +131,7 @@ function runInPage(ctx) {
     // UNLESS a conflicting global ARIA attribute or focusability restores
     // its native/explicit role -- mirrors presentation-role-conflict-manual.js's
     // detection logic. Kept local to this rule rather than routed through
-    // the shared eligibility helper: several other rules deliberately rely
+    // the shared eligibility helper: several other rules rely
     // on that helper staying permissive for role="none" wrappers they walk
     // through themselves (e.g. aria-prohibited-children's "transparent
     // wrapper" traversal).
@@ -185,8 +185,8 @@ function runInPage(ctx) {
     const nameInfo = helpers.getAccessibleNameInfo ? helpers.getAccessibleNameInfo(el, ctx) : null;
 
     // getAccessibleNameInfo only resolves programmatic mechanisms (aria-labelledby,
-    // aria-label, native <label> association, title) — it never falls back to
-    // subtree content — so it's safe to trust directly whenever present.
+    // aria-label, native <label> association, title), it never falls back to
+    // subtree content, so it's safe to trust directly whenever present.
     const trustedProgrammaticName = normalizeWs(
       nameInfo && nameInfo.present && typeof nameInfo.value === 'string' ? nameInfo.value : ''
     );

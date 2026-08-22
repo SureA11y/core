@@ -6,17 +6,17 @@
  * @check skip-link
  * @atomic true
  * @summary A "skip" link must resolve to a real, usable target
- * @standard Best Practices (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
  *   Applies to <a href="#fragment"> elements whose accessible name
  *   matches a common "skip to ..." / "jump to ..." authoring convention
- *   (case-insensitive "skip" or "jump to" in the name) — the recognizable
+ *   (case-insensitive "skip" or "jump to" in the name), the recognizable
  *   pattern for a skip-navigation link, not every same-page anchor link
  *   on the page. "jump to" is included alongside "skip" since real skip
  *   links use both conventions (e.g. a "Jump to section" link, which a
  *   purely positional match would catch but a "skip"-only text pattern
- *   would miss). Text-pattern matching itself stays deliberate (see
- *   implementation-notes) — this only widens the known-convention list.
+ *   would miss). Text-pattern matching itself stays intentional (see
+ *   implementation-notes); this only widens the known-convention list.
  * @expectation
  *   The link's fragment resolves to a real element in the document
  *   (via a matching id, or a legacy <a name="...">), and that target is
@@ -25,7 +25,7 @@
  *   whose target is missing or effectively unusable does not provide a
  *   reliable bypass destination.
  * @implementation-notes
- * - Not WCAG-normative — authored as an advisory, cantTell-capped
+ * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent.
  * - Keyed on the "skip" text-pattern convention rather than positional

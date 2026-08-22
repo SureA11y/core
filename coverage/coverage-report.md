@@ -32,7 +32,7 @@ Total rules (loaded without error): **130**
 | wcag2aa | 10 |
 | wcag2aaa | 5 |
 
-## SC Coverage (A) — Enforced requirements only (normativeMappings)
+## SC Coverage (A): Enforced requirements only (normativeMappings)
 
 ### 1.1.1
 
@@ -650,7 +650,7 @@ Automation mix: **full 40, partial 0, manual 2**.
 | tabindex | manual | tabindex should not be greater than 0 | src/checks/manual/tabindex-manual.js |  |  |
 | table-duplicate-name | manual | Table caption must not duplicate its summary attribute | src/checks/manual/table-duplicate-name-manual.js |  |  |
 
-## SC Coverage (B) — Enforced + manual/informative (normativeMappings + informativeReferences)
+## SC Coverage (B): Enforced + manual/informative (normativeMappings + informativeReferences)
 
 ### 1.1.1
 

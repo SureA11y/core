@@ -87,7 +87,7 @@ function runInPage(ctx) {
 
   function computeNameInfo(el) {
     // <video> is not a labelable element (no browser computes an accessible
-    // name from <label for="...">), so only ARIA naming and title count —
+    // name from <label for="...">), so only ARIA naming and title count,
     // do not accept native <label> associations.
     const flags = [];
     let aria = null;

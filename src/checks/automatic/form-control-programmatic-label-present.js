@@ -13,7 +13,7 @@
  *
  * WCAG mapping: matches technique H44 ("Using label elements to associate
  * text labels with form controls"), which WCAG's own Techniques document
- * lists as sufficient for 1.3.1, 3.3.2, AND 4.1.2 simultaneously — a label
+ * lists as sufficient for 1.3.1, 3.3.2, AND 4.1.2 simultaneously. A label
  * that programmatically associates with a control conveys the
  * relationship (1.3.1), provides the instruction (3.3.2), and exposes the
  * accessible name (4.1.2) all at once. This rule was originally only wired
@@ -25,9 +25,9 @@
  *   accessibility tree, excluding the input types hidden, submit, reset,
  *   button and image, which take their name from a value or alt attribute
  *   rather than from a label. A control carrying
- *   an explicit ARIA widget role is out of scope — button, checkbox,
+ *   an explicit ARIA widget role is out of scope, button, checkbox,
  *   combobox, listbox, textbox, slider and the rest of ROLE_OWNED_ELSEWHERE
- *   each have a naming rule of their own — and role="presentation"/"none"
+ *   each have a naming rule of their own, and role="presentation"/"none"
  *   removes a control unless it is still tabbable.
  * @expectation
  *   Each applicable control carries a programmatic label by one of the
@@ -179,7 +179,7 @@ function runInPage(ctx) {
 
   // getLabelMethod is provided by the shared dom-helpers bundle that
   // dom-runner.js always constructs for every rule execution (built-in or
-  // custom) — see createDomHelpers's own getLabelMethod, which implements
+  // custom), see createDomHelpers's own getLabelMethod, which implements
   // this exact <label>/aria-labelledby/aria-label/title/placeholder
   // priority order. No local reimplementation is needed as a fallback.
   function getLabelMethodSafe(el) {

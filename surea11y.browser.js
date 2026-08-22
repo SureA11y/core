@@ -451,7 +451,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "ruleId": "aria-conditional-attr",
     "title": "aria-errormessage requires aria-invalid to be set to a non-false value",
-    "description": "Checks that elements with aria-errormessage also have aria-invalid set to \"true\", \"grammar\", or \"spelling\" — otherwise the error message is dropped from the accessibility tree.",
+    "description": "Checks that elements with aria-errormessage also have aria-invalid set to \"true\", \"grammar\", or \"spelling\"; otherwise the error message is dropped from the accessibility tree.",
     "i18n": {
       "titleKey": "ariaConditionalAttr_title",
       "descriptionKey": "ariaConditionalAttr_description"
@@ -2497,7 +2497,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "ruleId": "empty-table-header",
     "title": "Table header cells must not be empty",
-    "description": "Checks that table header cells (<th>, or any element with role=\"columnheader\"/\"rowheader\") have visible text content — a header named only via aria-label/aria-labelledby is also flagged, since real screen-reader/browser support for that is inconsistent.",
+    "description": "Checks that table header cells (<th>, or any element with role=\"columnheader\"/\"rowheader\") have visible text content. A header named only via aria-label/aria-labelledby is also flagged, since real screen-reader/browser support for that is inconsistent.",
     "i18n": {
       "titleKey": "emptyTableHeader_title",
       "descriptionKey": "emptyTableHeader_description"
@@ -2573,7 +2573,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "ruleId": "form-control-label-quality",
     "title": "Form field labels should be descriptive and distinguishable",
-    "description": "Flags a visible form-field label that is a placeholder (\"Label\", \"Field\"), or that repeats another field's label with no visible context — heading, legend, or row — telling the two apart.",
+    "description": "Flags a visible form-field label that is a placeholder (\"Label\", \"Field\"), or that repeats another field's label with no visible context (heading, legend, or row) telling the two apart.",
     "i18n": {
       "titleKey": "formControlLabelQuality_title",
       "descriptionKey": "formControlLabelQuality_description"
@@ -4008,7 +4008,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "ruleId": "link-in-text-block",
     "title": "Links in text blocks must be distinguishable from surrounding text without relying on color alone",
-    "description": "Checks that a link inside a run of text is visually distinguishable from the surrounding text by underline, a font-weight/style difference, or a sufficient (>=3:1) color-contrast difference — not by color alone.",
+    "description": "Checks that a link inside a run of text is visually distinguishable from the surrounding text by underline, a font-weight/style difference, or a sufficient (>=3:1) color-contrast difference, not by color alone.",
     "i18n": {
       "titleKey": "linkInTextBlock_title",
       "descriptionKey": "linkInTextBlock_description"
@@ -4566,7 +4566,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "ruleId": "meta-refresh-no-exceptions",
     "title": "Page must not use a meta refresh at all (AAA)",
-    "description": "Checks that <meta http-equiv=\"refresh\"> is not present at all, regardless of delay — the stricter AAA-level counterpart of the A-level positive-delay-only check.",
+    "description": "Checks that <meta http-equiv=\"refresh\"> is not present at all, regardless of delay. This is the stricter AAA-level counterpart of the A-level positive-delay-only check.",
     "i18n": {
       "titleKey": "metaRefreshNoExceptions_title",
       "descriptionKey": "metaRefreshNoExceptions_description"
@@ -6547,7 +6547,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "ruleId": "td-has-header",
     "title": "Data cells in large tables must have an associated header",
-    "description": "Checks that every <td> in a large, simple (no colspan/rowspan) table has an associated header — via a headers attribute, an implicit column <th> above it, or an implicit row <th> to its left.",
+    "description": "Checks that every <td> in a large, simple (no colspan/rowspan) table has an associated header, via a headers attribute, an implicit column <th> above it, or an implicit row <th> to its left.",
     "i18n": {
       "titleKey": "tdHasHeader_title",
       "descriptionKey": "tdHasHeader_description"
@@ -7365,7 +7365,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     ],
     "meta": {
       "title": "Parsing",
-      "description": "Rollup of checks ensuring id values are unique. WCAG 2.0/2.1 only — SC 4.1.1 was removed in WCAG 2.2, so this composite carries the wcag22-removed tag.",
+      "description": "Rollup of checks ensuring id values are unique. WCAG 2.0/2.1 only: SC 4.1.1 was removed in WCAG 2.2, so this composite carries the wcag22-removed tag.",
       "wcagSc": [
         "4.1.1"
       ],
@@ -8145,7 +8145,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // Global ARIA states/properties supported on (almost) any element,
   // regardless of role, per the WAI-ARIA "Global States and Properties" list.
   // Declared inside runInPage (rather than at module scope) because the
-  // build inlines only this function's own source text — see
+  // build inlines only this function's own source text, see
   // scripts/build-core.js header ("runInPage MUST be self-contained").
   // <generated:aria-global-attrs>
   const GLOBAL_ATTRS = [
@@ -8172,8 +8172,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   ];
   // </generated:aria-global-attrs>
 
-  // Per-role supported (non-global) states/properties. Deliberately
-  // conservative — see src/core/aria-helpers.js file header for the same
+  // Per-role supported (non-global) states/properties.
+  // conservative, see src/core/aria-helpers.js file header for the same
   // confidence-scoping rationale; only well-established, unambiguous
   // role/attribute pairings from the WAI-ARIA role definitions are listed.
   // <generated:aria-implicit-roles>
@@ -8927,7 +8927,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         ? IMPLICIT_ROLE_BY_ELEMENT[key]
         : '';
       // No role from either source: for a tag HTML-AAM maps to no role at
-      // all, that IS the answer — nothing supports a role-specific
+      // all, that IS the answer. Nothing supports a role-specific
       // attribute here. Any other tag has a role this table does not model
       // (context-dependent ones), so it stays out of scope.
       if (!role && ROLELESS_ELEMENTS.has(tag)) {
@@ -8970,7 +8970,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     for (const name of disallowed) {
       // A property ARIA deprecated (rather than prohibited) on this role is
-      // still allowed — surfaced as cantTell for the author to decide, not a
+      // still allowed, surfaced as cantTell for the author to decide, not a
       // not-allowed fail.
       const deprecated =
         typeof ariaHelpers.isDeprecatedAttr === 'function' &&
@@ -9089,7 +9089,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function getConservativeSubtreeText(container) {
-    // "Name from content" — recurses into descendants and uses each one's
+    // "Name from content", recurses into descendants and uses each one's
     // own accessible name (img alt, aria-label/aria-labelledby, title) when
     // it has one, not just literal text nodes. See getContentNameInfo's
     // header comment in src/core/dom-helpers.js for the full rationale
@@ -9147,7 +9147,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       occurrences.push(
         helpers.reportOccurrence(el, {
           summary: `This element has ${m.attr} but no ${m.requires}, its non-braille equivalent.`,
-          hint: `${m.attr} is a Braille-specific supplement, not a replacement — also provide ${m.requires}.`,
+          hint: `${m.attr} is a Braille-specific supplement, not a replacement, so also provide ${m.requires}.`,
           i18n: {
             summaryKey: 'ariaBrailleEquivalent_summary_fail',
             hintKey: 'ariaBrailleEquivalent_hint_fail',
@@ -9228,7 +9228,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       helpers.reportOccurrence(el, {
         summary:
           'This element’s aria-checked value does not match its actual checked/indeterminate state.',
-        hint: 'Set aria-checked to match the element’s real state, or remove it — a native checkbox/radio already exposes this state without it.',
+        hint: 'Set aria-checked to match the element’s real state, or remove it; a native checkbox/radio already exposes this state without it.',
         i18n: {
           summaryKey: 'ariaCheckedStateMismatch_summary_cantTell',
           hintKey: 'ariaCheckedStateMismatch_hint_cantTell',
@@ -9546,7 +9546,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // Flat-tree ancestor walk (assignedSlot wins over parentNode, then shadow
-  // host) — shared with every other rule via ctx.helpers.composedParent
+  // host), shared with every other rule via ctx.helpers.composedParent
   // (src/core/dom-helpers.js), not reimplemented here, so a fix to the one
   // canonical definition can't drift out of sync with this rule's copy.
   const composedParent =
@@ -9970,8 +9970,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (isDisabledFormControl(el)) return false;
 
     // An explicit negative tabindex removes the element from the keyboard
-    // tab sequence entirely, regardless of tag — the standard, WAI-
-    // recommended technique for safely hiding focusable content behind
+    // tab sequence entirely, regardless of tag. It's the standard,
+    // WAI-recommended technique for safely hiding focusable content behind
     // aria-hidden (e.g. <button tabindex="-1"> / <a tabindex="-1"> inside
     // an aria-hidden container). This cares about tabbability, not raw
     // focusability. Such an element is still programmatically focusable
@@ -10121,7 +10121,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // Cheap check first: a plain ancestor-attribute walk with no CSS
     // computation, vs. isActuallyFocusable's getComputedStyle-per-ancestor
     // cost. Both conditions are required (AND), so checking whichever is
-    // cheaper first cannot change which elements end up in the bucket —
+    // cheaper first cannot change which elements end up in the bucket,
     // it only skips the expensive check for the (typically vast) majority
     // of focusable candidates that were never inside an aria-hidden root
     // in the first place. On pages with many focusable candidates and a
@@ -10340,7 +10340,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // See helpers.resolveTieredOutcome's own header comment (src/core/dom-helpers.js):
   // a fail-tier finding never silently discards cantTell-tier findings from
-  // the same run — both are returned together when the outcome is 'fail'.
+  // the same run, both are returned together when the outcome is 'fail'.
   const resolved = helpers.resolveTieredOutcome(
     failOccurrences,
     uncertainOccurrences,
@@ -10359,8 +10359,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // Roles whose WAI-ARIA 1.2 definition lists a "Prohibited ARIA States and
   // Properties" entry for naming attributes (these roles must never carry an
   // accessible name). Declared inside runInPage (rather than at module
-  // scope) because the build inlines only this function's own source text
-  // — see scripts/build-core.js header ("runInPage MUST be self-contained").
+  // scope) because the build inlines only this function's own source text.
+  // See scripts/build-core.js header ("runInPage MUST be self-contained").
   const ROLES_PROHIBITING_NAME = new Set([
     'caption',
     'code',
@@ -10430,7 +10430,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // and how ROLELESS_NATIVE_TAGS/WIDGET_TYPE_ROLES were derived) ---
 
   // Small, curated set of native tags verified to carry no explicit or
-  // implicit ARIA role. Deliberately excludes <section>/<form>/<a> — all
+  // implicit ARIA role. Excludes <section>/<form>/<a>, which are
   // conditionally roleless too, but already handled with more nuance
   // elsewhere in this engine (see header comment).
   const ROLELESS_NATIVE_TAGS = new Set([
@@ -10508,7 +10508,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         };
 
   // Nearest ancestor's real role (explicit-if-valid, else native/implicit),
-  // skipping roleless/presentation/none ancestors — used only to check
+  // skipping roleless/presentation/none ancestors. Used only to check
   // whether that role is a "widget"-type one (the roleless-branch
   // exemption). Not the same helper as aria-required-parent's containment
   // walk: this one also accepts non-required-context roles.
@@ -10536,7 +10536,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // A small, spec-reserved set of hyphenated tag names that are NOT
   // autonomous custom elements despite containing a hyphen (legacy SVG/
-  // MathML tags predating the Custom Elements spec) — see
+  // MathML tags predating the Custom Elements spec). See
   // https://html.spec.whatwg.org/#valid-custom-element-name's own
   // exclusion list. Excluded so this doesn't misclassify them as
   // always-roleless the same way a real custom element is.
@@ -10576,8 +10576,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const tag = String(el.tagName || '').toLowerCase();
     if (!ROLELESS_NATIVE_TAGS.has(tag) && !isRolelessCustomElementTag(tag)) continue;
     const explicitRole = ariaHelpers.getExplicitRole(el);
-    if (explicitRole && ariaHelpers.isValidConcreteRole(explicitRole)) continue; // has a real, recognized role — Tier 1's concern (if in ROLES_PROHIBITING_NAME) or a role this rule has no opinion on. An INVALID role token (e.g. a typo) is ignored per spec, same as no role attribute at all, and must still fall through to this branch.
-    if (ariaHelpers.getNativeRoleForElement(el)) continue; // has a real implicit role after all — not this branch's concern
+    if (explicitRole && ariaHelpers.isValidConcreteRole(explicitRole)) continue; // has a real, recognized role: Tier 1's concern (if in ROLES_PROHIBITING_NAME) or a role this rule has no opinion on. An INVALID role token (e.g. a typo) is ignored per spec, same as no role attribute at all, and must still fall through to this branch.
+    if (ariaHelpers.getNativeRoleForElement(el)) continue; // has a real implicit role after all, not this branch's concern
 
     const present = [];
     for (const attr of PROHIBITED_NAMING_ATTRS) {
@@ -10589,7 +10589,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     applicableCount += 1;
 
     const ancestorRole = getNearestAncestorRole(el);
-    if (ancestorRole && WIDGET_TYPE_ROLES.has(ancestorRole)) continue; // roleless helper node inside a real widget — not flagged
+    if (ancestorRole && WIDGET_TYPE_ROLES.has(ancestorRole)) continue; // roleless helper node inside a real widget, not flagged
 
     const nameInfo = helpers.getContentNameInfo ? helpers.getContentNameInfo(el, ctx) : null;
     const hasContentFallback = !!(
@@ -10603,7 +10603,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         cantTellOccurrences.push(
           helpers.reportOccurrence(el, {
             occurrenceOutcome: 'cantTell',
-            summary: `This ${tag} has no role, so ${attr} may not be exposed as its accessible name by assistive technology — but the element's own content already provides one.`,
+            summary: `This ${tag} has no role, so ${attr} may not be exposed as its accessible name by assistive technology, but the element's own content already provides one.`,
             hint: 'Verify whether the existing text content already serves as this element’s label; if so the naming attribute is redundant, otherwise give the element a role that supports naming (e.g. role="img").',
             i18n: {
               summaryKey: 'ariaProhibitedAttr_summary_cantTell_roleless',
@@ -10651,7 +10651,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // See helpers.resolveTieredOutcome's own header comment (src/core/dom-helpers.js):
   // a fail-tier finding never silently discards cantTell-tier findings from
-  // the same run — both are returned together when the outcome is 'fail'.
+  // the same run. Both are returned together when the outcome is 'fail'.
   const resolved = helpers.resolveTieredOutcome(
     failOccurrences,
     cantTellOccurrences,
@@ -10681,7 +10681,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // The WAI-ARIA "Global States and Properties" set (same list as
-  // aria-allowed-attr.js's GLOBAL_ATTRS — duplicated, not imported, since
+  // aria-allowed-attr.js's GLOBAL_ATTRS, duplicated rather than imported, since
   // runInPage must be self-contained per scripts/build-core.js). A
   // roleless descendant carrying any of these is a real accessible-tree
   // node, not a transparent wrapper.
@@ -10740,7 +10740,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // Collects this container's owned-role entries, pruning role="none"/
   // "presentation" and "group"/"rowgroup" wrappers as transparent
-  // (recursing through them unconditionally — see header comment), and
+  // (recursing through them unconditionally, see header comment), and
   // stopping at the first non-transparent role boundary otherwise. A
   // roleless wrapper is transparent too, but only as a way to reach the
   // items buried inside it: once one is found there, the rest of that
@@ -10779,7 +10779,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         }
         if (globalAttr || mechanism !== 'none') {
           // `mechanism` distinguishes an actual tabindex="" attribute from
-          // native focusability (e.g. <a href>, <button>, <input>) — these
+          // native focusability (e.g. <a href>, <button>, <input>): these
           // are different facts and must not be reported as the same
           // "carries tabindex" claim (a native anchor with no tabindex
           // attribute at all is not "carrying tabindex").
@@ -10791,8 +10791,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
       if (isPresentational || isTransparentGroup) {
         // role="none"/"presentation" really is removed from the accessibility
-        // tree, and its children are promoted to this container — so whatever
-        // is inside genuinely becomes an owned child. group/rowgroup stay
+        // tree, and its children are promoted to this container, so whatever
+        // is inside becomes an owned child in its own right. group/rowgroup stay
         // unconditionally transparent for the reason in the header comment.
         collectOwnedRoles(kid, out, depth + 1, requiredSet);
         continue;
@@ -10850,7 +10850,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     applicableCount += 1;
 
-    // Two different sets, deliberately. requiredSet drives the item-wrapper
+    // Two different sets on purpose. requiredSet drives the item-wrapper
     // detection in collectOwnedRoles: only a REQUIRED role makes a roleless
     // wrapper an item wrapper, so a wrapper holding nothing but a separator is
     // still interposed content. allowedRoles decides the verdict, and includes
@@ -11084,7 +11084,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // Candidate selector for descendant scanning: explicit role attributes,
   // plus every native tag ariaHelpers.getContainmentRole() recognizes
   // (kept in sync with aria-helpers.js NATIVE_CONTAINMENT_ROLE_BY_ELEMENT).
-  // Declared inside runInPage — see scripts/build-core.js header
+  // Declared inside runInPage, see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
   const CANDIDATE_SELECTOR =
     '[role], li, option, tr, td, th, thead, tbody, tfoot, ul, ol, table, select, input[type="radio"]';
@@ -11100,11 +11100,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // light-DOM subtree, so a container whose real owned children are
   // distributed via <slot> (e.g. a shadow-DOM role="list" wrapping
   // <slot></slot>, with the actual role="listitem" elements living in the
-  // light DOM and projected in) would never find them there — same class
+  // light DOM and projected in) would never find them there, same class
   // of bug as aria-required-parent's ancestor search, just in the opposite
   // (descendant) direction.
   //
-  // Deliberately scoped to slot expansion only — does NOT separately
+  // Scoped to slot expansion only, does NOT separately
   // descend into an unrelated nested custom element's own shadow root
   // (e.g. a <my-widget> child with no <slot> involvement at all). That's a
   // qualitatively different question (does an arbitrary component's own
@@ -11162,9 +11162,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     let found = false;
 
     // Fast path first: native querySelectorAll over the curated candidate
-    // selector, exactly as before this fix — covers the overwhelming
-    // majority of containers (no shadow DOM involved at all) with zero
-    // added cost.
+    // selector. Covers the overwhelming majority of containers (no shadow
+    // DOM involved at all) with zero added cost.
     let descendants;
     try {
       descendants = el.querySelectorAll(CANDIDATE_SELECTOR);
@@ -11180,7 +11179,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
 
     // Slow path only when the fast path found nothing AND there's an actual
-    // <slot> somewhere in the subtree to expand — bounds the extra cost to
+    // <slot> somewhere in the subtree to expand, bounds the extra cost to
     // exactly the containers that could possibly need it.
     if (!found) {
       let hasSlot;
@@ -11278,18 +11277,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // Roles that may host a nested listitem/treeitem group without breaking
-  // the required-context chain — the group role is transparent for exactly
+  // the required-context chain, the group role is transparent for exactly
   // these two roles.
   const GROUP_TRANSPARENT_FOR_ROLES = new Set(['listitem', 'treeitem']);
 
   // The WAI-ARIA "Global States and Properties" set (same list as
-  // aria-prohibited-children.js's GLOBAL_ARIA_ATTRS — duplicated, not
+  // aria-prohibited-children.js's GLOBAL_ARIA_ATTRS, duplicated, not
   // imported, since runInPage must be self-contained per
   // scripts/build-core.js). A roleless ancestor carrying any of these is
   // still "included in the accessibility tree" and is therefore a real
   // (generic) parent, not a transparent one: ACT's ff89c9 test corpus
   // covers exactly this with role="listitem" whose actual DOM parent is a
-  // roleless <div aria-live="polite">, itself inside a role="list" — the
+  // roleless <div aria-live="polite">, itself inside a role="list", the
   // required-context chain is broken by that included-but-roleless div,
   // even though a role="list" ancestor does exist further up.
   const GLOBAL_ARIA_ATTRS = [
@@ -11326,9 +11325,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return false;
   }
 
-  // A real ancestor role — not "no role at all" and not the two roles that
+  // A real ancestor role, not "no role at all" and not the two roles that
   // strip an element from the accessibility tree's parent/child chain
-  // entirely (presentation/none) — stops the search. This is stricter than
+  // entirely (presentation/none), stops the search. This is stricter than
   // "any ancestor with the right role anywhere up the tree": the
   // required-context relationship is about the accessibility tree's actual
   // PARENT, so an intervening ancestor with its OWN distinct real role
@@ -11350,13 +11349,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return role;
   }
 
-  // Flat-tree ancestor walk (ctx.helpers.composedParent — assignedSlot wins
+  // Flat-tree ancestor walk (ctx.helpers.composedParent, assignedSlot wins
   // over parentNode, then shadow host). A slotted light-DOM element's real
   // rendered ancestor is whatever the shadow tree wraps its <slot> in (e.g.
   // a role="list" container), not its own light-DOM parentElement.
   // composedParent can return a non-Element node (a ShadowRoot, nodeType
   // 11) when climbing out of a shadow tree that has no further light-DOM
-  // parent — skip those and keep climbing rather than treating them as a
+  // parent, skip those and keep climbing rather than treating them as a
   // (roleless) context.
   const getComposedParent =
     helpers && typeof helpers.composedParent === 'function'
@@ -11524,7 +11523,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // button-name-present et al.), which correctly includes hidden/aria-hidden
   // referenced nodes per the Accessible Name and Description Computation
   // spec (a hidden node directly referenced by aria-labelledby still
-  // supplies its text — this is a standard visually-hidden-label pattern).
+  // supplies its text, this is a standard visually-hidden-label pattern).
   const resolveLabelledby = (el, maxRefs) => {
     if (!getAriaLabelledByInfo) return '';
     try {
@@ -11786,7 +11785,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       selector: stableSelector,
       html,
       summary: 'This role="text" element contains a focusable descendant.',
-      hint: 'Remove role="text" (or remove the focusable descendant) — a "plain text" region should not contain focusable content.',
+      hint: 'Remove role="text" (or remove the focusable descendant); a "plain text" region should not contain focusable content.',
       i18n: {
         summaryKey: 'ariaText_summary_cantTell',
         hintKey: 'ariaText_hint_cantTell',
@@ -11960,7 +11959,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "autocomplete-valid": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
-  // Declared inside runInPage — see scripts/build-core.js header
+  // Declared inside runInPage, see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
   const FIELD_NAMES = new Set([
     'name',
@@ -12373,7 +12372,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function getConservativeSubtreeText(document, container) {
-    // "Name from content" — recurses into descendants and uses each one's
+    // "Name from content", recurses into descendants and uses each one's
     // own accessible name (img alt, aria-label/aria-labelledby, title) when
     // it has one, not just literal text nodes. See getContentNameInfo's
     // header comment in src/core/dom-helpers.js for the full rationale
@@ -12390,7 +12389,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // A <label> contributes a name via its own aria-label/aria-labelledby
   // (checked first, same ARIA-over-content precedence any element's
-  // accessible name gives — e.g. <label aria-label="Search"><svg
+  // accessible name gives, e.g. <label aria-label="Search"><svg
   // aria-hidden="true">...</svg></label> names its control "Search" even
   // though the label's only child content is aria-hidden) or, failing
   // that, its rendered content (getConservativeSubtreeText).
@@ -12405,10 +12404,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (content) return content;
     // Final fallback per the general accname text-alternative algorithm,
     // which applies to any element being asked for its name regardless of
-    // why (own aria-label, an aria-labelledby reference, or — here — native
+    // why (own aria-label, an aria-labelledby reference, or, here, native
     // <label for> association): title, when nothing else yields a name.
     // Purely additive (only fills in a name where there was none before),
-    // so it carries no false-positive risk — see dialog-name-present.js's
+    // so it carries no false-positive risk, see dialog-name-present.js's
     // identical <iframe>-title-fallback fix for the concrete real-world
     // trigger this same accname step covers elsewhere.
     return getAttr(lab, 'title');
@@ -12418,7 +12417,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const raw = getAttr(el, 'aria-labelledby');
     if (!raw) return '';
     // Delegates to the shared getTextFromIdRefs helper instead of computing
-    // name-from-content of the referenced element — see dialog-name-
+    // name-from-content of the referenced element, see dialog-name-
     // present.js's identical fix for the full rationale (an <iframe>
     // aria-labelledby target's only name source is its title attribute,
     // which name-from-content alone can never see).
@@ -12614,7 +12613,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function getConservativeSubtreeText(container) {
-    // "Name from content" — recurses into descendants and uses each one's
+    // "Name from content", recurses into descendants and uses each one's
     // own accessible name (img alt, aria-label/aria-labelledby, title) when
     // it has one, not just literal text nodes. See getContentNameInfo's
     // header comment in src/core/dom-helpers.js for the full rationale
@@ -12677,7 +12676,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // UNLESS a conflicting global ARIA attribute or focusability restores
     // its native/explicit role -- mirrors presentation-role-conflict-manual.js's
     // detection logic. Kept local to this rule rather than routed through
-    // the shared eligibility helper: several other rules deliberately rely
+    // the shared eligibility helper: several other rules rely
     // on that helper staying permissive for role="none" wrappers they walk
     // through themselves (e.g. aria-prohibited-children's "transparent
     // wrapper" traversal).
@@ -12731,8 +12730,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const nameInfo = helpers.getAccessibleNameInfo ? helpers.getAccessibleNameInfo(el, ctx) : null;
 
     // getAccessibleNameInfo only resolves programmatic mechanisms (aria-labelledby,
-    // aria-label, native <label> association, title) — it never falls back to
-    // subtree content — so it's safe to trust directly whenever present.
+    // aria-label, native <label> association, title), it never falls back to
+    // subtree content, so it's safe to trust directly whenever present.
     const trustedProgrammaticName = normalizeWs(
       nameInfo && nameInfo.present && typeof nameInfo.value === 'string' ? nameInfo.value : ''
     );
@@ -12960,7 +12959,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // ACT 047fe0's own Expectation requires the heading to be visible, not
-  // only included in the accessibility tree — a screen-reader-only heading
+  // only included in the accessibility tree: a screen-reader-only heading
   // still leaves sighted keyboard users with no way to locate the start of
   // non-repeated content. "Visible" per ACT's own glossary: making it fully
   // transparent would change rendered pixels, which every CSS-only hiding
@@ -12995,8 +12994,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [
     helpers.reportOccurrence(body, {
       summary:
-        'No recognized way to bypass repeated blocks of content was detected on this page — verify a bypass mechanism exists.',
-      hint: 'Confirm the page offers a bypass mechanism: a main landmark (<main> or role="main"), a working "skip to content" link, or heading elements that assistive technology can use to jump past repeated content. (A mechanism may be temporarily hidden — e.g. while a modal dialog makes the page inert — or provided on a per-site basis; this needs human confirmation.)',
+        'No recognized way to bypass repeated blocks of content was detected on this page. Verify a bypass mechanism exists.',
+      hint: 'Confirm the page offers a bypass mechanism: a main landmark (<main> or role="main"), a working "skip to content" link, or heading elements that assistive technology can use to jump past repeated content. (A mechanism may be temporarily hidden, e.g. while a modal dialog makes the page inert, or provided on a per-site basis; this needs human confirmation.)',
       i18n: {
         summaryKey: 'bypassBlocksPresent_summary_cantTell',
         hintKey: 'bypassBlocksPresent_hint_cantTell',
@@ -13339,7 +13338,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function getConservativeSubtreeText(document, container) {
-    // "Name from content" — recurses into descendants and uses each one's
+    // "Name from content", recurses into descendants and uses each one's
     // own accessible name (img alt, aria-label/aria-labelledby, title) when
     // it has one, not just literal text nodes. See getContentNameInfo's
     // header comment in src/core/dom-helpers.js for the full rationale
@@ -13356,7 +13355,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // A <label> contributes a name via its own aria-label/aria-labelledby
   // (checked first, same ARIA-over-content precedence any element's
-  // accessible name gives — e.g. <label aria-label="Search"><svg
+  // accessible name gives, e.g. <label aria-label="Search"><svg
   // aria-hidden="true">...</svg></label> names its control "Search" even
   // though the label's only child content is aria-hidden) or, failing
   // that, its rendered content (getConservativeSubtreeText).
@@ -13371,10 +13370,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (content) return content;
     // Final fallback per the general accname text-alternative algorithm,
     // which applies to any element being asked for its name regardless of
-    // why (own aria-label, an aria-labelledby reference, or — here — native
+    // why (own aria-label, an aria-labelledby reference, or, here, native
     // <label for> association): title, when nothing else yields a name.
     // Purely additive (only fills in a name where there was none before),
-    // so it carries no false-positive risk — see dialog-name-present.js's
+    // so it carries no false-positive risk, see dialog-name-present.js's
     // identical <iframe>-title-fallback fix for the concrete real-world
     // trigger this same accname step covers elsewhere.
     return getAttr(lab, 'title');
@@ -13384,7 +13383,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const raw = getAttr(el, 'aria-labelledby');
     if (!raw) return '';
     // Delegates to the shared getTextFromIdRefs helper instead of computing
-    // name-from-content of the referenced element — see dialog-name-
+    // name-from-content of the referenced element, see dialog-name-
     // present.js's identical fix for the full rationale (an <iframe>
     // aria-labelledby target's only name source is its title attribute,
     // which name-from-content alone can never see).
@@ -13508,7 +13507,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This combobox has no accessible name.',
-        hint: "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this combobox's accessible name.",
+        hint: "Provide aria-label, aria-labelledby, or a title attribute. Visible text content is not exposed as this combobox's accessible name.",
         i18n: {
           summaryKey: 'comboboxNamePresent_summary_fail',
           hintKey: 'comboboxNamePresent_hint_fail',
@@ -14886,7 +14885,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "css-focus-indicator-suppressed": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
-  // Declared inside runInPage — see scripts/build-core.js header
+  // Declared inside runInPage; see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
   const CSS_STYLE_RULE = 1;
 
@@ -15004,7 +15003,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return parts.map(trim).filter(Boolean);
   }
 
-  // :focus and :focus-visible, but never :focus-within — that one fires on
+  // :focus and :focus-visible, but never :focus-within: that one fires on
   // an ancestor of the focused element and says nothing about whether the
   // element itself is indicated.
   const FOCUS_PSEUDO = /:focus(-visible)?(?![-\w])/g;
@@ -15052,7 +15051,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     try {
       return el.matches(selector);
     } catch {
-      return false; // selector this engine cannot parse — skip rather than guess
+      return false; // selector this engine cannot parse, skip rather than guess
     }
   }
 
@@ -15098,7 +15097,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
 
       // A replacement is credited to the element that takes focus, wherever
-      // the rule paints it — on the element itself, its pseudo-element, a
+      // the rule paints it: on the element itself, its pseudo-element, a
       // sibling, or a descendant.
       if (provides) providers.push({ base: focusedBase, subject: isSubject });
     }
@@ -15112,7 +15111,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         collectFromStyleRule(cssRule);
         continue;
       }
-      // @media, @supports, @layer, ... — recurse into grouping rules.
+      // @media, @supports, @layer, ...: recurse into grouping rules.
       let nested = null;
       try {
         nested = cssRule.cssRules || null;
@@ -15768,7 +15767,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // exact equality: a `rad`/`grad`/`turn` value converts to a 90-degree
   // rotation with floating-point remainder (e.g. `1.5708rad` is
   // 90.0000210...deg, never exactly 90), and ACT's own failed examples
-  // include a deliberately-inexact 92.5deg — both must still register as a
+  // include a -inexact 92.5deg, both must still register as a
   // lock, which exact-modulo-equality (`% 90 === 0`) never does.
   const LOCK_TOLERANCE_DEG = 5;
   function isLockingRotation(styleDecl) {
@@ -15879,7 +15878,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "definition-list-children-valid": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
-  // Declared inside runInPage — see scripts/build-core.js header
+  // Declared inside runInPage, see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
   const PASSTHROUGH_TAGS = new Set(['dt', 'dd', 'script', 'template', 'style']);
 
@@ -15924,8 +15923,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
     const dedupedInvalidTags = [...new Set(invalidTags)];
 
-    // The dt/dd pairing is only required "when not empty" — a <dl> with
-    // NEITHER dt nor dd (whether genuinely childless after flattening, only
+    // The dt/dd pairing is only required "when not empty", a <dl> with
+    // NEITHER dt nor dd (whether childless after flattening, only
     // passthrough script/template/style content, or an empty wrapping div)
     // is vacuously fine, not a violation. Only an UNBALANCED pairing (dt
     // present without any dd, or vice versa) is a real structural problem.
@@ -16045,13 +16044,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function resolveAriaLabelledbyText(document, el, maxRefs) {
     const raw = getAttr(el, 'aria-labelledby');
     if (!raw) return '';
-    // Resolve via the shared getTextFromIdRefs helper — computes each
+    // Resolve via the shared getTextFromIdRefs helper, computes each
     // referenced element's own ACCESSIBLE NAME (aria-label, then
     // aria-labelledby, then a value-like name, then content, then title),
     // not just its content text. This matters when aria-labelledby points
     // at an <iframe title="..."> (e.g. BBC News' cookie-consent dialog,
     // pointing at an `<iframe title="SP Consent Message">`), whose only
-    // name source is its title attribute — an iframe's content is
+    // name source is its title attribute, an iframe's content is
     // opaque/cross-origin per HTML-AAM, so "name from content" is always
     // empty. Computing only name-from-content of the referenced node would
     // silently miss the title fallback and report no accessible name at
@@ -16342,7 +16341,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "duplicate-id-aria": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
-  // Declared inside runInPage — see scripts/build-core.js header
+  // Declared inside runInPage, see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
   const IDREF_ATTRS = [
     'aria-labelledby',
@@ -16518,8 +16517,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // `title` is a weaker text-alternative mechanism than aria-label/
-  // aria-labelledby — it is not reliably exposed to assistive technology
-  // in every context (e.g. touch/mobile) — so a pass achieved only via
+  // aria-labelledby, it is not reliably exposed to assistive technology
+  // in every context (e.g. touch/mobile), so a pass achieved only via
   // `title` is reported at reduced confidence rather than the rule's
   // default `high`.
   let anyPassedViaWeakMechanism = false;
@@ -16881,7 +16880,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (joined) return joined;
     }
     // Shared, accname-aligned "name from content" implementation (see
-    // dom-helpers.js's getContentNameInfo header comment) — resolves an
+    // dom-helpers.js's getContentNameInfo header comment). Resolves an
     // <img> descendant's own alt text, an aria-label/aria-labelledby'd
     // descendant's own name, etc., and already gates every descendant on
     // full accessibility-tree eligibility (aria-hidden, display:none,
@@ -17058,8 +17057,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       occurrences.push(
         helpers.reportOccurrence(el, {
           summary:
-            'This table header cell has no visible text — its only accessible name comes from aria-label/aria-labelledby, which real screen-reader/browser combinations (e.g. NVDA+Firefox, iOS VoiceOver+Safari) are known to ignore on <th> elements.',
-          hint: 'Add visible text content to this header cell (in addition to, or instead of, aria-label/aria-labelledby) — visible text is the only naming mechanism confirmed to work across tested screen readers.',
+            'This table header cell has no visible text. Its only accessible name comes from aria-label/aria-labelledby, which real screen-reader/browser combinations (e.g. NVDA+Firefox, iOS VoiceOver+Safari) are known to ignore on <th> elements.',
+          hint: 'Add visible text content to this header cell (in addition to, or instead of, aria-label/aria-labelledby); visible text is the only naming mechanism confirmed to work across tested screen readers.',
           i18n: {
             summaryKey: 'emptyTableHeader_summary_cantTell_ariaOnly',
             hintKey: 'emptyTableHeader_hint_cantTell_ariaOnly',
@@ -17203,7 +17202,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "form-control-label-quality": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
-  // Declared inside runInPage — see scripts/build-core.js header
+  // Declared inside runInPage; see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
   const PLACEHOLDER_LABEL_TEXT = new Set([
     'label',
@@ -17347,7 +17346,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // The programmatic labels of a field, per ACT: aria-labelledby targets when
   // present, otherwise the <label> elements associated with it. aria-label is
-  // deliberately absent — see the header comment.
+  // left out on purpose; see the header comment.
   function getVisibleLabelText(el) {
     const referenced = resolveIdRefs(el, 'aria-labelledby');
     const labels = referenced.length ? referenced : getNativeLabels(el);
@@ -17417,8 +17416,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return '';
   }
 
-  // A table row or list item carries its own context — the product name a
-  // repeated "Quantity" field belongs to — so it takes part in the key.
+  // A table row or list item carries its own context (the product name a
+  // repeated "Quantity" field belongs to), so it takes part in the key.
   function rowContextText(el, labelText) {
     let row = null;
     try {
@@ -17448,7 +17447,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const label = getVisibleLabelText(el);
     const labelText = label.text;
-    if (!labelText) continue; // no visible label to judge — a different rule's concern
+    if (!labelText) continue; // no visible label to judge, a different rule's concern
 
     fields.push({
       el,
@@ -17507,7 +17506,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       PLACEHOLDER_LABEL_TEXT:
         'Replace the label with one naming the information the field collects.',
       DUPLICATE_LABEL_TEXT:
-        'Give each field a label of its own, or put the distinguishing context on screen — a visible heading or a fieldset legend above each group.',
+        'Give each field a label of its own, or put the distinguishing context on screen: a visible heading or a fieldset legend above each group.',
       PARTIALLY_HIDDEN_LABEL:
         'Confirm the visible part alone identifies the field, or make the rest of the label visible.'
     };
@@ -17651,7 +17650,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // getLabelMethod is provided by the shared dom-helpers bundle that
   // dom-runner.js always constructs for every rule execution (built-in or
-  // custom) — see createDomHelpers's own getLabelMethod, which implements
+  // custom), see createDomHelpers's own getLabelMethod, which implements
   // this exact <label>/aria-labelledby/aria-label/title/placeholder
   // priority order. No local reimplementation is needed as a fallback.
   function getLabelMethodSafe(el) {
@@ -17873,7 +17872,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // getLabelMethod is provided by the shared dom-helpers bundle that
   // dom-runner.js always constructs for every rule execution (built-in or
-  // custom) — see createDomHelpers's own getLabelMethod, which implements
+  // custom); see createDomHelpers's own getLabelMethod, which implements
   // this exact <label>/aria-labelledby/aria-label/title/placeholder
   // priority order. No local reimplementation is needed as a fallback.
   function getLabelMethodSafe(el) {
@@ -17998,7 +17997,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     };
   }
 
-  // Manual rules may only emit cantTell/notApplicable (never pass/fail) —
+  // Manual rules may only emit cantTell/notApplicable (never pass/fail):
   // no applicable control relied on a weak (title/placeholder) primary
   // label, so there is nothing to flag for review.
   return {
@@ -18270,7 +18269,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "heading-quality": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
-  // Declared inside runInPage — see scripts/build-core.js header
+  // Declared inside runInPage; see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
   const PLACEHOLDER_HEADING_TEXT = new Set([
     'heading',
@@ -18828,15 +18827,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const { helpers, rule, document } = ctx;
 
   // Self-contained rendering check for the embedded document (a distinct
-  // realm — see this rule's own header comment on why the outer
+  // realm, see this rule's own header comment on why the outer
   // document's shared eligibility helpers can't be reused here).
-  // Deliberately checks only genuine non-rendering (display:none,
+  // Checks only genuine non-rendering (display:none,
   // visibility:hidden, the hidden attribute) via the ancestor chain, NOT
   // aria-hidden: aria-hidden alone does not remove an element from a real
   // browser's native tab order (the same anti-pattern this engine's own
   // aria-hidden-focus rule exists to catch), so an aria-hidden-but-
   // visually-rendered focusable element inside the frame is still
-  // genuinely reachable by keyboard and must stay flagged.
+  // reachable by keyboard and must stay flagged.
   function isRenderedInDoc(doc, el) {
     try {
       const view = doc.defaultView;
@@ -19060,7 +19059,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // A `srcdoc` iframe's embedded document is same-origin by definition, but
   // some environments (jsdom, notably) never populate `contentDocument`
   // from the attribute at all. Parsing the attribute's own HTML string is a
-  // static, deterministic fallback that needs no rendering pipeline — it
+  // static, deterministic fallback that needs no rendering pipeline. It
   // only kicks in when the live document looks empty, so a real browser's
   // already-loaded contentDocument is always preferred untouched.
   function parseSrcdocFallback(el) {
@@ -19079,7 +19078,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // ACT akn7bn's own Expectation only cares about focusable content that is
   // also *visible*: a 1x1 (or similar tracking-pixel-sized) iframe cannot
   // render any perceptible content, whatever's focusable inside it. Scoped
-  // to the iframe's own HTML width/height attributes — a static, always-
+  // to the iframe's own HTML width/height attributes, a static, always-
   // readable signal, unlike computed/rendered size, which needs real
   // layout jsdom doesn't have (see docs/LIMITATIONS.md).
   function isIframeVisiblyTiny(el) {
@@ -19193,7 +19192,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   // <iframe>/<frame> are natively focusable by default (no tabindex
-  // needed), unlike most elements — only an explicit negative tabindex
+  // needed), unlike most elements, only an explicit negative tabindex
   // removes them from the tab order.
   function isFrameFocusable(el) {
     try {
@@ -19559,7 +19558,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // Presentational exclusion: explicit role="none"/"presentation", or (img
-  // only) the native alt="" marker — both overridden by focusability, per
+  // only) the native alt="" marker. Both are overridden by focusability, per
   // ARIA conflict resolution (a focusable element is never presentational).
   function isPresentationallyExcluded(el, tag) {
     const role = getExplicitRole(el);
@@ -19576,7 +19575,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // explicit role, or role explicitly restated as graphics-document) with
   // no accessible name and not focusable. An svg explicitly given role="img"
   // /"graphics-symbol", an aria-name, a <title>/<desc>, or a tab stop is
-  // "included" — a naming question for svg-text-alternative-present, not
+  // "included", a naming question for svg-text-alternative-present, not
   // this rule's "is it decorative" question.
   function isIgnoredSvg(el) {
     const role = getExplicitRole(el);
@@ -19590,7 +19589,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // ACT e88epe's "ignored canvas": no explicit role at all and no
   // accessible name. Canvas fallback content as a naming mechanism is not
   // modeled here (a separate, narrower question than this rule needs to
-  // settle — see docs/DESIGN_CHALLENGES.md).
+  // settle; see docs/DESIGN_CHALLENGES.md).
   function isIgnoredCanvas(el) {
     const role = getExplicitRole(el);
     if (role) return false;
@@ -19603,8 +19602,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // ACT e88epe's own exception: never applies under an ancestor already
   // named by the author. The common real case is an icon-only button
   // (<button aria-label="Close"><svg>...</svg></button>) that already has a
-  // correct name from the button itself — whether the svg "is decorative"
-  // is moot, and flagging it would just be noise on ordinary icon usage.
+  // correct name from the button itself. Whether the svg "is decorative"
+  // is moot there, and flagging it would just be noise on ordinary icon usage.
   function hasAncestorNamedFromAuthor(el) {
     if (!getAccessibleNameInfo) return false;
     const getComposedParent =
@@ -20652,7 +20651,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // rendering as "format_color_fill") is DOM-visible pixels but is never
   // perceived as literal readable words the way real visible text is.
   // Excluding aria-hidden content is a cheap static-markup signal that gets
-  // the common case (decorative icon fonts) right — an icon-only button
+  // the common case (decorative icon fonts) right. An icon-only button
   // named via aria-label shouldn't have its glyph name counted as text.
   function isAccEligible(el) {
     if (!el) return false;
@@ -20841,7 +20840,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // Curated real-world icon-font family names. These fonts remap ordinary
   // word glyphs to unrelated symbols via ligatures/PUA codepoints, so the
-  // DOM text is real words but nothing readable actually renders — ACT
+  // DOM text is real words but nothing readable actually renders, ACT
   // 2ee8b8's own passed example is exactly this (a button's DOM text
   // "search" rendered as a magnifying-glass icon by "Material Icons").
   // Same curated-list tradeoff as link-name-quality's phrase list.
@@ -21120,7 +21119,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "landmark-banner-is-top-level": { run: (function runInPage(ctx) {
   const { document, root, helpers, rule } = ctx;
 
-  // Declared inside runInPage — see scripts/build-core.js header
+  // Declared inside runInPage; see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
   function normalizeWs(s) {
     return String(s || '')
@@ -21150,7 +21149,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // Delegates to the shared helpers.hasLandmarkScopingAncestor for the
   // question "does this element sit inside a sectioning-content/<main>
-  // ancestor that suppresses its conditional implicit role" — role-aware
+  // ancestor that suppresses its conditional implicit role": role-aware
   // (an ancestor's bare TAG only counts when it carries no role attribute
   // at all; an explicit role="dialog"-style override no longer suppresses)
   // rather than a local tag-only copy. See that function's header comment
@@ -21169,7 +21168,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (tag === 'main') return 'main';
     if (tag === 'nav') return 'navigation';
     if (tag === 'aside') {
-      // A named <aside> is never suppressed, even when nested — it keeps
+      // A named <aside> is never suppressed, even when nested. It keeps
       // "complementary" when it has an accessible name, even inside
       // sectioning content. Matches landmark-unique's precedent.
       if (!hasSectioningAncestor(el, false)) return 'complementary';
@@ -21325,7 +21324,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // Delegates to the shared helpers.hasLandmarkScopingAncestor for the
   // question "does this element sit inside a sectioning-content/<main>
-  // ancestor that suppresses its conditional implicit role" — role-aware
+  // ancestor that suppresses its conditional implicit role": role-aware
   // (an ancestor's bare TAG only counts when it carries no role attribute
   // at all; an explicit role="dialog"-style override no longer suppresses)
   // rather than a local tag-only copy. See that function's header comment
@@ -21344,7 +21343,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (tag === 'main') return 'main';
     if (tag === 'nav') return 'navigation';
     if (tag === 'aside') {
-      // A named <aside> is never suppressed, even when nested — it keeps
+      // A named <aside> is never suppressed, even when nested. It keeps
       // "complementary" when it has an accessible name, even inside
       // sectioning content. Matches landmark-unique's precedent.
       if (!hasSectioningAncestor(el, false)) return 'complementary';
@@ -21373,12 +21372,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return getImplicitLandmarkRole(el);
   }
 
-  // Candidate selection is deliberately NOT the same as getLandmarkRole()
-  // === 'contentinfo' — see the header comment above. A <footer> is
+  // Candidate selection is NOT the same as getLandmarkRole()
+  // === 'contentinfo'; see the header comment above. A <footer> is
   // a candidate purely by tag + absence of any role attribute, independent
   // of whether sectioning-ancestor nesting would currently suppress its
   // implicit role; an explicit role="contentinfo" is always a candidate too.
-  // A candidate must actually have the contentinfo role — a <footer> inside
+  // A candidate must actually have the contentinfo role: a <footer> inside
   // article/aside/main/nav/section is not one, so flagging it as nested
   // would report a landmark that does not exist.
   function isContentinfoCandidate(el) {
@@ -21505,7 +21504,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // Delegates to the shared helpers.hasLandmarkScopingAncestor for the
   // question "does this element sit inside a sectioning-content/<main>
-  // ancestor that suppresses its conditional implicit role" — role-aware
+  // ancestor that suppresses its conditional implicit role": role-aware
   // (an ancestor's bare TAG only counts when it carries no role attribute
   // at all; an explicit role="dialog"-style override no longer suppresses)
   // rather than a local tag-only copy. See that function's header comment
@@ -21524,7 +21523,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (tag === 'main') return 'main';
     if (tag === 'nav') return 'navigation';
     if (tag === 'aside') {
-      // A named <aside> is never suppressed, even when nested — it keeps
+      // A named <aside> is never suppressed, even when nested. It keeps
       // "complementary" when it has an accessible name, even inside
       // sectioning content. Matches landmark-unique's precedent.
       if (!hasSectioningAncestor(el, false)) return 'complementary';
@@ -21672,11 +21671,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // Delegates to the shared helpers.hasLandmarkScopingAncestor for the
   // question "does this element sit inside a sectioning-content/<main>
-  // ancestor that suppresses its conditional implicit role" — role-aware
+  // ancestor that suppresses its conditional implicit role": role-aware
   // (an ancestor's bare TAG only counts when it carries no role attribute
   // at all; an explicit role="dialog"-style override no longer suppresses)
   // rather than a local tag-only copy. See that function's header comment
-  // in src/core/aria-helpers.js for the full algorithm — e.g. an
+  // in src/core/aria-helpers.js for the full algorithm, e.g. an
   // <aside role="dialog"> containing its own <header>, where the <header>
   // keeps its banner role.
   function hasSectioningAncestor(el, includeMain) {
@@ -21814,7 +21813,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // Delegates to the shared helpers.hasLandmarkScopingAncestor for the
   // question "does this element sit inside a sectioning-content/<main>
-  // ancestor that suppresses its conditional implicit role" — role-aware
+  // ancestor that suppresses its conditional implicit role": role-aware
   // (an ancestor's bare TAG only counts when it carries no role attribute
   // at all; an explicit role="dialog"-style override no longer suppresses)
   // rather than a local tag-only copy. See that function's header comment
@@ -21833,7 +21832,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (tag === 'main') return 'main';
     if (tag === 'nav') return 'navigation';
     if (tag === 'aside') {
-      // A named <aside> is never suppressed, even when nested — it keeps
+      // A named <aside> is never suppressed, even when nested. It keeps
       // "complementary" when it has an accessible name, even inside
       // sectioning content. Matches landmark-unique's precedent.
       if (!hasSectioningAncestor(el, false)) return 'complementary';
@@ -22125,18 +22124,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // Delegates to the shared helpers.hasLandmarkScopingAncestor (role-aware:
   // an ancestor's bare TAG only counts when it carries no role attribute at
-  // all; an explicit role="dialog"-style override no longer suppresses —
+  // all; an explicit role="dialog"-style override no longer suppresses;
   // see that function's header comment in src/core/aria-helpers.js), using
   // two distinct ancestor scopes rather than one shared list: <header>/
   // <footer> use "sectioning content PLUS <main>" (includeMain: true) to
   // decide banner/contentinfo suppression, but <aside> uses PLAIN
-  // sectioning content only — NOT main (includeMain: false) — to decide
+  // sectioning content only, not main (includeMain: false), to decide
   // complementary suppression. A single shared sectioning-ancestors set
   // that includes 'main' is correct for header/footer but wrong for aside:
   // e.g. two unnamed <aside> elements that are direct children of <main>
   // would have their implicit "complementary" role incorrectly suppressed,
   // hiding a real duplicate-landmark violation. The role-aware half matters
-  // too: e.g. an <aside role="dialog"> containing its own <header> —
+  // too: take an <aside role="dialog"> containing its own <header>.
   // role="dialog" isn't one of the four scoping roles, so the nested
   // <header> keeps "banner" per spec, but a tag-only (non-role-aware)
   // check would unconditionally suppress it just because the ancestor TAG
@@ -22155,7 +22154,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (tag === 'nav') return 'navigation';
     if (tag === 'aside') {
       // An <aside> is suppressed by a sectioning-content ancestor ONLY
-      // when it also has no accessible name — a named <aside> is never
+      // when it also has no accessible name. A named <aside> is never
       // suppressed, even when nested.
       if (!hasSectioningAncestor(el, false)) return 'complementary';
       return getAccessibleLandmarkName(el) ? 'complementary' : '';
@@ -22182,7 +22181,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (explicit) {
       if (!LANDMARK_ROLES.has(explicit)) return '';
       // <form>/<section> only count as landmarks when they have an
-      // accessible name — a property of the ELEMENT, not of how the role
+      // accessible name, a property of the ELEMENT, not of how the role
       // got there. This applies whether the role is implicit (already
       // handled in getImplicitLandmarkRole below) or explicit. Per the W3C
       // ARIA-in-HTML spec ("a form is not exposed as a landmark region
@@ -22394,7 +22393,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     try {
       const blocker = c.getComputabilityBlocker(el);
       if (blocker && blocker.ok === false) {
-        // Not confidently computable — skip (benefit of the doubt).
+        // Not confidently computable, skip (benefit of the doubt).
       } else {
         const bg = c.computeEffectiveBackground(el, {
           contrast: { mode, rootCanvasFallback },
@@ -22419,7 +22418,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
           if (!(ratio >= 3)) flagged = true;
         }
-        // else: not confidently computable — skip.
+        // else: not confidently computable, skip.
       }
     } catch {
       // no-throw: treat as not computable, skip.
@@ -22475,7 +22474,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   function getConservativeSubtreeText(container) {
-    // "Name from content" — recurses into descendants and uses each one's
+    // "Name from content", recurses into descendants and uses each one's
     // own accessible name (img alt, aria-label/aria-labelledby, title) when
     // it has one, not just literal text nodes. See getContentNameInfo's
     // header comment in src/core/dom-helpers.js for the full rationale
@@ -22845,7 +22844,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "list-children-valid": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
-  // Declared inside runInPage — see scripts/build-core.js header
+  // Declared inside runInPage, see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
   const ALLOWED_CHILD_TAGS = new Set(['li', 'script', 'template']);
 
@@ -22885,7 +22884,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const roleAttr = child.getAttribute ? String(child.getAttribute('role') || '').trim() : '';
       const explicitRole = roleAttr ? (roleAttr.split(/\s+/)[0] || '').toLowerCase() : '';
 
-      // An explicit role always wins over the tag — see header comment.
+      // An explicit role always wins over the tag, see header comment.
       const valid = explicitRole ? explicitRole === 'listitem' : ALLOWED_CHILD_TAGS.has(tag);
 
       if (!valid) invalidTags.push(tag);
@@ -22947,7 +22946,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function getConservativeSubtreeText(document, container) {
-    // "Name from content" — recurses into descendants and uses each one's
+    // "Name from content", recurses into descendants and uses each one's
     // own accessible name (img alt, aria-label/aria-labelledby, title) when
     // it has one, not just literal text nodes. See getContentNameInfo's
     // header comment in src/core/dom-helpers.js for the full rationale
@@ -22964,7 +22963,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // A <label> contributes a name via its own aria-label/aria-labelledby
   // (checked first, same ARIA-over-content precedence any element's
-  // accessible name gives — e.g. <label aria-label="Search"><svg
+  // accessible name gives, e.g. <label aria-label="Search"><svg
   // aria-hidden="true">...</svg></label> names its control "Search" even
   // though the label's only child content is aria-hidden) or, failing
   // that, its rendered content (getConservativeSubtreeText).
@@ -22979,10 +22978,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (content) return content;
     // Final fallback per the general accname text-alternative algorithm,
     // which applies to any element being asked for its name regardless of
-    // why (own aria-label, an aria-labelledby reference, or — here — native
+    // why (own aria-label, an aria-labelledby reference, or, here, native
     // <label for> association): title, when nothing else yields a name.
     // Purely additive (only fills in a name where there was none before),
-    // so it carries no false-positive risk — see dialog-name-present.js's
+    // so it carries no false-positive risk, see dialog-name-present.js's
     // identical <iframe>-title-fallback fix for the concrete real-world
     // trigger this same accname step covers elsewhere.
     return getAttr(lab, 'title');
@@ -22992,7 +22991,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const raw = getAttr(el, 'aria-labelledby');
     if (!raw) return '';
     // Delegates to the shared getTextFromIdRefs helper instead of computing
-    // name-from-content of the referenced element — see dialog-name-
+    // name-from-content of the referenced element, see dialog-name-
     // present.js's identical fix for the full rationale (an <iframe>
     // aria-labelledby target's only name source is its title attribute,
     // which name-from-content alone can never see).
@@ -23127,7 +23126,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This element has no accessible name.',
-        hint: "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this listbox's accessible name.",
+        hint: "Provide aria-label, aria-labelledby, or a title attribute. Visible text content is not exposed as this listbox's accessible name.",
         i18n: {
           summaryKey: 'listboxNamePresent_summary_fail',
           hintKey: 'listboxNamePresent_hint_fail',
@@ -23191,7 +23190,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     let valid;
     if (explicitRole) {
       // An explicit role always wins over the tag's native role, in either
-      // direction — see the header comment.
+      // direction, see the header comment.
       valid = explicitRole === 'list' || explicitRole === 'presentation' || explicitRole === 'none';
     } else {
       valid = parentTag === 'ul' || parentTag === 'ol';
@@ -23637,7 +23636,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function getConservativeSubtreeText(document, container) {
-    // "Name from content" — recurses into descendants and uses each one's
+    // "Name from content", recurses into descendants and uses each one's
     // own accessible name (img alt, aria-label/aria-labelledby, title) when
     // it has one, not just literal text nodes. See getContentNameInfo's
     // header comment in src/core/dom-helpers.js for the full rationale
@@ -23656,7 +23655,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const raw = getAttr(el, 'aria-labelledby');
     if (!raw) return '';
     // Delegates to the shared getTextFromIdRefs helper instead of computing
-    // name-from-content of the referenced element — see dialog-name-
+    // name-from-content of the referenced element, see dialog-name-
     // present.js's identical fix for the full rationale (an <iframe>
     // aria-labelledby target's only name source is its title attribute,
     // which name-from-content alone can never see).
@@ -23895,7 +23894,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   for (const el of nodes) {
     if (!el || !el.getAttribute) continue;
-    if (el.closest && el.closest('noscript')) continue; // never applies with scripting enabled — see meta-refresh-no-exceptions.js's header comment
+    if (el.closest && el.closest('noscript')) continue; // never applies with scripting enabled, see meta-refresh-no-exceptions.js's header comment
     const raw = String(el.getAttribute('content') || '').trim();
     if (!raw) continue;
 
@@ -24148,7 +24147,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const raw = getAttr(el, 'aria-labelledby');
     if (!raw) return '';
     // Delegates to the shared getTextFromIdRefs helper instead of computing
-    // name-from-content of the referenced element — see dialog-name-
+    // name-from-content of the referenced element, see dialog-name-
     // present.js's identical fix for the full rationale (an <iframe>
     // aria-labelledby target's only name source is its title attribute,
     // which name-from-content alone can never see).
@@ -24200,8 +24199,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (title) return { ok: true, method: 'title' };
 
     // role="meter" is name-from-author-only per WAI-ARIA: aria-label,
-    // aria-labelledby, or title — no content-based naming method at all.
-    // It must NOT fall back to subtree content — visible text near/inside a
+    // aria-labelledby, or title, no content-based naming method at all.
+    // It must NOT fall back to subtree content, visible text near/inside a
     // custom meter widget is not reliably exposed as its accessible name.
     return { ok: false, method: 'none' };
   }
@@ -24231,7 +24230,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This meter has no accessible name.',
-        hint: "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this meter's accessible name.",
+        hint: "Provide aria-label, aria-labelledby, or a title attribute. Visible text content is not exposed as this meter's accessible name.",
         i18n: {
           summaryKey: 'meterNamePresent_summary_fail',
           hintKey: 'meterNamePresent_hint_fail',
@@ -24343,7 +24342,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "nested-interactive-controls-absent": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
-  // Declared inside runInPage — see scripts/build-core.js header
+  // Declared inside runInPage, see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
   const INTERACTIVE_SELECTOR = [
     'a[href]',
@@ -24482,8 +24481,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         // A composite-owned child (option in a listbox/combobox, tab in a
         // tablist, ...) is not a nested interactive control: its container
         // owns it and drives its focus (roving tabindex or
-        // aria-activedescendant). Treat it as an attribution boundary — do not
-        // count it, and do not descend past it. Any control genuinely nested
+        // aria-activedescendant). Treat it as an attribution boundary, do not
+        // count it, and do not descend past it. Any control nested
         // inside it is attributed to the child itself (examined as its own
         // container in the main loop), keeping the report at the nearest
         // interactive ancestor rather than bubbling up to the composite.
@@ -25007,7 +25006,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function getConservativeSubtreeText(document, container) {
-    // "Name from content" — recurses into descendants and uses each one's
+    // "Name from content", recurses into descendants and uses each one's
     // own accessible name (img alt, aria-label/aria-labelledby, title) when
     // it has one, not just literal text nodes. See getContentNameInfo's
     // header comment in src/core/dom-helpers.js for the full rationale
@@ -25026,7 +25025,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const raw = getAttr(el, 'aria-labelledby');
     if (!raw) return '';
     // Delegates to the shared getTextFromIdRefs helper instead of computing
-    // name-from-content of the referenced element — see dialog-name-
+    // name-from-content of the referenced element, see dialog-name-
     // present.js's identical fix for the full rationale (an <iframe>
     // aria-labelledby target's only name source is its title attribute,
     // which name-from-content alone can never see).
@@ -25598,7 +25597,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // Not restricted to `head > title`: per HTML parsing, a <title> encountered
   // after <head> has closed is not re-parented into <head>, yet the browser
   // (and document.title, used below) still recognizes it as the document's
-  // title — matching that here avoids a false "missing title" report for a
+  // title, matching that here avoids a false "missing title" report for a
   // <title> that legitimately ended up outside <head>.
   const titleEl = document.querySelector('title');
   const titleText = (document.title || '').replace(/\s+/g, ' ').trim();
@@ -25660,7 +25659,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const { helpers, rule } = ctx;
 
   // The full set of ARIA attributes marked `global: true` per the WAI-ARIA
-  // spec — any of these present on a presentational element restores its
+  // spec. Any of these present on a presentational element restores its
   // implicit role, not just the naming ones.
   const CONFLICTING_ATTRS = [
     'aria-atomic',
@@ -25696,7 +25695,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // The role attribute holds a fallback list; the first token naming a real
   // role wins, and unknown tokens are skipped over. Returns '' when the
-  // element has no role attribute or none of its tokens name a role — the
+  // element has no role attribute or none of its tokens name a role: the
   // cases where an <img alt=""> keeps the presentation role empty alt gives
   // it.
   function getEffectiveRoleToken(el) {
@@ -25733,26 +25732,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     // Presence, not value truthiness: the WAI-ARIA role-conflict-resolution
     // rule triggers on a global ARIA attribute being SPECIFIED at all, even
-    // with an empty value — e.g. <img alt="" aria-hidden="">, where
+    // with an empty value, e.g. <img alt="" aria-hidden="">, where
     // aria-hidden="" (empty string) is still a specified attribute. A
     // truthy-value check would miss this.
     let present = CONFLICTING_ATTRS.filter((attr) =>
       el.hasAttribute ? el.hasAttribute(attr) : el.getAttribute(attr) != null
     );
 
-    // aria-hidden="true" (the exact, valid truthy value — not the
+    // aria-hidden="true" (the exact, valid truthy value, not the
     // empty-string case above, which never actually hides anything) is a
     // special case: it removes the element and its subtree from the
     // accessibility tree unconditionally, independent of role. That makes
     // the "role restoration" this rule warns about ("...which restores its
     // implicit role and cancels the presentational intent") factually
-    // inert — no AT will ever expose the restored role OR any of the other
+    // inert. No AT will ever expose the restored role OR any of the other
     // conflicting attributes (aria-label, aria-describedby, ...) present
     // alongside it, since the whole element stays out of the tree
     // regardless. This pattern is extremely common (e.g. <svg
-    // role="presentation" aria-hidden="true"> decorative icons — a
+    // role="presentation" aria-hidden="true"> decorative icons, a
     // defensive belt-and-suspenders double-hide, not an authoring mistake).
-    // Focusability is NOT covered by this exemption — a keyboard user can
+    // Focusability is NOT covered by this exemption: a keyboard user can
     // still tab onto an aria-hidden="true" focusable element (the
     // aria-hidden-focus anti-pattern), a real, independent hazard
     // aria-hidden does nothing to prevent.
@@ -25816,7 +25815,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "presentational-children-focusable-absent": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
-  // Declared inside runInPage — see scripts/build-core.js header
+  // Declared inside runInPage, see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
   //
   // WAI-ARIA roles with "Children Presentational: True", plus the two
@@ -25842,7 +25841,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   ];
 
   // Native tags whose implicit role is in the set above and that can hold
-  // descendants — see the void-element note in the header comment.
+  // descendants, see the void-element note in the header comment.
   const NATIVE_ROLE_BY_TAG = {
     button: 'button',
     meter: 'meter',
@@ -25914,10 +25913,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           return n && n.parentElement ? n.parentElement : null;
         };
 
-  // isAccTreeEligible deliberately keeps an aria-hidden element that holds
+  // isAccTreeEligible keeps an aria-hidden element that holds
   // tabbable content in the accessibility tree (reason
   // "ariaHiddenOverriddenTabbable", modelling the browsers that expose it
-  // anyway) — which is precisely the shape aria-hidden-focus owns, so the
+  // anyway), which is precisely the shape aria-hidden-focus owns, so the
   // attribute is checked on its own here rather than read off eligibility.
   function inAriaHiddenSubtree(node) {
     let cur = node;
@@ -25972,7 +25971,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
       // A nested role with presentational children owns whatever tab stops
       // are inside it (it is examined as its own container in the main
-      // loop). It is only a boundary when it is not itself a tab stop —
+      // loop). It is only a boundary when it is not itself a tab stop,
       // a focusable one lands focus inside THIS element and belongs here.
       if (getPresentationalChildrenRole(node)) continue;
       const kids = node.children;
@@ -25997,7 +25996,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const role = getPresentationalChildrenRole(el);
     if (!role) continue;
     // A container that is hidden, or sits in an aria-hidden subtree, is
-    // aria-hidden-focus's concern — see the note on inAriaHiddenSubtree.
+    // aria-hidden-focus's concern, see the note on inAriaHiddenSubtree.
     if (!isExposed(el) || inAriaHiddenSubtree(el)) continue;
 
     applicableCount += 1;
@@ -26021,7 +26020,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: `This role="${role}" element makes its children presentational, but it contains content that is still part of sequential focus navigation (${dedupedTabStopTags.join(', ')}).`,
-        hint: 'Move the focusable content outside this element, or remove the role that makes the children presentational — focus landing inside it has no role or name to announce.',
+        hint: 'Move the focusable content outside this element, or remove the role that makes the children presentational, since focus landing inside it has no role or name to announce.',
         i18n: {
           summaryKey: 'presentationalChildrenFocusableAbsent_summary_fail',
           hintKey: 'presentationalChildrenFocusableAbsent_hint_fail',
@@ -26077,7 +26076,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const raw = getAttr(el, 'aria-labelledby');
     if (!raw) return '';
     // Delegates to the shared getTextFromIdRefs helper instead of computing
-    // name-from-content of the referenced element — see dialog-name-
+    // name-from-content of the referenced element, see dialog-name-
     // present.js's identical fix for the full rationale (an <iframe>
     // aria-labelledby target's only name source is its title attribute,
     // which name-from-content alone can never see).
@@ -26129,10 +26128,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (title) return { ok: true, method: 'title' };
 
     // role="progressbar" is name-from-author-only per WAI-ARIA: aria-label,
-    // aria-labelledby, or title — no content-based naming method at all. It
+    // aria-labelledby, or title, no content-based naming method at all. It
     // must NOT fall back to subtree content: e.g. a <ul role="progressbar">
     // loading skeleton with no name of its own, whose nested descendants
-    // carry their own aria-label for a different purpose — falling back to
+    // carry their own aria-label for a different purpose, falling back to
     // subtree content would wrongly treat that as the progressbar's name.
     return { ok: false, method: 'none' };
   }
@@ -26162,7 +26161,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This progress bar has no accessible name.',
-        hint: "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this progress bar's accessible name.",
+        hint: "Provide aria-label, aria-labelledby, or a title attribute. Visible text content is not exposed as this progress bar's accessible name.",
         i18n: {
           summaryKey: 'progressbarNamePresent_summary_fail',
           hintKey: 'progressbarNamePresent_hint_fail',
@@ -26232,11 +26231,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // Delegates to the shared helpers.hasLandmarkScopingAncestor for the
   // question "does this element sit inside a sectioning-content/<main>
-  // ancestor that suppresses its conditional implicit role" — role-aware
+  // ancestor that suppresses its conditional implicit role": role-aware
   // (an ancestor's bare TAG only counts when it carries no role attribute
   // at all; an explicit role="dialog"-style override no longer suppresses)
   // rather than a local tag-only copy. See that function's header comment
-  // in src/core/aria-helpers.js for the full algorithm — e.g. an
+  // in src/core/aria-helpers.js for the full algorithm, e.g. an
   // <aside role="dialog"> containing its own <header>, where the <header>
   // keeps its banner role.
   function hasSectioningAncestor(el, includeMain) {
@@ -26284,7 +26283,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const SKIP_TAGS = new Set(['script', 'style', 'template', 'noscript', 'link', 'meta', 'title']);
 
   // Roles/attributes that make an element its own self-contained
-  // announced area — not literally a WAI-ARIA landmark, but not "content
+  // announced area: not literally a WAI-ARIA landmark, but not "content
   // that needs a landmark" either.
   const LIVE_REGION_ROLES = new Set(['alert', 'status', 'log', 'marquee', 'timer']);
 
@@ -26312,8 +26311,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return false;
   }
 
-  // A "skip to content" link is deliberately placed outside the main
-  // content flow at the very top of the page — exempting it (when its
+  // A "skip to content" link is placed outside the main content flow
+  // on purpose, at the very top of the page. Exempting it (when its
   // fragment actually resolves to a real target, not a dead "#"
   // placeholder) avoids flagging a helpful, common accessibility pattern
   // as the very thing this rule is meant to catch.
@@ -26344,8 +26343,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const VISUAL_CONTENT_TAGS = new Set(['img', 'video', 'audio', 'canvas', 'object', 'embed']);
 
-  // Non-recursive "does THIS element, on its own, carry content" check —
-  // deliberately mirrors only the direct-content half of getContentNameInfo,
+  // Non-recursive "does THIS element, on its own, carry content" check.
+  // Mirrors only the direct-content half of getContentNameInfo on purpose,
   // not a full name-from-content recursion: the whole point is to keep
   // recursing through plain wrapper elements (a framework's root mount
   // <div> included) until reaching the actual content-bearing node, rather
@@ -26912,7 +26911,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function getConservativeSubtreeText(document, container) {
-    // "Name from content" — recurses into descendants and uses each one's
+    // "Name from content", recurses into descendants and uses each one's
     // own accessible name (img alt, aria-label/aria-labelledby, title) when
     // it has one, not just literal text nodes. See getContentNameInfo's
     // header comment in src/core/dom-helpers.js for the full rationale
@@ -26929,7 +26928,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // A <label> contributes a name via its own aria-label/aria-labelledby
   // (checked first, same ARIA-over-content precedence any element's
-  // accessible name gives — e.g. <label aria-label="Search"><svg
+  // accessible name gives, e.g. <label aria-label="Search"><svg
   // aria-hidden="true">...</svg></label> names its control "Search" even
   // though the label's only child content is aria-hidden) or, failing
   // that, its rendered content (getConservativeSubtreeText).
@@ -26944,10 +26943,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (content) return content;
     // Final fallback per the general accname text-alternative algorithm,
     // which applies to any element being asked for its name regardless of
-    // why (own aria-label, an aria-labelledby reference, or — here — native
+    // why (own aria-label, an aria-labelledby reference, or, here, native
     // <label for> association): title, when nothing else yields a name.
     // Purely additive (only fills in a name where there was none before),
-    // so it carries no false-positive risk — see dialog-name-present.js's
+    // so it carries no false-positive risk, see dialog-name-present.js's
     // identical <iframe>-title-fallback fix for the concrete real-world
     // trigger this same accname step covers elsewhere.
     return getAttr(lab, 'title');
@@ -26957,7 +26956,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const raw = getAttr(el, 'aria-labelledby');
     if (!raw) return '';
     // Delegates to the shared getTextFromIdRefs helper instead of computing
-    // name-from-content of the referenced element — see dialog-name-
+    // name-from-content of the referenced element, see dialog-name-
     // present.js's identical fix for the full rationale (an <iframe>
     // aria-labelledby target's only name source is its title attribute,
     // which name-from-content alone can never see).
@@ -27092,7 +27091,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This element has no accessible name.',
-        hint: "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this searchbox's accessible name.",
+        hint: "Provide aria-label, aria-labelledby, or a title attribute. Visible text content is not exposed as this searchbox's accessible name.",
         i18n: {
           summaryKey: 'searchboxNamePresent_summary_fail',
           hintKey: 'searchboxNamePresent_hint_fail',
@@ -27393,7 +27392,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function getConservativeSubtreeText(document, container) {
-    // "Name from content" — recurses into descendants and uses each one's
+    // "Name from content", recurses into descendants and uses each one's
     // own accessible name (img alt, aria-label/aria-labelledby, title) when
     // it has one, not just literal text nodes. See getContentNameInfo's
     // header comment in src/core/dom-helpers.js for the full rationale
@@ -27410,7 +27409,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // A <label> contributes a name via its own aria-label/aria-labelledby
   // (checked first, same ARIA-over-content precedence any element's
-  // accessible name gives — e.g. <label aria-label="Search"><svg
+  // accessible name gives, e.g. <label aria-label="Search"><svg
   // aria-hidden="true">...</svg></label> names its control "Search" even
   // though the label's only child content is aria-hidden) or, failing
   // that, its rendered content (getConservativeSubtreeText).
@@ -27425,10 +27424,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (content) return content;
     // Final fallback per the general accname text-alternative algorithm,
     // which applies to any element being asked for its name regardless of
-    // why (own aria-label, an aria-labelledby reference, or — here — native
+    // why (own aria-label, an aria-labelledby reference, or, here, native
     // <label for> association): title, when nothing else yields a name.
     // Purely additive (only fills in a name where there was none before),
-    // so it carries no false-positive risk — see dialog-name-present.js's
+    // so it carries no false-positive risk, see dialog-name-present.js's
     // identical <iframe>-title-fallback fix for the concrete real-world
     // trigger this same accname step covers elsewhere.
     return getAttr(lab, 'title');
@@ -27438,7 +27437,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const raw = getAttr(el, 'aria-labelledby');
     if (!raw) return '';
     // Delegates to the shared getTextFromIdRefs helper instead of computing
-    // name-from-content of the referenced element — see dialog-name-
+    // name-from-content of the referenced element, see dialog-name-
     // present.js's identical fix for the full rationale (an <iframe>
     // aria-labelledby target's only name source is its title attribute,
     // which name-from-content alone can never see).
@@ -27535,7 +27534,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
 
     // role="slider" is name-from-author-only per WAI-ARIA (unlike e.g.
-    // role="option"/"tab"), so it must NOT fall back to subtree content —
+    // role="option"/"tab"), so it must NOT fall back to subtree content,
     // visible text near/inside a custom slider widget is not reliably
     // exposed as its accessible name by assistive technologies.
     return { ok: false, method: 'none' };
@@ -27620,7 +27619,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function getConservativeSubtreeText(document, container) {
-    // "Name from content" — recurses into descendants and uses each one's
+    // "Name from content", recurses into descendants and uses each one's
     // own accessible name (img alt, aria-label/aria-labelledby, title) when
     // it has one, not just literal text nodes. See getContentNameInfo's
     // header comment in src/core/dom-helpers.js for the full rationale
@@ -27637,7 +27636,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // A <label> contributes a name via its own aria-label/aria-labelledby
   // (checked first, same ARIA-over-content precedence any element's
-  // accessible name gives — e.g. <label aria-label="Search"><svg
+  // accessible name gives, e.g. <label aria-label="Search"><svg
   // aria-hidden="true">...</svg></label> names its control "Search" even
   // though the label's only child content is aria-hidden) or, failing
   // that, its rendered content (getConservativeSubtreeText).
@@ -27652,10 +27651,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (content) return content;
     // Final fallback per the general accname text-alternative algorithm,
     // which applies to any element being asked for its name regardless of
-    // why (own aria-label, an aria-labelledby reference, or — here — native
+    // why (own aria-label, an aria-labelledby reference, or, here, native
     // <label for> association): title, when nothing else yields a name.
     // Purely additive (only fills in a name where there was none before),
-    // so it carries no false-positive risk — see dialog-name-present.js's
+    // so it carries no false-positive risk, see dialog-name-present.js's
     // identical <iframe>-title-fallback fix for the concrete real-world
     // trigger this same accname step covers elsewhere.
     return getAttr(lab, 'title');
@@ -27665,7 +27664,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const raw = getAttr(el, 'aria-labelledby');
     if (!raw) return '';
     // Delegates to the shared getTextFromIdRefs helper instead of computing
-    // name-from-content of the referenced element — see dialog-name-
+    // name-from-content of the referenced element, see dialog-name-
     // present.js's identical fix for the full rationale (an <iframe>
     // aria-labelledby target's only name source is its title attribute,
     // which name-from-content alone can never see).
@@ -27800,7 +27799,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This element has no accessible name.',
-        hint: "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this spinbutton's accessible name.",
+        hint: "Provide aria-label, aria-labelledby, or a title attribute. Visible text content is not exposed as this spinbutton's accessible name.",
         i18n: {
           summaryKey: 'spinbuttonNamePresent_summary_fail',
           hintKey: 'spinbuttonNamePresent_hint_fail',
@@ -27852,7 +27851,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function getConservativeSubtreeText(document, container) {
-    // "Name from content" — recurses into descendants and uses each one's
+    // "Name from content", recurses into descendants and uses each one's
     // own accessible name (img alt, aria-label/aria-labelledby, title) when
     // it has one, not just literal text nodes. See getContentNameInfo's
     // header comment in src/core/dom-helpers.js for the full rationale
@@ -27871,7 +27870,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const raw = getAttr(el, 'aria-labelledby');
     if (!raw) return '';
     // Delegates to the shared getTextFromIdRefs helper instead of computing
-    // name-from-content of the referenced element — see dialog-name-
+    // name-from-content of the referenced element, see dialog-name-
     // present.js's identical fix for the full rationale (an <iframe>
     // aria-labelledby target's only name source is its title attribute,
     // which name-from-content alone can never see).
@@ -28032,7 +28031,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // <desc> counts when it is the first child, or the second child
-  // immediately following a <title> — the standard <title>+<desc> pairing.
+  // immediately following a <title>, the standard <title>+<desc> pairing.
   // A <desc> appearing later than that is not reliably read by AT.
   function descText(el) {
     try {
@@ -28264,7 +28263,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // <desc> counts when it is the first child, or the second child
-  // immediately following a <title> — the standard <title>+<desc> pairing
+  // immediately following a <title>, the standard <title>+<desc> pairing
   // (e.g. <svg><title>...</title><desc>...</desc>...</svg>). A <desc>
   // appearing later than that is not reliably read by AT.
   function nonEmptyDescText(svg) {
@@ -28417,7 +28416,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
 
     // Per SVG-AAM §7.1: <desc> contributes only to the accessible
-    // DESCRIPTION, never the accessible NAME — so descText does not
+    // DESCRIPTION, never the accessible NAME, so descText does not
     // count here even though it does count toward applicability above.
     const ok = !!titleText || hasAriaName;
     if (ok) continue;
@@ -28433,7 +28432,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const baseOccurrence = {
       summary: 'Missing text alternative for <svg>.',
-      hint: 'Provide a <title> element with text, or an ARIA name (aria-label/aria-labelledby) — a <desc> element alone does not provide an accessible name.',
+      hint: 'Provide a <title> element with text, or an ARIA name (aria-label/aria-labelledby); a <desc> element alone does not provide an accessible name.',
       i18n: {
         summaryKey: 'svg_textAltPresent_summary_fail',
         hintKey: 'svg_textAltPresent_hint_fail',
@@ -28689,7 +28688,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function getConservativeSubtreeText(document, container) {
-    // "Name from content" — recurses into descendants and uses each one's
+    // "Name from content", recurses into descendants and uses each one's
     // own accessible name (img alt, aria-label/aria-labelledby, title) when
     // it has one, not just literal text nodes. See getContentNameInfo's
     // header comment in src/core/dom-helpers.js for the full rationale
@@ -28708,7 +28707,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const raw = getAttr(el, 'aria-labelledby');
     if (!raw) return '';
     // Delegates to the shared getTextFromIdRefs helper instead of computing
-    // name-from-content of the referenced element — see dialog-name-
+    // name-from-content of the referenced element, see dialog-name-
     // present.js's identical fix for the full rationale (an <iframe>
     // aria-labelledby target's only name source is its title attribute,
     // which name-from-content alone can never see).
@@ -28987,7 +28986,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       selector: stableSelector,
       html,
       summary:
-        'This table has no <caption>, but its first row is a single cell sitting above multi-cell rows — it may be acting as a fake caption.',
+        'This table has no <caption>, but its first row is a single cell sitting above multi-cell rows, so it may be acting as a fake caption.',
       hint: 'If this cell is meant to describe the table, use a real <caption> element instead of a lone first-row cell.',
       i18n: {
         summaryKey: 'tableFakeCaption_summary_cantTell',
@@ -29543,11 +29542,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // element, or either one is an ancestor of the other. A nested-interactive
   // pattern (e.g. a small <button> inside a wrapping <a href>, or vice
   // versa) is a single visual/interactive region, not two independently
-  // placed targets — the spacing exception's "does the circle intersect
+  // placed targets. The spacing exception's "does the circle intersect
   // ANOTHER target" language is about separate targets, not an element and
   // its own container. (Nested interactive controls are their own,
-  // separately-flagged anti-pattern — nested-interactive-controls-
-  // absent — not a target-size spacing concern.)
+  // separately-flagged anti-pattern, nested-interactive-controls-absent,
+  // not a target-size spacing concern.)
   function isRelated(a, b) {
     try {
       if (!a || !b) return false;
@@ -29604,7 +29603,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function hasSpacingConflict(target) {
     // 0) Pure geometry: deterministic center-distance check against ANY
     // nearby target, not just other undersized ones. Per WCAG 2.5.8, the
-    // spacing exception depends on proximity to any adjacent target — an
+    // spacing exception depends on proximity to any adjacent target, so an
     // undersized target sitting flush against an adequately-sized one still
     // fails the exception, which an undersized-only comparison would miss.
     for (const other of items) {
@@ -29628,8 +29627,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // as a confident conflict. Perimeter sampling is an approximation
     // (rounded corners, border-radius, and sub-pixel geometry can shift a
     // sample point in or out of a neighboring element), so a result that
-    // merely reaches HIT_THRESHOLD is not asserted as a deterministic
-    // fail — see the ambiguous band below.
+    // merely reaches HIT_THRESHOLD is not asserted as a deterministic fail.
+    // See the ambiguous band below.
     const CONFIDENT_THRESHOLD = 5;
     let hitCount = 0;
     let firstConflictEl = null;
@@ -29675,20 +29674,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // WCAG 2.5.8 "User Agent Control" exception: the target's size requirement
   // does not apply at all when its size is determined by the user agent and
-  // not modified by the author — the canonical example being an unstyled
-  // native checkbox/radio (browsers render these well under 24px by
-  // default, and that's not the author's choice). Scoped narrowly to
-  // input[type=checkbox]/[type=radio] specifically (the only form-control
-  // types with a universally-recognized, unambiguous native rendering) —
-  // deliberately not extended to select/range/color/file, whose "default"
-  // sizing varies enough across browsers/OSes that a wrong exemption there
-  // risks masking a real author-introduced undersized target.
+  // not modified by the author. The canonical example is an unstyled native
+  // checkbox/radio (browsers render these well under 24px by default, and
+  // that's not the author's choice). Scoped narrowly to
+  // input[type=checkbox]/[type=radio] specifically, the only form-control
+  // types with a universally-recognized, unambiguous native rendering, and
+  // not extended to select/range/color/file, whose "default" sizing varies
+  // enough across browsers/OSes that a wrong exemption there risks masking a
+  // real author-introduced undersized target.
   //
   // Detection signal: `appearance` (or the legacy `-webkit-appearance`)
   // computed as `none` is the near-universal first step of custom
-  // checkbox/radio styling across every CSS framework/design system —
-  // if the author hasn't reset it, the browser is still rendering its own
-  // default control chrome, so the size is genuinely UA-determined.
+  // checkbox/radio styling across every CSS framework/design system. If the
+  // author hasn't reset it, the browser is still rendering its own default
+  // control chrome, so the size is UA-determined rather than authored.
   function isUserAgentSizedControl(el) {
     try {
       if (!el || el.nodeType !== 1) return false;
@@ -29734,8 +29733,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // Image map targets are often constrained by the underlying image.
       // Currently unreachable in practice: <area> never becomes a
       // measurable candidate at all (see the file header's "Known,
-      // deliberately unimplemented gap" note) — kept for forward
-      // compatibility if that gap is closed later.
+      // unimplemented gap" note). Kept for forward compatibility if that
+      // gap is closed later.
       if (tag === 'area') return true;
 
       // Graphics / spatial interaction regions are commonly essential by design.
@@ -29759,7 +29758,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     // User Agent Control exception: size isn't the author's choice, so the
     // size requirement (and therefore any spacing conflict stemming from
-    // it) doesn't apply at all — skip straight to pass, no need to even
+    // it) doesn't apply at all. Skip straight to pass, no need to even
     // evaluate spacing.
     if (isUserAgentSizedControl(it.el)) {
       continue;
@@ -29768,12 +29767,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const info = hasSpacingConflict(it);
 
     if (!info.conflict && info.confident === false) {
-      // Ambiguous perimeter-sampling result near the decision threshold —
-      // previously recorded only as a page-level boolean with no per-target
-      // occurrence at all, so this specific target was unrecoverable from
-      // the result once any other target on the page had a confident
-      // fail (see helpers.resolveTieredOutcome's header comment). Now
-      // reported as its own cantTell-tier occurrence instead.
+      // Ambiguous perimeter-sampling result near the decision threshold: report
+      // it as its own cantTell-tier occurrence for this target so it isn't lost
+      // once any other target on the page has a confident fail (see
+      // helpers.resolveTieredOutcome's header comment).
       cantTellOccurrences.push(
         helpers.reportOccurrence(it.el, {
           occurrenceOutcome: 'cantTell',
@@ -29801,14 +29798,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (info.conflict) {
       if (isPlausiblyEssentialOrEquivalent(it.el)) {
         // Confident spacing conflict, but the target may be exempt as part
-        // of an essential graphic/image-map region — same "previously
-        // unrecoverable" gap as above, now reported instead of dropped.
+        // of an essential graphic/image-map region, so report it as
+        // cantTell rather than dropping it.
         cantTellOccurrences.push(
           helpers.reportOccurrence(it.el, {
             occurrenceOutcome: 'cantTell',
             summary:
               'Target is too small and too close to another target, but may be exempt as part of an essential graphic or image-map region.',
-            hint: 'Verify whether this target’s size is genuinely essential to its function (e.g. part of an SVG/canvas/image map); if not, increase target size or spacing.',
+            hint: 'Verify whether this target’s size is essential to its function (e.g. part of an SVG/canvas/image map); if not, increase target size or spacing.',
             i18n: {
               summaryKey: 'targetSizeMinimum_summary_cantTell_plausiblyEssential',
               hintKey: 'targetSizeMinimum_hint_cantTell_plausiblyEssential',
@@ -29880,7 +29877,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // See helpers.resolveTieredOutcome's own header comment (src/core/dom-helpers.js):
   // a fail-tier finding never silently discards cantTell-tier findings from
-  // the same run — both are returned together when the outcome is 'fail'.
+  // the same run. Both are returned together when the outcome is 'fail'.
   const resolved = helpers.resolveTieredOutcome(
     failOccurrences,
     cantTellOccurrences,
@@ -30029,7 +30026,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function getConservativeSubtreeText(document, container) {
-    // "Name from content" — recurses into descendants and uses each one's
+    // "Name from content", recurses into descendants and uses each one's
     // own accessible name (img alt, aria-label/aria-labelledby, title) when
     // it has one, not just literal text nodes. See getContentNameInfo's
     // header comment in src/core/dom-helpers.js for the full rationale
@@ -30046,7 +30043,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // A <label> contributes a name via its own aria-label/aria-labelledby
   // (checked first, same ARIA-over-content precedence any element's
-  // accessible name gives — e.g. <label aria-label="Search"><svg
+  // accessible name gives, e.g. <label aria-label="Search"><svg
   // aria-hidden="true">...</svg></label> names its control "Search" even
   // though the label's only child content is aria-hidden) or, failing
   // that, its rendered content (getConservativeSubtreeText).
@@ -30061,10 +30058,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (content) return content;
     // Final fallback per the general accname text-alternative algorithm,
     // which applies to any element being asked for its name regardless of
-    // why (own aria-label, an aria-labelledby reference, or — here — native
+    // why (own aria-label, an aria-labelledby reference, or, here, native
     // <label for> association): title, when nothing else yields a name.
     // Purely additive (only fills in a name where there was none before),
-    // so it carries no false-positive risk — see dialog-name-present.js's
+    // so it carries no false-positive risk, see dialog-name-present.js's
     // identical <iframe>-title-fallback fix for the concrete real-world
     // trigger this same accname step covers elsewhere.
     return getAttr(lab, 'title');
@@ -30074,7 +30071,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const raw = getAttr(el, 'aria-labelledby');
     if (!raw) return '';
     // Delegates to the shared getTextFromIdRefs helper instead of computing
-    // name-from-content of the referenced element — see dialog-name-
+    // name-from-content of the referenced element, see dialog-name-
     // present.js's identical fix for the full rationale (an <iframe>
     // aria-labelledby target's only name source is its title attribute,
     // which name-from-content alone can never see).
@@ -30209,7 +30206,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This element has no accessible name.',
-        hint: "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this textbox's accessible name.",
+        hint: "Provide aria-label, aria-labelledby, or a title attribute. Visible text content is not exposed as this textbox's accessible name.",
         i18n: {
           summaryKey: 'textboxNamePresent_summary_fail',
           hintKey: 'textboxNamePresent_hint_fail',
@@ -30257,7 +30254,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function getConservativeSubtreeText(document, container) {
-    // "Name from content" — recurses into descendants and uses each one's
+    // "Name from content", recurses into descendants and uses each one's
     // own accessible name (img alt, aria-label/aria-labelledby, title) when
     // it has one, not just literal text nodes. See getContentNameInfo's
     // header comment in src/core/dom-helpers.js for the full rationale
@@ -30276,7 +30273,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const raw = getAttr(el, 'aria-labelledby');
     if (!raw) return '';
     // Delegates to the shared getTextFromIdRefs helper instead of computing
-    // name-from-content of the referenced element — see dialog-name-
+    // name-from-content of the referenced element, see dialog-name-
     // present.js's identical fix for the full rationale (an <iframe>
     // aria-labelledby target's only name source is its title attribute,
     // which name-from-content alone can never see).
@@ -30406,7 +30403,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function getConservativeSubtreeText(document, container) {
-    // "Name from content" — recurses into descendants and uses each one's
+    // "Name from content", recurses into descendants and uses each one's
     // own accessible name (img alt, aria-label/aria-labelledby, title) when
     // it has one, not just literal text nodes. See getContentNameInfo's
     // header comment in src/core/dom-helpers.js for the full rationale
@@ -30425,7 +30422,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const raw = getAttr(el, 'aria-labelledby');
     if (!raw) return '';
     // Delegates to the shared getTextFromIdRefs helper instead of computing
-    // name-from-content of the referenced element — see dialog-name-
+    // name-from-content of the referenced element, see dialog-name-
     // present.js's identical fix for the full rationale (an <iframe>
     // aria-labelledby target's only name source is its title attribute,
     // which name-from-content alone can never see).
@@ -30572,7 +30569,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // "Governed text": non-whitespace text (or alt) that inherits its
-  // language from `root`, per ACT de46e4 — see @applicability above. Walks
+  // language from `root`, per ACT de46e4, see @applicability above. Walks
   // the flat subtree, stopping at any descendant carrying its own non-empty
   // lang (that subtree governs itself, not `root`), and treating
   // display:none/hidden content as absent. Bails out as soon as any
@@ -30629,7 +30626,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (rawAttr === null || rawAttr === '') continue; // ACT de46e4: empty is out of scope
 
     // The rule applies only where text actually inherits the language from
-    // THIS element specifically — not merely where the subtree has any text
+    // THIS element specifically, not merely where the subtree has any text
     // at all, which could all belong to a nested element's own (possibly
     // valid) lang instead. See hasGovernedText's doc comment.
     if (!hasGovernedText(el)) continue;
@@ -30768,7 +30765,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function computeNameInfo(el) {
     // <video> is not a labelable element (no browser computes an accessible
-    // name from <label for="...">), so only ARIA naming and title count —
+    // name from <label for="...">), so only ARIA naming and title count,
     // do not accept native <label> associations.
     const flags = [];
     let aria = null;
@@ -30953,7 +30950,7 @@ const I18N = {
     "svg_textAltPresent_title": "<svg> must provide a text alternative",
     "svg_textAltPresent_description": "Checks that inline <svg> elements provide a text alternative via a <title> element or an ARIA name (a <desc> element alone does not count).",
     "svg_textAltPresent_summary_fail": "Missing text alternative for <svg>.",
-    "svg_textAltPresent_hint_fail": "Provide a <title> element with text, or an ARIA name (aria-label/aria-labelledby) — a <desc> element alone does not provide an accessible name.",
+    "svg_textAltPresent_hint_fail": "Provide a <title> element with text, or an ARIA name (aria-label/aria-labelledby); a <desc> element alone does not provide an accessible name.",
     "object_textAltPresent_title": "<object> must provide a text alternative",
     "object_textAltPresent_description": "Checks that <object> elements provide a text alternative via fallback content or an accessible name.",
     "object_textAltPresent_summary_fail": "Missing text alternative for <object>.",
@@ -31031,13 +31028,13 @@ const I18N = {
     "rules.img-alt-suspicious.occurrence.cantTell.summary": "Image alt text appears suspicious (\"{{alt}}\" looks like {{pattern}}) and requires verification.",
     "rules.img-alt-suspicious.occurrence.cantTell.hint": "Review the alt text. Avoid filenames, URLs, placeholders, or generic terms, and ensure the text alternative describes the image’s purpose or function in context.",
     "formControlLabelQuality_title": "Form field labels should be descriptive and distinguishable",
-    "formControlLabelQuality_description": "Flags a visible form-field label that is a placeholder (\"Label\", \"Field\"), or that repeats another field's label with no visible context — heading, legend, or row — telling the two apart.",
+    "formControlLabelQuality_description": "Flags a visible form-field label that is a placeholder (\"Label\", \"Field\"), or that repeats another field's label with no visible context (heading, legend, or row) telling the two apart.",
     "formControlLabelQuality_summary_cantTell_placeholder": "This field's visible label (\"{{label}}\") is a placeholder rather than a description of what the field is for.",
     "formControlLabelQuality_summary_cantTell_duplicate": "This field's visible label (\"{{label}}\") is shared with {{count}} other field(s), with no visible heading, legend or row text telling them apart.",
     "formControlLabelQuality_hint_cantTell_placeholder": "Replace the label with one naming the information the field collects.",
     "formControlLabelQuality_summary_cantTell_partiallyHidden": "This field's label is split: \"{{label}}\" is what renders, while {{hiddenCount}} other part(s) of the label are hidden from sight.",
     "formControlLabelQuality_hint_cantTell_partiallyHidden": "Confirm the visible part alone identifies the field, or make the rest of the label visible.",
-    "formControlLabelQuality_hint_cantTell_duplicate": "Give each field a label of its own, or put the distinguishing context on screen — a visible heading or a fieldset legend above each group.",
+    "formControlLabelQuality_hint_cantTell_duplicate": "Give each field a label of its own, or put the distinguishing context on screen: a visible heading or a fieldset legend above each group.",
     "formControl_programmaticLabelQuality_title": "Form controls should not rely on placeholder or title as the primary label",
     "formControl_programmaticLabelQuality_description": "Flags form controls whose computed accessible name relies on placeholder or title as the primary labeling method. Prefer <label> or aria-labelledby.",
     "formControl_programmaticLabelQuality_summary_cantTell": "Form control’s primary label is derived from {{method}}.",
@@ -31134,7 +31131,7 @@ const I18N = {
     "targetSizeMinimum_summary_cantTell_ambiguousSpacing": "Target may be too small and too close to another target, but the overlap is near the detection threshold and could not be confidently measured.",
     "targetSizeMinimum_hint_cantTell_ambiguousSpacing": "Manually verify the effective spacing between this target and its neighbor; increase target size or spacing if the overlap is real.",
     "targetSizeMinimum_summary_cantTell_plausiblyEssential": "Target is too small and too close to another target, but may be exempt as part of an essential graphic or image-map region.",
-    "targetSizeMinimum_hint_cantTell_plausiblyEssential": "Verify whether this target’s size is genuinely essential to its function (e.g. part of an SVG/canvas/image map); if not, increase target size or spacing.",
+    "targetSizeMinimum_hint_cantTell_plausiblyEssential": "Verify whether this target’s size is essential to its function (e.g. part of an SVG/canvas/image map); if not, increase target size or spacing.",
     "targetSizeMinimum_summary_cantTell_inlineLinkRun": "Target is smaller than 24×24 CSS px and close to another inline link in the same run of text, where the inline exception may apply.",
     "targetSizeMinimum_hint_cantTell_inlineLinkRun": "Confirm whether these links form a run of inline text (which is exempt); otherwise increase the target size to at least 24×24 CSS px or add spacing.",
     "targetSizeMinimum_notApplicable_noTargets": "No pointer-operable targets were eligible for evaluation.",
@@ -31172,7 +31169,7 @@ const I18N = {
     "comboboxNamePresent_title": "Comboboxes have an accessible name",
     "comboboxNamePresent_description": "Checks that elements with role=\"combobox\" expose a non-empty accessible name.",
     "comboboxNamePresent_summary_fail": "This combobox has no accessible name.",
-    "comboboxNamePresent_hint_fail": "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this combobox's accessible name.",
+    "comboboxNamePresent_hint_fail": "Provide aria-label, aria-labelledby, or a title attribute. Visible text content is not exposed as this combobox's accessible name.",
     "dialogNamePresent_title": "Dialogs have an accessible name",
     "dialogNamePresent_description": "Checks that elements with role=\"dialog\" or role=\"alertdialog\" expose a non-empty accessible name.",
     "dialogNamePresent_summary_fail": "This dialog has no accessible name.",
@@ -31192,19 +31189,19 @@ const I18N = {
     "textboxNamePresent_title": "Textboxes have an accessible name",
     "textboxNamePresent_description": "Checks that elements with role=\"textbox\" expose a non-empty accessible name.",
     "textboxNamePresent_summary_fail": "This textbox has no accessible name.",
-    "textboxNamePresent_hint_fail": "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this textbox's accessible name.",
+    "textboxNamePresent_hint_fail": "Provide aria-label, aria-labelledby, or a title attribute. Visible text content is not exposed as this textbox's accessible name.",
     "searchboxNamePresent_title": "Searchboxes have an accessible name",
     "searchboxNamePresent_description": "Checks that elements with role=\"searchbox\" expose a non-empty accessible name.",
     "searchboxNamePresent_summary_fail": "This searchbox has no accessible name.",
-    "searchboxNamePresent_hint_fail": "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this searchbox's accessible name.",
+    "searchboxNamePresent_hint_fail": "Provide aria-label, aria-labelledby, or a title attribute. Visible text content is not exposed as this searchbox's accessible name.",
     "spinbuttonNamePresent_title": "Spinbuttons have an accessible name",
     "spinbuttonNamePresent_description": "Checks that elements with role=\"spinbutton\" expose a non-empty accessible name.",
     "spinbuttonNamePresent_summary_fail": "This spinbutton has no accessible name.",
-    "spinbuttonNamePresent_hint_fail": "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this spinbutton's accessible name.",
+    "spinbuttonNamePresent_hint_fail": "Provide aria-label, aria-labelledby, or a title attribute. Visible text content is not exposed as this spinbutton's accessible name.",
     "listboxNamePresent_title": "Listboxes have an accessible name",
     "listboxNamePresent_description": "Checks that elements with role=\"listbox\" expose a non-empty accessible name.",
     "listboxNamePresent_summary_fail": "This listbox has no accessible name.",
-    "listboxNamePresent_hint_fail": "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this listbox's accessible name.",
+    "listboxNamePresent_hint_fail": "Provide aria-label, aria-labelledby, or a title attribute. Visible text content is not exposed as this listbox's accessible name.",
     "optionNamePresent_title": "Options have an accessible name",
     "optionNamePresent_description": "Checks that elements with role=\"option\" expose a non-empty accessible name.",
     "optionNamePresent_summary_fail": "This option has no accessible name.",
@@ -31256,7 +31253,7 @@ const I18N = {
     "ariaDeprecatedRole_summary_cantTell": "This element uses role=\"{{role}}\", which is deprecated in WAI-ARIA (still valid, but discouraged).",
     "ariaDeprecatedRole_summary_cantTell_discouraged": "This element uses role=\"{{role}}\", which is reserved for user agents (still valid, but discouraged).",
     "ariaDeprecatedRole_guidance_directory": "Replace it with role=\"list\" (its recommended replacement).",
-    "ariaDeprecatedRole_guidance_generic": "Remove it — this role is reserved for user-agent-internal use, not authors. Use role=\"presentation\"/\"none\" to strip semantics, a semantic role like \"group\" to convey grouping, or simply a plain element (which already carries the implicit generic role) instead.",
+    "ariaDeprecatedRole_guidance_generic": "Remove it: this role is reserved for user-agent-internal use, not authors. Use role=\"presentation\"/\"none\" to strip semantics, a semantic role like \"group\" to convey grouping, or a plain element (which already carries the implicit generic role) instead.",
     "ariaDeprecatedRole_guidance_default": "Replace the deprecated role with its recommended replacement.",
     "ariaValidAttr_title": "aria-* attributes must be real, defined ARIA attributes",
     "ariaValidAttr_description": "Checks that every aria-* attribute name present in the DOM is a real attribute defined by the WAI-ARIA specification.",
@@ -31280,7 +31277,7 @@ const I18N = {
     "ariaProhibitedAttr_hint_fail": "Remove this attribute; this role must not carry an accessible name.",
     "ariaProhibitedAttr_summary_fail_roleless": "This {{element}} has no role and no other accessible-name source, so {{attr}} is not reliably exposed to assistive technology.",
     "ariaProhibitedAttr_hint_fail_roleless": "Give this element a role that supports an accessible name (e.g. role=\"img\"/\"button\"), or remove this attribute if it serves no purpose without one.",
-    "ariaProhibitedAttr_summary_cantTell_roleless": "This {{element}} has no role, so {{attr}} may not be exposed as its accessible name by assistive technology — but the element's own content already provides one.",
+    "ariaProhibitedAttr_summary_cantTell_roleless": "This {{element}} has no role, so {{attr}} may not be exposed as its accessible name by assistive technology, but the element's own content already provides one.",
     "ariaProhibitedAttr_hint_cantTell_roleless": "Verify whether the existing text content already serves as this element's label; if so the naming attribute is redundant, otherwise give the element a role that supports naming (e.g. role=\"img\").",
     "ariaRequiredAttr_title": "Roles with a required ARIA state/property must carry it",
     "ariaRequiredAttr_description": "Checks that elements with an explicit role carry every unambiguous, context-independent required aria-* state/property for that role (e.g. role=\"checkbox\" must have aria-checked).",
@@ -31375,11 +31372,11 @@ const I18N = {
     "meterNamePresent_title": "Meters have an accessible name",
     "meterNamePresent_description": "Checks that elements with role=\"meter\" expose a non-empty accessible name.",
     "meterNamePresent_summary_fail": "This meter has no accessible name.",
-    "meterNamePresent_hint_fail": "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this meter's accessible name.",
+    "meterNamePresent_hint_fail": "Provide aria-label, aria-labelledby, or a title attribute. Visible text content is not exposed as this meter's accessible name.",
     "progressbarNamePresent_title": "Progress bars have an accessible name",
     "progressbarNamePresent_description": "Checks that elements with role=\"progressbar\" expose a non-empty accessible name.",
     "progressbarNamePresent_summary_fail": "This progress bar has no accessible name.",
-    "progressbarNamePresent_hint_fail": "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this progress bar's accessible name.",
+    "progressbarNamePresent_hint_fail": "Provide aria-label, aria-labelledby, or a title attribute. Visible text content is not exposed as this progress bar's accessible name.",
     "tooltipNamePresent_title": "Tooltips have an accessible name",
     "tooltipNamePresent_description": "Checks that elements with role=\"tooltip\" expose a non-empty accessible name.",
     "tooltipNamePresent_summary_fail": "This tooltip has no accessible name.",
@@ -31401,11 +31398,11 @@ const I18N = {
     "presentationalChildrenFocusableAbsent_title": "Roles with presentational children must not contain focusable content",
     "presentationalChildrenFocusableAbsent_description": "Checks that an element whose role makes its children presentational (button, checkbox, img, option, radio, slider, switch, tab, ...) contains no descendant that takes a tab stop.",
     "presentationalChildrenFocusableAbsent_summary_fail": "This role=\"{{role}}\" element makes its children presentational, but it contains content that is still part of sequential focus navigation ({{focusableElements}}).",
-    "presentationalChildrenFocusableAbsent_hint_fail": "Move the focusable content outside this element, or remove the role that makes the children presentational — focus landing inside it has no role or name to announce.",
+    "presentationalChildrenFocusableAbsent_hint_fail": "Move the focusable content outside this element, or remove the role that makes the children presentational, since focus landing inside it has no role or name to announce.",
     "bypassBlocksPresent_title": "Page must provide a way to bypass repeated blocks",
     "bypassBlocksPresent_description": "Checks that the page has at least one recognized WCAG 2.4.1 bypass-blocks mechanism: a main landmark, a working same-page anchor link, or a heading.",
-    "bypassBlocksPresent_summary_cantTell": "No recognized way to bypass repeated blocks of content was detected on this page — verify a bypass mechanism exists.",
-    "bypassBlocksPresent_hint_cantTell": "Confirm the page offers a bypass mechanism: a main landmark (<main> or role=\"main\"), a working \"skip to content\" link, or heading elements that assistive technology can use to jump past repeated content. (A mechanism may be temporarily hidden — e.g. while a modal dialog makes the page inert — or provided on a per-site basis; this needs human confirmation.)",
+    "bypassBlocksPresent_summary_cantTell": "No recognized way to bypass repeated blocks of content was detected on this page. Verify a bypass mechanism exists.",
+    "bypassBlocksPresent_hint_cantTell": "Confirm the page offers a bypass mechanism: a main landmark (<main> or role=\"main\"), a working \"skip to content\" link, or heading elements that assistive technology can use to jump past repeated content. (A mechanism may be temporarily hidden, e.g. while a modal dialog makes the page inert, or provided on a per-site basis; this needs human confirmation.)",
     "landmarkBannerIsTopLevel_title": "Banner landmark must be top-level",
     "landmarkBannerIsTopLevel_description": "Checks that the banner landmark (role=\"banner\" or a non-nested <header>) is not nested inside another landmark region.",
     "landmarkBannerIsTopLevel_summary_cantTell": "This banner landmark is nested inside another landmark region.",
@@ -31464,11 +31461,11 @@ const I18N = {
     "tabindex_summary_cantTell": "This element has a positive tabindex, overriding the natural tab order.",
     "tabindex_hint_cantTell": "Use tabindex=\"0\" (or a negative value to remove from tab order) instead of a positive number; fix the DOM order if a different tab order is needed.",
     "emptyTableHeader_title": "Table header cells must not be empty",
-    "emptyTableHeader_description": "Checks that table header cells (<th>, or any element with role=\"columnheader\"/\"rowheader\") have visible text content — a header named only via aria-label/aria-labelledby is also flagged, since real screen-reader/browser support for that is inconsistent.",
+    "emptyTableHeader_description": "Checks that table header cells (<th>, or any element with role=\"columnheader\"/\"rowheader\") have visible text content. A header named only via aria-label/aria-labelledby is also flagged, since real screen-reader/browser support for that is inconsistent.",
     "emptyTableHeader_summary_cantTell": "This table header cell has no accessible name.",
     "emptyTableHeader_hint_cantTell": "Add text content (or aria-label/aria-labelledby) to this header cell, or remove it if it is not needed.",
-    "emptyTableHeader_summary_cantTell_ariaOnly": "This table header cell has no visible text — its only accessible name comes from aria-label/aria-labelledby, which real screen-reader/browser combinations (e.g. NVDA+Firefox, iOS VoiceOver+Safari) are known to ignore on <th> elements.",
-    "emptyTableHeader_hint_cantTell_ariaOnly": "Add visible text content to this header cell (in addition to, or instead of, aria-label/aria-labelledby) — visible text is the only naming mechanism confirmed to work across tested screen readers.",
+    "emptyTableHeader_summary_cantTell_ariaOnly": "This table header cell has no visible text. Its only accessible name comes from aria-label/aria-labelledby, which real screen-reader/browser combinations (e.g. NVDA+Firefox, iOS VoiceOver+Safari) are known to ignore on <th> elements.",
+    "emptyTableHeader_hint_cantTell_ariaOnly": "Add visible text content to this header cell (in addition to, or instead of, aria-label/aria-labelledby); visible text is the only naming mechanism confirmed to work across tested screen readers.",
     "labelTitleOnly_title": "Form controls should not use title as their only label",
     "labelTitleOnly_description": "Checks that a form control with a title attribute also has a real label (label element, aria-label, or aria-labelledby).",
     "labelTitleOnly_summary_cantTell": "This form control relies on the title attribute as its only label.",
@@ -31512,7 +31509,7 @@ const I18N = {
     "avoidInlineSpacing_summary_fail": "This element's inline style forces {{properties}} with !important, blocking user text-spacing overrides.",
     "avoidInlineSpacing_hint_fail": "Remove !important from line-height/letter-spacing/word-spacing in inline styles so users can override text spacing.",
     "metaRefreshNoExceptions_title": "Page must not use a meta refresh at all (AAA)",
-    "metaRefreshNoExceptions_description": "Checks that <meta http-equiv=\"refresh\"> is not present at all, regardless of delay — the stricter AAA-level counterpart of the A-level positive-delay-only check.",
+    "metaRefreshNoExceptions_description": "Checks that <meta http-equiv=\"refresh\"> is not present at all, regardless of delay. This is the stricter AAA-level counterpart of the A-level positive-delay-only check.",
     "metaRefreshNoExceptions_summary_fail": "This page uses a meta refresh, which is an automatic context change not initiated by the user.",
     "metaRefreshNoExceptions_hint_fail": "Remove the meta refresh; trigger the redirect/refresh only in response to a user action instead.",
     "validLang_title": "Element lang attribute must be syntactically valid",
@@ -31520,7 +31517,7 @@ const I18N = {
     "validLang_summary_fail": "This lang attribute value (\"{{value}}\") is not a syntactically valid language tag.",
     "validLang_hint_fail": "Use a valid BCP47 language tag (e.g. \"fr\", \"es-MX\").",
     "linkInTextBlock_title": "Links in text blocks must be distinguishable from surrounding text without relying on color alone",
-    "linkInTextBlock_description": "Checks that a link inside a run of text is visually distinguishable from the surrounding text by underline, a font-weight/style difference, or a sufficient (>=3:1) color-contrast difference — not by color alone.",
+    "linkInTextBlock_description": "Checks that a link inside a run of text is visually distinguishable from the surrounding text by underline, a font-weight/style difference, or a sufficient (>=3:1) color-contrast difference, not by color alone.",
     "linkInTextBlock_summary_fail": "This link in a block of text relies on color alone to be distinguished from the surrounding text.",
     "linkInTextBlock_hint_fail": "Add an underline, a font-weight/style difference, or increase the color contrast between the link and surrounding text to at least 3:1.",
     "noAutoplayAudio_title": "Autoplaying audio should provide a pause/stop or volume-control mechanism",
@@ -31542,15 +31539,15 @@ const I18N = {
     "ariaBrailleEquivalent_title": "aria-braillelabel/aria-brailleroledescription must have a non-braille equivalent",
     "ariaBrailleEquivalent_description": "Checks that elements using aria-braillelabel also have a regular accessible name, and elements using aria-brailleroledescription also have aria-roledescription.",
     "ariaBrailleEquivalent_summary_fail": "This element has {{attr}} but no {{requires}}, its non-braille equivalent.",
-    "ariaBrailleEquivalent_hint_fail": "{{attr}} is a Braille-specific supplement, not a replacement — also provide {{requires}}.",
+    "ariaBrailleEquivalent_hint_fail": "{{attr}} is a Braille-specific supplement, not a replacement, so also provide {{requires}}.",
     "ariaConditionalAttr_title": "aria-errormessage requires aria-invalid to be set to a non-false value",
-    "ariaConditionalAttr_description": "Checks that elements with aria-errormessage also have aria-invalid set to \"true\", \"grammar\", or \"spelling\" — otherwise the error message is dropped from the accessibility tree.",
+    "ariaConditionalAttr_description": "Checks that elements with aria-errormessage also have aria-invalid set to \"true\", \"grammar\", or \"spelling\"; otherwise the error message is dropped from the accessibility tree.",
     "ariaConditionalAttr_summary_fail": "This element has aria-errormessage but aria-invalid is missing or \"false\", so the error message is not exposed.",
     "ariaConditionalAttr_hint_fail": "Set aria-invalid to \"true\" (or \"grammar\"/\"spelling\") whenever aria-errormessage should be exposed to assistive technology.",
     "ariaCheckedStateMismatch_title": "Native checkbox/radio aria-checked should match its actual state",
     "ariaCheckedStateMismatch_description": "Flags a native <input type=\"checkbox\">/<input type=\"radio\"> whose explicit aria-checked value disagrees with its actual checked/indeterminate state, for manual review.",
     "ariaCheckedStateMismatch_summary_cantTell": "This element’s aria-checked value does not match its actual checked/indeterminate state.",
-    "ariaCheckedStateMismatch_hint_cantTell": "Set aria-checked to match the element’s real state, or remove it — a native checkbox/radio already exposes this state without it.",
+    "ariaCheckedStateMismatch_hint_cantTell": "Set aria-checked to match the element’s real state, or remove it; a native checkbox/radio already exposes this state without it.",
     "cssOrientationLock_title": "CSS must not lock the page to a single orientation",
     "cssOrientationLock_description": "Checks that no @media (orientation: portrait|landscape) rule sets a transform: rotate(...) on the page, a known technique for defeating device orientation.",
     "cssOrientationLock_summary_fail": "A \"{{mediaText}}\" media query rotates \"{{selectorText}}\", locking the page to one orientation.",
@@ -31559,7 +31556,7 @@ const I18N = {
     "ariaText_title": "role=\"text\" elements should have no focusable descendants",
     "ariaText_description": "Checks that elements with role=\"text\" contain no focusable descendant (link, button, form control, tabindex, iframe, or contenteditable).",
     "ariaText_summary_cantTell": "This role=\"text\" element contains a focusable descendant.",
-    "ariaText_hint_cantTell": "Remove role=\"text\" (or remove the focusable descendant) — a \"plain text\" region should not contain focusable content.",
+    "ariaText_hint_cantTell": "Remove role=\"text\" (or remove the focusable descendant); a \"plain text\" region should not contain focusable content.",
     "focusOrderSemantics_title": "Elements added to the tab order should have interactive semantics",
     "focusOrderSemantics_description": "Flags elements with tabindex >= 0 whose explicit role is a non-interactive structural/document role (e.g. heading, list, region, presentation), for manual review.",
     "focusOrderSemantics_summary_cantTell": "This element is in the tab order (tabindex=\"{{tabindex}}\") but has a non-interactive role (\"{{role}}\").",
@@ -31570,10 +31567,10 @@ const I18N = {
     "pAsHeading_hint_cantTell": "If this text introduces a new section, use a real heading element (<h1>-<h6> or role=\"heading\") instead of styling a paragraph to look like one.",
     "tableFakeCaption_title": "A table's first row should not stand in for a real <caption>",
     "tableFakeCaption_description": "Flags tables with no <caption> whose first row has a single non-empty cell while other rows have multiple cells, for manual review of whether that cell is acting as a fake caption.",
-    "tableFakeCaption_summary_cantTell": "This table has no <caption>, but its first row is a single cell sitting above multi-cell rows — it may be acting as a fake caption.",
+    "tableFakeCaption_summary_cantTell": "This table has no <caption>, but its first row is a single cell sitting above multi-cell rows, so it may be acting as a fake caption.",
     "tableFakeCaption_hint_cantTell": "If this cell is meant to describe the table, use a real <caption> element instead of a lone first-row cell.",
     "tdHasHeader_title": "Data cells in large tables must have an associated header",
-    "tdHasHeader_description": "Checks that every <td> in a large, simple (no colspan/rowspan) table has an associated header — via a headers attribute, an implicit column <th> above it, or an implicit row <th> to its left.",
+    "tdHasHeader_description": "Checks that every <td> in a large, simple (no colspan/rowspan) table has an associated header, via a headers attribute, an implicit column <th> above it, or an implicit row <th> to its left.",
     "tdHasHeader_summary_fail": "This data cell has no associated header (no headers attribute, no column <th> above it, no row <th> to its left).",
     "tdHasHeader_hint_fail": "Add a headers attribute referencing the relevant <th> id(s), or restructure the table so this cell has an implicit row/column header.",
     "mouseOnlyEventHandlers_title": "Pointer-only inline event handlers should have a keyboard-reachable equivalent",
@@ -32764,7 +32761,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           : 4;
 
       // ACT afw4f7/09o5cg's own applicability is scoped to text that
-      // "expresses something in human language" — a string of pure
+      // "expresses something in human language". A string of pure
       // punctuation/symbol characters, with no letter or digit at all,
       // isn't language and is out of scope entirely, not a violation. Their
       // own passed example is exactly that: a paragraph of nothing but
@@ -33453,11 +33450,11 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // docs/LIMITATIONS.md). Reading it exactly once and caching the {has,
   // value} pair here avoids compounding that with a second read from
   // elsewhere in this same run (e.g. this function being called more than
-  // once for the same element). The shared cache this uses is
-  // deliberately reset at the start of every run (see dom-runner.js), so
-  // this does not — and is not relied on to — survive across two
-  // independent runs against the same window; a genuinely fresh jsdom
-  // window, or a real browser, is unaffected either way.
+  // once for the same element). The shared cache this uses is reset at
+  // the start of every run (see dom-runner.js), so this does not survive
+  // across two independent runs against the same window, and nothing here
+  // relies on it doing so; a fresh jsdom window, or a real browser, is
+  // unaffected either way.
   function __textShadowInfoEl(el, cs) {
     try {
       if (!el || el.nodeType !== 1) {
@@ -33618,7 +33615,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       // CSS opacity on an ancestor scales the *entire rendered
       // subtree* (its own background plus everything already
       // accumulated from descendants) as one compositing group
-      // against whatever is further out — not just that ancestor's
+      // against whatever is further out, not just that ancestor's
       // own background layer. Applying it here (after folding in
       // this ancestor's own bg) keeps that correct even when
       // accumulated alpha already reached 1 from an inner opaque
@@ -33747,21 +33744,20 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     // card/nav/modal over a page-level hero image" pattern.
     //
     // This does NOT extend to mix-blend-mode/filter or an ancestor's
-    // `opacity` — those are compositing-GROUP operations applied to that
+    // `opacity`: those are compositing-GROUP operations applied to that
     // ancestor's entire rendered subtree (including any "opaque" layer
     // inside it) before blending against whatever is further out, so a
     // closer opaque paint layer does not shield against them the way it
     // shields against a plain background-image. Applying the same
-    // short-circuit there would risk a confidently wrong pass —
-    // deliberately NOT done, matching this engine's no-false-positives
-    // bar.
+    // short-circuit there would risk a confidently wrong pass, so it
+    // is not done here, matching this engine's no-false-positives bar.
     //
     // `backdrop-filter` IS extended, because it is the
     // opposite kind of operation: it samples/filters whatever is already
     // rendered BEHIND the element (earlier in paint order), not the
     // element's own subtree, so a closer-to-el fully-opaque
     // background-color paints OVER the filtered result at el's screen
-    // position and hides it completely — the same physical occlusion
+    // position and hides it completely, the same physical occlusion
     // background-image gets, just sourced from "behind" instead of
     // "this element's own background image". Confirmed with a live
     // Chromium repro (not just spec-reading): a `backdrop-filter:
@@ -33873,7 +33869,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       // confident ratio. Group opacity uniformly scales an ancestor's
       // *entire* rendered subtree (its own background AND everything
       // already accumulated from descendants, including el's text)
-      // when compositing against what's behind it — computing that
+      // when compositing against what's behind it. Computing that
       // precisely for the foreground would require re-deriving the
       // text's rendered color the same way the background is folded
       // (rather than compositing a separately opacity-scaled
@@ -33977,7 +33973,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     return [];
   })();
 
-  // Existence check for a single ID token — never throws, returns false
+  // Existence check for a single ID token. Never throws, returns false
   // (not "unknown") when the document isn't available so callers degrade
   // to their pre-existing format-only behavior rather than guessing.
   function idExists(id) {
@@ -33991,8 +33987,8 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
 
   // Presence-only accessible-name check (aria-label / aria-labelledby /
   // title), for the few role-permission decisions conditioned on whether
-  // an element currently has a name (e.g. <section>'s permitted-roles set
-  // — see ALLOWED_ROLES_BY_ELEMENT below). Uses the same precedence as
+  // an element currently has a name (e.g. <section>'s permitted-roles set,
+  // see ALLOWED_ROLES_BY_ELEMENT below). Uses the same precedence as
   // dom-helpers.js's getLandmarkNameInfo (aria-label -> aria-labelledby ->
   // title). title counts, so a <section title="..."> resolves to the
   // 'section[named]' role key rather than plain 'section'.
@@ -34013,14 +34009,14 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     return false;
   }
 
-  // Shared "does this element have a landmark-scoping ancestor" primitive
-  // — <header>'s "banner", <footer>'s "contentinfo", and <aside>'s
+  // Shared "does this element have a landmark-scoping ancestor" primitive.
+  // <header>'s "banner", <footer>'s "contentinfo", and <aside>'s
   // "complementary" implicit roles are all conditioned on the same W3C
   // ARIA-in-HTML exclusion: suppressed when nested inside sectioning
   // content (article/aside/nav/section), and for header/footer only,
   // also suppressed when nested inside <main> (pass includeMain: true).
-  // <aside> itself omits <main> from its own exclusion list — see the
-  // `aside` case in getElementRoleKey below — so callers must pass the
+  // <aside> itself omits <main> from its own exclusion list (see the
+  // `aside` case in getElementRoleKey below), so callers must pass the
   // right includeMain for the role they're computing.
   //
   // Role-aware, not tag-only: an ancestor's bare tag only counts when it
@@ -34044,7 +34040,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
       if (LANDMARK_SCOPING_TAGS.has(tag)) return true;
       return includeMain && tag === 'main';
     }
-    // A role attribute is present (even empty/invalid) — the element's
+    // A role attribute is present (even empty/invalid); the element's
     // bare TAG no longer counts; only an explicit, scoping-relevant
     // role value does.
     const token = trim(roleAttr).split(/\s+/)[0].toLowerCase();
@@ -34069,7 +34065,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   }
 
   // -------------------------------------------------------------------
-  // A) Abstract roles — MUST NOT be used directly in a role="" attribute.
+  // A) Abstract roles: MUST NOT be used directly in a role="" attribute.
   // -------------------------------------------------------------------
   // <generated:aria-abstract-roles>
   const ABSTRACT_ROLES = new Set([
@@ -34090,10 +34086,10 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
 
   // -------------------------------------------------------------------
   // B) Valid, concrete (non-abstract) roles authors should not explicitly
-  //    declare — either because WAI-ARIA has deprecated them (a direct
+  //    declare, either because WAI-ARIA has deprecated them (a direct
   //    replacement exists) or because they are reserved for
   //    user-agent-internal use. Flagged by aria-deprecated-role, not
-  //    aria-roles-valid (which only checks existence/abstractness) — see
+  //    aria-roles-valid (which only checks existence/abstractness); see
   //    DEPRECATED_ROLE_GUIDANCE below for per-role, reason-accurate
   //    messaging.
   // -------------------------------------------------------------------
@@ -34104,14 +34100,14 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   ]);
 
   // Valid roles reserved for user-agent-internal use, which ARIA states at
-  // SHOULD NOT strength — conforming, so reported as cantTell.
+  // SHOULD NOT strength: conforming, so reported as cantTell.
   const AUTHOR_DISCOURAGED_ROLES = new Set([
     'generic' // "primarily for implementors of user agents"
   ]);
 
   // Roles carrying an author MUST NOT, reported as fail. Empty under ARIA 1.2
-  // and 1.3, whose only author MUST NOT covers abstract roles — the concern of
-  // aria-roles-valid.
+  // and 1.3, whose only author MUST NOT covers abstract roles; that's the
+  // concern of aria-roles-valid.
   const AUTHOR_PROHIBITED_ROLES = new Set([]);
 
   // Deprecated but still ALLOWED states/properties (SHOULD NOT, still
@@ -34135,7 +34131,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     },
     generic: {
       key: 'ariaDeprecatedRole_guidance_generic',
-      text: 'Remove it — this role is reserved for user-agent-internal use, not authors. Use role="presentation"/"none" to strip semantics, a semantic role like "group" to convey grouping, or simply a plain element (which already carries the implicit generic role) instead.'
+      text: 'Remove it: this role is reserved for user-agent-internal use, not authors. Use role="presentation"/"none" to strip semantics, a semantic role like "group" to convey grouping, or a plain element (which already carries the implicit generic role) instead.'
     }
   };
 
@@ -34154,12 +34150,12 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   // -------------------------------------------------------------------
   // C) Complete set of concrete (non-abstract) WAI-ARIA 1.2 role tokens,
   //    plus the WAI-ARIA Graphics Module 1.0 roles (graphics-document/
-  //    graphics-object/graphics-symbol) — a separate W3C Recommendation
+  //    graphics-object/graphics-symbol), a separate W3C Recommendation
   //    that extends core ARIA, with a companion Graphics Accessibility API
   //    Mappings REC defining AT support. Without these, aria-roles-valid
   //    would wrongly report an AT-recognized role as unrecognized.
   //    Digital Publishing WAI-ARIA (doc-abstract etc.) is a separate
-  //    module, deliberately left out of scope for now.
+  //    module, left out of scope for now.
   // -------------------------------------------------------------------
   // <generated:aria-concrete-roles>
   const CONCRETE_ROLES = new Set([
@@ -34298,16 +34294,16 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
 
   // -------------------------------------------------------------------
   // D) ARIA attribute value types.
-  //    'token'        — one value from a fixed enumerated set
-  //    'token-list'   — space-separated values from a fixed enumerated set
-  //    'boolean'      — "true" | "false"
-  //    'tristate'     — "true" | "false" | "mixed"
-  //    'boolean-undefined' — "true" | "false" | "undefined"
-  //    'idref'        — a single ID token (existence not verified here)
-  //    'idref-list'   — space-separated ID tokens
-  //    'integer'      — a base-10 integer (may be negative where noted)
-  //    'number'       — a real number
-  //    'string'       — free-form text (only non-emptiness may be checked)
+  //    'token'        : one value from a fixed enumerated set
+  //    'token-list'   : space-separated values from a fixed enumerated set
+  //    'boolean'      : "true" | "false"
+  //    'tristate'     : "true" | "false" | "mixed"
+  //    'boolean-undefined' : "true" | "false" | "undefined"
+  //    'idref'        : a single ID token (existence not verified here)
+  //    'idref-list'   : space-separated ID tokens
+  //    'integer'      : a base-10 integer (may be negative where noted)
+  //    'number'       : a real number
+  //    'string'       : free-form text (only non-emptiness may be checked)
   // -------------------------------------------------------------------
   const ATTR_VALUE_TYPES = {
     'aria-activedescendant': 'idref',
@@ -34379,8 +34375,8 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   };
 
   // -------------------------------------------------------------------
-  // E) Required states/properties per role (see file header — deliberately
-  //    conservative; only unambiguous, context-independent cases).
+  // E) Required states/properties per role (see file header: conservative
+  //    on purpose, only unambiguous, context-independent cases).
   // -------------------------------------------------------------------
   const REQUIRED_PROPS_BY_ROLE = {
     checkbox: ['aria-checked'],
@@ -34406,7 +34402,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   // F) Required owned (child) roles for composite/container roles.
   //    Value is an array of alternative acceptable child roles (any one
   //    satisfies the requirement). aria-owns references also count as
-  //    "owning" — checked by the rule, not this table.
+  //    "owning"; that's checked by the rule, not this table.
   // -------------------------------------------------------------------
   const REQUIRED_OWNED_ROLES = {
     list: ['listitem'],
@@ -34447,15 +34443,15 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   };
 
   // -------------------------------------------------------------------
-  // H) ARIA-in-HTML permitted roles per element (deliberately scoped to
-  //    the most common elements first — see file header). `null` values
+  // H) ARIA-in-HTML permitted roles per element (scoped on purpose to
+  //    the most common elements first, see file header). `null` values
   //    are used for elements that permit "any role" in typical states.
   //    Element keys may include a simple attribute condition using the
   //    form 'tag[attr]' or 'tag[attr=value]' for the small number of
   //    elements whose permitted roles depend on an attribute.
   // -------------------------------------------------------------------
   const ALLOWED_ROLES_BY_ELEMENT = {
-    // A plain <a href> is constrained to these override roles — unlike a
+    // A plain <a href> is constrained to these override roles, unlike a
     // hrefless <a>, which is unconstrained. Restating the native 'link'
     // role is always permitted via the native-role fallback below.
     'a[href]': [
@@ -34477,7 +34473,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     // Restating the native 'article' role remains permitted via the
     // native-role fallback below regardless of this list.
     article: ['feed', 'presentation', 'none', 'document', 'application', 'main', 'region'],
-    // <area href> permits no override role at all — only its native 'link'
+    // <area href> permits no override role at all, only its native 'link'
     // role, via the native-role fallback below. Empty array (not null)
     // encodes "constrained to nothing", same convention as
     // 'label[associated]' below.
@@ -34489,7 +34485,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     // to restate, so an empty array is correct (not "unconstrained").
     html: [],
     // No override role is permitted on <picture>, and it has no implicit
-    // ARIA role to restate — empty array, same convention as 'html' /
+    // ARIA role to restate. Empty array, same convention as 'html' /
     // 'area[href]' above.
     picture: [],
     // Includes 'gridcell', 'separator', 'slider', 'treeitem': composite-grid
@@ -34518,7 +34514,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     h5: ['tab', 'presentation', 'none'],
     h6: ['tab', 'presentation', 'none'],
     hr: ['none', 'presentation'],
-    // 'complementary' is <aside>'s own native role — allowed via the
+    // 'complementary' is <aside>'s own native role, allowed via the
     // native-role fallback below even though it's not in this list
     // (spec: "also allowed, but NOT RECOMMENDED", same shape as <nav>).
     aside: ['feed', 'none', 'note', 'presentation', 'region', 'search'],
@@ -34526,8 +34522,8 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     // The array is identical for both keys; what differs by nesting is only
     // the native-role match (see 'header[toplevel]' below and
     // getElementRoleKey's header branch). A top-level <header role="banner">
-    // restates its own implicit "banner" role — a no-op, always permitted —
-    // even though 'banner' isn't in this array (same shape as <section>'s
+    // restates its own implicit "banner" role, a no-op that's always
+    // permitted even though 'banner' isn't in this array (same shape as <section>'s
     // named/unnamed split).
     'header[toplevel]': ['group', 'none', 'presentation', 'doc-footnote'],
     header: ['group', 'none', 'presentation', 'doc-footnote'],
@@ -34581,11 +34577,11 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     ],
     // Only 'application' is permitted on <video>.
     video: ['application'],
-    // Same as <video>, plus 'img'/'document' — an <object> can stand in
+    // Same as <video>, plus 'img'/'document': an <object> can stand in
     // for an image or a full document.
     object: ['application', 'img', 'document'],
     // 'region' is only permitted when the section has an accessible name
-    // (its conditional native role in that case — see getElementRoleKey's
+    // (its conditional native role in that case, see getElementRoleKey's
     // section[named]/section split above); every other role here is
     // permitted regardless of naming.
     'section[named]': [
@@ -34678,7 +34674,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     'input[type=email]': ['combobox', 'spinbutton'],
     select: ['menu'],
     // <select multiple> or <select size> 1>: native role is listbox, not
-    // combobox (see NATIVE_ROLE_BY_ELEMENT_KEY below) — no override role
+    // combobox (see NATIVE_ROLE_BY_ELEMENT_KEY below); no override role
     // is permitted, but restating the native listbox role is always
     // allowed via the native-role fallback.
     'select[multiple]': [],
@@ -34696,7 +34692,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   // -------------------------------------------------------------------
   // H2) Native/implicit role per ALLOWED_ROLES_BY_ELEMENT key. Keeping an
   //     element's own native role (e.g. role="list" on <ul>, role="table"
-  //     on <table>) is never a spec violation — the ARIA-in-HTML "allowed
+  //     on <table>) is never a spec violation. The ARIA-in-HTML "allowed
   //     roles" tables enumerate roles you may override *to*, not the
   //     native default, which remains implicitly valid whether or not it
   //     is redundantly re-declared. isRoleAllowedOnElement always accepts
@@ -34709,7 +34705,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     aside: 'complementary',
     button: 'button',
     form: 'form',
-    // No entry for plain 'header' — a header nested in sectioning
+    // No entry for plain 'header': a header nested in sectioning
     // content/<main> has no implicit role to restate.
     'header[toplevel]': 'banner',
     h1: 'heading',
@@ -34745,12 +34741,12 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   // -------------------------------------------------------------------
   // I) Native HTML tag -> implicit "containment role" mapping, used only
   //    for aria-required-children / aria-required-parent ownership
-  //    matching (getContainmentRole). Deliberately small and scoped to
+  //    matching (getContainmentRole). Kept small on purpose and scoped to
   //    exactly the roles referenced by REQUIRED_OWNED_ROLES /
   //    REQUIRED_CONTEXT_ROLE above, so that adding an explicit container
   //    role (e.g. role="list" on a <ul>, a common CSS-reset workaround)
   //    does not produce a false positive against plain native children
-  //    (e.g. <li> with no role attribute) — same scope-limiting rationale
+  //    (e.g. <li> with no role attribute), same scope-limiting rationale
   //    as ALLOWED_ROLES_BY_ELEMENT (see file header).
   // -------------------------------------------------------------------
   const NATIVE_CONTAINMENT_ROLE_BY_ELEMENT = {
@@ -34771,7 +34767,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
 
   // Several of the roles above are conditional in HTML-AAM: the element only
   // carries them inside the native structure they belong to. An <li> loose in
-  // a <div> is not a listitem, and ACT bc4a75 turns on exactly that —
+  // a <div> is not a listitem, and ACT bc4a75 turns on exactly that:
   // `<div role="list"><li>Item</li><span role="link">x</span></div>` fails,
   // because the list owns no valid child at all once the <li> stops counting.
   // `directParent` distinguishes HTML-AAM's "child of" conditions (li, option,
@@ -34878,7 +34874,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   }
 
   // Validates a single attribute's raw string value against its declared
-  // value type. Returns { valid, reason } — reason is a short machine
+  // value type. Returns { valid, reason }; reason is a short machine
   // code, not a user-facing string (rules localize their own messages).
   function validateAttrValue(name, rawValue) {
     const type = getAttrValueType(name);
@@ -34887,7 +34883,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     const v = trim(rawValue);
 
     // ACT 6a7281's own applicability: "any WAI-ARIA state or property that
-    // is not empty" — an explicitly empty value, including a bare boolean-
+    // is not empty". An explicitly empty value, including a bare boolean-
     // style attribute with no "=value" at all (e.g. `aria-checked` alone),
     // is out of this rule's scope entirely for every value type, not a
     // violation. Empty idrefs/idref-lists are additionally a common,
@@ -34933,9 +34929,9 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
         const formatOk = !/\s/.test(v);
         if (!formatOk) return { valid: false, reason: 'expected-single-idref' };
         // ACT 6a7281's own Background: aria-errormessage is a non-required
-        // property whose target commonly doesn't exist yet — an HTML
+        // property whose target commonly doesn't exist yet. An HTML
         // element with that id "may be created in response to an event
-        // that may or may not happen" — so existence is deliberately not
+        // that may or may not happen", so existence is not
         // checked for this one attribute, format only. aria-activedescendant
         // has no such carve-out in ACT's own text and keeps the existence
         // check.
@@ -34945,7 +34941,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
       }
       case 'idref-list': {
         const parts = v.split(/\s+/).filter(Boolean);
-        // Only flag when NONE of the referenced ids resolve — a
+        // Only flag when NONE of the referenced ids resolve. A
         // partially-dangling list (some ids exist, some don't) is left
         // unflagged.
         if (!parts.some((p) => idExists(p)))
@@ -35001,7 +34997,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     if (tag === 'header') {
       // <header>'s own implicit role is conditional: "banner" when
       // top-level (not nested inside sectioning content/<main>),
-      // generic/null when nested — see hasLandmarkScopingAncestor above
+      // generic/null when nested. See hasLandmarkScopingAncestor above
       // (includeMain: true, since <header>'s exclusion list includes
       // <main>). So role="banner" is a permitted no-op restatement only at
       // the top level; 'banner' isn't in <header>'s allowedRoles array and
@@ -35050,7 +35046,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     if (tag === 'select') {
       // <select multiple> or <select size> 1>: native role becomes
       // listbox instead of combobox (WHATWG HTML-AAM), a distinct
-      // permitted-roles entry — see ALLOWED_ROLES_BY_ELEMENT/
+      // permitted-roles entry. See ALLOWED_ROLES_BY_ELEMENT/
       // NATIVE_ROLE_BY_ELEMENT_KEY above.
       let isMultiSelect;
       try {
@@ -35085,9 +35081,9 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
       : '';
   }
 
-  // Returns { constrained, allowed } — constrained=false means this
+  // Returns { constrained, allowed }; constrained=false means this
   // element/role combination has no asserted constraint (rule should
-  // not flag it), matching the deliberately-scoped table above. An
+  // not flag it), matching the intentionally scoped table above. An
   // element's own native/implicit role (see NATIVE_ROLE_BY_ELEMENT_KEY)
   // is always allowed, even when not separately listed.
   function isRoleAllowedOnElement(el, role) {
@@ -35102,15 +35098,15 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   // Effective role for ownership/context matching only (aria-required-
   // children / aria-required-parent): explicit role wins when present;
   // otherwise falls back to the small NATIVE_CONTAINMENT_ROLE_BY_ELEMENT
-  // map above. Not a general-purpose implicit-role resolver — scoped
-  // deliberately narrow, see the table's header comment.
+  // map above. Not a general-purpose implicit-role resolver; kept
+  // narrow on purpose, see the table's header comment.
   //
   // The explicit role must be a real, valid concrete ARIA role to count:
   // an invalid/unrecognized role="" token (e.g. a library's own
   // non-standard "columngroup") is ignored by browsers/AT, which fall back
   // to the implicit role. Without this, a bogus role token wrongly
   // "blocks" the ancestor/descendant containment-role search instead of
-  // being transparent to it — e.g. role="columnheader" cells inside a
+  // being transparent to it, e.g. role="columnheader" cells inside a
   // role="columngroup" wrapper (not a real ARIA role) that itself sits
   // inside the real role="row" ancestor should still resolve to "row".
   function getContainmentRole(el) {
@@ -35158,8 +35154,8 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     getContainmentRole,
 
     // An element's own native/implicit ARIA-in-HTML role (see
-    // NATIVE_ROLE_BY_ELEMENT_KEY above) — previously internal-only
-    // (used by isRoleAllowedOnElement), now also re-exported for
+    // NATIVE_ROLE_BY_ELEMENT_KEY above), used internally by
+    // isRoleAllowedOnElement and also exported for
     // aria-prohibited-attr's roleless-element branch, which needs to
     // tell "no role at all" (e.g. a bare <span>/<div>) apart from "has
     // a real implicit role" (e.g. <button>, <a href>) without
@@ -35167,10 +35163,11 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     getNativeRoleForElement,
 
     // Shared "does this element have a landmark-scoping ancestor"
-    // primitive — see its own header comment above. Re-exported at
+    // primitive, see its own header comment above. Re-exported at
     // helpers' top level too (src/core/dom-helpers.js), matching
-    // getLandmarkNameInfo's precedent, for the manual landmark-check
-    // files that used to each carry their own (buggy, tag-only) copy.
+    // getLandmarkNameInfo's precedent, so the manual landmark-check
+    // files can share one implementation instead of each carrying its
+    // own copy.
     hasLandmarkScopingAncestor
   };
 });
@@ -35529,15 +35526,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // Flat-tree (composed) parent: a distributed/slotted node's real rendered
   // parent is the <slot> it's assigned to, NOT its own light-DOM parentNode
   // (parentNode is unaffected by slot assignment and stays truthy for any
-  // normally-connected slotted element — checking it first, as an earlier
-  // version of this helper did, means the assignedSlot branch never fires
-  // for the common case of a real, connected slotted child, silently
-  // treating it as if it rendered under its light-DOM parent instead of
-  // the shadow-tree container it's actually distributed into). assignedSlot
-  // must be checked first; parentNode only applies to nodes that aren't
-  // currently distributed through a slot. Once climbing reaches a
-  // ShadowRoot itself (parentNode is null there), `.host` is the shadow
-  // host element directly — NOT `getRootNode({composed:true})`, which
+  // normally-connected slotted element). Checking parentNode first would mean
+  // the assignedSlot branch never fires for the common case of a real,
+  // connected slotted child, silently treating it as if it rendered under
+  // its light-DOM parent instead of the shadow-tree container it's actually
+  // distributed into. assignedSlot must be checked first; parentNode only
+  // applies to nodes that aren't currently distributed through a slot. Once
+  // climbing reaches a ShadowRoot itself (parentNode is null there), `.host`
+  // is the shadow host element directly, not `getRootNode({composed:true})`, which
   // resolves all the way to the top-level document, skipping past the
   // immediate shadow boundary this function is trying to climb out of one
   // level at a time.
@@ -36135,7 +36131,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     for (const r of roots) {
       if (!r) continue;
       // querySelectorAll never returns its own context node, only
-      // descendants — so an attribute/role selector can never match `r`
+      // descendants, so an attribute/role selector can never match `r`
       // itself this way. In the default (unscoped) case `r` is
       // `document.documentElement` (the <html> element), so without this
       // self-match every rule using this helper would be blind to an issue
@@ -37107,7 +37103,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // Other elements that are natively tabbable by default (no explicit
       // tabindex required): <button>, <summary>, and <a>/<area> with a
       // non-empty href. Real browsers keep these in the tab order
-      // regardless of aria-hidden — this is exactly the "aria-hidden on a
+      // regardless of aria-hidden; this is exactly the "aria-hidden on a
       // focusable element" anti-pattern that aria-hidden-focus.js itself
       // detects as a violation, so the eligibility model must evaluate
       // these too rather than silently excluding them. getPlatformFocusability
@@ -37291,11 +37287,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // style already reflects the fully-resolved (post-inheritance)
     // value. Checked here, before the opacity accumulation walk below,
     // so an element that is BOTH opacity:0 AND visibility:hidden (a
-    // common hover/JS-reveal dropdown pattern — confirmed on a real
+    // common hover/JS-reveal dropdown pattern, confirmed on a real
     // site, Getty's global nav dropdowns) is correctly reported as
     // 'visibilityHidden' rather than only 'opacityZero'. Reporting only
-    // 'opacityZero' matters because callers that deliberately treat
-    // opacity:0 as "still in-scope" (e.g. aria-hidden-focus, which must
+    // 'opacityZero' matters because callers that treat
+    // opacity:0 as "still in-scope" on purpose (e.g. aria-hidden-focus, which must
     // not exclude opacity-based hiding) would otherwise see no other
     // blocking reason and wrongly conclude the element is focusable,
     // even though visibility:hidden alone already removes it from the
@@ -37311,13 +37307,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     // 2) CSS visibility suppression + opacity chain
     //
-    // Two passes over the SAME ancestor chain, deliberately NOT
-    // interleaved: display:none (and content-visibility:hidden) are
-    // absolute, un-overridable blocks — there is no CSS mechanism for a
+    // Two passes over the SAME ancestor chain, kept separate on purpose:
+    // display:none (and content-visibility:hidden) are
+    // absolute, un-overridable blocks. There is no CSS mechanism for a
     // descendant to un-hide itself from a display:none ancestor, unlike
     // visibility:hidden (invertible) or opacity (never a hard block by
-    // this function's own design — see callers like aria-hidden-focus
-    // that deliberately keep opacity:0 in-scope). A single interleaved
+    // this function's own design, see callers like aria-hidden-focus
+    // that keep opacity:0 in-scope on purpose). A single interleaved
     // loop returning on the FIRST blocking condition would let a closer
     // ancestor's opacity:0 short-circuit before a farther ancestor's
     // display:none is reached, hiding the stronger, unconditional block
@@ -37447,7 +37443,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
       if (cssBlock === 'displayNone') return __cacheAndReturn(out(false, ['displayNone'], {}));
       // NOTE: unlike display:none, CSS visibility is inherited and thus
-      // invertible — a descendant with an explicit visibility:visible
+      // invertible: a descendant with an explicit visibility:visible
       // re-renders even under a visibility:hidden ancestor. So an
       // ancestor's visibility:hidden must NOT short-circuit this walk;
       // the target node's own fully-resolved visibility is checked
@@ -37760,7 +37756,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // Recursively computes an IDREF-referenced node's own text alternative,
   // per the Accessible Name and Description Computation spec (resolving a
   // reference re-applies the name-computation algorithm to the target, it
-  // does not just read raw textContent — see getContentNameInfo for why
+  // does not just read raw textContent. See getContentNameInfo for why
   // raw textContent misses image alt text and other attribute-sourced
   // names on descendants). `visited` guards against cycles reachable via
   // direct aria-labelledby chains (e.g. two elements labelling each
@@ -37935,13 +37931,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // Computes a wrapping/explicit <label>'s own text for the purpose of
   // naming ONE specific control inside it, excluding that control's own
   // subtree (matches HTML-AAM's "label text minus embedded control
-  // content"). Deliberately does NOT call back into
-  // getAccessibleNameInfo/getContentNameInfo for descendants — only img
+  // content"). On purpose, it does NOT call back into
+  // getAccessibleNameInfo/getContentNameInfo for descendants: only img
   // alt (getTextAlternativeInfo), aria-label (getAriaLabelInfo), and
   // aria-labelledby (getAriaLabelledByInfo) on descendants, all of which
-  // are leaf-safe with respect to <label> lookups. This is intentional:
+  // are leaf-safe with respect to <label> lookups. This matters because
   // getAccessibleNameInfo calls this function, and getContentNameInfo's
-  // own descendant walk calls getAccessibleNameInfo — if this function
+  // own descendant walk calls getAccessibleNameInfo. If this function
   // routed back through either of those instead, a control nested inside
   // its own naming <label> (the exact case this exists to handle) would
   // recurse forever between "what's my name" and "what's my label's
@@ -38082,9 +38078,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     // Native <label> association via the HTML `.labels` API, which
     // resolves BOTH `<label for="...">` and wrapping `<label>...</label>`
-    // in one call, for any genuinely labelable element (button, input,
-    // meter, output, progress, select, textarea — `.labels` is simply
-    // absent/undefined on anything else, so this never over-triggers).
+    // in one call, for any labelable element (button, input,
+    // meter, output, progress, select, textarea). `.labels` is simply
+    // absent/undefined on anything else, so this never over-triggers.
     // Catches e.g. an unlabeled icon-only <button> wrapped in a <label>,
     // which the id-based lookup below misses (it only handles explicit
     // for="" and such a button has no id).
@@ -38197,8 +38193,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     // POLICY NOTE (revisit if ever reconsidered): title is accepted here as
     // a last-resort accessible-name source, matching HTML-AAM/accname. This
-    // is a deliberate, spec-compliant choice -- but title is a genuinely
-    // weak mechanism in practice (no touch/mobile exposure, inconsistent
+    // is a spec-compliant choice, but title is a weak
+    // mechanism in practice (no touch/mobile exposure, inconsistent
     // screen-reader support, no visible affordance for sighted users), and
     // this is the shared function nearly every accessible-name-dependent
     // rule in the engine goes through. Flagged here so it isn't silently
@@ -38338,7 +38334,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   }
 
   // <canvas> fallback content is the element's *children*, not just its
-  // rendered text — a documented HTML5 technique is an equivalent <img
+  // rendered text. A documented HTML5 technique is an equivalent <img
   // alt="..."> (or similarly self-describing element) inside <canvas>.
   // textContent alone misses that, since alt text isn't part of it.
   function __hasMeaningfulCanvasFallbackDescendant(container) {
@@ -38428,7 +38424,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
       // <canvas> is not a labelable element (no browser computes an
       // accessible name from <label for="...">), so only ARIA naming
-      // (and title, as a generic last-resort accname source) count —
+      // (and title, as a generic last-resort accname source) count,
       // unlike getAccessibleNameInfo, which also accepts native
       // <label> associations.
       const aria = getAriaNameInfo(el, _ctx, opts);
@@ -38471,9 +38467,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
     };
   }
 
-  // C.1) "Name from content" — recursive accname-aligned content-name computation.
+  // C.1) "Name from content": recursive accname-aligned content-name computation.
   //
-  // Rationale: the accname spec's "name from content" step (2F) is recursive —
+  // Rationale: the accname spec's "name from content" step (2F) is recursive:
   // for each child node, use that CHILD's own accessible name if it has one
   // (aria-label/aria-labelledby/native <label>/title, or `alt` for image-like
   // elements) rather than only concatenating literal text nodes. A naive
@@ -38486,8 +38482,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
     if (!isElement(el))
       return { present: false, value: '', mechanism: 'unsupported', flags: ['notElement'] };
 
-    // Shares __nameComputationDepth with computeIdRefTargetTextAlternative
-    // — see that function's header comment for why a single per-call
+    // Shares __nameComputationDepth with computeIdRefTargetTextAlternative;
+    // see that function's header comment for why a single per-call
     // guard isn't enough on its own.
     if (__nameComputationDepth >= __NAME_COMPUTATION_MAX_DEPTH) {
       return { present: false, value: '', mechanism: 'none', flags: ['depth-limit'] };
@@ -38553,12 +38549,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
       if (!isElement(node)) return;
 
       // Skip anything not exposed to the accessibility tree (hidden,
-      // aria-hidden, display:none, inert, etc.) — same scope as
+      // aria-hidden, display:none, inert, etc.), same scope as
       // isAccTreeEligible, so a hidden descendant never contributes.
       //
       // Exception: opts.includeHidden (set by computeIdRefTargetTextAlternative
       // when the aria-labelledby/aria-describedby TARGET itself is hidden)
-      // skips this check entirely except for genuinely non-rendered tags.
+      // skips this check entirely except for tags that never render at all.
       // Per the accname spec, a directly-referenced target's own hidden
       // state doesn't block name computation, and that bypass covers the
       // target's whole subtree, not just the target element. Without it,
@@ -38610,8 +38606,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
         // <img alt="" aria-labelledby="..."> must contribute the
         // referenced text, not nothing, to its parent's content name.
         //
-        // Deliberately uses getAriaNameInfo (aria only), NOT the general
-        // getAccessibleNameInfo — the latter falls back to a native
+        // Uses getAriaNameInfo (aria only) on purpose, NOT the general
+        // getAccessibleNameInfo, since the latter falls back to a native
         // <label>/title, which for an image-like descendant must rank
         // BELOW alt, not above it (otherwise an image's title tooltip would
         // win over its real alt text).
@@ -38623,7 +38619,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
           return;
         }
 
-        // input[type=image] (unlike img/area) is a genuinely
+        // input[type=image] (unlike img/area) is a real, plain
         // labelable form control -- a native <label> association
         // still outranks its alt attribute per accname's
         // element-specific name mapping, so it's checked here,
@@ -38710,11 +38706,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // descendant's children and then decide whether the title was needed,
     // without duplicating the <slot> handling.
     function walkChildren(node, parts) {
-      // A <slot>'s own childNodes are its FALLBACK content only —
+      // A <slot>'s own childNodes are its FALLBACK content only,
       // rendered solely when nothing is assigned to it. When real content
       // IS distributed into it, that's what's exposed to the accessibility
       // tree, and it lives elsewhere in the light DOM, not as this node's
-      // children — so prefer assignedNodes() and fall back to childNodes.
+      // children, so prefer assignedNodes() and fall back to childNodes.
       if (lower(node.tagName) === 'slot' && typeof node.assignedNodes === 'function') {
         let assigned;
         try {
@@ -39224,7 +39220,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
         }
 
         // A same-tag sibling before this node (i > 1) already means
-        // an unqualified tag selector would be ambiguous — no need
+        // an unqualified tag selector would be ambiguous, so there's no need
         // to also scan forward in that case. Only scan
         // nextElementSibling when this node is the first of its tag
         // among its siblings, to catch the case where the
@@ -39266,10 +39262,10 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // catch this: it only verifies THIS element matches the string,
       // never that the string is unique document-wide.
       //
-      // Fix: when multiple roots are in play, don't stop early --
+      // So when multiple roots are in play, don't stop early --
       // keep climbing (same as the always-correct no-contextSelector
-      // path) until finding a genuinely unique anchor or reaching the
-      // true document root, which is always singular. That restores
+      // path) until finding an anchor that's actually unique or reaching the
+      // true document root, which is always singular. That preserves
       // the invariant the final safety-check comment below relies on,
       // rather than needing a separate (more expensive) document-wide
       // uniqueness re-check.
@@ -39336,7 +39332,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       const candidate = parts.join(' > ') || tag || 'html';
 
       // Verify the constructed selector string actually resolves to
-      // `el` per the CSS engine's own semantics — a real safety net,
+      // `el` per the CSS engine's own semantics. This is a real safety net,
       // since some selector engines (observed in jsdom) disagree with
       // this function's own :nth-of-type sibling counting in edge
       // cases. `el.matches(candidate)` checks exactly that (does the
@@ -39349,13 +39345,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // descendant) combinators, so a correctly-matching chain can
       // only resolve to one element short of a malformed document
       // (e.g. two <html> roots) -- true as long as the walk above
-      // never stops short of a genuinely unique anchor/root, which is
-      // exactly what `stopAtMatchedRoot` now guarantees (see its own
-      // comment above; a multi-root contextSelector scan stopping
-      // early used to violate this invariant silently). Re-deriving
+      // never stops short of an anchor/root that's actually unique, which is
+      // exactly what `stopAtMatchedRoot` guarantees (see its own
+      // comment above; without it, a multi-root contextSelector scan
+      // stopping early would violate this invariant silently). Re-deriving
       // that guarantee via a
       // document-wide :nth-of-type scan was measured to cost O(total
-      // same-tag siblings) per call — pathological on pages with many
+      // same-tag siblings) per call, which is pathological on pages with many
       // flat, unidentified siblings (e.g. hundreds of unlabeled
       // <img>s), while contributing no realistic additional safety.
       try {
@@ -39460,7 +39456,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
   function isPlaceholderCapable(el) {
     // Per HTML, `placeholder` is only a name/hint source for text-entry
-    // input types and <textarea> — browsers/AT ignore it on other input
+    // input types and <textarea>. Browsers/AT ignore it on other input
     // types (checkbox, radio, range, color, date, file, ...) and on
     // <select>, so it must not be treated as an accessible-name source
     // for those.
@@ -39501,10 +39497,10 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
   // A <label> contributes a name to its associated control either via its
   // own aria-label/aria-labelledby (checked first, the usual ARIA-over-
-  // content precedence — so <label aria-label="Toggle Navigation"> names
+  // content precedence, so <label aria-label="Toggle Navigation"> names
   // its control even when its only child content is aria-hidden), or,
   // failing that, its rendered content (getContentNameInfo, which excludes
-  // aria-hidden/display:none/inert descendants — so a label whose only
+  // aria-hidden/display:none/inert descendants, so a label whose only
   // text is aria-hidden gives the control no name despite the association).
   function labelContributesAccessibleName(lab) {
     try {
@@ -39534,7 +39530,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // Deterministic, stable subset:
     // - <label for="id">
     // - wrapping <label> ... <input> ...
-    // A structural association alone isn't enough — see
+    // A structural association alone isn't enough; see
     // labelContributesAccessibleName above for what counts.
     if (!isElement(el)) return false;
 
@@ -39554,7 +39550,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     let out = false;
     let associatedLabels = [];
 
-    // Prefer the native `.labels` API — resolves both wrapping <label>
+    // Prefer the native `.labels` API, which resolves both wrapping <label>
     // and <label for="id"> association in one call, as real elements.
     try {
       if (el && 'labels' in el && el.labels && el.labels.length) {
@@ -39564,8 +39560,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     if (!associatedLabels.length) {
       // Fallback for environments without a working `.labels` API:
-      // structural-only (pre-existing behavior, no content check —
-      // __lookupLabelForId's cache doesn't retain an element ref).
+      // structural-only, no content check, since
+      // __lookupLabelForId's cache doesn't retain an element ref.
       const id = trim(getAttr(el, 'id'));
       if (id) {
         const entry = __lookupLabelForId(id, '__default__');
@@ -39662,13 +39658,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
   }
 
   // Resolves the final {outcome, severity, occurrences} for a rule that
-  // collects two independent confidence tiers during one run — some
+  // collects two independent confidence tiers during one run: some
   // findings are confident enough for a hard `fail`, others only warrant
   // `cantTell` (e.g. "this needs human review"). The naive approach
   // (`if (failOccurrences.length) return fail(failOccurrences); else if
   // (cantTellOccurrences.length) return cantTell(cantTellOccurrences);`)
   // silently drops every cantTell-tier finding whenever at least one
-  // fail-tier finding also exists on the same page — a real information
+  // fail-tier finding also exists on the same page. That's a real information
   // loss for a real scan, not just a test artifact: a page with one
   // confident violation and five "needs review" ones would report only
   // the one. This is a recurring shape across automatic rules with a
@@ -39679,13 +39675,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // The correct behavior when a fail-tier finding exists: the overall
   // outcome is still `fail` (a real, confident violation must still gate
   // CI), but BOTH buckets' occurrences are returned together, not just
-  // the fail ones — each occurrence already carries its own
+  // the fail ones. Each occurrence already carries its own
   // distinguishing `data.details.reasonCode`/summary/hint, so nothing
   // about which findings were confident vs. which need review is lost;
-  // only the single aggregate outcome label stays singular, which was
+  // only the single aggregate outcome label stays singular, which is
   // already this engine's accepted one-outcome-per-rule-run schema
   // constraint (changing that is a separate, much larger, cross-cutting
-  // decision spanning report.js/baseline.js/explain.js/WCAG rollups —
+  // decision spanning report.js/baseline.js/explain.js/WCAG rollups,
   // out of scope for this helper).
   function resolveTieredOutcome(failOccurrences, cantTellOccurrences, severity) {
     function withOccurrenceTier(items, tier) {
@@ -39845,8 +39841,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // agree on what a label is worth.
     labelContributesAccessibleName,
 
-    // Flat-tree ancestor walk (assignedSlot-aware, then shadow host) —
-    // see this function's own definition above for why assignedSlot
+    // Flat-tree ancestor walk (assignedSlot-aware, then shadow host).
+    // See this function's own definition above for why assignedSlot
     // must win over parentNode.
     composedParent,
     hasTruncatedAncestorWalk,

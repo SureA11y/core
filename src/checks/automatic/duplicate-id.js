@@ -10,7 +10,7 @@
  * @sc 4.1.1
  * @applicability
  *   Applies to any element carrying a non-empty id attribute. Visibility
- *   is irrelevant — a duplicate id breaks the same lookups whether the
+ *   is irrelevant. A duplicate id breaks the same lookups whether the
  *   element renders or not, which is why ACT 3ea0c8 evaluates hidden
  *   elements too.
  * @expectation
@@ -22,8 +22,8 @@
  *   rule is tagged `wcag2a` (its 2.0/2.1 origin) plus `wcag22-removed`. A
  *   consumer targeting WCAG 2.2 excludes it with
  *   `excludeTags: ['wcag22-removed']`; one targeting 2.0 or 2.1 keeps it
- *   and gets a real 4.1.1 result. The alternative — dropping the SC
- *   mapping entirely — would have made a genuine 2.0/2.1 failure
+ *   and gets a real 4.1.1 result. The alternative, dropping the SC
+ *   mapping entirely, would have made a genuine 2.0/2.1 failure
  *   invisible to anyone conformance-testing against those versions. See
  *   `docs/ENGINE_OPTIONS.md` for the tag, and `docs/DESIGN_CHALLENGES.md`
  *   for the decision this reverses.
@@ -39,7 +39,7 @@
  *   not reported.
  * - Overlaps `duplicate-id-aria` by design, and the two say different
  *   things. That rule reports a duplicate id that an ARIA attribute
- *   actually references, as a `cantTell` under 4.1.2 — the reference
+ *   actually references, as a `cantTell` under 4.1.2, the reference
  *   resolves to the first match, so whether the right element was named is
  *   an authoring question. This one is the flat structural fact under
  *   4.1.1, for every id, referenced or not.

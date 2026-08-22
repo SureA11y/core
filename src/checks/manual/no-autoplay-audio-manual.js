@@ -14,8 +14,8 @@
  *   SC 1.4.2 only applies when audio plays automatically for MORE than 3
  *   seconds; clip duration is not knowable from static markup (jsdom does
  *   not decode media), so this rule cannot determine whether the SC even
- *   applies to a given element. It is deliberately authored as `type:
- *   'manual'` (cantTell-capped, never fail) rather than guessing: an
+ *   applies to a given element. It is authored as `type:
+ *   'manual'` (cantTell-capped, never fail) on purpose rather than guessing: an
  *   autoplaying unmuted element with no `controls` attribute (the native,
  *   statically-verifiable mechanism to pause/stop or adjust volume) is
  *   flagged for human review rather than treated as a deterministic
@@ -28,7 +28,7 @@
  *   audible, so the SC's condition ("plays automatically... audio")
  *   does not apply.
  * - Custom (JS-built) controls that don't use the native `controls`
- *   attribute cannot be detected statically — a documented limitation,
+ *   attribute cannot be detected statically. That's a documented limitation,
  *   same class as `iframe-focusable-content`'s `contentDocument` gap.
  * - Not gated on `isAccTreeEligible`: unlike most rules, a `display:none`
  *   or `aria-hidden` audio/video element still plays audible sound in a

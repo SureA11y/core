@@ -42,7 +42,7 @@ test(`${RULE_ID}: pass when menuitems are wrapped in role="group" (group is itse
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: pass when listitems are wrapped in role="group" under role="list" (group is transparent for ANY container role, not only ones whose own required-owned set names "group" — ACT bc4a75)`, () => {
+test(`${RULE_ID}: pass when listitems are wrapped in role="group" under role="list" (group is transparent for ANY container role, not only ones whose own required-owned set names "group"; see ACT bc4a75)`, () => {
   const html = `<!doctype html><html><body>
     <div id="a" role="list">
       <span role="listitem">Item 1</span>
@@ -142,7 +142,7 @@ test(`${RULE_ID}: fail when a roleless-but-focusable (tabindex) child is owned b
   assert.equal(rule.occurrences[0].data.details.attr, 'tabindex');
 });
 
-test(`${RULE_ID}: fail when a roleless-but-natively-focusable (e.g. <a href>, no tabindex attribute) child is owned by a container — must not be misreported as "carries tabindex"`, () => {
+test(`${RULE_ID}: fail when a roleless-but-natively-focusable (e.g. <a href>, no tabindex attribute) child is owned by a container, must not be misreported as "carries tabindex"`, () => {
   const html = `<!doctype html><html><body>
     <ul role="list">
       <li role="listitem">Item</li>
@@ -158,7 +158,7 @@ test(`${RULE_ID}: fail when a roleless-but-natively-focusable (e.g. <a href>, no
   assert.ok(/natively focusable/.test(rule.occurrences[0].summary));
 });
 
-test(`${RULE_ID}: pass when a natively-focusable descendant sits several DOM levels inside a bare <li> (no role="" attribute) under role="list" — the <li>'s implicit listitem role is the real owned child and stops the walk there, matching aria-required-children's own native-tag fallback`, () => {
+test(`${RULE_ID}: pass when a natively-focusable descendant sits several DOM levels inside a bare <li> (no role="" attribute) under role="list": the <li>'s implicit listitem role is the real owned child and stops the walk there, matching aria-required-children's own native-tag fallback`, () => {
   const html = `<!doctype html><html><body>
     <ul role="list">
       <li>
@@ -185,9 +185,9 @@ test(`${RULE_ID}: pass when a natively-focusable descendant sits several DOM lev
 // cell(td) and columnheader(th)/row, radio(input[type=radio])/radiogroup.
 // ul/ol/table/select map to roles that are never themselves a required-
 // owned value, so a bare instance of those tags isn't part of this bug
-// class — omitted deliberately, not an oversight.
+// class, and it's omitted on purpose, not an oversight.
 
-test(`${RULE_ID}: pass when a focusable descendant sits inside a role="option" child of role="listbox" — the option is the real owned child`, () => {
+test(`${RULE_ID}: pass when a focusable descendant sits inside a role="option" child of role="listbox": the option is the real owned child`, () => {
   const html = `<!doctype html><html><body>
     <div role="listbox">
       <div role="option"><span id="a" tabindex="0">Nested focusable, should not be reported</span></div>
@@ -198,7 +198,7 @@ test(`${RULE_ID}: pass when a focusable descendant sits inside a role="option" c
 });
 
 test(`${RULE_ID}: a bare <option> outside a select carries no implicit role, so it is transparent`, () => {
-  // HTML-AAM gives <option> its role only inside select/datalist/optgroup —
+  // HTML-AAM gives <option> its role only inside select/datalist/optgroup;
   // the same conditional ACT bc4a75 applies to a bare <li> outside a list.
   // With no role of its own the option is a transparent wrapper, so the
   // focusable span inside it is the listbox's own roleless owned entry.
@@ -212,7 +212,7 @@ test(`${RULE_ID}: a bare <option> outside a select carries no implicit role, so 
   assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'ARIA_PROHIBITED_CHILD_ROLELESS');
 });
 
-test(`${RULE_ID}: pass when a bare <tbody> (no role="" attribute, tabindex for keyboard-scrollable table body — a real, common pattern) sits under role="table" — the <tbody>'s implicit rowgroup role is itself one of table's allowed owned roles, so it's a transparent group, not a roleless-focusable violation (uses a real <table> so the HTML parser doesn't silently drop <tbody>/<tr>/<td>, which are parse-error-ignored outside real table context)`, () => {
+test(`${RULE_ID}: pass when a bare <tbody> (no role="" attribute, tabindex for keyboard-scrollable table body, a real, common pattern) sits under role="table": the <tbody>'s implicit rowgroup role is itself one of table's allowed owned roles, so it's a transparent group, not a roleless-focusable violation (uses a real <table> so the HTML parser doesn't silently drop <tbody>/<tr>/<td>, which are parse-error-ignored outside real table context)`, () => {
   const html = `<!doctype html><html><body>
     <table role="table">
       <tbody tabindex="0">
@@ -224,7 +224,7 @@ test(`${RULE_ID}: pass when a bare <tbody> (no role="" attribute, tabindex for k
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: pass when a focusable descendant sits inside a bare <td> (no role="" attribute) under role="row" — the <td>'s implicit cell role is the real owned child (real <table> markup, see note above)`, () => {
+test(`${RULE_ID}: pass when a focusable descendant sits inside a bare <td> (no role="" attribute) under role="row": the <td>'s implicit cell role is the real owned child (real <table> markup, see note above)`, () => {
   const html = `<!doctype html><html><body>
     <table>
       <tr role="row"><td><a id="a" href="#">Nested link, should not be reported</a></td></tr>
@@ -234,7 +234,7 @@ test(`${RULE_ID}: pass when a focusable descendant sits inside a bare <td> (no r
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: pass when a focusable descendant sits inside a bare <th> (no role="" attribute) under role="row" — the <th>'s implicit columnheader role is the real owned child (real <table> markup, see note above)`, () => {
+test(`${RULE_ID}: pass when a focusable descendant sits inside a bare <th> (no role="" attribute) under role="row": the <th>'s implicit columnheader role is the real owned child (real <table> markup, see note above)`, () => {
   const html = `<!doctype html><html><body>
     <table>
       <tr role="row"><th><a id="a" href="#">Nested link, should not be reported</a></th></tr>
@@ -244,7 +244,7 @@ test(`${RULE_ID}: pass when a focusable descendant sits inside a bare <th> (no r
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: pass for a plain <input type="radio"> (no role="" attribute) under role="radiogroup" — an extremely common real-world pattern that was misreported as roleless-nativeFocusable before this fix, since native inputs are focusable with no tabindex attribute at all`, () => {
+test(`${RULE_ID}: pass for a plain <input type="radio"> (no role="" attribute) under role="radiogroup", an extremely common real-world pattern: native inputs are focusable with no tabindex attribute at all, so this must not be misreported as roleless-nativeFocusable`, () => {
   const html = `<!doctype html><html><body>
     <div role="radiogroup">
       <input id="a" type="radio" />
@@ -254,7 +254,7 @@ test(`${RULE_ID}: pass for a plain <input type="radio"> (no role="" attribute) u
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail when a container role is directly owned by another container role not in its allowed set (grid nested directly in radiogroup) — regression guard that stopping at a native-fallback boundary doesn't also suppress genuinely disallowed roles`, () => {
+test(`${RULE_ID}: fail when a container role is directly owned by another container role not in its allowed set (grid nested directly in radiogroup); regression guard that stopping at a native-fallback boundary doesn't also suppress roles that are actually disallowed`, () => {
   const html = `<!doctype html><html><body>
     <div role="radiogroup">
       <input type="radio" />
@@ -290,7 +290,7 @@ test(`${RULE_ID}: pass when a roleless, non-focusable, non-aria-attributed child
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: notApplicable (not pass) when the container has the hidden attribute — a would-be-disallowed child is not currently exposed to the accessibility tree`, () => {
+test(`${RULE_ID}: notApplicable (not pass) when the container has the hidden attribute: a would-be-disallowed child is not currently exposed to the accessibility tree`, () => {
   const html = `<!doctype html><html><body>
     <ul id="a" role="menubar" hidden>
       <li role="menuitem">File</li>
@@ -307,7 +307,7 @@ test(`${RULE_ID}: notApplicable (not pass) when the container has the hidden att
 // that the descent doesn't also drag the item's sibling content up into the
 // container's owned set.
 
-test(`${RULE_ID}: pass for the Angular Material card-radio shape — a roleless card wrapper holds the radio, and a role="separator" in the same card body is the card's content, not an owned child of the radiogroup`, () => {
+test(`${RULE_ID}: pass for the Angular Material card-radio shape: a roleless card wrapper holds the radio, and a role="separator" in the same card body is the card's content, not an owned child of the radiogroup`, () => {
   const html = `<!doctype html><html><body>
     <mat-radio-group role="radiogroup" aria-label="Select broker exposure card">
       <div class="mdc-layout-grid"><div class="mdc-layout-grid__inner">
@@ -336,7 +336,7 @@ test(`${RULE_ID}: pass for the Angular Material card-radio shape — a roleless 
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: pass when a roleless wrapper holds tabs alongside a role="button" — the button is the wrapper's content, not an owned child of the tablist`, () => {
+test(`${RULE_ID}: pass when a roleless wrapper holds tabs alongside a role="button"; the button is the wrapper's content, not an owned child of the tablist`, () => {
   const html = `<!doctype html><html><body>
     <div role="tablist" aria-label="Sections">
       <div class="tab-strip">
@@ -362,7 +362,7 @@ test(`${RULE_ID}: pass when a roleless row wrapper holds an option alongside a r
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail when a roleless wrapper holds NO allowed item — it is interposed content, not an item wrapper, so what it does hold is still reported`, () => {
+test(`${RULE_ID}: fail when a roleless wrapper holds NO allowed item: it is interposed content, not an item wrapper, so what it does hold is still reported`, () => {
   const html = `<!doctype html><html><body>
     <div role="list">
       <span role="listitem">Item</span>
@@ -374,7 +374,7 @@ test(`${RULE_ID}: fail when a roleless wrapper holds NO allowed item — it is i
   assert.ok(hasOccurrenceForId(rule, 'a'));
 });
 
-test(`${RULE_ID}: fail when a role="presentation" wrapper holds an item alongside a disallowed role — presentational elements really are removed from the accessibility tree and their children promoted, so the disallowed role IS an owned child (unlike a roleless wrapper, which stays in the tree as a generic node)`, () => {
+test(`${RULE_ID}: fail when a role="presentation" wrapper holds an item alongside a disallowed role: presentational elements really are removed from the accessibility tree and their children promoted, so the disallowed role IS an owned child (unlike a roleless wrapper, which stays in the tree as a generic node)`, () => {
   const html = `<!doctype html><html><body>
     <div role="list">
       <div role="presentation">
@@ -388,7 +388,7 @@ test(`${RULE_ID}: fail when a role="presentation" wrapper holds an item alongsid
   assert.ok(hasOccurrenceForId(rule, 'a'));
 });
 
-test(`${RULE_ID}: an item wrapper suppresses only its OWN subtree — a genuinely stray direct child of the same container is still reported`, () => {
+test(`${RULE_ID}: an item wrapper suppresses only its OWN subtree; a stray direct child of the same container is still reported`, () => {
   const html = `<!doctype html><html><body>
     <div role="radiogroup" aria-label="Plan">
       <div class="card">
@@ -408,7 +408,7 @@ test(`${RULE_ID}: an item wrapper suppresses only its OWN subtree — a genuinel
 // difference; scripts/generate-aria-tables.js documents and validates each
 // entry.
 
-test(`${RULE_ID}: pass for a role="separator" between menuitems — ARIA defines separator as "a divider that separates and distinguishes sections of content or groups of menuitems", and the APG menu pattern uses them`, () => {
+test(`${RULE_ID}: pass for a role="separator" between menuitems: ARIA defines separator as "a divider that separates and distinguishes sections of content or groups of menuitems", and the APG menu pattern uses them`, () => {
   const html = `<!doctype html><html><body>
     <div role="menu" aria-label="Edit">
       <div role="menuitem">Cut</div>
@@ -428,7 +428,7 @@ test(`${RULE_ID}: pass for a role="separator" in a menubar`, () => {
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: pass for a role="caption" on a table and on a grid — ARIA gives caption the Required Context Roles figure/grid/table, so prohibiting it there contradicted the engine's own REQUIRED_CONTEXT_ROLE table`, () => {
+test(`${RULE_ID}: pass for a role="caption" on a table and on a grid: ARIA gives caption the Required Context Roles figure/grid/table, so prohibiting it there contradicted the engine's own REQUIRED_CONTEXT_ROLE table`, () => {
   const html = `<!doctype html><html><body>
     <div role="table" aria-label="Results">
       <div role="caption">Q3 results</div>
@@ -443,7 +443,7 @@ test(`${RULE_ID}: pass for a role="caption" on a table and on a grid — ARIA gi
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail for a role="separator" under role="list"/"listbox"/"tablist" — the menuitem carve-out is per container role, and <ul>/<ol> admit only <li>`, () => {
+test(`${RULE_ID}: fail for a role="separator" under role="list"/"listbox"/"tablist": the menuitem carve-out is per container role, and <ul>/<ol> admit only <li>`, () => {
   for (const [container, item] of [
     ['list', 'listitem'],
     ['listbox', 'option'],
@@ -464,7 +464,7 @@ test(`${RULE_ID}: fail for a role="separator" under role="list"/"listbox"/"tabli
   }
 });
 
-test(`${RULE_ID}: fail for a role="caption" under role="treegrid" — aria-query gives caption the context figure/grid/table only, and extending it to treegrid would be this repo's judgement rather than ARIA's`, () => {
+test(`${RULE_ID}: fail for a role="caption" under role="treegrid": aria-query gives caption the context figure/grid/table only, and extending it to treegrid would be this repo's judgement rather than ARIA's`, () => {
   const html = `<!doctype html><html><body>
     <div role="treegrid" aria-label="Files">
       <div id="a" role="caption">Files</div>
@@ -476,7 +476,7 @@ test(`${RULE_ID}: fail for a role="caption" under role="treegrid" — aria-query
   assert.ok(hasOccurrenceForId(rule, 'a'));
 });
 
-test(`${RULE_ID}: an allowed-but-not-required role does NOT make a roleless wrapper an item wrapper — a wrapper holding only a separator is still interposed content under a container that prohibits separators`, () => {
+test(`${RULE_ID}: an allowed-but-not-required role does NOT make a roleless wrapper an item wrapper: a wrapper holding only a separator is still interposed content under a container that prohibits separators`, () => {
   const html = `<!doctype html><html><body>
     <div role="list">
       <div role="listitem">Item</div>

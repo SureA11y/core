@@ -13,15 +13,15 @@
  *   "Intended to be conveyed" is approximated deterministically by at least one of:
  *     - role="img", role="graphics-symbol", or role="graphics-document"
  *       on the SVG root element itself (the WAI-ARIA Graphics Module
- *       roles, alongside img). Deliberately does NOT extend to arbitrary
+ *       roles, alongside img). Does NOT extend to arbitrary
  *       role="img"/"graphics-symbol"/"graphics-document" descendants
- *       nested inside an <svg> — this check's scope is the <svg> root
+ *       nested inside an <svg>. This check's scope is the <svg> root
  *       only; role-img-text-alternative-present covers those same three
  *       roles on any other element, including nested SVG shapes (ACT
  *       7d6734's own failed example: a bare `<svg>` root with a nested
  *       `<circle role="graphics-symbol">`).
  *     - aria-label / aria-labelledby present
- *     - <title> or <desc> present (desc alone is an applicability signal only — see @expectation)
+ *     - <title> or <desc> present (desc alone is an applicability signal only, see @expectation)
  *     - focusable/tabbable (e.g., tabindex, native focusability)
  *
  *   Images with role="presentation" or role="none" are excluded only when they are not focusable.
@@ -31,7 +31,7 @@
  *   Each applicable <svg> element provides a text alternative via:
  *     - non-empty <title> text, OR
  *     - an ARIA name (aria-label / aria-labelledby).
- *   A <desc> element alone does NOT satisfy this — per the SVG Accessibility
+ *   A <desc> element alone does NOT satisfy this, per the SVG Accessibility
  *   API Mappings spec §7.1, <desc> only ever contributes to the accessible
  *   DESCRIPTION, never the accessible NAME. An <svg> with only a
  *   <desc> and no <title>/ARIA name is still "applicable" (desc signals
@@ -127,7 +127,7 @@ function runInPage(ctx) {
   }
 
   // <desc> counts when it is the first child, or the second child
-  // immediately following a <title> — the standard <title>+<desc> pairing
+  // immediately following a <title>, the standard <title>+<desc> pairing
   // (e.g. <svg><title>...</title><desc>...</desc>...</svg>). A <desc>
   // appearing later than that is not reliably read by AT.
   function nonEmptyDescText(svg) {
@@ -280,7 +280,7 @@ function runInPage(ctx) {
     }
 
     // Per SVG-AAM §7.1: <desc> contributes only to the accessible
-    // DESCRIPTION, never the accessible NAME — so descText does not
+    // DESCRIPTION, never the accessible NAME, so descText does not
     // count here even though it does count toward applicability above.
     const ok = !!titleText || hasAriaName;
     if (ok) continue;
@@ -296,7 +296,7 @@ function runInPage(ctx) {
 
     const baseOccurrence = {
       summary: 'Missing text alternative for <svg>.',
-      hint: 'Provide a <title> element with text, or an ARIA name (aria-label/aria-labelledby) — a <desc> element alone does not provide an accessible name.',
+      hint: 'Provide a <title> element with text, or an ARIA name (aria-label/aria-labelledby); a <desc> element alone does not provide an accessible name.',
       i18n: {
         summaryKey: 'svg_textAltPresent_summary_fail',
         hintKey: 'svg_textAltPresent_hint_fail',

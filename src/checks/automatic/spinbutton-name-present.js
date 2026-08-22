@@ -71,7 +71,7 @@ function runInPage(ctx) {
   }
 
   function getConservativeSubtreeText(document, container) {
-    // "Name from content" — recurses into descendants and uses each one's
+    // "Name from content", recurses into descendants and uses each one's
     // own accessible name (img alt, aria-label/aria-labelledby, title) when
     // it has one, not just literal text nodes. See getContentNameInfo's
     // header comment in src/core/dom-helpers.js for the full rationale
@@ -88,7 +88,7 @@ function runInPage(ctx) {
 
   // A <label> contributes a name via its own aria-label/aria-labelledby
   // (checked first, same ARIA-over-content precedence any element's
-  // accessible name gives — e.g. <label aria-label="Search"><svg
+  // accessible name gives, e.g. <label aria-label="Search"><svg
   // aria-hidden="true">...</svg></label> names its control "Search" even
   // though the label's only child content is aria-hidden) or, failing
   // that, its rendered content (getConservativeSubtreeText).
@@ -103,10 +103,10 @@ function runInPage(ctx) {
     if (content) return content;
     // Final fallback per the general accname text-alternative algorithm,
     // which applies to any element being asked for its name regardless of
-    // why (own aria-label, an aria-labelledby reference, or — here — native
+    // why (own aria-label, an aria-labelledby reference, or, here, native
     // <label for> association): title, when nothing else yields a name.
     // Purely additive (only fills in a name where there was none before),
-    // so it carries no false-positive risk — see dialog-name-present.js's
+    // so it carries no false-positive risk, see dialog-name-present.js's
     // identical <iframe>-title-fallback fix for the concrete real-world
     // trigger this same accname step covers elsewhere.
     return getAttr(lab, 'title');
@@ -116,7 +116,7 @@ function runInPage(ctx) {
     const raw = getAttr(el, 'aria-labelledby');
     if (!raw) return '';
     // Delegates to the shared getTextFromIdRefs helper instead of computing
-    // name-from-content of the referenced element — see dialog-name-
+    // name-from-content of the referenced element, see dialog-name-
     // present.js's identical fix for the full rationale (an <iframe>
     // aria-labelledby target's only name source is its title attribute,
     // which name-from-content alone can never see).
@@ -251,7 +251,7 @@ function runInPage(ctx) {
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This element has no accessible name.',
-        hint: "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this spinbutton's accessible name.",
+        hint: "Provide aria-label, aria-labelledby, or a title attribute. Visible text content is not exposed as this spinbutton's accessible name.",
         i18n: {
           summaryKey: 'spinbuttonNamePresent_summary_fail',
           hintKey: 'spinbuttonNamePresent_hint_fail',

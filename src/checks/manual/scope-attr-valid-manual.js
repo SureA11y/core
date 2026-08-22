@@ -6,7 +6,7 @@
  * @check scope-attr-valid
  * @atomic true
  * @summary The scope attribute must have a valid value
- * @standard Best Practices (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
  *   Applies to elements with a non-empty scope attribute.
  * @expectation
@@ -15,7 +15,7 @@
  *   assistive technology, silently losing the row/column header
  *   association it was meant to declare.
  * @implementation-notes
- * - Not WCAG-normative — authored as an advisory, cantTell-capped
+ * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent.
  */

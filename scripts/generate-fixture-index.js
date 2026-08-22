@@ -361,7 +361,7 @@ function main() {
     md += `| Rule ID | Type | Title | Rule file | Test file |\n|---|---|---|---|---|\n`;
     for (const r of withoutFixture) {
       // escapeHtml (already used for the HTML index below) also covers
-      // the markdown table's HTML-tag-in-title risk here — several
+      // the markdown table's HTML-tag-in-title risk here: several
       // real rule titles contain literal <area>/<canvas>/<th>/etc.
       // (see docs/RULE_CATALOG.md's generator, which had the exact
       // same gap: pipe-only escaping, no </> escaping).

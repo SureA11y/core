@@ -6,7 +6,7 @@
  * @check empty-heading
  * @atomic true
  * @summary Heading elements must not be empty
- * @standard Best Practices (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
  *   Applies to elements with a heading role: native <h1>-<h6>, or any
  *   element with explicit role="heading" (unless overridden by another
@@ -18,20 +18,20 @@
  *   heading is announced as "heading, level N" with nothing else, which
  *   is confusing when navigating by heading.
  * @implementation-notes
- * - Not WCAG-normative — authored as an advisory, cantTell-capped
+ * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent.
  * - This is also the reconciliation point for the ACT-rules
- *   "heading-name-present" requirement (see ROADMAP.md "Tier 5
- *   candidates"): already covered by this pre-existing rule under a
- *   different name, not a separate gap. `title` is accepted as a naming
+ *   "heading-name-present" requirement: already covered by this
+ *   pre-existing rule under a different name, not a separate gap.
+ *   `title` is accepted as a naming
  *   fallback, and hidden/aria-hidden/display:none headings are excluded
  *   (gated on `isAccTreeEligible`), so an empty heading no AT user could
  *   ever reach is not flagged.
  * - Descendant name resolution uses the shared, accname-aligned
- *   `helpers.getContentNameInfo` (see dom-helpers.js) — the same "name
+ *   `helpers.getContentNameInfo` (see dom-helpers.js), the same "name
  *   from content" implementation the 19 `-name-present` rules already
- *   use — rather than a narrower hand-rolled walker, so an `<img alt="...">`
+ *   use, rather than a narrower hand-rolled walker, so an `<img alt="...">`
  *   descendant's alt text (e.g. a
  *   `<h1><a><div><img alt="..."></div></a></h1>` logo header) is correctly
  *   picked up as the heading's name instead of producing a false "empty
@@ -147,7 +147,7 @@ function runInPage(ctx) {
       if (joined) return joined;
     }
     // Shared, accname-aligned "name from content" implementation (see
-    // dom-helpers.js's getContentNameInfo header comment) — resolves an
+    // dom-helpers.js's getContentNameInfo header comment). Resolves an
     // <img> descendant's own alt text, an aria-label/aria-labelledby'd
     // descendant's own name, etc., and already gates every descendant on
     // full accessibility-tree eligibility (aria-hidden, display:none,

@@ -14,13 +14,13 @@
  *   ARIA widget role: button, link, checkbox, radio, switch, tab, textbox,
  *   combobox, listbox, menuitem, menuitemcheckbox, menuitemradio, option,
  *   slider, spinbutton, searchbox, treeitem). The container is applicable
- *   regardless of whether it is itself focusable — focusability is only
+ *   regardless of whether it is itself focusable, focusability is only
  *   used to decide whether a *descendant* nests an interactive control.
  * @expectation
  *   The element does not contain, as a descendant, another *operable*
  *   interactive control (e.g. a <button> wrapping a <select>, or a link
  *   containing a checkbox). Nested interactive controls are not reliably
- *   announced or operable via assistive technology — activating the outer
+ *   announced or operable via assistive technology, activating the outer
  *   control and the inner one become ambiguous, and some AT only exposes
  *   one of the two.
  * @implementation-notes
@@ -89,7 +89,7 @@ const meta = {
 function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
-  // Declared inside runInPage — see scripts/build-core.js header
+  // Declared inside runInPage, see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
   const INTERACTIVE_SELECTOR = [
     'a[href]',
@@ -228,8 +228,8 @@ function runInPage(ctx) {
         // A composite-owned child (option in a listbox/combobox, tab in a
         // tablist, ...) is not a nested interactive control: its container
         // owns it and drives its focus (roving tabindex or
-        // aria-activedescendant). Treat it as an attribution boundary — do not
-        // count it, and do not descend past it. Any control genuinely nested
+        // aria-activedescendant). Treat it as an attribution boundary, do not
+        // count it, and do not descend past it. Any control nested
         // inside it is attributed to the child itself (examined as its own
         // container in the main loop), keeping the report at the nearest
         // interactive ancestor rather than bubbling up to the composite.

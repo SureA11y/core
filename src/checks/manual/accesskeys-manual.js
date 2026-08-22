@@ -6,17 +6,17 @@
  * @check accesskeys
  * @atomic true
  * @summary accesskey values must be unique on the page
- * @standard Best Practices (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
  *   Applies whenever two or more elements share the same non-empty
  *   accesskey attribute value (case-insensitive).
  * @expectation
  *   Every accesskey value on the page is unique. Duplicate accesskeys
- *   make keyboard-shortcut activation ambiguous — only one of the
+ *   make keyboard-shortcut activation ambiguous: only one of the
  *   elements sharing the key can actually be reached by it, and which
  *   one is browser/platform-dependent.
  * @implementation-notes
- * - Not WCAG-normative — authored as an advisory, cantTell-capped
+ * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent.
  */

@@ -11,7 +11,7 @@
  * @applicability
  *   Applies to <iframe>/<frame> elements with an explicit negative
  *   tabindex, whose embedded document is same-origin and reachable via
- *   contentDocument (cross-origin/unreachable frames assert nothing — see
+ *   contentDocument (cross-origin/unreachable frames assert nothing, see
  *   implementation notes).
  * @expectation
  *   The frame's embedded document contains no focusable element. Browsers
@@ -25,18 +25,18 @@
  *   focusable content inside it never satisfies ACT akn7bn's "visible"
  *   requirement and doesn't count.
  * @implementation-notes
- * - Deliberately scoped to same-origin, currently-accessible content only
+ * - Scoped to same-origin, currently-accessible content only
  *   (contentDocument access is wrapped in try/catch and treated as "no
- *   constraint asserted" — not counted as applicable — when unreachable),
+ *   constraint asserted", not counted as applicable, when unreachable),
  *   matching this engine's established scope-limiting rationale (see
  *   src/core/aria-helpers.js file header) rather than guessing at
  *   cross-origin content.
  * - A `srcdoc` iframe's document is same-origin by definition, but some
  *   environments (notably jsdom, including this library's own Node/jsdom
- *   integration path — see docs/INTEGRATION.md) never populate
+ *   integration path, see docs/INTEGRATION.md) never populate
  *   `contentDocument` from the attribute. When the live document looks
  *   empty and a `srcdoc` attribute is present, its HTML string is parsed
- *   directly via DOMParser as a static fallback — no rendering pipeline
+ *   directly via DOMParser as a static fallback, no rendering pipeline
  *   needed, and a real browser's already-loaded contentDocument is always
  *   preferred untouched.
  * - Focusability inside the embedded document is checked with a small,
@@ -79,15 +79,15 @@ function runInPage(ctx) {
   const { helpers, rule, document } = ctx;
 
   // Self-contained rendering check for the embedded document (a distinct
-  // realm — see this rule's own header comment on why the outer
+  // realm, see this rule's own header comment on why the outer
   // document's shared eligibility helpers can't be reused here).
-  // Deliberately checks only genuine non-rendering (display:none,
+  // Checks only genuine non-rendering (display:none,
   // visibility:hidden, the hidden attribute) via the ancestor chain, NOT
   // aria-hidden: aria-hidden alone does not remove an element from a real
   // browser's native tab order (the same anti-pattern this engine's own
   // aria-hidden-focus rule exists to catch), so an aria-hidden-but-
   // visually-rendered focusable element inside the frame is still
-  // genuinely reachable by keyboard and must stay flagged.
+  // reachable by keyboard and must stay flagged.
   function isRenderedInDoc(doc, el) {
     try {
       const view = doc.defaultView;
@@ -311,7 +311,7 @@ function runInPage(ctx) {
   // A `srcdoc` iframe's embedded document is same-origin by definition, but
   // some environments (jsdom, notably) never populate `contentDocument`
   // from the attribute at all. Parsing the attribute's own HTML string is a
-  // static, deterministic fallback that needs no rendering pipeline — it
+  // static, deterministic fallback that needs no rendering pipeline. It
   // only kicks in when the live document looks empty, so a real browser's
   // already-loaded contentDocument is always preferred untouched.
   function parseSrcdocFallback(el) {
@@ -330,7 +330,7 @@ function runInPage(ctx) {
   // ACT akn7bn's own Expectation only cares about focusable content that is
   // also *visible*: a 1x1 (or similar tracking-pixel-sized) iframe cannot
   // render any perceptible content, whatever's focusable inside it. Scoped
-  // to the iframe's own HTML width/height attributes — a static, always-
+  // to the iframe's own HTML width/height attributes, a static, always-
   // readable signal, unlike computed/rendered size, which needs real
   // layout jsdom doesn't have (see docs/LIMITATIONS.md).
   function isIframeVisiblyTiny(el) {

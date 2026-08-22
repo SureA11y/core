@@ -6,10 +6,10 @@
  * @check heading-order
  * @atomic true
  * @summary Heading levels must not skip a level going deeper
- * @standard Best Practices (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
  *   Applies whenever the page contains two or more heading elements
- *   (native <h1>-<h6>, or explicit role="heading" with aria-level —
+ *   (native <h1>-<h6>, or explicit role="heading" with aria-level;
  *   default level 2 per the ARIA spec when aria-level is absent/invalid).
  * @expectation
  *   In document order, each heading's level is no more than one greater
@@ -19,7 +19,7 @@
  *   when navigating by heading. Going back to a shallower level at any
  *   point is always fine.
  * @implementation-notes
- * - Not WCAG-normative — authored as an advisory, cantTell-capped
+ * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent.
  * - Tracks the highest level reached so far (not just the immediately

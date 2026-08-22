@@ -118,7 +118,7 @@ test('renderSarifReport: with a baseline, an already-known fail occurrence is om
   assert.strictEqual(sarif.runs[0].results.length, 0);
 });
 
-test('renderSarifReport: with a baseline, multiset matching still reports the genuinely new occurrence', () => {
+test('renderSarifReport: with a baseline, multiset matching still reports the actually new occurrence', () => {
   const check = makeCheckResult({
     occurrences: [
       makeOccurrence({ selector: 'main img:nth-child(1)' }),
