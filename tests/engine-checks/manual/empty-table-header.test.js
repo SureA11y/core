@@ -38,9 +38,8 @@ test(`${RULE_ID}: cantTell when th is empty`, () => {
 
 test(`${RULE_ID}: cantTell when th is named only via aria-label, no visible text`, () => {
   // Regression for a false positive: a table with icon-only column headers
-  // (<th aria-label="Chrome">) — this rule previously accepted aria-label as
-  // sufficient, but aria-label is ignored on <th> in practice by screen
-  // readers; only visible text reliably works.
+  // (<th aria-label="Chrome">). aria-label is ignored on <th> in practice
+  // by screen readers, so only visible text reliably works.
   const html = `<!doctype html><html><body><table><tr><th id="a" aria-label="Chrome"></th></tr></table></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });

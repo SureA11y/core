@@ -18,7 +18,7 @@
  *   deterministic defect).
  * @implementation-notes
  * - Distinct from aria-valid-attr-value (which validates the VALUE
- *   of a recognized attribute) — this rule only validates the attribute
+ *   of a recognized attribute), this rule only validates the attribute
  *   NAME.
  * - Not rule-gated on isAccTreeEligible: this remains a static-markup
  *   property, while engine-level hidden-subtree filtering still applies

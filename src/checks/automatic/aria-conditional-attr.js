@@ -16,17 +16,17 @@
  *   other than `"false"` (i.e. `"true"`, `"grammar"`, or `"spelling"`).
  *   An element with `aria-errormessage` but `aria-invalid` absent or
  *   `"false"` silently drops the error message from the accessibility
- *   tree — authors almost always intend it to be exposed.
+ *   tree, authors almost always intend it to be exposed.
  * @implementation-notes
- * - This is deliberately narrow: the broader space is a table of many
+ * - This is narrow: the broader space is a table of many
  *   attribute/condition pairs. This rule implements only the one pairing
  *   (`aria-errormessage` / `aria-invalid`) that is unambiguous and
- *   explicitly stated in the ARIA spec, to keep `fail` high-confidence —
+ *   explicitly stated in the ARIA spec, to keep `fail` high-confidence,
  *   matches this repo's established pattern (see `aria-required-attr`/
  *   `aria-prohibited-attr` for the same "narrow but zero false positives"
  *   trade-off).
  * - Does not check whether the `aria-errormessage` ID reference itself
- *   resolves to an existing element — that is `aria-valid-attr-value`'s
+ *   resolves to an existing element. That's `aria-valid-attr-value`'s
  *   concern, not this rule's.
  */
 
@@ -35,7 +35,7 @@ const id = 'aria-conditional-attr';
 const meta = {
   title: 'aria-errormessage requires aria-invalid to be set to a non-false value',
   description:
-    'Checks that elements with aria-errormessage also have aria-invalid set to "true", "grammar", or "spelling" — otherwise the error message is dropped from the accessibility tree.',
+    'Checks that elements with aria-errormessage also have aria-invalid set to "true", "grammar", or "spelling"; otherwise the error message is dropped from the accessibility tree.',
   i18n: {
     titleKey: 'ariaConditionalAttr_title',
     descriptionKey: 'ariaConditionalAttr_description'

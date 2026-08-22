@@ -19,9 +19,9 @@ module.exports = [
       }
     },
     rules: {
-      // This codebase's rule files deliberately swallow errors from optional/defensive
-      // helper calls with an empty `catch {}` (see CONTRIBUTING.md/RULE_AUTHORING.md) --
-      // that's an intentional pattern here, not an oversight to flag.
+      // This codebase's rule files swallow errors from optional/defensive helper
+      // calls with an empty `catch {}` on purpose (see CONTRIBUTING.md/RULE_AUTHORING.md),
+      // not an oversight to flag.
       'no-empty': ['error', { allowEmptyCatch: true }],
       'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
       'no-useless-assignment': 'error'

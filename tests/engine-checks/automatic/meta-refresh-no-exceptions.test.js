@@ -30,8 +30,8 @@ test(`${RULE_ID}: fail when delay is positive`, () => {
 
 test(`${RULE_ID}: notApplicable for a meta refresh nested inside noscript`, () => {
   // Regression for a false positive: a meta refresh nested inside <noscript>,
-  // e.g. <noscript><meta http-equiv="refresh" content="0; URL=/?nojsmode=1"></noscript>
-  // — a JS-disabled fallback that never takes effect for any context capable
+  // e.g. <noscript><meta http-equiv="refresh" content="0; URL=/?nojsmode=1"></noscript>,
+  // a JS-disabled fallback that never takes effect for any context capable
   // of running accessibility tooling in the first place.
   const html = `<!doctype html><html><head><noscript><meta http-equiv="refresh" content="0; URL=/?nojsmode=1"></noscript></head><body></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });

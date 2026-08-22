@@ -243,7 +243,7 @@ test('normalizeRuleMeta: i18n.descriptionKey, when provided, must be a non-empty
   );
 });
 
-test('normalizeRuleMeta: i18n.descriptionKey is genuinely optional (titleKey alone is valid)', () => {
+test('normalizeRuleMeta: i18n.descriptionKey is actually optional (titleKey alone is valid)', () => {
   const a = normalizeRuleMeta('r', 'r', { i18n: { titleKey: 'k' } }, 'a11ycore');
   assert.deepEqual(a.i18n, { titleKey: 'k' });
 });

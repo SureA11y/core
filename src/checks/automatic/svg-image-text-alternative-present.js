@@ -109,7 +109,7 @@ function runInPage(ctx) {
   }
 
   // <desc> counts when it is the first child, or the second child
-  // immediately following a <title> — the standard <title>+<desc> pairing.
+  // immediately following a <title>, the standard <title>+<desc> pairing.
   // A <desc> appearing later than that is not reliably read by AT.
   function descText(el) {
     try {

@@ -11,12 +11,12 @@
  * @applicability
  *   Applies to controls that carry aria-label or aria-labelledby, are
  *   visually rendered, and have visible label text this engine can extract
- *   deterministically — from an associated <label>, from the control's own
+ *   deterministically, from an associated <label>, from the control's own
  *   rendered text, or from the elements aria-labelledby points at. The
  *   candidates are <button>, <a href>, <summary>, non-hidden form controls,
  *   and the button, link, checkbox, radio, switch, searchbox, tab, menuitem,
  *   menuitemcheckbox, menuitemradio, option, treeitem and gridcell roles,
- *   minus anything hidden or disabled. aria-hidden is deliberately not
+ *   minus anything hidden or disabled. aria-hidden is not
  *   excluded: it changes nothing about what is rendered on screen, which is
  *   what this SC is about.
  * @expectation
@@ -180,7 +180,7 @@ function runInPage(ctx) {
   // rendering as "format_color_fill") is DOM-visible pixels but is never
   // perceived as literal readable words the way real visible text is.
   // Excluding aria-hidden content is a cheap static-markup signal that gets
-  // the common case (decorative icon fonts) right — an icon-only button
+  // the common case (decorative icon fonts) right. An icon-only button
   // named via aria-label shouldn't have its glyph name counted as text.
   function isAccEligible(el) {
     if (!el) return false;
@@ -369,7 +369,7 @@ function runInPage(ctx) {
 
   // Curated real-world icon-font family names. These fonts remap ordinary
   // word glyphs to unrelated symbols via ligatures/PUA codepoints, so the
-  // DOM text is real words but nothing readable actually renders — ACT
+  // DOM text is real words but nothing readable actually renders, ACT
   // 2ee8b8's own passed example is exactly this (a button's DOM text
   // "search" rendered as a magnifying-glass icon by "Material Icons").
   // Same curated-list tradeoff as link-name-quality's phrase list.

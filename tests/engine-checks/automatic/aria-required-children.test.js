@@ -85,7 +85,7 @@ test(`${RULE_ID}: pass when the required owned role only exists across a shadow-
 
 test(`${RULE_ID}: fail when a shadow-DOM container has a <slot> but nothing assigned to it satisfies the required owned role`, () => {
   // Same slotted shape as above, but the projected content has no
-  // acceptable owned role — confirms the composed-tree fallback doesn't
+  // acceptable owned role, confirming the composed-tree fallback doesn't
   // just make every slot-containing container pass unconditionally.
   const dom = createDom(`<!doctype html><html><body>
     <div id="host"><span id="a" slot="x">Not a listitem</span></div>

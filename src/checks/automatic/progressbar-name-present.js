@@ -73,7 +73,7 @@ function runInPage(ctx) {
     const raw = getAttr(el, 'aria-labelledby');
     if (!raw) return '';
     // Delegates to the shared getTextFromIdRefs helper instead of computing
-    // name-from-content of the referenced element — see dialog-name-
+    // name-from-content of the referenced element, see dialog-name-
     // present.js's identical fix for the full rationale (an <iframe>
     // aria-labelledby target's only name source is its title attribute,
     // which name-from-content alone can never see).
@@ -125,10 +125,10 @@ function runInPage(ctx) {
     if (title) return { ok: true, method: 'title' };
 
     // role="progressbar" is name-from-author-only per WAI-ARIA: aria-label,
-    // aria-labelledby, or title — no content-based naming method at all. It
+    // aria-labelledby, or title, no content-based naming method at all. It
     // must NOT fall back to subtree content: e.g. a <ul role="progressbar">
     // loading skeleton with no name of its own, whose nested descendants
-    // carry their own aria-label for a different purpose — falling back to
+    // carry their own aria-label for a different purpose, falling back to
     // subtree content would wrongly treat that as the progressbar's name.
     return { ok: false, method: 'none' };
   }
@@ -158,7 +158,7 @@ function runInPage(ctx) {
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This progress bar has no accessible name.',
-        hint: "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this progress bar's accessible name.",
+        hint: "Provide aria-label, aria-labelledby, or a title attribute. Visible text content is not exposed as this progress bar's accessible name.",
         i18n: {
           summaryKey: 'progressbarNamePresent_summary_fail',
           hintKey: 'progressbarNamePresent_hint_fail',

@@ -378,7 +378,7 @@ A simplified example looks like this:
 ```
 
 The second result illustrates the engine's conservative stance: it can
-confirm a link has text, but whether that text is genuinely descriptive
+confirm a link has text, but whether that text is actually descriptive
 requires human judgement, so it reports `cantTell` instead of guessing.
 
 Each finding contains enough information to answer four questions:
@@ -420,7 +420,7 @@ and progressively explore more advanced features.
 | `docs/TROUBLESHOOTING.md` | Frequently asked questions and common issues. |
 | `docs/RULE_AUTHORING.md` | Writing custom accessibility rules. |
 | `docs/RULE_TAXONOMY.md` | Rule categorization model. |
-| `docs/ACT_RULE_MAPPING.md` | Which ACT rules this engine implements, which it doesn't, and where the two deliberately differ. |
+| `docs/ACT_RULE_MAPPING.md` | Which ACT rules this engine implements, which it doesn't, and where the two differ by design. |
 | `docs/DESIGN_CHALLENGES.md` | Open and settled design questions, each with the reasoning behind the call. |
 | `docs/ARIA_DEPRECATION.md` | How deprecated ARIA roles and attributes are graded, and how to apply a later spec revision. |
 | `CONTRIBUTING.md` | Contributing guidelines. |

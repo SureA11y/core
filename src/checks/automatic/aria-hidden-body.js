@@ -10,13 +10,13 @@
  * @sc 1.3.1, 4.1.2
  * @applicability
  *   Always applicable to any HTML document with a <body> element,
- *   independent of contextSelector/root scoping — this is a whole-
+ *   independent of contextSelector/root scoping, this is a whole-
  *   document concern, matching page-title-present's pattern of
  *   evaluating document.body directly rather than the scoped root.
  * @expectation
  *   <body> does not have aria-hidden="true". Hiding the document body
  *   removes the entire page's content and structure from the
- *   accessibility tree at once — both 1.3.1 (Info and Relationships: the
+ *   accessibility tree at once, both 1.3.1 (Info and Relationships: the
  *   page's structure becomes entirely non-determinable) and 4.1.2 (Name,
  *   Role, Value: nothing in the document exposes a role/name/value any
  *   longer) apply.

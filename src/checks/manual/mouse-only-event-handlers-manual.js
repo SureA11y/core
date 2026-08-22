@@ -18,31 +18,31 @@
  *   The element also carries at least one keyboard-reachable inline
  *   handler: `onkeydown`, `onkeyup`, `onkeypress` (the direct keyboard-
  *   event equivalents), or `onfocus`/`onblur` (the standard substitute
- *   for hover-triggered behavior — focus/blur are the keyboard-
+ *   for hover-triggered behavior: focus/blur are the keyboard-
  *   navigable analog to mouseover/mouseout, per WCAG technique G90).
  *   Otherwise the element's mouse-driven behavior (a hover tooltip, a
  *   custom dropdown, a drag interaction) has no way to be triggered by a
  *   keyboard-only user.
  * @implementation-notes
  * - Authored as `type: 'manual'` (cantTell-capped, never fail), not
- *   `automatic`: this can only see inline `on*="..."` HTML attributes —
- *   a keyboard handler attached elsewhere via `addEventListener` (the
+ *   `automatic`: this can only see inline `on*="..."` HTML attributes.
+ *   A keyboard handler attached elsewhere via `addEventListener` (the
  *   norm in most modern frameworks) is invisible to a static markup
  *   scan and would make a `fail` a false positive. Surfaced by a diff
- *   against a legacy ruleset's WCAG2AA rules (see ROADMAP.md's Tier 4
- *   research notes) — this is a real, well-known WCAG 2.1.1 anti-pattern
+ *   against a legacy ruleset's WCAG2AA rules; this is a real, well-known
+ *   WCAG 2.1.1 anti-pattern
  *   (technique G90/F54) that nothing else in this rule set checks.
- * - Deliberately does NOT treat `onclick` as a keyboard-equivalent
- *   excuse: whether `onclick` is keyboard-reachable depends on the
+ * - Does NOT treat `onclick` as a keyboard-equivalent excuse on purpose:
+ *   whether `onclick` is keyboard-reachable depends on the
  *   element's separate focusability (native interactive tag or
- *   `tabindex`), which this rule does not attempt to cross-check — and
+ *   `tabindex`), which this rule does not attempt to cross-check, and
  *   for the specific hover-triggered handlers this rule targets
  *   (`onmouseover`/`onmouseout`/etc.), `onclick` isn't actually an
  *   equivalent interaction model regardless of focusability (hover and
  *   click are different gestures with different semantics).
  * - Only inline HTML attribute handlers are detectable; JS-attached
  *   listeners (`addEventListener('mouseover', ...)`) are invisible to a
- *   static DOM scan — a documented limitation, not an oversight.
+ *   static DOM scan. That's a documented limitation, not an oversight.
  */
 
 const id = 'mouse-only-event-handlers';

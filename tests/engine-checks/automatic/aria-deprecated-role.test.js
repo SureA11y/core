@@ -48,7 +48,7 @@ test(`${RULE_ID}: cantTell when role is deprecated but still valid (author decid
   assert.match(rule.occurrences[0].hint, /role="list"/);
 });
 
-test(`${RULE_ID}: cantTell when role="generic" is explicitly declared (reserved for user agents at SHOULD NOT strength — WAI-ARIA 1.2 §5.4)`, () => {
+test(`${RULE_ID}: cantTell when role="generic" is explicitly declared (reserved for user agents at SHOULD NOT strength, WAI-ARIA 1.2 §5.4)`, () => {
   const html = `<!doctype html><html><body><div id="a" role="generic"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
@@ -65,7 +65,7 @@ test(`${RULE_ID}: no ARIA 1.2 or 1.3 role carries an author MUST NOT, so nothing
   assert.ok(!(rule.occurrences || []).some((o) => o.occurrenceOutcome === 'fail'));
 });
 
-test(`${RULE_ID}: role="generic" still passes aria-roles-valid (it IS a valid, non-abstract role — just discouraged)`, () => {
+test(`${RULE_ID}: role="generic" still passes aria-roles-valid (it IS a valid, non-abstract role, just discouraged)`, () => {
   const html = `<!doctype html><html><body><div id="a" role="generic"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: ['aria-roles-valid'] });
   assertRule(result, 'aria-roles-valid', 'pass', { minOccurrences: 0, maxOccurrences: 0 });

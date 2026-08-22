@@ -19,8 +19,8 @@ test('dom helpers cache: getAccessibleNameInfo memoizes label[for] lookup per el
   const { document } = window;
 
   // getAccessibleNameInfo resolves label association via the native
-  // `.labels` API first (element references, no query needed) — same
-  // evolution already documented below for getLabelMethod — so spy on the
+  // `.labels` API first (element references, no query needed): same
+  // evolution already documented below for getLabelMethod, so spy on the
   // `.labels` getter itself as the "DOM work happened" signal, since
   // document.querySelector('label[for]') is no longer reached on this path.
   let labelsGetterCalls = 0;
@@ -112,7 +112,7 @@ test('dom helpers cache: getLabelMethod memoizes per element', () => {
   const { document } = window;
 
   // hasLabelAssociation resolves via the native `.labels` API (element
-  // references, no query needed) before falling back to querySelector —
+  // references, no query needed) before falling back to querySelector, so
   // spy on the `.labels` getter itself as the "DOM work happened" signal,
   // since querySelector is no longer called on this path.
   let labelsGetterCalls = 0;

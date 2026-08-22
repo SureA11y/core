@@ -13,8 +13,8 @@ try {
   chromium = null;
 }
 
-// runa11yCoreAcrossFrames/a11yCoreEnableFrameResponder are deliberately NOT
-// extractable alone via .toString() the way runa11yCoreInPage is -- they're
+// runa11yCoreAcrossFrames/a11yCoreEnableFrameResponder aren't extractable
+// alone via .toString() the way runa11yCoreInPage is -- they're
 // wrapped in their own self-contained IIFE (crossFrameRunnerSource in
 // scripts/build-core.js) together with a private copy of everything they
 // need, so they stay usable the same bundler-free way runa11yCoreInPage
@@ -133,7 +133,7 @@ test(
     );
 
     await t.test(
-      'a genuinely cross-origin child (different local origin) with the responder enabled is reachable too',
+      'a truly cross-origin child (different local origin) with the responder enabled is reachable too',
       async () => {
         const childServer = await serve(
           '<!doctype html><html><body><button></button></body></html>'
@@ -149,7 +149,7 @@ test(
         await page.goto(serverUrl(parentServer));
 
         const frame = page.frames()[1];
-        assert.notStrictEqual(frame.url(), page.url()); // genuinely a different origin, not just a different path
+        assert.notStrictEqual(frame.url(), page.url()); // actually a different origin, not just a different path
         await frame.addScriptTag({ content: CROSS_FRAME_CHUNK });
         await frame.evaluate(() => {
           window.a11yCoreEnableFrameResponder();

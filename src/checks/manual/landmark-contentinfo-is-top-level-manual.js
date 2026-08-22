@@ -6,25 +6,25 @@
  * @check landmark-contentinfo-is-top-level
  * @atomic true
  * @summary The contentinfo landmark must not be nested inside another landmark
- * @standard Best Practices (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
  *   Applies whenever the page contains at least one contentinfo
  *   candidate: explicit role="contentinfo", OR a <footer> with NO role
  *   attribute at all, regardless of nesting (see implementation notes on
- *   why candidate selection is deliberately unconditional).
+ *   why candidate selection is unconditional on purpose).
  * @expectation
  *   No contentinfo candidate has an ancestor that is itself any landmark
  *   region. A contentinfo nested inside another landmark is not a
  *   top-level, whole-page footer region and confuses landmark-based
  *   navigation for assistive technology users.
  * @implementation-notes
- * - Not WCAG-normative — authored as an advisory, cantTell-capped
+ * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent (this rule mirrors
  *   its structure with contentinfo/footer in place of banner/header).
  * - Candidate selection (`isContentinfoCandidate`) requires the element to
  *   really carry the contentinfo role, via the suppression-aware
- *   `getLandmarkRole` — same reasoning as landmark-banner-is-top-level.
+ *   `getLandmarkRole`, same reasoning as landmark-banner-is-top-level.
  */
 
 const id = 'landmark-contentinfo-is-top-level';
@@ -79,7 +79,7 @@ function runInPage(ctx) {
 
   // Delegates to the shared helpers.hasLandmarkScopingAncestor for the
   // question "does this element sit inside a sectioning-content/<main>
-  // ancestor that suppresses its conditional implicit role" — role-aware
+  // ancestor that suppresses its conditional implicit role": role-aware
   // (an ancestor's bare TAG only counts when it carries no role attribute
   // at all; an explicit role="dialog"-style override no longer suppresses)
   // rather than a local tag-only copy. See that function's header comment
@@ -98,7 +98,7 @@ function runInPage(ctx) {
     if (tag === 'main') return 'main';
     if (tag === 'nav') return 'navigation';
     if (tag === 'aside') {
-      // A named <aside> is never suppressed, even when nested — it keeps
+      // A named <aside> is never suppressed, even when nested. It keeps
       // "complementary" when it has an accessible name, even inside
       // sectioning content. Matches landmark-unique's precedent.
       if (!hasSectioningAncestor(el, false)) return 'complementary';
@@ -127,12 +127,12 @@ function runInPage(ctx) {
     return getImplicitLandmarkRole(el);
   }
 
-  // Candidate selection is deliberately NOT the same as getLandmarkRole()
-  // === 'contentinfo' — see the header comment above. A <footer> is
+  // Candidate selection is NOT the same as getLandmarkRole()
+  // === 'contentinfo'; see the header comment above. A <footer> is
   // a candidate purely by tag + absence of any role attribute, independent
   // of whether sectioning-ancestor nesting would currently suppress its
   // implicit role; an explicit role="contentinfo" is always a candidate too.
-  // A candidate must actually have the contentinfo role — a <footer> inside
+  // A candidate must actually have the contentinfo role: a <footer> inside
   // article/aside/main/nav/section is not one, so flagging it as nested
   // would report a landmark that does not exist.
   function isContentinfoCandidate(el) {

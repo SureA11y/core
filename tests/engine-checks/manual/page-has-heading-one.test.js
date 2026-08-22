@@ -85,7 +85,7 @@ test(`${RULE_ID}: cantTell when the only h1 has visibility:hidden`, () => {
   assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
-test(`${RULE_ID}: notApplicable when the h1 is only visually clipped off-screen but remains in the accessibility tree (eBay's homepage pattern — must NOT regress)`, () => {
+test(`${RULE_ID}: notApplicable when the h1 is only visually clipped off-screen but remains in the accessibility tree (eBay's homepage pattern, must not regress)`, () => {
   const html = `<!doctype html><html><body><h1 style="position:absolute;clip-path:inset(50%);visibility:visible">Site title</h1></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });

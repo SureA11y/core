@@ -1,6 +1,6 @@
 # Engine options reference
 
-Every runner (`runDomRulesInPage`, `runa11yCoreInPage`) takes the same four arguments: `(pageUrl, contextSelector, engineOptions, runOnly)`. This page documents `engineOptions` and `runOnly` in full — the real, current surface, verified against `src/core/dom-runner.js` and `scripts/build-core.js`, not the historical `docs/README.md`.
+Every runner (`runDomRulesInPage`, `runa11yCoreInPage`) takes the same four arguments: `(pageUrl, contextSelector, engineOptions, runOnly)`. This page documents `engineOptions` and `runOnly` in full, verified against `src/core/dom-runner.js` and `scripts/build-core.js`.
 
 ## Selecting which rules run
 

@@ -66,7 +66,7 @@ test(`${RULE_ID}: cantTell when a <header> nested inside an ancestor whose role 
   assert.ok(hasOccurrenceForId(rule, 'b'));
 });
 
-test(`${RULE_ID}: notApplicable when a <header> is nested inside a plain (no role override) <aside> — the ancestor's bare tag still suppresses banner exactly as before, only an explicit role override on the ancestor changes the outcome`, () => {
+test(`${RULE_ID}: notApplicable when a <header> is nested inside a plain (no role override) <aside>, since the ancestor's bare tag still suppresses banner; only an explicit role override on the ancestor changes the outcome`, () => {
   const html = `<!doctype html><html><body>
     <header id="a">Site header</header>
     <aside aria-label="Related"><header id="b">Not a landmark</header></aside>

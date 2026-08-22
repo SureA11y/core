@@ -6,7 +6,7 @@
  * @check landmark-main-is-top-level
  * @atomic true
  * @summary The main landmark must not be nested inside another landmark
- * @standard Best Practices (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
  *   Applies whenever the page contains at least one main landmark
  *   (explicit role="main", or an implicit <main> element).
@@ -16,15 +16,15 @@
  *   whole-page main content area and confuses landmark-based navigation
  *   for assistive technology users.
  * @implementation-notes
- * - Not WCAG-normative — authored as an advisory, cantTell-capped
+ * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent (this rule mirrors
  *   its structure with main in place of banner/header).
  * - Unlike landmark-banner-is-top-level/landmark-contentinfo-is-top-level
  *   (see that file's header comment), candidate selection here doesn't
  *   need to be unconditional: `<main>`'s implicit role is unconditional
- *   per HTML-AAM — unlike `<header>`/`<footer>`, nesting never suppresses
- *   it — so `getImplicitLandmarkRole`'s `main` branch is never subject to
+ *   per HTML-AAM. Unlike `<header>`/`<footer>`, nesting never suppresses
+ *   it, so `getImplicitLandmarkRole`'s `main` branch is never subject to
  *   the self-defeating candidate-selection problem those two rules guard
  *   against.
  */
@@ -81,7 +81,7 @@ function runInPage(ctx) {
 
   // Delegates to the shared helpers.hasLandmarkScopingAncestor for the
   // question "does this element sit inside a sectioning-content/<main>
-  // ancestor that suppresses its conditional implicit role" — role-aware
+  // ancestor that suppresses its conditional implicit role": role-aware
   // (an ancestor's bare TAG only counts when it carries no role attribute
   // at all; an explicit role="dialog"-style override no longer suppresses)
   // rather than a local tag-only copy. See that function's header comment
@@ -100,7 +100,7 @@ function runInPage(ctx) {
     if (tag === 'main') return 'main';
     if (tag === 'nav') return 'navigation';
     if (tag === 'aside') {
-      // A named <aside> is never suppressed, even when nested — it keeps
+      // A named <aside> is never suppressed, even when nested. It keeps
       // "complementary" when it has an accessible name, even inside
       // sectioning content. Matches landmark-unique's precedent.
       if (!hasSectioningAncestor(el, false)) return 'complementary';

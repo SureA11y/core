@@ -185,7 +185,7 @@ test('aria-role-name-present: role=tree labelledby hidden text => pass', () => {
   // Per the Accessible Name and Description Computation spec, a node
   // directly referenced by aria-labelledby still supplies its text even
   // when hidden from the accessibility tree (a standard visually-hidden
-  // label pattern) — this is not an accessibility violation.
+  // label pattern), so this is not an accessibility violation.
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 

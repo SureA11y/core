@@ -96,14 +96,14 @@ test(`${RULE_ID}: pass when the only intervening ancestor is transparent (role="
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: pass for a multi-level nested treeitem (treeitem > group > treeitem > group > tree) — a normal, arbitrarily-deep ARIA tree`, () => {
+test(`${RULE_ID}: pass for a multi-level nested treeitem (treeitem > group > treeitem > group > tree), a normal, arbitrarily-deep ARIA tree`, () => {
   // A sub-tree's <li role="treeitem"> items nested directly inside their
   // parent directory treeitem's own <ul role="group"> children container (a
   // standard ARIA TreeView pattern: tree > treeitem > group > treeitem >
   // group > treeitem...). hasAcceptableAncestorContext previously treated
   // the immediate role="group" ancestor as transparent (per
   // GROUP_TRANSPARENT_FOR_ROLES) and kept walking, but stopped at the next
-  // real ancestor role — a second treeitem — and failed since "treeitem"
+  // real ancestor role (a second treeitem) and failed since "treeitem"
   // wasn't itself in the original acceptable-roles set. The fix pushes the
   // tested element's own role into the acceptable set at the same point it
   // drops "group", so a further treeitem ancestor also satisfies the
@@ -121,7 +121,7 @@ test(`${RULE_ID}: pass for a multi-level nested treeitem (treeitem > group > tre
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: pass when an intervening ancestor has an invalid/unrecognized role token (not a real ARIA role) — transparent to the search, same as no role at all`, () => {
+test(`${RULE_ID}: pass when an intervening ancestor has an invalid/unrecognized role token (not a real ARIA role), transparent to the search, same as no role at all`, () => {
   // A role="columnheader" cell whose immediate role-bearing ancestor is
   // role="columngroup" (not a real ARIA role), itself inside a real
   // role="row" ancestor. Explicit-role resolution validates role="" tokens
@@ -167,7 +167,7 @@ test(`${RULE_ID}: pass when the required-context role only exists across a shado
 
 test(`${RULE_ID}: fail when a slotted element's shadow-DOM ancestor still has no acceptable context role`, () => {
   // Same slotted shape as above, but the wrapping shadow-DOM container has
-  // no role at all — confirms the composed-tree walk doesn't just make
+  // no role at all, confirming the composed-tree walk doesn't just make
   // every slotted element pass unconditionally.
   const dom = createDom(`<!doctype html><html><body>
     <div id="host"><div id="a" role="listitem" slot="descendant">Item</div></div>

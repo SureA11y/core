@@ -22,14 +22,14 @@
  *   accessibility tree. Membership is decided by WAI-ARIA's own "Accessible
  *   Name Required: True" characteristic, not by whether a role merely permits
  *   a name: tablist, toolbar, menu, menubar and scrollbar are name-from-author
- *   roles the spec does not require a name for, and are deliberately out of
+ *   roles the spec does not require a name for, and are out of
  *   scope. meter and progressbar are also covered by meter-name-present and
  *   progressbar-name-present, which map to SC 1.1.1; this rule is what gives
  *   those two roles their 4.1.2 coverage.
  * @expectation
  *   The element has a non-empty aria-label, an aria-labelledby that resolves
  *   to non-empty text, or a non-empty title. Every role in the set is
- *   name-from-author-only, so descendant text is deliberately not accepted:
+ *   name-from-author-only, so descendant text is not accepted:
  *   a labelled child inside a composite widget would otherwise pass the
  *   container that has no name of its own.
  */
@@ -114,7 +114,7 @@ function runInPage(ctx) {
   // button-name-present et al.), which correctly includes hidden/aria-hidden
   // referenced nodes per the Accessible Name and Description Computation
   // spec (a hidden node directly referenced by aria-labelledby still
-  // supplies its text — this is a standard visually-hidden-label pattern).
+  // supplies its text, this is a standard visually-hidden-label pattern).
   const resolveLabelledby = (el, maxRefs) => {
     if (!getAriaLabelledByInfo) return '';
     try {

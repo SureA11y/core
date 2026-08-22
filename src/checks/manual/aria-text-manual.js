@@ -6,7 +6,7 @@
  * @check aria-text
  * @atomic true
  * @summary role="text" elements should have no focusable descendants
- * @standard Best Practices (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
  *   Elements with an explicit `role="text"`.
  * @expectation
@@ -14,10 +14,10 @@
  *   subtree as a single unit of plain text (e.g. text visually split
  *   across multiple `<span>`s by styling). Per the WAI-ARIA Authoring
  *   Practices, this only makes sense when that subtree contains no
- *   focusable content — a focusable descendant inside a "this is just
+ *   focusable content: a focusable descendant inside a "this is just
  *   text" region is unreachable or confusing for keyboard/AT users.
  * @implementation-notes
- * - Not WCAG-normative — authored as an advisory, cantTell-capped
+ * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule, matching the Tier 1b precedent (see
  *   `landmark-unique`'s header comment for the shared rationale).
  * - "Focusable descendant" is a presence check (link/button/form
@@ -80,7 +80,7 @@ function runInPage(ctx) {
       selector: stableSelector,
       html,
       summary: 'This role="text" element contains a focusable descendant.',
-      hint: 'Remove role="text" (or remove the focusable descendant) — a "plain text" region should not contain focusable content.',
+      hint: 'Remove role="text" (or remove the focusable descendant); a "plain text" region should not contain focusable content.',
       i18n: {
         summaryKey: 'ariaText_summary_cantTell',
         hintKey: 'ariaText_hint_cantTell',

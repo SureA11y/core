@@ -18,7 +18,7 @@ Check the result's `error` field first — if it says `"<something> is not defin
 
 ## "A geometry-dependent rule (e.g. `target-size-minimum`) always says `notApplicable`"
 
-Plain jsdom (no real browser) doesn't implement CSS layout — `getBoundingClientRect()` always returns zero geometry. Rules that need real layout deliberately report `notApplicable` under jsdom rather than guess. Run through a real browser instead (Puppeteer/Playwright — see [`INTEGRATION.md`](./INTEGRATION.md) Pattern 2) to get real findings from these rules. See [`LIMITATIONS.md`](./LIMITATIONS.md).
+Plain jsdom (no real browser) doesn't implement CSS layout — `getBoundingClientRect()` always returns zero geometry. Rules that need real layout report `notApplicable` under jsdom rather than guess. Run through a real browser instead (Puppeteer/Playwright — see [`INTEGRATION.md`](./INTEGRATION.md) Pattern 2) to get real findings from these rules. See [`LIMITATIONS.md`](./LIMITATIONS.md).
 
 ## "I only see `fail`/`cantTell` occurrences — where's the list of elements that passed?"
 
@@ -28,7 +28,7 @@ By design, this engine never enumerates the elements a rule *passed* — only th
 
 Two common causes, in order of likelihood:
 
-1. **The element is excluded from the accessibility tree** — `aria-hidden="true"`, `display: none`, `visibility: hidden`, `hidden`, or an `inert` ancestor. Most rules deliberately skip content that's already invisible to assistive technology (checking a hidden element would be meaningless, and could produce a misleading `fail` on content no user encounters). Some rules explicitly opt out of this gating when it wouldn't make sense to (e.g. `no-autoplay-audio` — hidden audio still plays sound) — check the specific rule's file header comment (`@applicability`) in `src/checks/`.
+1. **The element is excluded from the accessibility tree** — `aria-hidden="true"`, `display: none`, `visibility: hidden`, `hidden`, or an `inert` ancestor. Most rules skip content that's already invisible to assistive technology, since checking a hidden element would be meaningless and could produce a misleading `fail` on content no user encounters. Some rules explicitly opt out of this gating when it wouldn't make sense to (e.g. `no-autoplay-audio` — hidden audio still plays sound) — check the specific rule's file header comment (`@applicability`) in `src/checks/`.
 2. **`excludeSelectors`** — if you've configured this (directly or inherited from a shared config), confirm the element in question isn't matched by it. Remember this can also be scoped to a single rule via `engineOptions.rules[ruleId].excludeSelectors` (see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#rule-scoped-excludeselectors)) — if a rule you expect to fire keeps coming back `notApplicable`/`pass` for one element only, check whether that rule specifically has its own exclude list configured, not just the global one.
 
 ## "Does a clean scan (`pass` everywhere) mean the page is WCAG conformant?"

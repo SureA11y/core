@@ -181,7 +181,7 @@ function hintFrom(dom, engineOptions) {
 
 test('the bundle carries English only', () => {
   assert.equal(bundleSource.includes('Entfernen Sie sie'), false);
-  assert.equal(bundleSource.includes('Remove it —'), true);
+  assert.equal(bundleSource.includes('Remove it:'), true);
 });
 
 test('without a side file, a non-English locale reports dictionary-not-loaded', async () => {

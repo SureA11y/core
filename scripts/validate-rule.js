@@ -64,10 +64,10 @@ function loadWcagFacetsRegistry(repoRoot) {
       assert.ok(isNonEmptyString(f.automation), `Facet.automation must be non-empty (${p})`);
 
       // Uniqueness within this SC's own facets array only. The same facet id
-      // legitimately repeats ACROSS different SCs when one rule/facet genuinely
+      // legitimately repeats ACROSS different SCs when one rule/facet actually
       // satisfies multiple SCs at once (e.g. scrollable-region-focusable-evidence
       // under both 2.1.1 and 2.1.3, mirroring the rule's own dual-mapped
-      // coverage.facetsBySc) — that's intentional dual-mapping, not a data bug.
+      // coverage.facetsBySc). That's intentional dual-mapping, not a data bug.
       assert.ok(
         !seenInThisSc.has(f.id),
         `Duplicate facet id "${f.id}" listed twice within SC ${sc} in ${p}`
@@ -396,7 +396,7 @@ function validateRunInPageSerialization(runInPage) {
   //
   // We intentionally allow `.id` property access, strings containing "id", and
   // `id: ...`/`meta: ...` used as an object-literal property KEY (a common,
-  // safe pattern for reporting e.g. `data: { details: { id: refId } }`) — a
+  // safe pattern for reporting e.g. `data: { details: { id: refId } }`). A
   // property key is never evaluated as an outer-scope variable reference,
   // unlike a bare `id`/`meta` token or the `{ id }` shorthand (still caught,
   // since it isn't followed by a colon).

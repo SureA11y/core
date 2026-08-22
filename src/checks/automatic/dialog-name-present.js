@@ -72,13 +72,13 @@ function runInPage(ctx) {
   function resolveAriaLabelledbyText(document, el, maxRefs) {
     const raw = getAttr(el, 'aria-labelledby');
     if (!raw) return '';
-    // Resolve via the shared getTextFromIdRefs helper — computes each
+    // Resolve via the shared getTextFromIdRefs helper, computes each
     // referenced element's own ACCESSIBLE NAME (aria-label, then
     // aria-labelledby, then a value-like name, then content, then title),
     // not just its content text. This matters when aria-labelledby points
     // at an <iframe title="..."> (e.g. BBC News' cookie-consent dialog,
     // pointing at an `<iframe title="SP Consent Message">`), whose only
-    // name source is its title attribute — an iframe's content is
+    // name source is its title attribute, an iframe's content is
     // opaque/cross-origin per HTML-AAM, so "name from content" is always
     // empty. Computing only name-from-content of the referenced node would
     // silently miss the title fallback and report no accessible name at

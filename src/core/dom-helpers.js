@@ -398,15 +398,14 @@ function createDomHelpers(opts) {
   // Flat-tree (composed) parent: a distributed/slotted node's real rendered
   // parent is the <slot> it's assigned to, NOT its own light-DOM parentNode
   // (parentNode is unaffected by slot assignment and stays truthy for any
-  // normally-connected slotted element — checking it first, as an earlier
-  // version of this helper did, means the assignedSlot branch never fires
-  // for the common case of a real, connected slotted child, silently
-  // treating it as if it rendered under its light-DOM parent instead of
-  // the shadow-tree container it's actually distributed into). assignedSlot
-  // must be checked first; parentNode only applies to nodes that aren't
-  // currently distributed through a slot. Once climbing reaches a
-  // ShadowRoot itself (parentNode is null there), `.host` is the shadow
-  // host element directly — NOT `getRootNode({composed:true})`, which
+  // normally-connected slotted element). Checking parentNode first would mean
+  // the assignedSlot branch never fires for the common case of a real,
+  // connected slotted child, silently treating it as if it rendered under
+  // its light-DOM parent instead of the shadow-tree container it's actually
+  // distributed into. assignedSlot must be checked first; parentNode only
+  // applies to nodes that aren't currently distributed through a slot. Once
+  // climbing reaches a ShadowRoot itself (parentNode is null there), `.host`
+  // is the shadow host element directly, not `getRootNode({composed:true})`, which
   // resolves all the way to the top-level document, skipping past the
   // immediate shadow boundary this function is trying to climb out of one
   // level at a time.
@@ -1004,7 +1003,7 @@ function createDomHelpers(opts) {
     for (const r of roots) {
       if (!r) continue;
       // querySelectorAll never returns its own context node, only
-      // descendants — so an attribute/role selector can never match `r`
+      // descendants, so an attribute/role selector can never match `r`
       // itself this way. In the default (unscoped) case `r` is
       // `document.documentElement` (the <html> element), so without this
       // self-match every rule using this helper would be blind to an issue
@@ -1976,7 +1975,7 @@ function createDomHelpers(opts) {
       // Other elements that are natively tabbable by default (no explicit
       // tabindex required): <button>, <summary>, and <a>/<area> with a
       // non-empty href. Real browsers keep these in the tab order
-      // regardless of aria-hidden — this is exactly the "aria-hidden on a
+      // regardless of aria-hidden; this is exactly the "aria-hidden on a
       // focusable element" anti-pattern that aria-hidden-focus.js itself
       // detects as a violation, so the eligibility model must evaluate
       // these too rather than silently excluding them. getPlatformFocusability
@@ -2160,11 +2159,11 @@ function createDomHelpers(opts) {
     // style already reflects the fully-resolved (post-inheritance)
     // value. Checked here, before the opacity accumulation walk below,
     // so an element that is BOTH opacity:0 AND visibility:hidden (a
-    // common hover/JS-reveal dropdown pattern — confirmed on a real
+    // common hover/JS-reveal dropdown pattern, confirmed on a real
     // site, Getty's global nav dropdowns) is correctly reported as
     // 'visibilityHidden' rather than only 'opacityZero'. Reporting only
-    // 'opacityZero' matters because callers that deliberately treat
-    // opacity:0 as "still in-scope" (e.g. aria-hidden-focus, which must
+    // 'opacityZero' matters because callers that treat
+    // opacity:0 as "still in-scope" on purpose (e.g. aria-hidden-focus, which must
     // not exclude opacity-based hiding) would otherwise see no other
     // blocking reason and wrongly conclude the element is focusable,
     // even though visibility:hidden alone already removes it from the
@@ -2180,13 +2179,13 @@ function createDomHelpers(opts) {
 
     // 2) CSS visibility suppression + opacity chain
     //
-    // Two passes over the SAME ancestor chain, deliberately NOT
-    // interleaved: display:none (and content-visibility:hidden) are
-    // absolute, un-overridable blocks — there is no CSS mechanism for a
+    // Two passes over the SAME ancestor chain, kept separate on purpose:
+    // display:none (and content-visibility:hidden) are
+    // absolute, un-overridable blocks. There is no CSS mechanism for a
     // descendant to un-hide itself from a display:none ancestor, unlike
     // visibility:hidden (invertible) or opacity (never a hard block by
-    // this function's own design — see callers like aria-hidden-focus
-    // that deliberately keep opacity:0 in-scope). A single interleaved
+    // this function's own design, see callers like aria-hidden-focus
+    // that keep opacity:0 in-scope on purpose). A single interleaved
     // loop returning on the FIRST blocking condition would let a closer
     // ancestor's opacity:0 short-circuit before a farther ancestor's
     // display:none is reached, hiding the stronger, unconditional block
@@ -2316,7 +2315,7 @@ function createDomHelpers(opts) {
 
       if (cssBlock === 'displayNone') return __cacheAndReturn(out(false, ['displayNone'], {}));
       // NOTE: unlike display:none, CSS visibility is inherited and thus
-      // invertible — a descendant with an explicit visibility:visible
+      // invertible: a descendant with an explicit visibility:visible
       // re-renders even under a visibility:hidden ancestor. So an
       // ancestor's visibility:hidden must NOT short-circuit this walk;
       // the target node's own fully-resolved visibility is checked
@@ -2629,7 +2628,7 @@ function createDomHelpers(opts) {
   // Recursively computes an IDREF-referenced node's own text alternative,
   // per the Accessible Name and Description Computation spec (resolving a
   // reference re-applies the name-computation algorithm to the target, it
-  // does not just read raw textContent — see getContentNameInfo for why
+  // does not just read raw textContent. See getContentNameInfo for why
   // raw textContent misses image alt text and other attribute-sourced
   // names on descendants). `visited` guards against cycles reachable via
   // direct aria-labelledby chains (e.g. two elements labelling each
@@ -2804,13 +2803,13 @@ function createDomHelpers(opts) {
   // Computes a wrapping/explicit <label>'s own text for the purpose of
   // naming ONE specific control inside it, excluding that control's own
   // subtree (matches HTML-AAM's "label text minus embedded control
-  // content"). Deliberately does NOT call back into
-  // getAccessibleNameInfo/getContentNameInfo for descendants — only img
+  // content"). On purpose, it does NOT call back into
+  // getAccessibleNameInfo/getContentNameInfo for descendants: only img
   // alt (getTextAlternativeInfo), aria-label (getAriaLabelInfo), and
   // aria-labelledby (getAriaLabelledByInfo) on descendants, all of which
-  // are leaf-safe with respect to <label> lookups. This is intentional:
+  // are leaf-safe with respect to <label> lookups. This matters because
   // getAccessibleNameInfo calls this function, and getContentNameInfo's
-  // own descendant walk calls getAccessibleNameInfo — if this function
+  // own descendant walk calls getAccessibleNameInfo. If this function
   // routed back through either of those instead, a control nested inside
   // its own naming <label> (the exact case this exists to handle) would
   // recurse forever between "what's my name" and "what's my label's
@@ -2951,9 +2950,9 @@ function createDomHelpers(opts) {
 
     // Native <label> association via the HTML `.labels` API, which
     // resolves BOTH `<label for="...">` and wrapping `<label>...</label>`
-    // in one call, for any genuinely labelable element (button, input,
-    // meter, output, progress, select, textarea — `.labels` is simply
-    // absent/undefined on anything else, so this never over-triggers).
+    // in one call, for any labelable element (button, input,
+    // meter, output, progress, select, textarea). `.labels` is simply
+    // absent/undefined on anything else, so this never over-triggers.
     // Catches e.g. an unlabeled icon-only <button> wrapped in a <label>,
     // which the id-based lookup below misses (it only handles explicit
     // for="" and such a button has no id).
@@ -3066,8 +3065,8 @@ function createDomHelpers(opts) {
 
     // POLICY NOTE (revisit if ever reconsidered): title is accepted here as
     // a last-resort accessible-name source, matching HTML-AAM/accname. This
-    // is a deliberate, spec-compliant choice -- but title is a genuinely
-    // weak mechanism in practice (no touch/mobile exposure, inconsistent
+    // is a spec-compliant choice, but title is a weak
+    // mechanism in practice (no touch/mobile exposure, inconsistent
     // screen-reader support, no visible affordance for sighted users), and
     // this is the shared function nearly every accessible-name-dependent
     // rule in the engine goes through. Flagged here so it isn't silently
@@ -3207,7 +3206,7 @@ function createDomHelpers(opts) {
   }
 
   // <canvas> fallback content is the element's *children*, not just its
-  // rendered text — a documented HTML5 technique is an equivalent <img
+  // rendered text. A documented HTML5 technique is an equivalent <img
   // alt="..."> (or similarly self-describing element) inside <canvas>.
   // textContent alone misses that, since alt text isn't part of it.
   function __hasMeaningfulCanvasFallbackDescendant(container) {
@@ -3297,7 +3296,7 @@ function createDomHelpers(opts) {
 
       // <canvas> is not a labelable element (no browser computes an
       // accessible name from <label for="...">), so only ARIA naming
-      // (and title, as a generic last-resort accname source) count —
+      // (and title, as a generic last-resort accname source) count,
       // unlike getAccessibleNameInfo, which also accepts native
       // <label> associations.
       const aria = getAriaNameInfo(el, _ctx, opts);
@@ -3340,9 +3339,9 @@ function createDomHelpers(opts) {
     };
   }
 
-  // C.1) "Name from content" — recursive accname-aligned content-name computation.
+  // C.1) "Name from content": recursive accname-aligned content-name computation.
   //
-  // Rationale: the accname spec's "name from content" step (2F) is recursive —
+  // Rationale: the accname spec's "name from content" step (2F) is recursive:
   // for each child node, use that CHILD's own accessible name if it has one
   // (aria-label/aria-labelledby/native <label>/title, or `alt` for image-like
   // elements) rather than only concatenating literal text nodes. A naive
@@ -3355,8 +3354,8 @@ function createDomHelpers(opts) {
     if (!isElement(el))
       return { present: false, value: '', mechanism: 'unsupported', flags: ['notElement'] };
 
-    // Shares __nameComputationDepth with computeIdRefTargetTextAlternative
-    // — see that function's header comment for why a single per-call
+    // Shares __nameComputationDepth with computeIdRefTargetTextAlternative;
+    // see that function's header comment for why a single per-call
     // guard isn't enough on its own.
     if (__nameComputationDepth >= __NAME_COMPUTATION_MAX_DEPTH) {
       return { present: false, value: '', mechanism: 'none', flags: ['depth-limit'] };
@@ -3422,12 +3421,12 @@ function createDomHelpers(opts) {
       if (!isElement(node)) return;
 
       // Skip anything not exposed to the accessibility tree (hidden,
-      // aria-hidden, display:none, inert, etc.) — same scope as
+      // aria-hidden, display:none, inert, etc.), same scope as
       // isAccTreeEligible, so a hidden descendant never contributes.
       //
       // Exception: opts.includeHidden (set by computeIdRefTargetTextAlternative
       // when the aria-labelledby/aria-describedby TARGET itself is hidden)
-      // skips this check entirely except for genuinely non-rendered tags.
+      // skips this check entirely except for tags that never render at all.
       // Per the accname spec, a directly-referenced target's own hidden
       // state doesn't block name computation, and that bypass covers the
       // target's whole subtree, not just the target element. Without it,
@@ -3479,8 +3478,8 @@ function createDomHelpers(opts) {
         // <img alt="" aria-labelledby="..."> must contribute the
         // referenced text, not nothing, to its parent's content name.
         //
-        // Deliberately uses getAriaNameInfo (aria only), NOT the general
-        // getAccessibleNameInfo — the latter falls back to a native
+        // Uses getAriaNameInfo (aria only) on purpose, NOT the general
+        // getAccessibleNameInfo, since the latter falls back to a native
         // <label>/title, which for an image-like descendant must rank
         // BELOW alt, not above it (otherwise an image's title tooltip would
         // win over its real alt text).
@@ -3492,7 +3491,7 @@ function createDomHelpers(opts) {
           return;
         }
 
-        // input[type=image] (unlike img/area) is a genuinely
+        // input[type=image] (unlike img/area) is a real, plain
         // labelable form control -- a native <label> association
         // still outranks its alt attribute per accname's
         // element-specific name mapping, so it's checked here,
@@ -3579,11 +3578,11 @@ function createDomHelpers(opts) {
     // descendant's children and then decide whether the title was needed,
     // without duplicating the <slot> handling.
     function walkChildren(node, parts) {
-      // A <slot>'s own childNodes are its FALLBACK content only —
+      // A <slot>'s own childNodes are its FALLBACK content only,
       // rendered solely when nothing is assigned to it. When real content
       // IS distributed into it, that's what's exposed to the accessibility
       // tree, and it lives elsewhere in the light DOM, not as this node's
-      // children — so prefer assignedNodes() and fall back to childNodes.
+      // children, so prefer assignedNodes() and fall back to childNodes.
       if (lower(node.tagName) === 'slot' && typeof node.assignedNodes === 'function') {
         let assigned;
         try {
@@ -4093,7 +4092,7 @@ function createDomHelpers(opts) {
         }
 
         // A same-tag sibling before this node (i > 1) already means
-        // an unqualified tag selector would be ambiguous — no need
+        // an unqualified tag selector would be ambiguous, so there's no need
         // to also scan forward in that case. Only scan
         // nextElementSibling when this node is the first of its tag
         // among its siblings, to catch the case where the
@@ -4135,10 +4134,10 @@ function createDomHelpers(opts) {
       // catch this: it only verifies THIS element matches the string,
       // never that the string is unique document-wide.
       //
-      // Fix: when multiple roots are in play, don't stop early --
+      // So when multiple roots are in play, don't stop early --
       // keep climbing (same as the always-correct no-contextSelector
-      // path) until finding a genuinely unique anchor or reaching the
-      // true document root, which is always singular. That restores
+      // path) until finding an anchor that's actually unique or reaching the
+      // true document root, which is always singular. That preserves
       // the invariant the final safety-check comment below relies on,
       // rather than needing a separate (more expensive) document-wide
       // uniqueness re-check.
@@ -4205,7 +4204,7 @@ function createDomHelpers(opts) {
       const candidate = parts.join(' > ') || tag || 'html';
 
       // Verify the constructed selector string actually resolves to
-      // `el` per the CSS engine's own semantics — a real safety net,
+      // `el` per the CSS engine's own semantics. This is a real safety net,
       // since some selector engines (observed in jsdom) disagree with
       // this function's own :nth-of-type sibling counting in edge
       // cases. `el.matches(candidate)` checks exactly that (does the
@@ -4218,13 +4217,13 @@ function createDomHelpers(opts) {
       // descendant) combinators, so a correctly-matching chain can
       // only resolve to one element short of a malformed document
       // (e.g. two <html> roots) -- true as long as the walk above
-      // never stops short of a genuinely unique anchor/root, which is
-      // exactly what `stopAtMatchedRoot` now guarantees (see its own
-      // comment above; a multi-root contextSelector scan stopping
-      // early used to violate this invariant silently). Re-deriving
+      // never stops short of an anchor/root that's actually unique, which is
+      // exactly what `stopAtMatchedRoot` guarantees (see its own
+      // comment above; without it, a multi-root contextSelector scan
+      // stopping early would violate this invariant silently). Re-deriving
       // that guarantee via a
       // document-wide :nth-of-type scan was measured to cost O(total
-      // same-tag siblings) per call — pathological on pages with many
+      // same-tag siblings) per call, which is pathological on pages with many
       // flat, unidentified siblings (e.g. hundreds of unlabeled
       // <img>s), while contributing no realistic additional safety.
       try {
@@ -4329,7 +4328,7 @@ function createDomHelpers(opts) {
 
   function isPlaceholderCapable(el) {
     // Per HTML, `placeholder` is only a name/hint source for text-entry
-    // input types and <textarea> — browsers/AT ignore it on other input
+    // input types and <textarea>. Browsers/AT ignore it on other input
     // types (checkbox, radio, range, color, date, file, ...) and on
     // <select>, so it must not be treated as an accessible-name source
     // for those.
@@ -4370,10 +4369,10 @@ function createDomHelpers(opts) {
 
   // A <label> contributes a name to its associated control either via its
   // own aria-label/aria-labelledby (checked first, the usual ARIA-over-
-  // content precedence — so <label aria-label="Toggle Navigation"> names
+  // content precedence, so <label aria-label="Toggle Navigation"> names
   // its control even when its only child content is aria-hidden), or,
   // failing that, its rendered content (getContentNameInfo, which excludes
-  // aria-hidden/display:none/inert descendants — so a label whose only
+  // aria-hidden/display:none/inert descendants, so a label whose only
   // text is aria-hidden gives the control no name despite the association).
   function labelContributesAccessibleName(lab) {
     try {
@@ -4403,7 +4402,7 @@ function createDomHelpers(opts) {
     // Deterministic, stable subset:
     // - <label for="id">
     // - wrapping <label> ... <input> ...
-    // A structural association alone isn't enough — see
+    // A structural association alone isn't enough; see
     // labelContributesAccessibleName above for what counts.
     if (!isElement(el)) return false;
 
@@ -4423,7 +4422,7 @@ function createDomHelpers(opts) {
     let out = false;
     let associatedLabels = [];
 
-    // Prefer the native `.labels` API — resolves both wrapping <label>
+    // Prefer the native `.labels` API, which resolves both wrapping <label>
     // and <label for="id"> association in one call, as real elements.
     try {
       if (el && 'labels' in el && el.labels && el.labels.length) {
@@ -4433,8 +4432,8 @@ function createDomHelpers(opts) {
 
     if (!associatedLabels.length) {
       // Fallback for environments without a working `.labels` API:
-      // structural-only (pre-existing behavior, no content check —
-      // __lookupLabelForId's cache doesn't retain an element ref).
+      // structural-only, no content check, since
+      // __lookupLabelForId's cache doesn't retain an element ref.
       const id = trim(getAttr(el, 'id'));
       if (id) {
         const entry = __lookupLabelForId(id, '__default__');
@@ -4531,13 +4530,13 @@ function createDomHelpers(opts) {
   }
 
   // Resolves the final {outcome, severity, occurrences} for a rule that
-  // collects two independent confidence tiers during one run — some
+  // collects two independent confidence tiers during one run: some
   // findings are confident enough for a hard `fail`, others only warrant
   // `cantTell` (e.g. "this needs human review"). The naive approach
   // (`if (failOccurrences.length) return fail(failOccurrences); else if
   // (cantTellOccurrences.length) return cantTell(cantTellOccurrences);`)
   // silently drops every cantTell-tier finding whenever at least one
-  // fail-tier finding also exists on the same page — a real information
+  // fail-tier finding also exists on the same page. That's a real information
   // loss for a real scan, not just a test artifact: a page with one
   // confident violation and five "needs review" ones would report only
   // the one. This is a recurring shape across automatic rules with a
@@ -4548,13 +4547,13 @@ function createDomHelpers(opts) {
   // The correct behavior when a fail-tier finding exists: the overall
   // outcome is still `fail` (a real, confident violation must still gate
   // CI), but BOTH buckets' occurrences are returned together, not just
-  // the fail ones — each occurrence already carries its own
+  // the fail ones. Each occurrence already carries its own
   // distinguishing `data.details.reasonCode`/summary/hint, so nothing
   // about which findings were confident vs. which need review is lost;
-  // only the single aggregate outcome label stays singular, which was
+  // only the single aggregate outcome label stays singular, which is
   // already this engine's accepted one-outcome-per-rule-run schema
   // constraint (changing that is a separate, much larger, cross-cutting
-  // decision spanning report.js/baseline.js/explain.js/WCAG rollups —
+  // decision spanning report.js/baseline.js/explain.js/WCAG rollups,
   // out of scope for this helper).
   function resolveTieredOutcome(failOccurrences, cantTellOccurrences, severity) {
     function withOccurrenceTier(items, tier) {
@@ -4714,8 +4713,8 @@ function createDomHelpers(opts) {
     // agree on what a label is worth.
     labelContributesAccessibleName,
 
-    // Flat-tree ancestor walk (assignedSlot-aware, then shadow host) —
-    // see this function's own definition above for why assignedSlot
+    // Flat-tree ancestor walk (assignedSlot-aware, then shadow host).
+    // See this function's own definition above for why assignedSlot
     // must win over parentNode.
     composedParent,
     hasTruncatedAncestorWalk,

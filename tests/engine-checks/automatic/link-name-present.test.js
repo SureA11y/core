@@ -119,7 +119,7 @@ test(`${RULE_ID}: a decorative image (alt="") with only a title on it is still a
   // unconditionally -- so an image explicitly marked decorative via
   // alt="" (the standard "this conveys nothing" marker) still had its
   // title text adopted as the link's whole accessible name, silently
-  // hiding a genuinely unnamed link like this logo-only case.
+  // hiding a link with no real name, like this logo-only case.
   const html = `
 <!doctype html><html><body>
   <a href="/home"><img src="logo.png" alt="" title="Acme homepage"></a>
@@ -171,7 +171,7 @@ test(`${RULE_ID}: named via light-DOM text distributed into an unnamed shadow-DO
   // getContentNameInfo's descendant walk used each <slot>'s own childNodes
   // (fallback content only, empty here) instead of its
   // assignedNodes({flatten:true}) (what's actually rendered/exposed to the
-  // accessibility tree), so it found nothing — a real false positive on any
+  // accessibility tree), so it found nothing: a real false positive on any
   // component library that projects a control's label via <slot>.
   if (!createDom || !runa11yCoreOnDom || !assertRule) {
     assert.ok(true);

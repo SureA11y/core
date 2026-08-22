@@ -6,11 +6,11 @@
  * @check image-redundant-alt
  * @atomic true
  * @summary An image's alt text must not duplicate adjacent visible text
- * @standard Best Practices (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
  *   Applies to <img> elements with non-empty alt text whose immediate
  *   parent element also has other visible text content (i.e. text nodes
- *   besides the image itself — commonly an <a> or <button> wrapping both
+ *   besides the image itself, commonly an <a> or <button> wrapping both
  *   an icon image and a text label).
  * @expectation
  *   The image's alt text is not the same (case-insensitive, normalized)
@@ -19,10 +19,10 @@
  *   single control (e.g. an icon-plus-text link where the icon's alt
  *   duplicates the link text).
  * @implementation-notes
- * - Not WCAG-normative — authored as an advisory, cantTell-capped
+ * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent.
- * - Deliberately scoped to the immediate parent only (not the whole
+ * - Scoped to the immediate parent only on purpose (not the whole
  *   ancestor chain or arbitrary siblings), to keep the "redundant"
  *   judgment high-confidence and avoid false positives from unrelated
  *   text elsewhere on the page that coincidentally matches.

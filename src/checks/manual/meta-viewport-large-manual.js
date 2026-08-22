@@ -6,7 +6,7 @@
  * @check meta-viewport-large
  * @atomic true
  * @summary Viewport meta tag should allow zooming up to 500% (AAA-level)
- * @standard Best Practices (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
  *   Applies to <meta name="viewport"> elements that carry a non-empty
  *   content attribute.
@@ -17,7 +17,7 @@
  *   enforces the AA 200% minimum as a hard, WCAG-normative fail); this
  *   rule is advisory best-practice guidance toward the higher AAA bar.
  * @implementation-notes
- * - Not WCAG-normative — authored as an advisory, cantTell-capped
+ * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent.
  * - Distinct, atomic decision from meta-viewport-zoom-enabled

@@ -67,7 +67,7 @@ test(`${RULE_ID}: cantTell when a <footer> nested inside an ancestor whose role 
   assert.ok(hasOccurrenceForId(rule, 'b'));
 });
 
-test(`${RULE_ID}: notApplicable when a <footer> is nested inside a plain (no role override) <aside> — the ancestor's bare tag still suppresses contentinfo exactly as before, only an explicit role override on the ancestor changes the outcome`, () => {
+test(`${RULE_ID}: notApplicable when a <footer> is nested inside a plain (no role override) <aside>, since the ancestor's bare tag still suppresses contentinfo; only an explicit role override on the ancestor changes the outcome`, () => {
   const html = `<!doctype html><html><body>
     <footer id="a">Site footer</footer>
     <aside aria-label="Related"><footer id="b">Not a landmark</footer></aside>

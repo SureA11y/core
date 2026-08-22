@@ -11,7 +11,7 @@ Removing, renaming, or changing the type/meaning of any of these is a **major** 
 - Each occurrence (`occurrences[i]`): `selector`, `html`, `summary`, `hint`, `i18n`, `structuralPath`.
 - The rule **catalog** (`getChecksCatalog()`/`getRulesCatalog()`, a separate surface from a scan result — see `RULE_AUTHORING.md`): `ruleId`, `title`, `description`, `tags`, `wcagSc`, `normativeMappings`, `defaultSeverity`, `defaultConfidence`, `type`, `deprecated`/`.deprecation`. Note `tags` lives here, not on a per-scan `checksResults[i].meta` — the two surfaces intentionally carry different subsets of a rule's metadata.
 
-This list is deliberately not a new, invented guarantee — it codifies what the 6 real consumers above (and `docs/OUTPUT_SCHEMA.md`'s own worked examples) already depend on today, either directly or as documented shape.
+This list isn't a new, invented guarantee: it codifies what the 6 real consumers above (and `docs/OUTPUT_SCHEMA.md`'s own worked examples) already depend on today, either directly or as documented shape.
 
 ## Package entry points (covered by semver)
 
@@ -71,7 +71,7 @@ const meta = {
 
 `meta.deprecated: true` requires both `deprecation.reason` and `deprecation.sinceVersion` — `normalizeRuleMeta` (`src/core/rule-meta.js`) throws a clear build-time error otherwise, the same way it already validates `meta.i18n.titleKey`.
 
-**A deprecated rule keeps running and producing results completely normally** — `pass`/`fail`/`cantTell`/`notApplicable` exactly as before. Deprecation is a catalog-level signal (visible via `getChecksCatalog()`, and in `docs/RULE_CATALOG.md`) for integrators to plan a migration on their own schedule — deliberately **not** an automatic exclusion (there is no `engineOptions.excludeDeprecated` flag). Silently dropping a rule's results the moment it's deprecated would be exactly the kind of surprise this document exists to prevent.
+**A deprecated rule keeps running and producing results completely normally** — `pass`/`fail`/`cantTell`/`notApplicable` exactly as before. Deprecation is a catalog-level signal (visible via `getChecksCatalog()`, and in `docs/RULE_CATALOG.md`) for integrators to plan a migration on their own schedule, **not** an automatic exclusion (there is no `engineOptions.excludeDeprecated` flag). Silently dropping a rule's results the moment it's deprecated would be exactly the kind of surprise this document exists to prevent.
 
 The process:
 1. Mark the rule `deprecated: true` with `deprecation.reason`/`.replacedBy`/`.sinceVersion` set. Document it under `CHANGELOG.md`'s `### Deprecated` section (a standard Keep-a-Changelog category that's been in this project's changelog template since the beginning but never actually used until now).

@@ -257,10 +257,10 @@ test(`${RULE_ID}: conflict inside svg => cantTell (essential/equivalent uncertai
     </svg>
   </body></html>`;
   const result = run(html);
-  // This uncertain-tier finding used to be recorded only
-  // as a page-level boolean with no occurrence at all — unrecoverable from
-  // the result the moment it was combined with a real page. Now it's a
-  // real occurrence, same as a fail-tier finding would be. Both A and B
+  // This uncertain-tier finding must be reported as its own occurrence,
+  // not folded into a page-level boolean, or it becomes unrecoverable
+  // once combined with a real page. It's a real occurrence here, same
+  // as a fail-tier finding would be. Both A and B
   // reciprocally conflict and are each inside the <svg>, so both occur.
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
   for (const occ of rule.occurrences) {
@@ -299,8 +299,8 @@ test(`${RULE_ID}: ambiguous near-threshold perimeter sampling => cantTell (not a
     <button id="big" data-rect="25,10,30,30">Big</button>
   </body></html>`;
   const result = run(html);
-  // Same gap as the svg case above — this ambiguous-tier
-  // finding used to have no occurrence at all, just a boolean flag.
+  // Same as the svg case above: this ambiguous-tier finding needs its
+  // own occurrence, not just a boolean flag.
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'undersized-ambiguous-spacing');
 });
@@ -353,10 +353,10 @@ test(`${RULE_ID}: nested interactive controls, BOTH undersized => pass (pure-geo
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: User Agent Control exception — unstyled native checkbox/radio pair in a typical list => pass`, () => {
+test(`${RULE_ID}: User Agent Control exception: unstyled native checkbox/radio pair in a typical list => pass`, () => {
   // Ordinary, unstyled checkboxes (appearance still "auto") in a normal
-  // compact list layout. Size is browser-default, not the author's choice
-  // — the size requirement doesn't apply at all, regardless of spacing.
+  // compact list layout. Size is browser-default, not the author's choice,
+  // so the size requirement doesn't apply at all, regardless of spacing.
   const html = `<!doctype html><html><body>
     <label><input type="checkbox" id="cb1" data-rect="0,0,13,13"> Option A</label>
     <label><input type="checkbox" id="cb2" data-rect="0,20,13,13"> Option B</label>
@@ -367,8 +367,8 @@ test(`${RULE_ID}: User Agent Control exception — unstyled native checkbox/radi
 
 test(`${RULE_ID}: User Agent Control exception does NOT apply once the author resets appearance:none`, () => {
   // Same shape as the pass case above, but the author has taken over
-  // styling (appearance:none) — evaluated normally, and fails like any
-  // other undersized-and-close pair.
+  // styling (appearance:none), so it's evaluated normally, and fails like
+  // any other undersized-and-close pair.
   const html = `<!doctype html><html><body>
     <input type="checkbox" id="cb3" style="appearance:none" data-rect="0,0,10,10">
     <input type="checkbox" id="cb4" style="appearance:none" data-rect="15,0,10,10">
@@ -423,9 +423,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/target-size-all-scenarios.htm
     'fail_geo_b',
     'fail_styled_checkbox_1',
     'fail_styled_checkbox_2',
-    'canttell_svg_a', // essential/equivalent uncertainty inside svg — now merged into the 'fail' result
+    'canttell_svg_a', // essential/equivalent uncertainty inside svg, merged into the 'fail' result
     'canttell_svg_b',
-    'canttell_ambiguous_spacing_target' // ambiguous-tier perimeter sampling — same merging
+    'canttell_ambiguous_spacing_target' // ambiguous-tier perimeter sampling, same merging
   ];
 
   const expectedNoOccIds = [

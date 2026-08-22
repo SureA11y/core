@@ -109,7 +109,7 @@ function runInPage(ctx) {
   }
 
   // Flat-tree ancestor walk (assignedSlot wins over parentNode, then shadow
-  // host) — shared with every other rule via ctx.helpers.composedParent
+  // host), shared with every other rule via ctx.helpers.composedParent
   // (src/core/dom-helpers.js), not reimplemented here, so a fix to the one
   // canonical definition can't drift out of sync with this rule's copy.
   const composedParent =
@@ -533,8 +533,8 @@ function runInPage(ctx) {
     if (isDisabledFormControl(el)) return false;
 
     // An explicit negative tabindex removes the element from the keyboard
-    // tab sequence entirely, regardless of tag — the standard, WAI-
-    // recommended technique for safely hiding focusable content behind
+    // tab sequence entirely, regardless of tag. It's the standard,
+    // WAI-recommended technique for safely hiding focusable content behind
     // aria-hidden (e.g. <button tabindex="-1"> / <a tabindex="-1"> inside
     // an aria-hidden container). This cares about tabbability, not raw
     // focusability. Such an element is still programmatically focusable
@@ -684,7 +684,7 @@ function runInPage(ctx) {
     // Cheap check first: a plain ancestor-attribute walk with no CSS
     // computation, vs. isActuallyFocusable's getComputedStyle-per-ancestor
     // cost. Both conditions are required (AND), so checking whichever is
-    // cheaper first cannot change which elements end up in the bucket —
+    // cheaper first cannot change which elements end up in the bucket,
     // it only skips the expensive check for the (typically vast) majority
     // of focusable candidates that were never inside an aria-hidden root
     // in the first place. On pages with many focusable candidates and a
@@ -903,7 +903,7 @@ function runInPage(ctx) {
 
   // See helpers.resolveTieredOutcome's own header comment (src/core/dom-helpers.js):
   // a fail-tier finding never silently discards cantTell-tier findings from
-  // the same run — both are returned together when the outcome is 'fail'.
+  // the same run, both are returned together when the outcome is 'fail'.
   const resolved = helpers.resolveTieredOutcome(
     failOccurrences,
     uncertainOccurrences,

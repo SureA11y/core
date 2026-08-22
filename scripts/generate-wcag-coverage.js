@@ -593,13 +593,13 @@ function main() {
   };
 
   md += renderScSections(
-    'SC Coverage (A) — Enforced requirements only (normativeMappings)',
+    'SC Coverage (A): Enforced requirements only (normativeMappings)',
     byScNormative,
     facetSummaries.enforced
   );
 
   md += renderScSections(
-    'SC Coverage (B) — Enforced + manual/informative (normativeMappings + informativeReferences)',
+    'SC Coverage (B): Enforced + manual/informative (normativeMappings + informativeReferences)',
     byScAll,
     facetSummaries.all
   );

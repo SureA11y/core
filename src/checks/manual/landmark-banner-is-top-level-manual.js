@@ -6,20 +6,20 @@
  * @check landmark-banner-is-top-level
  * @atomic true
  * @summary The banner landmark must not be nested inside another landmark
- * @standard Best Practices (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
  *   Applies whenever the page contains at least one banner candidate:
  *   explicit role="banner", OR a <header> with NO role attribute at all,
  *   regardless of nesting (see implementation notes on why candidate
- *   selection is deliberately unconditional).
+ *   selection is unconditional on purpose).
  * @expectation
  *   No banner candidate has an ancestor that is itself any landmark
  *   region. A banner nested inside another landmark is not a top-level,
  *   whole-page banner and confuses landmark-based navigation for
  *   assistive technology users.
  * @implementation-notes
- * - Not WCAG-normative — authored as an advisory, cantTell-capped
- *   `type: 'manual'` rule per ROADMAP.md Tier 1b and the design doc's policy model
+ * - Not WCAG-normative, authored as an advisory, cantTell-capped
+ *   `type: 'manual'` rule per the design doc's policy model
  *   ("Advisory / best-practice rules may exist, but must not produce
  *   `fail`"). Matches the existing `page-title-patterns-manual.js`
  *   precedent: deterministic DOM analysis, no human required, but
@@ -61,7 +61,7 @@ const meta = {
 function runInPage(ctx) {
   const { document, root, helpers, rule } = ctx;
 
-  // Declared inside runInPage — see scripts/build-core.js header
+  // Declared inside runInPage; see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
   function normalizeWs(s) {
     return String(s || '')
@@ -91,7 +91,7 @@ function runInPage(ctx) {
 
   // Delegates to the shared helpers.hasLandmarkScopingAncestor for the
   // question "does this element sit inside a sectioning-content/<main>
-  // ancestor that suppresses its conditional implicit role" — role-aware
+  // ancestor that suppresses its conditional implicit role": role-aware
   // (an ancestor's bare TAG only counts when it carries no role attribute
   // at all; an explicit role="dialog"-style override no longer suppresses)
   // rather than a local tag-only copy. See that function's header comment
@@ -110,7 +110,7 @@ function runInPage(ctx) {
     if (tag === 'main') return 'main';
     if (tag === 'nav') return 'navigation';
     if (tag === 'aside') {
-      // A named <aside> is never suppressed, even when nested — it keeps
+      // A named <aside> is never suppressed, even when nested. It keeps
       // "complementary" when it has an accessible name, even inside
       // sectioning content. Matches landmark-unique's precedent.
       if (!hasSectioningAncestor(el, false)) return 'complementary';

@@ -20,7 +20,7 @@
  *   still computed. Whether that element is the intended target depends on
  *   author intent, which markup does not carry, so the outcome is cantTell.
  * @implementation-notes
- * - Scoped deliberately to ids referenced by ARIA. The page-wide check
+ * - Scoped to ids referenced by ARIA. The page-wide check
  *   lives in its own rule, `duplicate-id`, mapped to the WCAG 2.0/2.1 SC
  *   4.1.1 that WCAG 2.2 removed; the two overlap on referenced ids and
  *   answer different questions there (see that rule's header).
@@ -61,7 +61,7 @@ const meta = {
 function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
-  // Declared inside runInPage — see scripts/build-core.js header
+  // Declared inside runInPage, see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
   const IDREF_ATTRS = [
     'aria-labelledby',

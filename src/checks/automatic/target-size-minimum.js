@@ -12,10 +12,9 @@
  *   Applies to <button>, <summary>, <a href>, <area href>, <input>,
  *   <select>, <textarea> and elements with role="button"/"link" that are
  *   pointer-reachable: rendered, not suppressed by pointer-events:none, and
- *   with a measurable box of non-zero size. Accessibility-tree exclusion is
- *   deliberately not a filter — an aria-hidden control is still a target a
- *   pointer can hit. <area> is matched but never actually evaluated, for the
- *   reason given below.
+ *   with a measurable box of non-zero size. Accessibility-tree exclusion isn't
+ *   a filter here: an aria-hidden control is still a target a pointer can hit.
+ *   <area> is matched but never actually evaluated, for the reason given below.
  * @expectation
  *   Each target is at least 24 by 24 CSS pixels, or meets one of the SC
  *   2.5.8 exceptions this rule can establish from geometry: spacing (a
@@ -24,8 +23,8 @@
  *   sizing (an unstyled native checkbox or radio, detected by appearance not
  *   having been reset to none). An undersized target too close to a
  *   neighbour fails. Where an exception may apply but geometry cannot
- *   confirm it — two inline links in one run of text, or a target inside an
- *   SVG, canvas or image map that may be essential — the result is cantTell
+ *   confirm it (two inline links in one run of text, or a target inside an
+ *   SVG, canvas or image map that may be essential), the result is cantTell
  *   rather than a guess.
  *
  * Notes (engine intent):
@@ -38,42 +37,43 @@
  * - Spacing: a 24px-diameter circle centered on an undersized target must not
  *   intersect another (unrelated) target's box or another undersized
  *   target's own circle. Two passes: a fast center-distance check (exact for
- *   undersized-vs-undersized; a reasonable proxy otherwise) and a 16-point
+ *   undersized-vs-undersized, a reasonable proxy otherwise) and a 16-point
  *   perimeter sample via elementFromPoint as a more precise fallback for
  *   cases the distance check under-detects (e.g. a small target adjacent to
  *   a large, elongated neighbor). Ancestor/descendant relationships between
- *   the target and the "other" element are never treated as a conflict —
- *   see isRelated — since a nested-interactive shape (a small control inside
- *   its own wrapping link/button) is one visual region, not two independent
- *   targets; that pattern is nested-interactive-controls-absent's
- *   concern, not a spacing one.
+ *   the target and the "other" element are never treated as a conflict (see
+ *   isRelated): a nested-interactive shape, a small control inside its own
+ *   wrapping link/button, is one visual region, not two independent targets.
+ *   That pattern is nested-interactive-controls-absent's concern, not a
+ *   spacing one.
  * - Inline: a link inside a text-block container passes outright
  *   (isInlineTextExceptionTarget). An inline link whose only spacing conflict
  *   is another inline link in the same run is reported as cantTell
- *   (isInlineLinkTarget) — the inline exception may cover it, but geometry
- *   can't confirm that.
+ *   (isInlineLinkTarget), since the inline exception may cover it but
+ *   geometry can't confirm that.
  * - User Agent Control: an unstyled native checkbox/radio, detected via
- *   `appearance` not being reset to `none` (see isUserAgentSizedControl) —
- *   scoped narrowly to checkbox/radio specifically, not every form control,
+ *   `appearance` not being reset to `none` (see isUserAgentSizedControl).
+ *   Scoped narrowly to checkbox/radio specifically, not every form control,
  *   since those are the only types with unambiguous native rendering.
  * - Essential/Equivalent: only a narrow, high-confidence subset is asserted
- *   (SVG/canvas/map-embedded controls) — see isPlausiblyEssentialOrEquivalent;
+ *   (SVG/canvas/map-embedded controls, see isPlausiblyEssentialOrEquivalent);
  *   anything else defers to cantTell rather than guessing "essential" from a
  *   layout container.
  *
- * Known, deliberately unimplemented gap: `<area>` (image-map hotspot)
+ * Known gap, left unimplemented on purpose: `<area>` (image-map hotspot)
  * elements are not evaluated at all. `area[href]` is in CANDIDATE_SELECTOR
- * for forward-compatibility, but it's currently a no-op: `<area>` has no
+ * for forward-compatibility, but it's currently a no-op. `<area>` has no
  * CSS box of its own (`display: none` by the HTML spec's default UA
- * stylesheet — verified, not a jsdom quirk), so `getBoundingClientRect()`
- * always reports zero geometry and `isPointerReachable`'s existing
- * `display:none` check rejects it before any size/exception logic runs. A
- * real `<area>` hit-region is computed by the browser from its `shape`/
- * `coords` attributes against the associated `<img>`'s *rendered* size —
- * an entirely different measurement path than every other candidate here.
- * Implementing that properly (parsing `coords`, resolving the owning
- * `<img>` via its `usemap`, accounting for the image's CSS-scaled render
- * size) is a separate, larger feature, not attempted in this pass.
+ * stylesheet, confirmed against the spec rather than a jsdom quirk), so
+ * `getBoundingClientRect()` always reports zero geometry and
+ * `isPointerReachable`'s existing `display:none` check rejects it before any
+ * size/exception logic runs. A real `<area>` hit-region is computed by the
+ * browser from its `shape`/`coords` attributes against the associated
+ * `<img>`'s *rendered* size, an entirely different measurement path than
+ * every other candidate here. Implementing that properly (parsing `coords`,
+ * resolving the owning `<img>` via its `usemap`, accounting for the image's
+ * CSS-scaled render size) is a separate, larger feature, not attempted in
+ * this pass.
  *
  * This is an automatic, deterministic approximation intended to be:
  * - strict on clear failures,
@@ -374,11 +374,11 @@ function runInPage(ctx) {
   // element, or either one is an ancestor of the other. A nested-interactive
   // pattern (e.g. a small <button> inside a wrapping <a href>, or vice
   // versa) is a single visual/interactive region, not two independently
-  // placed targets — the spacing exception's "does the circle intersect
+  // placed targets. The spacing exception's "does the circle intersect
   // ANOTHER target" language is about separate targets, not an element and
   // its own container. (Nested interactive controls are their own,
-  // separately-flagged anti-pattern — nested-interactive-controls-
-  // absent — not a target-size spacing concern.)
+  // separately-flagged anti-pattern, nested-interactive-controls-absent,
+  // not a target-size spacing concern.)
   function isRelated(a, b) {
     try {
       if (!a || !b) return false;
@@ -435,7 +435,7 @@ function runInPage(ctx) {
   function hasSpacingConflict(target) {
     // 0) Pure geometry: deterministic center-distance check against ANY
     // nearby target, not just other undersized ones. Per WCAG 2.5.8, the
-    // spacing exception depends on proximity to any adjacent target — an
+    // spacing exception depends on proximity to any adjacent target, so an
     // undersized target sitting flush against an adequately-sized one still
     // fails the exception, which an undersized-only comparison would miss.
     for (const other of items) {
@@ -459,8 +459,8 @@ function runInPage(ctx) {
     // as a confident conflict. Perimeter sampling is an approximation
     // (rounded corners, border-radius, and sub-pixel geometry can shift a
     // sample point in or out of a neighboring element), so a result that
-    // merely reaches HIT_THRESHOLD is not asserted as a deterministic
-    // fail — see the ambiguous band below.
+    // merely reaches HIT_THRESHOLD is not asserted as a deterministic fail.
+    // See the ambiguous band below.
     const CONFIDENT_THRESHOLD = 5;
     let hitCount = 0;
     let firstConflictEl = null;
@@ -506,20 +506,20 @@ function runInPage(ctx) {
 
   // WCAG 2.5.8 "User Agent Control" exception: the target's size requirement
   // does not apply at all when its size is determined by the user agent and
-  // not modified by the author — the canonical example being an unstyled
-  // native checkbox/radio (browsers render these well under 24px by
-  // default, and that's not the author's choice). Scoped narrowly to
-  // input[type=checkbox]/[type=radio] specifically (the only form-control
-  // types with a universally-recognized, unambiguous native rendering) —
-  // deliberately not extended to select/range/color/file, whose "default"
-  // sizing varies enough across browsers/OSes that a wrong exemption there
-  // risks masking a real author-introduced undersized target.
+  // not modified by the author. The canonical example is an unstyled native
+  // checkbox/radio (browsers render these well under 24px by default, and
+  // that's not the author's choice). Scoped narrowly to
+  // input[type=checkbox]/[type=radio] specifically, the only form-control
+  // types with a universally-recognized, unambiguous native rendering, and
+  // not extended to select/range/color/file, whose "default" sizing varies
+  // enough across browsers/OSes that a wrong exemption there risks masking a
+  // real author-introduced undersized target.
   //
   // Detection signal: `appearance` (or the legacy `-webkit-appearance`)
   // computed as `none` is the near-universal first step of custom
-  // checkbox/radio styling across every CSS framework/design system —
-  // if the author hasn't reset it, the browser is still rendering its own
-  // default control chrome, so the size is genuinely UA-determined.
+  // checkbox/radio styling across every CSS framework/design system. If the
+  // author hasn't reset it, the browser is still rendering its own default
+  // control chrome, so the size is UA-determined rather than authored.
   function isUserAgentSizedControl(el) {
     try {
       if (!el || el.nodeType !== 1) return false;
@@ -565,8 +565,8 @@ function runInPage(ctx) {
       // Image map targets are often constrained by the underlying image.
       // Currently unreachable in practice: <area> never becomes a
       // measurable candidate at all (see the file header's "Known,
-      // deliberately unimplemented gap" note) — kept for forward
-      // compatibility if that gap is closed later.
+      // unimplemented gap" note). Kept for forward compatibility if that
+      // gap is closed later.
       if (tag === 'area') return true;
 
       // Graphics / spatial interaction regions are commonly essential by design.
@@ -590,7 +590,7 @@ function runInPage(ctx) {
 
     // User Agent Control exception: size isn't the author's choice, so the
     // size requirement (and therefore any spacing conflict stemming from
-    // it) doesn't apply at all — skip straight to pass, no need to even
+    // it) doesn't apply at all. Skip straight to pass, no need to even
     // evaluate spacing.
     if (isUserAgentSizedControl(it.el)) {
       continue;
@@ -599,12 +599,10 @@ function runInPage(ctx) {
     const info = hasSpacingConflict(it);
 
     if (!info.conflict && info.confident === false) {
-      // Ambiguous perimeter-sampling result near the decision threshold —
-      // previously recorded only as a page-level boolean with no per-target
-      // occurrence at all, so this specific target was unrecoverable from
-      // the result once any other target on the page had a confident
-      // fail (see helpers.resolveTieredOutcome's header comment). Now
-      // reported as its own cantTell-tier occurrence instead.
+      // Ambiguous perimeter-sampling result near the decision threshold: report
+      // it as its own cantTell-tier occurrence for this target so it isn't lost
+      // once any other target on the page has a confident fail (see
+      // helpers.resolveTieredOutcome's header comment).
       cantTellOccurrences.push(
         helpers.reportOccurrence(it.el, {
           occurrenceOutcome: 'cantTell',
@@ -632,14 +630,14 @@ function runInPage(ctx) {
     if (info.conflict) {
       if (isPlausiblyEssentialOrEquivalent(it.el)) {
         // Confident spacing conflict, but the target may be exempt as part
-        // of an essential graphic/image-map region — same "previously
-        // unrecoverable" gap as above, now reported instead of dropped.
+        // of an essential graphic/image-map region, so report it as
+        // cantTell rather than dropping it.
         cantTellOccurrences.push(
           helpers.reportOccurrence(it.el, {
             occurrenceOutcome: 'cantTell',
             summary:
               'Target is too small and too close to another target, but may be exempt as part of an essential graphic or image-map region.',
-            hint: 'Verify whether this target’s size is genuinely essential to its function (e.g. part of an SVG/canvas/image map); if not, increase target size or spacing.',
+            hint: 'Verify whether this target’s size is essential to its function (e.g. part of an SVG/canvas/image map); if not, increase target size or spacing.',
             i18n: {
               summaryKey: 'targetSizeMinimum_summary_cantTell_plausiblyEssential',
               hintKey: 'targetSizeMinimum_hint_cantTell_plausiblyEssential',
@@ -711,7 +709,7 @@ function runInPage(ctx) {
 
   // See helpers.resolveTieredOutcome's own header comment (src/core/dom-helpers.js):
   // a fail-tier finding never silently discards cantTell-tier findings from
-  // the same run — both are returned together when the outcome is 'fail'.
+  // the same run. Both are returned together when the outcome is 'fail'.
   const resolved = helpers.resolveTieredOutcome(
     failOccurrences,
     cantTellOccurrences,

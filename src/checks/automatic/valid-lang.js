@@ -13,7 +13,7 @@
  *   lang attribute AND at least some non-whitespace "governed text" that
  *   actually inherits its language from that element, per ACT de46e4:
  *   - Descendant text/alt is governed by the nearest lang-carrying
- *     ancestor only — a nested descendant with its own non-empty lang
+ *     ancestor only, a nested descendant with its own non-empty lang
  *     re-scopes everything inside it, so that subtree no longer counts
  *     toward the outer element's applicability (it counts toward the
  *     nested element's own, if that one is also being evaluated).
@@ -22,11 +22,11 @@
  *   - Text (or alt) that CSS keeps out of the render tree (display:none,
  *     the hidden attribute, ...) does not count. aria-hidden and
  *     offscreen positioning do NOT exempt text, per ACT's own failed
- *     examples for both — only actual non-rendering does.
+ *     examples for both, only actual non-rendering does.
  * @expectation
  *   The lang value matches a valid BCP47 language-tag syntax. WCAG 3.1.2
  *   (Language of Parts) requires that when a passage's language differs
- *   from the page's default, it is identified programmatically — an
+ *   from the page's default, it is identified programmatically. An
  *   invalid tag fails to identify a real language at all.
  * @implementation-notes
  * - Distinct, atomic decision from html-lang-attr-present (that
@@ -34,7 +34,7 @@
  *   covers every other element, for SC 3.1.2.
  * - Same minimal BCP47 *syntax* check as html-lang-attr-present (primary
  *   subtag + optional subtags), not IANA Language Subtag Registry
- *   validation — same documented scope limitation (syntactically
+ *   validation, same documented scope limitation (syntactically
  *   well-formed but unregistered tags like "xx-ZZ" are not flagged).
  */
 
@@ -108,7 +108,7 @@ function runInPage(ctx) {
   }
 
   // "Governed text": non-whitespace text (or alt) that inherits its
-  // language from `root`, per ACT de46e4 — see @applicability above. Walks
+  // language from `root`, per ACT de46e4, see @applicability above. Walks
   // the flat subtree, stopping at any descendant carrying its own non-empty
   // lang (that subtree governs itself, not `root`), and treating
   // display:none/hidden content as absent. Bails out as soon as any
@@ -165,7 +165,7 @@ function runInPage(ctx) {
     if (rawAttr === null || rawAttr === '') continue; // ACT de46e4: empty is out of scope
 
     // The rule applies only where text actually inherits the language from
-    // THIS element specifically — not merely where the subtree has any text
+    // THIS element specifically, not merely where the subtree has any text
     // at all, which could all belong to a nested element's own (possibly
     // valid) lang instead. See hasGovernedText's doc comment.
     if (!hasGovernedText(el)) continue;

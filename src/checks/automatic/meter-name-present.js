@@ -73,7 +73,7 @@ function runInPage(ctx) {
     const raw = getAttr(el, 'aria-labelledby');
     if (!raw) return '';
     // Delegates to the shared getTextFromIdRefs helper instead of computing
-    // name-from-content of the referenced element — see dialog-name-
+    // name-from-content of the referenced element, see dialog-name-
     // present.js's identical fix for the full rationale (an <iframe>
     // aria-labelledby target's only name source is its title attribute,
     // which name-from-content alone can never see).
@@ -125,8 +125,8 @@ function runInPage(ctx) {
     if (title) return { ok: true, method: 'title' };
 
     // role="meter" is name-from-author-only per WAI-ARIA: aria-label,
-    // aria-labelledby, or title — no content-based naming method at all.
-    // It must NOT fall back to subtree content — visible text near/inside a
+    // aria-labelledby, or title, no content-based naming method at all.
+    // It must NOT fall back to subtree content, visible text near/inside a
     // custom meter widget is not reliably exposed as its accessible name.
     return { ok: false, method: 'none' };
   }
@@ -156,7 +156,7 @@ function runInPage(ctx) {
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This meter has no accessible name.',
-        hint: "Provide aria-label, aria-labelledby, or a title attribute — visible text content is not exposed as this meter's accessible name.",
+        hint: "Provide aria-label, aria-labelledby, or a title attribute. Visible text content is not exposed as this meter's accessible name.",
         i18n: {
           summaryKey: 'meterNamePresent_summary_fail',
           hintKey: 'meterNamePresent_hint_fail',

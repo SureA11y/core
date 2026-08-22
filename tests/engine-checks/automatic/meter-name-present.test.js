@@ -80,14 +80,11 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/meter-name-present-all-scenar
 });
 
 test(`${RULE_ID}: aria-labelledby pointing at an <iframe> falls back to its title attribute => pass`, () => {
-  // Regression for a false positive — a copy-pasted bug across the
-  // *-name-present rules:
-  // aria-labelledby pointing at an <iframe> has no "content" to compute a
-  // name from (iframe content is opaque/cross-origin per HTML-AAM); the
-  // referenced element's own accessible name must fall back to its title
-  // attribute, which the previous getConservativeSubtreeText-only
-  // resolveAriaLabelledbyText never checked. Fixed via the shared
-  // getTextFromIdRefs helper.
+  // A shared bug pattern across the *-name-present rules: aria-labelledby
+  // pointing at an <iframe> has no "content" to compute a name from (iframe
+  // content is opaque/cross-origin per HTML-AAM), so the referenced
+  // element's own accessible name needs to fall back to its title
+  // attribute. The shared getTextFromIdRefs helper handles that fallback.
   const html = `<!doctype html><html><body><iframe id="t" title="Settings"></iframe><div role="meter" aria-labelledby="t" aria-valuenow="80"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });

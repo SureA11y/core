@@ -6,19 +6,19 @@
  * @check landmark-no-duplicate-banner
  * @atomic true
  * @summary A page must not have more than one banner landmark
- * @standard Best Practices (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
  *   Applies whenever the page contains at least one banner landmark
- *   (explicit role="banner", or an implicit, non-nested <header> — see
+ *   (explicit role="banner", or an implicit, non-nested <header>; see
  *   landmark-banner-is-top-level's implementation notes for the
  *   shared landmark-detection model).
  * @expectation
  *   At most one banner landmark exists on the page. Per WAI-ARIA
  *   Authoring Practices, the banner landmark represents site-oriented
- *   content that identifies the page as a whole — having more than one
+ *   content that identifies the page as a whole, so having more than one
  *   is ambiguous for assistive technology users navigating by landmark.
  * @implementation-notes
- * - Not WCAG-normative — authored as an advisory, cantTell-capped
+ * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent.
  * - Flags every banner instance (not just the "extra" ones) when more
@@ -81,11 +81,11 @@ function runInPage(ctx) {
 
   // Delegates to the shared helpers.hasLandmarkScopingAncestor for the
   // question "does this element sit inside a sectioning-content/<main>
-  // ancestor that suppresses its conditional implicit role" — role-aware
+  // ancestor that suppresses its conditional implicit role": role-aware
   // (an ancestor's bare TAG only counts when it carries no role attribute
   // at all; an explicit role="dialog"-style override no longer suppresses)
   // rather than a local tag-only copy. See that function's header comment
-  // in src/core/aria-helpers.js for the full algorithm — e.g. an
+  // in src/core/aria-helpers.js for the full algorithm, e.g. an
   // <aside role="dialog"> containing its own <header>, where the <header>
   // keeps its banner role.
   function hasSectioningAncestor(el, includeMain) {
