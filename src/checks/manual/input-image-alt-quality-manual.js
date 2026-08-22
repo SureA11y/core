@@ -11,7 +11,7 @@
  * @type manual
  * @applicability
  *   Applies to <input type="image"> elements whose alt attribute is present
- *   and non-empty — an image button whose alt is its label. The element must
+ *   and non-empty: an image button whose alt is its label. The element must
  *   be included in the accessibility tree, and role="presentation"/"none"
  *   takes it out of scope unless it is focusable, which restores its role.
  * @expectation

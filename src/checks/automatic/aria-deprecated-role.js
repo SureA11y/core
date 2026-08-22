@@ -11,7 +11,7 @@
  * @applicability
  *   Applies to any element whose role attribute's first (used) token is a
  *   valid, non-abstract ARIA role that authors should not explicitly
- *   declare — either because WAI-ARIA has deprecated it (e.g. "directory",
+ *   declare, either because WAI-ARIA has deprecated it (e.g. "directory",
  *   superseded by role="list") or because it is reserved for user-agent-
  *   internal use (role="generic", which ARIA 1.2 §5.4 says authors SHOULD
  *   NOT use in content).

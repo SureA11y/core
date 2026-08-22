@@ -377,7 +377,7 @@ module.exports = [
     meta: {
       title: 'Parsing',
       description:
-        'Rollup of checks ensuring id values are unique. WCAG 2.0/2.1 only — SC 4.1.1 was removed in WCAG 2.2, so this composite carries the wcag22-removed tag.',
+        'Rollup of checks ensuring id values are unique. WCAG 2.0/2.1 only: SC 4.1.1 was removed in WCAG 2.2, so this composite carries the wcag22-removed tag.',
       wcagSc: ['4.1.1'],
       level: 'A'
     }

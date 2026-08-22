@@ -171,7 +171,7 @@ test(`${RULE_ID}: fail for an orphan focusable role=option with no owning listbo
   assert.ok(hasOccurrenceForId(rule, 'a'));
 });
 
-test(`${RULE_ID}: fail when a genuinely nested control sits inside a listbox option`, () => {
+test(`${RULE_ID}: fail when a real nested control sits inside a listbox option`, () => {
   // The exemption applies to the owned option itself, not to arbitrary
   // focusable controls placed inside it. A real <button> inside an option is
   // still a nested interactive control (attributed to the option).

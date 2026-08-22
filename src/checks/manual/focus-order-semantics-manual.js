@@ -6,32 +6,32 @@
  * @check focus-order-semantics
  * @atomic true
  * @summary Elements added to the tab order should have interactive semantics
- * @standard Best Practices (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
  *   Elements with an explicit `tabindex` of `0` or greater (in the tab
  *   order) AND an explicit `role` attribute that is one of a curated set
  *   of clearly non-interactive, structural/document roles.
  * @expectation
- *   An element deliberately placed in the tab order should communicate
- *   why it's focusable — a role like `heading`, `list`, `region`, or
+ *   An element placed in the tab order on purpose should communicate
+ *   why it's focusable: a role like `heading`, `list`, `region`, or
  *   `presentation` gives assistive technology no interactive semantic to
  *   announce, which is confusing for keyboard users who land on it and
  *   get no indication of what activating it (if anything) would do.
  * @implementation-notes
- * - Not WCAG-normative — authored as an advisory, cantTell-capped
+ * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule.
- * - The non-interactive role list is deliberately curated and
- *   conservative (structural/document roles only) — legitimate custom
- *   widget patterns using `tabindex` with a genuinely interactive role
- *   (`option`, `tab`, `menuitem`, etc.) are never flagged. Elements with
- *   `tabindex` and NO role at all are also not flagged: native semantics
- *   or an intentionally generic custom-interactive pattern cannot be
+ * - The non-interactive role list is curated and conservative
+ *   (structural/document roles only). Legitimate custom widget patterns
+ *   using `tabindex` with an actually interactive role (`option`, `tab`,
+ *   `menuitem`, etc.) are never flagged. Elements with `tabindex` and NO
+ *   role at all are also not flagged: native semantics or an
+ *   intentionally generic custom-interactive pattern cannot be
  *   distinguished from markup alone with the same confidence.
- * - `region` is deliberately NOT in the non-interactive role list: a
- *   tabbable `role="region"` is a real, WCAG 2.1.1/2.1.3-grounded pattern
- *   this engine's own `scrollable-region-focusable` check exists to
- *   RECOMMEND (a scrollable landmark with no other focusable content
- *   needs `tabindex="0"` to be keyboard-reachable at all) — flagging it
+ * - `region` is intentionally excluded from the non-interactive role
+ *   list: a tabbable `role="region"` is a real, WCAG 2.1.1/2.1.3-grounded
+ *   pattern this engine's own `scrollable-region-focusable` check exists
+ *   to RECOMMEND (a scrollable landmark with no other focusable content
+ *   needs `tabindex="0"` to be keyboard-reachable at all), so flagging it
  *   here would be internally inconsistent with that sibling check. A
  *   `role="region"` is also commonly made tabbable on its own merits
  *   (e.g. a cookie-consent banner or notification/toast region a keyboard

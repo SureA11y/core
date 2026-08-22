@@ -89,7 +89,7 @@ test(`${RULE_ID}: cantTell when no landmark, anchor link, or heading exists`, ()
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'BYPASS_MECHANISM_ABSENT');
 });
 
-test(`${RULE_ID}: shadow-aware — a skip link and its target inside the same shadow root count as a mechanism`, () => {
+test(`${RULE_ID}: shadow-aware, a skip link and its target inside the same shadow root count as a mechanism`, () => {
   if (!createDom || !runa11yCoreOnDom) {
     assert.ok(true);
     return;

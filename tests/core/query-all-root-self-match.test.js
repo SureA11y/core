@@ -7,7 +7,7 @@ const { JSDOM } = require('jsdom');
 const { createDomHelpers } = require('../../src/core/dom-helpers.js');
 
 // Regression test for a bug where queryAll/queryAllSmart could never match
-// the root element itself, only its descendants — since querySelectorAll
+// the root element itself, only its descendants, since querySelectorAll
 // never returns its own context node. In the standard (unscoped) engine
 // pipeline, `root` is `document.documentElement` (the <html> element), so
 // any rule scanning by attribute selector (`[role]`, `[lang]`, etc.) was

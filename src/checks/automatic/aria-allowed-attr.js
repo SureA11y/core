@@ -11,8 +11,8 @@
  * @applicability
  *   Applies to elements carrying at least one recognized, non-global
  *   aria-* attribute, judged against the role they actually have: an
- *   explicit valid role, else the implicit role of their tag, else — for
- *   the elements HTML-AAM maps to no role at all — nothing.
+ *   explicit valid role, else the implicit role of their tag, else, for
+ *   the elements HTML-AAM maps to no role at all, nothing.
  * @expectation
  *   Every recognized aria-* attribute present is either: (a) globally
  *   supported on any element (the "global" ARIA states/properties, e.g.
@@ -24,7 +24,7 @@
  * @implementation-notes
  * - Three tiers of role resolution, in order: an explicit `role`; the
  *   implicit role of the tag (IMPLICIT_ROLE_BY_ELEMENT, generated only for
- *   elements whose role is the same in every context — see
+ *   elements whose role is the same in every context, see
  *   `scripts/generate-aria-tables.js` for what is excluded and why); and
  *   ROLELESS_ELEMENTS, the tags HTML-AAM gives no role at all. A
  *   role-specific attribute on one of those is supported by nothing, which
@@ -93,7 +93,7 @@ function runInPage(ctx) {
   // Global ARIA states/properties supported on (almost) any element,
   // regardless of role, per the WAI-ARIA "Global States and Properties" list.
   // Declared inside runInPage (rather than at module scope) because the
-  // build inlines only this function's own source text — see
+  // build inlines only this function's own source text, see
   // scripts/build-core.js header ("runInPage MUST be self-contained").
   // <generated:aria-global-attrs>
   const GLOBAL_ATTRS = [
@@ -120,8 +120,8 @@ function runInPage(ctx) {
   ];
   // </generated:aria-global-attrs>
 
-  // Per-role supported (non-global) states/properties. Deliberately
-  // conservative — see src/core/aria-helpers.js file header for the same
+  // Per-role supported (non-global) states/properties.
+  // conservative, see src/core/aria-helpers.js file header for the same
   // confidence-scoping rationale; only well-established, unambiguous
   // role/attribute pairings from the WAI-ARIA role definitions are listed.
   // <generated:aria-implicit-roles>
@@ -875,7 +875,7 @@ function runInPage(ctx) {
         ? IMPLICIT_ROLE_BY_ELEMENT[key]
         : '';
       // No role from either source: for a tag HTML-AAM maps to no role at
-      // all, that IS the answer — nothing supports a role-specific
+      // all, that IS the answer. Nothing supports a role-specific
       // attribute here. Any other tag has a role this table does not model
       // (context-dependent ones), so it stays out of scope.
       if (!role && ROLELESS_ELEMENTS.has(tag)) {
@@ -918,7 +918,7 @@ function runInPage(ctx) {
 
     for (const name of disallowed) {
       // A property ARIA deprecated (rather than prohibited) on this role is
-      // still allowed — surfaced as cantTell for the author to decide, not a
+      // still allowed, surfaced as cantTell for the author to decide, not a
       // not-allowed fail.
       const deprecated =
         typeof ariaHelpers.isDeprecatedAttr === 'function' &&

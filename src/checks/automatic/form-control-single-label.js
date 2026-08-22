@@ -13,7 +13,7 @@
  *   hidden/submit/reset/button/image; select; textarea).
  * @expectation
  *   At most one <label> that can contribute to the control's accessible name
- *   is associated with it — by wrapping it, or by a <label for="..."> on its
+ *   is associated with it, by wrapping it, or by a <label for="..."> on its
  *   id (a label that both wraps and self-references via for counts once).
  *   Graded by whether the surplus labels actually compete for the name:
  *   - PASS when an override (aria-labelledby / aria-label) supersedes every

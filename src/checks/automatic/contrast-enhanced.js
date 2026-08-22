@@ -9,8 +9,8 @@
  * @standard WCAG 2.2
  * @sc 1.4.6
  * @applicability
- *   Applies to the visible text contrast-computable applies to — see that
- *   rule for the eligibility gates — narrowed to text whose background and
+ *   Applies to the visible text contrast-computable applies to, see that
+ *   rule for the eligibility gates, narrowed to text whose background and
  *   foreground are actually computable. Eligible text that is not computable
  *   leaves this rule notApplicable rather than cantTell: reporting that
  *   uncertainty belongs to contrast-computable, so the two never report the

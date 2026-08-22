@@ -11,21 +11,21 @@
  * @applicability
  *   Elements matching `a[href], area[href], [role="link"]` with a
  *   non-empty computed accessible name (programmatic first, then "name
- *   from content" — same two-step resolution as `link-name-present`,
+ *   from content", same two-step resolution as `link-name-present`,
  *   same selector too). Links with no name at all are
  *   `link-name-present`'s concern, not this rule's.
  * @expectation
  *   The link's full accessible name, normalized (trimmed, case-folded,
  *   trailing punctuation stripped), is not an exact match for a known
  *   non-descriptive phrase ("click here", "read more", "more", "here",
- *   "details", "link", etc. — WCAG technique F84's known failure pattern
+ *   "details", "link", etc., WCAG technique F84's known failure pattern
  *   for SC 2.4.4) or a bare file-format/type name ("HTML", "PDF", "EPUB",
- *   ...) with no adjacent context — an aria-describedby target, the
+ *   ...) with no adjacent context (an aria-describedby target, the
  *   enclosing list item/table cell/paragraph's own text, or (format
- *   names only) a table's first-row header — naming what it belongs to.
+ *   names only) a table's first-row header) naming what it belongs to.
  * @implementation-notes
- * - Deliberately EXACT match only, against small, well-established
- *   phrase lists — not a substring/contains check. "Read more about our
+ * - EXACT match only, on purpose, against small, well-established
+ *   phrase lists, not a substring/contains check. "Read more about our
  *   privacy policy" does not match "read more"; only the bare phrase
  *   alone does. This keeps false positives near zero at the cost of
  *   not catching every possible non-descriptive phrasing (e.g. "click
@@ -39,7 +39,7 @@
  * - Still `type: 'manual'` (cantTell-capped, never fail): finding no
  *   adjacent context is a strong signal, not proof that context doesn't
  *   exist elsewhere (a preceding heading several rows up, page-level
- *   framing) or that the surrounding text genuinely disambiguates.
+ *   framing) or that the surrounding text actually disambiguates.
  *   Flagging is for review, not a definitive violation.
  * - Reuses the same accessible-name computation as `link-name-present`
  *   (`getAccessibleNameInfo` then `getContentNameInfo` as fallback), so

@@ -162,7 +162,7 @@ test("textbox-name-present: label association with empty content falls back to t
   // Regression for the sibling gap to the <iframe>-title-fallback fix:
   // getLabelText previously stopped at content-only
   // (getConservativeSubtreeText) when resolving a native <label for> whose
-  // content is empty, never checking the label's own title attribute — the
+  // content is empty, never checking the label's own title attribute, the
   // same final-fallback step the general accname algorithm applies to any
   // element being asked for its name, regardless of why.
   const html = `<!doctype html><html><body><label for='a' title='Search'></label><div id='a' role='textbox'></div></body></html>`;

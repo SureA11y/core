@@ -52,7 +52,7 @@ test(`${RULE_ID}: cantTell when main is nested inside another landmark`, () => {
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'LANDMARK_MAIN_NOT_TOP_LEVEL');
 });
 
-test(`${RULE_ID}: cantTell when main is nested inside a <header> whose own implicit banner role is only correctly recognized because its <aside role="dialog"> ancestor's role has been overridden away from a landmark-scoping role — before this fix, the ancestor <header> was incorrectly not recognized as a landmark at all, so this nesting went entirely undetected (mirrors a real bug found on handsontable.com's docs-assistant side panel)`, () => {
+test(`${RULE_ID}: cantTell when main is nested inside a <header> whose own implicit banner role is only correctly recognized because its <aside role="dialog"> ancestor's role has been overridden away from a landmark-scoping role, so an ancestor <header> not recognized as a landmark would leave this nesting entirely undetected (mirrors a real bug found on handsontable.com's docs-assistant side panel)`, () => {
   const html = `<!doctype html><html><body>
     <aside role="dialog" aria-label="Assistant panel"><header><main id="a">Nested</main></header></aside>
   </body></html>`;
@@ -142,7 +142,7 @@ test(`${RULE_ID} (node runtime): notApplicable when main is nested inside an unn
   }
 });
 
-test(`${RULE_ID} (node runtime): cantTell when main is nested inside an unnamed top-level <aside> — a bare <aside> is implicitly complementary (HTML-AAM) unless nested inside sectioning content without a name`, () => {
+test(`${RULE_ID} (node runtime): cantTell when main is nested inside an unnamed top-level <aside>, since a bare <aside> is implicitly complementary (HTML-AAM) unless nested inside sectioning content without a name`, () => {
   const html = `<!doctype html><html><body><aside><main id="m">Nested</main></aside></body></html>`;
   const result = runNode(html);
   const rule = ruleFrom(result);

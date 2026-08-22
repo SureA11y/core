@@ -100,7 +100,7 @@ test(`${RULE_ID}: display:none text is not governed text (ACT de46e4 inapplicabl
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: aria-hidden text still counts as governed text — only actual non-rendering exempts it (ACT de46e4 failed example)`, () => {
+test(`${RULE_ID}: aria-hidden text still counts as governed text; only actual non-rendering exempts it (ACT de46e4 failed example)`, () => {
   const html = `<!doctype html><html><body>
     <article id="a" lang="english"><p aria-hidden="true">They wandered into a strange Tiki bar.</p></article>
   </body></html>`;
@@ -109,7 +109,7 @@ test(`${RULE_ID}: aria-hidden text still counts as governed text — only actual
   assert.ok(hasOccurrenceForId(rule, 'a'));
 });
 
-test(`${RULE_ID}: offscreen text still counts as governed text — offscreen positioning doesn't exempt it either (ACT de46e4 failed example)`, () => {
+test(`${RULE_ID}: offscreen text still counts as governed text; offscreen positioning doesn't exempt it either (ACT de46e4 failed example)`, () => {
   const html = `<!doctype html><html><body>
     <article id="a" lang="English"><p style="position: absolute; top: -9999px">They wandered into a strange Tiki bar.</p></article>
   </body></html>`;

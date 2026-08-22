@@ -18,8 +18,8 @@
  *   from a fixed enumerated set, an integer, a real number, or an ID
  *   reference (list) that resolves to an existing element in the document.
  *   Per ACT 6a7281's own applicability ("any state or property that is
- *   NOT empty"), an explicitly empty value — including a bare boolean-style
- *   attribute with no "=value" at all, e.g. `aria-checked` alone — is out
+ *   NOT empty"), an explicitly empty value, including a bare boolean-style
+ *   attribute with no "=value" at all, e.g. `aria-checked` alone, is out
  *   of scope for every value type, not a violation: a common, deliberate
  *   pattern in templated markup (e.g. React conditionally rendering
  *   `aria-describedby={hasError ? errorId : ''}`).
@@ -30,11 +30,11 @@
  * - ID-reference resolution (see aria-helpers.js's idExists) only flags
  *   idref-list attributes (aria-labelledby, aria-describedby,
  *   aria-controls, aria-owns, etc.) when NONE of the space-separated ids
- *   resolve — a partially-dangling list (some ids exist, some don't) is
+ *   resolve, a partially-dangling list (some ids exist, some don't) is
  *   left unflagged (only invalidate when every token fails to resolve).
  *   Of the two single-idref attributes, aria-activedescendant is flagged
  *   whenever its one id doesn't resolve; aria-errormessage's existence is
- *   deliberately never checked (format only) — ACT 6a7281's own Background
+ *   never checked (format only), ACT 6a7281's own Background
  *   text names it as a non-required property whose target "may be created
  *   in response to an event that may or may not happen" (a validation
  *   error message rendered only once the error actually occurs).

@@ -37,7 +37,7 @@ for (const locale of localeFiles) {
     assert.deepStrictEqual(
       missing,
       [],
-      `${locale}.json is missing ${missing.length} key(s) — run \`npm run i18n:sync\`: ${missing.slice(0, 10).join(', ')}${missing.length > 10 ? '...' : ''}`
+      `${locale}.json is missing ${missing.length} key(s), run \`npm run i18n:sync\`: ${missing.slice(0, 10).join(', ')}${missing.length > 10 ? '...' : ''}`
     );
   });
 }

@@ -14,20 +14,20 @@
  *   list for naming attributes (pure text-semantics / non-naming
  *   structural roles: caption, code, deletion, emphasis, generic,
  *   insertion, mark, none, paragraph, presentation, strong, subscript,
- *   suggestion, superscript, time), and (b) elements with no role at all —
+ *   suggestion, superscript, time), and (b) elements with no role at all:
  *   a curated set of native HTML tags verified to carry no implicit role
  *   (see ROLELESS_NATIVE_TAGS below), or any autonomous custom element (a
  *   hyphenated, author-defined tag per the Custom Elements spec; see
- *   isRolelessCustomElementTag below) — in both cases, only elements that
+ *   isRolelessCustomElementTag below). In both cases, only elements that
  *   also carry aria-label or aria-labelledby.
  * @expectation
  *   Prohibited attributes must not be present on (a); for (b), the naming
  *   attribute is at best unreliable (nothing accessible-name-aware to hang
- *   it off) and at worst silently ignored by assistive technology — see the
+ *   it off) and at worst silently ignored by assistive technology. See the
  *   roleless-branch implementation note below for the confidence split
  *   this produces.
  * @implementation-notes
- * - Deliberately scoped to the single, well-established prohibition class
+ * - Scoped to the single, well-established prohibition class
  *   (naming attributes on pure text-semantics roles) rather than an
  *   exhaustive per-role prohibited-attribute table; see
  *   src/core/aria-helpers.js file header for this engine's confidence-
@@ -41,7 +41,7 @@
  *   narrower, unambiguous naming-prohibition case fires as a hard,
  *   WCAG-normative fail instead, matching this engine's "one rule = one
  *   normative decision" pattern.
- * - Deliberately excludes `definition`/`term` despite both appearing on
+ * - Excludes `definition`/`term` on purpose, despite both appearing on
  *   MDN's aria-label "not supported" list: both support name from author
  *   (`nameFrom: ['author']` for definition, `['author', 'contents']` for
  *   term), and the W3C spec's §5.2.8.4 "Roles Supporting Name From Author"
@@ -50,9 +50,9 @@
  *   property, while engine-level hidden-subtree filtering still applies
  *   unless engineOptions.includeHiddenElements is true.
  * - Second, independent branch: naming attributes on ROLELESS elements (no
- *   explicit role="", no implicit/native role either) — e.g. icon-only
+ *   explicit role="", no implicit/native role either), e.g. icon-only
  *   `<span aria-label="...">` tiles with no other accessible-name source.
- *   ROLELESS_NATIVE_TAGS below is a curated, deliberately conservative
+ *   ROLELESS_NATIVE_TAGS below is a curated, intentionally conservative
  *   list of native tags confirmed to carry no implicit role (common
  *   text-level tags like `<p>`/`<strong>`/`<em>`/`<code>`/`<mark>`/`<time>`
  *   resolve to role `null`, same as a bare `<div>`/`<span>`);
@@ -65,7 +65,7 @@
  *   already produces a non-empty accessible name from its content (via
  *   `helpers.getContentNameInfo`, same as
  *   link-name-present/button-name-present), the naming attribute might
- *   just be a redundant/intentional override — reported as `cantTell`, not
+ *   just be a redundant/intentional override, so it's reported as `cantTell`, not
  *   a hard fail. Only a roleless element with no other accessible-name
  *   source at all is a confident, deterministic `fail`. The
  *   widget-ancestor exemption (skip when the closest real ancestor role is
@@ -119,8 +119,8 @@ function runInPage(ctx) {
   // Roles whose WAI-ARIA 1.2 definition lists a "Prohibited ARIA States and
   // Properties" entry for naming attributes (these roles must never carry an
   // accessible name). Declared inside runInPage (rather than at module
-  // scope) because the build inlines only this function's own source text
-  // — see scripts/build-core.js header ("runInPage MUST be self-contained").
+  // scope) because the build inlines only this function's own source text.
+  // See scripts/build-core.js header ("runInPage MUST be self-contained").
   const ROLES_PROHIBITING_NAME = new Set([
     'caption',
     'code',
@@ -190,7 +190,7 @@ function runInPage(ctx) {
   // and how ROLELESS_NATIVE_TAGS/WIDGET_TYPE_ROLES were derived) ---
 
   // Small, curated set of native tags verified to carry no explicit or
-  // implicit ARIA role. Deliberately excludes <section>/<form>/<a> — all
+  // implicit ARIA role. Excludes <section>/<form>/<a>, which are
   // conditionally roleless too, but already handled with more nuance
   // elsewhere in this engine (see header comment).
   const ROLELESS_NATIVE_TAGS = new Set([
@@ -268,7 +268,7 @@ function runInPage(ctx) {
         };
 
   // Nearest ancestor's real role (explicit-if-valid, else native/implicit),
-  // skipping roleless/presentation/none ancestors — used only to check
+  // skipping roleless/presentation/none ancestors. Used only to check
   // whether that role is a "widget"-type one (the roleless-branch
   // exemption). Not the same helper as aria-required-parent's containment
   // walk: this one also accepts non-required-context roles.
@@ -296,7 +296,7 @@ function runInPage(ctx) {
 
   // A small, spec-reserved set of hyphenated tag names that are NOT
   // autonomous custom elements despite containing a hyphen (legacy SVG/
-  // MathML tags predating the Custom Elements spec) — see
+  // MathML tags predating the Custom Elements spec). See
   // https://html.spec.whatwg.org/#valid-custom-element-name's own
   // exclusion list. Excluded so this doesn't misclassify them as
   // always-roleless the same way a real custom element is.
@@ -336,8 +336,8 @@ function runInPage(ctx) {
     const tag = String(el.tagName || '').toLowerCase();
     if (!ROLELESS_NATIVE_TAGS.has(tag) && !isRolelessCustomElementTag(tag)) continue;
     const explicitRole = ariaHelpers.getExplicitRole(el);
-    if (explicitRole && ariaHelpers.isValidConcreteRole(explicitRole)) continue; // has a real, recognized role — Tier 1's concern (if in ROLES_PROHIBITING_NAME) or a role this rule has no opinion on. An INVALID role token (e.g. a typo) is ignored per spec, same as no role attribute at all, and must still fall through to this branch.
-    if (ariaHelpers.getNativeRoleForElement(el)) continue; // has a real implicit role after all — not this branch's concern
+    if (explicitRole && ariaHelpers.isValidConcreteRole(explicitRole)) continue; // has a real, recognized role: Tier 1's concern (if in ROLES_PROHIBITING_NAME) or a role this rule has no opinion on. An INVALID role token (e.g. a typo) is ignored per spec, same as no role attribute at all, and must still fall through to this branch.
+    if (ariaHelpers.getNativeRoleForElement(el)) continue; // has a real implicit role after all, not this branch's concern
 
     const present = [];
     for (const attr of PROHIBITED_NAMING_ATTRS) {
@@ -349,7 +349,7 @@ function runInPage(ctx) {
     applicableCount += 1;
 
     const ancestorRole = getNearestAncestorRole(el);
-    if (ancestorRole && WIDGET_TYPE_ROLES.has(ancestorRole)) continue; // roleless helper node inside a real widget — not flagged
+    if (ancestorRole && WIDGET_TYPE_ROLES.has(ancestorRole)) continue; // roleless helper node inside a real widget, not flagged
 
     const nameInfo = helpers.getContentNameInfo ? helpers.getContentNameInfo(el, ctx) : null;
     const hasContentFallback = !!(
@@ -363,7 +363,7 @@ function runInPage(ctx) {
         cantTellOccurrences.push(
           helpers.reportOccurrence(el, {
             occurrenceOutcome: 'cantTell',
-            summary: `This ${tag} has no role, so ${attr} may not be exposed as its accessible name by assistive technology — but the element's own content already provides one.`,
+            summary: `This ${tag} has no role, so ${attr} may not be exposed as its accessible name by assistive technology, but the element's own content already provides one.`,
             hint: 'Verify whether the existing text content already serves as this element’s label; if so the naming attribute is redundant, otherwise give the element a role that supports naming (e.g. role="img").',
             i18n: {
               summaryKey: 'ariaProhibitedAttr_summary_cantTell_roleless',
@@ -411,7 +411,7 @@ function runInPage(ctx) {
 
   // See helpers.resolveTieredOutcome's own header comment (src/core/dom-helpers.js):
   // a fail-tier finding never silently discards cantTell-tier findings from
-  // the same run — both are returned together when the outcome is 'fail'.
+  // the same run. Both are returned together when the outcome is 'fail'.
   const resolved = helpers.resolveTieredOutcome(
     failOccurrences,
     cantTellOccurrences,

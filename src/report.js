@@ -282,7 +282,7 @@ function renderCards(checksResults) {
         <div class="card-meta">${wcagChips}</div>
         <div class="card-selector"><span class="card-selector-label">Selector:</span> <code>${esc(representative.selector || '(none)')}</code></div>
         <div class="card-snippet">${esc(representative.summary)}${representative.hint ? ` — ${esc(representative.hint)}` : ''}</div>
-        ${r.occurrences.length > 1 ? `<p class="card-note">Selector/summary above are from one representative occurrence — ${r.occurrences.length.toLocaleString()} total on this rule.</p>` : ''}
+        ${r.occurrences.length > 1 ? `<p class="card-note">Selector/summary above are from one representative occurrence; ${r.occurrences.length.toLocaleString()} total on this rule.</p>` : ''}
       </div>
     </div>`;
     })
@@ -290,7 +290,7 @@ function renderCards(checksResults) {
 
   const overflow =
     sorted.length > MAX_CARDS
-      ? `<p class="note">Showing the ${MAX_CARDS} highest-priority rules of ${sorted.length.toLocaleString()} with issues — see the full technical data below for the rest.</p>`
+      ? `<p class="note">Showing the ${MAX_CARDS} highest-priority rules of ${sorted.length.toLocaleString()} with issues. See the full technical data below for the rest.</p>`
       : '';
 
   return `<div class="cards">${cards}</div>${overflow}`;

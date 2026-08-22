@@ -1155,8 +1155,8 @@ ${implEntriesInPage.join(',\n')}
   //
   // Wrapped in its own private IIFE with its OWN local copy of
   // CHECK_DEFS/RULE_IMPLS/runnersSharedSource -- mirroring exactly how
-  // runa11yCoreInPage achieves self-containment above, and deliberately
-  // independent of the outer, Node-require-based RULE_IMPLS section, so
+  // runa11yCoreInPage achieves self-containment above, kept
+  // independent of the outer, Node-require-based RULE_IMPLS section on purpose, so
   // this stays usable the same bundler-free way runa11yCoreInPage already
   // is (raw source injected into a page -- a bookmarklet, a content script
   // with no build step -- rather than requiring a real bundler to resolve

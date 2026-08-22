@@ -174,7 +174,7 @@ test('matchBaseline/buildBaselineEntries: does not mutate the input result at al
 test('matchBaseline: a changed selector alone does not break the match, as long as ruleId/reasonCode/html are unchanged', () => {
   // Simulates the flagged element having moved position on the page (e.g. an
   // unrelated sibling added/removed elsewhere) -- selector/structuralPath
-  // would differ, but identity here is deliberately selector-independent.
+  // would differ, but identity here is selector-independent on purpose.
   const check = makeCheckResult({
     occurrences: [makeOccurrence({ selector: 'body > main > div:nth-child(7) > img' })]
   });

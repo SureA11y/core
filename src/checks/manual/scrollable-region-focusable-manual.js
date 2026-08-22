@@ -9,10 +9,10 @@
  * @standard WCAG 2.2
  * @sc 2.1.1, 2.1.3
  * @applicability
- *   Deliberately scoped to a fixed set of likely-to-scroll container tags
+ *   Scoped on purpose to a fixed set of likely-to-scroll container tags
  *   (div, section, article, aside, main, nav, pre, table, blockquote, ul,
  *   ol, textarea) with computed `overflow-x`/`overflow-y` of `auto` or
- *   `scroll` — not every element on the page, to keep this deterministic
+ *   `scroll`, not every element on the page, to keep this deterministic
  *   and performant (same style of scope-down as `region`).
  * @expectation
  *   A region whose CSS declares it may scroll (`auto`/`scroll`) should be
@@ -22,18 +22,18 @@
  *   scroll from), or the region itself carries a non-negative `tabindex`.
  * @implementation-notes
  * - jsdom does not perform layout, so `scrollHeight`/`clientHeight` are
- *   not available to confirm the region's content actually overflows —
+ *   not available to confirm the region's content actually overflows,
  *   only that the CSS declares it *may*. Many elements declare
  *   `overflow: auto` defensively without their content ever actually
  *   overflowing, which would be a false positive if treated as a hard
  *   `fail`. For that reason this is authored as `type: 'manual'`
- *   (cantTell-capped, never fail) rather than `automatic` — same class of
- *   layout-dependent gap as `iframe-focusable-content`'s
+ *   (cantTell-capped, never fail) rather than `automatic`, the same class
+ *   of layout-dependent gap as `iframe-focusable-content`'s
  *   `contentDocument` limitation.
  * - "Has a focusable descendant" is a presence check (link/button/form
  *   control/`[tabindex]`/`iframe`/`[contenteditable]`), not a full
- *   focusability computation (disabled state, visibility, etc.) — a
- *   deliberate simplification to keep this rule self-contained and fast.
+ *   focusability computation (disabled state, visibility, etc.). Kept
+ *   simple on purpose, to keep this rule self-contained and fast.
  */
 
 const id = 'scrollable-region-focusable';

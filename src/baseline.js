@@ -3,13 +3,13 @@
 'use strict';
 
 // docs/BASELINE.md: identity for one violation occurrence is
-// `ruleId + reasonCode + html` -- deliberately NOT `selector`/`structuralPath`
+// `ruleId + reasonCode + html`, on purpose NOT `selector`/`structuralPath`
 // (both position-derived, so they shift when unrelated markup changes
 // elsewhere on the page; see buildSelector/buildStructuralPath in
 // src/core/dom-helpers.js). Unlike src/explain/group.js's computeGroupKey,
-// this does not use a coarse structural signature: that's deliberately lossy
+// this does not use a coarse structural signature: that's lossy on purpose
 // for AI-explanation dedup (one prompt per shape), which would risk a CI gate
-// silently treating a genuinely new violation as "known" just because it
+// silently treating an actually new violation as "known" just because it
 // shares tag/class shape with an old baselined one -- the wrong failure mode
 // here. Content-based matching survives incidental DOM changes elsewhere on
 // the page; its known limitation is a flagged element with dynamic content

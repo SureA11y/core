@@ -75,7 +75,7 @@ test('isAbstractRole / isDeprecatedRole / isKnownRole / isValidConcreteRole', ()
   assert.equal(helpers.isValidConcreteRole('widget'), false); // abstract, not concrete
   assert.equal(helpers.isValidConcreteRole('not-a-role'), false);
 
-  // WAI-ARIA Graphics Module 1.0 — a separate REC-status module from core
+  // WAI-ARIA Graphics Module 1.0 is a separate REC-status module from core
   // ARIA 1.2, still a real, AT-recognized role token (see aria-helpers.js's
   // CONCRETE_ROLES comment).
   assert.equal(helpers.isValidConcreteRole('graphics-document'), true);

@@ -26,7 +26,7 @@ test('dom helpers cache: getAccessibleNameInfo does not reuse memoized result ac
 
   // getAccessibleNameInfo resolves label association via the native
   // `.labels` API first (element references, no query needed), so spy on
-  // the `.labels` getter itself as the "a fresh lookup happened" signal —
+  // the `.labels` getter itself as the "a fresh lookup happened" signal,
   // document.querySelector('label[for]') is no longer reached on this path.
   let labelsGetterCalls = 0;
   const proto = window.HTMLInputElement.prototype;
@@ -216,7 +216,7 @@ test('dom helpers semantics: aria-hidden eligibility override for explicit tabin
   assert.ok(em1.reasons.includes('ariaHiddenProgrammaticFocusExcluded'));
 
   // <button>/<summary>/<a href> are tabbable by default (no explicit tabindex
-  // required) — real browsers keep them in the tab order regardless of
+  // required), and real browsers keep them in the tab order regardless of
   // aria-hidden, so the eligibility model must evaluate them too.
   const eButton = helpers.isAccTreeEligible(nativeButton);
   assert.equal(eButton.eligible, true);

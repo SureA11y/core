@@ -9,24 +9,24 @@
  * @standard WCAG 2.2
  * @sc 2.4.1
  * @applicability
- *   Always applicable to any HTML document with a <body> element —
+ *   Always applicable to any HTML document with a <body> element:
  *   "bypass blocks" is a whole-page concern, matching
  *   aria-hidden-body / page-title-present's pattern of
  *   evaluating the document directly rather than a scoped root.
  * @expectation
  *   At least one of the following recognized WCAG 2.4.1 techniques is
  *   present:
- *   (a) a main landmark (<main> or [role="main"]) — technique ARIA11: a
+ *   (a) a main landmark (<main> or [role="main"]), technique ARIA11: a
  *       screen reader user can jump straight to it, bypassing everything
  *       before it (nav, header, repeated blocks) in one step;
- *   (b) a working same-page anchor link — technique G1/G123: an
+ *   (b) a working same-page anchor link, technique G1/G123: an
  *       <a href="#id"> (or legacy <a name="id">) whose target resolves to
  *       a real element in the link's own tree (light DOM or the same shadow
- *       root). Deliberately NOT required to be positioned before a <nav> or
- *       be keyboard-focus-order-first — see implementation notes;
+ *       root). Not required to be positioned before a <nav> or be
+ *       keyboard-focus-order-first (see implementation notes);
  *   (c) at least one heading (<h1>-<h6> or [role="heading"]) that is both
  *       included in the accessibility tree AND visible (not off-screen,
- *       clipped, opacity:0, or zero-size-overflow-hidden) — technique H69:
+ *       clipped, opacity:0, or zero-size-overflow-hidden), technique H69:
  *       heading navigation is itself a standards-recognized bypass
  *       mechanism (e.g. a screen reader's "jump by heading" command), but
  *       ACT 047fe0's own Expectation requires visibility too, since a
@@ -37,8 +37,8 @@
  *   `fail`). When a recognized mechanism is found the page has nothing to
  *   review here → `notApplicable` (matching page-has-heading-one-manual /
  *   skip-link-manual's "nothing to flag" convention). When none is found we
- *   return `cantTell` — "we could not detect a bypass mechanism, please
- *   verify" — rather than a hard `fail`. The absence of a *detectable*
+ *   return `cantTell`: "we could not detect a bypass mechanism, please
+ *   verify," rather than a hard `fail`. The absence of a *detectable*
  *   mechanism is NOT high-confidence evidence that 2.4.1 is violated, for
  *   several reasons the engine cannot resolve from a single static snapshot:
  *     • Applicability itself is undecidable in-page. 2.4.1 governs blocks of
@@ -50,7 +50,7 @@
  *       rest of the page is routinely made `inert` or `aria-hidden="true"`,
  *       so the page's real <main>/headings are (correctly) filtered out by
  *       isAccTreeEligible for the duration of that state and only the dialog
- *       is exposed — a snapshot taken then would see "no mechanism" though
+ *       is exposed, so a snapshot taken then would see "no mechanism" though
  *       the page has one once the dialog closes. The same applies to content
  *       that is display:none until revealed by script (tabs, accordions, an
  *       unmounted SPA view).
@@ -59,23 +59,19 @@
  *   human review instead. No ACT rule hard-fails 2.4.1 by presence alone,
  *   for the same reason.
  * - This rule intentionally checks presence, not position, for the
- *   same-page-anchor condition (b): a full bypass algorithm is heuristic
- *   (see ROADMAP.md's Tier 1a note on why this rule was
- *   deferred from the rest of that batch), and getting DOM-order /
- *   keyboard-focus-order positioning exactly right without introducing
- *   false positives is materially harder than the rest of Tier 1a. Being
- *   lenient about condition (b) can only make us *miss* a review prompt
- *   (a page whose only anchor link isn't a real skip mechanism, e.g. a
- *   "back to top" link) — never raise a spurious one.
+ *   same-page-anchor condition (b): a full bypass algorithm is heuristic,
+ *   and getting DOM-order / keyboard-focus-order positioning exactly right
+ *   without introducing false positives is materially harder than checking
+ *   presence alone. Being lenient about condition (b) can only make us
+ *   *miss* a review prompt (a page whose only anchor link isn't a real
+ *   skip mechanism, e.g. a "back to top" link), never raising a spurious one.
  * - Shadow DOM: all three conditions use `helpers.queryAllSmart`, which is
  *   shadow-DOM-aware (when the run enables includeShadowDom) and applies the
  *   engine's hidden-content policy. The same-page-anchor target is resolved
- *   in the link's own root (`getRootNode()` — the document, or the shadow
+ *   in the link's own root (`getRootNode()`: the document, or the shadow
  *   root the link lives in) before falling back to the document, so a skip
  *   link encapsulated in a web component is credited the same as one in the
- *   light DOM. (Previously the anchor path used raw
- *   `document.querySelectorAll`/`getElementById`, which never pierced shadow
- *   roots — a genuine gap now closed.)
+ *   light DOM.
  */
 
 const id = 'bypass-blocks-present';
@@ -233,7 +229,7 @@ function runInPage(ctx) {
   }
 
   // ACT 047fe0's own Expectation requires the heading to be visible, not
-  // only included in the accessibility tree — a screen-reader-only heading
+  // only included in the accessibility tree: a screen-reader-only heading
   // still leaves sighted keyboard users with no way to locate the start of
   // non-repeated content. "Visible" per ACT's own glossary: making it fully
   // transparent would change rendered pixels, which every CSS-only hiding
@@ -268,8 +264,8 @@ function runInPage(ctx) {
   const occurrences = [
     helpers.reportOccurrence(body, {
       summary:
-        'No recognized way to bypass repeated blocks of content was detected on this page — verify a bypass mechanism exists.',
-      hint: 'Confirm the page offers a bypass mechanism: a main landmark (<main> or role="main"), a working "skip to content" link, or heading elements that assistive technology can use to jump past repeated content. (A mechanism may be temporarily hidden — e.g. while a modal dialog makes the page inert — or provided on a per-site basis; this needs human confirmation.)',
+        'No recognized way to bypass repeated blocks of content was detected on this page. Verify a bypass mechanism exists.',
+      hint: 'Confirm the page offers a bypass mechanism: a main landmark (<main> or role="main"), a working "skip to content" link, or heading elements that assistive technology can use to jump past repeated content. (A mechanism may be temporarily hidden, e.g. while a modal dialog makes the page inert, or provided on a per-site basis; this needs human confirmation.)',
       i18n: {
         summaryKey: 'bypassBlocksPresent_summary_cantTell',
         hintKey: 'bypassBlocksPresent_hint_cantTell',

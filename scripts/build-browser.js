@@ -15,13 +15,13 @@
  * A generated core has three sections (see scripts/build-core.js):
  *   1. A Node-only section (`RULE_IMPLS` built from `require()` calls,
  *      catalog helpers, `runDomRulesInPage`) -- not usable outside Node.
- *   2. `runa11yCoreInPage` -- deliberately self-contained (no free vars: its
+ *   2. `runa11yCoreInPage` -- self-contained on purpose (no free vars: its
  *      own private copy of the rule catalog, `runCore`, and every helper it
  *      needs, all inlined inside the function body). This is the only part
  *      of the engine safe to run in a page realm with no bundler.
  *   3. `runa11yCoreAcrossFrames`/`a11yCoreEnableFrameResponder` -- also
  *      self-contained, but as a pair wrapped in their own shared IIFE, not
- *      as a single function. Left out of this bundle deliberately: it
+ *      as a single function. Left out of this bundle on purpose: it
  *      roughly doubles payload size for a cooperative-postMessage feature
  *      that itself requires the *embedded* page to also load surea11y and
  *      opt in, which isn't the common "drop one script tag" case this

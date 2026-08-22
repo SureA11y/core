@@ -6,7 +6,7 @@
  * @check landmark-no-duplicate-main
  * @atomic true
  * @summary A page must not have more than one main landmark
- * @standard Best Practices (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
  *   Applies whenever the page contains at least one main landmark
  *   (explicit role="main", or an implicit <main>).
@@ -15,7 +15,7 @@
  *   decision from landmark-one-main (that rule flags zero
  *   mains too; this one only flags more than one).
  * @implementation-notes
- * - Not WCAG-normative — authored as an advisory, cantTell-capped
+ * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent.
  * - Only landmarks actually exposed to assistive technology can collide.

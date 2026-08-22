@@ -12,7 +12,7 @@
  *   Applies to <a href> elements whose immediate parent element also has
  *   at least one direct-child text node with non-whitespace content
  *   (i.e. the link sits inline within a run of plain text, not as a
- *   standalone item — e.g. not the sole content of a <li> nav item).
+ *   standalone item, e.g. not the sole content of a <li> nav item).
  * @expectation
  *   A link inside a text block must be visually distinguishable from the
  *   surrounding text by at least one non-color means:
@@ -20,29 +20,29 @@
  *     - a different font-weight than the surrounding text, OR
  *     - a different font-style than the surrounding text, OR
  *     - a contrast ratio of at least 3:1 between the link's text color and
- *       the surrounding text's color (WCAG technique G183's threshold —
+ *       the surrounding text's color (WCAG technique G183's threshold,
  *       sufficient contrast alone is an accepted alternative to underline).
  *   Fails only when none of the above hold AND the color contrast between
- *   link and surrounding text is confidently computable and below 3:1 —
+ *   link and surrounding text is confidently computable and below 3:1,
  *   i.e. color is demonstrably the only cue.
  * @implementation-notes
  * - "Surrounding text style" is approximated as the link's immediate
  *   parent element's own computed style, not a full inline-context walk
- *   of the actual adjacent text node(s) — a deliberate scope-down, since
+ *   of the actual adjacent text node(s), a deliberate scope-down, since
  *   plain text nodes inherit their rendering from the parent in the
  *   overwhelming majority of real markup.
  * - When contrast is not confidently computable (background image/
- *   gradient, blend mode, filter, non-opaque ancestor — same blockers
+ *   gradient, blend mode, filter, non-opaque ancestor, same blockers
  *   `contrast-minimum`/`contrast-computable` use), the link is silently
  *   skipped rather than flagged or reported as cantTell, to keep `fail`
  *   reserved for deterministic, high-confidence violations. This means
- *   the rule never emits cantTell — outcome is notApplicable/pass/fail
+ *   the rule never emits cantTell, outcome is notApplicable/pass/fail
  *   only, matching this repo's other Tier 2 mechanical rules.
  * - Reuses the shared `helpers.contrast` subsystem (same
  *   computeEffectiveForeground/Background, getComputabilityBlocker,
  *   contrastRatio helpers as `contrast-minimum`), rather than re-deriving
  *   color math independently.
- * - Scoped to `a[href]` only (not `area[href]` or `[role="link"]`) —
+ * - Scoped to `a[href]` only (not `area[href]` or `[role="link"]`),
  *   matches the common real-world shape of this issue (prose links).
  */
 
@@ -52,7 +52,7 @@ const meta = {
   title:
     'Links in text blocks must be distinguishable from surrounding text without relying on color alone',
   description:
-    'Checks that a link inside a run of text is visually distinguishable from the surrounding text by underline, a font-weight/style difference, or a sufficient (>=3:1) color-contrast difference — not by color alone.',
+    'Checks that a link inside a run of text is visually distinguishable from the surrounding text by underline, a font-weight/style difference, or a sufficient (>=3:1) color-contrast difference, not by color alone.',
   i18n: {
     titleKey: 'linkInTextBlock_title',
     descriptionKey: 'linkInTextBlock_description'
@@ -179,7 +179,7 @@ function runInPage(ctx) {
     try {
       const blocker = c.getComputabilityBlocker(el);
       if (blocker && blocker.ok === false) {
-        // Not confidently computable — skip (benefit of the doubt).
+        // Not confidently computable, skip (benefit of the doubt).
       } else {
         const bg = c.computeEffectiveBackground(el, {
           contrast: { mode, rootCanvasFallback },
@@ -204,7 +204,7 @@ function runInPage(ctx) {
 
           if (!(ratio >= 3)) flagged = true;
         }
-        // else: not confidently computable — skip.
+        // else: not confidently computable, skip.
       }
     } catch {
       // no-throw: treat as not computable, skip.

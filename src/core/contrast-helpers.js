@@ -374,7 +374,7 @@ function createContrastHelpers(opts, shared) {
           : 4;
 
       // ACT afw4f7/09o5cg's own applicability is scoped to text that
-      // "expresses something in human language" — a string of pure
+      // "expresses something in human language". A string of pure
       // punctuation/symbol characters, with no letter or digit at all,
       // isn't language and is out of scope entirely, not a violation. Their
       // own passed example is exactly that: a paragraph of nothing but
@@ -1063,11 +1063,11 @@ function createContrastHelpers(opts, shared) {
   // docs/LIMITATIONS.md). Reading it exactly once and caching the {has,
   // value} pair here avoids compounding that with a second read from
   // elsewhere in this same run (e.g. this function being called more than
-  // once for the same element). The shared cache this uses is
-  // deliberately reset at the start of every run (see dom-runner.js), so
-  // this does not — and is not relied on to — survive across two
-  // independent runs against the same window; a genuinely fresh jsdom
-  // window, or a real browser, is unaffected either way.
+  // once for the same element). The shared cache this uses is reset at
+  // the start of every run (see dom-runner.js), so this does not survive
+  // across two independent runs against the same window, and nothing here
+  // relies on it doing so; a fresh jsdom window, or a real browser, is
+  // unaffected either way.
   function __textShadowInfoEl(el, cs) {
     try {
       if (!el || el.nodeType !== 1) {
@@ -1228,7 +1228,7 @@ function createContrastHelpers(opts, shared) {
       // CSS opacity on an ancestor scales the *entire rendered
       // subtree* (its own background plus everything already
       // accumulated from descendants) as one compositing group
-      // against whatever is further out — not just that ancestor's
+      // against whatever is further out, not just that ancestor's
       // own background layer. Applying it here (after folding in
       // this ancestor's own bg) keeps that correct even when
       // accumulated alpha already reached 1 from an inner opaque
@@ -1357,21 +1357,20 @@ function createContrastHelpers(opts, shared) {
     // card/nav/modal over a page-level hero image" pattern.
     //
     // This does NOT extend to mix-blend-mode/filter or an ancestor's
-    // `opacity` — those are compositing-GROUP operations applied to that
+    // `opacity`: those are compositing-GROUP operations applied to that
     // ancestor's entire rendered subtree (including any "opaque" layer
     // inside it) before blending against whatever is further out, so a
     // closer opaque paint layer does not shield against them the way it
     // shields against a plain background-image. Applying the same
-    // short-circuit there would risk a confidently wrong pass —
-    // deliberately NOT done, matching this engine's no-false-positives
-    // bar.
+    // short-circuit there would risk a confidently wrong pass, so it
+    // is not done here, matching this engine's no-false-positives bar.
     //
     // `backdrop-filter` IS extended, because it is the
     // opposite kind of operation: it samples/filters whatever is already
     // rendered BEHIND the element (earlier in paint order), not the
     // element's own subtree, so a closer-to-el fully-opaque
     // background-color paints OVER the filtered result at el's screen
-    // position and hides it completely — the same physical occlusion
+    // position and hides it completely, the same physical occlusion
     // background-image gets, just sourced from "behind" instead of
     // "this element's own background image". Confirmed with a live
     // Chromium repro (not just spec-reading): a `backdrop-filter:
@@ -1483,7 +1482,7 @@ function createContrastHelpers(opts, shared) {
       // confident ratio. Group opacity uniformly scales an ancestor's
       // *entire* rendered subtree (its own background AND everything
       // already accumulated from descendants, including el's text)
-      // when compositing against what's behind it — computing that
+      // when compositing against what's behind it. Computing that
       // precisely for the foreground would require re-deriving the
       // text's rendered color the same way the background is folded
       // (rather than compositing a separately opacity-scaled

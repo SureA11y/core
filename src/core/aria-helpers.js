@@ -11,14 +11,14 @@
  * This data was hand-authored from the WAI-ARIA 1.2 specification and the
  * ARIA in HTML specification, not generated from an official machine-
  * readable feed. To protect FAIL integrity (automatic `fail` must only be
- * emitted for deterministic, high-confidence violations), this module is
- * DELIBERATELY CONSERVATIVE in two specific places:
+ * emitted for deterministic, high-confidence violations), this module stays
+ * CONSERVATIVE BY DESIGN in two specific places:
  *
  * 1) REQUIRED_PROPS_BY_ROLE only lists a required state/property when the
  *    spec is unambiguous and context-independent. Several roles have
  *    required properties that are context-dependent (e.g. option's
  *    aria-selected default varies by selection-follows-focus context) or
- *    where sources disagree — those are intentionally left out of
+ *    where sources disagree; those are intentionally left out of
  *    "required" (they remain valid/supported, just not enforced as
  *    required) rather than risk flagging compliant markup.
  * 2) ALLOWED_ROLES_BY_ELEMENT (ARIA-in-HTML permitted-roles table) covers
@@ -51,7 +51,7 @@ function createAriaHelpers(opts, shared) {
     return [];
   })();
 
-  // Existence check for a single ID token — never throws, returns false
+  // Existence check for a single ID token. Never throws, returns false
   // (not "unknown") when the document isn't available so callers degrade
   // to their pre-existing format-only behavior rather than guessing.
   function idExists(id) {
@@ -65,8 +65,8 @@ function createAriaHelpers(opts, shared) {
 
   // Presence-only accessible-name check (aria-label / aria-labelledby /
   // title), for the few role-permission decisions conditioned on whether
-  // an element currently has a name (e.g. <section>'s permitted-roles set
-  // — see ALLOWED_ROLES_BY_ELEMENT below). Uses the same precedence as
+  // an element currently has a name (e.g. <section>'s permitted-roles set,
+  // see ALLOWED_ROLES_BY_ELEMENT below). Uses the same precedence as
   // dom-helpers.js's getLandmarkNameInfo (aria-label -> aria-labelledby ->
   // title). title counts, so a <section title="..."> resolves to the
   // 'section[named]' role key rather than plain 'section'.
@@ -87,14 +87,14 @@ function createAriaHelpers(opts, shared) {
     return false;
   }
 
-  // Shared "does this element have a landmark-scoping ancestor" primitive
-  // — <header>'s "banner", <footer>'s "contentinfo", and <aside>'s
+  // Shared "does this element have a landmark-scoping ancestor" primitive.
+  // <header>'s "banner", <footer>'s "contentinfo", and <aside>'s
   // "complementary" implicit roles are all conditioned on the same W3C
   // ARIA-in-HTML exclusion: suppressed when nested inside sectioning
   // content (article/aside/nav/section), and for header/footer only,
   // also suppressed when nested inside <main> (pass includeMain: true).
-  // <aside> itself omits <main> from its own exclusion list — see the
-  // `aside` case in getElementRoleKey below — so callers must pass the
+  // <aside> itself omits <main> from its own exclusion list (see the
+  // `aside` case in getElementRoleKey below), so callers must pass the
   // right includeMain for the role they're computing.
   //
   // Role-aware, not tag-only: an ancestor's bare tag only counts when it
@@ -118,7 +118,7 @@ function createAriaHelpers(opts, shared) {
       if (LANDMARK_SCOPING_TAGS.has(tag)) return true;
       return includeMain && tag === 'main';
     }
-    // A role attribute is present (even empty/invalid) — the element's
+    // A role attribute is present (even empty/invalid); the element's
     // bare TAG no longer counts; only an explicit, scoping-relevant
     // role value does.
     const token = trim(roleAttr).split(/\s+/)[0].toLowerCase();
@@ -143,7 +143,7 @@ function createAriaHelpers(opts, shared) {
   }
 
   // -------------------------------------------------------------------
-  // A) Abstract roles — MUST NOT be used directly in a role="" attribute.
+  // A) Abstract roles: MUST NOT be used directly in a role="" attribute.
   // -------------------------------------------------------------------
   // <generated:aria-abstract-roles>
   const ABSTRACT_ROLES = new Set([
@@ -164,10 +164,10 @@ function createAriaHelpers(opts, shared) {
 
   // -------------------------------------------------------------------
   // B) Valid, concrete (non-abstract) roles authors should not explicitly
-  //    declare — either because WAI-ARIA has deprecated them (a direct
+  //    declare, either because WAI-ARIA has deprecated them (a direct
   //    replacement exists) or because they are reserved for
   //    user-agent-internal use. Flagged by aria-deprecated-role, not
-  //    aria-roles-valid (which only checks existence/abstractness) — see
+  //    aria-roles-valid (which only checks existence/abstractness); see
   //    DEPRECATED_ROLE_GUIDANCE below for per-role, reason-accurate
   //    messaging.
   // -------------------------------------------------------------------
@@ -178,14 +178,14 @@ function createAriaHelpers(opts, shared) {
   ]);
 
   // Valid roles reserved for user-agent-internal use, which ARIA states at
-  // SHOULD NOT strength — conforming, so reported as cantTell.
+  // SHOULD NOT strength: conforming, so reported as cantTell.
   const AUTHOR_DISCOURAGED_ROLES = new Set([
     'generic' // "primarily for implementors of user agents"
   ]);
 
   // Roles carrying an author MUST NOT, reported as fail. Empty under ARIA 1.2
-  // and 1.3, whose only author MUST NOT covers abstract roles — the concern of
-  // aria-roles-valid.
+  // and 1.3, whose only author MUST NOT covers abstract roles; that's the
+  // concern of aria-roles-valid.
   const AUTHOR_PROHIBITED_ROLES = new Set([]);
 
   // Deprecated but still ALLOWED states/properties (SHOULD NOT, still
@@ -209,7 +209,7 @@ function createAriaHelpers(opts, shared) {
     },
     generic: {
       key: 'ariaDeprecatedRole_guidance_generic',
-      text: 'Remove it — this role is reserved for user-agent-internal use, not authors. Use role="presentation"/"none" to strip semantics, a semantic role like "group" to convey grouping, or simply a plain element (which already carries the implicit generic role) instead.'
+      text: 'Remove it: this role is reserved for user-agent-internal use, not authors. Use role="presentation"/"none" to strip semantics, a semantic role like "group" to convey grouping, or a plain element (which already carries the implicit generic role) instead.'
     }
   };
 
@@ -228,12 +228,12 @@ function createAriaHelpers(opts, shared) {
   // -------------------------------------------------------------------
   // C) Complete set of concrete (non-abstract) WAI-ARIA 1.2 role tokens,
   //    plus the WAI-ARIA Graphics Module 1.0 roles (graphics-document/
-  //    graphics-object/graphics-symbol) — a separate W3C Recommendation
+  //    graphics-object/graphics-symbol), a separate W3C Recommendation
   //    that extends core ARIA, with a companion Graphics Accessibility API
   //    Mappings REC defining AT support. Without these, aria-roles-valid
   //    would wrongly report an AT-recognized role as unrecognized.
   //    Digital Publishing WAI-ARIA (doc-abstract etc.) is a separate
-  //    module, deliberately left out of scope for now.
+  //    module, left out of scope for now.
   // -------------------------------------------------------------------
   // <generated:aria-concrete-roles>
   const CONCRETE_ROLES = new Set([
@@ -372,16 +372,16 @@ function createAriaHelpers(opts, shared) {
 
   // -------------------------------------------------------------------
   // D) ARIA attribute value types.
-  //    'token'        — one value from a fixed enumerated set
-  //    'token-list'   — space-separated values from a fixed enumerated set
-  //    'boolean'      — "true" | "false"
-  //    'tristate'     — "true" | "false" | "mixed"
-  //    'boolean-undefined' — "true" | "false" | "undefined"
-  //    'idref'        — a single ID token (existence not verified here)
-  //    'idref-list'   — space-separated ID tokens
-  //    'integer'      — a base-10 integer (may be negative where noted)
-  //    'number'       — a real number
-  //    'string'       — free-form text (only non-emptiness may be checked)
+  //    'token'        : one value from a fixed enumerated set
+  //    'token-list'   : space-separated values from a fixed enumerated set
+  //    'boolean'      : "true" | "false"
+  //    'tristate'     : "true" | "false" | "mixed"
+  //    'boolean-undefined' : "true" | "false" | "undefined"
+  //    'idref'        : a single ID token (existence not verified here)
+  //    'idref-list'   : space-separated ID tokens
+  //    'integer'      : a base-10 integer (may be negative where noted)
+  //    'number'       : a real number
+  //    'string'       : free-form text (only non-emptiness may be checked)
   // -------------------------------------------------------------------
   const ATTR_VALUE_TYPES = {
     'aria-activedescendant': 'idref',
@@ -453,8 +453,8 @@ function createAriaHelpers(opts, shared) {
   };
 
   // -------------------------------------------------------------------
-  // E) Required states/properties per role (see file header — deliberately
-  //    conservative; only unambiguous, context-independent cases).
+  // E) Required states/properties per role (see file header: conservative
+  //    on purpose, only unambiguous, context-independent cases).
   // -------------------------------------------------------------------
   const REQUIRED_PROPS_BY_ROLE = {
     checkbox: ['aria-checked'],
@@ -480,7 +480,7 @@ function createAriaHelpers(opts, shared) {
   // F) Required owned (child) roles for composite/container roles.
   //    Value is an array of alternative acceptable child roles (any one
   //    satisfies the requirement). aria-owns references also count as
-  //    "owning" — checked by the rule, not this table.
+  //    "owning"; that's checked by the rule, not this table.
   // -------------------------------------------------------------------
   const REQUIRED_OWNED_ROLES = {
     list: ['listitem'],
@@ -521,15 +521,15 @@ function createAriaHelpers(opts, shared) {
   };
 
   // -------------------------------------------------------------------
-  // H) ARIA-in-HTML permitted roles per element (deliberately scoped to
-  //    the most common elements first — see file header). `null` values
+  // H) ARIA-in-HTML permitted roles per element (scoped on purpose to
+  //    the most common elements first, see file header). `null` values
   //    are used for elements that permit "any role" in typical states.
   //    Element keys may include a simple attribute condition using the
   //    form 'tag[attr]' or 'tag[attr=value]' for the small number of
   //    elements whose permitted roles depend on an attribute.
   // -------------------------------------------------------------------
   const ALLOWED_ROLES_BY_ELEMENT = {
-    // A plain <a href> is constrained to these override roles — unlike a
+    // A plain <a href> is constrained to these override roles, unlike a
     // hrefless <a>, which is unconstrained. Restating the native 'link'
     // role is always permitted via the native-role fallback below.
     'a[href]': [
@@ -551,7 +551,7 @@ function createAriaHelpers(opts, shared) {
     // Restating the native 'article' role remains permitted via the
     // native-role fallback below regardless of this list.
     article: ['feed', 'presentation', 'none', 'document', 'application', 'main', 'region'],
-    // <area href> permits no override role at all — only its native 'link'
+    // <area href> permits no override role at all, only its native 'link'
     // role, via the native-role fallback below. Empty array (not null)
     // encodes "constrained to nothing", same convention as
     // 'label[associated]' below.
@@ -563,7 +563,7 @@ function createAriaHelpers(opts, shared) {
     // to restate, so an empty array is correct (not "unconstrained").
     html: [],
     // No override role is permitted on <picture>, and it has no implicit
-    // ARIA role to restate — empty array, same convention as 'html' /
+    // ARIA role to restate. Empty array, same convention as 'html' /
     // 'area[href]' above.
     picture: [],
     // Includes 'gridcell', 'separator', 'slider', 'treeitem': composite-grid
@@ -592,7 +592,7 @@ function createAriaHelpers(opts, shared) {
     h5: ['tab', 'presentation', 'none'],
     h6: ['tab', 'presentation', 'none'],
     hr: ['none', 'presentation'],
-    // 'complementary' is <aside>'s own native role — allowed via the
+    // 'complementary' is <aside>'s own native role, allowed via the
     // native-role fallback below even though it's not in this list
     // (spec: "also allowed, but NOT RECOMMENDED", same shape as <nav>).
     aside: ['feed', 'none', 'note', 'presentation', 'region', 'search'],
@@ -600,8 +600,8 @@ function createAriaHelpers(opts, shared) {
     // The array is identical for both keys; what differs by nesting is only
     // the native-role match (see 'header[toplevel]' below and
     // getElementRoleKey's header branch). A top-level <header role="banner">
-    // restates its own implicit "banner" role — a no-op, always permitted —
-    // even though 'banner' isn't in this array (same shape as <section>'s
+    // restates its own implicit "banner" role, a no-op that's always
+    // permitted even though 'banner' isn't in this array (same shape as <section>'s
     // named/unnamed split).
     'header[toplevel]': ['group', 'none', 'presentation', 'doc-footnote'],
     header: ['group', 'none', 'presentation', 'doc-footnote'],
@@ -655,11 +655,11 @@ function createAriaHelpers(opts, shared) {
     ],
     // Only 'application' is permitted on <video>.
     video: ['application'],
-    // Same as <video>, plus 'img'/'document' — an <object> can stand in
+    // Same as <video>, plus 'img'/'document': an <object> can stand in
     // for an image or a full document.
     object: ['application', 'img', 'document'],
     // 'region' is only permitted when the section has an accessible name
-    // (its conditional native role in that case — see getElementRoleKey's
+    // (its conditional native role in that case, see getElementRoleKey's
     // section[named]/section split above); every other role here is
     // permitted regardless of naming.
     'section[named]': [
@@ -752,7 +752,7 @@ function createAriaHelpers(opts, shared) {
     'input[type=email]': ['combobox', 'spinbutton'],
     select: ['menu'],
     // <select multiple> or <select size> 1>: native role is listbox, not
-    // combobox (see NATIVE_ROLE_BY_ELEMENT_KEY below) — no override role
+    // combobox (see NATIVE_ROLE_BY_ELEMENT_KEY below); no override role
     // is permitted, but restating the native listbox role is always
     // allowed via the native-role fallback.
     'select[multiple]': [],
@@ -770,7 +770,7 @@ function createAriaHelpers(opts, shared) {
   // -------------------------------------------------------------------
   // H2) Native/implicit role per ALLOWED_ROLES_BY_ELEMENT key. Keeping an
   //     element's own native role (e.g. role="list" on <ul>, role="table"
-  //     on <table>) is never a spec violation — the ARIA-in-HTML "allowed
+  //     on <table>) is never a spec violation. The ARIA-in-HTML "allowed
   //     roles" tables enumerate roles you may override *to*, not the
   //     native default, which remains implicitly valid whether or not it
   //     is redundantly re-declared. isRoleAllowedOnElement always accepts
@@ -783,7 +783,7 @@ function createAriaHelpers(opts, shared) {
     aside: 'complementary',
     button: 'button',
     form: 'form',
-    // No entry for plain 'header' — a header nested in sectioning
+    // No entry for plain 'header': a header nested in sectioning
     // content/<main> has no implicit role to restate.
     'header[toplevel]': 'banner',
     h1: 'heading',
@@ -819,12 +819,12 @@ function createAriaHelpers(opts, shared) {
   // -------------------------------------------------------------------
   // I) Native HTML tag -> implicit "containment role" mapping, used only
   //    for aria-required-children / aria-required-parent ownership
-  //    matching (getContainmentRole). Deliberately small and scoped to
+  //    matching (getContainmentRole). Kept small on purpose and scoped to
   //    exactly the roles referenced by REQUIRED_OWNED_ROLES /
   //    REQUIRED_CONTEXT_ROLE above, so that adding an explicit container
   //    role (e.g. role="list" on a <ul>, a common CSS-reset workaround)
   //    does not produce a false positive against plain native children
-  //    (e.g. <li> with no role attribute) — same scope-limiting rationale
+  //    (e.g. <li> with no role attribute), same scope-limiting rationale
   //    as ALLOWED_ROLES_BY_ELEMENT (see file header).
   // -------------------------------------------------------------------
   const NATIVE_CONTAINMENT_ROLE_BY_ELEMENT = {
@@ -845,7 +845,7 @@ function createAriaHelpers(opts, shared) {
 
   // Several of the roles above are conditional in HTML-AAM: the element only
   // carries them inside the native structure they belong to. An <li> loose in
-  // a <div> is not a listitem, and ACT bc4a75 turns on exactly that —
+  // a <div> is not a listitem, and ACT bc4a75 turns on exactly that:
   // `<div role="list"><li>Item</li><span role="link">x</span></div>` fails,
   // because the list owns no valid child at all once the <li> stops counting.
   // `directParent` distinguishes HTML-AAM's "child of" conditions (li, option,
@@ -952,7 +952,7 @@ function createAriaHelpers(opts, shared) {
   }
 
   // Validates a single attribute's raw string value against its declared
-  // value type. Returns { valid, reason } — reason is a short machine
+  // value type. Returns { valid, reason }; reason is a short machine
   // code, not a user-facing string (rules localize their own messages).
   function validateAttrValue(name, rawValue) {
     const type = getAttrValueType(name);
@@ -961,7 +961,7 @@ function createAriaHelpers(opts, shared) {
     const v = trim(rawValue);
 
     // ACT 6a7281's own applicability: "any WAI-ARIA state or property that
-    // is not empty" — an explicitly empty value, including a bare boolean-
+    // is not empty". An explicitly empty value, including a bare boolean-
     // style attribute with no "=value" at all (e.g. `aria-checked` alone),
     // is out of this rule's scope entirely for every value type, not a
     // violation. Empty idrefs/idref-lists are additionally a common,
@@ -1007,9 +1007,9 @@ function createAriaHelpers(opts, shared) {
         const formatOk = !/\s/.test(v);
         if (!formatOk) return { valid: false, reason: 'expected-single-idref' };
         // ACT 6a7281's own Background: aria-errormessage is a non-required
-        // property whose target commonly doesn't exist yet — an HTML
+        // property whose target commonly doesn't exist yet. An HTML
         // element with that id "may be created in response to an event
-        // that may or may not happen" — so existence is deliberately not
+        // that may or may not happen", so existence is not
         // checked for this one attribute, format only. aria-activedescendant
         // has no such carve-out in ACT's own text and keeps the existence
         // check.
@@ -1019,7 +1019,7 @@ function createAriaHelpers(opts, shared) {
       }
       case 'idref-list': {
         const parts = v.split(/\s+/).filter(Boolean);
-        // Only flag when NONE of the referenced ids resolve — a
+        // Only flag when NONE of the referenced ids resolve. A
         // partially-dangling list (some ids exist, some don't) is left
         // unflagged.
         if (!parts.some((p) => idExists(p)))
@@ -1075,7 +1075,7 @@ function createAriaHelpers(opts, shared) {
     if (tag === 'header') {
       // <header>'s own implicit role is conditional: "banner" when
       // top-level (not nested inside sectioning content/<main>),
-      // generic/null when nested — see hasLandmarkScopingAncestor above
+      // generic/null when nested. See hasLandmarkScopingAncestor above
       // (includeMain: true, since <header>'s exclusion list includes
       // <main>). So role="banner" is a permitted no-op restatement only at
       // the top level; 'banner' isn't in <header>'s allowedRoles array and
@@ -1124,7 +1124,7 @@ function createAriaHelpers(opts, shared) {
     if (tag === 'select') {
       // <select multiple> or <select size> 1>: native role becomes
       // listbox instead of combobox (WHATWG HTML-AAM), a distinct
-      // permitted-roles entry — see ALLOWED_ROLES_BY_ELEMENT/
+      // permitted-roles entry. See ALLOWED_ROLES_BY_ELEMENT/
       // NATIVE_ROLE_BY_ELEMENT_KEY above.
       let isMultiSelect;
       try {
@@ -1159,9 +1159,9 @@ function createAriaHelpers(opts, shared) {
       : '';
   }
 
-  // Returns { constrained, allowed } — constrained=false means this
+  // Returns { constrained, allowed }; constrained=false means this
   // element/role combination has no asserted constraint (rule should
-  // not flag it), matching the deliberately-scoped table above. An
+  // not flag it), matching the intentionally scoped table above. An
   // element's own native/implicit role (see NATIVE_ROLE_BY_ELEMENT_KEY)
   // is always allowed, even when not separately listed.
   function isRoleAllowedOnElement(el, role) {
@@ -1176,15 +1176,15 @@ function createAriaHelpers(opts, shared) {
   // Effective role for ownership/context matching only (aria-required-
   // children / aria-required-parent): explicit role wins when present;
   // otherwise falls back to the small NATIVE_CONTAINMENT_ROLE_BY_ELEMENT
-  // map above. Not a general-purpose implicit-role resolver — scoped
-  // deliberately narrow, see the table's header comment.
+  // map above. Not a general-purpose implicit-role resolver; kept
+  // narrow on purpose, see the table's header comment.
   //
   // The explicit role must be a real, valid concrete ARIA role to count:
   // an invalid/unrecognized role="" token (e.g. a library's own
   // non-standard "columngroup") is ignored by browsers/AT, which fall back
   // to the implicit role. Without this, a bogus role token wrongly
   // "blocks" the ancestor/descendant containment-role search instead of
-  // being transparent to it — e.g. role="columnheader" cells inside a
+  // being transparent to it, e.g. role="columnheader" cells inside a
   // role="columngroup" wrapper (not a real ARIA role) that itself sits
   // inside the real role="row" ancestor should still resolve to "row".
   function getContainmentRole(el) {
@@ -1232,8 +1232,8 @@ function createAriaHelpers(opts, shared) {
     getContainmentRole,
 
     // An element's own native/implicit ARIA-in-HTML role (see
-    // NATIVE_ROLE_BY_ELEMENT_KEY above) — previously internal-only
-    // (used by isRoleAllowedOnElement), now also re-exported for
+    // NATIVE_ROLE_BY_ELEMENT_KEY above), used internally by
+    // isRoleAllowedOnElement and also exported for
     // aria-prohibited-attr's roleless-element branch, which needs to
     // tell "no role at all" (e.g. a bare <span>/<div>) apart from "has
     // a real implicit role" (e.g. <button>, <a href>) without
@@ -1241,10 +1241,11 @@ function createAriaHelpers(opts, shared) {
     getNativeRoleForElement,
 
     // Shared "does this element have a landmark-scoping ancestor"
-    // primitive — see its own header comment above. Re-exported at
+    // primitive, see its own header comment above. Re-exported at
     // helpers' top level too (src/core/dom-helpers.js), matching
-    // getLandmarkNameInfo's precedent, for the manual landmark-check
-    // files that used to each carry their own (buggy, tag-only) copy.
+    // getLandmarkNameInfo's precedent, so the manual landmark-check
+    // files can share one implementation instead of each carrying its
+    // own copy.
     hasLandmarkScopingAncestor
   };
 }

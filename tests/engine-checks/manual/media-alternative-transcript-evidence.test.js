@@ -210,7 +210,7 @@ test(`${RULE_ID}: sibling media elements under the same container do not share e
   );
 });
 
-test(`${RULE_ID}: determinism — running twice yields identical rule result`, () => {
+test(`${RULE_ID}: determinism, running twice yields identical rule result`, () => {
   const tx = `Transcript: ${longText(220)}`;
 
   const html = `<!doctype html><html><body>

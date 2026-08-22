@@ -17,8 +17,8 @@
  * runnersSharedSource block (runCore, resolveEffectiveRunOnly,
  * resolveContextRoots, pingFrame, sendFrameRunCommand,
  * enableFrameRpcResponder, etc.) -- mirroring exactly how runa11yCoreInPage
- * itself achieves self-containment, and deliberately calling runCore(...)
- * directly here (not the sibling runa11yCoreInPage) so this stays
+ * itself achieves self-containment, and calls runCore(...) directly here on
+ * purpose (not the sibling runa11yCoreInPage) so this stays
  * independent of the outer, Node-require-based RULE_IMPLS section. That
  * independence matters concretely: it's what lets these two functions be
  * used the exact same bundler-free way runa11yCoreInPage already is (raw

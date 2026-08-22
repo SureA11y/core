@@ -93,7 +93,7 @@ test(`${RULE_ID}: i18n (fr) rule title/description are localized`, () => {
 test(`${RULE_ID} (node runtime): non-focusable (disabled) role="presentation" input is excluded, even with alt=""`, () => {
   // A plain <input type="image"> is natively focusable by default (unlike a
   // <div>/<svg>, which need an explicit tabindex) -- disabled is what makes
-  // it genuinely non-focusable here, matching the fixture's own ii_d_06 case.
+  // it actually non-focusable here, matching the fixture's own ii_d_06 case.
   const html = `<!doctype html><html><body><input id="i1" type="image" alt="" src="x.png" role="presentation" disabled></body></html>`;
   const result = runNode(html);
   const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
@@ -111,7 +111,7 @@ test(`${RULE_ID} (node runtime): non-focusable (disabled) role="none" input is e
   assert.strictEqual(rule.occurrences.length, 0);
 });
 
-test(`${RULE_ID} (node runtime): a role="presentation" input WITHOUT disabled is NOT excluded — natively focusable by default`, () => {
+test(`${RULE_ID} (node runtime): a role="presentation" input WITHOUT disabled is NOT excluded, since it's natively focusable by default`, () => {
   const html = `<!doctype html><html><body><input id="i4" type="image" alt="" aria-label="Search" src="x.png" role="presentation"></body></html>`;
   const result = runNode(html);
   const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);

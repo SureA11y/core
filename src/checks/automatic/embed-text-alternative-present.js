@@ -135,8 +135,8 @@ function runInPage(ctx) {
   }
 
   // `title` is a weaker text-alternative mechanism than aria-label/
-  // aria-labelledby — it is not reliably exposed to assistive technology
-  // in every context (e.g. touch/mobile) — so a pass achieved only via
+  // aria-labelledby, it is not reliably exposed to assistive technology
+  // in every context (e.g. touch/mobile), so a pass achieved only via
   // `title` is reported at reduced confidence rather than the rule's
   // default `high`.
   let anyPassedViaWeakMechanism = false;

@@ -251,12 +251,12 @@ function workerMain() {
   const engineOptions = payload.engineOptions || { perfStats: true, includeShadowDom: false };
 
   // IMPORTANT: keep this require inside the worker so module state doesn't leak into parent.
-  // Also IMPORTANT: this must happen BEFORE memBefore/t0 are captured below — requiring
+  // Also IMPORTANT: this must happen BEFORE memBefore/t0 are captured below. Requiring
   // this module pulls in jsdom and the whole generated core.js, which cold-loads in the
   // ~200ms range by itself. Measuring from before the require conflates one-time module-load
-  // cost with actual per-page engine-scan cost (a real bug this comment now guards against
-  // regressing back into — confirmed empirically: a cold `require()` of this module alone
-  // took ~227ms in a fresh process, larger than most real page scans this bench measures).
+  // cost with actual per-page engine-scan cost (a real bug this comment guards against
+  // regressing back into: a cold `require()` of this module alone
+  // took ~227ms in a fresh process in testing, larger than most real page scans this bench measures).
   const { runa11yCoreOnHtml } = require('../tests/helpers/runDomRulesOnHtml');
 
   // Measure process memory (not perfect, but consistent within a single run)

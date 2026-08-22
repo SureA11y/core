@@ -68,7 +68,7 @@ test(`${RULE_ID}: cantTell when two named <form role="search"> elements share th
   assert.ok(hasOccurrenceForId(rule, 'b'));
 });
 
-test(`${RULE_ID}: cantTell when two unnamed <aside> elements are direct children of <main> — <main> is not sectioning content and must not suppress <aside>'s implicit complementary role`, () => {
+test(`${RULE_ID}: cantTell when two unnamed <aside> elements are direct children of <main>, since <main> is not sectioning content and must not suppress <aside>'s implicit complementary role`, () => {
   const html = `<!doctype html><html><body>
     <main><aside id="a">First</aside><aside id="b">Second</aside></main>
   </body></html>`;
@@ -89,7 +89,7 @@ test(`${RULE_ID}: cantTell when a <header> nested inside an ancestor whose role 
   assert.ok(hasOccurrenceForId(rule, 'b'));
 });
 
-test(`${RULE_ID}: notApplicable when a <header> is nested inside a plain (no role override) <aside> — the ancestor's bare tag still suppresses banner exactly as before, only an explicit role override on the ancestor changes the outcome`, () => {
+test(`${RULE_ID}: notApplicable when a <header> is nested inside a plain (no role override) <aside>, since the ancestor's bare tag still suppresses banner; only an explicit role override on the ancestor changes the outcome`, () => {
   const html = `<!doctype html><html><body>
     <header id="a">Site header</header>
     <aside aria-label="Related"><header id="b">Not a landmark</header></aside>
@@ -98,7 +98,7 @@ test(`${RULE_ID}: notApplicable when a <header> is nested inside a plain (no rol
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: notApplicable when a NAMED <aside> is nested inside real sectioning content (an <article>) — an aside's role is suppressed only when both nested AND unnamed`, () => {
+test(`${RULE_ID}: notApplicable when a NAMED <aside> is nested inside real sectioning content (an <article>), since an aside's role is suppressed only when both nested AND unnamed`, () => {
   const html = `<!doctype html><html><body>
     <article><aside aria-label="Related" id="a">Related content</aside></article>
     <aside aria-label="Related" id="b">Duplicate name, top-level</aside>

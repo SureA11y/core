@@ -298,7 +298,7 @@ test(`${RULE_ID}: cantTell when a native dialog[open] is present behind an aria-
 });
 
 test(`${RULE_ID}: stays fail (not downgraded) when the open modal lives INSIDE the aria-hidden subtree`, () => {
-  // A modal that is itself inside the hidden subtree is genuinely broken
+  // A modal that is itself inside the hidden subtree really is broken
   // (the dialog is being hidden), so this must remain a hard fail.
   const html = `<!doctype html><html><body>
       <div id="ah_bg_inner_modal" aria-hidden="true">
@@ -376,13 +376,13 @@ test(`${RULE_ID}: fail when aria-hidden subtree contains focusable descendant (l
 });
 
 test(`${RULE_ID}: fail when a slotted focusable element's aria-hidden ancestor only exists across a shadow-DOM slot boundary`, () => {
-  // closestAriaHiddenTrue walks ancestors via composedParent, which
-  // previously checked parentNode before assignedSlot — parentNode is
-  // always truthy for a normally-connected slotted element, so the
-  // assignedSlot branch never fired, silently missing any aria-hidden
+  // closestAriaHiddenTrue walks ancestors via composedParent, which checks
+  // assignedSlot before parentNode: parentNode is always truthy for a
+  // normally-connected slotted element, so checking it first would mean the
+  // assignedSlot branch never fires, silently missing any aria-hidden
   // ancestor that only exists inside the shadow tree a light-DOM element
-  // is distributed into. This is a false NEGATIVE (a genuinely hidden-but-
-  // focusable element going unflagged).
+  // is distributed into. Getting this wrong is a false negative: a hidden
+  // but focusable element going unflagged.
   const dom = createDom(`<!doctype html><html><body>
       <div id="host"><button id="a" slot="x">Btn</button></div>
     </body></html>`);
@@ -395,8 +395,8 @@ test(`${RULE_ID}: fail when a slotted focusable element's aria-hidden ancestor o
     engineOptions: { includeShadowDom: true }
   });
   // The rule reports against the aria-hidden root (not the offending
-  // descendant) — same convention as the "focusable descendant (link)"
-  // test above — with the offender summarized in data.details.offenders.
+  // descendant), same convention as the "focusable descendant (link)"
+  // test above, with the offender summarized in data.details.offenders.
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'ah_shadow_root'));
   assert.strictEqual(rule.occurrences[0].data.details.offenders[0].tag, 'button');
@@ -456,7 +456,7 @@ test(`${RULE_ID}: excludes visibility:hidden focusable candidates (pass when onl
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: excludes candidates that are opacity:0 AND visibility:hidden together (pass — visibility:hidden wins)`, () => {
+test(`${RULE_ID}: excludes candidates that are opacity:0 AND visibility:hidden together (pass, visibility:hidden wins)`, () => {
   const html = `<!doctype html><html><body>
       <div id="ah_root_op_vh" aria-hidden="true">
         <a id="op_vh_link" href="#x" style="opacity:0;visibility:hidden">Hidden link</a>
@@ -466,7 +466,7 @@ test(`${RULE_ID}: excludes candidates that are opacity:0 AND visibility:hidden t
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: excludes a candidate whose closer ancestor is opacity:0 but a FARTHER ancestor is display:none — the closer, filterable opacity:0 must not mask the farther, unconditional display:none`, () => {
+test(`${RULE_ID}: excludes a candidate whose closer ancestor is opacity:0 but a FARTHER ancestor is display:none (the closer, filterable opacity:0 must not mask the farther, unconditional display:none)`, () => {
   const html = `<!doctype html><html><body>
       <div id="ah_outer_display_none" style="display:none">
         <div id="ah_root_deep" aria-hidden="true">

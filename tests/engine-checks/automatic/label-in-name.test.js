@@ -129,7 +129,7 @@ test('label-in-name: aria-hidden decorative icon glyph does not count as visible
   // in the aria-label, purely because the previous implementation collected
   // text via raw container.textContent (which ignores aria-hidden and CSS
   // visibility entirely) instead of the intended TreeWalker-based, filtered
-  // collection — itself caused by a free-var bug (a bare `NodeFilter`
+  // collection, itself caused by a free-var bug (a bare `NodeFilter`
   // reference that silently threw and fell back to textContent on every
   // call). Both are fixed together; this only has content inside the
   // aria-hidden icon, so nothing counts as a visible label at all.

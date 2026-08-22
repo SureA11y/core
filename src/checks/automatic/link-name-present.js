@@ -16,8 +16,8 @@
  *   The element has a non-empty accessible name. A programmatic name is
  *   taken first (aria-labelledby, aria-label, an associated <label>, title),
  *   and failing that the element falls back to its own subtree text,
- *   counting each descendant's own name (an <img alt>, aria-label or title)
- *   — the shape behind the common <a><img alt="..."></a> logo link. The
+ *   counting each descendant's own name (an <img alt>, aria-label or title),
+ *   the shape behind the common <a><img alt="..."></a> logo link. The
  *   content fallback is suppressed when an explicit, known role that is not
  *   name-from-content is present; an unrecognized role token falls back to
  *   the implicit role.
@@ -59,7 +59,7 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   function getConservativeSubtreeText(container) {
-    // "Name from content" — recurses into descendants and uses each one's
+    // "Name from content", recurses into descendants and uses each one's
     // own accessible name (img alt, aria-label/aria-labelledby, title) when
     // it has one, not just literal text nodes. See getContentNameInfo's
     // header comment in src/core/dom-helpers.js for the full rationale

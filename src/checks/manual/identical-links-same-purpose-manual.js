@@ -13,23 +13,23 @@
  *   grouped by that name (trimmed, whitespace-collapsed, case-folded).
  * @expectation
  *   Within a page, links that share the same accessible name are expected
- *   to serve the same purpose (i.e. resolve to the same destination — the
+ *   to serve the same purpose (i.e. resolve to the same destination, the
  *   full resolved URL, including any fragment). Same-text-different-
  *   destination links are common and frequently intentional in real
  *   sites (e.g. repeated "Read more" links per article card), so this is
  *   authored as `type: 'manual'` (cantTell-capped, never fail) rather
- *   than a hard fail — flagging a real name/destination mismatch for
+ *   than a hard fail, flagging a real name/destination mismatch for
  *   human judgment instead of guessing intent.
  * @implementation-notes
  * - Destination comparison uses the DOM `.href` property (already
  *   resolved to an absolute URL by the engine/browser), not the raw
- *   `href` attribute — so relative vs. absolute forms of the same target
+ *   `href` attribute, so relative vs. absolute forms of the same target
  *   are correctly treated as identical.
  * - A `role="link"` element with no `href` (ACT fd3a94/b20e66's own
  *   `<span role="link" onclick="location='...'">`-style examples) falls
  *   back to extracting the destination from a `location`/`location.href`
  *   assignment or `location.assign(...)`/`location.replace(...)` call in
- *   its `onclick` attribute — a literal string already present in
+ *   its `onclick` attribute, a literal string already present in
  *   markup, not something that requires executing script. An unrecognized
  *   onclick shape is simply not resolved (this rule is cantTell-capped,
  *   so a missed destination costs recall, never a false fail).

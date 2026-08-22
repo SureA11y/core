@@ -6,7 +6,7 @@ The first real binding, `@surea11y/playwright` (a sibling project, not part of t
 
 ## Core-engine vs. binding-layer: know which side you're on
 
-Some engine-parity features (relative to other established engines) are **engine-level** — call the engine, get the behavior, no binding code required. Others are **binding-layer** — the engine deliberately doesn't own them, because they only make sense once you have a real automation driver (a `Page`/`Browser`/`ElementHandle`-shaped object) in front of you. Building a new binding without knowing which is which leads to either reimplementing something the engine already does, or missing something because "surely the engine handles that."
+Some engine-parity features (relative to other established engines) are **engine-level** — call the engine, get the behavior, no binding code required. Others are **binding-layer** — the engine doesn't own them, because they only make sense once you have a real automation driver (a `Page`/`Browser`/`ElementHandle`-shaped object) in front of you. Building a new binding without knowing which is which leads to either reimplementing something the engine already does, or missing something because "surely the engine handles that."
 
 **Already engine-level, works the moment you call `runa11yCoreInPage`/`runDomRulesInPage` — no binding code needed:**
 - All rule execution, WCAG SC mapping, composite rollups.
@@ -17,7 +17,7 @@ Some engine-parity features (relative to other established engines) are **engine
 
 **Binding-layer — your binding has to build these itself, the engine won't:**
 - **Element references.** The engine returns `selector`/`structuralPath` strings, never a live handle — it has no concept of your driver's element-reference type. Resolve `occurrences[i].selector` back to a real handle yourself (Playwright's approach: `page.evaluateHandle` instead of `page.evaluate`, then `elementHandle.$(selector)` per occurrence — see `.elementRef(true)` in `@surea11y/playwright`).
-- **Result verbosity/reporter filtering.** The engine deliberately always returns every rule's outcome, including `pass`/`notApplicable` — "not a violations-only list" is a stated engine design choice (see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md)), not an oversight to work around. If your consumers want a trimmed view for CI-scale output, that's a post-filter your binding adds (`@surea11y/playwright`'s `.reportOnly(['fail','cantTell'])` is a simple array-filter over the full result — no engine change).
+- **Result verbosity/reporter filtering.** The engine always returns every rule's outcome, including `pass`/`notApplicable` — "not a violations-only list" is a stated engine design choice (see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md)), not an oversight to work around. If your consumers want a trimmed view for CI-scale output, that's a post-filter your binding adds (`@surea11y/playwright`'s `.reportOnly(['fail','cantTell'])` is a simple array-filter over the full result — no engine change).
 - **Formatted failure output for your framework's own assertion/reporting style** (e.g. Playwright/Jest-style multi-line failure messages). The engine's raw result is framework-agnostic on purpose; shaping it into "what shows up in a failed test's stack trace" is squarely binding territory.
 
 ## The serialization-boundary caveat

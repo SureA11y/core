@@ -6,9 +6,9 @@
  * @check page-has-heading-one
  * @atomic true
  * @summary The page should have at least one level-one heading
- * @standard Best Practices (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
- *   Always applicable to any HTML document with a <body> element —
+ *   Always applicable to any HTML document with a <body> element:
  *   "does the page have an h1" is a whole-page concern, matching
  *   bypass-blocks-present's pattern of evaluating the document
  *   directly.
@@ -18,18 +18,18 @@
  *   heading has no clear entry point for assistive technology users
  *   navigating by heading.
  * @implementation-notes
- * - Not WCAG-normative — authored as an advisory, cantTell-capped
+ * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent.
  * - Filters candidates through `isAccTreeEligible` (hidden/aria-hidden/
  *   display:none/inert elements don't count as "the page has a heading
- *   one"), matching `landmark-one-main`'s own precedent — a raw
+ *   one"), matching `landmark-one-main`'s own precedent. A raw
  *   `document.querySelectorAll` would wrongly credit an `<h1>` that sits
- *   inside a `display:none` ancestor, genuinely unreachable by sighted and
+ *   inside a `display:none` ancestor, unreachable by sighted and
  *   screen reader users alike, as satisfying this check. This does NOT
  *   regress purely-visually-clipped-but-AT-exposed headings (e.g. an `<h1>`
  *   hidden via clip-path/off-screen positioning, `visibility:visible`, no
- *   `aria-hidden`) — `isAccTreeEligible` only excludes elements actually
+ *   `aria-hidden`): `isAccTreeEligible` only excludes elements actually
  *   removed from the accessibility tree, not ones merely clipped from the
  *   visual viewport.
  */

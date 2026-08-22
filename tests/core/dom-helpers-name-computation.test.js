@@ -31,7 +31,7 @@ function byId(document, id) {
 // descendants (img/area/input[type=image]) resolved their contribution via
 // the general getAccessibleNameInfo, which falls back to title/native-label
 // unconditionally -- so title silently outranked a real, present alt
-// attribute, and a deliberately empty alt="" (a "this is decorative, name
+// attribute, and an intentionally empty alt="" (a "this is decorative, name
 // nothing" marker) was overridden by title too. Fixed to use getAriaNameInfo
 // (aria only) ahead of alt, with alt's own present/absent distinction
 // (getTextAlternativeInfo) deciding whether title is a legitimate fallback.
@@ -811,8 +811,8 @@ test('getTextFromIdRefsIdrefEligible: a referenced target that resolves to empty
 // A wrapping <label>'s OWN naming subtree walk: a descendant with its own
 // aria-label/aria-labelledby speaks for itself (its own children are not
 // also walked into), and an image-like descendant contributes its alt --
-// see this function's own header comment for why it deliberately does not
-// call back into getAccessibleNameInfo/getContentNameInfo for descendants.
+// see this function's own header comment for why it never calls back into
+// getAccessibleNameInfo/getContentNameInfo for descendants.
 
 test("getAccessibleNameInfo: a label's descendant with its own aria-label overrides that descendant's own text, without re-walking into its children", () => {
   const { helpers, document } = helpersFor(
@@ -871,7 +871,7 @@ test('getAccessibleNameInfo: a <label for="..."> that exists but has empty conte
 test('getContentNameInfo (via getTextFromIdRefs): an extremely long aria-labelledby chain hits the shared depth guard rather than recursing unbounded', () => {
   const CHAIN_LENGTH = 40;
   let html = '';
-  // Each link is deliberately EMPTY (no text of its own) so that once the
+  // Each link is EMPTY on purpose (no text of its own) so that once the
   // depth guard blocks the leaf's content computation, there is no
   // intermediate link's own rendered text to "rescue" the result on the
   // way back up -- isolating the guard's effect from ordinary content

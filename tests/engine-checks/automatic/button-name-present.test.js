@@ -272,7 +272,7 @@ test(`${RULE_ID}: fail when an icon-only button has no wrapping <label> and no o
   assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
-test(`${RULE_ID}: fail when role overrides <button> to a value-role and only content is present (Spotify "sort by" control — role="combobox" content is the selected VALUE, not a name)`, () => {
+test(`${RULE_ID}: fail when role overrides <button> to a value-role and only content is present (Spotify "sort by" control: role="combobox" content is the selected VALUE, not a name)`, () => {
   if (!runa11yCoreOnHtml || !assertRule) {
     assert.ok(true);
     return;

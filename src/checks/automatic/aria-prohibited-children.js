@@ -12,12 +12,12 @@
  *   Applies to elements with an explicit, valid role that is one of the
  *   container roles with a documented "required owned elements" entry
  *   (the same REQUIRED_OWNED_ROLES table aria-required-children
- *   uses — see src/core/aria-helpers.js).
+ *   uses, see src/core/aria-helpers.js).
  * @expectation
  *   Every accessible-tree-owned descendant of the container (after
  *   pruning role="none"/"presentation" elements and any "group"/
- *   "rowgroup" wrapper — both always transparent for owned-element
- *   matching, per WAI-ARIA, regardless of whether "group"/"rowgroup" is
+ *   "rowgroup" wrapper, both always transparent for owned-element
+ *   matching per WAI-ARIA, regardless of whether "group"/"rowgroup" is
  *   itself in the container's own required-owned-roles set) has a role
  *   from that same required-owned set. Nothing else is a structurally
  *   valid direct child of a composite/container role, where "allowed" is
@@ -32,16 +32,16 @@
  * @implementation-notes
  * - A distinct atomic decision from aria-required-children (see that
  *   rule): "does at least one required child exist" vs "is every owned
- *   child one of the allowed roles" — split per this repo's "one rule =
+ *   child one of the allowed roles", split per this repo's "one rule =
  *   one normative decision" principle.
  * - The "allowed owned roles" set is REQUIRED_OWNED_ROLES plus
  *   ALLOWED_EXTRA_OWNED_ROLES, because WAI-ARIA's "Required Owned
  *   Elements" says what a container MUST contain, not the exhaustive list
- *   of what it MAY contain. The extra table is deliberately small and each
- *   entry needs a source — ARIA giving the child a Required Context Role
- *   that names this container (caption in table/grid), or the child role's
- *   own definition placing it there (separator in menu/menubar) — recorded
- *   and validated in scripts/generate-aria-tables.js. The two sets are
+ *   of what it MAY contain. The extra table is kept small, and each entry
+ *   needs a source: ARIA giving the child a Required Context Role that
+ *   names this container (caption in table/grid), or the child role's own
+ *   definition placing it there (separator in menu/menubar). Recorded and
+ *   validated in scripts/generate-aria-tables.js. The two sets are
  *   used for different questions: only a REQUIRED role makes a roleless
  *   wrapper an item wrapper, while the allowed set decides the verdict.
  * - A ROLELESS descendant that has any global WAI-ARIA attribute or is
@@ -60,7 +60,7 @@
  * - A roleless wrapper is transparent only as a route to the items inside
  *   it, never as a way to attribute the item's own content to the
  *   container. Unlike role="none"/"presentation", a roleless element is
- *   NOT removed from the accessibility tree — it is exposed as a generic
+ *   NOT removed from the accessibility tree: it is exposed as a generic
  *   node, so strictly nothing inside it is the container's child at all.
  *   The walk descends anyway, because component markup routinely buries
  *   the real item several roleless levels down (an Angular Material card
@@ -78,18 +78,18 @@
  *   container with its own real role
  *   (e.g. a `<div role="listbox">` inside a menubar) is evaluated as its
  *   own owned-role entry against the outer container (and, separately,
- *   gets its own applicability pass as a container in the same rule run)
- *   — its descendants are never misattributed to the outer container.
+ *   gets its own applicability pass as a container in the same rule run),
+ *   so its descendants are never misattributed to the outer container.
  *   "group"/"rowgroup" are always transparent instead, for any container
  *   role, not only the few (menu, menubar, tree) whose own required-owned
- *   set names "group" as an acceptable leaf role — confirmed by ACT
+ *   set names "group" as an acceptable leaf role. Confirmed by ACT
  *   bc4a75's own examples, e.g. a `role="list"` (no "group" in its
  *   required-owned set) still treating a `role="group"` wrapper as
  *   transparent.
  * - Child-role resolution uses `ariaHelpers.getContainmentRole` (explicit
- *   role, falling back to the native-tag map — li/tr/td/th/tbody/ul/ol/
+ *   role, falling back to the native-tag map: li/tr/td/th/tbody/ul/ol/
  *   table/select/input[type=radio]), the same resolution
- *   aria-required-children's descendant matching uses — not
+ *   aria-required-children's descendant matching uses, not
  *   `getExplicitRole`, which only sees an explicit role="" attribute. A
  *   bare `<li>` with no role="" (the common CSS-reset workaround
  *   `<ul role="list"><li>...</li></ul>`) must still resolve to the
@@ -105,14 +105,14 @@
  *   for correctness (an ineligible container has no eligible descendants
  *   either, so `owned` ends up empty and nothing fails), but skipping the
  *   container up front reports `notApplicable` instead of a vacuous
- *   `pass` — the more accurate outcome for a container that isn't
- *   currently exposed at all — and avoids walking a subtree whose result
+ *   `pass`, the more accurate outcome for a container that isn't
+ *   currently exposed at all, and avoids walking a subtree whose result
  *   is already known.
  * - No aria-busy exemption here (unlike aria-required-children): the
  *   WAI-ARIA spec's aria-busy escape hatch is specifically about a
  *   container missing its required owned elements while loading, not
- *   about a container that already has extra/disallowed owned elements —
- *   that scenario isn't this rule's concern.
+ *   about a container that already has extra/disallowed owned elements.
+ *   That scenario isn't this rule's concern.
  */
 
 const id = 'aria-prohibited-children';
@@ -166,7 +166,7 @@ function runInPage(ctx) {
   }
 
   // The WAI-ARIA "Global States and Properties" set (same list as
-  // aria-allowed-attr.js's GLOBAL_ATTRS — duplicated, not imported, since
+  // aria-allowed-attr.js's GLOBAL_ATTRS, duplicated rather than imported, since
   // runInPage must be self-contained per scripts/build-core.js). A
   // roleless descendant carrying any of these is a real accessible-tree
   // node, not a transparent wrapper.
@@ -225,7 +225,7 @@ function runInPage(ctx) {
 
   // Collects this container's owned-role entries, pruning role="none"/
   // "presentation" and "group"/"rowgroup" wrappers as transparent
-  // (recursing through them unconditionally — see header comment), and
+  // (recursing through them unconditionally, see header comment), and
   // stopping at the first non-transparent role boundary otherwise. A
   // roleless wrapper is transparent too, but only as a way to reach the
   // items buried inside it: once one is found there, the rest of that
@@ -264,7 +264,7 @@ function runInPage(ctx) {
         }
         if (globalAttr || mechanism !== 'none') {
           // `mechanism` distinguishes an actual tabindex="" attribute from
-          // native focusability (e.g. <a href>, <button>, <input>) — these
+          // native focusability (e.g. <a href>, <button>, <input>): these
           // are different facts and must not be reported as the same
           // "carries tabindex" claim (a native anchor with no tabindex
           // attribute at all is not "carrying tabindex").
@@ -276,8 +276,8 @@ function runInPage(ctx) {
 
       if (isPresentational || isTransparentGroup) {
         // role="none"/"presentation" really is removed from the accessibility
-        // tree, and its children are promoted to this container — so whatever
-        // is inside genuinely becomes an owned child. group/rowgroup stay
+        // tree, and its children are promoted to this container, so whatever
+        // is inside becomes an owned child in its own right. group/rowgroup stay
         // unconditionally transparent for the reason in the header comment.
         collectOwnedRoles(kid, out, depth + 1, requiredSet);
         continue;
@@ -335,7 +335,7 @@ function runInPage(ctx) {
 
     applicableCount += 1;
 
-    // Two different sets, deliberately. requiredSet drives the item-wrapper
+    // Two different sets on purpose. requiredSet drives the item-wrapper
     // detection in collectOwnedRoles: only a REQUIRED role makes a roleless
     // wrapper an item wrapper, so a wrapper holding nothing but a separator is
     // still interposed content. allowedRoles decides the verdict, and includes

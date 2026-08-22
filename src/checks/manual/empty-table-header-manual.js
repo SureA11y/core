@@ -6,7 +6,7 @@
  * @check empty-table-header
  * @atomic true
  * @summary Table header cells must not be empty
- * @standard Best Practices (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
  *   Applies to <th> elements that don't carry a conflicting explicit role,
  *   plus any element (native <th> or not) with role="columnheader" or
@@ -19,19 +19,19 @@
  * @expectation
  *   The header cell has visible text content. A <th> named only via
  *   aria-label/aria-labelledby (no visible text) is ALSO flagged, not
- *   treated as equivalent — aria-label support on <th> is genuinely
- *   inconsistent in practice: NVDA+Firefox and iOS VoiceOver+Safari ignore
+ *   treated as equivalent: aria-label support on <th> is inconsistent
+ *   in practice. NVDA+Firefox and iOS VoiceOver+Safari ignore
  *   it entirely (only visible text is announced), JAWS+Chrome/IE11 also only
  *   announce visible text in the header cell itself. Visible text is the one
  *   mechanism confirmed to work across every tested combination. See
  *   https://html5accessibility.com/stuff/2024/05/22/not-so-short-note-on-aria-label-usage-big-table-edition/.
  * @implementation-notes
- * - Not WCAG-normative — authored as an advisory, cantTell-capped
+ * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent.
  * - Two distinct reasonCodes: TABLE_HEADER_EMPTY (no accessible name at
  *   all) vs. TABLE_HEADER_NAME_NOT_VISIBLE_TEXT (has aria-label/
- *   aria-labelledby but no visible text) — the latter gets a different
+ *   aria-labelledby but no visible text), the latter gets a different
  *   summary/hint explaining the AT-support gap, since the header isn't
  *   literally nameless, just unreliably named in practice.
  */
@@ -41,7 +41,7 @@ const id = 'empty-table-header';
 const meta = {
   title: 'Table header cells must not be empty',
   description:
-    'Checks that table header cells (<th>, or any element with role="columnheader"/"rowheader") have visible text content — a header named only via aria-label/aria-labelledby is also flagged, since real screen-reader/browser support for that is inconsistent.',
+    'Checks that table header cells (<th>, or any element with role="columnheader"/"rowheader") have visible text content. A header named only via aria-label/aria-labelledby is also flagged, since real screen-reader/browser support for that is inconsistent.',
   i18n: {
     titleKey: 'emptyTableHeader_title',
     descriptionKey: 'emptyTableHeader_description'
@@ -146,8 +146,8 @@ function runInPage(ctx) {
       occurrences.push(
         helpers.reportOccurrence(el, {
           summary:
-            'This table header cell has no visible text — its only accessible name comes from aria-label/aria-labelledby, which real screen-reader/browser combinations (e.g. NVDA+Firefox, iOS VoiceOver+Safari) are known to ignore on <th> elements.',
-          hint: 'Add visible text content to this header cell (in addition to, or instead of, aria-label/aria-labelledby) — visible text is the only naming mechanism confirmed to work across tested screen readers.',
+            'This table header cell has no visible text. Its only accessible name comes from aria-label/aria-labelledby, which real screen-reader/browser combinations (e.g. NVDA+Firefox, iOS VoiceOver+Safari) are known to ignore on <th> elements.',
+          hint: 'Add visible text content to this header cell (in addition to, or instead of, aria-label/aria-labelledby); visible text is the only naming mechanism confirmed to work across tested screen readers.',
           i18n: {
             summaryKey: 'emptyTableHeader_summary_cantTell_ariaOnly',
             hintKey: 'emptyTableHeader_hint_cantTell_ariaOnly',

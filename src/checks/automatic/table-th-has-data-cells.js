@@ -19,22 +19,22 @@
  * @expectation
  *   The table also contains at least one <td> somewhere in it.
  * @implementation-notes
- * - DELIBERATELY SCOPED (see aria-helpers.js file header for the same
+ * - SCOPED (see aria-helpers.js file header for the same
  *   conservative-scope rationale used throughout this engine): this rule
  *   does NOT implement the full HTML5 header-association algorithm
  *   (resolving which specific data cells a given <th scope="row"|"col">
  *   describes, accounting for colspan/rowspan and default-scope
  *   inference). That algorithm is one of the more error-prone parts of
  *   the HTML spec to reimplement correctly, and a wrong positional match
- *   would risk a false `fail` — unacceptable for this engine's fail-
+ *   would risk a false `fail`, unacceptable for this engine's fail-
  *   integrity bar.
  * - Instead, this rule only catches the single unambiguous case: a table
  *   that has <th> elements but ZERO <td> elements anywhere. In that case
- *   every <th> in the table trivially describes no data cell — no
+ *   every <th> in the table trivially describes no data cell, no
  *   positional analysis is needed to know that. A table that has at
  *   least one <td> somewhere is not evaluated further by this rule, even
  *   if some particular <th> in it doesn't actually describe any cell
- *   (false negative, not a false positive — acceptable under this
+ *   (false negative, not a false positive, acceptable under this
  *   engine's philosophy).
  * - Applicability IS gated, because the zero-<td> case above turns any
  *   over-broad scope straight into a false fail: a layout table marked

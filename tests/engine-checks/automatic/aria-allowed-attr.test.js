@@ -246,7 +246,7 @@ test(`${RULE_ID}: pass when a deprecated ex-global IS supported by the role (e.g
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: a genuinely-unsupported attr fails and a deprecated one cantTells on the same element`, () => {
+test(`${RULE_ID}: a truly unsupported attr fails and a deprecated one cantTells on the same element`, () => {
   const html = `<!doctype html><html><body><div id="a" role="radio" aria-checked="true" aria-valuenow="1" aria-invalid="false"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });

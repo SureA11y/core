@@ -6,20 +6,20 @@
  * @check landmark-unique
  * @atomic true
  * @summary Landmarks sharing the same role must have unique accessible names
- * @standard Best Practices (no formal WCAG Success Criterion — see ROADMAP.md Tier 1b)
+ * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
  *   Applies whenever two or more landmark regions on the page share the
  *   same landmark role (banner, contentinfo, main, navigation,
- *   complementary, region, form, or search — see implementation notes
+ *   complementary, region, form, or search; see implementation notes
  *   for the detection model).
  * @expectation
  *   Among landmarks sharing a role, each has a distinct accessible name
- *   (via aria-label/aria-labelledby — landmarks are not named from
+ *   (via aria-label/aria-labelledby; landmarks are not named from
  *   content). Two same-role landmarks with the same name (including two
  *   both left unnamed) are indistinguishable to assistive technology
  *   users navigating by landmark.
  * @implementation-notes
- * - Not WCAG-normative — authored as an advisory, cantTell-capped
+ * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent and the landmark-
  *   detection model (HTML-AAM implicit-role mapping + explicit role
@@ -80,18 +80,18 @@ function runInPage(ctx) {
 
   // Delegates to the shared helpers.hasLandmarkScopingAncestor (role-aware:
   // an ancestor's bare TAG only counts when it carries no role attribute at
-  // all; an explicit role="dialog"-style override no longer suppresses —
+  // all; an explicit role="dialog"-style override no longer suppresses;
   // see that function's header comment in src/core/aria-helpers.js), using
   // two distinct ancestor scopes rather than one shared list: <header>/
   // <footer> use "sectioning content PLUS <main>" (includeMain: true) to
   // decide banner/contentinfo suppression, but <aside> uses PLAIN
-  // sectioning content only — NOT main (includeMain: false) — to decide
+  // sectioning content only, not main (includeMain: false), to decide
   // complementary suppression. A single shared sectioning-ancestors set
   // that includes 'main' is correct for header/footer but wrong for aside:
   // e.g. two unnamed <aside> elements that are direct children of <main>
   // would have their implicit "complementary" role incorrectly suppressed,
   // hiding a real duplicate-landmark violation. The role-aware half matters
-  // too: e.g. an <aside role="dialog"> containing its own <header> —
+  // too: take an <aside role="dialog"> containing its own <header>.
   // role="dialog" isn't one of the four scoping roles, so the nested
   // <header> keeps "banner" per spec, but a tag-only (non-role-aware)
   // check would unconditionally suppress it just because the ancestor TAG
@@ -110,7 +110,7 @@ function runInPage(ctx) {
     if (tag === 'nav') return 'navigation';
     if (tag === 'aside') {
       // An <aside> is suppressed by a sectioning-content ancestor ONLY
-      // when it also has no accessible name — a named <aside> is never
+      // when it also has no accessible name. A named <aside> is never
       // suppressed, even when nested.
       if (!hasSectioningAncestor(el, false)) return 'complementary';
       return getAccessibleLandmarkName(el) ? 'complementary' : '';
@@ -137,7 +137,7 @@ function runInPage(ctx) {
     if (explicit) {
       if (!LANDMARK_ROLES.has(explicit)) return '';
       // <form>/<section> only count as landmarks when they have an
-      // accessible name — a property of the ELEMENT, not of how the role
+      // accessible name, a property of the ELEMENT, not of how the role
       // got there. This applies whether the role is implicit (already
       // handled in getImplicitLandmarkRole below) or explicit. Per the W3C
       // ARIA-in-HTML spec ("a form is not exposed as a landmark region

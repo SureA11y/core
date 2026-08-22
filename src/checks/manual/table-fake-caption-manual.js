@@ -22,7 +22,7 @@
  * @implementation-notes
  * - Heuristic (a legitimately narrow first data row is possible, if
  *   uncommon), so authored as `type: 'manual'` (cantTell-capped, never
- *   fail) rather than a hard fail — same conservative posture as
+ *   fail) rather than a hard fail, the same conservative posture as
  *   `p-as-heading`.
  * - Does not attempt full colspan/rowspan-aware column counting; "more
  *   than one cell" on another row is used as the multi-column signal,
@@ -121,7 +121,7 @@ function runInPage(ctx) {
       selector: stableSelector,
       html,
       summary:
-        'This table has no <caption>, but its first row is a single cell sitting above multi-cell rows — it may be acting as a fake caption.',
+        'This table has no <caption>, but its first row is a single cell sitting above multi-cell rows, so it may be acting as a fake caption.',
       hint: 'If this cell is meant to describe the table, use a real <caption> element instead of a lone first-row cell.',
       i18n: {
         summaryKey: 'tableFakeCaption_summary_cantTell',

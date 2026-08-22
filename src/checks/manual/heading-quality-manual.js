@@ -9,8 +9,8 @@
  * @standard WCAG 2.2
  * @sc 2.4.6
  * @applicability
- *   Elements with a heading role — native <h1>-<h6>, or any element with
- *   an explicit role="heading" — that are included in the accessibility
+ *   Elements with a heading role (native <h1>-<h6>, or any element with
+ *   an explicit role="heading") that are included in the accessibility
  *   tree and have a non-empty accessible name. A heading with no name at
  *   all is `empty-heading`'s concern, not this rule's.
  * @expectation
@@ -27,8 +27,8 @@
  *   deterministic is that a placeholder string cannot describe anything,
  *   which is the signal this rule raises for review.
  * - Only the placeholder half of ACT b49b2e is reachable this way. Its
- *   real expectation — the heading describes the first perceivable
- *   content after it — needs a human to read both, and ACT's own failed
+ *   real expectation (the heading describes the first perceivable
+ *   content after it) needs a human to read both, and ACT's own failed
  *   examples are all well-formed headings on the wrong topic
  *   ("Weather" over opening hours), which no markup-level check can
  *   catch. Mapped as a partial match; see docs/ACT_RULE_MAPPING.md.
@@ -36,10 +36,10 @@
  *   the same precision-over-recall trade-off `link-name-quality`'s own
  *   header comment reasons through: "Heading into the storm" is a real
  *   heading and must not match "heading".
- * - Short headings are deliberately NOT flagged. ACT b49b2e is explicit
+ * - Short headings are intentionally NOT flagged. ACT b49b2e is explicit
  *   that a heading may be a single word or even a single character and
- *   still be descriptive — its own passed example is `<h1>A</h1>` above a
- *   glossary section — so length carries no signal here, unlike in
+ *   still be descriptive; its own passed example is `<h1>A</h1>` above a
+ *   glossary section, so length carries no signal here, unlike in
  *   `page-title-patterns` where a <8-character page title is a real one.
  * - Heading resolution (native tag, explicit role, and the
  *   role="none"-plus-global-ARIA-attribute conflict-resolution case)
@@ -79,7 +79,7 @@ const meta = {
 function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
-  // Declared inside runInPage — see scripts/build-core.js header
+  // Declared inside runInPage; see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
   const PLACEHOLDER_HEADING_TEXT = new Set([
     'heading',

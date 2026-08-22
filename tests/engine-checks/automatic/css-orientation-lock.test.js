@@ -57,13 +57,13 @@ test(`${RULE_ID}: pass when a rotate() in an orientation media query is a small 
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail when the rotation is 92.5deg — near but not exactly 90 (ACT b33eff's own failed example; exact-modulo equality misses this)`, () => {
+test(`${RULE_ID}: fail when the rotation is 92.5deg, near but not exactly 90 (ACT b33eff's own failed example; exact-modulo equality misses this)`, () => {
   const html = `<!doctype html><html><head><style>@media (orientation: landscape) { body { transform: rotate(92.5deg); } }</style></head><body>Page Content</body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
-test(`${RULE_ID}: fail when the rotation is 1.5708rad — converts to 90.0000210...deg, never exactly 90 due to floating point (ACT b33eff's own failed example)`, () => {
+test(`${RULE_ID}: fail when the rotation is 1.5708rad (converts to 90.0000210...deg, never exactly 90 due to floating point; ACT b33eff's own failed example)`, () => {
   const html = `<!doctype html><html><head><style>@media (orientation: portrait) { html { transform: rotate(1.5708rad); } }</style></head><body>Page Content</body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });

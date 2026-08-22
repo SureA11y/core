@@ -575,7 +575,7 @@ test('a result or error reply to a ping is absorbed without settling it twice', 
       null
     );
 
-    // The ping's own resolve/reject slots are deliberately inert: a frame that
+    // The ping's own resolve/reject slots are inert on purpose: a frame that
     // answers a ping with anything but a pong leaves it to time out rather
     // than reporting a bogus reachability verdict.
     assert.strictEqual(registry.pending.has(requestId), false);

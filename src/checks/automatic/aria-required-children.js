@@ -17,7 +17,7 @@
  *   At least one descendant, or one aria-owns-referenced element, has one
  *   of the acceptable owned roles for that container role.
  * @implementation-notes
- * - Deliberately scoped to REQUIRED_OWNED_ROLES in src/core/aria-helpers.js
+ * - Scoped to REQUIRED_OWNED_ROLES in src/core/aria-helpers.js
  *   (see that file's header for the conservative-scope rationale).
  * - Owned-role matching uses ariaHelpers.getContainmentRole, which combines
  *   explicit role="" attributes with a small, curated native-HTML-tag
@@ -28,7 +28,7 @@
  * - Only one qualifying descendant/owned element is required (per
  *   WAI-ARIA "required owned elements": any one acceptable role satisfies
  *   the requirement); the full subtree is scanned without excluding nested
- *   containers with their own differing role, favoring simplicity — this
+ *   containers with their own differing role, favoring simplicity, this
  *   can only under-report (recall), never over-report (fail integrity).
  * - "At least one required child exists" is the whole of this rule's
  *   decision. Whether every owned child is ALLOWED is
@@ -41,7 +41,7 @@
  * - Gated on isAccTreeEligible for the container itself: unlike this
  *   file's sibling attribute/role-validity checks (e.g. aria-roles-valid),
  *   "does this container currently have a required child" is not a fact
- *   that stays fixed once written — it is routinely filled in by the same
+ *   that stays fixed once written, it is routinely filled in by the same
  *   script/interaction that reveals the container (a closed flyout menu
  *   or <dialog> populated on open). Flagging it while the container isn't
  *   currently exposed to the accessibility tree is a false positive; such
@@ -52,16 +52,16 @@
  *   widget is missing required owned elements due to script execution or
  *   loading, authors MUST mark a containing element with aria-busy equal
  *   to true." A container carrying aria-busy="true" is skipped the same
- *   way — only the exact string "true" counts (absent/"false" do not).
+ *   way, only the exact string "true" counts (absent/"false" do not).
  * - Descendant search tries a fast native querySelectorAll(CANDIDATE_
  *   SELECTOR) first (covers the light-DOM-only common case with no added
  *   cost); only when that finds nothing AND the container has a <slot>
  *   anywhere in its subtree does it fall back to a composed-tree walk that
- *   expands <slot> elements via assignedElements({flatten:true}) — plain
+ *   expands <slot> elements via assignedElements({flatten:true}). Plain
  *   querySelectorAll only sees a <slot>'s unrendered fallback content, never
- *   what's actually distributed into it. Deliberately scoped to slot
+ *   what's actually distributed into it. Scoped to slot
  *   expansion only, not a general "also descend into any nested custom
- *   element's own shadow root" walk — no known case needs that yet.
+ *   element's own shadow root" walk, no known case needs that yet.
  */
 
 const id = 'aria-required-children';
@@ -122,7 +122,7 @@ function runInPage(ctx) {
   // Candidate selector for descendant scanning: explicit role attributes,
   // plus every native tag ariaHelpers.getContainmentRole() recognizes
   // (kept in sync with aria-helpers.js NATIVE_CONTAINMENT_ROLE_BY_ELEMENT).
-  // Declared inside runInPage — see scripts/build-core.js header
+  // Declared inside runInPage, see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
   const CANDIDATE_SELECTOR =
     '[role], li, option, tr, td, th, thead, tbody, tfoot, ul, ol, table, select, input[type="radio"]';
@@ -138,11 +138,11 @@ function runInPage(ctx) {
   // light-DOM subtree, so a container whose real owned children are
   // distributed via <slot> (e.g. a shadow-DOM role="list" wrapping
   // <slot></slot>, with the actual role="listitem" elements living in the
-  // light DOM and projected in) would never find them there — same class
+  // light DOM and projected in) would never find them there, same class
   // of bug as aria-required-parent's ancestor search, just in the opposite
   // (descendant) direction.
   //
-  // Deliberately scoped to slot expansion only — does NOT separately
+  // Scoped to slot expansion only, does NOT separately
   // descend into an unrelated nested custom element's own shadow root
   // (e.g. a <my-widget> child with no <slot> involvement at all). That's a
   // qualitatively different question (does an arbitrary component's own
@@ -200,9 +200,8 @@ function runInPage(ctx) {
     let found = false;
 
     // Fast path first: native querySelectorAll over the curated candidate
-    // selector, exactly as before this fix — covers the overwhelming
-    // majority of containers (no shadow DOM involved at all) with zero
-    // added cost.
+    // selector. Covers the overwhelming majority of containers (no shadow
+    // DOM involved at all) with zero added cost.
     let descendants;
     try {
       descendants = el.querySelectorAll(CANDIDATE_SELECTOR);
@@ -218,7 +217,7 @@ function runInPage(ctx) {
     }
 
     // Slow path only when the fast path found nothing AND there's an actual
-    // <slot> somewhere in the subtree to expand — bounds the extra cost to
+    // <slot> somewhere in the subtree to expand, bounds the extra cost to
     // exactly the containers that could possibly need it.
     if (!found) {
       let hasSlot;

@@ -11,30 +11,30 @@
  * @applicability
  *   Applies to <iframe>/<frame> elements that are eligible for the
  *   accessibility tree (isAccTreeEligible) AND reachable by sequential
- *   focus navigation — both conditions required, regardless of role.
+ *   focus navigation, both conditions required, regardless of role.
  * @expectation
  *   The element has a non-empty accessible name via aria-labelledby,
  *   aria-label, or the title attribute. Unlike most interactive elements,
  *   an iframe's name is never derived from its rendered content (the
- *   embedded document is a separate browsing context) — this mirrors
+ *   embedded document is a separate browsing context), this mirrors
  *   dialog-name-present's "name-from-author-only" reasoning.
  * @implementation-notes
  * - Uses helpers.getAccessibleNameInfo, which already stops at
  *   aria-label/aria-labelledby/label[for]/title without falling back to
- *   subtree text content — the right shape for this element.
+ *   subtree text content, the right shape for this element.
  * - Per ACT cae760's own Applicability text, an iframe is only in scope
  *   when it is BOTH accessibility-tree-eligible AND reachable by
- *   sequential focus navigation — unconditionally, not only as a
+ *   sequential focus navigation, unconditionally, not only as a
  *   role="none"/"presentation" exception. Unlike most elements,
  *   <iframe>/<frame> are natively focusable by default (no tabindex
  *   needed), so `tabindex="-1"` (or any negative tabindex) exempts a
- *   frame regardless of whether it also carries a role — a plain
+ *   frame regardless of whether it also carries a role, a plain
  *   `<iframe tabindex="-1">` with no role at all is just as out of scope
  *   as `<iframe role="none" tabindex="-1">`; ACT cae760's own passed
- *   example is the roleless case. (The role="none" reasoning — "because
+ *   example is the roleless case. (The role="none" reasoning, "because
  *   iframe elements are part of sequential focus navigation, the
  *   explicit semantic role of none will be ignored, due to Presentational
- *   Roles Conflict Resolution" — is *why* a focusable role="none" iframe
+ *   Roles Conflict Resolution", is *why* a focusable role="none" iframe
  *   still needs a name, not a separate applicability path of its own.)
  *   helpers.getFocusableInfo doesn't model iframe/frame's native
  *   focusability at all, so it's computed locally here instead.
@@ -80,7 +80,7 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   // <iframe>/<frame> are natively focusable by default (no tabindex
-  // needed), unlike most elements — only an explicit negative tabindex
+  // needed), unlike most elements, only an explicit negative tabindex
   // removes them from the tab order.
   function isFrameFocusable(el) {
     try {

@@ -13,18 +13,18 @@
  * @expectation
  *   SC 1.2.2 requires captions for prerecorded synchronized media, but
  *   only when the video actually has an audio track that conveys
- *   information (a silent/decorative video needs none) — which cannot be
+ *   information (a silent/decorative video needs none), which cannot be
  *   verified from static markup alone (jsdom does not decode media).
  *   This rule is therefore `type: 'manual'` (cantTell-capped, never
  *   fail), matching the precedent set by
  *   `media-alternative-transcript-evidence` for the same class
- *   of "normatively mapped but not staticaly verifiable" gap. A <video>
+ *   of "normatively mapped but not statically verifiable" gap. A <video>
  *   with a `<track kind="captions">` (or `kind="subtitles"`, commonly
  *   used interchangeably in the wild even though captions and subtitles
  *   serve technically distinct purposes) whose `src` is non-empty is not
  *   flagged; everything else is flagged for human review.
  * @implementation-notes
- * - Does not attempt to verify the referenced track file's content —
+ * - Does not attempt to verify the referenced track file's content,
  *   only that a captions/subtitles track is declared with a non-empty
  *   `src`.
  */

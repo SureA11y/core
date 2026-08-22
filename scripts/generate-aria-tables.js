@@ -204,7 +204,7 @@ const INPUT_ROLES = {
   image: 'button'
 };
 
-// Elements HTML-AAM maps to no ARIA role at all, in any context — not
+// Elements HTML-AAM maps to no ARIA role at all, in any context: not
 // `generic`, not `presentation`: nothing. A role-specific ARIA attribute on one
 // of these is supported by nothing, which is what ACT 5c01ea's failed example 2
 // (`<audio controls aria-orientation="horizontal">`) turns on. Hand-listed
@@ -247,7 +247,7 @@ function renderRoleless(list) {
 // verified against it below, so a role that stops requiring a name, or gains a
 // name-from-contents path, breaks the build instead of the rule.
 //
-// Name-required roles deliberately absent, already owned by a dedicated rule:
+// Name-required roles left out here on purpose, already owned by a dedicated rule:
 //   alertdialog, dialog  dialog-name-present
 //   combobox             combobox-name-present
 //   img                  img-alt-present / role-img-alt-present

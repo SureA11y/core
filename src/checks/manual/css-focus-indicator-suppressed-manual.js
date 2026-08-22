@@ -17,7 +17,7 @@
  *   No element is matched by a `:focus`/`:focus-visible` rule that removes
  *   the outline (`outline: none`, `outline: 0`, `outline-color:
  *   transparent`, ...) unless some other focus rule matching it draws a
- *   replacement — a border, box-shadow, background, color change, a
+ *   replacement: a border, box-shadow, background, color change, a
  *   positive outline of its own, or a `::before`/`::after` decoration.
  * @implementation-notes
  * - Authored as `type: 'manual'` (cantTell-capped, never fail). CSS is
@@ -29,8 +29,8 @@
  * - Suppression is only read off the rule's SUBJECT: in `.a:focus .b`,
  *   the declarations apply to `.b` while `.a` has focus, so it says
  *   nothing about `.b`'s own focus indicator. A replacement, by contrast,
- *   is accepted from any rule whose focused compound matches the element
- *   — that is exactly the "focus me, paint something elsewhere" pattern
+ *   is accepted from any rule whose focused compound matches the element:
+ *   that's exactly the "focus me, paint something elsewhere" pattern
  *   (`#link:focus + .indicator { background: navy }`), which does give
  *   the user a visible change.
  * - Replacement properties are a curated list of the ones that change
@@ -38,7 +38,7 @@
  *   filter, opacity, transform, and `content` for a pseudo-element
  *   part), matching this engine's other curated-list checks. A rule
  *   setting only `outline-offset` alongside `outline: none` is not a
- *   replacement — it offsets an outline that is no longer drawn.
+ *   replacement: it offsets an outline that is no longer drawn.
  * - Cross-origin stylesheets throw on `.cssRules` access and are skipped,
  *   same limitation as `css-orientation-lock`. A page whose only focus
  *   styles live in one of those is reported as having no focus rules at
@@ -81,7 +81,7 @@ const meta = {
 function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
-  // Declared inside runInPage — see scripts/build-core.js header
+  // Declared inside runInPage; see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
   const CSS_STYLE_RULE = 1;
 
@@ -199,7 +199,7 @@ function runInPage(ctx) {
     return parts.map(trim).filter(Boolean);
   }
 
-  // :focus and :focus-visible, but never :focus-within — that one fires on
+  // :focus and :focus-visible, but never :focus-within: that one fires on
   // an ancestor of the focused element and says nothing about whether the
   // element itself is indicated.
   const FOCUS_PSEUDO = /:focus(-visible)?(?![-\w])/g;
@@ -247,7 +247,7 @@ function runInPage(ctx) {
     try {
       return el.matches(selector);
     } catch {
-      return false; // selector this engine cannot parse — skip rather than guess
+      return false; // selector this engine cannot parse, skip rather than guess
     }
   }
 
@@ -293,7 +293,7 @@ function runInPage(ctx) {
       }
 
       // A replacement is credited to the element that takes focus, wherever
-      // the rule paints it — on the element itself, its pseudo-element, a
+      // the rule paints it: on the element itself, its pseudo-element, a
       // sibling, or a descendant.
       if (provides) providers.push({ base: focusedBase, subject: isSubject });
     }
@@ -307,7 +307,7 @@ function runInPage(ctx) {
         collectFromStyleRule(cssRule);
         continue;
       }
-      // @media, @supports, @layer, ... — recurse into grouping rules.
+      // @media, @supports, @layer, ...: recurse into grouping rules.
       let nested = null;
       try {
         nested = cssRule.cssRules || null;
