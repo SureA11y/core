@@ -4,6 +4,8 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-08-23
+
 ### Added
 - `duplicate-id` flags a non-empty `id` repeated within the same document or shadow tree. Tagged `wcag2a` plus `wcag22-removed` since SC 4.1.1 (Parsing) was dropped in WCAG 2.2, so exclude it from a 2.2 conformance run with `excludeTags: ['wcag22-removed']`. See `docs/ENGINE_OPTIONS.md`.
 - `form-control-label-quality` reviews a field's visible label text: a leftover placeholder, a label reused across several fields with nothing telling them apart, or a label split between visible and hidden parts. Sits alongside `form-control-programmatic-label-quality`, which judges the labelling mechanism instead of the text.
@@ -14,6 +16,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 ### Changed
 - `docs/RULE_CATALOG.md` now includes each rule's applicability and expectation text alongside its summary, generated straight from source.
 - `link-name-quality` weighs nearby context before flagging a link as non-descriptive (an `aria-describedby` target, or the enclosing list item/table cell/paragraph's own text) rather than judging the accessible name on its own. It also catches bare file-format names like "HTML" or "PDF" for the first time.
+- Rule summaries and hints are reworded throughout: same meaning, plainer phrasing. Anything snapshot-testing that text will see a diff.
 
 ### Removed
 - `bin/surea11y-core.js` and its `bin` entry, unused since the CLI moved to `@surea11y/cli` in 1.4.0.
