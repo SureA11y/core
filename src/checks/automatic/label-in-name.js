@@ -423,7 +423,7 @@ function runInPage(ctx) {
     if (!node) return false;
     const cs = computedStyleOf(node);
     if (!cs) return false;
-    let family = '';
+    let family;
     try {
       family =
         cs.fontFamily || (cs.getPropertyValue ? cs.getPropertyValue('font-family') : '') || '';

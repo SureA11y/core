@@ -308,7 +308,7 @@ function runInPage(ctx) {
         continue;
       }
       // @media, @supports, @layer, ...: recurse into grouping rules.
-      let nested = null;
+      let nested;
       try {
         nested = cssRule.cssRules || null;
       } catch {
