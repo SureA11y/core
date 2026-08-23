@@ -86,6 +86,7 @@
     "coverage:strict": "node scripts/generate-wcag-coverage.js --rulesDir src/checks --strictFacets",
     "coverage:check": "node scripts/generate-wcag-coverage.js --rulesDir src/checks --check",
     "fixtures:index": "node scripts/generate-fixture-index.js",
+    "fixtures:check": "node scripts/generate-fixture-index.js --check",
     "docs:rule-catalog": "npm run build && node scripts/generate-rule-catalog.js",
     "validate:automatic-rules": "npm run build && node scripts/validate-all-rules.js src/checks/automatic",
     "validate:manual-rules": "npm run build && node scripts/validate-all-rules.js src/checks/manual",

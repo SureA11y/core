@@ -196,7 +196,7 @@ function escapeHtml(s) {
 }
 
 /** Self-contained HTML index: bare relative links to sibling fixture files. */
-function renderHtmlIndex(rows, now) {
+function renderHtmlIndex(rows) {
   const withFixture = rows.filter((r) => r.hasFixture);
   const withoutFixture = rows.filter((r) => !r.hasFixture);
 
@@ -257,7 +257,7 @@ function renderHtmlIndex(rows, now) {
 </head>
 <body>
   <h1>surea11y Fixture Index</h1>
-  <p class="meta">Generated: ${now} &middot; ${withFixture.length}/${rows.length} rules have a fixture &middot; regenerate with <code>node scripts/generate-fixture-index.js</code></p>
+  <p class="meta">${withFixture.length}/${rows.length} rules have a fixture &middot; regenerate with <code>node scripts/generate-fixture-index.js</code></p>
 
   <div class="toolbar">
     <input type="search" id="filter" placeholder="Filter by rule id or title…" autocomplete="off">
@@ -350,8 +350,9 @@ function main() {
   const withFixture = rows.filter((r) => r.hasFixture);
   const withoutFixture = rows.filter((r) => !r.hasFixture);
 
-  const now = new Date().toISOString();
-  let md = `# Fixture Index\n\nGenerated: ${now}\n\n`;
+  // No timestamp: these files are committed, so a generation time would make
+  // every run a diff and hide the drift worth seeing.
+  let md = `# Fixture Index\n\n`;
   md += `Every implemented rule should have a \`tests/fixtures/<slug>-all-scenarios.html\` scenario page (numbered \`case_NN\` blocks, each marked PASS/FAIL/CANTTELL in its \`.case-title\`) and a "fixture coverage" test in its \`tests/engine-checks/**/<rule>.test.js\` asserting the exact expected ids. See \`docs/RULE_AUTHORING.md\`.\n\n`;
   md += `## Summary\n\n`;
   md += `Total rules: **${rows.length}**. With fixture: **${withFixture.length}**. Without fixture: **${withoutFixture.length}**.\n\n`;
@@ -380,29 +381,45 @@ function main() {
   }
   md += `\n`;
 
-  fs.mkdirSync(path.dirname(path.resolve(repoRoot, args.out)), { recursive: true });
-  fs.writeFileSync(path.resolve(repoRoot, args.out), md, 'utf8');
-  fs.writeFileSync(
-    path.resolve(repoRoot, args.json),
-    JSON.stringify(
-      {
-        generatedAt: now,
-        summary: {
-          total: rows.length,
-          withFixture: withFixture.length,
-          withoutFixture: withoutFixture.length
-        },
-        rows
+  const json = JSON.stringify(
+    {
+      summary: {
+        total: rows.length,
+        withFixture: withFixture.length,
+        withoutFixture: withoutFixture.length
       },
-      null,
-      2
-    ),
-    'utf8'
+      rows
+    },
+    null,
+    2
   );
 
-  const htmlIndex = renderHtmlIndex(rows, now);
-  fs.mkdirSync(path.dirname(path.resolve(repoRoot, args.html)), { recursive: true });
-  fs.writeFileSync(path.resolve(repoRoot, args.html), htmlIndex, 'utf8');
+  const html = renderHtmlIndex(rows);
+
+  const mdPath = path.resolve(repoRoot, args.out);
+  const jsonPath = path.resolve(repoRoot, args.json);
+  const htmlPath = path.resolve(repoRoot, args.html);
+
+  if (process.argv.includes('--check')) {
+    const readOrNull = (file) => (fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : null);
+
+    if (
+      readOrNull(mdPath) !== md ||
+      readOrNull(jsonPath) !== json ||
+      readOrNull(htmlPath) !== html
+    ) {
+      console.error('Fixture index is stale. Run: npm run fixtures:index');
+      process.exit(1);
+    }
+    console.log('[fixture-index] index is up to date.');
+    return;
+  }
+
+  fs.mkdirSync(path.dirname(mdPath), { recursive: true });
+  fs.writeFileSync(mdPath, md, 'utf8');
+  fs.writeFileSync(jsonPath, json, 'utf8');
+  fs.mkdirSync(path.dirname(htmlPath), { recursive: true });
+  fs.writeFileSync(htmlPath, html, 'utf8');
 
   console.log(
     `[fixture-index] wrote ${args.out}, ${args.json}, ${args.html} — ${withFixture.length}/${rows.length} rules have a fixture`

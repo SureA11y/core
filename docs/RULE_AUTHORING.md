@@ -484,4 +484,5 @@ This writes `tests/fixtures/INDEX.md` (human-readable), `tests/fixtures/index.js
 counts, for external tooling to enumerate and load fixtures directly) and
 `tests/fixtures/index.html` (the same listing as a browsable page). Commit all three
 alongside the fixture and test changes. A rule shipped without its fixture is treated
-the same as a rule shipped without tests — not done.
+the same as a rule shipped without tests — not done. `npm run fixtures:check` reports
+a stale index without rewriting it, and CI fails on one.
