@@ -15112,7 +15112,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         continue;
       }
       // @media, @supports, @layer, ...: recurse into grouping rules.
-      let nested = null;
+      let nested;
       try {
         nested = cssRule.cssRules || null;
       } catch {
@@ -17390,14 +17390,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function fieldsetLegendText(el) {
-    let fieldset = null;
+    let fieldset;
     try {
       fieldset = el.closest ? el.closest('fieldset') : null;
     } catch {
       fieldset = null;
     }
     while (fieldset) {
-      let legend = null;
+      let legend;
       try {
         legend = fieldset.querySelector('legend');
       } catch {
@@ -17419,7 +17419,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // A table row or list item carries its own context (the product name a
   // repeated "Quantity" field belongs to), so it takes part in the key.
   function rowContextText(el, labelText) {
-    let row = null;
+    let row;
     try {
       row = el.closest ? el.closest(ROW_SELECTOR) : null;
     } catch {
@@ -20894,7 +20894,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!node) return false;
     const cs = computedStyleOf(node);
     if (!cs) return false;
-    let family = '';
+    let family;
     try {
       family =
         cs.fontFamily || (cs.getPropertyValue ? cs.getPropertyValue('font-family') : '') || '';
