@@ -25,3 +25,4 @@ jobs:
       - run: npm test
       - run: npm run validate:rules
       - run: npm run coverage:check
+      - run: npm run fixtures:check
