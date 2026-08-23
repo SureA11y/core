@@ -30,8 +30,8 @@ npm run docs:rule-catalog  # regenerate docs/RULE_CATALOG.md
 
 `coverage`, `fixtures:index` and `docs:rule-catalog` write generated files that are
 committed, so run them and commit the result rather than leaving the tree stale.
-`npm run coverage:check` reports the same drift without writing, which is the form to
-reach for if you just want to know.
+`npm run coverage:check` and `npm run fixtures:check` report the same drift without
+writing, which is the form to reach for if you just want to know. CI runs both.
 
 Note on coverage: `tests/node-runtime-parity.test.js` runs every rule's own fixture through `runDomRulesInPage` (the Node/require-based entry point), separately from the `runa11yCoreInPage` self-contained-bundle path nearly every other test uses (see that file's own header comment for why both exist and why coverage needs both) — don't remove it thinking it's a duplicate of the per-rule fixture-coverage test.
 
