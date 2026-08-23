@@ -184,7 +184,7 @@ Composite rules aren't individually authored. They're generated rollups over the
 | `wcag-3.1.2-language-of-parts` | Language of Parts | Rollup of checks ensuring elements whose language differs from the page default declare it correctly. | 3.1.2 | AA | 1 |
 | `wcag-3.2.5-change-on-request` | Change on Request | Rollup of checks ensuring context changes only happen at the user's request (AAA). | 3.2.5 | AAA | 1 |
 | `wcag-3.3.2-labels-or-instructions` | Labels or Instructions | Rollup of checks ensuring form controls have unambiguous labeling. | 3.3.2 | A | 2 |
-| `wcag-4.1.1-parsing` | Parsing | Rollup of checks ensuring id values are unique. WCAG 2.0/2.1 only — SC 4.1.1 was removed in WCAG 2.2, so this composite carries the wcag22-removed tag. | 4.1.1 | A | 1 |
+| `wcag-4.1.1-parsing` | Parsing | Rollup of checks ensuring id values are unique. WCAG 2.0/2.1 only: SC 4.1.1 was removed in WCAG 2.2, so this composite carries the wcag22-removed tag. | 4.1.1 | A | 1 |
 | `wcag-4.1.2-aria-validity` | Name, role, value: ARIA validity | Rollup of checks that ARIA role and attribute usage conforms to the WAI-ARIA specification (valid roles, valid attributes, valid values, required attributes/relationships, unique ARIA-referenced ids). | 4.1.2 | A | 17 |
 | `wcag-4.1.2-name` | Name, role, value: accessible name | Rollup of checks that common interactive elements expose a non-empty accessible name. | 4.1.2 | A | 23 |
 
@@ -301,7 +301,7 @@ Flags a native &lt;input type="checkbox"&gt;/&lt;input type="radio"&gt; whose ex
 
 automatic · WCAG 4.1.2 (A) · confidence high · default severity serious
 
-Checks that elements with aria-errormessage also have aria-invalid set to "true", "grammar", or "spelling" — otherwise the error message is dropped from the accessibility tree.
+Checks that elements with aria-errormessage also have aria-invalid set to "true", "grammar", or "spelling"; otherwise the error message is dropped from the accessibility tree.
 
 **Applies to.** Elements with a non-empty `aria-errormessage` attribute.
 
@@ -660,7 +660,7 @@ Checks that &lt;dl&gt; elements only directly contain &lt;dt&gt;/&lt;dd&gt; grou
 
 **Applies to.** Applies to &lt;dl&gt; elements that have at least one direct element child.
 
-**Expectation.** Every direct element child is &lt;dt&gt;, &lt;dd&gt;, &lt;script&gt;, &lt;template&gt;, &lt;style&gt;, or a &lt;div&gt; whose own children are drawn from that same set (a single level of wrapping div is allowed, matching how authors commonly group dt/dd pairs). If the flattened set contains any &lt;dt&gt; or &lt;dd&gt; at all, it must contain BOTH (an unbalanced dt-without-dd or dd-without-dt is invalid), a flattened set with neither is vacuously fine, not a violation (see implementation-notes). Any other direct or wrapped child breaks the description-list semantics assistive technologies rely on.
+**Expectation.** Every direct element child is &lt;dt&gt;, &lt;dd&gt;, &lt;script&gt;, &lt;template&gt;, &lt;style&gt;, or a &lt;div&gt; whose own children are drawn from that same set (a single level of wrapping div is allowed, matching how authors commonly group dt/dd pairs). If the flattened set contains any &lt;dt&gt; or &lt;dd&gt; at all, it must contain BOTH (an unbalanced dt-without-dd or dd-without-dt is invalid). A flattened set with neither is vacuously fine, not a violation (see implementation-notes). Any other direct or wrapped child breaks the description-list semantics assistive technologies rely on.
 
 ### `deprecated-elements-not-used`
 
@@ -672,7 +672,7 @@ Checks that deprecated, non-standard HTML elements whose blinking/scrolling cont
 
 **Applies to.** Applies to any &lt;blink&gt; or &lt;marquee&gt; element present in scope. These are obsolete, non-standard HTML elements whose defining behavior (blinking or auto-scrolling text) has no built-in user mechanism to pause, stop, or hide it.
 
-**Expectation.** Neither element is present. Since their movement can never be paused, stopped, or hidden by the user, presence is itself the violation, this rule has no partial-pass case (it reports only when the element is found).
+**Expectation.** Neither element is present. Since their movement can never be paused, stopped, or hidden by the user, presence is itself the violation. This rule has no partial-pass case (it reports only when the element is found).
 
 ### `dialog-name-present`
 
@@ -706,7 +706,7 @@ automatic · WCAG 4.1.1 (A) · confidence high · default severity moderate
 
 Checks that every non-empty id attribute value is unique within its own document or shadow tree (WCAG 2.0/2.1 SC 4.1.1, removed in WCAG 2.2).
 
-**Applies to.** Applies to any element carrying a non-empty id attribute. Visibility is irrelevant, a duplicate id breaks the same lookups whether the element renders or not, which is why ACT 3ea0c8 evaluates hidden elements too.
+**Applies to.** Applies to any element carrying a non-empty id attribute. Visibility is irrelevant. A duplicate id breaks the same lookups whether the element renders or not, which is why ACT 3ea0c8 evaluates hidden elements too.
 
 **Expectation.** No other element in the same tree carries the same id value. Ids are scoped per document tree and per shadow tree, so the same id inside two different shadow roots is not a duplicate.
 
@@ -771,7 +771,7 @@ Checks that heading elements (&lt;h1&gt;-&lt;h6&gt; or role="heading") have a no
 
 manual · no formal WCAG SC mapping · confidence medium · default severity minor
 
-Checks that table header cells (&lt;th&gt;, or any element with role="columnheader"/"rowheader") have visible text content — a header named only via aria-label/aria-labelledby is also flagged, since real screen-reader/browser support for that is inconsistent.
+Checks that table header cells (&lt;th&gt;, or any element with role="columnheader"/"rowheader") have visible text content. A header named only via aria-label/aria-labelledby is also flagged, since real screen-reader/browser support for that is inconsistent.
 
 **Applies to.** Applies to &lt;th&gt; elements that don't carry a conflicting explicit role, plus any element (native &lt;th&gt; or not) with role="columnheader" or role="rowheader" (`th:not([role]), [role="columnheader"], [role="rowheader"]`): a &lt;th&gt; that explicitly restates role="columnheader"/"rowheader" is still covered via the second clause, but a &lt;th role="presentation"&gt; (no longer meaningfully a header) is correctly excluded, and an ARIA-role-only header (e.g. a &lt;div role="columnheader"&gt; in a role="grid"/role="table" widget) is caught too.
 
@@ -795,7 +795,7 @@ Flags elements with tabindex &gt;= 0 whose explicit role is a non-interactive st
 
 manual · WCAG 2.4.6 (AA) · confidence medium · default severity minor
 
-Flags a visible form-field label that is a placeholder ("Label", "Field"), or that repeats another field's label with no visible context — heading, legend, or row — telling the two apart.
+Flags a visible form-field label that is a placeholder ("Label", "Field"), or that repeats another field's label with no visible context (heading, legend, or row) telling the two apart.
 
 **Applies to.** Visible form fields: native `input` (excluding hidden and the button-like types), `select`, `textarea`, or an element with one of the ARIA widget roles ACT cc0f0a lists (checkbox, combobox, listbox, menuitemcheckbox, menuitemradio, radio, searchbox, slider, spinbutton, switch, textbox) that carry a visible programmatic label: a `&lt;label&gt;` association, or the elements `aria-labelledby` points at. A field named only by `aria-label`/`title` has no visible label to judge and is out of scope here (its labelling mechanism is `form-control-programmatic-label-quality`'s concern, its presence `form-control-programmatic-label-present`'s).
 
@@ -1166,7 +1166,7 @@ Checks that when two or more landmarks share the same role, each has a distinct 
 
 automatic · WCAG 1.4.1 (A) · confidence high · default severity serious
 
-Checks that a link inside a run of text is visually distinguishable from the surrounding text by underline, a font-weight/style difference, or a sufficient (&gt;=3:1) color-contrast difference — not by color alone.
+Checks that a link inside a run of text is visually distinguishable from the surrounding text by underline, a font-weight/style difference, or a sufficient (&gt;=3:1) color-contrast difference, not by color alone.
 
 **Applies to.** Applies to &lt;a href&gt; elements whose immediate parent element also has at least one direct-child text node with non-whitespace content (i.e. the link sits inline within a run of plain text, not as a standalone item, e.g. not the sole content of a &lt;li&gt; nav item).
 
@@ -1283,7 +1283,7 @@ Checks that menu items (role="menuitem*", including checkbox/radio variants) exp
 
 automatic · WCAG 2.2.4, 3.2.5 (AAA) · confidence high · default severity moderate
 
-Checks that &lt;meta http-equiv="refresh"&gt; is not present at all, regardless of delay — the stricter AAA-level counterpart of the A-level positive-delay-only check.
+Checks that &lt;meta http-equiv="refresh"&gt; is not present at all, regardless of delay. This is the stricter AAA-level counterpart of the A-level positive-delay-only check.
 
 **Applies to.** Applies to the first &lt;meta http-equiv="refresh"&gt; element, in document order, with a valid content attribute, per HTML's shared declarative refresh steps, a document only ever acts on its first valid meta refresh, so a later one (valid or not) is inert and out of scope.
 
@@ -1656,7 +1656,7 @@ Checks that inline &lt;svg&gt; elements provide a text alternative via a &lt;tit
 
 Applies to inline &lt;svg&gt; elements that are exposed to assistive technologies AND appear intended to be conveyed. "Intended to be conveyed" is approximated deterministically by at least one of:
 
-- role="img", role="graphics-symbol", or role="graphics-document" on the SVG root element itself (the WAI-ARIA Graphics Module roles, alongside img). Does NOT extend to arbitrary role="img"/"graphics-symbol"/"graphics-document" descendants nested inside an &lt;svg&gt;, this check's scope is the &lt;svg&gt; root only; role-img-text-alternative-present covers those same three roles on any other element, including nested SVG shapes (ACT 7d6734's own failed example: a bare `&lt;svg&gt;` root with a nested `&lt;circle role="graphics-symbol"&gt;`).
+- role="img", role="graphics-symbol", or role="graphics-document" on the SVG root element itself (the WAI-ARIA Graphics Module roles, alongside img). Does NOT extend to arbitrary role="img"/"graphics-symbol"/"graphics-document" descendants nested inside an &lt;svg&gt;. This check's scope is the &lt;svg&gt; root only; role-img-text-alternative-present covers those same three roles on any other element, including nested SVG shapes (ACT 7d6734's own failed example: a bare `&lt;svg&gt;` root with a nested `&lt;circle role="graphics-symbol"&gt;`).
 - aria-label / aria-labelledby present
 - &lt;title&gt; or &lt;desc&gt; present (desc alone is an applicability signal only, see @expectation)
 - focusable/tabbable (e.g., tabindex, native focusability)
@@ -1792,7 +1792,7 @@ Known gap, left unimplemented on purpose: `&lt;area&gt;` (image-map hotspot) ele
 
 automatic · WCAG 1.3.1 (A) · confidence high · default severity serious
 
-Checks that every &lt;td&gt; in a large, simple (no colspan/rowspan) table has an associated header — via a headers attribute, an implicit column &lt;th&gt; above it, or an implicit row &lt;th&gt; to its left.
+Checks that every &lt;td&gt; in a large, simple (no colspan/rowspan) table has an associated header, via a headers attribute, an implicit column &lt;th&gt; above it, or an implicit row &lt;th&gt; to its left.
 
 **Applies to.** `&lt;table&gt;` elements with at least 4 rows and at least 4 columns (a "large" table, where implicit row/column header association is useful; small tables are usually self-evident), and with NO `colspan`/`rowspan` anywhere in the table.
 
