@@ -254,17 +254,15 @@ that one is on you.
 
 ## 6) Helpers contract used by rules (ctx.helpers)
 
-Rules use helpers returned by `createDomHelpers()`.
+Rules use helpers returned by `createDomHelpers()`. The most load-bearing ones —
+`queryAllSmart` (query with shadow/hidden/exclude handling built in),
+`getAccessibleNameInfo`/`getAccessibleDescriptionInfo`/`getTextAlternativeInfo` (naming),
+`isAccTreeEligible`/`getEligibilityInfo` (visibility), `getRoleInfo`/`getFocusableInfo`
+(role/focus) — cover most rules.
 
-Helpers observed in this repo include:
-- `queryAll`, `queryAllDeep`, `queryAllSmart`
-- `getOuterHtmlSnippet`
-- `buildSimpleSelector`, `buildSelector`
-- `isAccTreeEligible`, `getEligibilityInfo`
-- `resolveIdRefs`, `getTextFromIdRefs`
-- `getAccessibleNameInfo`, `getAccessibleDescriptionInfo`
-- `getTextAlternativeInfo`
-- `getRoleInfo`, `getFocusableInfo`
+**See [`RULE_HELPERS.md`](./RULE_HELPERS.md) for the full reference** (~35 helpers plus
+the `contrast.*`/`aria.*` namespaces), with what each one does and when to reach for it
+instead of reimplementing the logic in a new rule.
 
 ### 6.1 Shadow DOM scanning
 
