@@ -4663,6 +4663,14 @@ function createDomHelpers(opts) {
     getLabelMethod,
     getLabelStrength,
 
+    // Real <label> elements associated with a control (a `<label for="id">`
+    // pointing at it, plus a wrapping `<label>` it's the first labelable
+    // descendant of), for a rule that needs the actual elements rather than
+    // just a method/strength classification. See this function's own
+    // definition above for the full algorithm and why it doesn't use the
+    // native `.labels`/`.control` pair.
+    getAssociatedLabelElements,
+
     // Whether a <label> carries text that names its associated control
     // (own aria-name, else rendered content, else title). Shared so
     // form-control-single-label and form-control-programmatic-label-present
