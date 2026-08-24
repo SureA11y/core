@@ -419,6 +419,7 @@ and progressively explore more advanced features.
 | `docs/LIMITATIONS.md` | Structural limitations of automated accessibility testing. |
 | `docs/TROUBLESHOOTING.md` | Frequently asked questions and common issues. |
 | `docs/RULE_AUTHORING.md` | Writing custom accessibility rules. |
+| `docs/RULE_HELPERS.md` | Reference for every `ctx.helpers` function available to a rule. |
 | `docs/RULE_TAXONOMY.md` | Rule categorization model. |
 | `docs/ACT_RULE_MAPPING.md` | Which ACT rules this engine implements, which it doesn't, and where the two differ by design. |
 | `docs/DESIGN_CHALLENGES.md` | Open and settled design questions, each with the reasoning behind the call. |
