@@ -293,14 +293,29 @@ function runInPage(ctx) {
     }
   }
 
+  // Per-run memoization: getComputedStyle is a real, non-trivial cost in an
+  // actual browser (unlike jsdom, which no-ops it), and hasSpacingConflict
+  // below calls getStyle on the SAME candidate element repeatedly -- once
+  // per undersized target it's compared against, via
+  // isInlineTextExceptionTarget/isInlineLinkTarget -- so with U undersized
+  // targets and N total candidates this was an uncached O(U * N)
+  // getComputedStyle call count. The DOM is read-only for the rest of this
+  // rule's run (no writes between reads), so caching per element here is
+  // safe -- style cannot change mid-run.
+  const __styleCache = new WeakMap();
   function getStyle(el) {
+    if (__styleCache.has(el)) return __styleCache.get(el);
+    let cs;
     try {
-      return document && document.defaultView && document.defaultView.getComputedStyle
-        ? document.defaultView.getComputedStyle(el)
-        : null;
+      cs =
+        document && document.defaultView && document.defaultView.getComputedStyle
+          ? document.defaultView.getComputedStyle(el)
+          : null;
     } catch {
-      return null;
+      cs = null;
     }
+    __styleCache.set(el, cs);
+    return cs;
   }
 
   function isPointerReachable(el) {
@@ -431,6 +446,46 @@ function runInPage(ctx) {
 
   const undersized = items.filter((it) => it.rect.width < MIN || it.rect.height < MIN);
 
+  // Spatial grid over ALL items, cell size = MIN (24px), so hasSpacingConflict's
+  // proximity check below doesn't have to compare every undersized target
+  // against every other item -- an O(items^2) cost that dominates real-browser
+  // (not jsdom -- see this rule's own perf note further down) runtime on a
+  // page with many small targets. A point can only be within MIN of another
+  // point that shares its grid cell or one of the 8 adjacent cells: cell size
+  // equals the search radius, so two points in cells 2+ apart on either axis
+  // are, on that axis alone, already >= MIN apart. Restricting the candidate
+  // set to that 3x3 neighborhood is therefore never a false negative -- the
+  // exact same dist() < MIN check still runs on every candidate it returns,
+  // just skipping candidates that are geometrically guaranteed too far away.
+  // This changes performance only, never which targets conflict.
+  const grid = new Map(); // "cx,cy" -> item[]
+  function cellKeyFor(cx, cy) {
+    return cx + ',' + cy;
+  }
+  for (const it of items) {
+    const cx = Math.floor(it.center.cx / MIN);
+    const cy = Math.floor(it.center.cy / MIN);
+    const key = cellKeyFor(cx, cy);
+    let bucket = grid.get(key);
+    if (!bucket) {
+      bucket = [];
+      grid.set(key, bucket);
+    }
+    bucket.push(it);
+  }
+  function nearbyItems(center) {
+    const cx = Math.floor(center.cx / MIN);
+    const cy = Math.floor(center.cy / MIN);
+    const out = [];
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dy = -1; dy <= 1; dy++) {
+        const bucket = grid.get(cellKeyFor(cx + dx, cy + dy));
+        if (bucket) for (const it of bucket) out.push(it);
+      }
+    }
+    return out;
+  }
+
   // --- spacing/occlusion evaluation ---
   function hasSpacingConflict(target) {
     // 0) Pure geometry: deterministic center-distance check against ANY
@@ -438,7 +493,7 @@ function runInPage(ctx) {
     // spacing exception depends on proximity to any adjacent target, so an
     // undersized target sitting flush against an adequately-sized one still
     // fails the exception, which an undersized-only comparison would miss.
-    for (const other of items) {
+    for (const other of nearbyItems(target.center)) {
       if (!other || !other.el || isRelated(target.el, other.el)) continue;
 
       // Ignore inline-text exception targets when evaluating spacing conflicts.
