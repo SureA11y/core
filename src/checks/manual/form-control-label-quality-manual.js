@@ -206,29 +206,63 @@ function runInPage(ctx) {
     return out;
   }
 
+  // Index of `<label for="...">` elements by their `for` value, built once
+  // (not the native `el.labels`, deliberately -- see getNativeLabels).
+  const labelsByForId = new Map();
+  try {
+    for (const label of document.querySelectorAll('label[for]')) {
+      const forVal = normalizeWs(label.getAttribute('for'));
+      if (!forVal) continue;
+      const bucket = labelsByForId.get(forVal);
+      if (bucket) bucket.push(label);
+      else labelsByForId.set(forVal, [label]);
+    }
+  } catch {
+    // labelsByForId stays empty; getNativeLabels still has the wrapping-label check
+  }
+
+  // Per HTML's label-control algorithm, a wrapping <label> with no `for`
+  // attribute is associated with its own FIRST labelable descendant only --
+  // these are exactly the tags that count (input excluding type=hidden,
+  // which FIELD_SELECTOR already excludes from `el` itself, but a wrapping
+  // label could still wrap a hidden input ahead of the real field).
+  const LABELABLE_SELECTOR =
+    'input:not([type="hidden"]), select, textarea, button, meter, output, progress';
+
+  // The native `el.labels` accessor is spec-correct but, in this engine's
+  // supported Node/jsdom runtime (see tests/node-runtime-parity.test.js),
+  // jsdom implements it as a live query that walks the WHOLE document on
+  // every access, and for every `<label for>` it passes, calls `.control`
+  // -- itself another whole-document walk to resolve that id (jsdom's
+  // form-controls.js getLabelsForLabelable / HTMLLabelElement-impl.js
+  // `get control`). Called once per field, that's the O(fields * document
+  // size) cost that used to dominate this rule under jsdom (a real browser
+  // maintains an internal id index, so this cost is jsdom-specific, but
+  // jsdom is a real, tested runtime for this engine, not just a benchmark
+  // artifact). A `for`-attribute index built once above, plus a bounded
+  // `closest('label')` walk, answers the same question in O(1) amortized
+  // per field instead.
   function getNativeLabels(el) {
     const labels = [];
-    try {
-      if (el.labels && el.labels.length) {
-        for (const label of el.labels) labels.push(label);
-        return labels;
-      }
-    } catch {
-      // fall through to the manual lookup
-    }
     const idVal = normalizeWs(el.getAttribute && el.getAttribute('id'));
     if (idVal) {
-      try {
-        for (const label of document.querySelectorAll('label[for]')) {
-          if (normalizeWs(label.getAttribute('for')) === idVal) labels.push(label);
-        }
-      } catch {
-        // ignore
+      const forLabels = labelsByForId.get(idVal);
+      if (forLabels) {
+        for (const label of forLabels) labels.push(label);
       }
     }
     try {
       const wrapping = el.closest ? el.closest('label') : null;
-      if (wrapping && labels.indexOf(wrapping) === -1) labels.push(wrapping);
+      const hasForAttr = !!(wrapping && wrapping.hasAttribute && wrapping.hasAttribute('for'));
+      if (wrapping && !hasForAttr && labels.indexOf(wrapping) === -1) {
+        let firstControl = null;
+        try {
+          firstControl = wrapping.querySelector ? wrapping.querySelector(LABELABLE_SELECTOR) : null;
+        } catch {
+          firstControl = null;
+        }
+        if (firstControl === el) labels.push(wrapping);
+      }
     } catch {
       // ignore
     }
@@ -269,15 +303,17 @@ function runInPage(ctx) {
     }
   }
 
+  // Nearest preceding *visible* heading text, per field. Precomputed below
+  // (once `fields` is built) via a single document-order sweep rather than
+  // scanning the full `headings` array backward for every field: `headings`
+  // and `fields` are each already in document order (both come from
+  // querySelectorAll/queryAllSmart), so a two-pointer merge answers every
+  // field in one O(fields + headings) pass instead of the O(fields *
+  // headings) pairwise compareDocumentPosition/isVisible calls a per-field
+  // backward scan requires -- the dominant cost on heading/form-heavy pages.
+  const nearestVisibleHeadingByField = new Map();
   function nearestVisibleHeadingText(el) {
-    for (let i = headings.length - 1; i >= 0; i--) {
-      const heading = headings[i];
-      if (!precedes(heading, el)) continue;
-      if (!isVisible(heading)) continue;
-      const text = normalizeWs(heading.textContent);
-      if (text) return text;
-    }
-    return '';
+    return nearestVisibleHeadingByField.get(el) || '';
   }
 
   function fieldsetLegendText(el) {
@@ -309,6 +345,9 @@ function runInPage(ctx) {
 
   // A table row or list item carries its own context (the product name a
   // repeated "Quantity" field belongs to), so it takes part in the key.
+  // `row.textContent` serializes the whole row subtree, so it's memoized per
+  // row element -- several fields (one per column) commonly share a row.
+  const rowTextCache = new Map();
   function rowContextText(el, labelText) {
     let row;
     try {
@@ -317,7 +356,11 @@ function runInPage(ctx) {
       row = null;
     }
     if (!row || !isVisible(row)) return '';
-    const text = normalizeWs(row.textContent);
+    let text = rowTextCache.get(row);
+    if (text === undefined) {
+      text = normalizeWs(row.textContent);
+      rowTextCache.set(row, text);
+    }
     if (!text) return '';
     return normalizeWs(text.split(labelText).join(' '));
   }
@@ -346,6 +389,73 @@ function runInPage(ctx) {
       normalized: normalize(labelText),
       hiddenParts: label.hiddenParts
     });
+  }
+
+  // Populate nearestVisibleHeadingByField (declared above nearestVisibleHeadingText)
+  // via a single two-pointer sweep instead of, per field, scanning the full
+  // `headings` array backward and calling compareDocumentPosition/isVisible
+  // against every one of them -- the O(fields * headings) cost that used to
+  // dominate this rule (and the whole engine) on heading/form-heavy pages.
+  //
+  // Two correctness precautions this needs, since a two-pointer merge only
+  // works over sequences that are BOTH already in real document order:
+  //
+  // 1. A field inside a shadow root has no document-order relationship to
+  //    any heading at all: per the DOM spec, compareDocumentPosition
+  //    between nodes in different trees returns an implementation-specific
+  //    (not document-order-derived) PRECEDING/FOLLOWING bit. Merging it in
+  //    would be meaningless and could even desync the sweep for later
+  //    fields, so it's filtered out up front and always answered '' --
+  //    matching the "no light-DOM heading can be this field's visible
+  //    context" reading rather than trusting that arbitrary bit.
+  // 2. `fields` (from queryAllSmart) is NOT guaranteed to be globally
+  //    document-order: it's built root by root (see resolveContextRoots),
+  //    and a multi-region `engineOptions.contextSelector` array is resolved
+  //    in the CALLER's array order, not sorted by document position. A
+  //    fresh copy is sorted by real position before the sweep so the merge
+  //    is correct regardless of contextSelector's region order (this is a
+  //    cheap O(k log k) sort, not the O(n*m) cost being fixed).
+  {
+    const orderedFields = [];
+    for (const field of fields) {
+      let sameRoot;
+      try {
+        sameRoot =
+          typeof field.el.getRootNode !== 'function' || field.el.getRootNode() === document;
+      } catch {
+        sameRoot = true;
+      }
+
+      if (!sameRoot) {
+        nearestVisibleHeadingByField.set(field.el, '');
+        continue;
+      }
+      orderedFields.push(field);
+    }
+
+    orderedFields.sort((a, b) => {
+      try {
+        const bits = a.el.compareDocumentPosition(b.el);
+        if (bits & 4) return -1; // b follows a
+        if (bits & 2) return 1; // b precedes a
+      } catch {
+        /* ignore -- treat as equal/unordered */
+      }
+      return 0;
+    });
+
+    let hIdx = 0;
+    let current = '';
+    for (const field of orderedFields) {
+      while (hIdx < headings.length && precedes(headings[hIdx], field.el)) {
+        const heading = headings[hIdx];
+        hIdx += 1;
+        if (!isVisible(heading)) continue;
+        const text = normalizeWs(heading.textContent);
+        if (text) current = text;
+      }
+      nearestVisibleHeadingByField.set(field.el, current);
+    }
   }
 
   if (!fields.length) {
