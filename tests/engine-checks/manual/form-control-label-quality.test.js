@@ -6,7 +6,11 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const { assertRule } = require('../../helpers/assertRule.js');
-const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
+const {
+  runa11yCoreOnHtml,
+  createDom,
+  runa11yCoreOnDom
+} = require('../../helpers/runDomRulesOnHtml.js');
 
 const RULE_ID = 'form-control-label-quality';
 
@@ -192,6 +196,65 @@ test(`${RULE_ID}: i18n default is English`, () => {
   });
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1 });
   assert.strictEqual(rule.title, 'Form field labels should be descriptive and distinguishable');
+});
+
+// ---------------------------------------------------------------------------
+// Nearest-preceding-visible-heading context: a two-pointer document-order
+// sweep replaces a per-field backward scan (perf fix). These pin the two
+// ways that sweep can go wrong if it isn't kept document-order-correct.
+// ---------------------------------------------------------------------------
+
+test(`${RULE_ID}: dense headings still resolve each field's own nearest preceding heading`, () => {
+  // Regression for the two-pointer sweep: with several headings and fields
+  // interleaved, each field must resolve to the heading immediately above
+  // it, not whichever heading happened to be "current" when some other
+  // field was processed.
+  const result = runa11yCoreOnHtml(
+    page(
+      '<h2>Alpha</h2><label>Name <input id="a1"></label>' +
+        '<h2>Beta</h2><label>Name <input id="a2"></label>' +
+        '<h2>Gamma</h2><label>Name <input id="a3"></label>'
+    ),
+    { runOnly: [RULE_ID] }
+  );
+  // Every "Name" field sits under a distinct visible heading, so none of
+  // them share a context key -- no duplicates.
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: a field inside a shadow root gets no light-DOM heading context`, () => {
+  // Regression for the two-pointer sweep's shadow-root guard: without it, a
+  // shadow-root field could inherit whatever heading text was "current"
+  // after the light-DOM fields ahead of it in queryAllSmart's result order,
+  // even though it has no real document-order relationship to any of them.
+  // Here that would wrongly make it look like a duplicate of the light-DOM
+  // "Search" field under "Group B".
+  const dom = createDom(
+    page('<h2>Group B</h2><label>Search <input id="light1"></label><div id="host"></div>')
+  );
+  const host = dom.window.document.getElementById('host');
+  host.attachShadow({ mode: 'open' }).innerHTML = '<label>Search <input id="shadow1"></label>';
+
+  const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: a reversed multi-region contextSelector still resolves each field's true heading`, () => {
+  // Regression for the two-pointer sweep needing its own sorted view:
+  // queryAllSmart concatenates region matches in the CALLER's contextSelector
+  // order, not document order, so listing the later region first must not
+  // make an earlier field inherit a later heading's text.
+  const html = page(
+    '<h2>H1</h2><div id="regionA"><label>Search <input id="fA"></label></div>' +
+      '<h2>H2</h2><div id="regionB"><label>Search <input id="fB"></label></div>'
+  );
+  const result = runa11yCoreOnHtml(html, {
+    contextSelector: ['#regionB', '#regionA'],
+    runOnly: [RULE_ID]
+  });
+  // fA is under H1, fB is under H2 -- correctly distinct contexts, so the
+  // shared "Search" label is not a duplicate.
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/form-control-label-quality-all-scenarios.html)`, () => {

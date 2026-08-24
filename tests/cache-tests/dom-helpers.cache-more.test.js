@@ -24,56 +24,49 @@ test('dom helpers cache: getAccessibleNameInfo does not reuse memoized result ac
   const { window } = dom;
   const { document } = window;
 
-  // getAccessibleNameInfo resolves label association via the native
-  // `.labels` API first (element references, no query needed), so spy on
-  // the `.labels` getter itself as the "a fresh lookup happened" signal,
-  // document.querySelector('label[for]') is no longer reached on this path.
-  let labelsGetterCalls = 0;
-  const proto = window.HTMLInputElement.prototype;
-  const originalDescriptor =
-    Object.getOwnPropertyDescriptor(proto, 'labels') ||
-    Object.getOwnPropertyDescriptor(Object.getPrototypeOf(proto), 'labels');
-  Object.defineProperty(proto, 'labels', {
-    configurable: true,
-    get() {
-      labelsGetterCalls++;
-      return originalDescriptor.get.call(this);
-    }
-  });
-
   const helpers = createDomHelpers({ window, document, root: document });
   const input = document.getElementById('x');
 
+  // Label association is resolved via a document-scoped `for`-attribute
+  // index plus `el.closest('label')` -- not the native `.labels`/`.control`
+  // pair, which jsdom implements as an expensive whole-document walk (see
+  // getAssociatedLabelElements's header comment in dom-helpers.js) -- so
+  // spy on `.closest` as the "a fresh lookup happened" signal.
+  let closestCalls = 0;
+  const originalClosest = input.closest.bind(input);
+  input.closest = (sel) => {
+    closestCalls++;
+    return originalClosest(sel);
+  };
+
   // First call (key A)
-  const before1 = labelsGetterCalls;
+  const before1 = closestCalls;
   const r1 = helpers.getAccessibleNameInfo(input, { helpers }, { disallowContents: true });
-  const after1 = labelsGetterCalls;
+  const after1 = closestCalls;
 
   assert.equal(r1.present, true);
   assert.equal(r1.mechanism, 'label');
   assert.equal(r1.value, 'Full Name');
-  assert.ok(after1 > before1, 'first call should perform DOM work (.labels)');
+  assert.ok(after1 > before1, 'first call should perform DOM work (label resolution)');
 
   // Second call with same opts (should be cached for key A)
-  const before2 = labelsGetterCalls;
+  const before2 = closestCalls;
   const r2 = helpers.getAccessibleNameInfo(input, { helpers }, { disallowContents: true });
-  const after2 = labelsGetterCalls;
+  const after2 = closestCalls;
 
   assert.deepEqual(r2, r1);
   assert.equal(after2, before2, 'second call should be cached for same opts key');
 
   // Call with different opts (key B) should not reuse key A result
-  const before3 = labelsGetterCalls;
+  const before3 = closestCalls;
   const r3 = helpers.getAccessibleNameInfo(input, { helpers }, { disallowContents: false });
-  const after3 = labelsGetterCalls;
+  const after3 = closestCalls;
 
   assert.deepEqual(r3, r1, 'output may be identical, but cache key must differ');
   assert.ok(
     after3 > before3,
     'different opts key should cause a fresh lookup (no cross-key reuse)'
   );
-
-  Object.defineProperty(proto, 'labels', originalDescriptor);
 });
 
 test('dom helpers cache: eligibility caches are scoped by root/document and do not bleed across roots', () => {

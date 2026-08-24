@@ -15156,7 +15156,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   let __ancestorBlockerDomStructFinalByScope = null; // WeakMap<object, WeakMap<Element, string|null>> (final structural blocker per element per scope)
   let __labelAssociationCache = null;
   let __labelMethodCache = null;
-  let __labelForIndexByDoc = null; // WeakMap<Document, Map<string, {exists:boolean, text:string}>> (label[for] by id cache)
+  let __labelElementsByForIdIndexByDoc = null; // WeakMap<Document, Map<string, Element[]>> (label[for] by id -> real elements, see getAssociatedLabelElements)
   let __accessibleNameCacheByKey = null; // Map<string, WeakMap<Element, Info>>
   let __accessibleDescCacheByKey = null; // Map<string, WeakMap<Element, Info>>
 
@@ -15269,12 +15269,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
   }
 
   try {
-    __labelForIndexByDoc =
-      __domSharedCache.labelForIndexByDoc instanceof WeakMap
-        ? __domSharedCache.labelForIndexByDoc
-        : (__domSharedCache.labelForIndexByDoc = new WeakMap());
+    __labelElementsByForIdIndexByDoc =
+      __domSharedCache.labelElementsByForIdIndexByDoc instanceof WeakMap
+        ? __domSharedCache.labelElementsByForIdIndexByDoc
+        : (__domSharedCache.labelElementsByForIdIndexByDoc = new WeakMap());
   } catch {
-    __labelForIndexByDoc = null;
+    __labelElementsByForIdIndexByDoc = null;
   }
 
   try {
@@ -15305,87 +15305,103 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return document && typeof document === 'object' ? document : null;
   }
 
-  function __getLabelForByIdCache(nameKey) {
-    // Document-scoped cache for `document.querySelector('label[for="..."]')`.
-    // Keeps test semantics (first lookup uses querySelector) while eliminating repeated lookups.
-    if (!document || !document.querySelector) return null;
-    if (!__labelForIndexByDoc) {
-      __perfInc('labelForById.nocache');
-      return null;
+  // Real `<label for="...">` element references for one `for` value, built
+  // via a single `document.querySelectorAll('label[for]')` pass and cached
+  // per document for the whole run, for callers that need the actual label
+  // element (to compute its accessible name, or to check whether it
+  // contributes one), not just whether one exists.
+  function __getLabelElementsForId(id) {
+    const key = trim(id);
+    if (!key || !document || !document.querySelectorAll) return [];
+
+    function buildIndex() {
+      const byId = new Map();
+      try {
+        for (const label of document.querySelectorAll('label[for]')) {
+          const forVal = trim(label.getAttribute('for'));
+          if (!forVal) continue;
+          const bucket = byId.get(forVal);
+          if (bucket) bucket.push(label);
+          else byId.set(forVal, [label]);
+        }
+      } catch {}
+      return byId;
     }
 
-    try {
-      const nk = nameKey == null ? '__default__' : String(nameKey);
-      let byKey = __labelForIndexByDoc.get(document);
-      if (!(byKey instanceof Map)) {
-        __perfInc('labelForById.miss');
-        byKey = new Map();
-        __labelForIndexByDoc.set(document, byKey);
-        __perfInc('labelForById.build');
-      }
-      const existing = byKey.get(nk);
-      if (existing && existing instanceof Map) {
-        __perfInc('labelForById.hit');
-        return existing;
-      }
-      __perfInc('labelForById.miss');
-      const map = new Map();
-      byKey.set(nk, map);
-      __perfInc('labelForById.build');
-      return map;
-    } catch {
-      __perfInc('labelForById.nocache');
-      return null;
+    if (!__labelElementsByForIdIndexByDoc) return buildIndex().get(key) || [];
+
+    let byId = __labelElementsByForIdIndexByDoc.get(document);
+    if (!(byId instanceof Map)) {
+      byId = buildIndex();
+      __labelElementsByForIdIndexByDoc.set(document, byId);
     }
+    return byId.get(key) || [];
   }
 
-  function __lookupLabelForId(id, nameKey) {
-    const key = trim(id);
-    if (!key) return null;
+  // Tags the HTML label-association algorithm recognizes as "labelable"
+  // (https://html.spec.whatwg.org/#category-label), used only to find a
+  // wrapping <label>'s FIRST such descendant -- the one it is actually
+  // associated with when it carries no `for` attribute.
+  const LABELABLE_SELECTOR =
+    'input:not([type="hidden"]), select, textarea, button, meter, output, progress';
 
-    const map = __getLabelForByIdCache(nameKey);
-    if (map) {
-      if (map.has(key)) return map.get(key) || null;
-      // compute and store
-      let entry;
-      try {
-        const sel = 'label[for="' + key.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"]';
-        const label = document.querySelector(sel);
-        if (label && isElement(label)) {
-          let t = '';
-          try {
-            t = trim(label.textContent);
-          } catch {
-            t = '';
-          }
-          entry = { exists: true, text: t };
-        } else {
-          entry = { exists: false, text: '' };
-        }
-      } catch {
-        entry = { exists: false, text: '' };
-      }
-      try {
-        map.set(key, entry);
-      } catch {}
-      return entry && entry.exists ? entry : null;
+  // Real `<label>` elements associated with `el`, replicating the native
+  // `.labels` API's result (a `<label for="id">` pointing at `el`, plus a
+  // wrapping `<label>` with no `for` attribute whose first labelable
+  // descendant is `el`) without ever calling `.labels`/`label.control`.
+  //
+  // Why not just call `.labels`: it's spec-correct, but in this engine's
+  // supported Node/jsdom runtime (see tests/node-runtime-parity.test.js),
+  // jsdom implements it as a live query that walks the WHOLE document on
+  // every access, and for every `<label for>` it passes during that walk,
+  // resolves `.control` -- itself ANOTHER whole-document walk to resolve
+  // that id (jsdom's form-controls.js getLabelsForLabelable /
+  // HTMLLabelElement-impl.js `get control`). Called once per labelable
+  // element, that's an O(elements * document size) cost that used to
+  // dominate whole engine runs on form-heavy pages -- a real browser
+  // maintains an internal id index so `.labels` is cheap there, but jsdom
+  // is a real, tested runtime for this engine, not just a benchmark
+  // artifact. The `for`-index above (built once per document) plus a
+  // bounded `closest('label')` walk answers the same question without it.
+  function getAssociatedLabelElements(el) {
+    const out = [];
+    const id = trim(getAttr(el, 'id'));
+    if (id) {
+      const forLabels = __getLabelElementsForId(id);
+      for (const l of forLabels) out.push(l);
     }
-
-    // No cache available: fallback to direct querySelector
     try {
-      const sel = 'label[for="' + key.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"]';
-      const label = document.querySelector(sel);
-      if (label && isElement(label)) {
-        let t = '';
+      const wrap = el.closest ? el.closest('label') : null;
+      if (
+        wrap &&
+        isElement(wrap) &&
+        !(wrap.hasAttribute && wrap.hasAttribute('for')) &&
+        out.indexOf(wrap) === -1
+      ) {
+        let firstControl = null;
         try {
-          t = trim(label.textContent);
+          firstControl = wrap.querySelector ? wrap.querySelector(LABELABLE_SELECTOR) : null;
         } catch {
-          t = '';
+          firstControl = null;
         }
-        return { exists: true, text: t };
+        if (firstControl === el) out.push(wrap);
       }
     } catch {}
-    return null;
+    // Usually 0-1 elements; a second only shows up for genuinely unusual
+    // markup (both a `for`-labelled AND a wrapping label on one control),
+    // where the two lookups above aren't guaranteed to already be in
+    // document order relative to each other.
+    if (out.length > 1) {
+      try {
+        out.sort((a, b) => {
+          const bits = a.compareDocumentPosition(b);
+          if (bits & 4) return -1;
+          if (bits & 2) return 1;
+          return 0;
+        });
+      } catch {}
+    }
+    return out;
   }
 
   function __getEligibilityAccCacheForScope() {
@@ -16515,25 +16531,19 @@ const createDomHelpers = (function createDomHelpers(opts) {
       const ariaLabel = trim(getAttr(el, 'aria-label'));
       if (ariaLabel) return ariaLabel;
 
-      // Native <label> association, same two-step lookup (.labels API,
-      // then id-based `label[for]` fallback) and same priority slot
+      // Native <label> association (getAssociatedLabelElements: a `for`-index
+      // lookup plus a bounded closest('label') walk, not `.labels`/`.control`
+      // -- see that function's header comment for why), same priority slot
       // (before value-like/content) as getAccessibleNameInfo's own
       // resolution of a standalone element. Without it, an aria-labelledby
       // target that is itself a labeled form control (e.g. an <input>
       // named only by a <label for>) would resolve to empty text.
       try {
-        if (el.labels && el.labels.length) {
-          for (const labelEl of Array.from(el.labels)) {
-            const info = getLabelSubtreeNameInfo(labelEl, el, _ctx, effOpts);
-            if (info.present && info.value) return info.value;
-          }
+        for (const labelEl of getAssociatedLabelElements(el)) {
+          const info = getLabelSubtreeNameInfo(labelEl, el, _ctx, effOpts);
+          if (info.present && info.value) return info.value;
         }
       } catch {}
-      const elId = trim(getAttr(el, 'id'));
-      if (elId) {
-        const entry = __lookupLabelForId(elId, __getNameOptsKey(effOpts));
-        if (entry && entry.exists && entry.text) return entry.text;
-      }
 
       const valueLike = __getElementValueLikeName(el);
       if (valueLike) return valueLike;
@@ -16768,64 +16778,31 @@ const createDomHelpers = (function createDomHelpers(opts) {
       for (const f of aria.flags) flags.push(f);
     }
 
-    // Native <label> association via the HTML `.labels` API, which
-    // resolves BOTH `<label for="...">` and wrapping `<label>...</label>`
-    // in one call, for any labelable element (button, input,
-    // meter, output, progress, select, textarea). `.labels` is simply
-    // absent/undefined on anything else, so this never over-triggers.
-    // Catches e.g. an unlabeled icon-only <button> wrapped in a <label>,
-    // which the id-based lookup below misses (it only handles explicit
-    // for="" and such a button has no id).
+    // Native <label> association: `<label for="...">` and a wrapping
+    // `<label>...</label>` both resolve through getAssociatedLabelElements
+    // (a `for`-index lookup plus a bounded closest('label') walk, not the
+    // native `.labels`/`.control` pair -- see that function's header
+    // comment for why), for any element with a matching id or that sits
+    // inside a wrapping label, labelable or not. Catches e.g. an unlabeled
+    // icon-only <button> wrapped in a <label>, and a non-natively-labelable
+    // element like <div role="button" id="x"> named by <label for="x">,
+    // in the same pass.
     try {
-      if (el.labels && el.labels.length) {
-        // Seed the IDREF cycle guard with `el` itself before walking its
-        // own label: a label whose content contains a descendant
-        // aria-labelledby'd back to `el` (the very control being named --
-        // self-contradictory, but not invalid markup) would otherwise
-        // resolve that descendant via a brand-new getTextFromIdRefs Set
-        // that has no idea `el`'s own name is already mid-computation,
-        // round-tripping back through this exact label once before the
-        // (correctly guarded) inner resolution stops it -- doubling every
-        // part of the label's text. See computeIdRefTargetTextAlternative's
-        // own __idrefVisited comment for the general mechanism this reuses.
-        const labelOpts = Object.assign({}, opts, { __idrefVisited: new Set([el]) });
-        for (const labelEl of Array.from(el.labels)) {
-          const info = getLabelSubtreeNameInfo(labelEl, el, _ctx, labelOpts);
-          if (info.present && info.value) {
-            const out = { present: true, value: info.value, mechanism: 'label', flags };
-            try {
-              if (__accessibleNameCacheByKey) {
-                const wm =
-                  __accessibleNameCacheByKey.get(key) ||
-                  (__accessibleNameCacheByKey.set(key, new WeakMap()),
-                  __accessibleNameCacheByKey.get(key));
-                if (wm && wm instanceof WeakMap)
-                  wm.set(el, {
-                    present: true,
-                    value: out.value,
-                    mechanism: out.mechanism,
-                    flags: out.flags.slice(0)
-                  });
-              }
-            } catch {}
-            return out;
-          }
-        }
-      }
-    } catch {}
-
-    // Explicit <label for="..."> or wrapping <label> (common and deterministic for form controls)
-    // (fallback for elements where `.labels` isn't natively available,
-    // e.g. a non-native-labelable element like <div role="button" id="x">
-    // still explicitly pointed at by <label for="x">.)
-    const id = trim(getAttr(el, 'id'));
-    if (id) {
-      // Prefer indexed lookup (1 build per run) over repeated querySelector per element.
-      const entry = __lookupLabelForId(id, key);
-      if (entry && entry.exists) {
-        const lt = entry.text || '';
-        if (lt) {
-          const out = { present: true, value: lt, mechanism: 'label', flags };
+      // Seed the IDREF cycle guard with `el` itself before walking its own
+      // label: a label whose content contains a descendant
+      // aria-labelledby'd back to `el` (the very control being named --
+      // self-contradictory, but not invalid markup) would otherwise
+      // resolve that descendant via a brand-new getTextFromIdRefs Set that
+      // has no idea `el`'s own name is already mid-computation,
+      // round-tripping back through this exact label once before the
+      // (correctly guarded) inner resolution stops it -- doubling every
+      // part of the label's text. See computeIdRefTargetTextAlternative's
+      // own __idrefVisited comment for the general mechanism this reuses.
+      const labelOpts = Object.assign({}, opts, { __idrefVisited: new Set([el]) });
+      for (const labelEl of getAssociatedLabelElements(el)) {
+        const info = getLabelSubtreeNameInfo(labelEl, el, _ctx, labelOpts);
+        if (info.present && info.value) {
+          const out = { present: true, value: info.value, mechanism: 'label', flags };
           try {
             if (__accessibleNameCacheByKey) {
               const wm =
@@ -16843,9 +16820,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
           } catch {}
           return out;
         }
-        // If label exists but is empty, fall through (matches prior behavior: empty label doesn't produce a name).
+        // If this label exists but is empty, keep trying any other
+        // associated label rather than stopping (matches prior behavior:
+        // an empty label alone doesn't produce a name).
       }
-    }
+    } catch {}
 
     // The alt attribute is accname's own next naming source for img/area/
     // input[type=image] -- ranked above title, below ARIA naming and real
@@ -18239,38 +18218,15 @@ const createDomHelpers = (function createDomHelpers(opts) {
     } catch {}
 
     __perfInc('labelAssociation.miss');
-    let out = false;
-    let associatedLabels = [];
-
-    // Prefer the native `.labels` API, which resolves both wrapping <label>
-    // and <label for="id"> association in one call, as real elements.
-    try {
-      if (el && 'labels' in el && el.labels && el.labels.length) {
-        associatedLabels = Array.prototype.slice.call(el.labels);
-      }
-    } catch {}
-
-    if (!associatedLabels.length) {
-      // Fallback for environments without a working `.labels` API:
-      // structural-only, no content check, since
-      // __lookupLabelForId's cache doesn't retain an element ref.
-      const id = trim(getAttr(el, 'id'));
-      if (id) {
-        const entry = __lookupLabelForId(id, '__default__');
-        if (entry && entry.exists) out = true;
-      }
-
-      if (!out && el.closest) {
-        try {
-          const wrap = el.closest('label');
-          if (wrap && isElement(wrap)) associatedLabels = [wrap];
-        } catch {}
-      }
-    }
-
-    if (!out && associatedLabels.length) {
-      out = associatedLabels.some(labelContributesAccessibleName);
-    }
+    // getAssociatedLabelElements resolves both wrapping <label> and
+    // <label for="id"> association as real elements, without the native
+    // `.labels`/`.control` pair -- see that function's header comment for
+    // why (jsdom implements `.labels` as an expensive whole-document walk;
+    // this doesn't).
+    const associatedLabels = getAssociatedLabelElements(el);
+    const out = associatedLabels.length
+      ? associatedLabels.some(labelContributesAccessibleName)
+      : false;
 
     try {
       if (__labelAssociationCache && el && typeof el === 'object')
@@ -37043,29 +36999,63 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return out;
   }
 
+  // Index of `<label for="...">` elements by their `for` value, built once
+  // (not the native `el.labels`, deliberately -- see getNativeLabels).
+  const labelsByForId = new Map();
+  try {
+    for (const label of document.querySelectorAll('label[for]')) {
+      const forVal = normalizeWs(label.getAttribute('for'));
+      if (!forVal) continue;
+      const bucket = labelsByForId.get(forVal);
+      if (bucket) bucket.push(label);
+      else labelsByForId.set(forVal, [label]);
+    }
+  } catch {
+    // labelsByForId stays empty; getNativeLabels still has the wrapping-label check
+  }
+
+  // Per HTML's label-control algorithm, a wrapping <label> with no `for`
+  // attribute is associated with its own FIRST labelable descendant only --
+  // these are exactly the tags that count (input excluding type=hidden,
+  // which FIELD_SELECTOR already excludes from `el` itself, but a wrapping
+  // label could still wrap a hidden input ahead of the real field).
+  const LABELABLE_SELECTOR =
+    'input:not([type="hidden"]), select, textarea, button, meter, output, progress';
+
+  // The native `el.labels` accessor is spec-correct but, in this engine's
+  // supported Node/jsdom runtime (see tests/node-runtime-parity.test.js),
+  // jsdom implements it as a live query that walks the WHOLE document on
+  // every access, and for every `<label for>` it passes, calls `.control`
+  // -- itself another whole-document walk to resolve that id (jsdom's
+  // form-controls.js getLabelsForLabelable / HTMLLabelElement-impl.js
+  // `get control`). Called once per field, that's the O(fields * document
+  // size) cost that used to dominate this rule under jsdom (a real browser
+  // maintains an internal id index, so this cost is jsdom-specific, but
+  // jsdom is a real, tested runtime for this engine, not just a benchmark
+  // artifact). A `for`-attribute index built once above, plus a bounded
+  // `closest('label')` walk, answers the same question in O(1) amortized
+  // per field instead.
   function getNativeLabels(el) {
     const labels = [];
-    try {
-      if (el.labels && el.labels.length) {
-        for (const label of el.labels) labels.push(label);
-        return labels;
-      }
-    } catch {
-      // fall through to the manual lookup
-    }
     const idVal = normalizeWs(el.getAttribute && el.getAttribute('id'));
     if (idVal) {
-      try {
-        for (const label of document.querySelectorAll('label[for]')) {
-          if (normalizeWs(label.getAttribute('for')) === idVal) labels.push(label);
-        }
-      } catch {
-        // ignore
+      const forLabels = labelsByForId.get(idVal);
+      if (forLabels) {
+        for (const label of forLabels) labels.push(label);
       }
     }
     try {
       const wrapping = el.closest ? el.closest('label') : null;
-      if (wrapping && labels.indexOf(wrapping) === -1) labels.push(wrapping);
+      const hasForAttr = !!(wrapping && wrapping.hasAttribute && wrapping.hasAttribute('for'));
+      if (wrapping && !hasForAttr && labels.indexOf(wrapping) === -1) {
+        let firstControl = null;
+        try {
+          firstControl = wrapping.querySelector ? wrapping.querySelector(LABELABLE_SELECTOR) : null;
+        } catch {
+          firstControl = null;
+        }
+        if (firstControl === el) labels.push(wrapping);
+      }
     } catch {
       // ignore
     }
@@ -37106,15 +37096,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  // Nearest preceding *visible* heading text, per field. Precomputed below
+  // (once `fields` is built) via a single document-order sweep rather than
+  // scanning the full `headings` array backward for every field: `headings`
+  // and `fields` are each already in document order (both come from
+  // querySelectorAll/queryAllSmart), so a two-pointer merge answers every
+  // field in one O(fields + headings) pass instead of the O(fields *
+  // headings) pairwise compareDocumentPosition/isVisible calls a per-field
+  // backward scan requires -- the dominant cost on heading/form-heavy pages.
+  const nearestVisibleHeadingByField = new Map();
   function nearestVisibleHeadingText(el) {
-    for (let i = headings.length - 1; i >= 0; i--) {
-      const heading = headings[i];
-      if (!precedes(heading, el)) continue;
-      if (!isVisible(heading)) continue;
-      const text = normalizeWs(heading.textContent);
-      if (text) return text;
-    }
-    return '';
+    return nearestVisibleHeadingByField.get(el) || '';
   }
 
   function fieldsetLegendText(el) {
@@ -37146,6 +37138,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // A table row or list item carries its own context (the product name a
   // repeated "Quantity" field belongs to), so it takes part in the key.
+  // `row.textContent` serializes the whole row subtree, so it's memoized per
+  // row element -- several fields (one per column) commonly share a row.
+  const rowTextCache = new Map();
   function rowContextText(el, labelText) {
     let row;
     try {
@@ -37154,7 +37149,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       row = null;
     }
     if (!row || !isVisible(row)) return '';
-    const text = normalizeWs(row.textContent);
+    let text = rowTextCache.get(row);
+    if (text === undefined) {
+      text = normalizeWs(row.textContent);
+      rowTextCache.set(row, text);
+    }
     if (!text) return '';
     return normalizeWs(text.split(labelText).join(' '));
   }
@@ -37183,6 +37182,73 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       normalized: normalize(labelText),
       hiddenParts: label.hiddenParts
     });
+  }
+
+  // Populate nearestVisibleHeadingByField (declared above nearestVisibleHeadingText)
+  // via a single two-pointer sweep instead of, per field, scanning the full
+  // `headings` array backward and calling compareDocumentPosition/isVisible
+  // against every one of them -- the O(fields * headings) cost that used to
+  // dominate this rule (and the whole engine) on heading/form-heavy pages.
+  //
+  // Two correctness precautions this needs, since a two-pointer merge only
+  // works over sequences that are BOTH already in real document order:
+  //
+  // 1. A field inside a shadow root has no document-order relationship to
+  //    any heading at all: per the DOM spec, compareDocumentPosition
+  //    between nodes in different trees returns an implementation-specific
+  //    (not document-order-derived) PRECEDING/FOLLOWING bit. Merging it in
+  //    would be meaningless and could even desync the sweep for later
+  //    fields, so it's filtered out up front and always answered '' --
+  //    matching the "no light-DOM heading can be this field's visible
+  //    context" reading rather than trusting that arbitrary bit.
+  // 2. `fields` (from queryAllSmart) is NOT guaranteed to be globally
+  //    document-order: it's built root by root (see resolveContextRoots),
+  //    and a multi-region `engineOptions.contextSelector` array is resolved
+  //    in the CALLER's array order, not sorted by document position. A
+  //    fresh copy is sorted by real position before the sweep so the merge
+  //    is correct regardless of contextSelector's region order (this is a
+  //    cheap O(k log k) sort, not the O(n*m) cost being fixed).
+  {
+    const orderedFields = [];
+    for (const field of fields) {
+      let sameRoot;
+      try {
+        sameRoot =
+          typeof field.el.getRootNode !== 'function' || field.el.getRootNode() === document;
+      } catch {
+        sameRoot = true;
+      }
+
+      if (!sameRoot) {
+        nearestVisibleHeadingByField.set(field.el, '');
+        continue;
+      }
+      orderedFields.push(field);
+    }
+
+    orderedFields.sort((a, b) => {
+      try {
+        const bits = a.el.compareDocumentPosition(b.el);
+        if (bits & 4) return -1; // b follows a
+        if (bits & 2) return 1; // b precedes a
+      } catch {
+        /* ignore -- treat as equal/unordered */
+      }
+      return 0;
+    });
+
+    let hIdx = 0;
+    let current = '';
+    for (const field of orderedFields) {
+      while (hIdx < headings.length && precedes(headings[hIdx], field.el)) {
+        const heading = headings[hIdx];
+        hIdx += 1;
+        if (!isVisible(heading)) continue;
+        const text = normalizeWs(heading.textContent);
+        if (text) current = text;
+      }
+      nearestVisibleHeadingByField.set(field.el, current);
+    }
   }
 
   if (!fields.length) {
@@ -49189,14 +49255,29 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  // Per-run memoization: getComputedStyle is a real, non-trivial cost in an
+  // actual browser (unlike jsdom, which no-ops it), and hasSpacingConflict
+  // below calls getStyle on the SAME candidate element repeatedly -- once
+  // per undersized target it's compared against, via
+  // isInlineTextExceptionTarget/isInlineLinkTarget -- so with U undersized
+  // targets and N total candidates this was an uncached O(U * N)
+  // getComputedStyle call count. The DOM is read-only for the rest of this
+  // rule's run (no writes between reads), so caching per element here is
+  // safe -- style cannot change mid-run.
+  const __styleCache = new WeakMap();
   function getStyle(el) {
+    if (__styleCache.has(el)) return __styleCache.get(el);
+    let cs;
     try {
-      return document && document.defaultView && document.defaultView.getComputedStyle
-        ? document.defaultView.getComputedStyle(el)
-        : null;
+      cs =
+        document && document.defaultView && document.defaultView.getComputedStyle
+          ? document.defaultView.getComputedStyle(el)
+          : null;
     } catch {
-      return null;
+      cs = null;
     }
+    __styleCache.set(el, cs);
+    return cs;
   }
 
   function isPointerReachable(el) {
@@ -49327,6 +49408,46 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const undersized = items.filter((it) => it.rect.width < MIN || it.rect.height < MIN);
 
+  // Spatial grid over ALL items, cell size = MIN (24px), so hasSpacingConflict's
+  // proximity check below doesn't have to compare every undersized target
+  // against every other item -- an O(items^2) cost that dominates real-browser
+  // (not jsdom -- see this rule's own perf note further down) runtime on a
+  // page with many small targets. A point can only be within MIN of another
+  // point that shares its grid cell or one of the 8 adjacent cells: cell size
+  // equals the search radius, so two points in cells 2+ apart on either axis
+  // are, on that axis alone, already >= MIN apart. Restricting the candidate
+  // set to that 3x3 neighborhood is therefore never a false negative -- the
+  // exact same dist() < MIN check still runs on every candidate it returns,
+  // just skipping candidates that are geometrically guaranteed too far away.
+  // This changes performance only, never which targets conflict.
+  const grid = new Map(); // "cx,cy" -> item[]
+  function cellKeyFor(cx, cy) {
+    return cx + ',' + cy;
+  }
+  for (const it of items) {
+    const cx = Math.floor(it.center.cx / MIN);
+    const cy = Math.floor(it.center.cy / MIN);
+    const key = cellKeyFor(cx, cy);
+    let bucket = grid.get(key);
+    if (!bucket) {
+      bucket = [];
+      grid.set(key, bucket);
+    }
+    bucket.push(it);
+  }
+  function nearbyItems(center) {
+    const cx = Math.floor(center.cx / MIN);
+    const cy = Math.floor(center.cy / MIN);
+    const out = [];
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dy = -1; dy <= 1; dy++) {
+        const bucket = grid.get(cellKeyFor(cx + dx, cy + dy));
+        if (bucket) for (const it of bucket) out.push(it);
+      }
+    }
+    return out;
+  }
+
   // --- spacing/occlusion evaluation ---
   function hasSpacingConflict(target) {
     // 0) Pure geometry: deterministic center-distance check against ANY
@@ -49334,7 +49455,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // spacing exception depends on proximity to any adjacent target, so an
     // undersized target sitting flush against an adequately-sized one still
     // fails the exception, which an undersized-only comparison would miss.
-    for (const other of items) {
+    for (const other of nearbyItems(target.center)) {
       if (!other || !other.el || isRelated(target.el, other.el)) continue;
 
       // Ignore inline-text exception targets when evaluating spacing conflicts.
@@ -58196,7 +58317,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   let __ancestorBlockerDomStructFinalByScope = null; // WeakMap<object, WeakMap<Element, string|null>> (final structural blocker per element per scope)
   let __labelAssociationCache = null;
   let __labelMethodCache = null;
-  let __labelForIndexByDoc = null; // WeakMap<Document, Map<string, {exists:boolean, text:string}>> (label[for] by id cache)
+  let __labelElementsByForIdIndexByDoc = null; // WeakMap<Document, Map<string, Element[]>> (label[for] by id -> real elements, see getAssociatedLabelElements)
   let __accessibleNameCacheByKey = null; // Map<string, WeakMap<Element, Info>>
   let __accessibleDescCacheByKey = null; // Map<string, WeakMap<Element, Info>>
 
@@ -58309,12 +58430,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
   }
 
   try {
-    __labelForIndexByDoc =
-      __domSharedCache.labelForIndexByDoc instanceof WeakMap
-        ? __domSharedCache.labelForIndexByDoc
-        : (__domSharedCache.labelForIndexByDoc = new WeakMap());
+    __labelElementsByForIdIndexByDoc =
+      __domSharedCache.labelElementsByForIdIndexByDoc instanceof WeakMap
+        ? __domSharedCache.labelElementsByForIdIndexByDoc
+        : (__domSharedCache.labelElementsByForIdIndexByDoc = new WeakMap());
   } catch {
-    __labelForIndexByDoc = null;
+    __labelElementsByForIdIndexByDoc = null;
   }
 
   try {
@@ -58345,87 +58466,103 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return document && typeof document === 'object' ? document : null;
   }
 
-  function __getLabelForByIdCache(nameKey) {
-    // Document-scoped cache for `document.querySelector('label[for="..."]')`.
-    // Keeps test semantics (first lookup uses querySelector) while eliminating repeated lookups.
-    if (!document || !document.querySelector) return null;
-    if (!__labelForIndexByDoc) {
-      __perfInc('labelForById.nocache');
-      return null;
+  // Real `<label for="...">` element references for one `for` value, built
+  // via a single `document.querySelectorAll('label[for]')` pass and cached
+  // per document for the whole run, for callers that need the actual label
+  // element (to compute its accessible name, or to check whether it
+  // contributes one), not just whether one exists.
+  function __getLabelElementsForId(id) {
+    const key = trim(id);
+    if (!key || !document || !document.querySelectorAll) return [];
+
+    function buildIndex() {
+      const byId = new Map();
+      try {
+        for (const label of document.querySelectorAll('label[for]')) {
+          const forVal = trim(label.getAttribute('for'));
+          if (!forVal) continue;
+          const bucket = byId.get(forVal);
+          if (bucket) bucket.push(label);
+          else byId.set(forVal, [label]);
+        }
+      } catch {}
+      return byId;
     }
 
-    try {
-      const nk = nameKey == null ? '__default__' : String(nameKey);
-      let byKey = __labelForIndexByDoc.get(document);
-      if (!(byKey instanceof Map)) {
-        __perfInc('labelForById.miss');
-        byKey = new Map();
-        __labelForIndexByDoc.set(document, byKey);
-        __perfInc('labelForById.build');
-      }
-      const existing = byKey.get(nk);
-      if (existing && existing instanceof Map) {
-        __perfInc('labelForById.hit');
-        return existing;
-      }
-      __perfInc('labelForById.miss');
-      const map = new Map();
-      byKey.set(nk, map);
-      __perfInc('labelForById.build');
-      return map;
-    } catch {
-      __perfInc('labelForById.nocache');
-      return null;
+    if (!__labelElementsByForIdIndexByDoc) return buildIndex().get(key) || [];
+
+    let byId = __labelElementsByForIdIndexByDoc.get(document);
+    if (!(byId instanceof Map)) {
+      byId = buildIndex();
+      __labelElementsByForIdIndexByDoc.set(document, byId);
     }
+    return byId.get(key) || [];
   }
 
-  function __lookupLabelForId(id, nameKey) {
-    const key = trim(id);
-    if (!key) return null;
+  // Tags the HTML label-association algorithm recognizes as "labelable"
+  // (https://html.spec.whatwg.org/#category-label), used only to find a
+  // wrapping <label>'s FIRST such descendant -- the one it is actually
+  // associated with when it carries no `for` attribute.
+  const LABELABLE_SELECTOR =
+    'input:not([type="hidden"]), select, textarea, button, meter, output, progress';
 
-    const map = __getLabelForByIdCache(nameKey);
-    if (map) {
-      if (map.has(key)) return map.get(key) || null;
-      // compute and store
-      let entry;
-      try {
-        const sel = 'label[for="' + key.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"]';
-        const label = document.querySelector(sel);
-        if (label && isElement(label)) {
-          let t = '';
-          try {
-            t = trim(label.textContent);
-          } catch {
-            t = '';
-          }
-          entry = { exists: true, text: t };
-        } else {
-          entry = { exists: false, text: '' };
-        }
-      } catch {
-        entry = { exists: false, text: '' };
-      }
-      try {
-        map.set(key, entry);
-      } catch {}
-      return entry && entry.exists ? entry : null;
+  // Real `<label>` elements associated with `el`, replicating the native
+  // `.labels` API's result (a `<label for="id">` pointing at `el`, plus a
+  // wrapping `<label>` with no `for` attribute whose first labelable
+  // descendant is `el`) without ever calling `.labels`/`label.control`.
+  //
+  // Why not just call `.labels`: it's spec-correct, but in this engine's
+  // supported Node/jsdom runtime (see tests/node-runtime-parity.test.js),
+  // jsdom implements it as a live query that walks the WHOLE document on
+  // every access, and for every `<label for>` it passes during that walk,
+  // resolves `.control` -- itself ANOTHER whole-document walk to resolve
+  // that id (jsdom's form-controls.js getLabelsForLabelable /
+  // HTMLLabelElement-impl.js `get control`). Called once per labelable
+  // element, that's an O(elements * document size) cost that used to
+  // dominate whole engine runs on form-heavy pages -- a real browser
+  // maintains an internal id index so `.labels` is cheap there, but jsdom
+  // is a real, tested runtime for this engine, not just a benchmark
+  // artifact. The `for`-index above (built once per document) plus a
+  // bounded `closest('label')` walk answers the same question without it.
+  function getAssociatedLabelElements(el) {
+    const out = [];
+    const id = trim(getAttr(el, 'id'));
+    if (id) {
+      const forLabels = __getLabelElementsForId(id);
+      for (const l of forLabels) out.push(l);
     }
-
-    // No cache available: fallback to direct querySelector
     try {
-      const sel = 'label[for="' + key.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"]';
-      const label = document.querySelector(sel);
-      if (label && isElement(label)) {
-        let t = '';
+      const wrap = el.closest ? el.closest('label') : null;
+      if (
+        wrap &&
+        isElement(wrap) &&
+        !(wrap.hasAttribute && wrap.hasAttribute('for')) &&
+        out.indexOf(wrap) === -1
+      ) {
+        let firstControl = null;
         try {
-          t = trim(label.textContent);
+          firstControl = wrap.querySelector ? wrap.querySelector(LABELABLE_SELECTOR) : null;
         } catch {
-          t = '';
+          firstControl = null;
         }
-        return { exists: true, text: t };
+        if (firstControl === el) out.push(wrap);
       }
     } catch {}
-    return null;
+    // Usually 0-1 elements; a second only shows up for genuinely unusual
+    // markup (both a `for`-labelled AND a wrapping label on one control),
+    // where the two lookups above aren't guaranteed to already be in
+    // document order relative to each other.
+    if (out.length > 1) {
+      try {
+        out.sort((a, b) => {
+          const bits = a.compareDocumentPosition(b);
+          if (bits & 4) return -1;
+          if (bits & 2) return 1;
+          return 0;
+        });
+      } catch {}
+    }
+    return out;
   }
 
   function __getEligibilityAccCacheForScope() {
@@ -59555,25 +59692,19 @@ const createDomHelpers = (function createDomHelpers(opts) {
       const ariaLabel = trim(getAttr(el, 'aria-label'));
       if (ariaLabel) return ariaLabel;
 
-      // Native <label> association, same two-step lookup (.labels API,
-      // then id-based `label[for]` fallback) and same priority slot
+      // Native <label> association (getAssociatedLabelElements: a `for`-index
+      // lookup plus a bounded closest('label') walk, not `.labels`/`.control`
+      // -- see that function's header comment for why), same priority slot
       // (before value-like/content) as getAccessibleNameInfo's own
       // resolution of a standalone element. Without it, an aria-labelledby
       // target that is itself a labeled form control (e.g. an <input>
       // named only by a <label for>) would resolve to empty text.
       try {
-        if (el.labels && el.labels.length) {
-          for (const labelEl of Array.from(el.labels)) {
-            const info = getLabelSubtreeNameInfo(labelEl, el, _ctx, effOpts);
-            if (info.present && info.value) return info.value;
-          }
+        for (const labelEl of getAssociatedLabelElements(el)) {
+          const info = getLabelSubtreeNameInfo(labelEl, el, _ctx, effOpts);
+          if (info.present && info.value) return info.value;
         }
       } catch {}
-      const elId = trim(getAttr(el, 'id'));
-      if (elId) {
-        const entry = __lookupLabelForId(elId, __getNameOptsKey(effOpts));
-        if (entry && entry.exists && entry.text) return entry.text;
-      }
 
       const valueLike = __getElementValueLikeName(el);
       if (valueLike) return valueLike;
@@ -59808,64 +59939,31 @@ const createDomHelpers = (function createDomHelpers(opts) {
       for (const f of aria.flags) flags.push(f);
     }
 
-    // Native <label> association via the HTML `.labels` API, which
-    // resolves BOTH `<label for="...">` and wrapping `<label>...</label>`
-    // in one call, for any labelable element (button, input,
-    // meter, output, progress, select, textarea). `.labels` is simply
-    // absent/undefined on anything else, so this never over-triggers.
-    // Catches e.g. an unlabeled icon-only <button> wrapped in a <label>,
-    // which the id-based lookup below misses (it only handles explicit
-    // for="" and such a button has no id).
+    // Native <label> association: `<label for="...">` and a wrapping
+    // `<label>...</label>` both resolve through getAssociatedLabelElements
+    // (a `for`-index lookup plus a bounded closest('label') walk, not the
+    // native `.labels`/`.control` pair -- see that function's header
+    // comment for why), for any element with a matching id or that sits
+    // inside a wrapping label, labelable or not. Catches e.g. an unlabeled
+    // icon-only <button> wrapped in a <label>, and a non-natively-labelable
+    // element like <div role="button" id="x"> named by <label for="x">,
+    // in the same pass.
     try {
-      if (el.labels && el.labels.length) {
-        // Seed the IDREF cycle guard with `el` itself before walking its
-        // own label: a label whose content contains a descendant
-        // aria-labelledby'd back to `el` (the very control being named --
-        // self-contradictory, but not invalid markup) would otherwise
-        // resolve that descendant via a brand-new getTextFromIdRefs Set
-        // that has no idea `el`'s own name is already mid-computation,
-        // round-tripping back through this exact label once before the
-        // (correctly guarded) inner resolution stops it -- doubling every
-        // part of the label's text. See computeIdRefTargetTextAlternative's
-        // own __idrefVisited comment for the general mechanism this reuses.
-        const labelOpts = Object.assign({}, opts, { __idrefVisited: new Set([el]) });
-        for (const labelEl of Array.from(el.labels)) {
-          const info = getLabelSubtreeNameInfo(labelEl, el, _ctx, labelOpts);
-          if (info.present && info.value) {
-            const out = { present: true, value: info.value, mechanism: 'label', flags };
-            try {
-              if (__accessibleNameCacheByKey) {
-                const wm =
-                  __accessibleNameCacheByKey.get(key) ||
-                  (__accessibleNameCacheByKey.set(key, new WeakMap()),
-                  __accessibleNameCacheByKey.get(key));
-                if (wm && wm instanceof WeakMap)
-                  wm.set(el, {
-                    present: true,
-                    value: out.value,
-                    mechanism: out.mechanism,
-                    flags: out.flags.slice(0)
-                  });
-              }
-            } catch {}
-            return out;
-          }
-        }
-      }
-    } catch {}
-
-    // Explicit <label for="..."> or wrapping <label> (common and deterministic for form controls)
-    // (fallback for elements where `.labels` isn't natively available,
-    // e.g. a non-native-labelable element like <div role="button" id="x">
-    // still explicitly pointed at by <label for="x">.)
-    const id = trim(getAttr(el, 'id'));
-    if (id) {
-      // Prefer indexed lookup (1 build per run) over repeated querySelector per element.
-      const entry = __lookupLabelForId(id, key);
-      if (entry && entry.exists) {
-        const lt = entry.text || '';
-        if (lt) {
-          const out = { present: true, value: lt, mechanism: 'label', flags };
+      // Seed the IDREF cycle guard with `el` itself before walking its own
+      // label: a label whose content contains a descendant
+      // aria-labelledby'd back to `el` (the very control being named --
+      // self-contradictory, but not invalid markup) would otherwise
+      // resolve that descendant via a brand-new getTextFromIdRefs Set that
+      // has no idea `el`'s own name is already mid-computation,
+      // round-tripping back through this exact label once before the
+      // (correctly guarded) inner resolution stops it -- doubling every
+      // part of the label's text. See computeIdRefTargetTextAlternative's
+      // own __idrefVisited comment for the general mechanism this reuses.
+      const labelOpts = Object.assign({}, opts, { __idrefVisited: new Set([el]) });
+      for (const labelEl of getAssociatedLabelElements(el)) {
+        const info = getLabelSubtreeNameInfo(labelEl, el, _ctx, labelOpts);
+        if (info.present && info.value) {
+          const out = { present: true, value: info.value, mechanism: 'label', flags };
           try {
             if (__accessibleNameCacheByKey) {
               const wm =
@@ -59883,9 +59981,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
           } catch {}
           return out;
         }
-        // If label exists but is empty, fall through (matches prior behavior: empty label doesn't produce a name).
+        // If this label exists but is empty, keep trying any other
+        // associated label rather than stopping (matches prior behavior:
+        // an empty label alone doesn't produce a name).
       }
-    }
+    } catch {}
 
     // The alt attribute is accname's own next naming source for img/area/
     // input[type=image] -- ranked above title, below ARIA naming and real
@@ -61279,38 +61379,15 @@ const createDomHelpers = (function createDomHelpers(opts) {
     } catch {}
 
     __perfInc('labelAssociation.miss');
-    let out = false;
-    let associatedLabels = [];
-
-    // Prefer the native `.labels` API, which resolves both wrapping <label>
-    // and <label for="id"> association in one call, as real elements.
-    try {
-      if (el && 'labels' in el && el.labels && el.labels.length) {
-        associatedLabels = Array.prototype.slice.call(el.labels);
-      }
-    } catch {}
-
-    if (!associatedLabels.length) {
-      // Fallback for environments without a working `.labels` API:
-      // structural-only, no content check, since
-      // __lookupLabelForId's cache doesn't retain an element ref.
-      const id = trim(getAttr(el, 'id'));
-      if (id) {
-        const entry = __lookupLabelForId(id, '__default__');
-        if (entry && entry.exists) out = true;
-      }
-
-      if (!out && el.closest) {
-        try {
-          const wrap = el.closest('label');
-          if (wrap && isElement(wrap)) associatedLabels = [wrap];
-        } catch {}
-      }
-    }
-
-    if (!out && associatedLabels.length) {
-      out = associatedLabels.some(labelContributesAccessibleName);
-    }
+    // getAssociatedLabelElements resolves both wrapping <label> and
+    // <label for="id"> association as real elements, without the native
+    // `.labels`/`.control` pair -- see that function's header comment for
+    // why (jsdom implements `.labels` as an expensive whole-document walk;
+    // this doesn't).
+    const associatedLabels = getAssociatedLabelElements(el);
+    const out = associatedLabels.length
+      ? associatedLabels.some(labelContributesAccessibleName)
+      : false;
 
     try {
       if (__labelAssociationCache && el && typeof el === 'object')
@@ -80038,29 +80115,63 @@ const __a11yCoreCrossFrameApi = (function () {
     return out;
   }
 
+  // Index of `<label for="...">` elements by their `for` value, built once
+  // (not the native `el.labels`, deliberately -- see getNativeLabels).
+  const labelsByForId = new Map();
+  try {
+    for (const label of document.querySelectorAll('label[for]')) {
+      const forVal = normalizeWs(label.getAttribute('for'));
+      if (!forVal) continue;
+      const bucket = labelsByForId.get(forVal);
+      if (bucket) bucket.push(label);
+      else labelsByForId.set(forVal, [label]);
+    }
+  } catch {
+    // labelsByForId stays empty; getNativeLabels still has the wrapping-label check
+  }
+
+  // Per HTML's label-control algorithm, a wrapping <label> with no `for`
+  // attribute is associated with its own FIRST labelable descendant only --
+  // these are exactly the tags that count (input excluding type=hidden,
+  // which FIELD_SELECTOR already excludes from `el` itself, but a wrapping
+  // label could still wrap a hidden input ahead of the real field).
+  const LABELABLE_SELECTOR =
+    'input:not([type="hidden"]), select, textarea, button, meter, output, progress';
+
+  // The native `el.labels` accessor is spec-correct but, in this engine's
+  // supported Node/jsdom runtime (see tests/node-runtime-parity.test.js),
+  // jsdom implements it as a live query that walks the WHOLE document on
+  // every access, and for every `<label for>` it passes, calls `.control`
+  // -- itself another whole-document walk to resolve that id (jsdom's
+  // form-controls.js getLabelsForLabelable / HTMLLabelElement-impl.js
+  // `get control`). Called once per field, that's the O(fields * document
+  // size) cost that used to dominate this rule under jsdom (a real browser
+  // maintains an internal id index, so this cost is jsdom-specific, but
+  // jsdom is a real, tested runtime for this engine, not just a benchmark
+  // artifact). A `for`-attribute index built once above, plus a bounded
+  // `closest('label')` walk, answers the same question in O(1) amortized
+  // per field instead.
   function getNativeLabels(el) {
     const labels = [];
-    try {
-      if (el.labels && el.labels.length) {
-        for (const label of el.labels) labels.push(label);
-        return labels;
-      }
-    } catch {
-      // fall through to the manual lookup
-    }
     const idVal = normalizeWs(el.getAttribute && el.getAttribute('id'));
     if (idVal) {
-      try {
-        for (const label of document.querySelectorAll('label[for]')) {
-          if (normalizeWs(label.getAttribute('for')) === idVal) labels.push(label);
-        }
-      } catch {
-        // ignore
+      const forLabels = labelsByForId.get(idVal);
+      if (forLabels) {
+        for (const label of forLabels) labels.push(label);
       }
     }
     try {
       const wrapping = el.closest ? el.closest('label') : null;
-      if (wrapping && labels.indexOf(wrapping) === -1) labels.push(wrapping);
+      const hasForAttr = !!(wrapping && wrapping.hasAttribute && wrapping.hasAttribute('for'));
+      if (wrapping && !hasForAttr && labels.indexOf(wrapping) === -1) {
+        let firstControl = null;
+        try {
+          firstControl = wrapping.querySelector ? wrapping.querySelector(LABELABLE_SELECTOR) : null;
+        } catch {
+          firstControl = null;
+        }
+        if (firstControl === el) labels.push(wrapping);
+      }
     } catch {
       // ignore
     }
@@ -80101,15 +80212,17 @@ const __a11yCoreCrossFrameApi = (function () {
     }
   }
 
+  // Nearest preceding *visible* heading text, per field. Precomputed below
+  // (once `fields` is built) via a single document-order sweep rather than
+  // scanning the full `headings` array backward for every field: `headings`
+  // and `fields` are each already in document order (both come from
+  // querySelectorAll/queryAllSmart), so a two-pointer merge answers every
+  // field in one O(fields + headings) pass instead of the O(fields *
+  // headings) pairwise compareDocumentPosition/isVisible calls a per-field
+  // backward scan requires -- the dominant cost on heading/form-heavy pages.
+  const nearestVisibleHeadingByField = new Map();
   function nearestVisibleHeadingText(el) {
-    for (let i = headings.length - 1; i >= 0; i--) {
-      const heading = headings[i];
-      if (!precedes(heading, el)) continue;
-      if (!isVisible(heading)) continue;
-      const text = normalizeWs(heading.textContent);
-      if (text) return text;
-    }
-    return '';
+    return nearestVisibleHeadingByField.get(el) || '';
   }
 
   function fieldsetLegendText(el) {
@@ -80141,6 +80254,9 @@ const __a11yCoreCrossFrameApi = (function () {
 
   // A table row or list item carries its own context (the product name a
   // repeated "Quantity" field belongs to), so it takes part in the key.
+  // `row.textContent` serializes the whole row subtree, so it's memoized per
+  // row element -- several fields (one per column) commonly share a row.
+  const rowTextCache = new Map();
   function rowContextText(el, labelText) {
     let row;
     try {
@@ -80149,7 +80265,11 @@ const __a11yCoreCrossFrameApi = (function () {
       row = null;
     }
     if (!row || !isVisible(row)) return '';
-    const text = normalizeWs(row.textContent);
+    let text = rowTextCache.get(row);
+    if (text === undefined) {
+      text = normalizeWs(row.textContent);
+      rowTextCache.set(row, text);
+    }
     if (!text) return '';
     return normalizeWs(text.split(labelText).join(' '));
   }
@@ -80178,6 +80298,73 @@ const __a11yCoreCrossFrameApi = (function () {
       normalized: normalize(labelText),
       hiddenParts: label.hiddenParts
     });
+  }
+
+  // Populate nearestVisibleHeadingByField (declared above nearestVisibleHeadingText)
+  // via a single two-pointer sweep instead of, per field, scanning the full
+  // `headings` array backward and calling compareDocumentPosition/isVisible
+  // against every one of them -- the O(fields * headings) cost that used to
+  // dominate this rule (and the whole engine) on heading/form-heavy pages.
+  //
+  // Two correctness precautions this needs, since a two-pointer merge only
+  // works over sequences that are BOTH already in real document order:
+  //
+  // 1. A field inside a shadow root has no document-order relationship to
+  //    any heading at all: per the DOM spec, compareDocumentPosition
+  //    between nodes in different trees returns an implementation-specific
+  //    (not document-order-derived) PRECEDING/FOLLOWING bit. Merging it in
+  //    would be meaningless and could even desync the sweep for later
+  //    fields, so it's filtered out up front and always answered '' --
+  //    matching the "no light-DOM heading can be this field's visible
+  //    context" reading rather than trusting that arbitrary bit.
+  // 2. `fields` (from queryAllSmart) is NOT guaranteed to be globally
+  //    document-order: it's built root by root (see resolveContextRoots),
+  //    and a multi-region `engineOptions.contextSelector` array is resolved
+  //    in the CALLER's array order, not sorted by document position. A
+  //    fresh copy is sorted by real position before the sweep so the merge
+  //    is correct regardless of contextSelector's region order (this is a
+  //    cheap O(k log k) sort, not the O(n*m) cost being fixed).
+  {
+    const orderedFields = [];
+    for (const field of fields) {
+      let sameRoot;
+      try {
+        sameRoot =
+          typeof field.el.getRootNode !== 'function' || field.el.getRootNode() === document;
+      } catch {
+        sameRoot = true;
+      }
+
+      if (!sameRoot) {
+        nearestVisibleHeadingByField.set(field.el, '');
+        continue;
+      }
+      orderedFields.push(field);
+    }
+
+    orderedFields.sort((a, b) => {
+      try {
+        const bits = a.el.compareDocumentPosition(b.el);
+        if (bits & 4) return -1; // b follows a
+        if (bits & 2) return 1; // b precedes a
+      } catch {
+        /* ignore -- treat as equal/unordered */
+      }
+      return 0;
+    });
+
+    let hIdx = 0;
+    let current = '';
+    for (const field of orderedFields) {
+      while (hIdx < headings.length && precedes(headings[hIdx], field.el)) {
+        const heading = headings[hIdx];
+        hIdx += 1;
+        if (!isVisible(heading)) continue;
+        const text = normalizeWs(heading.textContent);
+        if (text) current = text;
+      }
+      nearestVisibleHeadingByField.set(field.el, current);
+    }
   }
 
   if (!fields.length) {
@@ -92184,14 +92371,29 @@ const __a11yCoreCrossFrameApi = (function () {
     }
   }
 
+  // Per-run memoization: getComputedStyle is a real, non-trivial cost in an
+  // actual browser (unlike jsdom, which no-ops it), and hasSpacingConflict
+  // below calls getStyle on the SAME candidate element repeatedly -- once
+  // per undersized target it's compared against, via
+  // isInlineTextExceptionTarget/isInlineLinkTarget -- so with U undersized
+  // targets and N total candidates this was an uncached O(U * N)
+  // getComputedStyle call count. The DOM is read-only for the rest of this
+  // rule's run (no writes between reads), so caching per element here is
+  // safe -- style cannot change mid-run.
+  const __styleCache = new WeakMap();
   function getStyle(el) {
+    if (__styleCache.has(el)) return __styleCache.get(el);
+    let cs;
     try {
-      return document && document.defaultView && document.defaultView.getComputedStyle
-        ? document.defaultView.getComputedStyle(el)
-        : null;
+      cs =
+        document && document.defaultView && document.defaultView.getComputedStyle
+          ? document.defaultView.getComputedStyle(el)
+          : null;
     } catch {
-      return null;
+      cs = null;
     }
+    __styleCache.set(el, cs);
+    return cs;
   }
 
   function isPointerReachable(el) {
@@ -92322,6 +92524,46 @@ const __a11yCoreCrossFrameApi = (function () {
 
   const undersized = items.filter((it) => it.rect.width < MIN || it.rect.height < MIN);
 
+  // Spatial grid over ALL items, cell size = MIN (24px), so hasSpacingConflict's
+  // proximity check below doesn't have to compare every undersized target
+  // against every other item -- an O(items^2) cost that dominates real-browser
+  // (not jsdom -- see this rule's own perf note further down) runtime on a
+  // page with many small targets. A point can only be within MIN of another
+  // point that shares its grid cell or one of the 8 adjacent cells: cell size
+  // equals the search radius, so two points in cells 2+ apart on either axis
+  // are, on that axis alone, already >= MIN apart. Restricting the candidate
+  // set to that 3x3 neighborhood is therefore never a false negative -- the
+  // exact same dist() < MIN check still runs on every candidate it returns,
+  // just skipping candidates that are geometrically guaranteed too far away.
+  // This changes performance only, never which targets conflict.
+  const grid = new Map(); // "cx,cy" -> item[]
+  function cellKeyFor(cx, cy) {
+    return cx + ',' + cy;
+  }
+  for (const it of items) {
+    const cx = Math.floor(it.center.cx / MIN);
+    const cy = Math.floor(it.center.cy / MIN);
+    const key = cellKeyFor(cx, cy);
+    let bucket = grid.get(key);
+    if (!bucket) {
+      bucket = [];
+      grid.set(key, bucket);
+    }
+    bucket.push(it);
+  }
+  function nearbyItems(center) {
+    const cx = Math.floor(center.cx / MIN);
+    const cy = Math.floor(center.cy / MIN);
+    const out = [];
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dy = -1; dy <= 1; dy++) {
+        const bucket = grid.get(cellKeyFor(cx + dx, cy + dy));
+        if (bucket) for (const it of bucket) out.push(it);
+      }
+    }
+    return out;
+  }
+
   // --- spacing/occlusion evaluation ---
   function hasSpacingConflict(target) {
     // 0) Pure geometry: deterministic center-distance check against ANY
@@ -92329,7 +92571,7 @@ const __a11yCoreCrossFrameApi = (function () {
     // spacing exception depends on proximity to any adjacent target, so an
     // undersized target sitting flush against an adequately-sized one still
     // fails the exception, which an undersized-only comparison would miss.
-    for (const other of items) {
+    for (const other of nearbyItems(target.center)) {
       if (!other || !other.el || isRelated(target.el, other.el)) continue;
 
       // Ignore inline-text exception targets when evaluating spacing conflicts.
@@ -101191,7 +101433,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   let __ancestorBlockerDomStructFinalByScope = null; // WeakMap<object, WeakMap<Element, string|null>> (final structural blocker per element per scope)
   let __labelAssociationCache = null;
   let __labelMethodCache = null;
-  let __labelForIndexByDoc = null; // WeakMap<Document, Map<string, {exists:boolean, text:string}>> (label[for] by id cache)
+  let __labelElementsByForIdIndexByDoc = null; // WeakMap<Document, Map<string, Element[]>> (label[for] by id -> real elements, see getAssociatedLabelElements)
   let __accessibleNameCacheByKey = null; // Map<string, WeakMap<Element, Info>>
   let __accessibleDescCacheByKey = null; // Map<string, WeakMap<Element, Info>>
 
@@ -101304,12 +101546,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
   }
 
   try {
-    __labelForIndexByDoc =
-      __domSharedCache.labelForIndexByDoc instanceof WeakMap
-        ? __domSharedCache.labelForIndexByDoc
-        : (__domSharedCache.labelForIndexByDoc = new WeakMap());
+    __labelElementsByForIdIndexByDoc =
+      __domSharedCache.labelElementsByForIdIndexByDoc instanceof WeakMap
+        ? __domSharedCache.labelElementsByForIdIndexByDoc
+        : (__domSharedCache.labelElementsByForIdIndexByDoc = new WeakMap());
   } catch {
-    __labelForIndexByDoc = null;
+    __labelElementsByForIdIndexByDoc = null;
   }
 
   try {
@@ -101340,87 +101582,103 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return document && typeof document === 'object' ? document : null;
   }
 
-  function __getLabelForByIdCache(nameKey) {
-    // Document-scoped cache for `document.querySelector('label[for="..."]')`.
-    // Keeps test semantics (first lookup uses querySelector) while eliminating repeated lookups.
-    if (!document || !document.querySelector) return null;
-    if (!__labelForIndexByDoc) {
-      __perfInc('labelForById.nocache');
-      return null;
+  // Real `<label for="...">` element references for one `for` value, built
+  // via a single `document.querySelectorAll('label[for]')` pass and cached
+  // per document for the whole run, for callers that need the actual label
+  // element (to compute its accessible name, or to check whether it
+  // contributes one), not just whether one exists.
+  function __getLabelElementsForId(id) {
+    const key = trim(id);
+    if (!key || !document || !document.querySelectorAll) return [];
+
+    function buildIndex() {
+      const byId = new Map();
+      try {
+        for (const label of document.querySelectorAll('label[for]')) {
+          const forVal = trim(label.getAttribute('for'));
+          if (!forVal) continue;
+          const bucket = byId.get(forVal);
+          if (bucket) bucket.push(label);
+          else byId.set(forVal, [label]);
+        }
+      } catch {}
+      return byId;
     }
 
-    try {
-      const nk = nameKey == null ? '__default__' : String(nameKey);
-      let byKey = __labelForIndexByDoc.get(document);
-      if (!(byKey instanceof Map)) {
-        __perfInc('labelForById.miss');
-        byKey = new Map();
-        __labelForIndexByDoc.set(document, byKey);
-        __perfInc('labelForById.build');
-      }
-      const existing = byKey.get(nk);
-      if (existing && existing instanceof Map) {
-        __perfInc('labelForById.hit');
-        return existing;
-      }
-      __perfInc('labelForById.miss');
-      const map = new Map();
-      byKey.set(nk, map);
-      __perfInc('labelForById.build');
-      return map;
-    } catch {
-      __perfInc('labelForById.nocache');
-      return null;
+    if (!__labelElementsByForIdIndexByDoc) return buildIndex().get(key) || [];
+
+    let byId = __labelElementsByForIdIndexByDoc.get(document);
+    if (!(byId instanceof Map)) {
+      byId = buildIndex();
+      __labelElementsByForIdIndexByDoc.set(document, byId);
     }
+    return byId.get(key) || [];
   }
 
-  function __lookupLabelForId(id, nameKey) {
-    const key = trim(id);
-    if (!key) return null;
+  // Tags the HTML label-association algorithm recognizes as "labelable"
+  // (https://html.spec.whatwg.org/#category-label), used only to find a
+  // wrapping <label>'s FIRST such descendant -- the one it is actually
+  // associated with when it carries no `for` attribute.
+  const LABELABLE_SELECTOR =
+    'input:not([type="hidden"]), select, textarea, button, meter, output, progress';
 
-    const map = __getLabelForByIdCache(nameKey);
-    if (map) {
-      if (map.has(key)) return map.get(key) || null;
-      // compute and store
-      let entry;
-      try {
-        const sel = 'label[for="' + key.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"]';
-        const label = document.querySelector(sel);
-        if (label && isElement(label)) {
-          let t = '';
-          try {
-            t = trim(label.textContent);
-          } catch {
-            t = '';
-          }
-          entry = { exists: true, text: t };
-        } else {
-          entry = { exists: false, text: '' };
-        }
-      } catch {
-        entry = { exists: false, text: '' };
-      }
-      try {
-        map.set(key, entry);
-      } catch {}
-      return entry && entry.exists ? entry : null;
+  // Real `<label>` elements associated with `el`, replicating the native
+  // `.labels` API's result (a `<label for="id">` pointing at `el`, plus a
+  // wrapping `<label>` with no `for` attribute whose first labelable
+  // descendant is `el`) without ever calling `.labels`/`label.control`.
+  //
+  // Why not just call `.labels`: it's spec-correct, but in this engine's
+  // supported Node/jsdom runtime (see tests/node-runtime-parity.test.js),
+  // jsdom implements it as a live query that walks the WHOLE document on
+  // every access, and for every `<label for>` it passes during that walk,
+  // resolves `.control` -- itself ANOTHER whole-document walk to resolve
+  // that id (jsdom's form-controls.js getLabelsForLabelable /
+  // HTMLLabelElement-impl.js `get control`). Called once per labelable
+  // element, that's an O(elements * document size) cost that used to
+  // dominate whole engine runs on form-heavy pages -- a real browser
+  // maintains an internal id index so `.labels` is cheap there, but jsdom
+  // is a real, tested runtime for this engine, not just a benchmark
+  // artifact. The `for`-index above (built once per document) plus a
+  // bounded `closest('label')` walk answers the same question without it.
+  function getAssociatedLabelElements(el) {
+    const out = [];
+    const id = trim(getAttr(el, 'id'));
+    if (id) {
+      const forLabels = __getLabelElementsForId(id);
+      for (const l of forLabels) out.push(l);
     }
-
-    // No cache available: fallback to direct querySelector
     try {
-      const sel = 'label[for="' + key.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"]';
-      const label = document.querySelector(sel);
-      if (label && isElement(label)) {
-        let t = '';
+      const wrap = el.closest ? el.closest('label') : null;
+      if (
+        wrap &&
+        isElement(wrap) &&
+        !(wrap.hasAttribute && wrap.hasAttribute('for')) &&
+        out.indexOf(wrap) === -1
+      ) {
+        let firstControl = null;
         try {
-          t = trim(label.textContent);
+          firstControl = wrap.querySelector ? wrap.querySelector(LABELABLE_SELECTOR) : null;
         } catch {
-          t = '';
+          firstControl = null;
         }
-        return { exists: true, text: t };
+        if (firstControl === el) out.push(wrap);
       }
     } catch {}
-    return null;
+    // Usually 0-1 elements; a second only shows up for genuinely unusual
+    // markup (both a `for`-labelled AND a wrapping label on one control),
+    // where the two lookups above aren't guaranteed to already be in
+    // document order relative to each other.
+    if (out.length > 1) {
+      try {
+        out.sort((a, b) => {
+          const bits = a.compareDocumentPosition(b);
+          if (bits & 4) return -1;
+          if (bits & 2) return 1;
+          return 0;
+        });
+      } catch {}
+    }
+    return out;
   }
 
   function __getEligibilityAccCacheForScope() {
@@ -102550,25 +102808,19 @@ const createDomHelpers = (function createDomHelpers(opts) {
       const ariaLabel = trim(getAttr(el, 'aria-label'));
       if (ariaLabel) return ariaLabel;
 
-      // Native <label> association, same two-step lookup (.labels API,
-      // then id-based `label[for]` fallback) and same priority slot
+      // Native <label> association (getAssociatedLabelElements: a `for`-index
+      // lookup plus a bounded closest('label') walk, not `.labels`/`.control`
+      // -- see that function's header comment for why), same priority slot
       // (before value-like/content) as getAccessibleNameInfo's own
       // resolution of a standalone element. Without it, an aria-labelledby
       // target that is itself a labeled form control (e.g. an <input>
       // named only by a <label for>) would resolve to empty text.
       try {
-        if (el.labels && el.labels.length) {
-          for (const labelEl of Array.from(el.labels)) {
-            const info = getLabelSubtreeNameInfo(labelEl, el, _ctx, effOpts);
-            if (info.present && info.value) return info.value;
-          }
+        for (const labelEl of getAssociatedLabelElements(el)) {
+          const info = getLabelSubtreeNameInfo(labelEl, el, _ctx, effOpts);
+          if (info.present && info.value) return info.value;
         }
       } catch {}
-      const elId = trim(getAttr(el, 'id'));
-      if (elId) {
-        const entry = __lookupLabelForId(elId, __getNameOptsKey(effOpts));
-        if (entry && entry.exists && entry.text) return entry.text;
-      }
 
       const valueLike = __getElementValueLikeName(el);
       if (valueLike) return valueLike;
@@ -102803,64 +103055,31 @@ const createDomHelpers = (function createDomHelpers(opts) {
       for (const f of aria.flags) flags.push(f);
     }
 
-    // Native <label> association via the HTML `.labels` API, which
-    // resolves BOTH `<label for="...">` and wrapping `<label>...</label>`
-    // in one call, for any labelable element (button, input,
-    // meter, output, progress, select, textarea). `.labels` is simply
-    // absent/undefined on anything else, so this never over-triggers.
-    // Catches e.g. an unlabeled icon-only <button> wrapped in a <label>,
-    // which the id-based lookup below misses (it only handles explicit
-    // for="" and such a button has no id).
+    // Native <label> association: `<label for="...">` and a wrapping
+    // `<label>...</label>` both resolve through getAssociatedLabelElements
+    // (a `for`-index lookup plus a bounded closest('label') walk, not the
+    // native `.labels`/`.control` pair -- see that function's header
+    // comment for why), for any element with a matching id or that sits
+    // inside a wrapping label, labelable or not. Catches e.g. an unlabeled
+    // icon-only <button> wrapped in a <label>, and a non-natively-labelable
+    // element like <div role="button" id="x"> named by <label for="x">,
+    // in the same pass.
     try {
-      if (el.labels && el.labels.length) {
-        // Seed the IDREF cycle guard with `el` itself before walking its
-        // own label: a label whose content contains a descendant
-        // aria-labelledby'd back to `el` (the very control being named --
-        // self-contradictory, but not invalid markup) would otherwise
-        // resolve that descendant via a brand-new getTextFromIdRefs Set
-        // that has no idea `el`'s own name is already mid-computation,
-        // round-tripping back through this exact label once before the
-        // (correctly guarded) inner resolution stops it -- doubling every
-        // part of the label's text. See computeIdRefTargetTextAlternative's
-        // own __idrefVisited comment for the general mechanism this reuses.
-        const labelOpts = Object.assign({}, opts, { __idrefVisited: new Set([el]) });
-        for (const labelEl of Array.from(el.labels)) {
-          const info = getLabelSubtreeNameInfo(labelEl, el, _ctx, labelOpts);
-          if (info.present && info.value) {
-            const out = { present: true, value: info.value, mechanism: 'label', flags };
-            try {
-              if (__accessibleNameCacheByKey) {
-                const wm =
-                  __accessibleNameCacheByKey.get(key) ||
-                  (__accessibleNameCacheByKey.set(key, new WeakMap()),
-                  __accessibleNameCacheByKey.get(key));
-                if (wm && wm instanceof WeakMap)
-                  wm.set(el, {
-                    present: true,
-                    value: out.value,
-                    mechanism: out.mechanism,
-                    flags: out.flags.slice(0)
-                  });
-              }
-            } catch {}
-            return out;
-          }
-        }
-      }
-    } catch {}
-
-    // Explicit <label for="..."> or wrapping <label> (common and deterministic for form controls)
-    // (fallback for elements where `.labels` isn't natively available,
-    // e.g. a non-native-labelable element like <div role="button" id="x">
-    // still explicitly pointed at by <label for="x">.)
-    const id = trim(getAttr(el, 'id'));
-    if (id) {
-      // Prefer indexed lookup (1 build per run) over repeated querySelector per element.
-      const entry = __lookupLabelForId(id, key);
-      if (entry && entry.exists) {
-        const lt = entry.text || '';
-        if (lt) {
-          const out = { present: true, value: lt, mechanism: 'label', flags };
+      // Seed the IDREF cycle guard with `el` itself before walking its own
+      // label: a label whose content contains a descendant
+      // aria-labelledby'd back to `el` (the very control being named --
+      // self-contradictory, but not invalid markup) would otherwise
+      // resolve that descendant via a brand-new getTextFromIdRefs Set that
+      // has no idea `el`'s own name is already mid-computation,
+      // round-tripping back through this exact label once before the
+      // (correctly guarded) inner resolution stops it -- doubling every
+      // part of the label's text. See computeIdRefTargetTextAlternative's
+      // own __idrefVisited comment for the general mechanism this reuses.
+      const labelOpts = Object.assign({}, opts, { __idrefVisited: new Set([el]) });
+      for (const labelEl of getAssociatedLabelElements(el)) {
+        const info = getLabelSubtreeNameInfo(labelEl, el, _ctx, labelOpts);
+        if (info.present && info.value) {
+          const out = { present: true, value: info.value, mechanism: 'label', flags };
           try {
             if (__accessibleNameCacheByKey) {
               const wm =
@@ -102878,9 +103097,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
           } catch {}
           return out;
         }
-        // If label exists but is empty, fall through (matches prior behavior: empty label doesn't produce a name).
+        // If this label exists but is empty, keep trying any other
+        // associated label rather than stopping (matches prior behavior:
+        // an empty label alone doesn't produce a name).
       }
-    }
+    } catch {}
 
     // The alt attribute is accname's own next naming source for img/area/
     // input[type=image] -- ranked above title, below ARIA naming and real
@@ -104274,38 +104495,15 @@ const createDomHelpers = (function createDomHelpers(opts) {
     } catch {}
 
     __perfInc('labelAssociation.miss');
-    let out = false;
-    let associatedLabels = [];
-
-    // Prefer the native `.labels` API, which resolves both wrapping <label>
-    // and <label for="id"> association in one call, as real elements.
-    try {
-      if (el && 'labels' in el && el.labels && el.labels.length) {
-        associatedLabels = Array.prototype.slice.call(el.labels);
-      }
-    } catch {}
-
-    if (!associatedLabels.length) {
-      // Fallback for environments without a working `.labels` API:
-      // structural-only, no content check, since
-      // __lookupLabelForId's cache doesn't retain an element ref.
-      const id = trim(getAttr(el, 'id'));
-      if (id) {
-        const entry = __lookupLabelForId(id, '__default__');
-        if (entry && entry.exists) out = true;
-      }
-
-      if (!out && el.closest) {
-        try {
-          const wrap = el.closest('label');
-          if (wrap && isElement(wrap)) associatedLabels = [wrap];
-        } catch {}
-      }
-    }
-
-    if (!out && associatedLabels.length) {
-      out = associatedLabels.some(labelContributesAccessibleName);
-    }
+    // getAssociatedLabelElements resolves both wrapping <label> and
+    // <label for="id"> association as real elements, without the native
+    // `.labels`/`.control` pair -- see that function's header comment for
+    // why (jsdom implements `.labels` as an expensive whole-document walk;
+    // this doesn't).
+    const associatedLabels = getAssociatedLabelElements(el);
+    const out = associatedLabels.length
+      ? associatedLabels.some(labelContributesAccessibleName)
+      : false;
 
     try {
       if (__labelAssociationCache && el && typeof el === 'object')
