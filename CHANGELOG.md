@@ -4,6 +4,9 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ## [Unreleased]
 
+### Added
+- `docs/RULE_HELPERS.md`: reference for every function on `ctx.helpers` available to a rule's `runInPage` — around 35 flat helpers plus the `contrast.*`/`aria.*` namespaces. `docs/RULE_AUTHORING.md` §6 previously named only a dozen of them inline; the rest were discoverable only by reading `src/core/dom-helpers.js` directly. §6 now points here instead.
+
 ## [1.6.0] - 2026-08-23
 
 ### Added
