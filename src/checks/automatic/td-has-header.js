@@ -118,27 +118,28 @@ function runInPage(ctx) {
       return !!(cell && cell.tagName && cell.tagName.toLowerCase() === 'th' && isEligible(cell));
     }
 
-    function hasColumnHeaderAbove(r, c) {
-      for (let ri = 0; ri < r; ri++) {
-        const cell = rowCells[ri] && rowCells[ri][c];
-        if (isHeaderCell(cell)) return true;
-      }
-      return false;
-    }
-
-    function hasRowHeaderBefore(r, c) {
-      const cells = rowCells[r] || [];
-      for (let ci = 0; ci < c; ci++) {
-        if (isHeaderCell(cells[ci])) return true;
-      }
-      return false;
-    }
+    // "Was there a <th> above this cell's column" and "was there a <th>
+    // earlier in this cell's row" are both prefix questions over a scan
+    // already in progress (rows top to bottom, cells left to right within a
+    // row), so each is tracked incrementally instead of rescanning the
+    // rows/columns already passed for every cell: colHasHeaderAbove[c]
+    // carries forward across rows, rowHasHeaderBefore resets at the start
+    // of each row. One pass over every cell, not one rescan per cell.
+    const colHasHeaderAbove = new Array(maxCols).fill(false);
 
     for (let r = 0; r < rowCells.length; r++) {
       const cells = rowCells[r];
+      let rowHasHeaderBefore = false;
+
       for (let c = 0; c < cells.length; c++) {
         const cell = cells[c];
-        if (!cell || isHeaderCell(cell)) continue;
+        if (!cell) continue;
+
+        if (isHeaderCell(cell)) {
+          colHasHeaderAbove[c] = true;
+          rowHasHeaderBefore = true;
+          continue;
+        }
 
         // An aria-hidden data cell isn't exposed to AT either, so it has
         // no need for an accessible header association.
@@ -147,8 +148,8 @@ function runInPage(ctx) {
         const headersAttr = trim(cell.getAttribute('headers'));
         if (headersAttr) continue;
 
-        if (hasColumnHeaderAbove(r, c)) continue;
-        if (hasRowHeaderBefore(r, c)) continue;
+        if (colHasHeaderAbove[c]) continue;
+        if (rowHasHeaderBefore) continue;
 
         occurrences.push(
           helpers.reportOccurrence(cell, {
