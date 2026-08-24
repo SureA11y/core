@@ -20835,55 +20835,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return parts.join(' ').replace(/\s+/g, ' ').trim();
   }
 
+  // Real <label> elements associated with a native form control -- the
+  // shared dom-helpers.js implementation (a `for`-attribute index plus a
+  // bounded closest('label') walk), not the native `.labels`/`.control`
+  // pair: jsdom implements those as a whole-document walk on every access
+  // (see that function's own header comment for the full explanation),
+  // real cost this engine's Node/jsdom runtime pays, not just a browser
+  // realm this code happens to also run in.
   function getAssociatedLabelElements(control) {
-    const labels = [];
-    try {
-      if (control && control.labels && typeof control.labels.length === 'number') {
-        for (const l of control.labels) labels.push(l);
-      }
-    } catch {
-      // ignore
-    }
-
-    // Fallback: wrapped label
-    try {
-      const w = control && control.closest ? control.closest('label') : null;
-      if (w) labels.push(w);
-    } catch {
-      // ignore
-    }
-
-    // Fallback: label[for=id]. Uses `document` directly rather than
-    // ctx.root -- label[for] association is a document-wide relationship
-    // (IDs are document-unique), not bounded by whatever contextSelector
-    // region happens to be scanned, and ctx.root is an array (multi-region
-    // contextSelector support), not a single element with its own
-    // .querySelector to call directly.
-    try {
-      const idAttribute = control && control.getAttribute ? control.getAttribute('id') || '' : '';
-      const key = String(idAttribute || '').trim();
-      if (key && document && document.querySelector) {
-        const l = document.querySelector('label[for="' + CSS.escape(key) + '"]');
-        if (l) labels.push(l);
-      }
-    } catch {
-      // ignore
-    }
-
-    // De-dupe in document order
-    const seen = new Set();
-    const out = [];
-    for (const l of labels) {
+    if (helpers && typeof helpers.getAssociatedLabelElements === 'function') {
       try {
-        if (!l || !l.tagName) continue;
-        if (seen.has(l)) continue;
-        seen.add(l);
-        out.push(l);
+        return helpers.getAssociatedLabelElements(control) || [];
       } catch {
-        // ignore
+        return [];
       }
     }
-    return out;
+    return [];
   }
 
   function getVisibleTextLabelInfo(el) {
@@ -39955,6 +39922,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     getLabelMethod,
     getLabelStrength,
+
+    // Real <label> elements associated with a control (a `<label for="id">`
+    // pointing at it, plus a wrapping `<label>` it's the first labelable
+    // descendant of), for a rule that needs the actual elements rather than
+    // just a method/strength classification. See this function's own
+    // definition above for the full algorithm and why it doesn't use the
+    // native `.labels`/`.control` pair.
+    getAssociatedLabelElements,
 
     // Whether a <label> carries text that names its associated control
     // (own aria-name, else rendered content, else title). Shared so
