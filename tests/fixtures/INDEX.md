@@ -90,7 +90,7 @@ None — every rule has a fixture.
 | landmark-no-duplicate-main | manual | `tests/fixtures/landmark-no-duplicate-main-all-scenarios.html` | 1 | 0 | 0 | 1 | 0 |
 | landmark-one-main | manual | `tests/fixtures/landmark-one-main-all-scenarios.html` | 1 | 0 | 0 | 1 | 0 |
 | landmark-unique | manual | `tests/fixtures/landmark-unique-all-scenarios.html` | 12 | 0 | 0 | 6 | 6 |
-| link-in-text-block | automatic | `tests/fixtures/link-in-text-block-all-scenarios.html` | 7 | 4 | 1 | 0 | 2 |
+| link-in-text-block | automatic | `tests/fixtures/link-in-text-block-all-scenarios.html` | 7 | 4 | 1 | 1 | 1 |
 | link-name-present | automatic | `tests/fixtures/link-name-present-all-scenarios.html` | 19 | 12 | 5 | 0 | 2 |
 | link-name-quality | manual | `tests/fixtures/link-name-quality-all-scenarios.html` | 7 | 0 | 0 | 4 | 3 |
 | list-children-valid | automatic | `tests/fixtures/list-children-valid-all-scenarios.html` | 14 | 8 | 5 | 0 | 1 |

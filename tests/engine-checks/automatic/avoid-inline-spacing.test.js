@@ -114,7 +114,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/avoid-inline-spacing-all-scen
     'ais_case_03',
     'ais_case_07',
     'ais_case_08',
-    'ais_case_09'
+    'ais_case_09',
+    'ais_case_10'
   ]) {
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
@@ -122,4 +123,24 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/avoid-inline-spacing-all-scen
     (o) => typeof o.html === 'string' && o.html.includes('id="ais_case_05"')
   );
   assert.deepStrictEqual(both.data.details.properties, ['letter-spacing', 'word-spacing']);
+});
+
+test(`${RULE_ID}: cantTell, not pass, when an !important spacing value cannot be resolved`, () => {
+  // `calc()` mixing viewport and font-relative units resolves to no ratio here,
+  // and jsdom exposes no used value to fall back on.
+  const html = `<!doctype html><html><body><p id="unresolved" style="letter-spacing: calc(1vw - 2ex) !important">Some text.</p></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'INLINE_SPACING_NOT_RESOLVABLE');
+  assert.ok(hasOccurrenceForId(rule, 'unresolved'));
+});
+
+test(`${RULE_ID}: an unresolvable value does not mask a proven failure elsewhere`, () => {
+  const html = `<!doctype html><html><body>
+    <p id="unresolved" style="letter-spacing: calc(1vw - 2ex) !important">Some text.</p>
+    <p id="tooTight" style="letter-spacing: 0.01em !important">Some text.</p>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'tooTight'));
 });

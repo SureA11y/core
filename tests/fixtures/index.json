@@ -1436,8 +1436,8 @@
       "caseCounts": {
         "PASS": 4,
         "FAIL": 1,
-        "CANTTELL": 0,
-        "OTHER": 2
+        "CANTTELL": 1,
+        "OTHER": 1
       }
     },
     {
