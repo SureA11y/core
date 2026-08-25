@@ -1,7 +1,7 @@
 {
   "summary": {
-    "total": 131,
-    "withFixture": 131,
+    "total": 132,
+    "withFixture": 132,
     "withoutFixture": 0
   },
   "rows": [
@@ -1887,6 +1887,25 @@
         "FAIL": 1,
         "CANTTELL": 0,
         "OTHER": 0
+      }
+    },
+    {
+      "ruleId": "password-paste-enabled",
+      "title": "Authentication fields must not block pasting",
+      "type": "manual",
+      "wcagSc": [
+        "3.3.8"
+      ],
+      "ruleFile": "src/checks/manual/password-paste-enabled-manual.js",
+      "testFile": "tests/engine-checks/manual/password-paste-enabled.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/password-paste-enabled-all-scenarios.html",
+      "totalCases": 14,
+      "caseCounts": {
+        "PASS": 0,
+        "FAIL": 0,
+        "CANTTELL": 8,
+        "OTHER": 6
       }
     },
     {

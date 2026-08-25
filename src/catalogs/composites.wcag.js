@@ -482,5 +482,17 @@ module.exports = [
       wcagSc: ['3.3.2'],
       level: 'A'
     }
+  },
+
+  {
+    id: 'wcag-3.3.8-accessible-authentication-minimum',
+    checksIds: ['password-paste-enabled'],
+    meta: {
+      title: 'Accessible Authentication (Minimum)',
+      description:
+        'Rollup of checks ensuring an authentication step leaves the mechanisms that help a user through it in place.',
+      wcagSc: ['3.3.8'],
+      level: 'AA'
+    }
   }
 ];

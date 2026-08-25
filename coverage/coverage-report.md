@@ -5,13 +5,13 @@ Facets: `src/coverage/wcag-facets.js`
 
 ## Summary
 
-Total rules (loaded without error): **131**
+Total rules (loaded without error): **132**
 
 ### Coverage by WCAG Level (Version-agnostic, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| Any WCAG version | 106 | 18 | 5 |
+| Any WCAG version | 107 | 19 | 5 |
 
 ### Coverage by WCAG Level (Per version, cumulative)
 
@@ -19,7 +19,7 @@ Total rules (loaded without error): **131**
 |---|---:|---:|---:|
 | WCAG 2.0 | 101 | 14 | 5 |
 | WCAG 2.1 | 4 | 3 | 0 |
-| WCAG 2.2 | 1 | 1 | 0 |
+| WCAG 2.2 | 2 | 2 | 0 |
 
 ### Raw WCAG tag counts (non-cumulative)
 
@@ -27,7 +27,7 @@ Total rules (loaded without error): **131**
 |---|---:|
 | wcag21a | 1 |
 | wcag21aa | 3 |
-| wcag22aa | 1 |
+| wcag22aa | 2 |
 | wcag2a | 90 |
 | wcag2aa | 10 |
 | wcag2aaa | 5 |
@@ -514,6 +514,19 @@ Automation mix: **full 2, partial 0, manual 0**.
 |---|---|---|---|---|---|
 | form-control-programmatic-label-present | automatic | Form controls must have a programmatic label | src/checks/automatic/form-control-programmatic-label-present.js | form-control-labels-or-instructions-present |  |
 | form-control-single-label | automatic | Form controls must not have multiple labels | src/checks/automatic/form-control-single-label.js | form-control-single-label |  |
+
+### 3.3.8
+
+Facet coverage: **1/1** facets covered.
+Automation mix: **full 0, partial 0, manual 1**.
+
+| Facet | Automation | Covered by |
+|---|---|---|
+| authentication-paste-not-blocked | manual | password-paste-enabled |
+
+| Rule ID | Type | Title | File | Facet | Notes |
+|---|---|---|---|---|---|
+| password-paste-enabled | manual | Authentication fields must not block pasting | src/checks/manual/password-paste-enabled-manual.js | authentication-paste-not-blocked |  |
 
 ### 4.1.1
 
@@ -1133,6 +1146,19 @@ Automation mix: **full 2, partial 0, manual 0**.
 |---|---|---|---|---|---|
 | form-control-programmatic-label-present | automatic | Form controls must have a programmatic label | src/checks/automatic/form-control-programmatic-label-present.js | form-control-labels-or-instructions-present |  |
 | form-control-single-label | automatic | Form controls must not have multiple labels | src/checks/automatic/form-control-single-label.js | form-control-single-label |  |
+
+### 3.3.8
+
+Facet coverage: **1/1** facets covered.
+Automation mix: **full 0, partial 0, manual 1**.
+
+| Facet | Automation | Covered by |
+|---|---|---|
+| authentication-paste-not-blocked | manual | password-paste-enabled |
+
+| Rule ID | Type | Title | File | Facet | Notes |
+|---|---|---|---|---|---|
+| password-paste-enabled | manual | Authentication fields must not block pasting | src/checks/manual/password-paste-enabled-manual.js | authentication-paste-not-blocked |  |
 
 ### 4.1.1
 

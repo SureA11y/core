@@ -2,7 +2,7 @@
   "rulesDir": "src/checks",
   "facetsFile": "src/coverage/wcag-facets.js",
   "summary": {
-    "totalRules": 131,
+    "totalRules": 132,
     "wcagTagCoverage": {
       "byVersion": {
         "2.0": {
@@ -16,14 +16,14 @@
           "AAA": 0
         },
         "2.2": {
-          "A": 1,
-          "AA": 1,
+          "A": 2,
+          "AA": 2,
           "AAA": 0
         }
       },
       "anyVersion": {
-        "A": 106,
-        "AA": 18,
+        "A": 107,
+        "AA": 19,
         "AAA": 5
       },
       "rawTagCounts": {
@@ -32,7 +32,7 @@
         "wcag21aa": 3,
         "wcag2aaa": 5,
         "wcag21a": 1,
-        "wcag22aa": 1
+        "wcag22aa": 2
       }
     }
   },
@@ -5555,6 +5555,58 @@
       }
     },
     {
+      "file": "src/checks/manual/password-paste-enabled-manual.js",
+      "ruleId": "password-paste-enabled",
+      "wcagScNormative": [
+        "3.3.8"
+      ],
+      "wcagScAll": [
+        "3.3.8"
+      ],
+      "wcagScInformative": [],
+      "type": "manual",
+      "title": "Authentication fields must not block pasting",
+      "tags": [
+        "wcag22aa",
+        "wcag338",
+        "forms",
+        "authentication",
+        "atomic",
+        "manual",
+        "acc"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag22aa",
+            "version": "2.2",
+            "level": "AA"
+          }
+        ],
+        "versions": [
+          "2.2"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.2": [
+            "A",
+            "AA"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A",
+          "AA"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "3.3.8": [
+            "authentication-paste-not-blocked"
+          ]
+        }
+      }
+    },
+    {
       "file": "src/checks/manual/presentation-role-conflict-manual.js",
       "ruleId": "presentation-role-conflict",
       "wcagScNormative": [],
@@ -6962,6 +7014,28 @@
         ]
       },
       {
+        "sc": "3.3.8",
+        "title": "Accessible Authentication (Minimum)",
+        "totalFacets": 1,
+        "coveredFacets": 1,
+        "uncoveredFacets": [],
+        "automationCounts": {
+          "manual": 1
+        },
+        "missingFacetRules": [],
+        "unknownFacetIds": [],
+        "facets": [
+          {
+            "id": "authentication-paste-not-blocked",
+            "label": "A password or one-time-code field does not cancel pasting, so a password manager or the clipboard can still fill it",
+            "automation": "manual",
+            "coveredBy": [
+              "password-paste-enabled"
+            ]
+          }
+        ]
+      },
+      {
         "sc": "4.1.1",
         "title": "Parsing (Obsolete and removed)",
         "totalFacets": 1,
@@ -8326,6 +8400,28 @@
             "automation": "full",
             "coveredBy": [
               "form-control-single-label"
+            ]
+          }
+        ]
+      },
+      {
+        "sc": "3.3.8",
+        "title": "Accessible Authentication (Minimum)",
+        "totalFacets": 1,
+        "coveredFacets": 1,
+        "uncoveredFacets": [],
+        "automationCounts": {
+          "manual": 1
+        },
+        "missingFacetRules": [],
+        "unknownFacetIds": [],
+        "facets": [
+          {
+            "id": "authentication-paste-not-blocked",
+            "label": "A password or one-time-code field does not cancel pasting, so a password manager or the clipboard can still fill it",
+            "automation": "manual",
+            "coveredBy": [
+              "password-paste-enabled"
             ]
           }
         ]

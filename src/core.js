@@ -5383,6 +5383,62 @@ const CHECK_DEFS = [
     "mappings": null
   },
   {
+    "ruleId": "password-paste-enabled",
+    "title": "Authentication fields must not block pasting",
+    "description": "Checks that a password or one-time-code field carries no inline paste handler that cancels the paste, which would remove the password manager or clipboard that WCAG 3.3.8 relies on as the assisting mechanism.",
+    "i18n": {
+      "titleKey": "passwordPasteEnabled_title",
+      "descriptionKey": "passwordPasteEnabled_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag22aa",
+      "wcag338",
+      "forms",
+      "authentication",
+      "atomic",
+      "manual",
+      "acc",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "3.3.8"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "3.3.8",
+        "title": "Accessible Authentication (Minimum)",
+        "conformanceLevel": "AA"
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "medium",
+    "type": "manual",
+    "coverage": {
+      "facetsBySc": {
+        "3.3.8": [
+          "authentication-paste-not-blocked"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "understandable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
     "ruleId": "presentation-role-conflict",
     "title": "Presentational role must not conflict with a global ARIA attribute or focusability",
     "description": "Checks that role=\"presentation\"/\"none\" (including an <img alt=\"\"> implicit presentation role) is not combined with a global ARIA attribute (aria-label, aria-hidden, aria-describedby, ...) or focusability (tabindex/native).",
@@ -7503,6 +7559,20 @@ const COMPOSITE_RULES = [
       ],
       "level": "A"
     }
+  },
+  {
+    "id": "wcag-3.3.8-accessible-authentication-minimum",
+    "checksIds": [
+      "password-paste-enabled"
+    ],
+    "meta": {
+      "title": "Accessible Authentication (Minimum)",
+      "description": "Rollup of checks ensuring an authentication step leaves the mechanisms that help a user through it in place.",
+      "wcagSc": [
+        "3.3.8"
+      ],
+      "level": "AA"
+    }
   }
 ];
 
@@ -7609,6 +7679,7 @@ const RULE_IMPLS = {
   "page-has-heading-one": { run: require("./checks/manual/page-has-heading-one-manual.js").runInPage, applicability: require("./checks/manual/page-has-heading-one-manual.js").applicability || null },
   "page-title-patterns": { run: require("./checks/manual/page-title-patterns-manual.js").runInPage, applicability: require("./checks/manual/page-title-patterns-manual.js").applicability || null },
   "page-title-present": { run: require("./checks/automatic/page-title-present.js").runInPage, applicability: require("./checks/automatic/page-title-present.js").applicability || null },
+  "password-paste-enabled": { run: require("./checks/manual/password-paste-enabled-manual.js").runInPage, applicability: require("./checks/manual/password-paste-enabled-manual.js").applicability || null },
   "presentation-role-conflict": { run: require("./checks/manual/presentation-role-conflict-manual.js").runInPage, applicability: require("./checks/manual/presentation-role-conflict-manual.js").applicability || null },
   "presentational-children-focusable-absent": { run: require("./checks/automatic/presentational-children-focusable-absent.js").runInPage, applicability: require("./checks/automatic/presentational-children-focusable-absent.js").applicability || null },
   "progressbar-name-present": { run: require("./checks/automatic/progressbar-name-present.js").runInPage, applicability: require("./checks/automatic/progressbar-name-present.js").applicability || null },
@@ -8231,6 +8302,12 @@ const I18N = {
     "autocompleteValid_description": "Prüft, ob ein nicht leeres autocomplete-Attribut „on“/„off“ oder eine wohlgeformte Liste von Autofill-Detail-Tokens ist.",
     "autocompleteValid_summary_fail": "Dieser autocomplete-Attributwert ist kein gültiger Autofill-Wert.",
     "autocompleteValid_hint_fail": "Verwenden Sie „on“/„off“ oder eine gültige Liste von Autofill-Tokens (z. B. „shipping street-address“, „cc-number“).",
+    "passwordPasteEnabled_title": "Authentifizierungsfelder dürfen das Einfügen nicht blockieren",
+    "passwordPasteEnabled_description": "Prüft, dass ein Passwort- oder Einmalcode-Feld keinen Inline-Einfügehandler trägt, der den Vorgang abbricht und damit den Passwortmanager oder die Zwischenablage entfernt, auf die sich WCAG 3.3.8 als unterstützenden Mechanismus stützt.",
+    "passwordPasteEnabled_summary_fail": "Dieses Authentifizierungsfeld hat einen Einfügehandler, dessen einzige Wirkung das Abbrechen des Vorgangs ist.",
+    "passwordPasteEnabled_hint_fail": "Prüfen Sie von Hand, ob sich noch einfügen lässt. Ist es blockiert, entfernen Sie den Handler, damit ein Passwortmanager oder – bei einem Einmalcode – die Zwischenablage das Feld ausfüllen kann.",
+    "passwordPasteEnabled_summary_cantTell": "Dieses Authentifizierungsfeld hat einen Einfügehandler; ob er den Vorgang abbricht, ließ sich nicht ermitteln.",
+    "passwordPasteEnabled_hint_cantTell": "Prüfen Sie von Hand, dass sich weiterhin in das Feld einfügen lässt, damit ein Passwortmanager oder die Zwischenablage es ausfüllen kann.",
     "htmlXmlLangMismatch_title": "lang und xml:lang dürfen sich nicht widersprechen",
     "htmlXmlLangMismatch_description": "Prüft, ob die Attribute lang und xml:lang des <html>-Elements dieselbe Hauptsprache deklarieren, wenn beide vorhanden sind.",
     "htmlXmlLangMismatch_summary_fail": "Die Attribute lang („{{lang}}“) und xml:lang („{{xmlLang}}“) deklarieren unterschiedliche Sprachen.",
@@ -8909,6 +8986,12 @@ const I18N = {
     "autocompleteValid_description": "Checks that a non-empty autocomplete attribute is \"on\"/\"off\" or a well-formed autofill detail token list.",
     "autocompleteValid_summary_fail": "This autocomplete attribute value is not a valid autofill value.",
     "autocompleteValid_hint_fail": "Use \"on\"/\"off\", or a valid autofill token list (e.g. \"shipping street-address\", \"cc-number\").",
+    "passwordPasteEnabled_title": "Authentication fields must not block pasting",
+    "passwordPasteEnabled_description": "Checks that a password or one-time-code field carries no inline paste handler that cancels the paste, which would remove the password manager or clipboard that WCAG 3.3.8 relies on as the assisting mechanism.",
+    "passwordPasteEnabled_summary_fail": "This authentication field has a paste handler whose only effect is to cancel the paste.",
+    "passwordPasteEnabled_hint_fail": "Confirm by hand whether pasting still works. If it is blocked, remove the handler so a password manager, or the clipboard for a one-time code, can fill the field.",
+    "passwordPasteEnabled_summary_cantTell": "This authentication field has a paste handler, and whether it cancels pasting could not be determined.",
+    "passwordPasteEnabled_hint_cantTell": "Check by hand that pasting into the field still works, so a password manager or the clipboard can fill it.",
     "htmlXmlLangMismatch_title": "lang and xml:lang must not disagree",
     "htmlXmlLangMismatch_description": "Checks that the <html> element's lang and xml:lang attributes declare the same primary language, when both are present.",
     "htmlXmlLangMismatch_summary_fail": "The lang (\"{{lang}}\") and xml:lang (\"{{xmlLang}}\") attributes declare different languages.",
@@ -9587,6 +9670,12 @@ const I18N = {
     "autocompleteValid_description": "Comprueba que un atributo autocomplete no vacío sea \"on\"/\"off\" o una lista de tokens de detalle de autocompletado bien formada.",
     "autocompleteValid_summary_fail": "Este valor del atributo autocomplete no es un valor de autocompletado válido.",
     "autocompleteValid_hint_fail": "Usar \"on\"/\"off\", o una lista de tokens de autocompletado válida (por ejemplo, \"shipping street-address\", \"cc-number\").",
+    "passwordPasteEnabled_title": "Los campos de autenticación no deben impedir pegar",
+    "passwordPasteEnabled_description": "Comprueba que un campo de contraseña o de código de un solo uso no lleve un controlador de pegado en línea que cancele la acción, lo que eliminaría el gestor de contraseñas o el portapapeles en los que WCAG 3.3.8 se apoya como mecanismo de ayuda.",
+    "passwordPasteEnabled_summary_fail": "Este campo de autenticación tiene un controlador de pegado cuyo único efecto es cancelar la acción.",
+    "passwordPasteEnabled_hint_fail": "Compruebe manualmente si aún se puede pegar. Si está bloqueado, elimine el controlador para que un gestor de contraseñas, o el portapapeles en el caso de un código de un solo uso, pueda rellenar el campo.",
+    "passwordPasteEnabled_summary_cantTell": "Este campo de autenticación tiene un controlador de pegado y no se ha podido determinar si cancela la acción.",
+    "passwordPasteEnabled_hint_cantTell": "Compruebe manualmente que aún se puede pegar en el campo, de modo que un gestor de contraseñas o el portapapeles puedan rellenarlo.",
     "htmlXmlLangMismatch_title": "lang y xml:lang no deben estar en desacuerdo",
     "htmlXmlLangMismatch_description": "Comprueba que los atributos lang y xml:lang del elemento <html> declaren el mismo idioma principal, cuando ambos están presentes.",
     "htmlXmlLangMismatch_summary_fail": "Los atributos lang (\"{{lang}}\") y xml:lang (\"{{xmlLang}}\") declaran idiomas diferentes.",
@@ -10265,6 +10354,12 @@ const I18N = {
     "autocompleteValid_description": "Vérifie qu’un attribut autocomplete non vide vaut « on »/« off » ou une liste de jetons d’auto-remplissage bien formée.",
     "autocompleteValid_summary_fail": "Cette valeur d’attribut autocomplete n’est pas une valeur d’auto-remplissage valide.",
     "autocompleteValid_hint_fail": "Utilisez « on »/« off », ou une liste de jetons d’auto-remplissage valide (ex. « shipping street-address », « cc-number »).",
+    "passwordPasteEnabled_title": "Les champs d'authentification ne doivent pas empêcher le collage",
+    "passwordPasteEnabled_description": "Vérifie qu'un champ de mot de passe ou de code à usage unique ne porte pas de gestionnaire de collage en ligne qui annule l'action, ce qui supprimerait le gestionnaire de mots de passe ou le presse-papiers sur lesquels WCAG 3.3.8 s'appuie comme mécanisme d'aide.",
+    "passwordPasteEnabled_summary_fail": "Ce champ d'authentification comporte un gestionnaire de collage dont le seul effet est d'annuler l'action.",
+    "passwordPasteEnabled_hint_fail": "Vérifiez manuellement si le collage fonctionne encore. S'il est bloqué, supprimez le gestionnaire pour qu'un gestionnaire de mots de passe, ou le presse-papiers pour un code à usage unique, puisse remplir le champ.",
+    "passwordPasteEnabled_summary_cantTell": "Ce champ d'authentification comporte un gestionnaire de collage et il n'a pas été possible de déterminer s'il annule l'action.",
+    "passwordPasteEnabled_hint_cantTell": "Vérifiez manuellement que le collage fonctionne toujours dans le champ, afin qu'un gestionnaire de mots de passe ou le presse-papiers puisse le remplir.",
     "htmlXmlLangMismatch_title": "lang et xml:lang ne doivent pas se contredire",
     "htmlXmlLangMismatch_description": "Vérifie que les attributs lang et xml:lang de l’élément <html> déclarent la même langue principale, lorsque les deux sont présents.",
     "htmlXmlLangMismatch_summary_fail": "Les attributs lang (« {{lang}} ») et xml:lang (« {{xmlLang}} ») déclarent des langues différentes.",
@@ -25169,6 +25264,62 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "mappings": null
   },
   {
+    "ruleId": "password-paste-enabled",
+    "title": "Authentication fields must not block pasting",
+    "description": "Checks that a password or one-time-code field carries no inline paste handler that cancels the paste, which would remove the password manager or clipboard that WCAG 3.3.8 relies on as the assisting mechanism.",
+    "i18n": {
+      "titleKey": "passwordPasteEnabled_title",
+      "descriptionKey": "passwordPasteEnabled_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag22aa",
+      "wcag338",
+      "forms",
+      "authentication",
+      "atomic",
+      "manual",
+      "acc",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "3.3.8"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "3.3.8",
+        "title": "Accessible Authentication (Minimum)",
+        "conformanceLevel": "AA"
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "medium",
+    "type": "manual",
+    "coverage": {
+      "facetsBySc": {
+        "3.3.8": [
+          "authentication-paste-not-blocked"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "understandable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
     "ruleId": "presentation-role-conflict",
     "title": "Presentational role must not conflict with a global ARIA attribute or focusability",
     "description": "Checks that role=\"presentation\"/\"none\" (including an <img alt=\"\"> implicit presentation role) is not combined with a global ARIA attribute (aria-label, aria-hidden, aria-describedby, ...) or focusability (tabindex/native).",
@@ -27288,6 +27439,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "3.3.2"
       ],
       "level": "A"
+    }
+  },
+  {
+    "id": "wcag-3.3.8-accessible-authentication-minimum",
+    "checksIds": [
+      "password-paste-enabled"
+    ],
+    "meta": {
+      "title": "Accessible Authentication (Minimum)",
+      "description": "Rollup of checks ensuring an authentication step leaves the mechanisms that help a user through it in place.",
+      "wcagSc": [
+        "3.3.8"
+      ],
+      "level": "AA"
     }
   }
 ];
@@ -46034,6 +46199,187 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 }), applicability: (function applicability(ctx) {
   return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
 }) },
+    "password-paste-enabled": { run: (function runInPage(ctx) {
+  const { helpers, rule } = ctx;
+
+  // Declared inside runInPage; see scripts/build-core.js header
+  // ("runInPage MUST be self-contained").
+  const AUTH_AUTOCOMPLETE_TOKENS = ['current-password', 'new-password', 'one-time-code'];
+
+  function normalizeWs(s) {
+    return String(s || '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function autocompleteTokens(el) {
+    return normalizeWs(el.getAttribute && el.getAttribute('autocomplete'))
+      .toLowerCase()
+      .split(' ')
+      .filter(Boolean);
+  }
+
+  // A field an authentication step reads: a password input, or any control
+  // whose autocomplete token names an authentication secret. The autocomplete
+  // route matters for one-time codes, which are ordinary text inputs.
+  //
+  // type="password" is a masking control, not only an authentication one: a
+  // card security code is routinely masked the same way. An explicit
+  // autocomplete purpose that is not an authentication one says so, and takes
+  // the field back out of scope.
+  function isAuthField(el) {
+    const tag = el.tagName ? el.tagName.toLowerCase() : '';
+    if (tag !== 'input' && tag !== 'textarea') return false;
+
+    const tokens = autocompleteTokens(el);
+    if (AUTH_AUTOCOMPLETE_TOKENS.some((t) => tokens.includes(t))) return true;
+
+    const type = normalizeWs(el.getAttribute && el.getAttribute('type')).toLowerCase();
+    if (tag !== 'input' || type !== 'password') return false;
+
+    const declaresOtherPurpose = tokens.some(
+      (t) => t !== 'on' && t !== 'off' && !AUTH_AUTOCOMPLETE_TOKENS.includes(t)
+    );
+    return !declaresOtherPurpose;
+  }
+
+  // A field that takes no input at all cannot be pasted into either, so a
+  // paste handler on it blocks nothing.
+  function acceptsInput(el) {
+    if (el.hasAttribute && (el.hasAttribute('disabled') || el.hasAttribute('readonly'))) {
+      return false;
+    }
+    return true;
+  }
+
+  // Classifies an inline handler as 'cancelOnly', 'opaque' or 'none'.
+  //
+  // Cancelling is not the same as blocking. Replacing the default paste is
+  // how a split one-time-code field distributes the digits across its boxes,
+  // and how a password field strips stray whitespace from what was pasted --
+  // both call preventDefault and then insert the text themselves, which
+  // helps the user rather than stopping them. So a handler counts as
+  // blocking only when cancelling is the whole of what it does. Anything
+  // further -- a call, an assignment, a condition -- may well be putting the
+  // text back, and the markup does not say, so it reports cantTell.
+  function classifyHandler(source) {
+    const src = String(source || '').trim();
+    if (!src) return 'none';
+
+    const CANCEL = [
+      /\breturn\s+false\b/gi,
+      /\breturn\s*!1\b/gi,
+      /\bpreventDefault\s*\(\s*\)/gi,
+      /\breturnValue\s*=\s*(?:false|!1)\b/gi
+    ];
+    // Says "yes, paste" outright, so it blocks nothing.
+    const ALLOW = [/\breturn\s+true\b/gi, /\breturn\s*!0\b/gi];
+    // Neither cancels nor re-inserts.
+    const NEUTRAL = [/\bstop(?:Immediate)?Propagation\s*\(\s*\)/gi, /\breturn\b/gi];
+    // What is left of an object reference once its method call is removed.
+    const REFS = /\b(?:window|document|this|event|evt|ev|e|arguments\[0\])\b/gi;
+    const ONLY_PUNCTUATION = /^[\s;.,()[\]{}]*$/;
+
+    let rest = src;
+    let sawCancel = false;
+    for (const re of CANCEL) {
+      const next = rest.replace(re, ' ');
+      if (next !== rest) sawCancel = true;
+      rest = next;
+    }
+
+    if (!sawCancel) {
+      for (const re of ALLOW) rest = rest.replace(re, ' ');
+      for (const re of NEUTRAL) rest = rest.replace(re, ' ');
+      rest = rest.replace(REFS, ' ');
+      return ONLY_PUNCTUATION.test(rest) ? 'none' : 'opaque';
+    }
+
+    for (const re of NEUTRAL) rest = rest.replace(re, ' ');
+    rest = rest.replace(REFS, ' ');
+    // Anything left beyond punctuation is the handler doing more than cancel.
+    return ONLY_PUNCTUATION.test(rest) ? 'cancelOnly' : 'opaque';
+  }
+
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart('input, textarea')
+    : helpers.queryAll('input, textarea');
+
+  const cancelling = [];
+  const undetermined = [];
+
+  for (const el of nodes) {
+    if (!el || !el.getAttribute) continue;
+    if (!isAuthField(el)) continue;
+
+    if (!acceptsInput(el)) continue;
+
+    const eligResult = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el, ctx) : true;
+    const eligible =
+      typeof eligResult === 'boolean' ? eligResult : !!(eligResult && eligResult.eligible);
+    if (!eligible) continue;
+
+    const handler = el.getAttribute('onpaste');
+    if (handler === null) continue;
+
+    const verdict = classifyHandler(handler);
+    if (verdict === 'none') continue;
+
+    const eligInfo = helpers.getEligibilityInfo
+      ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
+      : { targetSet: 'acc', accEligible: null, reasons: [] };
+
+    if (verdict === 'cancelOnly') {
+      cancelling.push(
+        helpers.reportOccurrence(el, {
+          summary:
+            'This authentication field has a paste handler whose only effect is to cancel the paste.',
+          hint: 'Confirm by hand whether pasting still works. If it is blocked, remove the handler so a password manager, or the clipboard for a one-time code, can fill the field.',
+          i18n: {
+            summaryKey: 'passwordPasteEnabled_summary_fail',
+            hintKey: 'passwordPasteEnabled_hint_fail',
+            params: {}
+          },
+          data: {
+            visibilityFilter: eligInfo,
+            details: { reasonCode: 'PASTE_CANCELLED', handler: normalizeWs(handler) }
+          }
+        })
+      );
+      continue;
+    }
+
+    // An inline handler that delegates: whether it cancels lives in code the
+    // markup does not carry.
+    undetermined.push(
+      helpers.reportOccurrence(el, {
+        summary:
+          'This authentication field has a paste handler, and whether it cancels pasting could not be determined.',
+        hint: 'Check by hand that pasting into the field still works, so a password manager or the clipboard can fill it.',
+        i18n: {
+          summaryKey: 'passwordPasteEnabled_summary_cantTell',
+          hintKey: 'passwordPasteEnabled_hint_cantTell',
+          params: {}
+        },
+        data: {
+          visibilityFilter: eligInfo,
+          details: { reasonCode: 'PASTE_HANDLER_OPAQUE', handler: normalizeWs(handler) }
+        }
+      })
+    );
+  }
+
+  const occurrences = cancelling.concat(undetermined);
+  if (!occurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'cantTell',
+    severity: rule.defaultSeverity || 'serious',
+    occurrences
+  };
+}), applicability: null },
     "presentation-role-conflict": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
@@ -51939,6 +52285,12 @@ const I18N = {
     "autocompleteValid_description": "Prüft, ob ein nicht leeres autocomplete-Attribut „on“/„off“ oder eine wohlgeformte Liste von Autofill-Detail-Tokens ist.",
     "autocompleteValid_summary_fail": "Dieser autocomplete-Attributwert ist kein gültiger Autofill-Wert.",
     "autocompleteValid_hint_fail": "Verwenden Sie „on“/„off“ oder eine gültige Liste von Autofill-Tokens (z. B. „shipping street-address“, „cc-number“).",
+    "passwordPasteEnabled_title": "Authentifizierungsfelder dürfen das Einfügen nicht blockieren",
+    "passwordPasteEnabled_description": "Prüft, dass ein Passwort- oder Einmalcode-Feld keinen Inline-Einfügehandler trägt, der den Vorgang abbricht und damit den Passwortmanager oder die Zwischenablage entfernt, auf die sich WCAG 3.3.8 als unterstützenden Mechanismus stützt.",
+    "passwordPasteEnabled_summary_fail": "Dieses Authentifizierungsfeld hat einen Einfügehandler, dessen einzige Wirkung das Abbrechen des Vorgangs ist.",
+    "passwordPasteEnabled_hint_fail": "Prüfen Sie von Hand, ob sich noch einfügen lässt. Ist es blockiert, entfernen Sie den Handler, damit ein Passwortmanager oder – bei einem Einmalcode – die Zwischenablage das Feld ausfüllen kann.",
+    "passwordPasteEnabled_summary_cantTell": "Dieses Authentifizierungsfeld hat einen Einfügehandler; ob er den Vorgang abbricht, ließ sich nicht ermitteln.",
+    "passwordPasteEnabled_hint_cantTell": "Prüfen Sie von Hand, dass sich weiterhin in das Feld einfügen lässt, damit ein Passwortmanager oder die Zwischenablage es ausfüllen kann.",
     "htmlXmlLangMismatch_title": "lang und xml:lang dürfen sich nicht widersprechen",
     "htmlXmlLangMismatch_description": "Prüft, ob die Attribute lang und xml:lang des <html>-Elements dieselbe Hauptsprache deklarieren, wenn beide vorhanden sind.",
     "htmlXmlLangMismatch_summary_fail": "Die Attribute lang („{{lang}}“) und xml:lang („{{xmlLang}}“) deklarieren unterschiedliche Sprachen.",
@@ -52617,6 +52969,12 @@ const I18N = {
     "autocompleteValid_description": "Checks that a non-empty autocomplete attribute is \"on\"/\"off\" or a well-formed autofill detail token list.",
     "autocompleteValid_summary_fail": "This autocomplete attribute value is not a valid autofill value.",
     "autocompleteValid_hint_fail": "Use \"on\"/\"off\", or a valid autofill token list (e.g. \"shipping street-address\", \"cc-number\").",
+    "passwordPasteEnabled_title": "Authentication fields must not block pasting",
+    "passwordPasteEnabled_description": "Checks that a password or one-time-code field carries no inline paste handler that cancels the paste, which would remove the password manager or clipboard that WCAG 3.3.8 relies on as the assisting mechanism.",
+    "passwordPasteEnabled_summary_fail": "This authentication field has a paste handler whose only effect is to cancel the paste.",
+    "passwordPasteEnabled_hint_fail": "Confirm by hand whether pasting still works. If it is blocked, remove the handler so a password manager, or the clipboard for a one-time code, can fill the field.",
+    "passwordPasteEnabled_summary_cantTell": "This authentication field has a paste handler, and whether it cancels pasting could not be determined.",
+    "passwordPasteEnabled_hint_cantTell": "Check by hand that pasting into the field still works, so a password manager or the clipboard can fill it.",
     "htmlXmlLangMismatch_title": "lang and xml:lang must not disagree",
     "htmlXmlLangMismatch_description": "Checks that the <html> element's lang and xml:lang attributes declare the same primary language, when both are present.",
     "htmlXmlLangMismatch_summary_fail": "The lang (\"{{lang}}\") and xml:lang (\"{{xmlLang}}\") attributes declare different languages.",
@@ -53295,6 +53653,12 @@ const I18N = {
     "autocompleteValid_description": "Comprueba que un atributo autocomplete no vacío sea \"on\"/\"off\" o una lista de tokens de detalle de autocompletado bien formada.",
     "autocompleteValid_summary_fail": "Este valor del atributo autocomplete no es un valor de autocompletado válido.",
     "autocompleteValid_hint_fail": "Usar \"on\"/\"off\", o una lista de tokens de autocompletado válida (por ejemplo, \"shipping street-address\", \"cc-number\").",
+    "passwordPasteEnabled_title": "Los campos de autenticación no deben impedir pegar",
+    "passwordPasteEnabled_description": "Comprueba que un campo de contraseña o de código de un solo uso no lleve un controlador de pegado en línea que cancele la acción, lo que eliminaría el gestor de contraseñas o el portapapeles en los que WCAG 3.3.8 se apoya como mecanismo de ayuda.",
+    "passwordPasteEnabled_summary_fail": "Este campo de autenticación tiene un controlador de pegado cuyo único efecto es cancelar la acción.",
+    "passwordPasteEnabled_hint_fail": "Compruebe manualmente si aún se puede pegar. Si está bloqueado, elimine el controlador para que un gestor de contraseñas, o el portapapeles en el caso de un código de un solo uso, pueda rellenar el campo.",
+    "passwordPasteEnabled_summary_cantTell": "Este campo de autenticación tiene un controlador de pegado y no se ha podido determinar si cancela la acción.",
+    "passwordPasteEnabled_hint_cantTell": "Compruebe manualmente que aún se puede pegar en el campo, de modo que un gestor de contraseñas o el portapapeles puedan rellenarlo.",
     "htmlXmlLangMismatch_title": "lang y xml:lang no deben estar en desacuerdo",
     "htmlXmlLangMismatch_description": "Comprueba que los atributos lang y xml:lang del elemento <html> declaren el mismo idioma principal, cuando ambos están presentes.",
     "htmlXmlLangMismatch_summary_fail": "Los atributos lang (\"{{lang}}\") y xml:lang (\"{{xmlLang}}\") declaran idiomas diferentes.",
@@ -53973,6 +54337,12 @@ const I18N = {
     "autocompleteValid_description": "Vérifie qu’un attribut autocomplete non vide vaut « on »/« off » ou une liste de jetons d’auto-remplissage bien formée.",
     "autocompleteValid_summary_fail": "Cette valeur d’attribut autocomplete n’est pas une valeur d’auto-remplissage valide.",
     "autocompleteValid_hint_fail": "Utilisez « on »/« off », ou une liste de jetons d’auto-remplissage valide (ex. « shipping street-address », « cc-number »).",
+    "passwordPasteEnabled_title": "Les champs d'authentification ne doivent pas empêcher le collage",
+    "passwordPasteEnabled_description": "Vérifie qu'un champ de mot de passe ou de code à usage unique ne porte pas de gestionnaire de collage en ligne qui annule l'action, ce qui supprimerait le gestionnaire de mots de passe ou le presse-papiers sur lesquels WCAG 3.3.8 s'appuie comme mécanisme d'aide.",
+    "passwordPasteEnabled_summary_fail": "Ce champ d'authentification comporte un gestionnaire de collage dont le seul effet est d'annuler l'action.",
+    "passwordPasteEnabled_hint_fail": "Vérifiez manuellement si le collage fonctionne encore. S'il est bloqué, supprimez le gestionnaire pour qu'un gestionnaire de mots de passe, ou le presse-papiers pour un code à usage unique, puisse remplir le champ.",
+    "passwordPasteEnabled_summary_cantTell": "Ce champ d'authentification comporte un gestionnaire de collage et il n'a pas été possible de déterminer s'il annule l'action.",
+    "passwordPasteEnabled_hint_cantTell": "Vérifiez manuellement que le collage fonctionne toujours dans le champ, afin qu'un gestionnaire de mots de passe ou le presse-papiers puisse le remplir.",
     "htmlXmlLangMismatch_title": "lang et xml:lang ne doivent pas se contredire",
     "htmlXmlLangMismatch_description": "Vérifie que les attributs lang et xml:lang de l’élément <html> déclarent la même langue principale, lorsque les deux sont présents.",
     "htmlXmlLangMismatch_summary_fail": "Les attributs lang (« {{lang}} ») et xml:lang (« {{xmlLang}} ») déclarent des langues différentes.",

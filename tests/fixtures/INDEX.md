@@ -4,13 +4,13 @@ Every implemented rule should have a `tests/fixtures/<slug>-all-scenarios.html` 
 
 ## Summary
 
-Total rules: **131**. With fixture: **131**. Without fixture: **0**.
+Total rules: **132**. With fixture: **132**. Without fixture: **0**.
 
 ## Rules WITHOUT a fixture (0)
 
 None — every rule has a fixture.
 
-## Rules WITH a fixture (131)
+## Rules WITH a fixture (132)
 
 | Rule ID | Type | Fixture | Cases | PASS | FAIL | CANTTELL | OTHER |
 |---|---|---|---:|---:|---:|---:|---:|
@@ -115,6 +115,7 @@ None — every rule has a fixture.
 | page-has-heading-one | manual | `tests/fixtures/page-has-heading-one-all-scenarios.html` | 1 | 0 | 0 | 1 | 0 |
 | page-title-patterns | manual | `tests/fixtures/page-title-patterns-all-scenarios.html` | 1 | 0 | 0 | 1 | 0 |
 | page-title-present | automatic | `tests/fixtures/page-title-present-all-scenarios.html` | 1 | 0 | 1 | 0 | 0 |
+| password-paste-enabled | manual | `tests/fixtures/password-paste-enabled-all-scenarios.html` | 14 | 0 | 0 | 8 | 6 |
 | presentation-role-conflict | manual | `tests/fixtures/presentation-role-conflict-all-scenarios.html` | 15 | 0 | 0 | 8 | 7 |
 | presentational-children-focusable-absent | automatic | `tests/fixtures/presentational-children-focusable-absent-all-scenarios.html` | 14 | 6 | 6 | 0 | 2 |
 | progressbar-name-present | automatic | `tests/fixtures/progressbar-name-present-all-scenarios.html` | 8 | 3 | 4 | 0 | 1 |
