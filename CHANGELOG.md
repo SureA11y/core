@@ -7,6 +7,9 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 ### Added
 - `docs/RULE_HELPERS.md`: reference for every function on `ctx.helpers` available to a rule's `runInPage` — around 35 flat helpers plus the `contrast.*`/`aria.*` namespaces. `docs/RULE_AUTHORING.md` §6 previously named only a dozen of them inline; the rest were discoverable only by reading `src/core/dom-helpers.js` directly. §6 now points here instead.
 
+### Added
+- `@surea11y/core/i18n/<locale>` resolves each locale side file by path, alongside the existing `@surea11y/core/browser`. A binding that injects the standalone bundle into a page needs the matching dictionary to honour `engineOptions.locale`, and the exports map previously put both out of reach. An unshipped locale fails to resolve rather than resolving to nothing, so a caller can tell the difference and fall back. See [`docs/BINDING_AUTHORS_GUIDE.md`](./docs/BINDING_AUTHORS_GUIDE.md).
+
 ### Changed
 - The standalone browser bundle and its locale side files are minified. `surea11y.browser.js` goes from 1430 KB to 706 KB, and from 294 KB to 165 KB over the wire. Most of a page's download was the 130 inlined rule bodies, and most of those were their own comments. The global, the API and the result are unchanged; the readable form of every rule remains its own module under `src/checks`.
 - `runa11yCoreAcrossFrames` scans its own frame through `runa11yCoreInPage` instead of carrying a second copy of the rule catalog and the shared runner block. The generated `src/core.js` drops from 4.34 MB to 2.67 MB, and the published package from 7.7 MB to 5.3 MB unpacked. Both functions stay usable the bundler-free way they always were — raw source injected into a page — since `runa11yCoreInPage` is itself self-contained and free of `require()`.
