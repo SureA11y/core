@@ -1337,7 +1337,13 @@ function createDomHelpers(opts) {
   let __labelAssociationCache = null;
   let __labelMethodCache = null;
   let __labelElementsByForIdIndexByDoc = null; // WeakMap<Document, Map<string, Element[]>> (label[for] by id -> real elements, see getAssociatedLabelElements)
-  let __accessibleNameCacheByKey = null; // Map<string, WeakMap<Element, Info>>
+  // Map<string, WeakMap<Element, Info>>. Only names computed at
+  // __nameComputationDepth 0 are stored: a name computed deeper is the value
+  // that traversal saw, not the element's own. Resolving an aria-labelledby
+  // that points back at an ancestor re-enters the element, the cycle guard
+  // returns '' for that inner visit, and caching it would hand '' to whoever
+  // asked next -- so which rule ran first decided the answer.
+  let __accessibleNameCacheByKey = null;
   let __accessibleDescCacheByKey = null; // Map<string, WeakMap<Element, Info>>
 
   try {
@@ -2938,7 +2944,7 @@ function createDomHelpers(opts) {
         flags: flags.concat(aria.flags || [])
       };
       try {
-        if (__accessibleNameCacheByKey) {
+        if (__accessibleNameCacheByKey && __nameComputationDepth === 0) {
           const wm =
             __accessibleNameCacheByKey.get(key) ||
             (__accessibleNameCacheByKey.set(key, new WeakMap()),
@@ -2984,7 +2990,7 @@ function createDomHelpers(opts) {
         if (info.present && info.value) {
           const out = { present: true, value: info.value, mechanism: 'label', flags };
           try {
-            if (__accessibleNameCacheByKey) {
+            if (__accessibleNameCacheByKey && __nameComputationDepth === 0) {
               const wm =
                 __accessibleNameCacheByKey.get(key) ||
                 (__accessibleNameCacheByKey.set(key, new WeakMap()),
@@ -3024,7 +3030,7 @@ function createDomHelpers(opts) {
       if (altText) {
         const out = { present: true, value: altText, mechanism: 'alt', flags };
         try {
-          if (__accessibleNameCacheByKey) {
+          if (__accessibleNameCacheByKey && __nameComputationDepth === 0) {
             const wm =
               __accessibleNameCacheByKey.get(key) ||
               (__accessibleNameCacheByKey.set(key, new WeakMap()),
@@ -3055,7 +3061,7 @@ function createDomHelpers(opts) {
       flags.push('title-used');
       const out = { present: true, value: title, mechanism: 'title', flags };
       try {
-        if (__accessibleNameCacheByKey) {
+        if (__accessibleNameCacheByKey && __nameComputationDepth === 0) {
           const wm =
             __accessibleNameCacheByKey.get(key) ||
             (__accessibleNameCacheByKey.set(key, new WeakMap()),
@@ -3074,7 +3080,7 @@ function createDomHelpers(opts) {
 
     const out = { present: false, value: '', mechanism: 'none', flags };
     try {
-      if (__accessibleNameCacheByKey) {
+      if (__accessibleNameCacheByKey && __nameComputationDepth === 0) {
         const wm =
           __accessibleNameCacheByKey.get(key) ||
           (__accessibleNameCacheByKey.set(key, new WeakMap()), __accessibleNameCacheByKey.get(key));
