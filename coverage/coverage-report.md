@@ -5,7 +5,7 @@ Facets: `src/coverage/wcag-facets.js`
 
 ## Summary
 
-Total rules (loaded without error): **130**
+Total rules (loaded without error): **131**
 
 ### Coverage by WCAG Level (Version-agnostic, cumulative)
 
@@ -634,6 +634,7 @@ Automation mix: **full 40, partial 0, manual 2**.
 | image-redundant-alt | manual | Image alt text must not duplicate adjacent visible text | src/checks/manual/image-redundant-alt-manual.js |  |  |
 | label-title-only | manual | Form controls should not use title as their only label | src/checks/manual/label-title-only-manual.js |  |  |
 | landmark-banner-is-top-level | manual | Banner landmark must be top-level | src/checks/manual/landmark-banner-is-top-level-manual.js |  |  |
+| landmark-complementary-is-top-level | manual | Complementary landmark must be top-level | src/checks/manual/landmark-complementary-is-top-level-manual.js |  |  |
 | landmark-contentinfo-is-top-level | manual | Contentinfo landmark must be top-level | src/checks/manual/landmark-contentinfo-is-top-level-manual.js |  |  |
 | landmark-main-is-top-level | manual | Main landmark must be top-level | src/checks/manual/landmark-main-is-top-level-manual.js |  |  |
 | landmark-no-duplicate-banner | manual | Page must not have more than one banner landmark | src/checks/manual/landmark-no-duplicate-banner-manual.js |  |  |
@@ -1252,6 +1253,7 @@ Automation mix: **full 40, partial 0, manual 2**.
 | image-redundant-alt | manual | Image alt text must not duplicate adjacent visible text | src/checks/manual/image-redundant-alt-manual.js |  |  |
 | label-title-only | manual | Form controls should not use title as their only label | src/checks/manual/label-title-only-manual.js |  |  |
 | landmark-banner-is-top-level | manual | Banner landmark must be top-level | src/checks/manual/landmark-banner-is-top-level-manual.js |  |  |
+| landmark-complementary-is-top-level | manual | Complementary landmark must be top-level | src/checks/manual/landmark-complementary-is-top-level-manual.js |  |  |
 | landmark-contentinfo-is-top-level | manual | Contentinfo landmark must be top-level | src/checks/manual/landmark-contentinfo-is-top-level-manual.js |  |  |
 | landmark-main-is-top-level | manual | Main landmark must be top-level | src/checks/manual/landmark-main-is-top-level-manual.js |  |  |
 | landmark-no-duplicate-banner | manual | Page must not have more than one banner landmark | src/checks/manual/landmark-no-duplicate-banner-manual.js |  |  |

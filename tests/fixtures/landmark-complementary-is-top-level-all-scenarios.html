@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>landmark-complementary-is-top-level — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>landmark-complementary-is-top-level</code></h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>lctl_case_NN</code>.
+  </p>
+
+  <h2>A. Complementary landmarks that are already top-level</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — NEUTRAL: top-level &lt;aside&gt;, not nested in another landmark</div>
+    <aside id="lctl_case_01">Related links</aside>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — NEUTRAL: top-level explicit role="complementary"</div>
+    <div role="complementary" id="lctl_case_02">Related links</div>
+  </div>
+
+  <h2>B. Nested inside another landmark (CANTTELL)</h2>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — CANTTELL: explicit role="complementary" inside a &lt;nav&gt;</div>
+    <nav aria-label="Section navigation">
+      <div role="complementary" id="lctl_case_03">Related links</div>
+    </nav>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — CANTTELL: named &lt;aside&gt; inside &lt;main&gt; keeps its complementary role, so it really is a nested landmark</div>
+    <main>
+      <aside aria-label="Further reading" id="lctl_case_04">Related links</aside>
+    </main>
+  </div>
+
+  <h2>C. No complementary role to report</h2>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — NEUTRAL: unnamed &lt;aside&gt; inside sectioning content has no complementary role per HTML-AAM, so there is no landmark to call nested</div>
+    <article>
+      <aside id="lctl_case_05">Pull quote</aside>
+    </article>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — NEUTRAL: &lt;aside&gt; whose role is overridden away from complementary</div>
+    <nav aria-label="Overridden">
+      <aside role="note" id="lctl_case_06">Not a landmark</aside>
+    </nav>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — INELIGIBLE: nested complementary hidden from the accessibility tree, so there is no landmark AT navigates</div>
+    <nav aria-label="Hidden host">
+      <aside aria-label="Hidden aside" aria-hidden="true" id="lctl_case_07">Related links</aside>
+    </nav>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

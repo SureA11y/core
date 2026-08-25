@@ -2,7 +2,7 @@
   "rulesDir": "src/checks",
   "facetsFile": "src/coverage/wcag-facets.js",
   "summary": {
-    "totalRules": 130,
+    "totalRules": 131,
     "wcagTagCoverage": {
       "byVersion": {
         "2.0": {
@@ -4959,6 +4959,30 @@
       "wcagScInformative": [],
       "type": "manual",
       "title": "Banner landmark must be top-level",
+      "tags": [
+        "best-practice",
+        "landmarks",
+        "structure",
+        "atomic",
+        "manual"
+      ],
+      "wcagTagSignals": {
+        "parsed": [],
+        "versions": [],
+        "cumulativeLevelsByVersion": {},
+        "cumulativeLevelsAny": []
+      },
+      "error": null,
+      "coverage": {}
+    },
+    {
+      "file": "src/checks/manual/landmark-complementary-is-top-level-manual.js",
+      "ruleId": "landmark-complementary-is-top-level",
+      "wcagScNormative": [],
+      "wcagScAll": [],
+      "wcagScInformative": [],
+      "type": "manual",
+      "title": "Complementary landmark must be top-level",
       "tags": [
         "best-practice",
         "landmarks",

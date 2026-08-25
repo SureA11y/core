@@ -2,7 +2,7 @@
 
 Generated from the compiled engine's own catalog (`getChecksCatalog()`/`getRulesCatalog()`) and each rule's source header. Run `node scripts/generate-rule-catalog.js` after `npm run build` to regenerate this file whenever rules change. Do not hand-edit.
 
-**130 rules total: 78 automatic (WCAG-normative, can return `fail`), 52 manual (advisory/judgment-required, capped at `cantTell`). 106 carry at least one formal WCAG Success Criterion mapping.**
+**131 rules total: 78 automatic (WCAG-normative, can return `fail`), 53 manual (advisory/judgment-required, capped at `cantTell`). 106 carry at least one formal WCAG Success Criterion mapping.**
 
 The tables below are an index; [rule reference](#rule-reference) carries each rule's description, what it applies to and what it expects.
 
@@ -91,7 +91,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`valid-lang`](#valid-lang) | Element lang attribute must be syntactically valid | 3.1.2 | AA | high | moderate |
 | [`video-poster-text-alternative-present`](#video-poster-text-alternative-present) | &lt;video&gt; poster must have a text alternative | 1.1.1 | A | medium | serious |
 
-## Manual rules (52), advisory, capped at `cantTell`
+## Manual rules (53), advisory, capped at `cantTell`
 
 | Rule ID | Title | WCAG SC | Level | Confidence | Default severity |
 |---|---|---|---|---|---|
@@ -120,6 +120,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`input-image-alt-quality`](#input-image-alt-quality) | &lt;input type="image"&gt; alt text must be appropriate (manual review) | 1.1.1 | A | medium | minor |
 | [`label-title-only`](#label-title-only) | Form controls should not use title as their only label | — | — | medium | minor |
 | [`landmark-banner-is-top-level`](#landmark-banner-is-top-level) | Banner landmark must be top-level | — | — | medium | minor |
+| [`landmark-complementary-is-top-level`](#landmark-complementary-is-top-level) | Complementary landmark must be top-level | — | — | medium | minor |
 | [`landmark-contentinfo-is-top-level`](#landmark-contentinfo-is-top-level) | Contentinfo landmark must be top-level | — | — | medium | minor |
 | [`landmark-main-is-top-level`](#landmark-main-is-top-level) | Main landmark must be top-level | — | — | medium | minor |
 | [`landmark-no-duplicate-banner`](#landmark-no-duplicate-banner) | Page must not have more than one banner landmark | — | — | medium | minor |
@@ -1075,6 +1076,18 @@ Checks that the banner landmark (role="banner" or a non-nested &lt;header&gt;) i
 **Applies to.** Applies whenever the page contains at least one banner candidate: explicit role="banner", OR a &lt;header&gt; with NO role attribute at all, regardless of nesting (see implementation notes on why candidate selection is unconditional on purpose).
 
 **Expectation.** No banner candidate has an ancestor that is itself any landmark region. A banner nested inside another landmark is not a top-level, whole-page banner and confuses landmark-based navigation for assistive technology users.
+
+### `landmark-complementary-is-top-level`
+
+**Complementary landmark must be top-level**
+
+manual · no formal WCAG SC mapping · confidence medium · default severity minor
+
+Checks that the complementary landmark (role="complementary" or an &lt;aside&gt; that keeps its implicit role) is not nested inside another landmark region.
+
+**Applies to.** Applies whenever the page contains at least one element carrying the complementary role: explicit role="complementary", or an &lt;aside&gt; that keeps its implicit role (see implementation notes on when it does not).
+
+**Expectation.** No complementary candidate has an ancestor that is itself a landmark region. Complementary content supports the main content of the page and sits beside it; nested inside another landmark it is a section of that landmark instead, which is not what landmark navigation announces.
 
 ### `landmark-contentinfo-is-top-level`
 
