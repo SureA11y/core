@@ -6,7 +6,11 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const { assertRule } = require('../../helpers/assertRule.js');
-const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
+const {
+  runa11yCoreOnHtml,
+  createDom,
+  runa11yCoreOnDom
+} = require('../../helpers/runDomRulesOnHtml.js');
 
 const RULE_ID = 'css-orientation-lock';
 
@@ -159,4 +163,50 @@ test(`css-orientation-lock: notApplicable when engineOptions.fragment is true, e
     minOccurrences: 0,
     maxOccurrences: 0
   });
+});
+
+test(`${RULE_ID}: cantTell, not pass, when a stylesheet cannot be read`, () => {
+  // A cross-origin stylesheet throws on `.cssRules`; a lock could be declared
+  // inside it, so the scan cannot claim the page is clean.
+  const dom = createDom(
+    `<!doctype html><html><head><style>p { color: #222; }</style></head><body><p>Text.</p></body></html>`
+  );
+
+  const readable = dom.window.document.styleSheets[0];
+  const unreadable = {
+    get cssRules() {
+      throw new dom.window.DOMException('cross-origin', 'SecurityError');
+    }
+  };
+  Object.defineProperty(dom.window.document, 'styleSheets', {
+    configurable: true,
+    get: () => [readable, unreadable]
+  });
+
+  const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'STYLESHEETS_NOT_READABLE');
+  assert.strictEqual(rule.occurrences[0].data.details.unreadableSheetCount, 1);
+});
+
+test(`${RULE_ID}: an unreadable stylesheet does not mask a lock found in a readable one`, () => {
+  const dom = createDom(
+    `<!doctype html><html><head><style>
+      @media (orientation: portrait) { .page { transform: rotate(90deg); } }
+    </style></head><body><div class="page">Text.</div></body></html>`
+  );
+
+  const readable = dom.window.document.styleSheets[0];
+  const unreadable = {
+    get cssRules() {
+      throw new dom.window.DOMException('cross-origin', 'SecurityError');
+    }
+  };
+  Object.defineProperty(dom.window.document, 'styleSheets', {
+    configurable: true,
+    get: () => [readable, unreadable]
+  });
+
+  const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
 });

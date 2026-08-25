@@ -8196,6 +8196,8 @@ const I18N = {
     "avoidInlineSpacing_description": "Prüft, dass ein per !important erzwungener Wert für line-height, letter-spacing oder word-spacing WCAG 1.4.12 bereits erfüllt, sodass dem Nutzer nichts zu überschreiben bleibt.",
     "avoidInlineSpacing_summary_fail": "Der Inline-Stil dieses Elements erzwingt {{properties}} mit !important und blockiert damit Überschreibungen des Textabstands durch den Nutzer.",
     "avoidInlineSpacing_hint_fail": "Entfernen Sie !important von line-height/letter-spacing/word-spacing in Inline-Stilen, damit Nutzer den Textabstand überschreiben können.",
+    "avoidInlineSpacing_summary_cantTell": "Der Inline-Stil dieses Elements setzt {{properties}} mit !important, der Wert ließ sich jedoch nicht auflösen; daher konnte nicht ermittelt werden, ob er die WCAG-Textabstandsmetrik erfüllt.",
+    "avoidInlineSpacing_hint_cantTell": "Prüfen Sie diesen Wert manuell anhand der Metrik (Zeilenhöhe 1,5; Zeichenabstand 0,12em; Wortabstand 0,16em), oder geben Sie ihn in einer Einheit an, die die Engine gegen die berechnete Schriftgröße des Elements auflösen kann.",
     "metaRefreshNoExceptions_title": "Die Seite darf überhaupt keinen Meta-Refresh verwenden (AAA)",
     "metaRefreshNoExceptions_description": "Prüft, ob <meta http-equiv=\"refresh\"> unabhängig von der Verzögerung überhaupt nicht vorhanden ist — das strengere AAA-Gegenstück zur A-Prüfung, die nur positive Verzögerungen betrachtet.",
     "metaRefreshNoExceptions_summary_fail": "Diese Seite verwendet einen Meta-Refresh, eine automatische Kontextänderung, die nicht vom Nutzer ausgelöst wird.",
@@ -8208,6 +8210,8 @@ const I18N = {
     "linkInTextBlock_description": "Prüft, ob ein Link innerhalb eines Textabschnitts durch Unterstreichung, einen Unterschied in Schriftgewicht/-stil oder einen ausreichenden (>= 3:1) Farbkontrastunterschied visuell vom umgebenden Text unterscheidbar ist — nicht allein durch Farbe.",
     "linkInTextBlock_summary_fail": "Dieser Link in einem Textblock unterscheidet sich vom umgebenden Text ausschließlich durch Farbe.",
     "linkInTextBlock_hint_fail": "Fügen Sie eine Unterstreichung oder einen Unterschied in Schriftgewicht/-stil hinzu, oder erhöhen Sie den Farbkontrast zwischen Link und umgebendem Text auf mindestens 3:1.",
+    "linkInTextBlock_summary_cantTell": "Es konnte nicht ermittelt werden, ob sich dieser Link durch andere Mittel als Farbe vom umgebenden Text abhebt.",
+    "linkInTextBlock_hint_cantTell": "Prüfen Sie visuell, ob der Link eine Unterstreichung, einen Unterschied in Schriftstärke oder -stil oder mindestens 3:1 Kontrast zum umgebenden Text aufweist. Wird die Engine in einem echten Browser statt in einem DOM-Emulator ausgeführt, klärt sich das in den meisten Fällen automatisch.",
     "noAutoplayAudio_title": "Automatisch abgespieltes Audio sollte einen Mechanismus zum Pausieren/Stoppen oder zur Lautstärkeregelung bieten",
     "noAutoplayAudio_description": "Markiert <audio>/<video>-Elemente, die unstummgeschaltet automatisch abspielen und kein natives controls-Attribut haben, zur manuellen Überprüfung im Hinblick auf die 3-Sekunden-Ausnahme in WCAG 1.4.2.",
     "noAutoplayAudio_summary_cantTell": "Dieses Element spielt Audio automatisch ab, ohne einen nativen Mechanismus zum Pausieren/Stoppen oder zur Lautstärkeregelung.",
@@ -8241,6 +8245,8 @@ const I18N = {
     "cssOrientationLock_summary_fail": "Eine Media Query „{{mediaText}}“ dreht „{{selectorText}}“ und legt die Seite damit auf eine Ausrichtung fest.",
     "cssOrientationLock_summary_fail_unknownSelector": "Eine \"{{mediaText}}\"-Media-Query dreht ein Element ohne lesbaren Selektor und sperrt die Seite auf eine Ausrichtung.",
     "cssOrientationLock_hint_fail": "Entfernen Sie die rotate()-Transformation aus der Ausrichtungs-Media-Query; lassen Sie die Seite stattdessen natürlich auf die Geräteausrichtung reagieren, anstatt eine visuelle Drehung zu erzwingen.",
+    "cssOrientationLock_summary_cantTell_unreadableSheets": "{{count}} Stylesheet(s) konnten nicht gelesen werden; daher ließ sich nicht ermitteln, ob diese Seite ihre Ausrichtung fixiert.",
+    "cssOrientationLock_hint_cantTell_unreadableSheets": "Stylesheets von fremden Ursprüngen lassen sich aus der Seite heraus nicht inspizieren. Prüfen Sie Drittanbieter-CSS auf eine Orientierungs-Media-Query mit einer rotate()-Transformation, oder wiederholen Sie den Scan mit diesen Stylesheets vom selben Ursprung.",
     "ariaText_title": "Elemente mit role=\"text\" sollten keine fokussierbaren Nachfahren haben",
     "ariaText_description": "Prüft, ob Elemente mit role=\"text\" keinen fokussierbaren Nachfahren enthalten (Link, Schaltfläche, Formularelement, tabindex, iframe oder contenteditable).",
     "ariaText_summary_cantTell": "Dieses Element mit role=\"text\" enthält einen fokussierbaren Nachfahren.",
@@ -8864,6 +8870,8 @@ const I18N = {
     "avoidInlineSpacing_description": "Checks that where inline style forces line-height, letter-spacing or word-spacing with !important, the value already meets WCAG 1.4.12, so the user has nothing left to override.",
     "avoidInlineSpacing_summary_fail": "This element's inline style forces {{properties}} with !important, blocking user text-spacing overrides.",
     "avoidInlineSpacing_hint_fail": "Remove !important from line-height/letter-spacing/word-spacing in inline styles so users can override text spacing.",
+    "avoidInlineSpacing_summary_cantTell": "This element's inline style sets {{properties}} with !important, but the value could not be resolved, so whether it meets the WCAG text-spacing metric could not be determined.",
+    "avoidInlineSpacing_hint_cantTell": "Check this value by hand against the metric (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em), or express it in a unit the engine can resolve against the element’s computed font size.",
     "metaRefreshNoExceptions_title": "Page must not use a meta refresh at all (AAA)",
     "metaRefreshNoExceptions_description": "Checks that <meta http-equiv=\"refresh\"> is not present at all, regardless of delay. This is the stricter AAA-level counterpart of the A-level positive-delay-only check.",
     "metaRefreshNoExceptions_summary_fail": "This page uses a meta refresh, which is an automatic context change not initiated by the user.",
@@ -8876,6 +8884,8 @@ const I18N = {
     "linkInTextBlock_description": "Checks that a link inside a run of text is visually distinguishable from the surrounding text by underline, a font-weight/style difference, or a sufficient (>=3:1) color-contrast difference, not by color alone.",
     "linkInTextBlock_summary_fail": "This link in a block of text relies on color alone to be distinguished from the surrounding text.",
     "linkInTextBlock_hint_fail": "Add an underline, a font-weight/style difference, or increase the color contrast between the link and surrounding text to at least 3:1.",
+    "linkInTextBlock_summary_cantTell": "Whether this link is distinguishable from the surrounding text by non-color means could not be determined.",
+    "linkInTextBlock_hint_cantTell": "Confirm by eye that the link carries an underline, a font-weight or font-style difference, or at least 3:1 contrast against the surrounding text. Running the engine in a real browser rather than a DOM emulator resolves most cases automatically.",
     "noAutoplayAudio_title": "Autoplaying audio should provide a pause/stop or volume-control mechanism",
     "noAutoplayAudio_description": "Flags <audio>/<video> elements that autoplay unmuted with no native controls attribute, for manual review against the 3-second exemption in WCAG 1.4.2.",
     "noAutoplayAudio_summary_cantTell": "This element autoplays audio without a native pause/stop or volume-control mechanism.",
@@ -8909,6 +8919,8 @@ const I18N = {
     "cssOrientationLock_summary_fail": "A \"{{mediaText}}\" media query rotates \"{{selectorText}}\", locking the page to one orientation.",
     "cssOrientationLock_summary_fail_unknownSelector": "A \"{{mediaText}}\" media query rotates an element with no readable selector, locking the page to one orientation.",
     "cssOrientationLock_hint_fail": "Remove the rotate() transform from the orientation media query; let the page respond naturally to device orientation instead of forcing a visual rotation.",
+    "cssOrientationLock_summary_cantTell_unreadableSheets": "{{count}} stylesheet(s) could not be read, so whether this page locks its orientation could not be determined.",
+    "cssOrientationLock_hint_cantTell_unreadableSheets": "Cross-origin stylesheets are not inspectable from the page. Check any third-party CSS for an orientation media query containing a rotate() transform, or re-run the scan with those stylesheets served same-origin.",
     "ariaText_title": "role=\"text\" elements should have no focusable descendants",
     "ariaText_description": "Checks that elements with role=\"text\" contain no focusable descendant (link, button, form control, tabindex, iframe, or contenteditable).",
     "ariaText_summary_cantTell": "This role=\"text\" element contains a focusable descendant.",
@@ -9532,6 +9544,8 @@ const I18N = {
     "avoidInlineSpacing_description": "Comprueba que cuando el estilo en línea fuerza line-height, letter-spacing o word-spacing con !important, el valor ya cumple WCAG 1.4.12, por lo que al usuario no le queda nada que anular.",
     "avoidInlineSpacing_summary_fail": "El estilo en línea de este elemento fuerza {{properties}} con !important, bloqueando las anulaciones de espaciado de texto del usuario.",
     "avoidInlineSpacing_hint_fail": "Eliminar !important de line-height/letter-spacing/word-spacing en los estilos en línea para que los usuarios puedan anular el espaciado de texto.",
+    "avoidInlineSpacing_summary_cantTell": "El estilo en línea de este elemento define {{properties}} con !important, pero no se ha podido resolver el valor, por lo que no se ha podido determinar si cumple la métrica de espaciado de texto de WCAG.",
+    "avoidInlineSpacing_hint_cantTell": "Compruebe este valor manualmente con la métrica (interlineado 1,5; espaciado entre letras 0,12em; espaciado entre palabras 0,16em), o exprésalo en una unidad que el motor pueda resolver respecto al tamaño de fuente calculado del elemento.",
     "metaRefreshNoExceptions_title": "La página no debe usar un meta refresh en absoluto (AAA)",
     "metaRefreshNoExceptions_description": "Comprueba que <meta http-equiv=\"refresh\"> no esté presente en absoluto, independientemente del retraso; es la contraparte más estricta de nivel AAA de la comprobación de nivel A que solo se aplica a los retrasos positivos.",
     "metaRefreshNoExceptions_summary_fail": "Esta página usa un meta refresh, que es un cambio de contexto automático no iniciado por el usuario.",
@@ -9544,6 +9558,8 @@ const I18N = {
     "linkInTextBlock_description": "Comprueba que un enlace dentro de un bloque de texto se distinga visualmente del texto circundante mediante subrayado, una diferencia de grosor/estilo de fuente, o una diferencia de contraste de color suficiente (>=3:1); no solo por el color.",
     "linkInTextBlock_summary_fail": "Este enlace dentro de un bloque de texto depende únicamente del color para distinguirse del texto circundante.",
     "linkInTextBlock_hint_fail": "Agregar un subrayado, una diferencia de grosor/estilo de fuente, o aumentar el contraste de color entre el enlace y el texto circundante a al menos 3:1.",
+    "linkInTextBlock_summary_cantTell": "No se ha podido determinar si este enlace se distingue del texto circundante por medios que no sean el color.",
+    "linkInTextBlock_hint_cantTell": "Compruebe visualmente que el enlace tiene subrayado, una diferencia de grosor o estilo de fuente, o al menos un contraste de 3:1 con el texto circundante. Ejecutar el motor en un navegador real, en lugar de en un emulador de DOM, resuelve la mayoría de los casos automáticamente.",
     "noAutoplayAudio_title": "El audio en reproducción automática debería proporcionar un mecanismo de pausa/detención o control de volumen",
     "noAutoplayAudio_description": "Señala elementos <audio>/<video> que se reproducen automáticamente sin silenciar y sin un atributo de controles nativo, para su revisión manual frente a la excepción de 3 segundos del criterio de éxito 1.4.2 de WCAG.",
     "noAutoplayAudio_summary_cantTell": "Este elemento reproduce audio automáticamente sin un mecanismo nativo de pausa/detención o control de volumen.",
@@ -9577,6 +9593,8 @@ const I18N = {
     "cssOrientationLock_summary_fail": "Una media query \"{{mediaText}}\" rota \"{{selectorText}}\", bloqueando la página a una sola orientación.",
     "cssOrientationLock_summary_fail_unknownSelector": "Una consulta de medios \"{{mediaText}}\" rota un elemento sin selector legible y bloquea la página en una sola orientación.",
     "cssOrientationLock_hint_fail": "Eliminar la transformación rotate() de la media query de orientación; dejar que la página responda de forma natural a la orientación del dispositivo en lugar de forzar una rotación visual.",
+    "cssOrientationLock_summary_cantTell_unreadableSheets": "No se han podido leer {{count}} hoja(s) de estilo, por lo que no se ha podido determinar si esta página bloquea su orientación.",
+    "cssOrientationLock_hint_cantTell_unreadableSheets": "Las hojas de estilo de origen cruzado no se pueden inspeccionar desde la página. Revise el CSS de terceros en busca de una consulta de medios de orientación que contenga una transformación rotate(), o repita el análisis sirviendo esas hojas de estilo desde el mismo origen.",
     "ariaText_title": "Los elementos con role=\"text\" no deberían tener descendientes enfocables",
     "ariaText_description": "Comprueba que los elementos con role=\"text\" no contengan ningún descendiente enfocable (enlace, botón, control de formulario, tabindex, iframe o contenteditable).",
     "ariaText_summary_cantTell": "Este elemento con role=\"text\" contiene un descendiente enfocable.",
@@ -10200,6 +10218,8 @@ const I18N = {
     "avoidInlineSpacing_description": "Vérifie que lorsqu’un style en ligne force line-height, letter-spacing ou word-spacing avec !important, la valeur respecte déjà WCAG 1.4.12, ne laissant rien à surcharger à l’utilisateur.",
     "avoidInlineSpacing_summary_fail": "Le style en ligne de cet élément force {{properties}} avec !important, bloquant les surcharges d’espacement de texte par l’utilisateur.",
     "avoidInlineSpacing_hint_fail": "Retirez !important de line-height/letter-spacing/word-spacing dans les styles en ligne afin que les utilisateurs puissent surcharger l’espacement du texte.",
+    "avoidInlineSpacing_summary_cantTell": "Le style en ligne de cet élément définit {{properties}} avec !important, mais la valeur n'a pas pu être résolue ; impossible donc de déterminer si elle respecte la métrique d'espacement du texte WCAG.",
+    "avoidInlineSpacing_hint_cantTell": "Vérifiez cette valeur manuellement par rapport à la métrique (hauteur de ligne 1,5 ; espacement des lettres 0,12em ; espacement des mots 0,16em), ou exprimez-la dans une unité que le moteur peut résoudre par rapport à la taille de police calculée de l'élément.",
     "metaRefreshNoExceptions_title": "La page ne doit utiliser aucun rafraîchissement meta (AAA)",
     "metaRefreshNoExceptions_description": "Vérifie que <meta http-equiv=\"refresh\"> n’est présent en aucun cas, quel que soit le délai — la variante plus stricte, de niveau AAA, de la vérification de niveau A qui ne porte que sur les délais positifs.",
     "metaRefreshNoExceptions_summary_fail": "Cette page utilise un rafraîchissement meta, un changement de contexte automatique non initié par l’utilisateur.",
@@ -10212,6 +10232,8 @@ const I18N = {
     "linkInTextBlock_description": "Vérifie qu’un lien à l’intérieur d’un bloc de texte est visuellement distinguable du texte environnant par un soulignement, une différence de graisse/style de police, ou un contraste de couleur suffisant (>= 3:1) — pas seulement par la couleur.",
     "linkInTextBlock_summary_fail": "Ce lien dans un bloc de texte se distingue du texte environnant uniquement par la couleur.",
     "linkInTextBlock_hint_fail": "Ajoutez un soulignement, une différence de graisse/style de police, ou augmentez le contraste de couleur entre le lien et le texte environnant à au moins 3:1.",
+    "linkInTextBlock_summary_cantTell": "Impossible de déterminer si ce lien se distingue du texte environnant par un moyen autre que la couleur.",
+    "linkInTextBlock_hint_cantTell": "Vérifiez visuellement que le lien porte un soulignement, une différence de graisse ou de style de police, ou un contraste d'au moins 3:1 avec le texte environnant. Exécuter le moteur dans un navigateur réel plutôt que dans un émulateur de DOM résout automatiquement la plupart des cas.",
     "noAutoplayAudio_title": "Un audio en lecture automatique devrait proposer un mécanisme de pause/arrêt ou de contrôle du volume",
     "noAutoplayAudio_description": "Signale les éléments <audio>/<video> qui se lancent automatiquement sans être coupés et sans attribut controls natif, pour une revue manuelle par rapport à l’exemption de 3 secondes de la WCAG 1.4.2.",
     "noAutoplayAudio_summary_cantTell": "Cet élément lit un audio automatiquement sans mécanisme natif de pause/arrêt ou de contrôle du volume.",
@@ -10245,6 +10267,8 @@ const I18N = {
     "cssOrientationLock_summary_fail": "Une media query « {{mediaText}} » fait pivoter « {{selectorText}} », verrouillant la page à une seule orientation.",
     "cssOrientationLock_summary_fail_unknownSelector": "Une media query \"{{mediaText}}\" fait pivoter un élément sans sélecteur lisible et verrouille la page dans une seule orientation.",
     "cssOrientationLock_hint_fail": "Retirez la transformation rotate() de la media query d’orientation ; laissez la page répondre naturellement à l’orientation de l’appareil au lieu de forcer une rotation visuelle.",
+    "cssOrientationLock_summary_cantTell_unreadableSheets": "{{count}} feuille(s) de style n'ont pas pu être lues ; impossible donc de déterminer si cette page verrouille son orientation.",
+    "cssOrientationLock_hint_cantTell_unreadableSheets": "Les feuilles de style d'origine différente ne sont pas inspectables depuis la page. Vérifiez le CSS tiers à la recherche d'une media query d'orientation contenant une transformation rotate(), ou relancez l'analyse avec ces feuilles de style servies depuis la même origine.",
     "ariaText_title": "Les éléments role=\"text\" ne devraient avoir aucun descendant focalisable",
     "ariaText_description": "Vérifie que les éléments ayant role=\"text\" ne contiennent aucun descendant focalisable (lien, bouton, contrôle de formulaire, tabindex, iframe, ou contenteditable).",
     "ariaText_summary_cantTell": "Cet élément role=\"text\" contient un descendant focalisable.",
@@ -31836,6 +31860,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const occurrences = [];
   let applicableCount = 0;
+  const undecided = [];
 
   // Within one declaration block, importance wins over order, so the last
   // important declaration is the one that takes effect. Passed Example 5 of ACT
@@ -31981,6 +32006,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!hasVisibleTextChild(el) || !isRendered(el) || isOffScreen(el)) continue;
 
     const flagged = [];
+    const unresolved = [];
     let inScope = false;
     for (const prop of SPACING_PROPS) {
       const decl = effectiveDeclaration(raw, prop);
@@ -31988,14 +32014,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (INHERITED_KEYWORDS.indexOf(decl.value.toLowerCase()) !== -1) continue;
       inScope = true;
       const ratio = spacingRatio(el, prop, decl.value);
-      // Unresolvable spacing is left alone: this engine reserves fail for
-      // high-confidence violations.
-      if (ratio === null) continue;
+      // Not flagged, since `fail` needs a measured value -- but recorded, so
+      // the element does not fall through to `pass` unmeasured.
+      if (ratio === null) {
+        unresolved.push(prop);
+        continue;
+      }
       if (ratio < MIN_RATIO[prop]) flagged.push(prop);
     }
 
     if (inScope) applicableCount += 1;
-    if (!flagged.length) continue;
+    if (!flagged.length) {
+      if (unresolved.length) undecided.push({ el, props: unresolved.slice() });
+      continue;
+    }
 
     const tag = el.tagName.toLowerCase();
 
@@ -32024,6 +32056,35 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       outcome: 'fail',
       severity: rule.defaultSeverity || 'moderate',
       occurrences
+    };
+  }
+  if (undecided.length) {
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'moderate',
+      confidence: 'low',
+      occurrences: undecided.map(({ el, props }) =>
+        helpers.reportOccurrence(el, {
+          summary: `This element's inline style sets ${props.join(', ')} with !important, but the value could not be resolved, so whether it meets the WCAG text-spacing metric could not be determined.`,
+          hint: 'Check this value by hand against the metric (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em), or express it in a unit the engine can resolve against the element’s computed font size.',
+          i18n: {
+            summaryKey: 'avoidInlineSpacing_summary_cantTell',
+            hintKey: 'avoidInlineSpacing_hint_cantTell',
+            params: {
+              element: (el.tagName || '').toLowerCase(),
+              properties: props.join(', ')
+            }
+          },
+          data: {
+            details: {
+              reasonCode: 'INLINE_SPACING_NOT_RESOLVABLE',
+              element: (el.tagName || '').toLowerCase(),
+              properties: props
+            }
+          }
+        })
+      )
     };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
@@ -35502,6 +35563,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const findings = [];
   let sheetCount = 0;
+  let unreadableSheetCount = 0;
 
   try {
     const sheets = document.styleSheets || [];
@@ -35510,7 +35572,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       try {
         rules = sheet && sheet.cssRules ? sheet.cssRules : null;
       } catch {
-        continue; // cross-origin stylesheet, not inspectable
+        // Cross-origin, not inspectable. Counted, since a lock could be
+        // declared there and a `pass` would claim more than was checked.
+        unreadableSheetCount += 1;
+        continue;
       }
       if (!rules) continue;
       sheetCount += 1;
@@ -35526,15 +35591,43 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // no-throw: treat as no accessible stylesheets
   }
 
-  if (sheetCount === 0) {
-    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
-  }
+  const scanTarget = document.documentElement || document.body || null;
 
+  // A lock found in a readable sheet is still a lock, so `fail` outranks the
+  // uncertainty below.
   if (!findings.length) {
+    if (unreadableSheetCount > 0) {
+      return {
+        ruleId: rule.ruleId,
+        outcome: 'cantTell',
+        severity: rule.defaultSeverity || 'serious',
+        confidence: 'low',
+        occurrences: [
+          helpers.reportOccurrence(scanTarget, {
+            summary: `${unreadableSheetCount} stylesheet(s) could not be read, so whether this page locks its orientation could not be determined.`,
+            hint: 'Cross-origin stylesheets are not inspectable from the page. Check any third-party CSS for an orientation media query containing a rotate() transform, or re-run the scan with those stylesheets served same-origin.',
+            i18n: {
+              summaryKey: 'cssOrientationLock_summary_cantTell_unreadableSheets',
+              hintKey: 'cssOrientationLock_hint_cantTell_unreadableSheets',
+              params: { count: String(unreadableSheetCount) }
+            },
+            data: {
+              details: {
+                reasonCode: 'STYLESHEETS_NOT_READABLE',
+                unreadableSheetCount
+              }
+            }
+          })
+        ]
+      };
+    }
+    if (sheetCount === 0) {
+      return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+    }
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
 
-  const target = document.documentElement || document.body || null;
+  const target = scanTarget;
   const occurrences = findings.map((f) =>
     helpers.reportOccurrence(target, {
       summary: f.selectorText
@@ -42086,14 +42179,176 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return null;
   }
 
-  function decorationTokens(cs) {
-    const raw =
-      `${(cs && cs.textDecorationLine) || ''} ${(cs && cs.textDecoration) || ''}`.toLowerCase();
-    return raw.split(/\s+/).filter(Boolean);
+  // Whether the element is underlined, and whether the computed style can be
+  // trusted to say so. A conforming CSSOM serialises the `text-decoration`
+  // shorthand with the line value first, so it and `text-decoration-line`
+  // always agree on whether `underline` is present. jsdom does not cascade
+  // the property at all: the shorthand reads back as the UA's "underline"
+  // for every <a> whatever the author CSS says, and the longhand as "none"
+  // unless the author used the longhand. Either one taken alone is wrong in
+  // one direction, so disagreement is the signal to stop trusting both.
+  function decorationInfo(cs) {
+    if (!cs) return { underlined: false, trustworthy: false };
+
+    const lineRaw = String(cs.textDecorationLine || '')
+      .trim()
+      .toLowerCase();
+    const shortRaw = String(cs.textDecoration || '')
+      .trim()
+      .toLowerCase();
+
+    const lineTokens = lineRaw.split(/\s+/).filter(Boolean);
+    const shortTokens = shortRaw.split(/\s+/).filter(Boolean);
+
+    // Only one of the two exposed: nothing to cross-check against, take it.
+    if (!lineTokens.length) {
+      return { underlined: shortTokens.includes('underline'), trustworthy: shortTokens.length > 0 };
+    }
+    if (!shortTokens.length) {
+      return { underlined: lineTokens.includes('underline'), trustworthy: true };
+    }
+
+    const byLine = lineTokens.includes('underline');
+    const byShort = shortTokens.includes('underline');
+    return { underlined: byLine, trustworthy: byLine === byShort };
   }
 
-  function hasUnderline(cs) {
-    return decorationTokens(cs).includes('underline');
+  // Resolves `text-decoration` from the author stylesheets when the computed
+  // style is untrustworthy, reading the CSSOM as `css-orientation-lock` and
+  // `css-focus-indicator-suppressed` do. Without it the rule could not decide
+  // anything under a DOM emulator, which is how the CLI scans static HTML.
+  //
+  // A narrow cascade is enough: `text-decoration-line` is not inherited, so
+  // only declarations matching the element itself and its inline style apply,
+  // ordered by specificity. With no author declaration the UA default stands,
+  // and for a link that is an underline. Anything that would make the answer a
+  // guess yields `resolved: false` and the caller reports cantTell.
+  const CSS_STYLE_RULE = 1;
+  const MAX_NESTED_DEPTH = 8;
+
+  function splitSelectorList(selectorText) {
+    const parts = [];
+    let depth = 0;
+    let current = '';
+    for (const ch of String(selectorText || '')) {
+      if (ch === '(') depth += 1;
+      if (ch === ')') depth = Math.max(0, depth - 1);
+      if (ch === ',' && depth === 0) {
+        parts.push(current);
+        current = '';
+        continue;
+      }
+      current += ch;
+    }
+    parts.push(current);
+    return parts.map((p) => p.trim()).filter(Boolean);
+  }
+
+  // Approximate CSS specificity as a single sortable integer. Exactness is
+  // not required: this only orders declarations of one property against each
+  // other, and near-ties are broken by document order as the cascade does.
+  function specificityOf(selector) {
+    const s = String(selector || '');
+    const ids = (s.match(/#[\w-]+/g) || []).length;
+    const classesEtc = (s.match(/\.[\w-]+|\[[^\]]*\]|:(?!:)[\w-]+/g) || []).length;
+    const types = (s.match(/(^|[\s>+~])[a-z][\w-]*/gi) || []).length;
+    return ids * 10000 + classesEtc * 100 + types;
+  }
+
+  // A declaration wins if it is the last one, in (specificity, order), whose
+  // selector matches. `!important` outranks everything non-important.
+  function underlineFromDeclaration(style) {
+    if (!style || typeof style.getPropertyValue !== 'function') return null;
+    for (const prop of ['text-decoration-line', 'text-decoration']) {
+      const raw = String(style.getPropertyValue(prop) || '')
+        .trim()
+        .toLowerCase();
+      if (!raw) continue;
+      const important = String(style.getPropertyPriority(prop) || '') === 'important';
+      return { underlined: /\bunderline\b/.test(raw), important };
+    }
+    return null;
+  }
+
+  function resolveUnderlineFromCssom(el) {
+    const doc = el && el.ownerDocument ? el.ownerDocument : null;
+    if (!doc || typeof el.matches !== 'function') return { underlined: false, resolved: false };
+
+    let best = null; // { rank, order, underlined }
+    let order = 0;
+    let unreadableSheet = false;
+    let unparsableSelector = false;
+
+    function consider(cssRule) {
+      const decl = underlineFromDeclaration(cssRule.style);
+      if (!decl) return;
+      for (const part of splitSelectorList(cssRule.selectorText)) {
+        // A pseudo-element rule paints a box other than the link's own text.
+        if (/::[a-z-]+/i.test(part)) continue;
+        // A state the static DOM is not in (:hover/:focus/...) does not
+        // describe the link's resting appearance, which is what this rule is
+        // about.
+        if (/:(hover|focus|focus-visible|focus-within|active|target|visited)\b/i.test(part)) {
+          continue;
+        }
+        let matched;
+        try {
+          matched = el.matches(part);
+        } catch {
+          unparsableSelector = true;
+          continue;
+        }
+        if (!matched) continue;
+        order += 1;
+        const rank = (decl.important ? 1e9 : 0) + specificityOf(part);
+        if (!best || rank >= best.rank) best = { rank, order, underlined: decl.underlined };
+      }
+    }
+
+    function walk(rules, depth) {
+      if (!rules || depth > MAX_NESTED_DEPTH) return;
+      for (const cssRule of rules) {
+        if (!cssRule) continue;
+        if (cssRule.type === CSS_STYLE_RULE && cssRule.selectorText) {
+          consider(cssRule);
+          continue;
+        }
+        let nested;
+        try {
+          nested = cssRule.cssRules || null;
+        } catch {
+          nested = null;
+        }
+        if (nested) walk(nested, depth + 1);
+      }
+    }
+
+    try {
+      for (const sheet of doc.styleSheets || []) {
+        let rules = null;
+        try {
+          rules = sheet && sheet.cssRules ? sheet.cssRules : null;
+        } catch {
+          unreadableSheet = true; // cross-origin, not inspectable
+          continue;
+        }
+        if (rules) walk(rules, 0);
+      }
+    } catch {
+      return { underlined: false, resolved: false };
+    }
+
+    // The inline style attribute outranks every stylesheet declaration.
+    const inline = underlineFromDeclaration(el.style);
+    if (inline) return { underlined: inline.underlined, resolved: true };
+
+    if (best) return { underlined: best.underlined, resolved: true };
+
+    // No author declaration reached this element. If a sheet or selector was
+    // unreadable, one of them might have, so the answer is unknown; otherwise
+    // the UA default stands, and for a link that means underlined.
+    if (unreadableSheet || unparsableSelector) return { underlined: false, resolved: false };
+    return { underlined: true, resolved: true };
   }
 
   function hasSurroundingText(el, parent) {
@@ -42124,7 +42379,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     : helpers.queryAll(selector);
 
   const occurrences = [];
+  const undecided = [];
   let applicableCount = 0;
+  let decidedCount = 0;
+
+  // Applicable, but not evaluable. Held separately so the outcome below can
+  // tell "checked and sound" apart from "never decided".
+  function markUndecided(el, reasonCode) {
+    undecided.push({ el, reasonCode });
+  }
 
   for (const el of nodes) {
     if (!el || !el.getAttribute) continue;
@@ -42142,27 +42405,40 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const linkCs = safeComputedStyle(el);
     const parentCs = safeComputedStyle(parent);
 
-    if (hasUnderline(linkCs)) continue;
-
+    // Cues that do not depend on `text-decoration` come first, so a link
+    // carrying one is decided even where decoration is unreadable.
     const linkWeight = c && linkCs ? c.normalizeFontWeight(linkCs.fontWeight) : 400;
     const parentWeight = c && parentCs ? c.normalizeFontWeight(parentCs.fontWeight) : 400;
-    if (linkWeight !== parentWeight) continue;
+    if (linkWeight !== parentWeight) {
+      decidedCount += 1;
+      continue;
+    }
 
     const linkStyle = (linkCs && linkCs.fontStyle) || 'normal';
     const parentStyle = (parentCs && parentCs.fontStyle) || 'normal';
-    if (linkStyle !== parentStyle) continue;
+    if (linkStyle !== parentStyle) {
+      decidedCount += 1;
+      continue;
+    }
 
-    if (!c) continue;
+    if (!c) {
+      markUndecided(el, 'CONTRAST_HELPERS_UNAVAILABLE');
+      continue;
+    }
 
     let flagged = false;
+    let computed = false;
     let ratio = null;
     let fgLinkHex = '';
     let fgParentHex = '';
+    let undecidedReason = 'COLOR_NOT_COMPUTABLE';
 
     try {
       const blocker = c.getComputabilityBlocker(el);
       if (blocker && blocker.ok === false) {
-        // Not confidently computable, skip (benefit of the doubt).
+        // Not confidently computable: recorded below rather than skipped, so
+        // it cannot be mistaken for a clean result.
+        if (blocker.reasonCode) undecidedReason = String(blocker.reasonCode);
       } else {
         const bg = c.computeEffectiveBackground(el, {
           contrast: { mode, rootCanvasFallback },
@@ -42185,15 +42461,49 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           fgLinkHex = c.rgbToHex ? c.rgbToHex(fgLinkOpaque) : '';
           fgParentHex = c.rgbToHex ? c.rgbToHex(fgParentOpaque) : '';
 
+          computed = true;
           if (!(ratio >= 3)) flagged = true;
         }
-        // else: not confidently computable, skip.
+        // else: not confidently computable, recorded below.
       }
     } catch {
-      // no-throw: treat as not computable, skip.
+      // No-throw: treat as not computable and record it.
+      undecidedReason = 'ENGINE_EXCEPTION';
     }
 
-    if (!flagged) continue;
+    if (!computed) {
+      markUndecided(el, undecidedReason);
+      continue;
+    }
+
+    // Contrast alone is an accepted alternative to an underline (G183), so a
+    // link clearing 3:1 is distinguishable regardless of decoration.
+    if (!flagged) {
+      decidedCount += 1;
+      continue;
+    }
+
+    // Below 3:1, an underline is the last remaining cue -- and only now does
+    // it matter whether this environment can actually report one.
+    const decoration = decorationInfo(linkCs);
+    let underlined;
+    if (decoration.trustworthy) {
+      underlined = decoration.underlined;
+    } else {
+      const fromCssom = resolveUnderlineFromCssom(el);
+      if (!fromCssom.resolved) {
+        markUndecided(el, 'TEXT_DECORATION_NOT_RESOLVABLE');
+        continue;
+      }
+      underlined = fromCssom.underlined;
+    }
+
+    if (underlined) {
+      decidedCount += 1;
+      continue;
+    }
+
+    decidedCount += 1;
 
     const eligInfo = helpers.getEligibilityInfo
       ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
@@ -42226,6 +42536,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
+
+  // A proven violation outranks an undecided candidate, which outranks a clean
+  // one. The middle step keeps an unevaluable link out of `pass`.
   if (occurrences.length) {
     return {
       ruleId: rule.ruleId,
@@ -42234,7 +42547,37 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       occurrences
     };
   }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+
+  if (undecided.length) {
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'serious',
+      confidence: 'low',
+      occurrences: undecided.map(({ el, reasonCode }) =>
+        helpers.reportOccurrence(el, {
+          summary:
+            'Whether this link is distinguishable from the surrounding text by non-color means could not be determined.',
+          hint: 'Confirm by eye that the link carries an underline, a font-weight or font-style difference, or at least 3:1 contrast against the surrounding text. Running the engine in a real browser rather than a DOM emulator resolves most cases automatically.',
+          i18n: {
+            summaryKey: 'linkInTextBlock_summary_cantTell',
+            hintKey: 'linkInTextBlock_hint_cantTell'
+          },
+          data: {
+            visibilityFilter: helpers.getEligibilityInfo
+              ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
+              : { targetSet: 'acc', accEligible: null, reasons: [] },
+            details: { reasonCode }
+          }
+        })
+      )
+    };
+  }
+
+  if (decidedCount > 0) {
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  }
+  return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "link-name-present": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
@@ -51333,6 +51676,8 @@ const I18N = {
     "avoidInlineSpacing_description": "Prüft, dass ein per !important erzwungener Wert für line-height, letter-spacing oder word-spacing WCAG 1.4.12 bereits erfüllt, sodass dem Nutzer nichts zu überschreiben bleibt.",
     "avoidInlineSpacing_summary_fail": "Der Inline-Stil dieses Elements erzwingt {{properties}} mit !important und blockiert damit Überschreibungen des Textabstands durch den Nutzer.",
     "avoidInlineSpacing_hint_fail": "Entfernen Sie !important von line-height/letter-spacing/word-spacing in Inline-Stilen, damit Nutzer den Textabstand überschreiben können.",
+    "avoidInlineSpacing_summary_cantTell": "Der Inline-Stil dieses Elements setzt {{properties}} mit !important, der Wert ließ sich jedoch nicht auflösen; daher konnte nicht ermittelt werden, ob er die WCAG-Textabstandsmetrik erfüllt.",
+    "avoidInlineSpacing_hint_cantTell": "Prüfen Sie diesen Wert manuell anhand der Metrik (Zeilenhöhe 1,5; Zeichenabstand 0,12em; Wortabstand 0,16em), oder geben Sie ihn in einer Einheit an, die die Engine gegen die berechnete Schriftgröße des Elements auflösen kann.",
     "metaRefreshNoExceptions_title": "Die Seite darf überhaupt keinen Meta-Refresh verwenden (AAA)",
     "metaRefreshNoExceptions_description": "Prüft, ob <meta http-equiv=\"refresh\"> unabhängig von der Verzögerung überhaupt nicht vorhanden ist — das strengere AAA-Gegenstück zur A-Prüfung, die nur positive Verzögerungen betrachtet.",
     "metaRefreshNoExceptions_summary_fail": "Diese Seite verwendet einen Meta-Refresh, eine automatische Kontextänderung, die nicht vom Nutzer ausgelöst wird.",
@@ -51345,6 +51690,8 @@ const I18N = {
     "linkInTextBlock_description": "Prüft, ob ein Link innerhalb eines Textabschnitts durch Unterstreichung, einen Unterschied in Schriftgewicht/-stil oder einen ausreichenden (>= 3:1) Farbkontrastunterschied visuell vom umgebenden Text unterscheidbar ist — nicht allein durch Farbe.",
     "linkInTextBlock_summary_fail": "Dieser Link in einem Textblock unterscheidet sich vom umgebenden Text ausschließlich durch Farbe.",
     "linkInTextBlock_hint_fail": "Fügen Sie eine Unterstreichung oder einen Unterschied in Schriftgewicht/-stil hinzu, oder erhöhen Sie den Farbkontrast zwischen Link und umgebendem Text auf mindestens 3:1.",
+    "linkInTextBlock_summary_cantTell": "Es konnte nicht ermittelt werden, ob sich dieser Link durch andere Mittel als Farbe vom umgebenden Text abhebt.",
+    "linkInTextBlock_hint_cantTell": "Prüfen Sie visuell, ob der Link eine Unterstreichung, einen Unterschied in Schriftstärke oder -stil oder mindestens 3:1 Kontrast zum umgebenden Text aufweist. Wird die Engine in einem echten Browser statt in einem DOM-Emulator ausgeführt, klärt sich das in den meisten Fällen automatisch.",
     "noAutoplayAudio_title": "Automatisch abgespieltes Audio sollte einen Mechanismus zum Pausieren/Stoppen oder zur Lautstärkeregelung bieten",
     "noAutoplayAudio_description": "Markiert <audio>/<video>-Elemente, die unstummgeschaltet automatisch abspielen und kein natives controls-Attribut haben, zur manuellen Überprüfung im Hinblick auf die 3-Sekunden-Ausnahme in WCAG 1.4.2.",
     "noAutoplayAudio_summary_cantTell": "Dieses Element spielt Audio automatisch ab, ohne einen nativen Mechanismus zum Pausieren/Stoppen oder zur Lautstärkeregelung.",
@@ -51378,6 +51725,8 @@ const I18N = {
     "cssOrientationLock_summary_fail": "Eine Media Query „{{mediaText}}“ dreht „{{selectorText}}“ und legt die Seite damit auf eine Ausrichtung fest.",
     "cssOrientationLock_summary_fail_unknownSelector": "Eine \"{{mediaText}}\"-Media-Query dreht ein Element ohne lesbaren Selektor und sperrt die Seite auf eine Ausrichtung.",
     "cssOrientationLock_hint_fail": "Entfernen Sie die rotate()-Transformation aus der Ausrichtungs-Media-Query; lassen Sie die Seite stattdessen natürlich auf die Geräteausrichtung reagieren, anstatt eine visuelle Drehung zu erzwingen.",
+    "cssOrientationLock_summary_cantTell_unreadableSheets": "{{count}} Stylesheet(s) konnten nicht gelesen werden; daher ließ sich nicht ermitteln, ob diese Seite ihre Ausrichtung fixiert.",
+    "cssOrientationLock_hint_cantTell_unreadableSheets": "Stylesheets von fremden Ursprüngen lassen sich aus der Seite heraus nicht inspizieren. Prüfen Sie Drittanbieter-CSS auf eine Orientierungs-Media-Query mit einer rotate()-Transformation, oder wiederholen Sie den Scan mit diesen Stylesheets vom selben Ursprung.",
     "ariaText_title": "Elemente mit role=\"text\" sollten keine fokussierbaren Nachfahren haben",
     "ariaText_description": "Prüft, ob Elemente mit role=\"text\" keinen fokussierbaren Nachfahren enthalten (Link, Schaltfläche, Formularelement, tabindex, iframe oder contenteditable).",
     "ariaText_summary_cantTell": "Dieses Element mit role=\"text\" enthält einen fokussierbaren Nachfahren.",
@@ -52001,6 +52350,8 @@ const I18N = {
     "avoidInlineSpacing_description": "Checks that where inline style forces line-height, letter-spacing or word-spacing with !important, the value already meets WCAG 1.4.12, so the user has nothing left to override.",
     "avoidInlineSpacing_summary_fail": "This element's inline style forces {{properties}} with !important, blocking user text-spacing overrides.",
     "avoidInlineSpacing_hint_fail": "Remove !important from line-height/letter-spacing/word-spacing in inline styles so users can override text spacing.",
+    "avoidInlineSpacing_summary_cantTell": "This element's inline style sets {{properties}} with !important, but the value could not be resolved, so whether it meets the WCAG text-spacing metric could not be determined.",
+    "avoidInlineSpacing_hint_cantTell": "Check this value by hand against the metric (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em), or express it in a unit the engine can resolve against the element’s computed font size.",
     "metaRefreshNoExceptions_title": "Page must not use a meta refresh at all (AAA)",
     "metaRefreshNoExceptions_description": "Checks that <meta http-equiv=\"refresh\"> is not present at all, regardless of delay. This is the stricter AAA-level counterpart of the A-level positive-delay-only check.",
     "metaRefreshNoExceptions_summary_fail": "This page uses a meta refresh, which is an automatic context change not initiated by the user.",
@@ -52013,6 +52364,8 @@ const I18N = {
     "linkInTextBlock_description": "Checks that a link inside a run of text is visually distinguishable from the surrounding text by underline, a font-weight/style difference, or a sufficient (>=3:1) color-contrast difference, not by color alone.",
     "linkInTextBlock_summary_fail": "This link in a block of text relies on color alone to be distinguished from the surrounding text.",
     "linkInTextBlock_hint_fail": "Add an underline, a font-weight/style difference, or increase the color contrast between the link and surrounding text to at least 3:1.",
+    "linkInTextBlock_summary_cantTell": "Whether this link is distinguishable from the surrounding text by non-color means could not be determined.",
+    "linkInTextBlock_hint_cantTell": "Confirm by eye that the link carries an underline, a font-weight or font-style difference, or at least 3:1 contrast against the surrounding text. Running the engine in a real browser rather than a DOM emulator resolves most cases automatically.",
     "noAutoplayAudio_title": "Autoplaying audio should provide a pause/stop or volume-control mechanism",
     "noAutoplayAudio_description": "Flags <audio>/<video> elements that autoplay unmuted with no native controls attribute, for manual review against the 3-second exemption in WCAG 1.4.2.",
     "noAutoplayAudio_summary_cantTell": "This element autoplays audio without a native pause/stop or volume-control mechanism.",
@@ -52046,6 +52399,8 @@ const I18N = {
     "cssOrientationLock_summary_fail": "A \"{{mediaText}}\" media query rotates \"{{selectorText}}\", locking the page to one orientation.",
     "cssOrientationLock_summary_fail_unknownSelector": "A \"{{mediaText}}\" media query rotates an element with no readable selector, locking the page to one orientation.",
     "cssOrientationLock_hint_fail": "Remove the rotate() transform from the orientation media query; let the page respond naturally to device orientation instead of forcing a visual rotation.",
+    "cssOrientationLock_summary_cantTell_unreadableSheets": "{{count}} stylesheet(s) could not be read, so whether this page locks its orientation could not be determined.",
+    "cssOrientationLock_hint_cantTell_unreadableSheets": "Cross-origin stylesheets are not inspectable from the page. Check any third-party CSS for an orientation media query containing a rotate() transform, or re-run the scan with those stylesheets served same-origin.",
     "ariaText_title": "role=\"text\" elements should have no focusable descendants",
     "ariaText_description": "Checks that elements with role=\"text\" contain no focusable descendant (link, button, form control, tabindex, iframe, or contenteditable).",
     "ariaText_summary_cantTell": "This role=\"text\" element contains a focusable descendant.",
@@ -52669,6 +53024,8 @@ const I18N = {
     "avoidInlineSpacing_description": "Comprueba que cuando el estilo en línea fuerza line-height, letter-spacing o word-spacing con !important, el valor ya cumple WCAG 1.4.12, por lo que al usuario no le queda nada que anular.",
     "avoidInlineSpacing_summary_fail": "El estilo en línea de este elemento fuerza {{properties}} con !important, bloqueando las anulaciones de espaciado de texto del usuario.",
     "avoidInlineSpacing_hint_fail": "Eliminar !important de line-height/letter-spacing/word-spacing en los estilos en línea para que los usuarios puedan anular el espaciado de texto.",
+    "avoidInlineSpacing_summary_cantTell": "El estilo en línea de este elemento define {{properties}} con !important, pero no se ha podido resolver el valor, por lo que no se ha podido determinar si cumple la métrica de espaciado de texto de WCAG.",
+    "avoidInlineSpacing_hint_cantTell": "Compruebe este valor manualmente con la métrica (interlineado 1,5; espaciado entre letras 0,12em; espaciado entre palabras 0,16em), o exprésalo en una unidad que el motor pueda resolver respecto al tamaño de fuente calculado del elemento.",
     "metaRefreshNoExceptions_title": "La página no debe usar un meta refresh en absoluto (AAA)",
     "metaRefreshNoExceptions_description": "Comprueba que <meta http-equiv=\"refresh\"> no esté presente en absoluto, independientemente del retraso; es la contraparte más estricta de nivel AAA de la comprobación de nivel A que solo se aplica a los retrasos positivos.",
     "metaRefreshNoExceptions_summary_fail": "Esta página usa un meta refresh, que es un cambio de contexto automático no iniciado por el usuario.",
@@ -52681,6 +53038,8 @@ const I18N = {
     "linkInTextBlock_description": "Comprueba que un enlace dentro de un bloque de texto se distinga visualmente del texto circundante mediante subrayado, una diferencia de grosor/estilo de fuente, o una diferencia de contraste de color suficiente (>=3:1); no solo por el color.",
     "linkInTextBlock_summary_fail": "Este enlace dentro de un bloque de texto depende únicamente del color para distinguirse del texto circundante.",
     "linkInTextBlock_hint_fail": "Agregar un subrayado, una diferencia de grosor/estilo de fuente, o aumentar el contraste de color entre el enlace y el texto circundante a al menos 3:1.",
+    "linkInTextBlock_summary_cantTell": "No se ha podido determinar si este enlace se distingue del texto circundante por medios que no sean el color.",
+    "linkInTextBlock_hint_cantTell": "Compruebe visualmente que el enlace tiene subrayado, una diferencia de grosor o estilo de fuente, o al menos un contraste de 3:1 con el texto circundante. Ejecutar el motor en un navegador real, en lugar de en un emulador de DOM, resuelve la mayoría de los casos automáticamente.",
     "noAutoplayAudio_title": "El audio en reproducción automática debería proporcionar un mecanismo de pausa/detención o control de volumen",
     "noAutoplayAudio_description": "Señala elementos <audio>/<video> que se reproducen automáticamente sin silenciar y sin un atributo de controles nativo, para su revisión manual frente a la excepción de 3 segundos del criterio de éxito 1.4.2 de WCAG.",
     "noAutoplayAudio_summary_cantTell": "Este elemento reproduce audio automáticamente sin un mecanismo nativo de pausa/detención o control de volumen.",
@@ -52714,6 +53073,8 @@ const I18N = {
     "cssOrientationLock_summary_fail": "Una media query \"{{mediaText}}\" rota \"{{selectorText}}\", bloqueando la página a una sola orientación.",
     "cssOrientationLock_summary_fail_unknownSelector": "Una consulta de medios \"{{mediaText}}\" rota un elemento sin selector legible y bloquea la página en una sola orientación.",
     "cssOrientationLock_hint_fail": "Eliminar la transformación rotate() de la media query de orientación; dejar que la página responda de forma natural a la orientación del dispositivo en lugar de forzar una rotación visual.",
+    "cssOrientationLock_summary_cantTell_unreadableSheets": "No se han podido leer {{count}} hoja(s) de estilo, por lo que no se ha podido determinar si esta página bloquea su orientación.",
+    "cssOrientationLock_hint_cantTell_unreadableSheets": "Las hojas de estilo de origen cruzado no se pueden inspeccionar desde la página. Revise el CSS de terceros en busca de una consulta de medios de orientación que contenga una transformación rotate(), o repita el análisis sirviendo esas hojas de estilo desde el mismo origen.",
     "ariaText_title": "Los elementos con role=\"text\" no deberían tener descendientes enfocables",
     "ariaText_description": "Comprueba que los elementos con role=\"text\" no contengan ningún descendiente enfocable (enlace, botón, control de formulario, tabindex, iframe o contenteditable).",
     "ariaText_summary_cantTell": "Este elemento con role=\"text\" contiene un descendiente enfocable.",
@@ -53337,6 +53698,8 @@ const I18N = {
     "avoidInlineSpacing_description": "Vérifie que lorsqu’un style en ligne force line-height, letter-spacing ou word-spacing avec !important, la valeur respecte déjà WCAG 1.4.12, ne laissant rien à surcharger à l’utilisateur.",
     "avoidInlineSpacing_summary_fail": "Le style en ligne de cet élément force {{properties}} avec !important, bloquant les surcharges d’espacement de texte par l’utilisateur.",
     "avoidInlineSpacing_hint_fail": "Retirez !important de line-height/letter-spacing/word-spacing dans les styles en ligne afin que les utilisateurs puissent surcharger l’espacement du texte.",
+    "avoidInlineSpacing_summary_cantTell": "Le style en ligne de cet élément définit {{properties}} avec !important, mais la valeur n'a pas pu être résolue ; impossible donc de déterminer si elle respecte la métrique d'espacement du texte WCAG.",
+    "avoidInlineSpacing_hint_cantTell": "Vérifiez cette valeur manuellement par rapport à la métrique (hauteur de ligne 1,5 ; espacement des lettres 0,12em ; espacement des mots 0,16em), ou exprimez-la dans une unité que le moteur peut résoudre par rapport à la taille de police calculée de l'élément.",
     "metaRefreshNoExceptions_title": "La page ne doit utiliser aucun rafraîchissement meta (AAA)",
     "metaRefreshNoExceptions_description": "Vérifie que <meta http-equiv=\"refresh\"> n’est présent en aucun cas, quel que soit le délai — la variante plus stricte, de niveau AAA, de la vérification de niveau A qui ne porte que sur les délais positifs.",
     "metaRefreshNoExceptions_summary_fail": "Cette page utilise un rafraîchissement meta, un changement de contexte automatique non initié par l’utilisateur.",
@@ -53349,6 +53712,8 @@ const I18N = {
     "linkInTextBlock_description": "Vérifie qu’un lien à l’intérieur d’un bloc de texte est visuellement distinguable du texte environnant par un soulignement, une différence de graisse/style de police, ou un contraste de couleur suffisant (>= 3:1) — pas seulement par la couleur.",
     "linkInTextBlock_summary_fail": "Ce lien dans un bloc de texte se distingue du texte environnant uniquement par la couleur.",
     "linkInTextBlock_hint_fail": "Ajoutez un soulignement, une différence de graisse/style de police, ou augmentez le contraste de couleur entre le lien et le texte environnant à au moins 3:1.",
+    "linkInTextBlock_summary_cantTell": "Impossible de déterminer si ce lien se distingue du texte environnant par un moyen autre que la couleur.",
+    "linkInTextBlock_hint_cantTell": "Vérifiez visuellement que le lien porte un soulignement, une différence de graisse ou de style de police, ou un contraste d'au moins 3:1 avec le texte environnant. Exécuter le moteur dans un navigateur réel plutôt que dans un émulateur de DOM résout automatiquement la plupart des cas.",
     "noAutoplayAudio_title": "Un audio en lecture automatique devrait proposer un mécanisme de pause/arrêt ou de contrôle du volume",
     "noAutoplayAudio_description": "Signale les éléments <audio>/<video> qui se lancent automatiquement sans être coupés et sans attribut controls natif, pour une revue manuelle par rapport à l’exemption de 3 secondes de la WCAG 1.4.2.",
     "noAutoplayAudio_summary_cantTell": "Cet élément lit un audio automatiquement sans mécanisme natif de pause/arrêt ou de contrôle du volume.",
@@ -53382,6 +53747,8 @@ const I18N = {
     "cssOrientationLock_summary_fail": "Une media query « {{mediaText}} » fait pivoter « {{selectorText}} », verrouillant la page à une seule orientation.",
     "cssOrientationLock_summary_fail_unknownSelector": "Une media query \"{{mediaText}}\" fait pivoter un élément sans sélecteur lisible et verrouille la page dans une seule orientation.",
     "cssOrientationLock_hint_fail": "Retirez la transformation rotate() de la media query d’orientation ; laissez la page répondre naturellement à l’orientation de l’appareil au lieu de forcer une rotation visuelle.",
+    "cssOrientationLock_summary_cantTell_unreadableSheets": "{{count}} feuille(s) de style n'ont pas pu être lues ; impossible donc de déterminer si cette page verrouille son orientation.",
+    "cssOrientationLock_hint_cantTell_unreadableSheets": "Les feuilles de style d'origine différente ne sont pas inspectables depuis la page. Vérifiez le CSS tiers à la recherche d'une media query d'orientation contenant une transformation rotate(), ou relancez l'analyse avec ces feuilles de style servies depuis la même origine.",
     "ariaText_title": "Les éléments role=\"text\" ne devraient avoir aucun descendant focalisable",
     "ariaText_description": "Vérifie que les éléments ayant role=\"text\" ne contiennent aucun descendant focalisable (lien, bouton, contrôle de formulaire, tabindex, iframe, ou contenteditable).",
     "ariaText_summary_cantTell": "Cet élément role=\"text\" contient un descendant focalisable.",
@@ -74928,6 +75295,7 @@ const __a11yCoreCrossFrameApi = (function () {
 
   const occurrences = [];
   let applicableCount = 0;
+  const undecided = [];
 
   // Within one declaration block, importance wins over order, so the last
   // important declaration is the one that takes effect. Passed Example 5 of ACT
@@ -75073,6 +75441,7 @@ const __a11yCoreCrossFrameApi = (function () {
     if (!hasVisibleTextChild(el) || !isRendered(el) || isOffScreen(el)) continue;
 
     const flagged = [];
+    const unresolved = [];
     let inScope = false;
     for (const prop of SPACING_PROPS) {
       const decl = effectiveDeclaration(raw, prop);
@@ -75080,14 +75449,20 @@ const __a11yCoreCrossFrameApi = (function () {
       if (INHERITED_KEYWORDS.indexOf(decl.value.toLowerCase()) !== -1) continue;
       inScope = true;
       const ratio = spacingRatio(el, prop, decl.value);
-      // Unresolvable spacing is left alone: this engine reserves fail for
-      // high-confidence violations.
-      if (ratio === null) continue;
+      // Not flagged, since `fail` needs a measured value -- but recorded, so
+      // the element does not fall through to `pass` unmeasured.
+      if (ratio === null) {
+        unresolved.push(prop);
+        continue;
+      }
       if (ratio < MIN_RATIO[prop]) flagged.push(prop);
     }
 
     if (inScope) applicableCount += 1;
-    if (!flagged.length) continue;
+    if (!flagged.length) {
+      if (unresolved.length) undecided.push({ el, props: unresolved.slice() });
+      continue;
+    }
 
     const tag = el.tagName.toLowerCase();
 
@@ -75116,6 +75491,35 @@ const __a11yCoreCrossFrameApi = (function () {
       outcome: 'fail',
       severity: rule.defaultSeverity || 'moderate',
       occurrences
+    };
+  }
+  if (undecided.length) {
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'moderate',
+      confidence: 'low',
+      occurrences: undecided.map(({ el, props }) =>
+        helpers.reportOccurrence(el, {
+          summary: `This element's inline style sets ${props.join(', ')} with !important, but the value could not be resolved, so whether it meets the WCAG text-spacing metric could not be determined.`,
+          hint: 'Check this value by hand against the metric (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em), or express it in a unit the engine can resolve against the element’s computed font size.',
+          i18n: {
+            summaryKey: 'avoidInlineSpacing_summary_cantTell',
+            hintKey: 'avoidInlineSpacing_hint_cantTell',
+            params: {
+              element: (el.tagName || '').toLowerCase(),
+              properties: props.join(', ')
+            }
+          },
+          data: {
+            details: {
+              reasonCode: 'INLINE_SPACING_NOT_RESOLVABLE',
+              element: (el.tagName || '').toLowerCase(),
+              properties: props
+            }
+          }
+        })
+      )
     };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
@@ -78594,6 +78998,7 @@ const __a11yCoreCrossFrameApi = (function () {
 
   const findings = [];
   let sheetCount = 0;
+  let unreadableSheetCount = 0;
 
   try {
     const sheets = document.styleSheets || [];
@@ -78602,7 +79007,10 @@ const __a11yCoreCrossFrameApi = (function () {
       try {
         rules = sheet && sheet.cssRules ? sheet.cssRules : null;
       } catch {
-        continue; // cross-origin stylesheet, not inspectable
+        // Cross-origin, not inspectable. Counted, since a lock could be
+        // declared there and a `pass` would claim more than was checked.
+        unreadableSheetCount += 1;
+        continue;
       }
       if (!rules) continue;
       sheetCount += 1;
@@ -78618,15 +79026,43 @@ const __a11yCoreCrossFrameApi = (function () {
     // no-throw: treat as no accessible stylesheets
   }
 
-  if (sheetCount === 0) {
-    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
-  }
+  const scanTarget = document.documentElement || document.body || null;
 
+  // A lock found in a readable sheet is still a lock, so `fail` outranks the
+  // uncertainty below.
   if (!findings.length) {
+    if (unreadableSheetCount > 0) {
+      return {
+        ruleId: rule.ruleId,
+        outcome: 'cantTell',
+        severity: rule.defaultSeverity || 'serious',
+        confidence: 'low',
+        occurrences: [
+          helpers.reportOccurrence(scanTarget, {
+            summary: `${unreadableSheetCount} stylesheet(s) could not be read, so whether this page locks its orientation could not be determined.`,
+            hint: 'Cross-origin stylesheets are not inspectable from the page. Check any third-party CSS for an orientation media query containing a rotate() transform, or re-run the scan with those stylesheets served same-origin.',
+            i18n: {
+              summaryKey: 'cssOrientationLock_summary_cantTell_unreadableSheets',
+              hintKey: 'cssOrientationLock_hint_cantTell_unreadableSheets',
+              params: { count: String(unreadableSheetCount) }
+            },
+            data: {
+              details: {
+                reasonCode: 'STYLESHEETS_NOT_READABLE',
+                unreadableSheetCount
+              }
+            }
+          })
+        ]
+      };
+    }
+    if (sheetCount === 0) {
+      return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+    }
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
 
-  const target = document.documentElement || document.body || null;
+  const target = scanTarget;
   const occurrences = findings.map((f) =>
     helpers.reportOccurrence(target, {
       summary: f.selectorText
@@ -85178,14 +85614,176 @@ const __a11yCoreCrossFrameApi = (function () {
     return null;
   }
 
-  function decorationTokens(cs) {
-    const raw =
-      `${(cs && cs.textDecorationLine) || ''} ${(cs && cs.textDecoration) || ''}`.toLowerCase();
-    return raw.split(/\s+/).filter(Boolean);
+  // Whether the element is underlined, and whether the computed style can be
+  // trusted to say so. A conforming CSSOM serialises the `text-decoration`
+  // shorthand with the line value first, so it and `text-decoration-line`
+  // always agree on whether `underline` is present. jsdom does not cascade
+  // the property at all: the shorthand reads back as the UA's "underline"
+  // for every <a> whatever the author CSS says, and the longhand as "none"
+  // unless the author used the longhand. Either one taken alone is wrong in
+  // one direction, so disagreement is the signal to stop trusting both.
+  function decorationInfo(cs) {
+    if (!cs) return { underlined: false, trustworthy: false };
+
+    const lineRaw = String(cs.textDecorationLine || '')
+      .trim()
+      .toLowerCase();
+    const shortRaw = String(cs.textDecoration || '')
+      .trim()
+      .toLowerCase();
+
+    const lineTokens = lineRaw.split(/\s+/).filter(Boolean);
+    const shortTokens = shortRaw.split(/\s+/).filter(Boolean);
+
+    // Only one of the two exposed: nothing to cross-check against, take it.
+    if (!lineTokens.length) {
+      return { underlined: shortTokens.includes('underline'), trustworthy: shortTokens.length > 0 };
+    }
+    if (!shortTokens.length) {
+      return { underlined: lineTokens.includes('underline'), trustworthy: true };
+    }
+
+    const byLine = lineTokens.includes('underline');
+    const byShort = shortTokens.includes('underline');
+    return { underlined: byLine, trustworthy: byLine === byShort };
   }
 
-  function hasUnderline(cs) {
-    return decorationTokens(cs).includes('underline');
+  // Resolves `text-decoration` from the author stylesheets when the computed
+  // style is untrustworthy, reading the CSSOM as `css-orientation-lock` and
+  // `css-focus-indicator-suppressed` do. Without it the rule could not decide
+  // anything under a DOM emulator, which is how the CLI scans static HTML.
+  //
+  // A narrow cascade is enough: `text-decoration-line` is not inherited, so
+  // only declarations matching the element itself and its inline style apply,
+  // ordered by specificity. With no author declaration the UA default stands,
+  // and for a link that is an underline. Anything that would make the answer a
+  // guess yields `resolved: false` and the caller reports cantTell.
+  const CSS_STYLE_RULE = 1;
+  const MAX_NESTED_DEPTH = 8;
+
+  function splitSelectorList(selectorText) {
+    const parts = [];
+    let depth = 0;
+    let current = '';
+    for (const ch of String(selectorText || '')) {
+      if (ch === '(') depth += 1;
+      if (ch === ')') depth = Math.max(0, depth - 1);
+      if (ch === ',' && depth === 0) {
+        parts.push(current);
+        current = '';
+        continue;
+      }
+      current += ch;
+    }
+    parts.push(current);
+    return parts.map((p) => p.trim()).filter(Boolean);
+  }
+
+  // Approximate CSS specificity as a single sortable integer. Exactness is
+  // not required: this only orders declarations of one property against each
+  // other, and near-ties are broken by document order as the cascade does.
+  function specificityOf(selector) {
+    const s = String(selector || '');
+    const ids = (s.match(/#[\w-]+/g) || []).length;
+    const classesEtc = (s.match(/\.[\w-]+|\[[^\]]*\]|:(?!:)[\w-]+/g) || []).length;
+    const types = (s.match(/(^|[\s>+~])[a-z][\w-]*/gi) || []).length;
+    return ids * 10000 + classesEtc * 100 + types;
+  }
+
+  // A declaration wins if it is the last one, in (specificity, order), whose
+  // selector matches. `!important` outranks everything non-important.
+  function underlineFromDeclaration(style) {
+    if (!style || typeof style.getPropertyValue !== 'function') return null;
+    for (const prop of ['text-decoration-line', 'text-decoration']) {
+      const raw = String(style.getPropertyValue(prop) || '')
+        .trim()
+        .toLowerCase();
+      if (!raw) continue;
+      const important = String(style.getPropertyPriority(prop) || '') === 'important';
+      return { underlined: /\bunderline\b/.test(raw), important };
+    }
+    return null;
+  }
+
+  function resolveUnderlineFromCssom(el) {
+    const doc = el && el.ownerDocument ? el.ownerDocument : null;
+    if (!doc || typeof el.matches !== 'function') return { underlined: false, resolved: false };
+
+    let best = null; // { rank, order, underlined }
+    let order = 0;
+    let unreadableSheet = false;
+    let unparsableSelector = false;
+
+    function consider(cssRule) {
+      const decl = underlineFromDeclaration(cssRule.style);
+      if (!decl) return;
+      for (const part of splitSelectorList(cssRule.selectorText)) {
+        // A pseudo-element rule paints a box other than the link's own text.
+        if (/::[a-z-]+/i.test(part)) continue;
+        // A state the static DOM is not in (:hover/:focus/...) does not
+        // describe the link's resting appearance, which is what this rule is
+        // about.
+        if (/:(hover|focus|focus-visible|focus-within|active|target|visited)\b/i.test(part)) {
+          continue;
+        }
+        let matched;
+        try {
+          matched = el.matches(part);
+        } catch {
+          unparsableSelector = true;
+          continue;
+        }
+        if (!matched) continue;
+        order += 1;
+        const rank = (decl.important ? 1e9 : 0) + specificityOf(part);
+        if (!best || rank >= best.rank) best = { rank, order, underlined: decl.underlined };
+      }
+    }
+
+    function walk(rules, depth) {
+      if (!rules || depth > MAX_NESTED_DEPTH) return;
+      for (const cssRule of rules) {
+        if (!cssRule) continue;
+        if (cssRule.type === CSS_STYLE_RULE && cssRule.selectorText) {
+          consider(cssRule);
+          continue;
+        }
+        let nested;
+        try {
+          nested = cssRule.cssRules || null;
+        } catch {
+          nested = null;
+        }
+        if (nested) walk(nested, depth + 1);
+      }
+    }
+
+    try {
+      for (const sheet of doc.styleSheets || []) {
+        let rules = null;
+        try {
+          rules = sheet && sheet.cssRules ? sheet.cssRules : null;
+        } catch {
+          unreadableSheet = true; // cross-origin, not inspectable
+          continue;
+        }
+        if (rules) walk(rules, 0);
+      }
+    } catch {
+      return { underlined: false, resolved: false };
+    }
+
+    // The inline style attribute outranks every stylesheet declaration.
+    const inline = underlineFromDeclaration(el.style);
+    if (inline) return { underlined: inline.underlined, resolved: true };
+
+    if (best) return { underlined: best.underlined, resolved: true };
+
+    // No author declaration reached this element. If a sheet or selector was
+    // unreadable, one of them might have, so the answer is unknown; otherwise
+    // the UA default stands, and for a link that means underlined.
+    if (unreadableSheet || unparsableSelector) return { underlined: false, resolved: false };
+    return { underlined: true, resolved: true };
   }
 
   function hasSurroundingText(el, parent) {
@@ -85216,7 +85814,15 @@ const __a11yCoreCrossFrameApi = (function () {
     : helpers.queryAll(selector);
 
   const occurrences = [];
+  const undecided = [];
   let applicableCount = 0;
+  let decidedCount = 0;
+
+  // Applicable, but not evaluable. Held separately so the outcome below can
+  // tell "checked and sound" apart from "never decided".
+  function markUndecided(el, reasonCode) {
+    undecided.push({ el, reasonCode });
+  }
 
   for (const el of nodes) {
     if (!el || !el.getAttribute) continue;
@@ -85234,27 +85840,40 @@ const __a11yCoreCrossFrameApi = (function () {
     const linkCs = safeComputedStyle(el);
     const parentCs = safeComputedStyle(parent);
 
-    if (hasUnderline(linkCs)) continue;
-
+    // Cues that do not depend on `text-decoration` come first, so a link
+    // carrying one is decided even where decoration is unreadable.
     const linkWeight = c && linkCs ? c.normalizeFontWeight(linkCs.fontWeight) : 400;
     const parentWeight = c && parentCs ? c.normalizeFontWeight(parentCs.fontWeight) : 400;
-    if (linkWeight !== parentWeight) continue;
+    if (linkWeight !== parentWeight) {
+      decidedCount += 1;
+      continue;
+    }
 
     const linkStyle = (linkCs && linkCs.fontStyle) || 'normal';
     const parentStyle = (parentCs && parentCs.fontStyle) || 'normal';
-    if (linkStyle !== parentStyle) continue;
+    if (linkStyle !== parentStyle) {
+      decidedCount += 1;
+      continue;
+    }
 
-    if (!c) continue;
+    if (!c) {
+      markUndecided(el, 'CONTRAST_HELPERS_UNAVAILABLE');
+      continue;
+    }
 
     let flagged = false;
+    let computed = false;
     let ratio = null;
     let fgLinkHex = '';
     let fgParentHex = '';
+    let undecidedReason = 'COLOR_NOT_COMPUTABLE';
 
     try {
       const blocker = c.getComputabilityBlocker(el);
       if (blocker && blocker.ok === false) {
-        // Not confidently computable, skip (benefit of the doubt).
+        // Not confidently computable: recorded below rather than skipped, so
+        // it cannot be mistaken for a clean result.
+        if (blocker.reasonCode) undecidedReason = String(blocker.reasonCode);
       } else {
         const bg = c.computeEffectiveBackground(el, {
           contrast: { mode, rootCanvasFallback },
@@ -85277,15 +85896,49 @@ const __a11yCoreCrossFrameApi = (function () {
           fgLinkHex = c.rgbToHex ? c.rgbToHex(fgLinkOpaque) : '';
           fgParentHex = c.rgbToHex ? c.rgbToHex(fgParentOpaque) : '';
 
+          computed = true;
           if (!(ratio >= 3)) flagged = true;
         }
-        // else: not confidently computable, skip.
+        // else: not confidently computable, recorded below.
       }
     } catch {
-      // no-throw: treat as not computable, skip.
+      // No-throw: treat as not computable and record it.
+      undecidedReason = 'ENGINE_EXCEPTION';
     }
 
-    if (!flagged) continue;
+    if (!computed) {
+      markUndecided(el, undecidedReason);
+      continue;
+    }
+
+    // Contrast alone is an accepted alternative to an underline (G183), so a
+    // link clearing 3:1 is distinguishable regardless of decoration.
+    if (!flagged) {
+      decidedCount += 1;
+      continue;
+    }
+
+    // Below 3:1, an underline is the last remaining cue -- and only now does
+    // it matter whether this environment can actually report one.
+    const decoration = decorationInfo(linkCs);
+    let underlined;
+    if (decoration.trustworthy) {
+      underlined = decoration.underlined;
+    } else {
+      const fromCssom = resolveUnderlineFromCssom(el);
+      if (!fromCssom.resolved) {
+        markUndecided(el, 'TEXT_DECORATION_NOT_RESOLVABLE');
+        continue;
+      }
+      underlined = fromCssom.underlined;
+    }
+
+    if (underlined) {
+      decidedCount += 1;
+      continue;
+    }
+
+    decidedCount += 1;
 
     const eligInfo = helpers.getEligibilityInfo
       ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
@@ -85318,6 +85971,9 @@ const __a11yCoreCrossFrameApi = (function () {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
+
+  // A proven violation outranks an undecided candidate, which outranks a clean
+  // one. The middle step keeps an unevaluable link out of `pass`.
   if (occurrences.length) {
     return {
       ruleId: rule.ruleId,
@@ -85326,7 +85982,37 @@ const __a11yCoreCrossFrameApi = (function () {
       occurrences
     };
   }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+
+  if (undecided.length) {
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'serious',
+      confidence: 'low',
+      occurrences: undecided.map(({ el, reasonCode }) =>
+        helpers.reportOccurrence(el, {
+          summary:
+            'Whether this link is distinguishable from the surrounding text by non-color means could not be determined.',
+          hint: 'Confirm by eye that the link carries an underline, a font-weight or font-style difference, or at least 3:1 contrast against the surrounding text. Running the engine in a real browser rather than a DOM emulator resolves most cases automatically.',
+          i18n: {
+            summaryKey: 'linkInTextBlock_summary_cantTell',
+            hintKey: 'linkInTextBlock_hint_cantTell'
+          },
+          data: {
+            visibilityFilter: helpers.getEligibilityInfo
+              ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
+              : { targetSet: 'acc', accEligible: null, reasons: [] },
+            details: { reasonCode }
+          }
+        })
+      )
+    };
+  }
+
+  if (decidedCount > 0) {
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  }
+  return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "link-name-present": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
@@ -94425,6 +95111,8 @@ const I18N = {
     "avoidInlineSpacing_description": "Prüft, dass ein per !important erzwungener Wert für line-height, letter-spacing oder word-spacing WCAG 1.4.12 bereits erfüllt, sodass dem Nutzer nichts zu überschreiben bleibt.",
     "avoidInlineSpacing_summary_fail": "Der Inline-Stil dieses Elements erzwingt {{properties}} mit !important und blockiert damit Überschreibungen des Textabstands durch den Nutzer.",
     "avoidInlineSpacing_hint_fail": "Entfernen Sie !important von line-height/letter-spacing/word-spacing in Inline-Stilen, damit Nutzer den Textabstand überschreiben können.",
+    "avoidInlineSpacing_summary_cantTell": "Der Inline-Stil dieses Elements setzt {{properties}} mit !important, der Wert ließ sich jedoch nicht auflösen; daher konnte nicht ermittelt werden, ob er die WCAG-Textabstandsmetrik erfüllt.",
+    "avoidInlineSpacing_hint_cantTell": "Prüfen Sie diesen Wert manuell anhand der Metrik (Zeilenhöhe 1,5; Zeichenabstand 0,12em; Wortabstand 0,16em), oder geben Sie ihn in einer Einheit an, die die Engine gegen die berechnete Schriftgröße des Elements auflösen kann.",
     "metaRefreshNoExceptions_title": "Die Seite darf überhaupt keinen Meta-Refresh verwenden (AAA)",
     "metaRefreshNoExceptions_description": "Prüft, ob <meta http-equiv=\"refresh\"> unabhängig von der Verzögerung überhaupt nicht vorhanden ist — das strengere AAA-Gegenstück zur A-Prüfung, die nur positive Verzögerungen betrachtet.",
     "metaRefreshNoExceptions_summary_fail": "Diese Seite verwendet einen Meta-Refresh, eine automatische Kontextänderung, die nicht vom Nutzer ausgelöst wird.",
@@ -94437,6 +95125,8 @@ const I18N = {
     "linkInTextBlock_description": "Prüft, ob ein Link innerhalb eines Textabschnitts durch Unterstreichung, einen Unterschied in Schriftgewicht/-stil oder einen ausreichenden (>= 3:1) Farbkontrastunterschied visuell vom umgebenden Text unterscheidbar ist — nicht allein durch Farbe.",
     "linkInTextBlock_summary_fail": "Dieser Link in einem Textblock unterscheidet sich vom umgebenden Text ausschließlich durch Farbe.",
     "linkInTextBlock_hint_fail": "Fügen Sie eine Unterstreichung oder einen Unterschied in Schriftgewicht/-stil hinzu, oder erhöhen Sie den Farbkontrast zwischen Link und umgebendem Text auf mindestens 3:1.",
+    "linkInTextBlock_summary_cantTell": "Es konnte nicht ermittelt werden, ob sich dieser Link durch andere Mittel als Farbe vom umgebenden Text abhebt.",
+    "linkInTextBlock_hint_cantTell": "Prüfen Sie visuell, ob der Link eine Unterstreichung, einen Unterschied in Schriftstärke oder -stil oder mindestens 3:1 Kontrast zum umgebenden Text aufweist. Wird die Engine in einem echten Browser statt in einem DOM-Emulator ausgeführt, klärt sich das in den meisten Fällen automatisch.",
     "noAutoplayAudio_title": "Automatisch abgespieltes Audio sollte einen Mechanismus zum Pausieren/Stoppen oder zur Lautstärkeregelung bieten",
     "noAutoplayAudio_description": "Markiert <audio>/<video>-Elemente, die unstummgeschaltet automatisch abspielen und kein natives controls-Attribut haben, zur manuellen Überprüfung im Hinblick auf die 3-Sekunden-Ausnahme in WCAG 1.4.2.",
     "noAutoplayAudio_summary_cantTell": "Dieses Element spielt Audio automatisch ab, ohne einen nativen Mechanismus zum Pausieren/Stoppen oder zur Lautstärkeregelung.",
@@ -94470,6 +95160,8 @@ const I18N = {
     "cssOrientationLock_summary_fail": "Eine Media Query „{{mediaText}}“ dreht „{{selectorText}}“ und legt die Seite damit auf eine Ausrichtung fest.",
     "cssOrientationLock_summary_fail_unknownSelector": "Eine \"{{mediaText}}\"-Media-Query dreht ein Element ohne lesbaren Selektor und sperrt die Seite auf eine Ausrichtung.",
     "cssOrientationLock_hint_fail": "Entfernen Sie die rotate()-Transformation aus der Ausrichtungs-Media-Query; lassen Sie die Seite stattdessen natürlich auf die Geräteausrichtung reagieren, anstatt eine visuelle Drehung zu erzwingen.",
+    "cssOrientationLock_summary_cantTell_unreadableSheets": "{{count}} Stylesheet(s) konnten nicht gelesen werden; daher ließ sich nicht ermitteln, ob diese Seite ihre Ausrichtung fixiert.",
+    "cssOrientationLock_hint_cantTell_unreadableSheets": "Stylesheets von fremden Ursprüngen lassen sich aus der Seite heraus nicht inspizieren. Prüfen Sie Drittanbieter-CSS auf eine Orientierungs-Media-Query mit einer rotate()-Transformation, oder wiederholen Sie den Scan mit diesen Stylesheets vom selben Ursprung.",
     "ariaText_title": "Elemente mit role=\"text\" sollten keine fokussierbaren Nachfahren haben",
     "ariaText_description": "Prüft, ob Elemente mit role=\"text\" keinen fokussierbaren Nachfahren enthalten (Link, Schaltfläche, Formularelement, tabindex, iframe oder contenteditable).",
     "ariaText_summary_cantTell": "Dieses Element mit role=\"text\" enthält einen fokussierbaren Nachfahren.",
@@ -95093,6 +95785,8 @@ const I18N = {
     "avoidInlineSpacing_description": "Checks that where inline style forces line-height, letter-spacing or word-spacing with !important, the value already meets WCAG 1.4.12, so the user has nothing left to override.",
     "avoidInlineSpacing_summary_fail": "This element's inline style forces {{properties}} with !important, blocking user text-spacing overrides.",
     "avoidInlineSpacing_hint_fail": "Remove !important from line-height/letter-spacing/word-spacing in inline styles so users can override text spacing.",
+    "avoidInlineSpacing_summary_cantTell": "This element's inline style sets {{properties}} with !important, but the value could not be resolved, so whether it meets the WCAG text-spacing metric could not be determined.",
+    "avoidInlineSpacing_hint_cantTell": "Check this value by hand against the metric (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em), or express it in a unit the engine can resolve against the element’s computed font size.",
     "metaRefreshNoExceptions_title": "Page must not use a meta refresh at all (AAA)",
     "metaRefreshNoExceptions_description": "Checks that <meta http-equiv=\"refresh\"> is not present at all, regardless of delay. This is the stricter AAA-level counterpart of the A-level positive-delay-only check.",
     "metaRefreshNoExceptions_summary_fail": "This page uses a meta refresh, which is an automatic context change not initiated by the user.",
@@ -95105,6 +95799,8 @@ const I18N = {
     "linkInTextBlock_description": "Checks that a link inside a run of text is visually distinguishable from the surrounding text by underline, a font-weight/style difference, or a sufficient (>=3:1) color-contrast difference, not by color alone.",
     "linkInTextBlock_summary_fail": "This link in a block of text relies on color alone to be distinguished from the surrounding text.",
     "linkInTextBlock_hint_fail": "Add an underline, a font-weight/style difference, or increase the color contrast between the link and surrounding text to at least 3:1.",
+    "linkInTextBlock_summary_cantTell": "Whether this link is distinguishable from the surrounding text by non-color means could not be determined.",
+    "linkInTextBlock_hint_cantTell": "Confirm by eye that the link carries an underline, a font-weight or font-style difference, or at least 3:1 contrast against the surrounding text. Running the engine in a real browser rather than a DOM emulator resolves most cases automatically.",
     "noAutoplayAudio_title": "Autoplaying audio should provide a pause/stop or volume-control mechanism",
     "noAutoplayAudio_description": "Flags <audio>/<video> elements that autoplay unmuted with no native controls attribute, for manual review against the 3-second exemption in WCAG 1.4.2.",
     "noAutoplayAudio_summary_cantTell": "This element autoplays audio without a native pause/stop or volume-control mechanism.",
@@ -95138,6 +95834,8 @@ const I18N = {
     "cssOrientationLock_summary_fail": "A \"{{mediaText}}\" media query rotates \"{{selectorText}}\", locking the page to one orientation.",
     "cssOrientationLock_summary_fail_unknownSelector": "A \"{{mediaText}}\" media query rotates an element with no readable selector, locking the page to one orientation.",
     "cssOrientationLock_hint_fail": "Remove the rotate() transform from the orientation media query; let the page respond naturally to device orientation instead of forcing a visual rotation.",
+    "cssOrientationLock_summary_cantTell_unreadableSheets": "{{count}} stylesheet(s) could not be read, so whether this page locks its orientation could not be determined.",
+    "cssOrientationLock_hint_cantTell_unreadableSheets": "Cross-origin stylesheets are not inspectable from the page. Check any third-party CSS for an orientation media query containing a rotate() transform, or re-run the scan with those stylesheets served same-origin.",
     "ariaText_title": "role=\"text\" elements should have no focusable descendants",
     "ariaText_description": "Checks that elements with role=\"text\" contain no focusable descendant (link, button, form control, tabindex, iframe, or contenteditable).",
     "ariaText_summary_cantTell": "This role=\"text\" element contains a focusable descendant.",
@@ -95761,6 +96459,8 @@ const I18N = {
     "avoidInlineSpacing_description": "Comprueba que cuando el estilo en línea fuerza line-height, letter-spacing o word-spacing con !important, el valor ya cumple WCAG 1.4.12, por lo que al usuario no le queda nada que anular.",
     "avoidInlineSpacing_summary_fail": "El estilo en línea de este elemento fuerza {{properties}} con !important, bloqueando las anulaciones de espaciado de texto del usuario.",
     "avoidInlineSpacing_hint_fail": "Eliminar !important de line-height/letter-spacing/word-spacing en los estilos en línea para que los usuarios puedan anular el espaciado de texto.",
+    "avoidInlineSpacing_summary_cantTell": "El estilo en línea de este elemento define {{properties}} con !important, pero no se ha podido resolver el valor, por lo que no se ha podido determinar si cumple la métrica de espaciado de texto de WCAG.",
+    "avoidInlineSpacing_hint_cantTell": "Compruebe este valor manualmente con la métrica (interlineado 1,5; espaciado entre letras 0,12em; espaciado entre palabras 0,16em), o exprésalo en una unidad que el motor pueda resolver respecto al tamaño de fuente calculado del elemento.",
     "metaRefreshNoExceptions_title": "La página no debe usar un meta refresh en absoluto (AAA)",
     "metaRefreshNoExceptions_description": "Comprueba que <meta http-equiv=\"refresh\"> no esté presente en absoluto, independientemente del retraso; es la contraparte más estricta de nivel AAA de la comprobación de nivel A que solo se aplica a los retrasos positivos.",
     "metaRefreshNoExceptions_summary_fail": "Esta página usa un meta refresh, que es un cambio de contexto automático no iniciado por el usuario.",
@@ -95773,6 +96473,8 @@ const I18N = {
     "linkInTextBlock_description": "Comprueba que un enlace dentro de un bloque de texto se distinga visualmente del texto circundante mediante subrayado, una diferencia de grosor/estilo de fuente, o una diferencia de contraste de color suficiente (>=3:1); no solo por el color.",
     "linkInTextBlock_summary_fail": "Este enlace dentro de un bloque de texto depende únicamente del color para distinguirse del texto circundante.",
     "linkInTextBlock_hint_fail": "Agregar un subrayado, una diferencia de grosor/estilo de fuente, o aumentar el contraste de color entre el enlace y el texto circundante a al menos 3:1.",
+    "linkInTextBlock_summary_cantTell": "No se ha podido determinar si este enlace se distingue del texto circundante por medios que no sean el color.",
+    "linkInTextBlock_hint_cantTell": "Compruebe visualmente que el enlace tiene subrayado, una diferencia de grosor o estilo de fuente, o al menos un contraste de 3:1 con el texto circundante. Ejecutar el motor en un navegador real, en lugar de en un emulador de DOM, resuelve la mayoría de los casos automáticamente.",
     "noAutoplayAudio_title": "El audio en reproducción automática debería proporcionar un mecanismo de pausa/detención o control de volumen",
     "noAutoplayAudio_description": "Señala elementos <audio>/<video> que se reproducen automáticamente sin silenciar y sin un atributo de controles nativo, para su revisión manual frente a la excepción de 3 segundos del criterio de éxito 1.4.2 de WCAG.",
     "noAutoplayAudio_summary_cantTell": "Este elemento reproduce audio automáticamente sin un mecanismo nativo de pausa/detención o control de volumen.",
@@ -95806,6 +96508,8 @@ const I18N = {
     "cssOrientationLock_summary_fail": "Una media query \"{{mediaText}}\" rota \"{{selectorText}}\", bloqueando la página a una sola orientación.",
     "cssOrientationLock_summary_fail_unknownSelector": "Una consulta de medios \"{{mediaText}}\" rota un elemento sin selector legible y bloquea la página en una sola orientación.",
     "cssOrientationLock_hint_fail": "Eliminar la transformación rotate() de la media query de orientación; dejar que la página responda de forma natural a la orientación del dispositivo en lugar de forzar una rotación visual.",
+    "cssOrientationLock_summary_cantTell_unreadableSheets": "No se han podido leer {{count}} hoja(s) de estilo, por lo que no se ha podido determinar si esta página bloquea su orientación.",
+    "cssOrientationLock_hint_cantTell_unreadableSheets": "Las hojas de estilo de origen cruzado no se pueden inspeccionar desde la página. Revise el CSS de terceros en busca de una consulta de medios de orientación que contenga una transformación rotate(), o repita el análisis sirviendo esas hojas de estilo desde el mismo origen.",
     "ariaText_title": "Los elementos con role=\"text\" no deberían tener descendientes enfocables",
     "ariaText_description": "Comprueba que los elementos con role=\"text\" no contengan ningún descendiente enfocable (enlace, botón, control de formulario, tabindex, iframe o contenteditable).",
     "ariaText_summary_cantTell": "Este elemento con role=\"text\" contiene un descendiente enfocable.",
@@ -96429,6 +97133,8 @@ const I18N = {
     "avoidInlineSpacing_description": "Vérifie que lorsqu’un style en ligne force line-height, letter-spacing ou word-spacing avec !important, la valeur respecte déjà WCAG 1.4.12, ne laissant rien à surcharger à l’utilisateur.",
     "avoidInlineSpacing_summary_fail": "Le style en ligne de cet élément force {{properties}} avec !important, bloquant les surcharges d’espacement de texte par l’utilisateur.",
     "avoidInlineSpacing_hint_fail": "Retirez !important de line-height/letter-spacing/word-spacing dans les styles en ligne afin que les utilisateurs puissent surcharger l’espacement du texte.",
+    "avoidInlineSpacing_summary_cantTell": "Le style en ligne de cet élément définit {{properties}} avec !important, mais la valeur n'a pas pu être résolue ; impossible donc de déterminer si elle respecte la métrique d'espacement du texte WCAG.",
+    "avoidInlineSpacing_hint_cantTell": "Vérifiez cette valeur manuellement par rapport à la métrique (hauteur de ligne 1,5 ; espacement des lettres 0,12em ; espacement des mots 0,16em), ou exprimez-la dans une unité que le moteur peut résoudre par rapport à la taille de police calculée de l'élément.",
     "metaRefreshNoExceptions_title": "La page ne doit utiliser aucun rafraîchissement meta (AAA)",
     "metaRefreshNoExceptions_description": "Vérifie que <meta http-equiv=\"refresh\"> n’est présent en aucun cas, quel que soit le délai — la variante plus stricte, de niveau AAA, de la vérification de niveau A qui ne porte que sur les délais positifs.",
     "metaRefreshNoExceptions_summary_fail": "Cette page utilise un rafraîchissement meta, un changement de contexte automatique non initié par l’utilisateur.",
@@ -96441,6 +97147,8 @@ const I18N = {
     "linkInTextBlock_description": "Vérifie qu’un lien à l’intérieur d’un bloc de texte est visuellement distinguable du texte environnant par un soulignement, une différence de graisse/style de police, ou un contraste de couleur suffisant (>= 3:1) — pas seulement par la couleur.",
     "linkInTextBlock_summary_fail": "Ce lien dans un bloc de texte se distingue du texte environnant uniquement par la couleur.",
     "linkInTextBlock_hint_fail": "Ajoutez un soulignement, une différence de graisse/style de police, ou augmentez le contraste de couleur entre le lien et le texte environnant à au moins 3:1.",
+    "linkInTextBlock_summary_cantTell": "Impossible de déterminer si ce lien se distingue du texte environnant par un moyen autre que la couleur.",
+    "linkInTextBlock_hint_cantTell": "Vérifiez visuellement que le lien porte un soulignement, une différence de graisse ou de style de police, ou un contraste d'au moins 3:1 avec le texte environnant. Exécuter le moteur dans un navigateur réel plutôt que dans un émulateur de DOM résout automatiquement la plupart des cas.",
     "noAutoplayAudio_title": "Un audio en lecture automatique devrait proposer un mécanisme de pause/arrêt ou de contrôle du volume",
     "noAutoplayAudio_description": "Signale les éléments <audio>/<video> qui se lancent automatiquement sans être coupés et sans attribut controls natif, pour une revue manuelle par rapport à l’exemption de 3 secondes de la WCAG 1.4.2.",
     "noAutoplayAudio_summary_cantTell": "Cet élément lit un audio automatiquement sans mécanisme natif de pause/arrêt ou de contrôle du volume.",
@@ -96474,6 +97182,8 @@ const I18N = {
     "cssOrientationLock_summary_fail": "Une media query « {{mediaText}} » fait pivoter « {{selectorText}} », verrouillant la page à une seule orientation.",
     "cssOrientationLock_summary_fail_unknownSelector": "Une media query \"{{mediaText}}\" fait pivoter un élément sans sélecteur lisible et verrouille la page dans une seule orientation.",
     "cssOrientationLock_hint_fail": "Retirez la transformation rotate() de la media query d’orientation ; laissez la page répondre naturellement à l’orientation de l’appareil au lieu de forcer une rotation visuelle.",
+    "cssOrientationLock_summary_cantTell_unreadableSheets": "{{count}} feuille(s) de style n'ont pas pu être lues ; impossible donc de déterminer si cette page verrouille son orientation.",
+    "cssOrientationLock_hint_cantTell_unreadableSheets": "Les feuilles de style d'origine différente ne sont pas inspectables depuis la page. Vérifiez le CSS tiers à la recherche d'une media query d'orientation contenant une transformation rotate(), ou relancez l'analyse avec ces feuilles de style servies depuis la même origine.",
     "ariaText_title": "Les éléments role=\"text\" ne devraient avoir aucun descendant focalisable",
     "ariaText_description": "Vérifie que les éléments ayant role=\"text\" ne contiennent aucun descendant focalisable (lien, bouton, contrôle de formulaire, tabindex, iframe, ou contenteditable).",
     "ariaText_summary_cantTell": "Cet élément role=\"text\" contient un descendant focalisable.",

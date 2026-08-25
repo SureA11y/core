@@ -240,6 +240,7 @@ function runInPage(ctx) {
 
   const findings = [];
   let sheetCount = 0;
+  let unreadableSheetCount = 0;
 
   try {
     const sheets = document.styleSheets || [];
@@ -248,7 +249,10 @@ function runInPage(ctx) {
       try {
         rules = sheet && sheet.cssRules ? sheet.cssRules : null;
       } catch {
-        continue; // cross-origin stylesheet, not inspectable
+        // Cross-origin, not inspectable. Counted, since a lock could be
+        // declared there and a `pass` would claim more than was checked.
+        unreadableSheetCount += 1;
+        continue;
       }
       if (!rules) continue;
       sheetCount += 1;
@@ -264,15 +268,43 @@ function runInPage(ctx) {
     // no-throw: treat as no accessible stylesheets
   }
 
-  if (sheetCount === 0) {
-    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
-  }
+  const scanTarget = document.documentElement || document.body || null;
 
+  // A lock found in a readable sheet is still a lock, so `fail` outranks the
+  // uncertainty below.
   if (!findings.length) {
+    if (unreadableSheetCount > 0) {
+      return {
+        ruleId: rule.ruleId,
+        outcome: 'cantTell',
+        severity: rule.defaultSeverity || 'serious',
+        confidence: 'low',
+        occurrences: [
+          helpers.reportOccurrence(scanTarget, {
+            summary: `${unreadableSheetCount} stylesheet(s) could not be read, so whether this page locks its orientation could not be determined.`,
+            hint: 'Cross-origin stylesheets are not inspectable from the page. Check any third-party CSS for an orientation media query containing a rotate() transform, or re-run the scan with those stylesheets served same-origin.',
+            i18n: {
+              summaryKey: 'cssOrientationLock_summary_cantTell_unreadableSheets',
+              hintKey: 'cssOrientationLock_hint_cantTell_unreadableSheets',
+              params: { count: String(unreadableSheetCount) }
+            },
+            data: {
+              details: {
+                reasonCode: 'STYLESHEETS_NOT_READABLE',
+                unreadableSheetCount
+              }
+            }
+          })
+        ]
+      };
+    }
+    if (sheetCount === 0) {
+      return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+    }
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
 
-  const target = document.documentElement || document.body || null;
+  const target = scanTarget;
   const occurrences = findings.map((f) =>
     helpers.reportOccurrence(target, {
       summary: f.selectorText
