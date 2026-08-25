@@ -8,6 +8,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 - `docs/RULE_HELPERS.md`: reference for every function on `ctx.helpers` available to a rule's `runInPage` — around 35 flat helpers plus the `contrast.*`/`aria.*` namespaces. `docs/RULE_AUTHORING.md` §6 previously named only a dozen of them inline; the rest were discoverable only by reading `src/core/dom-helpers.js` directly. §6 now points here instead.
 
 ### Added
+- `landmark-complementary-is-top-level` reports a complementary landmark nested inside another landmark, completing a family that already covered banner, contentinfo and main. Advisory and capped at `cantTell`, like its three siblings. An unnamed `<aside>` inside sectioning content has no complementary role per HTML-AAM and is not reported, since there would be no landmark there to call nested; a named one keeps the role wherever it sits, so an `<aside aria-label>` inside `<main>` is reported.
 - `@surea11y/core/i18n/<locale>` resolves each locale side file by path, alongside the existing `@surea11y/core/browser`. A binding that injects the standalone bundle into a page needs the matching dictionary to honour `engineOptions.locale`, and the exports map previously put both out of reach. An unshipped locale fails to resolve rather than resolving to nothing, so a caller can tell the difference and fall back. See [`docs/BINDING_AUTHORS_GUIDE.md`](./docs/BINDING_AUTHORS_GUIDE.md).
 
 ### Changed

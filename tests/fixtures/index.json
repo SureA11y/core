@@ -1,7 +1,7 @@
 {
   "summary": {
-    "total": 130,
-    "withFixture": 130,
+    "total": 131,
+    "withFixture": 131,
     "withoutFixture": 0
   },
   "rows": [
@@ -1300,6 +1300,23 @@
         "FAIL": 0,
         "CANTTELL": 2,
         "OTHER": 2
+      }
+    },
+    {
+      "ruleId": "landmark-complementary-is-top-level",
+      "title": "Complementary landmark must be top-level",
+      "type": "manual",
+      "wcagSc": [],
+      "ruleFile": "src/checks/manual/landmark-complementary-is-top-level-manual.js",
+      "testFile": "tests/engine-checks/manual/landmark-complementary-is-top-level.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/landmark-complementary-is-top-level-all-scenarios.html",
+      "totalCases": 7,
+      "caseCounts": {
+        "PASS": 0,
+        "FAIL": 0,
+        "CANTTELL": 2,
+        "OTHER": 5
       }
     },
     {
