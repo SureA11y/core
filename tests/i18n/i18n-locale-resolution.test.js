@@ -4,6 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const { JSDOM } = require('jsdom');
 
 const { runa11yCoreOnHtml } = require('../helpers/runa11yCoreOnHtml');
 
@@ -171,12 +172,50 @@ test('resolveLocale falls back to English when no table was inlined at all', () 
   });
 });
 
-test('every engine copy carries resolveLocale', () => {
+test('every engine copy in the generated core carries resolveLocale', () => {
   const core = fs.readFileSync(path.join(ROOT_DIR, 'src', 'core.js'), 'utf8');
-  const bundle = fs.readFileSync(path.join(ROOT_DIR, 'surea11y.browser.js'), 'utf8');
 
-  assert.equal(core.split('function resolveLocale(').length - 1, 3);
-  assert.equal(bundle.split('function resolveLocale(').length - 1, 1);
+  // Two engine copies: the module scope runDomRulesInPage runs against, and
+  // runa11yCoreInPage's self-contained body. The cross-frame IIFE scans its
+  // own frame through runa11yCoreInPage rather than carrying a third copy.
+  assert.equal(core.split('function resolveLocale(').length - 1, 2);
+});
+
+test('the browser bundle resolves locales on its own', () => {
+  // The bundle is minified, so its identifiers are gone and only behaviour is
+  // left to assert against -- which is the better question anyway: loaded
+  // alone into a page, with nothing else present, does it still resolve a
+  // locale and report what it resolved?
+  const dom = new JSDOM('<!doctype html><html><head><title>t</title></head><body></body></html>', {
+    url: 'https://example.test/',
+    runScripts: 'outside-only'
+  });
+
+  dom.window.eval(fs.readFileSync(path.join(ROOT_DIR, 'surea11y.browser.js'), 'utf8'));
+
+  // The result comes from the jsdom realm, so copy it into a plain object of
+  // this one before comparing -- a strict deep-equal weighs prototypes too.
+  const scan = (engineOptions) => {
+    const { requested, resolved, reason } = dom.window.a11ycore.runa11yCoreInPage(
+      'https://example.test/',
+      null,
+      engineOptions,
+      { includeRuleIds: ['page-title-present'] }
+    ).engine.locale;
+    return { requested, resolved, reason };
+  };
+
+  assert.deepEqual(scan({}), { requested: 'en', resolved: 'en', reason: 'ok' });
+  assert.deepEqual(scan({ locale: 'de' }), {
+    requested: 'de',
+    resolved: 'en',
+    reason: 'dictionary-not-loaded'
+  });
+  assert.deepEqual(scan({ locale: 'qqq' }), {
+    requested: 'qqq',
+    resolved: 'en',
+    reason: 'unknown-locale'
+  });
 });
 
 test('resolveLocale prefers an exact match over the primary subtag', () => {
