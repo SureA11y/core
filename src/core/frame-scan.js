@@ -12,29 +12,23 @@
  * one can achieve). This exists for when there is no automation driver.
  *
  * Inlined into generated core.js (via scripts/build-core.js), wrapped in its
- * OWN private IIFE together with its own local copies of CHECK_DEFS/
- * RULE_IMPLS/ENGINE_TAG/SCHEMA_VERSION/COMPOSITE_RULES and the shared
- * runnersSharedSource block (runCore, resolveEffectiveRunOnly,
- * resolveContextRoots, pingFrame, sendFrameRunCommand,
- * enableFrameRpcResponder, etc.) -- mirroring exactly how runa11yCoreInPage
- * itself achieves self-containment, and calls runCore(...) directly here on
- * purpose (not the sibling runa11yCoreInPage) so this stays
- * independent of the outer, Node-require-based RULE_IMPLS section. That
- * independence matters concretely: it's what lets these two functions be
- * used the exact same bundler-free way runa11yCoreInPage already is (raw
- * source injected into a page, e.g. a bookmarklet or a content script with
- * no build step) rather than requiring a real bundler to resolve `require()`
- * calls first. References runCore/resolveContextRoots/resolveEffectiveRunOnly/
- * pingFrame/sendFrameRunCommand/enableFrameRpcResponder/CHECK_DEFS/
- * RULE_IMPLS/ENGINE_TAG/SCHEMA_VERSION/COMPOSITE_RULES as free vars,
- * satisfied by that wrapping. Not requireable/testable in isolation for
- * that reason (same as dom-runner.js) -- test via the generated core.js
- * bundle instead.
+ * own private IIFE alongside the postMessage helpers it needs. The local
+ * frame is scanned through runa11yCoreInPage, which is itself self-contained
+ * and require-free, so this stays usable the same bundler-free way that
+ * function already is: raw source injected into a page, a bookmarklet or a
+ * content script with no build step, rather than needing a bundler to
+ * resolve `require()` calls first. Delegating also keeps the rule catalog
+ * and the shared runner block from being emitted a second time -- they
+ * account for roughly half of core.js on their own.
+ *
+ * References runa11yCoreInPage/resolveContextRoots/pingFrame/
+ * sendFrameRunCommand/enableFrameRpcResponder as free vars, satisfied by
+ * that wrapping. Not requireable/testable in isolation for that reason
+ * (same as dom-runner.js) -- test via the generated core.js bundle instead.
  */
 
-/* global runCore, resolveContextRoots, resolveEffectiveRunOnly, pingFrame,
-   sendFrameRunCommand, enableFrameRpcResponder, CHECK_DEFS, RULE_IMPLS,
-   ENGINE_TAG, SCHEMA_VERSION, COMPOSITE_RULES */
+/* global runa11yCoreInPage, resolveContextRoots, pingFrame,
+   sendFrameRunCommand, enableFrameRpcResponder */
 
 function findChildFrameElements(roots) {
   const seen = new Set();
@@ -88,17 +82,7 @@ function getFrameElementUrl(el) {
  * @returns {Promise<{ topFrame: object, frames: Array<{url:string|null, topFrame?:object, frames?:Array, error?:string}> }>}
  */
 function runa11yCoreAcrossFrames(pageUrl, contextSelector, engineOptions, runOnly) {
-  const topFrame = runCore(
-    pageUrl,
-    contextSelector,
-    engineOptions,
-    resolveEffectiveRunOnly(engineOptions, runOnly),
-    CHECK_DEFS,
-    RULE_IMPLS,
-    ENGINE_TAG,
-    SCHEMA_VERSION,
-    COMPOSITE_RULES
-  );
+  const topFrame = runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly);
 
   const eo = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
   const pingWaitTime = typeof eo.pingWaitTime === 'number' ? eo.pingWaitTime : undefined;
