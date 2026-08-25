@@ -83,6 +83,7 @@ function runInPage(ctx) {
 
   const occurrences = [];
   let applicableCount = 0;
+  const undecided = [];
 
   // Within one declaration block, importance wins over order, so the last
   // important declaration is the one that takes effect. Passed Example 5 of ACT
@@ -228,6 +229,7 @@ function runInPage(ctx) {
     if (!hasVisibleTextChild(el) || !isRendered(el) || isOffScreen(el)) continue;
 
     const flagged = [];
+    const unresolved = [];
     let inScope = false;
     for (const prop of SPACING_PROPS) {
       const decl = effectiveDeclaration(raw, prop);
@@ -235,14 +237,20 @@ function runInPage(ctx) {
       if (INHERITED_KEYWORDS.indexOf(decl.value.toLowerCase()) !== -1) continue;
       inScope = true;
       const ratio = spacingRatio(el, prop, decl.value);
-      // Unresolvable spacing is left alone: this engine reserves fail for
-      // high-confidence violations.
-      if (ratio === null) continue;
+      // Not flagged, since `fail` needs a measured value -- but recorded, so
+      // the element does not fall through to `pass` unmeasured.
+      if (ratio === null) {
+        unresolved.push(prop);
+        continue;
+      }
       if (ratio < MIN_RATIO[prop]) flagged.push(prop);
     }
 
     if (inScope) applicableCount += 1;
-    if (!flagged.length) continue;
+    if (!flagged.length) {
+      if (unresolved.length) undecided.push({ el, props: unresolved.slice() });
+      continue;
+    }
 
     const tag = el.tagName.toLowerCase();
 
@@ -271,6 +279,35 @@ function runInPage(ctx) {
       outcome: 'fail',
       severity: rule.defaultSeverity || 'moderate',
       occurrences
+    };
+  }
+  if (undecided.length) {
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'moderate',
+      confidence: 'low',
+      occurrences: undecided.map(({ el, props }) =>
+        helpers.reportOccurrence(el, {
+          summary: `This element's inline style sets ${props.join(', ')} with !important, but the value could not be resolved, so whether it meets the WCAG text-spacing metric could not be determined.`,
+          hint: 'Check this value by hand against the metric (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em), or express it in a unit the engine can resolve against the element’s computed font size.',
+          i18n: {
+            summaryKey: 'avoidInlineSpacing_summary_cantTell',
+            hintKey: 'avoidInlineSpacing_hint_cantTell',
+            params: {
+              element: (el.tagName || '').toLowerCase(),
+              properties: props.join(', ')
+            }
+          },
+          data: {
+            details: {
+              reasonCode: 'INLINE_SPACING_NOT_RESOLVABLE',
+              element: (el.tagName || '').toLowerCase(),
+              properties: props
+            }
+          }
+        })
+      )
     };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };

@@ -12144,6 +12144,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const occurrences = [];
   let applicableCount = 0;
+  const undecided = [];
 
   // Within one declaration block, importance wins over order, so the last
   // important declaration is the one that takes effect. Passed Example 5 of ACT
@@ -12289,6 +12290,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!hasVisibleTextChild(el) || !isRendered(el) || isOffScreen(el)) continue;
 
     const flagged = [];
+    const unresolved = [];
     let inScope = false;
     for (const prop of SPACING_PROPS) {
       const decl = effectiveDeclaration(raw, prop);
@@ -12296,14 +12298,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (INHERITED_KEYWORDS.indexOf(decl.value.toLowerCase()) !== -1) continue;
       inScope = true;
       const ratio = spacingRatio(el, prop, decl.value);
-      // Unresolvable spacing is left alone: this engine reserves fail for
-      // high-confidence violations.
-      if (ratio === null) continue;
+      // Not flagged, since `fail` needs a measured value -- but recorded, so
+      // the element does not fall through to `pass` unmeasured.
+      if (ratio === null) {
+        unresolved.push(prop);
+        continue;
+      }
       if (ratio < MIN_RATIO[prop]) flagged.push(prop);
     }
 
     if (inScope) applicableCount += 1;
-    if (!flagged.length) continue;
+    if (!flagged.length) {
+      if (unresolved.length) undecided.push({ el, props: unresolved.slice() });
+      continue;
+    }
 
     const tag = el.tagName.toLowerCase();
 
@@ -12332,6 +12340,35 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       outcome: 'fail',
       severity: rule.defaultSeverity || 'moderate',
       occurrences
+    };
+  }
+  if (undecided.length) {
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'moderate',
+      confidence: 'low',
+      occurrences: undecided.map(({ el, props }) =>
+        helpers.reportOccurrence(el, {
+          summary: `This element's inline style sets ${props.join(', ')} with !important, but the value could not be resolved, so whether it meets the WCAG text-spacing metric could not be determined.`,
+          hint: 'Check this value by hand against the metric (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em), or express it in a unit the engine can resolve against the element’s computed font size.',
+          i18n: {
+            summaryKey: 'avoidInlineSpacing_summary_cantTell',
+            hintKey: 'avoidInlineSpacing_hint_cantTell',
+            params: {
+              element: (el.tagName || '').toLowerCase(),
+              properties: props.join(', ')
+            }
+          },
+          data: {
+            details: {
+              reasonCode: 'INLINE_SPACING_NOT_RESOLVABLE',
+              element: (el.tagName || '').toLowerCase(),
+              properties: props
+            }
+          }
+        })
+      )
     };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
@@ -15810,6 +15847,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const findings = [];
   let sheetCount = 0;
+  let unreadableSheetCount = 0;
 
   try {
     const sheets = document.styleSheets || [];
@@ -15818,7 +15856,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       try {
         rules = sheet && sheet.cssRules ? sheet.cssRules : null;
       } catch {
-        continue; // cross-origin stylesheet, not inspectable
+        // Cross-origin, not inspectable. Counted, since a lock could be
+        // declared there and a `pass` would claim more than was checked.
+        unreadableSheetCount += 1;
+        continue;
       }
       if (!rules) continue;
       sheetCount += 1;
@@ -15834,15 +15875,43 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // no-throw: treat as no accessible stylesheets
   }
 
-  if (sheetCount === 0) {
-    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
-  }
+  const scanTarget = document.documentElement || document.body || null;
 
+  // A lock found in a readable sheet is still a lock, so `fail` outranks the
+  // uncertainty below.
   if (!findings.length) {
+    if (unreadableSheetCount > 0) {
+      return {
+        ruleId: rule.ruleId,
+        outcome: 'cantTell',
+        severity: rule.defaultSeverity || 'serious',
+        confidence: 'low',
+        occurrences: [
+          helpers.reportOccurrence(scanTarget, {
+            summary: `${unreadableSheetCount} stylesheet(s) could not be read, so whether this page locks its orientation could not be determined.`,
+            hint: 'Cross-origin stylesheets are not inspectable from the page. Check any third-party CSS for an orientation media query containing a rotate() transform, or re-run the scan with those stylesheets served same-origin.',
+            i18n: {
+              summaryKey: 'cssOrientationLock_summary_cantTell_unreadableSheets',
+              hintKey: 'cssOrientationLock_hint_cantTell_unreadableSheets',
+              params: { count: String(unreadableSheetCount) }
+            },
+            data: {
+              details: {
+                reasonCode: 'STYLESHEETS_NOT_READABLE',
+                unreadableSheetCount
+              }
+            }
+          })
+        ]
+      };
+    }
+    if (sheetCount === 0) {
+      return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+    }
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
 
-  const target = document.documentElement || document.body || null;
+  const target = scanTarget;
   const occurrences = findings.map((f) =>
     helpers.reportOccurrence(target, {
       summary: f.selectorText
@@ -22394,14 +22463,176 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return null;
   }
 
-  function decorationTokens(cs) {
-    const raw =
-      `${(cs && cs.textDecorationLine) || ''} ${(cs && cs.textDecoration) || ''}`.toLowerCase();
-    return raw.split(/\s+/).filter(Boolean);
+  // Whether the element is underlined, and whether the computed style can be
+  // trusted to say so. A conforming CSSOM serialises the `text-decoration`
+  // shorthand with the line value first, so it and `text-decoration-line`
+  // always agree on whether `underline` is present. jsdom does not cascade
+  // the property at all: the shorthand reads back as the UA's "underline"
+  // for every <a> whatever the author CSS says, and the longhand as "none"
+  // unless the author used the longhand. Either one taken alone is wrong in
+  // one direction, so disagreement is the signal to stop trusting both.
+  function decorationInfo(cs) {
+    if (!cs) return { underlined: false, trustworthy: false };
+
+    const lineRaw = String(cs.textDecorationLine || '')
+      .trim()
+      .toLowerCase();
+    const shortRaw = String(cs.textDecoration || '')
+      .trim()
+      .toLowerCase();
+
+    const lineTokens = lineRaw.split(/\s+/).filter(Boolean);
+    const shortTokens = shortRaw.split(/\s+/).filter(Boolean);
+
+    // Only one of the two exposed: nothing to cross-check against, take it.
+    if (!lineTokens.length) {
+      return { underlined: shortTokens.includes('underline'), trustworthy: shortTokens.length > 0 };
+    }
+    if (!shortTokens.length) {
+      return { underlined: lineTokens.includes('underline'), trustworthy: true };
+    }
+
+    const byLine = lineTokens.includes('underline');
+    const byShort = shortTokens.includes('underline');
+    return { underlined: byLine, trustworthy: byLine === byShort };
   }
 
-  function hasUnderline(cs) {
-    return decorationTokens(cs).includes('underline');
+  // Resolves `text-decoration` from the author stylesheets when the computed
+  // style is untrustworthy, reading the CSSOM as `css-orientation-lock` and
+  // `css-focus-indicator-suppressed` do. Without it the rule could not decide
+  // anything under a DOM emulator, which is how the CLI scans static HTML.
+  //
+  // A narrow cascade is enough: `text-decoration-line` is not inherited, so
+  // only declarations matching the element itself and its inline style apply,
+  // ordered by specificity. With no author declaration the UA default stands,
+  // and for a link that is an underline. Anything that would make the answer a
+  // guess yields `resolved: false` and the caller reports cantTell.
+  const CSS_STYLE_RULE = 1;
+  const MAX_NESTED_DEPTH = 8;
+
+  function splitSelectorList(selectorText) {
+    const parts = [];
+    let depth = 0;
+    let current = '';
+    for (const ch of String(selectorText || '')) {
+      if (ch === '(') depth += 1;
+      if (ch === ')') depth = Math.max(0, depth - 1);
+      if (ch === ',' && depth === 0) {
+        parts.push(current);
+        current = '';
+        continue;
+      }
+      current += ch;
+    }
+    parts.push(current);
+    return parts.map((p) => p.trim()).filter(Boolean);
+  }
+
+  // Approximate CSS specificity as a single sortable integer. Exactness is
+  // not required: this only orders declarations of one property against each
+  // other, and near-ties are broken by document order as the cascade does.
+  function specificityOf(selector) {
+    const s = String(selector || '');
+    const ids = (s.match(/#[\w-]+/g) || []).length;
+    const classesEtc = (s.match(/\.[\w-]+|\[[^\]]*\]|:(?!:)[\w-]+/g) || []).length;
+    const types = (s.match(/(^|[\s>+~])[a-z][\w-]*/gi) || []).length;
+    return ids * 10000 + classesEtc * 100 + types;
+  }
+
+  // A declaration wins if it is the last one, in (specificity, order), whose
+  // selector matches. `!important` outranks everything non-important.
+  function underlineFromDeclaration(style) {
+    if (!style || typeof style.getPropertyValue !== 'function') return null;
+    for (const prop of ['text-decoration-line', 'text-decoration']) {
+      const raw = String(style.getPropertyValue(prop) || '')
+        .trim()
+        .toLowerCase();
+      if (!raw) continue;
+      const important = String(style.getPropertyPriority(prop) || '') === 'important';
+      return { underlined: /\bunderline\b/.test(raw), important };
+    }
+    return null;
+  }
+
+  function resolveUnderlineFromCssom(el) {
+    const doc = el && el.ownerDocument ? el.ownerDocument : null;
+    if (!doc || typeof el.matches !== 'function') return { underlined: false, resolved: false };
+
+    let best = null; // { rank, order, underlined }
+    let order = 0;
+    let unreadableSheet = false;
+    let unparsableSelector = false;
+
+    function consider(cssRule) {
+      const decl = underlineFromDeclaration(cssRule.style);
+      if (!decl) return;
+      for (const part of splitSelectorList(cssRule.selectorText)) {
+        // A pseudo-element rule paints a box other than the link's own text.
+        if (/::[a-z-]+/i.test(part)) continue;
+        // A state the static DOM is not in (:hover/:focus/...) does not
+        // describe the link's resting appearance, which is what this rule is
+        // about.
+        if (/:(hover|focus|focus-visible|focus-within|active|target|visited)\b/i.test(part)) {
+          continue;
+        }
+        let matched;
+        try {
+          matched = el.matches(part);
+        } catch {
+          unparsableSelector = true;
+          continue;
+        }
+        if (!matched) continue;
+        order += 1;
+        const rank = (decl.important ? 1e9 : 0) + specificityOf(part);
+        if (!best || rank >= best.rank) best = { rank, order, underlined: decl.underlined };
+      }
+    }
+
+    function walk(rules, depth) {
+      if (!rules || depth > MAX_NESTED_DEPTH) return;
+      for (const cssRule of rules) {
+        if (!cssRule) continue;
+        if (cssRule.type === CSS_STYLE_RULE && cssRule.selectorText) {
+          consider(cssRule);
+          continue;
+        }
+        let nested;
+        try {
+          nested = cssRule.cssRules || null;
+        } catch {
+          nested = null;
+        }
+        if (nested) walk(nested, depth + 1);
+      }
+    }
+
+    try {
+      for (const sheet of doc.styleSheets || []) {
+        let rules = null;
+        try {
+          rules = sheet && sheet.cssRules ? sheet.cssRules : null;
+        } catch {
+          unreadableSheet = true; // cross-origin, not inspectable
+          continue;
+        }
+        if (rules) walk(rules, 0);
+      }
+    } catch {
+      return { underlined: false, resolved: false };
+    }
+
+    // The inline style attribute outranks every stylesheet declaration.
+    const inline = underlineFromDeclaration(el.style);
+    if (inline) return { underlined: inline.underlined, resolved: true };
+
+    if (best) return { underlined: best.underlined, resolved: true };
+
+    // No author declaration reached this element. If a sheet or selector was
+    // unreadable, one of them might have, so the answer is unknown; otherwise
+    // the UA default stands, and for a link that means underlined.
+    if (unreadableSheet || unparsableSelector) return { underlined: false, resolved: false };
+    return { underlined: true, resolved: true };
   }
 
   function hasSurroundingText(el, parent) {
@@ -22432,7 +22663,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     : helpers.queryAll(selector);
 
   const occurrences = [];
+  const undecided = [];
   let applicableCount = 0;
+  let decidedCount = 0;
+
+  // Applicable, but not evaluable. Held separately so the outcome below can
+  // tell "checked and sound" apart from "never decided".
+  function markUndecided(el, reasonCode) {
+    undecided.push({ el, reasonCode });
+  }
 
   for (const el of nodes) {
     if (!el || !el.getAttribute) continue;
@@ -22450,27 +22689,40 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const linkCs = safeComputedStyle(el);
     const parentCs = safeComputedStyle(parent);
 
-    if (hasUnderline(linkCs)) continue;
-
+    // Cues that do not depend on `text-decoration` come first, so a link
+    // carrying one is decided even where decoration is unreadable.
     const linkWeight = c && linkCs ? c.normalizeFontWeight(linkCs.fontWeight) : 400;
     const parentWeight = c && parentCs ? c.normalizeFontWeight(parentCs.fontWeight) : 400;
-    if (linkWeight !== parentWeight) continue;
+    if (linkWeight !== parentWeight) {
+      decidedCount += 1;
+      continue;
+    }
 
     const linkStyle = (linkCs && linkCs.fontStyle) || 'normal';
     const parentStyle = (parentCs && parentCs.fontStyle) || 'normal';
-    if (linkStyle !== parentStyle) continue;
+    if (linkStyle !== parentStyle) {
+      decidedCount += 1;
+      continue;
+    }
 
-    if (!c) continue;
+    if (!c) {
+      markUndecided(el, 'CONTRAST_HELPERS_UNAVAILABLE');
+      continue;
+    }
 
     let flagged = false;
+    let computed = false;
     let ratio = null;
     let fgLinkHex = '';
     let fgParentHex = '';
+    let undecidedReason = 'COLOR_NOT_COMPUTABLE';
 
     try {
       const blocker = c.getComputabilityBlocker(el);
       if (blocker && blocker.ok === false) {
-        // Not confidently computable, skip (benefit of the doubt).
+        // Not confidently computable: recorded below rather than skipped, so
+        // it cannot be mistaken for a clean result.
+        if (blocker.reasonCode) undecidedReason = String(blocker.reasonCode);
       } else {
         const bg = c.computeEffectiveBackground(el, {
           contrast: { mode, rootCanvasFallback },
@@ -22493,15 +22745,49 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           fgLinkHex = c.rgbToHex ? c.rgbToHex(fgLinkOpaque) : '';
           fgParentHex = c.rgbToHex ? c.rgbToHex(fgParentOpaque) : '';
 
+          computed = true;
           if (!(ratio >= 3)) flagged = true;
         }
-        // else: not confidently computable, skip.
+        // else: not confidently computable, recorded below.
       }
     } catch {
-      // no-throw: treat as not computable, skip.
+      // No-throw: treat as not computable and record it.
+      undecidedReason = 'ENGINE_EXCEPTION';
     }
 
-    if (!flagged) continue;
+    if (!computed) {
+      markUndecided(el, undecidedReason);
+      continue;
+    }
+
+    // Contrast alone is an accepted alternative to an underline (G183), so a
+    // link clearing 3:1 is distinguishable regardless of decoration.
+    if (!flagged) {
+      decidedCount += 1;
+      continue;
+    }
+
+    // Below 3:1, an underline is the last remaining cue -- and only now does
+    // it matter whether this environment can actually report one.
+    const decoration = decorationInfo(linkCs);
+    let underlined;
+    if (decoration.trustworthy) {
+      underlined = decoration.underlined;
+    } else {
+      const fromCssom = resolveUnderlineFromCssom(el);
+      if (!fromCssom.resolved) {
+        markUndecided(el, 'TEXT_DECORATION_NOT_RESOLVABLE');
+        continue;
+      }
+      underlined = fromCssom.underlined;
+    }
+
+    if (underlined) {
+      decidedCount += 1;
+      continue;
+    }
+
+    decidedCount += 1;
 
     const eligInfo = helpers.getEligibilityInfo
       ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
@@ -22534,6 +22820,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
+
+  // A proven violation outranks an undecided candidate, which outranks a clean
+  // one. The middle step keeps an unevaluable link out of `pass`.
   if (occurrences.length) {
     return {
       ruleId: rule.ruleId,
@@ -22542,7 +22831,37 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       occurrences
     };
   }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+
+  if (undecided.length) {
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'serious',
+      confidence: 'low',
+      occurrences: undecided.map(({ el, reasonCode }) =>
+        helpers.reportOccurrence(el, {
+          summary:
+            'Whether this link is distinguishable from the surrounding text by non-color means could not be determined.',
+          hint: 'Confirm by eye that the link carries an underline, a font-weight or font-style difference, or at least 3:1 contrast against the surrounding text. Running the engine in a real browser rather than a DOM emulator resolves most cases automatically.',
+          i18n: {
+            summaryKey: 'linkInTextBlock_summary_cantTell',
+            hintKey: 'linkInTextBlock_hint_cantTell'
+          },
+          data: {
+            visibilityFilter: helpers.getEligibilityInfo
+              ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
+              : { targetSet: 'acc', accEligible: null, reasons: [] },
+            details: { reasonCode }
+          }
+        })
+      )
+    };
+  }
+
+  if (decidedCount > 0) {
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  }
+  return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "link-name-present": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
@@ -31641,6 +31960,8 @@ const I18N = {
     "avoidInlineSpacing_description": "Checks that where inline style forces line-height, letter-spacing or word-spacing with !important, the value already meets WCAG 1.4.12, so the user has nothing left to override.",
     "avoidInlineSpacing_summary_fail": "This element's inline style forces {{properties}} with !important, blocking user text-spacing overrides.",
     "avoidInlineSpacing_hint_fail": "Remove !important from line-height/letter-spacing/word-spacing in inline styles so users can override text spacing.",
+    "avoidInlineSpacing_summary_cantTell": "This element's inline style sets {{properties}} with !important, but the value could not be resolved, so whether it meets the WCAG text-spacing metric could not be determined.",
+    "avoidInlineSpacing_hint_cantTell": "Check this value by hand against the metric (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em), or express it in a unit the engine can resolve against the element’s computed font size.",
     "metaRefreshNoExceptions_title": "Page must not use a meta refresh at all (AAA)",
     "metaRefreshNoExceptions_description": "Checks that <meta http-equiv=\"refresh\"> is not present at all, regardless of delay. This is the stricter AAA-level counterpart of the A-level positive-delay-only check.",
     "metaRefreshNoExceptions_summary_fail": "This page uses a meta refresh, which is an automatic context change not initiated by the user.",
@@ -31653,6 +31974,8 @@ const I18N = {
     "linkInTextBlock_description": "Checks that a link inside a run of text is visually distinguishable from the surrounding text by underline, a font-weight/style difference, or a sufficient (>=3:1) color-contrast difference, not by color alone.",
     "linkInTextBlock_summary_fail": "This link in a block of text relies on color alone to be distinguished from the surrounding text.",
     "linkInTextBlock_hint_fail": "Add an underline, a font-weight/style difference, or increase the color contrast between the link and surrounding text to at least 3:1.",
+    "linkInTextBlock_summary_cantTell": "Whether this link is distinguishable from the surrounding text by non-color means could not be determined.",
+    "linkInTextBlock_hint_cantTell": "Confirm by eye that the link carries an underline, a font-weight or font-style difference, or at least 3:1 contrast against the surrounding text. Running the engine in a real browser rather than a DOM emulator resolves most cases automatically.",
     "noAutoplayAudio_title": "Autoplaying audio should provide a pause/stop or volume-control mechanism",
     "noAutoplayAudio_description": "Flags <audio>/<video> elements that autoplay unmuted with no native controls attribute, for manual review against the 3-second exemption in WCAG 1.4.2.",
     "noAutoplayAudio_summary_cantTell": "This element autoplays audio without a native pause/stop or volume-control mechanism.",
@@ -31686,6 +32009,8 @@ const I18N = {
     "cssOrientationLock_summary_fail": "A \"{{mediaText}}\" media query rotates \"{{selectorText}}\", locking the page to one orientation.",
     "cssOrientationLock_summary_fail_unknownSelector": "A \"{{mediaText}}\" media query rotates an element with no readable selector, locking the page to one orientation.",
     "cssOrientationLock_hint_fail": "Remove the rotate() transform from the orientation media query; let the page respond naturally to device orientation instead of forcing a visual rotation.",
+    "cssOrientationLock_summary_cantTell_unreadableSheets": "{{count}} stylesheet(s) could not be read, so whether this page locks its orientation could not be determined.",
+    "cssOrientationLock_hint_cantTell_unreadableSheets": "Cross-origin stylesheets are not inspectable from the page. Check any third-party CSS for an orientation media query containing a rotate() transform, or re-run the scan with those stylesheets served same-origin.",
     "ariaText_title": "role=\"text\" elements should have no focusable descendants",
     "ariaText_description": "Checks that elements with role=\"text\" contain no focusable descendant (link, button, form control, tabindex, iframe, or contenteditable).",
     "ariaText_summary_cantTell": "This role=\"text\" element contains a focusable descendant.",

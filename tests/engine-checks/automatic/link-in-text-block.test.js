@@ -62,13 +62,70 @@ test(`${RULE_ID}: pass when color-only but contrast vs surrounding text is >= 3:
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: not flagged when contrast is not confidently computable (background-image blocker)`, () => {
+test(`${RULE_ID}: cantTell, not pass, when contrast is not confidently computable (background-image blocker)`, () => {
   const html = `<!doctype html><html><head><style>
     body { background: #ffffff; }
     p { color: #222222; }
     .nodeco { text-decoration: none; color: #2a2a2a; }
     .bgimg { background-image: linear-gradient(90deg, #fff, #000); }
   </style></head><body><p>Read <a href="#" class="nodeco bgimg">this link</a> for more.</p></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.notStrictEqual(rule.occurrences[0].data.details.reasonCode, 'COLOR_ONLY_DIFFERENTIATION');
+});
+
+test(`${RULE_ID}: an unevaluable link does not mask a proven failure elsewhere`, () => {
+  const html = `<!doctype html><html><head><style>
+    body { background: #ffffff; }
+    p { color: #222222; }
+    .nodeco { text-decoration: none; }
+    .weak { color: #2a2a2a; }
+    .bgimg { background-image: linear-gradient(90deg, #fff, #000); }
+  </style></head><body>
+    <p>Read <a href="#" id="weakLink" class="nodeco weak">this link</a> for more.</p>
+    <p>Or <a href="#" id="blockedLink" class="nodeco bgimg">this one</a> instead.</p>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'weakLink'));
+});
+
+test(`${RULE_ID}: underline declared via the text-decoration shorthand resolves under a DOM emulator`, () => {
+  // The computed values cannot tell these two stylesheets apart under jsdom;
+  // the rule resolves the declaration from the CSSOM instead.
+  const underlined = `<!doctype html><html><head><style>
+    body { background: #ffffff; }
+    p { color: #222222; }
+    a { color: #2a2a2a; text-decoration: underline; }
+  </style></head><body><p>Read <a href="#">this link</a> for more.</p></body></html>`;
+  assertRule(runa11yCoreOnHtml(underlined, { runOnly: [RULE_ID] }), RULE_ID, 'pass', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
+
+  const notUnderlined = underlined.replace('text-decoration: underline', 'text-decoration: none');
+  assertRule(runa11yCoreOnHtml(notUnderlined, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 1
+  });
+});
+
+test(`${RULE_ID}: a :hover underline does not count as the resting-state cue`, () => {
+  const html = `<!doctype html><html><head><style>
+    body { background: #ffffff; }
+    p { color: #222222; }
+    a { color: #2a2a2a; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+  </style></head><body><p>Read <a href="#">this link</a> for more.</p></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
+});
+
+test(`${RULE_ID}: inline style outranks a stylesheet declaration`, () => {
+  const html = `<!doctype html><html><head><style>
+    body { background: #ffffff; }
+    p { color: #222222; }
+    a { color: #2a2a2a; text-decoration: none; }
+  </style></head><body><p>Read <a href="#" style="text-decoration: underline">this link</a> for more.</p></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
