@@ -3725,6 +3725,44 @@ const CHECK_DEFS = [
     "mappings": null
   },
   {
+    "ruleId": "landmark-complementary-is-top-level",
+    "title": "Complementary landmark must be top-level",
+    "description": "Checks that the complementary landmark (role=\"complementary\" or an <aside> that keeps its implicit role) is not nested inside another landmark region.",
+    "i18n": {
+      "titleKey": "landmarkComplementaryIsTopLevel_title",
+      "descriptionKey": "landmarkComplementaryIsTopLevel_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "best-practice",
+      "landmarks",
+      "structure",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [],
+    "defaultSeverity": "minor",
+    "defaultConfidence": "medium",
+    "type": "manual",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "operable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
     "ruleId": "landmark-contentinfo-is-top-level",
     "title": "Contentinfo landmark must be top-level",
     "description": "Checks that the contentinfo landmark (role=\"contentinfo\" or a non-nested <footer>) is not nested inside another landmark region.",
@@ -7539,6 +7577,7 @@ const RULE_IMPLS = {
   "label-in-name": { run: require("./checks/automatic/label-in-name.js").runInPage, applicability: require("./checks/automatic/label-in-name.js").applicability || null },
   "label-title-only": { run: require("./checks/manual/label-title-only-manual.js").runInPage, applicability: require("./checks/manual/label-title-only-manual.js").applicability || null },
   "landmark-banner-is-top-level": { run: require("./checks/manual/landmark-banner-is-top-level-manual.js").runInPage, applicability: require("./checks/manual/landmark-banner-is-top-level-manual.js").applicability || null },
+  "landmark-complementary-is-top-level": { run: require("./checks/manual/landmark-complementary-is-top-level-manual.js").runInPage, applicability: require("./checks/manual/landmark-complementary-is-top-level-manual.js").applicability || null },
   "landmark-contentinfo-is-top-level": { run: require("./checks/manual/landmark-contentinfo-is-top-level-manual.js").runInPage, applicability: require("./checks/manual/landmark-contentinfo-is-top-level-manual.js").applicability || null },
   "landmark-main-is-top-level": { run: require("./checks/manual/landmark-main-is-top-level-manual.js").runInPage, applicability: require("./checks/manual/landmark-main-is-top-level-manual.js").applicability || null },
   "landmark-no-duplicate-banner": { run: require("./checks/manual/landmark-no-duplicate-banner-manual.js").runInPage, applicability: require("./checks/manual/landmark-no-duplicate-banner-manual.js").applicability || null },
@@ -8099,6 +8138,10 @@ const I18N = {
     "landmarkContentinfoIsTopLevel_description": "Prüft, ob die contentinfo-Landmarke (role=\"contentinfo\" oder ein nicht verschachtelter <footer>) nicht innerhalb einer anderen Landmarke verschachtelt ist.",
     "landmarkContentinfoIsTopLevel_summary_cantTell": "Diese contentinfo-Landmarke ist innerhalb einer anderen Landmarke verschachtelt.",
     "landmarkContentinfoIsTopLevel_hint_cantTell": "Verschieben Sie die contentinfo-Landmarke (footer/role=\"contentinfo\") so, dass sie nicht von einer anderen Landmarke umschlossen wird; contentinfo sollte eine Region auf oberster Ebene der Seite sein.",
+    "landmarkComplementaryIsTopLevel_title": "Der ergänzende Bereich muss auf oberster Ebene liegen",
+    "landmarkComplementaryIsTopLevel_description": "Prüft, dass der ergänzende Bereich (role=\"complementary\" oder ein <aside>, das seine implizite Rolle behält) nicht in einem anderen Landmarkenbereich verschachtelt ist.",
+    "landmarkComplementaryIsTopLevel_summary_cantTell": "Dieser ergänzende Bereich ist in einem anderen Landmarkenbereich verschachtelt.",
+    "landmarkComplementaryIsTopLevel_hint_cantTell": "Verschieben Sie den ergänzenden Bereich (<aside>/role=\"complementary\"), sodass er nicht in einem anderen Landmarkenbereich liegt; ergänzender Inhalt steht neben dem Hauptinhalt, nicht innerhalb eines anderen Bereichs.",
     "landmarkMainIsTopLevel_title": "Die main-Landmarke muss auf oberster Ebene liegen",
     "landmarkMainIsTopLevel_description": "Prüft, ob die main-Landmarke (role=\"main\" oder <main>) nicht innerhalb einer anderen Landmarke verschachtelt ist.",
     "landmarkMainIsTopLevel_summary_cantTell": "Diese main-Landmarke ist innerhalb einer anderen Landmarke verschachtelt.",
@@ -8773,6 +8816,10 @@ const I18N = {
     "landmarkContentinfoIsTopLevel_description": "Checks that the contentinfo landmark (role=\"contentinfo\" or a non-nested <footer>) is not nested inside another landmark region.",
     "landmarkContentinfoIsTopLevel_summary_cantTell": "This contentinfo landmark is nested inside another landmark region.",
     "landmarkContentinfoIsTopLevel_hint_cantTell": "Move the contentinfo landmark (footer/role=\"contentinfo\") so it is not contained by another landmark; contentinfo should be a top-level region of the page.",
+    "landmarkComplementaryIsTopLevel_title": "Complementary landmark must be top-level",
+    "landmarkComplementaryIsTopLevel_description": "Checks that the complementary landmark (role=\"complementary\" or an <aside> that keeps its implicit role) is not nested inside another landmark region.",
+    "landmarkComplementaryIsTopLevel_summary_cantTell": "This complementary landmark is nested inside another landmark region.",
+    "landmarkComplementaryIsTopLevel_hint_cantTell": "Move the complementary landmark (<aside>/role=\"complementary\") so it is not contained by another landmark; complementary content belongs beside the main content, not inside another region.",
     "landmarkMainIsTopLevel_title": "Main landmark must be top-level",
     "landmarkMainIsTopLevel_description": "Checks that the main landmark (role=\"main\" or <main>) is not nested inside another landmark region.",
     "landmarkMainIsTopLevel_summary_cantTell": "This main landmark is nested inside another landmark region.",
@@ -9447,6 +9494,10 @@ const I18N = {
     "landmarkContentinfoIsTopLevel_description": "Comprueba que el landmark contentinfo (role=\"contentinfo\" o un <footer> no anidado) no esté anidado dentro de otra región landmark.",
     "landmarkContentinfoIsTopLevel_summary_cantTell": "Este landmark contentinfo está anidado dentro de otra región landmark.",
     "landmarkContentinfoIsTopLevel_hint_cantTell": "Mover el landmark contentinfo (footer/role=\"contentinfo\") para que no esté contenido por otro landmark; contentinfo debe ser una región de nivel superior de la página.",
+    "landmarkComplementaryIsTopLevel_title": "La región complementaria debe estar en el nivel superior",
+    "landmarkComplementaryIsTopLevel_description": "Comprueba que la región complementaria (role=\"complementary\" o un <aside> que conserva su rol implícito) no esté anidada dentro de otra región de referencia.",
+    "landmarkComplementaryIsTopLevel_summary_cantTell": "Esta región complementaria está anidada dentro de otra región de referencia.",
+    "landmarkComplementaryIsTopLevel_hint_cantTell": "Mueva la región complementaria (<aside>/role=\"complementary\") para que no quede contenida en otra región de referencia; el contenido complementario acompaña al contenido principal, no va dentro de otra región.",
     "landmarkMainIsTopLevel_title": "El landmark main debe ser de nivel superior",
     "landmarkMainIsTopLevel_description": "Comprueba que el landmark main (role=\"main\" o <main>) no esté anidado dentro de otra región landmark.",
     "landmarkMainIsTopLevel_summary_cantTell": "Este landmark main está anidado dentro de otra región landmark.",
@@ -10121,6 +10172,10 @@ const I18N = {
     "landmarkContentinfoIsTopLevel_description": "Vérifie que le point de repère contentinfo (role=\"contentinfo\" ou un <footer> non imbriqué) n’est pas imbriqué dans un autre point de repère.",
     "landmarkContentinfoIsTopLevel_summary_cantTell": "Ce point de repère contentinfo est imbriqué dans un autre point de repère.",
     "landmarkContentinfoIsTopLevel_hint_cantTell": "Déplacez le point de repère contentinfo (footer/role=\"contentinfo\") afin qu’il ne soit contenu par aucun autre point de repère ; contentinfo doit être une région de premier niveau de la page.",
+    "landmarkComplementaryIsTopLevel_title": "La région complémentaire doit être de premier niveau",
+    "landmarkComplementaryIsTopLevel_description": "Vérifie que la région complémentaire (role=\"complementary\" ou un <aside> qui conserve son rôle implicite) n'est pas imbriquée dans une autre région de repère.",
+    "landmarkComplementaryIsTopLevel_summary_cantTell": "Cette région complémentaire est imbriquée dans une autre région de repère.",
+    "landmarkComplementaryIsTopLevel_hint_cantTell": "Déplacez la région complémentaire (<aside>/role=\"complementary\") pour qu'elle ne soit pas contenue dans une autre région de repère ; le contenu complémentaire accompagne le contenu principal, il ne se place pas à l'intérieur d'une autre région.",
     "landmarkMainIsTopLevel_title": "Le point de repère main doit être de premier niveau",
     "landmarkMainIsTopLevel_description": "Vérifie que le point de repère main (role=\"main\" ou <main>) n’est pas imbriqué dans un autre point de repère.",
     "landmarkMainIsTopLevel_summary_cantTell": "Ce point de repère main est imbriqué dans un autre point de repère.",
@@ -23424,6 +23479,44 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "i18n": {
       "titleKey": "landmarkBannerIsTopLevel_title",
       "descriptionKey": "landmarkBannerIsTopLevel_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "best-practice",
+      "landmarks",
+      "structure",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [],
+    "defaultSeverity": "minor",
+    "defaultConfidence": "medium",
+    "type": "manual",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "operable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "landmark-complementary-is-top-level",
+    "title": "Complementary landmark must be top-level",
+    "description": "Checks that the complementary landmark (role=\"complementary\" or an <aside> that keeps its implicit role) is not nested inside another landmark region.",
+    "i18n": {
+      "titleKey": "landmarkComplementaryIsTopLevel_title",
+      "descriptionKey": "landmarkComplementaryIsTopLevel_description"
     },
     "helpUrl": "",
     "tags": [
@@ -41155,6 +41248,180 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
+    "landmark-complementary-is-top-level": { run: (function runInPage(ctx) {
+  const { document, root, helpers, rule } = ctx;
+
+  // Declared inside runInPage; see scripts/build-core.js header
+  // ("runInPage MUST be self-contained").
+  function normalizeWs(s) {
+    return String(s || '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  // Delegates to the shared helpers.getLandmarkNameInfo (aria-label -> aria-labelledby, via the
+  // target's own accessible name, not raw textContent -> title attribute fallback) rather than a
+  // local copy -- see that function's header comment in src/core/dom-helpers.js. Sharing it keeps
+  // the title-attribute fallback consistent across the landmark rules.
+  function getAccessibleLandmarkName(el) {
+    try {
+      if (helpers && typeof helpers.getLandmarkNameInfo === 'function') {
+        const info = helpers.getLandmarkNameInfo(el, ctx);
+        if (info && info.present && info.value) return normalizeWs(info.value);
+      }
+    } catch {}
+    return '';
+  }
+
+  function getExplicitRoleToken(el) {
+    const raw = normalizeWs(el.getAttribute && el.getAttribute('role'));
+    if (!raw) return '';
+    return raw.split(/\s+/)[0].toLowerCase();
+  }
+
+  // Delegates to the shared helpers.hasLandmarkScopingAncestor for the
+  // question "does this element sit inside a sectioning-content/<main>
+  // ancestor that suppresses its conditional implicit role": role-aware
+  // (an ancestor's bare TAG only counts when it carries no role attribute
+  // at all; an explicit role="dialog"-style override no longer suppresses)
+  // rather than a local tag-only copy. See that function's header comment
+  // in src/core/aria-helpers.js for the full algorithm.
+  function hasSectioningAncestor(el, includeMain) {
+    return helpers && typeof helpers.hasLandmarkScopingAncestor === 'function'
+      ? helpers.hasLandmarkScopingAncestor(el, { includeMain })
+      : false;
+  }
+
+  function getImplicitLandmarkRole(el) {
+    const tag = el.tagName ? el.tagName.toLowerCase() : '';
+    if (tag === 'header') return hasSectioningAncestor(el, true) ? '' : 'banner';
+    if (tag === 'footer') return hasSectioningAncestor(el, true) ? '' : 'contentinfo';
+    if (tag === 'main') return 'main';
+    if (tag === 'nav') return 'navigation';
+    if (tag === 'aside') {
+      // A named <aside> is never suppressed, even when nested. It keeps
+      // "complementary" when it has an accessible name, even inside
+      // sectioning content. Matches landmark-unique's precedent.
+      if (!hasSectioningAncestor(el, false)) return 'complementary';
+      return getAccessibleLandmarkName(el) ? 'complementary' : '';
+    }
+    if (tag === 'section') return getAccessibleLandmarkName(el) ? 'region' : '';
+    if (tag === 'form') return getAccessibleLandmarkName(el) ? 'form' : '';
+    return '';
+  }
+
+  const LANDMARK_ROLES = new Set([
+    'banner',
+    'contentinfo',
+    'main',
+    'navigation',
+    'complementary',
+    'region',
+    'form',
+    'search'
+  ]);
+
+  function getLandmarkRole(el) {
+    if (!el || !el.getAttribute) return '';
+    const explicit = getExplicitRoleToken(el);
+    if (explicit) return LANDMARK_ROLES.has(explicit) ? explicit : '';
+    return getImplicitLandmarkRole(el);
+  }
+
+  // A candidate must actually carry the complementary role. An <aside> that
+  // HTML-AAM strips the role from is not a complementary landmark at all, so
+  // flagging it would report a landmark that does not exist.
+  function isComplementaryCandidate(el) {
+    return getLandmarkRole(el) === 'complementary';
+  }
+
+  function hasLandmarkAncestor(el) {
+    const scopeRoots = Array.isArray(root) ? root : root ? [root] : [];
+    let p = el.parentElement;
+    while (p) {
+      if (getLandmarkRole(p)) return true;
+      // Don't climb past the scanned scope -- see aria-helpers.js's
+      // hasLandmarkScopingAncestor for the same fix and rationale.
+      if (scopeRoots.includes(p)) break;
+      p = p.parentElement;
+    }
+    return false;
+  }
+
+  // queryAllSmart (shadow-DOM-aware) instead of plain document.querySelectorAll -- see
+  // landmark-unique-manual.js's header comment. A third-party shadow-DOM-hosted
+  // widget's own landmark is invisible to a light-DOM-only query.
+  let nodes;
+  try {
+    nodes =
+      helpers && typeof helpers.queryAllSmart === 'function'
+        ? helpers.queryAllSmart('header, footer, main, nav, aside, section, form, [role]')
+        : document.querySelectorAll('header, footer, main, nav, aside, section, form, [role]');
+  } catch {
+    nodes = [];
+  }
+
+  const complementaries = [];
+  const seen = new Set();
+  for (const el of nodes) {
+    if (!el || seen.has(el)) continue;
+    seen.add(el);
+    if (!isComplementaryCandidate(el)) continue;
+
+    // An aria-hidden candidate is removed from the accessibility tree
+    // entirely, so it is not part of the landmark structure assistive
+    // technology users navigate and there is no real landmark to call
+    // nested. queryAllSmart's default hidden-content policy only excludes
+    // "hard" CSS-based hiding (display:none, etc.), not the softer
+    // aria-hidden exclusion, so this needs its own check.
+    if (helpers && typeof helpers.isAccTreeEligible === 'function') {
+      const elig = (() => {
+        try {
+          return helpers.isAccTreeEligible(el, ctx);
+        } catch {
+          return { eligible: true, reasons: [] };
+        }
+      })();
+      if (elig && elig.eligible === false) continue;
+    }
+
+    complementaries.push(el);
+  }
+
+  if (complementaries.length === 0) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+
+  const occurrences = [];
+  for (const el of complementaries) {
+    if (!hasLandmarkAncestor(el)) continue;
+
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: 'This complementary landmark is nested inside another landmark region.',
+        hint: 'Move the complementary landmark (<aside>/role="complementary") so it is not contained by another landmark; complementary content belongs beside the main content, not inside another region.',
+        i18n: {
+          summaryKey: 'landmarkComplementaryIsTopLevel_summary_cantTell',
+          hintKey: 'landmarkComplementaryIsTopLevel_hint_cantTell',
+          params: {}
+        },
+        data: {
+          details: { reasonCode: 'LANDMARK_COMPLEMENTARY_NOT_TOP_LEVEL' }
+        }
+      })
+    );
+  }
+
+  if (occurrences.length) {
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'minor',
+      occurrences
+    };
+  }
+  return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+}), applicability: null },
     "landmark-contentinfo-is-top-level": { run: (function runInPage(ctx) {
   const { document, root, helpers, rule } = ctx;
 
@@ -51579,6 +51846,10 @@ const I18N = {
     "landmarkContentinfoIsTopLevel_description": "Prüft, ob die contentinfo-Landmarke (role=\"contentinfo\" oder ein nicht verschachtelter <footer>) nicht innerhalb einer anderen Landmarke verschachtelt ist.",
     "landmarkContentinfoIsTopLevel_summary_cantTell": "Diese contentinfo-Landmarke ist innerhalb einer anderen Landmarke verschachtelt.",
     "landmarkContentinfoIsTopLevel_hint_cantTell": "Verschieben Sie die contentinfo-Landmarke (footer/role=\"contentinfo\") so, dass sie nicht von einer anderen Landmarke umschlossen wird; contentinfo sollte eine Region auf oberster Ebene der Seite sein.",
+    "landmarkComplementaryIsTopLevel_title": "Der ergänzende Bereich muss auf oberster Ebene liegen",
+    "landmarkComplementaryIsTopLevel_description": "Prüft, dass der ergänzende Bereich (role=\"complementary\" oder ein <aside>, das seine implizite Rolle behält) nicht in einem anderen Landmarkenbereich verschachtelt ist.",
+    "landmarkComplementaryIsTopLevel_summary_cantTell": "Dieser ergänzende Bereich ist in einem anderen Landmarkenbereich verschachtelt.",
+    "landmarkComplementaryIsTopLevel_hint_cantTell": "Verschieben Sie den ergänzenden Bereich (<aside>/role=\"complementary\"), sodass er nicht in einem anderen Landmarkenbereich liegt; ergänzender Inhalt steht neben dem Hauptinhalt, nicht innerhalb eines anderen Bereichs.",
     "landmarkMainIsTopLevel_title": "Die main-Landmarke muss auf oberster Ebene liegen",
     "landmarkMainIsTopLevel_description": "Prüft, ob die main-Landmarke (role=\"main\" oder <main>) nicht innerhalb einer anderen Landmarke verschachtelt ist.",
     "landmarkMainIsTopLevel_summary_cantTell": "Diese main-Landmarke ist innerhalb einer anderen Landmarke verschachtelt.",
@@ -52253,6 +52524,10 @@ const I18N = {
     "landmarkContentinfoIsTopLevel_description": "Checks that the contentinfo landmark (role=\"contentinfo\" or a non-nested <footer>) is not nested inside another landmark region.",
     "landmarkContentinfoIsTopLevel_summary_cantTell": "This contentinfo landmark is nested inside another landmark region.",
     "landmarkContentinfoIsTopLevel_hint_cantTell": "Move the contentinfo landmark (footer/role=\"contentinfo\") so it is not contained by another landmark; contentinfo should be a top-level region of the page.",
+    "landmarkComplementaryIsTopLevel_title": "Complementary landmark must be top-level",
+    "landmarkComplementaryIsTopLevel_description": "Checks that the complementary landmark (role=\"complementary\" or an <aside> that keeps its implicit role) is not nested inside another landmark region.",
+    "landmarkComplementaryIsTopLevel_summary_cantTell": "This complementary landmark is nested inside another landmark region.",
+    "landmarkComplementaryIsTopLevel_hint_cantTell": "Move the complementary landmark (<aside>/role=\"complementary\") so it is not contained by another landmark; complementary content belongs beside the main content, not inside another region.",
     "landmarkMainIsTopLevel_title": "Main landmark must be top-level",
     "landmarkMainIsTopLevel_description": "Checks that the main landmark (role=\"main\" or <main>) is not nested inside another landmark region.",
     "landmarkMainIsTopLevel_summary_cantTell": "This main landmark is nested inside another landmark region.",
@@ -52927,6 +53202,10 @@ const I18N = {
     "landmarkContentinfoIsTopLevel_description": "Comprueba que el landmark contentinfo (role=\"contentinfo\" o un <footer> no anidado) no esté anidado dentro de otra región landmark.",
     "landmarkContentinfoIsTopLevel_summary_cantTell": "Este landmark contentinfo está anidado dentro de otra región landmark.",
     "landmarkContentinfoIsTopLevel_hint_cantTell": "Mover el landmark contentinfo (footer/role=\"contentinfo\") para que no esté contenido por otro landmark; contentinfo debe ser una región de nivel superior de la página.",
+    "landmarkComplementaryIsTopLevel_title": "La región complementaria debe estar en el nivel superior",
+    "landmarkComplementaryIsTopLevel_description": "Comprueba que la región complementaria (role=\"complementary\" o un <aside> que conserva su rol implícito) no esté anidada dentro de otra región de referencia.",
+    "landmarkComplementaryIsTopLevel_summary_cantTell": "Esta región complementaria está anidada dentro de otra región de referencia.",
+    "landmarkComplementaryIsTopLevel_hint_cantTell": "Mueva la región complementaria (<aside>/role=\"complementary\") para que no quede contenida en otra región de referencia; el contenido complementario acompaña al contenido principal, no va dentro de otra región.",
     "landmarkMainIsTopLevel_title": "El landmark main debe ser de nivel superior",
     "landmarkMainIsTopLevel_description": "Comprueba que el landmark main (role=\"main\" o <main>) no esté anidado dentro de otra región landmark.",
     "landmarkMainIsTopLevel_summary_cantTell": "Este landmark main está anidado dentro de otra región landmark.",
@@ -53601,6 +53880,10 @@ const I18N = {
     "landmarkContentinfoIsTopLevel_description": "Vérifie que le point de repère contentinfo (role=\"contentinfo\" ou un <footer> non imbriqué) n’est pas imbriqué dans un autre point de repère.",
     "landmarkContentinfoIsTopLevel_summary_cantTell": "Ce point de repère contentinfo est imbriqué dans un autre point de repère.",
     "landmarkContentinfoIsTopLevel_hint_cantTell": "Déplacez le point de repère contentinfo (footer/role=\"contentinfo\") afin qu’il ne soit contenu par aucun autre point de repère ; contentinfo doit être une région de premier niveau de la page.",
+    "landmarkComplementaryIsTopLevel_title": "La région complémentaire doit être de premier niveau",
+    "landmarkComplementaryIsTopLevel_description": "Vérifie que la région complémentaire (role=\"complementary\" ou un <aside> qui conserve son rôle implicite) n'est pas imbriquée dans une autre région de repère.",
+    "landmarkComplementaryIsTopLevel_summary_cantTell": "Cette région complémentaire est imbriquée dans une autre région de repère.",
+    "landmarkComplementaryIsTopLevel_hint_cantTell": "Déplacez la région complémentaire (<aside>/role=\"complementary\") pour qu'elle ne soit pas contenue dans une autre région de repère ; le contenu complémentaire accompagne le contenu principal, il ne se place pas à l'intérieur d'une autre région.",
     "landmarkMainIsTopLevel_title": "Le point de repère main doit être de premier niveau",
     "landmarkMainIsTopLevel_description": "Vérifie que le point de repère main (role=\"main\" ou <main>) n’est pas imbriqué dans un autre point de repère.",
     "landmarkMainIsTopLevel_summary_cantTell": "Ce point de repère main est imbriqué dans un autre point de repère.",
