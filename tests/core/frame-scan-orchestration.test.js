@@ -13,14 +13,13 @@
  * `{ url, error }` and never abort the scan, whichever way it failed.
  *
  * The module documents that it is compiled into an IIFE that supplies
- * runCore/resolveContextRoots/resolveEffectiveRunOnly/pingFrame/... as free
- * variables. In a CommonJS module free variables resolve against the global
- * object, so this file satisfies that same contract by installing them as
- * globals -- the real frame-messaging.js implementations for the RPC half,
- * a recording stub for runCore (the engine internals it needs are exactly
- * what the generated IIFE exists to provide, and none of them are what these
- * tests are about). Node's test runner gives each test file its own process,
- * so the globals stay contained.
+ * runa11yCoreInPage/resolveContextRoots/pingFrame/... as free variables. In a
+ * CommonJS module free variables resolve against the global object, so this
+ * file satisfies that same contract by installing them as globals -- the real
+ * frame-messaging.js implementations for the RPC half, a recording stub for
+ * runa11yCoreInPage (a whole engine run is what the generated IIFE exists to
+ * provide, and is not what these tests are about). Node's test runner gives
+ * each test file its own process, so the globals stay contained.
  */
 
 const test = require('node:test');
@@ -36,34 +35,19 @@ const {
 } = require('../../src/core/frame-messaging.js');
 const { resolveContextRoots } = require('../../src/core/dom-helpers.js');
 
-const CHECK_DEFS = [];
-const RULE_IMPLS = {};
-const ENGINE_TAG = 'a11ycore';
-const SCHEMA_VERSION = '1.0.0';
-const COMPOSITE_RULES = [];
-
-const runCoreCalls = [];
+const localScanCalls = [];
 
 // The free variables src/core/frame-scan.js is compiled against. See the file
 // comment above.
 Object.assign(globalThis, {
-  runCore(pageUrl, contextSelector, engineOptions, runOnly) {
-    runCoreCalls.push({ pageUrl, contextSelector, engineOptions, runOnly });
+  runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
+    localScanCalls.push({ pageUrl, contextSelector, engineOptions, runOnly });
     return { pageUrl, checksResults: [] };
-  },
-  resolveEffectiveRunOnly(engineOptions, runOnly) {
-    // Tagged so a test can tell the resolved runOnly apart from the raw one.
-    return { resolved: true, from: runOnly };
   },
   resolveContextRoots,
   pingFrame,
   sendFrameRunCommand,
-  enableFrameRpcResponder,
-  CHECK_DEFS,
-  RULE_IMPLS,
-  ENGINE_TAG,
-  SCHEMA_VERSION,
-  COMPOSITE_RULES
+  enableFrameRpcResponder
 });
 
 const {
@@ -117,7 +101,7 @@ function dispatch(win, data, source) {
 
 test('a page with no frames returns just its own result', async () => {
   setupPage('<!doctype html><html><body><img src="x.png"></body></html>');
-  runCoreCalls.length = 0;
+  localScanCalls.length = 0;
 
   const runOnly = { tags: ['wcag2a'] };
   const result = await runa11yCoreAcrossFrames('https://example.test/', '#main', {}, runOnly);
@@ -130,12 +114,12 @@ test('a page with no frames returns just its own result', async () => {
 
   // The page's own scan runs through the same runOnly resolution a
   // single-frame scan would use, not the caller's raw runOnly.
-  assert.deepStrictEqual(runCoreCalls, [
+  assert.deepStrictEqual(localScanCalls, [
     {
       pageUrl: 'https://example.test/',
       contextSelector: '#main',
       engineOptions: {},
-      runOnly: { resolved: true, from: runOnly }
+      runOnly
     }
   ]);
 });

@@ -1153,14 +1153,14 @@ ${implEntriesInPage.join(',\n')}
   // postMessage protocol can achieve, which requires the child frame to
   // also call a11yCoreEnableFrameResponder().
   //
-  // Wrapped in its own private IIFE with its OWN local copy of
-  // CHECK_DEFS/RULE_IMPLS/runnersSharedSource -- mirroring exactly how
-  // runa11yCoreInPage achieves self-containment above, kept
-  // independent of the outer, Node-require-based RULE_IMPLS section on purpose, so
-  // this stays usable the same bundler-free way runa11yCoreInPage already
-  // is (raw source injected into a page -- a bookmarklet, a content script
-  // with no build step -- rather than requiring a real bundler to resolve
-  // require() calls first).
+  // Wrapped in its own private IIFE carrying only the postMessage helpers it
+  // needs. The local frame is scanned through runa11yCoreInPage, emitted
+  // above, which is self-contained and require-free -- so this stays usable
+  // the same bundler-free way that function is (raw source injected into a
+  // page -- a bookmarklet, a content script with no build step -- rather
+  // than requiring a real bundler to resolve require() calls first), without
+  // a second copy of the rule catalog and the shared runner block, which
+  // together are about half of the generated file.
   //
   // The IIFE assigns onto `window` directly (not just returning a value to
   // a const) so these two functions remain callable from a LATER, SEPARATE
@@ -1175,16 +1175,15 @@ ${implEntriesInPage.join(',\n')}
   // already does for runa11yCoreInPage/runDomRulesInPage.
   const crossFrameRunnerSource = `
 const __a11yCoreCrossFrameApi = (function () {
-  const ENGINE_TAG = ${jsStringify(ENGINE_TAG)};
-  const SCHEMA_VERSION = ${jsStringify(SCHEMA_VERSION)};
-  const CHECK_DEFS = ${jsStringify(defs)};
-  const TEST_DEFS = CHECK_DEFS;
-  const COMPOSITE_RULES = ${jsStringify(COMPOSITE_RULES)};
-  const RULE_IMPLS = {
-${implEntriesInPage.join(',\n')}
-  };
-
-  ${runnersSharedSource}
+  const FRAME_RPC_CHANNEL = ${jsStringify(FRAME_RPC_CHANNEL)};
+${inlineConstFunction('getFrameRpcRegistry', getFrameRpcRegistry)}
+${inlineConstFunction('installFrameRpcListener', installFrameRpcListener)}
+${inlineConstFunction('nextFrameRpcRequestId', nextFrameRpcRequestId)}
+${inlineConstFunction('pingFrame', pingFrame)}
+${inlineConstFunction('sendFrameRunCommand', sendFrameRunCommand)}
+${inlineConstFunction('enableFrameRpcResponder', enableFrameRpcResponder)}
+${inlineConstFunction('normalizeSelectorList', normalizeSelectorList)}
+${inlineConstFunction('resolveContextRoots', resolveContextRoots)}
 
 ${findChildFrameElements.toString()}
 
