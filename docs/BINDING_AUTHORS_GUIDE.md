@@ -36,6 +36,108 @@ A short list, derived from what the audit pass on `@surea11y/playwright` actuall
 - [ ] If you support cross-frame scanning via your own driver, confirm each frame's result gets the same normalization (selector/structuralPath/severity) as a single-document scan — don't let a "per-frame" code path silently skip the shared result-shaping logic.
 - [ ] TypeScript types (if you ship any) stay in sync with actual engine output — `structuralPath: number[] | null` and any new fields ([`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) is the source of truth) are easy to leave stale after an engine update.
 
-## A known engine-side tradeoff worth knowing about
+## Getting the engine into the page without paying for it twice
 
-`src/core.js` is not small (~4.3MB as of 2026-08-20) because the bundler-free, no-driver-context functions (`runa11yCoreInPage`, `runa11yCoreAcrossFrames`, `a11yCoreEnableFrameResponder`) each carry their own complete self-contained copy of the rule catalog. If your binding only ever uses `require('@surea11y/core')` in Node and injects `runa11yCoreInPage.toString()` into the page (the same pattern `@surea11y/playwright` uses), your actual browser-injected payload is unaffected by this — only your Node-side `require()` footprint grows. Worth knowing if your binding's own package size matters to your consumers.
+A binding that crosses a realm boundary has to get the engine into the page
+somehow. The obvious way — serialize `runa11yCoreInPage` with `.toString()` and
+hand it to the driver's evaluate-in-page call — works, and is what
+`@surea11y/playwright` did first, but it sends the whole engine **on every
+call**: about 1.7MB per frame, per scan. A five-frame scan sends it five times,
+and the next scan sends it all again.
+
+The package ships a smaller way. `@surea11y/core/browser` is the standalone
+bundle: the same `runa11yCoreInPage`, minified, about 707KB, which defines
+`window.a11ycore`. Load it into the document once and every later scan costs a
+few hundred bytes.
+
+The shape below is deliberately driver-neutral — `evaluateInPage` stands for
+whatever your driver calls it (`page.evaluate` in Playwright and Puppeteer,
+`browser.execute` in WebdriverIO, `driver.executeScript` in Selenium, which
+takes a *string* of script text rather than a function):
+
+```js
+const fs = require('fs');
+const BUNDLE = fs.readFileSync(require.resolve('@surea11y/core/browser'), 'utf8');
+
+// Returns true when window.a11ycore is ready to use in this document.
+async function ensureEngine(target) {
+  if (await evaluateInPage(target, () => typeof window.a11ycore !== 'undefined')) return true;
+  try {
+    await evaluateInPage(target, (src) => (0, eval)(src), BUNDLE);
+  } catch {
+    return false;
+  }
+  // Confirm it actually landed rather than assuming: see the CSP note below.
+  return evaluateInPage(target, () => typeof window.a11ycore !== 'undefined');
+}
+```
+
+Then use it if it is there, and keep the serialize path as the fallback:
+
+```js
+async function scan(target, args) {
+  if (await ensureEngine(target)) {
+    return evaluateInPage(
+      target,
+      (a) => window.a11ycore.runa11yCoreInPage(a.url, a.contextSelector, a.engineOptions, a.runOnly),
+      args
+    );
+  }
+  return evaluateInPage(target, serializedRunnerFn, args); // what your binding does today
+}
+```
+
+Four things to know before adapting it:
+
+- **Verify the global appeared; don't assume.** That is what makes this safe to
+  adopt across drivers without auditing each one's execution model. A driver
+  whose script execution is subject to the page's own CSP will fail to define
+  the global, `ensureEngine` returns false, and the scan falls back to the
+  payload it uses today rather than breaking.
+- **Don't reach for `addScriptTag`.** It injects an inline `<script>`, which a
+  page serving `script-src 'self'` refuses — confirmed in Chromium against both
+  a page and a sub-frame. Playwright's and Puppeteer's `evaluate` run through
+  CDP, outside the page's CSP, so the snippet above was confirmed working under
+  `script-src 'self'` with no `unsafe-eval`. Other drivers execute scripts by
+  other means; the presence check above is what covers the difference.
+- **A navigation clears it.** `window.a11ycore` belongs to the document, so the
+  check has to run per frame and after every navigation. That is why `scan`
+  calls `ensureEngine` unconditionally rather than caching a flag on the
+  binding.
+- **The bundle carries English only.** Every other locale is a side file, so a
+  binding forwarding `engineOptions.locale` must load the matching one the same
+  way, before the scan:
+
+  ```js
+  const primary = String(locale || 'en').trim().toLowerCase().split('-')[0];
+  if (primary && primary !== 'en') {
+    let localePath;
+    try {
+      localePath = require.resolve(`@surea11y/core/i18n/${primary}`);
+    } catch {
+      localePath = null; // not a locale this build ships; English is the fallback
+    }
+    if (localePath) {
+      await evaluateInPage(target, (src) => (0, eval)(src), fs.readFileSync(localePath, 'utf8'));
+    }
+  }
+  ```
+
+  Without it the scan still succeeds, but in English, with
+  `engine.locale.reason` reporting `dictionary-not-loaded` — the engine saying
+  this step was missed, rather than a failure to swallow.
+
+Results are identical either way: same rules, same composites, same `engine`
+block, verified over a page seeded with a spread of violations. This is only
+about what crosses the wire.
+
+### Which situation is your binding in
+
+Only the first row pays the serialization cost this section is about.
+
+| Binding | Realm | What to do |
+|---|---|---|
+| Playwright, Puppeteer, Selenium, WebdriverIO | Node drives a separate browser realm | Everything above: load `@surea11y/core/browser` into the document once, scan through `window.a11ycore`, keep the serialize path as fallback. |
+| Cypress | Test code already runs in the browser, with the app under test in a same-origin frame | No serialization boundary, so nothing crosses the wire — but the engine still has to run in the app's realm, not the runner's. Read `@surea11y/core/browser` (`cy.readFile`), evaluate it into the app window, and call `win.a11ycore.runa11yCoreInPage` there. Reaching for the Node-side `require` instead scans the wrong document. |
+| Jest, Vitest, or anything else driving jsdom in-process | One realm, in Node | None of this applies. `require('@surea11y/core')` and call `runDomRulesInPage` against the DOM you already have — see [`INTEGRATION.md`](./INTEGRATION.md) Pattern 1. Injecting a bundle here would be strictly worse. |
+| Browser extension, bookmarklet, injected script | Already in the page | Load the bundle once and call it; that is the case it was built for. |
