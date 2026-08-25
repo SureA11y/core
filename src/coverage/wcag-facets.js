@@ -864,7 +864,13 @@ const FACETS = {
     "3.3.8": {
         "title": "Accessible Authentication (Minimum)",
         "level": "AA",
-        "facets": []
+        "facets": [
+            {
+                "id": "authentication-paste-not-blocked",
+                "label": "A password or one-time-code field does not cancel pasting, so a password manager or the clipboard can still fill it",
+                "automation": "manual"
+            }
+        ]
     },
     "3.3.9": {
         "title": "Accessible Authentication (Enhanced)",
