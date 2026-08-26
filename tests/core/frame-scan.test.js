@@ -14,16 +14,15 @@ try {
 }
 
 // runa11yCoreAcrossFrames/a11yCoreEnableFrameResponder aren't extractable
-// alone via .toString() the way runa11yCoreInPage is -- they're
-// wrapped in their own self-contained IIFE (crossFrameRunnerSource in
-// scripts/build-core.js) together with a private copy of everything they
-// need, so they stay usable the same bundler-free way runa11yCoreInPage
-// already is (raw source injected into a page, no build step). Extract that
-// whole IIFE chunk out of the generated core.js by its marker comment,
+// alone via .toString() the way runa11yCoreInPage is -- they live in their
+// own IIFE (crossFrameRunnerSource in scripts/build-core.js), and they scan
+// the top frame by calling runa11yCoreInPage rather than carrying a second
+// copy of the catalog. So the injectable slice starts at the in-page runner
+// and runs to module.exports: one contiguous chunk, free of require(), and
 // exactly the shape a real "plain script injection" consumer would load.
 function loadCrossFrameChunk() {
   const src = fs.readFileSync(path.join(__dirname, '../../src/core.js'), 'utf8');
-  const startMarker = '// SELF-CONTAINED cross-frame scanning';
+  const startMarker = '// SELF-CONTAINED in-page runner';
   const endMarker = 'module.exports = {';
   const start = src.indexOf(startMarker);
   const end = src.indexOf(endMarker, start);
