@@ -41,7 +41,7 @@
   <h2>B. Invalid</h2>
 
   <div class="case" id="case_04">
-    <div class="case-title">04 — FAIL: no owned child of an acceptable role exists</div>
+    <div class="case-title">04 — CANTTELL: no owned child of an acceptable role exists</div>
     <div role="listbox" id="arc_case_04"><div>just text</div></div>
   </div>
 
@@ -67,6 +67,11 @@
   <div class="case" id="case_08">
     <div class="case-title">08 — NEUTRAL: container carries aria-busy="true" — author-signaled transient incompleteness per the WAI-ARIA spec's own required-owned-elements escape hatch</div>
     <ul role="list" aria-busy="true" id="arc_case_08"></ul>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — CANTTELL: container owns items that never got their role — reported for review, not failed, since a container of unroled elements is equally "a broken list" and "an empty list with content inside it", which markup alone does not settle</div>
+    <div role="list" id="arc_case_09"><div>Item one</div><div>Item two</div></div>
   </div>
 
   <p class="note">End of fixture.</p>

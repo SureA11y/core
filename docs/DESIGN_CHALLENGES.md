@@ -28,6 +28,20 @@ A running log of engine design decisions worth re-examining: cases where an exis
 
 ## Decided
 
+### `aria-required-children` failed a container for being empty, when its sibling already owns the question of whether the contents are valid, now advisory
+
+**Decision as it stands (before the change):** the rule failed any container role with a "required owned elements" entry that had no descendant (or `aria-owns` target) carrying one of those roles. An empty `<div role="list">`, a `role="tablist"` before its tabs arrive, a `role="rowgroup"` with no rows: all `fail` at `moderate`, mapped to SC 1.3.1.
+
+**Why it was questioned:** the rule asks one thing, whether the required content is PRESENT. Whether the content a container does own is VALID is `aria-prohibited-children`'s decision, and that rule fails independently. Absence conveys nothing false: an empty `role="list"` is announced as a list with no items, which is exactly what it is. The engine's own native-HTML rules already work this way, which made the ARIA side incoherent by comparison: `<ul></ul>` passes and `<div role="list"></div>` failed, same structure, same emptiness, opposite verdicts, with nothing in WCAG distinguishing them. ACT `bc4a75`, the authority this rule's `fail` rests on, turns out not to cover the shape at all: its Expectation is "each test target only owns elements with a semantic role from the required owned element list", which an empty container satisfies vacuously, and it publishes no empty-container example in either direction. The engine's clean run against that corpus was therefore silent about this case rather than confirming it.
+
+**What was weighed:** three predicates were on the table. Cap the rule at `cantTell` outright; keep a `fail` for a container that owns roles but none of the required ones; or the stricter line used elsewhere in the industry, `cantTell` only when the container owns no content whatsoever, so a container of unroled elements still fails. The middle option was dropped once it was clear that every shape it would fail is already failed by `aria-prohibited-children`, making it a second rule agreeing with the first rather than a decision of its own, against this repo's one-rule-one-decision principle. The strict option was dropped because a container of unroled elements is equally "a broken list" and "an empty list with content inside it", and static markup does not settle which.
+
+**Decision (2026-08-28):** the rule reports `cantTell` for every finding and can no longer `fail`. Applicability, the `aria-busy` escape hatch, accessibility-tree eligibility, `aria-owns` resolution and slot expansion are all unchanged, as is `aria-prohibited-children`.
+
+**Accepted cost:** `<div role="list"><div>Item one</div><div>Item two</div></div>`, a list whose items never got their role, is now reported for review rather than failed, and no other rule fails it. That is the only shape that loses a failure; the fixture carries it as case 09 and a test pins the sibling rule still failing a genuinely disallowed child, so the safety net this depends on cannot be removed quietly.
+
+**Status:** resolved 2026-08-28.
+
 ### The `aria-*` family reported ARIA-spec conformance as a WCAG 4.1.2 failure, where ACT's own mapping calls most of it "not required for conformance", now graded
 
 **Decision as it stands (before the change):** 13 of the 16 automatic `aria-*` rules declared `wcagSc: ['4.1.2']` at level A (the other three were re-mapped to 1.3.1, see Status), `normative: true` (no rule anywhere in this repo sets `normative: false`) and `defaultConfidence: 'high'` — the exception being `aria-required-parent`, which is `medium` and still emits a flat `fail`. Eleven of the sixteen emit a flat `fail` with no second tier; five grade into a `cantTell` tier (`aria-allowed-attr`, `aria-deprecated-role`, `aria-prohibited-attr`, `aria-valid-attr-value`, `aria-hidden-focus`). Seventeen atomic rules feed one composite, `wcag-4.1.2-aria-validity`, whose own description says it rolls up checks "that ARIA role and attribute usage conforms to the WAI-ARIA specification"; any single contributor `fail` makes that SC verdict `fail`.

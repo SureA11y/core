@@ -27,7 +27,7 @@
 </head>
 <body>
   <h1>surea11y Fixture Index</h1>
-  <p class="meta">132/132 rules have a fixture &middot; regenerate with <code>node scripts/generate-fixture-index.js</code></p>
+  <p class="meta">132/133 rules have a fixture &middot; regenerate with <code>node scripts/generate-fixture-index.js</code></p>
 
   <div class="toolbar">
     <input type="search" id="filter" placeholder="Filter by rule id or title…" autocomplete="off">
@@ -202,10 +202,10 @@
       <td><a href="aria-required-children-all-scenarios.html" target="_blank" rel="noopener">aria-required-children</a></td>
       <td class="muted">automatic</td>
       <td>Container roles must own at least one required child role</td>
-      <td class="num">8</td>
+      <td class="num">9</td>
       <td class="num pass">3</td>
-      <td class="num fail">1</td>
-      <td class="num canttell"></td>
+      <td class="num fail"></td>
+      <td class="num canttell">2</td>
       <td class="num">4</td>
     </tr>
 <tr data-search="aria-required-parent roles requiring a specific context role must be in that context">
@@ -1371,6 +1371,10 @@
     </tbody>
   </table>
 
+  <h2>Rules without a fixture (1)</h2>
+  <ul>
+    <li>identical-iframes-same-purpose — <code>src/checks/automatic/identical-iframes-same-purpose.js</code></li>
+  </ul>
 
 <script>
 (function () {

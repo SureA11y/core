@@ -4,11 +4,13 @@ Every implemented rule should have a `tests/fixtures/<slug>-all-scenarios.html` 
 
 ## Summary
 
-Total rules: **132**. With fixture: **132**. Without fixture: **0**.
+Total rules: **133**. With fixture: **132**. Without fixture: **1**.
 
-## Rules WITHOUT a fixture (0)
+## Rules WITHOUT a fixture (1)
 
-None — every rule has a fixture.
+| Rule ID | Type | Title | Rule file | Test file |
+|---|---|---|---|---|
+| identical-iframes-same-purpose | automatic | Frames with the same name embed the same resource | src/checks/automatic/identical-iframes-same-purpose.js | tests/engine-checks/automatic/identical-iframes-same-purpose.test.js |
 
 ## Rules WITH a fixture (132)
 
@@ -29,7 +31,7 @@ None — every rule has a fixture.
 | aria-prohibited-attr | automatic | `tests/fixtures/aria-prohibited-attr-all-scenarios.html` | 15 | 2 | 9 | 0 | 4 |
 | aria-prohibited-children | automatic | `tests/fixtures/aria-prohibited-children-all-scenarios.html` | 20 | 10 | 8 | 0 | 2 |
 | aria-required-attr | automatic | `tests/fixtures/aria-required-attr-all-scenarios.html` | 17 | 4 | 4 | 2 | 7 |
-| aria-required-children | automatic | `tests/fixtures/aria-required-children-all-scenarios.html` | 8 | 3 | 1 | 0 | 4 |
+| aria-required-children | automatic | `tests/fixtures/aria-required-children-all-scenarios.html` | 9 | 3 | 0 | 2 | 4 |
 | aria-required-parent | automatic | `tests/fixtures/aria-required-parent-all-scenarios.html` | 12 | 6 | 2 | 0 | 4 |
 | aria-role-name-present | automatic | `tests/fixtures/aria-role-name-present-all-scenarios.html` | 27 | 6 | 8 | 0 | 13 |
 | aria-roles-valid | automatic | `tests/fixtures/aria-roles-valid-all-scenarios.html` | 8 | 4 | 2 | 1 | 1 |
