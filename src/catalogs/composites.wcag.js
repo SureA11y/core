@@ -432,7 +432,6 @@ module.exports = [
       'aria-allowed-attr',
       'aria-prohibited-attr',
       'aria-required-attr',
-      'aria-allowed-role',
       'duplicate-id-aria',
       'nested-interactive-controls-absent',
       'presentational-children-focusable-absent',

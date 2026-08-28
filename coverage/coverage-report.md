@@ -11,13 +11,13 @@ Total rules (loaded without error): **132**
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| Any WCAG version | 107 | 19 | 5 |
+| Any WCAG version | 106 | 19 | 5 |
 
 ### Coverage by WCAG Level (Per version, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| WCAG 2.0 | 101 | 14 | 5 |
+| WCAG 2.0 | 100 | 14 | 5 |
 | WCAG 2.1 | 4 | 3 | 0 |
 | WCAG 2.2 | 2 | 2 | 0 |
 
@@ -28,7 +28,7 @@ Total rules (loaded without error): **132**
 | wcag21a | 1 |
 | wcag21aa | 3 |
 | wcag22aa | 2 |
-| wcag2a | 90 |
+| wcag2a | 89 |
 | wcag2aa | 10 |
 | wcag2aaa | 5 |
 
@@ -549,8 +549,8 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 ### 4.1.2
 
-Facet coverage: **39/39** facets covered.
-Automation mix: **full 37, partial 0, manual 2**.
+Facet coverage: **38/38** facets covered.
+Automation mix: **full 36, partial 0, manual 2**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
@@ -581,7 +581,6 @@ Automation mix: **full 37, partial 0, manual 2**.
 | aria-attr-allowed-for-role | full | aria-allowed-attr |
 | aria-attr-not-prohibited | full | aria-prohibited-attr |
 | aria-attr-required-for-role | full | aria-required-attr |
-| aria-role-allowed-for-element | full | aria-allowed-role |
 | iframe-name-present | full | iframe-name-present |
 | iframe-title-unique | full | iframe-title-unique |
 | aria-hidden-body-absent | full | aria-hidden-body |
@@ -597,7 +596,6 @@ Automation mix: **full 37, partial 0, manual 2**.
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | aria-allowed-attr | automatic | aria-* attributes must be permitted for the element’s role | src/checks/automatic/aria-allowed-attr.js | aria-attr-allowed-for-role |  |
-| aria-allowed-role | automatic | Explicit role must be permitted for its host element | src/checks/automatic/aria-allowed-role.js | aria-role-allowed-for-element |  |
 | aria-braille-equivalent | automatic | aria-braillelabel/aria-brailleroledescription must have a non-braille equivalent | src/checks/automatic/aria-braille-equivalent.js | aria-braille-equivalent |  |
 | aria-conditional-attr | automatic | aria-errormessage requires aria-invalid to be set to a non-false value | src/checks/automatic/aria-conditional-attr.js | aria-conditional-attr |  |
 | aria-deprecated-role | automatic | role attribute should not use a deprecated or author-discouraged ARIA role | src/checks/automatic/aria-deprecated-role.js | aria-role-not-deprecated |  |
@@ -638,6 +636,7 @@ Automation mix: **full 37, partial 0, manual 2**.
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
+| aria-allowed-role | automatic | Explicit role must be permitted for its host element | src/checks/automatic/aria-allowed-role.js |  |  |
 | accesskeys | manual | accesskey values must be unique | src/checks/manual/accesskeys-manual.js |  |  |
 | aria-text | manual | role="text" elements should have no focusable descendants | src/checks/manual/aria-text-manual.js |  |  |
 | empty-heading | manual | Headings must not be empty | src/checks/manual/empty-heading-manual.js |  |  |
@@ -1181,8 +1180,8 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 ### 4.1.2
 
-Facet coverage: **39/39** facets covered.
-Automation mix: **full 37, partial 0, manual 2**.
+Facet coverage: **38/38** facets covered.
+Automation mix: **full 36, partial 0, manual 2**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
@@ -1213,7 +1212,6 @@ Automation mix: **full 37, partial 0, manual 2**.
 | aria-attr-allowed-for-role | full | aria-allowed-attr |
 | aria-attr-not-prohibited | full | aria-prohibited-attr |
 | aria-attr-required-for-role | full | aria-required-attr |
-| aria-role-allowed-for-element | full | aria-allowed-role |
 | iframe-name-present | full | iframe-name-present |
 | iframe-title-unique | full | iframe-title-unique |
 | aria-hidden-body-absent | full | aria-hidden-body |
@@ -1229,7 +1227,6 @@ Automation mix: **full 37, partial 0, manual 2**.
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | aria-allowed-attr | automatic | aria-* attributes must be permitted for the element’s role | src/checks/automatic/aria-allowed-attr.js | aria-attr-allowed-for-role |  |
-| aria-allowed-role | automatic | Explicit role must be permitted for its host element | src/checks/automatic/aria-allowed-role.js | aria-role-allowed-for-element |  |
 | aria-braille-equivalent | automatic | aria-braillelabel/aria-brailleroledescription must have a non-braille equivalent | src/checks/automatic/aria-braille-equivalent.js | aria-braille-equivalent |  |
 | aria-conditional-attr | automatic | aria-errormessage requires aria-invalid to be set to a non-false value | src/checks/automatic/aria-conditional-attr.js | aria-conditional-attr |  |
 | aria-deprecated-role | automatic | role attribute should not use a deprecated or author-discouraged ARIA role | src/checks/automatic/aria-deprecated-role.js | aria-role-not-deprecated |  |
@@ -1270,6 +1267,7 @@ Automation mix: **full 37, partial 0, manual 2**.
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
+| aria-allowed-role | automatic | Explicit role must be permitted for its host element | src/checks/automatic/aria-allowed-role.js |  |  |
 | accesskeys | manual | accesskey values must be unique | src/checks/manual/accesskeys-manual.js |  |  |
 | aria-text | manual | role="text" elements should have no focusable descendants | src/checks/manual/aria-text-manual.js |  |  |
 | empty-heading | manual | Headings must not be empty | src/checks/manual/empty-heading-manual.js |  |  |

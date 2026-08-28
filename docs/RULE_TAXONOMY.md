@@ -11,13 +11,30 @@ It reflects **what already exists in the rules and tests**, not theory.
 Encoded by: `meta.type`
 
 - `automatic`
-    - Rule makes a **normative decision**
-    - Allowed outcomes: `pass`, `fail`, `notApplicable`, and `cantTell` as a defensive fallback only (e.g. an internal-failure safety net, or a computability gate a rule can't resolve — see `contrast-minimum.js`/`contrast-enhanced.js`/`contrast-computable.js`/`target-size-minimum.js`), never as its primary intended path
+    - Rule **decides deterministically**, with no heuristics and no guessing
+    - Allowed outcomes: `pass`, `fail`, `notApplicable`, `cantTell`
+    - `cantTell` is the primary path in two distinct cases, and a defensive
+      fallback in a third:
+        - the rule decides that a real violation exists, but the violation does
+          not on its own establish that the mapped criterion fails — an ARIA
+          author requirement the exposed name, role and value survive
+          (`aria-valid-attr`, `aria-braille-equivalent`,
+          `aria-conditional-attr`), or the graded tier of a rule that fails
+          elsewhere (`aria-required-attr`, `aria-roles-valid`)
+        - the rule decides deterministically but claims no Success Criterion at
+          all (`aria-allowed-role`, tagged `best-practice`)
+        - a computability gate the rule cannot resolve, or an internal-failure
+          safety net (`contrast-minimum.js`/`contrast-enhanced.js`/
+          `contrast-computable.js`/`target-size-minimum.js`)
 - `manual`
-    - Rule signals **human review required**
+    - Rule signals **human review required**: it cannot decide at all
     - Allowed outcomes: `cantTell`, `notApplicable`
 
-Manual rules MUST NOT make normative failure decisions.
+Manual rules MUST NOT make normative failure decisions. The dividing line
+between the two types is whether the rule can decide, not which outcome it
+reports: an automatic rule that reports `cantTell` has decided, and is saying
+what it found; a manual rule reports `cantTell` because the question is not
+decidable from markup.
 
 ---
 
