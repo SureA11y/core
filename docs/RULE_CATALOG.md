@@ -2,13 +2,13 @@
 
 Generated from the compiled engine's own catalog (`getChecksCatalog()`/`getRulesCatalog()`) and each rule's source header. Run `node scripts/generate-rule-catalog.js` after `npm run build` to regenerate this file whenever rules change. Do not hand-edit.
 
-**132 rules total: 78 automatic (WCAG-normative, can return `fail`), 54 manual (advisory/judgment-required, capped at `cantTell`). 106 carry at least one formal WCAG Success Criterion mapping.**
+**133 rules total: 79 automatic (WCAG-normative, can return `fail`), 54 manual (advisory/judgment-required, capped at `cantTell`). 107 carry at least one formal WCAG Success Criterion mapping.**
 
 The tables below are an index; [rule reference](#rule-reference) carries each rule's description, what it applies to and what it expects.
 
 See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`severity` mean on a scan result, and [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md) for how these roll up to an SC-level conformance claim. For WCAG-facet-level coverage-gap tracking (which parts of an SC are and aren't automatable yet), see `coverage/coverage-report.md` instead: that one is organized by facet, this one by rule.
 
-## Automatic rules (78), can return `fail`
+## Automatic rules (79), can return `fail`
 
 | Rule ID | Title | WCAG SC | Level | Confidence | Default severity |
 |---|---|---|---|---|---|
@@ -50,6 +50,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`form-control-single-label`](#form-control-single-label) | Form controls must not have multiple labels | 3.3.2 | A | high | moderate |
 | [`html-lang-attr-present`](#html-lang-attr-present) | Page language is declared | 3.1.1 | A | high | serious |
 | [`html-xml-lang-mismatch`](#html-xml-lang-mismatch) | lang and xml:lang must not disagree | 3.1.1 | A | high | serious |
+| [`identical-iframes-same-purpose`](#identical-iframes-same-purpose) | Frames with the same name embed the same resource | 4.1.2 | A | medium | moderate |
 | [`iframe-focusable-content`](#iframe-focusable-content) | Frames with tabindex="-1" must not contain focusable content | 2.1.1 | A | high | moderate |
 | [`iframe-name-present`](#iframe-name-present) | Frames have an accessible name | 4.1.2 | A | high | serious |
 | [`iframe-title-unique`](#iframe-title-unique) | Frame titles must be unique | 4.1.2 | A | high | moderate |
@@ -920,6 +921,18 @@ Checks that the &lt;html&gt; element's lang and xml:lang attributes declare the 
 **Applies to.** Applies when the &lt;html&gt; element has both a non-empty lang attribute and a non-empty xml:lang attribute.
 
 **Expectation.** The primary language subtag (the part before the first "-") of lang and xml:lang match, case-insensitively. When both attributes are present but declare different languages, assistive technology and user agents may resolve the page's language inconsistently.
+
+### `identical-iframes-same-purpose`
+
+**Frames with the same name embed the same resource**
+
+automatic · WCAG 4.1.2 (A) · confidence medium · default severity moderate
+
+Checks that &lt;iframe&gt;/&lt;frame&gt; elements sharing an accessible name embed the same resource, since one name can only describe one resource.
+
+**Applies to.** Applies to each set of two or more &lt;iframe&gt;/&lt;frame&gt; elements that are included in the accessibility tree and share the same non-empty accessible name, compared with whitespace collapsed. A frame named only by a mechanism that names nothing, or hidden from the accessibility tree, is not part of a set; a set needs two surviving members to exist at all.
+
+**Expectation.** Every frame in a set resolves to the same resource. A shared name describes one resource, so two frames answering to it must embed the same one.
 
 ### `identical-links-same-purpose`
 
