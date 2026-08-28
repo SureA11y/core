@@ -20,8 +20,8 @@ After adding/changing a rule:
 
 ```sh
 npm run build              # regenerate src/core.js
-npm run validate:rules     # rule module contract (exports, meta, no free variables in runInPage)
-npm test                   # full suite must be green
+npm run validate:rules     # rule module contract (exports, meta, no free variables in runInPage) -- also run by `npm test`, standalone for a quicker signal
+npm test                   # full suite must be green (~2 min: format, build, rule contracts, then the tests)
 npm run coverage           # if the rule touches WCAG facet coverage
 npm run test:coverage      # code line/branch coverage (Node's built-in test runner) -- not the same thing as `coverage` above
 npm run fixtures:index     # if you added/changed a fixture
