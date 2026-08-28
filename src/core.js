@@ -39201,7 +39201,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function normalizedName(el) {
     if (!helpers.getAccessibleNameInfo) return '';
-    let info = null;
+    let info;
     try {
       info = helpers.getAccessibleNameInfo(el, ctx, { maxRefs: 8 });
     } catch {
@@ -39243,7 +39243,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // A directory written with and without its trailing slash is one resource,
   // and a fragment selects within a resource rather than naming another.
   function resourceKey(el) {
-    let raw = null;
+    let raw;
     try {
       raw = el.getAttribute('src');
     } catch {
