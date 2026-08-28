@@ -290,6 +290,21 @@ const FACETS = {
                 "automation": "full"
             },
             {
+                "id": "aria-role-required-owned-children",
+                "label": "Container roles (list, listbox, menu, table, tablist, tree, ...) own at least one required child role",
+                "automation": "full"
+            },
+            {
+                "id": "aria-role-owned-children-allowed",
+                "label": "Container roles do not own an accessible-tree child with a disallowed role",
+                "automation": "full"
+            },
+            {
+                "id": "aria-role-required-context-parent",
+                "label": "Roles requiring a specific context role (listitem, option, tab, treeitem, row, cell, ...) have an acceptable ancestor/owner",
+                "automation": "full"
+            },
+            {
                 "id": "p-as-heading-evidence",
                 "label": "Bold, heading-sized <p> text that may need a real heading element (evidence only)",
                 "automation": "manual"
@@ -1030,21 +1045,6 @@ const FACETS = {
             {
                 "id": "aria-role-allowed-for-element",
                 "label": "Explicit role attribute is permitted by the ARIA-in-HTML spec for its host element",
-                "automation": "full"
-            },
-            {
-                "id": "aria-role-required-owned-children",
-                "label": "Container roles (list, listbox, menu, table, tablist, tree, ...) own at least one required child role",
-                "automation": "full"
-            },
-            {
-                "id": "aria-role-owned-children-allowed",
-                "label": "Container roles do not own an accessible-tree child with a disallowed role",
-                "automation": "full"
-            },
-            {
-                "id": "aria-role-required-context-parent",
-                "label": "Roles requiring a specific context role (listitem, option, tab, treeitem, row, cell, ...) have an acceptable ancestor/owner",
                 "automation": "full"
             },
             {

@@ -499,17 +499,17 @@
       "file": "src/checks/automatic/aria-prohibited-children.js",
       "ruleId": "aria-prohibited-children",
       "wcagScNormative": [
-        "4.1.2"
+        "1.3.1"
       ],
       "wcagScAll": [
-        "4.1.2"
+        "1.3.1"
       ],
       "wcagScInformative": [],
       "type": "automatic",
       "title": "Container roles must not own a child with a disallowed role",
       "tags": [
         "wcag2a",
-        "wcag412",
+        "wcag131",
         "aria",
         "structure",
         "atomic",
@@ -538,7 +538,7 @@
       "error": null,
       "coverage": {
         "facetsBySc": {
-          "4.1.2": [
+          "1.3.1": [
             "aria-role-owned-children-allowed"
           ]
         }
@@ -597,17 +597,17 @@
       "file": "src/checks/automatic/aria-required-children.js",
       "ruleId": "aria-required-children",
       "wcagScNormative": [
-        "4.1.2"
+        "1.3.1"
       ],
       "wcagScAll": [
-        "4.1.2"
+        "1.3.1"
       ],
       "wcagScInformative": [],
       "type": "automatic",
       "title": "Container roles must own at least one required child role",
       "tags": [
         "wcag2a",
-        "wcag412",
+        "wcag131",
         "aria",
         "structure",
         "atomic",
@@ -636,7 +636,7 @@
       "error": null,
       "coverage": {
         "facetsBySc": {
-          "4.1.2": [
+          "1.3.1": [
             "aria-role-required-owned-children"
           ]
         }
@@ -646,17 +646,17 @@
       "file": "src/checks/automatic/aria-required-parent.js",
       "ruleId": "aria-required-parent",
       "wcagScNormative": [
-        "4.1.2"
+        "1.3.1"
       ],
       "wcagScAll": [
-        "4.1.2"
+        "1.3.1"
       ],
       "wcagScInformative": [],
       "type": "automatic",
       "title": "Roles requiring a specific context role must be in that context",
       "tags": [
         "wcag2a",
-        "wcag412",
+        "wcag131",
         "aria",
         "structure",
         "atomic",
@@ -685,7 +685,7 @@
       "error": null,
       "coverage": {
         "facetsBySc": {
-          "4.1.2": [
+          "1.3.1": [
             "aria-role-required-context-parent"
           ]
         }
@@ -6252,13 +6252,13 @@
       {
         "sc": "1.3.1",
         "title": "Info and Relationships",
-        "totalFacets": 12,
-        "coveredFacets": 11,
+        "totalFacets": 15,
+        "coveredFacets": 14,
         "uncoveredFacets": [
           "form-control-label-quality-review"
         ],
         "automationCounts": {
-          "full": 8,
+          "full": 11,
           "manual": 3,
           "partial": 1
         },
@@ -6333,6 +6333,30 @@
             "automation": "full",
             "coveredBy": [
               "dlitem-parent-valid"
+            ]
+          },
+          {
+            "id": "aria-role-required-owned-children",
+            "label": "Container roles (list, listbox, menu, table, tablist, tree, ...) own at least one required child role",
+            "automation": "full",
+            "coveredBy": [
+              "aria-required-children"
+            ]
+          },
+          {
+            "id": "aria-role-owned-children-allowed",
+            "label": "Container roles do not own an accessible-tree child with a disallowed role",
+            "automation": "full",
+            "coveredBy": [
+              "aria-prohibited-children"
+            ]
+          },
+          {
+            "id": "aria-role-required-context-parent",
+            "label": "Roles requiring a specific context role (listitem, option, tab, treeitem, row, cell, ...) have an acceptable ancestor/owner",
+            "automation": "full",
+            "coveredBy": [
+              "aria-required-parent"
             ]
           },
           {
@@ -7060,11 +7084,11 @@
       {
         "sc": "4.1.2",
         "title": "Name, Role, Value",
-        "totalFacets": 42,
-        "coveredFacets": 42,
+        "totalFacets": 39,
+        "coveredFacets": 39,
         "uncoveredFacets": [],
         "automationCounts": {
-          "full": 40,
+          "full": 37,
           "manual": 2
         },
         "missingFacetRules": [],
@@ -7292,30 +7316,6 @@
             "automation": "full",
             "coveredBy": [
               "aria-allowed-role"
-            ]
-          },
-          {
-            "id": "aria-role-required-owned-children",
-            "label": "Container roles (list, listbox, menu, table, tablist, tree, ...) own at least one required child role",
-            "automation": "full",
-            "coveredBy": [
-              "aria-required-children"
-            ]
-          },
-          {
-            "id": "aria-role-owned-children-allowed",
-            "label": "Container roles do not own an accessible-tree child with a disallowed role",
-            "automation": "full",
-            "coveredBy": [
-              "aria-prohibited-children"
-            ]
-          },
-          {
-            "id": "aria-role-required-context-parent",
-            "label": "Roles requiring a specific context role (listitem, option, tab, treeitem, row, cell, ...) have an acceptable ancestor/owner",
-            "automation": "full",
-            "coveredBy": [
-              "aria-required-parent"
             ]
           },
           {
@@ -7643,13 +7643,13 @@
       {
         "sc": "1.3.1",
         "title": "Info and Relationships",
-        "totalFacets": 12,
-        "coveredFacets": 11,
+        "totalFacets": 15,
+        "coveredFacets": 14,
         "uncoveredFacets": [
           "form-control-label-quality-review"
         ],
         "automationCounts": {
-          "full": 8,
+          "full": 11,
           "manual": 3,
           "partial": 1
         },
@@ -7724,6 +7724,30 @@
             "automation": "full",
             "coveredBy": [
               "dlitem-parent-valid"
+            ]
+          },
+          {
+            "id": "aria-role-required-owned-children",
+            "label": "Container roles (list, listbox, menu, table, tablist, tree, ...) own at least one required child role",
+            "automation": "full",
+            "coveredBy": [
+              "aria-required-children"
+            ]
+          },
+          {
+            "id": "aria-role-owned-children-allowed",
+            "label": "Container roles do not own an accessible-tree child with a disallowed role",
+            "automation": "full",
+            "coveredBy": [
+              "aria-prohibited-children"
+            ]
+          },
+          {
+            "id": "aria-role-required-context-parent",
+            "label": "Roles requiring a specific context role (listitem, option, tab, treeitem, row, cell, ...) have an acceptable ancestor/owner",
+            "automation": "full",
+            "coveredBy": [
+              "aria-required-parent"
             ]
           },
           {
@@ -8451,11 +8475,11 @@
       {
         "sc": "4.1.2",
         "title": "Name, Role, Value",
-        "totalFacets": 42,
-        "coveredFacets": 42,
+        "totalFacets": 39,
+        "coveredFacets": 39,
         "uncoveredFacets": [],
         "automationCounts": {
-          "full": 40,
+          "full": 37,
           "manual": 2
         },
         "missingFacetRules": [],
@@ -8683,30 +8707,6 @@
             "automation": "full",
             "coveredBy": [
               "aria-allowed-role"
-            ]
-          },
-          {
-            "id": "aria-role-required-owned-children",
-            "label": "Container roles (list, listbox, menu, table, tablist, tree, ...) own at least one required child role",
-            "automation": "full",
-            "coveredBy": [
-              "aria-required-children"
-            ]
-          },
-          {
-            "id": "aria-role-owned-children-allowed",
-            "label": "Container roles do not own an accessible-tree child with a disallowed role",
-            "automation": "full",
-            "coveredBy": [
-              "aria-prohibited-children"
-            ]
-          },
-          {
-            "id": "aria-role-required-context-parent",
-            "label": "Roles requiring a specific context role (listitem, option, tab, treeitem, row, cell, ...) have an acceptable ancestor/owner",
-            "automation": "full",
-            "coveredBy": [
-              "aria-required-parent"
             ]
           },
           {
