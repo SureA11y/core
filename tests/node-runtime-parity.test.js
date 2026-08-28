@@ -56,7 +56,9 @@ function runViaEntryPoint(entryPointFn, html, ruleId) {
   }
 }
 
-for (const row of fixturesIndex.rows) {
+// A rule with no fixture yet has fixtureFile: null. It is tracked as a gap by
+// tests/fixtures/INDEX.md, so skip it here rather than crashing every run.
+for (const row of fixturesIndex.rows.filter((r) => r.fixtureFile)) {
   test(`${row.ruleId}: runDomRulesInPage and runa11yCoreInPage agree on its own fixture`, () => {
     const html = fs.readFileSync(path.join(__dirname, '..', row.fixtureFile), 'utf8');
 
