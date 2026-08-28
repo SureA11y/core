@@ -319,12 +319,12 @@
       "testFile": "tests/engine-checks/automatic/aria-required-parent.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/aria-required-parent-all-scenarios.html",
-      "totalCases": 11,
+      "totalCases": 12,
       "caseCounts": {
         "PASS": 6,
         "FAIL": 2,
         "CANTTELL": 0,
-        "OTHER": 3
+        "OTHER": 4
       }
     },
     {

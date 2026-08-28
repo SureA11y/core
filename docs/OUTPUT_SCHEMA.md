@@ -109,7 +109,7 @@ This is the exact shape of the object returned by `runDomRulesInPage(...)` / `ru
 Notes:
 
 - **`outcome` vs `outcomeNormalized`**: identical except `notApplicable` becomes `"inapplicable"` in `outcomeNormalized`. Both are provided so you can match either your own vocabulary or the engine's internal one.
-- **`type: "manual"` rules can never report `outcome: "fail"`.** If a manual rule's own logic would have said `fail`, the engine coerces it to `cantTell` and appends an explanatory note to `error` — this is enforced centrally (`policy.coerceManualFailToCantTell`, on by default under the `a11y` policy contract; see [`POLICY.md`](./POLICY.md)), not something each rule has to remember. `fail` is reserved for deterministic, high-confidence, `type: "automatic"` findings only.
+- **`type: "manual"` rules can never report `outcome: "fail"`.** If a manual rule's own logic would have said `fail`, the engine coerces it to `cantTell` and appends an explanatory note to `error` — this is enforced centrally (`policy.coerceManualFailToCantTell`, on by default under the `a11y` policy contract; see [`POLICY.md`](./POLICY.md)), not something each rule has to remember. `fail` is reserved for deterministic, `type: "automatic"` findings only.
 - **`meta.normativeMappings`** is how a check result ties back to a WCAG Success Criterion — `[]` for rules with no formal WCAG mapping (this engine calls them advisory `type: "manual"` rules). See [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md) for how these roll up.
 - **`wcagVersionScope`**: only present when the run's target WCAG version turned this rule's `fail` into a `cantTell` — today that means a rule mapped to SC 4.1.1 Parsing (`duplicate-id`) under the default 2.2 target, since 2.2 removed that criterion. `removedSc` lists the criteria that stopped existing, `target` is the version that removed them, and `coercedFrom` is the outcome the rule itself reported. The occurrences are the rule's own, unchanged — nothing was dropped, only the conformance verdict was. Absent on every other result, and **never** reported through `error`: nothing went wrong. See [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#filtering-by-wcag-version-21-vs-22).
 - **`error`**: only present if the rule implementation threw an uncaught exception, or if the manual-fail coercion above fired. A thrown rule always surfaces as `outcome: "cantTell"` with `occurrences: []` and `error` set to the exception message — the engine never lets one broken rule crash the whole scan.
@@ -172,7 +172,7 @@ Rollup precedence (deterministic, in this order): **any contributor `fail` → c
 
 | Outcome | Meaning | Can appear on `type: "manual"`? |
 |---|---|---|
-| `fail` | Deterministic, high-confidence, normative violation — no heuristics, no guessing. | No (coerced to `cantTell`) |
+| `fail` | Deterministic, normative violation — the decision procedure guesses at nothing. | No (coerced to `cantTell`) |
 | `pass` | The rule's applicable target(s) exist and none were flagged. | Yes |
 | `cantTell` | Requires human judgment — either genuinely ambiguous, or a `manual` rule's advisory finding. | Yes |
 | `notApplicable` | The rule found no elements it applies to on this page/scope. | Yes |
@@ -183,6 +183,8 @@ Rollup precedence (deterministic, in this order): **any contributor `fail` → c
 
 - `severity`: `minor` < `moderate` < `serious` < `critical` — the rule author's assessment of user impact, independent of `confidence`.
 - `confidence`: `low` < `medium` < `high` — how certain the engine is that a `fail`/`cantTell` verdict is correct. Both are informational metadata for prioritization; neither changes `outcome`'s meaning.
+
+A `fail` is not always `confidence: "high"`, and that is not a contradiction. The outcome describes the decision procedure — it resolved the question without guessing — while `confidence` describes the model that decision was made against. A handful of automatic rules decide deterministically against something that is itself an approximation (the curated WAI-ARIA role tables, the native-role mappings, an accessibility tree inferred from static markup) and report `medium`: `aria-required-children`, `aria-prohibited-children`, `aria-required-parent`, `aria-allowed-attr`, `form-control-programmatic-label-present`, `svg-image-text-alternative-present`, `video-poster-text-alternative-present` and `target-size-minimum`. `confidence` is on every result, so a consumer that wants only the most certain failures can gate on it directly; `policy.allowedConfidence` will not do it for you, since a disallowed value is replaced with the rule's own `defaultConfidence` rather than changing the outcome (see [`POLICY.md`](./POLICY.md)).
 
 ## Worked example
 

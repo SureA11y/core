@@ -30,7 +30,7 @@ None — every rule has a fixture.
 | aria-prohibited-children | automatic | `tests/fixtures/aria-prohibited-children-all-scenarios.html` | 20 | 10 | 8 | 0 | 2 |
 | aria-required-attr | automatic | `tests/fixtures/aria-required-attr-all-scenarios.html` | 16 | 4 | 5 | 0 | 7 |
 | aria-required-children | automatic | `tests/fixtures/aria-required-children-all-scenarios.html` | 8 | 3 | 1 | 0 | 4 |
-| aria-required-parent | automatic | `tests/fixtures/aria-required-parent-all-scenarios.html` | 11 | 6 | 2 | 0 | 3 |
+| aria-required-parent | automatic | `tests/fixtures/aria-required-parent-all-scenarios.html` | 12 | 6 | 2 | 0 | 4 |
 | aria-role-name-present | automatic | `tests/fixtures/aria-role-name-present-all-scenarios.html` | 27 | 6 | 8 | 0 | 13 |
 | aria-roles-valid | automatic | `tests/fixtures/aria-roles-valid-all-scenarios.html` | 7 | 4 | 2 | 0 | 1 |
 | aria-text | manual | `tests/fixtures/aria-text-all-scenarios.html` | 4 | 0 | 0 | 2 | 2 |

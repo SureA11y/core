@@ -19,7 +19,7 @@ surea11y is a **static DOM scan**: it reads the DOM tree and computed styles at 
 
 ## Not attempted: judgment calls that aren't automatable safely
 
-These have no comparably safe heuristic at this engine's confidence bar (`fail` must stay reserved for deterministic, high-confidence violations, full stop). Building them anyway would either catch almost nothing (too narrow to be useful) or risk real false positives (too broad to trust):
+These have no comparably safe heuristic at this engine's bar (`fail` must stay reserved for deterministic violations, full stop). Building them anyway would either catch almost nothing (too narrow to be useful) or risk real false positives (too broad to trust):
 
 - **"Is this heading/label text meaningful?"** — real headings and labels are enormously varied and legitimately short ("FAQ," "Name," "Overview" are all fine), so nothing decides from markup whether a heading describes the section under it or a label describes the field beside it. What *is* decidable is that some strings cannot describe anything: `heading-quality` and `form-control-label-quality` flag leftover placeholders, numbered template slots, filenames and URLs against curated exact-match lists, the same precision-over-recall trade-off `link-name-quality` makes. Both are `manual` rules capped at `cantTell` — they raise a candidate for review, they never assert the text is wrong.
 - **"Does this error message describe the problem?"** — what triggers a validation error and its content are almost always JS/validation-library-driven, invisible to a static scan in the first place; not just a heuristic-design problem.
