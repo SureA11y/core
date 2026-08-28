@@ -44,6 +44,14 @@ only its own origin tag — so a full conformance target is a union of tag sets.
 ready-made sets per version, including the one criterion WCAG 2.2 removed rather than
 added.
 
+**The removed criterion is handled for you.** Every run resolves a target WCAG version
+(`engineOptions.wcagVersion`, else whatever your version tags imply, else `2.2`) and
+reports it back as `engine.wcagVersion`. Under a 2.2 target, a rule mapped only to SC
+4.1.1 Parsing cannot report `fail` — it runs, reports its occurrences, and comes back
+`cantTell` with a `wcagVersionScope` field explaining the coercion. So a default scan
+never gates on a criterion WCAG 2.2 does not contain, and a 2.0/2.1 scan still gets a
+real 4.1.1 verdict.
+
 Composites, unlike atomic rules, *are* filtered cumulatively. The runner reads the
 highest level named in `tags` and drops every composite above it, so requesting
 `['wcag2a', 'wcag2aa']` returns no `rulesResults` entry for an AAA-only SC. That is
@@ -58,7 +66,7 @@ suppression.
 No automated tool — this one included — can certify full WCAG conformance. That's not a limitation specific to surea11y; it's inherent to WCAG itself; a meaningful fraction of Success Criteria require human judgment (is this alt text *accurate*, not just *present*; is this error message *understandable*) or dynamic testing this engine's static-DOM-scan architecture cannot do at all (keyboard-trap detection, real layout/reflow at zoom). See [`LIMITATIONS.md`](./LIMITATIONS.md) for the full, explicit list of what's out of scope and why.
 
 What surea11y *can* give you, honestly:
-- Every `fail` is a real, deterministic, normative violation — never a guess.
+- Every `fail` is a real, deterministic, normative violation under the version you targeted — never a guess.
 - Every `cantTell` is an explicit flag for human review, not a swallowed uncertainty.
 - The facet coverage table tells you exactly which parts of which SCs have zero automated coverage, so you know where a `pass` is silent rather than exhaustive.
 

@@ -8061,6 +8061,8 @@ const I18N = {
     "ariaValidAttrValue_description": "Prüft, ob jedes erkannte aria-*-Attribut einen Wert hat, der seinem WAI-ARIA-deklarierten Werttyp entspricht (boolesch, tristate, Token, Ganzzahl, Zahl oder ID-Referenz).",
     "ariaValidAttrValue_summary_fail": "{{attr}}=\"{{value}}\" ist kein gültiger Wert für dieses Attribut.",
     "ariaValidAttrValue_hint_fail": "Verwenden Sie einen Wert, der dem erwarteten Typ des Attributs entspricht (siehe WAI-ARIA-Spezifikation für dieses Attribut).",
+    "ariaValidAttrValue_summary_cantTell_idref": "{{attr}}=\"{{value}}\" verweist auf eine id, die derzeit kein Element trägt; diese Referenz lässt sich statisch nicht prüfen.",
+    "ariaValidAttrValue_hint_cantTell_idref": "Prüfen Sie, ob das gesteuerte Element beim Öffnen des Widgets erzeugt wird; existiert es nie, entfernen oder korrigieren Sie die Referenz.",
     "ariaAllowedAttr_title": "aria-*-Attribute müssen für die Rolle des Elements zulässig sein",
     "ariaAllowedAttr_description": "Prüft, ob jedes erkannte aria-*-Attribut auf einem Element mit expliziter Rolle entweder global unterstützt wird oder von dieser Rolle unterstützt wird.",
     "ariaAllowedAttr_summary_fail": "{{attr}} ist bei role=\"{{role}}\" nicht zulässig.",
@@ -8745,6 +8747,8 @@ const I18N = {
     "ariaValidAttrValue_description": "Checks that every recognized aria-* attribute has a value conforming to its WAI-ARIA-declared value type (boolean, tristate, token, integer, number, or ID reference).",
     "ariaValidAttrValue_summary_fail": "{{attr}}=\"{{value}}\" is not a valid value for this attribute.",
     "ariaValidAttrValue_hint_fail": "Use a value that matches the attribute’s expected type (see the WAI-ARIA specification for this attribute).",
+    "ariaValidAttrValue_summary_cantTell_idref": "{{attr}}=\"{{value}}\" points to an id that no element currently has, so this reference cannot be checked statically.",
+    "ariaValidAttrValue_hint_cantTell_idref": "Confirm the controlled element is created when the widget opens; if it never exists, remove or correct the reference.",
     "ariaAllowedAttr_title": "aria-* attributes must be permitted for the element’s role",
     "ariaAllowedAttr_description": "Checks that every recognized aria-* attribute present on an element with an explicit role is either globally supported or supported by that role.",
     "ariaAllowedAttr_summary_fail": "{{attr}} is not permitted on role=\"{{role}}\".",
@@ -9429,6 +9433,8 @@ const I18N = {
     "ariaValidAttrValue_description": "Comprueba que cada atributo aria-* reconocido tenga un valor conforme a su tipo declarado por WAI-ARIA (booleano, tri-estado, token, entero, número o referencia de ID).",
     "ariaValidAttrValue_summary_fail": "{{attr}}=\"{{value}}\" no es un valor válido para este atributo.",
     "ariaValidAttrValue_hint_fail": "Usar un valor que coincida con el tipo esperado del atributo (consultar la especificación WAI-ARIA para este atributo).",
+    "ariaValidAttrValue_summary_cantTell_idref": "{{attr}}=\"{{value}}\" apunta a un id que ningún elemento tiene actualmente, por lo que esta referencia no se puede comprobar de forma estática.",
+    "ariaValidAttrValue_hint_cantTell_idref": "Confirmar que el elemento controlado se crea al abrir el widget; si nunca existe, eliminar o corregir la referencia.",
     "ariaAllowedAttr_title": "Los atributos aria-* deben estar permitidos para el rol del elemento",
     "ariaAllowedAttr_description": "Comprueba que cada atributo aria-* reconocido presente en un elemento con un rol explícito esté admitido globalmente o admitido por ese rol.",
     "ariaAllowedAttr_summary_fail": "{{attr}} no está permitido en role=\"{{role}}\".",
@@ -10113,6 +10119,8 @@ const I18N = {
     "ariaValidAttrValue_description": "Vérifie que chaque attribut aria-* reconnu a une valeur conforme à son type déclaré par WAI-ARIA (booléen, tri-état, jeton, entier, nombre ou référence d’ID).",
     "ariaValidAttrValue_summary_fail": "{{attr}}=\"{{value}}\" n’est pas une valeur valide pour cet attribut.",
     "ariaValidAttrValue_hint_fail": "Utilisez une valeur correspondant au type attendu de l’attribut (consultez la spécification WAI-ARIA pour cet attribut).",
+    "ariaValidAttrValue_summary_cantTell_idref": "{{attr}}=\"{{value}}\" renvoie à un id qu’aucun élément ne porte actuellement ; cette référence ne peut pas être vérifiée statiquement.",
+    "ariaValidAttrValue_hint_cantTell_idref": "Vérifiez que l’élément contrôlé est créé à l’ouverture du composant ; s’il n’existe jamais, supprimez ou corrigez la référence.",
     "ariaAllowedAttr_title": "Les attributs aria-* doivent être autorisés pour le rôle de l’élément",
     "ariaAllowedAttr_description": "Vérifie que chaque attribut aria-* reconnu présent sur un élément ayant un rôle explicite est soit globalement pris en charge, soit pris en charge par ce rôle.",
     "ariaAllowedAttr_summary_fail": "{{attr}} n’est pas autorisé sur role=\"{{role}}\".",
@@ -13739,10 +13747,28 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     return ATTR_VALUE_TYPES[lower(name)] || null;
   }
 
+  // Is this element in a state where the thing it controls legitimately
+  // isn't in the DOM yet? A collapsed disclosure/combobox/tab renders its
+  // popup on expand, so `aria-controls` pointing at an id that doesn't
+  // exist *while collapsed* is the documented authoring pattern, not a
+  // defect. aria-expanded="false" / aria-selected="false" are the two
+  // states that say so.
+  function controlsTargetMayBeUnrendered(el) {
+    return (
+      lower(getAttr(el, 'aria-expanded')) === 'false' ||
+      lower(getAttr(el, 'aria-selected')) === 'false'
+    );
+  }
+
   // Validates a single attribute's raw string value against its declared
-  // value type. Returns { valid, reason }; reason is a short machine
-  // code, not a user-facing string (rules localize their own messages).
-  function validateAttrValue(name, rawValue) {
+  // value type. Returns { valid, reason, review? }; reason is a short
+  // machine code, not a user-facing string (rules localize their own
+  // messages). `review: true` marks the one case that is neither valid nor
+  // a confident violation: the value is well-formed but the engine cannot
+  // decide, statically, whether it is wrong (see aria-controls below).
+  // `el` is optional; without it the few element-state-dependent branches
+  // fall back to their element-agnostic answer.
+  function validateAttrValue(name, rawValue, el) {
     const type = getAttrValueType(name);
     if (!type) return { valid: true, reason: 'unknown-attr-skip' };
 
@@ -13810,9 +13836,22 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
         // Only flag when NONE of the referenced ids resolve. A
         // partially-dangling list (some ids exist, some don't) is left
         // unflagged.
-        if (!parts.some((p) => idExists(p)))
-          return { valid: false, reason: 'idref-list-none-found' };
-        return { valid: true, reason: '' };
+        if (parts.some((p) => idExists(p))) return { valid: true, reason: '' };
+
+        // aria-controls is the one idref-list attribute whose target is
+        // routinely absent by design: the menu, listbox or panel it names
+        // is created when the widget opens. A collapsed widget therefore
+        // passes outright, and every other unresolved aria-controls is
+        // handed to a human rather than failed, since a static scan cannot
+        // see markup that only exists after an interaction. Same reasoning
+        // as aria-errormessage's carve-out above, one state further along.
+        if (lower(name) === 'aria-controls') {
+          if (controlsTargetMayBeUnrendered(el))
+            return { valid: true, reason: 'idref-controls-unrendered' };
+          return { valid: false, review: true, reason: 'idref-controls-not-found' };
+        }
+
+        return { valid: false, reason: 'idref-list-none-found' };
       }
       case 'string':
       default:
@@ -19471,6 +19510,79 @@ const runCore = (function runCore(
     }
   }
 
+  // =========================
+  // WCAG version scoping
+  // =========================
+  // Every WCAG version so far is additive except for one criterion: 4.1.1
+  // Parsing, which 2.2 removed. A rule mapped only to a removed criterion
+  // still reports something real -- a duplicate id breaks `<label for>`,
+  // fragment links and getElementById whatever the standard says -- but it
+  // cannot be a conformance FAILURE under a target version that no longer
+  // contains the criterion. So the rule keeps running and its fail is
+  // coerced to cantTell there: the finding stays visible for human review
+  // instead of gating a 2.2 run, and nobody has to remember to exclude it.
+  //
+  // Resolution order: an explicit engineOptions.wcagVersion, then whatever
+  // the caller's own version tag set implies (the ready-made sets in
+  // docs/ENGINE_OPTIONS.md), then this engine's default target of 2.2.
+  const WCAG_REMOVED_SC_TAG = 'wcag22-removed';
+  const DEFAULT_WCAG_VERSION = '2.2';
+
+  function normalizeWcagVersion(v) {
+    const s = typeof v === 'string' ? v.trim() : '';
+    return s === '2.0' || s === '2.1' || s === '2.2' ? s : null;
+  }
+
+  // Only the nine version-origin tags carry version intent. An SC tag
+  // (`wcag411`), a level tag on its own or `best-practice` says nothing
+  // about which version the caller is conformance-testing against, so a
+  // run filtered by those falls through to the default.
+  function inferWcagVersionFromRunOnly(runOnly2) {
+    const tags = runOnly2 && Array.isArray(runOnly2.tags) ? runOnly2.tags : [];
+    if (!tags.length) return null;
+    if (tags.includes('wcag22a') || tags.includes('wcag22aa') || tags.includes('wcag22aaa'))
+      return '2.2';
+    if (tags.includes('wcag21a') || tags.includes('wcag21aa') || tags.includes('wcag21aaa'))
+      return '2.1';
+    if (tags.includes('wcag2a') || tags.includes('wcag2aa') || tags.includes('wcag2aaa'))
+      return '2.0';
+    return null;
+  }
+
+  const targetWcagVersion =
+    normalizeWcagVersion(engineOptionsResolved && engineOptionsResolved.wcagVersion) ||
+    inferWcagVersionFromRunOnly(runOnly) ||
+    DEFAULT_WCAG_VERSION;
+
+  function scopeOutcomeToWcagVersion(def, result) {
+    if (targetWcagVersion !== '2.2') return result;
+    if (!result || typeof result !== 'object' || result.outcome !== 'fail') return result;
+
+    const defTags = def && Array.isArray(def.tags) ? def.tags : [];
+    if (!defTags.some((tag) => String(tag).toLowerCase() === WCAG_REMOVED_SC_TAG)) return result;
+
+    const occurrences = Array.isArray(result.occurrences)
+      ? result.occurrences.map((occ) =>
+          occ && typeof occ === 'object' && !Array.isArray(occ) && occ.occurrenceOutcome === 'fail'
+            ? { ...occ, occurrenceOutcome: 'cantTell' }
+            : occ
+        )
+      : result.occurrences;
+
+    // Deliberately NOT reported through `error`: nothing went wrong here,
+    // and consumers read a non-empty `error` as "this rule threw".
+    return {
+      ...result,
+      outcome: 'cantTell',
+      occurrences,
+      wcagVersionScope: {
+        target: targetWcagVersion,
+        removedSc: def && Array.isArray(def.wcagSc) ? def.wcagSc.slice() : [],
+        coercedFrom: 'fail'
+      }
+    };
+  }
+
   const checksResults = [];
 
   for (const def of effectiveCheckDefs) {
@@ -19590,7 +19702,13 @@ const runCore = (function runCore(
       };
     }
     checksResults.push(
-      normalizeRuleResult(defResolved, result, SCHEMA_VERSION, policy, sharedHelpers)
+      normalizeRuleResult(
+        defResolved,
+        scopeOutcomeToWcagVersion(defResolved, result),
+        SCHEMA_VERSION,
+        policy,
+        sharedHelpers
+      )
     );
     if (ruleTimings)
       ruleTimings[defResolved.ruleId] = (ruleTimings[defResolved.ruleId] || 0) + (nowMs() - t0);
@@ -19640,7 +19758,8 @@ const runCore = (function runCore(
     engine: {
       tag: ENGINE_TAG,
       schemaVersion: SCHEMA_VERSION,
-      locale: resolveLocale(engineOptionsResolved)
+      locale: resolveLocale(engineOptionsResolved),
+      wcagVersion: targetWcagVersion
     },
     url,
     title,
@@ -31895,13 +32014,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('*') : helpers.queryAll('*');
 
-  const occurrences = [];
+  const failOccurrences = [];
+  const cantTellOccurrences = [];
   let applicableCount = 0;
 
   for (const el of nodes) {
     if (!el || !el.attributes || !el.getAttribute) continue;
 
     let invalid = null;
+    let review = null;
     const attrs = el.attributes;
     for (let i = 0; i < attrs.length; i++) {
       const name = String(attrs[i].name || '').toLowerCase();
@@ -31911,21 +32032,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       applicableCount += 1;
 
       const rawValue = el.getAttribute(name);
-      const result = ariaHelpers.validateAttrValue(name, rawValue);
-      if (!result.valid) {
+      const result = ariaHelpers.validateAttrValue(name, rawValue, el);
+      if (result.valid) continue;
+
+      const item = {
+        name,
+        value: rawValue == null ? '' : String(rawValue),
+        reason: result.reason
+      };
+
+      if (result.review) {
+        if (!review) review = [];
+        review.push(item);
+      } else {
         if (!invalid) invalid = [];
-        invalid.push({
-          name,
-          value: rawValue == null ? '' : String(rawValue),
-          reason: result.reason
-        });
+        invalid.push(item);
       }
     }
 
-    if (!invalid || !invalid.length) continue;
-
-    for (const item of invalid) {
-      occurrences.push(
+    for (const item of invalid || []) {
+      failOccurrences.push(
         helpers.reportOccurrence(el, {
           summary: 'This element has an ARIA attribute with an invalid value.',
           hint: 'Use a value that matches the attribute’s expected type (see the WAI-ARIA specification for this attribute).',
@@ -31945,20 +32071,44 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         })
       );
     }
+
+    for (const item of review || []) {
+      cantTellOccurrences.push(
+        helpers.reportOccurrence(el, {
+          summary:
+            'No element with this id exists right now, so the engine cannot tell whether this reference is wrong.',
+          hint: 'Confirm the controlled element is created when the widget opens; if it never exists, remove or correct the reference.',
+          i18n: {
+            summaryKey: 'ariaValidAttrValue_summary_cantTell_idref',
+            hintKey: 'ariaValidAttrValue_hint_cantTell_idref',
+            params: { attr: item.name, value: item.value }
+          },
+          data: {
+            details: {
+              reasonCode: 'ARIA_ATTR_VALUE_TARGET_ABSENT',
+              attr: item.name,
+              value: item.value,
+              valueReason: item.reason
+            }
+          }
+        })
+      );
+    }
   }
 
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'serious',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+
+  // See helpers.resolveTieredOutcome's own header comment
+  // (src/core/dom-helpers.js): a fail-tier finding never silently discards
+  // cantTell-tier findings from the same run.
+  const resolved = helpers.resolveTieredOutcome(
+    failOccurrences,
+    cantTellOccurrences,
+    rule.defaultSeverity || 'serious'
+  );
+  return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "autocomplete-valid": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
@@ -52074,6 +52224,8 @@ const I18N = {
     "ariaValidAttrValue_description": "Prüft, ob jedes erkannte aria-*-Attribut einen Wert hat, der seinem WAI-ARIA-deklarierten Werttyp entspricht (boolesch, tristate, Token, Ganzzahl, Zahl oder ID-Referenz).",
     "ariaValidAttrValue_summary_fail": "{{attr}}=\"{{value}}\" ist kein gültiger Wert für dieses Attribut.",
     "ariaValidAttrValue_hint_fail": "Verwenden Sie einen Wert, der dem erwarteten Typ des Attributs entspricht (siehe WAI-ARIA-Spezifikation für dieses Attribut).",
+    "ariaValidAttrValue_summary_cantTell_idref": "{{attr}}=\"{{value}}\" verweist auf eine id, die derzeit kein Element trägt; diese Referenz lässt sich statisch nicht prüfen.",
+    "ariaValidAttrValue_hint_cantTell_idref": "Prüfen Sie, ob das gesteuerte Element beim Öffnen des Widgets erzeugt wird; existiert es nie, entfernen oder korrigieren Sie die Referenz.",
     "ariaAllowedAttr_title": "aria-*-Attribute müssen für die Rolle des Elements zulässig sein",
     "ariaAllowedAttr_description": "Prüft, ob jedes erkannte aria-*-Attribut auf einem Element mit expliziter Rolle entweder global unterstützt wird oder von dieser Rolle unterstützt wird.",
     "ariaAllowedAttr_summary_fail": "{{attr}} ist bei role=\"{{role}}\" nicht zulässig.",
@@ -52758,6 +52910,8 @@ const I18N = {
     "ariaValidAttrValue_description": "Checks that every recognized aria-* attribute has a value conforming to its WAI-ARIA-declared value type (boolean, tristate, token, integer, number, or ID reference).",
     "ariaValidAttrValue_summary_fail": "{{attr}}=\"{{value}}\" is not a valid value for this attribute.",
     "ariaValidAttrValue_hint_fail": "Use a value that matches the attribute’s expected type (see the WAI-ARIA specification for this attribute).",
+    "ariaValidAttrValue_summary_cantTell_idref": "{{attr}}=\"{{value}}\" points to an id that no element currently has, so this reference cannot be checked statically.",
+    "ariaValidAttrValue_hint_cantTell_idref": "Confirm the controlled element is created when the widget opens; if it never exists, remove or correct the reference.",
     "ariaAllowedAttr_title": "aria-* attributes must be permitted for the element’s role",
     "ariaAllowedAttr_description": "Checks that every recognized aria-* attribute present on an element with an explicit role is either globally supported or supported by that role.",
     "ariaAllowedAttr_summary_fail": "{{attr}} is not permitted on role=\"{{role}}\".",
@@ -53442,6 +53596,8 @@ const I18N = {
     "ariaValidAttrValue_description": "Comprueba que cada atributo aria-* reconocido tenga un valor conforme a su tipo declarado por WAI-ARIA (booleano, tri-estado, token, entero, número o referencia de ID).",
     "ariaValidAttrValue_summary_fail": "{{attr}}=\"{{value}}\" no es un valor válido para este atributo.",
     "ariaValidAttrValue_hint_fail": "Usar un valor que coincida con el tipo esperado del atributo (consultar la especificación WAI-ARIA para este atributo).",
+    "ariaValidAttrValue_summary_cantTell_idref": "{{attr}}=\"{{value}}\" apunta a un id que ningún elemento tiene actualmente, por lo que esta referencia no se puede comprobar de forma estática.",
+    "ariaValidAttrValue_hint_cantTell_idref": "Confirmar que el elemento controlado se crea al abrir el widget; si nunca existe, eliminar o corregir la referencia.",
     "ariaAllowedAttr_title": "Los atributos aria-* deben estar permitidos para el rol del elemento",
     "ariaAllowedAttr_description": "Comprueba que cada atributo aria-* reconocido presente en un elemento con un rol explícito esté admitido globalmente o admitido por ese rol.",
     "ariaAllowedAttr_summary_fail": "{{attr}} no está permitido en role=\"{{role}}\".",
@@ -54126,6 +54282,8 @@ const I18N = {
     "ariaValidAttrValue_description": "Vérifie que chaque attribut aria-* reconnu a une valeur conforme à son type déclaré par WAI-ARIA (booléen, tri-état, jeton, entier, nombre ou référence d’ID).",
     "ariaValidAttrValue_summary_fail": "{{attr}}=\"{{value}}\" n’est pas une valeur valide pour cet attribut.",
     "ariaValidAttrValue_hint_fail": "Utilisez une valeur correspondant au type attendu de l’attribut (consultez la spécification WAI-ARIA pour cet attribut).",
+    "ariaValidAttrValue_summary_cantTell_idref": "{{attr}}=\"{{value}}\" renvoie à un id qu’aucun élément ne porte actuellement ; cette référence ne peut pas être vérifiée statiquement.",
+    "ariaValidAttrValue_hint_cantTell_idref": "Vérifiez que l’élément contrôlé est créé à l’ouverture du composant ; s’il n’existe jamais, supprimez ou corrigez la référence.",
     "ariaAllowedAttr_title": "Les attributs aria-* doivent être autorisés pour le rôle de l’élément",
     "ariaAllowedAttr_description": "Vérifie que chaque attribut aria-* reconnu présent sur un élément ayant un rôle explicite est soit globalement pris en charge, soit pris en charge par ce rôle.",
     "ariaAllowedAttr_summary_fail": "{{attr}} n’est pas autorisé sur role=\"{{role}}\".",
@@ -57752,10 +57910,28 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     return ATTR_VALUE_TYPES[lower(name)] || null;
   }
 
+  // Is this element in a state where the thing it controls legitimately
+  // isn't in the DOM yet? A collapsed disclosure/combobox/tab renders its
+  // popup on expand, so `aria-controls` pointing at an id that doesn't
+  // exist *while collapsed* is the documented authoring pattern, not a
+  // defect. aria-expanded="false" / aria-selected="false" are the two
+  // states that say so.
+  function controlsTargetMayBeUnrendered(el) {
+    return (
+      lower(getAttr(el, 'aria-expanded')) === 'false' ||
+      lower(getAttr(el, 'aria-selected')) === 'false'
+    );
+  }
+
   // Validates a single attribute's raw string value against its declared
-  // value type. Returns { valid, reason }; reason is a short machine
-  // code, not a user-facing string (rules localize their own messages).
-  function validateAttrValue(name, rawValue) {
+  // value type. Returns { valid, reason, review? }; reason is a short
+  // machine code, not a user-facing string (rules localize their own
+  // messages). `review: true` marks the one case that is neither valid nor
+  // a confident violation: the value is well-formed but the engine cannot
+  // decide, statically, whether it is wrong (see aria-controls below).
+  // `el` is optional; without it the few element-state-dependent branches
+  // fall back to their element-agnostic answer.
+  function validateAttrValue(name, rawValue, el) {
     const type = getAttrValueType(name);
     if (!type) return { valid: true, reason: 'unknown-attr-skip' };
 
@@ -57823,9 +57999,22 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
         // Only flag when NONE of the referenced ids resolve. A
         // partially-dangling list (some ids exist, some don't) is left
         // unflagged.
-        if (!parts.some((p) => idExists(p)))
-          return { valid: false, reason: 'idref-list-none-found' };
-        return { valid: true, reason: '' };
+        if (parts.some((p) => idExists(p))) return { valid: true, reason: '' };
+
+        // aria-controls is the one idref-list attribute whose target is
+        // routinely absent by design: the menu, listbox or panel it names
+        // is created when the widget opens. A collapsed widget therefore
+        // passes outright, and every other unresolved aria-controls is
+        // handed to a human rather than failed, since a static scan cannot
+        // see markup that only exists after an interaction. Same reasoning
+        // as aria-errormessage's carve-out above, one state further along.
+        if (lower(name) === 'aria-controls') {
+          if (controlsTargetMayBeUnrendered(el))
+            return { valid: true, reason: 'idref-controls-unrendered' };
+          return { valid: false, review: true, reason: 'idref-controls-not-found' };
+        }
+
+        return { valid: false, reason: 'idref-list-none-found' };
       }
       case 'string':
       default:
@@ -63484,6 +63673,79 @@ const runCore = (function runCore(
     }
   }
 
+  // =========================
+  // WCAG version scoping
+  // =========================
+  // Every WCAG version so far is additive except for one criterion: 4.1.1
+  // Parsing, which 2.2 removed. A rule mapped only to a removed criterion
+  // still reports something real -- a duplicate id breaks `<label for>`,
+  // fragment links and getElementById whatever the standard says -- but it
+  // cannot be a conformance FAILURE under a target version that no longer
+  // contains the criterion. So the rule keeps running and its fail is
+  // coerced to cantTell there: the finding stays visible for human review
+  // instead of gating a 2.2 run, and nobody has to remember to exclude it.
+  //
+  // Resolution order: an explicit engineOptions.wcagVersion, then whatever
+  // the caller's own version tag set implies (the ready-made sets in
+  // docs/ENGINE_OPTIONS.md), then this engine's default target of 2.2.
+  const WCAG_REMOVED_SC_TAG = 'wcag22-removed';
+  const DEFAULT_WCAG_VERSION = '2.2';
+
+  function normalizeWcagVersion(v) {
+    const s = typeof v === 'string' ? v.trim() : '';
+    return s === '2.0' || s === '2.1' || s === '2.2' ? s : null;
+  }
+
+  // Only the nine version-origin tags carry version intent. An SC tag
+  // (`wcag411`), a level tag on its own or `best-practice` says nothing
+  // about which version the caller is conformance-testing against, so a
+  // run filtered by those falls through to the default.
+  function inferWcagVersionFromRunOnly(runOnly2) {
+    const tags = runOnly2 && Array.isArray(runOnly2.tags) ? runOnly2.tags : [];
+    if (!tags.length) return null;
+    if (tags.includes('wcag22a') || tags.includes('wcag22aa') || tags.includes('wcag22aaa'))
+      return '2.2';
+    if (tags.includes('wcag21a') || tags.includes('wcag21aa') || tags.includes('wcag21aaa'))
+      return '2.1';
+    if (tags.includes('wcag2a') || tags.includes('wcag2aa') || tags.includes('wcag2aaa'))
+      return '2.0';
+    return null;
+  }
+
+  const targetWcagVersion =
+    normalizeWcagVersion(engineOptionsResolved && engineOptionsResolved.wcagVersion) ||
+    inferWcagVersionFromRunOnly(runOnly) ||
+    DEFAULT_WCAG_VERSION;
+
+  function scopeOutcomeToWcagVersion(def, result) {
+    if (targetWcagVersion !== '2.2') return result;
+    if (!result || typeof result !== 'object' || result.outcome !== 'fail') return result;
+
+    const defTags = def && Array.isArray(def.tags) ? def.tags : [];
+    if (!defTags.some((tag) => String(tag).toLowerCase() === WCAG_REMOVED_SC_TAG)) return result;
+
+    const occurrences = Array.isArray(result.occurrences)
+      ? result.occurrences.map((occ) =>
+          occ && typeof occ === 'object' && !Array.isArray(occ) && occ.occurrenceOutcome === 'fail'
+            ? { ...occ, occurrenceOutcome: 'cantTell' }
+            : occ
+        )
+      : result.occurrences;
+
+    // Deliberately NOT reported through `error`: nothing went wrong here,
+    // and consumers read a non-empty `error` as "this rule threw".
+    return {
+      ...result,
+      outcome: 'cantTell',
+      occurrences,
+      wcagVersionScope: {
+        target: targetWcagVersion,
+        removedSc: def && Array.isArray(def.wcagSc) ? def.wcagSc.slice() : [],
+        coercedFrom: 'fail'
+      }
+    };
+  }
+
   const checksResults = [];
 
   for (const def of effectiveCheckDefs) {
@@ -63603,7 +63865,13 @@ const runCore = (function runCore(
       };
     }
     checksResults.push(
-      normalizeRuleResult(defResolved, result, SCHEMA_VERSION, policy, sharedHelpers)
+      normalizeRuleResult(
+        defResolved,
+        scopeOutcomeToWcagVersion(defResolved, result),
+        SCHEMA_VERSION,
+        policy,
+        sharedHelpers
+      )
     );
     if (ruleTimings)
       ruleTimings[defResolved.ruleId] = (ruleTimings[defResolved.ruleId] || 0) + (nowMs() - t0);
@@ -63653,7 +63921,8 @@ const runCore = (function runCore(
     engine: {
       tag: ENGINE_TAG,
       schemaVersion: SCHEMA_VERSION,
-      locale: resolveLocale(engineOptionsResolved)
+      locale: resolveLocale(engineOptionsResolved),
+      wcagVersion: targetWcagVersion
     },
     url,
     title,

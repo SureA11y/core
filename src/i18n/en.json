@@ -339,6 +339,8 @@
   "ariaValidAttrValue_description": "Checks that every recognized aria-* attribute has a value conforming to its WAI-ARIA-declared value type (boolean, tristate, token, integer, number, or ID reference).",
   "ariaValidAttrValue_summary_fail": "{{attr}}=\"{{value}}\" is not a valid value for this attribute.",
   "ariaValidAttrValue_hint_fail": "Use a value that matches the attribute’s expected type (see the WAI-ARIA specification for this attribute).",
+  "ariaValidAttrValue_summary_cantTell_idref": "{{attr}}=\"{{value}}\" points to an id that no element currently has, so this reference cannot be checked statically.",
+  "ariaValidAttrValue_hint_cantTell_idref": "Confirm the controlled element is created when the widget opens; if it never exists, remove or correct the reference.",
   "ariaAllowedAttr_title": "aria-* attributes must be permitted for the element’s role",
   "ariaAllowedAttr_description": "Checks that every recognized aria-* attribute present on an element with an explicit role is either globally supported or supported by that role.",
   "ariaAllowedAttr_summary_fail": "{{attr}} is not permitted on role=\"{{role}}\".",

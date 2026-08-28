@@ -119,6 +119,48 @@ test(`${RULE_ID}: fail when a single-idref attribute references a non-existent i
   assert.equal(rule.occurrences[0].data.details.valueReason, 'idref-not-found');
 });
 
+test(`${RULE_ID}: aria-controls referencing a non-existent id is cantTell, not fail (the controlled element is usually built when the widget opens)`, () => {
+  const html = `<!doctype html><html><body><button aria-controls="does_not_exist">Show details</button></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.equal(rule.occurrences[0].data.details.valueReason, 'idref-controls-not-found');
+  assert.equal(rule.occurrences[0].data.details.reasonCode, 'ARIA_ATTR_VALUE_TARGET_ABSENT');
+  assert.equal(rule.occurrences[0].occurrenceOutcome, 'cantTell');
+});
+
+test(`${RULE_ID}: pass when aria-controls has no target but the widget is collapsed (aria-expanded="false")`, () => {
+  const html = `<!doctype html><html><body><button aria-expanded="false" aria-controls="not_yet">Open menu</button></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: pass when aria-controls has no target but the tab is unselected (aria-selected="false")`, () => {
+  const html = `<!doctype html><html><body><div role="tab" aria-selected="false" aria-controls="not_yet">Second tab</div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: pass when aria-controls resolves`, () => {
+  const html = `<!doctype html><html><body>
+    <button aria-expanded="true" aria-controls="panel">Hide details</button>
+    <div id="panel">Details</div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: a real fail elsewhere keeps the outcome at fail and carries the aria-controls occurrence along`, () => {
+  const html = `<!doctype html><html><body>
+    <button aria-controls="does_not_exist">Show details</button>
+    <div aria-hidden="yes">Bad boolean</div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+
+  const tiers = rule.occurrences.map((o) => o.occurrenceOutcome).sort();
+  assert.deepStrictEqual(tiers, ['cantTell', 'fail']);
+});
+
 test(`${RULE_ID}: aria-errormessage referencing a non-existent id is not flagged (ACT 6a7281: the target may be created only once the error actually occurs)`, () => {
   const html = `<!doctype html><html><body><div role="textbox" aria-errormessage="does_not_exist" aria-label="A textbox"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
@@ -154,7 +196,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-valid-attr-value-all-sce
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 6, maxOccurrences: 6 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 7, maxOccurrences: 7 });
 
   const expectedFailIds = [
     'avav_case_06',
@@ -164,6 +206,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-valid-attr-value-all-sce
     'avav_case_14',
     'avav_case_15'
   ];
+  const expectedCantTellIds = ['avav_case_17'];
   const expectedNoOccIds = [
     'avav_case_01',
     'avav_case_02',
@@ -173,13 +216,25 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-valid-attr-value-all-sce
     'avav_case_10',
     'avav_case_11',
     'avav_case_12',
-    'avav_case_13'
+    'avav_case_13',
+    'avav_case_16'
   ];
 
   for (const id of expectedFailIds) {
     assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);
   }
+  for (const id of expectedCantTellIds) {
+    assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);
+  }
   for (const id of expectedNoOccIds) {
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
+
+  const tierById = {};
+  for (const o of rule.occurrences) {
+    const match = /id="(avav_case_\d+)"/.exec(typeof o.html === 'string' ? o.html : '');
+    if (match) tierById[match[1]] = o.occurrenceOutcome;
+  }
+  for (const id of expectedFailIds) assert.strictEqual(tierById[id], 'fail');
+  for (const id of expectedCantTellIds) assert.strictEqual(tierById[id], 'cantTell');
 });

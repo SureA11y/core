@@ -339,6 +339,8 @@
   "ariaValidAttrValue_description": "Vérifie que chaque attribut aria-* reconnu a une valeur conforme à son type déclaré par WAI-ARIA (booléen, tri-état, jeton, entier, nombre ou référence d’ID).",
   "ariaValidAttrValue_summary_fail": "{{attr}}=\"{{value}}\" n’est pas une valeur valide pour cet attribut.",
   "ariaValidAttrValue_hint_fail": "Utilisez une valeur correspondant au type attendu de l’attribut (consultez la spécification WAI-ARIA pour cet attribut).",
+  "ariaValidAttrValue_summary_cantTell_idref": "{{attr}}=\"{{value}}\" renvoie à un id qu’aucun élément ne porte actuellement ; cette référence ne peut pas être vérifiée statiquement.",
+  "ariaValidAttrValue_hint_cantTell_idref": "Vérifiez que l’élément contrôlé est créé à l’ouverture du composant ; s’il n’existe jamais, supprimez ou corrigez la référence.",
   "ariaAllowedAttr_title": "Les attributs aria-* doivent être autorisés pour le rôle de l’élément",
   "ariaAllowedAttr_description": "Vérifie que chaque attribut aria-* reconnu présent sur un élément ayant un rôle explicite est soit globalement pris en charge, soit pris en charge par ce rôle.",
   "ariaAllowedAttr_summary_fail": "{{attr}} n’est pas autorisé sur role=\"{{role}}\".",
