@@ -350,6 +350,7 @@
         "wcag2a",
         "wcag131",
         "wcag412",
+        "aria",
         "structure",
         "atomic",
         "automatic"
@@ -706,6 +707,7 @@
       "tags": [
         "wcag2a",
         "wcag412",
+        "aria",
         "navigation",
         "atomic",
         "automatic",
