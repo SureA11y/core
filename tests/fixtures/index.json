@@ -102,9 +102,7 @@
       "ruleId": "aria-allowed-role",
       "title": "Explicit role must be permitted for its host element",
       "type": "automatic",
-      "wcagSc": [
-        "4.1.2"
-      ],
+      "wcagSc": [],
       "ruleFile": "src/checks/automatic/aria-allowed-role.js",
       "testFile": "tests/engine-checks/automatic/aria-allowed-role.test.js",
       "hasFixture": true,

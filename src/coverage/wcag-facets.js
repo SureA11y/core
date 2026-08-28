@@ -1043,11 +1043,6 @@ const FACETS = {
                 "automation": "full"
             },
             {
-                "id": "aria-role-allowed-for-element",
-                "label": "Explicit role attribute is permitted by the ARIA-in-HTML spec for its host element",
-                "automation": "full"
-            },
-            {
                 "id": "iframe-name-present",
                 "label": "<iframe>/<frame> elements expose an accessible name (aria-label / aria-labelledby / title)",
                 "automation": "full"

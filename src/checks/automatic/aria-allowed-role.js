@@ -6,8 +6,7 @@
  * @check aria-allowed-role
  * @atomic true
  * @summary Explicit role must be permitted by the ARIA-in-HTML spec for its host element
- * @standard WCAG 2.2
- * @sc 4.1.2
+ * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
  *   Applies to elements with an explicit, valid, non-abstract role, where
  *   the host element/attribute combination has an asserted permitted-roles
@@ -22,6 +21,12 @@
  *   assistive technology exposes, so whether the combination harms anyone
  *   depends on the widget, not on the table.
  * @implementation-notes
+ * - Not WCAG-normative. ARIA-in-HTML's permitted-roles table is an author
+ *   conformance requirement of that specification; no ACT rule covers it and
+ *   no source maps it to a Success Criterion, so the rule reports the
+ *   violation without claiming a criterion is failed. Deterministic all the
+ *   same, so it stays `type: 'automatic'` and keeps deciding rather than
+ *   deferring to a reviewer -- see docs/RULE_TAXONOMY.md 1.1.
  * - Scoped to elements present in ALLOWED_ROLES_BY_ELEMENT;
  *   elements without an asserted constraint are treated as "no constraint"
  *   (not flagged) rather than guessed at, see that table's header comment.
@@ -41,22 +46,14 @@ const meta = {
     descriptionKey: 'ariaAllowedRole_description'
   },
   helpUrl: null,
-  tags: ['wcag2a', 'wcag412', 'aria', 'structure', 'atomic', 'automatic'],
-  wcagSc: ['4.1.2'],
-  normativeMappings: [
-    {
-      standard: 'WCAG',
-      version: '2.2',
-      requirement: '4.1.2',
-      title: 'Name, Role, Value',
-      conformanceLevel: 'A'
-    }
-  ],
+  tags: ['best-practice', 'aria', 'structure', 'atomic', 'automatic'],
+  wcagSc: [],
+  normativeMappings: [],
   defaultSeverity: 'moderate',
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '4.1.2': ['aria-role-allowed-for-element'] } }
+  coverage: {}
 };
 
 function runInPage(ctx) {
