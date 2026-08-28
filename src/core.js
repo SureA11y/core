@@ -2990,6 +2990,62 @@ const CHECK_DEFS = [
     "mappings": null
   },
   {
+    "ruleId": "identical-iframes-same-purpose",
+    "title": "Frames with the same name embed the same resource",
+    "description": "Checks that <iframe>/<frame> elements sharing an accessible name embed the same resource, since one name can only describe one resource.",
+    "i18n": {
+      "titleKey": "identicalIframesSamePurpose_title",
+      "descriptionKey": "identicalIframesSamePurpose_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag412",
+      "structure",
+      "atomic",
+      "automatic",
+      "name",
+      "iframe",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "4.1.2"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "4.1.2",
+        "title": "Name, Role, Value",
+        "conformanceLevel": "A"
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "medium",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "4.1.2": [
+          "identical-iframes-same-purpose"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
     "ruleId": "identical-links-same-purpose",
     "title": "Links with the same accessible name should lead to the same destination",
     "description": "Flags groups of links that share the same accessible name but resolve to more than one distinct destination, for manual review of whether they serve the same purpose.",
@@ -7450,6 +7506,7 @@ const COMPOSITE_RULES = [
       "form-control-programmatic-label-present",
       "iframe-name-present",
       "iframe-title-unique",
+      "identical-iframes-same-purpose",
       "link-name-present",
       "listbox-name-present",
       "menuitem-name-present",
@@ -7617,6 +7674,7 @@ const RULE_IMPLS = {
   "heading-quality": { run: require("./checks/manual/heading-quality-manual.js").runInPage, applicability: require("./checks/manual/heading-quality-manual.js").applicability || null },
   "html-lang-attr-present": { run: require("./checks/automatic/language-page-present.js").runInPage, applicability: require("./checks/automatic/language-page-present.js").applicability || null },
   "html-xml-lang-mismatch": { run: require("./checks/automatic/html-xml-lang-mismatch.js").runInPage, applicability: require("./checks/automatic/html-xml-lang-mismatch.js").applicability || null },
+  "identical-iframes-same-purpose": { run: require("./checks/automatic/identical-iframes-same-purpose.js").runInPage, applicability: require("./checks/automatic/identical-iframes-same-purpose.js").applicability || null },
   "identical-links-same-purpose": { run: require("./checks/manual/identical-links-same-purpose-manual.js").runInPage, applicability: require("./checks/manual/identical-links-same-purpose-manual.js").applicability || null },
   "iframe-focusable-content": { run: require("./checks/automatic/iframe-focusable-content.js").runInPage, applicability: require("./checks/automatic/iframe-focusable-content.js").applicability || null },
   "iframe-name-present": { run: require("./checks/automatic/iframe-name-present.js").runInPage, applicability: require("./checks/automatic/iframe-name-present.js").applicability || null },
@@ -8103,6 +8161,10 @@ const I18N = {
     "iframeTitleUnique_description": "Prüft, ob nicht zwei <iframe>/<frame>-Elemente im betrachteten Bereich denselben title-Attributwert teilen.",
     "iframeTitleUnique_summary_fail": "Der Titel „{{title}}“ dieses <{{element}}> ist unter den Frames dieser Seite nicht eindeutig.",
     "iframeTitleUnique_hint_fail": "Geben Sie jedem Frame einen eigenen Titel, der seinen jeweiligen Inhalt oder Zweck beschreibt.",
+    "identicalIframesSamePurpose_title": "Frames with the same name embed the same resource",
+    "identicalIframesSamePurpose_description": "Checks that <iframe>/<frame> elements sharing an accessible name embed the same resource, since one name can only describe one resource.",
+    "identicalIframesSamePurpose_summary_cantTell": "This <{{element}}> shares the name “{{name}}” with another frame that embeds a different resource.",
+    "identicalIframesSamePurpose_hint_cantTell": "Give each frame a name describing the resource it embeds, or point them at the same resource.",
     "iframeFocusableContent_title": "Frames mit tabindex=\"-1\" dürfen keinen fokussierbaren Inhalt enthalten",
     "iframeFocusableContent_description": "Prüft, ob <iframe>/<frame>-Elemente derselben Herkunft mit tabindex=\"-1\" keinen fokussierbaren Inhalt enthalten, da Browser diese Einschränkung nicht in das eingebettete Dokument des Frames übertragen.",
     "iframeFocusableContent_summary_fail": "Dieses <{{element}}> hat tabindex=\"-1\", aber sein Inhalt enthält fokussierbare Elemente, die weiterhin per Tastatur erreichbar sind.",
@@ -8793,6 +8855,10 @@ const I18N = {
     "iframeTitleUnique_description": "Checks that no two <iframe>/<frame> elements in scope share the same title attribute value.",
     "iframeTitleUnique_summary_fail": "This <{{element}}>'s title \"{{title}}\" is not unique among the frames on this page.",
     "iframeTitleUnique_hint_fail": "Give each frame a distinct title describing its specific content or purpose.",
+    "identicalIframesSamePurpose_title": "Frames with the same name embed the same resource",
+    "identicalIframesSamePurpose_description": "Checks that <iframe>/<frame> elements sharing an accessible name embed the same resource, since one name can only describe one resource.",
+    "identicalIframesSamePurpose_summary_cantTell": "This <{{element}}> shares the name “{{name}}” with another frame that embeds a different resource.",
+    "identicalIframesSamePurpose_hint_cantTell": "Give each frame a name describing the resource it embeds, or point them at the same resource.",
     "iframeFocusableContent_title": "Frames with tabindex=\"-1\" must not contain focusable content",
     "iframeFocusableContent_description": "Checks that same-origin <iframe>/<frame> elements with tabindex=\"-1\" do not contain focusable content, since browsers do not propagate that restriction into the frame’s embedded document.",
     "iframeFocusableContent_summary_fail": "This <{{element}}> has tabindex=\"-1\" but its content contains focusable elements, which remain reachable by keyboard.",
@@ -9483,6 +9549,10 @@ const I18N = {
     "iframeTitleUnique_description": "Comprueba que dos elementos <iframe>/<frame> no compartan, dentro del alcance, el mismo valor de atributo title.",
     "iframeTitleUnique_summary_fail": "El título \"{{title}}\" de este <{{element}}> no es único entre los marcos de esta página.",
     "iframeTitleUnique_hint_fail": "Asignar a cada marco un título distinto que describa su contenido o propósito específico.",
+    "identicalIframesSamePurpose_title": "Frames with the same name embed the same resource",
+    "identicalIframesSamePurpose_description": "Checks that <iframe>/<frame> elements sharing an accessible name embed the same resource, since one name can only describe one resource.",
+    "identicalIframesSamePurpose_summary_cantTell": "This <{{element}}> shares the name “{{name}}” with another frame that embeds a different resource.",
+    "identicalIframesSamePurpose_hint_cantTell": "Give each frame a name describing the resource it embeds, or point them at the same resource.",
     "iframeFocusableContent_title": "Los marcos con tabindex=\"-1\" no deben contener contenido enfocable",
     "iframeFocusableContent_description": "Comprueba que los elementos <iframe>/<frame> del mismo origen con tabindex=\"-1\" no contengan contenido enfocable, ya que los navegadores no propagan esa restricción al documento incrustado del marco.",
     "iframeFocusableContent_summary_fail": "Este <{{element}}> tiene tabindex=\"-1\" pero su contenido incluye elementos enfocables, que siguen siendo alcanzables por teclado.",
@@ -10173,6 +10243,10 @@ const I18N = {
     "iframeTitleUnique_description": "Vérifie qu’aucun <iframe>/<frame> dans le périmètre analysé ne partage la même valeur d’attribut title qu’un autre.",
     "iframeTitleUnique_summary_fail": "Le titre « {{title}} » de ce <{{element}}> n’est pas unique parmi les cadres de cette page.",
     "iframeTitleUnique_hint_fail": "Donnez à chaque cadre un titre distinct décrivant son contenu ou son objet spécifique.",
+    "identicalIframesSamePurpose_title": "Frames with the same name embed the same resource",
+    "identicalIframesSamePurpose_description": "Checks that <iframe>/<frame> elements sharing an accessible name embed the same resource, since one name can only describe one resource.",
+    "identicalIframesSamePurpose_summary_cantTell": "This <{{element}}> shares the name “{{name}}” with another frame that embeds a different resource.",
+    "identicalIframesSamePurpose_hint_cantTell": "Give each frame a name describing the resource it embeds, or point them at the same resource.",
     "iframeFocusableContent_title": "Les cadres avec tabindex=\"-1\" ne doivent pas contenir de contenu focalisable",
     "iframeFocusableContent_description": "Vérifie que les éléments <iframe>/<frame> de même origine avec tabindex=\"-1\" ne contiennent pas de contenu focalisable, car les navigateurs ne propagent pas cette restriction au document intégré du cadre.",
     "iframeFocusableContent_summary_fail": "Ce <{{element}}> a tabindex=\"-1\" mais son contenu contient des éléments focalisables, qui restent accessibles au clavier.",
@@ -23044,6 +23118,62 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "mappings": null
   },
   {
+    "ruleId": "identical-iframes-same-purpose",
+    "title": "Frames with the same name embed the same resource",
+    "description": "Checks that <iframe>/<frame> elements sharing an accessible name embed the same resource, since one name can only describe one resource.",
+    "i18n": {
+      "titleKey": "identicalIframesSamePurpose_title",
+      "descriptionKey": "identicalIframesSamePurpose_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag412",
+      "structure",
+      "atomic",
+      "automatic",
+      "name",
+      "iframe",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "4.1.2"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "4.1.2",
+        "title": "Name, Role, Value",
+        "conformanceLevel": "A"
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "medium",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "4.1.2": [
+          "identical-iframes-same-purpose"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
     "ruleId": "identical-links-same-purpose",
     "title": "Links with the same accessible name should lead to the same destination",
     "description": "Flags groups of links that share the same accessible name but resolve to more than one distinct destination, for manual review of whether they serve the same purpose.",
@@ -27504,6 +27634,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "form-control-programmatic-label-present",
       "iframe-name-present",
       "iframe-title-unique",
+      "identical-iframes-same-purpose",
       "link-name-present",
       "listbox-name-present",
       "menuitem-name-present",
@@ -39064,6 +39195,149 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 }), applicability: (function applicability(ctx) {
   return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
 }) },
+    "identical-iframes-same-purpose": { run: (function runInPage(ctx) {
+  const { helpers, rule } = ctx;
+
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart('iframe, frame')
+    : helpers.queryAll('iframe, frame');
+
+  function normalizedName(el) {
+    if (!helpers.getAccessibleNameInfo) return '';
+    let info = null;
+    try {
+      info = helpers.getAccessibleNameInfo(el, ctx, { maxRefs: 8 });
+    } catch {
+      return '';
+    }
+    if (!info || !info.present || !info.value) return '';
+    return String(info.value).replace(/\s+/g, ' ').trim();
+  }
+
+  // A light-DOM child of a shadow host with no slot to land in is absent from
+  // the flat tree and so renders nowhere, which the shared eligibility helper
+  // does not model.
+  function isUnslotted(el) {
+    try {
+      let cur = el;
+      let guard = 0;
+      while (cur && cur.nodeType === 1 && guard++ < 100) {
+        const parent = cur.parentNode;
+        if (!parent || parent.nodeType !== 1) return false;
+        if (parent.shadowRoot && cur.assignedSlot == null) return true;
+        cur = parent;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  }
+
+  function inAccessibilityTree(el) {
+    if (isUnslotted(el)) return false;
+    if (!helpers.isIncludedInAccessibilityTree) return true;
+    try {
+      return !!helpers.isIncludedInAccessibilityTree(el);
+    } catch {
+      return false;
+    }
+  }
+
+  // A directory written with and without its trailing slash is one resource,
+  // and a fragment selects within a resource rather than naming another.
+  function resourceKey(el) {
+    let raw = null;
+    try {
+      raw = el.getAttribute('src');
+    } catch {
+      return null;
+    }
+    if (raw == null || !String(raw).trim()) return null;
+
+    const doc = (ctx && ctx.document) || (el.ownerDocument ? el.ownerDocument : null);
+    const base = doc && doc.baseURI ? doc.baseURI : undefined;
+    try {
+      const u = new URL(String(raw).trim(), base);
+      let pathname = u.pathname;
+      if (pathname.length > 1 && pathname.charAt(pathname.length - 1) === '/') {
+        pathname = pathname.slice(0, -1);
+      }
+      return u.protocol + '//' + u.host + pathname + u.search;
+    } catch {
+      return null;
+    }
+  }
+
+  const groups = new Map();
+
+  for (const el of nodes) {
+    if (!el || !el.tagName) continue;
+    if (!inAccessibilityTree(el)) continue;
+
+    const name = normalizedName(el);
+    if (!name) continue;
+
+    const list = groups.get(name);
+    if (list) list.push(el);
+    else groups.set(name, [el]);
+  }
+
+  const sets = [];
+  for (const [name, els] of groups) {
+    if (els.length >= 2) sets.push([name, els]);
+  }
+
+  if (!sets.length) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+
+  const occurrences = [];
+
+  for (const [name, els] of sets) {
+    const keys = els.map(resourceKey);
+    const resolved = keys.filter((k) => k != null);
+    const allResolved = resolved.length === keys.length;
+    const allSame = allResolved && resolved.every((k) => k === resolved[0]);
+    if (allSame) continue;
+
+    for (let i = 0; i < els.length; i++) {
+      const el = els[i];
+      const tag = el.tagName.toLowerCase();
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          summary:
+            'This frame shares its accessible name with another frame that embeds a different resource.',
+          hint: 'Give each frame a name describing the resource it embeds, or point them at the same resource.',
+          i18n: {
+            summaryKey: 'identicalIframesSamePurpose_summary_cantTell',
+            hintKey: 'identicalIframesSamePurpose_hint_cantTell',
+            params: { element: tag, name }
+          },
+          data: {
+            details: {
+              reasonCode:
+                keys[i] == null ? 'IFRAME_RESOURCE_UNRESOLVED' : 'IFRAME_RESOURCE_DIFFERS',
+              element: tag,
+              name,
+              resource: keys[i],
+              setSize: els.length
+            }
+          }
+        })
+      );
+    }
+  }
+
+  if (occurrences.length) {
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'moderate',
+      occurrences
+    };
+  }
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+}), applicability: null },
     "identical-links-same-purpose": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
@@ -52345,6 +52619,10 @@ const I18N = {
     "iframeTitleUnique_description": "Prüft, ob nicht zwei <iframe>/<frame>-Elemente im betrachteten Bereich denselben title-Attributwert teilen.",
     "iframeTitleUnique_summary_fail": "Der Titel „{{title}}“ dieses <{{element}}> ist unter den Frames dieser Seite nicht eindeutig.",
     "iframeTitleUnique_hint_fail": "Geben Sie jedem Frame einen eigenen Titel, der seinen jeweiligen Inhalt oder Zweck beschreibt.",
+    "identicalIframesSamePurpose_title": "Frames with the same name embed the same resource",
+    "identicalIframesSamePurpose_description": "Checks that <iframe>/<frame> elements sharing an accessible name embed the same resource, since one name can only describe one resource.",
+    "identicalIframesSamePurpose_summary_cantTell": "This <{{element}}> shares the name “{{name}}” with another frame that embeds a different resource.",
+    "identicalIframesSamePurpose_hint_cantTell": "Give each frame a name describing the resource it embeds, or point them at the same resource.",
     "iframeFocusableContent_title": "Frames mit tabindex=\"-1\" dürfen keinen fokussierbaren Inhalt enthalten",
     "iframeFocusableContent_description": "Prüft, ob <iframe>/<frame>-Elemente derselben Herkunft mit tabindex=\"-1\" keinen fokussierbaren Inhalt enthalten, da Browser diese Einschränkung nicht in das eingebettete Dokument des Frames übertragen.",
     "iframeFocusableContent_summary_fail": "Dieses <{{element}}> hat tabindex=\"-1\", aber sein Inhalt enthält fokussierbare Elemente, die weiterhin per Tastatur erreichbar sind.",
@@ -53035,6 +53313,10 @@ const I18N = {
     "iframeTitleUnique_description": "Checks that no two <iframe>/<frame> elements in scope share the same title attribute value.",
     "iframeTitleUnique_summary_fail": "This <{{element}}>'s title \"{{title}}\" is not unique among the frames on this page.",
     "iframeTitleUnique_hint_fail": "Give each frame a distinct title describing its specific content or purpose.",
+    "identicalIframesSamePurpose_title": "Frames with the same name embed the same resource",
+    "identicalIframesSamePurpose_description": "Checks that <iframe>/<frame> elements sharing an accessible name embed the same resource, since one name can only describe one resource.",
+    "identicalIframesSamePurpose_summary_cantTell": "This <{{element}}> shares the name “{{name}}” with another frame that embeds a different resource.",
+    "identicalIframesSamePurpose_hint_cantTell": "Give each frame a name describing the resource it embeds, or point them at the same resource.",
     "iframeFocusableContent_title": "Frames with tabindex=\"-1\" must not contain focusable content",
     "iframeFocusableContent_description": "Checks that same-origin <iframe>/<frame> elements with tabindex=\"-1\" do not contain focusable content, since browsers do not propagate that restriction into the frame’s embedded document.",
     "iframeFocusableContent_summary_fail": "This <{{element}}> has tabindex=\"-1\" but its content contains focusable elements, which remain reachable by keyboard.",
@@ -53725,6 +54007,10 @@ const I18N = {
     "iframeTitleUnique_description": "Comprueba que dos elementos <iframe>/<frame> no compartan, dentro del alcance, el mismo valor de atributo title.",
     "iframeTitleUnique_summary_fail": "El título \"{{title}}\" de este <{{element}}> no es único entre los marcos de esta página.",
     "iframeTitleUnique_hint_fail": "Asignar a cada marco un título distinto que describa su contenido o propósito específico.",
+    "identicalIframesSamePurpose_title": "Frames with the same name embed the same resource",
+    "identicalIframesSamePurpose_description": "Checks that <iframe>/<frame> elements sharing an accessible name embed the same resource, since one name can only describe one resource.",
+    "identicalIframesSamePurpose_summary_cantTell": "This <{{element}}> shares the name “{{name}}” with another frame that embeds a different resource.",
+    "identicalIframesSamePurpose_hint_cantTell": "Give each frame a name describing the resource it embeds, or point them at the same resource.",
     "iframeFocusableContent_title": "Los marcos con tabindex=\"-1\" no deben contener contenido enfocable",
     "iframeFocusableContent_description": "Comprueba que los elementos <iframe>/<frame> del mismo origen con tabindex=\"-1\" no contengan contenido enfocable, ya que los navegadores no propagan esa restricción al documento incrustado del marco.",
     "iframeFocusableContent_summary_fail": "Este <{{element}}> tiene tabindex=\"-1\" pero su contenido incluye elementos enfocables, que siguen siendo alcanzables por teclado.",
@@ -54415,6 +54701,10 @@ const I18N = {
     "iframeTitleUnique_description": "Vérifie qu’aucun <iframe>/<frame> dans le périmètre analysé ne partage la même valeur d’attribut title qu’un autre.",
     "iframeTitleUnique_summary_fail": "Le titre « {{title}} » de ce <{{element}}> n’est pas unique parmi les cadres de cette page.",
     "iframeTitleUnique_hint_fail": "Donnez à chaque cadre un titre distinct décrivant son contenu ou son objet spécifique.",
+    "identicalIframesSamePurpose_title": "Frames with the same name embed the same resource",
+    "identicalIframesSamePurpose_description": "Checks that <iframe>/<frame> elements sharing an accessible name embed the same resource, since one name can only describe one resource.",
+    "identicalIframesSamePurpose_summary_cantTell": "This <{{element}}> shares the name “{{name}}” with another frame that embeds a different resource.",
+    "identicalIframesSamePurpose_hint_cantTell": "Give each frame a name describing the resource it embeds, or point them at the same resource.",
     "iframeFocusableContent_title": "Les cadres avec tabindex=\"-1\" ne doivent pas contenir de contenu focalisable",
     "iframeFocusableContent_description": "Vérifie que les éléments <iframe>/<frame> de même origine avec tabindex=\"-1\" ne contiennent pas de contenu focalisable, car les navigateurs ne propagent pas cette restriction au document intégré du cadre.",
     "iframeFocusableContent_summary_fail": "Ce <{{element}}> a tabindex=\"-1\" mais son contenu contient des éléments focalisables, qui restent accessibles au clavier.",

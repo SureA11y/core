@@ -2,11 +2,11 @@
   "rulesDir": "src/checks",
   "facetsFile": "src/coverage/wcag-facets.js",
   "summary": {
-    "totalRules": 132,
+    "totalRules": 133,
     "wcagTagCoverage": {
       "byVersion": {
         "2.0": {
-          "A": 100,
+          "A": 101,
           "AA": 14,
           "AAA": 5
         },
@@ -22,12 +22,12 @@
         }
       },
       "anyVersion": {
-        "A": 106,
+        "A": 107,
         "AA": 19,
         "AAA": 5
       },
       "rawTagCounts": {
-        "wcag2a": 89,
+        "wcag2a": 90,
         "wcag2aa": 10,
         "wcag21aa": 3,
         "wcag2aaa": 5,
@@ -1889,6 +1889,56 @@
         "facetsBySc": {
           "3.1.1": [
             "html-xml-lang-mismatch"
+          ]
+        }
+      }
+    },
+    {
+      "file": "src/checks/automatic/identical-iframes-same-purpose.js",
+      "ruleId": "identical-iframes-same-purpose",
+      "wcagScNormative": [
+        "4.1.2"
+      ],
+      "wcagScAll": [
+        "4.1.2"
+      ],
+      "wcagScInformative": [],
+      "type": "automatic",
+      "title": "Frames with the same name embed the same resource",
+      "tags": [
+        "wcag2a",
+        "wcag412",
+        "structure",
+        "atomic",
+        "automatic",
+        "name",
+        "iframe"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2a",
+            "version": "2.0",
+            "level": "A"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "4.1.2": [
+            "identical-iframes-same-purpose"
           ]
         }
       }
@@ -7061,12 +7111,13 @@
       {
         "sc": "4.1.2",
         "title": "Name, Role, Value",
-        "totalFacets": 38,
-        "coveredFacets": 38,
+        "totalFacets": 39,
+        "coveredFacets": 39,
         "uncoveredFacets": [],
         "automationCounts": {
           "full": 36,
-          "manual": 2
+          "manual": 2,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -7301,6 +7352,14 @@
             "automation": "full",
             "coveredBy": [
               "iframe-title-unique"
+            ]
+          },
+          {
+            "id": "identical-iframes-same-purpose",
+            "label": "<iframe>/<frame> elements sharing an accessible name embed the same resource",
+            "automation": "partial",
+            "coveredBy": [
+              "identical-iframes-same-purpose"
             ]
           },
           {
@@ -8444,12 +8503,13 @@
       {
         "sc": "4.1.2",
         "title": "Name, Role, Value",
-        "totalFacets": 38,
-        "coveredFacets": 38,
+        "totalFacets": 39,
+        "coveredFacets": 39,
         "uncoveredFacets": [],
         "automationCounts": {
           "full": 36,
-          "manual": 2
+          "manual": 2,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -8684,6 +8744,14 @@
             "automation": "full",
             "coveredBy": [
               "iframe-title-unique"
+            ]
+          },
+          {
+            "id": "identical-iframes-same-purpose",
+            "label": "<iframe>/<frame> elements sharing an accessible name embed the same resource",
+            "automation": "partial",
+            "coveredBy": [
+              "identical-iframes-same-purpose"
             ]
           },
           {
