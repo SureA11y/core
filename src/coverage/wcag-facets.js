@@ -1053,6 +1053,11 @@ const FACETS = {
                 "automation": "full"
             },
             {
+                "id": "identical-iframes-same-purpose",
+                "label": "<iframe>/<frame> elements sharing an accessible name embed the same resource",
+                "automation": "partial"
+            },
+            {
                 "id": "aria-hidden-body-absent",
                 "label": "The document <body> does not have aria-hidden=\"true\"",
                 "automation": "full"

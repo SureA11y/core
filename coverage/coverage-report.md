@@ -5,19 +5,19 @@ Facets: `src/coverage/wcag-facets.js`
 
 ## Summary
 
-Total rules (loaded without error): **132**
+Total rules (loaded without error): **133**
 
 ### Coverage by WCAG Level (Version-agnostic, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| Any WCAG version | 106 | 19 | 5 |
+| Any WCAG version | 107 | 19 | 5 |
 
 ### Coverage by WCAG Level (Per version, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| WCAG 2.0 | 100 | 14 | 5 |
+| WCAG 2.0 | 101 | 14 | 5 |
 | WCAG 2.1 | 4 | 3 | 0 |
 | WCAG 2.2 | 2 | 2 | 0 |
 
@@ -28,7 +28,7 @@ Total rules (loaded without error): **132**
 | wcag21a | 1 |
 | wcag21aa | 3 |
 | wcag22aa | 2 |
-| wcag2a | 89 |
+| wcag2a | 90 |
 | wcag2aa | 10 |
 | wcag2aaa | 5 |
 
@@ -549,8 +549,8 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 ### 4.1.2
 
-Facet coverage: **38/38** facets covered.
-Automation mix: **full 36, partial 0, manual 2**.
+Facet coverage: **39/39** facets covered.
+Automation mix: **full 36, partial 1, manual 2**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
@@ -583,6 +583,7 @@ Automation mix: **full 36, partial 0, manual 2**.
 | aria-attr-required-for-role | full | aria-required-attr |
 | iframe-name-present | full | iframe-name-present |
 | iframe-title-unique | full | iframe-title-unique |
+| identical-iframes-same-purpose | partial | identical-iframes-same-purpose |
 | aria-hidden-body-absent | full | aria-hidden-body |
 | duplicate-id-aria | full | duplicate-id-aria |
 | summary-name-present | full | summary-name-present |
@@ -613,6 +614,7 @@ Automation mix: **full 36, partial 0, manual 2**.
 | dialog-name-present | automatic | Dialogs have an accessible name | src/checks/automatic/dialog-name-present.js | dialog-name-present |  |
 | duplicate-id-aria | automatic | IDs referenced by ARIA must be unique | src/checks/automatic/duplicate-id-aria.js | duplicate-id-aria |  |
 | form-control-programmatic-label-present | automatic | Form controls must have a programmatic label | src/checks/automatic/form-control-programmatic-label-present.js | form-control-name-present |  |
+| identical-iframes-same-purpose | automatic | Frames with the same name embed the same resource | src/checks/automatic/identical-iframes-same-purpose.js | identical-iframes-same-purpose |  |
 | iframe-name-present | automatic | Frames have an accessible name | src/checks/automatic/iframe-name-present.js | iframe-name-present |  |
 | iframe-title-unique | automatic | Frame titles must be unique | src/checks/automatic/iframe-title-unique.js | iframe-title-unique |  |
 | link-name-present | automatic | Links have an accessible name | src/checks/automatic/link-name-present.js | link-name-present |  |
@@ -1180,8 +1182,8 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 ### 4.1.2
 
-Facet coverage: **38/38** facets covered.
-Automation mix: **full 36, partial 0, manual 2**.
+Facet coverage: **39/39** facets covered.
+Automation mix: **full 36, partial 1, manual 2**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
@@ -1214,6 +1216,7 @@ Automation mix: **full 36, partial 0, manual 2**.
 | aria-attr-required-for-role | full | aria-required-attr |
 | iframe-name-present | full | iframe-name-present |
 | iframe-title-unique | full | iframe-title-unique |
+| identical-iframes-same-purpose | partial | identical-iframes-same-purpose |
 | aria-hidden-body-absent | full | aria-hidden-body |
 | duplicate-id-aria | full | duplicate-id-aria |
 | summary-name-present | full | summary-name-present |
@@ -1244,6 +1247,7 @@ Automation mix: **full 36, partial 0, manual 2**.
 | dialog-name-present | automatic | Dialogs have an accessible name | src/checks/automatic/dialog-name-present.js | dialog-name-present |  |
 | duplicate-id-aria | automatic | IDs referenced by ARIA must be unique | src/checks/automatic/duplicate-id-aria.js | duplicate-id-aria |  |
 | form-control-programmatic-label-present | automatic | Form controls must have a programmatic label | src/checks/automatic/form-control-programmatic-label-present.js | form-control-name-present |  |
+| identical-iframes-same-purpose | automatic | Frames with the same name embed the same resource | src/checks/automatic/identical-iframes-same-purpose.js | identical-iframes-same-purpose |  |
 | iframe-name-present | automatic | Frames have an accessible name | src/checks/automatic/iframe-name-present.js | iframe-name-present |  |
 | iframe-title-unique | automatic | Frame titles must be unique | src/checks/automatic/iframe-title-unique.js | iframe-title-unique |  |
 | link-name-present | automatic | Links have an accessible name | src/checks/automatic/link-name-present.js | link-name-present |  |

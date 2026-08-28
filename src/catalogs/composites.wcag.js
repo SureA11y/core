@@ -397,6 +397,7 @@ module.exports = [
       'form-control-programmatic-label-present',
       'iframe-name-present',
       'iframe-title-unique',
+      'identical-iframes-same-purpose',
       'link-name-present',
       'listbox-name-present',
       'menuitem-name-present',
