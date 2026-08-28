@@ -152,90 +152,90 @@
   <h2>B. Invalid</h2>
 
   <div class="case" id="case_04">
-    <div class="case-title">04 — FAIL: role is not permitted for the host element</div>
+    <div class="case-title">04 — CANTTELL: role is not permitted for the host element</div>
     <nav role="tab" id="aar_case_04"></nav>
   </div>
 
   <div class="case" id="case_08">
-    <div class="case-title">08 — FAIL: role="listbox" is not permitted on a non-multiple &lt;select&gt; (native role is combobox there, allowed override is "menu" only)</div>
+    <div class="case-title">08 — CANTTELL: role="listbox" is not permitted on a non-multiple &lt;select&gt; (native role is combobox there, allowed override is "menu" only)</div>
     <select role="listbox" id="aar_case_08"><option>A</option></select>
   </div>
 
   <div class="case" id="case_09">
-    <div class="case-title">09 — FAIL: no role override is permitted on &lt;select multiple&gt; besides its own native listbox role</div>
+    <div class="case-title">09 — CANTTELL: no role override is permitted on &lt;select multiple&gt; besides its own native listbox role</div>
     <select multiple role="menu" id="aar_case_09"><option>A</option></select>
   </div>
 
   <div class="case" id="case_12">
-    <div class="case-title">12 — FAIL: role="presentation" is not permitted on &lt;video&gt; (unlike most other elements)</div>
+    <div class="case-title">12 — CANTTELL: role="presentation" is not permitted on &lt;video&gt; (unlike most other elements)</div>
     <video role="presentation" id="aar_case_12"></video>
   </div>
 
   <div class="case" id="case_13">
-    <div class="case-title">13 — FAIL: role="button" is not permitted on &lt;object&gt;</div>
+    <div class="case-title">13 — CANTTELL: role="button" is not permitted on &lt;object&gt;</div>
     <object data="x.svg" role="button" id="aar_case_13"></object>
   </div>
 
   <div class="case" id="case_17">
-    <div class="case-title">17 — FAIL: role="presentation" is not permitted on &lt;img&gt; with non-empty alt</div>
+    <div class="case-title">17 — CANTTELL: role="presentation" is not permitted on &lt;img&gt; with non-empty alt</div>
     <img alt="Decorative" src="x.png" role="presentation" id="aar_case_17">
   </div>
 
   <div class="case" id="case_18">
-    <div class="case-title">18 — FAIL: role="presentation" is not permitted on &lt;area&gt; without href</div>
+    <div class="case-title">18 — CANTTELL: role="presentation" is not permitted on &lt;area&gt; without href</div>
     <img alt="" usemap="#map18" src="x.png">
     <map name="map18"><area role="presentation" shape="rect" coords="0,0,10,10" id="aar_case_18"></map>
   </div>
 
   <div class="case" id="case_23">
-    <div class="case-title">23 — FAIL: &lt;label&gt; associated with a labelable control permits no explicit role</div>
+    <div class="case-title">23 — CANTTELL: &lt;label&gt; associated with a labelable control permits no explicit role</div>
     <label for="aar_case_23_target" role="button" id="aar_case_23">Toggle</label>
     <input id="aar_case_23_target" type="checkbox">
   </div>
 
   <div class="case" id="case_25">
-    <div class="case-title">25 — FAIL: role="button" is not permitted on &lt;input type="checkbox"&gt; without aria-pressed</div>
+    <div class="case-title">25 — CANTTELL: role="button" is not permitted on &lt;input type="checkbox"&gt; without aria-pressed</div>
     <input type="checkbox" role="button" aria-haspopup="true" id="aar_case_25">
   </div>
 
   <div class="case" id="case_28">
-    <div class="case-title">28 — FAIL: role="region" is not permitted on &lt;form&gt;</div>
+    <div class="case-title">28 — CANTTELL: role="region" is not permitted on &lt;form&gt;</div>
     <form role="region" id="aar_case_28"></form>
   </div>
 
   <div class="case" id="case_29">
-    <div class="case-title">29 — FAIL: role="dialog" is not permitted on &lt;aside&gt;</div>
+    <div class="case-title">29 — CANTTELL: role="dialog" is not permitted on &lt;aside&gt;</div>
     <aside role="dialog" id="aar_case_29"></aside>
   </div>
 
   <div class="case" id="case_32">
-    <div class="case-title">32 — FAIL: role="region" is not permitted on a &lt;section&gt; with no accessible name</div>
+    <div class="case-title">32 — CANTTELL: role="region" is not permitted on a &lt;section&gt; with no accessible name</div>
     <section role="region" id="aar_case_32"></section>
   </div>
 
   <div class="case" id="case_36">
-    <div class="case-title">36 — FAIL: role="navigation" is not permitted on &lt;header&gt;</div>
+    <div class="case-title">36 — CANTTELL: role="navigation" is not permitted on &lt;header&gt;</div>
     <header role="navigation" id="aar_case_36"></header>
   </div>
 
   <div class="case" id="case_38">
-    <div class="case-title">38 — FAIL: role="banner" is NOT permitted on a &lt;header&gt; nested inside &lt;main&gt; (nested headers have no implicit "banner" role to restate)</div>
+    <div class="case-title">38 — CANTTELL: role="banner" is NOT permitted on a &lt;header&gt; nested inside &lt;main&gt; (nested headers have no implicit "banner" role to restate)</div>
     <main><header role="banner" id="aar_case_38"></header></main>
   </div>
 
   <div class="case" id="case_39">
-    <div class="case-title">39 — FAIL: role="group" is NOT permitted on &lt;a href&gt; (&lt;a href&gt; was previously wrongly treated as unconstrained)</div>
+    <div class="case-title">39 — CANTTELL: role="group" is NOT permitted on &lt;a href&gt; (&lt;a href&gt; was previously wrongly treated as unconstrained)</div>
     <a href="/x" role="group" id="aar_case_39"></a>
   </div>
 
   <div class="case" id="case_41">
-    <div class="case-title">41 — FAIL: no override role is permitted on &lt;area href&gt; at all — only its own native "link" role may be restated</div>
+    <div class="case-title">41 — CANTTELL: no override role is permitted on &lt;area href&gt; at all — only its own native "link" role may be restated</div>
     <img alt="" usemap="#map41" src="x.png">
     <map name="map41"><area href="/x" role="tab" shape="rect" coords="0,0,10,10" id="aar_case_41"></map>
   </div>
 
   <div class="case" id="case_43">
-    <div class="case-title">43 — FAIL: role="group" is NOT permitted on &lt;article&gt;</div>
+    <div class="case-title">43 — CANTTELL: role="group" is NOT permitted on &lt;article&gt;</div>
     <article role="group" id="aar_case_43"></article>
   </div>
 
@@ -245,7 +245,7 @@
   </div>
 
   <div class="case" id="case_45">
-    <div class="case-title">45 — FAIL: no override role is ever permitted on &lt;picture&gt;</div>
+    <div class="case-title">45 — CANTTELL: no override role is ever permitted on &lt;picture&gt;</div>
     <picture role="presentation" id="aar_case_45"><img src="x.png" alt=""></picture>
   </div>
 
@@ -270,7 +270,7 @@
   </div>
 
   <div class="case" id="case_50">
-    <div class="case-title">50 — FAIL: role="grid" is still not permitted on &lt;button&gt; (only the four widened roles above were added, not the whole role vocabulary)</div>
+    <div class="case-title">50 — CANTTELL: role="grid" is still not permitted on &lt;button&gt; (only the four widened roles above were added, not the whole role vocabulary)</div>
     <button role="grid" id="aar_case_50"></button>
   </div>
 

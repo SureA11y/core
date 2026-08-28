@@ -82,6 +82,41 @@ test(`${RULE_ID}: fail when role is abstract`, () => {
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'ARIA_ROLE_ABSTRACT');
 });
 
+test(`${RULE_ID}: cantTell when an unrecognized role sits on an element with a native role (ACT 674b10: satisfied through the implicit role)`, () => {
+  const html = `<!doctype html><html><body><button id="a" role="buton">Click</button></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.equal(rule.occurrences[0].data.details.nativeRole, 'button');
+  assert.equal(rule.occurrences[0].data.details.reasonCode, 'ARIA_ROLE_INVALID');
+});
+
+test(`${RULE_ID}: cantTell when an abstract role sits on an element with a native role`, () => {
+  const html = `<!doctype html><html><body><nav id="a" role="widget">Nav</nav></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.equal(rule.occurrences[0].data.details.nativeRole, 'navigation');
+  assert.equal(rule.occurrences[0].data.details.reasonCode, 'ARIA_ROLE_ABSTRACT');
+});
+
+test(`${RULE_ID}: a roleless host stays a fail, a custom element has no native role to fall back to`, () => {
+  const html = `<!doctype html><html><body><my-widget id="a" role="buton">x</my-widget></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.equal(rule.occurrences[0].occurrenceOutcome, 'fail');
+});
+
+test(`${RULE_ID}: a fail-tier finding outranks a cantTell-tier one, and neither is dropped`, () => {
+  const html = `<!doctype html><html><body>
+    <div id="a" role="buton"></div>
+    <button id="b" role="buton">Click</button>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  const byId = (id) => rule.occurrences.find((o) => o.html && o.html.includes(`id="${id}"`));
+  assert.equal(byId('a').occurrenceOutcome, 'fail');
+  assert.equal(byId('b').occurrenceOutcome, 'cantTell');
+});
+
 test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><body><div id="a" role="buton"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
@@ -99,9 +134,12 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-roles-valid-all-scenario
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 3, maxOccurrences: 3 });
 
   const expectedFailIds = ['arv_case_03', 'arv_case_04'];
+  const cantTellOcc = rule.occurrences.find((o) => o.html && o.html.includes('id="arv_case_08"'));
+  assert.ok(cantTellOcc, 'Expected occurrence for id="arv_case_08"');
+  assert.equal(cantTellOcc.occurrenceOutcome, 'cantTell');
   const expectedNoOccIds = [
     'arv_case_01',
     'arv_case_02',

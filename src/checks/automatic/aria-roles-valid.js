@@ -11,16 +11,15 @@
  * @applicability
  *   Applies to any element with a non-empty role="" attribute in the composed DOM.
  * @expectation
- *   The role attribute's first token (the role actually used by assistive technology;
- *   later space-separated tokens are author-supplied fallbacks and are not evaluated
- *   here) must be a real WAI-ARIA role name, and must not be an abstract role
- *   (abstract roles exist only for the specification's own role taxonomy and must
- *   never be used directly in markup).
- * @implementation-notes
- * - Unlike this engine's accessible-name rules, ARIA validity is a static markup
- *   property independent of current visibility/eligibility, so this rule does not
- *   gate on isAccTreeEligible: an invalid role is a defect whether or not the
- *   element happens to be hidden right now.
+ *   At least one role token names a concrete, non-abstract ARIA role.
+ *   Graded by what the element falls back to when none does:
+ *   - FAIL on a roleless host (div, span, custom element), which is left
+ *     exposed as generic, so the role the author meant reaches no one.
+ *   - CANTTELL where the element has a native role (a <button>, <nav>,
+ *     <a href>), which the accessibility tree keeps using. ACT 674b10 lists
+ *     4.1.2 as a secondary requirement only, "satisfied through the implicit
+ *     role," so the bad token is worth reporting but is not itself the
+ *     criterion failing.
  */
 
 const id = 'aria-roles-valid';
@@ -64,7 +63,8 @@ function runInPage(ctx) {
     ? helpers.queryAllSmart('[role]')
     : helpers.queryAll('[role]');
 
-  const occurrences = [];
+  const failOccurrences = [];
+  const cantTellOccurrences = [];
   let applicableCount = 0;
 
   // Programmatically hidden per the ACT glossary: display:none, visibility not
@@ -121,8 +121,37 @@ function runInPage(ctx) {
     const isKnown = tokens.some((t) => ariaHelpers.isKnownRole(t));
     const reasonCode = !isKnown ? 'ARIA_ROLE_INVALID' : 'ARIA_ROLE_ABSTRACT';
 
-    occurrences.push(
+    // An unusable role token leaves the element on its native role, when it
+    // has one: ACT 674b10 lists 4.1.2 as only a secondary requirement for
+    // exactly that reason. A roleless host (div, span, custom element) has
+    // nothing to fall back to and is exposed as generic instead.
+    const nativeRole =
+      typeof ariaHelpers.getNativeRoleForElement === 'function'
+        ? ariaHelpers.getNativeRoleForElement(el) || ''
+        : '';
+
+    if (nativeRole) {
+      cantTellOccurrences.push(
+        helpers.reportOccurrence(el, {
+          occurrenceOutcome: 'cantTell',
+          summary: `The role attribute value is not usable, so this element is still exposed as its native role="${nativeRole}".`,
+          hint: 'Fix or remove the role token; assistive technology is using the native role in the meantime.',
+          i18n: {
+            summaryKey: 'ariaRolesValid_summary_cantTell',
+            hintKey: 'ariaRolesValid_hint_cantTell',
+            params: { role, nativeRole }
+          },
+          data: {
+            details: { reasonCode, role, nativeRole }
+          }
+        })
+      );
+      continue;
+    }
+
+    failOccurrences.push(
       helpers.reportOccurrence(el, {
+        occurrenceOutcome: 'fail',
         summary: !isKnown
           ? 'The role attribute value is not a recognized ARIA role.'
           : 'The role attribute value is an abstract ARIA role, which must not be used directly.',
@@ -146,15 +175,12 @@ function runInPage(ctx) {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'serious',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  const resolved = helpers.resolveTieredOutcome(
+    failOccurrences,
+    cantTellOccurrences,
+    rule.defaultSeverity || 'serious'
+  );
+  return { ruleId: rule.ruleId, ...resolved };
 }
 
 module.exports = { id, meta, runInPage };
