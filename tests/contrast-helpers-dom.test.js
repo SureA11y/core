@@ -486,6 +486,17 @@ test('getTextScan: excludes text whose ANCESTOR (not the text\'s own element) ca
   assert.strictEqual(scan.eligibleTextCount, 0);
 });
 
+test('getTextScan: text assigned straight to a shadow root is attributed to the host element', () => {
+  const { document, window, helpers } = makeHelpers('<p id="host"></p>');
+  const host = document.getElementById('host');
+  host.attachShadow({ mode: 'open' }).textContent = 'Some text in English';
+
+  const scan = helpers.getTextScan(ctxFor(document, window), {}, {});
+  assert.strictEqual(scan.eligibleTextCount, 1);
+  assert.strictEqual(scan.elements.length, 1);
+  assert.strictEqual(scan.elements[0].el, host);
+});
+
 test('getTextScan: a getVisibilityHintsInfo that throws is not treated as clipped (falls back to isDomVisibleEligible)', () => {
   const { document, window, helpers } = makeHelpers('<p id="p1">Hello</p>');
   const scan = helpers.getTextScan(

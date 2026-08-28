@@ -516,9 +516,13 @@ function createContrastHelpers(opts, shared) {
           const text = node && node.nodeValue;
           if (!isNonEmptyText(text)) continue;
 
+          const parentNode = node.parentNode;
+          // Text assigned straight to a shadow root has no parent element, but
+          // it renders with the host's inherited color and background.
           const el =
             node.parentElement ||
-            (node.parentNode && node.parentNode.nodeType === 1 ? node.parentNode : null);
+            (parentNode && parentNode.nodeType === 1 ? parentNode : null) ||
+            (parentNode && parentNode.nodeType === 11 && parentNode.host ? parentNode.host : null);
 
           if (!el) continue;
           // Respect subtree exclusions from engineOptions.excludeSelectors
