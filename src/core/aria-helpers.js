@@ -951,10 +951,28 @@ function createAriaHelpers(opts, shared) {
     return ATTR_VALUE_TYPES[lower(name)] || null;
   }
 
+  // Is this element in a state where the thing it controls legitimately
+  // isn't in the DOM yet? A collapsed disclosure/combobox/tab renders its
+  // popup on expand, so `aria-controls` pointing at an id that doesn't
+  // exist *while collapsed* is the documented authoring pattern, not a
+  // defect. aria-expanded="false" / aria-selected="false" are the two
+  // states that say so.
+  function controlsTargetMayBeUnrendered(el) {
+    return (
+      lower(getAttr(el, 'aria-expanded')) === 'false' ||
+      lower(getAttr(el, 'aria-selected')) === 'false'
+    );
+  }
+
   // Validates a single attribute's raw string value against its declared
-  // value type. Returns { valid, reason }; reason is a short machine
-  // code, not a user-facing string (rules localize their own messages).
-  function validateAttrValue(name, rawValue) {
+  // value type. Returns { valid, reason, review? }; reason is a short
+  // machine code, not a user-facing string (rules localize their own
+  // messages). `review: true` marks the one case that is neither valid nor
+  // a confident violation: the value is well-formed but the engine cannot
+  // decide, statically, whether it is wrong (see aria-controls below).
+  // `el` is optional; without it the few element-state-dependent branches
+  // fall back to their element-agnostic answer.
+  function validateAttrValue(name, rawValue, el) {
     const type = getAttrValueType(name);
     if (!type) return { valid: true, reason: 'unknown-attr-skip' };
 
@@ -1022,9 +1040,22 @@ function createAriaHelpers(opts, shared) {
         // Only flag when NONE of the referenced ids resolve. A
         // partially-dangling list (some ids exist, some don't) is left
         // unflagged.
-        if (!parts.some((p) => idExists(p)))
-          return { valid: false, reason: 'idref-list-none-found' };
-        return { valid: true, reason: '' };
+        if (parts.some((p) => idExists(p))) return { valid: true, reason: '' };
+
+        // aria-controls is the one idref-list attribute whose target is
+        // routinely absent by design: the menu, listbox or panel it names
+        // is created when the widget opens. A collapsed widget therefore
+        // passes outright, and every other unresolved aria-controls is
+        // handed to a human rather than failed, since a static scan cannot
+        // see markup that only exists after an interaction. Same reasoning
+        // as aria-errormessage's carve-out above, one state further along.
+        if (lower(name) === 'aria-controls') {
+          if (controlsTargetMayBeUnrendered(el))
+            return { valid: true, reason: 'idref-controls-unrendered' };
+          return { valid: false, review: true, reason: 'idref-controls-not-found' };
+        }
+
+        return { valid: false, reason: 'idref-list-none-found' };
       }
       case 'string':
       default:

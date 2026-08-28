@@ -299,3 +299,23 @@ One existing test changed meaning with it: a bare `<option>` under `role="listbo
 **Interaction with the item-wrapper fix above:** the two sets are used for different questions, on purpose. Only a *required* role makes a roleless wrapper an item wrapper, so a wrapper holding nothing but a separator is still interposed content and is still reported under a container that prohibits separators. The allowed set decides only the final verdict.
 
 **Status:** resolved 2026-08-21. Separators in menus/menubars and captions on tables/grids pass; separators under `list`/`listbox`/`tablist`, captions under `treegrid`, and any stray role with no source behind it still fail. The reported allowed-roles list in the failure message now names the full allowed set rather than only the required roles.
+
+### A dangling `aria-controls` was a `fail`, in a rule that cannot see the DOM the reference is about
+
+**Decision as it stood:** `aria-valid-attr-value` treats every ID-reference attribute the same way. An idref-list whose tokens all fail to resolve is an invalid value, hence a `fail` under SC 4.1.2. Exactly one attribute already had a carve-out: `aria-errormessage`, on the strength of ACT 6a7281's own Background text, which names it as a non-required property whose target "may be created in response to an event that may or may not happen."
+
+**Why it was questioned:** that carve-out's reasoning covers `aria-controls` at least as well. A disclosure button, a combobox, a menu button and a tab all name content the widget *builds when it opens*, so the reference is correct and the element genuinely is not in the DOM yet. A static scan that looks for it and does not find it has not established a defect; it has established that it looked at the wrong moment. axe-core reached the same conclusion independently: it never reports a violation for a missing `aria-controls` target, passing when the element is collapsed and returning incomplete otherwise.
+
+**Decision (2026-08-27):** `aria-controls` no longer fails on an unresolved target. When the element carries `aria-expanded="false"` or `aria-selected="false"` the absence is exactly what that state means, so the rule passes outright; otherwise it reports `cantTell` for human review, with reason code `idref-controls-not-found`. Every other idref/idref-list attribute keeps its `fail`, since a dangling `aria-labelledby` or `aria-owns` names content that was supposed to be there already and no state excuses it. The rule now reports two tiers through `helpers.resolveTieredOutcome`, so a real invalid value elsewhere on the page still gates as `fail` and carries the `cantTell` occurrences along rather than dropping them.
+
+**Status:** resolved 2026-08-27.
+
+### SC 4.1.1 Parsing could still fail a WCAG 2.2 run, unless the caller remembered a tag
+
+**Decision as it stood:** `duplicate-id` maps to SC 4.1.1 and carries `wcag22-removed` (see the entry above). The tag was inert engine-side: it existed for consumers to pass to `excludeTags` themselves, and `docs/ENGINE_OPTIONS.md` told them to.
+
+**Why it was questioned:** the package describes itself as a WCAG 2.2 engine, and a plain run, with no tags and no options, still reported a `fail` against a criterion WCAG 2.2 does not contain. The correct behaviour was reachable but opt-in, which is backwards: the default should be right and the deviation should be the thing you ask for. Leaving it to the caller also meant the honesty the tag was created to protect, that "the conformance arithmetic stays honest for every version", only held for callers who knew the tag existed.
+
+**Decision (2026-08-27):** the engine resolves a target WCAG version per run, from `engineOptions.wcagVersion`, else whatever the caller's own version-origin tags imply, else `2.2`, and reports it as `engine.wcagVersion`. Under a 2.2 target a `wcag22-removed` rule cannot report `fail`: it runs, keeps every occurrence, and its outcome is coerced to `cantTell` with a `wcagVersionScope` field naming the removed criterion. Coercing rather than excluding was the deliberate choice, since a duplicate id still breaks `<label for>`, fragment navigation and `getElementById`, so dropping the rule from a 2.2 run would hide a real defect, and this engine's whole premise is telling you what it cannot tell you. `excludeTags: ['wcag22-removed']` still removes it entirely for anyone who wants that. The coercion deliberately does not go through `error`, the channel the two existing coercions use, because consumers read a non-empty `error` as "this rule threw" and nothing went wrong here.
+
+**Status:** resolved 2026-08-27.

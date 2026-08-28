@@ -59,6 +59,11 @@
     <div aria-labelledby="avav_case_13_label avav_case_13_missing" id="avav_case_13"></div>
   </div>
 
+  <div class="case" id="case_16">
+    <div class="case-title">16 — PASS: aria-controls target does not exist yet, but the widget is collapsed (aria-expanded="false") so it is not supposed to</div>
+    <button aria-expanded="false" aria-controls="avav_case_16_menu" id="avav_case_16">Open menu</button>
+  </div>
+
   <h2>B. Invalid</h2>
 
   <div class="case" id="case_06">
@@ -96,7 +101,14 @@
     <div role="listbox" aria-activedescendant="avav_case_15_does_not_exist" id="avav_case_15"></div>
   </div>
 
-  <h2>C. Not applicable (skipped, not counted)</h2>
+  <h2>C. Needs review</h2>
+
+  <div class="case" id="case_17">
+    <div class="case-title">17 — CANTTELL: aria-controls target does not exist and the element is not in a collapsed state</div>
+    <button aria-controls="avav_case_17_panel" id="avav_case_17">Show details</button>
+  </div>
+
+  <h2>D. Not applicable (skipped, not counted)</h2>
 
   <div class="case" id="case_11">
     <div class="case-title">11 — NEUTRAL: the only aria-* attribute is unrecognized (a different rule's concern)</div>

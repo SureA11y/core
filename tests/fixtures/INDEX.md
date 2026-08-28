@@ -35,7 +35,7 @@ None — every rule has a fixture.
 | aria-roles-valid | automatic | `tests/fixtures/aria-roles-valid-all-scenarios.html` | 7 | 4 | 2 | 0 | 1 |
 | aria-text | manual | `tests/fixtures/aria-text-all-scenarios.html` | 4 | 0 | 0 | 2 | 2 |
 | aria-valid-attr | automatic | `tests/fixtures/aria-valid-attr-all-scenarios.html` | 5 | 1 | 2 | 0 | 2 |
-| aria-valid-attr-value | automatic | `tests/fixtures/aria-valid-attr-value-all-scenarios.html` | 15 | 8 | 6 | 0 | 1 |
+| aria-valid-attr-value | automatic | `tests/fixtures/aria-valid-attr-value-all-scenarios.html` | 17 | 9 | 6 | 1 | 1 |
 | autocomplete-valid | automatic | `tests/fixtures/autocomplete-valid-all-scenarios.html` | 7 | 4 | 2 | 0 | 1 |
 | avoid-inline-spacing | automatic | `tests/fixtures/avoid-inline-spacing-all-scenarios.html` | 9 | 3 | 3 | 0 | 3 |
 | binary-control-name-present | automatic | `tests/fixtures/binary-control-name-present-all-scenarios.html` | 25 | 11 | 4 | 0 | 10 |
@@ -54,7 +54,7 @@ None — every rule has a fixture.
 | deprecated-elements-not-used | automatic | `tests/fixtures/deprecated-elements-not-used-all-scenarios.html` | 3 | 0 | 2 | 0 | 1 |
 | dialog-name-present | automatic | `tests/fixtures/dialog-name-present-all-scenarios.html` | 21 | 4 | 6 | 0 | 11 |
 | dlitem-parent-valid | automatic | `tests/fixtures/dlitem-parent-valid-all-scenarios.html` | 5 | 2 | 3 | 0 | 0 |
-| duplicate-id | automatic | `tests/fixtures/duplicate-id-all-scenarios.html` | 6 | 1 | 3 | 0 | 2 |
+| duplicate-id | automatic | `tests/fixtures/duplicate-id-all-scenarios.html` | 6 | 1 | 0 | 3 | 2 |
 | duplicate-id-aria | automatic | `tests/fixtures/duplicate-id-aria-all-scenarios.html` | 5 | 1 | 3 | 0 | 1 |
 | embed-text-alternative-present | automatic | `tests/fixtures/embed-text-alternative-present-all-scenarios.html` | 15 | 3 | 6 | 0 | 6 |
 | embed-text-alternative-quality | manual | `tests/fixtures/embed-text-alternative-quality-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |

@@ -23,6 +23,14 @@
     rule's own tests rather than here.
   </p>
 
+  <p class="note">
+    The duplicate cases below are marked CANTTELL because that is what a default scan
+    reports: this rule maps to SC 4.1.1 Parsing, which WCAG 2.2 removed, so it cannot be
+    a conformance failure under the default 2.2 target. Each one is a real FAIL against
+    WCAG 2.0/2.1 — run with <code>engineOptions.wcagVersion: '2.1'</code> (or a 2.0/2.1
+    tag set) to see it as one.
+  </p>
+
   <h2>A. Unique ids</h2>
 
   <div class="case" id="case_01">
@@ -34,21 +42,21 @@
   <h2>B. Repeated ids</h2>
 
   <div class="case" id="case_02">
-    <div class="case-title">02 — FAIL: the same id on two elements</div>
+    <div class="case-title">02 — CANTTELL: the same id on two elements</div>
     <div id="dupid_case_02">Name</div>
     <div id="dupid_case_02">City</div>
     <input aria-labelledby="dupid_case_02" type="text" name="city" />
   </div>
 
   <div class="case" id="case_03">
-    <div class="case-title">03 — FAIL: the same id on three elements</div>
+    <div class="case-title">03 — CANTTELL: the same id on three elements</div>
     <span id="dupid_case_03">One</span>
     <span id="dupid_case_03">Two</span>
     <span id="dupid_case_03">Three</span>
   </div>
 
   <div class="case" id="case_04">
-    <div class="case-title">04 — FAIL: duplicate where one copy is not rendered (counted, and reported on the copy in scope)</div>
+    <div class="case-title">04 — CANTTELL: duplicate where one copy is not rendered (counted, and reported on the copy in scope)</div>
     <span id="dupid_case_04" style="display: none">Hidden</span>
     <span id="dupid_case_04">Visible</span>
   </div>

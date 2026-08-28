@@ -339,6 +339,8 @@
   "ariaValidAttrValue_description": "Prüft, ob jedes erkannte aria-*-Attribut einen Wert hat, der seinem WAI-ARIA-deklarierten Werttyp entspricht (boolesch, tristate, Token, Ganzzahl, Zahl oder ID-Referenz).",
   "ariaValidAttrValue_summary_fail": "{{attr}}=\"{{value}}\" ist kein gültiger Wert für dieses Attribut.",
   "ariaValidAttrValue_hint_fail": "Verwenden Sie einen Wert, der dem erwarteten Typ des Attributs entspricht (siehe WAI-ARIA-Spezifikation für dieses Attribut).",
+  "ariaValidAttrValue_summary_cantTell_idref": "{{attr}}=\"{{value}}\" verweist auf eine id, die derzeit kein Element trägt; diese Referenz lässt sich statisch nicht prüfen.",
+  "ariaValidAttrValue_hint_cantTell_idref": "Prüfen Sie, ob das gesteuerte Element beim Öffnen des Widgets erzeugt wird; existiert es nie, entfernen oder korrigieren Sie die Referenz.",
   "ariaAllowedAttr_title": "aria-*-Attribute müssen für die Rolle des Elements zulässig sein",
   "ariaAllowedAttr_description": "Prüft, ob jedes erkannte aria-*-Attribut auf einem Element mit expliziter Rolle entweder global unterstützt wird oder von dieser Rolle unterstützt wird.",
   "ariaAllowedAttr_summary_fail": "{{attr}} ist bei role=\"{{role}}\" nicht zulässig.",

@@ -55,10 +55,34 @@ Since versions are cumulative (2.1 = 2.0 + new; 2.2 = 2.0 + 2.1 + new), select a
 { tags: ['wcag22a', 'wcag22aa', 'wcag22aaa'] }
 ```
 
-**One SC goes the other way.** WCAG 2.2 removed SC 4.1.1 Parsing — the only criterion ever dropped rather than added. A rule mapped to it carries its 2.0-origin tag (`wcag2a`) like any other baseline rule, plus `wcag22-removed`, and the version tag sets above therefore include it under a 2.2 target, where it does not belong. Exclude it explicitly:
+**One SC goes the other way.** WCAG 2.2 removed SC 4.1.1 Parsing — the only criterion ever dropped rather than added. A rule mapped to it carries its 2.0-origin tag (`wcag2a`) like any other baseline rule, plus `wcag22-removed`, and the version tag sets above therefore include it under a 2.2 target, where it does not belong.
+
+You do not have to do anything about that. The engine resolves a **target WCAG version** for every run and, when that target is 2.2, a `wcag22-removed` rule cannot report `fail`: it still runs, still reports every occurrence it found, but its outcome is coerced to `cantTell` and the result carries a `wcagVersionScope` field saying why (see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#a-check-result-checksresultsi)). Nothing is silently dropped, and a 2.2 run is not gated by a criterion 2.2 does not contain.
+
+The target version is resolved in this order:
+
+1. `engineOptions.wcagVersion` — `'2.0'`, `'2.1'` or `'2.2'`, if you set it.
+2. The version-origin tags in your own filter: a set topping out at `wcag21a`/`wcag21aa` reads as a 2.1 target, one containing any `wcag22*` tag as 2.2, one with only `wcag2*` tags as 2.0. Only those nine tags count — an SC tag (`wcag411`) or `best-practice` says nothing about a version.
+3. Otherwise `'2.2'`, this engine's default target.
 
 ```js
-// WCAG 2.2 AA conformance, without the criterion 2.2 removed:
+// Nothing to declare: a plain run already targets 2.2, so a duplicate id
+// comes back cantTell rather than fail.
+runDomRulesInPage(url, null, {}, null);
+
+// Conformance-testing against 2.1, where SC 4.1.1 still exists:
+runDomRulesInPage(url, null, { wcagVersion: '2.1' }, null);
+
+// Same thing, implied by the tag set — no extra option needed:
+runDomRulesInPage(url, null, {}, { tags: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'] });
+```
+
+The resolved target is reported back on every result as `engine.wcagVersion`, so you can confirm which one a run actually used.
+
+If you would rather not see the rule at all under 2.2, exclude it outright — the tag is still there for exactly that:
+
+```js
+// WCAG 2.2 AA conformance, with the removed criterion left out entirely:
 {
   tags: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22a', 'wcag22aa'],
   excludeTags: ['wcag22-removed']
@@ -86,6 +110,7 @@ runDomRulesInPage(url, null, {
 ```js
 const engineOptions = {
   locale: 'en',                    // default 'en'; de-DE falls back to de, then to en per string
+  wcagVersion: '2.2',              // default '2.2' — the conformance target, see "Filtering by WCAG version" above
   messages: { de: { /* key: text */ } },  // optional caller-supplied dictionaries; win over built-in ones
   includeHiddenElements: false,    // default false — set true to evaluate hidden/collapsed subtrees too
   includeShadowDom: true,          // default true — opt OUT with `false` to skip open shadow roots
@@ -131,6 +156,7 @@ const engineOptions = {
 | Option | Meaning |
 |---|---|
 | `locale` | Any string. A code with a subtag falls back to its base language first, so `de-DE` uses `de`; failing that, English. Individual strings then fall back the same way (chosen locale → `en` → the rule's literal English text), so a partly-translated locale never produces missing text. All of that is silent in the strings themselves, so the result reports what actually happened in `engine.locale` — check it if you need to know whether you got the language you asked for. See [`I18N.md`](./I18N.md). |
+| `wcagVersion` | `'2.0'`, `'2.1'` or `'2.2'` — which version of WCAG the run is conformance-testing against. Defaults to whatever your version-origin tags imply, and to `'2.2'` when they imply nothing. The only thing it currently changes is SC 4.1.1 Parsing, removed in 2.2: under a 2.2 target a rule tagged `wcag22-removed` still runs and still reports its occurrences, but cannot `fail` — see ["Filtering by WCAG version"](#filtering-by-wcag-version-21-vs-22) above. Any other value is ignored and the default applies. |
 | `messages` | Optional `{ [locale]: { key: text } }`. Checked before the engine's own tables, so it can override individual strings or supply a language the build does not carry. Keys you omit fall back normally, so a partial override is fine. This is how the standalone browser bundle receives a locale side file, and it is the only way to get a dictionary into a page context, since the in-page runner is serialized and cannot read files. See [`I18N.md`](./I18N.md). |
 | `includeHiddenElements` | Default `false`: helper queries exclude elements hidden by structural/CSS mechanisms such as `display:none`, `[hidden]`, closed `<details>`, and hidden rendering-only host elements (with descendants excluded too). Set `true` to include those hidden/collapsed subtrees in evaluation (legacy/static-markup behavior). |
 | `includeShadowDom` | Default `true`: rules using `helpers.queryAllSmart` traverse into open shadow roots. Set `false` to scan only the light DOM. Closed shadow roots are never reachable either way (no DOM API exposes them). |
