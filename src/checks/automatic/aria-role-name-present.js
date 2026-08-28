@@ -45,7 +45,7 @@ const meta = {
     descriptionKey: 'ariaRoleNamePresent_description'
   },
   helpUrl: null,
-  tags: ['wcag2a', 'wcag412', 'navigation', 'atomic', 'automatic', 'name'],
+  tags: ['wcag2a', 'wcag412', 'aria', 'navigation', 'atomic', 'automatic', 'name'],
   wcagSc: ['4.1.2'],
   normativeMappings: [
     {

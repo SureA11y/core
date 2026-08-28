@@ -33,7 +33,7 @@ const meta = {
     descriptionKey: 'ariaHiddenBody_description'
   },
   helpUrl: null,
-  tags: ['wcag2a', 'wcag131', 'wcag412', 'structure', 'atomic', 'automatic'],
+  tags: ['wcag2a', 'wcag131', 'wcag412', 'aria', 'structure', 'atomic', 'automatic'],
   wcagSc: ['1.3.1', '4.1.2'],
   normativeMappings: [
     {
