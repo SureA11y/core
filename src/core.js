@@ -353,7 +353,7 @@ const CHECK_DEFS = [
         "conformanceLevel": "A"
       }
     ],
-    "defaultSeverity": "serious",
+    "defaultSeverity": "moderate",
     "defaultConfidence": "high",
     "type": "automatic",
     "coverage": {
@@ -463,7 +463,7 @@ const CHECK_DEFS = [
         "conformanceLevel": "A"
       }
     ],
-    "defaultSeverity": "serious",
+    "defaultSeverity": "moderate",
     "defaultConfidence": "high",
     "type": "automatic",
     "coverage": {
@@ -8047,6 +8047,8 @@ const I18N = {
     "ariaRolesValid_hint_invalid": "Verwenden Sie einen gültigen ARIA-Rollenwert, oder entfernen Sie das role-Attribut, wenn keine Rolle zutrifft.",
     "ariaRolesValid_summary_abstract": "role=\"{{role}}\" ist eine abstrakte ARIA-Rolle, die nicht direkt verwendet werden darf.",
     "ariaRolesValid_hint_abstract": "Ersetzen Sie diese abstrakte Rolle durch eine konkrete Rolle, die zu dem Widget/der Struktur passt.",
+    "ariaRolesValid_summary_cantTell": "Der Wert des role-Attributs ist unbrauchbar, daher wird das Element weiterhin mit seiner nativen Rolle role=\"{{nativeRole}}\" bereitgestellt.",
+    "ariaRolesValid_hint_cantTell": "Korrigieren Sie das Rollen-Token oder entfernen Sie es; bis dahin verwenden assistive Technologien die native Rolle.",
     "ariaDeprecatedRole_title": "Das role-Attribut sollte keine veraltete oder für Autoren nicht empfohlene ARIA-Rolle verwenden",
     "ariaDeprecatedRole_description": "Prüft, ob ein explizites role=\"\"-Attribut keine durch die WAI-ARIA-Spezifikation als veraltet markierte Rolle verwendet, und keine Rolle, die für die interne Verwendung durch den User-Agent reserviert ist (z. B. role=\"generic\").",
     "ariaDeprecatedRole_summary_fail": "Dieses Element verwendet role=\"{{role}}\", was Autoren nicht explizit deklarieren dürfen.",
@@ -8085,6 +8087,8 @@ const I18N = {
     "ariaRequiredAttr_description": "Prüft, ob Elemente mit expliziter Rolle jeden eindeutigen, kontextunabhängigen erforderlichen aria-*-Status/-Eigenschaft für diese Rolle tragen (z. B. muss role=\"checkbox\" aria-checked haben).",
     "ariaRequiredAttr_summary_fail": "{{attr}} ist für role=\"{{role}}\" erforderlich, fehlt jedoch.",
     "ariaRequiredAttr_hint_fail": "Fügen Sie dieses Attribut mit einem für diese Rolle gültigen Wert hinzu.",
+    "ariaRequiredAttr_summary_cantTell": "Dieses Attribut ist für role=\"{{role}}\" erforderlich und fehlt, ARIA verwendet aber „{{implicit}}“ als impliziten Wert.",
+    "ariaRequiredAttr_hint_cantTell": "Setzen Sie {{attr}} ausdrücklich, wenn „{{implicit}}“ nicht der gemeinte Zustand ist.",
     "ariaAllowedRole_title": "Die explizite Rolle muss für ihr Host-Element zulässig sein",
     "ariaAllowedRole_description": "Prüft, ob ein explizites role=\"\"-Attribut eine der Rollen ist, die die ARIA-in-HTML-Spezifikation für das Host-Element zulässt (z. B. ist role=\"tab\" bei <nav> nicht zulässig).",
     "ariaAllowedRole_summary_fail": "role=\"{{role}}\" ist bei <{{element}}> nicht zulässig.",
@@ -8733,6 +8737,8 @@ const I18N = {
     "ariaRolesValid_hint_invalid": "Use a valid ARIA role token, or remove the role attribute if none applies.",
     "ariaRolesValid_summary_abstract": "role=\"{{role}}\" is an abstract ARIA role, which must not be used directly.",
     "ariaRolesValid_hint_abstract": "Replace this abstract role with a concrete role appropriate for the widget/structure.",
+    "ariaRolesValid_summary_cantTell": "The role attribute value is not usable, so this element is still exposed as its native role=\"{{nativeRole}}\".",
+    "ariaRolesValid_hint_cantTell": "Fix or remove the role token; assistive technology is using the native role in the meantime.",
     "ariaDeprecatedRole_title": "role attribute should not use a deprecated or author-discouraged ARIA role",
     "ariaDeprecatedRole_description": "Checks that an explicit role=\"\" attribute does not use a role deprecated by the WAI-ARIA specification, or one reserved for user-agent-internal use (e.g. role=\"generic\").",
     "ariaDeprecatedRole_summary_fail": "This element uses role=\"{{role}}\", which authors must not explicitly declare.",
@@ -8771,6 +8777,8 @@ const I18N = {
     "ariaRequiredAttr_description": "Checks that elements with an explicit role carry every unambiguous, context-independent required aria-* state/property for that role (e.g. role=\"checkbox\" must have aria-checked).",
     "ariaRequiredAttr_summary_fail": "{{attr}} is required for role=\"{{role}}\", but is missing.",
     "ariaRequiredAttr_hint_fail": "Add this attribute with a valid value for this role.",
+    "ariaRequiredAttr_summary_cantTell": "This attribute is required for role=\"{{role}}\" and is missing, but ARIA falls back to \"{{implicit}}\".",
+    "ariaRequiredAttr_hint_cantTell": "Set {{attr}} explicitly if \"{{implicit}}\" is not the state you mean.",
     "ariaAllowedRole_title": "Explicit role must be permitted for its host element",
     "ariaAllowedRole_description": "Checks that an explicit role=\"\" attribute is one of the roles the ARIA-in-HTML specification permits for the host element (e.g. role=\"tab\" is not permitted on <nav>).",
     "ariaAllowedRole_summary_fail": "role=\"{{role}}\" is not permitted on <{{element}}>.",
@@ -9419,6 +9427,8 @@ const I18N = {
     "ariaRolesValid_hint_invalid": "Usar un token de rol ARIA válido, o eliminar el atributo role si no aplica ninguno.",
     "ariaRolesValid_summary_abstract": "role=\"{{role}}\" es un rol ARIA abstracto, que no debe usarse directamente.",
     "ariaRolesValid_hint_abstract": "Reemplazar este rol abstracto por un rol concreto adecuado para el widget o la estructura.",
+    "ariaRolesValid_summary_cantTell": "El valor del atributo role no es utilizable, por lo que el elemento se sigue exponiendo con su rol nativo role=\"{{nativeRole}}\".",
+    "ariaRolesValid_hint_cantTell": "Corrige o elimina el token de rol; mientras tanto, la tecnología de apoyo usa el rol nativo.",
     "ariaDeprecatedRole_title": "El atributo role no debería usar un rol ARIA obsoleto o desaconsejado para autores",
     "ariaDeprecatedRole_description": "Comprueba que un atributo role=\"\" explícito no use un rol obsoleto según la especificación WAI-ARIA, ni uno reservado para uso interno del agente de usuario (por ejemplo, role=\"generic\").",
     "ariaDeprecatedRole_summary_fail": "Este elemento usa role=\"{{role}}\", que los autores no deben declarar explícitamente.",
@@ -9457,6 +9467,8 @@ const I18N = {
     "ariaRequiredAttr_description": "Comprueba que los elementos con un rol explícito lleven todo estado/propiedad aria-* obligatorio, inequívoco e independiente del contexto para ese rol (por ejemplo, role=\"checkbox\" debe tener aria-checked).",
     "ariaRequiredAttr_summary_fail": "{{attr}} es obligatorio para role=\"{{role}}\", pero falta.",
     "ariaRequiredAttr_hint_fail": "Agregar este atributo con un valor válido para este rol.",
+    "ariaRequiredAttr_summary_cantTell": "Este atributo es obligatorio para role=\"{{role}}\" y falta, pero ARIA usa \"{{implicit}}\" como valor implícito.",
+    "ariaRequiredAttr_hint_cantTell": "Indica {{attr}} de forma explícita si \"{{implicit}}\" no es el estado que quieres.",
     "ariaAllowedRole_title": "El rol explícito debe estar permitido para su elemento anfitrión",
     "ariaAllowedRole_description": "Comprueba que un atributo role=\"\" explícito sea uno de los roles que la especificación ARIA-in-HTML permite para el elemento anfitrión (por ejemplo, role=\"tab\" no está permitido en <nav>).",
     "ariaAllowedRole_summary_fail": "role=\"{{role}}\" no está permitido en <{{element}}>.",
@@ -10105,6 +10117,8 @@ const I18N = {
     "ariaRolesValid_hint_invalid": "Utilisez un rôle ARIA valide, ou retirez l’attribut role si aucun ne s’applique.",
     "ariaRolesValid_summary_abstract": "role=\"{{role}}\" est un rôle ARIA abstrait, qui ne doit pas être utilisé directement.",
     "ariaRolesValid_hint_abstract": "Remplacez ce rôle abstrait par un rôle concret adapté au composant/à la structure.",
+    "ariaRolesValid_summary_cantTell": "La valeur de l’attribut role est inutilisable ; l’élément reste donc exposé avec son rôle natif role=\"{{nativeRole}}\".",
+    "ariaRolesValid_hint_cantTell": "Corrigez ou supprimez le jeton de rôle ; en attendant, les technologies d’assistance utilisent le rôle natif.",
     "ariaDeprecatedRole_title": "L’attribut role ne devrait pas utiliser un rôle ARIA obsolète ou déconseillé aux auteurs",
     "ariaDeprecatedRole_description": "Vérifie qu’un attribut role=\"\" explicite n’utilise pas un rôle rendu obsolète par la spécification WAI-ARIA, ni un rôle réservé à un usage interne à l’agent utilisateur (ex. role=\"generic\").",
     "ariaDeprecatedRole_summary_fail": "Cet élément utilise role=\"{{role}}\", que les auteurs ne doivent pas déclarer explicitement.",
@@ -10143,6 +10157,8 @@ const I18N = {
     "ariaRequiredAttr_description": "Vérifie que les éléments ayant un rôle explicite portent chaque état/propriété aria-* requis, non ambigu et indépendant du contexte, pour ce rôle (ex. role=\"checkbox\" doit avoir aria-checked).",
     "ariaRequiredAttr_summary_fail": "{{attr}} est requis pour role=\"{{role}}\", mais est absent.",
     "ariaRequiredAttr_hint_fail": "Ajoutez cet attribut avec une valeur valide pour ce rôle.",
+    "ariaRequiredAttr_summary_cantTell": "Cet attribut est obligatoire pour role=\"{{role}}\" et il est absent, mais ARIA utilise « {{implicit}} » comme valeur implicite.",
+    "ariaRequiredAttr_hint_cantTell": "Indiquez {{attr}} explicitement si « {{implicit}} » n’est pas l’état voulu.",
     "ariaAllowedRole_title": "Le rôle explicite doit être autorisé pour son élément hôte",
     "ariaAllowedRole_description": "Vérifie qu’un attribut role=\"\" explicite fait partie des rôles que la spécification ARIA-in-HTML autorise pour l’élément hôte (ex. role=\"tab\" n’est pas autorisé sur <nav>).",
     "ariaAllowedRole_summary_fail": "role=\"{{role}}\" n’est pas autorisé sur <{{element}}>.",
@@ -13278,6 +13294,18 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     switch: ['aria-checked']
   };
 
+  // Generated from aria-query's requiredProps: the required states/properties
+  // ARIA gives an implicit value, so omitting the attribute still leaves the
+  // role exposing something. Only these can be reported below fail strength;
+  // every other required attribute has no spec-supplied stand-in.
+  // <generated:aria-required-prop-implicit-values>
+  const REQUIRED_PROP_IMPLICIT_VALUES = {
+    combobox: { 'aria-expanded': 'false' },
+    heading: { 'aria-level': '2' },
+    option: { 'aria-selected': 'false' }
+  };
+  // </generated:aria-required-prop-implicit-values>
+
   // -------------------------------------------------------------------
   // F) Required owned (child) roles for composite/container roles.
   //    Value is an array of alternative acceptable child roles (any one
@@ -13869,6 +13897,13 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     return REQUIRED_PROPS_BY_ROLE[lower(role)] ? REQUIRED_PROPS_BY_ROLE[lower(role)].slice(0) : [];
   }
 
+  function getRequiredAttrImplicitValue(role, attr) {
+    const forRole = REQUIRED_PROP_IMPLICIT_VALUES[lower(role)];
+    if (!forRole) return null;
+    const v = forRole[lower(attr)];
+    return typeof v === 'string' ? v : null;
+  }
+
   function getRequiredOwnedRoles(role) {
     return REQUIRED_OWNED_ROLES[lower(role)] ? REQUIRED_OWNED_ROLES[lower(role)].slice(0) : null;
   }
@@ -14059,6 +14094,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     isKnownRole,
     isValidConcreteRole,
     getRequiredAttrsForRole,
+    getRequiredAttrImplicitValue,
     getRequiredOwnedRoles,
     getRequiredContextRoles,
     isRoleAllowedOnElement,
@@ -20389,7 +20425,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A"
       }
     ],
-    "defaultSeverity": "serious",
+    "defaultSeverity": "moderate",
     "defaultConfidence": "high",
     "type": "automatic",
     "coverage": {
@@ -20499,7 +20535,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A"
       }
     ],
-    "defaultSeverity": "serious",
+    "defaultSeverity": "moderate",
     "defaultConfidence": "high",
     "type": "automatic",
     "coverage": {
@@ -29202,15 +29238,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'moderate',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  const resolved = helpers.resolveTieredOutcome(
+    [],
+    occurrences,
+    rule.defaultSeverity || 'moderate'
+  );
+  return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "aria-braille-equivalent": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
@@ -29299,15 +29332,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'serious',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  const resolved = helpers.resolveTieredOutcome(
+    [],
+    occurrences,
+    rule.defaultSeverity || 'moderate'
+  );
+  return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "aria-checked-state-mismatch": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
@@ -29442,15 +29472,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'serious',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  const resolved = helpers.resolveTieredOutcome(
+    [],
+    occurrences,
+    rule.defaultSeverity || 'moderate'
+  );
+  return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "aria-deprecated-role": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
@@ -31109,7 +31136,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     ? helpers.queryAllSmart('[role]')
     : helpers.queryAll('[role]');
 
-  const occurrences = [];
+  const failOccurrences = [];
+  const cantTellOccurrences = [];
   let applicableCount = 0;
 
   for (const el of nodes) {
@@ -31156,8 +31184,38 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!missing.length) continue;
 
     for (const attr of missing) {
-      occurrences.push(
+      const implicit =
+        typeof ariaHelpers.getRequiredAttrImplicitValue === 'function'
+          ? ariaHelpers.getRequiredAttrImplicitValue(role, attr)
+          : null;
+
+      if (implicit) {
+        cantTellOccurrences.push(
+          helpers.reportOccurrence(el, {
+            occurrenceOutcome: 'cantTell',
+            summary: `This attribute is required for this element’s role and is missing, but ARIA falls back to "${implicit}".`,
+            hint: 'Set the attribute explicitly if the implicit value is not the state you mean.',
+            i18n: {
+              summaryKey: 'ariaRequiredAttr_summary_cantTell',
+              hintKey: 'ariaRequiredAttr_hint_cantTell',
+              params: { attr, role, implicit }
+            },
+            data: {
+              details: {
+                reasonCode: 'ARIA_ATTR_REQUIRED_MISSING_IMPLICIT',
+                attr,
+                role,
+                implicitValue: implicit
+              }
+            }
+          })
+        );
+        continue;
+      }
+
+      failOccurrences.push(
         helpers.reportOccurrence(el, {
+          occurrenceOutcome: 'fail',
           summary: 'This attribute is required for this element’s role, but is missing.',
           hint: 'Add this attribute with a valid value for this role.',
           i18n: {
@@ -31176,15 +31234,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'serious',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  const resolved = helpers.resolveTieredOutcome(
+    failOccurrences,
+    cantTellOccurrences,
+    rule.defaultSeverity || 'serious'
+  );
+  return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "aria-required-children": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
@@ -31807,7 +31862,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     ? helpers.queryAllSmart('[role]')
     : helpers.queryAll('[role]');
 
-  const occurrences = [];
+  const failOccurrences = [];
+  const cantTellOccurrences = [];
   let applicableCount = 0;
 
   // Programmatically hidden per the ACT glossary: display:none, visibility not
@@ -31864,8 +31920,37 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const isKnown = tokens.some((t) => ariaHelpers.isKnownRole(t));
     const reasonCode = !isKnown ? 'ARIA_ROLE_INVALID' : 'ARIA_ROLE_ABSTRACT';
 
-    occurrences.push(
+    // An unusable role token leaves the element on its native role, when it
+    // has one: ACT 674b10 lists 4.1.2 as only a secondary requirement for
+    // exactly that reason. A roleless host (div, span, custom element) has
+    // nothing to fall back to and is exposed as generic instead.
+    const nativeRole =
+      typeof ariaHelpers.getNativeRoleForElement === 'function'
+        ? ariaHelpers.getNativeRoleForElement(el) || ''
+        : '';
+
+    if (nativeRole) {
+      cantTellOccurrences.push(
+        helpers.reportOccurrence(el, {
+          occurrenceOutcome: 'cantTell',
+          summary: `The role attribute value is not usable, so this element is still exposed as its native role="${nativeRole}".`,
+          hint: 'Fix or remove the role token; assistive technology is using the native role in the meantime.',
+          i18n: {
+            summaryKey: 'ariaRolesValid_summary_cantTell',
+            hintKey: 'ariaRolesValid_hint_cantTell',
+            params: { role, nativeRole }
+          },
+          data: {
+            details: { reasonCode, role, nativeRole }
+          }
+        })
+      );
+      continue;
+    }
+
+    failOccurrences.push(
       helpers.reportOccurrence(el, {
+        occurrenceOutcome: 'fail',
         summary: !isKnown
           ? 'The role attribute value is not a recognized ARIA role.'
           : 'The role attribute value is an abstract ARIA role, which must not be used directly.',
@@ -31889,15 +31974,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'serious',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  const resolved = helpers.resolveTieredOutcome(
+    failOccurrences,
+    cantTellOccurrences,
+    rule.defaultSeverity || 'serious'
+  );
+  return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "aria-text": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
@@ -32018,15 +32100,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'serious',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  const resolved = helpers.resolveTieredOutcome([], occurrences, rule.defaultSeverity || 'serious');
+  return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "aria-valid-attr-value": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
@@ -52232,6 +52307,8 @@ const I18N = {
     "ariaRolesValid_hint_invalid": "Verwenden Sie einen gültigen ARIA-Rollenwert, oder entfernen Sie das role-Attribut, wenn keine Rolle zutrifft.",
     "ariaRolesValid_summary_abstract": "role=\"{{role}}\" ist eine abstrakte ARIA-Rolle, die nicht direkt verwendet werden darf.",
     "ariaRolesValid_hint_abstract": "Ersetzen Sie diese abstrakte Rolle durch eine konkrete Rolle, die zu dem Widget/der Struktur passt.",
+    "ariaRolesValid_summary_cantTell": "Der Wert des role-Attributs ist unbrauchbar, daher wird das Element weiterhin mit seiner nativen Rolle role=\"{{nativeRole}}\" bereitgestellt.",
+    "ariaRolesValid_hint_cantTell": "Korrigieren Sie das Rollen-Token oder entfernen Sie es; bis dahin verwenden assistive Technologien die native Rolle.",
     "ariaDeprecatedRole_title": "Das role-Attribut sollte keine veraltete oder für Autoren nicht empfohlene ARIA-Rolle verwenden",
     "ariaDeprecatedRole_description": "Prüft, ob ein explizites role=\"\"-Attribut keine durch die WAI-ARIA-Spezifikation als veraltet markierte Rolle verwendet, und keine Rolle, die für die interne Verwendung durch den User-Agent reserviert ist (z. B. role=\"generic\").",
     "ariaDeprecatedRole_summary_fail": "Dieses Element verwendet role=\"{{role}}\", was Autoren nicht explizit deklarieren dürfen.",
@@ -52270,6 +52347,8 @@ const I18N = {
     "ariaRequiredAttr_description": "Prüft, ob Elemente mit expliziter Rolle jeden eindeutigen, kontextunabhängigen erforderlichen aria-*-Status/-Eigenschaft für diese Rolle tragen (z. B. muss role=\"checkbox\" aria-checked haben).",
     "ariaRequiredAttr_summary_fail": "{{attr}} ist für role=\"{{role}}\" erforderlich, fehlt jedoch.",
     "ariaRequiredAttr_hint_fail": "Fügen Sie dieses Attribut mit einem für diese Rolle gültigen Wert hinzu.",
+    "ariaRequiredAttr_summary_cantTell": "Dieses Attribut ist für role=\"{{role}}\" erforderlich und fehlt, ARIA verwendet aber „{{implicit}}“ als impliziten Wert.",
+    "ariaRequiredAttr_hint_cantTell": "Setzen Sie {{attr}} ausdrücklich, wenn „{{implicit}}“ nicht der gemeinte Zustand ist.",
     "ariaAllowedRole_title": "Die explizite Rolle muss für ihr Host-Element zulässig sein",
     "ariaAllowedRole_description": "Prüft, ob ein explizites role=\"\"-Attribut eine der Rollen ist, die die ARIA-in-HTML-Spezifikation für das Host-Element zulässt (z. B. ist role=\"tab\" bei <nav> nicht zulässig).",
     "ariaAllowedRole_summary_fail": "role=\"{{role}}\" ist bei <{{element}}> nicht zulässig.",
@@ -52918,6 +52997,8 @@ const I18N = {
     "ariaRolesValid_hint_invalid": "Use a valid ARIA role token, or remove the role attribute if none applies.",
     "ariaRolesValid_summary_abstract": "role=\"{{role}}\" is an abstract ARIA role, which must not be used directly.",
     "ariaRolesValid_hint_abstract": "Replace this abstract role with a concrete role appropriate for the widget/structure.",
+    "ariaRolesValid_summary_cantTell": "The role attribute value is not usable, so this element is still exposed as its native role=\"{{nativeRole}}\".",
+    "ariaRolesValid_hint_cantTell": "Fix or remove the role token; assistive technology is using the native role in the meantime.",
     "ariaDeprecatedRole_title": "role attribute should not use a deprecated or author-discouraged ARIA role",
     "ariaDeprecatedRole_description": "Checks that an explicit role=\"\" attribute does not use a role deprecated by the WAI-ARIA specification, or one reserved for user-agent-internal use (e.g. role=\"generic\").",
     "ariaDeprecatedRole_summary_fail": "This element uses role=\"{{role}}\", which authors must not explicitly declare.",
@@ -52956,6 +53037,8 @@ const I18N = {
     "ariaRequiredAttr_description": "Checks that elements with an explicit role carry every unambiguous, context-independent required aria-* state/property for that role (e.g. role=\"checkbox\" must have aria-checked).",
     "ariaRequiredAttr_summary_fail": "{{attr}} is required for role=\"{{role}}\", but is missing.",
     "ariaRequiredAttr_hint_fail": "Add this attribute with a valid value for this role.",
+    "ariaRequiredAttr_summary_cantTell": "This attribute is required for role=\"{{role}}\" and is missing, but ARIA falls back to \"{{implicit}}\".",
+    "ariaRequiredAttr_hint_cantTell": "Set {{attr}} explicitly if \"{{implicit}}\" is not the state you mean.",
     "ariaAllowedRole_title": "Explicit role must be permitted for its host element",
     "ariaAllowedRole_description": "Checks that an explicit role=\"\" attribute is one of the roles the ARIA-in-HTML specification permits for the host element (e.g. role=\"tab\" is not permitted on <nav>).",
     "ariaAllowedRole_summary_fail": "role=\"{{role}}\" is not permitted on <{{element}}>.",
@@ -53604,6 +53687,8 @@ const I18N = {
     "ariaRolesValid_hint_invalid": "Usar un token de rol ARIA válido, o eliminar el atributo role si no aplica ninguno.",
     "ariaRolesValid_summary_abstract": "role=\"{{role}}\" es un rol ARIA abstracto, que no debe usarse directamente.",
     "ariaRolesValid_hint_abstract": "Reemplazar este rol abstracto por un rol concreto adecuado para el widget o la estructura.",
+    "ariaRolesValid_summary_cantTell": "El valor del atributo role no es utilizable, por lo que el elemento se sigue exponiendo con su rol nativo role=\"{{nativeRole}}\".",
+    "ariaRolesValid_hint_cantTell": "Corrige o elimina el token de rol; mientras tanto, la tecnología de apoyo usa el rol nativo.",
     "ariaDeprecatedRole_title": "El atributo role no debería usar un rol ARIA obsoleto o desaconsejado para autores",
     "ariaDeprecatedRole_description": "Comprueba que un atributo role=\"\" explícito no use un rol obsoleto según la especificación WAI-ARIA, ni uno reservado para uso interno del agente de usuario (por ejemplo, role=\"generic\").",
     "ariaDeprecatedRole_summary_fail": "Este elemento usa role=\"{{role}}\", que los autores no deben declarar explícitamente.",
@@ -53642,6 +53727,8 @@ const I18N = {
     "ariaRequiredAttr_description": "Comprueba que los elementos con un rol explícito lleven todo estado/propiedad aria-* obligatorio, inequívoco e independiente del contexto para ese rol (por ejemplo, role=\"checkbox\" debe tener aria-checked).",
     "ariaRequiredAttr_summary_fail": "{{attr}} es obligatorio para role=\"{{role}}\", pero falta.",
     "ariaRequiredAttr_hint_fail": "Agregar este atributo con un valor válido para este rol.",
+    "ariaRequiredAttr_summary_cantTell": "Este atributo es obligatorio para role=\"{{role}}\" y falta, pero ARIA usa \"{{implicit}}\" como valor implícito.",
+    "ariaRequiredAttr_hint_cantTell": "Indica {{attr}} de forma explícita si \"{{implicit}}\" no es el estado que quieres.",
     "ariaAllowedRole_title": "El rol explícito debe estar permitido para su elemento anfitrión",
     "ariaAllowedRole_description": "Comprueba que un atributo role=\"\" explícito sea uno de los roles que la especificación ARIA-in-HTML permite para el elemento anfitrión (por ejemplo, role=\"tab\" no está permitido en <nav>).",
     "ariaAllowedRole_summary_fail": "role=\"{{role}}\" no está permitido en <{{element}}>.",
@@ -54290,6 +54377,8 @@ const I18N = {
     "ariaRolesValid_hint_invalid": "Utilisez un rôle ARIA valide, ou retirez l’attribut role si aucun ne s’applique.",
     "ariaRolesValid_summary_abstract": "role=\"{{role}}\" est un rôle ARIA abstrait, qui ne doit pas être utilisé directement.",
     "ariaRolesValid_hint_abstract": "Remplacez ce rôle abstrait par un rôle concret adapté au composant/à la structure.",
+    "ariaRolesValid_summary_cantTell": "La valeur de l’attribut role est inutilisable ; l’élément reste donc exposé avec son rôle natif role=\"{{nativeRole}}\".",
+    "ariaRolesValid_hint_cantTell": "Corrigez ou supprimez le jeton de rôle ; en attendant, les technologies d’assistance utilisent le rôle natif.",
     "ariaDeprecatedRole_title": "L’attribut role ne devrait pas utiliser un rôle ARIA obsolète ou déconseillé aux auteurs",
     "ariaDeprecatedRole_description": "Vérifie qu’un attribut role=\"\" explicite n’utilise pas un rôle rendu obsolète par la spécification WAI-ARIA, ni un rôle réservé à un usage interne à l’agent utilisateur (ex. role=\"generic\").",
     "ariaDeprecatedRole_summary_fail": "Cet élément utilise role=\"{{role}}\", que les auteurs ne doivent pas déclarer explicitement.",
@@ -54328,6 +54417,8 @@ const I18N = {
     "ariaRequiredAttr_description": "Vérifie que les éléments ayant un rôle explicite portent chaque état/propriété aria-* requis, non ambigu et indépendant du contexte, pour ce rôle (ex. role=\"checkbox\" doit avoir aria-checked).",
     "ariaRequiredAttr_summary_fail": "{{attr}} est requis pour role=\"{{role}}\", mais est absent.",
     "ariaRequiredAttr_hint_fail": "Ajoutez cet attribut avec une valeur valide pour ce rôle.",
+    "ariaRequiredAttr_summary_cantTell": "Cet attribut est obligatoire pour role=\"{{role}}\" et il est absent, mais ARIA utilise « {{implicit}} » comme valeur implicite.",
+    "ariaRequiredAttr_hint_cantTell": "Indiquez {{attr}} explicitement si « {{implicit}} » n’est pas l’état voulu.",
     "ariaAllowedRole_title": "Le rôle explicite doit être autorisé pour son élément hôte",
     "ariaAllowedRole_description": "Vérifie qu’un attribut role=\"\" explicite fait partie des rôles que la spécification ARIA-in-HTML autorise pour l’élément hôte (ex. role=\"tab\" n’est pas autorisé sur <nav>).",
     "ariaAllowedRole_summary_fail": "role=\"{{role}}\" n’est pas autorisé sur <{{element}}>.",
@@ -57463,6 +57554,18 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     switch: ['aria-checked']
   };
 
+  // Generated from aria-query's requiredProps: the required states/properties
+  // ARIA gives an implicit value, so omitting the attribute still leaves the
+  // role exposing something. Only these can be reported below fail strength;
+  // every other required attribute has no spec-supplied stand-in.
+  // <generated:aria-required-prop-implicit-values>
+  const REQUIRED_PROP_IMPLICIT_VALUES = {
+    combobox: { 'aria-expanded': 'false' },
+    heading: { 'aria-level': '2' },
+    option: { 'aria-selected': 'false' }
+  };
+  // </generated:aria-required-prop-implicit-values>
+
   // -------------------------------------------------------------------
   // F) Required owned (child) roles for composite/container roles.
   //    Value is an array of alternative acceptable child roles (any one
@@ -58054,6 +58157,13 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     return REQUIRED_PROPS_BY_ROLE[lower(role)] ? REQUIRED_PROPS_BY_ROLE[lower(role)].slice(0) : [];
   }
 
+  function getRequiredAttrImplicitValue(role, attr) {
+    const forRole = REQUIRED_PROP_IMPLICIT_VALUES[lower(role)];
+    if (!forRole) return null;
+    const v = forRole[lower(attr)];
+    return typeof v === 'string' ? v : null;
+  }
+
   function getRequiredOwnedRoles(role) {
     return REQUIRED_OWNED_ROLES[lower(role)] ? REQUIRED_OWNED_ROLES[lower(role)].slice(0) : null;
   }
@@ -58244,6 +58354,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     isKnownRole,
     isValidConcreteRole,
     getRequiredAttrsForRole,
+    getRequiredAttrImplicitValue,
     getRequiredOwnedRoles,
     getRequiredContextRoles,
     isRoleAllowedOnElement,

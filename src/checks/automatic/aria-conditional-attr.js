@@ -17,6 +17,11 @@
  *   An element with `aria-errormessage` but `aria-invalid` absent or
  *   `"false"` silently drops the error message from the accessibility
  *   tree, authors almost always intend it to be exposed.
+ *   Reported at CANTTELL rather than FAIL: aria-errormessage is only
+ *   exposed once aria-invalid is set, so the reference is currently inert.
+ *   Whether that costs the user anything depends on whether the message is
+ *   conveyed some other way (visible text next to the field, aria-describedby),
+ *   which static markup does not settle.
  * @implementation-notes
  * - This is narrow: the broader space is a table of many
  *   attribute/condition pairs. This rule implements only the one pairing
@@ -52,7 +57,7 @@ const meta = {
       conformanceLevel: 'A'
     }
   ],
-  defaultSeverity: 'serious',
+  defaultSeverity: 'moderate',
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'high',
@@ -111,15 +116,12 @@ function runInPage(ctx) {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'serious',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  const resolved = helpers.resolveTieredOutcome(
+    [],
+    occurrences,
+    rule.defaultSeverity || 'moderate'
+  );
+  return { ruleId: rule.ruleId, ...resolved };
 }
 
 module.exports = { id, meta, runInPage };

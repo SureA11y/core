@@ -16,6 +16,12 @@
  *   specification (catches typos / made-up attribute names, which are
  *   silently ignored by assistive technology and therefore a real,
  *   deterministic defect).
+ *   Reported at CANTTELL rather than FAIL: an aria-* attribute the spec
+ *   does not define is inert, so nothing about the element's exposed name,
+ *   role or value changes because it is there. Where the author meant a real
+ *   attribute and the element ends up without a name, that absence is the
+ *   naming rules' decision, not this one's. ACT 5f99a7 maps 1.3.1/4.1.2 as
+ *   secondary requirements, "less strict" than the rule itself.
  * @implementation-notes
  * - Distinct from aria-valid-attr-value (which validates the VALUE
  *   of a recognized attribute), this rule only validates the attribute
@@ -107,15 +113,8 @@ function runInPage(ctx) {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'serious',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  const resolved = helpers.resolveTieredOutcome([], occurrences, rule.defaultSeverity || 'serious');
+  return { ruleId: rule.ruleId, ...resolved };
 }
 
 module.exports = { id, meta, runInPage };

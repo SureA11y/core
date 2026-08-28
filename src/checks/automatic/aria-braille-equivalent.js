@@ -23,6 +23,11 @@
  *   Using either braille-specific attribute as the ONLY naming mechanism
  *   leaves non-braille assistive technology (most screen readers, voice
  *   control, etc.) with no accessible name/role description at all.
+ *   Reported at CANTTELL rather than FAIL: aria-brailleroledescription
+ *   without aria-roledescription reaches no user at all, and a missing
+ *   accessible name is the naming rules' decision for the roles that require
+ *   one. The braille attribute being unpaired is worth surfacing, but it is
+ *   not itself a criterion failing.
  * @implementation-notes
  * - `aria-braillelabel`/`aria-brailleroledescription` do not participate
  *   in the standard accessible-name computation, so
@@ -52,7 +57,7 @@ const meta = {
       conformanceLevel: 'A'
     }
   ],
-  defaultSeverity: 'serious',
+  defaultSeverity: 'moderate',
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'high',
@@ -146,15 +151,12 @@ function runInPage(ctx) {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'serious',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  const resolved = helpers.resolveTieredOutcome(
+    [],
+    occurrences,
+    rule.defaultSeverity || 'moderate'
+  );
+  return { ruleId: rule.ruleId, ...resolved };
 }
 
 module.exports = { id, meta, runInPage };

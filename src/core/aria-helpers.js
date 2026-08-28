@@ -476,6 +476,18 @@ function createAriaHelpers(opts, shared) {
     switch: ['aria-checked']
   };
 
+  // Generated from aria-query's requiredProps: the required states/properties
+  // ARIA gives an implicit value, so omitting the attribute still leaves the
+  // role exposing something. Only these can be reported below fail strength;
+  // every other required attribute has no spec-supplied stand-in.
+  // <generated:aria-required-prop-implicit-values>
+  const REQUIRED_PROP_IMPLICIT_VALUES = {
+    combobox: { 'aria-expanded': 'false' },
+    heading: { 'aria-level': '2' },
+    option: { 'aria-selected': 'false' }
+  };
+  // </generated:aria-required-prop-implicit-values>
+
   // -------------------------------------------------------------------
   // F) Required owned (child) roles for composite/container roles.
   //    Value is an array of alternative acceptable child roles (any one
@@ -1067,6 +1079,13 @@ function createAriaHelpers(opts, shared) {
     return REQUIRED_PROPS_BY_ROLE[lower(role)] ? REQUIRED_PROPS_BY_ROLE[lower(role)].slice(0) : [];
   }
 
+  function getRequiredAttrImplicitValue(role, attr) {
+    const forRole = REQUIRED_PROP_IMPLICIT_VALUES[lower(role)];
+    if (!forRole) return null;
+    const v = forRole[lower(attr)];
+    return typeof v === 'string' ? v : null;
+  }
+
   function getRequiredOwnedRoles(role) {
     return REQUIRED_OWNED_ROLES[lower(role)] ? REQUIRED_OWNED_ROLES[lower(role)].slice(0) : null;
   }
@@ -1257,6 +1276,7 @@ function createAriaHelpers(opts, shared) {
     isKnownRole,
     isValidConcreteRole,
     getRequiredAttrsForRole,
+    getRequiredAttrImplicitValue,
     getRequiredOwnedRoles,
     getRequiredContextRoles,
     isRoleAllowedOnElement,

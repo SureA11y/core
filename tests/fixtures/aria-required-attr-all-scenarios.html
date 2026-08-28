@@ -46,8 +46,13 @@
   </div>
 
   <div class="case" id="case_07">
-    <div class="case-title">07 — FAIL: role="heading" with aria-level missing</div>
+    <div class="case-title">07 — CANTTELL: role="heading" with aria-level missing — ARIA gives heading an implicit level of 2, so the role still exposes one and only the author knows whether 2 is right</div>
     <div role="heading" id="ara_case_07">Section title</div>
+  </div>
+
+  <div class="case" id="case_17">
+    <div class="case-title">17 — CANTTELL: role="combobox" with aria-expanded missing — ARIA gives combobox an implicit "false", so the collapsed state is still exposed</div>
+    <div role="combobox" id="ara_case_17"></div>
   </div>
 
   <div class="case" id="case_09">
