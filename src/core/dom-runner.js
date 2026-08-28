@@ -637,6 +637,79 @@ function runCore(
     }
   }
 
+  // =========================
+  // WCAG version scoping
+  // =========================
+  // Every WCAG version so far is additive except for one criterion: 4.1.1
+  // Parsing, which 2.2 removed. A rule mapped only to a removed criterion
+  // still reports something real -- a duplicate id breaks `<label for>`,
+  // fragment links and getElementById whatever the standard says -- but it
+  // cannot be a conformance FAILURE under a target version that no longer
+  // contains the criterion. So the rule keeps running and its fail is
+  // coerced to cantTell there: the finding stays visible for human review
+  // instead of gating a 2.2 run, and nobody has to remember to exclude it.
+  //
+  // Resolution order: an explicit engineOptions.wcagVersion, then whatever
+  // the caller's own version tag set implies (the ready-made sets in
+  // docs/ENGINE_OPTIONS.md), then this engine's default target of 2.2.
+  const WCAG_REMOVED_SC_TAG = 'wcag22-removed';
+  const DEFAULT_WCAG_VERSION = '2.2';
+
+  function normalizeWcagVersion(v) {
+    const s = typeof v === 'string' ? v.trim() : '';
+    return s === '2.0' || s === '2.1' || s === '2.2' ? s : null;
+  }
+
+  // Only the nine version-origin tags carry version intent. An SC tag
+  // (`wcag411`), a level tag on its own or `best-practice` says nothing
+  // about which version the caller is conformance-testing against, so a
+  // run filtered by those falls through to the default.
+  function inferWcagVersionFromRunOnly(runOnly2) {
+    const tags = runOnly2 && Array.isArray(runOnly2.tags) ? runOnly2.tags : [];
+    if (!tags.length) return null;
+    if (tags.includes('wcag22a') || tags.includes('wcag22aa') || tags.includes('wcag22aaa'))
+      return '2.2';
+    if (tags.includes('wcag21a') || tags.includes('wcag21aa') || tags.includes('wcag21aaa'))
+      return '2.1';
+    if (tags.includes('wcag2a') || tags.includes('wcag2aa') || tags.includes('wcag2aaa'))
+      return '2.0';
+    return null;
+  }
+
+  const targetWcagVersion =
+    normalizeWcagVersion(engineOptionsResolved && engineOptionsResolved.wcagVersion) ||
+    inferWcagVersionFromRunOnly(runOnly) ||
+    DEFAULT_WCAG_VERSION;
+
+  function scopeOutcomeToWcagVersion(def, result) {
+    if (targetWcagVersion !== '2.2') return result;
+    if (!result || typeof result !== 'object' || result.outcome !== 'fail') return result;
+
+    const defTags = def && Array.isArray(def.tags) ? def.tags : [];
+    if (!defTags.some((tag) => String(tag).toLowerCase() === WCAG_REMOVED_SC_TAG)) return result;
+
+    const occurrences = Array.isArray(result.occurrences)
+      ? result.occurrences.map((occ) =>
+          occ && typeof occ === 'object' && !Array.isArray(occ) && occ.occurrenceOutcome === 'fail'
+            ? { ...occ, occurrenceOutcome: 'cantTell' }
+            : occ
+        )
+      : result.occurrences;
+
+    // Deliberately NOT reported through `error`: nothing went wrong here,
+    // and consumers read a non-empty `error` as "this rule threw".
+    return {
+      ...result,
+      outcome: 'cantTell',
+      occurrences,
+      wcagVersionScope: {
+        target: targetWcagVersion,
+        removedSc: def && Array.isArray(def.wcagSc) ? def.wcagSc.slice() : [],
+        coercedFrom: 'fail'
+      }
+    };
+  }
+
   const checksResults = [];
 
   for (const def of effectiveCheckDefs) {
@@ -756,7 +829,13 @@ function runCore(
       };
     }
     checksResults.push(
-      normalizeRuleResult(defResolved, result, SCHEMA_VERSION, policy, sharedHelpers)
+      normalizeRuleResult(
+        defResolved,
+        scopeOutcomeToWcagVersion(defResolved, result),
+        SCHEMA_VERSION,
+        policy,
+        sharedHelpers
+      )
     );
     if (ruleTimings)
       ruleTimings[defResolved.ruleId] = (ruleTimings[defResolved.ruleId] || 0) + (nowMs() - t0);
@@ -806,7 +885,8 @@ function runCore(
     engine: {
       tag: ENGINE_TAG,
       schemaVersion: SCHEMA_VERSION,
-      locale: resolveLocale(engineOptionsResolved)
+      locale: resolveLocale(engineOptionsResolved),
+      wcagVersion: targetWcagVersion
     },
     url,
     title,

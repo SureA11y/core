@@ -19,14 +19,19 @@
  *   two different shadow roots is not a duplicate.
  * @implementation-notes
  * - WCAG-VERSION SCOPED. SC 4.1.1 Parsing was removed in WCAG 2.2, so this
- *   rule is tagged `wcag2a` (its 2.0/2.1 origin) plus `wcag22-removed`. A
- *   consumer targeting WCAG 2.2 excludes it with
- *   `excludeTags: ['wcag22-removed']`; one targeting 2.0 or 2.1 keeps it
- *   and gets a real 4.1.1 result. The alternative, dropping the SC
- *   mapping entirely, would have made a genuine 2.0/2.1 failure
- *   invisible to anyone conformance-testing against those versions. See
- *   `docs/ENGINE_OPTIONS.md` for the tag, and `docs/DESIGN_CHALLENGES.md`
- *   for the decision this reverses.
+ *   rule is tagged `wcag2a` (its 2.0/2.1 origin) plus `wcag22-removed`.
+ *   The engine acts on that tag itself: under a 2.2 target, which is the
+ *   default, this rule still runs and still reports every duplicate it
+ *   finds, but its fail is coerced to `cantTell` with a `wcagVersionScope`
+ *   field saying why (see scopeOutcomeToWcagVersion in
+ *   `src/core/dom-runner.js`). A consumer targeting 2.0 or 2.1
+ *   (`engineOptions.wcagVersion`, or a tag set that implies it) gets the
+ *   real 4.1.1 failure; one that would rather not see the rule at all
+ *   under 2.2 still excludes it with `excludeTags: ['wcag22-removed']`.
+ *   The alternative, dropping the SC mapping entirely, would have made a
+ *   genuine 2.0/2.1 failure invisible to anyone conformance-testing
+ *   against those versions. See `docs/ENGINE_OPTIONS.md` for the option
+ *   and the tag, and `docs/DESIGN_CHALLENGES.md` for the decision history.
  * - The defect outlives its Success Criterion: a duplicate id breaks
  *   `<label for>` association, fragment navigation, `getElementById`, and
  *   every ID-reference attribute, none of which stopped mattering when

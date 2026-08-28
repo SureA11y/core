@@ -36,11 +36,13 @@ test(`${RULE_ID}: pass when every id is used once`, () => {
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail reports every element sharing the id`, () => {
+test(`${RULE_ID}: reports every element sharing the id`, () => {
   const result = runa11yCoreOnHtml(page('<div id="a">1</div><div id="a">2</div>'), {
     runOnly: [RULE_ID]
   });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  // cantTell, not fail: the default target is WCAG 2.2, which no longer
+  // contains SC 4.1.1. See the version-scoping block at the bottom.
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
   assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'DUPLICATE_ID');
   assert.strictEqual(rule.occurrences[0].data.details.id, 'a');
   assert.strictEqual(rule.occurrences[0].data.details.count, 2);
@@ -51,7 +53,7 @@ test(`${RULE_ID}: the reported count grows with the number of copies`, () => {
     page('<div id="a">1</div><div id="a">2</div><div id="a">3</div>'),
     { runOnly: [RULE_ID] }
   );
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 3, maxOccurrences: 3 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 3, maxOccurrences: 3 });
   assert.strictEqual(rule.occurrences[0].data.details.count, 3);
 });
 
@@ -69,7 +71,7 @@ test(`${RULE_ID}: a non-rendered element still counts as a duplicate`, () => {
     page('<span id="a" style="display:none">Hidden</span><span id="a">Visible</span>'),
     { runOnly: [RULE_ID] }
   );
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1 });
   assert.strictEqual(rule.occurrences[0].data.details.count, 2);
 });
 
@@ -99,7 +101,7 @@ test(`${RULE_ID}: an id repeated inside one shadow root is a duplicate`, () => {
     runOnly: [RULE_ID],
     engineOptions: { includeShadowDom: true }
   });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
   assert.strictEqual(rule.occurrences[0].data.details.id, 'title');
 });
 
@@ -145,11 +147,84 @@ test(`${RULE_ID}: excludeTags: ['wcag22-removed'] takes it out of a WCAG 2.2 run
   assert.ok(!excluded.checksResults.some((r) => r.ruleId === RULE_ID));
 });
 
+test(`${RULE_ID}: a default run targets WCAG 2.2, so a duplicate id is cantTell, not fail`, () => {
+  const result = runa11yCoreOnHtml(page('<div id="a">1</div><div id="a">2</div>'), {
+    runOnly: [RULE_ID]
+  });
+  assert.strictEqual(result.engine.wcagVersion, '2.2');
+
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2 });
+  assert.deepStrictEqual(rule.wcagVersionScope, {
+    target: '2.2',
+    removedSc: ['4.1.1'],
+    coercedFrom: 'fail'
+  });
+  // Nothing went wrong -- the coercion must not masquerade as a thrown rule.
+  assert.ok(!rule.error);
+});
+
+test(`${RULE_ID}: engineOptions.wcagVersion 2.1 keeps the real 4.1.1 failure`, () => {
+  const result = runa11yCoreOnHtml(page('<div id="a">1</div><div id="a">2</div>'), {
+    runOnly: [RULE_ID],
+    engineOptions: { wcagVersion: '2.1' }
+  });
+  assert.strictEqual(result.engine.wcagVersion, '2.1');
+
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2 });
+  assert.strictEqual(rule.wcagVersionScope, undefined);
+});
+
+test(`${RULE_ID}: a 2.0/2.1 tag set implies the version, no extra option needed`, () => {
+  const html = page('<div id="a">1</div><div id="a">2</div>');
+
+  const v20 = runa11yCoreOnHtml(html, { runOnly: { tags: ['wcag2a', 'wcag2aa'] } });
+  assert.strictEqual(v20.engine.wcagVersion, '2.0');
+  assertRule(v20, RULE_ID, 'fail', { minOccurrences: 2 });
+
+  const v21 = runa11yCoreOnHtml(html, {
+    runOnly: { tags: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'] }
+  });
+  assert.strictEqual(v21.engine.wcagVersion, '2.1');
+  assertRule(v21, RULE_ID, 'fail', { minOccurrences: 2 });
+
+  const v22 = runa11yCoreOnHtml(html, {
+    runOnly: { tags: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22a', 'wcag22aa'] }
+  });
+  assert.strictEqual(v22.engine.wcagVersion, '2.2');
+  assertRule(v22, RULE_ID, 'cantTell', { minOccurrences: 2 });
+});
+
+test(`${RULE_ID}: an explicit wcagVersion beats whatever the tag set implies`, () => {
+  const result = runa11yCoreOnHtml(page('<div id="a">1</div><div id="a">2</div>'), {
+    runOnly: { tags: ['wcag2a', 'wcag2aa'] },
+    engineOptions: { wcagVersion: '2.2' }
+  });
+  assert.strictEqual(result.engine.wcagVersion, '2.2');
+  assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2 });
+});
+
+test(`${RULE_ID}: the 4.1.1 composite follows the atomic rule down to cantTell`, () => {
+  const html = page('<div id="a">1</div><div id="a">2</div>');
+
+  const under22 = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const composite22 = under22.rulesResults.find((r) => r.ruleId === 'wcag-4.1.1-parsing');
+  assert.ok(composite22, 'expected the 4.1.1 composite to be present');
+  assert.strictEqual(composite22.outcome, 'cantTell');
+
+  const under21 = runa11yCoreOnHtml(html, {
+    runOnly: [RULE_ID],
+    engineOptions: { wcagVersion: '2.1' }
+  });
+  const composite21 = under21.rulesResults.find((r) => r.ruleId === 'wcag-4.1.1-parsing');
+  assert.ok(composite21, 'expected the 4.1.1 composite to be present');
+  assert.strictEqual(composite21.outcome, 'fail');
+});
+
 test(`${RULE_ID}: i18n default is English`, () => {
   const result = runa11yCoreOnHtml(page('<div id="a">1</div><div id="a">2</div>'), {
     runOnly: [RULE_ID]
   });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1 });
   assert.strictEqual(rule.title, 'IDs must be unique');
 });
 
@@ -160,7 +235,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/duplicate-id-all-scenarios.ht
 
   // case_02 twice, case_03 three times, case_04 once (its hidden copy is
   // counted but sits outside the reported scope).
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 6, maxOccurrences: 6 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 6, maxOccurrences: 6 });
 
   for (const id of ['dupid_case_02', 'dupid_case_03', 'dupid_case_04']) {
     assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);

@@ -38,6 +38,19 @@
  *   text names it as a non-required property whose target "may be created
  *   in response to an event that may or may not happen" (a validation
  *   error message rendered only once the error actually occurs).
+ * - aria-controls is never a fail on a target that doesn't resolve, and
+ *   this is the one place the rule reports two tiers. The controlled
+ *   element is routinely built when the widget opens, so a static scan
+ *   that cannot find it has not found a defect; it has found markup it
+ *   cannot decide. A collapsed widget (aria-expanded="false" or
+ *   aria-selected="false") passes outright, since the absence is exactly
+ *   what that state means; anything else is a `cantTell` for human
+ *   review. Every other idref/idref-list attribute keeps its fail: a
+ *   dangling aria-labelledby or aria-owns names content that was supposed
+ *   to be there already.
+ * - Two tiers in one run means helpers.resolveTieredOutcome decides the
+ *   aggregate: a real fail elsewhere on the page still reports fail, and
+ *   the aria-controls occurrences ride along rather than being dropped.
  */
 
 const id = 'aria-valid-attr-value';
@@ -79,13 +92,15 @@ function runInPage(ctx) {
 
   const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('*') : helpers.queryAll('*');
 
-  const occurrences = [];
+  const failOccurrences = [];
+  const cantTellOccurrences = [];
   let applicableCount = 0;
 
   for (const el of nodes) {
     if (!el || !el.attributes || !el.getAttribute) continue;
 
     let invalid = null;
+    let review = null;
     const attrs = el.attributes;
     for (let i = 0; i < attrs.length; i++) {
       const name = String(attrs[i].name || '').toLowerCase();
@@ -95,21 +110,26 @@ function runInPage(ctx) {
       applicableCount += 1;
 
       const rawValue = el.getAttribute(name);
-      const result = ariaHelpers.validateAttrValue(name, rawValue);
-      if (!result.valid) {
+      const result = ariaHelpers.validateAttrValue(name, rawValue, el);
+      if (result.valid) continue;
+
+      const item = {
+        name,
+        value: rawValue == null ? '' : String(rawValue),
+        reason: result.reason
+      };
+
+      if (result.review) {
+        if (!review) review = [];
+        review.push(item);
+      } else {
         if (!invalid) invalid = [];
-        invalid.push({
-          name,
-          value: rawValue == null ? '' : String(rawValue),
-          reason: result.reason
-        });
+        invalid.push(item);
       }
     }
 
-    if (!invalid || !invalid.length) continue;
-
-    for (const item of invalid) {
-      occurrences.push(
+    for (const item of invalid || []) {
+      failOccurrences.push(
         helpers.reportOccurrence(el, {
           summary: 'This element has an ARIA attribute with an invalid value.',
           hint: 'Use a value that matches the attribute’s expected type (see the WAI-ARIA specification for this attribute).',
@@ -129,20 +149,44 @@ function runInPage(ctx) {
         })
       );
     }
+
+    for (const item of review || []) {
+      cantTellOccurrences.push(
+        helpers.reportOccurrence(el, {
+          summary:
+            'No element with this id exists right now, so the engine cannot tell whether this reference is wrong.',
+          hint: 'Confirm the controlled element is created when the widget opens; if it never exists, remove or correct the reference.',
+          i18n: {
+            summaryKey: 'ariaValidAttrValue_summary_cantTell_idref',
+            hintKey: 'ariaValidAttrValue_hint_cantTell_idref',
+            params: { attr: item.name, value: item.value }
+          },
+          data: {
+            details: {
+              reasonCode: 'ARIA_ATTR_VALUE_TARGET_ABSENT',
+              attr: item.name,
+              value: item.value,
+              valueReason: item.reason
+            }
+          }
+        })
+      );
+    }
   }
 
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'serious',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+
+  // See helpers.resolveTieredOutcome's own header comment
+  // (src/core/dom-helpers.js): a fail-tier finding never silently discards
+  // cantTell-tier findings from the same run.
+  const resolved = helpers.resolveTieredOutcome(
+    failOccurrences,
+    cantTellOccurrences,
+    rule.defaultSeverity || 'serious'
+  );
+  return { ruleId: rule.ruleId, ...resolved };
 }
 
 module.exports = { id, meta, runInPage };

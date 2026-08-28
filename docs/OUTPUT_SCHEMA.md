@@ -18,7 +18,8 @@ This is the exact shape of the object returned by `runDomRulesInPage(...)` / `ru
   engine: {
     tag: string,
     schemaVersion: string,
-    locale: { requested: string, resolved: string, reason: string }
+    locale: { requested: string, resolved: string, reason: string },
+    wcagVersion: "2.0" | "2.1" | "2.2"
   },
   url: string | null,
   title: string | null,
@@ -37,6 +38,7 @@ This is the exact shape of the object returned by `runDomRulesInPage(...)` / `ru
 | `engine.schemaVersion` | The result-schema version (`"1.0.0"`). Bump-worthy if this document's shape ever changes incompatibly — pin to it if you're parsing output programmatically. See [`API_STABILITY.md`](./API_STABILITY.md) for the full stable/unstable field list and version-bump policy. |
 | `engine.locale` | Which dictionary the run actually used. `requested` is your `engineOptions.locale` after trimming (`"en"` if you passed nothing or a non-string); `resolved` is the locale whose dictionary was used; `reason` explains the pairing. Because locale fallback is graceful and per-string, asking for a language the build does not carry produces English text rather than an error — this field is how you find that out without reading the strings. Reported once per result: a run uses one dictionary throughout. |
 | `engine.locale.reason` | `"ok"` — you got the dictionary you asked for, and it carries every key. `"primary-subtag"` — your code had a subtag with no dictionary of its own, so its base language was used: `"de-DE"` resolves to `"de"`. `"dictionary-not-loaded"` — the project ships that language, but this build does not carry it and none was supplied (the standalone browser bundle, without its locale side file). `"unknown-locale"` — the project has no such translation at all. `"partial-dictionary"` — the dictionary was used but is missing keys English has, so those strings fell back to English. Treat the set as open; later releases can add to it. |
+| `engine.wcagVersion` | Which version of WCAG this run was conformance-tested against: your `engineOptions.wcagVersion`, or what your version-origin tags implied, or the default `"2.2"`. It affects one thing today — a rule mapped only to SC 4.1.1 Parsing cannot `fail` under a 2.2 target (see `checksResults[i].wcagVersionScope` below). Reported once per result: a run has one target throughout. |
 | `url` | The `pageUrl` argument you passed in, or `document.location.href` if you passed `null`/omitted it, or `null` if neither is available. |
 | `title` | `document.title` at scan time, or `null`. |
 | `timestamp` | **Not auto-generated.** Only set if you pass `engineOptions.timestamp` as a non-empty string — the engine has no built-in clock (deterministic-by-design). If you want a scan timestamp in the result, supply it yourself. |
@@ -95,6 +97,11 @@ This is the exact shape of the object returned by `runDomRulesInPage(...)` / `ru
   },
   engineOptions: object,   // the resolved engineOptions this rule actually ran under
   schemaVersion: string,
+  wcagVersionScope?: {     // present only when the target WCAG version changed this outcome
+    target: "2.0" | "2.1" | "2.2",
+    removedSc: string[],
+    coercedFrom: "fail"
+  },
   error?: string           // present only if the rule threw — see below
 }
 ```
@@ -104,6 +111,7 @@ Notes:
 - **`outcome` vs `outcomeNormalized`**: identical except `notApplicable` becomes `"inapplicable"` in `outcomeNormalized`. Both are provided so you can match either your own vocabulary or the engine's internal one.
 - **`type: "manual"` rules can never report `outcome: "fail"`.** If a manual rule's own logic would have said `fail`, the engine coerces it to `cantTell` and appends an explanatory note to `error` — this is enforced centrally (`policy.coerceManualFailToCantTell`, on by default under the `a11y` policy contract; see [`POLICY.md`](./POLICY.md)), not something each rule has to remember. `fail` is reserved for deterministic, high-confidence, `type: "automatic"` findings only.
 - **`meta.normativeMappings`** is how a check result ties back to a WCAG Success Criterion — `[]` for rules with no formal WCAG mapping (this engine calls them advisory `type: "manual"` rules). See [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md) for how these roll up.
+- **`wcagVersionScope`**: only present when the run's target WCAG version turned this rule's `fail` into a `cantTell` — today that means a rule mapped to SC 4.1.1 Parsing (`duplicate-id`) under the default 2.2 target, since 2.2 removed that criterion. `removedSc` lists the criteria that stopped existing, `target` is the version that removed them, and `coercedFrom` is the outcome the rule itself reported. The occurrences are the rule's own, unchanged — nothing was dropped, only the conformance verdict was. Absent on every other result, and **never** reported through `error`: nothing went wrong. See [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#filtering-by-wcag-version-21-vs-22).
 - **`error`**: only present if the rule implementation threw an uncaught exception, or if the manual-fail coercion above fired. A thrown rule always surfaces as `outcome: "cantTell"` with `occurrences: []` and `error` set to the exception message — the engine never lets one broken rule crash the whole scan.
 - **`engineOptions`** on each result is the *resolved* options object (after locale/contrast defaults were applied), not literally what you passed in — useful for confirming what a given rule actually saw, especially the resolved `locale` and `contrast.mode`/`contrast.rootCanvasFallback`.
 
