@@ -202,6 +202,26 @@ test(`${RULE_ID}: notApplicable when the element has the hidden attribute (not c
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+test(`${RULE_ID}: notApplicable when an ancestor carries aria-busy="true" (WAI-ARIA's own escape hatch for a widget still being assembled)`, () => {
+  const html = `<!doctype html><html><body><div aria-busy="true"><div id="a" role="option">Opt</div></div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: aria-busy="false" on an ancestor does NOT exempt a missing context role (only the exact string "true" counts)`, () => {
+  const html = `<!doctype html><html><body><div aria-busy="false"><div id="a" role="option">Opt</div></div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+});
+
+test(`${RULE_ID}: the element's own aria-busy="true" does not exempt it, the spec marks a containing element`, () => {
+  const html = `<!doctype html><html><body><div id="a" role="option" aria-busy="true">Opt</div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+});
+
 test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><body><div id="a" role="tab"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
@@ -232,7 +252,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-required-parent-all-scen
     'arp_case_08',
     'arp_case_09',
     'arp_case_10',
-    'arp_case_11'
+    'arp_case_11',
+    'arp_case_12'
   ]) {
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }

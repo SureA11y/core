@@ -18,7 +18,7 @@ Only `fail`/`cantTell` occurrences produce SARIF results — a `pass`/`notApplic
 
 | Engine outcome | SARIF `level` | Meaning |
 |---|---|---|
-| `fail` | `error` | Deterministic, high-confidence violation — the CI-gating case. |
+| `fail` | `error` | Deterministic violation — the CI-gating case. |
 | `cantTell` | `warning` | Needs human review — surfaced, but shouldn't block a build on its own. |
 
 Every rule that ran (regardless of whether it produced a result) is listed once in `runs[0].tool.driver.rules`, with `defaultConfiguration.level` set from the rule's `type`: `automatic` (fail-capable) → `error`, `manual` (capped at `cantTell`) → `warning`.
