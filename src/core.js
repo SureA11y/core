@@ -556,6 +556,7 @@ const CHECK_DEFS = [
       "wcag2a",
       "wcag131",
       "wcag412",
+      "aria",
       "structure",
       "atomic",
       "automatic",
@@ -961,6 +962,7 @@ const CHECK_DEFS = [
     "tags": [
       "wcag2a",
       "wcag412",
+      "aria",
       "navigation",
       "atomic",
       "automatic",
@@ -20586,6 +20588,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "wcag2a",
       "wcag131",
       "wcag412",
+      "aria",
       "structure",
       "atomic",
       "automatic",
@@ -20991,6 +20994,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "tags": [
       "wcag2a",
       "wcag412",
+      "aria",
       "navigation",
       "atomic",
       "automatic",
