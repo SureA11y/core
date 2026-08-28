@@ -7,7 +7,7 @@
  * @atomic true
  * @summary Container roles must not own an accessible-tree child with a disallowed role
  * @standard WCAG 2.2
- * @sc 4.1.2
+ * @sc 1.3.1
  * @applicability
  *   Applies to elements with an explicit, valid role that is one of the
  *   container roles with a documented "required owned elements" entry
@@ -126,14 +126,14 @@ const meta = {
     descriptionKey: 'ariaProhibitedChildren_description'
   },
   helpUrl: null,
-  tags: ['wcag2a', 'wcag412', 'aria', 'structure', 'atomic', 'automatic'],
-  wcagSc: ['4.1.2'],
+  tags: ['wcag2a', 'wcag131', 'aria', 'structure', 'atomic', 'automatic'],
+  wcagSc: ['1.3.1'],
   normativeMappings: [
     {
       standard: 'WCAG',
       version: '2.2',
-      requirement: '4.1.2',
-      title: 'Name, Role, Value',
+      requirement: '1.3.1',
+      title: 'Info and Relationships',
       conformanceLevel: 'A'
     }
   ],
@@ -141,7 +141,7 @@ const meta = {
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'medium',
-  coverage: { facetsBySc: { '4.1.2': ['aria-role-owned-children-allowed'] } }
+  coverage: { facetsBySc: { '1.3.1': ['aria-role-owned-children-allowed'] } }
 };
 
 function runInPage(ctx) {

@@ -78,6 +78,9 @@ module.exports = [
       'listitem-parent-valid',
       'definition-list-children-valid',
       'dlitem-parent-valid',
+      'aria-required-children',
+      'aria-prohibited-children',
+      'aria-required-parent',
       'form-control-programmatic-label-present',
       'p-as-heading',
       'table-fake-caption',
@@ -430,9 +433,6 @@ module.exports = [
       'aria-prohibited-attr',
       'aria-required-attr',
       'aria-allowed-role',
-      'aria-required-children',
-      'aria-prohibited-children',
-      'aria-required-parent',
       'duplicate-id-aria',
       'nested-interactive-controls-absent',
       'presentational-children-focusable-absent',
@@ -443,7 +443,7 @@ module.exports = [
     meta: {
       title: 'Name, role, value: ARIA validity',
       description:
-        'Rollup of checks that ARIA role and attribute usage conforms to the WAI-ARIA specification (valid roles, valid attributes, valid values, required attributes/relationships, unique ARIA-referenced ids).',
+        'Rollup of checks that ARIA role and attribute usage conforms to the WAI-ARIA specification (valid roles, valid attributes, valid values, required attributes, unique ARIA-referenced ids).',
       wcagSc: ['4.1.2'],
       level: 'A'
     }
