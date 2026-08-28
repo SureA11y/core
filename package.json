@@ -91,7 +91,7 @@
     "docs:rule-catalog": "npm run build && node scripts/generate-rule-catalog.js",
     "validate:automatic-rules": "npm run build && node scripts/validate-all-rules.js src/checks/automatic",
     "validate:manual-rules": "npm run build && node scripts/validate-all-rules.js src/checks/manual",
-    "validate:rules": "npm run validate:automatic-rules && npm run validate:manual-rules",
+    "validate:rules": "npm run build && node scripts/validate-all-rules.js src/checks/automatic src/checks/manual",
     "i18n:new": "node scripts/i18n-scaffold.js",
     "i18n:sync": "node scripts/i18n-sync.js",
     "i18n:check": "node scripts/i18n-sync.js --check",
