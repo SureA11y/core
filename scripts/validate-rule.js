@@ -253,20 +253,22 @@ function validateMeta(meta) {
 
   assert.ok(Array.isArray(meta.tags) && meta.tags.length > 0, 'meta.tags must be non-empty array');
 
-  // wcagSc: automatic checks are always WCAG-normative and must declare at least one SC.
-  // Manual checks come in two shapes: a pure "Best Practice" advisory rule with NO WCAG SC
-  // at all (wcagSc: [], normativeMappings: [], coverage: {} -- Tier 1b, see ROADMAP.md), or a
-  // WCAG-SC-tied quality/manual-review rule (wcagSc non-empty, e.g. the *-quality-manual
-  // family) that otherwise follows the same shape as an automatic rule's mappings.
+  // wcagSc: a rule that claims a Success Criterion must declare at least one, whatever
+  // its type. A rule tagged 'best-practice' claims none and declares nothing
+  // (wcagSc: [], normativeMappings: [], coverage: {}); deciding deterministically while
+  // claiming no criterion is its own case in RULE_TAXONOMY.md 1.1, so this is open to
+  // automatic rules and not only to advisory ones.
   assert.ok(Array.isArray(meta.wcagSc), 'meta.wcagSc must be an array');
-  if (meta.type === 'automatic') {
+  const claimsNoCriterion =
+    Array.isArray(meta.tags) && meta.tags.map(String).includes('best-practice');
+  if (meta.type === 'automatic' && !claimsNoCriterion) {
     assert.ok(meta.wcagSc.length > 0, 'meta.wcagSc must be non-empty array for automatic checks');
   }
 
   assert.ok(Array.isArray(meta.normativeMappings), 'meta.normativeMappings must be an array');
 
   if (meta.type === 'automatic' || meta.type === 'manual') {
-    if (meta.type === 'automatic') {
+    if (meta.type === 'automatic' && !claimsNoCriterion) {
       assert.ok(
         meta.normativeMappings.length > 0,
         'meta.normativeMappings must be non-empty array for automatic checks'
