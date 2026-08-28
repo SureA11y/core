@@ -31495,6 +31495,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           return n && n.parentElement ? n.parentElement : null;
         };
 
+  // The escape hatch marks the container being assembled, not the item inside
+  // it, so this walks up instead of reading the element's own attribute.
+  function hasBusyAncestor(el) {
+    let cur = getComposedParent(el);
+    let guard = 0;
+    while (cur && guard++ < 200) {
+      if (cur.nodeType === 1 && cur.getAttribute) {
+        const v = cur.getAttribute('aria-busy');
+        if (v != null && String(v).trim().toLowerCase() === 'true') return true;
+      }
+      cur = getComposedParent(cur);
+    }
+    return false;
+  }
+
   function hasAcceptableAncestorContext(el, acceptableRoles, ownRole) {
     const allowsGroup = acceptableRoles.has('group');
     let cur = getComposedParent(el);
@@ -31564,6 +31579,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!requiredContext || !requiredContext.length) continue; // no entry, or explicitly unconstrained
 
     if (!isEligibleAcc(el)) continue; // not currently exposed to the accessibility tree
+    if (hasBusyAncestor(el)) continue; // author has signaled transient incompleteness per WAI-ARIA
 
     applicableCount += 1;
 
