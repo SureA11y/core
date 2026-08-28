@@ -130,10 +130,12 @@ test('omitting engineOptions.rules entirely is fully backward compatible', () =>
     </body></html>
   `;
 
-  // No `rules` option at all -- both rules should fail exactly as before this feature existed.
+  // No `rules` option at all -- both rules report exactly as before this
+  // feature existed. aria-required-children is capped at cantTell in its own
+  // right; what matters here is that it still evaluates the element.
   const result = runa11yCoreOnHtml(html);
 
-  assertRule(result, 'aria-required-children', 'fail', { minOccurrences: 1 });
+  assertRule(result, 'aria-required-children', 'cantTell', { minOccurrences: 1 });
   assertRule(result, 'img-alt-present', 'fail', { minOccurrences: 1 });
 });
 
@@ -225,8 +227,9 @@ test('two rules with their own distinct rule-scoped excludeSelectors do not cros
   });
 
   // aria-required-children: .excl-for-a div is excluded FOR THIS RULE; the
-  // .excl-for-b div (excluded only for img-alt-present) must still fail here.
-  const ruleA = assertRule(result, 'aria-required-children', 'fail', {
+  // .excl-for-b div (excluded only for img-alt-present) must still be
+  // evaluated and reported here.
+  const ruleA = assertRule(result, 'aria-required-children', 'cantTell', {
     minOccurrences: 1,
     maxOccurrences: 1
   });

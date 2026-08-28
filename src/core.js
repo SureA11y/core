@@ -31526,15 +31526,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'moderate',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  const resolved = helpers.resolveTieredOutcome(
+    [],
+    occurrences,
+    rule.defaultSeverity || 'moderate'
+  );
+  return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "aria-required-parent": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
