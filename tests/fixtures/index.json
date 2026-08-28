@@ -1,8 +1,8 @@
 {
   "summary": {
-    "total": 132,
+    "total": 133,
     "withFixture": 132,
-    "withoutFixture": 0
+    "withoutFixture": 1
   },
   "rows": [
     {
@@ -298,11 +298,11 @@
       "testFile": "tests/engine-checks/automatic/aria-required-children.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/aria-required-children-all-scenarios.html",
-      "totalCases": 8,
+      "totalCases": 9,
       "caseCounts": {
         "PASS": 3,
-        "FAIL": 1,
-        "CANTTELL": 0,
+        "FAIL": 0,
+        "CANTTELL": 2,
         "OTHER": 4
       }
     },
@@ -1039,6 +1039,20 @@
         "CANTTELL": 0,
         "OTHER": 0
       }
+    },
+    {
+      "ruleId": "identical-iframes-same-purpose",
+      "title": "Frames with the same name embed the same resource",
+      "type": "automatic",
+      "wcagSc": [
+        "4.1.2"
+      ],
+      "ruleFile": "src/checks/automatic/identical-iframes-same-purpose.js",
+      "testFile": "tests/engine-checks/automatic/identical-iframes-same-purpose.test.js",
+      "hasFixture": false,
+      "fixtureFile": null,
+      "totalCases": 0,
+      "caseCounts": null
     },
     {
       "ruleId": "identical-links-same-purpose",

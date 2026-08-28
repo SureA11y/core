@@ -15,7 +15,17 @@
  *   table, grid, treegrid, tablist, tree, row).
  * @expectation
  *   At least one descendant, or one aria-owns-referenced element, has one
- *   of the acceptable owned roles for that container role.
+ *   of the acceptable owned roles for that container role. Reported at
+ *   CANTTELL, never FAIL: this rule asks only whether the required content
+ *   is PRESENT, and a container that owns nothing conveys nothing false --
+ *   an empty role="list" is announced as a list with no items, which is what
+ *   it is. Whether the content a container does own is VALID is
+ *   aria-prohibited-children's decision, and that rule still fails, so a
+ *   genuinely misdescribed structure (a role="button" among list items, a
+ *   tablist of plain buttons) is caught with the same strength as before.
+ *   The native-HTML equivalents already work this way: nothing in this
+ *   ruleset fails an empty <ul>, and list-children-valid judges only the
+ *   children that exist.
  * @implementation-notes
  * - Scoped to REQUIRED_OWNED_ROLES in src/core/aria-helpers.js
  *   (see that file's header for the conservative-scope rationale).
@@ -283,15 +293,12 @@ function runInPage(ctx) {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'moderate',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  const resolved = helpers.resolveTieredOutcome(
+    [],
+    occurrences,
+    rule.defaultSeverity || 'moderate'
+  );
+  return { ruleId: rule.ruleId, ...resolved };
 }
 
 module.exports = { id, meta, runInPage };

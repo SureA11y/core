@@ -53,10 +53,10 @@ test(`${RULE_ID}: pass when the owned role is only reachable via aria-owns`, () 
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail when no owned child of an acceptable role exists`, () => {
+test(`${RULE_ID}: cantTell when no owned child of an acceptable role exists`, () => {
   const html = `<!doctype html><html><body><div id="a" role="listbox"><div>just text</div></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'a'));
   assert.equal(rule.occurrences[0].data.details.role, 'listbox');
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'ARIA_REQUIRED_CHILD_MISSING');
@@ -83,7 +83,7 @@ test(`${RULE_ID}: pass when the required owned role only exists across a shadow-
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail when a shadow-DOM container has a <slot> but nothing assigned to it satisfies the required owned role`, () => {
+test(`${RULE_ID}: cantTell when a shadow-DOM container has a <slot> but nothing assigned to it satisfies the required owned role`, () => {
   // Same slotted shape as above, but the projected content has no
   // acceptable owned role, confirming the composed-tree fallback doesn't
   // just make every slot-containing container pass unconditionally.
@@ -98,7 +98,7 @@ test(`${RULE_ID}: fail when a shadow-DOM container has a <slot> but nothing assi
     runOnly: [RULE_ID],
     engineOptions: { includeShadowDom: true }
   });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'list'));
 });
 
@@ -123,15 +123,41 @@ test(`${RULE_ID}: notApplicable when the container has aria-busy="true" (WAI-ARI
 test(`${RULE_ID}: aria-busy="false" does NOT exempt an empty container (only the exact string "true" counts)`, () => {
   const html = `<!doctype html><html><body><ul id="a" role="list" aria-busy="false"></ul></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'a'));
 });
 
 test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><body><div id="a" role="listbox"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1 });
   assert.strictEqual(rule.title, 'Container roles must own at least one required child role');
+});
+
+test(`${RULE_ID}: an empty container is reported for review, never failed, it conveys nothing false`, () => {
+  const html = `<!doctype html><html><body><div id="a" role="list"></div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.equal(rule.occurrences[0].occurrenceOutcome, 'cantTell');
+});
+
+test(`${RULE_ID}: a container of items that never got their role is also only reported for review`, () => {
+  const html = `<!doctype html><html><body><div id="a" role="list"><div>One</div><div>Two</div></div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+});
+
+// The safety net that makes the cantTell cap above affordable: a container
+// owning something genuinely disallowed is still a hard fail, from the rule
+// whose decision that is. Change one of these two and this test should be the
+// thing that objects.
+test(`${RULE_ID}: a container owning a disallowed role still fails, via aria-prohibited-children`, () => {
+  const html = `<!doctype html><html><body><div id="a" role="list"><div role="button">Add</div></div></body></html>`;
+  const result = runa11yCoreOnHtml(html, {
+    runOnly: [RULE_ID, 'aria-prohibited-children']
+  });
+  assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1 });
+  assertRule(result, 'aria-prohibited-children', 'fail', { minOccurrences: 1 });
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-required-children-all-scenarios.html)`, () => {
@@ -144,9 +170,10 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-required-children-all-sc
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
 
   assert.ok(hasOccurrenceForId(rule, 'arc_case_04'));
+  assert.ok(hasOccurrenceForId(rule, 'arc_case_09'));
   for (const id of [
     'arc_case_01',
     'arc_case_02',

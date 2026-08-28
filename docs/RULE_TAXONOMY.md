@@ -23,6 +23,10 @@ Encoded by: `meta.type`
           elsewhere (`aria-required-attr`, `aria-roles-valid`)
         - the rule decides deterministically but claims no Success Criterion at
           all (`aria-allowed-role`, tagged `best-practice`)
+        - the rule asks whether something is PRESENT, and its absence conveys
+          nothing false, while the question of whether what IS present is valid
+          belongs to a sibling rule that still fails
+          (`aria-required-children`, paired with `aria-prohibited-children`)
         - a computability gate the rule cannot resolve, or an internal-failure
           safety net (`contrast-minimum.js`/`contrast-enhanced.js`/
           `contrast-computable.js`/`target-size-minimum.js`)
