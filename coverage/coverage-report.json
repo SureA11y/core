@@ -6,7 +6,7 @@
     "wcagTagCoverage": {
       "byVersion": {
         "2.0": {
-          "A": 101,
+          "A": 100,
           "AA": 14,
           "AAA": 5
         },
@@ -22,12 +22,12 @@
         }
       },
       "anyVersion": {
-        "A": 107,
+        "A": 106,
         "AA": 19,
         "AAA": 5
       },
       "rawTagCounts": {
-        "wcag2a": 90,
+        "wcag2a": 89,
         "wcag2aa": 10,
         "wcag21aa": 3,
         "wcag2aaa": 5,
@@ -139,51 +139,26 @@
     {
       "file": "src/checks/automatic/aria-allowed-role.js",
       "ruleId": "aria-allowed-role",
-      "wcagScNormative": [
-        "4.1.2"
-      ],
-      "wcagScAll": [
-        "4.1.2"
-      ],
+      "wcagScNormative": [],
+      "wcagScAll": [],
       "wcagScInformative": [],
       "type": "automatic",
       "title": "Explicit role must be permitted for its host element",
       "tags": [
-        "wcag2a",
-        "wcag412",
+        "best-practice",
         "aria",
         "structure",
         "atomic",
         "automatic"
       ],
       "wcagTagSignals": {
-        "parsed": [
-          {
-            "tag": "wcag2a",
-            "version": "2.0",
-            "level": "A"
-          }
-        ],
-        "versions": [
-          "2.0"
-        ],
-        "cumulativeLevelsByVersion": {
-          "2.0": [
-            "A"
-          ]
-        },
-        "cumulativeLevelsAny": [
-          "A"
-        ]
+        "parsed": [],
+        "versions": [],
+        "cumulativeLevelsByVersion": {},
+        "cumulativeLevelsAny": []
       },
       "error": null,
-      "coverage": {
-        "facetsBySc": {
-          "4.1.2": [
-            "aria-role-allowed-for-element"
-          ]
-        }
-      }
+      "coverage": {}
     },
     {
       "file": "src/checks/automatic/aria-braille-equivalent.js",
@@ -7086,11 +7061,11 @@
       {
         "sc": "4.1.2",
         "title": "Name, Role, Value",
-        "totalFacets": 39,
-        "coveredFacets": 39,
+        "totalFacets": 38,
+        "coveredFacets": 38,
         "uncoveredFacets": [],
         "automationCounts": {
-          "full": 37,
+          "full": 36,
           "manual": 2
         },
         "missingFacetRules": [],
@@ -7310,14 +7285,6 @@
             "automation": "full",
             "coveredBy": [
               "aria-required-attr"
-            ]
-          },
-          {
-            "id": "aria-role-allowed-for-element",
-            "label": "Explicit role attribute is permitted by the ARIA-in-HTML spec for its host element",
-            "automation": "full",
-            "coveredBy": [
-              "aria-allowed-role"
             ]
           },
           {
@@ -8477,11 +8444,11 @@
       {
         "sc": "4.1.2",
         "title": "Name, Role, Value",
-        "totalFacets": 39,
-        "coveredFacets": 39,
+        "totalFacets": 38,
+        "coveredFacets": 38,
         "uncoveredFacets": [],
         "automationCounts": {
-          "full": 37,
+          "full": 36,
           "manual": 2
         },
         "missingFacetRules": [],
@@ -8701,14 +8668,6 @@
             "automation": "full",
             "coveredBy": [
               "aria-required-attr"
-            ]
-          },
-          {
-            "id": "aria-role-allowed-for-element",
-            "label": "Explicit role attribute is permitted by the ARIA-in-HTML spec for its host element",
-            "automation": "full",
-            "coveredBy": [
-              "aria-allowed-role"
             ]
           },
           {

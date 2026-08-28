@@ -278,36 +278,19 @@ const CHECK_DEFS = [
     },
     "helpUrl": "",
     "tags": [
-      "wcag2a",
-      "wcag412",
+      "best-practice",
       "aria",
       "structure",
       "atomic",
       "automatic",
       "a11ycore"
     ],
-    "wcagSc": [
-      "4.1.2"
-    ],
-    "normativeMappings": [
-      {
-        "standard": "WCAG",
-        "version": "2.2",
-        "requirement": "4.1.2",
-        "title": "Name, Role, Value",
-        "conformanceLevel": "A"
-      }
-    ],
+    "wcagSc": [],
+    "normativeMappings": [],
     "defaultSeverity": "moderate",
     "defaultConfidence": "high",
     "type": "automatic",
-    "coverage": {
-      "facetsBySc": {
-        "4.1.2": [
-          "aria-role-allowed-for-element"
-        ]
-      }
-    },
+    "coverage": {},
     "data": null,
     "ruleInterfaceVersion": "1.0.0",
     "ruleVersion": "0.0.0",
@@ -7502,7 +7485,6 @@ const COMPOSITE_RULES = [
       "aria-allowed-attr",
       "aria-prohibited-attr",
       "aria-required-attr",
-      "aria-allowed-role",
       "duplicate-id-aria",
       "nested-interactive-controls-absent",
       "presentational-children-focusable-absent",
@@ -20350,36 +20332,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     },
     "helpUrl": "",
     "tags": [
-      "wcag2a",
-      "wcag412",
+      "best-practice",
       "aria",
       "structure",
       "atomic",
       "automatic",
       "a11ycore"
     ],
-    "wcagSc": [
-      "4.1.2"
-    ],
-    "normativeMappings": [
-      {
-        "standard": "WCAG",
-        "version": "2.2",
-        "requirement": "4.1.2",
-        "title": "Name, Role, Value",
-        "conformanceLevel": "A"
-      }
-    ],
+    "wcagSc": [],
+    "normativeMappings": [],
     "defaultSeverity": "moderate",
     "defaultConfidence": "high",
     "type": "automatic",
-    "coverage": {
-      "facetsBySc": {
-        "4.1.2": [
-          "aria-role-allowed-for-element"
-        ]
-      }
-    },
+    "coverage": {},
     "data": null,
     "ruleInterfaceVersion": "1.0.0",
     "ruleVersion": "0.0.0",
@@ -27574,7 +27539,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "aria-allowed-attr",
       "aria-prohibited-attr",
       "aria-required-attr",
-      "aria-allowed-role",
       "duplicate-id-aria",
       "nested-interactive-controls-absent",
       "presentational-children-focusable-absent",
