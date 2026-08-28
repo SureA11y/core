@@ -256,7 +256,7 @@
       "title": "Container roles must not own a child with a disallowed role",
       "type": "automatic",
       "wcagSc": [
-        "4.1.2"
+        "1.3.1"
       ],
       "ruleFile": "src/checks/automatic/aria-prohibited-children.js",
       "testFile": "tests/engine-checks/automatic/aria-prohibited-children.test.js",
@@ -294,7 +294,7 @@
       "title": "Container roles must own at least one required child role",
       "type": "automatic",
       "wcagSc": [
-        "4.1.2"
+        "1.3.1"
       ],
       "ruleFile": "src/checks/automatic/aria-required-children.js",
       "testFile": "tests/engine-checks/automatic/aria-required-children.test.js",
@@ -313,7 +313,7 @@
       "title": "Roles requiring a specific context role must be in that context",
       "type": "automatic",
       "wcagSc": [
-        "4.1.2"
+        "1.3.1"
       ],
       "ruleFile": "src/checks/automatic/aria-required-parent.js",
       "testFile": "tests/engine-checks/automatic/aria-required-parent.test.js",

@@ -740,7 +740,7 @@ const CHECK_DEFS = [
     "helpUrl": "",
     "tags": [
       "wcag2a",
-      "wcag412",
+      "wcag131",
       "aria",
       "structure",
       "atomic",
@@ -748,14 +748,14 @@ const CHECK_DEFS = [
       "a11ycore"
     ],
     "wcagSc": [
-      "4.1.2"
+      "1.3.1"
     ],
     "normativeMappings": [
       {
         "standard": "WCAG",
         "version": "2.2",
-        "requirement": "4.1.2",
-        "title": "Name, Role, Value",
+        "requirement": "1.3.1",
+        "title": "Info and Relationships",
         "conformanceLevel": "A"
       }
     ],
@@ -764,7 +764,7 @@ const CHECK_DEFS = [
     "type": "automatic",
     "coverage": {
       "facetsBySc": {
-        "4.1.2": [
+        "1.3.1": [
           "aria-role-owned-children-allowed"
         ]
       }
@@ -850,7 +850,7 @@ const CHECK_DEFS = [
     "helpUrl": "",
     "tags": [
       "wcag2a",
-      "wcag412",
+      "wcag131",
       "aria",
       "structure",
       "atomic",
@@ -858,14 +858,14 @@ const CHECK_DEFS = [
       "a11ycore"
     ],
     "wcagSc": [
-      "4.1.2"
+      "1.3.1"
     ],
     "normativeMappings": [
       {
         "standard": "WCAG",
         "version": "2.2",
-        "requirement": "4.1.2",
-        "title": "Name, Role, Value",
+        "requirement": "1.3.1",
+        "title": "Info and Relationships",
         "conformanceLevel": "A"
       }
     ],
@@ -874,7 +874,7 @@ const CHECK_DEFS = [
     "type": "automatic",
     "coverage": {
       "facetsBySc": {
-        "4.1.2": [
+        "1.3.1": [
           "aria-role-required-owned-children"
         ]
       }
@@ -905,7 +905,7 @@ const CHECK_DEFS = [
     "helpUrl": "",
     "tags": [
       "wcag2a",
-      "wcag412",
+      "wcag131",
       "aria",
       "structure",
       "atomic",
@@ -913,14 +913,14 @@ const CHECK_DEFS = [
       "a11ycore"
     ],
     "wcagSc": [
-      "4.1.2"
+      "1.3.1"
     ],
     "normativeMappings": [
       {
         "standard": "WCAG",
         "version": "2.2",
-        "requirement": "4.1.2",
-        "title": "Name, Role, Value",
+        "requirement": "1.3.1",
+        "title": "Info and Relationships",
         "conformanceLevel": "A"
       }
     ],
@@ -929,7 +929,7 @@ const CHECK_DEFS = [
     "type": "automatic",
     "coverage": {
       "facetsBySc": {
-        "4.1.2": [
+        "1.3.1": [
           "aria-role-required-context-parent"
         ]
       }
@@ -7089,6 +7089,9 @@ const COMPOSITE_RULES = [
       "listitem-parent-valid",
       "definition-list-children-valid",
       "dlitem-parent-valid",
+      "aria-required-children",
+      "aria-prohibited-children",
+      "aria-required-parent",
       "form-control-programmatic-label-present",
       "p-as-heading",
       "table-fake-caption",
@@ -7498,9 +7501,6 @@ const COMPOSITE_RULES = [
       "aria-prohibited-attr",
       "aria-required-attr",
       "aria-allowed-role",
-      "aria-required-children",
-      "aria-prohibited-children",
-      "aria-required-parent",
       "duplicate-id-aria",
       "nested-interactive-controls-absent",
       "presentational-children-focusable-absent",
@@ -7510,7 +7510,7 @@ const COMPOSITE_RULES = [
     ],
     "meta": {
       "title": "Name, role, value: ARIA validity",
-      "description": "Rollup of checks that ARIA role and attribute usage conforms to the WAI-ARIA specification (valid roles, valid attributes, valid values, required attributes/relationships, unique ARIA-referenced ids).",
+      "description": "Rollup of checks that ARIA role and attribute usage conforms to the WAI-ARIA specification (valid roles, valid attributes, valid values, required attributes, unique ARIA-referenced ids).",
       "wcagSc": [
         "4.1.2"
       ],
@@ -20770,7 +20770,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "helpUrl": "",
     "tags": [
       "wcag2a",
-      "wcag412",
+      "wcag131",
       "aria",
       "structure",
       "atomic",
@@ -20778,14 +20778,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "a11ycore"
     ],
     "wcagSc": [
-      "4.1.2"
+      "1.3.1"
     ],
     "normativeMappings": [
       {
         "standard": "WCAG",
         "version": "2.2",
-        "requirement": "4.1.2",
-        "title": "Name, Role, Value",
+        "requirement": "1.3.1",
+        "title": "Info and Relationships",
         "conformanceLevel": "A"
       }
     ],
@@ -20794,7 +20794,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "type": "automatic",
     "coverage": {
       "facetsBySc": {
-        "4.1.2": [
+        "1.3.1": [
           "aria-role-owned-children-allowed"
         ]
       }
@@ -20880,7 +20880,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "helpUrl": "",
     "tags": [
       "wcag2a",
-      "wcag412",
+      "wcag131",
       "aria",
       "structure",
       "atomic",
@@ -20888,14 +20888,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "a11ycore"
     ],
     "wcagSc": [
-      "4.1.2"
+      "1.3.1"
     ],
     "normativeMappings": [
       {
         "standard": "WCAG",
         "version": "2.2",
-        "requirement": "4.1.2",
-        "title": "Name, Role, Value",
+        "requirement": "1.3.1",
+        "title": "Info and Relationships",
         "conformanceLevel": "A"
       }
     ],
@@ -20904,7 +20904,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "type": "automatic",
     "coverage": {
       "facetsBySc": {
-        "4.1.2": [
+        "1.3.1": [
           "aria-role-required-owned-children"
         ]
       }
@@ -20935,7 +20935,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "helpUrl": "",
     "tags": [
       "wcag2a",
-      "wcag412",
+      "wcag131",
       "aria",
       "structure",
       "atomic",
@@ -20943,14 +20943,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "a11ycore"
     ],
     "wcagSc": [
-      "4.1.2"
+      "1.3.1"
     ],
     "normativeMappings": [
       {
         "standard": "WCAG",
         "version": "2.2",
-        "requirement": "4.1.2",
-        "title": "Name, Role, Value",
+        "requirement": "1.3.1",
+        "title": "Info and Relationships",
         "conformanceLevel": "A"
       }
     ],
@@ -20959,7 +20959,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "type": "automatic",
     "coverage": {
       "facetsBySc": {
-        "4.1.2": [
+        "1.3.1": [
           "aria-role-required-context-parent"
         ]
       }
@@ -27119,6 +27119,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listitem-parent-valid",
       "definition-list-children-valid",
       "dlitem-parent-valid",
+      "aria-required-children",
+      "aria-prohibited-children",
+      "aria-required-parent",
       "form-control-programmatic-label-present",
       "p-as-heading",
       "table-fake-caption",
@@ -27528,9 +27531,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "aria-prohibited-attr",
       "aria-required-attr",
       "aria-allowed-role",
-      "aria-required-children",
-      "aria-prohibited-children",
-      "aria-required-parent",
       "duplicate-id-aria",
       "nested-interactive-controls-absent",
       "presentational-children-focusable-absent",
@@ -27540,7 +27540,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     ],
     "meta": {
       "title": "Name, role, value: ARIA validity",
-      "description": "Rollup of checks that ARIA role and attribute usage conforms to the WAI-ARIA specification (valid roles, valid attributes, valid values, required attributes/relationships, unique ARIA-referenced ids).",
+      "description": "Rollup of checks that ARIA role and attribute usage conforms to the WAI-ARIA specification (valid roles, valid attributes, valid values, required attributes, unique ARIA-referenced ids).",
       "wcagSc": [
         "4.1.2"
       ],

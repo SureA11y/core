@@ -118,8 +118,8 @@ Automation mix: **full 0, partial 0, manual 1**.
 
 ### 1.3.1
 
-Facet coverage: **11/12** facets covered.
-Automation mix: **full 8, partial 1, manual 3**.
+Facet coverage: **14/15** facets covered.
+Automation mix: **full 11, partial 1, manual 3**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
@@ -132,6 +132,9 @@ Automation mix: **full 8, partial 1, manual 3**.
 | listitem-parent-valid | full | listitem-parent-valid |
 | definition-list-children-valid | full | definition-list-children-valid |
 | dlitem-parent-valid | full | dlitem-parent-valid |
+| aria-role-required-owned-children | full | aria-required-children |
+| aria-role-owned-children-allowed | full | aria-prohibited-children |
+| aria-role-required-context-parent | full | aria-required-parent |
 | p-as-heading-evidence | manual | p-as-heading |
 | table-fake-caption-evidence | manual | table-fake-caption |
 | td-has-header | full | td-has-header |
@@ -141,6 +144,9 @@ Uncovered facets: form-control-label-quality-review
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | aria-hidden-body | automatic | The document &lt;body&gt; must not be aria-hidden | src/checks/automatic/aria-hidden-body.js | aria-hidden-body-absent |  |
+| aria-prohibited-children | automatic | Container roles must not own a child with a disallowed role | src/checks/automatic/aria-prohibited-children.js | aria-role-owned-children-allowed |  |
+| aria-required-children | automatic | Container roles must own at least one required child role | src/checks/automatic/aria-required-children.js | aria-role-required-owned-children |  |
+| aria-required-parent | automatic | Roles requiring a specific context role must be in that context | src/checks/automatic/aria-required-parent.js | aria-role-required-context-parent |  |
 | definition-list-children-valid | automatic | Description lists must be structured correctly | src/checks/automatic/definition-list-children-valid.js | definition-list-children-valid |  |
 | dlitem-parent-valid | automatic | Description-list items must be inside a description list | src/checks/automatic/dlitem-parent-valid.js | dlitem-parent-valid |  |
 | form-control-programmatic-label-present | automatic | Form controls must have a programmatic label | src/checks/automatic/form-control-programmatic-label-present.js | form-control-programmatic-label-present |  |
@@ -543,8 +549,8 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 ### 4.1.2
 
-Facet coverage: **42/42** facets covered.
-Automation mix: **full 40, partial 0, manual 2**.
+Facet coverage: **39/39** facets covered.
+Automation mix: **full 37, partial 0, manual 2**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
@@ -576,9 +582,6 @@ Automation mix: **full 40, partial 0, manual 2**.
 | aria-attr-not-prohibited | full | aria-prohibited-attr |
 | aria-attr-required-for-role | full | aria-required-attr |
 | aria-role-allowed-for-element | full | aria-allowed-role |
-| aria-role-required-owned-children | full | aria-required-children |
-| aria-role-owned-children-allowed | full | aria-prohibited-children |
-| aria-role-required-context-parent | full | aria-required-parent |
 | iframe-name-present | full | iframe-name-present |
 | iframe-title-unique | full | iframe-title-unique |
 | aria-hidden-body-absent | full | aria-hidden-body |
@@ -601,10 +604,7 @@ Automation mix: **full 40, partial 0, manual 2**.
 | aria-hidden-body | automatic | The document &lt;body&gt; must not be aria-hidden | src/checks/automatic/aria-hidden-body.js | aria-hidden-body-absent |  |
 | aria-hidden-focus | automatic | ARIA hidden elements must not be focusable | src/checks/automatic/aria-hidden-focus.js | aria-hidden-focusable |  |
 | aria-prohibited-attr | automatic | ARIA naming attributes must not be used on roles that prohibit them | src/checks/automatic/aria-prohibited-attr.js | aria-attr-not-prohibited |  |
-| aria-prohibited-children | automatic | Container roles must not own a child with a disallowed role | src/checks/automatic/aria-prohibited-children.js | aria-role-owned-children-allowed |  |
 | aria-required-attr | automatic | Roles with a required ARIA state/property must carry it | src/checks/automatic/aria-required-attr.js | aria-attr-required-for-role |  |
-| aria-required-children | automatic | Container roles must own at least one required child role | src/checks/automatic/aria-required-children.js | aria-role-required-owned-children |  |
-| aria-required-parent | automatic | Roles requiring a specific context role must be in that context | src/checks/automatic/aria-required-parent.js | aria-role-required-context-parent |  |
 | aria-role-name-present | automatic | ARIA roles that require an accessible name have one | src/checks/automatic/aria-role-name-present.js | aria-role-name-present |  |
 | aria-roles-valid | automatic | role attribute must be a valid, non-abstract ARIA role | src/checks/automatic/aria-roles-valid.js | aria-role-valid |  |
 | aria-valid-attr-value | automatic | aria-* attribute values must match their declared type | src/checks/automatic/aria-valid-attr-value.js | aria-attr-value-valid |  |
@@ -750,8 +750,8 @@ Automation mix: **full 0, partial 0, manual 1**.
 
 ### 1.3.1
 
-Facet coverage: **11/12** facets covered.
-Automation mix: **full 8, partial 1, manual 3**.
+Facet coverage: **14/15** facets covered.
+Automation mix: **full 11, partial 1, manual 3**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
@@ -764,6 +764,9 @@ Automation mix: **full 8, partial 1, manual 3**.
 | listitem-parent-valid | full | listitem-parent-valid |
 | definition-list-children-valid | full | definition-list-children-valid |
 | dlitem-parent-valid | full | dlitem-parent-valid |
+| aria-role-required-owned-children | full | aria-required-children |
+| aria-role-owned-children-allowed | full | aria-prohibited-children |
+| aria-role-required-context-parent | full | aria-required-parent |
 | p-as-heading-evidence | manual | p-as-heading |
 | table-fake-caption-evidence | manual | table-fake-caption |
 | td-has-header | full | td-has-header |
@@ -773,6 +776,9 @@ Uncovered facets: form-control-label-quality-review
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | aria-hidden-body | automatic | The document &lt;body&gt; must not be aria-hidden | src/checks/automatic/aria-hidden-body.js | aria-hidden-body-absent |  |
+| aria-prohibited-children | automatic | Container roles must not own a child with a disallowed role | src/checks/automatic/aria-prohibited-children.js | aria-role-owned-children-allowed |  |
+| aria-required-children | automatic | Container roles must own at least one required child role | src/checks/automatic/aria-required-children.js | aria-role-required-owned-children |  |
+| aria-required-parent | automatic | Roles requiring a specific context role must be in that context | src/checks/automatic/aria-required-parent.js | aria-role-required-context-parent |  |
 | definition-list-children-valid | automatic | Description lists must be structured correctly | src/checks/automatic/definition-list-children-valid.js | definition-list-children-valid |  |
 | dlitem-parent-valid | automatic | Description-list items must be inside a description list | src/checks/automatic/dlitem-parent-valid.js | dlitem-parent-valid |  |
 | form-control-programmatic-label-present | automatic | Form controls must have a programmatic label | src/checks/automatic/form-control-programmatic-label-present.js | form-control-programmatic-label-present |  |
@@ -1175,8 +1181,8 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 ### 4.1.2
 
-Facet coverage: **42/42** facets covered.
-Automation mix: **full 40, partial 0, manual 2**.
+Facet coverage: **39/39** facets covered.
+Automation mix: **full 37, partial 0, manual 2**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
@@ -1208,9 +1214,6 @@ Automation mix: **full 40, partial 0, manual 2**.
 | aria-attr-not-prohibited | full | aria-prohibited-attr |
 | aria-attr-required-for-role | full | aria-required-attr |
 | aria-role-allowed-for-element | full | aria-allowed-role |
-| aria-role-required-owned-children | full | aria-required-children |
-| aria-role-owned-children-allowed | full | aria-prohibited-children |
-| aria-role-required-context-parent | full | aria-required-parent |
 | iframe-name-present | full | iframe-name-present |
 | iframe-title-unique | full | iframe-title-unique |
 | aria-hidden-body-absent | full | aria-hidden-body |
@@ -1233,10 +1236,7 @@ Automation mix: **full 40, partial 0, manual 2**.
 | aria-hidden-body | automatic | The document &lt;body&gt; must not be aria-hidden | src/checks/automatic/aria-hidden-body.js | aria-hidden-body-absent |  |
 | aria-hidden-focus | automatic | ARIA hidden elements must not be focusable | src/checks/automatic/aria-hidden-focus.js | aria-hidden-focusable |  |
 | aria-prohibited-attr | automatic | ARIA naming attributes must not be used on roles that prohibit them | src/checks/automatic/aria-prohibited-attr.js | aria-attr-not-prohibited |  |
-| aria-prohibited-children | automatic | Container roles must not own a child with a disallowed role | src/checks/automatic/aria-prohibited-children.js | aria-role-owned-children-allowed |  |
 | aria-required-attr | automatic | Roles with a required ARIA state/property must carry it | src/checks/automatic/aria-required-attr.js | aria-attr-required-for-role |  |
-| aria-required-children | automatic | Container roles must own at least one required child role | src/checks/automatic/aria-required-children.js | aria-role-required-owned-children |  |
-| aria-required-parent | automatic | Roles requiring a specific context role must be in that context | src/checks/automatic/aria-required-parent.js | aria-role-required-context-parent |  |
 | aria-role-name-present | automatic | ARIA roles that require an accessible name have one | src/checks/automatic/aria-role-name-present.js | aria-role-name-present |  |
 | aria-roles-valid | automatic | role attribute must be a valid, non-abstract ARIA role | src/checks/automatic/aria-roles-valid.js | aria-role-valid |  |
 | aria-valid-attr-value | automatic | aria-* attribute values must match their declared type | src/checks/automatic/aria-valid-attr-value.js | aria-attr-value-valid |  |
