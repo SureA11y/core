@@ -16,6 +16,11 @@
  * @expectation
  *   The explicit role is one of the roles the ARIA-in-HTML specification
  *   permits for that host element.
+ *   Reported at CANTTELL rather than FAIL: ARIA-in-HTML's permitted-roles
+ *   table is an author conformance requirement with no ACT rule and no WCAG
+ *   mapping in any source. The role the author asked for is still the role
+ *   assistive technology exposes, so whether the combination harms anyone
+ *   depends on the widget, not on the table.
  * @implementation-notes
  * - Scoped to elements present in ALLOWED_ROLES_BY_ELEMENT;
  *   elements without an asserted constraint are treated as "no constraint"
@@ -103,15 +108,12 @@ function runInPage(ctx) {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'moderate',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  const resolved = helpers.resolveTieredOutcome(
+    [],
+    occurrences,
+    rule.defaultSeverity || 'moderate'
+  );
+  return { ruleId: rule.ruleId, ...resolved };
 }
 
 module.exports = { id, meta, runInPage };

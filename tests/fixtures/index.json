@@ -112,8 +112,8 @@
       "totalCases": 50,
       "caseCounts": {
         "PASS": 30,
-        "FAIL": 19,
-        "CANTTELL": 0,
+        "FAIL": 0,
+        "CANTTELL": 19,
         "OTHER": 1
       }
     },
@@ -131,8 +131,8 @@
       "totalCases": 6,
       "caseCounts": {
         "PASS": 3,
-        "FAIL": 2,
-        "CANTTELL": 0,
+        "FAIL": 0,
+        "CANTTELL": 2,
         "OTHER": 1
       }
     },
@@ -169,8 +169,8 @@
       "totalCases": 6,
       "caseCounts": {
         "PASS": 3,
-        "FAIL": 2,
-        "CANTTELL": 0,
+        "FAIL": 0,
+        "CANTTELL": 2,
         "OTHER": 1
       }
     },
@@ -281,11 +281,11 @@
       "testFile": "tests/engine-checks/automatic/aria-required-attr.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/aria-required-attr-all-scenarios.html",
-      "totalCases": 16,
+      "totalCases": 17,
       "caseCounts": {
         "PASS": 4,
-        "FAIL": 5,
-        "CANTTELL": 0,
+        "FAIL": 4,
+        "CANTTELL": 2,
         "OTHER": 7
       }
     },
@@ -357,11 +357,11 @@
       "testFile": "tests/engine-checks/automatic/aria-roles-valid.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/aria-roles-valid-all-scenarios.html",
-      "totalCases": 7,
+      "totalCases": 8,
       "caseCounts": {
         "PASS": 4,
         "FAIL": 2,
-        "CANTTELL": 0,
+        "CANTTELL": 1,
         "OTHER": 1
       }
     },
@@ -396,8 +396,8 @@
       "totalCases": 5,
       "caseCounts": {
         "PASS": 1,
-        "FAIL": 2,
-        "CANTTELL": 0,
+        "FAIL": 0,
+        "CANTTELL": 2,
         "OTHER": 2
       }
     },

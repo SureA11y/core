@@ -64,6 +64,8 @@ const BEGIN_CONCRETE = '  // <generated:aria-concrete-roles>';
 const END_CONCRETE = '  // </generated:aria-concrete-roles>';
 const BEGIN_NAME_REQUIRED = '  // <generated:aria-name-required-roles>';
 const END_NAME_REQUIRED = '  // </generated:aria-name-required-roles>';
+const BEGIN_REQUIRED_IMPLICIT = '  // <generated:aria-required-prop-implicit-values>';
+const END_REQUIRED_IMPLICIT = '  // </generated:aria-required-prop-implicit-values>';
 const BEGIN_ALLOWED_EXTRA = '  // <generated:aria-allowed-extra-owned-roles>';
 const END_ALLOWED_EXTRA = '  // </generated:aria-allowed-extra-owned-roles>';
 
@@ -473,6 +475,37 @@ function renderRoles(table) {
   return lines.join('\n');
 }
 
+// Required states/properties ARIA gives an implicit value, so the role still
+// exposes something when the author omits the attribute (role="heading"
+// without aria-level is still a level-2 heading). aria-query carries the
+// value in requiredProps; null means the role requires the attribute and the
+// spec supplies nothing in its place.
+function requiredPropImplicitValues() {
+  const out = {};
+  for (const [name, def] of roles.entries()) {
+    if (def.abstract) continue;
+    for (const [prop, implicit] of Object.entries(def.requiredProps || {})) {
+      if (implicit === null || implicit === undefined) continue;
+      if (!out[name]) out[name] = {};
+      out[name][prop] = String(implicit);
+    }
+  }
+  return out;
+}
+
+function renderRequiredImplicit(table) {
+  const lines = [BEGIN_REQUIRED_IMPLICIT, '  const REQUIRED_PROP_IMPLICIT_VALUES = {'];
+  for (const role of Object.keys(table).sort()) {
+    const entries = Object.keys(table[role])
+      .sort()
+      .map((attr) => `'${attr}': '${table[role][attr]}'`)
+      .join(', ');
+    lines.push(`    ${role}: { ${entries} },`);
+  }
+  lines.push('  };', END_REQUIRED_IMPLICIT);
+  return lines.join('\n');
+}
+
 function replaceBlock(source, begin, end, replacement) {
   const start = source.indexOf(begin);
   const stop = source.indexOf(end);
@@ -529,6 +562,12 @@ async function main() {
     BEGIN_CONCRETE,
     END_CONCRETE,
     renderRoleSet(BEGIN_CONCRETE, END_CONCRETE, 'CONCRETE_ROLES', sets.concrete)
+  );
+  helpers = replaceBlock(
+    helpers,
+    BEGIN_REQUIRED_IMPLICIT,
+    END_REQUIRED_IMPLICIT,
+    renderRequiredImplicit(requiredPropImplicitValues())
   );
   files.set(HELPERS_PATH, { before: helpersBefore, after: helpers });
 

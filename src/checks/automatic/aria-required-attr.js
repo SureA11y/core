@@ -19,8 +19,22 @@
  *   native control's own state exposure already covers it; no aria-checked
  *   is required. helpers.aria.getNativeRoleForElement resolves this).
  * @expectation
- *   Every required aria-* attribute for that role is present (and non-empty).
+ *   Every required state/property for that role is present and non-empty.
+ *   Graded by whether ARIA supplies a stand-in for the missing attribute:
+ *   - FAIL where it does not, so the state is simply not exposed
+ *     (aria-checked on checkbox/radio/switch/menuitemcheckbox/menuitemradio,
+ *     aria-valuenow on slider/scrollbar/meter and on a focusable separator).
+ *   - CANTTELL where ARIA defines an implicit value the role falls back to
+ *     (aria-expanded on combobox, aria-level on heading), so the role still
+ *     exposes a value and only the author knows whether it is the right one.
  * @implementation-notes
+ * - The implicit-value table is generated from aria-query's requiredProps by
+ *   scripts/generate-aria-tables.js (REQUIRED_PROP_IMPLICIT_VALUES in
+ *   src/core/aria-helpers.js), so the two tiers cannot drift apart from the
+ *   spec by hand. ACT 4e8ab6 maps this rule's requirement to WAI-ARIA rather
+ *   than to WCAG, and names 1.3.1/4.1.2 as "less strict" precisely because
+ *   they "allow for fallback default values"; the cantTell tier is that
+ *   carve-out, not a softening of the fail tier.
  * - Scoped to REQUIRED_PROPS_BY_ROLE in src/core/aria-helpers.js,
  *   which only lists a required property when the spec is unambiguous and
  *   context-independent, see that file's header for the rationale.
@@ -131,7 +145,8 @@ function runInPage(ctx) {
     ? helpers.queryAllSmart('[role]')
     : helpers.queryAll('[role]');
 
-  const occurrences = [];
+  const failOccurrences = [];
+  const cantTellOccurrences = [];
   let applicableCount = 0;
 
   for (const el of nodes) {
@@ -178,8 +193,38 @@ function runInPage(ctx) {
     if (!missing.length) continue;
 
     for (const attr of missing) {
-      occurrences.push(
+      const implicit =
+        typeof ariaHelpers.getRequiredAttrImplicitValue === 'function'
+          ? ariaHelpers.getRequiredAttrImplicitValue(role, attr)
+          : null;
+
+      if (implicit) {
+        cantTellOccurrences.push(
+          helpers.reportOccurrence(el, {
+            occurrenceOutcome: 'cantTell',
+            summary: `This attribute is required for this element’s role and is missing, but ARIA falls back to "${implicit}".`,
+            hint: 'Set the attribute explicitly if the implicit value is not the state you mean.',
+            i18n: {
+              summaryKey: 'ariaRequiredAttr_summary_cantTell',
+              hintKey: 'ariaRequiredAttr_hint_cantTell',
+              params: { attr, role, implicit }
+            },
+            data: {
+              details: {
+                reasonCode: 'ARIA_ATTR_REQUIRED_MISSING_IMPLICIT',
+                attr,
+                role,
+                implicitValue: implicit
+              }
+            }
+          })
+        );
+        continue;
+      }
+
+      failOccurrences.push(
         helpers.reportOccurrence(el, {
+          occurrenceOutcome: 'fail',
           summary: 'This attribute is required for this element’s role, but is missing.',
           hint: 'Add this attribute with a valid value for this role.',
           i18n: {
@@ -198,15 +243,12 @@ function runInPage(ctx) {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'serious',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  const resolved = helpers.resolveTieredOutcome(
+    failOccurrences,
+    cantTellOccurrences,
+    rule.defaultSeverity || 'serious'
+  );
+  return { ruleId: rule.ruleId, ...resolved };
 }
 
 module.exports = { id, meta, runInPage };

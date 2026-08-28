@@ -69,12 +69,59 @@ test(`${RULE_ID}: pass when role="heading" has aria-level present`, () => {
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail when role="heading" has no aria-level`, () => {
+test(`${RULE_ID}: cantTell when role="heading" has no aria-level, ARIA gives heading an implicit level of 2`, () => {
   const html = `<!doctype html><html><body><div id="a" role="heading"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.equal(rule.occurrences[0].data.details.attr, 'aria-level');
   assert.equal(rule.occurrences[0].data.details.role, 'heading');
+  assert.equal(rule.occurrences[0].data.details.implicitValue, '2');
+  assert.equal(rule.occurrences[0].data.details.reasonCode, 'ARIA_ATTR_REQUIRED_MISSING_IMPLICIT');
+});
+
+test(`${RULE_ID}: cantTell when role="combobox" has no aria-expanded, ARIA gives combobox an implicit "false"`, () => {
+  const html = `<!doctype html><html><body><div id="a" role="combobox"></div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.equal(rule.occurrences[0].data.details.implicitValue, 'false');
+});
+
+test(`${RULE_ID}: role="checkbox" without aria-checked stays a fail, ARIA supplies no implicit value for it`, () => {
+  const html = `<!doctype html><html><body><div id="a" role="checkbox"></div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.equal(rule.occurrences[0].data.details.reasonCode, 'ARIA_ATTR_REQUIRED_MISSING');
+});
+
+test(`${RULE_ID}: a fail-tier finding outranks a cantTell-tier one, and neither is dropped`, () => {
+  const html = `<!doctype html><html><body>
+    <div id="a" role="checkbox"></div>
+    <div id="b" role="heading">Title</div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  const byId = (id) => rule.occurrences.find((o) => o.html && o.html.includes(`id="${id}"`));
+  assert.equal(byId('a').occurrenceOutcome, 'fail');
+  assert.equal(byId('b').occurrenceOutcome, 'cantTell');
+});
+
+test(`${RULE_ID}: the implicit-value table matches aria-query, no hand-picked list`, () => {
+  const { roles } = require('aria-query');
+  const expected = {};
+  for (const [name, def] of roles.entries()) {
+    if (def.abstract) continue;
+    for (const [prop, implicit] of Object.entries(def.requiredProps || {})) {
+      if (implicit === null || implicit === undefined) continue;
+      expected[`${name}/${prop}`] = String(implicit);
+    }
+  }
+  const { createAriaHelpers } = require('../../../src/core/aria-helpers.js');
+  const aria = createAriaHelpers({}, {});
+  for (const [key, value] of Object.entries(expected)) {
+    const [role, attr] = key.split('/');
+    assert.equal(aria.getRequiredAttrImplicitValue(role, attr), value, key);
+  }
+  assert.equal(aria.getRequiredAttrImplicitValue('checkbox', 'aria-checked'), null);
 });
 
 test(`${RULE_ID}: fail when role="meter" has no aria-valuenow (meter has no "indeterminate" concept unlike progressbar, so this is unconditional)`, () => {
@@ -152,15 +199,16 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-required-attr-all-scenar
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 5, maxOccurrences: 5 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 6, maxOccurrences: 6 });
 
-  const expectedFailIds = [
-    'ara_case_02',
-    'ara_case_03',
-    'ara_case_07',
-    'ara_case_09',
-    'ara_case_15'
-  ];
+  const expectedFailIds = ['ara_case_02', 'ara_case_03', 'ara_case_09', 'ara_case_15'];
+  const expectedCantTellIds = ['ara_case_07', 'ara_case_17'];
+
+  for (const id of expectedCantTellIds) {
+    const occ = rule.occurrences.find((o) => o.html && o.html.includes(`id="${id}"`));
+    assert.ok(occ, `Expected occurrence for id="${id}"`);
+    assert.equal(occ.occurrenceOutcome, 'cantTell', `Expected cantTell tier for id="${id}"`);
+  }
   const expectedNoOccIds = [
     'ara_case_01',
     'ara_case_04',

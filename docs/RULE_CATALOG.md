@@ -15,8 +15,8 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`area-alt-present`](#area-alt-present) | &lt;area&gt; must have an alt attribute | 1.1.1 | A | high | serious |
 | [`aria-allowed-attr`](#aria-allowed-attr) | aria-* attributes must be permitted for the element’s role | 4.1.2 | A | medium | moderate |
 | [`aria-allowed-role`](#aria-allowed-role) | Explicit role must be permitted for its host element | 4.1.2 | A | high | moderate |
-| [`aria-braille-equivalent`](#aria-braille-equivalent) | aria-braillelabel/aria-brailleroledescription must have a non-braille equivalent | 4.1.2 | A | high | serious |
-| [`aria-conditional-attr`](#aria-conditional-attr) | aria-errormessage requires aria-invalid to be set to a non-false value | 4.1.2 | A | high | serious |
+| [`aria-braille-equivalent`](#aria-braille-equivalent) | aria-braillelabel/aria-brailleroledescription must have a non-braille equivalent | 4.1.2 | A | high | moderate |
+| [`aria-conditional-attr`](#aria-conditional-attr) | aria-errormessage requires aria-invalid to be set to a non-false value | 4.1.2 | A | high | moderate |
 | [`aria-deprecated-role`](#aria-deprecated-role) | role attribute should not use a deprecated or author-discouraged ARIA role | 4.1.2 | A | high | moderate |
 | [`aria-hidden-body`](#aria-hidden-body) | The document &lt;body&gt; must not be aria-hidden | 1.3.1, 4.1.2 | A | high | critical |
 | [`aria-hidden-focus`](#aria-hidden-focus) | ARIA hidden elements must not be focusable | 2.4.7, 4.1.2 | AA | high | serious |
@@ -265,13 +265,13 @@ Checks that an explicit role="" attribute is one of the roles the ARIA-in-HTML s
 
 **Applies to.** Applies to elements with an explicit, valid, non-abstract role, where the host element/attribute combination has an asserted permitted-roles constraint in the ARIA-in-HTML table (src/core/aria-helpers.js ALLOWED_ROLES_BY_ELEMENT).
 
-**Expectation.** The explicit role is one of the roles the ARIA-in-HTML specification permits for that host element.
+**Expectation.** The explicit role is one of the roles the ARIA-in-HTML specification permits for that host element. Reported at CANTTELL rather than FAIL: ARIA-in-HTML's permitted-roles table is an author conformance requirement with no ACT rule and no WCAG mapping in any source. The role the author asked for is still the role assistive technology exposes, so whether the combination harms anyone depends on the widget, not on the table.
 
 ### `aria-braille-equivalent`
 
 **aria-braillelabel/aria-brailleroledescription must have a non-braille equivalent**
 
-automatic · WCAG 4.1.2 (A) · confidence high · default severity serious
+automatic · WCAG 4.1.2 (A) · confidence high · default severity moderate
 
 Checks that elements using aria-braillelabel also have a regular accessible name, and elements using aria-brailleroledescription also have aria-roledescription.
 
@@ -284,7 +284,7 @@ Per the ARIA specification, `aria-braillelabel` is a Braille-specific SUPPLEMENT
 - a non-empty accessible name from a non-braille mechanism, if it declares `aria-braillelabel`;
 - a non-empty `aria-roledescription`, if it declares `aria-brailleroledescription`.
 
-Using either braille-specific attribute as the ONLY naming mechanism leaves non-braille assistive technology (most screen readers, voice control, etc.) with no accessible name/role description at all.
+Using either braille-specific attribute as the ONLY naming mechanism leaves non-braille assistive technology (most screen readers, voice control, etc.) with no accessible name/role description at all. Reported at CANTTELL rather than FAIL: aria-brailleroledescription without aria-roledescription reaches no user at all, and a missing accessible name is the naming rules' decision for the roles that require one. The braille attribute being unpaired is worth surfacing, but it is not itself a criterion failing.
 
 ### `aria-checked-state-mismatch`
 
@@ -302,13 +302,13 @@ Flags a native &lt;input type="checkbox"&gt;/&lt;input type="radio"&gt; whose ex
 
 **aria-errormessage requires aria-invalid to be set to a non-false value**
 
-automatic · WCAG 4.1.2 (A) · confidence high · default severity serious
+automatic · WCAG 4.1.2 (A) · confidence high · default severity moderate
 
 Checks that elements with aria-errormessage also have aria-invalid set to "true", "grammar", or "spelling"; otherwise the error message is dropped from the accessibility tree.
 
 **Applies to.** Elements with a non-empty `aria-errormessage` attribute.
 
-**Expectation.** Per the ARIA specification, `aria-errormessage` is only exposed to assistive technology when `aria-invalid` is present with a value other than `"false"` (i.e. `"true"`, `"grammar"`, or `"spelling"`). An element with `aria-errormessage` but `aria-invalid` absent or `"false"` silently drops the error message from the accessibility tree, authors almost always intend it to be exposed.
+**Expectation.** Per the ARIA specification, `aria-errormessage` is only exposed to assistive technology when `aria-invalid` is present with a value other than `"false"` (i.e. `"true"`, `"grammar"`, or `"spelling"`). An element with `aria-errormessage` but `aria-invalid` absent or `"false"` silently drops the error message from the accessibility tree, authors almost always intend it to be exposed. Reported at CANTTELL rather than FAIL: aria-errormessage is only exposed once aria-invalid is set, so the reference is currently inert. Whether that costs the user anything depends on whether the message is conveyed some other way (visible text next to the field, aria-describedby), which static markup does not settle.
 
 ### `aria-deprecated-role`
 
@@ -393,7 +393,12 @@ Checks that elements with an explicit role carry every unambiguous, context-inde
 
 **Applies to.** Applies to elements with an explicit, valid, non-abstract role that is also one of the small set of roles with a documented, context- independent required state/property (checkbox, combobox, heading, menuitemcheckbox, menuitemradio, meter, radio, scrollbar, separator, slider, switch) -- except when that explicit role is identical to the element's own native/implicit role (ACT 4e8ab6: e.g. &lt;input type="checkbox" role="checkbox"&gt;, which is exempt because the native control's own state exposure already covers it; no aria-checked is required. helpers.aria.getNativeRoleForElement resolves this).
 
-**Expectation.** Every required aria-* attribute for that role is present (and non-empty).
+**Expectation.**
+
+Every required state/property for that role is present and non-empty. Graded by whether ARIA supplies a stand-in for the missing attribute:
+
+- FAIL where it does not, so the state is simply not exposed (aria-checked on checkbox/radio/switch/menuitemcheckbox/menuitemradio, aria-valuenow on slider/scrollbar/meter and on a focusable separator).
+- CANTTELL where ARIA defines an implicit value the role falls back to (aria-expanded on combobox, aria-level on heading), so the role still exposes a value and only the author knows whether it is the right one.
 
 ### `aria-required-children`
 
@@ -441,7 +446,12 @@ Checks that an explicit role="" attribute resolves to a real, non-abstract WAI-A
 
 **Applies to.** Applies to any element with a non-empty role="" attribute in the composed DOM.
 
-**Expectation.** The role attribute's first token (the role actually used by assistive technology; later space-separated tokens are author-supplied fallbacks and are not evaluated here) must be a real WAI-ARIA role name, and must not be an abstract role (abstract roles exist only for the specification's own role taxonomy and must never be used directly in markup).
+**Expectation.**
+
+At least one role token names a concrete, non-abstract ARIA role. Graded by what the element falls back to when none does:
+
+- FAIL on a roleless host (div, span, custom element), which is left exposed as generic, so the role the author meant reaches no one.
+- CANTTELL where the element has a native role (a &lt;button&gt;, &lt;nav&gt;, &lt;a href&gt;), which the accessibility tree keeps using. ACT 674b10 lists 4.1.2 as a secondary requirement only, "satisfied through the implicit role," so the bad token is worth reporting but is not itself the criterion failing.
 
 ### `aria-text`
 
@@ -465,7 +475,7 @@ Checks that every aria-* attribute name present in the DOM is a real attribute d
 
 **Applies to.** Applies to any element in the composed DOM that carries at least one attribute whose name starts with "aria-".
 
-**Expectation.** Each aria-* attribute name is a real attribute defined by the WAI-ARIA specification (catches typos / made-up attribute names, which are silently ignored by assistive technology and therefore a real, deterministic defect).
+**Expectation.** Each aria-* attribute name is a real attribute defined by the WAI-ARIA specification (catches typos / made-up attribute names, which are silently ignored by assistive technology and therefore a real, deterministic defect). Reported at CANTTELL rather than FAIL: an aria-* attribute the spec does not define is inert, so nothing about the element's exposed name, role or value changes because it is there. Where the author meant a real attribute and the element ends up without a name, that absence is the naming rules' decision, not this one's. ACT 5f99a7 maps 1.3.1/4.1.2 as secondary requirements, "less strict" than the rule itself.
 
 ### `aria-valid-attr-value`
 
