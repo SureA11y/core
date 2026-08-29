@@ -606,6 +606,8 @@
   "avoidInlineSpacing_hint_fail": "Eliminar !important de line-height/letter-spacing/word-spacing en los estilos en línea para que los usuarios puedan anular el espaciado de texto.",
   "avoidInlineSpacing_summary_cantTell": "El estilo en línea de este elemento define {{properties}} con !important, pero no se ha podido resolver el valor, por lo que no se ha podido determinar si cumple la métrica de espaciado de texto de WCAG.",
   "avoidInlineSpacing_hint_cantTell": "Compruebe este valor manualmente con la métrica (interlineado 1,5; espaciado entre letras 0,12em; espaciado entre palabras 0,16em), o exprésalo en una unidad que el motor pueda resolver respecto al tamaño de fuente calculado del elemento.",
+  "avoidInlineSpacing_summary_cantTell_noSoftWrap": "This element's inline style forces {{properties}} with !important, but its text does not appear able to wrap, so the text-spacing criterion may not apply to it.",
+  "avoidInlineSpacing_hint_cantTell_noSoftWrap": "Confirm whether this text ever wraps. If it cannot, the criterion does not apply; if it can, remove !important or set a value that already meets the metric.",
   "metaRefreshNoExceptions_title": "La página no debe usar un meta refresh en absoluto (AAA)",
   "metaRefreshNoExceptions_description": "Comprueba que <meta http-equiv=\"refresh\"> no esté presente en absoluto, independientemente del retraso; es la contraparte más estricta de nivel AAA de la comprobación de nivel A que solo se aplica a los retrasos positivos.",
   "metaRefreshNoExceptions_summary_fail": "Esta página usa un meta refresh, que es un cambio de contexto automático no iniciado por el usuario.",

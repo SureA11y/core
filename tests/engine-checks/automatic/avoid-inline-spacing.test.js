@@ -144,3 +144,28 @@ test(`${RULE_ID}: an unresolvable value does not mask a proven failure elsewhere
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'tooTight'));
 });
+
+test(`${RULE_ID}: text inside a horizontal overflow container is reviewed, not failed`, () => {
+  // ACT 78fd32 inapplicable example 2: the paragraph cannot take a soft wrap
+  // break, so the criterion does not reach it and a fail here is a false
+  // positive that blocks an implementation report.
+  const html = `<!doctype html><html><body><div style="overflow-x: scroll;"><p id="noWrap" style="line-height: 1em !important; width: 1000px;">The toy brought back fond memories of being lost in the rain forest.</p></div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+
+  assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'INLINE_SPACING_NO_SOFT_WRAP');
+  assert.strictEqual(rule.occurrences[0].uncertainty.code, 'not-computable');
+  assert.ok(hasOccurrenceForId(rule, 'noWrap'));
+});
+
+test(`${RULE_ID}: text that cannot wrap is reviewed, but ordinary text still fails`, () => {
+  const html = `<!doctype html><html><body>
+    <p id="nowrap" style="line-height: 1em !important; white-space: nowrap;">Some text.</p>
+    <p id="wraps" style="line-height: 1em !important;">The toy brought back fond memories of being lost in the rain forest.</p>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
+
+  assert.ok(hasOccurrenceForId(rule, 'wraps'));
+  assert.ok(!hasOccurrenceForId(rule, 'nowrap'));
+});

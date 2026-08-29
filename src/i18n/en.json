@@ -606,6 +606,8 @@
   "avoidInlineSpacing_hint_fail": "Remove !important from line-height/letter-spacing/word-spacing in inline styles so users can override text spacing.",
   "avoidInlineSpacing_summary_cantTell": "This element's inline style sets {{properties}} with !important, but the value could not be resolved, so whether it meets the WCAG text-spacing metric could not be determined.",
   "avoidInlineSpacing_hint_cantTell": "Check this value by hand against the metric (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em), or express it in a unit the engine can resolve against the element’s computed font size.",
+  "avoidInlineSpacing_summary_cantTell_noSoftWrap": "This element's inline style forces {{properties}} with !important, but its text does not appear able to wrap, so the text-spacing criterion may not apply to it.",
+  "avoidInlineSpacing_hint_cantTell_noSoftWrap": "Confirm whether this text ever wraps. If it cannot, the criterion does not apply; if it can, remove !important or set a value that already meets the metric.",
   "metaRefreshNoExceptions_title": "Page must not use a meta refresh at all (AAA)",
   "metaRefreshNoExceptions_description": "Checks that <meta http-equiv=\"refresh\"> is not present at all, regardless of delay. This is the stricter AAA-level counterpart of the A-level positive-delay-only check.",
   "metaRefreshNoExceptions_summary_fail": "This page uses a meta refresh, which is an automatic context change not initiated by the user.",

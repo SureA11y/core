@@ -606,6 +606,8 @@
   "avoidInlineSpacing_hint_fail": "Retirez !important de line-height/letter-spacing/word-spacing dans les styles en ligne afin que les utilisateurs puissent surcharger l’espacement du texte.",
   "avoidInlineSpacing_summary_cantTell": "Le style en ligne de cet élément définit {{properties}} avec !important, mais la valeur n'a pas pu être résolue ; impossible donc de déterminer si elle respecte la métrique d'espacement du texte WCAG.",
   "avoidInlineSpacing_hint_cantTell": "Vérifiez cette valeur manuellement par rapport à la métrique (hauteur de ligne 1,5 ; espacement des lettres 0,12em ; espacement des mots 0,16em), ou exprimez-la dans une unité que le moteur peut résoudre par rapport à la taille de police calculée de l'élément.",
+  "avoidInlineSpacing_summary_cantTell_noSoftWrap": "This element's inline style forces {{properties}} with !important, but its text does not appear able to wrap, so the text-spacing criterion may not apply to it.",
+  "avoidInlineSpacing_hint_cantTell_noSoftWrap": "Confirm whether this text ever wraps. If it cannot, the criterion does not apply; if it can, remove !important or set a value that already meets the metric.",
   "metaRefreshNoExceptions_title": "La page ne doit utiliser aucun rafraîchissement meta (AAA)",
   "metaRefreshNoExceptions_description": "Vérifie que <meta http-equiv=\"refresh\"> n’est présent en aucun cas, quel que soit le délai — la variante plus stricte, de niveau AAA, de la vérification de niveau A qui ne porte que sur les délais positifs.",
   "metaRefreshNoExceptions_summary_fail": "Cette page utilise un rafraîchissement meta, un changement de contexte automatique non initié par l’utilisateur.",
