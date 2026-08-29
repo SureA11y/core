@@ -30,6 +30,7 @@
     "./baseline": "./src/baseline.js",
     "./report": "./src/report.js",
     "./sarif": "./src/sarif.js",
+    "./earl": "./src/earl.js",
     "./browser": "./surea11y.browser.js",
     "./i18n/*": "./surea11y.i18n.*.js",
     "./package.json": "./package.json"
@@ -56,6 +57,7 @@
     "src/baseline.js",
     "src/report.js",
     "src/sarif.js",
+    "src/earl.js",
     "src/checks/**/*.js",
     "surea11y.browser.js",
     "surea11y.i18n.*.js",
