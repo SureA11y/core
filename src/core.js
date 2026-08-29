@@ -7726,7 +7726,7 @@ const RULE_IMPLS = {
   "presentational-children-focusable-absent": { run: require("./checks/automatic/presentational-children-focusable-absent.js").runInPage, applicability: require("./checks/automatic/presentational-children-focusable-absent.js").applicability || null },
   "progressbar-name-present": { run: require("./checks/automatic/progressbar-name-present.js").runInPage, applicability: require("./checks/automatic/progressbar-name-present.js").applicability || null },
   "region": { run: require("./checks/manual/region-manual.js").runInPage, applicability: require("./checks/manual/region-manual.js").applicability || null },
-  "role-img-text-alternative-present": { run: require("./checks/automatic/role-img-alt-present.js").runInPage, applicability: require("./checks/automatic/role-img-alt-present.js").applicability || null },
+  "role-img-text-alternative-present": { run: require("./checks/automatic/role-img-text-alternative-present.js").runInPage, applicability: require("./checks/automatic/role-img-text-alternative-present.js").applicability || null },
   "scope-attr-valid": { run: require("./checks/manual/scope-attr-valid-manual.js").runInPage, applicability: require("./checks/manual/scope-attr-valid-manual.js").applicability || null },
   "scrollable-region-focusable": { run: require("./checks/manual/scrollable-region-focusable-manual.js").runInPage, applicability: require("./checks/manual/scrollable-region-focusable-manual.js").applicability || null },
   "searchbox-name-present": { run: require("./checks/automatic/searchbox-name-present.js").runInPage, applicability: require("./checks/automatic/searchbox-name-present.js").applicability || null },

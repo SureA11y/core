@@ -252,7 +252,7 @@ function renderRoleless(list) {
 // Name-required roles left out here on purpose, already owned by a dedicated rule:
 //   alertdialog, dialog  dialog-name-present
 //   combobox             combobox-name-present
-//   img                  img-alt-present / role-img-alt-present
+//   img                  img-alt-present / role-img-text-alternative-present
 //   listbox              listbox-name-present
 //   region               region-manual
 //   searchbox            searchbox-name-present

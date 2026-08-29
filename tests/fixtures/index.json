@@ -1999,10 +1999,10 @@
       "wcagSc": [
         "1.1.1"
       ],
-      "ruleFile": "src/checks/automatic/role-img-alt-present.js",
-      "testFile": "tests/engine-checks/automatic/role-img-alt-present.test.js",
+      "ruleFile": "src/checks/automatic/role-img-text-alternative-present.js",
+      "testFile": "tests/engine-checks/automatic/role-img-text-alternative-present.test.js",
       "hasFixture": true,
-      "fixtureFile": "tests/fixtures/role-img-alt-present-all-scenarios.html",
+      "fixtureFile": "tests/fixtures/role-img-text-alternative-present-all-scenarios.html",
       "totalCases": 25,
       "caseCounts": {
         "PASS": 5,
