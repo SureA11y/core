@@ -95,6 +95,16 @@ function runInPage(ctx) {
           hintKey: 'ariaAllowedRole_hint_fail',
           params: { role, element: tag }
         },
+        uncertainty: {
+          code: 'spec-only',
+          needed: 'Whether the role misstates this element to assistive technology in practice.',
+          evidence: {
+            role,
+            element: tag,
+            source: 'ARIA in HTML permitted-roles table',
+            wcagSc: []
+          }
+        },
         data: {
           details: { reasonCode: 'ARIA_ROLE_NOT_ALLOWED_FOR_ELEMENT', role, element: tag }
         }

@@ -288,6 +288,11 @@ function runInPage(ctx) {
               hintKey: 'cssOrientationLock_hint_cantTell_unreadableSheets',
               params: { count: String(unreadableSheetCount) }
             },
+            uncertainty: {
+              code: 'not-computable',
+              needed: 'The contents of the stylesheets this scan could not read.',
+              evidence: { unreadableSheetCount, reasonCode: 'STYLESHEETS_NOT_READABLE' }
+            },
             data: {
               details: {
                 reasonCode: 'STYLESHEETS_NOT_READABLE',

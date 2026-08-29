@@ -279,6 +279,16 @@ function runInPage(ctx) {
           hintKey: 'ariaRequiredChildren_hint_fail',
           params: { role, requiredRoles: requiredOwned.join(', ') }
         },
+        uncertainty: {
+          code: 'spec-only',
+          needed:
+            'Whether this container is legitimately empty, or holds items that never got their role.',
+          evidence: {
+            role,
+            requiredOwnedRoles: requiredOwned,
+            childElementCount: el.children ? el.children.length : null
+          }
+        },
         data: {
           details: {
             reasonCode: 'ARIA_REQUIRED_CHILD_MISSING',

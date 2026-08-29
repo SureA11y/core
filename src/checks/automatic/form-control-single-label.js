@@ -173,6 +173,15 @@ function runInPage(ctx) {
             hintKey: 'formControlSingleLabel_hint_cantTell',
             params: { element: tag, labelCount: String(eligibleLabels.size) }
           },
+          uncertainty: {
+            code: 'spec-only',
+            needed: 'Whether the empty label is filled in at runtime or is simply redundant.',
+            evidence: {
+              element: tag,
+              labelCount: eligibleLabels.size,
+              contributingLabelCount: contributing.length
+            }
+          },
           data: {
             details: {
               reasonCode: 'FORM_FIELD_EXTRA_EMPTY_LABEL',

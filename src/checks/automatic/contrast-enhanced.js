@@ -216,6 +216,17 @@ function runInPage(ctx) {
 
       const det = details && typeof details === 'object' ? details : { reasonCode: 'UNKNOWN' };
 
+      // The background is the only input this rule can fail to resolve; every other
+      // reason code here describes a ratio it did compute.
+      const uncertainty =
+        det.reasonCode === 'BACKGROUND_NOT_COMPUTABLE'
+          ? {
+              code: 'not-computable',
+              needed: 'The effective background colour behind this text.',
+              evidence: { reasonCode: det.reasonCode, foreground: det.fg || null }
+            }
+          : null;
+
       const occBase = {
         selector: '',
         html: '',
@@ -226,6 +237,7 @@ function runInPage(ctx) {
           hintKey: '',
           params: params && typeof params === 'object' ? params : {}
         },
+        ...(uncertainty ? { uncertainty } : {}),
         data: { details: det }
       };
 

@@ -370,6 +370,11 @@ function runInPage(ctx) {
               hintKey: 'ariaProhibitedAttr_hint_cantTell_roleless',
               params: { attr, element: tag }
             },
+            uncertainty: {
+              code: 'judgement-required',
+              needed: 'Whether the element’s own content already serves as its label.',
+              evidence: { attribute: attr, element: tag, role: null, hasOwnContent: true }
+            },
             data: {
               details: {
                 reasonCode: 'ARIA_ATTR_PROHIBITED_ROLELESS_NEEDS_REVIEW',

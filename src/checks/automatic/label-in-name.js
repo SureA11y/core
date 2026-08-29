@@ -457,44 +457,45 @@ function runInPage(ctx) {
     // character) is not something markup settles: the author may have meant
     // either. Report without asserting a defect instead of failing or
     // staying silent.
-    let uncertainty = '';
+    let uncertainReason = '';
     if (!contains) {
       if (containsWordRun(tokenize(visibleLabel, true), tokenize(accName, true), null)) {
-        uncertainty = 'HYPHENATION_DIFFERS';
+        uncertainReason = 'HYPHENATION_DIFFERS';
       } else {
         const abbreviated = abbreviatedWords(visibleLabel);
         if (abbreviated.size && containsWordRun(labelTokens, nameTokens, abbreviated)) {
-          uncertainty = 'POSSIBLE_ABBREVIATION';
+          uncertainReason = 'POSSIBLE_ABBREVIATION';
         } else if ((labelInfo.sourceElements || []).some(isIconFontElement)) {
-          uncertainty = 'POSSIBLE_ICON_FONT_GLYPH';
+          uncertainReason = 'POSSIBLE_ICON_FONT_GLYPH';
         } else if (isSingleSymbolicCharacter(visibleLabel, accNorm)) {
-          uncertainty = 'POSSIBLE_SYMBOLIC_CHARACTER';
+          uncertainReason = 'POSSIBLE_SYMBOLIC_CHARACTER';
         }
       }
     }
 
     const isSymbolicUncertainty =
-      uncertainty === 'POSSIBLE_ICON_FONT_GLYPH' || uncertainty === 'POSSIBLE_SYMBOLIC_CHARACTER';
+      uncertainReason === 'POSSIBLE_ICON_FONT_GLYPH' ||
+      uncertainReason === 'POSSIBLE_SYMBOLIC_CHARACTER';
 
     if (!contains) {
       occurrences.push(
         helpers.reportOccurrence(el, {
-          ...(uncertainty ? { outcome: 'cantTell' } : null),
-          summary: uncertainty
+          ...(uncertainReason ? { outcome: 'cantTell' } : null),
+          summary: uncertainReason
             ? 'Accessible name may not contain the visible label text.'
             : 'Accessible name does not contain the visible label text.',
-          hint: !uncertainty
+          hint: !uncertainReason
             ? 'Ensure the accessible name includes the visible text label (e.g., update aria-label/aria-labelledby to include the visible wording).'
             : isSymbolicUncertainty
               ? 'Check by hand: the visible text may render as an icon or symbol rather than literal words, which markup cannot settle.'
               : 'Check by hand: the two differ only by an abbreviation or by hyphenation, which markup cannot settle.',
           i18n: {
-            summaryKey: !uncertainty
+            summaryKey: !uncertainReason
               ? 'labelInName_summary_fail'
               : isSymbolicUncertainty
                 ? 'labelInName_summary_cantTell_symbolic'
                 : 'labelInName_summary_cantTell',
-            hintKey: !uncertainty
+            hintKey: !uncertainReason
               ? 'labelInName_hint_fail'
               : isSymbolicUncertainty
                 ? 'labelInName_hint_cantTell_symbolic'
@@ -506,9 +507,23 @@ function runInPage(ctx) {
               nameMechanism: acc && acc.mechanism ? acc.mechanism : 'none'
             }
           },
+          ...(uncertainReason
+            ? {
+                uncertainty: {
+                  code: 'equivalence-unknown',
+                  needed:
+                    'Whether the accessible name and the visible label say the same thing to a user.',
+                  evidence: {
+                    visibleLabel,
+                    accessibleName: accName,
+                    difference: uncertainReason
+                  }
+                }
+              }
+            : null),
           data: {
             details: {
-              reasonCode: uncertainty || 'VISIBLE_LABEL_NOT_IN_ACCESSIBLE_NAME',
+              reasonCode: uncertainReason || 'VISIBLE_LABEL_NOT_IN_ACCESSIBLE_NAME',
               visibleLabel,
               accessibleName: accName,
               normalized: { visibleLabel: visibleNorm, accessibleName: accNorm },

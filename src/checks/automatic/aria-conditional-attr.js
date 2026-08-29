@@ -103,6 +103,11 @@ function runInPage(ctx) {
           hintKey: 'ariaConditionalAttr_hint_fail',
           params: { element: tag, ariaInvalid: invalidValue || '(absent)' }
         },
+        uncertainty: {
+          code: 'spec-only',
+          needed: 'Whether the field is ever in an invalid state that should expose this message.',
+          evidence: { element: tag, ariaInvalid: invalidValue || null }
+        },
         data: {
           details: {
             reasonCode: 'ARIA_ERRORMESSAGE_WITHOUT_TRUTHY_INVALID',

@@ -127,6 +127,13 @@ Only present when `outcome` is `fail` or `cantTell` (a `pass`/`notApplicable` re
   summary: string,
   hint: string,
   i18n: { summaryKey: string, hintKey: string, params: object } | null,
+  occurrenceOutcome?: "fail" | "cantTell",   // present when the rule graded its findings into tiers
+  uncertainty?: {          // present only on a cantTell-tier occurrence
+    code: "not-computable" | "runtime-dependent" | "spec-only"
+        | "equivalence-unknown" | "judgement-required" | "out-of-scope",
+    needed?: string,       // what would settle the question
+    evidence?: object      // what the rule did establish, rule-specific
+  },
   data: {
     visibilityFilter?: { eligible: boolean, targetSet: string, accEligible: boolean | null, reasons: string[] },
     details?: object   // rule-specific, non-normative — see below
@@ -144,6 +151,25 @@ Only present when `outcome` is `fail` or `cantTell` (a `pass`/`notApplicable` re
 | `i18n` | The raw translation keys behind `summary`/`hint`, if you want to re-render them in a different locale yourself without re-running the scan. `null` if the occurrence didn't use key-based i18n. |
 | `data.visibilityFilter` | Present on most occurrences: why the engine considered this element eligible (or not) under whichever eligibility model the rule used. `eligible` is that result; `targetSet` says which model produced it (`'dom'`: raw DOM/CSS visibility — most rules; `'acc'`: accessibility-tree eligibility). `accEligible` mirrors `eligible` only when `targetSet` is `'acc'`, otherwise `null` — don't read it as a second, independent signal. `reasons` is a list of machine-readable exclusion codes when `eligible: false`. |
 | `data.details` | Rule-specific structured data (e.g. `reasonCode`, computed metrics, resolved references) — **non-normative**: useful for building richer UI or debugging, but never changes what `outcome`/`severity` mean. Shape varies per rule; treat as best-effort extra context, not a stable contract. |
+| `occurrenceOutcome` | Which tier this occurrence belongs to, on a rule that graded its findings into a confident `fail` tier and a needs-review `cantTell` tier. A rule reporting one tier only omits it, in which case the result's own `outcome` is the occurrence's tier. This is why a `fail` result can carry `cantTell`-tier occurrences: the aggregate outcome stays singular so CI can still gate on it, without discarding the findings that only warranted review. |
+| `uncertainty` | Why this finding could not be decided — see [Uncertainty codes](#uncertainty-codes) below. |
+
+### Uncertainty codes
+
+A `cantTell` says the engine did not decide. `uncertainty` says **why**, from a closed vocabulary, so a consumer can branch on the reason rather than parse a summary string. It is present only on a `cantTell`-tier occurrence: a `fail`-tier one would be claiming the rule both decided and did not, so the engine drops it.
+
+| `code` | Meaning | Typical shape |
+|---|---|---|
+| `not-computable` | The evidence the rule needed could not be read in this environment. | A cross-origin stylesheet, a background colour that resolves to no value, an `src` that will not resolve. |
+| `runtime-dependent` | The markup cannot settle it because script decides at runtime. | An `aria-controls` naming an element the widget builds when it opens. |
+| `spec-only` | A real specification violation, but the exposed name, role and value survive it, so no Success Criterion is established as failed. | An ARIA attribute whose absence the specification supplies a default for. |
+| `equivalence-unknown` | Two things may or may not serve the same purpose, and neither the markup nor the content settles it. | Two frames sharing an accessible name but embedding different resources. |
+| `judgement-required` | The question is inherently a human call. | Whether an undersized target is essential; every `type: "manual"` rule. |
+| `out-of-scope` | The finding is real but falls outside the standard this run targets. | A rule mapped only to a criterion the target WCAG version removed. |
+
+`needed` states, in one sentence, what would settle the question — the thing a reviewer has to go and check. `evidence` carries what the rule *did* establish, so the reviewer starts from the engine's work rather than repeating it; its shape is rule-specific and, like `data.details`, not a stable contract. The `code` is: new codes may be added in a minor release, but an existing one does not change meaning, so branch on the codes you know and treat an unrecognised one as "needs review" rather than an error.
+
+Every automatic rule that can report `cantTell` carries this, and a test holds that line so a new one cannot arrive without it. The `out-of-scope` code is attached by the engine rather than by a rule, on the same occurrences that produce a result-level `wcagVersionScope`. Manual rules do not carry it: `judgement-required` is what `type: "manual"` already means, so repeating it per occurrence would say nothing the result does not.
 
 ## A composite result (`rulesResults[i]`)
 

@@ -128,6 +128,11 @@ function runInPage(ctx) {
             hintKey: 'duplicateIdAria_hint_cantTell',
             params: { id: refId, duplicateCount: String(els.length) }
           },
+          uncertainty: {
+            code: 'judgement-required',
+            needed: 'Whether the first element carrying this id is the intended target.',
+            evidence: { id: refId, duplicateCount: els.length, resolvesTo: 'first' }
+          },
           data: {
             details: {
               reasonCode: 'DUPLICATE_ID_ARIA_REFERENCED',

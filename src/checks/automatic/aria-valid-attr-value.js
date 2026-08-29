@@ -161,6 +161,15 @@ function runInPage(ctx) {
             hintKey: 'ariaValidAttrValue_hint_cantTell_idref',
             params: { attr: item.name, value: item.value }
           },
+          uncertainty: {
+            code: 'runtime-dependent',
+            needed: 'Whether the widget creates the referenced element when it opens.',
+            evidence: {
+              attribute: item.name,
+              referencedId: item.value,
+              resolvedAtScanTime: false
+            }
+          },
           data: {
             details: {
               reasonCode: 'ARIA_ATTR_VALUE_TARGET_ABSENT',

@@ -934,6 +934,12 @@ function runInPage(ctx) {
               hintKey: 'ariaAllowedAttr_hint_cantTell',
               params: { attr: name, role }
             },
+            uncertainty: {
+              code: 'spec-only',
+              needed:
+                'Whether the deprecated attribute is still honoured by the assistive technology in use.',
+              evidence: { attribute: name, role, status: 'deprecated-for-role' }
+            },
             data: {
               details: { reasonCode: 'ARIA_ATTR_DEPRECATED', attr: name, role }
             }

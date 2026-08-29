@@ -299,6 +299,15 @@ function runInPage(ctx) {
               properties: props.join(', ')
             }
           },
+          uncertainty: {
+            code: 'not-computable',
+            needed: 'A resolved value for the spacing declarations marked !important.',
+            evidence: {
+              element: (el.tagName || '').toLowerCase(),
+              properties: props,
+              reasonCode: 'INLINE_SPACING_NOT_RESOLVABLE'
+            }
+          },
           data: {
             details: {
               reasonCode: 'INLINE_SPACING_NOT_RESOLVABLE',

@@ -390,6 +390,11 @@ function runInPage(ctx) {
             'This frame has tabindex="-1" and a focusable candidate, but focus moves immediately to another target. Verify keyboard reachability in a real browser.',
           hint: 'If this is an intentional focus handoff, ensure keyboard users cannot remain on hidden/intermediate frame content.',
           i18n: null,
+          uncertainty: {
+            code: 'runtime-dependent',
+            needed: 'Whether a keyboard user can reach this frame’s content in a real browser.',
+            evidence: { element: tag, focusRedirected: true }
+          },
           data: {
             details: {
               reasonCode: 'IFRAME_TABINDEX_NEGATIVE_CONTENT_RUNTIME_REDIRECT',

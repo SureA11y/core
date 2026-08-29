@@ -487,6 +487,12 @@ function runInPage(ctx) {
             summaryKey: 'linkInTextBlock_summary_cantTell',
             hintKey: 'linkInTextBlock_hint_cantTell'
           },
+          uncertainty: {
+            code: 'not-computable',
+            needed:
+              'Whether the link carries an underline, weight or style difference, or 3:1 contrast against its surrounding text.',
+            evidence: { reasonCode }
+          },
           data: {
             visibilityFilter: helpers.getEligibilityInfo
               ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })

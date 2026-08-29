@@ -43,6 +43,11 @@ const { createContrastHelpers } = require('../src/core/contrast-helpers');
 const { createAriaHelpers } = require('../src/core/aria-helpers');
 const { normalizeRuleMeta } = require('../src/core/rule-meta');
 const {
+  UNCERTAINTY_CODE_VALUES,
+  isUncertaintyCode,
+  normalizeUncertainty
+} = require('../src/core/uncertainty');
+const {
   FRAME_RPC_CHANNEL,
   getFrameRpcRegistry,
   installFrameRpcListener,
@@ -1004,6 +1009,17 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
     if (typeof o.hint !== 'string') o.hint = '';
     if (typeof o.html !== 'string') o.html = '';
 
+    // Uncertainty describes a cantTell-tier finding; on a fail-tier occurrence
+    // it would claim the rule both decided and did not, so it is dropped.
+    const occTier =
+      (o.occurrenceOutcome === 'fail' || o.occurrenceOutcome === 'cantTell')
+        ? o.occurrenceOutcome
+        : out.outcome;
+    const normalizedUncertainty =
+      occTier === 'cantTell' ? normalizeUncertainty(o.uncertainty) : null;
+    if (normalizedUncertainty) o.uncertainty = normalizedUncertainty;
+    else delete o.uncertainty;
+
     // Existing i18n normalization/resolution (leave as-is, shown shortened here)
     if (o.i18n && typeof o.i18n === 'object' && !Array.isArray(o.i18n)) {
       const ii = { ...o.i18n };
@@ -1088,6 +1104,12 @@ ${inlineConstFunction('createAriaHelpers', createAriaHelpers)}
 ${inlineConstFunction('normalizeSelectorList', normalizeSelectorList)}
 ${inlineConstFunction('resolveContextRoots', resolveContextRoots)}
 ${inlineConstFunction('createDomHelpers', createDomHelpers)}
+
+// Inlined from src/core/uncertainty.js -- the cantTell vocabulary, emitted so
+// normalizeRuleResult can validate an occurrence's uncertainty in-page.
+const UNCERTAINTY_CODE_VALUES = ${jsStringify(UNCERTAINTY_CODE_VALUES)};
+${inlineConstFunction('isUncertaintyCode', isUncertaintyCode)}
+${inlineConstFunction('normalizeUncertainty', normalizeUncertainty)}
 
 // Inlined from src/core/rule-meta.js (also used at build time by loadRuleModules
 // above -- single source of truth -- and here so runtime-registered custom

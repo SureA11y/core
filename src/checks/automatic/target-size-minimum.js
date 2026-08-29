@@ -669,6 +669,14 @@ function runInPage(ctx) {
             hintKey: 'targetSizeMinimum_hint_cantTell_ambiguousSpacing',
             params: {}
           },
+          uncertainty: {
+            code: 'not-computable',
+            needed: 'A reliable measurement of the spacing between this target and its neighbour.',
+            evidence: {
+              measured: { width: it.rect.width, height: it.rect.height },
+              conflictHitCount: info.hitCount
+            }
+          },
           data: {
             details: {
               measured: { width: it.rect.width, height: it.rect.height },
@@ -698,6 +706,14 @@ function runInPage(ctx) {
               hintKey: 'targetSizeMinimum_hint_cantTell_plausiblyEssential',
               params: {}
             },
+            uncertainty: {
+              code: 'judgement-required',
+              needed: 'Whether this target’s size is essential, which WCAG exempts.',
+              evidence: {
+                measured: { width: it.rect.width, height: it.rect.height },
+                conflictHitCount: info.hitCount
+              }
+            },
             data: {
               details: {
                 measured: { width: it.rect.width, height: it.rect.height },
@@ -725,6 +741,14 @@ function runInPage(ctx) {
               summaryKey: 'targetSizeMinimum_summary_cantTell_inlineLinkRun',
               hintKey: 'targetSizeMinimum_hint_cantTell_inlineLinkRun',
               params: {}
+            },
+            uncertainty: {
+              code: 'judgement-required',
+              needed: 'Whether this target is a link in a sentence, which WCAG exempts.',
+              evidence: {
+                measured: { width: it.rect.width, height: it.rect.height },
+                conflictHitCount: info.hitCount
+              }
             },
             data: {
               details: {
