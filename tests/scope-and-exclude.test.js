@@ -228,6 +228,11 @@ test('excludeSelectors: a malformed selector excludes nothing rather than throwi
   assert.strictEqual(imgOccurrences('#outer', { excludeSelectors: ['#does-not-exist'] }), 2);
 });
 
+test('excludeSelectors: a malformed selector does not disable the usable ones beside it', () => {
+  assert.strictEqual(imgOccurrences('#inner', { excludeSelectors: ['>>>bad', '#outer'] }), 0);
+  assert.strictEqual(imgOccurrences('#inner', { excludeSelectors: ['#outer', '>>>bad'] }), 0);
+});
+
 test('excludeSelectors: excluding an ancestor of the context removes the context too', () => {
   assert.strictEqual(imgOccurrences('#inner', { excludeSelectors: ['#outer'] }), 0);
   assert.strictEqual(imgOccurrences('#inner', { excludeSelectors: ['#inner'] }), 0);

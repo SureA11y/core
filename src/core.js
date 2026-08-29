@@ -14354,6 +14354,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   var __idRefReverseIndexByScope = null; // WeakMap<object, Map<string, Set<Element>>>
   var __uniqIndexByScope = null; // WeakMap<object, object> (selector uniqueness index per scope)
   var __shadowRootsByRoot = null; // WeakMap<object, Array<object>> (cached open shadow roots per root)
+  var __excludedCache = null; // Map<optsKey, WeakMap<Element, boolean>> (isExcluded results)
 
   // Shared recursion-depth guard across the mutually-recursive naming
   // functions (computeIdRefTargetTextAlternative <-> getContentNameInfo <->
@@ -15132,14 +15133,51 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return false;
   }
 
+  // Memoized per element and per effective exclude list. Every rule queries
+  // through here, so the uncached form re-walked each element's ancestor
+  // chain once per selector per rule; the memo makes the whole document cost
+  // one walk. An element is excluded when it or an ancestor matches, so a
+  // parent's answer settles its descendants.
   function isExcluded(el) {
     const eff = __getEffectiveExcludeSelectors();
-    if (!eff.length || !el || !el.closest) return false;
-    try {
-      return eff.some((sel) => !!el.closest(sel));
-    } catch {
-      return false;
+    if (!eff.length || !el || !el.matches) return false;
+
+    const memo = __getExcludedCacheForOpts();
+    if (memo) {
+      const hit = memo.get(el);
+      if (hit !== undefined) {
+        __perfInc('excluded.hit');
+        return hit;
+      }
+      __perfInc('excluded.miss');
     }
+
+    let result = false;
+    for (let i = 0; i < eff.length; i++) {
+      try {
+        if (el.matches(eff[i])) {
+          result = true;
+          break;
+        }
+      } catch {
+        // An unparseable selector matches nothing rather than excluding
+        // everything; the remaining selectors still apply.
+      }
+    }
+    if (!result) {
+      const parent = el.parentElement;
+      result = parent ? isExcluded(parent) : false;
+    }
+
+    if (memo) {
+      try {
+        memo.set(el, result);
+      } catch {
+        // Non-Element keys (a detached node reached through parentElement)
+        // simply go uncached.
+      }
+    }
+    return result;
   }
 
   function queryAll(sel) {
@@ -15395,6 +15433,33 @@ const createDomHelpers = (function createDomHelpers(opts) {
       if (!(wm instanceof WeakMap)) {
         wm = new WeakMap();
         __selectorCache.set(key, wm);
+      }
+      return wm;
+    } catch {
+      return null;
+    }
+  }
+
+  // Exclusion results (per element), partitioned by the same key as the
+  // selector cache: the effective exclude list changes as the active rule's
+  // rule-scoped excludes change.
+  try {
+    __excludedCache =
+      __domSharedCache.excludedCache instanceof Map
+        ? __domSharedCache.excludedCache
+        : (__domSharedCache.excludedCache = new Map());
+  } catch {
+    __excludedCache = null;
+  }
+
+  function __getExcludedCacheForOpts() {
+    if (!__excludedCache) return null;
+    try {
+      const key = __getSelectorOptsKey();
+      let wm = __excludedCache.get(key);
+      if (!(wm instanceof WeakMap)) {
+        wm = new WeakMap();
+        __excludedCache.set(key, wm);
       }
       return wm;
     } catch {
@@ -18402,8 +18467,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
     if (!el || typeof el !== 'object') return null;
     const path = [];
     let node = el;
+    let guard = 0;
     try {
+      // The only unbounded walk here. A consistent tree ends it via the
+      // `idx < 0` check; this bound covers a parent chain that cycles while
+      // still reporting itself as each other's child, and sits far above any
+      // depth a real document reaches.
       while (node && node.parentElement) {
+        if (guard++ >= 10000) return null;
         const parent = node.parentElement;
         const idx = Array.prototype.indexOf.call(parent.children, node);
         if (idx < 0) return null;
@@ -59153,6 +59224,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   var __idRefReverseIndexByScope = null; // WeakMap<object, Map<string, Set<Element>>>
   var __uniqIndexByScope = null; // WeakMap<object, object> (selector uniqueness index per scope)
   var __shadowRootsByRoot = null; // WeakMap<object, Array<object>> (cached open shadow roots per root)
+  var __excludedCache = null; // Map<optsKey, WeakMap<Element, boolean>> (isExcluded results)
 
   // Shared recursion-depth guard across the mutually-recursive naming
   // functions (computeIdRefTargetTextAlternative <-> getContentNameInfo <->
@@ -59931,14 +60003,51 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return false;
   }
 
+  // Memoized per element and per effective exclude list. Every rule queries
+  // through here, so the uncached form re-walked each element's ancestor
+  // chain once per selector per rule; the memo makes the whole document cost
+  // one walk. An element is excluded when it or an ancestor matches, so a
+  // parent's answer settles its descendants.
   function isExcluded(el) {
     const eff = __getEffectiveExcludeSelectors();
-    if (!eff.length || !el || !el.closest) return false;
-    try {
-      return eff.some((sel) => !!el.closest(sel));
-    } catch {
-      return false;
+    if (!eff.length || !el || !el.matches) return false;
+
+    const memo = __getExcludedCacheForOpts();
+    if (memo) {
+      const hit = memo.get(el);
+      if (hit !== undefined) {
+        __perfInc('excluded.hit');
+        return hit;
+      }
+      __perfInc('excluded.miss');
     }
+
+    let result = false;
+    for (let i = 0; i < eff.length; i++) {
+      try {
+        if (el.matches(eff[i])) {
+          result = true;
+          break;
+        }
+      } catch {
+        // An unparseable selector matches nothing rather than excluding
+        // everything; the remaining selectors still apply.
+      }
+    }
+    if (!result) {
+      const parent = el.parentElement;
+      result = parent ? isExcluded(parent) : false;
+    }
+
+    if (memo) {
+      try {
+        memo.set(el, result);
+      } catch {
+        // Non-Element keys (a detached node reached through parentElement)
+        // simply go uncached.
+      }
+    }
+    return result;
   }
 
   function queryAll(sel) {
@@ -60194,6 +60303,33 @@ const createDomHelpers = (function createDomHelpers(opts) {
       if (!(wm instanceof WeakMap)) {
         wm = new WeakMap();
         __selectorCache.set(key, wm);
+      }
+      return wm;
+    } catch {
+      return null;
+    }
+  }
+
+  // Exclusion results (per element), partitioned by the same key as the
+  // selector cache: the effective exclude list changes as the active rule's
+  // rule-scoped excludes change.
+  try {
+    __excludedCache =
+      __domSharedCache.excludedCache instanceof Map
+        ? __domSharedCache.excludedCache
+        : (__domSharedCache.excludedCache = new Map());
+  } catch {
+    __excludedCache = null;
+  }
+
+  function __getExcludedCacheForOpts() {
+    if (!__excludedCache) return null;
+    try {
+      const key = __getSelectorOptsKey();
+      let wm = __excludedCache.get(key);
+      if (!(wm instanceof WeakMap)) {
+        wm = new WeakMap();
+        __excludedCache.set(key, wm);
       }
       return wm;
     } catch {
@@ -63201,8 +63337,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
     if (!el || typeof el !== 'object') return null;
     const path = [];
     let node = el;
+    let guard = 0;
     try {
+      // The only unbounded walk here. A consistent tree ends it via the
+      // `idx < 0` check; this bound covers a parent chain that cycles while
+      // still reporting itself as each other's child, and sits far above any
+      // depth a real document reaches.
       while (node && node.parentElement) {
+        if (guard++ >= 10000) return null;
         const parent = node.parentElement;
         const idx = Array.prototype.indexOf.call(parent.children, node);
         if (idx < 0) return null;
