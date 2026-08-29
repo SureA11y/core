@@ -77,7 +77,7 @@
     "format:check": "prettier --check \"src/**/*.js\" \"scripts/**/*.js\" \"tests/**/*.js\" \"eslint.config.js\"",
     "build": "node scripts/build-core.js && node scripts/build-browser.js",
     "pretest": "playwright install chromium",
-    "test": "npm run format:check && npm run build && npm run validate:rules && node scripts/run-tests.js",
+    "test": "npm run lint && npm run format:check && npm run build && npm run validate:rules && node scripts/run-tests.js",
     "test:coverage": "npm run build && node scripts/run-tests.js --experimental-test-coverage --test-coverage-include=src/**/*.js",
     "test:contrast-helpers": "node tests/contrast-helpers.test.js",
     "helpers-perf-bench": "node --expose-gc scripts/dom-helpers-perf-bench.js",
