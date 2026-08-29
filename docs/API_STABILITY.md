@@ -53,7 +53,7 @@ Note what identity does **not** include: `selector` and `structuralPath` deliber
 
 ### A rename that predates this
 
-`role-img-alt-present` became `role-img-text-alternative-present` with no deprecation entry and no major bump, before any of the above was written down; the source file still carries the old name. Anything holding the old id — a baseline entry, a `runOnly` list — silently matched nothing. It is recorded here rather than quietly fixed, because it is the reason this section exists.
+`role-img-alt-present` became `role-img-text-alternative-present` with no deprecation entry and no major bump, before any of the above was written down. Anything holding the old id — a baseline entry, a `runOnly` list — silently matched nothing. The rename is not reversible now: the old id has been absent across every 1.x release, so a deprecation entry today would announce the retirement of something no current version answers to. It is recorded here instead, because it is the reason this section exists. Its source file, fixture and test kept the old name for a while afterwards, which is what made the rename easy to miss; they carry the rule's own id now.
 
 ## What triggers which version bump
 

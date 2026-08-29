@@ -341,12 +341,12 @@ test(`${RULE_ID}: an unlabeled role="graphics-document" <svg> root also fails he
   assert.ok(hasOccurrenceForId(rule, 's1'));
 });
 
-test(`${RULE_ID}: fixture coverage (tests/fixtures/role-img-alt-present-all-scenarios.html)`, () => {
+test(`${RULE_ID}: fixture coverage (tests/fixtures/role-img-text-alternative-present-all-scenarios.html)`, () => {
   const fixturePath = path.join(
     __dirname,
     '../..',
     'fixtures',
-    'role-img-alt-present-all-scenarios.html'
+    'role-img-text-alternative-present-all-scenarios.html'
   );
   const html = fs.readFileSync(fixturePath, 'utf8');
 
