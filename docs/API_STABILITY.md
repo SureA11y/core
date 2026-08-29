@@ -32,8 +32,28 @@ Declaring this map is what lets the engine's internal file layout change without
 ## Explicitly unstable (not covered by semver)
 
 - `perfStats` and `ruleTimings` — internal timing/debug counters, only present when `engineOptions.perfStats`/`.profileRules` is set. Shape not covered by this document.
-- `occurrences[i].data.details` — rule-specific, non-normative extra context. Shape varies per rule and may change in a patch release; treat as best-effort, not a stable contract (this was already noted in `docs/OUTPUT_SCHEMA.md` before this document existed).
+- `occurrences[i].data.details` — rule-specific, non-normative extra context. Shape varies per rule and may change in a patch release; treat as best-effort, not a stable contract (this was already noted in `docs/OUTPUT_SCHEMA.md` before this document existed). **`data.details.reasonCode` is the exception** and is stable — see [Finding identity](#finding-identity) below.
 - `ruleInterfaceVersion` / `ruleVersion` on a rule's meta — currently unused scaffolding (every rule defaults to the same two static strings; nothing meaningfully sets or consumes them today). Not part of this contract until they're actually wired up to mean something.
+
+## Finding identity
+
+A consumer needs to know whether a finding it is looking at is the same one it saw last week. Two things in this package answer that, and both compute it the same way — `computeBaselineKey(ruleId, reasonCode, html)` in `src/baseline.js`:
+
+- **Baselines.** `--write-baseline`/`--baseline` suppress known findings so a build only breaks on new ones.
+- **SARIF.** `partialFingerprints['surea11y/violation/v1']`, which GitHub Code Scanning uses to decide whether an alert is the same alert or a new one.
+
+So the identity is `ruleId` + `reasonCode` + the occurrence `html`, and two of those three are promises:
+
+- **A rule id, once published, does not change.** Renaming or removing one is a major change. The supported path is to keep the id, mark it `deprecated` with `deprecation.replacedBy` naming the successor, and remove it only after the notice period.
+- **A reason code, once a rule has shipped it, does not change.** This is a deliberate exception to the surrounding "`data.details` is unstable" rule: everything else under `data.details` is free-form, but `reasonCode` is load-bearing for identity, so it is pinned. Adding a new code to a rule is a minor change; changing or dropping an existing one is not, because every stored baseline entry and every open Code Scanning alert keyed on it stops matching.
+
+Both are inventoried in [`scripts/data/finding-ids.json`](../scripts/data/finding-ids.json), regenerated with `npm run finding-ids` and checked by `tests/finding-ids.test.js`, which fails when a published rule id or reason code disappears. The inventory is the record of what has been promised; the test is what stops the promise being broken by accident.
+
+Note what identity does **not** include: `selector` and `structuralPath` deliberately stay out of the fingerprint, because both change when the surrounding page is edited, which would make every finding look new after an unrelated refactor. `html` is in, so editing the flagged element itself does read as a new finding — that is the intended trade-off, since the element's markup is the thing the finding is about.
+
+### A rename that predates this
+
+`role-img-alt-present` became `role-img-text-alternative-present` with no deprecation entry and no major bump, before any of the above was written down; the source file still carries the old name. Anything holding the old id — a baseline entry, a `runOnly` list — silently matched nothing. It is recorded here rather than quietly fixed, because it is the reason this section exists.
 
 ## What triggers which version bump
 
