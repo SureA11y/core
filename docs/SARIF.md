@@ -14,7 +14,9 @@ See [`CI_INTEGRATIONS.md`](./CI_INTEGRATIONS.md) for a ready-to-paste GitHub Act
 
 ## What becomes a SARIF result
 
-Only `fail`/`cantTell` occurrences produce SARIF results — a `pass`/`notApplicable` check has no occurrences to report at all (same "violations only" framing as [`REPORT.md`](./REPORT.md)'s HTML report).
+Only `fail`/`cantTell` occurrences produce SARIF results (same "violations only" framing as [`REPORT.md`](./REPORT.md)'s HTML report).
+
+A `notApplicable` check is not always empty: a rule may attach one occurrence explaining why it had nothing to judge, which the contrast rules do when no text had a computable background. SARIF deliberately omits those — a consumer treats every result as an alert, and "this was not evaluated" is not one. It does mean a SARIF-only pipeline cannot tell "checked, nothing to flag" from "could not check", so read `checksResults` directly, or the HTML report, when that distinction matters.
 
 | Engine outcome | SARIF `level` | Meaning |
 |---|---|---|
