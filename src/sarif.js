@@ -133,6 +133,7 @@ function renderSarifReport(result, options = {}) {
   const seenRuleIds = new Set();
   const failResults = [];
   const cantTellResults = [];
+  const notices = [];
 
   for (const check of (result && result.checksResults) || []) {
     if (!check || !Array.isArray(check.occurrences)) continue;
@@ -142,7 +143,23 @@ function renderSarifReport(result, options = {}) {
       rules.push(buildRule(check));
     }
 
-    if (check.outcome !== 'fail' && check.outcome !== 'cantTell') continue;
+    if (check.outcome !== 'fail' && check.outcome !== 'cantTell') {
+      // A rule with nothing to judge may still say why, which is the
+      // difference between "checked, nothing to flag" and "could not check".
+      // That is not an alert, so it cannot be a result; carrying it as an
+      // execution notice keeps a SARIF-only pipeline from reading silence as
+      // a clean bill of health.
+      for (const occurrence of check.occurrences) {
+        const text = occurrence && typeof occurrence.summary === 'string' ? occurrence.summary : '';
+        if (!text) continue;
+        notices.push({
+          level: 'note',
+          message: { text },
+          associatedRule: { id: check.ruleId }
+        });
+      }
+      continue;
+    }
 
     for (const occurrence of check.occurrences) {
       if (!occurrence) continue;
@@ -179,7 +196,10 @@ function renderSarifReport(result, options = {}) {
         },
         // fail first: matches docs/REPORT.md's own "violations before advisory
         // findings" ordering.
-        results: [...failResults, ...cantTellResults]
+        results: [...failResults, ...cantTellResults],
+        ...(notices.length
+          ? { invocations: [{ executionSuccessful: true, toolExecutionNotices: notices }] }
+          : {})
       }
     ]
   };

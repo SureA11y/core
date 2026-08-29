@@ -468,7 +468,7 @@ test('renderSarifReport: an occurrence carrying `outcome` instead of `occurrence
   );
 });
 
-test('a notApplicable check can carry an explanatory occurrence, which SARIF omits', () => {
+test('a notApplicable check can carry an explanatory occurrence', () => {
   const result = runa11yCoreOnHtml(
     '<!doctype html><html lang="en"><head><title>t</title></head><body><p>Hello world</p></body></html>',
     { engineOptions: {} }
@@ -478,8 +478,42 @@ test('a notApplicable check can carry an explanatory occurrence, which SARIF omi
   assert.strictEqual(contrast.outcome, 'notApplicable');
   assert.strictEqual(contrast.occurrences.length, 1, 'the rule says why it had nothing to judge');
   assert.strictEqual(contrast.occurrences[0].selector, '', 'it describes the scan, not an element');
+});
 
+test('a rule that could not check reaches SARIF as a notice, never as an alert', () => {
+  const result = runa11yCoreOnHtml(
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><p>Hello world</p></body></html>',
+    { engineOptions: {} }
+  );
   const sarif = parse(renderSarifReport(result, { toolVersion: '1.2.3' }));
+
   const ids = sarif.runs[0].results.map((r) => r.ruleId);
-  assert.ok(!ids.includes('contrast-minimum'), 'a notApplicable occurrence is not an alert');
+  assert.ok(!ids.includes('contrast-minimum'), 'not evaluated is not a violation');
+
+  const notices = sarif.runs[0].invocations[0].toolExecutionNotices;
+  const contrast = notices.find((n) => n.associatedRule.id === 'contrast-minimum');
+  assert.ok(contrast, 'a SARIF-only consumer must still learn contrast went unchecked');
+  assert.strictEqual(contrast.level, 'note');
+  assert.match(contrast.message.text, /computable contrast/);
+  assert.strictEqual(sarif.runs[0].invocations[0].executionSuccessful, true);
+});
+
+test('a run with nothing to report carries no invocations block at all', () => {
+  const result = makeScanResult([makeCheckResult({ outcome: 'pass', occurrences: [] })]);
+  const sarif = parse(renderSarifReport(result, { toolVersion: '1.2.3' }));
+
+  assert.strictEqual(sarif.runs[0].invocations, undefined);
+});
+
+test('an occurrence with no summary produces no notice', () => {
+  const result = makeScanResult([
+    makeCheckResult({
+      ruleId: 'silent-rule',
+      outcome: 'notApplicable',
+      occurrences: [makeOccurrence({ summary: undefined })]
+    })
+  ]);
+  const sarif = parse(renderSarifReport(result, { toolVersion: '1.2.3' }));
+
+  assert.strictEqual(sarif.runs[0].invocations, undefined);
 });
