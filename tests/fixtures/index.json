@@ -448,11 +448,11 @@
       "testFile": "tests/engine-checks/automatic/avoid-inline-spacing.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/avoid-inline-spacing-all-scenarios.html",
-      "totalCases": 9,
+      "totalCases": 12,
       "caseCounts": {
         "PASS": 3,
         "FAIL": 3,
-        "CANTTELL": 0,
+        "CANTTELL": 3,
         "OTHER": 3
       }
     },

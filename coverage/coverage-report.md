@@ -75,7 +75,7 @@ Uncovered facets: text-alternative-mechanism, functional-nontext-name, decorativ
 | meter-name-present | automatic | Meters have an accessible name | src/checks/automatic/meter-name-present.js | meter-name-present |  |
 | object-text-alternative-present | automatic | &lt;object&gt; must provide a text alternative | src/checks/automatic/object-text-alternative-present.js | object-text-alternative-present |  |
 | progressbar-name-present | automatic | Progress bars have an accessible name | src/checks/automatic/progressbar-name-present.js | progressbar-name-present |  |
-| role-img-text-alternative-present | automatic | [role="img"/"graphics-symbol"/"graphics-document"] must have an accessible text alternative | src/checks/automatic/role-img-alt-present.js | role-img-text-alternative-present |  |
+| role-img-text-alternative-present | automatic | [role="img"/"graphics-symbol"/"graphics-document"] must have an accessible text alternative | src/checks/automatic/role-img-text-alternative-present.js | role-img-text-alternative-present |  |
 | svg-image-text-alternative-present | automatic | SVG &lt;image&gt; must have a text alternative | src/checks/automatic/svg-image-text-alternative-present.js | svg-image-text-alt-present |  |
 | svg-text-alternative-present | automatic | &lt;svg&gt; must provide a text alternative | src/checks/automatic/svg-text-alternative-present.js | svg-text-alternative-present |  |
 | video-poster-text-alternative-present | automatic | &lt;video&gt; poster must have a text alternative | src/checks/automatic/video-poster-text-alternative-present.js | video-poster-text-alt-present |  |
@@ -708,7 +708,7 @@ Uncovered facets: text-alternative-mechanism, functional-nontext-name, decorativ
 | meter-name-present | automatic | Meters have an accessible name | src/checks/automatic/meter-name-present.js | meter-name-present |  |
 | object-text-alternative-present | automatic | &lt;object&gt; must provide a text alternative | src/checks/automatic/object-text-alternative-present.js | object-text-alternative-present |  |
 | progressbar-name-present | automatic | Progress bars have an accessible name | src/checks/automatic/progressbar-name-present.js | progressbar-name-present |  |
-| role-img-text-alternative-present | automatic | [role="img"/"graphics-symbol"/"graphics-document"] must have an accessible text alternative | src/checks/automatic/role-img-alt-present.js | role-img-text-alternative-present |  |
+| role-img-text-alternative-present | automatic | [role="img"/"graphics-symbol"/"graphics-document"] must have an accessible text alternative | src/checks/automatic/role-img-text-alternative-present.js | role-img-text-alternative-present |  |
 | svg-image-text-alternative-present | automatic | SVG &lt;image&gt; must have a text alternative | src/checks/automatic/svg-image-text-alternative-present.js | svg-image-text-alt-present |  |
 | svg-text-alternative-present | automatic | &lt;svg&gt; must provide a text alternative | src/checks/automatic/svg-text-alternative-present.js | svg-text-alternative-present |  |
 | video-poster-text-alternative-present | automatic | &lt;video&gt; poster must have a text alternative | src/checks/automatic/video-poster-text-alternative-present.js | video-poster-text-alt-present |  |

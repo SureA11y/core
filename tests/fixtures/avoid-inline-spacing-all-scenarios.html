@@ -61,8 +61,20 @@
   </div>
 
   <div class="case" id="case_10">
-    <div class="case-title">10 &mdash; CANTTELL: letter-spacing forced through a calc() that resolves to no ratio here &mdash; recorded as undecided, outranked on this page by the failures above</div>
+    <div class="case-title">10 — CANTTELL: letter-spacing forced through a calc() that resolves to no ratio here &mdash; recorded as undecided, outranked on this page by the failures above</div>
     <p style="letter-spacing: calc(1vw - 2ex) !important" id="ais_case_10">Spaced text</p>
+  </div>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — CANTTELL: a fixed-width element inside a horizontally scrolling ancestor can take no soft wrap break, so the criterion may not reach it (ACT 78fd32 inapplicable example) &mdash; recorded as undecided, outranked on this page by the failures above</div>
+    <div style="overflow-x: scroll">
+      <p style="line-height:1em !important; width:1000px" id="ais_case_11">The toy brought back fond memories of being lost in the rain forest.</p>
+    </div>
+  </div>
+
+  <div class="case" id="case_12">
+    <div class="case-title">12 — CANTTELL: text not allowed to wrap reaches the same conclusion without the scrolling ancestor &mdash; recorded as undecided, outranked on this page by the failures above</div>
+    <p style="line-height:1em !important; white-space:nowrap" id="ais_case_12">Spaced text</p>
   </div>
 
   <p class="note">End of fixture.</p>

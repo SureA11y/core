@@ -3089,7 +3089,7 @@
       }
     },
     {
-      "file": "src/checks/automatic/role-img-alt-present.js",
+      "file": "src/checks/automatic/role-img-text-alternative-present.js",
       "ruleId": "role-img-text-alternative-present",
       "wcagScNormative": [
         "1.1.1"
