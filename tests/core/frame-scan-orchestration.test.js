@@ -86,6 +86,10 @@ function attachChildWindow(el, { respondWith } = {}) {
     }
   };
 
+  // A responder answers only the frame that embeds it, so the stand-in child
+  // needs the page's handle as its parent.
+  Object.defineProperty(childWin, 'parent', { value: parentHandle, configurable: true });
+
   if (typeof respondWith === 'function') enableFrameRpcResponder(childWin, respondWith);
   else installFrameRpcListener(childWin, FRAME_RPC_CHANNEL);
 
@@ -322,6 +326,12 @@ test('a11yCoreEnableFrameResponder makes this window answer a parent scan', asyn
       dispatch(parentWin, data, pageHandle);
     }
   };
+  // The responder answers its embedder only, so the page must see the caller
+  // as its parent.
+  Object.defineProperty(globalThis.window, 'parent', {
+    value: parentHandle,
+    configurable: true
+  });
 
   assert.strictEqual(await pingFrame(parentWin, pageHandle, 30), true);
 
@@ -371,6 +381,12 @@ test('a11yCoreEnableFrameResponder survives a parent that sends no payload', asy
       dispatch(parentWin, data, pageHandle);
     }
   };
+  // The responder answers its embedder only, so the page must see the caller
+  // as its parent.
+  Object.defineProperty(globalThis.window, 'parent', {
+    value: parentHandle,
+    configurable: true
+  });
 
   const reply = await sendFrameRunCommand(parentWin, pageHandle, null, 200);
 
