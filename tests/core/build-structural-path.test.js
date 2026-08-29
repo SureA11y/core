@@ -79,3 +79,29 @@ test(`engine integration: every fail/cantTell occurrence carries a structuralPat
   assert.strictEqual(rule.occurrences.length, 1);
   assert.deepStrictEqual(rule.occurrences[0].structuralPath, [1, 0, 0, 0]);
 });
+
+test('buildStructuralPath: a parent chain that never reaches the root yields null rather than looping', () => {
+  const { helpers } = helpersFor('<!doctype html><html><body><p>x</p></body></html>');
+
+  // A chain that reports itself as its own parent's child, which a real DOM
+  // cannot produce but a proxied or synthetic one can.
+  const a = {};
+  const b = {};
+  a.parentElement = b;
+  b.parentElement = a;
+  a.children = [b];
+  b.children = [a];
+
+  assert.strictEqual(helpers.buildStructuralPath(a), null);
+});
+
+test('buildStructuralPath: a legitimately deep document still gets a full path', () => {
+  const depth = 400;
+  const { helpers, document } = helpersFor(
+    `<!doctype html><html><body>${'<div>'.repeat(depth)}<img id="target" src="x.png">${'</div>'.repeat(depth)}</body></html>`
+  );
+
+  const path = helpers.buildStructuralPath(document.getElementById('target'));
+  assert.ok(Array.isArray(path));
+  assert.ok(path.length >= depth, `expected a path at least ${depth} deep, got ${path.length}`);
+});
