@@ -16,7 +16,24 @@ See [`CI_INTEGRATIONS.md`](./CI_INTEGRATIONS.md) for a ready-to-paste GitHub Act
 
 Only `fail`/`cantTell` occurrences produce SARIF results (same "violations only" framing as [`REPORT.md`](./REPORT.md)'s HTML report).
 
-A `notApplicable` check is not always empty: a rule may attach one occurrence explaining why it had nothing to judge, which the contrast rules do when no text had a computable background. SARIF deliberately omits those — a consumer treats every result as an alert, and "this was not evaluated" is not one. It does mean a SARIF-only pipeline cannot tell "checked, nothing to flag" from "could not check", so read `checksResults` directly, or the HTML report, when that distinction matters.
+A `notApplicable` check is not always empty: a rule may attach one occurrence explaining why it had nothing to judge, which the contrast rules do when no text had a computable background. Those never become results — a consumer treats every result as an alert, and "this was not evaluated" is not one — but they are not dropped either. They are carried as `note`-level entries in `runs[0].invocations[0].toolExecutionNotices`, each naming the rule it came from via `associatedRule.id`:
+
+```json
+"invocations": [
+  {
+    "executionSuccessful": true,
+    "toolExecutionNotices": [
+      {
+        "level": "note",
+        "message": { "text": "No eligible text had computable contrast (eligible text nodes: 13). See the contrast computability rule for details." },
+        "associatedRule": { "id": "contrast-minimum" }
+      }
+    ]
+  }
+]
+```
+
+That keeps a SARIF-only pipeline from reading silence as a clean bill of health: no contrast alerts can mean the page is fine, or that contrast was never computable, and only the notice separates the two. The block is emitted only when there is something to say, so a run with nothing to report has no `invocations` key at all.
 
 | Engine outcome | SARIF `level` | Meaning |
 |---|---|---|
