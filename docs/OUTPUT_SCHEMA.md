@@ -117,7 +117,9 @@ Notes:
 
 ## An occurrence (`occurrences[i]`)
 
-Only present when `outcome` is `fail` or `cantTell` (a `pass`/`notApplicable` result has `occurrences: []` — this engine does not enumerate the elements it passed, only the ones it flagged).
+Normally present only when `outcome` is `fail` or `cantTell`: a `pass` result has `occurrences: []`, since this engine does not enumerate the elements it passed, only the ones it flagged.
+
+`notApplicable` is the one exception. A rule that had nothing to judge may attach a single occurrence saying why, and the contrast rules do exactly that when no text had a computable background — the difference between "checked, nothing to flag" and "could not check" is one this engine reports rather than hides. Such an occurrence describes the scan, not an element, so its `selector` is empty. Do not read `occurrences.length` as a violation count without checking `outcome` first.
 
 ```ts
 {
@@ -143,7 +145,7 @@ Only present when `outcome` is `fail` or `cantTell` (a `pass`/`notApplicable` re
 
 | Field | Meaning |
 |---|---|
-| `selector` | A best-effort CSS selector built to resolve back to the flagged element (see `helpers.buildSelector` in `RULE_AUTHORING.md`). Not guaranteed unique in adversarial DOM shapes, but the engine actively verifies it resolves to the reported element before using it. |
+| `selector` | A best-effort CSS selector built to resolve back to the flagged element (see `helpers.buildSelector` in `RULE_AUTHORING.md`). Not guaranteed unique in adversarial DOM shapes, but the engine actively verifies it resolves to the reported element before using it. The exception is a rule whose finding *is* an absent element: `page-title-present` reports `head > title` with an `html` of `<title>(missing)</title>`, neither of which is on the page. Both are constants, so the fingerprint they feed stays stable, but do not treat `selector` as resolvable or `html` as real markup without checking the rule reported something that exists. |
 | `html` | An outer-HTML snippet of the flagged element — use this as your primary "which element" signal when `includeShadowDom: true` (selectors don't pierce shadow boundaries). |
 | `structuralPath` | The flagged element's sibling-index path from `documentElement` down to it (e.g. `[1, 0, 2]`) — `[]` if the element *is* `documentElement`, `null` if it couldn't be determined. A more robust element-identity mechanism than `selector` alone: it survives DOM changes a selector string wouldn't (an id/class rename, for instance), at the cost of not being usable as an actual CSS selector. Computed from the element reference when the rule kept one, otherwise by re-resolving `selector` against the document (same caveat as `selector` itself: a non-unique selector could resolve to a different element than intended). |
 | `summary` | Human-readable, already localized ("This button has no accessible name."). |

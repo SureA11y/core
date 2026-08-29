@@ -23,7 +23,7 @@ A **consumer** gets an interchange format. EARL is what accessibility tooling re
 
 ## How it differs from the other reporters
 
-[`SARIF.md`](./SARIF.md) and [`REPORT.md`](./REPORT.md) both carry **violations only**: a `pass` or `notApplicable` result has no occurrences, so there is nothing for them to show. EARL is the opposite. Every rule that ran becomes an assertion, `pass` and `inapplicable` included, because an implementation report is a claim about what the engine decided *everywhere*. A rule that stayed silent because it found nothing applicable is evidence, not noise — it is how a reader distinguishes "this engine checked and found nothing to check" from "this engine does not implement that rule at all".
+[`SARIF.md`](./SARIF.md) and [`REPORT.md`](./REPORT.md) both carry **violations only**: they report `fail` and `cantTell` occurrences and drop everything else. EARL is the opposite. Every rule that ran becomes an assertion, `pass` and `inapplicable` included, because an implementation report is a claim about what the engine decided *everywhere*. A rule that stayed silent because it found nothing applicable is evidence, not noise — it is how a reader distinguishes "this engine checked and found nothing to check" from "this engine does not implement that rule at all".
 
 ## Shape
 

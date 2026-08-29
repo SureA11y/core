@@ -467,3 +467,19 @@ test('renderSarifReport: an occurrence carrying `outcome` instead of `occurrence
     ['error', 'warning']
   );
 });
+
+test('a notApplicable check can carry an explanatory occurrence, which SARIF omits', () => {
+  const result = runa11yCoreOnHtml(
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><p>Hello world</p></body></html>',
+    { engineOptions: {} }
+  );
+
+  const contrast = result.checksResults.find((c) => c.ruleId === 'contrast-minimum');
+  assert.strictEqual(contrast.outcome, 'notApplicable');
+  assert.strictEqual(contrast.occurrences.length, 1, 'the rule says why it had nothing to judge');
+  assert.strictEqual(contrast.occurrences[0].selector, '', 'it describes the scan, not an element');
+
+  const sarif = parse(renderSarifReport(result, { toolVersion: '1.2.3' }));
+  const ids = sarif.runs[0].results.map((r) => r.ruleId);
+  assert.ok(!ids.includes('contrast-minimum'), 'a notApplicable occurrence is not an alert');
+});
