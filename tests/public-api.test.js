@@ -55,7 +55,7 @@ test('the internal set is not reachable through a documented entry point', () =>
   // The root is the only specifier carrying the engine surface; the others are
   // the reporters and the browser bundle, which export their own functions.
   assert.ok(subpaths.includes('.'), 'the package still exports a root specifier');
-  for (const sub of ['./baseline', './report', './sarif']) {
+  for (const sub of ['./baseline', './report', './sarif', './earl']) {
     assert.ok(subpaths.includes(sub), `${sub} is a documented entry point`);
   }
 });
