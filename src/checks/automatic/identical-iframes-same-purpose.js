@@ -182,6 +182,24 @@ function runInPage(ctx) {
             hintKey: 'identicalIframesSamePurpose_hint_cantTell',
             params: { element: tag, name }
           },
+          uncertainty:
+            keys[i] == null
+              ? {
+                  code: 'not-computable',
+                  needed: 'A resolvable src for this frame.',
+                  evidence: { element: tag, name, setSize: els.length }
+                }
+              : {
+                  code: 'equivalence-unknown',
+                  needed: 'Whether the two resources serve the same purpose despite differing.',
+                  evidence: {
+                    element: tag,
+                    name,
+                    resource: keys[i],
+                    otherResources: resolved.filter((k) => k !== keys[i]),
+                    setSize: els.length
+                  }
+                },
           data: {
             details: {
               reasonCode:

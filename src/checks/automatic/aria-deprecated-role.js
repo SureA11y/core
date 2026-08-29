@@ -161,6 +161,12 @@ function runInPage(ctx) {
             hintKey: guidance.key,
             params: { role }
           },
+          uncertainty: {
+            code: 'spec-only',
+            needed:
+              'Whether this user-agent-reserved role misleads the assistive technology in use.',
+            evidence: { role, ariaStatus: 'discouraged-for-authors' }
+          },
           data: {
             details: { reasonCode: 'ARIA_ROLE_AUTHOR_DISCOURAGED', role, guidance: guidance.text }
           }
@@ -177,6 +183,12 @@ function runInPage(ctx) {
             summaryKey: 'ariaDeprecatedRole_summary_cantTell',
             hintKey: guidance.key,
             params: { role }
+          },
+          uncertainty: {
+            code: 'spec-only',
+            needed:
+              'Whether the deprecated role is still honoured, and what it should be replaced with.',
+            evidence: { role, ariaStatus: 'deprecated' }
           },
           data: {
             details: { reasonCode: 'ARIA_ROLE_DEPRECATED', role, guidance: guidance.text }

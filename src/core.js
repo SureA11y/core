@@ -11262,6 +11262,17 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
     if (typeof o.hint !== 'string') o.hint = '';
     if (typeof o.html !== 'string') o.html = '';
 
+    // Uncertainty describes a cantTell-tier finding; on a fail-tier occurrence
+    // it would claim the rule both decided and did not, so it is dropped.
+    const occTier =
+      (o.occurrenceOutcome === 'fail' || o.occurrenceOutcome === 'cantTell')
+        ? o.occurrenceOutcome
+        : out.outcome;
+    const normalizedUncertainty =
+      occTier === 'cantTell' ? normalizeUncertainty(o.uncertainty) : null;
+    if (normalizedUncertainty) o.uncertainty = normalizedUncertainty;
+    else delete o.uncertainty;
+
     // Existing i18n normalization/resolution (leave as-is, shown shortened here)
     if (o.i18n && typeof o.i18n === 'object' && !Array.isArray(o.i18n)) {
       const ii = { ...o.i18n };
@@ -18832,6 +18843,31 @@ const createDomHelpers = (function createDomHelpers(opts) {
   };
 });
 
+// Inlined from src/core/uncertainty.js -- the cantTell vocabulary, emitted so
+// normalizeRuleResult can validate an occurrence's uncertainty in-page.
+const UNCERTAINTY_CODE_VALUES = [
+  "not-computable",
+  "runtime-dependent",
+  "spec-only",
+  "equivalence-unknown",
+  "judgement-required",
+  "out-of-scope"
+];
+const isUncertaintyCode = (function isUncertaintyCode(code) {
+  return UNCERTAINTY_CODE_VALUES.indexOf(code) !== -1;
+});
+const normalizeUncertainty = (function normalizeUncertainty(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) return null;
+  if (!isUncertaintyCode(input.code)) return null;
+
+  const out = { code: input.code };
+  if (typeof input.needed === 'string' && input.needed.trim()) out.needed = input.needed.trim();
+  if (input.evidence && typeof input.evidence === 'object' && !Array.isArray(input.evidence)) {
+    out.evidence = { ...input.evidence };
+  }
+  return out;
+});
+
 // Inlined from src/core/rule-meta.js (also used at build time by loadRuleModules
 // above -- single source of truth -- and here so runtime-registered custom
 // rules via engineOptions.customRules get identical meta defaulting/validation
@@ -19659,12 +19695,26 @@ const runCore = (function runCore(
     const defTags = def && Array.isArray(def.tags) ? def.tags : [];
     if (!defTags.some((tag) => String(tag).toLowerCase() === WCAG_REMOVED_SC_TAG)) return result;
 
+    const removedSc = def && Array.isArray(def.wcagSc) ? def.wcagSc.slice() : [];
+
+    // Every occurrence becomes cantTell-tier here, so each one states why: the
+    // finding stands, the criterion it was made against does not.
     const occurrences = Array.isArray(result.occurrences)
-      ? result.occurrences.map((occ) =>
-          occ && typeof occ === 'object' && !Array.isArray(occ) && occ.occurrenceOutcome === 'fail'
-            ? { ...occ, occurrenceOutcome: 'cantTell' }
-            : occ
-        )
+      ? result.occurrences.map((occ) => {
+          if (!occ || typeof occ !== 'object' || Array.isArray(occ)) return occ;
+          const next =
+            occ.occurrenceOutcome === 'fail'
+              ? { ...occ, occurrenceOutcome: 'cantTell' }
+              : { ...occ };
+          if (!next.uncertainty) {
+            next.uncertainty = {
+              code: 'out-of-scope',
+              needed: `Whether this still matters under WCAG ${targetWcagVersion}, which removed the criterion it was found against.`,
+              evidence: { removedSc, target: targetWcagVersion, findingStands: true }
+            };
+          }
+          return next;
+        })
       : result.occurrences;
 
     // Deliberately NOT reported through `error`: nothing went wrong here,
@@ -19675,7 +19725,7 @@ const runCore = (function runCore(
       occurrences,
       wcagVersionScope: {
         target: targetWcagVersion,
-        removedSc: def && Array.isArray(def.wcagSc) ? def.wcagSc.slice() : [],
+        removedSc,
         coercedFrom: 'fail'
       }
     };
@@ -29248,6 +29298,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               hintKey: 'ariaAllowedAttr_hint_cantTell',
               params: { attr: name, role }
             },
+            uncertainty: {
+              code: 'spec-only',
+              needed:
+                'Whether the deprecated attribute is still honoured by the assistive technology in use.',
+              evidence: { attribute: name, role, status: 'deprecated-for-role' }
+            },
             data: {
               details: { reasonCode: 'ARIA_ATTR_DEPRECATED', attr: name, role }
             }
@@ -29322,6 +29378,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           summaryKey: 'ariaAllowedRole_summary_fail',
           hintKey: 'ariaAllowedRole_hint_fail',
           params: { role, element: tag }
+        },
+        uncertainty: {
+          code: 'spec-only',
+          needed: 'Whether the role misstates this element to assistive technology in practice.',
+          evidence: {
+            role,
+            element: tag,
+            source: 'ARIA in HTML permitted-roles table',
+            wcagSc: []
+          }
         },
         data: {
           details: { reasonCode: 'ARIA_ROLE_NOT_ALLOWED_FOR_ELEMENT', role, element: tag }
@@ -29411,6 +29477,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             summaryKey: 'ariaBrailleEquivalent_summary_fail',
             hintKey: 'ariaBrailleEquivalent_hint_fail',
             params: { element: tag, attr: m.attr, requires: m.requires }
+          },
+          uncertainty: {
+            code: 'spec-only',
+            needed:
+              'Whether any user reaches this attribute, given no braille equivalent is exposed.',
+            evidence: { element: tag, attribute: m.attr, requires: m.requires }
           },
           data: {
             details: {
@@ -29554,6 +29626,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           hintKey: 'ariaConditionalAttr_hint_fail',
           params: { element: tag, ariaInvalid: invalidValue || '(absent)' }
         },
+        uncertainty: {
+          code: 'spec-only',
+          needed: 'Whether the field is ever in an invalid state that should expose this message.',
+          evidence: { element: tag, ariaInvalid: invalidValue || null }
+        },
         data: {
           details: {
             reasonCode: 'ARIA_ERRORMESSAGE_WITHOUT_TRUTHY_INVALID',
@@ -29677,6 +29754,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             hintKey: guidance.key,
             params: { role }
           },
+          uncertainty: {
+            code: 'spec-only',
+            needed:
+              'Whether this user-agent-reserved role misleads the assistive technology in use.',
+            evidence: { role, ariaStatus: 'discouraged-for-authors' }
+          },
           data: {
             details: { reasonCode: 'ARIA_ROLE_AUTHOR_DISCOURAGED', role, guidance: guidance.text }
           }
@@ -29693,6 +29776,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             summaryKey: 'ariaDeprecatedRole_summary_cantTell',
             hintKey: guidance.key,
             params: { role }
+          },
+          uncertainty: {
+            code: 'spec-only',
+            needed:
+              'Whether the deprecated role is still honoured, and what it should be replaced with.',
+            evidence: { role, ariaStatus: 'deprecated' }
           },
           data: {
             details: { reasonCode: 'ARIA_ROLE_DEPRECATED', role, guidance: guidance.text }
@@ -30863,6 +30952,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               hintKey: 'ariaProhibitedAttr_hint_cantTell_roleless',
               params: { attr, element: tag }
             },
+            uncertainty: {
+              code: 'judgement-required',
+              needed: 'Whether the element’s own content already serves as its label.',
+              evidence: { attribute: attr, element: tag, role: null, hasOwnContent: true }
+            },
             data: {
               details: {
                 reasonCode: 'ARIA_ATTR_PROHIBITED_ROLELESS_NEEDS_REVIEW',
@@ -31295,6 +31389,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               hintKey: 'ariaRequiredAttr_hint_cantTell',
               params: { attr, role, implicit }
             },
+            uncertainty: {
+              code: 'spec-only',
+              needed: 'Whether the implicit fallback is the state the author meant.',
+              evidence: { attribute: attr, role, implicitValue: implicit }
+            },
             data: {
               details: {
                 reasonCode: 'ARIA_ATTR_REQUIRED_MISSING_IMPLICIT',
@@ -31511,6 +31610,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           summaryKey: 'ariaRequiredChildren_summary_fail',
           hintKey: 'ariaRequiredChildren_hint_fail',
           params: { role, requiredRoles: requiredOwned.join(', ') }
+        },
+        uncertainty: {
+          code: 'spec-only',
+          needed:
+            'Whether this container is legitimately empty, or holds items that never got their role.',
+          evidence: {
+            role,
+            requiredOwnedRoles: requiredOwned,
+            childElementCount: el.children ? el.children.length : null
+          }
         },
         data: {
           details: {
@@ -32032,6 +32141,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             hintKey: 'ariaRolesValid_hint_cantTell',
             params: { role, nativeRole }
           },
+          uncertainty: {
+            code: 'spec-only',
+            needed: 'Whether the native role this element falls back to is the one intended.',
+            evidence: { role, nativeRole, fallbackExposed: true }
+          },
           data: {
             details: { reasonCode, role, nativeRole }
           }
@@ -32181,6 +32295,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             hintKey: 'ariaValidAttr_hint_fail',
             params: { attr: name }
           },
+          uncertainty: {
+            code: 'spec-only',
+            needed:
+              'Whether the misspelling cost the element a name or state it has no other source for.',
+            evidence: { attribute: name, definedInAria: false, exposedEffect: 'none' }
+          },
           data: {
             details: { reasonCode: 'ARIA_ATTR_INVALID', attr: name }
           }
@@ -32273,6 +32393,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             summaryKey: 'ariaValidAttrValue_summary_cantTell_idref',
             hintKey: 'ariaValidAttrValue_hint_cantTell_idref',
             params: { attr: item.name, value: item.value }
+          },
+          uncertainty: {
+            code: 'runtime-dependent',
+            needed: 'Whether the widget creates the referenced element when it opens.',
+            evidence: {
+              attribute: item.name,
+              referencedId: item.value,
+              resolvedAtScanTime: false
+            }
           },
           data: {
             details: {
@@ -32703,6 +32832,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             params: {
               element: (el.tagName || '').toLowerCase(),
               properties: props.join(', ')
+            }
+          },
+          uncertainty: {
+            code: 'not-computable',
+            needed: 'A resolved value for the spacing declarations marked !important.',
+            evidence: {
+              element: (el.tagName || '').toLowerCase(),
+              properties: props,
+              reasonCode: 'INLINE_SPACING_NOT_RESOLVABLE'
             }
           },
           data: {
@@ -34009,6 +34147,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               : {}
           )
         },
+        uncertainty: {
+          code: 'not-computable',
+          needed: 'A contrast ratio for this text, which this page composition blocks.',
+          evidence: {
+            reasonCode: rc,
+            blockerProperty: details.blockerProperty || null,
+            blockerValue: details.blockerValue || null,
+            backgroundAlpha: details.backgroundAlpha === undefined ? null : details.backgroundAlpha
+          }
+        },
         data: { details }
       };
 
@@ -34424,6 +34572,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
       const det = details && typeof details === 'object' ? details : { reasonCode: 'UNKNOWN' };
 
+      // The background is the only input this rule can fail to resolve; every other
+      // reason code here describes a ratio it did compute.
+      const uncertainty =
+        det.reasonCode === 'BACKGROUND_NOT_COMPUTABLE'
+          ? {
+              code: 'not-computable',
+              needed: 'The effective background colour behind this text.',
+              evidence: { reasonCode: det.reasonCode, foreground: det.fg || null }
+            }
+          : null;
+
       const occBase = {
         selector: '',
         html: '',
@@ -34434,6 +34593,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           hintKey: '',
           params: params && typeof params === 'object' ? params : {}
         },
+        ...(uncertainty ? { uncertainty } : {}),
         data: { details: det }
       };
 
@@ -34926,6 +35086,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
       const det = details && typeof details === 'object' ? details : { reasonCode: 'UNKNOWN' };
 
+      // The background is the only input this rule can fail to resolve; every other
+      // reason code here describes a ratio it did compute.
+      const uncertainty =
+        det.reasonCode === 'BACKGROUND_NOT_COMPUTABLE'
+          ? {
+              code: 'not-computable',
+              needed: 'The effective background colour behind this text.',
+              evidence: { reasonCode: det.reasonCode, foreground: det.fg || null }
+            }
+          : null;
+
       const occBase = {
         selector: '',
         html: '',
@@ -34936,6 +35107,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           hintKey: '',
           params: params && typeof params === 'object' ? params : {}
         },
+        ...(uncertainty ? { uncertainty } : {}),
         data: { details: det }
       };
 
@@ -36240,6 +36412,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               hintKey: 'cssOrientationLock_hint_cantTell_unreadableSheets',
               params: { count: String(unreadableSheetCount) }
             },
+            uncertainty: {
+              code: 'not-computable',
+              needed: 'The contents of the stylesheets this scan could not read.',
+              evidence: { unreadableSheetCount, reasonCode: 'STYLESHEETS_NOT_READABLE' }
+            },
             data: {
               details: {
                 reasonCode: 'STYLESHEETS_NOT_READABLE',
@@ -36821,6 +36998,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             summaryKey: 'duplicateIdAria_summary_cantTell',
             hintKey: 'duplicateIdAria_hint_cantTell',
             params: { id: refId, duplicateCount: String(els.length) }
+          },
+          uncertainty: {
+            code: 'judgement-required',
+            needed: 'Whether the first element carrying this id is the intended target.',
+            evidence: { id: refId, duplicateCount: els.length, resolvesTo: 'first' }
           },
           data: {
             details: {
@@ -38639,6 +38821,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             hintKey: 'formControlSingleLabel_hint_cantTell',
             params: { element: tag, labelCount: String(eligibleLabels.size) }
           },
+          uncertainty: {
+            code: 'spec-only',
+            needed: 'Whether the empty label is filled in at runtime or is simply redundant.',
+            evidence: {
+              element: tag,
+              labelCount: eligibleLabels.size,
+              contributingLabelCount: contributing.length
+            }
+          },
           data: {
             details: {
               reasonCode: 'FORM_FIELD_EXTRA_EMPTY_LABEL',
@@ -39310,6 +39501,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             hintKey: 'identicalIframesSamePurpose_hint_cantTell',
             params: { element: tag, name }
           },
+          uncertainty:
+            keys[i] == null
+              ? {
+                  code: 'not-computable',
+                  needed: 'A resolvable src for this frame.',
+                  evidence: { element: tag, name, setSize: els.length }
+                }
+              : {
+                  code: 'equivalence-unknown',
+                  needed: 'Whether the two resources serve the same purpose despite differing.',
+                  evidence: {
+                    element: tag,
+                    name,
+                    resource: keys[i],
+                    otherResources: resolved.filter((k) => k !== keys[i]),
+                    setSize: els.length
+                  }
+                },
           data: {
             details: {
               reasonCode:
@@ -39805,6 +40014,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             'This frame has tabindex="-1" and a focusable candidate, but focus moves immediately to another target. Verify keyboard reachability in a real browser.',
           hint: 'If this is an intentional focus handoff, ensure keyboard users cannot remain on hidden/intermediate frame content.',
           i18n: null,
+          uncertainty: {
+            code: 'runtime-dependent',
+            needed: 'Whether a keyboard user can reach this frame’s content in a real browser.',
+            evidence: { element: tag, focusRedirected: true }
+          },
           data: {
             details: {
               reasonCode: 'IFRAME_TABINDEX_NEGATIVE_CONTENT_RUNTIME_REDIRECT',
@@ -41595,44 +41809,45 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // character) is not something markup settles: the author may have meant
     // either. Report without asserting a defect instead of failing or
     // staying silent.
-    let uncertainty = '';
+    let uncertainReason = '';
     if (!contains) {
       if (containsWordRun(tokenize(visibleLabel, true), tokenize(accName, true), null)) {
-        uncertainty = 'HYPHENATION_DIFFERS';
+        uncertainReason = 'HYPHENATION_DIFFERS';
       } else {
         const abbreviated = abbreviatedWords(visibleLabel);
         if (abbreviated.size && containsWordRun(labelTokens, nameTokens, abbreviated)) {
-          uncertainty = 'POSSIBLE_ABBREVIATION';
+          uncertainReason = 'POSSIBLE_ABBREVIATION';
         } else if ((labelInfo.sourceElements || []).some(isIconFontElement)) {
-          uncertainty = 'POSSIBLE_ICON_FONT_GLYPH';
+          uncertainReason = 'POSSIBLE_ICON_FONT_GLYPH';
         } else if (isSingleSymbolicCharacter(visibleLabel, accNorm)) {
-          uncertainty = 'POSSIBLE_SYMBOLIC_CHARACTER';
+          uncertainReason = 'POSSIBLE_SYMBOLIC_CHARACTER';
         }
       }
     }
 
     const isSymbolicUncertainty =
-      uncertainty === 'POSSIBLE_ICON_FONT_GLYPH' || uncertainty === 'POSSIBLE_SYMBOLIC_CHARACTER';
+      uncertainReason === 'POSSIBLE_ICON_FONT_GLYPH' ||
+      uncertainReason === 'POSSIBLE_SYMBOLIC_CHARACTER';
 
     if (!contains) {
       occurrences.push(
         helpers.reportOccurrence(el, {
-          ...(uncertainty ? { outcome: 'cantTell' } : null),
-          summary: uncertainty
+          ...(uncertainReason ? { outcome: 'cantTell' } : null),
+          summary: uncertainReason
             ? 'Accessible name may not contain the visible label text.'
             : 'Accessible name does not contain the visible label text.',
-          hint: !uncertainty
+          hint: !uncertainReason
             ? 'Ensure the accessible name includes the visible text label (e.g., update aria-label/aria-labelledby to include the visible wording).'
             : isSymbolicUncertainty
               ? 'Check by hand: the visible text may render as an icon or symbol rather than literal words, which markup cannot settle.'
               : 'Check by hand: the two differ only by an abbreviation or by hyphenation, which markup cannot settle.',
           i18n: {
-            summaryKey: !uncertainty
+            summaryKey: !uncertainReason
               ? 'labelInName_summary_fail'
               : isSymbolicUncertainty
                 ? 'labelInName_summary_cantTell_symbolic'
                 : 'labelInName_summary_cantTell',
-            hintKey: !uncertainty
+            hintKey: !uncertainReason
               ? 'labelInName_hint_fail'
               : isSymbolicUncertainty
                 ? 'labelInName_hint_cantTell_symbolic'
@@ -41644,9 +41859,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               nameMechanism: acc && acc.mechanism ? acc.mechanism : 'none'
             }
           },
+          ...(uncertainReason
+            ? {
+                uncertainty: {
+                  code: 'equivalence-unknown',
+                  needed:
+                    'Whether the accessible name and the visible label say the same thing to a user.',
+                  evidence: {
+                    visibleLabel,
+                    accessibleName: accName,
+                    difference: uncertainReason
+                  }
+                }
+              }
+            : null),
           data: {
             details: {
-              reasonCode: uncertainty || 'VISIBLE_LABEL_NOT_IN_ACCESSIBLE_NAME',
+              reasonCode: uncertainReason || 'VISIBLE_LABEL_NOT_IN_ACCESSIBLE_NAME',
               visibleLabel,
               accessibleName: accName,
               normalized: { visibleLabel: visibleNorm, accessibleName: accNorm },
@@ -43508,6 +43737,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           i18n: {
             summaryKey: 'linkInTextBlock_summary_cantTell',
             hintKey: 'linkInTextBlock_hint_cantTell'
+          },
+          uncertainty: {
+            code: 'not-computable',
+            needed:
+              'Whether the link carries an underline, weight or style difference, or 3:1 contrast against its surrounding text.',
+            evidence: { reasonCode }
           },
           data: {
             visibilityFilter: helpers.getEligibilityInfo
@@ -51076,6 +51311,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             hintKey: 'targetSizeMinimum_hint_cantTell_ambiguousSpacing',
             params: {}
           },
+          uncertainty: {
+            code: 'not-computable',
+            needed: 'A reliable measurement of the spacing between this target and its neighbour.',
+            evidence: {
+              measured: { width: it.rect.width, height: it.rect.height },
+              conflictHitCount: info.hitCount
+            }
+          },
           data: {
             details: {
               measured: { width: it.rect.width, height: it.rect.height },
@@ -51105,6 +51348,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               hintKey: 'targetSizeMinimum_hint_cantTell_plausiblyEssential',
               params: {}
             },
+            uncertainty: {
+              code: 'judgement-required',
+              needed: 'Whether this target’s size is essential, which WCAG exempts.',
+              evidence: {
+                measured: { width: it.rect.width, height: it.rect.height },
+                conflictHitCount: info.hitCount
+              }
+            },
             data: {
               details: {
                 measured: { width: it.rect.width, height: it.rect.height },
@@ -51132,6 +51383,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               summaryKey: 'targetSizeMinimum_summary_cantTell_inlineLinkRun',
               hintKey: 'targetSizeMinimum_hint_cantTell_inlineLinkRun',
               params: {}
+            },
+            uncertainty: {
+              code: 'judgement-required',
+              needed: 'Whether this target is a link in a sentence, which WCAG exempts.',
+              evidence: {
+                measured: { width: it.rect.width, height: it.rect.height },
+                conflictHitCount: info.hitCount
+              }
             },
             data: {
               details: {
@@ -55716,6 +55975,17 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
     if (typeof o.summary !== 'string') o.summary = '';
     if (typeof o.hint !== 'string') o.hint = '';
     if (typeof o.html !== 'string') o.html = '';
+
+    // Uncertainty describes a cantTell-tier finding; on a fail-tier occurrence
+    // it would claim the rule both decided and did not, so it is dropped.
+    const occTier =
+      (o.occurrenceOutcome === 'fail' || o.occurrenceOutcome === 'cantTell')
+        ? o.occurrenceOutcome
+        : out.outcome;
+    const normalizedUncertainty =
+      occTier === 'cantTell' ? normalizeUncertainty(o.uncertainty) : null;
+    if (normalizedUncertainty) o.uncertainty = normalizedUncertainty;
+    else delete o.uncertainty;
 
     // Existing i18n normalization/resolution (leave as-is, shown shortened here)
     if (o.i18n && typeof o.i18n === 'object' && !Array.isArray(o.i18n)) {
@@ -63287,6 +63557,31 @@ const createDomHelpers = (function createDomHelpers(opts) {
   };
 });
 
+// Inlined from src/core/uncertainty.js -- the cantTell vocabulary, emitted so
+// normalizeRuleResult can validate an occurrence's uncertainty in-page.
+const UNCERTAINTY_CODE_VALUES = [
+  "not-computable",
+  "runtime-dependent",
+  "spec-only",
+  "equivalence-unknown",
+  "judgement-required",
+  "out-of-scope"
+];
+const isUncertaintyCode = (function isUncertaintyCode(code) {
+  return UNCERTAINTY_CODE_VALUES.indexOf(code) !== -1;
+});
+const normalizeUncertainty = (function normalizeUncertainty(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) return null;
+  if (!isUncertaintyCode(input.code)) return null;
+
+  const out = { code: input.code };
+  if (typeof input.needed === 'string' && input.needed.trim()) out.needed = input.needed.trim();
+  if (input.evidence && typeof input.evidence === 'object' && !Array.isArray(input.evidence)) {
+    out.evidence = { ...input.evidence };
+  }
+  return out;
+});
+
 // Inlined from src/core/rule-meta.js (also used at build time by loadRuleModules
 // above -- single source of truth -- and here so runtime-registered custom
 // rules via engineOptions.customRules get identical meta defaulting/validation
@@ -64114,12 +64409,26 @@ const runCore = (function runCore(
     const defTags = def && Array.isArray(def.tags) ? def.tags : [];
     if (!defTags.some((tag) => String(tag).toLowerCase() === WCAG_REMOVED_SC_TAG)) return result;
 
+    const removedSc = def && Array.isArray(def.wcagSc) ? def.wcagSc.slice() : [];
+
+    // Every occurrence becomes cantTell-tier here, so each one states why: the
+    // finding stands, the criterion it was made against does not.
     const occurrences = Array.isArray(result.occurrences)
-      ? result.occurrences.map((occ) =>
-          occ && typeof occ === 'object' && !Array.isArray(occ) && occ.occurrenceOutcome === 'fail'
-            ? { ...occ, occurrenceOutcome: 'cantTell' }
-            : occ
-        )
+      ? result.occurrences.map((occ) => {
+          if (!occ || typeof occ !== 'object' || Array.isArray(occ)) return occ;
+          const next =
+            occ.occurrenceOutcome === 'fail'
+              ? { ...occ, occurrenceOutcome: 'cantTell' }
+              : { ...occ };
+          if (!next.uncertainty) {
+            next.uncertainty = {
+              code: 'out-of-scope',
+              needed: `Whether this still matters under WCAG ${targetWcagVersion}, which removed the criterion it was found against.`,
+              evidence: { removedSc, target: targetWcagVersion, findingStands: true }
+            };
+          }
+          return next;
+        })
       : result.occurrences;
 
     // Deliberately NOT reported through `error`: nothing went wrong here,
@@ -64130,7 +64439,7 @@ const runCore = (function runCore(
       occurrences,
       wcagVersionScope: {
         target: targetWcagVersion,
-        removedSc: def && Array.isArray(def.wcagSc) ? def.wcagSc.slice() : [],
+        removedSc,
         coercedFrom: 'fail'
       }
     };

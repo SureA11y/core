@@ -102,6 +102,12 @@ function runInPage(ctx) {
             hintKey: 'ariaValidAttr_hint_fail',
             params: { attr: name }
           },
+          uncertainty: {
+            code: 'spec-only',
+            needed:
+              'Whether the misspelling cost the element a name or state it has no other source for.',
+            evidence: { attribute: name, definedInAria: false, exposedEffect: 'none' }
+          },
           data: {
             details: { reasonCode: 'ARIA_ATTR_INVALID', attr: name }
           }

@@ -83,3 +83,14 @@ test('validate-rule rejects an export outside the module contract', () => {
 
   assert.equal(validateSource(source), false);
 });
+
+for (const [label, code, accepted] of [
+  ['a code in the vocabulary', 'spec-only', true],
+  ['a misspelled code', 'equivalence-unkown', false],
+  ['an invented code', 'probably-fine', false]
+]) {
+  test(`validate-rule ${accepted ? 'accepts' : 'rejects'} ${label}`, () => {
+    const line = `const u = { uncertainty: { code: '${code}' }, data: {} };`;
+    assert.equal(validate(line), accepted);
+  });
+}

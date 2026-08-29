@@ -209,6 +209,11 @@ function runInPage(ctx) {
               hintKey: 'ariaRequiredAttr_hint_cantTell',
               params: { attr, role, implicit }
             },
+            uncertainty: {
+              code: 'spec-only',
+              needed: 'Whether the implicit fallback is the state the author meant.',
+              evidence: { attribute: attr, role, implicitValue: implicit }
+            },
             data: {
               details: {
                 reasonCode: 'ARIA_ATTR_REQUIRED_MISSING_IMPLICIT',

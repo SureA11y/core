@@ -39,6 +39,7 @@ const path = require('node:path');
 const { runa11yCoreOnHtml } = require('../tests/helpers/runDomRulesOnHtml.js');
 const { assertRule } = require('../tests/helpers/assertRule.js');
 const { versionTagPrefixForScs } = require('../src/coverage/wcag-version-map.js');
+const { UNCERTAINTY_CODE_VALUES, isUncertaintyCode } = require('../src/core/uncertainty.js');
 
 function loadWcagFacetsRegistry(repoRoot) {
   const p = path.join(repoRoot, 'src', 'coverage', 'wcag-facets.js');
@@ -220,6 +221,39 @@ function extractI18nKeysFromSource(runFilePath) {
     if (m[2]) keys.add(m[2]);
   }
   return { keys: Array.from(keys), src };
+}
+
+function extractUncertaintyCodesFromSource(runFilePath) {
+  // Conservative extraction, same shape as the i18n key scan above. The engine
+  // drops an unrecognised code at normalization, so an invented one would vanish
+  // from the output rather than surface as a typo -- source is where it shows.
+  const src = fs.readFileSync(runFilePath, 'utf8');
+  const codes = [];
+
+  const blockRe = /\buncertainty\s*:/g;
+  let m;
+  while ((m = blockRe.exec(src)) !== null) {
+    // Bound the window at the sibling `data:` key, which every occurrence carries
+    // after its uncertainty payload; the character cap covers a rule without one.
+    const window = src.slice(m.index, m.index + 1200).split(/\bdata\s*:/)[0];
+    const codeRe = /\bcode\s*:\s*(['"])(.*?)\1/g;
+    let c;
+    while ((c = codeRe.exec(window)) !== null) {
+      if (c[2]) codes.push(c[2]);
+    }
+  }
+  return codes;
+}
+
+function validateUncertaintyCodes(runFilePath) {
+  const codes = extractUncertaintyCodesFromSource(runFilePath);
+  for (const code of codes) {
+    assert.ok(
+      isUncertaintyCode(code),
+      `uncertainty.code "${code}" is not in the vocabulary (${UNCERTAINTY_CODE_VALUES.join(', ')})`
+    );
+  }
+  return codes;
 }
 
 function validateMeta(meta) {
@@ -632,6 +666,9 @@ function main() {
   for (const k of staticKeys) {
     validateI18nKeyExists(enDict, k, 'static i18n key');
   }
+
+  // Keep the cantTell vocabulary closed (static extraction)
+  validateUncertaintyCodes(ruleAbsPath);
 
   // Runtime validation via engine
   const RULE_ID = mod.id;

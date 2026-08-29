@@ -136,6 +136,12 @@ function runInPage(ctx) {
             hintKey: 'ariaBrailleEquivalent_hint_fail',
             params: { element: tag, attr: m.attr, requires: m.requires }
           },
+          uncertainty: {
+            code: 'spec-only',
+            needed:
+              'Whether any user reaches this attribute, given no braille equivalent is exposed.',
+            evidence: { element: tag, attribute: m.attr, requires: m.requires }
+          },
           data: {
             details: {
               reasonCode: 'BRAILLE_ATTR_WITHOUT_EQUIVALENT',

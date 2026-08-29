@@ -141,6 +141,11 @@ function runInPage(ctx) {
             hintKey: 'ariaRolesValid_hint_cantTell',
             params: { role, nativeRole }
           },
+          uncertainty: {
+            code: 'spec-only',
+            needed: 'Whether the native role this element falls back to is the one intended.',
+            evidence: { role, nativeRole, fallbackExposed: true }
+          },
           data: {
             details: { reasonCode, role, nativeRole }
           }

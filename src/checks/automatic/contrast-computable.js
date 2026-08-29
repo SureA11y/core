@@ -178,6 +178,16 @@ function runInPage(ctx) {
               : {}
           )
         },
+        uncertainty: {
+          code: 'not-computable',
+          needed: 'A contrast ratio for this text, which this page composition blocks.',
+          evidence: {
+            reasonCode: rc,
+            blockerProperty: details.blockerProperty || null,
+            blockerValue: details.blockerValue || null,
+            backgroundAlpha: details.backgroundAlpha === undefined ? null : details.backgroundAlpha
+          }
+        },
         data: { details }
       };
 

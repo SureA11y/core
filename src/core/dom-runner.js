@@ -688,12 +688,26 @@ function runCore(
     const defTags = def && Array.isArray(def.tags) ? def.tags : [];
     if (!defTags.some((tag) => String(tag).toLowerCase() === WCAG_REMOVED_SC_TAG)) return result;
 
+    const removedSc = def && Array.isArray(def.wcagSc) ? def.wcagSc.slice() : [];
+
+    // Every occurrence becomes cantTell-tier here, so each one states why: the
+    // finding stands, the criterion it was made against does not.
     const occurrences = Array.isArray(result.occurrences)
-      ? result.occurrences.map((occ) =>
-          occ && typeof occ === 'object' && !Array.isArray(occ) && occ.occurrenceOutcome === 'fail'
-            ? { ...occ, occurrenceOutcome: 'cantTell' }
-            : occ
-        )
+      ? result.occurrences.map((occ) => {
+          if (!occ || typeof occ !== 'object' || Array.isArray(occ)) return occ;
+          const next =
+            occ.occurrenceOutcome === 'fail'
+              ? { ...occ, occurrenceOutcome: 'cantTell' }
+              : { ...occ };
+          if (!next.uncertainty) {
+            next.uncertainty = {
+              code: 'out-of-scope',
+              needed: `Whether this still matters under WCAG ${targetWcagVersion}, which removed the criterion it was found against.`,
+              evidence: { removedSc, target: targetWcagVersion, findingStands: true }
+            };
+          }
+          return next;
+        })
       : result.occurrences;
 
     // Deliberately NOT reported through `error`: nothing went wrong here,
@@ -704,7 +718,7 @@ function runCore(
       occurrences,
       wcagVersionScope: {
         target: targetWcagVersion,
-        removedSc: def && Array.isArray(def.wcagSc) ? def.wcagSc.slice() : [],
+        removedSc,
         coercedFrom: 'fail'
       }
     };
