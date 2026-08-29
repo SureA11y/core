@@ -1,0 +1,26 @@
+{
+  "$comment": "Hand-maintained, unlike finding-ids.json in this directory: this is a decision about what the package promises, not a derivation from source. src/index.js re-exports the generated core verbatim, so every symbol the build emits reaches consumers whether or not it was meant to. Classifying each one here, and failing tests/public-api.test.js when the two disagree, is what makes the boundary deliberate. See docs/API_STABILITY.md#extension-points.",
+  "supported": [
+    "runa11yCoreInPage",
+    "runDomRulesInPage",
+    "runa11yCoreAcrossFrames",
+    "a11yCoreEnableFrameResponder",
+    "getChecksCatalog",
+    "getRulesCatalog"
+  ],
+  "internal": [
+    "CHECK_DEFS",
+    "COMPOSITE_RULES",
+    "DEFAULT_POLICY",
+    "ENGINE_TAG",
+    "POLICY_CONTRACTS",
+    "SCHEMA_VERSION",
+    "TEST_DEFS",
+    "__internal",
+    "getCheckDefById",
+    "getChecksForRunOnly",
+    "getCompositeRuleById",
+    "getTestsForRunOnly",
+    "resolvePolicy"
+  ]
+}

@@ -6,7 +6,7 @@
 
 Removing, renaming, or changing the type/meaning of any of these is a **major** version bump:
 
-- Top-level result: `engine.tag`, `engine.schemaVersion`, `engine.locale` (the field and its `requested`/`resolved`/`reason` keys — the set of `reason` *values* is open and may gain entries in a minor), `engine.wcagVersion`, `url`, `checksResults` (an array), `rulesResults` (an array).
+- Top-level result: `engine.tag`, `engine.schemaVersion`, `engine.locale` (the field and its `requested`/`resolved`/`reason` keys — the set of `reason` *values* is open and may gain entries in a minor), `engine.wcagVersion`, `url`, `checksResults` (an array), `rulesResults` (an array), `overriddenBuiltinIds` (an array, empty when no `customRules` entry shadowed a built-in id — part of the extension contract, see below).
 - Each `checksResults[i]` / `rulesResults[i]` entry: `ruleId`, `outcome`, `outcomeNormalized`, `severity`, `confidence`, `type`, `title`, `description`, `meta` (including `meta.normativeMappings`, `meta.deprecated`/`.deprecation` — see below), `engineOptions`, `schemaVersion`.
 - Each occurrence (`occurrences[i]`): `selector`, `html`, `summary`, `hint`, `i18n`, `structuralPath`.
 - The rule **catalog** (`getChecksCatalog()`/`getRulesCatalog()`, a separate surface from a scan result — see `RULE_AUTHORING.md`): `ruleId`, `title`, `description`, `tags`, `wcagSc`, `normativeMappings`, `defaultSeverity`, `defaultConfidence`, `type`, `deprecated`/`.deprecation`. Note `tags` lives here, not on a per-scan `checksResults[i].meta` — the two surfaces intentionally carry different subsets of a rule's metadata.
@@ -28,6 +28,33 @@ Since 1.4.0 the package declares an explicit `exports` map. These are the only i
 Anything **not** in that table — `src/core/*`, `src/checks/*`, `src/i18n/*`, `src/policy/*`, and the generated `src/core.js` itself — is internal. Before 1.4.0 there was no `exports` map, so those paths were technically reachable via deep `require()`; they were never documented as public and are no longer resolvable. The `<script src="node_modules/@surea11y/core/surea11y.browser.js">` form documented in the README is a filesystem path, not module resolution, and is unaffected.
 
 Declaring this map is what lets the engine's internal file layout change without a major bump. Note that `src/checks/*` is still *shipped* (the generated bundle `require()`s it at runtime) — shipped is not the same as public.
+
+## Extension points
+
+The `exports` map above says which **paths** are importable. It does not say which **symbols** behind them are supported, and that distinction matters here: `src/index.js` re-exports the generated core verbatim, so every symbol the build emits reaches consumers whether or not it was meant for them. The classification lives in [`scripts/data/public-api.json`](../scripts/data/public-api.json) and is checked by `tests/public-api.test.js`, which fails when a new export appears unclassified — a leak has to be a decision, not an accident.
+
+**Supported** — covered by semver, safe to build on:
+
+| Export | For |
+|---|---|
+| `runa11yCoreInPage` | Scanning from another JS realm: the whole engine is inlined, so `fn.toString()` re-evaluated in a browser tab works. What all five browser bindings use. |
+| `runDomRulesInPage` | Scanning in the same Node process, dispatching through real `require()`. What `@surea11y/test-matchers` uses. |
+| `runa11yCoreAcrossFrames` / `a11yCoreEnableFrameResponder` | Cross-frame scanning without an automation driver. |
+| `getChecksCatalog()` / `getRulesCatalog()` | Reading the rule catalog; its stable fields are listed above. |
+
+**Exported but internal** — reachable today, not supported, and free to change or disappear in a minor: `CHECK_DEFS`, `TEST_DEFS`, `COMPOSITE_RULES`, `DEFAULT_POLICY`, `POLICY_CONTRACTS`, `ENGINE_TAG`, `SCHEMA_VERSION`, `resolvePolicy`, `getCheckDefById`, `getCompositeRuleById`, `getChecksForRunOnly`, `getTestsForRunOnly`, `__internal`.
+
+They stay exported rather than being removed, because removing them is itself a breaking change and no consumer needs it yet; the honest fix for now is to say they are not part of the contract. Note the two constants have supported equivalents on every result — `engine.tag` and `engine.schemaVersion` — so read them from there rather than importing them. Curating this list down to the supported set is a candidate for the next major.
+
+### Extending the engine
+
+Three things are meant to be extended, and all three go through `engineOptions` or a separate entry point rather than through the exported symbols above:
+
+- **`engineOptions.customRules`** — the plugin mechanism: an array of rule descriptors registered for one call, never added to the static catalog and never persisted between calls. **The descriptor contract is covered by semver**: `id`, `meta`, `runInPage(ctx)` and the optional `applicability(ctx)` and `data`, along with the `ctx.helpers` a rule receives and the `{outcome, severity, occurrences}` it returns. That `runInPage`/`applicability` may be passed as a function *or* as a function-source string is part of the contract too, not a convenience: `engineOptions` crossing into another realm (a Playwright `page.evaluate`, say) cannot carry a live `Function`, so a binding has no other way to register one. A custom rule that shadows a built-in id replaces it for that scan and is reported back in `overriddenBuiltinIds`, so an accidental collision is visible rather than silent. A custom rule written against today's contract keeps working across minors; requiring a new field of it is a major. The full descriptor shape is in [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#customrules--runtime-registered-rules), the helpers in [`RULE_HELPERS.md`](./RULE_HELPERS.md), and the outcome rules a custom rule must obey in [`RULE_TAXONOMY.md`](./RULE_TAXONOMY.md).
+- **`engineOptions.policyContract` / `engineOptions.policy`** — which outcomes and confidence values a scan may report, and whether a manual rule's would-be `fail` is coerced. The two option names, the built-in contract ids `'a11y'` and `'generic'`, and the inline-contract shape are supported; the `POLICY_CONTRACTS` export itself is not, since passing a string or an inline object is all a caller needs. See [`POLICY.md`](./POLICY.md).
+- **Reporters** — `@surea11y/core/baseline`, `/report` and `/sarif` consume a result rather than hooking into the scan, which is why they are separate entry points. A consumer wanting a different output format reads the result shape above; nothing needs to be registered with the engine.
+
+There is deliberately no hook for changing what a built-in rule decides. Overriding one means shipping a `customRules` entry that reuses its id, which the engine allows for a single call, warns about, and reports in `overriddenBuiltinIds` — so a scan that silently disagrees with the catalog is not possible.
 
 ## Explicitly unstable (not covered by semver)
 
