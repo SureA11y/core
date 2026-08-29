@@ -210,7 +210,8 @@
     ],
     "avoid-inline-spacing": [
       "INLINE_SPACING_IMPORTANT",
-      "INLINE_SPACING_NOT_RESOLVABLE"
+      "INLINE_SPACING_NOT_RESOLVABLE",
+      "INLINE_SPACING_NO_SOFT_WRAP"
     ],
     "binary-control-name-present": [
       "name_missing"

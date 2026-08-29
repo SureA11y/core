@@ -42,6 +42,20 @@ falls on. Each rule makes a single deterministic decision:
 `cantTell` is the point of the project. An engine that quietly discards what it
 cannot determine produces a shorter report and a false sense of coverage.
 
+### Checked against the ACT corpus
+
+Every rule with a [W3C ACT Rules](https://act-rules.github.io/) counterpart runs
+against ACT's own published test cases: 798 examples across 58 rules. The engine
+fails none of the examples ACT marks `passed` or `inapplicable`, so it reports no
+false positives against that corpus. Where it cannot decide a case it returns
+`cantTell`, which ACT permits for an automated implementation.
+
+Thirty-one examples ACT marks `failed` go unflagged. Most are judgement calls,
+such as whether a heading describes the content under it.
+[`docs/ACT_RULE_MAPPING.md`](./docs/ACT_RULE_MAPPING.md) lists every one with the
+reasoning, and `node scripts/act-testcase-check.js` reproduces the figures. They
+cover the rules that have an ACT counterpart.
+
 ## What this engine does not detect
 
 Keyboard traps, reflow and clipping at 400% zoom, anything that only exists
@@ -440,16 +454,13 @@ surea11y is built on a simple principle:
 > Automate what can be determined objectively. Never pretend to automate
 > what cannot.
 
-Accessibility is not something that can be reduced to a single score or
-a binary pass/fail result. Some WCAG requirements can be evaluated with
-complete confidence, while others require human judgement, knowledge of
-context or usability evaluation.
+Some WCAG requirements can be checked with complete confidence. Others
+need human judgement, knowledge of context, or usability evaluation. A
+single score or a pass/fail verdict flattens that difference; surea11y
+reports it.
 
-Rather than hiding that distinction, surea11y makes it explicit.
-
-That philosophy influences every rule in the engine and is the reason
-outcomes such as `cantTell` and `notApplicable` exist. They communicate
-uncertainty honestly instead of encouraging misleading conclusions.
+This is why `cantTell` and `notApplicable` exist as outcomes, and it
+shapes every rule in the engine.
 
 ### What surea11y won't catch
 
@@ -469,11 +480,6 @@ philosophy. For example, surea11y will not:
 These are the cases where the engine reports `cantTell`, and where a
 human reviewer's judgement remains necessary. See
 `docs/LIMITATIONS.md` for the complete list of structural limitations.
-
-The objective of the project is not to replace accessibility experts. It
-is to remove repetitive verification work, provide reliable automated
-feedback to developers and help teams integrate accessibility into their
-normal development process.
 
 ---
 
@@ -553,9 +559,7 @@ engine consistency to ensure deterministic results across releases.
 
 Contributions are welcome.
 
-Whether you are fixing a bug, improving documentation or implementing a
-new accessibility rule, please keep the project's core principles in
-mind:
+Bug fix, documentation, or a new rule — the same principles apply:
 
 - deterministic behaviour;
 - objective rule evaluation;
@@ -606,24 +610,3 @@ This project is released under the Mozilla Public License 2.0 (MPL-2.0).
 See the accompanying `LICENSE` file for the complete license text.
 
 MPL-2.0 is file-level copyleft: it applies to `@surea11y/core`'s own source files, not to code that merely depends on it. A project that installs `@surea11y/core` as a normal package dependency and imports its public API — without copying or modifying this repository's source files — is unaffected by MPL-2.0 and may keep its own license (including a permissive one like MIT).
-
----
-
-## Final Notes
-
-surea11y was created with a simple goal: make accessibility testing
-trustworthy enough to become part of everyday software engineering.
-
-It does not attempt to replace manual accessibility reviews, usability
-testing or expert judgement. Instead, it focuses on providing reliable
-automated verification for the parts of accessibility that can be
-evaluated objectively.
-
-By combining deterministic rules, standards traceability, stable
-machine-readable output and honest reporting of uncertainty, surea11y
-enables teams to detect accessibility issues earlier, reduce regressions
-and build more accessible products with confidence.
-
-Accessibility is not a checkbox performed before release. It is an
-engineering practice that benefits from continuous feedback, and
-surea11y is designed to become one of those feedback loops.

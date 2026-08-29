@@ -25,8 +25,12 @@
  * - Within one declaration block, importance outranks order, so the effective
  *   declaration is the last `!important` one for that property.
  * - ACT 78fd32/24afc2/9e45ec additionally require the text to contain a soft
- *   wrap break, which cannot be determined without layout. Not implemented, so
- *   a forced value on text that never wraps is still reported.
+ *   wrap break, which layout would settle and this cannot. Two shapes do
+ *   establish that no wrap is possible -- text not allowed to wrap, and a
+ *   fixed-width element inside a horizontally scrolling ancestor -- and those
+ *   are reported for review rather than failed. Anything else is treated as
+ *   wrapping, so a forced value on text that never wraps for some other reason
+ *   is still reported.
  */
 
 const id = 'avoid-inline-spacing';
@@ -84,6 +88,7 @@ function runInPage(ctx) {
   const occurrences = [];
   let applicableCount = 0;
   const undecided = [];
+  const noWrap = [];
 
   // Within one declaration block, importance wins over order, so the last
   // important declaration is the one that takes effect. Passed Example 5 of ACT
@@ -147,6 +152,36 @@ function runInPage(ctx) {
       // no computed style available
     }
     return null;
+  }
+
+  // ACT 78fd32/24afc2/9e45ec apply only to text that contains a soft wrap
+  // break. Layout settles that; short of it, two shapes establish that no wrap
+  // can happen -- text not allowed to wrap, and a fixed-width element inside a
+  // horizontally scrolling ancestor, which narrowing the viewport cannot reach.
+  function cannotSoftWrap(el) {
+    const cs = computedStyleOf(el);
+    const whiteSpace = cs ? String(cs.whiteSpace || '').toLowerCase() : '';
+    if (whiteSpace === 'nowrap' || whiteSpace === 'pre') return true;
+
+    if (!/(^|;)\s*width\s*:/i.test(String(el.getAttribute('style') || ''))) return false;
+
+    const chain =
+      helpers && typeof helpers.ancestorsIncludingSelf === 'function'
+        ? helpers.ancestorsIncludingSelf(el)
+        : null;
+    const ancestors = chain || [];
+    if (!chain) {
+      for (let a = el.parentElement; a; a = a.parentElement) ancestors.push(a);
+    }
+
+    for (const ancestor of ancestors) {
+      if (ancestor === el) continue;
+      const acs = computedStyleOf(ancestor);
+      if (!acs) continue;
+      const overflowX = String(acs.overflowX || acs.overflow || '').toLowerCase();
+      if (overflowX === 'scroll' || overflowX === 'auto') return true;
+    }
+    return false;
   }
 
   // ACT scopes these rules to text visible on screen, and text pushed far off
@@ -252,6 +287,14 @@ function runInPage(ctx) {
       continue;
     }
 
+    // A forced value on text that cannot wrap is outside these ACT rules'
+    // applicability, and whether it wraps is not decidable here, so it is
+    // reported for review rather than failed.
+    if (cannotSoftWrap(el)) {
+      noWrap.push({ el, props: flagged.slice() });
+      continue;
+    }
+
     const tag = el.tagName.toLowerCase();
 
     occurrences.push(
@@ -279,6 +322,44 @@ function runInPage(ctx) {
       outcome: 'fail',
       severity: rule.defaultSeverity || 'moderate',
       occurrences
+    };
+  }
+  if (noWrap.length) {
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'moderate',
+      confidence: 'low',
+      occurrences: noWrap.map(({ el, props }) =>
+        helpers.reportOccurrence(el, {
+          summary: `This element's inline style forces ${props.join(', ')} with !important, but its text does not appear able to wrap, so the text-spacing criterion may not apply to it.`,
+          hint: 'Confirm whether this text ever wraps. If it cannot, the criterion does not apply; if it can, remove !important or set a value that already meets the metric.',
+          i18n: {
+            summaryKey: 'avoidInlineSpacing_summary_cantTell_noSoftWrap',
+            hintKey: 'avoidInlineSpacing_hint_cantTell_noSoftWrap',
+            params: {
+              element: (el.tagName || '').toLowerCase(),
+              properties: props.join(', ')
+            }
+          },
+          uncertainty: {
+            code: 'not-computable',
+            needed: 'Whether this text ever contains a soft wrap break, which needs layout.',
+            evidence: {
+              element: (el.tagName || '').toLowerCase(),
+              properties: props,
+              reasonCode: 'INLINE_SPACING_NO_SOFT_WRAP'
+            }
+          },
+          data: {
+            details: {
+              reasonCode: 'INLINE_SPACING_NO_SOFT_WRAP',
+              element: (el.tagName || '').toLowerCase(),
+              properties: props
+            }
+          }
+        })
+      )
     };
   }
   if (undecided.length) {

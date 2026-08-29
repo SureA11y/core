@@ -8370,6 +8370,8 @@ const I18N = {
     "avoidInlineSpacing_hint_fail": "Entfernen Sie !important von line-height/letter-spacing/word-spacing in Inline-Stilen, damit Nutzer den Textabstand überschreiben können.",
     "avoidInlineSpacing_summary_cantTell": "Der Inline-Stil dieses Elements setzt {{properties}} mit !important, der Wert ließ sich jedoch nicht auflösen; daher konnte nicht ermittelt werden, ob er die WCAG-Textabstandsmetrik erfüllt.",
     "avoidInlineSpacing_hint_cantTell": "Prüfen Sie diesen Wert manuell anhand der Metrik (Zeilenhöhe 1,5; Zeichenabstand 0,12em; Wortabstand 0,16em), oder geben Sie ihn in einer Einheit an, die die Engine gegen die berechnete Schriftgröße des Elements auflösen kann.",
+    "avoidInlineSpacing_summary_cantTell_noSoftWrap": "This element's inline style forces {{properties}} with !important, but its text does not appear able to wrap, so the text-spacing criterion may not apply to it.",
+    "avoidInlineSpacing_hint_cantTell_noSoftWrap": "Confirm whether this text ever wraps. If it cannot, the criterion does not apply; if it can, remove !important or set a value that already meets the metric.",
     "metaRefreshNoExceptions_title": "Die Seite darf überhaupt keinen Meta-Refresh verwenden (AAA)",
     "metaRefreshNoExceptions_description": "Prüft, ob <meta http-equiv=\"refresh\"> unabhängig von der Verzögerung überhaupt nicht vorhanden ist — das strengere AAA-Gegenstück zur A-Prüfung, die nur positive Verzögerungen betrachtet.",
     "metaRefreshNoExceptions_summary_fail": "Diese Seite verwendet einen Meta-Refresh, eine automatische Kontextänderung, die nicht vom Nutzer ausgelöst wird.",
@@ -9064,6 +9066,8 @@ const I18N = {
     "avoidInlineSpacing_hint_fail": "Remove !important from line-height/letter-spacing/word-spacing in inline styles so users can override text spacing.",
     "avoidInlineSpacing_summary_cantTell": "This element's inline style sets {{properties}} with !important, but the value could not be resolved, so whether it meets the WCAG text-spacing metric could not be determined.",
     "avoidInlineSpacing_hint_cantTell": "Check this value by hand against the metric (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em), or express it in a unit the engine can resolve against the element’s computed font size.",
+    "avoidInlineSpacing_summary_cantTell_noSoftWrap": "This element's inline style forces {{properties}} with !important, but its text does not appear able to wrap, so the text-spacing criterion may not apply to it.",
+    "avoidInlineSpacing_hint_cantTell_noSoftWrap": "Confirm whether this text ever wraps. If it cannot, the criterion does not apply; if it can, remove !important or set a value that already meets the metric.",
     "metaRefreshNoExceptions_title": "Page must not use a meta refresh at all (AAA)",
     "metaRefreshNoExceptions_description": "Checks that <meta http-equiv=\"refresh\"> is not present at all, regardless of delay. This is the stricter AAA-level counterpart of the A-level positive-delay-only check.",
     "metaRefreshNoExceptions_summary_fail": "This page uses a meta refresh, which is an automatic context change not initiated by the user.",
@@ -9758,6 +9762,8 @@ const I18N = {
     "avoidInlineSpacing_hint_fail": "Eliminar !important de line-height/letter-spacing/word-spacing en los estilos en línea para que los usuarios puedan anular el espaciado de texto.",
     "avoidInlineSpacing_summary_cantTell": "El estilo en línea de este elemento define {{properties}} con !important, pero no se ha podido resolver el valor, por lo que no se ha podido determinar si cumple la métrica de espaciado de texto de WCAG.",
     "avoidInlineSpacing_hint_cantTell": "Compruebe este valor manualmente con la métrica (interlineado 1,5; espaciado entre letras 0,12em; espaciado entre palabras 0,16em), o exprésalo en una unidad que el motor pueda resolver respecto al tamaño de fuente calculado del elemento.",
+    "avoidInlineSpacing_summary_cantTell_noSoftWrap": "This element's inline style forces {{properties}} with !important, but its text does not appear able to wrap, so the text-spacing criterion may not apply to it.",
+    "avoidInlineSpacing_hint_cantTell_noSoftWrap": "Confirm whether this text ever wraps. If it cannot, the criterion does not apply; if it can, remove !important or set a value that already meets the metric.",
     "metaRefreshNoExceptions_title": "La página no debe usar un meta refresh en absoluto (AAA)",
     "metaRefreshNoExceptions_description": "Comprueba que <meta http-equiv=\"refresh\"> no esté presente en absoluto, independientemente del retraso; es la contraparte más estricta de nivel AAA de la comprobación de nivel A que solo se aplica a los retrasos positivos.",
     "metaRefreshNoExceptions_summary_fail": "Esta página usa un meta refresh, que es un cambio de contexto automático no iniciado por el usuario.",
@@ -10452,6 +10458,8 @@ const I18N = {
     "avoidInlineSpacing_hint_fail": "Retirez !important de line-height/letter-spacing/word-spacing dans les styles en ligne afin que les utilisateurs puissent surcharger l’espacement du texte.",
     "avoidInlineSpacing_summary_cantTell": "Le style en ligne de cet élément définit {{properties}} avec !important, mais la valeur n'a pas pu être résolue ; impossible donc de déterminer si elle respecte la métrique d'espacement du texte WCAG.",
     "avoidInlineSpacing_hint_cantTell": "Vérifiez cette valeur manuellement par rapport à la métrique (hauteur de ligne 1,5 ; espacement des lettres 0,12em ; espacement des mots 0,16em), ou exprimez-la dans une unité que le moteur peut résoudre par rapport à la taille de police calculée de l'élément.",
+    "avoidInlineSpacing_summary_cantTell_noSoftWrap": "This element's inline style forces {{properties}} with !important, but its text does not appear able to wrap, so the text-spacing criterion may not apply to it.",
+    "avoidInlineSpacing_hint_cantTell_noSoftWrap": "Confirm whether this text ever wraps. If it cannot, the criterion does not apply; if it can, remove !important or set a value that already meets the metric.",
     "metaRefreshNoExceptions_title": "La page ne doit utiliser aucun rafraîchissement meta (AAA)",
     "metaRefreshNoExceptions_description": "Vérifie que <meta http-equiv=\"refresh\"> n’est présent en aucun cas, quel que soit le délai — la variante plus stricte, de niveau AAA, de la vérification de niveau A qui ne porte que sur les délais positifs.",
     "metaRefreshNoExceptions_summary_fail": "Cette page utilise un rafraîchissement meta, un changement de contexte automatique non initié par l’utilisateur.",
@@ -32619,6 +32627,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
   const undecided = [];
+  const noWrap = [];
 
   // Within one declaration block, importance wins over order, so the last
   // important declaration is the one that takes effect. Passed Example 5 of ACT
@@ -32682,6 +32691,36 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // no computed style available
     }
     return null;
+  }
+
+  // ACT 78fd32/24afc2/9e45ec apply only to text that contains a soft wrap
+  // break. Layout settles that; short of it, two shapes establish that no wrap
+  // can happen -- text not allowed to wrap, and a fixed-width element inside a
+  // horizontally scrolling ancestor, which narrowing the viewport cannot reach.
+  function cannotSoftWrap(el) {
+    const cs = computedStyleOf(el);
+    const whiteSpace = cs ? String(cs.whiteSpace || '').toLowerCase() : '';
+    if (whiteSpace === 'nowrap' || whiteSpace === 'pre') return true;
+
+    if (!/(^|;)\s*width\s*:/i.test(String(el.getAttribute('style') || ''))) return false;
+
+    const chain =
+      helpers && typeof helpers.ancestorsIncludingSelf === 'function'
+        ? helpers.ancestorsIncludingSelf(el)
+        : null;
+    const ancestors = chain || [];
+    if (!chain) {
+      for (let a = el.parentElement; a; a = a.parentElement) ancestors.push(a);
+    }
+
+    for (const ancestor of ancestors) {
+      if (ancestor === el) continue;
+      const acs = computedStyleOf(ancestor);
+      if (!acs) continue;
+      const overflowX = String(acs.overflowX || acs.overflow || '').toLowerCase();
+      if (overflowX === 'scroll' || overflowX === 'auto') return true;
+    }
+    return false;
   }
 
   // ACT scopes these rules to text visible on screen, and text pushed far off
@@ -32787,6 +32826,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       continue;
     }
 
+    // A forced value on text that cannot wrap is outside these ACT rules'
+    // applicability, and whether it wraps is not decidable here, so it is
+    // reported for review rather than failed.
+    if (cannotSoftWrap(el)) {
+      noWrap.push({ el, props: flagged.slice() });
+      continue;
+    }
+
     const tag = el.tagName.toLowerCase();
 
     occurrences.push(
@@ -32814,6 +32861,44 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       outcome: 'fail',
       severity: rule.defaultSeverity || 'moderate',
       occurrences
+    };
+  }
+  if (noWrap.length) {
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'moderate',
+      confidence: 'low',
+      occurrences: noWrap.map(({ el, props }) =>
+        helpers.reportOccurrence(el, {
+          summary: `This element's inline style forces ${props.join(', ')} with !important, but its text does not appear able to wrap, so the text-spacing criterion may not apply to it.`,
+          hint: 'Confirm whether this text ever wraps. If it cannot, the criterion does not apply; if it can, remove !important or set a value that already meets the metric.',
+          i18n: {
+            summaryKey: 'avoidInlineSpacing_summary_cantTell_noSoftWrap',
+            hintKey: 'avoidInlineSpacing_hint_cantTell_noSoftWrap',
+            params: {
+              element: (el.tagName || '').toLowerCase(),
+              properties: props.join(', ')
+            }
+          },
+          uncertainty: {
+            code: 'not-computable',
+            needed: 'Whether this text ever contains a soft wrap break, which needs layout.',
+            evidence: {
+              element: (el.tagName || '').toLowerCase(),
+              properties: props,
+              reasonCode: 'INLINE_SPACING_NO_SOFT_WRAP'
+            }
+          },
+          data: {
+            details: {
+              reasonCode: 'INLINE_SPACING_NO_SOFT_WRAP',
+              element: (el.tagName || '').toLowerCase(),
+              properties: props
+            }
+          }
+        })
+      )
     };
   }
   if (undecided.length) {
@@ -53084,6 +53169,8 @@ const I18N = {
     "avoidInlineSpacing_hint_fail": "Entfernen Sie !important von line-height/letter-spacing/word-spacing in Inline-Stilen, damit Nutzer den Textabstand überschreiben können.",
     "avoidInlineSpacing_summary_cantTell": "Der Inline-Stil dieses Elements setzt {{properties}} mit !important, der Wert ließ sich jedoch nicht auflösen; daher konnte nicht ermittelt werden, ob er die WCAG-Textabstandsmetrik erfüllt.",
     "avoidInlineSpacing_hint_cantTell": "Prüfen Sie diesen Wert manuell anhand der Metrik (Zeilenhöhe 1,5; Zeichenabstand 0,12em; Wortabstand 0,16em), oder geben Sie ihn in einer Einheit an, die die Engine gegen die berechnete Schriftgröße des Elements auflösen kann.",
+    "avoidInlineSpacing_summary_cantTell_noSoftWrap": "This element's inline style forces {{properties}} with !important, but its text does not appear able to wrap, so the text-spacing criterion may not apply to it.",
+    "avoidInlineSpacing_hint_cantTell_noSoftWrap": "Confirm whether this text ever wraps. If it cannot, the criterion does not apply; if it can, remove !important or set a value that already meets the metric.",
     "metaRefreshNoExceptions_title": "Die Seite darf überhaupt keinen Meta-Refresh verwenden (AAA)",
     "metaRefreshNoExceptions_description": "Prüft, ob <meta http-equiv=\"refresh\"> unabhängig von der Verzögerung überhaupt nicht vorhanden ist — das strengere AAA-Gegenstück zur A-Prüfung, die nur positive Verzögerungen betrachtet.",
     "metaRefreshNoExceptions_summary_fail": "Diese Seite verwendet einen Meta-Refresh, eine automatische Kontextänderung, die nicht vom Nutzer ausgelöst wird.",
@@ -53778,6 +53865,8 @@ const I18N = {
     "avoidInlineSpacing_hint_fail": "Remove !important from line-height/letter-spacing/word-spacing in inline styles so users can override text spacing.",
     "avoidInlineSpacing_summary_cantTell": "This element's inline style sets {{properties}} with !important, but the value could not be resolved, so whether it meets the WCAG text-spacing metric could not be determined.",
     "avoidInlineSpacing_hint_cantTell": "Check this value by hand against the metric (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em), or express it in a unit the engine can resolve against the element’s computed font size.",
+    "avoidInlineSpacing_summary_cantTell_noSoftWrap": "This element's inline style forces {{properties}} with !important, but its text does not appear able to wrap, so the text-spacing criterion may not apply to it.",
+    "avoidInlineSpacing_hint_cantTell_noSoftWrap": "Confirm whether this text ever wraps. If it cannot, the criterion does not apply; if it can, remove !important or set a value that already meets the metric.",
     "metaRefreshNoExceptions_title": "Page must not use a meta refresh at all (AAA)",
     "metaRefreshNoExceptions_description": "Checks that <meta http-equiv=\"refresh\"> is not present at all, regardless of delay. This is the stricter AAA-level counterpart of the A-level positive-delay-only check.",
     "metaRefreshNoExceptions_summary_fail": "This page uses a meta refresh, which is an automatic context change not initiated by the user.",
@@ -54472,6 +54561,8 @@ const I18N = {
     "avoidInlineSpacing_hint_fail": "Eliminar !important de line-height/letter-spacing/word-spacing en los estilos en línea para que los usuarios puedan anular el espaciado de texto.",
     "avoidInlineSpacing_summary_cantTell": "El estilo en línea de este elemento define {{properties}} con !important, pero no se ha podido resolver el valor, por lo que no se ha podido determinar si cumple la métrica de espaciado de texto de WCAG.",
     "avoidInlineSpacing_hint_cantTell": "Compruebe este valor manualmente con la métrica (interlineado 1,5; espaciado entre letras 0,12em; espaciado entre palabras 0,16em), o exprésalo en una unidad que el motor pueda resolver respecto al tamaño de fuente calculado del elemento.",
+    "avoidInlineSpacing_summary_cantTell_noSoftWrap": "This element's inline style forces {{properties}} with !important, but its text does not appear able to wrap, so the text-spacing criterion may not apply to it.",
+    "avoidInlineSpacing_hint_cantTell_noSoftWrap": "Confirm whether this text ever wraps. If it cannot, the criterion does not apply; if it can, remove !important or set a value that already meets the metric.",
     "metaRefreshNoExceptions_title": "La página no debe usar un meta refresh en absoluto (AAA)",
     "metaRefreshNoExceptions_description": "Comprueba que <meta http-equiv=\"refresh\"> no esté presente en absoluto, independientemente del retraso; es la contraparte más estricta de nivel AAA de la comprobación de nivel A que solo se aplica a los retrasos positivos.",
     "metaRefreshNoExceptions_summary_fail": "Esta página usa un meta refresh, que es un cambio de contexto automático no iniciado por el usuario.",
@@ -55166,6 +55257,8 @@ const I18N = {
     "avoidInlineSpacing_hint_fail": "Retirez !important de line-height/letter-spacing/word-spacing dans les styles en ligne afin que les utilisateurs puissent surcharger l’espacement du texte.",
     "avoidInlineSpacing_summary_cantTell": "Le style en ligne de cet élément définit {{properties}} avec !important, mais la valeur n'a pas pu être résolue ; impossible donc de déterminer si elle respecte la métrique d'espacement du texte WCAG.",
     "avoidInlineSpacing_hint_cantTell": "Vérifiez cette valeur manuellement par rapport à la métrique (hauteur de ligne 1,5 ; espacement des lettres 0,12em ; espacement des mots 0,16em), ou exprimez-la dans une unité que le moteur peut résoudre par rapport à la taille de police calculée de l'élément.",
+    "avoidInlineSpacing_summary_cantTell_noSoftWrap": "This element's inline style forces {{properties}} with !important, but its text does not appear able to wrap, so the text-spacing criterion may not apply to it.",
+    "avoidInlineSpacing_hint_cantTell_noSoftWrap": "Confirm whether this text ever wraps. If it cannot, the criterion does not apply; if it can, remove !important or set a value that already meets the metric.",
     "metaRefreshNoExceptions_title": "La page ne doit utiliser aucun rafraîchissement meta (AAA)",
     "metaRefreshNoExceptions_description": "Vérifie que <meta http-equiv=\"refresh\"> n’est présent en aucun cas, quel que soit le délai — la variante plus stricte, de niveau AAA, de la vérification de niveau A qui ne porte que sur les délais positifs.",
     "metaRefreshNoExceptions_summary_fail": "Cette page utilise un rafraîchissement meta, un changement de contexte automatique non initié par l’utilisateur.",
