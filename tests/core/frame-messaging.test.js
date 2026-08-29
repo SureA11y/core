@@ -56,7 +56,8 @@ function deliver(win, data, source) {
 /**
  * Wires two windows into a loopback pair and returns each side's handle on
  * the other -- what `targetWindow` and `event.source` are in a real frame
- * exchange.
+ * exchange. The child's `parent` is pointed at the parent's handle, since a
+ * responder only answers the frame that embeds it.
  */
 function connect(parentWin, childWin) {
   const parentHandle = {
@@ -69,6 +70,7 @@ function connect(parentWin, childWin) {
       deliver(childWin, data, parentHandle);
     }
   };
+  Object.defineProperty(childWin, 'parent', { value: parentHandle, configurable: true });
   return { parentHandle, childHandle };
 }
 
@@ -572,7 +574,7 @@ test('a result or error reply to a ping is absorbed without settling it twice', 
     deliver(
       parentWin,
       { __a11ycore: true, channel: FRAME_RPC_CHANNEL, requestId, type, payload },
-      null
+      silentFrame
     );
 
     // The ping's own resolve/reject slots are inert on purpose: a frame that
@@ -584,4 +586,101 @@ test('a result or error reply to a ping is absorbed without settling it twice', 
       'still-pending'
     );
   }
+});
+
+test('only the window a request went to may answer it', async () => {
+  const parentWin = makeWindow();
+  const child = { postMessage() {} };
+  const bystander = { postMessage() {} };
+  const registry = getFrameRpcRegistry(parentWin);
+
+  const run = sendFrameRunCommand(parentWin, child, { pageUrl: null }, RUN_WAIT);
+  const [requestId] = [...registry.pending.keys()];
+
+  deliver(
+    parentWin,
+    {
+      __a11ycore: true,
+      channel: FRAME_RPC_CHANNEL,
+      requestId,
+      type: 'result',
+      payload: { topFrame: { forged: true }, frames: [] }
+    },
+    bystander
+  );
+
+  await assert.rejects(run, /timed out/);
+});
+
+test('a ping is not answered on behalf of the frame it was sent to', async () => {
+  const parentWin = makeWindow();
+  const child = { postMessage() {} };
+  const bystander = { postMessage() {} };
+  const registry = getFrameRpcRegistry(parentWin);
+
+  const ping = pingFrame(parentWin, child, PING_WAIT);
+  const [requestId] = [...registry.pending.keys()];
+
+  deliver(
+    parentWin,
+    { __a11ycore: true, channel: FRAME_RPC_CHANNEL, requestId, type: 'pong' },
+    bystander
+  );
+
+  assert.strictEqual(await ping, false, 'reachability is the addressed frame’s answer to give');
+});
+
+test('a responder answers only the frame that embeds it, not a sibling holding a reference', async () => {
+  const parentWin = makeWindow();
+  const childWin = makeWindow();
+  connect(parentWin, childWin);
+
+  let answered = null;
+  enableFrameRpcResponder(childWin, () => ({ secret: 'child dom' }));
+
+  const sibling = {
+    postMessage(data) {
+      answered = data;
+    }
+  };
+  deliver(
+    childWin,
+    {
+      __a11ycore: true,
+      channel: FRAME_RPC_CHANNEL,
+      requestId: 'sibling-1',
+      type: 'run',
+      payload: {}
+    },
+    sibling
+  );
+  await tick(30);
+
+  assert.strictEqual(answered, null, 'a sibling frame must not be able to read this frame’s DOM');
+});
+
+test('a responder in an unframed window answers nobody', async () => {
+  const win = makeWindow();
+  let answered = null;
+  enableFrameRpcResponder(win, () => ({ secret: 'top dom' }));
+
+  const caller = {
+    postMessage(data) {
+      answered = data;
+    }
+  };
+  deliver(
+    win,
+    {
+      __a11ycore: true,
+      channel: FRAME_RPC_CHANNEL,
+      requestId: 'opener-1',
+      type: 'run',
+      payload: {}
+    },
+    caller
+  );
+  await tick(30);
+
+  assert.strictEqual(answered, null, 'nothing embeds a top-level window, so nothing may scan it');
 });

@@ -61,6 +61,21 @@ function installFrameRpcListener(win, channel) {
     if (data.type === 'run') {
       const responder = registry.responder;
       if (typeof responder !== 'function') return; // no responder enabled here: unreachable
+      // Only the frame that embeds this one may ask for a scan. The relay is
+      // hop-by-hop, so a legitimate request always comes from the direct
+      // parent; anything else is a window that merely holds a reference --
+      // a sibling frame reached through parent.frames[i], or an opener --
+      // and the same-origin policy gives those no way to read this DOM.
+      // Answering them would hand over occurrence html it otherwise blocks.
+      // Silent, like the no-responder case above: a caller with no standing
+      // learns nothing from the difference.
+      let embedder = null;
+      try {
+        embedder = win.parent && win.parent !== win ? win.parent : null;
+      } catch (e) {
+        embedder = null;
+      }
+      if (!embedder || event.source !== embedder) return;
       Promise.resolve()
         .then(function () {
           return responder(data.payload);
@@ -105,6 +120,10 @@ function installFrameRpcListener(win, channel) {
     // 'pong' | 'result' | 'error' -- resolve whichever pending request this replies to.
     const pending = registry.pending.get(data.requestId);
     if (!pending) return;
+    // Only the window a request was sent to may answer it. Without this, any
+    // window holding a reference to this one can settle someone else's
+    // in-flight request by naming its id.
+    if (pending.target && event.source !== pending.target) return;
     if (data.type === 'pong') {
       pending.onPong();
       return;
@@ -156,6 +175,7 @@ function pingFrame(win, targetWindow, pingWaitTime) {
     }, waitMs);
 
     registry.pending.set(requestId, {
+      target: targetWindow,
       onPong: function () {
         if (settled) return;
         settled = true;
@@ -201,6 +221,7 @@ function sendFrameRunCommand(win, targetWindow, payload, frameWaitTime) {
     }, waitMs);
 
     registry.pending.set(requestId, {
+      target: targetWindow,
       onPong: function () {},
       resolve: function (result) {
         clearTimeout(timeout);

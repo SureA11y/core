@@ -167,6 +167,8 @@ Notes for CI specifically:
 
 **How it works**: a parent frame's `runa11yCoreAcrossFrames()` call pings each direct child `<iframe>`/`<frame>` via `postMessage`; if — and only if — that child has *also* called `a11yCoreEnableFrameResponder()` (its own opt-in to being scannable from above), it runs its own scan and replies with the result, which the parent includes. **A non-cooperating frame (the common case for most third-party embeds you don't control) is simply unreachable** — the same-origin policy allows no way around it from inside the page.
 
+**Who a responder answers**: the frame that embeds it, and nothing else. Enabling the responder is consent to be scanned *from above*, not by anything that can reach you — a sibling frame can obtain a reference through `parent.frames[i]` and `postMessage` to you across origins, and a scan result carries `occurrences[].html`, which is DOM content the same-origin policy otherwise makes unreadable to it. A `run` command whose sender is not the direct parent is ignored, as is one arriving at a window nothing embeds. Replies are matched the same way: only the frame a request was addressed to can answer it, so another window cannot settle a scan in flight by naming its id. The relay is hop-by-hop — a grandchild is reached through its own parent — so a legitimate request always arrives from the direct parent.
+
 ```js
 // Inside the embedded/child page (e.g. a widget's own bundle), once, at load:
 const { a11yCoreEnableFrameResponder } = require('@surea11y/core');

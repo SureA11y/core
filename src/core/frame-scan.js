@@ -141,12 +141,15 @@ function runa11yCoreAcrossFrames(pageUrl, contextSelector, engineOptions, runOnl
  * gets a phantom `window.addEventListener` they didn't ask for.
  *
  * The incoming run command's own engineOptions/runOnly are always used
- * as-is (the parent's request carries the options, the child just executes
- * with them, no local override) -- there's no origin/identity check on the
- * sender beyond the namespaced message envelope itself (running a read-only
- * scan and replying with DOM-derived results isn't a privileged operation;
- * the DOM content involved is no more sensitive than what's already
- * rendered on the page).
+ * as-is: the parent's request carries the options, the child just executes
+ * with them, no local override.
+ *
+ * Only the frame that embeds this one is answered. Any window holding a
+ * reference can postMessage here -- a sibling frame reached through
+ * parent.frames[i], or an opener -- and a scan result carries occurrence
+ * html, which is DOM content the same-origin policy gives those windows no
+ * way to read. The relay is hop-by-hop, so a legitimate request always comes
+ * from the direct parent; everything else is refused in frame-messaging.js.
  *
  * @returns {function(): void} disable() -- stops responding to future scans
  */
