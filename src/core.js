@@ -20046,7 +20046,7 @@ const installFrameRpcListener = (function installFrameRpcListener(win, channel) 
       // Answering them would hand over occurrence html it otherwise blocks.
       // Silent, like the no-responder case above: a caller with no standing
       // learns nothing from the difference.
-      let embedder = null;
+      let embedder;
       try {
         embedder = win.parent && win.parent !== win ? win.parent : null;
       } catch (e) {
@@ -64937,7 +64937,7 @@ const installFrameRpcListener = (function installFrameRpcListener(win, channel) 
       // Answering them would hand over occurrence html it otherwise blocks.
       // Silent, like the no-responder case above: a caller with no standing
       // learns nothing from the difference.
-      let embedder = null;
+      let embedder;
       try {
         embedder = win.parent && win.parent !== win ? win.parent : null;
       } catch (e) {
@@ -65177,7 +65177,7 @@ const installFrameRpcListener = (function installFrameRpcListener(win, channel) 
       // Answering them would hand over occurrence html it otherwise blocks.
       // Silent, like the no-responder case above: a caller with no standing
       // learns nothing from the difference.
-      let embedder = null;
+      let embedder;
       try {
         embedder = win.parent && win.parent !== win ? win.parent : null;
       } catch (e) {
