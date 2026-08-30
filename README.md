@@ -56,6 +56,13 @@ such as whether a heading describes the content under it.
 reasoning, and `node scripts/act-testcase-check.js` reproduces the figures. They
 cover the rules that have an ACT counterpart.
 
+The [EARL implementation report](https://surea11y.github.io/act-report/act-report.jsonld)
+records the outcome for every one of those cases, passes and inapplicable
+results included, so a rule that stayed silent because nothing applied is
+distinguishable from one that is not implemented. `node scripts/act-report.js`
+regenerates it against the corpus as it stands rather than a snapshot, and a
+scheduled job republishes it weekly and on release.
+
 ## What this engine does not detect
 
 Keyboard traps, reflow and clipping at 400% zoom, anything that only exists
