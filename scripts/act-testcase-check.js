@@ -15,61 +15,21 @@
  *   node scripts/act-testcase-check.js                 # all mapped rules
  *   node scripts/act-testcase-check.js --act=97a4e1     # single ACT rule
  *   node scripts/act-testcase-check.js --out=report.json
+ *   node scripts/act-testcase-check.js --no-cache          # refetch the live corpus
  */
 
 const fs = require('node:fs');
 const path = require('node:path');
 const { runa11yCoreOnHtml } = require('../tests/helpers/runDomRulesOnHtml.js');
-
-const MANIFEST_PATH = path.join(__dirname, 'data', 'act-rule-map.json');
+const { fetchBuckets, fetchText, loadManifest } = require('./lib/act-corpus.js');
 
 function parseArgs(argv) {
   const out = {};
   for (const arg of argv) {
-    const m = /^--([^=]+)=(.*)$/.exec(arg);
-    if (m) out[m[1]] = m[2];
+    const m = /^--([^=]+)(?:=(.*))?$/.exec(arg);
+    if (m) out[m[1]] = m[2] === undefined ? true : m[2];
   }
   return out;
-}
-
-async function fetchText(url) {
-  const res = await fetch(url, { redirect: 'follow' });
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText} for ${url}`);
-  return res.text();
-}
-
-/**
- * Parses an act-rules.github.io rule page for its Passed/Failed/Inapplicable
- * test-case links, bucketed by the nearest preceding `id="passed|failed|inapplicable"`
- * section anchor in document order.
- */
-function parseTestCaseBuckets(html, actId) {
-  const markerRe = /id="(passed|failed|inapplicable)"/g;
-  const markers = [];
-  let m;
-  while ((m = markerRe.exec(html))) {
-    markers.push({ name: m[1], pos: m.index });
-  }
-  markers.sort((a, b) => a.pos - b.pos);
-
-  const linkRe = new RegExp(`testcases/${actId}/[a-f0-9]+\\.html`, 'g');
-  const buckets = { passed: [], failed: [], inapplicable: [] };
-  const seen = new Set();
-  let lm;
-  while ((lm = linkRe.exec(html))) {
-    const url = lm[0];
-    if (seen.has(url)) continue;
-    let bucket = null;
-    for (const marker of markers) {
-      if (marker.pos <= lm.index) bucket = marker.name;
-      else break;
-    }
-    if (bucket) {
-      buckets[bucket].push(`https://act-rules.github.io/${url}`);
-      seen.add(url);
-    }
-  }
-  return buckets;
 }
 
 function outcomesForRule(result, ruleId) {
@@ -108,8 +68,8 @@ function evaluate(expectedBucket, ourRuleIds, result) {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
-  const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
-  const entries = args.act ? manifest.filter((e) => e.actId === args.act) : manifest;
+  const options = { cache: args['no-cache'] !== true };
+  const entries = loadManifest(typeof args.act === 'string' ? args.act : undefined);
 
   if (!entries.length) {
     console.error(`No manifest entry for --act=${args.act}`);
@@ -121,10 +81,9 @@ async function main() {
   let totalMismatches = 0;
 
   for (const entry of entries) {
-    const pageUrl = `https://act-rules.github.io/rules/${entry.actId}/`;
-    let pageHtml;
+    let buckets;
     try {
-      pageHtml = await fetchText(pageUrl);
+      buckets = await fetchBuckets(entry.actId, options);
     } catch (err) {
       console.error(
         `SKIP ${entry.actId} (${entry.actName}): could not fetch rule page: ${err.message}`
@@ -132,7 +91,6 @@ async function main() {
       continue;
     }
 
-    const buckets = parseTestCaseBuckets(pageHtml, entry.actId);
     const entryResult = {
       actId: entry.actId,
       actName: entry.actName,
@@ -147,7 +105,7 @@ async function main() {
         totalCases += 1;
         let html;
         try {
-          html = await fetchText(caseUrl);
+          html = await fetchText(caseUrl, options);
         } catch (err) {
           entryResult.mismatches.push({
             caseUrl,
