@@ -30,21 +30,45 @@ function cachePathFor(url) {
   return path.join(CACHE_DIR, `${crypto.createHash('sha1').update(url).digest('hex')}.html`);
 }
 
+const RETRY_DELAYS = [500, 1500, 4500];
+
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function fetchOnce(url) {
+  const res = await fetch(url, { redirect: 'follow' });
+  if (!res.ok) {
+    const err = new Error(`${res.status} ${res.statusText} for ${url}`);
+    err.retryable = res.status === 429 || res.status >= 500;
+    throw err;
+  }
+  return res.text();
+}
+
 /**
  * A few hundred fetches from a third-party site per run, so a previous run's
  * copy is the default. A pre-submission run wants `--no-cache`.
+ *
+ * The site answers a few of those with a 503, and one unfetched case is enough
+ * to make the whole report incomplete, so a transient status is retried.
  */
 async function fetchText(url, { cache = true } = {}) {
   const cached = cachePathFor(url);
   if (cache && fs.existsSync(cached)) return fs.readFileSync(cached, 'utf8');
 
-  const res = await fetch(url, { redirect: 'follow' });
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText} for ${url}`);
-  const text = await res.text();
-
-  fs.mkdirSync(CACHE_DIR, { recursive: true });
-  fs.writeFileSync(cached, text);
-  return text;
+  let lastError;
+  for (let attempt = 0; attempt <= RETRY_DELAYS.length; attempt += 1) {
+    if (attempt) await delay(RETRY_DELAYS[attempt - 1]);
+    try {
+      const text = await fetchOnce(url);
+      fs.mkdirSync(CACHE_DIR, { recursive: true });
+      fs.writeFileSync(cached, text);
+      return text;
+    } catch (err) {
+      lastError = err;
+      if (err.retryable === false) break;
+    }
+  }
+  throw lastError;
 }
 
 /**
