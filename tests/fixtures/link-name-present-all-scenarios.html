@@ -186,15 +186,14 @@
 
     <div class="case" id="case_15c">
       <div class="case-title">
-        15c — EXCEPTION: native &lt;a href&gt;, aria-hidden="true", no explicit tabindex needed =>
-        eligible, missing name => FAIL
+        15c — NEUTRAL: native &lt;a href&gt;, aria-hidden="true" => out of scope here;
+        aria-hidden-focus reports this markup
       </div>
       <a href="/x" aria-hidden="true" id="link_case_15c"></a>
       <div class="meta">
-        &lt;a href&gt; is natively tabbable by default; the engine's aria-hidden override exception
-        now covers &lt;a href&gt;/&lt;button&gt;/&lt;summary&gt; in addition to
-        &lt;area&gt;/&lt;select&gt;/&lt;textarea&gt;/&lt;input&gt; (see isAccTreeEligible), matching
-        real browser tab-order behavior.
+        &lt;a href&gt; is natively tabbable by default, but ACT c487ae excludes focusable
+        aria-hidden content from this rule, so it stays out of scope here (see the eligibility
+        comment in the rule source).
       </div>
     </div>
 

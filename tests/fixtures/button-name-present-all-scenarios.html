@@ -159,17 +159,16 @@
   </div>
 
   <div class="case" id="case_19">
-    <div class="case-title">19 — EXCEPTION: role=button, aria-hidden="true" but focusable => eligible, missing name => FAIL</div>
+    <div class="case-title">19 — NEUTRAL: role=button, aria-hidden="true" and focusable => out of scope here; aria-hidden-focus reports this markup</div>
     <div role="button" aria-hidden="true" tabindex="0" id="btn_case_19"></div>
   </div>
 
   <div class="case" id="case_19b">
-    <div class="case-title">19b — EXCEPTION: native &lt;button&gt;, aria-hidden="true", no explicit tabindex needed => eligible, missing name => FAIL</div>
+    <div class="case-title">19b — NEUTRAL: native &lt;button&gt;, aria-hidden="true" => out of scope here; aria-hidden-focus reports this markup</div>
     <button aria-hidden="true" id="btn_case_19b"></button>
-    <div class="meta">&lt;button&gt; is natively tabbable by default; the engine's aria-hidden
-      override exception now covers &lt;button&gt;/&lt;summary&gt;/&lt;a href&gt; in addition to
-      &lt;area&gt;/&lt;select&gt;/&lt;textarea&gt;/&lt;input&gt; (see isAccTreeEligible), matching real
-      browser tab-order behavior.</div>
+    <div class="meta">&lt;button&gt; is natively tabbable by default, but ACT c487ae excludes
+      focusable aria-hidden content from this rule, so it stays out of scope here (see the
+      eligibility comment in the rule source).</div>
   </div>
 
   <div class="case" id="case_23">
