@@ -155,7 +155,15 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/link-in-text-block-all-scenar
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  // Two, not one: case 07 is undecidable and is reported as a cantTell-tier
+  // occurrence alongside case 05's confident fail rather than discarded by it.
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+
+  const undecided = (rule.occurrences || []).find(
+    (o) => typeof o.html === 'string' && o.html.includes('id="litb_case_07"')
+  );
+  assert.ok(undecided, 'Expected occurrence for id="litb_case_07"');
+  assert.strictEqual(undecided.occurrenceOutcome, 'cantTell');
 
   const expectedFailIds = ['litb_case_05'];
   const expectedNoOccIds = [
@@ -163,8 +171,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/link-in-text-block-all-scenar
     'litb_case_02',
     'litb_case_03',
     'litb_case_04',
-    'litb_case_06',
-    'litb_case_07'
+    'litb_case_06'
   ];
 
   for (const id of expectedFailIds) {

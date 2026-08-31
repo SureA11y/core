@@ -461,46 +461,45 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  // A proven violation outranks an undecided candidate, which outranks a clean
-  // one. The middle step keeps an unevaluable link out of `pass`.
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'serious',
-      occurrences
-    };
-  }
+  const cantTellOccurrences = undecided.map(({ el, reasonCode }) =>
+    helpers.reportOccurrence(el, {
+      occurrenceOutcome: 'cantTell',
+      summary:
+        'Whether this link is distinguishable from the surrounding text by non-color means could not be determined.',
+      hint: 'Confirm by eye that the link carries an underline, a font-weight or font-style difference, or at least 3:1 contrast against the surrounding text. Running the engine in a real browser rather than a DOM emulator resolves most cases automatically.',
+      i18n: {
+        summaryKey: 'linkInTextBlock_summary_cantTell',
+        hintKey: 'linkInTextBlock_hint_cantTell'
+      },
+      uncertainty: {
+        code: 'not-computable',
+        needed:
+          'Whether the link carries an underline, weight or style difference, or 3:1 contrast against its surrounding text.',
+        evidence: { reasonCode }
+      },
+      data: {
+        visibilityFilter: helpers.getEligibilityInfo
+          ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
+          : { targetSet: 'acc', accEligible: null, reasons: [] },
+        details: { reasonCode }
+      }
+    })
+  );
 
-  if (undecided.length) {
+  // See helpers.resolveTieredOutcome (src/core/dom-helpers.js): a proven
+  // violation outranks an undecided candidate for the rule's own outcome, but
+  // never discards it, so an unevaluable link survives a failure elsewhere in
+  // the same run.
+  if (occurrences.length || cantTellOccurrences.length) {
+    const resolved = helpers.resolveTieredOutcome(
+      occurrences,
+      cantTellOccurrences,
+      rule.defaultSeverity || 'serious'
+    );
     return {
       ruleId: rule.ruleId,
-      outcome: 'cantTell',
-      severity: rule.defaultSeverity || 'serious',
-      confidence: 'low',
-      occurrences: undecided.map(({ el, reasonCode }) =>
-        helpers.reportOccurrence(el, {
-          summary:
-            'Whether this link is distinguishable from the surrounding text by non-color means could not be determined.',
-          hint: 'Confirm by eye that the link carries an underline, a font-weight or font-style difference, or at least 3:1 contrast against the surrounding text. Running the engine in a real browser rather than a DOM emulator resolves most cases automatically.',
-          i18n: {
-            summaryKey: 'linkInTextBlock_summary_cantTell',
-            hintKey: 'linkInTextBlock_hint_cantTell'
-          },
-          uncertainty: {
-            code: 'not-computable',
-            needed:
-              'Whether the link carries an underline, weight or style difference, or 3:1 contrast against its surrounding text.',
-            evidence: { reasonCode }
-          },
-          data: {
-            visibilityFilter: helpers.getEligibilityInfo
-              ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
-              : { targetSet: 'acc', accEligible: null, reasons: [] },
-            details: { reasonCode }
-          }
-        })
-      )
+      ...resolved,
+      ...(resolved.outcome === 'cantTell' ? { confidence: 'low' } : null)
     };
   }
 

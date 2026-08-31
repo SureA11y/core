@@ -1,32 +1,3 @@
 {
-  "disagreements": [
-    {
-      "ruleId": "avoid-inline-spacing",
-      "caseId": "case_10",
-      "marked": "cantTell",
-      "engine": "notFlagged",
-      "label": "letter-spacing forced through a calc() that resolves to no ratio here — recorded as undecided, outranked on this page by…"
-    },
-    {
-      "ruleId": "avoid-inline-spacing",
-      "caseId": "case_11",
-      "marked": "cantTell",
-      "engine": "notFlagged",
-      "label": "a fixed-width element inside a horizontally scrolling ancestor can take no soft wrap break, so the criterion may not rea…"
-    },
-    {
-      "ruleId": "avoid-inline-spacing",
-      "caseId": "case_12",
-      "marked": "cantTell",
-      "engine": "notFlagged",
-      "label": "text not allowed to wrap reaches the same conclusion without the scrolling ancestor — recorded as undecided, outranked o…"
-    },
-    {
-      "ruleId": "link-in-text-block",
-      "caseId": "case_07",
-      "marked": "cantTell",
-      "engine": "notFlagged",
-      "label": "color contrast vs surrounding text not confidently computable (background-image blocker on the link itself) — recorded a…"
-    }
-  ]
+  "disagreements": []
 }
