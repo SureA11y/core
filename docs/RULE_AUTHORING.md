@@ -405,6 +405,23 @@ exercised as real pages), not just embedded as strings inside `.test.js` files.
     (eligible, FAIL)", "C. Ineligible (excluded from accessibility tree, skipped)").
 - Cover every branch the rule's own logic distinguishes: pass, fail (each distinct
   `reasonCode`), notApplicable/skipped, and — for manual rules — cantTell.
+- A whole-document rule (`page-title-present`, `meta-refresh-timing-absent`, `region`)
+  can only demonstrate one outcome per page. Its fixture declares a single bare
+  `.case-title` with no `.case` wrapper, and the page itself is the case; the marker is
+  compared against the rule-level outcome, so `PASS` and `NEUTRAL` are distinguished
+  there. Cover the remaining branches with inline tests rather than near-identical
+  fixture files.
+- One fixture shared by several rules that expect different things of the same case
+  (`tests/fixtures/contrast-all-scenarios.html` serves `contrast-minimum`,
+  `contrast-enhanced` and `contrast-computable`) carries a per-rule marker as a
+  `data-outcome-<rule-id>` attribute on the `.case`, which overrides the shared
+  `.case-title` for that rule. Use an attribute rather than more text when the rules
+  under test evaluate text: a `.case-title` added to a contrast case is one more text
+  node to check. A marker word the parser does not recognise (`MIXED`, `UNSTATED`)
+  asserts nothing, for a case whose outcome the fixture does not state.
+- `npm run fixtures:markers:check` replays every fixture and fails when a marker no
+  longer matches what the rule reports; `scripts/data/fixture-markers.json` records the
+  cases that already disagree, so that set can only shrink.
 
 ### 11.2 Known, acceptable exceptions to "one fixture, many cases"
 
