@@ -33,18 +33,18 @@
   <h2>B. Invalid (duplicated, ARIA-referenced)</h2>
 
   <div class="case" id="case_02">
-    <div class="case-title">02 — FAIL: two elements share an id referenced by aria-labelledby (first duplicate)</div>
+    <div class="case-title">02 — CANTTELL: two elements share an id referenced by aria-labelledby (first duplicate)</div>
     <span id="dia_ref_01" class="dia-dup-01">Label A</span>
     <button id="dia_case_02" aria-labelledby="dia_ref_01">x</button>
   </div>
 
   <div class="case" id="case_03">
-    <div class="case-title">03 — FAIL: second element sharing that same id</div>
+    <div class="case-title">03 — CANTTELL: second element sharing that same id</div>
     <span id="dia_ref_01" class="dia-dup-01" data-dupe="true">Label A duplicate</span>
   </div>
 
   <div class="case" id="case_04">
-    <div class="case-title">04 — FAIL: duplicated id referenced via aria-describedby</div>
+    <div class="case-title">04 — CANTTELL: duplicated id referenced via aria-describedby</div>
     <span id="dia_ref_02">Description</span>
     <input id="dia_case_04" aria-describedby="dia_ref_02">
     <span id="dia_ref_02" data-dupe="true">Description duplicate</span>

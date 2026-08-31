@@ -174,7 +174,7 @@
 <h2>D. Role presentation/none behavior</h2>
 
 <div class="case" id="case_18">
-  <div class="case-title">18 — it is eligible (focusable) so it should fail, not “neutral/ineligible”</div>
+  <div class="case-title">18 — FAIL: role="presentation" on a focusable input does not take it out of scope, so a missing label still fails</div>
   <div class="row">
     <input id="fc_case_18" type="text" role="presentation" />
     <span>Should be excluded (not focusable).</span>
