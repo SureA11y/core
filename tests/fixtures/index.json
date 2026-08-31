@@ -222,10 +222,10 @@
       "testFile": "tests/engine-checks/automatic/aria-hidden-focus.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/aria-hidden-focus-all-scenarios.html",
-      "totalCases": 0,
+      "totalCases": 33,
       "caseCounts": {
-        "PASS": 0,
-        "FAIL": 0,
+        "PASS": 13,
+        "FAIL": 20,
         "CANTTELL": 0,
         "OTHER": 0
       }
@@ -582,12 +582,12 @@
       "testFile": "tests/engine-checks/automatic/contrast-computable.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/contrast-all-scenarios.html",
-      "totalCases": 0,
+      "totalCases": 36,
       "caseCounts": {
-        "PASS": 0,
-        "FAIL": 0,
+        "PASS": 1,
+        "FAIL": 4,
         "CANTTELL": 0,
-        "OTHER": 0
+        "OTHER": 31
       }
     },
     {
@@ -601,12 +601,12 @@
       "testFile": "tests/engine-checks/automatic/contrast-enhanced.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/contrast-all-scenarios.html",
-      "totalCases": 0,
+      "totalCases": 36,
       "caseCounts": {
-        "PASS": 0,
-        "FAIL": 0,
+        "PASS": 1,
+        "FAIL": 4,
         "CANTTELL": 0,
-        "OTHER": 0
+        "OTHER": 31
       }
     },
     {
@@ -620,12 +620,12 @@
       "testFile": "tests/engine-checks/automatic/contrast-minimum.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/contrast-all-scenarios.html",
-      "totalCases": 0,
+      "totalCases": 36,
       "caseCounts": {
-        "PASS": 0,
-        "FAIL": 0,
+        "PASS": 1,
+        "FAIL": 4,
         "CANTTELL": 0,
-        "OTHER": 0
+        "OTHER": 31
       }
     },
     {
@@ -677,10 +677,10 @@
       "testFile": "tests/engine-checks/automatic/css-orientation-lock.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/css-orientation-lock-all-scenarios.html",
-      "totalCases": 0,
+      "totalCases": 1,
       "caseCounts": {
         "PASS": 0,
-        "FAIL": 0,
+        "FAIL": 1,
         "CANTTELL": 0,
         "OTHER": 0
       }
@@ -794,8 +794,8 @@
       "totalCases": 5,
       "caseCounts": {
         "PASS": 1,
-        "FAIL": 3,
-        "CANTTELL": 0,
+        "FAIL": 0,
+        "CANTTELL": 3,
         "OTHER": 1
       }
     },
@@ -920,10 +920,10 @@
       "testFile": "tests/engine-checks/automatic/form-control-programmatic-label-present.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/form-control-programmatic-label-all-scenarios.html",
-      "totalCases": 41,
+      "totalCases": 42,
       "caseCounts": {
         "PASS": 13,
-        "FAIL": 10,
+        "FAIL": 11,
         "CANTTELL": 0,
         "OTHER": 18
       }
@@ -1180,9 +1180,9 @@
       "totalCases": 33,
       "caseCounts": {
         "PASS": 6,
-        "FAIL": 11,
+        "FAIL": 10,
         "CANTTELL": 0,
-        "OTHER": 16
+        "OTHER": 17
       }
     },
     {
@@ -1310,8 +1310,8 @@
       "caseCounts": {
         "PASS": 0,
         "FAIL": 0,
-        "CANTTELL": 2,
-        "OTHER": 2
+        "CANTTELL": 1,
+        "OTHER": 3
       }
     },
     {
@@ -2338,12 +2338,12 @@
       "testFile": "tests/engine-checks/automatic/target-size-minimum.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/target-size-all-scenarios.html",
-      "totalCases": 0,
+      "totalCases": 25,
       "caseCounts": {
-        "PASS": 0,
-        "FAIL": 0,
-        "CANTTELL": 0,
-        "OTHER": 0
+        "PASS": 8,
+        "FAIL": 7,
+        "CANTTELL": 2,
+        "OTHER": 8
       }
     },
     {
