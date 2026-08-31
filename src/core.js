@@ -32947,60 +32947,43 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'moderate',
-      occurrences
-    };
-  }
-  if (noWrap.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'cantTell',
-      severity: rule.defaultSeverity || 'moderate',
-      confidence: 'low',
-      occurrences: noWrap.map(({ el, props }) =>
-        helpers.reportOccurrence(el, {
-          summary: `This element's inline style forces ${props.join(', ')} with !important, but its text does not appear able to wrap, so the text-spacing criterion may not apply to it.`,
-          hint: 'Confirm whether this text ever wraps. If it cannot, the criterion does not apply; if it can, remove !important or set a value that already meets the metric.',
-          i18n: {
-            summaryKey: 'avoidInlineSpacing_summary_cantTell_noSoftWrap',
-            hintKey: 'avoidInlineSpacing_hint_cantTell_noSoftWrap',
-            params: {
-              element: (el.tagName || '').toLowerCase(),
-              properties: props.join(', ')
-            }
-          },
-          uncertainty: {
-            code: 'not-computable',
-            needed: 'Whether this text ever contains a soft wrap break, which needs layout.',
-            evidence: {
-              element: (el.tagName || '').toLowerCase(),
-              properties: props,
-              reasonCode: 'INLINE_SPACING_NO_SOFT_WRAP'
-            }
-          },
-          data: {
-            details: {
-              reasonCode: 'INLINE_SPACING_NO_SOFT_WRAP',
-              element: (el.tagName || '').toLowerCase(),
-              properties: props
-            }
+
+  const cantTellOccurrences = noWrap
+    .map(({ el, props }) =>
+      helpers.reportOccurrence(el, {
+        occurrenceOutcome: 'cantTell',
+        summary: `This element's inline style forces ${props.join(', ')} with !important, but its text does not appear able to wrap, so the text-spacing criterion may not apply to it.`,
+        hint: 'Confirm whether this text ever wraps. If it cannot, the criterion does not apply; if it can, remove !important or set a value that already meets the metric.',
+        i18n: {
+          summaryKey: 'avoidInlineSpacing_summary_cantTell_noSoftWrap',
+          hintKey: 'avoidInlineSpacing_hint_cantTell_noSoftWrap',
+          params: {
+            element: (el.tagName || '').toLowerCase(),
+            properties: props.join(', ')
           }
-        })
-      )
-    };
-  }
-  if (undecided.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'cantTell',
-      severity: rule.defaultSeverity || 'moderate',
-      confidence: 'low',
-      occurrences: undecided.map(({ el, props }) =>
+        },
+        uncertainty: {
+          code: 'not-computable',
+          needed: 'Whether this text ever contains a soft wrap break, which needs layout.',
+          evidence: {
+            element: (el.tagName || '').toLowerCase(),
+            properties: props,
+            reasonCode: 'INLINE_SPACING_NO_SOFT_WRAP'
+          }
+        },
+        data: {
+          details: {
+            reasonCode: 'INLINE_SPACING_NO_SOFT_WRAP',
+            element: (el.tagName || '').toLowerCase(),
+            properties: props
+          }
+        }
+      })
+    )
+    .concat(
+      undecided.map(({ el, props }) =>
         helpers.reportOccurrence(el, {
+          occurrenceOutcome: 'cantTell',
           summary: `This element's inline style sets ${props.join(', ')} with !important, but the value could not be resolved, so whether it meets the WCAG text-spacing metric could not be determined.`,
           hint: 'Check this value by hand against the metric (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em), or express it in a unit the engine can resolve against the element’s computed font size.',
           i18n: {
@@ -33029,9 +33012,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           }
         })
       )
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+    );
+
+  // See helpers.resolveTieredOutcome (src/core/dom-helpers.js): a fail-tier
+  // finding never silently discards the cantTell-tier findings from the same
+  // run, so an undecided element survives a failure elsewhere on the page.
+  const resolved = helpers.resolveTieredOutcome(
+    occurrences,
+    cantTellOccurrences,
+    rule.defaultSeverity || 'moderate'
+  );
+  return {
+    ruleId: rule.ruleId,
+    ...resolved,
+    ...(resolved.outcome === 'cantTell' ? { confidence: 'low' } : null)
+  };
 }), applicability: null },
     "binary-control-name-present": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
@@ -43889,46 +43884,45 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  // A proven violation outranks an undecided candidate, which outranks a clean
-  // one. The middle step keeps an unevaluable link out of `pass`.
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'serious',
-      occurrences
-    };
-  }
+  const cantTellOccurrences = undecided.map(({ el, reasonCode }) =>
+    helpers.reportOccurrence(el, {
+      occurrenceOutcome: 'cantTell',
+      summary:
+        'Whether this link is distinguishable from the surrounding text by non-color means could not be determined.',
+      hint: 'Confirm by eye that the link carries an underline, a font-weight or font-style difference, or at least 3:1 contrast against the surrounding text. Running the engine in a real browser rather than a DOM emulator resolves most cases automatically.',
+      i18n: {
+        summaryKey: 'linkInTextBlock_summary_cantTell',
+        hintKey: 'linkInTextBlock_hint_cantTell'
+      },
+      uncertainty: {
+        code: 'not-computable',
+        needed:
+          'Whether the link carries an underline, weight or style difference, or 3:1 contrast against its surrounding text.',
+        evidence: { reasonCode }
+      },
+      data: {
+        visibilityFilter: helpers.getEligibilityInfo
+          ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
+          : { targetSet: 'acc', accEligible: null, reasons: [] },
+        details: { reasonCode }
+      }
+    })
+  );
 
-  if (undecided.length) {
+  // See helpers.resolveTieredOutcome (src/core/dom-helpers.js): a proven
+  // violation outranks an undecided candidate for the rule's own outcome, but
+  // never discards it, so an unevaluable link survives a failure elsewhere in
+  // the same run.
+  if (occurrences.length || cantTellOccurrences.length) {
+    const resolved = helpers.resolveTieredOutcome(
+      occurrences,
+      cantTellOccurrences,
+      rule.defaultSeverity || 'serious'
+    );
     return {
       ruleId: rule.ruleId,
-      outcome: 'cantTell',
-      severity: rule.defaultSeverity || 'serious',
-      confidence: 'low',
-      occurrences: undecided.map(({ el, reasonCode }) =>
-        helpers.reportOccurrence(el, {
-          summary:
-            'Whether this link is distinguishable from the surrounding text by non-color means could not be determined.',
-          hint: 'Confirm by eye that the link carries an underline, a font-weight or font-style difference, or at least 3:1 contrast against the surrounding text. Running the engine in a real browser rather than a DOM emulator resolves most cases automatically.',
-          i18n: {
-            summaryKey: 'linkInTextBlock_summary_cantTell',
-            hintKey: 'linkInTextBlock_hint_cantTell'
-          },
-          uncertainty: {
-            code: 'not-computable',
-            needed:
-              'Whether the link carries an underline, weight or style difference, or 3:1 contrast against its surrounding text.',
-            evidence: { reasonCode }
-          },
-          data: {
-            visibilityFilter: helpers.getEligibilityInfo
-              ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
-              : { targetSet: 'acc', accEligible: null, reasons: [] },
-            details: { reasonCode }
-          }
-        })
-      )
+      ...resolved,
+      ...(resolved.outcome === 'cantTell' ? { confidence: 'low' } : null)
     };
   }
 

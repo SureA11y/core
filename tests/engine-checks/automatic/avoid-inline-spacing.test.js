@@ -104,9 +104,18 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/avoid-inline-spacing-all-scen
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 3, maxOccurrences: 3 });
+  // Six, not three: the undecided elements are cantTell-tier occurrences
+  // reported alongside the confident fails rather than discarded by them.
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 6, maxOccurrences: 6 });
   for (const id of ['ais_case_04', 'ais_case_05', 'ais_case_06']) {
     assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);
+  }
+  for (const id of ['ais_case_10', 'ais_case_11', 'ais_case_12']) {
+    const occ = (rule.occurrences || []).find(
+      (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+    );
+    assert.ok(occ, `Expected occurrence for id="${id}"`);
+    assert.strictEqual(occ.occurrenceOutcome, 'cantTell', id);
   }
   for (const id of [
     'ais_case_01',
@@ -114,8 +123,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/avoid-inline-spacing-all-scen
     'ais_case_03',
     'ais_case_07',
     'ais_case_08',
-    'ais_case_09',
-    'ais_case_10'
+    'ais_case_09'
   ]) {
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
@@ -164,8 +172,13 @@ test(`${RULE_ID}: text that cannot wrap is reviewed, but ordinary text still fai
     <p id="wraps" style="line-height: 1em !important;">The toy brought back fond memories of being lost in the rain forest.</p>
   </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
 
   assert.ok(hasOccurrenceForId(rule, 'wraps'));
-  assert.ok(!hasOccurrenceForId(rule, 'nowrap'));
+
+  const noWrap = (rule.occurrences || []).find(
+    (o) => typeof o.html === 'string' && o.html.includes('id="nowrap"')
+  );
+  assert.ok(noWrap, 'the element that cannot wrap is still reported');
+  assert.strictEqual(noWrap.occurrenceOutcome, 'cantTell');
 });

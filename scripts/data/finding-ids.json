@@ -381,6 +381,7 @@
       "LANDMARK_NOT_UNIQUE"
     ],
     "link-in-text-block": [
+      "BACKGROUND_IMAGE_OR_GRADIENT",
       "COLOR_ONLY_DIFFERENTIATION"
     ],
     "link-name-present": [

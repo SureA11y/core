@@ -4,6 +4,9 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ## [Unreleased]
 
+### Fixed
+- `avoid-inline-spacing` and `link-in-text-block` no longer discard their `cantTell` findings when something else on the page fails. Both built an undecided list and then returned early with the fail list alone, so a single spacing failure silently removed every element the rule could not decide — the one thing an engine that reports what it cannot tell you must not do. `helpers.resolveTieredOutcome` exists to merge the two tiers and `target-size-minimum` already used it; both rules now do the same. The rule-level outcome is unchanged, `fail` where it was `fail`, and the confident failures are byte-identical; what changes is that the result carries the `cantTell`-tier occurrences alongside them, each with `occurrenceOutcome: "cantTell"` and the `uncertainty` block naming what a human would have to settle. On their own fixtures that is three more occurrences for `avoid-inline-spacing` — a `calc()` that resolves to no ratio, and two elements whose text cannot take a soft wrap break — and one more for `link-in-text-block`, a link over a background image whose contrast against the surrounding text is not computable. `link-in-text-block` gains the `BACKGROUND_IMAGE_OR_GRADIENT` reason code in `scripts/data/finding-ids.json`, which the rule always had but could never emit on a page that also failed; the addition is purely additive, so no existing finding fingerprint or stored baseline changes.
+
 ## [1.7.0] - 2026-08-29
 
 ### Added

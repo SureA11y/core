@@ -316,60 +316,43 @@ function runInPage(ctx) {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'moderate',
-      occurrences
-    };
-  }
-  if (noWrap.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'cantTell',
-      severity: rule.defaultSeverity || 'moderate',
-      confidence: 'low',
-      occurrences: noWrap.map(({ el, props }) =>
-        helpers.reportOccurrence(el, {
-          summary: `This element's inline style forces ${props.join(', ')} with !important, but its text does not appear able to wrap, so the text-spacing criterion may not apply to it.`,
-          hint: 'Confirm whether this text ever wraps. If it cannot, the criterion does not apply; if it can, remove !important or set a value that already meets the metric.',
-          i18n: {
-            summaryKey: 'avoidInlineSpacing_summary_cantTell_noSoftWrap',
-            hintKey: 'avoidInlineSpacing_hint_cantTell_noSoftWrap',
-            params: {
-              element: (el.tagName || '').toLowerCase(),
-              properties: props.join(', ')
-            }
-          },
-          uncertainty: {
-            code: 'not-computable',
-            needed: 'Whether this text ever contains a soft wrap break, which needs layout.',
-            evidence: {
-              element: (el.tagName || '').toLowerCase(),
-              properties: props,
-              reasonCode: 'INLINE_SPACING_NO_SOFT_WRAP'
-            }
-          },
-          data: {
-            details: {
-              reasonCode: 'INLINE_SPACING_NO_SOFT_WRAP',
-              element: (el.tagName || '').toLowerCase(),
-              properties: props
-            }
+
+  const cantTellOccurrences = noWrap
+    .map(({ el, props }) =>
+      helpers.reportOccurrence(el, {
+        occurrenceOutcome: 'cantTell',
+        summary: `This element's inline style forces ${props.join(', ')} with !important, but its text does not appear able to wrap, so the text-spacing criterion may not apply to it.`,
+        hint: 'Confirm whether this text ever wraps. If it cannot, the criterion does not apply; if it can, remove !important or set a value that already meets the metric.',
+        i18n: {
+          summaryKey: 'avoidInlineSpacing_summary_cantTell_noSoftWrap',
+          hintKey: 'avoidInlineSpacing_hint_cantTell_noSoftWrap',
+          params: {
+            element: (el.tagName || '').toLowerCase(),
+            properties: props.join(', ')
           }
-        })
-      )
-    };
-  }
-  if (undecided.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'cantTell',
-      severity: rule.defaultSeverity || 'moderate',
-      confidence: 'low',
-      occurrences: undecided.map(({ el, props }) =>
+        },
+        uncertainty: {
+          code: 'not-computable',
+          needed: 'Whether this text ever contains a soft wrap break, which needs layout.',
+          evidence: {
+            element: (el.tagName || '').toLowerCase(),
+            properties: props,
+            reasonCode: 'INLINE_SPACING_NO_SOFT_WRAP'
+          }
+        },
+        data: {
+          details: {
+            reasonCode: 'INLINE_SPACING_NO_SOFT_WRAP',
+            element: (el.tagName || '').toLowerCase(),
+            properties: props
+          }
+        }
+      })
+    )
+    .concat(
+      undecided.map(({ el, props }) =>
         helpers.reportOccurrence(el, {
+          occurrenceOutcome: 'cantTell',
           summary: `This element's inline style sets ${props.join(', ')} with !important, but the value could not be resolved, so whether it meets the WCAG text-spacing metric could not be determined.`,
           hint: 'Check this value by hand against the metric (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em), or express it in a unit the engine can resolve against the element’s computed font size.',
           i18n: {
@@ -398,9 +381,21 @@ function runInPage(ctx) {
           }
         })
       )
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+    );
+
+  // See helpers.resolveTieredOutcome (src/core/dom-helpers.js): a fail-tier
+  // finding never silently discards the cantTell-tier findings from the same
+  // run, so an undecided element survives a failure elsewhere on the page.
+  const resolved = helpers.resolveTieredOutcome(
+    occurrences,
+    cantTellOccurrences,
+    rule.defaultSeverity || 'moderate'
+  );
+  return {
+    ruleId: rule.ruleId,
+    ...resolved,
+    ...(resolved.outcome === 'cantTell' ? { confidence: 'low' } : null)
+  };
 }
 
 module.exports = { id, meta, runInPage };
