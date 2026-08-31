@@ -1,0 +1,102 @@
+{
+  "disagreements": [
+    {
+      "ruleId": "avoid-inline-spacing",
+      "caseId": "case_10",
+      "marked": "cantTell",
+      "engine": "notFlagged",
+      "label": "letter-spacing forced through a calc() that resolves to no ratio here — recorded as undecided, outranked on this page by…"
+    },
+    {
+      "ruleId": "avoid-inline-spacing",
+      "caseId": "case_11",
+      "marked": "cantTell",
+      "engine": "notFlagged",
+      "label": "a fixed-width element inside a horizontally scrolling ancestor can take no soft wrap break, so the criterion may not rea…"
+    },
+    {
+      "ruleId": "avoid-inline-spacing",
+      "caseId": "case_12",
+      "marked": "cantTell",
+      "engine": "notFlagged",
+      "label": "text not allowed to wrap reaches the same conclusion without the scrolling ancestor — recorded as undecided, outranked o…"
+    },
+    {
+      "ruleId": "button-name-present",
+      "caseId": "case_19",
+      "marked": "fail",
+      "engine": "notFlagged",
+      "label": "role=button, aria-hidden=\"true\" but focusable => eligible, missing name => FAIL"
+    },
+    {
+      "ruleId": "button-name-present",
+      "caseId": "case_19b",
+      "marked": "fail",
+      "engine": "notFlagged",
+      "label": "native <button>, aria-hidden=\"true\", no explicit tabindex needed => eligible, missing name => FAIL"
+    },
+    {
+      "ruleId": "duplicate-id-aria",
+      "caseId": "case_02",
+      "marked": "fail",
+      "engine": "cantTell",
+      "label": "two elements share an id referenced by aria-labelledby (first duplicate)"
+    },
+    {
+      "ruleId": "duplicate-id-aria",
+      "caseId": "case_03",
+      "marked": "fail",
+      "engine": "cantTell",
+      "label": "second element sharing that same id"
+    },
+    {
+      "ruleId": "duplicate-id-aria",
+      "caseId": "case_04",
+      "marked": "fail",
+      "engine": "cantTell",
+      "label": "duplicated id referenced via aria-describedby"
+    },
+    {
+      "ruleId": "form-control-programmatic-label-present",
+      "caseId": "case_18",
+      "marked": "notApplicable",
+      "engine": "fail",
+      "label": "it is eligible (focusable) so it should fail, not “neutral/ineligible”"
+    },
+    {
+      "ruleId": "img-alt-present",
+      "caseId": "case_22",
+      "marked": "fail",
+      "engine": "notFlagged",
+      "label": "role=\"presentation\", missing alt"
+    },
+    {
+      "ruleId": "landmark-banner-is-top-level",
+      "caseId": "case_01",
+      "marked": "cantTell",
+      "engine": "notFlagged",
+      "label": "top-level header banner, not nested in another landmark"
+    },
+    {
+      "ruleId": "link-in-text-block",
+      "caseId": "case_07",
+      "marked": "cantTell",
+      "engine": "notFlagged",
+      "label": "color contrast vs surrounding text not confidently computable (background-image blocker on the link itself) — recorded a…"
+    },
+    {
+      "ruleId": "link-name-present",
+      "caseId": "case_15c",
+      "marked": "fail",
+      "engine": "notFlagged",
+      "label": "native <a href>, aria-hidden=\"true\", no explicit tabindex needed => eligible, missing name => FAIL"
+    },
+    {
+      "ruleId": "slider-name-present",
+      "caseId": "case_15",
+      "marked": "fail",
+      "engine": "notFlagged",
+      "label": "role=slider, aria-hidden=\"true\" but focusable => eligible, missing name => FAIL"
+    }
+  ]
+}
