@@ -91,75 +91,122 @@
 </head>
 
 <body>
+<div class="case" id="case_01">
+  <div class="case-title">01 — PASS: &gt;= 24x24</div>
 <!-- PASS: >= 24x24 -->
 <button id="pass_big" class="candidate" data-rect="10,10,30,30">Big</button>
+</div>
 
+<div class="case" id="case_02">
+  <div class="case-title">02 — PASS: undersized but spaced (no other targets within 12px radius around center)</div>
 <!-- PASS: undersized but spaced (no other targets within 12px radius around center) -->
 <button id="pass_spaced_small" class="candidate" data-rect="200,10,10,10">Small spaced</button>
+</div>
 
+<div class="case" id="case_03">
+  <div class="case-title">03 — FAIL: undersized and too close to another target</div>
 <!-- FAIL: undersized and too close to another target -->
 <button id="fail_close_a" class="candidate" data-rect="10,80,10,10">A</button>
 <button id="fail_close_b" class="candidate" data-rect="25,80,10,10">B</button>
+</div>
 
+<div class="case" id="case_04">
+  <div class="case-title">04 — FAIL: aria-hidden but still pointer-operable (should be evaluated)</div>
 <!-- FAIL: aria-hidden but still pointer-operable (should be evaluated) -->
 <button id="fail_aria_hidden" class="candidate" aria-hidden="true" data-rect="10,120,10,10">AH</button>
 <button id="near_aria_hidden" class="candidate" data-rect="25,120,10,10">N</button>
+</div>
 
+<div class="case" id="case_05">
+  <div class="case-title">05 — FAIL: opacity:0 still pointer-reachable</div>
 <!-- FAIL: opacity:0 still pointer-reachable -->
 <button id="fail_opacity0" class="candidate opacity0" data-rect="10,160,10,10">O0</button>
 <button id="near_opacity0" class="candidate" data-rect="25,160,10,10">N</button>
+</div>
 
+<div class="case" id="case_06">
+  <div class="case-title">06 — NEUTRAL: pointer-events none (should not be evaluated)</div>
 <!-- EXCLUDED: pointer-events none (should not be evaluated) -->
 <button id="excluded_pointer_events" class="candidate pe-none" style="pointer-events:none" data-rect="10,200,10,10">PE</button>
 <button id="near_pointer_events" class="candidate" data-rect="25,200,10,10">N</button>
+</div>
 
+<div class="case" id="case_07">
+  <div class="case-title">07 — NEUTRAL: display none</div>
 <!-- EXCLUDED: display none -->
 <button id="excluded_display_none" class="candidate dispNone" style="display:none" data-rect="10,240,10,10">DN</button>
+</div>
 
+<div class="case" id="case_08">
+  <div class="case-title">08 — NEUTRAL: visibility hidden</div>
 <!-- EXCLUDED: visibility hidden -->
 <button id="excluded_visibility_hidden" class="candidate visHidden" style="visibility:hidden" data-rect="10,280,10,10">VH</button>
+</div>
 
+<div class="case" id="case_09">
+  <div class="case-title">09 — NEUTRAL: content-visibility hidden</div>
 <!-- EXCLUDED: content-visibility hidden -->
 <button id="excluded_content_visibility_hidden" class="candidate cvHidden" style="content-visibility:hidden" data-rect="10,320,10,10">CV</button>
+</div>
 
+<div class="case" id="case_10">
+  <div class="case-title">10 — NEUTRAL: hidden attribute</div>
 <!-- EXCLUDED: hidden attribute -->
 <button id="excluded_hidden_attr" class="candidate hiddenAttr" hidden data-rect="10,360,10,10">HA</button>
+</div>
 
 <details id="details_closed">
   <summary id="details_summary" class="candidate" data-rect="10,400,20,20">Summary</summary>
   <button id="excluded_details_content" class="candidate" data-rect="40,400,10,10">Inside closed details</button>
 </details>
 
+<div class="case" id="case_11">
+  <div class="case-title">11 — NEUTRAL: inert ancestor</div>
 <!-- EXCLUDED: inert ancestor -->
 <div id="inert_container" inert>
   <button id="excluded_inert" class="candidate" data-rect="10,440,10,10">Inert</button>
 </div>
+</div>
 
+<div class="case" id="case_12">
+  <div class="case-title">12 — NEUTRAL: no client rects (simulates transform:scale(0) / zero geometry)</div>
 <!-- EXCLUDED: no client rects (simulates transform:scale(0) / zero geometry) -->
 <button id="excluded_no_rects" class="candidate" data-no-rects="1" data-rect="10,480,10,10">No rects</button>
+</div>
 
+<div class="case" id="case_13">
+  <div class="case-title">13 — FAIL: via occlusion: small target mostly covered by another target</div>
 <!-- FAIL via occlusion: small target mostly covered by another target -->
 <button id="fail_occluded_small" class="candidate" data-rect="10,520,10,10">S</button>
 <!-- overlay candidate placed later in DOM, so treated as topmost by elementFromPoint patch -->
 <button id="occluder_big" class="candidate" data-rect="5,515,40,40">Cover</button>
+</div>
 
 <!-- ========================================================= -->
 <!-- ADDITIONS for new rule behavior (inline exception, distance check, cantTell) -->
 <!-- ========================================================= -->
 
+<div class="case" id="case_14">
+  <div class="case-title">14 — PASS: inline text link in &lt;p&gt; (inline-text exception)</div>
 <!-- PASS: inline text link in <p> (inline-text exception) -->
 <p id="p_inline_exception">
   Read
   <a id="pass_inline_link" href="#" style="display:inline" data-rect="10,580,10,10">more</a>
   here.
 </p>
+</div>
 
+<div class="case" id="case_15">
+  <div class="case-title">15 — PASS: inline-block link in &lt;p&gt; (design systems often use inline-block; you treat as exception)</div>
 <!-- PASS: inline-block link in <p> (design systems often use inline-block; you treat as exception) -->
 <p id="p_inline_block_exception">
   Tags:
   <a id="pass_inline_block_link" href="#" style="display:inline-block" data-rect="60,580,10,10">chip</a>
 </p>
+</div>
 
+<div class="case" id="case_16">
+  <div class="case-title">16 — PASS: inline text link close to a small button should NOT create spacing conflict (because inline-text exception targets are ignored as conflicts)</div>
 <!-- PASS: inline text link close to a small button should NOT create spacing conflict
      (because inline-text exception targets are ignored as conflicts) -->
 <p id="p_inline_close_to_button">
@@ -167,17 +214,26 @@
   <a id="pass_inline_close_link" href="#" style="display:inline" data-rect="10,620,10,10">here</a>.
 </p>
 <button id="pass_button_near_inline_link" class="candidate" data-rect="25,620,10,10">B</button>
+</div>
 
+<div class="case" id="case_17">
+  <div class="case-title">17 — FAIL: inline link NOT in a text container is NOT an exception; should be evaluated normally</div>
 <!-- FAIL: inline link NOT in a text container is NOT an exception; should be evaluated normally -->
 <div id="div_not_text_container">
   <a id="fail_inline_not_text_container" href="#" style="display:inline" data-rect="10,660,10,10">Link</a>
 </div>
 <button id="fail_near_inline_not_text_container" class="candidate" data-rect="25,660,10,10">B</button>
+</div>
 
+<div class="case" id="case_18">
+  <div class="case-title">18 — FAIL: geometry-only overlap (center distance &lt; 24) should trigger conflict deterministically</div>
 <!-- FAIL: geometry-only overlap (center distance < 24) should trigger conflict deterministically -->
 <button id="fail_geo_a" class="candidate" data-rect="200,700,10,10">GA</button>
 <button id="fail_geo_b" class="candidate" data-rect="220,700,10,10">GB</button>
+</div>
 
+<div class="case" id="case_19">
+  <div class="case-title">19 — CANTTELL: scenario inside SVG/foreignObject (kept for parity)</div>
 <!-- CANTTELL scenario inside SVG/foreignObject (kept for parity).
      In real browsers, foreignObject rendering can vary; for your checks it's deterministic via data-rect.
 -->
@@ -189,14 +245,23 @@
     </div>
   </foreignObject>
 </svg>
+</div>
 
+<div class="case" id="case_20">
+  <div class="case-title">20 — NEUTRAL: operability exclusions you added (disabled / aria-disabled)</div>
 <!-- OPTIONAL: operability exclusions you added (disabled / aria-disabled) -->
 <button id="excluded_disabled" class="candidate" disabled data-rect="10,780,10,10">Disabled</button>
 <button id="excluded_aria_disabled" class="candidate" aria-disabled="true" data-rect="25,780,10,10">Aria-disabled</button>
+</div>
 
+<div class="case" id="case_21">
+  <div class="case-title">21 — PASS: sanity check that a lone undersized target still passes by spacing exception</div>
 <!-- OPTIONAL: sanity check that a lone undersized target still passes by spacing exception -->
 <button id="pass_lone_small" class="candidate" data-rect="400,780,10,10">Lone small</button>
+</div>
 
+<div class="case" id="case_22">
+  <div class="case-title">22 — PASS: nested interactive controls (small inner control inside its own wrapping descendant relationship weren&#x27;t excluded, both would incorrectly fail</div>
 <!-- PASS: nested interactive controls (small inner control inside its own wrapping
      link) must never be treated as two independently-placed targets conflicting
      with each other — that's nested-interactive-controls-absent's
@@ -205,7 +270,10 @@
 <a href="/card" id="pass_nested_outer_link" class="candidate" data-rect="10,820,300,80">
   <button id="pass_nested_inner_button" class="candidate" data-rect="270,830,10,10">X</button>
 </a>
+</div>
 
+<div class="case" id="case_23">
+  <div class="case-title">23 — PASS: unstyled native checkbox/radio pair in a typical compact list. together the way real checkbox lists usually do</div>
 <!-- PASS: unstyled native checkbox/radio pair in a typical compact list.
      WCAG 2.5.8 "User Agent Control" exception — size is browser-default, not
      the author's choice, so the size requirement (and any spacing conflict
@@ -217,14 +285,20 @@
 <label class="candidate" style="position:absolute; left:10px; top:940px;">
   <input type="checkbox" id="pass_ua_checkbox_2" data-rect="10,940,13,13"> Option B
 </label>
+</div>
 
+<div class="case" id="case_24">
+  <div class="case-title">24 — FAIL: same shape as above, but the author has reset appearance:none — same as any other undersized-and-close pair)</div>
 <!-- FAIL: same shape as above, but the author has reset appearance:none —
      the User Agent Control exception no longer applies once the author has
      taken over styling, so this pair must be evaluated normally (and fails,
      same as any other undersized-and-close pair). -->
 <input type="checkbox" id="fail_styled_checkbox_1" class="candidate" style="appearance:none; -webkit-appearance:none;" data-rect="10,980,10,10">
 <input type="checkbox" id="fail_styled_checkbox_2" class="candidate" style="appearance:none; -webkit-appearance:none;" data-rect="25,980,10,10">
+</div>
 
+<div class="case" id="case_25">
+  <div class="case-title">25 — CANTTELL: ambiguous near-threshold perimeter sampling. Center-to-center confidently pass either</div>
 <!-- CANTTELL: ambiguous near-threshold perimeter sampling. Center-to-center
      distance to the neighbor is 154px (>= 24, so the fast, unambiguous
      center-distance check never fires), but the neighbor's near edge still
@@ -234,6 +308,7 @@
      confidently pass either. -->
 <button id="canttell_ambiguous_spacing_target" class="candidate" data-rect="91,1111,18,18">Amb</button>
 <button id="ambiguous_spacing_neighbor" class="candidate" data-rect="108,1113,292,14">Neighbor</button>
+</div>
 
 </body>
 </html>

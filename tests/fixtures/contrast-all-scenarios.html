@@ -8,7 +8,7 @@
     body { font-family: Arial, sans-serif; background: #ffffff; color: #111111; }
 
     .case { padding: 14px 16px; border-bottom: 1px solid #ddd; }
-    .label { font-size: 12px; color: #444; margin: 0 0 8px 0; }
+    .case-title, .label { font-size: 12px; color: #444; margin: 0 0 8px 0; }
     .text { margin: 0; }
 
     .normalText { font-size: 16px; font-weight: 400; }
@@ -77,7 +77,7 @@
 <!-- 1) Baseline: PASS AA+AAA -->
 <!-- ========================================================= -->
 <section class="case bgWhite" id="case-pass-aa-aaa">
-  <p class="label">PASS AA+AAA: black on white</p>
+  <p class="case-title">01 — PASS: black on white meets AA and AAA</p>
   <p class="text normalText" id="pass_black_on_white" style="color:#000000;">
     PASS: black on white (normal text).
   </p>
@@ -86,8 +86,8 @@
 <!-- ========================================================= -->
 <!-- 2) AA pass but AAA fail (ratio between 4.5 and 7) -->
 <!-- ========================================================= -->
-<section class="case bgWhite" id="case-pass-aa-fail-aaa">
-  <p class="label">PASS AA but FAIL AAA: gray on white</p>
+<section class="case bgWhite" id="case-pass-aa-fail-aaa" data-outcome-contrast-computable="PASS" data-outcome-contrast-enhanced="FAIL" data-outcome-contrast-minimum="PASS">
+  <p class="case-title">02 — MIXED: gray on white meets AA but not AAA</p>
   <p class="text normalText" id="aa_pass_aaa_fail_gray_on_white" style="color:#767676;">
     AA pass / AAA fail candidate (normal text).
   </p>
@@ -96,8 +96,8 @@
 <!-- ========================================================= -->
 <!-- 3) FAIL AA (ratio below 4.5 for normal text) -->
 <!-- ========================================================= -->
-<section class="case bgWhite" id="case-fail-aa">
-  <p class="label">FAIL AA: light gray on white</p>
+<section class="case bgWhite" id="case-fail-aa" data-outcome-contrast-computable="PASS">
+  <p class="case-title">03 — FAIL: light gray on white fails AA and AAA</p>
   <p class="text normalText" id="aa_fail_light_gray_on_white" style="color:#999999;">
     FAIL: should fail AA (normal text).
   </p>
@@ -107,8 +107,8 @@
 <!-- 4) Large text threshold (AA large = 3.0; AAA large = 4.5) -->
 <!-- Same foreground as (3) but large by size -->
 <!-- ========================================================= -->
-<section class="case bgWhite" id="case-large-text-threshold">
-  <p class="label">Large text by size (24px): uses large-text threshold</p>
+<section class="case bgWhite" id="case-large-text-threshold" data-outcome-contrast-computable="PASS">
+  <p class="case-title">04 — UNSTATED: large text by size (24px) uses the large-text threshold</p>
   <p class="text largeText" id="large_text_light_gray_on_white" style="color:#999999;">
     Large text: same color as AA-fail normal text.
   </p>
@@ -117,8 +117,8 @@
 <!-- ========================================================= -->
 <!-- 5) Large text by bold threshold (18.6667px + weight>=700) -->
 <!-- ========================================================= -->
-<section class="case bgWhite" id="case-bold-large-threshold">
-  <p class="label">Large text by bold threshold (18.6667px + 700)</p>
+<section class="case bgWhite" id="case-bold-large-threshold" data-outcome-contrast-computable="PASS">
+  <p class="case-title">05 — UNSTATED: large text by bold threshold (18.6667px + 700)</p>
   <p class="text boldLargeText" id="bold_large_text_light_gray_on_white" style="color:#999999;">
     Bold large text: large-text thresholds should apply.
   </p>
@@ -128,8 +128,8 @@
 <!-- 6) Foreground alpha compositing (text color rgba) -->
 <!-- fg rgba black@0.5 over white should become mid-gray -->
 <!-- ========================================================= -->
-<section class="case bgWhite" id="case-foreground-alpha">
-  <p class="label">Foreground alpha: rgba(0,0,0,0.5) on white</p>
+<section class="case bgWhite" id="case-foreground-alpha" data-outcome-contrast-computable="PASS">
+  <p class="case-title">06 — UNSTATED: foreground alpha rgba(0,0,0,0.5) on white</p>
   <p class="text normalText" id="fg_alpha_black_50_on_white" style="color: rgba(0,0,0,0.5);">
     Foreground alpha compositing should be applied.
   </p>
@@ -140,8 +140,8 @@
 <!-- Background is semi-transparent white over body white (still white-ish) -->
 <!-- Useful to confirm computeEffectiveBackground + alpha reporting -->
 <!-- ========================================================= -->
-<section class="case bgAlpha50" id="case-background-alpha">
-  <p class="label">Background alpha: rgba(255,255,255,0.5)</p>
+<section class="case bgAlpha50" id="case-background-alpha" data-outcome-contrast-computable="PASS">
+  <p class="case-title">07 — UNSTATED: background alpha rgba(255,255,255,0.5)</p>
   <p class="text normalText" id="bg_alpha_white_50_black_text" style="color:#000000;">
     Background alpha layering case.
   </p>
@@ -150,9 +150,9 @@
 <!-- ========================================================= -->
 <!-- 8) Background alpha over a non-white parent -->
 <!-- ========================================================= -->
-<section class="case bgGray" id="case-background-alpha-over-gray">
+<section class="case bgGray" id="case-background-alpha-over-gray" data-outcome-contrast-computable="PASS">
   <div class="pad bgAlpha80OnGray">
-    <p class="label">Background alpha 0.8 over gray parent</p>
+    <p class="case-title">08 — UNSTATED: background alpha 0.8 over a gray parent</p>
     <p class="text normalText" id="bg_alpha_80_over_gray_black_text" style="color:#000000;">
       Background compositing up the chain.
     </p>
@@ -163,8 +163,8 @@
 <!-- 9) Computability blocker: background gradient -->
 <!-- Should trigger Rule 1 cantTell -->
 <!-- ========================================================= -->
-<section class="case bgGradient" id="case-blocker-gradient">
-  <p class="label">Blocker: background-image gradient</p>
+<section class="case bgGradient" id="case-blocker-gradient" data-outcome-contrast-computable="CANTTELL">
+  <p class="case-title">09 — NEUTRAL: blocker: background-image gradient, contrast is not computable</p>
   <p class="text normalText" id="blocker_gradient_bg" style="color:#000000;">
     NOT COMPUTABLE: background gradient.
   </p>
@@ -173,8 +173,8 @@
 <!-- ========================================================= -->
 <!-- 10) Computability blocker: background image -->
 <!-- ========================================================= -->
-<section class="case bgImage" id="case-blocker-image">
-  <p class="label">Blocker: background-image url(...)</p>
+<section class="case bgImage" id="case-blocker-image" data-outcome-contrast-computable="CANTTELL">
+  <p class="case-title">10 — NEUTRAL: blocker: background-image url(), contrast is not computable</p>
   <p class="text normalText" id="blocker_image_bg" style="color:#000000;">
     NOT COMPUTABLE: background image.
   </p>
@@ -183,8 +183,8 @@
 <!-- ========================================================= -->
 <!-- 11) Computability blocker: mix-blend-mode -->
 <!-- ========================================================= -->
-<section class="case bgWhite" id="case-blocker-mix-blend">
-  <p class="label">Blocker: mix-blend-mode</p>
+<section class="case bgWhite" id="case-blocker-mix-blend" data-outcome-contrast-computable="CANTTELL">
+  <p class="case-title">11 — NEUTRAL: blocker: mix-blend-mode, contrast is not computable</p>
   <p class="text normalText blendMode" id="blocker_mix_blend_mode" style="color:#000000;">
     NOT COMPUTABLE: mix-blend-mode.
   </p>
@@ -193,8 +193,8 @@
 <!-- ========================================================= -->
 <!-- 12) Computability blocker: filter -->
 <!-- ========================================================= -->
-<section class="case bgWhite" id="case-blocker-filter">
-  <p class="label">Blocker: filter</p>
+<section class="case bgWhite" id="case-blocker-filter" data-outcome-contrast-computable="CANTTELL">
+  <p class="case-title">12 — NEUTRAL: blocker: filter, contrast is not computable</p>
   <p class="text normalText hasFilter" id="blocker_filter" style="color:#000000;">
     NOT COMPUTABLE: filter.
   </p>
@@ -203,8 +203,8 @@
 <!-- ========================================================= -->
 <!-- 13) Computability blocker: backdrop-filter -->
 <!-- ========================================================= -->
-<section class="case bgWhite" id="case-blocker-backdrop-filter">
-  <p class="label">Blocker: backdrop-filter</p>
+<section class="case bgWhite" id="case-blocker-backdrop-filter" data-outcome-contrast-computable="CANTTELL">
+  <p class="case-title">13 — NEUTRAL: blocker: backdrop-filter, contrast is not computable</p>
   <p class="text normalText hasBackdropFilter" id="blocker_backdrop_filter" style="color:#000000;">
     NOT COMPUTABLE: backdrop-filter.
   </p>
@@ -218,8 +218,8 @@
      separately-scaled foreground against a fully-folded background =>
      cantTell (reasonCode ANCESTOR_OPACITY). -->
 <!-- ========================================================= -->
-<section class="case bgWhite" id="case-blocker-ancestor-opacity">
-  <p class="label">Blocker: ANCESTOR opacity &lt; 1 (group opacity)</p>
+<section class="case bgWhite" id="case-blocker-ancestor-opacity" data-outcome-contrast-computable="CANTTELL">
+  <p class="case-title">14 — NEUTRAL: blocker: ancestor opacity &lt; 1 (group opacity), contrast is not computable</p>
   <div style="opacity:0.5; background-color:#ffffff;">
     <p class="text normalText" id="blocker_ancestor_opacity" style="color:#000000; background-color:#ffffff; opacity:1;">
       NOT COMPUTABLE: ancestor has opacity:0.5 (group opacity).
@@ -236,8 +236,8 @@
      entry intentionally demonstrates "computable but low ratio", not
      "not computable"). -->
 <!-- ========================================================= -->
-<section class="case bgWhite" id="case-own-opacity-still-computable">
-  <p class="label">NOT a blocker: element's OWN opacity &lt; 1</p>
+<section class="case bgWhite" id="case-own-opacity-still-computable" data-outcome-contrast-computable="PASS">
+  <p class="case-title">15 — UNSTATED: not a blocker: the element&rsquo;s own opacity &lt; 1 stays computable</p>
   <p class="text normalText" id="own_opacity_still_computable" style="color:#000000; background-color:#ffffff; opacity:0.5;">
     Computable: only the text element's own opacity is fractional (no ancestor blocker).
   </p>
@@ -247,7 +247,7 @@
 <!-- 14) Not visible: hidden attribute (excluded by eligibility) -->
 <!-- ========================================================= -->
 <section class="case bgWhite" id="case-hidden-attr" hidden>
-  <p class="label">hidden attribute (should be excluded)</p>
+  <p class="case-title">16 — NEUTRAL: hidden attribute is excluded</p>
   <p class="text normalText" id="excluded_hidden_attr_fail" style="color:#999999;">
     Should be excluded (hidden attribute).
   </p>
@@ -257,7 +257,7 @@
 <!-- 15) Not visible: display:none (excluded) -->
 <!-- ========================================================= -->
 <section class="case bgWhite displayNone" id="case-display-none">
-  <p class="label">display:none subtree (should be excluded)</p>
+  <p class="case-title">17 — NEUTRAL: display:none subtree is excluded</p>
   <p class="text normalText" id="excluded_display_none_fail" style="color:#999999;">
     Should be excluded (display:none).
   </p>
@@ -267,7 +267,7 @@
 <!-- 16) Not visible: visibility:hidden (excluded) -->
 <!-- ========================================================= -->
 <section class="case bgWhite visibilityHidden" id="case-visibility-hidden">
-  <p class="label">visibility:hidden subtree (should be excluded)</p>
+  <p class="case-title">18 — NEUTRAL: visibility:hidden subtree is excluded</p>
   <p class="text normalText" id="excluded_visibility_hidden_fail" style="color:#999999;">
     Should be excluded (visibility:hidden).
   </p>
@@ -277,7 +277,7 @@
 <!-- 17) Not visible: visibility:collapse (excluded) -->
 <!-- ========================================================= -->
 <section class="case bgWhite visibilityCollapse" id="case-visibility-collapse">
-  <p class="label">visibility:collapse subtree (should be excluded)</p>
+  <p class="case-title">19 — NEUTRAL: visibility:collapse subtree is excluded</p>
   <p class="text normalText" id="excluded_visibility_collapse_fail" style="color:#999999;">
     Should be excluded (visibility:collapse).
   </p>
@@ -287,7 +287,7 @@
 <!-- 18) Closed <details>: excluded by your helper -->
 <!-- ========================================================= -->
 <section class="case bgWhite" id="case-details-closed">
-  <p class="label">&lt;details&gt; closed content (should be excluded)</p>
+  <p class="case-title">20 — NEUTRAL: closed &lt;details&gt; content is excluded</p>
   <details id="details_closed">
     <summary>Closed details summary</summary>
     <p class="text normalText" id="excluded_details_closed_fail" style="color:#999999;">
@@ -300,7 +300,7 @@
 <!-- 19) <template> content: excluded by your helper -->
 <!-- ========================================================= -->
 <section class="case bgWhite" id="case-template">
-  <p class="label">&lt;template&gt; content (should be excluded)</p>
+  <p class="case-title">21 — NEUTRAL: &lt;template&gt; content is excluded</p>
   <template id="tpl">
     <p class="text normalText" id="excluded_template_fail" style="color:#999999;">
       Should be excluded (template content).
@@ -311,11 +311,11 @@
 <!-- ========================================================= -->
 <!-- 20) inert subtree: excluded -->
 <!-- ========================================================= -->
-<section class="case bgWhite" id="case-inert">
-  <p class="label">inert subtree (should be excluded)</p>
+<section class="case bgWhite" id="case-inert" data-outcome-contrast-computable="PASS">
+  <p class="case-title">22 — FAIL: an inert subtree is still rendered, so its text is checked</p>
   <div inert>
-    <p class="text normalText" id="excluded_inert_fail" style="color:#999999;">
-      Should be excluded (inert).
+    <p class="text normalText" id="eligible_inert_fail" style="color:#999999;">
+      Inert text is still visible.
     </p>
   </div>
 </section>
@@ -323,22 +323,22 @@
 <!-- ========================================================= -->
 <!-- 21) aria-hidden subtree: excluded UNLESS tabbable override -->
 <!-- ========================================================= -->
-<section class="case bgWhite" id="case-aria-hidden">
-  <p class="label">aria-hidden cases</p>
+<section class="case bgWhite" id="case-aria-hidden" data-outcome-contrast-computable="PASS">
+  <p class="case-title">23 — FAIL: aria-hidden text is still rendered, so it is checked whatever its tabbability</p>
 
-  <!-- excluded: aria-hidden true, not tabbable -->
-  <p class="text normalText" id="excluded_aria_hidden_fail" style="color:#999999;" aria-hidden="true">
-    Should be excluded (aria-hidden, not tabbable).
+  <!-- aria-hidden true, not tabbable -->
+  <p class="text normalText" id="eligible_aria_hidden_fail" style="color:#999999;" aria-hidden="true">
+    Still visible (aria-hidden, not tabbable).
   </p>
 
-  <!-- eligible override: aria-hidden true, tabbable -->
+  <!-- aria-hidden true, tabbable -->
   <p class="text normalText" id="eligible_aria_hidden_tabbable_fail" style="color:#999999;" aria-hidden="true" tabindex="0">
-    Eligible override: aria-hidden but tabbable (should be evaluated).
+    Still visible (aria-hidden but tabbable).
   </p>
 
-  <!-- NOT eligible override: aria-hidden true, programmatic focus only -->
-  <p class="text normalText" id="excluded_aria_hidden_prog_focus" style="color:#999999;" aria-hidden="true" tabindex="-1">
-    Should be excluded (aria-hidden + tabindex=-1 programmatic focus only).
+  <!-- aria-hidden true, programmatic focus only -->
+  <p class="text normalText" id="eligible_aria_hidden_prog_focus_fail" style="color:#999999;" aria-hidden="true" tabindex="-1">
+    Still visible (aria-hidden with tabindex=-1, programmatic focus only).
   </p>
 </section>
 
@@ -346,7 +346,7 @@
 <!-- 22) Not visually visible but eligible: opacity:0 -->
 <!-- ========================================================= -->
 <section class="case bgWhite" id="case-opacity-zero">
-  <p class="label">opacity:0 (still eligible in your policy)</p>
+  <p class="case-title">24 — UNSTATED: opacity:0 text is still eligible</p>
   <p class="text normalText opacityZero" id="eligible_opacity_zero_fail" style="color:#999999;">
     Eligible even if invisible (opacity:0). Should be evaluated.
   </p>
@@ -356,7 +356,7 @@
 <!-- 23) Not visually visible but eligible: offscreen -->
 <!-- ========================================================= -->
 <section class="case bgWhite" id="case-offscreen">
-  <p class="label">Offscreen positioned (still eligible)</p>
+  <p class="case-title">25 — UNSTATED: offscreen positioned text is still eligible</p>
   <p class="text normalText offscreen" id="eligible_offscreen_fail" style="color:#999999;">
     Eligible offscreen. Should be evaluated.
   </p>
@@ -366,7 +366,7 @@
 <!-- 24) SR-only clipping (excluded from contrast rules) -->
 <!-- ========================================================= -->
 <section class="case bgWhite" id="case-sr-only">
-  <p class="label">SR-only clipped (excluded)</p>
+  <p class="case-title">26 — NEUTRAL: SR-only clipped text is excluded</p>
   <p class="text normalText srOnly" id="excluded_sr_only_clip_fail" style="color:#999999;">
     Excluded SR-only. Never visually presented, so no contrast requirement.
   </p>
@@ -376,7 +376,7 @@
 <!-- 25) Zero-size text (policy decision; currently eligible) -->
 <!-- ========================================================= -->
 <section class="case bgWhite" id="case-zero-size">
-  <p class="label">Zero-size text (currently still eligible)</p>
+  <p class="case-title">27 — UNSTATED: zero-size text is still eligible</p>
   <p class="text normalText zeroSize" id="eligible_zero_size_text" style="color:#999999;">
     Zero-size text.
   </p>
@@ -388,7 +388,7 @@
      contrast requirement) -->
 <!-- ========================================================= -->
 <section class="case bgWhite" id="case-disabled-native">
-  <p class="label">Native [disabled] button (should be excluded)</p>
+  <p class="case-title">28 — NEUTRAL: native [disabled] button is excluded</p>
   <button class="text normalText" id="excluded_disabled_button_fail" style="color:#999999; background:#ffffff;" disabled>
     Should be excluded (disabled button).
   </button>
@@ -398,7 +398,7 @@
 <!-- 28) Inactive UI component: text nested inside a disabled control -->
 <!-- ========================================================= -->
 <section class="case bgWhite" id="case-disabled-native-nested">
-  <p class="label">Text nested inside a disabled button (should be excluded)</p>
+  <p class="case-title">29 — NEUTRAL: text nested inside a disabled button is excluded</p>
   <button class="normalText" id="disabled_button_nested_wrapper" style="background:#ffffff;" disabled>
     <span class="text" id="excluded_disabled_button_nested_fail" style="color:#999999;">
       Should be excluded (nested inside disabled button).
@@ -411,7 +411,7 @@
      <fieldset disabled> (native disabled propagates via :disabled) -->
 <!-- ========================================================= -->
 <section class="case bgWhite" id="case-disabled-fieldset">
-  <p class="label">Button inside &lt;fieldset disabled&gt; (should be excluded)</p>
+  <p class="case-title">30 — NEUTRAL: button inside &lt;fieldset disabled&gt; is excluded</p>
   <fieldset disabled>
     <button class="text normalText" id="excluded_disabled_fieldset_fail" style="color:#999999; background:#ffffff;">
       Should be excluded (disabled fieldset propagation).
@@ -423,7 +423,7 @@
 <!-- 30) Inactive UI component: aria-disabled="true" (custom widget) -->
 <!-- ========================================================= -->
 <section class="case bgWhite" id="case-aria-disabled">
-  <p class="label">role="button" aria-disabled="true" (should be excluded)</p>
+  <p class="case-title">31 — NEUTRAL: role="button" aria-disabled="true" is excluded</p>
   <div class="text normalText" id="excluded_aria_disabled_fail" role="button" aria-disabled="true" style="color:#999999; background:#ffffff;">
     Should be excluded (aria-disabled custom widget).
   </div>
@@ -433,8 +433,8 @@
 <!-- 31) NOT inactive: enabled button with the same low-contrast
      colors (should still be evaluated and fail) -->
 <!-- ========================================================= -->
-<section class="case bgWhite" id="case-enabled-button-control">
-  <p class="label">Enabled button, same colors as disabled cases (should still fail)</p>
+<section class="case bgWhite" id="case-enabled-button-control" data-outcome-contrast-computable="PASS">
+  <p class="case-title">32 — FAIL: enabled button with the same colours as the disabled cases still fails</p>
   <button class="text normalText" id="eligible_enabled_button_fail" style="color:#999999; background:#ffffff;">
     Eligible: enabled button, should be evaluated.
   </button>
@@ -446,12 +446,12 @@
      text-node children) — must still be evaluated. -->
 <!-- ========================================================= -->
 <section class="case bgWhite" id="case-value-input-submit">
-  <p class="label">&lt;input type="submit"&gt; (should be evaluated via its value attribute)</p>
+  <p class="case-title">33 — UNSTATED: &lt;input type="submit"&gt; is evaluated through its value attribute</p>
   <input type="submit" id="eligible_submit_input_fail" style="color:#999999; background:#ffffff;" value="Eligible: submit input, should be evaluated.">
 </section>
 
 <section class="case bgWhite" id="case-value-input-button">
-  <p class="label">&lt;input type="button"&gt; (should be evaluated via its value attribute)</p>
+  <p class="case-title">34 — UNSTATED: &lt;input type="button"&gt; is evaluated through its value attribute</p>
   <input type="button" id="eligible_button_input_fail" style="color:#999999; background:#ffffff;" value="Eligible: button input, should be evaluated.">
 </section>
 
@@ -460,7 +460,7 @@
      exception as a disabled <button> (case 27 above). -->
 <!-- ========================================================= -->
 <section class="case bgWhite" id="case-value-input-disabled">
-  <p class="label">&lt;input type="submit" disabled&gt; (should be excluded)</p>
+  <p class="case-title">35 — NEUTRAL: &lt;input type="submit" disabled&gt; is excluded</p>
   <input type="submit" id="excluded_disabled_submit_input_fail" style="color:#999999; background:#ffffff;" value="Should be excluded (disabled submit input)." disabled>
 </section>
 
@@ -468,7 +468,7 @@
 <!-- 26) Whitespace-only text node (ignored by rule traversal) -->
 <!-- ========================================================= -->
 <section class="case bgWhite" id="case-whitespace-only">
-  <p class="label">Whitespace-only text node (should be ignored)</p>
+  <p class="case-title">36 — NEUTRAL: whitespace-only text node is ignored</p>
   <p class="text normalText" id="whitespace_only">
 
   </p>
