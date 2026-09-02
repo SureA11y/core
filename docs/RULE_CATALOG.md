@@ -53,7 +53,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`identical-iframes-same-purpose`](#identical-iframes-same-purpose) | Frames with the same name embed the same resource | 4.1.2 | A | medium | moderate |
 | [`iframe-focusable-content`](#iframe-focusable-content) | Frames with tabindex="-1" must not contain focusable content | 2.1.1 | A | high | moderate |
 | [`iframe-name-present`](#iframe-name-present) | Frames have an accessible name | 4.1.2 | A | high | serious |
-| [`iframe-title-unique`](#iframe-title-unique) | Frame titles must be unique | 4.1.2 | A | high | moderate |
+| [`iframe-title-unique`](#iframe-title-unique) | Frames sharing a title embed the same resource | 4.1.2 | A | medium | moderate |
 | [`img-alt-present`](#img-alt-present) | &lt;img&gt; must have an alt attribute | 1.1.1 | A | high | serious |
 | [`input-image-alt-present`](#input-image-alt-present) | &lt;input type="image"&gt; must have an alt attribute | 1.1.1 | A | high | serious |
 | [`label-in-name`](#label-in-name) | Label in Name: accessible name contains visible text | 2.5.3 | A | high | serious |
@@ -972,15 +972,15 @@ Checks that &lt;iframe&gt;/&lt;frame&gt; elements expose a non-empty accessible 
 
 ### `iframe-title-unique`
 
-**Frame titles must be unique**
+**Frames sharing a title embed the same resource**
 
-automatic · WCAG 4.1.2 (A) · confidence high · default severity moderate
+automatic · WCAG 4.1.2 (A) · confidence medium · default severity moderate
 
-Checks that no two &lt;iframe&gt;/&lt;frame&gt; elements in scope share the same title attribute value.
+Checks that &lt;iframe&gt;/&lt;frame&gt; elements sharing a title attribute embed the same resource, since one title can only describe one resource.
 
-**Applies to.** Applies to &lt;iframe&gt;/&lt;frame&gt; elements that carry a non-empty title attribute.
+**Applies to.** Applies to each set of two or more &lt;iframe&gt;/&lt;frame&gt; elements that are included in the accessibility tree and carry the same non-empty (trimmed, case-sensitive) title attribute value. A frame hidden from the accessibility tree is not part of a set; a set needs two surviving members to exist at all.
 
-**Expectation.** No two frames in scope share the same (trimmed, case-sensitive) title attribute value, a duplicate title prevents assistive technology users from telling frames apart when scanning by name.
+**Expectation.** Every frame in a set resolves to the same resource. One title can only describe one resource, so two frames answering to it must embed the same one. Frames whose resources differ are reported cantTell, never fail: WCAG 4.1.2 asks that a name be exposed, not that it be unique, and ACT rule 4b1c6c accepts identical names on frames embedding equivalent content, which nothing in the markup settles.
 
 ### `image-redundant-alt`
 

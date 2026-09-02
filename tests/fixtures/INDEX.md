@@ -74,7 +74,7 @@ Total rules: **133**. With fixture: **132**. Without fixture: **1**.
 | identical-links-same-purpose | manual | `tests/fixtures/identical-links-same-purpose-all-scenarios.html` | 1 | 0 | 0 | 0 | 1 |
 | iframe-focusable-content | automatic | `tests/fixtures/iframe-focusable-content-all-scenarios.html` | 2 | 1 | 0 | 0 | 1 |
 | iframe-name-present | automatic | `tests/fixtures/iframe-name-present-all-scenarios.html` | 9 | 3 | 3 | 0 | 3 |
-| iframe-title-unique | automatic | `tests/fixtures/iframe-title-unique-all-scenarios.html` | 4 | 1 | 2 | 0 | 1 |
+| iframe-title-unique | automatic | `tests/fixtures/iframe-title-unique-all-scenarios.html` | 13 | 7 | 0 | 4 | 2 |
 | image-redundant-alt | manual | `tests/fixtures/image-redundant-alt-all-scenarios.html` | 3 | 0 | 0 | 1 | 2 |
 | img-alt-decorative | manual | `tests/fixtures/img-alt-decorative-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
 | img-alt-present | automatic | `tests/fixtures/img-alt-present-all-scenarios.html` | 33 | 6 | 10 | 0 | 17 |

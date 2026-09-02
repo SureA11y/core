@@ -20,11 +20,12 @@
  *   describes one resource, so two frames answering to it must embed the
  *   same one.
  * @implementation-notes
- * - Distinct from iframe-title-unique, which asks the stricter question of
- *   whether the title ATTRIBUTE repeats at all, and answers it from static
- *   markup. This rule keys on the computed accessible name and judges the
+ * - Distinct from iframe-title-unique, which asks the same question of the
+ *   title ATTRIBUTE rather than the computed accessible name. This rule keys
+ *   on the name assistive technology actually announces and judges the
  *   resource behind it.
- * - src values are compared as resolved absolute URLs with the fragment
+ * - src values are compared through helpers.getFrameResourceKey, shared
+ *   with iframe-title-unique: resolved absolute URLs with the fragment
  *   removed and a trailing slash normalised away, so a directory written
  *   both with and without one is a single resource.
  * - Frames that resolve to different URLs are reported cantTell, never
@@ -112,26 +113,13 @@ function runInPage(ctx) {
     }
   }
 
-  // A directory written with and without its trailing slash is one resource,
-  // and a fragment selects within a resource rather than naming another.
+  // What "the same resource" means is shared with iframe-title-unique through
+  // helpers.getFrameResourceKey (src/core/dom-helpers.js): src resolved against
+  // the document, fragment dropped, trailing slash normalised away.
   function resourceKey(el) {
-    let raw;
+    if (!helpers.getFrameResourceKey) return null;
     try {
-      raw = el.getAttribute('src');
-    } catch {
-      return null;
-    }
-    if (raw == null || !String(raw).trim()) return null;
-
-    const doc = (ctx && ctx.document) || (el.ownerDocument ? el.ownerDocument : null);
-    const base = doc && doc.baseURI ? doc.baseURI : undefined;
-    try {
-      const u = new URL(String(raw).trim(), base);
-      let pathname = u.pathname;
-      if (pathname.length > 1 && pathname.charAt(pathname.length - 1) === '/') {
-        pathname = pathname.slice(0, -1);
-      }
-      return u.protocol + '//' + u.host + pathname + u.search;
+      return helpers.getFrameResourceKey(el);
     } catch {
       return null;
     }

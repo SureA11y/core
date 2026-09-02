@@ -4562,6 +4562,36 @@ function createDomHelpers(opts) {
     return o;
   }
 
+  // The resource an <iframe>/<frame> embeds, as a comparable key: src resolved
+  // against the document, with the fragment dropped (it selects within a
+  // resource rather than naming another) and a trailing slash normalised
+  // away (a directory written both ways is one resource). null when there is
+  // no src or it does not resolve. Shared by identical-iframes-same-purpose
+  // and iframe-title-unique so they agree on what "the same resource" means.
+  function getFrameResourceKey(el) {
+    if (!isElement(el)) return null;
+    let raw;
+    try {
+      raw = el.getAttribute('src');
+    } catch {
+      return null;
+    }
+    if (raw == null || !String(raw).trim()) return null;
+
+    const doc = document || (el.ownerDocument ? el.ownerDocument : null);
+    const base = doc && doc.baseURI ? doc.baseURI : undefined;
+    try {
+      const u = new URL(String(raw).trim(), base);
+      let pathname = u.pathname;
+      if (pathname.length > 1 && pathname.charAt(pathname.length - 1) === '/') {
+        pathname = pathname.slice(0, -1);
+      }
+      return u.protocol + '//' + u.host + pathname + u.search;
+    } catch {
+      return null;
+    }
+  }
+
   // Resolves the final {outcome, severity, occurrences} for a rule that
   // collects two independent confidence tiers during one run: some
   // findings are confident enough for a hard `fail`, others only warrant
@@ -4753,6 +4783,9 @@ function createDomHelpers(opts) {
     // form-control-single-label and form-control-programmatic-label-present
     // agree on what a label is worth.
     labelContributesAccessibleName,
+
+    // The resource an <iframe>/<frame> embeds, as a key two rules can compare.
+    getFrameResourceKey,
 
     // Flat-tree ancestor walk (assignedSlot-aware, then shadow host).
     // See this function's own definition above for why assignedSlot
