@@ -1,8 +1,8 @@
 {
   "summary": {
     "total": 133,
-    "withFixture": 132,
-    "withoutFixture": 1
+    "withFixture": 131,
+    "withoutFixture": 2
   },
   "rows": [
     {
@@ -1113,22 +1113,17 @@
     },
     {
       "ruleId": "iframe-title-unique",
-      "title": "Frames sharing a title embed the same resource",
+      "title": "Frame titles must be unique (deprecated)",
       "type": "automatic",
       "wcagSc": [
         "4.1.2"
       ],
       "ruleFile": "src/checks/automatic/iframe-title-unique.js",
       "testFile": "tests/engine-checks/automatic/iframe-title-unique.test.js",
-      "hasFixture": true,
-      "fixtureFile": "tests/fixtures/iframe-title-unique-all-scenarios.html",
-      "totalCases": 13,
-      "caseCounts": {
-        "PASS": 7,
-        "FAIL": 0,
-        "CANTTELL": 4,
-        "OTHER": 2
-      }
+      "hasFixture": false,
+      "fixtureFile": null,
+      "totalCases": 0,
+      "caseCounts": null
     },
     {
       "ruleId": "image-redundant-alt",

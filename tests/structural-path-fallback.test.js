@@ -33,8 +33,20 @@ function ruleFiles() {
     .sort();
 }
 
+// A deprecated rule reduced to notApplicable reports no occurrences at all, so
+// it neither uses the helper nor bypasses it (iframe-title-unique, see
+// docs/API_STABILITY.md).
+function isDeprecated(file) {
+  try {
+    const mod = require(file);
+    return !!(mod && mod.meta && mod.meta.deprecated);
+  } catch {
+    return false;
+  }
+}
+
 test('the number of rules bypassing reportOccurrence only shrinks', () => {
-  const files = ruleFiles();
+  const files = ruleFiles().filter((f) => !isDeprecated(f));
   const handBuilt = files.filter((f) => !fs.readFileSync(f, 'utf8').includes('reportOccurrence'));
 
   assert.ok(files.length > 100, 'sanity: the rule files were found');

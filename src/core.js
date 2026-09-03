@@ -3213,8 +3213,8 @@ const CHECK_DEFS = [
   },
   {
     "ruleId": "iframe-title-unique",
-    "title": "Frames sharing a title embed the same resource",
-    "description": "Checks that <iframe>/<frame> elements sharing a title attribute embed the same resource, since one title can only describe one resource.",
+    "title": "Frame titles must be unique (deprecated)",
+    "description": "Deprecated since 1.8.0 and always notApplicable: whether frames sharing a name embed the same resource is checked by identical-iframes-same-purpose.",
     "i18n": {
       "titleKey": "iframeTitleUnique_title",
       "descriptionKey": "iframeTitleUnique_description"
@@ -3243,12 +3243,12 @@ const CHECK_DEFS = [
       }
     ],
     "defaultSeverity": "moderate",
-    "defaultConfidence": "medium",
+    "defaultConfidence": "high",
     "type": "automatic",
     "coverage": {
       "facetsBySc": {
         "4.1.2": [
-          "iframe-title-unique"
+          "identical-iframes-same-purpose"
         ]
       }
     },
@@ -3257,8 +3257,12 @@ const CHECK_DEFS = [
     "ruleVersion": "0.0.0",
     "normative": true,
     "atomic": true,
-    "deprecated": false,
-    "deprecation": null,
+    "deprecated": true,
+    "deprecation": {
+      "replacedBy": "identical-iframes-same-purpose",
+      "reason": "A repeated title attribute is not a WCAG 4.1.2 violation, and identical-iframes-same-purpose already checks what ACT rule 4b1c6c asks: that frames sharing a name embed the same resource.",
+      "sinceVersion": "1.8.0"
+    },
     "category": "robust",
     "standard": null,
     "applicability": "",
@@ -8157,10 +8161,8 @@ const I18N = {
     "iframeNamePresent_description": "Prüft, ob <iframe>/<frame>-Elemente über aria-label, aria-labelledby oder das title-Attribut einen nicht leeren zugänglichen Namen aufweisen.",
     "iframeNamePresent_summary_fail": "Dieses <{{element}}> hat keinen zugänglichen Namen.",
     "iframeNamePresent_hint_fail": "Fügen Sie ein title-Attribut (oder aria-label/aria-labelledby) hinzu, das Inhalt oder Zweck des Frames beschreibt.",
-    "iframeTitleUnique_title": "Frames sharing a title embed the same resource",
-    "iframeTitleUnique_description": "Checks that <iframe>/<frame> elements sharing a title attribute embed the same resource, since one title can only describe one resource.",
-    "iframeTitleUnique_summary_cantTell": "This <{{element}}> shares the title “{{title}}” with another frame that embeds a different resource.",
-    "iframeTitleUnique_hint_cantTell": "Give each frame a title describing the resource it embeds, or point them at the same resource.",
+    "iframeTitleUnique_title": "Frame titles must be unique (deprecated)",
+    "iframeTitleUnique_description": "Deprecated since 1.8.0 and always notApplicable: whether frames sharing a name embed the same resource is checked by identical-iframes-same-purpose.",
     "identicalIframesSamePurpose_title": "Frames with the same name embed the same resource",
     "identicalIframesSamePurpose_description": "Checks that <iframe>/<frame> elements sharing an accessible name embed the same resource, since one name can only describe one resource.",
     "identicalIframesSamePurpose_summary_cantTell": "This <{{element}}> shares the name “{{name}}” with another frame that embeds a different resource.",
@@ -8853,10 +8855,8 @@ const I18N = {
     "iframeNamePresent_description": "Checks that <iframe>/<frame> elements expose a non-empty accessible name via aria-label, aria-labelledby, or the title attribute.",
     "iframeNamePresent_summary_fail": "This <{{element}}> has no accessible name.",
     "iframeNamePresent_hint_fail": "Add a title attribute (or aria-label/aria-labelledby) describing the frame’s content or purpose.",
-    "iframeTitleUnique_title": "Frames sharing a title embed the same resource",
-    "iframeTitleUnique_description": "Checks that <iframe>/<frame> elements sharing a title attribute embed the same resource, since one title can only describe one resource.",
-    "iframeTitleUnique_summary_cantTell": "This <{{element}}> shares the title “{{title}}” with another frame that embeds a different resource.",
-    "iframeTitleUnique_hint_cantTell": "Give each frame a title describing the resource it embeds, or point them at the same resource.",
+    "iframeTitleUnique_title": "Frame titles must be unique (deprecated)",
+    "iframeTitleUnique_description": "Deprecated since 1.8.0 and always notApplicable: whether frames sharing a name embed the same resource is checked by identical-iframes-same-purpose.",
     "identicalIframesSamePurpose_title": "Frames with the same name embed the same resource",
     "identicalIframesSamePurpose_description": "Checks that <iframe>/<frame> elements sharing an accessible name embed the same resource, since one name can only describe one resource.",
     "identicalIframesSamePurpose_summary_cantTell": "This <{{element}}> shares the name “{{name}}” with another frame that embeds a different resource.",
@@ -9549,10 +9549,8 @@ const I18N = {
     "iframeNamePresent_description": "Comprueba que los elementos <iframe>/<frame> expongan un nombre accesible no vacío mediante aria-label, aria-labelledby o el atributo title.",
     "iframeNamePresent_summary_fail": "Este <{{element}}> no tiene nombre accesible.",
     "iframeNamePresent_hint_fail": "Agregar un atributo title (o aria-label/aria-labelledby) que describa el contenido o el propósito del marco.",
-    "iframeTitleUnique_title": "Frames sharing a title embed the same resource",
-    "iframeTitleUnique_description": "Checks that <iframe>/<frame> elements sharing a title attribute embed the same resource, since one title can only describe one resource.",
-    "iframeTitleUnique_summary_cantTell": "This <{{element}}> shares the title “{{title}}” with another frame that embeds a different resource.",
-    "iframeTitleUnique_hint_cantTell": "Give each frame a title describing the resource it embeds, or point them at the same resource.",
+    "iframeTitleUnique_title": "Frame titles must be unique (deprecated)",
+    "iframeTitleUnique_description": "Deprecated since 1.8.0 and always notApplicable: whether frames sharing a name embed the same resource is checked by identical-iframes-same-purpose.",
     "identicalIframesSamePurpose_title": "Frames with the same name embed the same resource",
     "identicalIframesSamePurpose_description": "Checks that <iframe>/<frame> elements sharing an accessible name embed the same resource, since one name can only describe one resource.",
     "identicalIframesSamePurpose_summary_cantTell": "This <{{element}}> shares the name “{{name}}” with another frame that embeds a different resource.",
@@ -10245,10 +10243,8 @@ const I18N = {
     "iframeNamePresent_description": "Vérifie que les éléments <iframe>/<frame> exposent un nom accessible non vide via aria-label, aria-labelledby, ou l’attribut title.",
     "iframeNamePresent_summary_fail": "Ce <{{element}}> n’a pas de nom accessible.",
     "iframeNamePresent_hint_fail": "Ajoutez un attribut title (ou aria-label/aria-labelledby) décrivant le contenu ou l’objet du cadre.",
-    "iframeTitleUnique_title": "Frames sharing a title embed the same resource",
-    "iframeTitleUnique_description": "Checks that <iframe>/<frame> elements sharing a title attribute embed the same resource, since one title can only describe one resource.",
-    "iframeTitleUnique_summary_cantTell": "This <{{element}}> shares the title “{{title}}” with another frame that embeds a different resource.",
-    "iframeTitleUnique_hint_cantTell": "Give each frame a title describing the resource it embeds, or point them at the same resource.",
+    "iframeTitleUnique_title": "Frame titles must be unique (deprecated)",
+    "iframeTitleUnique_description": "Deprecated since 1.8.0 and always notApplicable: whether frames sharing a name embed the same resource is checked by identical-iframes-same-purpose.",
     "identicalIframesSamePurpose_title": "Frames with the same name embed the same resource",
     "identicalIframesSamePurpose_description": "Checks that <iframe>/<frame> elements sharing an accessible name embed the same resource, since one name can only describe one resource.",
     "identicalIframesSamePurpose_summary_cantTell": "This <{{element}}> shares the name “{{name}}” with another frame that embeds a different resource.",
@@ -18712,36 +18708,6 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return o;
   }
 
-  // The resource an <iframe>/<frame> embeds, as a comparable key: src resolved
-  // against the document, with the fragment dropped (it selects within a
-  // resource rather than naming another) and a trailing slash normalised
-  // away (a directory written both ways is one resource). null when there is
-  // no src or it does not resolve. Shared by identical-iframes-same-purpose
-  // and iframe-title-unique so they agree on what "the same resource" means.
-  function getFrameResourceKey(el) {
-    if (!isElement(el)) return null;
-    let raw;
-    try {
-      raw = el.getAttribute('src');
-    } catch {
-      return null;
-    }
-    if (raw == null || !String(raw).trim()) return null;
-
-    const doc = document || (el.ownerDocument ? el.ownerDocument : null);
-    const base = doc && doc.baseURI ? doc.baseURI : undefined;
-    try {
-      const u = new URL(String(raw).trim(), base);
-      let pathname = u.pathname;
-      if (pathname.length > 1 && pathname.charAt(pathname.length - 1) === '/') {
-        pathname = pathname.slice(0, -1);
-      }
-      return u.protocol + '//' + u.host + pathname + u.search;
-    } catch {
-      return null;
-    }
-  }
-
   // Resolves the final {outcome, severity, occurrences} for a rule that
   // collects two independent confidence tiers during one run: some
   // findings are confident enough for a hard `fail`, others only warrant
@@ -18933,9 +18899,6 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // form-control-single-label and form-control-programmatic-label-present
     // agree on what a label is worth.
     labelContributesAccessibleName,
-
-    // The resource an <iframe>/<frame> embeds, as a key two rules can compare.
-    getFrameResourceKey,
 
     // Flat-tree ancestor walk (assignedSlot-aware, then shadow host).
     // See this function's own definition above for why assignedSlot
@@ -23524,8 +23487,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "iframe-title-unique",
-    "title": "Frames sharing a title embed the same resource",
-    "description": "Checks that <iframe>/<frame> elements sharing a title attribute embed the same resource, since one title can only describe one resource.",
+    "title": "Frame titles must be unique (deprecated)",
+    "description": "Deprecated since 1.8.0 and always notApplicable: whether frames sharing a name embed the same resource is checked by identical-iframes-same-purpose.",
     "i18n": {
       "titleKey": "iframeTitleUnique_title",
       "descriptionKey": "iframeTitleUnique_description"
@@ -23554,12 +23517,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
     ],
     "defaultSeverity": "moderate",
-    "defaultConfidence": "medium",
+    "defaultConfidence": "high",
     "type": "automatic",
     "coverage": {
       "facetsBySc": {
         "4.1.2": [
-          "iframe-title-unique"
+          "identical-iframes-same-purpose"
         ]
       }
     },
@@ -23568,8 +23531,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "ruleVersion": "0.0.0",
     "normative": true,
     "atomic": true,
-    "deprecated": false,
-    "deprecation": null,
+    "deprecated": true,
+    "deprecation": {
+      "replacedBy": "identical-iframes-same-purpose",
+      "reason": "A repeated title attribute is not a WCAG 4.1.2 violation, and identical-iframes-same-purpose already checks what ACT rule 4b1c6c asks: that frames sharing a name embed the same resource.",
+      "sinceVersion": "1.8.0"
+    },
     "category": "robust",
     "standard": null,
     "applicability": "",
@@ -39636,13 +39603,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
-  // What "the same resource" means is shared with iframe-title-unique through
-  // helpers.getFrameResourceKey (src/core/dom-helpers.js): src resolved against
-  // the document, fragment dropped, trailing slash normalised away.
+  // A directory written with and without its trailing slash is one resource,
+  // and a fragment selects within a resource rather than naming another.
   function resourceKey(el) {
-    if (!helpers.getFrameResourceKey) return null;
+    let raw;
     try {
-      return helpers.getFrameResourceKey(el);
+      raw = el.getAttribute('src');
+    } catch {
+      return null;
+    }
+    if (raw == null || !String(raw).trim()) return null;
+
+    const doc = (ctx && ctx.document) || (el.ownerDocument ? el.ownerDocument : null);
+    const base = doc && doc.baseURI ? doc.baseURI : undefined;
+    try {
+      const u = new URL(String(raw).trim(), base);
+      let pathname = u.pathname;
+      if (pathname.length > 1 && pathname.charAt(pathname.length - 1) === '/') {
+        pathname = pathname.slice(0, -1);
+      }
+      return u.protocol + '//' + u.host + pathname + u.search;
     } catch {
       return null;
     }
@@ -40339,136 +40319,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "iframe-title-unique": { run: (function runInPage(ctx) {
-  const { helpers, rule } = ctx;
-
-  const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('iframe, frame')
-    : helpers.queryAll('iframe, frame');
-
-  // A light-DOM child of a shadow host with no slot to land in is absent from
-  // the flat tree and so renders nowhere, which the shared eligibility helper
-  // does not model. Same check as identical-iframes-same-purpose.
-  function isUnslotted(el) {
-    try {
-      let cur = el;
-      let guard = 0;
-      while (cur && cur.nodeType === 1 && guard++ < 100) {
-        const parent = cur.parentNode;
-        if (!parent || parent.nodeType !== 1) return false;
-        if (parent.shadowRoot && cur.assignedSlot == null) return true;
-        cur = parent;
-      }
-      return false;
-    } catch {
-      return false;
-    }
-  }
-
-  function inAccessibilityTree(el) {
-    if (isUnslotted(el)) return false;
-    if (!helpers.isIncludedInAccessibilityTree) return true;
-    try {
-      return !!helpers.isIncludedInAccessibilityTree(el);
-    } catch {
-      return false;
-    }
-  }
-
-  function resourceKey(el) {
-    if (!helpers.getFrameResourceKey) return null;
-    try {
-      return helpers.getFrameResourceKey(el);
-    } catch {
-      return null;
-    }
-  }
-
-  const groups = new Map(); // trimmed title -> elements[]
-  let applicableCount = 0;
-
-  for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
-    if (!inAccessibilityTree(el)) continue;
-
-    const title = String(el.getAttribute('title') || '').trim();
-    if (!title) continue;
-
-    applicableCount += 1;
-
-    const list = groups.get(title);
-    if (list) list.push(el);
-    else groups.set(title, [el]);
-  }
-
-  if (applicableCount === 0) {
-    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
-  }
-
-  const occurrences = [];
-
-  for (const [title, els] of groups) {
-    if (els.length < 2) continue;
-
-    const keys = els.map(resourceKey);
-    const resolved = keys.filter((k) => k != null);
-    const allResolved = resolved.length === keys.length;
-    const allSame = allResolved && resolved.every((k) => k === resolved[0]);
-    if (allSame) continue;
-
-    for (let i = 0; i < els.length; i++) {
-      const el = els[i];
-      const tag = el.tagName.toLowerCase();
-      occurrences.push(
-        helpers.reportOccurrence(el, {
-          summary:
-            'This frame shares its title with another frame that embeds a different resource.',
-          hint: 'Give each frame a title describing the resource it embeds, or point them at the same resource.',
-          i18n: {
-            summaryKey: 'iframeTitleUnique_summary_cantTell',
-            hintKey: 'iframeTitleUnique_hint_cantTell',
-            params: { element: tag, title }
-          },
-          uncertainty:
-            keys[i] == null
-              ? {
-                  code: 'not-computable',
-                  needed: 'A resolvable src for this frame.',
-                  evidence: { element: tag, title, setSize: els.length }
-                }
-              : {
-                  code: 'equivalence-unknown',
-                  needed: 'Whether the two resources serve the same purpose despite differing.',
-                  evidence: {
-                    element: tag,
-                    title,
-                    resource: keys[i],
-                    otherResources: resolved.filter((k) => k !== keys[i]),
-                    setSize: els.length
-                  }
-                },
-          data: {
-            details: {
-              reasonCode: 'IFRAME_TITLE_DUPLICATE',
-              element: tag,
-              title,
-              resource: keys[i],
-              duplicateCount: els.length
-            }
-          }
-        })
-      );
-    }
-  }
-
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'cantTell',
-      severity: rule.defaultSeverity || 'moderate',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  const { rule } = ctx;
+  return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "image-redundant-alt": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
@@ -53128,10 +52980,8 @@ const I18N = {
     "iframeNamePresent_description": "Prüft, ob <iframe>/<frame>-Elemente über aria-label, aria-labelledby oder das title-Attribut einen nicht leeren zugänglichen Namen aufweisen.",
     "iframeNamePresent_summary_fail": "Dieses <{{element}}> hat keinen zugänglichen Namen.",
     "iframeNamePresent_hint_fail": "Fügen Sie ein title-Attribut (oder aria-label/aria-labelledby) hinzu, das Inhalt oder Zweck des Frames beschreibt.",
-    "iframeTitleUnique_title": "Frames sharing a title embed the same resource",
-    "iframeTitleUnique_description": "Checks that <iframe>/<frame> elements sharing a title attribute embed the same resource, since one title can only describe one resource.",
-    "iframeTitleUnique_summary_cantTell": "This <{{element}}> shares the title “{{title}}” with another frame that embeds a different resource.",
-    "iframeTitleUnique_hint_cantTell": "Give each frame a title describing the resource it embeds, or point them at the same resource.",
+    "iframeTitleUnique_title": "Frame titles must be unique (deprecated)",
+    "iframeTitleUnique_description": "Deprecated since 1.8.0 and always notApplicable: whether frames sharing a name embed the same resource is checked by identical-iframes-same-purpose.",
     "identicalIframesSamePurpose_title": "Frames with the same name embed the same resource",
     "identicalIframesSamePurpose_description": "Checks that <iframe>/<frame> elements sharing an accessible name embed the same resource, since one name can only describe one resource.",
     "identicalIframesSamePurpose_summary_cantTell": "This <{{element}}> shares the name “{{name}}” with another frame that embeds a different resource.",
@@ -53824,10 +53674,8 @@ const I18N = {
     "iframeNamePresent_description": "Checks that <iframe>/<frame> elements expose a non-empty accessible name via aria-label, aria-labelledby, or the title attribute.",
     "iframeNamePresent_summary_fail": "This <{{element}}> has no accessible name.",
     "iframeNamePresent_hint_fail": "Add a title attribute (or aria-label/aria-labelledby) describing the frame’s content or purpose.",
-    "iframeTitleUnique_title": "Frames sharing a title embed the same resource",
-    "iframeTitleUnique_description": "Checks that <iframe>/<frame> elements sharing a title attribute embed the same resource, since one title can only describe one resource.",
-    "iframeTitleUnique_summary_cantTell": "This <{{element}}> shares the title “{{title}}” with another frame that embeds a different resource.",
-    "iframeTitleUnique_hint_cantTell": "Give each frame a title describing the resource it embeds, or point them at the same resource.",
+    "iframeTitleUnique_title": "Frame titles must be unique (deprecated)",
+    "iframeTitleUnique_description": "Deprecated since 1.8.0 and always notApplicable: whether frames sharing a name embed the same resource is checked by identical-iframes-same-purpose.",
     "identicalIframesSamePurpose_title": "Frames with the same name embed the same resource",
     "identicalIframesSamePurpose_description": "Checks that <iframe>/<frame> elements sharing an accessible name embed the same resource, since one name can only describe one resource.",
     "identicalIframesSamePurpose_summary_cantTell": "This <{{element}}> shares the name “{{name}}” with another frame that embeds a different resource.",
@@ -54520,10 +54368,8 @@ const I18N = {
     "iframeNamePresent_description": "Comprueba que los elementos <iframe>/<frame> expongan un nombre accesible no vacío mediante aria-label, aria-labelledby o el atributo title.",
     "iframeNamePresent_summary_fail": "Este <{{element}}> no tiene nombre accesible.",
     "iframeNamePresent_hint_fail": "Agregar un atributo title (o aria-label/aria-labelledby) que describa el contenido o el propósito del marco.",
-    "iframeTitleUnique_title": "Frames sharing a title embed the same resource",
-    "iframeTitleUnique_description": "Checks that <iframe>/<frame> elements sharing a title attribute embed the same resource, since one title can only describe one resource.",
-    "iframeTitleUnique_summary_cantTell": "This <{{element}}> shares the title “{{title}}” with another frame that embeds a different resource.",
-    "iframeTitleUnique_hint_cantTell": "Give each frame a title describing the resource it embeds, or point them at the same resource.",
+    "iframeTitleUnique_title": "Frame titles must be unique (deprecated)",
+    "iframeTitleUnique_description": "Deprecated since 1.8.0 and always notApplicable: whether frames sharing a name embed the same resource is checked by identical-iframes-same-purpose.",
     "identicalIframesSamePurpose_title": "Frames with the same name embed the same resource",
     "identicalIframesSamePurpose_description": "Checks that <iframe>/<frame> elements sharing an accessible name embed the same resource, since one name can only describe one resource.",
     "identicalIframesSamePurpose_summary_cantTell": "This <{{element}}> shares the name “{{name}}” with another frame that embeds a different resource.",
@@ -55216,10 +55062,8 @@ const I18N = {
     "iframeNamePresent_description": "Vérifie que les éléments <iframe>/<frame> exposent un nom accessible non vide via aria-label, aria-labelledby, ou l’attribut title.",
     "iframeNamePresent_summary_fail": "Ce <{{element}}> n’a pas de nom accessible.",
     "iframeNamePresent_hint_fail": "Ajoutez un attribut title (ou aria-label/aria-labelledby) décrivant le contenu ou l’objet du cadre.",
-    "iframeTitleUnique_title": "Frames sharing a title embed the same resource",
-    "iframeTitleUnique_description": "Checks that <iframe>/<frame> elements sharing a title attribute embed the same resource, since one title can only describe one resource.",
-    "iframeTitleUnique_summary_cantTell": "This <{{element}}> shares the title “{{title}}” with another frame that embeds a different resource.",
-    "iframeTitleUnique_hint_cantTell": "Give each frame a title describing the resource it embeds, or point them at the same resource.",
+    "iframeTitleUnique_title": "Frame titles must be unique (deprecated)",
+    "iframeTitleUnique_description": "Deprecated since 1.8.0 and always notApplicable: whether frames sharing a name embed the same resource is checked by identical-iframes-same-purpose.",
     "identicalIframesSamePurpose_title": "Frames with the same name embed the same resource",
     "identicalIframesSamePurpose_description": "Checks that <iframe>/<frame> elements sharing an accessible name embed the same resource, since one name can only describe one resource.",
     "identicalIframesSamePurpose_summary_cantTell": "This <{{element}}> shares the name “{{name}}” with another frame that embeds a different resource.",
@@ -63683,36 +63527,6 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return o;
   }
 
-  // The resource an <iframe>/<frame> embeds, as a comparable key: src resolved
-  // against the document, with the fragment dropped (it selects within a
-  // resource rather than naming another) and a trailing slash normalised
-  // away (a directory written both ways is one resource). null when there is
-  // no src or it does not resolve. Shared by identical-iframes-same-purpose
-  // and iframe-title-unique so they agree on what "the same resource" means.
-  function getFrameResourceKey(el) {
-    if (!isElement(el)) return null;
-    let raw;
-    try {
-      raw = el.getAttribute('src');
-    } catch {
-      return null;
-    }
-    if (raw == null || !String(raw).trim()) return null;
-
-    const doc = document || (el.ownerDocument ? el.ownerDocument : null);
-    const base = doc && doc.baseURI ? doc.baseURI : undefined;
-    try {
-      const u = new URL(String(raw).trim(), base);
-      let pathname = u.pathname;
-      if (pathname.length > 1 && pathname.charAt(pathname.length - 1) === '/') {
-        pathname = pathname.slice(0, -1);
-      }
-      return u.protocol + '//' + u.host + pathname + u.search;
-    } catch {
-      return null;
-    }
-  }
-
   // Resolves the final {outcome, severity, occurrences} for a rule that
   // collects two independent confidence tiers during one run: some
   // findings are confident enough for a hard `fail`, others only warrant
@@ -63904,9 +63718,6 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // form-control-single-label and form-control-programmatic-label-present
     // agree on what a label is worth.
     labelContributesAccessibleName,
-
-    // The resource an <iframe>/<frame> embeds, as a key two rules can compare.
-    getFrameResourceKey,
 
     // Flat-tree ancestor walk (assignedSlot-aware, then shadow host).
     // See this function's own definition above for why assignedSlot

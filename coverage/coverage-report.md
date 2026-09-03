@@ -549,8 +549,8 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 ### 4.1.2
 
-Facet coverage: **39/39** facets covered.
-Automation mix: **full 36, partial 1, manual 2**.
+Facet coverage: **38/38** facets covered.
+Automation mix: **full 35, partial 1, manual 2**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
@@ -582,8 +582,7 @@ Automation mix: **full 36, partial 1, manual 2**.
 | aria-attr-not-prohibited | full | aria-prohibited-attr |
 | aria-attr-required-for-role | full | aria-required-attr |
 | iframe-name-present | full | iframe-name-present |
-| iframe-title-unique | full | iframe-title-unique |
-| identical-iframes-same-purpose | partial | identical-iframes-same-purpose |
+| identical-iframes-same-purpose | partial | identical-iframes-same-purpose, iframe-title-unique |
 | aria-hidden-body-absent | full | aria-hidden-body |
 | duplicate-id-aria | full | duplicate-id-aria |
 | summary-name-present | full | summary-name-present |
@@ -616,7 +615,7 @@ Automation mix: **full 36, partial 1, manual 2**.
 | form-control-programmatic-label-present | automatic | Form controls must have a programmatic label | src/checks/automatic/form-control-programmatic-label-present.js | form-control-name-present |  |
 | identical-iframes-same-purpose | automatic | Frames with the same name embed the same resource | src/checks/automatic/identical-iframes-same-purpose.js | identical-iframes-same-purpose |  |
 | iframe-name-present | automatic | Frames have an accessible name | src/checks/automatic/iframe-name-present.js | iframe-name-present |  |
-| iframe-title-unique | automatic | Frame titles must be unique | src/checks/automatic/iframe-title-unique.js | iframe-title-unique |  |
+| iframe-title-unique | automatic | Frame titles must be unique (deprecated) | src/checks/automatic/iframe-title-unique.js | identical-iframes-same-purpose |  |
 | link-name-present | automatic | Links have an accessible name | src/checks/automatic/link-name-present.js | link-name-present |  |
 | listbox-name-present | automatic | Listboxes have an accessible name | src/checks/automatic/listbox-name-present.js | listbox-name-present |  |
 | menuitem-name-present | automatic | Menu items have an accessible name | src/checks/automatic/menuitem-name-present.js | menuitem-name-present |  |
@@ -1182,8 +1181,8 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 ### 4.1.2
 
-Facet coverage: **39/39** facets covered.
-Automation mix: **full 36, partial 1, manual 2**.
+Facet coverage: **38/38** facets covered.
+Automation mix: **full 35, partial 1, manual 2**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
@@ -1215,8 +1214,7 @@ Automation mix: **full 36, partial 1, manual 2**.
 | aria-attr-not-prohibited | full | aria-prohibited-attr |
 | aria-attr-required-for-role | full | aria-required-attr |
 | iframe-name-present | full | iframe-name-present |
-| iframe-title-unique | full | iframe-title-unique |
-| identical-iframes-same-purpose | partial | identical-iframes-same-purpose |
+| identical-iframes-same-purpose | partial | identical-iframes-same-purpose, iframe-title-unique |
 | aria-hidden-body-absent | full | aria-hidden-body |
 | duplicate-id-aria | full | duplicate-id-aria |
 | summary-name-present | full | summary-name-present |
@@ -1249,7 +1247,7 @@ Automation mix: **full 36, partial 1, manual 2**.
 | form-control-programmatic-label-present | automatic | Form controls must have a programmatic label | src/checks/automatic/form-control-programmatic-label-present.js | form-control-name-present |  |
 | identical-iframes-same-purpose | automatic | Frames with the same name embed the same resource | src/checks/automatic/identical-iframes-same-purpose.js | identical-iframes-same-purpose |  |
 | iframe-name-present | automatic | Frames have an accessible name | src/checks/automatic/iframe-name-present.js | iframe-name-present |  |
-| iframe-title-unique | automatic | Frame titles must be unique | src/checks/automatic/iframe-title-unique.js | iframe-title-unique |  |
+| iframe-title-unique | automatic | Frame titles must be unique (deprecated) | src/checks/automatic/iframe-title-unique.js | identical-iframes-same-purpose |  |
 | link-name-present | automatic | Links have an accessible name | src/checks/automatic/link-name-present.js | link-name-present |  |
 | listbox-name-present | automatic | Listboxes have an accessible name | src/checks/automatic/listbox-name-present.js | listbox-name-present |  |
 | menuitem-name-present | automatic | Menu items have an accessible name | src/checks/automatic/menuitem-name-present.js | menuitem-name-present |  |

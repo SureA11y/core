@@ -193,13 +193,6 @@ descendants are correctly excluded), else its own `title`. Shared by
 `form-control-single-label` and `form-control-programmatic-label-present` so they agree
 on what "a label with content" means.
 
-### `getFrameResourceKey(el)` → `string | null`
-The resource an `<iframe>`/`<frame>` embeds, as a comparable key: `src` resolved against
-the document, with the fragment dropped and a trailing slash normalised away, so
-`/sub-dir/` and `/sub-dir` are one resource and `#top` does not make a second. `null`
-when there is no `src` or it does not resolve. Shared by `identical-iframes-same-purpose`
-and `iframe-title-unique` so they agree on what "the same resource" means.
-
 ### `getLabelMethod(el, ctx, opts)` → `{ method, value }`
 Which mechanism actually labels `el` — `'label'` | `'aria-labelledby'` |
 `'aria-label'` | `'title'` | `'placeholder'` | `'none'` — checked in that precedence
