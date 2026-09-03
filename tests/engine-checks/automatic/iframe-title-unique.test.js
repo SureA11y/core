@@ -2,81 +2,71 @@
 
 const test = require('node:test');
 const assert = require('node:assert');
-const fs = require('node:fs');
-const path = require('node:path');
 
 const { assertRule } = require('../../helpers/assertRule.js');
 const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
+const { getChecksCatalog } = require('../../../src/index.js');
 
+// Deprecated since 1.8.0: the rule stays in the catalog but decides nothing.
+// The check it used to make lives in identical-iframes-same-purpose.
 const RULE_ID = 'iframe-title-unique';
+const SUCCESSOR = 'identical-iframes-same-purpose';
 
-function hasOccurrenceForId(rule, id) {
-  return (rule.occurrences || []).some(
-    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
-  );
+const BASE = 'https://example.test/';
+
+function run(body, runOnly = [RULE_ID]) {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body>${body}</body></html>`;
+  return runa11yCoreOnHtml(html, { runOnly, url: BASE });
 }
 
-test(`${RULE_ID}: notApplicable when no iframe/frame has a title attribute`, () => {
-  const html = `<!doctype html><html><body><iframe id="a"></iframe></body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+test(`${RULE_ID}: is in the catalog, deprecated in favour of ${SUCCESSOR}`, () => {
+  const catalog = getChecksCatalog();
+  const entry = catalog.find((r) => r.ruleId === RULE_ID);
+  assert.ok(entry, 'the rule id stays published until the file is removed in 2.0.0');
+  assert.strictEqual(entry.deprecated, true);
+  assert.strictEqual(entry.deprecation.replacedBy, SUCCESSOR);
+  assert.strictEqual(entry.deprecation.sinceVersion, '1.8.0');
+  assert.ok(entry.deprecation.reason, 'the catalog says why');
+  assert.ok(
+    catalog.some((r) => r.ruleId === SUCCESSOR && !r.deprecated),
+    'the successor is a live rule'
+  );
+});
+
+test(`${RULE_ID}: notApplicable on a page with no frames`, () => {
+  const result = run('<p>none</p>');
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: pass when a single frame has a title`, () => {
-  const html = `<!doctype html><html><body><iframe id="a" title="Chat widget"></iframe></body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+// The case the rule used to fail: WCAG 4.1.2 asks that a name be exposed, not unique.
+test(`${RULE_ID}: notApplicable, not fail, when two frames share a title and embed different resources`, () => {
+  const result = run(
+    '<iframe id="a" title="Widget" src="/one.html"></iframe><iframe id="b" title="Widget" src="/two.html"></iframe>'
+  );
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: pass when multiple frames have distinct titles`, () => {
-  const html = `<!doctype html><html><body><iframe id="a" title="Chat"></iframe><iframe id="b" title="Ads"></iframe></body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+test(`${RULE_ID}: notApplicable when two frames share a title and a resource`, () => {
+  const result = run(
+    '<iframe title="List of Contributors" src="/page-one.html"></iframe><iframe title="List of Contributors" src="/page-one.html"></iframe>'
+  );
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail when two frames share the same title`, () => {
-  const html = `<!doctype html><html><body><iframe id="a" title="Widget"></iframe><iframe id="b" title="Widget"></iframe></body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
-  assert.ok(hasOccurrenceForId(rule, 'a'));
-  assert.ok(hasOccurrenceForId(rule, 'b'));
-  assert.equal(rule.occurrences[0].data.details.reasonCode, 'IFRAME_TITLE_DUPLICATE');
-  assert.equal(rule.occurrences[0].data.details.title, 'Widget');
-});
-
-test(`${RULE_ID}: fail flags only the duplicated group when a third frame has a distinct title`, () => {
-  const html = `<!doctype html><html><body><iframe id="a" title="Widget"></iframe><iframe id="b" title="Widget"></iframe><iframe id="c" title="Unique"></iframe></body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
-  assert.ok(!hasOccurrenceForId(rule, 'c'));
+test(`${RULE_ID}: the successor decides the case this rule used to fail`, () => {
+  const result = run(
+    '<iframe id="a" title="Widget" src="/one.html"></iframe><iframe id="b" title="Widget" src="/two.html"></iframe>',
+    [RULE_ID, SUCCESSOR]
+  );
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, SUCCESSOR, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
 });
 
 test(`${RULE_ID}: i18n default is English`, () => {
-  const html = `<!doctype html><html><body><iframe id="a" title="Widget"></iframe><iframe id="b" title="Widget"></iframe></body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
-  assert.strictEqual(rule.title, 'Frame titles must be unique');
-});
-
-test(`${RULE_ID}: fixture coverage (tests/fixtures/iframe-title-unique-all-scenarios.html)`, () => {
-  const fixturePath = path.join(
-    __dirname,
-    '../..',
-    'fixtures',
-    'iframe-title-unique-all-scenarios.html'
-  );
-  const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
-  const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
-
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
-
-  const expectedFailIds = ['ifu_case_02', 'ifu_case_03'];
-  const expectedNoOccIds = ['ifu_case_01', 'ifu_case_04'];
-
-  for (const id of expectedFailIds) {
-    assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);
-  }
-  for (const id of expectedNoOccIds) {
-    assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
-  }
+  const result = run('<iframe title="Widget" src="/one.html"></iframe>');
+  const rule = assertRule(result, RULE_ID, 'notApplicable', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
+  assert.strictEqual(rule.title, 'Frame titles must be unique (deprecated)');
 });

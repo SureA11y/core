@@ -3213,8 +3213,8 @@ const CHECK_DEFS = [
   },
   {
     "ruleId": "iframe-title-unique",
-    "title": "Frame titles must be unique",
-    "description": "Checks that no two <iframe>/<frame> elements in scope share the same title attribute value.",
+    "title": "Frame titles must be unique (deprecated)",
+    "description": "Deprecated since 1.8.0 and always notApplicable: whether frames sharing a name embed the same resource is checked by identical-iframes-same-purpose.",
     "i18n": {
       "titleKey": "iframeTitleUnique_title",
       "descriptionKey": "iframeTitleUnique_description"
@@ -3248,7 +3248,7 @@ const CHECK_DEFS = [
     "coverage": {
       "facetsBySc": {
         "4.1.2": [
-          "iframe-title-unique"
+          "identical-iframes-same-purpose"
         ]
       }
     },
@@ -3257,8 +3257,12 @@ const CHECK_DEFS = [
     "ruleVersion": "0.0.0",
     "normative": true,
     "atomic": true,
-    "deprecated": false,
-    "deprecation": null,
+    "deprecated": true,
+    "deprecation": {
+      "replacedBy": "identical-iframes-same-purpose",
+      "reason": "A repeated title attribute is not a WCAG 4.1.2 violation, and identical-iframes-same-purpose already checks what ACT rule 4b1c6c asks: that frames sharing a name embed the same resource.",
+      "sinceVersion": "1.8.0"
+    },
     "category": "robust",
     "standard": null,
     "applicability": "",
@@ -8157,10 +8161,8 @@ const I18N = {
     "iframeNamePresent_description": "Prüft, ob <iframe>/<frame>-Elemente über aria-label, aria-labelledby oder das title-Attribut einen nicht leeren zugänglichen Namen aufweisen.",
     "iframeNamePresent_summary_fail": "Dieses <{{element}}> hat keinen zugänglichen Namen.",
     "iframeNamePresent_hint_fail": "Fügen Sie ein title-Attribut (oder aria-label/aria-labelledby) hinzu, das Inhalt oder Zweck des Frames beschreibt.",
-    "iframeTitleUnique_title": "Frame-Titel müssen eindeutig sein",
-    "iframeTitleUnique_description": "Prüft, ob nicht zwei <iframe>/<frame>-Elemente im betrachteten Bereich denselben title-Attributwert teilen.",
-    "iframeTitleUnique_summary_fail": "Der Titel „{{title}}“ dieses <{{element}}> ist unter den Frames dieser Seite nicht eindeutig.",
-    "iframeTitleUnique_hint_fail": "Geben Sie jedem Frame einen eigenen Titel, der seinen jeweiligen Inhalt oder Zweck beschreibt.",
+    "iframeTitleUnique_title": "Frame titles must be unique (deprecated)",
+    "iframeTitleUnique_description": "Deprecated since 1.8.0 and always notApplicable: whether frames sharing a name embed the same resource is checked by identical-iframes-same-purpose.",
     "identicalIframesSamePurpose_title": "Frames with the same name embed the same resource",
     "identicalIframesSamePurpose_description": "Checks that <iframe>/<frame> elements sharing an accessible name embed the same resource, since one name can only describe one resource.",
     "identicalIframesSamePurpose_summary_cantTell": "This <{{element}}> shares the name “{{name}}” with another frame that embeds a different resource.",
@@ -8853,10 +8855,8 @@ const I18N = {
     "iframeNamePresent_description": "Checks that <iframe>/<frame> elements expose a non-empty accessible name via aria-label, aria-labelledby, or the title attribute.",
     "iframeNamePresent_summary_fail": "This <{{element}}> has no accessible name.",
     "iframeNamePresent_hint_fail": "Add a title attribute (or aria-label/aria-labelledby) describing the frame’s content or purpose.",
-    "iframeTitleUnique_title": "Frame titles must be unique",
-    "iframeTitleUnique_description": "Checks that no two <iframe>/<frame> elements in scope share the same title attribute value.",
-    "iframeTitleUnique_summary_fail": "This <{{element}}>'s title \"{{title}}\" is not unique among the frames on this page.",
-    "iframeTitleUnique_hint_fail": "Give each frame a distinct title describing its specific content or purpose.",
+    "iframeTitleUnique_title": "Frame titles must be unique (deprecated)",
+    "iframeTitleUnique_description": "Deprecated since 1.8.0 and always notApplicable: whether frames sharing a name embed the same resource is checked by identical-iframes-same-purpose.",
     "identicalIframesSamePurpose_title": "Frames with the same name embed the same resource",
     "identicalIframesSamePurpose_description": "Checks that <iframe>/<frame> elements sharing an accessible name embed the same resource, since one name can only describe one resource.",
     "identicalIframesSamePurpose_summary_cantTell": "This <{{element}}> shares the name “{{name}}” with another frame that embeds a different resource.",
@@ -9549,10 +9549,8 @@ const I18N = {
     "iframeNamePresent_description": "Comprueba que los elementos <iframe>/<frame> expongan un nombre accesible no vacío mediante aria-label, aria-labelledby o el atributo title.",
     "iframeNamePresent_summary_fail": "Este <{{element}}> no tiene nombre accesible.",
     "iframeNamePresent_hint_fail": "Agregar un atributo title (o aria-label/aria-labelledby) que describa el contenido o el propósito del marco.",
-    "iframeTitleUnique_title": "Los títulos de los marcos deben ser únicos",
-    "iframeTitleUnique_description": "Comprueba que dos elementos <iframe>/<frame> no compartan, dentro del alcance, el mismo valor de atributo title.",
-    "iframeTitleUnique_summary_fail": "El título \"{{title}}\" de este <{{element}}> no es único entre los marcos de esta página.",
-    "iframeTitleUnique_hint_fail": "Asignar a cada marco un título distinto que describa su contenido o propósito específico.",
+    "iframeTitleUnique_title": "Frame titles must be unique (deprecated)",
+    "iframeTitleUnique_description": "Deprecated since 1.8.0 and always notApplicable: whether frames sharing a name embed the same resource is checked by identical-iframes-same-purpose.",
     "identicalIframesSamePurpose_title": "Frames with the same name embed the same resource",
     "identicalIframesSamePurpose_description": "Checks that <iframe>/<frame> elements sharing an accessible name embed the same resource, since one name can only describe one resource.",
     "identicalIframesSamePurpose_summary_cantTell": "This <{{element}}> shares the name “{{name}}” with another frame that embeds a different resource.",
@@ -10245,10 +10243,8 @@ const I18N = {
     "iframeNamePresent_description": "Vérifie que les éléments <iframe>/<frame> exposent un nom accessible non vide via aria-label, aria-labelledby, ou l’attribut title.",
     "iframeNamePresent_summary_fail": "Ce <{{element}}> n’a pas de nom accessible.",
     "iframeNamePresent_hint_fail": "Ajoutez un attribut title (ou aria-label/aria-labelledby) décrivant le contenu ou l’objet du cadre.",
-    "iframeTitleUnique_title": "Les titres de cadres doivent être uniques",
-    "iframeTitleUnique_description": "Vérifie qu’aucun <iframe>/<frame> dans le périmètre analysé ne partage la même valeur d’attribut title qu’un autre.",
-    "iframeTitleUnique_summary_fail": "Le titre « {{title}} » de ce <{{element}}> n’est pas unique parmi les cadres de cette page.",
-    "iframeTitleUnique_hint_fail": "Donnez à chaque cadre un titre distinct décrivant son contenu ou son objet spécifique.",
+    "iframeTitleUnique_title": "Frame titles must be unique (deprecated)",
+    "iframeTitleUnique_description": "Deprecated since 1.8.0 and always notApplicable: whether frames sharing a name embed the same resource is checked by identical-iframes-same-purpose.",
     "identicalIframesSamePurpose_title": "Frames with the same name embed the same resource",
     "identicalIframesSamePurpose_description": "Checks that <iframe>/<frame> elements sharing an accessible name embed the same resource, since one name can only describe one resource.",
     "identicalIframesSamePurpose_summary_cantTell": "This <{{element}}> shares the name “{{name}}” with another frame that embeds a different resource.",
@@ -23491,8 +23487,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "iframe-title-unique",
-    "title": "Frame titles must be unique",
-    "description": "Checks that no two <iframe>/<frame> elements in scope share the same title attribute value.",
+    "title": "Frame titles must be unique (deprecated)",
+    "description": "Deprecated since 1.8.0 and always notApplicable: whether frames sharing a name embed the same resource is checked by identical-iframes-same-purpose.",
     "i18n": {
       "titleKey": "iframeTitleUnique_title",
       "descriptionKey": "iframeTitleUnique_description"
@@ -23526,7 +23522,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "coverage": {
       "facetsBySc": {
         "4.1.2": [
-          "iframe-title-unique"
+          "identical-iframes-same-purpose"
         ]
       }
     },
@@ -23535,8 +23531,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "ruleVersion": "0.0.0",
     "normative": true,
     "atomic": true,
-    "deprecated": false,
-    "deprecation": null,
+    "deprecated": true,
+    "deprecation": {
+      "replacedBy": "identical-iframes-same-purpose",
+      "reason": "A repeated title attribute is not a WCAG 4.1.2 violation, and identical-iframes-same-purpose already checks what ACT rule 4b1c6c asks: that frames sharing a name embed the same resource.",
+      "sinceVersion": "1.8.0"
+    },
     "category": "robust",
     "standard": null,
     "applicability": "",
@@ -40319,70 +40319,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "iframe-title-unique": { run: (function runInPage(ctx) {
-  const { helpers, rule } = ctx;
-
-  const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('iframe, frame')
-    : helpers.queryAll('iframe, frame');
-
-  const groups = new Map(); // trimmed title -> elements[]
-  let applicableCount = 0;
-
-  for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
-
-    const title = String(el.getAttribute('title') || '').trim();
-    if (!title) continue;
-
-    applicableCount += 1;
-
-    const list = groups.get(title);
-    if (list) list.push(el);
-    else groups.set(title, [el]);
-  }
-
-  if (applicableCount === 0) {
-    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
-  }
-
-  const occurrences = [];
-
-  for (const [title, els] of groups) {
-    if (els.length < 2) continue;
-
-    for (const el of els) {
-      const tag = el.tagName.toLowerCase();
-      occurrences.push(
-        helpers.reportOccurrence(el, {
-          summary: 'This frame’s title is not unique among the frames on this page.',
-          hint: 'Give each frame a distinct title describing its specific content or purpose.',
-          i18n: {
-            summaryKey: 'iframeTitleUnique_summary_fail',
-            hintKey: 'iframeTitleUnique_hint_fail',
-            params: { element: tag, title }
-          },
-          data: {
-            details: {
-              reasonCode: 'IFRAME_TITLE_DUPLICATE',
-              element: tag,
-              title,
-              duplicateCount: els.length
-            }
-          }
-        })
-      );
-    }
-  }
-
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'moderate',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  const { rule } = ctx;
+  return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "image-redundant-alt": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
@@ -53042,10 +52980,8 @@ const I18N = {
     "iframeNamePresent_description": "Prüft, ob <iframe>/<frame>-Elemente über aria-label, aria-labelledby oder das title-Attribut einen nicht leeren zugänglichen Namen aufweisen.",
     "iframeNamePresent_summary_fail": "Dieses <{{element}}> hat keinen zugänglichen Namen.",
     "iframeNamePresent_hint_fail": "Fügen Sie ein title-Attribut (oder aria-label/aria-labelledby) hinzu, das Inhalt oder Zweck des Frames beschreibt.",
-    "iframeTitleUnique_title": "Frame-Titel müssen eindeutig sein",
-    "iframeTitleUnique_description": "Prüft, ob nicht zwei <iframe>/<frame>-Elemente im betrachteten Bereich denselben title-Attributwert teilen.",
-    "iframeTitleUnique_summary_fail": "Der Titel „{{title}}“ dieses <{{element}}> ist unter den Frames dieser Seite nicht eindeutig.",
-    "iframeTitleUnique_hint_fail": "Geben Sie jedem Frame einen eigenen Titel, der seinen jeweiligen Inhalt oder Zweck beschreibt.",
+    "iframeTitleUnique_title": "Frame titles must be unique (deprecated)",
+    "iframeTitleUnique_description": "Deprecated since 1.8.0 and always notApplicable: whether frames sharing a name embed the same resource is checked by identical-iframes-same-purpose.",
     "identicalIframesSamePurpose_title": "Frames with the same name embed the same resource",
     "identicalIframesSamePurpose_description": "Checks that <iframe>/<frame> elements sharing an accessible name embed the same resource, since one name can only describe one resource.",
     "identicalIframesSamePurpose_summary_cantTell": "This <{{element}}> shares the name “{{name}}” with another frame that embeds a different resource.",
@@ -53738,10 +53674,8 @@ const I18N = {
     "iframeNamePresent_description": "Checks that <iframe>/<frame> elements expose a non-empty accessible name via aria-label, aria-labelledby, or the title attribute.",
     "iframeNamePresent_summary_fail": "This <{{element}}> has no accessible name.",
     "iframeNamePresent_hint_fail": "Add a title attribute (or aria-label/aria-labelledby) describing the frame’s content or purpose.",
-    "iframeTitleUnique_title": "Frame titles must be unique",
-    "iframeTitleUnique_description": "Checks that no two <iframe>/<frame> elements in scope share the same title attribute value.",
-    "iframeTitleUnique_summary_fail": "This <{{element}}>'s title \"{{title}}\" is not unique among the frames on this page.",
-    "iframeTitleUnique_hint_fail": "Give each frame a distinct title describing its specific content or purpose.",
+    "iframeTitleUnique_title": "Frame titles must be unique (deprecated)",
+    "iframeTitleUnique_description": "Deprecated since 1.8.0 and always notApplicable: whether frames sharing a name embed the same resource is checked by identical-iframes-same-purpose.",
     "identicalIframesSamePurpose_title": "Frames with the same name embed the same resource",
     "identicalIframesSamePurpose_description": "Checks that <iframe>/<frame> elements sharing an accessible name embed the same resource, since one name can only describe one resource.",
     "identicalIframesSamePurpose_summary_cantTell": "This <{{element}}> shares the name “{{name}}” with another frame that embeds a different resource.",
@@ -54434,10 +54368,8 @@ const I18N = {
     "iframeNamePresent_description": "Comprueba que los elementos <iframe>/<frame> expongan un nombre accesible no vacío mediante aria-label, aria-labelledby o el atributo title.",
     "iframeNamePresent_summary_fail": "Este <{{element}}> no tiene nombre accesible.",
     "iframeNamePresent_hint_fail": "Agregar un atributo title (o aria-label/aria-labelledby) que describa el contenido o el propósito del marco.",
-    "iframeTitleUnique_title": "Los títulos de los marcos deben ser únicos",
-    "iframeTitleUnique_description": "Comprueba que dos elementos <iframe>/<frame> no compartan, dentro del alcance, el mismo valor de atributo title.",
-    "iframeTitleUnique_summary_fail": "El título \"{{title}}\" de este <{{element}}> no es único entre los marcos de esta página.",
-    "iframeTitleUnique_hint_fail": "Asignar a cada marco un título distinto que describa su contenido o propósito específico.",
+    "iframeTitleUnique_title": "Frame titles must be unique (deprecated)",
+    "iframeTitleUnique_description": "Deprecated since 1.8.0 and always notApplicable: whether frames sharing a name embed the same resource is checked by identical-iframes-same-purpose.",
     "identicalIframesSamePurpose_title": "Frames with the same name embed the same resource",
     "identicalIframesSamePurpose_description": "Checks that <iframe>/<frame> elements sharing an accessible name embed the same resource, since one name can only describe one resource.",
     "identicalIframesSamePurpose_summary_cantTell": "This <{{element}}> shares the name “{{name}}” with another frame that embeds a different resource.",
@@ -55130,10 +55062,8 @@ const I18N = {
     "iframeNamePresent_description": "Vérifie que les éléments <iframe>/<frame> exposent un nom accessible non vide via aria-label, aria-labelledby, ou l’attribut title.",
     "iframeNamePresent_summary_fail": "Ce <{{element}}> n’a pas de nom accessible.",
     "iframeNamePresent_hint_fail": "Ajoutez un attribut title (ou aria-label/aria-labelledby) décrivant le contenu ou l’objet du cadre.",
-    "iframeTitleUnique_title": "Les titres de cadres doivent être uniques",
-    "iframeTitleUnique_description": "Vérifie qu’aucun <iframe>/<frame> dans le périmètre analysé ne partage la même valeur d’attribut title qu’un autre.",
-    "iframeTitleUnique_summary_fail": "Le titre « {{title}} » de ce <{{element}}> n’est pas unique parmi les cadres de cette page.",
-    "iframeTitleUnique_hint_fail": "Donnez à chaque cadre un titre distinct décrivant son contenu ou son objet spécifique.",
+    "iframeTitleUnique_title": "Frame titles must be unique (deprecated)",
+    "iframeTitleUnique_description": "Deprecated since 1.8.0 and always notApplicable: whether frames sharing a name embed the same resource is checked by identical-iframes-same-purpose.",
     "identicalIframesSamePurpose_title": "Frames with the same name embed the same resource",
     "identicalIframesSamePurpose_description": "Checks that <iframe>/<frame> elements sharing an accessible name embed the same resource, since one name can only describe one resource.",
     "identicalIframesSamePurpose_summary_cantTell": "This <{{element}}> shares the name “{{name}}” with another frame that embeds a different resource.",

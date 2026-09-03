@@ -59,7 +59,15 @@ test('every rule states what it applies to and what it expects', () => {
 });
 
 test('every rule can emit at least one message', () => {
+  // A deprecated rule reduced to notApplicable has nothing to say and no keys
+  // to say it with (iframe-title-unique, see docs/API_STABILITY.md).
+  const deprecated = new Set(
+    getChecksCatalog()
+      .filter((r) => r.deprecated)
+      .map((r) => r.ruleId)
+  );
   for (const rule of rules) {
+    if (deprecated.has(rule.id)) continue;
     const total = ['fail', 'cantTell', 'pass', 'notApplicable'].reduce(
       (n, o) => n + rule.messages[o].length,
       0

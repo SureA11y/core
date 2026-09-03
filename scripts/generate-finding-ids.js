@@ -112,9 +112,8 @@ function codesFromFixture(ruleId, fixtureFile) {
 }
 
 function main() {
-  const catalogIds = getChecksCatalog()
-    .map((r) => r.ruleId)
-    .sort();
+  const catalog = getChecksCatalog();
+  const catalogIds = catalog.map((r) => r.ruleId).sort();
 
   // A rule id is the file's own registered id, not its filename: the two have
   // already drifted apart once (role-img-text-alternative-present).
@@ -146,6 +145,21 @@ function main() {
       add(row.ruleId, codesFromFixture(row.ruleId, row.fixtureFile));
     } catch (e) {
       console.error(`[finding-ids] ${row.ruleId}: fixture pass failed (${e.message})`);
+    }
+  }
+
+  // A deprecated rule may have stopped emitting its codes -- iframe-title-unique
+  // reports notApplicable on every page -- but the inventory records what was
+  // shipped, not what is still produced, and a code's promise ends only when
+  // the rule file is removed (docs/API_STABILITY.md). Carry its committed
+  // codes forward until then, so retiring a check is not read as breaking one.
+  if (fs.existsSync(OUT_FILE)) {
+    const committed = JSON.parse(fs.readFileSync(OUT_FILE, 'utf8'));
+    const committedCodes = (committed && committed.reasonCodes) || {};
+    for (const r of catalog) {
+      if (r.deprecated && Array.isArray(committedCodes[r.ruleId])) {
+        add(r.ruleId, committedCodes[r.ruleId]);
+      }
     }
   }
 
