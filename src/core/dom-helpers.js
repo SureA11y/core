@@ -488,26 +488,15 @@ function createDomHelpers(opts) {
   }
 
   function hasBlockingInert(node) {
-    // Default behavior: inert anywhere in ancestorsIncludingSelf blocks.
+    // inert anywhere in ancestorsIncludingSelf blocks, <area>/<map> included:
+    // unlike aria-hidden, inert removes focusability itself, so there is no
+    // "still reachable by Tab" case to carve out.
     if (!isElement(node)) return false;
-
-    const tag = (node.tagName || '').toLowerCase();
-    const isArea = tag === 'area';
-
-    let mapEl = null;
-    if (isArea) mapEl = getClosestMap(node);
 
     const chain = ancestorsIncludingSelf(node);
 
     for (const a of chain) {
       if (!isElement(a)) continue;
-
-      // Exception: for <area>, inert on itself or on its <map> does NOT block
-      if (isArea) {
-        if (a === node) continue; // ignore <area inert>
-        if (mapEl && a === mapEl) continue; // ignore <map inert>
-      }
-
       if (a.hasAttribute && a.hasAttribute('inert')) return true;
     }
     return false;
@@ -819,24 +808,30 @@ function createDomHelpers(opts) {
       if (href && href.trim()) return true;
     }
     if (tag === 'area') {
-      // Engine policy: treat <area> as focusable when it's part of a *used* image map.
-      const map = getClosestMap(el);
-      if (map) {
-        const rawName = (
-          map.getAttribute &&
-          (map.getAttribute('name') || map.getAttribute('id') || '')
-        ).trim();
-        if (rawName && document && document.querySelector) {
-          const esc = __cssEscapeSafe;
-          const n = esc(rawName);
+      // Engine policy: treat <area href> as focusable when it's part of a
+      // *used* image map. Without href an <area> is not a hyperlink at all
+      // per the HTML spec, so it falls through to the generic tabindex
+      // check below, same as any other non-interactive element.
+      const href = el.getAttribute && el.getAttribute('href');
+      if (href && href.trim()) {
+        const map = getClosestMap(el);
+        if (map) {
+          const rawName = (
+            map.getAttribute &&
+            (map.getAttribute('name') || map.getAttribute('id') || '')
+          ).trim();
+          if (rawName && document && document.querySelector) {
+            const esc = __cssEscapeSafe;
+            const n = esc(rawName);
 
-          // Be practical: accept both "#name" and "name", and ignore case.
-          const sels = [`img[usemap="#${n}" i]`, `img[usemap="${n}" i]`];
+            // Be practical: accept both "#name" and "name", and ignore case.
+            const sels = [`img[usemap="#${n}" i]`, `img[usemap="${n}" i]`];
 
-          for (const sel of sels) {
-            try {
-              if (document.querySelector(sel)) return true;
-            } catch {}
+            for (const sel of sels) {
+              try {
+                if (document.querySelector(sel)) return true;
+              } catch {}
+            }
           }
         }
       }

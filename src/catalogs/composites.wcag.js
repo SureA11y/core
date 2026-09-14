@@ -16,7 +16,6 @@ module.exports = [
       'area-alt-present',
       'img-alt-decorative',
       'img-alt-quality',
-      'area-alt-decorative',
       'area-alt-quality',
       'canvas-text-alternative-quality',
       'canvas-text-alternative-present',

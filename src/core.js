@@ -46,65 +46,9 @@ const CHECK_DEFS = [
     "mappings": null
   },
   {
-    "ruleId": "area-alt-decorative",
-    "title": "<area> with alt=\"\" must be decorative (manual review)",
-    "description": "Flags <area> elements with empty alt for human review that they are decorative/non-informative.",
-    "i18n": {
-      "titleKey": "area_altDecorative_title",
-      "descriptionKey": "area_altDecorative_description"
-    },
-    "helpUrl": "",
-    "tags": [
-      "wcag2a",
-      "wcag111",
-      "nontext",
-      "images",
-      "imagemap",
-      "manual",
-      "atomic",
-      "a11ycore"
-    ],
-    "wcagSc": [
-      "1.1.1"
-    ],
-    "normativeMappings": [
-      {
-        "standard": "WCAG",
-        "version": "2.2",
-        "requirement": "1.1.1",
-        "title": "Non-text Content",
-        "conformanceLevel": "A"
-      }
-    ],
-    "defaultSeverity": "minor",
-    "defaultConfidence": "medium",
-    "type": "manual",
-    "coverage": {
-      "facetsBySc": {
-        "1.1.1": [
-          "text-alternative-quality"
-        ]
-      }
-    },
-    "data": null,
-    "ruleInterfaceVersion": "1.0.0",
-    "ruleVersion": "0.0.0",
-    "normative": true,
-    "atomic": true,
-    "deprecated": false,
-    "deprecation": null,
-    "category": "perceivable",
-    "standard": null,
-    "applicability": "",
-    "expectation": "",
-    "references": [],
-    "requirements": null,
-    "mappings": null
-  },
-  {
     "ruleId": "area-alt-present",
-    "title": "<area> must have an alt attribute",
-    "description": "Checks that <area> elements provide an alt attribute to support a text alternative mechanism.",
+    "title": "<area> must have an accessible name",
+    "description": "Checks that <area> elements have a non-empty accessible name via alt, aria-label/aria-labelledby, or title.",
     "i18n": {
       "titleKey": "area_altPresent_title",
       "descriptionKey": "area_altPresent_description"
@@ -7063,7 +7007,6 @@ const COMPOSITE_RULES = [
       "area-alt-present",
       "img-alt-decorative",
       "img-alt-quality",
-      "area-alt-decorative",
       "area-alt-quality",
       "canvas-text-alternative-quality",
       "canvas-text-alternative-present",
@@ -7620,7 +7563,6 @@ const COMPOSITE_RULES = [
 // Node/runtime rule implementations (normalized)
 const RULE_IMPLS = {
   "accesskeys": { run: require("./checks/manual/accesskeys-manual.js").runInPage, applicability: require("./checks/manual/accesskeys-manual.js").applicability || null },
-  "area-alt-decorative": { run: require("./checks/manual/area-alt-decorative-manual.js").runInPage, applicability: require("./checks/manual/area-alt-decorative-manual.js").applicability || null },
   "area-alt-present": { run: require("./checks/automatic/area-alt-present.js").runInPage, applicability: require("./checks/automatic/area-alt-present.js").applicability || null },
   "area-alt-quality": { run: require("./checks/manual/area-alt-quality-manual.js").runInPage, applicability: require("./checks/manual/area-alt-quality-manual.js").applicability || null },
   "aria-allowed-attr": { run: require("./checks/automatic/aria-allowed-attr.js").runInPage, applicability: require("./checks/automatic/aria-allowed-attr.js").applicability || null },
@@ -7767,10 +7709,12 @@ const I18N = {
     "img_altPresent_description": "Prüft, ob <img>-Elemente ein alt-Attribut bereitstellen, um einen Mechanismus für eine Textalternative zu unterstützen.",
     "img_altPresent_summary_fail": "Fehlendes alt-Attribut auf <img>.",
     "img_altPresent_hint_fail": "Fügen Sie ein alt-Attribut hinzu (verwenden Sie alt=\"\" nur für dekorative Bilder).",
-    "area_altPresent_title": "<area> muss ein alt-Attribut haben",
-    "area_altPresent_description": "Prüft, ob <area>-Elemente ein alt-Attribut bereitstellen, um einen Mechanismus für eine Textalternative zu unterstützen.",
+    "area_altPresent_title": "<area> muss einen zugänglichen Namen haben",
+    "area_altPresent_description": "Prüft, ob <area>-Elemente über alt, aria-label/aria-labelledby oder title einen nicht leeren zugänglichen Namen haben.",
     "area_altPresent_summary_fail": "Fehlendes alt-Attribut auf <area>.",
-    "area_altPresent_hint_fail": "Fügen Sie ein alt-Attribut hinzu (verwenden Sie alt=\"\" nur für dekorative Bereiche).",
+    "area_altPresent_hint_fail": "Fügen Sie ein alt-Attribut hinzu, das das Linkziel beschreibt (ein <area> kann nicht dekorativ sein).",
+    "area_altPresent_summary_fail_empty": "Ein leeres alt-Attribut lässt den <area>-Link ohne zugänglichen Namen.",
+    "area_altPresent_hint_fail_empty": "Beschreiben Sie das Linkziel in alt, oder fügen Sie aria-label/aria-labelledby hinzu (ein <area> kann nicht dekorativ sein, sobald seine Map verwendet wird).",
     "inputImage_altPresent_title": "<input type=\"image\"> muss ein alt-Attribut haben",
     "inputImage_altPresent_description": "Prüft, ob <input type=\"image\">-Elemente ein alt-Attribut bereitstellen, um einen Mechanismus für eine Textalternative zu unterstützen.",
     "inputImage_altPresent_summary_fail": "Fehlendes alt-Attribut auf <input type=\"image\">.",
@@ -7811,10 +7755,6 @@ const I18N = {
     "area_altQuality_description": "Markiert <area>-Elemente mit nicht leerem Alternativtext zur manuellen Überprüfung der Angemessenheit.",
     "area_altQuality_summary_cantTell": "Überprüfen Sie den Alternativtext von <area> auf Genauigkeit und Angemessenheit.",
     "area_altQuality_hint_cantTell": "Stellen Sie sicher, dass der Alternativtext das Ziel/die Aktion des Bereichs der Image-Map im Kontext identifiziert.",
-    "area_altDecorative_title": "<area> mit alt=\"\" muss dekorativ sein (manuelle Überprüfung)",
-    "area_altDecorative_description": "Markiert <area>-Elemente mit leerem alt zur manuellen Überprüfung, ob sie dekorativ/nicht informativ sind.",
-    "area_altDecorative_summary_cantTell": "Überprüfen Sie, ob <area> dekorativ ist (alt=\"\").",
-    "area_altDecorative_hint_cantTell": "Bestätigen Sie, dass der Bereich keine Information oder Funktion vermittelt. Falls er interaktiv oder bedeutsam ist, stellen Sie einen aussagekräftigen Alternativtext bereit.",
     "inputImage_altQuality_title": "<input type=\"image\">-Alternativtext muss angemessen sein (manuelle Überprüfung)",
     "inputImage_altQuality_description": "Markiert <input type=\"image\">-Elemente mit nicht leerem Alternativtext zur manuellen Überprüfung der Angemessenheit.",
     "inputImage_altQuality_summary_cantTell": "Überprüfen Sie den Alternativtext von <input type=\"image\"> auf Genauigkeit und Angemessenheit.",
@@ -8463,10 +8403,12 @@ const I18N = {
     "img_altPresent_description": "Checks that <img> elements provide an alt attribute to support a text alternative mechanism.",
     "img_altPresent_summary_fail": "Missing alt attribute on <img>.",
     "img_altPresent_hint_fail": "Add an alt attribute (use alt=\"\" only for decorative images).",
-    "area_altPresent_title": "<area> must have an alt attribute",
-    "area_altPresent_description": "Checks that <area> elements provide an alt attribute to support a text alternative mechanism.",
+    "area_altPresent_title": "<area> must have an accessible name",
+    "area_altPresent_description": "Checks that <area> elements have a non-empty accessible name via alt, aria-label/aria-labelledby, or title.",
     "area_altPresent_summary_fail": "Missing alt attribute on <area>.",
-    "area_altPresent_hint_fail": "Add an alt attribute (use alt=\"\" only for decorative areas).",
+    "area_altPresent_hint_fail": "Add an alt attribute describing the link destination (an <area> cannot be decorative).",
+    "area_altPresent_summary_fail_empty": "Empty alt attribute leaves <area> link with no accessible name.",
+    "area_altPresent_hint_fail_empty": "Describe the link destination in alt, or add aria-label/aria-labelledby (an <area> cannot be decorative once its map is used).",
     "inputImage_altPresent_title": "<input type=\"image\"> must have an alt attribute",
     "inputImage_altPresent_description": "Checks that <input type=\"image\"> elements provide an alt attribute to support a text alternative mechanism.",
     "inputImage_altPresent_summary_fail": "Missing alt attribute on <input type=\"image\">.",
@@ -8507,10 +8449,6 @@ const I18N = {
     "area_altQuality_description": "Flags <area> elements with non-empty alt text for human review of appropriateness.",
     "area_altQuality_summary_cantTell": "Review alt text on <area> for accuracy and appropriateness.",
     "area_altQuality_hint_cantTell": "Ensure the alt text identifies the destination/action of the image map area in context.",
-    "area_altDecorative_title": "<area> with alt=\"\" must be decorative (manual review)",
-    "area_altDecorative_description": "Flags <area> elements with empty alt for human review that they are decorative/non-informative.",
-    "area_altDecorative_summary_cantTell": "Review whether <area> is decorative (alt=\"\").",
-    "area_altDecorative_hint_cantTell": "Confirm the area does not convey information or function. If it is interactive or meaningful, provide meaningful alt text.",
     "inputImage_altQuality_title": "<input type=\"image\"> alt text must be appropriate (manual review)",
     "inputImage_altQuality_description": "Flags <input type=\"image\"> elements with non-empty alt text for human review of appropriateness.",
     "inputImage_altQuality_summary_cantTell": "Review alt text on <input type=\"image\"> for accuracy and appropriateness.",
@@ -9159,10 +9097,12 @@ const I18N = {
     "img_altPresent_description": "Comprueba que los elementos <img> incluyan un atributo alt para ofrecer un mecanismo de alternativa textual.",
     "img_altPresent_summary_fail": "Falta el atributo alt en <img>.",
     "img_altPresent_hint_fail": "Agregar un atributo alt (usar alt=\"\" solo para imágenes decorativas).",
-    "area_altPresent_title": "<area> debe tener un atributo alt",
-    "area_altPresent_description": "Comprueba que los elementos <area> incluyan un atributo alt para ofrecer un mecanismo de alternativa textual.",
+    "area_altPresent_title": "<area> debe tener un nombre accesible",
+    "area_altPresent_description": "Comprueba que los elementos <area> tengan un nombre accesible no vacío mediante alt, aria-label/aria-labelledby o title.",
     "area_altPresent_summary_fail": "Falta el atributo alt en <area>.",
-    "area_altPresent_hint_fail": "Agregar un atributo alt (usar alt=\"\" solo para áreas decorativas).",
+    "area_altPresent_hint_fail": "Agregar un atributo alt que describa el destino del enlace (un <area> no puede ser decorativa).",
+    "area_altPresent_summary_fail_empty": "Un atributo alt vacío deja el enlace <area> sin nombre accesible.",
+    "area_altPresent_hint_fail_empty": "Describir el destino del enlace en alt, o agregar aria-label/aria-labelledby (un <area> no puede ser decorativa una vez que su mapa está en uso).",
     "inputImage_altPresent_title": "<input type=\"image\"> debe tener un atributo alt",
     "inputImage_altPresent_description": "Comprueba que los elementos <input type=\"image\"> incluyan un atributo alt para ofrecer un mecanismo de alternativa textual.",
     "inputImage_altPresent_summary_fail": "Falta el atributo alt en <input type=\"image\">.",
@@ -9203,10 +9143,6 @@ const I18N = {
     "area_altQuality_description": "Señala elementos <area> con texto alt no vacío para su revisión manual en cuanto a idoneidad.",
     "area_altQuality_summary_cantTell": "Revisar el texto alt de <area> en cuanto a exactitud e idoneidad.",
     "area_altQuality_hint_cantTell": "Asegurarse de que el texto alt identifique el destino o la acción del área del mapa de imagen en su contexto.",
-    "area_altDecorative_title": "<area> con alt=\"\" debe ser decorativa (revisión manual)",
-    "area_altDecorative_description": "Señala elementos <area> con alt vacío para su revisión manual de que son decorativos o no informativos.",
-    "area_altDecorative_summary_cantTell": "Revisar si <area> es decorativa (alt=\"\").",
-    "area_altDecorative_hint_cantTell": "Confirmar que el área no transmite información ni función. Si es interactiva o significativa, proporcionar un texto alt significativo.",
     "inputImage_altQuality_title": "El texto alt de <input type=\"image\"> debe ser apropiado (revisión manual)",
     "inputImage_altQuality_description": "Señala elementos <input type=\"image\"> con texto alt no vacío para su revisión manual en cuanto a idoneidad.",
     "inputImage_altQuality_summary_cantTell": "Revisar el texto alt de <input type=\"image\"> en cuanto a exactitud e idoneidad.",
@@ -9855,10 +9791,12 @@ const I18N = {
     "img_altPresent_description": "Vérifie que les éléments <img> fournissent un attribut alt afin de proposer un mécanisme d’alternative textuelle.",
     "img_altPresent_summary_fail": "Attribut alt manquant sur <img>.",
     "img_altPresent_hint_fail": "Ajoutez un attribut alt (utilisez alt=\"\" uniquement pour les images décoratives).",
-    "area_altPresent_title": "<area> doit avoir un attribut alt",
-    "area_altPresent_description": "Vérifie que les éléments <area> fournissent un attribut alt afin de proposer un mécanisme d’alternative textuelle.",
+    "area_altPresent_title": "<area> doit avoir un nom accessible",
+    "area_altPresent_description": "Vérifie que les éléments <area> ont un nom accessible non vide via alt, aria-label/aria-labelledby ou title.",
     "area_altPresent_summary_fail": "Attribut alt manquant sur <area>.",
-    "area_altPresent_hint_fail": "Ajoutez un attribut alt (utilisez alt=\"\" uniquement pour les zones décoratives).",
+    "area_altPresent_hint_fail": "Ajoutez un attribut alt décrivant la destination du lien (une <area> ne peut pas être décorative).",
+    "area_altPresent_summary_fail_empty": "Un attribut alt vide laisse le lien <area> sans nom accessible.",
+    "area_altPresent_hint_fail_empty": "Décrivez la destination du lien dans alt, ou ajoutez aria-label/aria-labelledby (une <area> ne peut pas être décorative une fois sa carte utilisée).",
     "inputImage_altPresent_title": "<input type=\"image\"> doit avoir un attribut alt",
     "inputImage_altPresent_description": "Vérifie que les éléments <input type=\"image\"> fournissent un attribut alt afin de proposer un mécanisme d’alternative textuelle.",
     "inputImage_altPresent_summary_fail": "Attribut alt manquant sur <input type=\"image\">.",
@@ -9899,10 +9837,6 @@ const I18N = {
     "area_altQuality_description": "Signale les éléments <area> dont l’attribut alt n’est pas vide afin de vérifier manuellement sa pertinence.",
     "area_altQuality_summary_cantTell": "Vérifiez le texte alt de <area> (exactitude et pertinence).",
     "area_altQuality_hint_cantTell": "Assurez-vous que le texte alt identifie la destination/l’action de la zone dans son contexte.",
-    "area_altDecorative_title": "<area> avec alt=\"\" : décoratif à confirmer (revue manuelle)",
-    "area_altDecorative_description": "Signale les éléments <area> dont l’attribut alt est vide afin de confirmer qu’ils sont décoratifs ou non informatifs.",
-    "area_altDecorative_summary_cantTell": "Vérifiez si <area> est décoratif (alt=\"\").",
-    "area_altDecorative_hint_cantTell": "Confirmez que la zone n’a pas de fonction ni d’information. Sinon, fournissez un texte alt pertinent.",
     "inputImage_altQuality_title": "<input type=\"image\"> : texte alt à vérifier (revue manuelle)",
     "inputImage_altQuality_description": "Signale les éléments <input type=\"image\"> dont l’attribut alt n’est pas vide afin de vérifier manuellement sa pertinence.",
     "inputImage_altQuality_summary_cantTell": "Vérifiez le texte alt de <input type=\"image\"> (exactitude et pertinence).",
@@ -14638,26 +14572,15 @@ const createDomHelpers = (function createDomHelpers(opts) {
   }
 
   function hasBlockingInert(node) {
-    // Default behavior: inert anywhere in ancestorsIncludingSelf blocks.
+    // inert anywhere in ancestorsIncludingSelf blocks, <area>/<map> included:
+    // unlike aria-hidden, inert removes focusability itself, so there is no
+    // "still reachable by Tab" case to carve out.
     if (!isElement(node)) return false;
-
-    const tag = (node.tagName || '').toLowerCase();
-    const isArea = tag === 'area';
-
-    let mapEl = null;
-    if (isArea) mapEl = getClosestMap(node);
 
     const chain = ancestorsIncludingSelf(node);
 
     for (const a of chain) {
       if (!isElement(a)) continue;
-
-      // Exception: for <area>, inert on itself or on its <map> does NOT block
-      if (isArea) {
-        if (a === node) continue; // ignore <area inert>
-        if (mapEl && a === mapEl) continue; // ignore <map inert>
-      }
-
       if (a.hasAttribute && a.hasAttribute('inert')) return true;
     }
     return false;
@@ -14969,24 +14892,30 @@ const createDomHelpers = (function createDomHelpers(opts) {
       if (href && href.trim()) return true;
     }
     if (tag === 'area') {
-      // Engine policy: treat <area> as focusable when it's part of a *used* image map.
-      const map = getClosestMap(el);
-      if (map) {
-        const rawName = (
-          map.getAttribute &&
-          (map.getAttribute('name') || map.getAttribute('id') || '')
-        ).trim();
-        if (rawName && document && document.querySelector) {
-          const esc = __cssEscapeSafe;
-          const n = esc(rawName);
+      // Engine policy: treat <area href> as focusable when it's part of a
+      // *used* image map. Without href an <area> is not a hyperlink at all
+      // per the HTML spec, so it falls through to the generic tabindex
+      // check below, same as any other non-interactive element.
+      const href = el.getAttribute && el.getAttribute('href');
+      if (href && href.trim()) {
+        const map = getClosestMap(el);
+        if (map) {
+          const rawName = (
+            map.getAttribute &&
+            (map.getAttribute('name') || map.getAttribute('id') || '')
+          ).trim();
+          if (rawName && document && document.querySelector) {
+            const esc = __cssEscapeSafe;
+            const n = esc(rawName);
 
-          // Be practical: accept both "#name" and "name", and ignore case.
-          const sels = [`img[usemap="#${n}" i]`, `img[usemap="${n}" i]`];
+            // Be practical: accept both "#name" and "name", and ignore case.
+            const sels = [`img[usemap="#${n}" i]`, `img[usemap="${n}" i]`];
 
-          for (const sel of sels) {
-            try {
-              if (document.querySelector(sel)) return true;
-            } catch {}
+            for (const sel of sels) {
+              try {
+                if (document.querySelector(sel)) return true;
+              } catch {}
+            }
           }
         }
       }
@@ -20324,65 +20253,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "mappings": null
   },
   {
-    "ruleId": "area-alt-decorative",
-    "title": "<area> with alt=\"\" must be decorative (manual review)",
-    "description": "Flags <area> elements with empty alt for human review that they are decorative/non-informative.",
-    "i18n": {
-      "titleKey": "area_altDecorative_title",
-      "descriptionKey": "area_altDecorative_description"
-    },
-    "helpUrl": "",
-    "tags": [
-      "wcag2a",
-      "wcag111",
-      "nontext",
-      "images",
-      "imagemap",
-      "manual",
-      "atomic",
-      "a11ycore"
-    ],
-    "wcagSc": [
-      "1.1.1"
-    ],
-    "normativeMappings": [
-      {
-        "standard": "WCAG",
-        "version": "2.2",
-        "requirement": "1.1.1",
-        "title": "Non-text Content",
-        "conformanceLevel": "A"
-      }
-    ],
-    "defaultSeverity": "minor",
-    "defaultConfidence": "medium",
-    "type": "manual",
-    "coverage": {
-      "facetsBySc": {
-        "1.1.1": [
-          "text-alternative-quality"
-        ]
-      }
-    },
-    "data": null,
-    "ruleInterfaceVersion": "1.0.0",
-    "ruleVersion": "0.0.0",
-    "normative": true,
-    "atomic": true,
-    "deprecated": false,
-    "deprecation": null,
-    "category": "perceivable",
-    "standard": null,
-    "applicability": "",
-    "expectation": "",
-    "references": [],
-    "requirements": null,
-    "mappings": null
-  },
-  {
     "ruleId": "area-alt-present",
-    "title": "<area> must have an alt attribute",
-    "description": "Checks that <area> elements provide an alt attribute to support a text alternative mechanism.",
+    "title": "<area> must have an accessible name",
+    "description": "Checks that <area> elements have a non-empty accessible name via alt, aria-label/aria-labelledby, or title.",
     "i18n": {
       "titleKey": "area_altPresent_title",
       "descriptionKey": "area_altPresent_description"
@@ -27341,7 +27214,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "area-alt-present",
       "img-alt-decorative",
       "img-alt-quality",
-      "area-alt-decorative",
       "area-alt-quality",
       "canvas-text-alternative-quality",
       "canvas-text-alternative-present",
@@ -27948,204 +27820,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     occurrences
   };
 }), applicability: null },
-    "area-alt-decorative": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
-
-  const queryAllSmart =
-    helpers && typeof helpers.queryAllSmart === 'function' ? helpers.queryAllSmart : null;
-  const queryAll =
-    helpers && typeof helpers.queryAll === 'function'
-      ? helpers.queryAll
-      : (sel) => {
-          try {
-            return safeRoot && safeRoot.querySelectorAll
-              ? Array.from(safeRoot.querySelectorAll(sel))
-              : [];
-          } catch {
-            return [];
-          }
-        };
-
-  const __accEligCache = new WeakMap();
-  function accEligibleCached(node) {
-    if (!isAccTreeEligible) return { eligible: true, reasons: [] };
-    if (!node || typeof node !== 'object') return { eligible: true, reasons: [] };
-    const cached = __accEligCache.get(node);
-    if (cached) return cached;
-    let res;
-    try {
-      res = isAccTreeEligible(node, ctx);
-    } catch {
-      res = { eligible: true, reasons: [] };
-    }
-    res = res && typeof res === 'object' ? res : { eligible: !!res, reasons: [] };
-    __accEligCache.set(node, res);
-    return res;
-  }
-
-  const getEligibilityInfo =
-    helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
-
-  const isAccTreeEligible =
-    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
-
-  // --- image-map semantics (rule-local; match automatic <area> applicability) ---
-  function normUsemap(val) {
-    try {
-      const t = String(val || '').trim();
-      if (!t) return '';
-      return t[0] === '#' ? t.slice(1).trim().toLowerCase() : t.toLowerCase();
-    } catch {
-      return '';
-    }
-  }
-
-  function getMapName(mapEl) {
-    try {
-      if (!mapEl || !mapEl.getAttribute) return '';
-      const n = String(mapEl.getAttribute('name') || mapEl.getAttribute('id') || '').trim();
-      return n ? n.toLowerCase() : '';
-    } catch {
-      return '';
-    }
-  }
-
-  const getFocusableInfo =
-    helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
-
-  function isRolePresentationExcluded(el) {
-    const role = (() => {
-      try {
-        return String(el.getAttribute('role') || '')
-          .trim()
-          .toLowerCase();
-      } catch {
-        return '';
-      }
-    })();
-    if (role !== 'presentation' && role !== 'none') return false;
-
-    // Exclude only when NOT focusable (mirrors img-alt-present policy)
-    let focusable;
-    if (getFocusableInfo) {
-      const fi = (() => {
-        try {
-          return getFocusableInfo(el, ctx);
-        } catch {
-          return null;
-        }
-      })();
-      focusable = !!(fi && fi.focusable);
-    } else {
-      const tabindex = el.getAttribute('tabindex');
-      focusable =
-        tabindex != null &&
-        String(tabindex).trim() !== '' &&
-        !Number.isNaN(Number(String(tabindex).trim()));
-    }
-    return !focusable;
-  }
-
-  const els = (() => {
-    try {
-      return Array.from((queryAllSmart ? queryAllSmart('area') : queryAll('area')) || []);
-    } catch {
-      return queryAll('area');
-    }
-  })();
-
-  const __usemapIndex = new Map(); // mapName -> img (first in document order)
-  try {
-    const imgs = Array.from(document.querySelectorAll('img[usemap]'));
-    for (const img of imgs) {
-      const u = normUsemap(img.getAttribute('usemap'));
-      if (!u) continue;
-      if (!__usemapIndex.has(u)) __usemapIndex.set(u, img); // keep first match only
-    }
-  } catch {}
-
-  if (!els.length) {
-    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
-  }
-
-  const occurrences = [];
-  let applicableCount = 0;
-
-  for (const el of els) {
-    if (!el || !el.getAttribute) continue;
-
-    // Must belong to a *used* image map (referenced by an <img usemap>). If unused, not applicable.
-    let img;
-    try {
-      const map = el.closest && el.closest('map');
-      const mapName = map ? getMapName(map) : '';
-      img = mapName ? __usemapIndex.get(mapName) || null : null;
-    } catch {
-      img = null;
-    }
-    if (!img) continue;
-
-    // The referencing <img> must be eligible in the accessibility tree.
-    if (isAccTreeEligible) {
-      const imgElig = accEligibleCached(img);
-      if (imgElig && imgElig.eligible === false) continue;
-    }
-
-    if (isAccTreeEligible) {
-      const elig = (() => {
-        try {
-          return isAccTreeEligible(el, ctx);
-        } catch {
-          return { eligible: true, reasons: [] };
-        }
-      })();
-      if (elig && elig.eligible === false) continue;
-    }
-
-    if (isRolePresentationExcluded(el)) continue;
-
-    // Rule-specific applicability (only elements that already have a text alternative mechanism)
-    let alt;
-    try {
-      alt = el.getAttribute('alt');
-    } catch {
-      alt = null;
-    }
-    if (alt === null) continue;
-    if (String(alt).trim() !== '') continue; // only alt=""
-
-    applicableCount += 1;
-
-    const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
-
-    const baseOccurrence = {
-      summary: 'Review whether <area> is decorative (alt="").',
-      hint: 'Confirm the area does not convey information or function. If it is interactive or meaningful, provide meaningful alt text.',
-      i18n: {
-        summaryKey: 'area_altDecorative_summary_cantTell',
-        hintKey: 'area_altDecorative_hint_cantTell',
-        params: { element: (el.tagName || '').toLowerCase() }
-      },
-      data: {
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
-        details: null
-      }
-    };
-
-    if (helpers && typeof helpers.reportOccurrence === 'function') {
-      occurrences.push(helpers.reportOccurrence(el, baseOccurrence));
-    } else {
-      occurrences.push({ selector: '', html: '', ...baseOccurrence });
-    }
-  }
-
-  if (applicableCount === 0) {
-    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
-  }
-
-  return { ruleId: rule.ruleId, outcome: 'cantTell', severity: 'minor', occurrences };
-}), applicability: null },
     "area-alt-present": { run: (function runInPage(ctx) {
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
@@ -28251,6 +27925,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const img = getReferencingImgForArea(el);
     if (!img) continue;
 
+    // 0b) Without href an <area> is not a hyperlink at all per the HTML
+    // spec -- just a shape with no associated action -- so it has nothing
+    // for this rule to name.
+    const hrefRaw = el.getAttribute('href');
+    if (!hrefRaw || !hrefRaw.trim()) continue;
+
     // 1) The referencing <img> must itself be eligible in the acc tree.
     // This is the "visibility of map/area doesn't matter; the image does" policy.
     if (isAccTreeEligible) {
@@ -28279,8 +27959,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // From here: applicable
     applicableCount += 1;
 
-    const hasAlt = el.getAttribute('alt') !== null;
-    if (hasAlt) continue;
+    let altRaw;
+    try {
+      altRaw = el.getAttribute('alt');
+    } catch {
+      altRaw = null;
+    }
+    const hasAltAttr = altRaw !== null;
+    const altGivesName = hasAltAttr && String(altRaw).trim() !== '';
+    if (altGivesName) continue;
+
+    // alt="" is not decorative on an <area>: a used map's area is always a
+    // link, so it needs a name from elsewhere or it fails.
 
     // aria-label / aria-labelledby is also a valid, standards-recognized
     // text-alternative mechanism for <area> (HTML-AAM accessible name
@@ -28296,8 +27986,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
 
     // A non-empty title attribute is HTML-AAM's own next fallback naming
-    // source once alt is entirely absent. Same gap img-alt-present handles
-    // for <img title="..."> with no alt.
+    // source once alt gives no name (missing or empty). Same gap
+    // img-alt-present handles for <img title="..."> with no alt.
     const titleRaw = (() => {
       try {
         return el.getAttribute('title');
@@ -28309,21 +27999,36 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
-    const baseOccurrence = {
-      // Leave selector/html empty so the engine can fill them from __node.
-      selector: '',
-      html: '',
-      summary: 'Missing alt attribute on &lt;area&gt;.',
-      hint: 'Add an alt attribute (use alt="" only for decorative areas).',
-      i18n: {
-        summaryKey: 'area_altPresent_summary_fail',
-        hintKey: 'area_altPresent_hint_fail',
-        params: { element: 'area' }
-      },
-      data: {
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    };
+    const baseOccurrence = hasAltAttr
+      ? {
+          // Leave selector/html empty so the engine can fill them from __node.
+          selector: '',
+          html: '',
+          summary: 'Empty alt attribute leaves &lt;area&gt; link with no accessible name.',
+          hint: 'Describe the link destination in alt, or add aria-label/aria-labelledby (an <area> cannot be decorative once its map is used).',
+          i18n: {
+            summaryKey: 'area_altPresent_summary_fail_empty',
+            hintKey: 'area_altPresent_hint_fail_empty',
+            params: { element: 'area' }
+          },
+          data: {
+            visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+          }
+        }
+      : {
+          selector: '',
+          html: '',
+          summary: 'Missing alt attribute on &lt;area&gt;.',
+          hint: 'Add an alt attribute describing the link destination (an <area> cannot be decorative).',
+          i18n: {
+            summaryKey: 'area_altPresent_summary_fail',
+            hintKey: 'area_altPresent_hint_fail',
+            params: { element: 'area' }
+          },
+          data: {
+            visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+          }
+        };
 
     if (helpers && typeof helpers.reportOccurrence === 'function') {
       occurrences.push(helpers.reportOccurrence(el, baseOccurrence));
@@ -28484,6 +28189,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       img = null;
     }
     if (!img) continue;
+
+    // Without href an <area> is not a hyperlink at all per the HTML spec,
+    // so there is nothing here for this rule to review.
+    const hrefRaw = el.getAttribute('href');
+    if (!hrefRaw || !hrefRaw.trim()) continue;
 
     // The referencing <img> must be eligible in the accessibility tree.
     if (isAccTreeEligible) {
@@ -52652,10 +52362,12 @@ const I18N = {
     "img_altPresent_description": "Prüft, ob <img>-Elemente ein alt-Attribut bereitstellen, um einen Mechanismus für eine Textalternative zu unterstützen.",
     "img_altPresent_summary_fail": "Fehlendes alt-Attribut auf <img>.",
     "img_altPresent_hint_fail": "Fügen Sie ein alt-Attribut hinzu (verwenden Sie alt=\"\" nur für dekorative Bilder).",
-    "area_altPresent_title": "<area> muss ein alt-Attribut haben",
-    "area_altPresent_description": "Prüft, ob <area>-Elemente ein alt-Attribut bereitstellen, um einen Mechanismus für eine Textalternative zu unterstützen.",
+    "area_altPresent_title": "<area> muss einen zugänglichen Namen haben",
+    "area_altPresent_description": "Prüft, ob <area>-Elemente über alt, aria-label/aria-labelledby oder title einen nicht leeren zugänglichen Namen haben.",
     "area_altPresent_summary_fail": "Fehlendes alt-Attribut auf <area>.",
-    "area_altPresent_hint_fail": "Fügen Sie ein alt-Attribut hinzu (verwenden Sie alt=\"\" nur für dekorative Bereiche).",
+    "area_altPresent_hint_fail": "Fügen Sie ein alt-Attribut hinzu, das das Linkziel beschreibt (ein <area> kann nicht dekorativ sein).",
+    "area_altPresent_summary_fail_empty": "Ein leeres alt-Attribut lässt den <area>-Link ohne zugänglichen Namen.",
+    "area_altPresent_hint_fail_empty": "Beschreiben Sie das Linkziel in alt, oder fügen Sie aria-label/aria-labelledby hinzu (ein <area> kann nicht dekorativ sein, sobald seine Map verwendet wird).",
     "inputImage_altPresent_title": "<input type=\"image\"> muss ein alt-Attribut haben",
     "inputImage_altPresent_description": "Prüft, ob <input type=\"image\">-Elemente ein alt-Attribut bereitstellen, um einen Mechanismus für eine Textalternative zu unterstützen.",
     "inputImage_altPresent_summary_fail": "Fehlendes alt-Attribut auf <input type=\"image\">.",
@@ -52696,10 +52408,6 @@ const I18N = {
     "area_altQuality_description": "Markiert <area>-Elemente mit nicht leerem Alternativtext zur manuellen Überprüfung der Angemessenheit.",
     "area_altQuality_summary_cantTell": "Überprüfen Sie den Alternativtext von <area> auf Genauigkeit und Angemessenheit.",
     "area_altQuality_hint_cantTell": "Stellen Sie sicher, dass der Alternativtext das Ziel/die Aktion des Bereichs der Image-Map im Kontext identifiziert.",
-    "area_altDecorative_title": "<area> mit alt=\"\" muss dekorativ sein (manuelle Überprüfung)",
-    "area_altDecorative_description": "Markiert <area>-Elemente mit leerem alt zur manuellen Überprüfung, ob sie dekorativ/nicht informativ sind.",
-    "area_altDecorative_summary_cantTell": "Überprüfen Sie, ob <area> dekorativ ist (alt=\"\").",
-    "area_altDecorative_hint_cantTell": "Bestätigen Sie, dass der Bereich keine Information oder Funktion vermittelt. Falls er interaktiv oder bedeutsam ist, stellen Sie einen aussagekräftigen Alternativtext bereit.",
     "inputImage_altQuality_title": "<input type=\"image\">-Alternativtext muss angemessen sein (manuelle Überprüfung)",
     "inputImage_altQuality_description": "Markiert <input type=\"image\">-Elemente mit nicht leerem Alternativtext zur manuellen Überprüfung der Angemessenheit.",
     "inputImage_altQuality_summary_cantTell": "Überprüfen Sie den Alternativtext von <input type=\"image\"> auf Genauigkeit und Angemessenheit.",
@@ -53348,10 +53056,12 @@ const I18N = {
     "img_altPresent_description": "Checks that <img> elements provide an alt attribute to support a text alternative mechanism.",
     "img_altPresent_summary_fail": "Missing alt attribute on <img>.",
     "img_altPresent_hint_fail": "Add an alt attribute (use alt=\"\" only for decorative images).",
-    "area_altPresent_title": "<area> must have an alt attribute",
-    "area_altPresent_description": "Checks that <area> elements provide an alt attribute to support a text alternative mechanism.",
+    "area_altPresent_title": "<area> must have an accessible name",
+    "area_altPresent_description": "Checks that <area> elements have a non-empty accessible name via alt, aria-label/aria-labelledby, or title.",
     "area_altPresent_summary_fail": "Missing alt attribute on <area>.",
-    "area_altPresent_hint_fail": "Add an alt attribute (use alt=\"\" only for decorative areas).",
+    "area_altPresent_hint_fail": "Add an alt attribute describing the link destination (an <area> cannot be decorative).",
+    "area_altPresent_summary_fail_empty": "Empty alt attribute leaves <area> link with no accessible name.",
+    "area_altPresent_hint_fail_empty": "Describe the link destination in alt, or add aria-label/aria-labelledby (an <area> cannot be decorative once its map is used).",
     "inputImage_altPresent_title": "<input type=\"image\"> must have an alt attribute",
     "inputImage_altPresent_description": "Checks that <input type=\"image\"> elements provide an alt attribute to support a text alternative mechanism.",
     "inputImage_altPresent_summary_fail": "Missing alt attribute on <input type=\"image\">.",
@@ -53392,10 +53102,6 @@ const I18N = {
     "area_altQuality_description": "Flags <area> elements with non-empty alt text for human review of appropriateness.",
     "area_altQuality_summary_cantTell": "Review alt text on <area> for accuracy and appropriateness.",
     "area_altQuality_hint_cantTell": "Ensure the alt text identifies the destination/action of the image map area in context.",
-    "area_altDecorative_title": "<area> with alt=\"\" must be decorative (manual review)",
-    "area_altDecorative_description": "Flags <area> elements with empty alt for human review that they are decorative/non-informative.",
-    "area_altDecorative_summary_cantTell": "Review whether <area> is decorative (alt=\"\").",
-    "area_altDecorative_hint_cantTell": "Confirm the area does not convey information or function. If it is interactive or meaningful, provide meaningful alt text.",
     "inputImage_altQuality_title": "<input type=\"image\"> alt text must be appropriate (manual review)",
     "inputImage_altQuality_description": "Flags <input type=\"image\"> elements with non-empty alt text for human review of appropriateness.",
     "inputImage_altQuality_summary_cantTell": "Review alt text on <input type=\"image\"> for accuracy and appropriateness.",
@@ -54044,10 +53750,12 @@ const I18N = {
     "img_altPresent_description": "Comprueba que los elementos <img> incluyan un atributo alt para ofrecer un mecanismo de alternativa textual.",
     "img_altPresent_summary_fail": "Falta el atributo alt en <img>.",
     "img_altPresent_hint_fail": "Agregar un atributo alt (usar alt=\"\" solo para imágenes decorativas).",
-    "area_altPresent_title": "<area> debe tener un atributo alt",
-    "area_altPresent_description": "Comprueba que los elementos <area> incluyan un atributo alt para ofrecer un mecanismo de alternativa textual.",
+    "area_altPresent_title": "<area> debe tener un nombre accesible",
+    "area_altPresent_description": "Comprueba que los elementos <area> tengan un nombre accesible no vacío mediante alt, aria-label/aria-labelledby o title.",
     "area_altPresent_summary_fail": "Falta el atributo alt en <area>.",
-    "area_altPresent_hint_fail": "Agregar un atributo alt (usar alt=\"\" solo para áreas decorativas).",
+    "area_altPresent_hint_fail": "Agregar un atributo alt que describa el destino del enlace (un <area> no puede ser decorativa).",
+    "area_altPresent_summary_fail_empty": "Un atributo alt vacío deja el enlace <area> sin nombre accesible.",
+    "area_altPresent_hint_fail_empty": "Describir el destino del enlace en alt, o agregar aria-label/aria-labelledby (un <area> no puede ser decorativa una vez que su mapa está en uso).",
     "inputImage_altPresent_title": "<input type=\"image\"> debe tener un atributo alt",
     "inputImage_altPresent_description": "Comprueba que los elementos <input type=\"image\"> incluyan un atributo alt para ofrecer un mecanismo de alternativa textual.",
     "inputImage_altPresent_summary_fail": "Falta el atributo alt en <input type=\"image\">.",
@@ -54088,10 +53796,6 @@ const I18N = {
     "area_altQuality_description": "Señala elementos <area> con texto alt no vacío para su revisión manual en cuanto a idoneidad.",
     "area_altQuality_summary_cantTell": "Revisar el texto alt de <area> en cuanto a exactitud e idoneidad.",
     "area_altQuality_hint_cantTell": "Asegurarse de que el texto alt identifique el destino o la acción del área del mapa de imagen en su contexto.",
-    "area_altDecorative_title": "<area> con alt=\"\" debe ser decorativa (revisión manual)",
-    "area_altDecorative_description": "Señala elementos <area> con alt vacío para su revisión manual de que son decorativos o no informativos.",
-    "area_altDecorative_summary_cantTell": "Revisar si <area> es decorativa (alt=\"\").",
-    "area_altDecorative_hint_cantTell": "Confirmar que el área no transmite información ni función. Si es interactiva o significativa, proporcionar un texto alt significativo.",
     "inputImage_altQuality_title": "El texto alt de <input type=\"image\"> debe ser apropiado (revisión manual)",
     "inputImage_altQuality_description": "Señala elementos <input type=\"image\"> con texto alt no vacío para su revisión manual en cuanto a idoneidad.",
     "inputImage_altQuality_summary_cantTell": "Revisar el texto alt de <input type=\"image\"> en cuanto a exactitud e idoneidad.",
@@ -54740,10 +54444,12 @@ const I18N = {
     "img_altPresent_description": "Vérifie que les éléments <img> fournissent un attribut alt afin de proposer un mécanisme d’alternative textuelle.",
     "img_altPresent_summary_fail": "Attribut alt manquant sur <img>.",
     "img_altPresent_hint_fail": "Ajoutez un attribut alt (utilisez alt=\"\" uniquement pour les images décoratives).",
-    "area_altPresent_title": "<area> doit avoir un attribut alt",
-    "area_altPresent_description": "Vérifie que les éléments <area> fournissent un attribut alt afin de proposer un mécanisme d’alternative textuelle.",
+    "area_altPresent_title": "<area> doit avoir un nom accessible",
+    "area_altPresent_description": "Vérifie que les éléments <area> ont un nom accessible non vide via alt, aria-label/aria-labelledby ou title.",
     "area_altPresent_summary_fail": "Attribut alt manquant sur <area>.",
-    "area_altPresent_hint_fail": "Ajoutez un attribut alt (utilisez alt=\"\" uniquement pour les zones décoratives).",
+    "area_altPresent_hint_fail": "Ajoutez un attribut alt décrivant la destination du lien (une <area> ne peut pas être décorative).",
+    "area_altPresent_summary_fail_empty": "Un attribut alt vide laisse le lien <area> sans nom accessible.",
+    "area_altPresent_hint_fail_empty": "Décrivez la destination du lien dans alt, ou ajoutez aria-label/aria-labelledby (une <area> ne peut pas être décorative une fois sa carte utilisée).",
     "inputImage_altPresent_title": "<input type=\"image\"> doit avoir un attribut alt",
     "inputImage_altPresent_description": "Vérifie que les éléments <input type=\"image\"> fournissent un attribut alt afin de proposer un mécanisme d’alternative textuelle.",
     "inputImage_altPresent_summary_fail": "Attribut alt manquant sur <input type=\"image\">.",
@@ -54784,10 +54490,6 @@ const I18N = {
     "area_altQuality_description": "Signale les éléments <area> dont l’attribut alt n’est pas vide afin de vérifier manuellement sa pertinence.",
     "area_altQuality_summary_cantTell": "Vérifiez le texte alt de <area> (exactitude et pertinence).",
     "area_altQuality_hint_cantTell": "Assurez-vous que le texte alt identifie la destination/l’action de la zone dans son contexte.",
-    "area_altDecorative_title": "<area> avec alt=\"\" : décoratif à confirmer (revue manuelle)",
-    "area_altDecorative_description": "Signale les éléments <area> dont l’attribut alt est vide afin de confirmer qu’ils sont décoratifs ou non informatifs.",
-    "area_altDecorative_summary_cantTell": "Vérifiez si <area> est décoratif (alt=\"\").",
-    "area_altDecorative_hint_cantTell": "Confirmez que la zone n’a pas de fonction ni d’information. Sinon, fournissez un texte alt pertinent.",
     "inputImage_altQuality_title": "<input type=\"image\"> : texte alt à vérifier (revue manuelle)",
     "inputImage_altQuality_description": "Signale les éléments <input type=\"image\"> dont l’attribut alt n’est pas vide afin de vérifier manuellement sa pertinence.",
     "inputImage_altQuality_summary_cantTell": "Vérifiez le texte alt de <input type=\"image\"> (exactitude et pertinence).",
@@ -59523,26 +59225,15 @@ const createDomHelpers = (function createDomHelpers(opts) {
   }
 
   function hasBlockingInert(node) {
-    // Default behavior: inert anywhere in ancestorsIncludingSelf blocks.
+    // inert anywhere in ancestorsIncludingSelf blocks, <area>/<map> included:
+    // unlike aria-hidden, inert removes focusability itself, so there is no
+    // "still reachable by Tab" case to carve out.
     if (!isElement(node)) return false;
-
-    const tag = (node.tagName || '').toLowerCase();
-    const isArea = tag === 'area';
-
-    let mapEl = null;
-    if (isArea) mapEl = getClosestMap(node);
 
     const chain = ancestorsIncludingSelf(node);
 
     for (const a of chain) {
       if (!isElement(a)) continue;
-
-      // Exception: for <area>, inert on itself or on its <map> does NOT block
-      if (isArea) {
-        if (a === node) continue; // ignore <area inert>
-        if (mapEl && a === mapEl) continue; // ignore <map inert>
-      }
-
       if (a.hasAttribute && a.hasAttribute('inert')) return true;
     }
     return false;
@@ -59854,24 +59545,30 @@ const createDomHelpers = (function createDomHelpers(opts) {
       if (href && href.trim()) return true;
     }
     if (tag === 'area') {
-      // Engine policy: treat <area> as focusable when it's part of a *used* image map.
-      const map = getClosestMap(el);
-      if (map) {
-        const rawName = (
-          map.getAttribute &&
-          (map.getAttribute('name') || map.getAttribute('id') || '')
-        ).trim();
-        if (rawName && document && document.querySelector) {
-          const esc = __cssEscapeSafe;
-          const n = esc(rawName);
+      // Engine policy: treat <area href> as focusable when it's part of a
+      // *used* image map. Without href an <area> is not a hyperlink at all
+      // per the HTML spec, so it falls through to the generic tabindex
+      // check below, same as any other non-interactive element.
+      const href = el.getAttribute && el.getAttribute('href');
+      if (href && href.trim()) {
+        const map = getClosestMap(el);
+        if (map) {
+          const rawName = (
+            map.getAttribute &&
+            (map.getAttribute('name') || map.getAttribute('id') || '')
+          ).trim();
+          if (rawName && document && document.querySelector) {
+            const esc = __cssEscapeSafe;
+            const n = esc(rawName);
 
-          // Be practical: accept both "#name" and "name", and ignore case.
-          const sels = [`img[usemap="#${n}" i]`, `img[usemap="${n}" i]`];
+            // Be practical: accept both "#name" and "name", and ignore case.
+            const sels = [`img[usemap="#${n}" i]`, `img[usemap="${n}" i]`];
 
-          for (const sel of sels) {
-            try {
-              if (document.querySelector(sel)) return true;
-            } catch {}
+            for (const sel of sels) {
+              try {
+                if (document.querySelector(sel)) return true;
+              } catch {}
+            }
           }
         }
       }
