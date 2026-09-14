@@ -95,9 +95,11 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/combobox-name-present-all-sce
   }
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 6, maxOccurrences: 6 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 8, maxOccurrences: 8 });
 
   const expectedFailIds = [
+    'combobox_case_23',
+    'combobox_case_24',
     'combobox_case_01',
     'combobox_case_02',
     'combobox_case_08',
@@ -122,9 +124,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/combobox-name-present-all-sce
     'combobox_case_19',
     'combobox_case_20',
     'combobox_case_21',
-    'combobox_case_22',
-    'combobox_case_23',
-    'combobox_case_24'
+    'combobox_case_22'
   ];
 
   for (const id of expectedFailIds) {
@@ -160,7 +160,12 @@ test("combobox-name-present: label association with empty content falls back to 
   // content is empty, never checking the label's own title attribute, the
   // same final-fallback step the general accname algorithm applies to any
   // element being asked for its name, regardless of why.
-  const html = `<!doctype html><html><body><label for='a' title='Search'></label><div id='a' role='combobox'></div></body></html>`;
+  // Uses a native, genuinely labelable <input>, not role="combobox" on a
+  // <div>: label[for]/wrapping <label> association only ever applies to
+  // labelable elements (dom-helpers.js's getAssociatedLabelElements), so
+  // this exercises the title fallback on a target that can actually be
+  // labelled at all.
+  const html = `<!doctype html><html><body><label for='a' title='Search'></label><input id='a' role='combobox'></body></html>`;
 
   if (!runa11yCoreOnHtml || !assertRule) {
     assert.ok(true);

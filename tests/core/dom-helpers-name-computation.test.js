@@ -847,10 +847,22 @@ test('getAccessibleNameInfo: an aria-labelledby pointing only at a missing id su
   assert.ok(info.flags.includes('aria-labelledby-empty-or-unresolvable'));
 });
 
-test('getAccessibleNameInfo: a <label for="..."> names a non-natively-labelable element (e.g. div[role=button]) via the id-based fallback, since it has no .labels API', () => {
+test('getAccessibleNameInfo: a <label for="..."> does NOT name a non-natively-labelable element (e.g. div[role=button]) -- a label only ever associates with a labelable element', () => {
+  // Verified against real Chromium and Firefox: this exact markup produces
+  // no accessible name in either browser's accessibility tree, regardless
+  // of ARIA role. getAssociatedLabelElements (dom-helpers.js) requires the
+  // target to match LABELABLE_SELECTOR before crediting a `for` reference,
+  // same as it already required for the wrapping-<label> case.
   const { helpers, document } = helpersFor(
     '<label for="x">Name</label><div id="x" role="button" tabindex="0"></div>'
   );
+  const info = helpers.getAccessibleNameInfo(byId(document, 'x'), { helpers });
+  assert.equal(info.present, false);
+  assert.equal(info.mechanism, 'none');
+});
+
+test('getAccessibleNameInfo: a <label for="..."> DOES name a genuinely labelable element with no .labels API support in this runtime (id-based fallback)', () => {
+  const { helpers, document } = helpersFor('<label for="x">Name</label><input id="x">');
   const info = helpers.getAccessibleNameInfo(byId(document, 'x'), { helpers });
   assert.equal(info.present, true);
   assert.equal(info.value, 'Name');
