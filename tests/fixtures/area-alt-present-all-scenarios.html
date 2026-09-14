@@ -84,62 +84,62 @@
     </div>
   </div>
 
-  <h2 id="hidden_css">C. Hidden by HTML/CSS (ineligible)</h2>
+  <h2 id="hidden_css">C. hidden/display:none on the area or its map (ignored: non-rendered elements)</h2>
 
   <div class="case" id="case_06">
-    <div class="case-title">06 — Pass: <code>hidden</code> attribute on &lt;area&gt; (missing alt)</div>
+    <div class="case-title">06 — FAIL: <code>hidden</code> attribute on &lt;area&gt; does not exclude it (missing alt)</div>
     <div class="row">
       <img alt="" usemap="#m_hidden" src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%23cc6666'/%3E%3C/svg%3E">
       <map name="m_hidden">
         <area href="/x" id="area_case_06" hidden shape="rect" coords="0,0,40,24">
       </map>
-      <span>Ineligible per helper.</span>
+      <span>&lt;area&gt; generates no box; hidden on a non-rendered element has no effect in a real browser.</span>
     </div>
   </div>
 
   <div class="case" id="case_07">
-    <div class="case-title">07 — Pass: <code>display:none</code> on &lt;map&gt; (missing alt)</div>
+    <div class="case-title">07 — FAIL: <code>display:none</code> on &lt;map&gt; does not exclude its &lt;area&gt; (missing alt)</div>
     <div class="row">
       <img alt="" usemap="#m_dn" src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%23cc6666'/%3E%3C/svg%3E">
       <map name="m_dn" style="display:none">
         <area href="/x" id="area_case_07" shape="rect" coords="0,0,40,24">
       </map>
-      <span>Ineligible per helper.</span>
+      <span>&lt;map&gt; generates no box either; display:none on it has no effect in a real browser.</span>
     </div>
   </div>
 
   <div class="case" id="case_08">
-    <div class="case-title">08 — Pass: <code>visibility:hidden</code> on &lt;map&gt; (missing alt)</div>
+    <div class="case-title">08 — NOT APPLICABLE: <code>visibility:hidden</code> on a wrapper hides the referencing &lt;img&gt; (missing alt)</div>
     <div class="row hiddenvis">
       <img alt="" usemap="#m_vh" src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%23cc6666'/%3E%3C/svg%3E">
       <map name="m_vh">
         <area href="/x" id="area_case_08" shape="rect" coords="0,0,40,24">
       </map>
-      <span>Ineligible per helper.</span>
+      <span>Unlike case 06/07, this excludes via the referencing &lt;img&gt; itself not being rendered, not via the map/area.</span>
     </div>
   </div>
 
-  <h2 id="inertness">D. Inertness (inert blocks wherever it is declared)</h2>
+  <h2 id="inertness">D. Inertness: ignored on the area/map itself, still blocks on a genuine outside ancestor</h2>
 
   <div class="case" id="case_09">
-    <div class="case-title">09 — INELIGIBLE: <code>inert</code> on &lt;map&gt; blocks its &lt;area&gt; children</div>
+    <div class="case-title">09 — FAIL: <code>inert</code> on &lt;map&gt; does not exclude its &lt;area&gt; children (missing alt)</div>
     <div class="row">
       <img alt="" usemap="#m_inert_map" src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%239999ff'/%3E%3C/svg%3E">
       <map name="m_inert_map" inert>
         <area href="/x" id="area_case_09" shape="rect" coords="0,0,40,24">
       </map>
-      <span>Inert propagates to flattened-tree descendants, &lt;area&gt; included.</span>
+      <span>inert has no effect on a non-rendered element in a real browser; the area stays reachable.</span>
     </div>
   </div>
 
   <div class="case" id="case_10">
-    <div class="case-title">10 — INELIGIBLE: <code>inert</code> on &lt;area&gt; itself blocks it</div>
+    <div class="case-title">10 — FAIL: <code>inert</code> on &lt;area&gt; itself does not exclude it (missing alt)</div>
     <div class="row">
       <img alt="" usemap="#m_inert_area" src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%239999ff'/%3E%3C/svg%3E">
       <map name="m_inert_area">
         <area href="/x" id="area_case_10" inert shape="rect" coords="0,0,40,24">
       </map>
-      <span>Unlike aria-hidden, inert removes focusability itself.</span>
+      <span>Same reasoning as case 09: the area itself generates no box, so inert on it has no effect either.</span>
     </div>
   </div>
 
@@ -242,13 +242,13 @@
   </div>
 
   <div class="case" id="case_20">
-    <div class="case-title">20 — NOT APPLICABLE: used map but referencing img is aria-hidden</div>
+    <div class="case-title">20 — FAIL: used map, referencing img is aria-hidden but still rendered (missing alt)</div>
     <div class="row">
       <img aria-hidden="true" alt="" usemap="#m_img_ah" src="data:image/svg+xml,...">
       <map name="m_img_ah">
         <area href="/x" id="area_case_20" shape="rect" coords="0,0,40,24">
       </map>
-      <span>Image is aria-hidden and not focusable => image ineligible => area not applicable.</span>
+      <span>&lt;area&gt; is not a DOM descendant of &lt;img&gt;, only linked by usemap; aria-hidden on the img has nothing to propagate along, and the img is still rendered.</span>
     </div>
   </div>
 

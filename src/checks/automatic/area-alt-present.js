@@ -13,8 +13,15 @@
  *   1) are in a <map> that is referenced by an <img usemap>, AND
  *   2) carry a non-empty href (an <area> with no href is not a hyperlink
  *      at all per the HTML spec, and has nothing for this rule to name), AND
- *   3) the referencing <img> is eligible in the accessibility tree (best-effort), AND
- *   4) the <area> itself is eligible in the accessibility tree (with engine exceptions).
+ *   3) the referencing <img> is actually rendered (hidden/display:none/
+ *      visibility exclude it; aria-hidden does not, since <area> is not a
+ *      DOM descendant of <img>), AND
+ *   4) the <area> itself is eligible in the accessibility tree. hidden,
+ *      display:none and inert on the <area> or its <map> do not exclude it:
+ *      neither element generates a box, so a real browser's image-map
+ *      hit-testing ignores all three there (verified against Chromium and
+ *      Firefox); only those mechanisms on a genuine ancestor of the whole
+ *      <img>+<map> pairing do.
  * @expectation
  *   Each applicable <area> element has a non-empty accessible name, from alt,
  *   aria-label/aria-labelledby, or title. An <area> in a used map is always
@@ -79,6 +86,11 @@ function runInPage(ctx) {
 
   const isAccTreeEligible =
     helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+
+  const isDomVisibleEligible =
+    helpers && typeof helpers.isDomVisibleEligible === 'function'
+      ? helpers.isDomVisibleEligible
+      : null;
 
   const getAriaNameInfo =
     helpers && typeof helpers.getAriaNameInfo === 'function' ? helpers.getAriaNameInfo : null;
@@ -166,17 +178,26 @@ function runInPage(ctx) {
     const hrefRaw = el.getAttribute('href');
     if (!hrefRaw || !hrefRaw.trim()) continue;
 
-    // 1) The referencing <img> must itself be eligible in the acc tree.
-    // This is the "visibility of map/area doesn't matter; the image does" policy.
-    if (isAccTreeEligible) {
-      const imgElig = (() => {
+    // 1) The referencing <img> must actually be rendered: a used map's
+    // hotspots depend on the img's box, not its accessibility-tree
+    // exposure. <area> is not a DOM descendant of <img> -- only linked by
+    // the usemap IDREF -- so aria-hidden on the img has nothing to
+    // propagate along (verified against Chromium and Firefox: the area
+    // stays reachable regardless). hidden/display:none/visibility on the
+    // img itself still excludes it, since that removes the box the
+    // hotspot geometry depends on.
+    if (isDomVisibleEligible) {
+      const imgVis = (() => {
         try {
-          return isAccTreeEligible(img, ctx);
+          return isDomVisibleEligible(img, ctx, {
+            visibilityMode: 'styleOnly',
+            disableGeometry: true
+          });
         } catch {
           return { eligible: true, reasons: [] };
         }
       })();
-      if (imgElig && imgElig.eligible === false) continue;
+      if (imgVis && imgVis.eligible === false) continue;
     }
 
     // 2) The <area> itself must be eligible (aria-hidden/inert exceptions handled by helper).

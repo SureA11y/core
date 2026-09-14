@@ -215,7 +215,7 @@ automatic · WCAG 1.1.1 (A) · confidence high · default severity serious
 
 Checks that &lt;area&gt; elements have a non-empty accessible name via alt, aria-label/aria-labelledby, or title.
 
-**Applies to.** Applies to &lt;area&gt; elements that: 1) are in a &lt;map&gt; that is referenced by an &lt;img usemap&gt;, AND 2) carry a non-empty href (an &lt;area&gt; with no href is not a hyperlink at all per the HTML spec, and has nothing for this rule to name), AND 3) the referencing &lt;img&gt; is eligible in the accessibility tree (best-effort), AND 4) the &lt;area&gt; itself is eligible in the accessibility tree (with engine exceptions).
+**Applies to.** Applies to &lt;area&gt; elements that: 1) are in a &lt;map&gt; that is referenced by an &lt;img usemap&gt;, AND 2) carry a non-empty href (an &lt;area&gt; with no href is not a hyperlink at all per the HTML spec, and has nothing for this rule to name), AND 3) the referencing &lt;img&gt; is actually rendered (hidden/display:none/ visibility exclude it; aria-hidden does not, since &lt;area&gt; is not a DOM descendant of &lt;img&gt;), AND 4) the &lt;area&gt; itself is eligible in the accessibility tree. hidden, display:none and inert on the &lt;area&gt; or its &lt;map&gt; do not exclude it: neither element generates a box, so a real browser's image-map hit-testing ignores all three there (verified against Chromium and Firefox); only those mechanisms on a genuine ancestor of the whole &lt;img&gt;+&lt;map&gt; pairing do.
 
 **Expectation.** Each applicable &lt;area&gt; element has a non-empty accessible name, from alt, aria-label/aria-labelledby, or title. An &lt;area&gt; in a used map is always a link, so alt="" is not decorative here as it is on &lt;img&gt;: an empty alt fails the same as a missing one unless another mechanism names it.
 
@@ -227,7 +227,7 @@ manual · WCAG 1.1.1 (A) · confidence medium · default severity minor
 
 Flags &lt;area&gt; elements with non-empty alt text for human review of appropriateness.
 
-**Applies to.** Applies to &lt;area&gt; elements whose alt attribute is present and non-empty. The &lt;area&gt; must carry a non-empty href (otherwise it is not a hyperlink at all per the HTML spec) and belong to a &lt;map&gt; that an &lt;img usemap&gt; actually references, and both that &lt;img&gt; and the &lt;area&gt; itself must be included in the accessibility tree; an &lt;area&gt; in an unused map is out of scope. role="presentation"/"none" takes an element out unless it is focusable.
+**Applies to.** Applies to &lt;area&gt; elements whose alt attribute is present and non-empty. The &lt;area&gt; must carry a non-empty href (otherwise it is not a hyperlink at all per the HTML spec) and belong to a &lt;map&gt; that an &lt;img usemap&gt; actually references; an &lt;area&gt; in an unused map is out of scope. The referencing &lt;img&gt; must actually be rendered (hidden/display:none/ visibility exclude it; aria-hidden does not, since &lt;area&gt; is not a DOM descendant of &lt;img&gt;), and the &lt;area&gt; itself must be eligible: hidden, display:none and inert on the &lt;area&gt; or its &lt;map&gt; do not exclude it, since neither generates a box and a real browser's image-map hit-testing ignores all three there (verified against Chromium and Firefox); only those mechanisms on a genuine ancestor of the whole &lt;img&gt;+&lt;map&gt; pairing do. role="presentation"/"none" takes an element out unless it is focusable.
 
 **Expectation.** Human review is required to confirm that the provided text alternative is accurate and appropriate.
 

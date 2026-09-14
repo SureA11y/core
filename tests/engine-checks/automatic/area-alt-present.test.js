@@ -121,33 +121,33 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/area-alt-present-all-scenario
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
   // Expected fails for the crafted fixture.
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 6, maxOccurrences: 6 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 11, maxOccurrences: 11 });
 
   const expectedFailIds = [
     'area_case_01',
     'area_case_03',
     'area_case_04',
+    'area_case_06', // hidden on <area> itself does not exclude it
+    'area_case_07', // display:none on <map> does not exclude its <area>
+    'area_case_09', // inert on <map> does not exclude its <area> children
+    'area_case_10', // inert on <area> itself does not exclude it
     'area_case_14',
     'area_case_15',
+    'area_case_20', // referencing img aria-hidden does not propagate to <area>
     'area_case_23' // aria-labelledby dangling IDREF, no alt => fails
   ];
 
   const expectedNoOccIds = [
     'area_case_02',
     'area_case_05',
-    'area_case_06',
-    'area_case_07',
-    'area_case_08',
-    'area_case_09', // inert on <map> blocks its <area> children
-    'area_case_10', // inert on <area> itself blocks it
-    'area_case_11',
+    'area_case_08', // wrapper visibility:hidden hides the referencing <img>
+    'area_case_11', // inert on a genuine ancestor outside the map still blocks
     'area_case_12',
     'area_case_13',
     'area_case_16', // used map, but the area itself has no href
     'area_case_17',
     'area_case_18',
     'area_case_19',
-    'area_case_20',
     'area_case_21', // aria-label satisfies mechanism without alt
     'area_case_22' // aria-labelledby resolves non-empty text
   ];

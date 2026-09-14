@@ -488,15 +488,24 @@ function createDomHelpers(opts) {
   }
 
   function hasBlockingInert(node) {
-    // inert anywhere in ancestorsIncludingSelf blocks, <area>/<map> included:
-    // unlike aria-hidden, inert removes focusability itself, so there is no
-    // "still reachable by Tab" case to carve out.
     if (!isElement(node)) return false;
+
+    const tag = (node.tagName || '').toLowerCase();
+    const isArea = tag === 'area';
+    const mapEl = isArea ? getClosestMap(node) : null;
 
     const chain = ancestorsIncludingSelf(node);
 
     for (const a of chain) {
       if (!isElement(a)) continue;
+
+      // <area>/<map> generate no box, so a real browser's image-map
+      // hit-testing sits outside the pipeline inert operates on. Verified
+      // against Chromium and Firefox: inert on the area or its map does
+      // not remove it from the tab order. Only inert on a genuine ancestor
+      // of the <img>+<map> pairing does.
+      if (isArea && (a === node || a === mapEl)) continue;
+
       if (a.hasAttribute && a.hasAttribute('inert')) return true;
     }
     return false;
@@ -1825,6 +1834,9 @@ function createDomHelpers(opts) {
     }
 
     const chain = ancestorsIncludingSelf(node);
+    const __tag0 = (node.tagName || '').toLowerCase();
+    const __isAreaNode = __tag0 === 'area';
+    const __ownMapEl = __isAreaNode ? getClosestMap(node) : null;
 
     // 1) HTML/DOM hiding
     for (const a of chain) {
@@ -1894,6 +1906,13 @@ function createDomHelpers(opts) {
         if (hiddenVal === 'until-found') struct = null;
       }
 
+      // Same non-rendered-element reasoning as hasBlockingInert: a plain
+      // `hidden` on the area or its map doesn't remove it from the tab
+      // order either (verified alongside inert, Chromium and Firefox).
+      if (struct === 'hiddenAttr' && __isAreaNode && (a === node || a === __ownMapEl)) {
+        struct = null;
+      }
+
       if (struct) return __cacheAndReturn({ eligible: false, reasons: [struct] });
     }
     if (inClosedDetailsContent(node))
@@ -1932,6 +1951,11 @@ function createDomHelpers(opts) {
         const tn = (a.tagName || '').toLowerCase();
         if (tn === 'area') continue;
       }
+
+      // Same reasoning extends to its <map>: a used map's hotspot ignores
+      // display:none on the <map> itself in a real browser (verified
+      // alongside inert and hidden, Chromium and Firefox).
+      if (__isAreaNode && __ownMapEl && a === __ownMapEl) continue;
 
       // Cache ancestor CSS blockers (display) per scope.
       let cssBlock = null;
