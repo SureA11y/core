@@ -14572,15 +14572,24 @@ const createDomHelpers = (function createDomHelpers(opts) {
   }
 
   function hasBlockingInert(node) {
-    // inert anywhere in ancestorsIncludingSelf blocks, <area>/<map> included:
-    // unlike aria-hidden, inert removes focusability itself, so there is no
-    // "still reachable by Tab" case to carve out.
     if (!isElement(node)) return false;
+
+    const tag = (node.tagName || '').toLowerCase();
+    const isArea = tag === 'area';
+    const mapEl = isArea ? getClosestMap(node) : null;
 
     const chain = ancestorsIncludingSelf(node);
 
     for (const a of chain) {
       if (!isElement(a)) continue;
+
+      // <area>/<map> generate no box, so a real browser's image-map
+      // hit-testing sits outside the pipeline inert operates on. Verified
+      // against Chromium and Firefox: inert on the area or its map does
+      // not remove it from the tab order. Only inert on a genuine ancestor
+      // of the <img>+<map> pairing does.
+      if (isArea && (a === node || a === mapEl)) continue;
+
       if (a.hasAttribute && a.hasAttribute('inert')) return true;
     }
     return false;
@@ -15909,6 +15918,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
     }
 
     const chain = ancestorsIncludingSelf(node);
+    const __tag0 = (node.tagName || '').toLowerCase();
+    const __isAreaNode = __tag0 === 'area';
+    const __ownMapEl = __isAreaNode ? getClosestMap(node) : null;
 
     // 1) HTML/DOM hiding
     for (const a of chain) {
@@ -15978,6 +15990,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
         if (hiddenVal === 'until-found') struct = null;
       }
 
+      // Same non-rendered-element reasoning as hasBlockingInert: a plain
+      // `hidden` on the area or its map doesn't remove it from the tab
+      // order either (verified alongside inert, Chromium and Firefox).
+      if (struct === 'hiddenAttr' && __isAreaNode && (a === node || a === __ownMapEl)) {
+        struct = null;
+      }
+
       if (struct) return __cacheAndReturn({ eligible: false, reasons: [struct] });
     }
     if (inClosedDetailsContent(node))
@@ -16016,6 +16035,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
         const tn = (a.tagName || '').toLowerCase();
         if (tn === 'area') continue;
       }
+
+      // Same reasoning extends to its <map>: a used map's hotspot ignores
+      // display:none on the <map> itself in a real browser (verified
+      // alongside inert and hidden, Chromium and Firefox).
+      if (__isAreaNode && __ownMapEl && a === __ownMapEl) continue;
 
       // Cache ancestor CSS blockers (display) per scope.
       let cssBlock = null;
@@ -27845,6 +27869,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const isAccTreeEligible =
     helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
 
+  const isDomVisibleEligible =
+    helpers && typeof helpers.isDomVisibleEligible === 'function'
+      ? helpers.isDomVisibleEligible
+      : null;
+
   const getAriaNameInfo =
     helpers && typeof helpers.getAriaNameInfo === 'function' ? helpers.getAriaNameInfo : null;
 
@@ -27931,17 +27960,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const hrefRaw = el.getAttribute('href');
     if (!hrefRaw || !hrefRaw.trim()) continue;
 
-    // 1) The referencing <img> must itself be eligible in the acc tree.
-    // This is the "visibility of map/area doesn't matter; the image does" policy.
-    if (isAccTreeEligible) {
-      const imgElig = (() => {
+    // 1) The referencing <img> must actually be rendered: a used map's
+    // hotspots depend on the img's box, not its accessibility-tree
+    // exposure. <area> is not a DOM descendant of <img> -- only linked by
+    // the usemap IDREF -- so aria-hidden on the img has nothing to
+    // propagate along (verified against Chromium and Firefox: the area
+    // stays reachable regardless). hidden/display:none/visibility on the
+    // img itself still excludes it, since that removes the box the
+    // hotspot geometry depends on.
+    if (isDomVisibleEligible) {
+      const imgVis = (() => {
         try {
-          return isAccTreeEligible(img, ctx);
+          return isDomVisibleEligible(img, ctx, {
+            visibilityMode: 'styleOnly',
+            disableGeometry: true
+          });
         } catch {
           return { eligible: true, reasons: [] };
         }
       })();
-      if (imgElig && imgElig.eligible === false) continue;
+      if (imgVis && imgVis.eligible === false) continue;
     }
 
     // 2) The <area> itself must be eligible (aria-hidden/inert exceptions handled by helper).
@@ -28078,6 +28116,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const isAccTreeEligible =
     helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
 
+  const isDomVisibleEligible =
+    helpers && typeof helpers.isDomVisibleEligible === 'function'
+      ? helpers.isDomVisibleEligible
+      : null;
+
   const __accEligCache = new WeakMap();
   function accEligibleCached(node) {
     if (!isAccTreeEligible) return { eligible: true, reasons: [] };
@@ -28092,6 +28135,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
     r = r && typeof r === 'object' ? r : { eligible: !!r, reasons: [] };
     __accEligCache.set(node, r);
+    return r;
+  }
+
+  const __domVisCache = new WeakMap();
+  function domVisibleCached(node) {
+    if (!isDomVisibleEligible) return { eligible: true, reasons: [] };
+    if (!node || typeof node !== 'object') return { eligible: true, reasons: [] };
+    const c = __domVisCache.get(node);
+    if (c) return c;
+    let r;
+    try {
+      r = isDomVisibleEligible(node, ctx, { visibilityMode: 'styleOnly', disableGeometry: true });
+    } catch {
+      r = { eligible: true, reasons: [] };
+    }
+    r = r && typeof r === 'object' ? r : { eligible: !!r, reasons: [] };
+    __domVisCache.set(node, r);
     return r;
   }
 
@@ -28195,10 +28255,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const hrefRaw = el.getAttribute('href');
     if (!hrefRaw || !hrefRaw.trim()) continue;
 
-    // The referencing <img> must be eligible in the accessibility tree.
-    if (isAccTreeEligible) {
-      const imgElig = accEligibleCached(img);
-      if (imgElig && imgElig.eligible === false) continue;
+    // The referencing <img> must actually be rendered. <area> is not a DOM
+    // descendant of <img>, so aria-hidden on the img has nothing to
+    // propagate along; hidden/display:none/visibility on the img still
+    // excludes it, since that removes the box the hotspot depends on.
+    if (isDomVisibleEligible) {
+      const imgVis = domVisibleCached(img);
+      if (imgVis && imgVis.eligible === false) continue;
     }
 
     if (isAccTreeEligible) {
@@ -59225,15 +59288,24 @@ const createDomHelpers = (function createDomHelpers(opts) {
   }
 
   function hasBlockingInert(node) {
-    // inert anywhere in ancestorsIncludingSelf blocks, <area>/<map> included:
-    // unlike aria-hidden, inert removes focusability itself, so there is no
-    // "still reachable by Tab" case to carve out.
     if (!isElement(node)) return false;
+
+    const tag = (node.tagName || '').toLowerCase();
+    const isArea = tag === 'area';
+    const mapEl = isArea ? getClosestMap(node) : null;
 
     const chain = ancestorsIncludingSelf(node);
 
     for (const a of chain) {
       if (!isElement(a)) continue;
+
+      // <area>/<map> generate no box, so a real browser's image-map
+      // hit-testing sits outside the pipeline inert operates on. Verified
+      // against Chromium and Firefox: inert on the area or its map does
+      // not remove it from the tab order. Only inert on a genuine ancestor
+      // of the <img>+<map> pairing does.
+      if (isArea && (a === node || a === mapEl)) continue;
+
       if (a.hasAttribute && a.hasAttribute('inert')) return true;
     }
     return false;
@@ -60562,6 +60634,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
     }
 
     const chain = ancestorsIncludingSelf(node);
+    const __tag0 = (node.tagName || '').toLowerCase();
+    const __isAreaNode = __tag0 === 'area';
+    const __ownMapEl = __isAreaNode ? getClosestMap(node) : null;
 
     // 1) HTML/DOM hiding
     for (const a of chain) {
@@ -60631,6 +60706,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
         if (hiddenVal === 'until-found') struct = null;
       }
 
+      // Same non-rendered-element reasoning as hasBlockingInert: a plain
+      // `hidden` on the area or its map doesn't remove it from the tab
+      // order either (verified alongside inert, Chromium and Firefox).
+      if (struct === 'hiddenAttr' && __isAreaNode && (a === node || a === __ownMapEl)) {
+        struct = null;
+      }
+
       if (struct) return __cacheAndReturn({ eligible: false, reasons: [struct] });
     }
     if (inClosedDetailsContent(node))
@@ -60669,6 +60751,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
         const tn = (a.tagName || '').toLowerCase();
         if (tn === 'area') continue;
       }
+
+      // Same reasoning extends to its <map>: a used map's hotspot ignores
+      // display:none on the <map> itself in a real browser (verified
+      // alongside inert and hidden, Chromium and Firefox).
+      if (__isAreaNode && __ownMapEl && a === __ownMapEl) continue;
 
       // Cache ancestor CSS blockers (display) per scope.
       let cssBlock = null;

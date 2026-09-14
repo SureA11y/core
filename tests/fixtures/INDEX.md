@@ -17,7 +17,7 @@ Total rules: **132**. With fixture: **131**. Without fixture: **1**.
 | Rule ID | Type | Fixture | Cases | PASS | FAIL | CANTTELL | OTHER |
 |---|---|---|---:|---:|---:|---:|---:|
 | accesskeys | manual | `tests/fixtures/accesskeys-all-scenarios.html` | 3 | 0 | 0 | 1 | 2 |
-| area-alt-present | automatic | `tests/fixtures/area-alt-present-all-scenarios.html` | 23 | 4 | 6 | 0 | 13 |
+| area-alt-present | automatic | `tests/fixtures/area-alt-present-all-scenarios.html` | 23 | 4 | 11 | 0 | 8 |
 | area-alt-quality | manual | `tests/fixtures/area-alt-quality-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
 | aria-allowed-attr | automatic | `tests/fixtures/aria-allowed-attr-all-scenarios.html` | 18 | 8 | 6 | 1 | 3 |
 | aria-allowed-role | automatic | `tests/fixtures/aria-allowed-role-all-scenarios.html` | 50 | 30 | 0 | 19 | 1 |
