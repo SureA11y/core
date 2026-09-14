@@ -33,19 +33,36 @@
  *     --adapter=scripts/lib/corpus-adapters/violations-nodes-target.js \
  *     [--rule=area-alt-present,area-alt-quality] \
  *     [--gaps-only] \
+ *     [--finding-filter=<regex>] \
  *     [--out=report.json]
  *
  * --inject   Local file path or https:// URL for the tool's own script.
  * --call     A JS expression, evaluated and awaited inside the page, that
- *            runs the tool and resolves to its raw result object.
- * --adapter  Path to a module exporting a function (rawResult) => string[]
- *            of CSS selectors for the nodes it flagged. Must be a plain,
- *            self-contained function -- its source is inlined into the
- *            page, so it cannot close over anything outside its argument.
- *            scripts/lib/corpus-adapters/violations-nodes-target.js covers
- *            the common { violations: [{ nodes: [{ target }] }] } shape.
+ *            runs the tool and resolves to its raw result object. Running
+ *            the tool unscoped (its whole rule set, not just a counterpart
+ *            of the rule being compared) is how a full-corpus sweep across
+ *            many of this repo's rules stays practical without hand-mapping
+ *            every rule id to the other tool's -- but it also means most of
+ *            its findings on a small scenario fixture are about unrelated
+ *            page-level scaffolding (missing landmark, missing lang, ...),
+ *            not the concern under test. --finding-filter exists for this.
+ * --adapter  Path to a module exporting a function (rawResult) => Array<
+ *            string | { selector, findingId? }> for the nodes it flagged.
+ *            findingId (the other tool's own rule/check id for that finding)
+ *            is optional but strongly recommended when --call runs the tool
+ *            unscoped, since it's what --finding-filter matches against; a
+ *            bare selector (no findingId) is still resolved to a case but
+ *            can't be filtered. Must be a plain, self-contained function --
+ *            its source is inlined into the page, so it cannot close over
+ *            anything outside its argument. scripts/lib/corpus-adapters/
+ *            violations-nodes-target.js covers the common
+ *            { violations: [{ id, nodes: [{ target }] }] } shape.
  * --rule     Comma-separated rule ids to check (default: every rule with a
  *            fixture and at least one element-scoped case).
+ * --finding-filter  Regex (case-insensitive): only a finding whose findingId
+ *            matches counts toward a gap; others are recorded but excluded
+ *            from the gap/status counts, under otherIgnored. Has no effect
+ *            on findings with no findingId (the adapter didn't supply one).
  */
 
 const fs = require('node:fs');
@@ -81,7 +98,7 @@ function bucketFor(ourFlagged, otherFlagged) {
   return 'gap'; // the other tool flagged it, we didn't
 }
 
-async function checkRule(browser, repoRoot, rule, { inject, call, adapterFnSrc }) {
+async function checkRule(browser, repoRoot, rule, { inject, call, adapterFnSrc, findingFilter }) {
   const fixtureAbsPath = path.resolve(repoRoot, rule.fixtureFile);
   const page = await browser.newPage();
 
@@ -94,10 +111,11 @@ async function checkRule(browser, repoRoot, rule, { inject, call, adapterFnSrc }
     else await page.addScriptTag({ path: path.resolve(repoRoot, inject) });
 
     const scan = await page.evaluate(
-      async ({ callExpr, adapterFnSrc }) => {
+      async ({ callExpr, adapterFnSrc, filterSrc }) => {
         const raw = await Promise.resolve(eval(callExpr));
         const adapt = eval('(' + adapterFnSrc + ')');
-        const selectors = adapt(raw) || [];
+        const findings = adapt(raw) || [];
+        const filterRe = filterSrc ? new RegExp(filterSrc, 'i') : null;
 
         function findQuietly(sel) {
           try {
@@ -107,30 +125,42 @@ async function checkRule(browser, repoRoot, rule, { inject, call, adapterFnSrc }
           }
         }
 
-        const flaggedCaseIds = new Set();
+        const caseFindingIds = new Map(); // caseId -> Set(findingId)
         const unattributed = [];
-        for (const sel of selectors) {
-          const el = findQuietly(sel);
+        for (const raw2 of findings) {
+          const f = typeof raw2 === 'string' ? { selector: raw2, findingId: null } : raw2 || {};
+          if (!f.selector) continue;
+          if (filterRe && f.findingId && !filterRe.test(f.findingId)) continue;
+          const el = findQuietly(f.selector);
           const caseEl = el ? el.closest('.case') : null;
-          if (caseEl && caseEl.id) flaggedCaseIds.add(caseEl.id);
-          else unattributed.push(sel);
+          if (caseEl && caseEl.id) {
+            if (!caseFindingIds.has(caseEl.id)) caseFindingIds.set(caseEl.id, new Set());
+            caseFindingIds.get(caseEl.id).add(f.findingId || '(unnamed)');
+          } else {
+            unattributed.push(f.selector);
+          }
         }
-        return { flaggedCaseIds: Array.from(flaggedCaseIds), unattributed };
+        return {
+          caseFindingIds: Array.from(caseFindingIds, ([id, ids]) => [id, Array.from(ids)]),
+          unattributed
+        };
       },
-      { callExpr: call, adapterFnSrc }
+      { callExpr: call, adapterFnSrc, filterSrc: findingFilter || null }
     );
 
-    const flagged = new Set(scan.flaggedCaseIds);
+    const flagged = new Map(scan.caseFindingIds);
     const elementCases = rule.cases.filter((c) => c.scope !== 'document');
 
     for (const c of elementCases) {
       const ourFlagged = c.engineOutcome !== 'notFlagged';
-      const otherFlagged = flagged.has(c.id);
+      const otherFindingIds = flagged.get(c.id) || null;
+      const otherFlagged = !!otherFindingIds;
       result.rows.push({
         caseId: c.id,
         marker: c.marker,
         ourOutcome: c.engineOutcome,
         otherFlagged,
+        otherFindingIds,
         bucket: bucketFor(ourFlagged, otherFlagged)
       });
     }
@@ -161,10 +191,11 @@ async function main() {
   const repoRoot = findRepoRoot(__dirname);
   const adapterFn = require(path.resolve(repoRoot, args.adapter));
   if (typeof adapterFn !== 'function') {
-    console.error(`${args.adapter} must export a function (rawResult) => string[]`);
+    console.error(`${args.adapter} must export a function (rawResult) => Array<string|object>`);
     process.exit(1);
   }
   const adapterFnSrc = adapterFn.toString();
+  const findingFilter = typeof args['finding-filter'] === 'string' ? args['finding-filter'] : null;
 
   const { rules } = collect({ repoRoot });
   const ruleFilter = args.rule
@@ -197,7 +228,8 @@ async function main() {
     const entry = await checkRule(browser, repoRoot, rule, {
       inject: args.inject,
       call: args.call,
-      adapterFnSrc
+      adapterFnSrc,
+      findingFilter
     });
     report.push(entry);
 
@@ -222,7 +254,8 @@ async function main() {
         : 'agree';
     console.log(`${rule.id}  [${entry.rows.length} cases]  -> ${status}`);
     for (const row of rowsToShow) {
-      console.log(`    ${row.bucket.padEnd(11)} ${row.caseId}  (ours: ${row.ourOutcome})`);
+      const ids = row.otherFindingIds ? `  [${row.otherFindingIds.join(', ')}]` : '';
+      console.log(`    ${row.bucket.padEnd(11)} ${row.caseId}  (ours: ${row.ourOutcome})${ids}`);
     }
     if (entry.otherUnattributed.length) {
       console.log(`    ${entry.otherUnattributed.length} finding(s) did not resolve to a case`);

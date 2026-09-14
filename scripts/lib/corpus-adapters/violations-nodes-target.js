@@ -4,9 +4,12 @@
 
 /**
  * Adapter for other-engine-corpus-check.js: interprets a scan result shaped
- * like { violations: [{ nodes: [{ target }] }] }, a common shape several DOM
- * accessibility scanners share, and returns the flagged nodes as CSS
- * selectors the driver can resolve back to a fixture case.
+ * like { violations: [{ id, nodes: [{ target }] }] }, a common shape several
+ * DOM accessibility scanners share, and returns the flagged nodes as
+ * { selector, findingId } pairs the driver resolves back to a fixture case.
+ * findingId (the violation's own rule id) lets a gap be filtered by whether
+ * it plausibly concerns the same thing the compared rule does, rather than
+ * every one of the other tool's rules being treated as equally relevant.
  *
  * A node's target is usually a single selector, or an array ending in one
  * (a multi-frame target carries the frame chain first); the last entry is
@@ -19,22 +22,24 @@
  */
 module.exports = function adaptViolationsNodesTarget(rawResult) {
   const violations = (rawResult && rawResult.violations) || [];
-  const selectors = [];
+  const findings = [];
 
   for (const violation of violations) {
+    const findingId = (violation && violation.id) || null;
     const nodes = (violation && violation.nodes) || [];
     for (const node of nodes) {
       const target = node && node.target;
+      let selector = null;
       if (typeof target === 'string') {
-        selectors.push(target);
-        continue;
+        selector = target;
+      } else if (Array.isArray(target) && target.length) {
+        const last = target[target.length - 1];
+        if (typeof last === 'string') selector = last;
+        else if (Array.isArray(last) && last.length) selector = last[last.length - 1];
       }
-      if (!Array.isArray(target) || !target.length) continue;
-      const last = target[target.length - 1];
-      if (typeof last === 'string') selectors.push(last);
-      else if (Array.isArray(last) && last.length) selectors.push(last[last.length - 1]);
+      if (selector) findings.push({ selector, findingId });
     }
   }
 
-  return selectors;
+  return findings;
 };
