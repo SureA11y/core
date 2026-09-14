@@ -211,18 +211,35 @@
 </section>
 
 <!-- ========================================================= -->
-<!-- 13b) Computability blocker: ANCESTOR opacity < 1 -->
+<!-- 13b) NOT a blocker: ancestor opacity < 1 over a flat, resolvable backdrop -->
 <!-- An ancestor (not the text element itself) has fractional opacity.
-     Group opacity uniformly scales the ancestor's whole rendered subtree,
-     so the ratio can't be confidently computed by compositing a
-     separately-scaled foreground against a fully-folded background =>
-     cantTell (reasonCode ANCESTOR_OPACITY). -->
+     Group opacity composites the ancestor's whole rendered subtree as one
+     layer, then scales it, then blends against whatever is behind it --
+     resolvable in a single walk when that whole chain stays flat and
+     opaque, same as this engine already does for the background alone. -->
 <!-- ========================================================= -->
-<section class="case bgWhite" id="case-blocker-ancestor-opacity" data-outcome-contrast-computable="CANTTELL">
-  <p class="case-title">14 — NEUTRAL: blocker: ancestor opacity &lt; 1 (group opacity), contrast is not computable</p>
+<section class="case bgWhite" id="case-blocker-ancestor-opacity" data-outcome-contrast-computable="PASS" data-outcome-contrast-minimum="FAIL" data-outcome-contrast-enhanced="FAIL">
+  <p class="case-title">14 — FAIL: ancestor opacity &lt; 1 (group opacity) over a flat backdrop is computable, and the resulting ratio fails</p>
   <div style="opacity:0.5; background-color:#ffffff;">
     <p class="text normalText" id="blocker_ancestor_opacity" style="color:#000000; background-color:#ffffff; opacity:1;">
-      NOT COMPUTABLE: ancestor has opacity:0.5 (group opacity).
+      COMPUTABLE: black at 50% group opacity over white resolves to a flat gray, ~4:1, below the AA threshold.
+    </p>
+  </div>
+</section>
+
+<!-- ========================================================= -->
+<!-- 13b-2) Computability blocker: ancestor opacity < 1, backdrop unresolvable -->
+<!-- Same ancestor-opacity shape as 13b, but the opacity ancestor's own
+     content is opaque flat white ONLY because of a gradient sitting
+     further out, beyond the opacity ancestor -- the gradient itself
+     remains a blocker no compositing walk can resolve, so this stays
+     cantTell (reasonCode ANCESTOR_OPACITY). -->
+<!-- ========================================================= -->
+<section class="case" id="case-blocker-ancestor-opacity-unresolvable" data-outcome-contrast-computable="CANTTELL" data-outcome-contrast-minimum="NEUTRAL" data-outcome-contrast-enhanced="NEUTRAL" style="background-image:linear-gradient(red, blue);">
+  <p class="case-title">14b — NEUTRAL: ancestor opacity &lt; 1 with a gradient further out stays not computable</p>
+  <div style="opacity:0.5;">
+    <p class="text normalText" id="blocker_ancestor_opacity_unresolvable" style="color:#000000;">
+      NOT COMPUTABLE: ancestor has opacity:0.5, and a gradient sits further out behind it.
     </p>
   </div>
 </section>

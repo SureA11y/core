@@ -568,10 +568,10 @@ test(`${RULE_ID}: text forming the accessible name of a disabled widget via a <l
   });
 });
 
-test(`${RULE_ID}: ANCESTOR opacity < 1 gates to notApplicable instead of a confidently wrong ratio`, () => {
-  // The ancestor-opacity computability blocker (see contrast-computable) means
-  // this rule must NOT compute a ratio for this element; overall outcome stays
-  // notApplicable because nothing else in this page is computable.
+test(`${RULE_ID}: ANCESTOR opacity < 1 over a flat resolvable backdrop is computable (and here fails)`, () => {
+  // Group opacity over a flat, fully-resolvable backdrop is computable
+  // (see contrast-computable) -- black text at 50% group opacity over
+  // white resolves to a flat gray, ~4:1, below the AA threshold.
   const html = `
 <!doctype html>
 <html style="background-color: rgb(255, 255, 255); opacity: 1">
@@ -585,15 +585,9 @@ test(`${RULE_ID}: ANCESTOR opacity < 1 gates to notApplicable instead of a confi
 </body></html>`;
 
   const result = run(html);
-  const rule = assertRule(result, RULE_ID, 'notApplicable', {
-    minOccurrences: 1,
-    maxOccurrences: 1
-  });
-  assert.strictEqual(
-    rule.occurrences[0].i18n.summaryKey,
-    'contrastMinimum_notApplicable_noComputableText'
-  );
-  assert.strictEqual(Number(rule.occurrences[0].data.details.computableTextCount), 0);
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'BELOW_THRESHOLD');
+  assert.strictEqual(rule.occurrences[0].i18n.params.ratio, '3.95');
 });
 
 test(`${RULE_ID}: element's OWN opacity < 1 is NOT a computability blocker; ratio is computed (and here fails)`, () => {
@@ -619,7 +613,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/contrast-all-scenarios.html)`
 
   const result = run(html);
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 14, maxOccurrences: 14 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 15, maxOccurrences: 15 });
 
   const expectedFailIds = [
     'aa_fail_light_gray_on_white',
@@ -627,6 +621,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/contrast-all-scenarios.html)`
     'bold_large_text_light_gray_on_white',
     'fg_alpha_black_50_on_white',
     'own_opacity_still_computable',
+    'blocker_ancestor_opacity', // group opacity over a flat backdrop is computable
     'eligible_inert_fail',
     'eligible_aria_hidden_fail',
     'eligible_aria_hidden_tabbable_fail',
@@ -659,7 +654,6 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/contrast-all-scenarios.html)`
     'blocker_mix_blend_mode',
     'blocker_filter',
     'blocker_backdrop_filter',
-    'blocker_ancestor_opacity',
     'excluded_disabled_button_fail', // inactive UI component (WCAG 1.4.3/1.4.6 Incidental exception)
     'excluded_disabled_button_nested_fail',
     'excluded_disabled_fieldset_fail',
@@ -690,7 +684,7 @@ test(`${RULE_ID} (node runtime): fixture coverage (tests/fixtures/contrast-all-s
   const rule = ruleFrom(result);
   assert.ok(rule);
   assert.strictEqual(rule.outcome, 'fail');
-  assert.strictEqual(rule.occurrences.length, 14);
+  assert.strictEqual(rule.occurrences.length, 15);
 
   const expectedFailIds = [
     'aa_fail_light_gray_on_white',
@@ -698,6 +692,7 @@ test(`${RULE_ID} (node runtime): fixture coverage (tests/fixtures/contrast-all-s
     'bold_large_text_light_gray_on_white',
     'fg_alpha_black_50_on_white',
     'own_opacity_still_computable',
+    'blocker_ancestor_opacity', // group opacity over a flat backdrop is computable
     'eligible_inert_fail',
     'eligible_aria_hidden_fail',
     'eligible_aria_hidden_tabbable_fail',
@@ -719,7 +714,6 @@ test(`${RULE_ID} (node runtime): fixture coverage (tests/fixtures/contrast-all-s
     'blocker_mix_blend_mode',
     'blocker_filter',
     'blocker_backdrop_filter',
-    'blocker_ancestor_opacity',
     'excluded_disabled_button_fail',
     'excluded_disabled_submit_input_fail'
   ];
