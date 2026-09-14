@@ -1126,6 +1126,14 @@ function createContrastHelpers(opts, shared) {
 
   // -------- Effective foreground/background memoization --------
 
+  // Populated by resolveGroupOpacityColors (defined near
+  // getComputabilityBlocker, below) for the narrow ancestor-opacity case
+  // it can safely resolve. Checked first by both functions below so a
+  // rule computing fg/bg right after a clean computability check gets the
+  // correctly group-composited colors without needing to know that case
+  // was ever in play.
+  const __groupOpacityOverrideCache = new WeakMap();
+
   const __localEffectiveForegroundCache = new WeakMap();
   const __effectiveForegroundCache =
     __getSharedWeakMapCache('__effectiveForegroundCache') || __localEffectiveForegroundCache;
@@ -1133,6 +1141,19 @@ function createContrastHelpers(opts, shared) {
   function computeEffectiveForeground(el) {
     try {
       if (el && __effectiveForegroundCache.has(el)) return __effectiveForegroundCache.get(el);
+    } catch (_e) {}
+
+    try {
+      const override = el && __groupOpacityOverrideCache.get(el);
+      if (override) {
+        const out = {
+          rgba: { r: override.fg.r, g: override.fg.g, b: override.fg.b, a: 1 },
+          alpha: 1,
+          opacityProduct: 1
+        };
+        __effectiveForegroundCache.set(el, out);
+        return out;
+      }
     } catch (_e) {}
 
     const cs = __contrastComputedStyle(el);
@@ -1176,6 +1197,19 @@ function createContrastHelpers(opts, shared) {
   }
 
   function computeEffectiveBackground(el, opts2) {
+    try {
+      const override = el && __groupOpacityOverrideCache.get(el);
+      if (override) {
+        return {
+          ok: true,
+          rgba: { r: override.bg.r, g: override.bg.g, b: override.bg.b, a: 1 },
+          alpha: 1,
+          stack: [],
+          reasonCode: null
+        };
+      }
+    } catch (_e) {}
+
     const __bgKey = __bgCacheKey(opts2);
     const __collectStack = !!(opts2 && opts2.collectStack);
 
@@ -1339,6 +1373,110 @@ function createContrastHelpers(opts, shared) {
     }
   }
 
+  // -------- Group-opacity contrast resolution (narrow, safe case) --------
+
+  // getComputabilityBlocker's default policy treats any ANCESTOR (not el
+  // itself) with fractional opacity as an unconditional blocker, because
+  // naively combining the existing per-element opacity product (folded
+  // into the foreground via computeOpacityProduct, which walks ALL
+  // ancestors) with the existing ancestor-opacity-aware background walk
+  // (computeEffectiveBackground, which ALSO folds ancestor opacity into
+  // its own compositing) double-counts the ancestor's opacity: a
+  // foreground already darkened by the full ancestor-inclusive opacity
+  // product, composited against a background that separately already
+  // absorbed that same opacity, applies the ancestor's dimming twice and
+  // lands on a lighter (wrong) color than real compositing produces
+  // whenever the local and external colors actually differ. Verified by
+  // hand against a real rendered screenshot.
+  //
+  // This resolves both colors in a single walk instead, tracking a
+  // background accumulator (as computeEffectiveBackground already does)
+  // and a parallel foreground accumulator that receives el's own text
+  // color as its innermost layer at el's own level, then applying every
+  // ancestor's own background-color and opacity to BOTH accumulators in
+  // lockstep. Nothing is combined after the fact, so there's nothing to
+  // double-count, and it handles any number of nested opacity ancestors
+  // -- each with its own background-color or not -- uniformly. It only
+  // bails (returns null, leaving the existing ANCESTOR_OPACITY cantTell
+  // in place) for a blend-mode/filter/background-image anywhere in the
+  // chain, a missing declared text color, or a background that never
+  // reaches full opacity even after the whole chain is walked.
+  function resolveGroupOpacityColors(el) {
+    try {
+      if (el && __groupOpacityOverrideCache.has(el)) return __groupOpacityOverrideCache.get(el);
+    } catch (_e) {}
+
+    function __cacheAndReturn(res) {
+      try {
+        if (el) __groupOpacityOverrideCache.set(el, res);
+      } catch (_e) {}
+      return res;
+    }
+
+    try {
+      if (!el || el.nodeType !== 1) return __cacheAndReturn(null);
+
+      const elCs = __contrastComputedStyle(el);
+      const elColor = parseCssColorToRgba(elCs && elCs.color);
+      if (!elColor) return __cacheAndReturn(null);
+
+      let bgAcc = { r: 0, g: 0, b: 0, a: 0 };
+      let fgAcc = { r: 0, g: 0, b: 0, a: 0 };
+      let cur = el;
+      let guard = 0;
+
+      while (cur && guard++ < 200) {
+        if (cur.nodeType !== 1) {
+          cur = composedParent(cur);
+          continue;
+        }
+        const cs = __contrastComputedStyle(cur);
+
+        if (
+          __hasBlendModeEl(cur, cs) ||
+          __hasFilterEl(cur, cs) ||
+          __hasBackgroundImageOrGradientEl(cur, cs)
+        ) {
+          return __cacheAndReturn(null);
+        }
+
+        const bg = parseCssColorToRgba(cs && cs.backgroundColor);
+        if (bg) {
+          const layer = { r: bg.r, g: bg.g, b: bg.b, a: clamp01(bg.a) };
+          bgAcc = compositeRgba(bgAcc, layer);
+          fgAcc = compositeRgba(fgAcc, layer);
+        }
+
+        if (cur === el) {
+          // el's own text color is the innermost foreground layer,
+          // painted over whatever el's own background (if any) already
+          // contributed to fgAcc above.
+          fgAcc = compositeRgba(
+            { r: elColor.r, g: elColor.g, b: elColor.b, a: clamp01(elColor.a) },
+            fgAcc
+          );
+        }
+
+        const op = clamp01(Number.parseFloat(cs && cs.opacity != null ? cs.opacity : '1'));
+        if (op < 1) {
+          bgAcc = { r: bgAcc.r, g: bgAcc.g, b: bgAcc.b, a: clamp01(bgAcc.a * op) };
+          fgAcc = { r: fgAcc.r, g: fgAcc.g, b: fgAcc.b, a: clamp01(fgAcc.a * op) };
+        }
+
+        cur = composedParent(cur);
+      }
+
+      if (bgAcc.a < 1 || fgAcc.a < 1) return __cacheAndReturn(null);
+
+      return __cacheAndReturn({
+        fg: { r: fgAcc.r, g: fgAcc.g, b: fgAcc.b },
+        bg: { r: bgAcc.r, g: bgAcc.g, b: bgAcc.b }
+      });
+    } catch (_e) {
+      return __cacheAndReturn(null);
+    }
+  }
+
   // -------- Computability blocker (memoized per element, per run) --------
 
   const __localComputabilityBlockerCache = new WeakMap();
@@ -1483,23 +1621,34 @@ function createContrastHelpers(opts, shared) {
 
       // An ANCESTOR (not el itself) with fractional opacity is treated
       // as a computability blocker rather than being folded into a
-      // confident ratio. Group opacity uniformly scales an ancestor's
-      // *entire* rendered subtree (its own background AND everything
-      // already accumulated from descendants, including el's text)
-      // when compositing against what's behind it. Computing that
-      // precisely for the foreground would require re-deriving the
-      // text's rendered color the same way the background is folded
-      // (rather than compositing a separately opacity-scaled
-      // foreground against the fully-folded background, which
-      // double-counts the ancestor's opacity). Rather than risk a
-      // confidently wrong pass/fail from that mismatch, defer to
-      // manual review. (el's own opacity, if any, does not trigger
-      // this: it is already handled correctly by the existing
-      // per-element opacity product used for the foreground.)
+      // confident ratio, UNLESS resolveGroupOpacityColors can resolve it
+      // safely (see its own header comment): el's local background is
+      // opaque before the opacity ancestor, that ancestor paints nothing
+      // of its own, and the backdrop beyond it resolves cleanly. That
+      // covers the common case -- a semi-transparent wrapper with no
+      // background of its own -- without risking the double-counted,
+      // confidently-wrong ratio a naive combination of the existing
+      // per-element foreground and ancestor-aware background would
+      // produce for the general case. (el's own opacity, if any, does not
+      // trigger this at all: it is already handled correctly by the
+      // existing per-element opacity product used for the foreground.)
       if (cur !== el) {
         const ancestorOpacity = clamp01(
           Number.parseFloat(cs && cs.opacity != null ? cs.opacity : '1')
         );
+        if (ancestorOpacity < 1 && resolveGroupOpacityColors(el)) {
+          const out = {
+            ok: true,
+            reasonCode: null,
+            blockerSelector: '',
+            blockerProperty: '',
+            blockerValue: ''
+          };
+          try {
+            if (el) __computabilityBlockerCache.set(el, out);
+          } catch (_e) {}
+          return out;
+        }
         if (ancestorOpacity < 1) {
           const out = {
             ok: false,

@@ -566,9 +566,9 @@
       "totalCases": 36,
       "caseCounts": {
         "PASS": 1,
-        "FAIL": 4,
+        "FAIL": 5,
         "CANTTELL": 0,
-        "OTHER": 31
+        "OTHER": 30
       }
     },
     {
@@ -585,9 +585,9 @@
       "totalCases": 36,
       "caseCounts": {
         "PASS": 1,
-        "FAIL": 4,
+        "FAIL": 5,
         "CANTTELL": 0,
-        "OTHER": 31
+        "OTHER": 30
       }
     },
     {
@@ -604,9 +604,9 @@
       "totalCases": 36,
       "caseCounts": {
         "PASS": 1,
-        "FAIL": 4,
+        "FAIL": 5,
         "CANTTELL": 0,
-        "OTHER": 31
+        "OTHER": 30
       }
     },
     {
