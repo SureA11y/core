@@ -545,8 +545,8 @@
       "fixtureFile": "tests/fixtures/combobox-name-present-all-scenarios.html",
       "totalCases": 24,
       "caseCounts": {
-        "PASS": 7,
-        "FAIL": 5,
+        "PASS": 5,
+        "FAIL": 7,
         "CANTTELL": 0,
         "OTHER": 12
       }
@@ -1520,8 +1520,8 @@
       "fixtureFile": "tests/fixtures/listbox-name-present-all-scenarios.html",
       "totalCases": 23,
       "caseCounts": {
-        "PASS": 7,
-        "FAIL": 5,
+        "PASS": 5,
+        "FAIL": 7,
         "CANTTELL": 0,
         "OTHER": 11
       }
@@ -2042,8 +2042,8 @@
       "fixtureFile": "tests/fixtures/searchbox-name-present-all-scenarios.html",
       "totalCases": 23,
       "caseCounts": {
-        "PASS": 7,
-        "FAIL": 5,
+        "PASS": 5,
+        "FAIL": 7,
         "CANTTELL": 0,
         "OTHER": 11
       }
@@ -2116,8 +2116,8 @@
       "fixtureFile": "tests/fixtures/spinbutton-name-present-all-scenarios.html",
       "totalCases": 23,
       "caseCounts": {
-        "PASS": 7,
-        "FAIL": 5,
+        "PASS": 5,
+        "FAIL": 7,
         "CANTTELL": 0,
         "OTHER": 11
       }
@@ -2359,8 +2359,8 @@
       "fixtureFile": "tests/fixtures/textbox-name-present-all-scenarios.html",
       "totalCases": 23,
       "caseCounts": {
-        "PASS": 7,
-        "FAIL": 5,
+        "PASS": 5,
+        "FAIL": 7,
         "CANTTELL": 0,
         "OTHER": 11
       }

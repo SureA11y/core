@@ -102,9 +102,11 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/textbox-name-present-all-scen
   }
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 6, maxOccurrences: 6 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 8, maxOccurrences: 8 });
 
   const expectedFailIds = [
+    'textbox_case_22',
+    'textbox_case_23',
     'textbox_case_01',
     'textbox_case_02',
     'textbox_case_08',
@@ -128,9 +130,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/textbox-name-present-all-scen
     'textbox_case_18',
     'textbox_case_19',
     'textbox_case_20',
-    'textbox_case_21',
-    'textbox_case_22',
-    'textbox_case_23'
+    'textbox_case_21'
   ];
 
   for (const id of expectedFailIds) {
@@ -165,7 +165,12 @@ test("textbox-name-present: label association with empty content falls back to t
   // content is empty, never checking the label's own title attribute, the
   // same final-fallback step the general accname algorithm applies to any
   // element being asked for its name, regardless of why.
-  const html = `<!doctype html><html><body><label for='a' title='Search'></label><div id='a' role='textbox'></div></body></html>`;
+  // Uses a native, genuinely labelable <input>, not role="textbox" on a
+  // <div>: label[for]/wrapping <label> association only ever applies to
+  // labelable elements (dom-helpers.js's getAssociatedLabelElements), so
+  // this exercises the title fallback on a target that can actually be
+  // labelled at all.
+  const html = `<!doctype html><html><body><label for='a' title='Search'></label><input id='a' role='textbox'></body></html>`;
 
   if (!runa11yCoreOnHtml || !assertRule) {
     assert.ok(true);

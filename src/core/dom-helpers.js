@@ -1620,6 +1620,23 @@ function createDomHelpers(opts) {
   // bounded `closest('label')` walk answers the same question without it.
   function getAssociatedLabelElements(el) {
     const out = [];
+    // A <label> -- wrapping or via `for` -- only ever associates with a
+    // labelable element (LABELABLE_SELECTOR, same spec category). The
+    // wrapping branch below already enforces this by construction
+    // (`firstControl === el`, found via LABELABLE_SELECTOR); the `for`
+    // branch doesn't derive it the same way, so it's checked directly here
+    // instead. Verified against real Chromium and Firefox: a
+    // `<label for="x">`/wrapping `<label>` around a non-labelable element
+    // (e.g. a `<div role="combobox">`) produces no accessible name in
+    // either browser's accessibility tree.
+    let isLabelable;
+    try {
+      isLabelable = !!(el && el.matches && el.matches(LABELABLE_SELECTOR));
+    } catch {
+      isLabelable = false;
+    }
+    if (!isLabelable) return out;
+
     const id = trim(getAttr(el, 'id'));
     if (id) {
       const forLabels = __getLabelElementsForId(id);

@@ -149,21 +149,6 @@ function runInPage(ctx) {
     }
   }
 
-  function buildLabelForMap(doc) {
-    const map = new Map(); // id -> label element (first)
-    try {
-      const labels = doc && doc.getElementsByTagName ? doc.getElementsByTagName('label') : [];
-      for (let i = 0; i < labels.length; i += 1) {
-        const lab = labels[i];
-        if (!lab || !lab.getAttribute) continue;
-        const f = normalizeWs(lab.getAttribute('for'));
-        if (!f) continue;
-        if (!map.has(f)) map.set(f, lab);
-      }
-    } catch {}
-    return map;
-  }
-
   const occurrences = [];
   let applicableCount = 0;
 
@@ -172,42 +157,27 @@ function runInPage(ctx) {
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
 
-  // Precompute label[for] map for searchbox elements that are labelable
-  // native form controls (e.g. <input role="searchbox">).
-  const labelForMap = buildLabelForMap(document);
-
+  // Delegates to the shared, spec-guarded lookup (dom-helpers.js's
+  // getAssociatedLabelElements): a <label> -- wrapping or via `for` --
+  // only ever associates with a genuinely labelable element, so this
+  // correctly returns nothing for role-only widgets a <label> merely sits
+  // next to, and the real thing for a labelable element like
+  // <input role="searchbox">.
   function getNativeLabelText(el) {
+    if (!helpers || typeof helpers.getAssociatedLabelElements !== 'function') return '';
+    let labels;
     try {
-      if ('labels' in el && el.labels && el.labels.length) {
-        const parts = [];
-        const max = Math.min(4, el.labels.length);
-        for (let i = 0; i < max; i += 1) {
-          const lab = el.labels[i];
-          const t = lab ? getLabelText(lab) : '';
-          if (t) parts.push(t);
-        }
-        const joined = normalizeWs(parts.join(' '));
-        if (joined) return joined;
-      }
-    } catch {}
-    try {
-      if (el.closest) {
-        const wrap = el.closest('label');
-        if (wrap) {
-          const t = getLabelText(wrap);
-          if (t) return t;
-        }
-      }
-    } catch {}
-    try {
-      const idAttr = getAttr(el, 'id');
-      if (idAttr && labelForMap.has(idAttr)) {
-        const lab = labelForMap.get(idAttr);
-        const t = lab ? getLabelText(lab) : '';
-        if (t) return t;
-      }
-    } catch {}
-    return '';
+      labels = helpers.getAssociatedLabelElements(el) || [];
+    } catch {
+      labels = [];
+    }
+    const parts = [];
+    const max = Math.min(4, labels.length);
+    for (let i = 0; i < max; i += 1) {
+      const t = getLabelText(labels[i]);
+      if (t) parts.push(t);
+    }
+    return normalizeWs(parts.join(' '));
   }
 
   function hasName(el) {
