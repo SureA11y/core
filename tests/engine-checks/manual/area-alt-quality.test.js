@@ -32,10 +32,17 @@ test(`${RULE_ID}: cantTell when at least one applicable element triggers manual 
   const html = fs.readFileSync(fixturePath, 'utf8');
 
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
 
-  const expected = ['area_q_01', 'area_q_06'];
-  const notExpected = ['area_q_02', 'area_q_03', 'area_q_04', 'area_q_05', 'area_q_07'];
+  const expected = ['area_q_01'];
+  const notExpected = [
+    'area_q_02',
+    'area_q_03',
+    'area_q_04',
+    'area_q_05',
+    'area_q_06', // inert on area blocks it
+    'area_q_07'
+  ];
 
   for (const id of expected) {
     assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);
@@ -79,8 +86,7 @@ test(`${RULE_ID}: i18n (fr) rule title/description are localized`, () => {
 });
 
 // An <area> inside a used <map> is natively focusable regardless of tabindex,
-// so role="presentation"/"none" alone never excludes it here -- the same
-// documented outcome as area-alt-decorative's identical helper. Pinned so a
+// so role="presentation"/"none" alone never excludes it here. Pinned so a
 // future change to the exclusion cannot silently start dropping <area>
 // elements from review.
 

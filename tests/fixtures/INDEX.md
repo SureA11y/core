@@ -4,7 +4,7 @@ Every implemented rule should have a `tests/fixtures/<slug>-all-scenarios.html` 
 
 ## Summary
 
-Total rules: **133**. With fixture: **132**. Without fixture: **1**.
+Total rules: **132**. With fixture: **131**. Without fixture: **1**.
 
 ## Rules WITHOUT a fixture (1)
 
@@ -12,13 +12,12 @@ Total rules: **133**. With fixture: **132**. Without fixture: **1**.
 |---|---|---|---|---|
 | identical-iframes-same-purpose | automatic | Frames with the same name embed the same resource | src/checks/automatic/identical-iframes-same-purpose.js | tests/engine-checks/automatic/identical-iframes-same-purpose.test.js |
 
-## Rules WITH a fixture (132)
+## Rules WITH a fixture (131)
 
 | Rule ID | Type | Fixture | Cases | PASS | FAIL | CANTTELL | OTHER |
 |---|---|---|---:|---:|---:|---:|---:|
 | accesskeys | manual | `tests/fixtures/accesskeys-all-scenarios.html` | 3 | 0 | 0 | 1 | 2 |
-| area-alt-decorative | manual | `tests/fixtures/area-alt-decorative-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
-| area-alt-present | automatic | `tests/fixtures/area-alt-present-all-scenarios.html` | 23 | 5 | 8 | 0 | 10 |
+| area-alt-present | automatic | `tests/fixtures/area-alt-present-all-scenarios.html` | 23 | 4 | 6 | 0 | 13 |
 | area-alt-quality | manual | `tests/fixtures/area-alt-quality-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
 | aria-allowed-attr | automatic | `tests/fixtures/aria-allowed-attr-all-scenarios.html` | 18 | 8 | 6 | 1 | 3 |
 | aria-allowed-role | automatic | `tests/fixtures/aria-allowed-role-all-scenarios.html` | 50 | 30 | 0 | 19 | 1 |

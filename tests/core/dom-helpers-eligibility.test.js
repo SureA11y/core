@@ -106,13 +106,24 @@ test('isAccTreeEligible: [inert] on an ancestor blocks descendants', () => {
   assert.deepEqual(r.reasons, ['inert']);
 });
 
-test('isAccTreeEligible: inert on an <area> itself, or on its <map>, does not block the area (documented exception)', () => {
+test('isAccTreeEligible: inert on an <area> itself blocks it, same as any other element', () => {
   const { helpers, document } = helpersFor(
-    '<map name="m" inert><area id="a" inert shape="rect" coords="0,0,10,10" href="/x"></map>' +
+    '<map name="m"><area id="a" inert shape="rect" coords="0,0,10,10" href="/x"></map>' +
       '<img usemap="#m" src="i.png">'
   );
   const r = helpers.isAccTreeEligible(byId(document, 'a'));
-  assert.equal(r.eligible, true);
+  assert.equal(r.eligible, false);
+  assert.deepEqual(r.reasons, ['inert']);
+});
+
+test("isAccTreeEligible: inert on an <area>'s <map> blocks the area too", () => {
+  const { helpers, document } = helpersFor(
+    '<map name="m" inert><area id="a" shape="rect" coords="0,0,10,10" href="/x"></map>' +
+      '<img usemap="#m" src="i.png">'
+  );
+  const r = helpers.isAccTreeEligible(byId(document, 'a'));
+  assert.equal(r.eligible, false);
+  assert.deepEqual(r.reasons, ['inert']);
 });
 
 test('isAccTreeEligible: display:none on an ancestor blocks the whole subtree', () => {
