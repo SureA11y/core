@@ -2,7 +2,7 @@
 
 Generated from the compiled engine's own catalog (`getChecksCatalog()`/`getRulesCatalog()`) and each rule's source header. Run `node scripts/generate-rule-catalog.js` after `npm run build` to regenerate this file whenever rules change. Do not hand-edit.
 
-**133 rules total: 79 automatic (WCAG-normative, can return `fail`), 54 manual (advisory/judgment-required, capped at `cantTell`). 107 carry at least one formal WCAG Success Criterion mapping.**
+**132 rules total: 79 automatic (WCAG-normative, can return `fail`), 53 manual (advisory/judgment-required, capped at `cantTell`). 106 carry at least one formal WCAG Success Criterion mapping.**
 
 The tables below are an index; [rule reference](#rule-reference) carries each rule's description, what it applies to and what it expects.
 
@@ -12,7 +12,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 
 | Rule ID | Title | WCAG SC | Level | Confidence | Default severity |
 |---|---|---|---|---|---|
-| [`area-alt-present`](#area-alt-present) | &lt;area&gt; must have an alt attribute | 1.1.1 | A | high | serious |
+| [`area-alt-present`](#area-alt-present) | &lt;area&gt; must have an accessible name | 1.1.1 | A | high | serious |
 | [`aria-allowed-attr`](#aria-allowed-attr) | aria-* attributes must be permitted for the element’s role | 4.1.2 | A | medium | moderate |
 | [`aria-allowed-role`](#aria-allowed-role) | Explicit role must be permitted for its host element | — | — | high | moderate |
 | [`aria-braille-equivalent`](#aria-braille-equivalent) | aria-braillelabel/aria-brailleroledescription must have a non-braille equivalent | 4.1.2 | A | high | moderate |
@@ -92,12 +92,11 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`valid-lang`](#valid-lang) | Element lang attribute must be syntactically valid | 3.1.2 | AA | high | moderate |
 | [`video-poster-text-alternative-present`](#video-poster-text-alternative-present) | &lt;video&gt; poster must have a text alternative | 1.1.1 | A | medium | serious |
 
-## Manual rules (54), advisory, capped at `cantTell`
+## Manual rules (53), advisory, capped at `cantTell`
 
 | Rule ID | Title | WCAG SC | Level | Confidence | Default severity |
 |---|---|---|---|---|---|
 | [`accesskeys`](#accesskeys) | accesskey values must be unique | — | — | medium | minor |
-| [`area-alt-decorative`](#area-alt-decorative) | &lt;area&gt; with alt="" must be decorative (manual review) | 1.1.1 | A | medium | minor |
 | [`area-alt-quality`](#area-alt-quality) | &lt;area&gt; alt text must be appropriate (manual review) | 1.1.1 | A | medium | minor |
 | [`aria-checked-state-mismatch`](#aria-checked-state-mismatch) | Native checkbox/radio aria-checked should match its actual state | 4.1.2 | A | medium | moderate |
 | [`aria-text`](#aria-text) | role="text" elements should have no focusable descendants | — | — | medium | minor |
@@ -157,7 +156,7 @@ Composite rules aren't individually authored. They're generated rollups over the
 
 | Composite ID | Title | Description | WCAG SC | Level | # atomic rules rolled up |
 |---|---|---|---|---|---|
-| `wcag-1.1.1-non-text-content` | Non-text content: text alternatives | Rollup of checks ensuring non-text content has an appropriate text alternative. | 1.1.1 | A | 22 |
+| `wcag-1.1.1-non-text-content` | Non-text content: text alternatives | Rollup of checks ensuring non-text content has an appropriate text alternative. | 1.1.1 | A | 21 |
 | `wcag-1.2.1-audio-only-video-only-prerecorded` | Audio-only and video-only (prerecorded): transcript | Rollup of checks for transcript availability for prerecorded audio-only/video-only media. | 1.2.1 | A | 1 |
 | `wcag-1.2.2-captions-prerecorded` | Captions (Prerecorded) | Rollup of checks for captions-track evidence on prerecorded video. | 1.2.2 | A | 1 |
 | `wcag-1.3.1-info-and-relationships` | Info and Relationships | Rollup of checks ensuring information, structure, and relationships conveyed through presentation are programmatically determinable. | 1.3.1 | A | 14 |
@@ -208,29 +207,17 @@ Checks that no two elements on the page share the same accesskey attribute value
 
 **Expectation.** Every accesskey value on the page is unique. Duplicate accesskeys make keyboard-shortcut activation ambiguous: only one of the elements sharing the key can actually be reached by it, and which one is browser/platform-dependent.
 
-### `area-alt-decorative`
-
-**&lt;area&gt; with alt="" must be decorative (manual review)**
-
-manual · WCAG 1.1.1 (A) · confidence medium · default severity minor
-
-Flags &lt;area&gt; elements with empty alt for human review that they are decorative/non-informative.
-
-**Applies to.** Applies to &lt;area&gt; elements whose alt attribute is present but empty once trimmed, the markup that declares a hotspot decorative. The &lt;area&gt; must belong to a &lt;map&gt; that an &lt;img usemap&gt; actually references, and both that &lt;img&gt; and the &lt;area&gt; itself must be included in the accessibility tree; an &lt;area&gt; in an unused map is out of scope. role="presentation"/"none" takes an element out unless it is focusable.
-
-**Expectation.** Human review is required to confirm that the provided text alternative is accurate and appropriate.
-
 ### `area-alt-present`
 
-**&lt;area&gt; must have an alt attribute**
+**&lt;area&gt; must have an accessible name**
 
 automatic · WCAG 1.1.1 (A) · confidence high · default severity serious
 
-Checks that &lt;area&gt; elements provide an alt attribute to support a text alternative mechanism.
+Checks that &lt;area&gt; elements have a non-empty accessible name via alt, aria-label/aria-labelledby, or title.
 
-**Applies to.** Applies to &lt;area&gt; elements that: 1) are in a &lt;map&gt; that is referenced by an &lt;img usemap&gt;, AND 2) the referencing &lt;img&gt; is eligible in the accessibility tree (best-effort), AND 3) the &lt;area&gt; itself is eligible in the accessibility tree (with engine exceptions).
+**Applies to.** Applies to &lt;area&gt; elements that: 1) are in a &lt;map&gt; that is referenced by an &lt;img usemap&gt;, AND 2) carry a non-empty href (an &lt;area&gt; with no href is not a hyperlink at all per the HTML spec, and has nothing for this rule to name), AND 3) the referencing &lt;img&gt; is actually rendered (hidden/display:none/ visibility exclude it; aria-hidden does not, since &lt;area&gt; is not a DOM descendant of &lt;img&gt;), AND 4) the &lt;area&gt; itself is eligible in the accessibility tree. hidden, display:none and inert on the &lt;area&gt; or its &lt;map&gt; do not exclude it: neither element generates a box, so a real browser's image-map hit-testing ignores all three there (verified against Chromium and Firefox); only those mechanisms on a genuine ancestor of the whole &lt;img&gt;+&lt;map&gt; pairing do.
 
-**Expectation.** Each applicable &lt;area&gt; element has an alt attribute. The alt attribute may be empty (alt="").
+**Expectation.** Each applicable &lt;area&gt; element has a non-empty accessible name, from alt, aria-label/aria-labelledby, or title. An &lt;area&gt; in a used map is always a link, so alt="" is not decorative here as it is on &lt;img&gt;: an empty alt fails the same as a missing one unless another mechanism names it.
 
 ### `area-alt-quality`
 
@@ -240,7 +227,7 @@ manual · WCAG 1.1.1 (A) · confidence medium · default severity minor
 
 Flags &lt;area&gt; elements with non-empty alt text for human review of appropriateness.
 
-**Applies to.** Applies to &lt;area&gt; elements whose alt attribute is present and non-empty. The &lt;area&gt; must belong to a &lt;map&gt; that an &lt;img usemap&gt; actually references, and both that &lt;img&gt; and the &lt;area&gt; itself must be included in the accessibility tree; an &lt;area&gt; in an unused map is out of scope. role="presentation"/"none" takes an element out unless it is focusable.
+**Applies to.** Applies to &lt;area&gt; elements whose alt attribute is present and non-empty. The &lt;area&gt; must carry a non-empty href (otherwise it is not a hyperlink at all per the HTML spec) and belong to a &lt;map&gt; that an &lt;img usemap&gt; actually references; an &lt;area&gt; in an unused map is out of scope. The referencing &lt;img&gt; must actually be rendered (hidden/display:none/ visibility exclude it; aria-hidden does not, since &lt;area&gt; is not a DOM descendant of &lt;img&gt;), and the &lt;area&gt; itself must be eligible: hidden, display:none and inert on the &lt;area&gt; or its &lt;map&gt; do not exclude it, since neither generates a box and a real browser's image-map hit-testing ignores all three there (verified against Chromium and Firefox); only those mechanisms on a genuine ancestor of the whole &lt;img&gt;+&lt;map&gt; pairing do. role="presentation"/"none" takes an element out unless it is focusable.
 
 **Expectation.** Human review is required to confirm that the provided text alternative is accurate and appropriate.
 
@@ -684,9 +671,9 @@ automatic · WCAG 2.2.2 (A) · confidence high · default severity serious
 
 Checks that deprecated, non-standard HTML elements whose blinking/scrolling content cannot be paused, stopped, or hidden by the user (&lt;blink&gt;, &lt;marquee&gt;) are not present.
 
-**Applies to.** Applies to any &lt;blink&gt; or &lt;marquee&gt; element present in scope. These are obsolete, non-standard HTML elements whose defining behavior (blinking or auto-scrolling text) has no built-in user mechanism to pause, stop, or hide it.
+**Applies to.** Applies to any scan scope; whether it contains a &lt;blink&gt; or &lt;marquee&gt; element is always an answerable question. These are obsolete, non-standard HTML elements whose defining behavior (blinking or auto-scrolling text) has no built-in user mechanism to pause, stop, or hide it.
 
-**Expectation.** Neither element is present. Since their movement can never be paused, stopped, or hidden by the user, presence is itself the violation. This rule has no partial-pass case (it reports only when the element is found).
+**Expectation.** Neither element is present. Since their movement can never be paused, stopped, or hidden by the user, presence is itself the violation, and absence is itself a pass -- there is no third, not-applicable case.
 
 ### `dialog-name-present`
 
@@ -1624,9 +1611,9 @@ automatic · WCAG 2.1.1 (A) · confidence high · default severity serious
 
 Checks that &lt;img&gt; elements do not carry the ismap attribute (server-side image maps have no keyboard-operable equivalent).
 
-**Applies to.** Applies to &lt;img&gt; elements that carry an ismap attribute.
+**Applies to.** Applies to any scan scope; whether it contains an &lt;img&gt; carrying an ismap attribute is always an answerable question.
 
-**Expectation.** The image does not use ismap at all. Server-side image maps depend on the browser sending click coordinates to the server, which has no keyboard-operable equivalent, there is no way to determine or expose individual clickable regions to assistive technology or keyboard users. Client-side image maps (&lt;map&gt;/&lt;area&gt;, each with real href/alt) are the accessible alternative and are not flagged by this rule.
+**Expectation.** No image uses ismap. Server-side image maps depend on the browser sending click coordinates to the server, which has no keyboard-operable equivalent, there is no way to determine or expose individual clickable regions to assistive technology or keyboard users. Client-side image maps (&lt;map&gt;/&lt;area&gt;, each with real href/alt) are the accessible alternative and are not flagged by this rule. Presence of ismap is itself the violation, and absence is itself a pass -- there is no third, not-applicable case.
 
 ### `skip-link`
 

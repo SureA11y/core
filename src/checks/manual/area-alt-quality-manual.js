@@ -11,10 +11,18 @@
  * @type manual
  * @applicability
  *   Applies to <area> elements whose alt attribute is present and non-empty.
- *   The <area> must belong to a <map> that an <img usemap> actually
- *   references, and both that <img> and the <area> itself must be included
- *   in the accessibility tree; an <area> in an unused map is out of scope.
- *   role="presentation"/"none" takes an element out unless it is focusable.
+ *   The <area> must carry a non-empty href (otherwise it is not a hyperlink
+ *   at all per the HTML spec) and belong to a <map> that an <img usemap>
+ *   actually references; an <area> in an unused map is out of scope. The
+ *   referencing <img> must actually be rendered (hidden/display:none/
+ *   visibility exclude it; aria-hidden does not, since <area> is not a DOM
+ *   descendant of <img>), and the <area> itself must be eligible: hidden,
+ *   display:none and inert on the <area> or its <map> do not exclude it,
+ *   since neither generates a box and a real browser's image-map
+ *   hit-testing ignores all three there (verified against Chromium and
+ *   Firefox); only those mechanisms on a genuine ancestor of the whole
+ *   <img>+<map> pairing do. role="presentation"/"none" takes an element out
+ *   unless it is focusable.
  * @expectation
  *   Human review is required to confirm that the provided text alternative is accurate and appropriate.
  */
@@ -76,6 +84,11 @@ function runInPage(ctx) {
   const isAccTreeEligible =
     helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
 
+  const isDomVisibleEligible =
+    helpers && typeof helpers.isDomVisibleEligible === 'function'
+      ? helpers.isDomVisibleEligible
+      : null;
+
   const __accEligCache = new WeakMap();
   function accEligibleCached(node) {
     if (!isAccTreeEligible) return { eligible: true, reasons: [] };
@@ -90,6 +103,23 @@ function runInPage(ctx) {
     }
     r = r && typeof r === 'object' ? r : { eligible: !!r, reasons: [] };
     __accEligCache.set(node, r);
+    return r;
+  }
+
+  const __domVisCache = new WeakMap();
+  function domVisibleCached(node) {
+    if (!isDomVisibleEligible) return { eligible: true, reasons: [] };
+    if (!node || typeof node !== 'object') return { eligible: true, reasons: [] };
+    const c = __domVisCache.get(node);
+    if (c) return c;
+    let r;
+    try {
+      r = isDomVisibleEligible(node, ctx, { visibilityMode: 'styleOnly', disableGeometry: true });
+    } catch {
+      r = { eligible: true, reasons: [] };
+    }
+    r = r && typeof r === 'object' ? r : { eligible: !!r, reasons: [] };
+    __domVisCache.set(node, r);
     return r;
   }
 
@@ -188,10 +218,18 @@ function runInPage(ctx) {
     }
     if (!img) continue;
 
-    // The referencing <img> must be eligible in the accessibility tree.
-    if (isAccTreeEligible) {
-      const imgElig = accEligibleCached(img);
-      if (imgElig && imgElig.eligible === false) continue;
+    // Without href an <area> is not a hyperlink at all per the HTML spec,
+    // so there is nothing here for this rule to review.
+    const hrefRaw = el.getAttribute('href');
+    if (!hrefRaw || !hrefRaw.trim()) continue;
+
+    // The referencing <img> must actually be rendered. <area> is not a DOM
+    // descendant of <img>, so aria-hidden on the img has nothing to
+    // propagate along; hidden/display:none/visibility on the img still
+    // excludes it, since that removes the box the hotspot depends on.
+    if (isDomVisibleEligible) {
+      const imgVis = domVisibleCached(img);
+      if (imgVis && imgVis.eligible === false) continue;
     }
 
     if (isAccTreeEligible) {

@@ -96,9 +96,11 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/spinbutton-name-present-all-s
   }
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 6, maxOccurrences: 6 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 8, maxOccurrences: 8 });
 
   const expectedFailIds = [
+    'spinbutton_case_22',
+    'spinbutton_case_23',
     'spinbutton_case_01',
     'spinbutton_case_02',
     'spinbutton_case_08',
@@ -122,9 +124,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/spinbutton-name-present-all-s
     'spinbutton_case_18',
     'spinbutton_case_19',
     'spinbutton_case_20',
-    'spinbutton_case_21',
-    'spinbutton_case_22',
-    'spinbutton_case_23'
+    'spinbutton_case_21'
   ];
 
   for (const id of expectedFailIds) {
@@ -158,7 +158,12 @@ test("spinbutton-name-present: label association with empty content falls back t
   // content is empty, never checking the label's own title attribute, the
   // same final-fallback step the general accname algorithm applies to any
   // element being asked for its name.
-  const html = `<!doctype html><html><body><label for='a' title='Search'></label><div id='a' role='spinbutton'></div></body></html>`;
+  // Uses a native, genuinely labelable <input>, not role="spinbutton" on a
+  // <div>: label[for]/wrapping <label> association only ever applies to
+  // labelable elements (dom-helpers.js's getAssociatedLabelElements), so
+  // this exercises the title fallback on a target that can actually be
+  // labelled at all.
+  const html = `<!doctype html><html><body><label for='a' title='Search'></label><input id='a' role='spinbutton'></body></html>`;
 
   if (!runa11yCoreOnHtml || !assertRule) {
     assert.ok(true);

@@ -4,7 +4,7 @@ Every implemented rule should have a `tests/fixtures/<slug>-all-scenarios.html` 
 
 ## Summary
 
-Total rules: **133**. With fixture: **131**. Without fixture: **2**.
+Total rules: **132**. With fixture: **130**. Without fixture: **2**.
 
 ## Rules WITHOUT a fixture (2)
 
@@ -13,13 +13,12 @@ Total rules: **133**. With fixture: **131**. Without fixture: **2**.
 | identical-iframes-same-purpose | automatic | Frames with the same name embed the same resource | src/checks/automatic/identical-iframes-same-purpose.js | tests/engine-checks/automatic/identical-iframes-same-purpose.test.js |
 | iframe-title-unique | automatic | Frame titles must be unique (deprecated) | src/checks/automatic/iframe-title-unique.js | tests/engine-checks/automatic/iframe-title-unique.test.js |
 
-## Rules WITH a fixture (131)
+## Rules WITH a fixture (130)
 
 | Rule ID | Type | Fixture | Cases | PASS | FAIL | CANTTELL | OTHER |
 |---|---|---|---:|---:|---:|---:|---:|
 | accesskeys | manual | `tests/fixtures/accesskeys-all-scenarios.html` | 3 | 0 | 0 | 1 | 2 |
-| area-alt-decorative | manual | `tests/fixtures/area-alt-decorative-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
-| area-alt-present | automatic | `tests/fixtures/area-alt-present-all-scenarios.html` | 23 | 5 | 8 | 0 | 10 |
+| area-alt-present | automatic | `tests/fixtures/area-alt-present-all-scenarios.html` | 23 | 4 | 11 | 0 | 8 |
 | area-alt-quality | manual | `tests/fixtures/area-alt-quality-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
 | aria-allowed-attr | automatic | `tests/fixtures/aria-allowed-attr-all-scenarios.html` | 18 | 8 | 6 | 1 | 3 |
 | aria-allowed-role | automatic | `tests/fixtures/aria-allowed-role-all-scenarios.html` | 50 | 30 | 0 | 19 | 1 |
@@ -46,10 +45,10 @@ Total rules: **133**. With fixture: **131**. Without fixture: **2**.
 | bypass-blocks-present | manual | `tests/fixtures/bypass-blocks-present-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
 | canvas-text-alternative-present | automatic | `tests/fixtures/canvas-text-alternative-present-all-scenarios.html` | 25 | 9 | 7 | 0 | 9 |
 | canvas-text-alternative-quality | manual | `tests/fixtures/canvas-text-alternative-quality-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
-| combobox-name-present | automatic | `tests/fixtures/combobox-name-present-all-scenarios.html` | 24 | 7 | 5 | 0 | 12 |
-| contrast-computable | automatic | `tests/fixtures/contrast-all-scenarios.html` | 36 | 1 | 4 | 0 | 31 |
-| contrast-enhanced | automatic | `tests/fixtures/contrast-all-scenarios.html` | 36 | 1 | 4 | 0 | 31 |
-| contrast-minimum | automatic | `tests/fixtures/contrast-all-scenarios.html` | 36 | 1 | 4 | 0 | 31 |
+| combobox-name-present | automatic | `tests/fixtures/combobox-name-present-all-scenarios.html` | 24 | 5 | 7 | 0 | 12 |
+| contrast-computable | automatic | `tests/fixtures/contrast-all-scenarios.html` | 36 | 3 | 5 | 0 | 28 |
+| contrast-enhanced | automatic | `tests/fixtures/contrast-all-scenarios.html` | 36 | 3 | 5 | 0 | 28 |
+| contrast-minimum | automatic | `tests/fixtures/contrast-all-scenarios.html` | 36 | 3 | 5 | 0 | 28 |
 | css-focus-indicator-suppressed | manual | `tests/fixtures/css-focus-indicator-suppressed-all-scenarios.html` | 12 | 4 | 0 | 5 | 3 |
 | css-hidden-focus | manual | `tests/fixtures/css-hidden-focus-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
 | css-orientation-lock | automatic | `tests/fixtures/css-orientation-lock-all-scenarios.html` | 1 | 0 | 1 | 0 | 0 |
@@ -97,7 +96,7 @@ Total rules: **133**. With fixture: **131**. Without fixture: **2**.
 | link-name-present | automatic | `tests/fixtures/link-name-present-all-scenarios.html` | 19 | 12 | 5 | 0 | 2 |
 | link-name-quality | manual | `tests/fixtures/link-name-quality-all-scenarios.html` | 7 | 0 | 0 | 4 | 3 |
 | list-children-valid | automatic | `tests/fixtures/list-children-valid-all-scenarios.html` | 14 | 8 | 5 | 0 | 1 |
-| listbox-name-present | automatic | `tests/fixtures/listbox-name-present-all-scenarios.html` | 23 | 7 | 5 | 0 | 11 |
+| listbox-name-present | automatic | `tests/fixtures/listbox-name-present-all-scenarios.html` | 23 | 5 | 7 | 0 | 11 |
 | listitem-parent-valid | automatic | `tests/fixtures/listitem-parent-valid-all-scenarios.html` | 13 | 5 | 5 | 0 | 3 |
 | manual-review | manual | `tests/fixtures/manual-review-all-scenarios.html` | 1 | 0 | 0 | 1 | 0 |
 | media-alternative-transcript-evidence | manual | `tests/fixtures/media-transcript-present-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
@@ -125,11 +124,11 @@ Total rules: **133**. With fixture: **131**. Without fixture: **2**.
 | role-img-text-alternative-present | automatic | `tests/fixtures/role-img-text-alternative-present-all-scenarios.html` | 25 | 5 | 10 | 0 | 10 |
 | scope-attr-valid | manual | `tests/fixtures/scope-attr-valid-all-scenarios.html` | 2 | 0 | 0 | 1 | 1 |
 | scrollable-region-focusable | manual | `tests/fixtures/scrollable-region-focusable-all-scenarios.html` | 5 | 0 | 0 | 2 | 3 |
-| searchbox-name-present | automatic | `tests/fixtures/searchbox-name-present-all-scenarios.html` | 23 | 7 | 5 | 0 | 11 |
+| searchbox-name-present | automatic | `tests/fixtures/searchbox-name-present-all-scenarios.html` | 23 | 5 | 7 | 0 | 11 |
 | server-side-image-map-absent | automatic | `tests/fixtures/server-side-image-map-absent-all-scenarios.html` | 3 | 0 | 1 | 0 | 2 |
 | skip-link | manual | `tests/fixtures/skip-link-all-scenarios.html` | 6 | 0 | 0 | 3 | 3 |
 | slider-name-present | automatic | `tests/fixtures/slider-name-present-all-scenarios.html` | 23 | 9 | 4 | 0 | 10 |
-| spinbutton-name-present | automatic | `tests/fixtures/spinbutton-name-present-all-scenarios.html` | 23 | 7 | 5 | 0 | 11 |
+| spinbutton-name-present | automatic | `tests/fixtures/spinbutton-name-present-all-scenarios.html` | 23 | 5 | 7 | 0 | 11 |
 | summary-name-present | automatic | `tests/fixtures/summary-name-present-all-scenarios.html` | 6 | 4 | 2 | 0 | 0 |
 | svg-image-text-alternative-present | automatic | `tests/fixtures/svg-image-text-alternative-present-all-scenarios.html` | 20 | 6 | 8 | 0 | 6 |
 | svg-text-alternative-present | automatic | `tests/fixtures/svg-text-alternative-present-all-scenarios.html` | 26 | 5 | 14 | 0 | 7 |
@@ -142,7 +141,7 @@ Total rules: **133**. With fixture: **131**. Without fixture: **2**.
 | table-th-has-data-cells | automatic | `tests/fixtures/table-th-has-data-cells-all-scenarios.html` | 4 | 1 | 2 | 0 | 1 |
 | target-size-minimum | automatic | `tests/fixtures/target-size-all-scenarios.html` | 25 | 8 | 7 | 2 | 8 |
 | td-has-header | automatic | `tests/fixtures/td-has-header-all-scenarios.html` | 5 | 0 | 1 | 0 | 4 |
-| textbox-name-present | automatic | `tests/fixtures/textbox-name-present-all-scenarios.html` | 23 | 7 | 5 | 0 | 11 |
+| textbox-name-present | automatic | `tests/fixtures/textbox-name-present-all-scenarios.html` | 23 | 5 | 7 | 0 | 11 |
 | tooltip-name-present | automatic | `tests/fixtures/tooltip-name-present-all-scenarios.html` | 7 | 4 | 2 | 0 | 1 |
 | treeitem-name-present | automatic | `tests/fixtures/treeitem-name-present-all-scenarios.html` | 17 | 4 | 5 | 0 | 8 |
 | valid-lang | automatic | `tests/fixtures/valid-lang-all-scenarios.html` | 3 | 1 | 1 | 0 | 1 |

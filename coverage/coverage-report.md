@@ -5,19 +5,19 @@ Facets: `src/coverage/wcag-facets.js`
 
 ## Summary
 
-Total rules (loaded without error): **133**
+Total rules (loaded without error): **132**
 
 ### Coverage by WCAG Level (Version-agnostic, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| Any WCAG version | 107 | 19 | 5 |
+| Any WCAG version | 106 | 19 | 5 |
 
 ### Coverage by WCAG Level (Per version, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| WCAG 2.0 | 101 | 14 | 5 |
+| WCAG 2.0 | 100 | 14 | 5 |
 | WCAG 2.1 | 4 | 3 | 0 |
 | WCAG 2.2 | 2 | 2 | 0 |
 
@@ -28,7 +28,7 @@ Total rules (loaded without error): **133**
 | wcag21a | 1 |
 | wcag21aa | 3 |
 | wcag22aa | 2 |
-| wcag2a | 90 |
+| wcag2a | 89 |
 | wcag2aa | 10 |
 | wcag2aaa | 5 |
 
@@ -45,7 +45,7 @@ Automation mix: **full 6, partial 13, manual 2**.
 | functional-nontext-name | partial | — |
 | decorative-null | manual | — |
 | text-alt-quality-review | manual | — |
-| text-alternative-quality | partial | area-alt-decorative, area-alt-quality, canvas-text-alternative-quality, embed-text-alternative-quality, img-alt-decorative, img-alt-quality, input-image-alt-decorative, input-image-alt-quality, object-text-alternative-quality, svg-text-alternative-quality |
+| text-alternative-quality | partial | area-alt-quality, canvas-text-alternative-quality, embed-text-alternative-quality, img-alt-decorative, img-alt-quality, input-image-alt-decorative, input-image-alt-quality, object-text-alternative-quality, svg-text-alternative-quality |
 | img-alt-attr-present | full | img-alt-present |
 | role-img-text-alternative-present | full | role-img-text-alternative-present |
 | input-image-alt-attr-present | full | input-image-alt-present |
@@ -67,7 +67,7 @@ Uncovered facets: text-alternative-mechanism, functional-nontext-name, decorativ
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
-| area-alt-present | automatic | &lt;area&gt; must have an alt attribute | src/checks/automatic/area-alt-present.js | area-alt-attr-present |  |
+| area-alt-present | automatic | &lt;area&gt; must have an accessible name | src/checks/automatic/area-alt-present.js | area-alt-attr-present |  |
 | canvas-text-alternative-present | automatic | &lt;canvas&gt; must provide a text alternative | src/checks/automatic/canvas-text-alternative-present.js | canvas-text-alternative-present |  |
 | embed-text-alternative-present | automatic | &lt;embed&gt; must provide a text alternative | src/checks/automatic/embed-text-alternative-present.js | embed-text-alternative-present |  |
 | img-alt-present | automatic | &lt;img&gt; must have an alt attribute | src/checks/automatic/img-alt-present.js | img-alt-attr-present |  |
@@ -79,7 +79,6 @@ Uncovered facets: text-alternative-mechanism, functional-nontext-name, decorativ
 | svg-image-text-alternative-present | automatic | SVG &lt;image&gt; must have a text alternative | src/checks/automatic/svg-image-text-alternative-present.js | svg-image-text-alt-present |  |
 | svg-text-alternative-present | automatic | &lt;svg&gt; must provide a text alternative | src/checks/automatic/svg-text-alternative-present.js | svg-text-alternative-present |  |
 | video-poster-text-alternative-present | automatic | &lt;video&gt; poster must have a text alternative | src/checks/automatic/video-poster-text-alternative-present.js | video-poster-text-alt-present |  |
-| area-alt-decorative | manual | &lt;area&gt; with alt="" must be decorative (manual review) | src/checks/manual/area-alt-decorative-manual.js | text-alternative-quality |  |
 | area-alt-quality | manual | &lt;area&gt; alt text must be appropriate (manual review) | src/checks/manual/area-alt-quality-manual.js | text-alternative-quality |  |
 | canvas-text-alternative-quality | manual | &lt;canvas&gt; text alternative must be appropriate (manual review) | src/checks/manual/canvas-text-alternative-quality-manual.js | text-alternative-quality |  |
 | embed-text-alternative-quality | manual | &lt;embed&gt; text alternative must be appropriate (manual review) | src/checks/manual/embed-text-alternative-quality-manual.js | text-alternative-quality |  |
@@ -677,7 +676,7 @@ Automation mix: **full 6, partial 13, manual 2**.
 | functional-nontext-name | partial | — |
 | decorative-null | manual | — |
 | text-alt-quality-review | manual | — |
-| text-alternative-quality | partial | area-alt-decorative, area-alt-quality, canvas-text-alternative-quality, embed-text-alternative-quality, img-alt-decorative, img-alt-quality, input-image-alt-decorative, input-image-alt-quality, object-text-alternative-quality, svg-text-alternative-quality |
+| text-alternative-quality | partial | area-alt-quality, canvas-text-alternative-quality, embed-text-alternative-quality, img-alt-decorative, img-alt-quality, input-image-alt-decorative, input-image-alt-quality, object-text-alternative-quality, svg-text-alternative-quality |
 | img-alt-attr-present | full | img-alt-present |
 | role-img-text-alternative-present | full | role-img-text-alternative-present |
 | input-image-alt-attr-present | full | input-image-alt-present |
@@ -699,7 +698,7 @@ Uncovered facets: text-alternative-mechanism, functional-nontext-name, decorativ
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
-| area-alt-present | automatic | &lt;area&gt; must have an alt attribute | src/checks/automatic/area-alt-present.js | area-alt-attr-present |  |
+| area-alt-present | automatic | &lt;area&gt; must have an accessible name | src/checks/automatic/area-alt-present.js | area-alt-attr-present |  |
 | canvas-text-alternative-present | automatic | &lt;canvas&gt; must provide a text alternative | src/checks/automatic/canvas-text-alternative-present.js | canvas-text-alternative-present |  |
 | embed-text-alternative-present | automatic | &lt;embed&gt; must provide a text alternative | src/checks/automatic/embed-text-alternative-present.js | embed-text-alternative-present |  |
 | img-alt-present | automatic | &lt;img&gt; must have an alt attribute | src/checks/automatic/img-alt-present.js | img-alt-attr-present |  |
@@ -711,7 +710,6 @@ Uncovered facets: text-alternative-mechanism, functional-nontext-name, decorativ
 | svg-image-text-alternative-present | automatic | SVG &lt;image&gt; must have a text alternative | src/checks/automatic/svg-image-text-alternative-present.js | svg-image-text-alt-present |  |
 | svg-text-alternative-present | automatic | &lt;svg&gt; must provide a text alternative | src/checks/automatic/svg-text-alternative-present.js | svg-text-alternative-present |  |
 | video-poster-text-alternative-present | automatic | &lt;video&gt; poster must have a text alternative | src/checks/automatic/video-poster-text-alternative-present.js | video-poster-text-alt-present |  |
-| area-alt-decorative | manual | &lt;area&gt; with alt="" must be decorative (manual review) | src/checks/manual/area-alt-decorative-manual.js | text-alternative-quality |  |
 | area-alt-quality | manual | &lt;area&gt; alt text must be appropriate (manual review) | src/checks/manual/area-alt-quality-manual.js | text-alternative-quality |  |
 | canvas-text-alternative-quality | manual | &lt;canvas&gt; text alternative must be appropriate (manual review) | src/checks/manual/canvas-text-alternative-quality-manual.js | text-alternative-quality |  |
 | embed-text-alternative-quality | manual | &lt;embed&gt; text alternative must be appropriate (manual review) | src/checks/manual/embed-text-alternative-quality-manual.js | text-alternative-quality |  |

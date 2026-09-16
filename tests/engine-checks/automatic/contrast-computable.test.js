@@ -308,7 +308,14 @@ test(`${RULE_ID}: an opaque intervening layer does NOT occlude an OUTER ancestor
   assert.ok(hasOccurrenceForId(rule, 'opaque_then_filter'));
 });
 
-test(`${RULE_ID}: an opaque intervening layer does NOT occlude an OUTER ancestor's opacity<1 (compositing-group operation, not paint) => cantTell ANCESTOR_OPACITY`, () => {
+test(`${RULE_ID}: an opaque intervening layer does NOT occlude an OUTER ancestor's opacity<1 (compositing-group operation, not paint), but the whole chain still resolves`, () => {
+  // An opaque paint layer between el and an outer opacity ancestor does
+  // NOT shield against that ancestor's opacity the way it shields against
+  // a background-image (opacity is a compositing-group operation on the
+  // ancestor's whole subtree, not a paint occlusion) -- but the group
+  // still composites onto a flat, fully-resolvable backdrop here, so it's
+  // computable regardless, just via the full ancestor chain rather than
+  // being shielded early.
   const html = `
 <!doctype html>
 <html style="background-color: rgb(255, 255, 255); opacity: 1">
@@ -323,9 +330,8 @@ test(`${RULE_ID}: an opaque intervening layer does NOT occlude an OUTER ancestor
 
   const result = run(html);
 
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
-  assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'ANCESTOR_OPACITY');
-  assert.ok(hasOccurrenceForId(rule, 'opaque_then_opacity'));
+  const rule = assertRule(result, RULE_ID, 'pass', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.strictEqual(rule.occurrences[0].i18n.summaryKey, 'contrastComputable_pass_allComputable');
 });
 
 test(`${RULE_ID}: an opaque intervening layer does NOT occlude an OUTER ancestor's mix-blend-mode (compositing-group operation, not paint) => cantTell MIX_BLEND_MODE`, () => {
@@ -491,7 +497,7 @@ test(`${RULE_ID}: auditorAssist + root not opaque => pass (rootCanvasFallback ap
   assert.ok(Number(occ.data.details.eligibleTextCount) >= 1);
 });
 
-test(`${RULE_ID}: ANCESTOR opacity < 1 blocker => cantTell with reasonCode ANCESTOR_OPACITY`, () => {
+test(`${RULE_ID}: ANCESTOR opacity < 1 over a flat resolvable backdrop is computable (pass)`, () => {
   const html = `
 <!doctype html>
 <html style="background-color: rgb(255, 255, 255); opacity: 1">
@@ -506,11 +512,40 @@ test(`${RULE_ID}: ANCESTOR opacity < 1 blocker => cantTell with reasonCode ANCES
 
   const result = run(html);
 
+  // The subtree's own content (text over its own background) resolves to
+  // full opacity before the ancestor's opacity is applied, then that flat
+  // result is scaled and blended against the (also flat) root -- no
+  // per-pixel rendering needed, so this is computable, not blocked.
+  const rule = assertRule(result, RULE_ID, 'pass', { minOccurrences: 1, maxOccurrences: 1 });
+  const occ = rule.occurrences[0];
+  assert.strictEqual(occ.i18n.summaryKey, 'contrastComputable_pass_allComputable');
+  assert.ok(Number(occ.data.details.eligibleTextCount) >= 1);
+});
+
+test(`${RULE_ID}: ANCESTOR opacity < 1 stays a blocker when a gradient sits further out, beyond the opacity ancestor itself`, () => {
+  const html = `
+<!doctype html>
+<html style="background-color: rgb(255, 255, 255); opacity: 1">
+<head></head>
+<body style="background-image: linear-gradient(red, blue);">
+  <div style="opacity: 0.5;">
+    <p id="anc_op_gradient" style="color: rgb(0, 0, 0);">
+      Ancestor opacity, gradient further out
+    </p>
+  </div>
+</body></html>`;
+
+  const result = run(html);
+
+  // The opacity ancestor itself has no background image or gradient, but
+  // resolveGroupOpacityColors still walks the whole chain to a fully
+  // opaque result -- finding the gradient on <body>, further out, falls
+  // back to the existing ANCESTOR_OPACITY blocker rather than asserting a
+  // confident ratio it cannot actually compute.
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   const occ = rule.occurrences[0];
   assert.strictEqual(occ.data.details.reasonCode, 'ANCESTOR_OPACITY');
-  assert.strictEqual(occ.i18n.summaryKey, 'contrastComputable_cantTell_notComputable');
-  assert.ok(hasOccurrenceForId(rule, 'anc_op'));
+  assert.ok(hasOccurrenceForId(rule, 'anc_op_gradient'));
 });
 
 test(`${RULE_ID}: element's OWN opacity < 1 (no ancestor blocker) => pass (still computable)`, () => {
@@ -538,7 +573,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/contrast-all-scenarios.html)`
 
   const result = run(html);
 
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 8, maxOccurrences: 8 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 9, maxOccurrences: 9 });
 
   const expectedReasonCodeById = {
     blocker_gradient_bg: 'BACKGROUND_IMAGE_OR_GRADIENT',
@@ -546,7 +581,10 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/contrast-all-scenarios.html)`
     blocker_mix_blend_mode: 'MIX_BLEND_MODE',
     blocker_filter: 'BACKGROUND_FILTER_OR_BACKDROP_FILTER',
     blocker_backdrop_filter: 'BACKGROUND_FILTER_OR_BACKDROP_FILTER',
-    blocker_ancestor_opacity: 'ANCESTOR_OPACITY'
+    // ancestor opacity resolves cleanly on its own (see the "pass" test
+    // above), but stays a blocker when something further out -- here a
+    // gradient behind the opacity ancestor -- is itself unresolvable.
+    blocker_ancestor_opacity_unresolvable: 'ANCESTOR_OPACITY'
   };
 
   for (const [id, reasonCode] of Object.entries(expectedReasonCodeById)) {
@@ -561,10 +599,11 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/contrast-all-scenarios.html)`
     );
   }
 
-  // The gradient/image blockers are set on the ANCESTOR <section>, so the
-  // sibling ".label" paragraph in each of those two sections is also
-  // blocked (2 extra anonymous occurrences), for 6 + 2 = 8 total.
-  assert.strictEqual(rule.occurrences.length, 8);
+  // The gradient/image blockers, and the new ancestor-opacity-plus-
+  // gradient case, are set on the ANCESTOR <section>, so each section's
+  // own case-title paragraph is also blocked (3 extra anonymous
+  // occurrences), for 6 + 3 = 9 total.
+  assert.strictEqual(rule.occurrences.length, 9);
 });
 
 // Optional: determinism smoke check (run twice, compare results)

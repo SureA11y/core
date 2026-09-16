@@ -11,19 +11,30 @@
  * @applicability
  *   Applies to <area> elements that:
  *   1) are in a <map> that is referenced by an <img usemap>, AND
- *   2) the referencing <img> is eligible in the accessibility tree (best-effort), AND
- *   3) the <area> itself is eligible in the accessibility tree (with engine exceptions).
+ *   2) carry a non-empty href (an <area> with no href is not a hyperlink
+ *      at all per the HTML spec, and has nothing for this rule to name), AND
+ *   3) the referencing <img> is actually rendered (hidden/display:none/
+ *      visibility exclude it; aria-hidden does not, since <area> is not a
+ *      DOM descendant of <img>), AND
+ *   4) the <area> itself is eligible in the accessibility tree. hidden,
+ *      display:none and inert on the <area> or its <map> do not exclude it:
+ *      neither element generates a box, so a real browser's image-map
+ *      hit-testing ignores all three there (verified against Chromium and
+ *      Firefox); only those mechanisms on a genuine ancestor of the whole
+ *      <img>+<map> pairing do.
  * @expectation
- *   Each applicable <area> element has an alt attribute.
- *   The alt attribute may be empty (alt="").
+ *   Each applicable <area> element has a non-empty accessible name, from alt,
+ *   aria-label/aria-labelledby, or title. An <area> in a used map is always
+ *   a link, so alt="" is not decorative here as it is on <img>: an empty alt
+ *   fails the same as a missing one unless another mechanism names it.
  */
 
 const id = 'area-alt-present';
 
 const meta = {
-  title: '<area> must have an alt attribute',
+  title: '<area> must have an accessible name',
   description:
-    'Checks that <area> elements provide an alt attribute to support a text alternative mechanism.',
+    'Checks that <area> elements have a non-empty accessible name via alt, aria-label/aria-labelledby, or title.',
   i18n: {
     titleKey: 'area_altPresent_title',
     descriptionKey: 'area_altPresent_description'
@@ -75,6 +86,11 @@ function runInPage(ctx) {
 
   const isAccTreeEligible =
     helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+
+  const isDomVisibleEligible =
+    helpers && typeof helpers.isDomVisibleEligible === 'function'
+      ? helpers.isDomVisibleEligible
+      : null;
 
   const getAriaNameInfo =
     helpers && typeof helpers.getAriaNameInfo === 'function' ? helpers.getAriaNameInfo : null;
@@ -156,17 +172,32 @@ function runInPage(ctx) {
     const img = getReferencingImgForArea(el);
     if (!img) continue;
 
-    // 1) The referencing <img> must itself be eligible in the acc tree.
-    // This is the "visibility of map/area doesn't matter; the image does" policy.
-    if (isAccTreeEligible) {
-      const imgElig = (() => {
+    // 0b) Without href an <area> is not a hyperlink at all per the HTML
+    // spec -- just a shape with no associated action -- so it has nothing
+    // for this rule to name.
+    const hrefRaw = el.getAttribute('href');
+    if (!hrefRaw || !hrefRaw.trim()) continue;
+
+    // 1) The referencing <img> must actually be rendered: a used map's
+    // hotspots depend on the img's box, not its accessibility-tree
+    // exposure. <area> is not a DOM descendant of <img> -- only linked by
+    // the usemap IDREF -- so aria-hidden on the img has nothing to
+    // propagate along (verified against Chromium and Firefox: the area
+    // stays reachable regardless). hidden/display:none/visibility on the
+    // img itself still excludes it, since that removes the box the
+    // hotspot geometry depends on.
+    if (isDomVisibleEligible) {
+      const imgVis = (() => {
         try {
-          return isAccTreeEligible(img, ctx);
+          return isDomVisibleEligible(img, ctx, {
+            visibilityMode: 'styleOnly',
+            disableGeometry: true
+          });
         } catch {
           return { eligible: true, reasons: [] };
         }
       })();
-      if (imgElig && imgElig.eligible === false) continue;
+      if (imgVis && imgVis.eligible === false) continue;
     }
 
     // 2) The <area> itself must be eligible (aria-hidden/inert exceptions handled by helper).
@@ -184,8 +215,18 @@ function runInPage(ctx) {
     // From here: applicable
     applicableCount += 1;
 
-    const hasAlt = el.getAttribute('alt') !== null;
-    if (hasAlt) continue;
+    let altRaw;
+    try {
+      altRaw = el.getAttribute('alt');
+    } catch {
+      altRaw = null;
+    }
+    const hasAltAttr = altRaw !== null;
+    const altGivesName = hasAltAttr && String(altRaw).trim() !== '';
+    if (altGivesName) continue;
+
+    // alt="" is not decorative on an <area>: a used map's area is always a
+    // link, so it needs a name from elsewhere or it fails.
 
     // aria-label / aria-labelledby is also a valid, standards-recognized
     // text-alternative mechanism for <area> (HTML-AAM accessible name
@@ -201,8 +242,8 @@ function runInPage(ctx) {
     }
 
     // A non-empty title attribute is HTML-AAM's own next fallback naming
-    // source once alt is entirely absent. Same gap img-alt-present handles
-    // for <img title="..."> with no alt.
+    // source once alt gives no name (missing or empty). Same gap
+    // img-alt-present handles for <img title="..."> with no alt.
     const titleRaw = (() => {
       try {
         return el.getAttribute('title');
@@ -214,21 +255,36 @@ function runInPage(ctx) {
 
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
-    const baseOccurrence = {
-      // Leave selector/html empty so the engine can fill them from __node.
-      selector: '',
-      html: '',
-      summary: 'Missing alt attribute on &lt;area&gt;.',
-      hint: 'Add an alt attribute (use alt="" only for decorative areas).',
-      i18n: {
-        summaryKey: 'area_altPresent_summary_fail',
-        hintKey: 'area_altPresent_hint_fail',
-        params: { element: 'area' }
-      },
-      data: {
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    };
+    const baseOccurrence = hasAltAttr
+      ? {
+          // Leave selector/html empty so the engine can fill them from __node.
+          selector: '',
+          html: '',
+          summary: 'Empty alt attribute leaves &lt;area&gt; link with no accessible name.',
+          hint: 'Describe the link destination in alt, or add aria-label/aria-labelledby (an <area> cannot be decorative once its map is used).',
+          i18n: {
+            summaryKey: 'area_altPresent_summary_fail_empty',
+            hintKey: 'area_altPresent_hint_fail_empty',
+            params: { element: 'area' }
+          },
+          data: {
+            visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+          }
+        }
+      : {
+          selector: '',
+          html: '',
+          summary: 'Missing alt attribute on &lt;area&gt;.',
+          hint: 'Add an alt attribute describing the link destination (an <area> cannot be decorative).',
+          i18n: {
+            summaryKey: 'area_altPresent_summary_fail',
+            hintKey: 'area_altPresent_hint_fail',
+            params: { element: 'area' }
+          },
+          data: {
+            visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+          }
+        };
 
     if (helpers && typeof helpers.reportOccurrence === 'function') {
       occurrences.push(helpers.reportOccurrence(el, baseOccurrence));

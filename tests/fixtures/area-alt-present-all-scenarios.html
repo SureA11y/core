@@ -32,7 +32,7 @@
     <div class="row">
       <img alt="" usemap="#m_used" src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%2345c46a'/%3E%3C/svg%3E">
       <map name="m_used">
-        <area id="area_case_01" shape="rect" coords="0,0,40,24">
+        <area href="/x" id="area_case_01" shape="rect" coords="0,0,40,24">
       </map>
       <span>Missing alt.</span>
     </div>
@@ -43,20 +43,20 @@
     <div class="row">
       <img alt="" usemap="#m_used2" src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%2345c46a'/%3E%3C/svg%3E">
       <map name="m_used2">
-        <area id="area_case_02" alt="Go to green" shape="rect" coords="0,0,40,24">
+        <area href="/x" id="area_case_02" alt="Go to green" shape="rect" coords="0,0,40,24">
       </map>
       <span>Has alt.</span>
     </div>
   </div>
 
   <div class="case" id="case_03">
-    <div class="case-title">03 — PASS (for this atomic rule): used map &lt;area&gt; with empty <code>alt=""</code></div>
+    <div class="case-title">03 — FAIL: used map &lt;area&gt; with empty <code>alt=""</code> and no other name</div>
     <div class="row">
       <img alt="" usemap="#m_used3" src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%2345c46a'/%3E%3C/svg%3E">
       <map name="m_used3">
-        <area id="area_case_03" alt="" shape="rect" coords="0,0,40,24">
+        <area href="/x" id="area_case_03" alt="" shape="rect" coords="0,0,40,24">
       </map>
-      <span>Empty alt allowed here.</span>
+      <span>An &lt;area&gt; is always a link once its map is used; empty alt is not decorative here.</span>
     </div>
   </div>
 
@@ -67,7 +67,7 @@
     <div class="row">
       <img alt="" usemap="#m_ah" src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%23ff77aa'/%3E%3C/svg%3E">
       <map name="m_ah">
-        <area id="area_case_04" aria-hidden="true" shape="rect" coords="0,0,40,24">
+        <area href="/x" id="area_case_04" aria-hidden="true" shape="rect" coords="0,0,40,24">
       </map>
       <span>aria-hidden but focusable (used map) => eligible &amp; applicable.</span>
     </div>
@@ -78,68 +78,68 @@
     <div class="row">
       <img alt="" usemap="#m_ah2" src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%23ff77aa'/%3E%3C/svg%3E">
       <map name="m_ah2">
-        <area id="area_case_05" aria-hidden="true" alt="Hidden but focusable" shape="rect" coords="0,0,40,24">
+        <area href="/x" id="area_case_05" aria-hidden="true" alt="Hidden but focusable" shape="rect" coords="0,0,40,24">
       </map>
       <span>aria-hidden but has alt.</span>
     </div>
   </div>
 
-  <h2 id="hidden_css">C. Hidden by HTML/CSS (ineligible)</h2>
+  <h2 id="hidden_css">C. hidden/display:none on the area or its map (ignored: non-rendered elements)</h2>
 
   <div class="case" id="case_06">
-    <div class="case-title">06 — Pass: <code>hidden</code> attribute on &lt;area&gt; (missing alt)</div>
+    <div class="case-title">06 — FAIL: <code>hidden</code> attribute on &lt;area&gt; does not exclude it (missing alt)</div>
     <div class="row">
       <img alt="" usemap="#m_hidden" src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%23cc6666'/%3E%3C/svg%3E">
       <map name="m_hidden">
-        <area id="area_case_06" hidden shape="rect" coords="0,0,40,24">
+        <area href="/x" id="area_case_06" hidden shape="rect" coords="0,0,40,24">
       </map>
-      <span>Ineligible per helper.</span>
+      <span>&lt;area&gt; generates no box; hidden on a non-rendered element has no effect in a real browser.</span>
     </div>
   </div>
 
   <div class="case" id="case_07">
-    <div class="case-title">07 — Pass: <code>display:none</code> on &lt;map&gt; (missing alt)</div>
+    <div class="case-title">07 — FAIL: <code>display:none</code> on &lt;map&gt; does not exclude its &lt;area&gt; (missing alt)</div>
     <div class="row">
       <img alt="" usemap="#m_dn" src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%23cc6666'/%3E%3C/svg%3E">
       <map name="m_dn" style="display:none">
-        <area id="area_case_07" shape="rect" coords="0,0,40,24">
+        <area href="/x" id="area_case_07" shape="rect" coords="0,0,40,24">
       </map>
-      <span>Ineligible per helper.</span>
+      <span>&lt;map&gt; generates no box either; display:none on it has no effect in a real browser.</span>
     </div>
   </div>
 
   <div class="case" id="case_08">
-    <div class="case-title">08 — Pass: <code>visibility:hidden</code> on &lt;map&gt; (missing alt)</div>
+    <div class="case-title">08 — NOT APPLICABLE: <code>visibility:hidden</code> on a wrapper hides the referencing &lt;img&gt; (missing alt)</div>
     <div class="row hiddenvis">
       <img alt="" usemap="#m_vh" src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%23cc6666'/%3E%3C/svg%3E">
       <map name="m_vh">
-        <area id="area_case_08" shape="rect" coords="0,0,40,24">
+        <area href="/x" id="area_case_08" shape="rect" coords="0,0,40,24">
       </map>
-      <span>Ineligible per helper.</span>
+      <span>Unlike case 06/07, this excludes via the referencing &lt;img&gt; itself not being rendered, not via the map/area.</span>
     </div>
   </div>
 
-  <h2 id="inertness">D. Inertness (special &lt;area&gt;/&lt;map&gt; behavior)</h2>
+  <h2 id="inertness">D. Inertness: ignored on the area/map itself, still blocks on a genuine outside ancestor</h2>
 
   <div class="case" id="case_09">
-    <div class="case-title">09 — FAIL: <code>inert</code> on &lt;map&gt; does not block &lt;area&gt; eligibility (missing alt)</div>
+    <div class="case-title">09 — FAIL: <code>inert</code> on &lt;map&gt; does not exclude its &lt;area&gt; children (missing alt)</div>
     <div class="row">
       <img alt="" usemap="#m_inert_map" src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%239999ff'/%3E%3C/svg%3E">
       <map name="m_inert_map" inert>
-        <area id="area_case_09" shape="rect" coords="0,0,40,24">
+        <area href="/x" id="area_case_09" shape="rect" coords="0,0,40,24">
       </map>
-      <span>Per helper exception, inert on map is ignored for &lt;area&gt;.</span>
+      <span>inert has no effect on a non-rendered element in a real browser; the area stays reachable.</span>
     </div>
   </div>
 
   <div class="case" id="case_10">
-    <div class="case-title">10 — FAIL: <code>inert</code> on &lt;area&gt; itself does not block eligibility (missing alt)</div>
+    <div class="case-title">10 — FAIL: <code>inert</code> on &lt;area&gt; itself does not exclude it (missing alt)</div>
     <div class="row">
       <img alt="" usemap="#m_inert_area" src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%239999ff'/%3E%3C/svg%3E">
       <map name="m_inert_area">
-        <area id="area_case_10" inert shape="rect" coords="0,0,40,24">
+        <area href="/x" id="area_case_10" inert shape="rect" coords="0,0,40,24">
       </map>
-      <span>Per helper exception, inert on area is ignored.</span>
+      <span>Same reasoning as case 09: the area itself generates no box, so inert on it has no effect either.</span>
     </div>
   </div>
 
@@ -148,7 +148,7 @@
     <div class="row" inert>
       <img alt="" usemap="#m_inert_wrap" src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%239999ff'/%3E%3C/svg%3E">
       <map name="m_inert_wrap">
-        <area id="area_case_11" shape="rect" coords="0,0,40,24">
+        <area href="/x" id="area_case_11" shape="rect" coords="0,0,40,24">
       </map>
       <span>Ineligible per helper.</span>
     </div>
@@ -160,7 +160,7 @@
     <div class="case-title">12 — INELIGIBLE: unused map &lt;area aria-hidden="true"&gt; missing alt</div>
     <div class="row">
       <map name="m_unused_ah">
-        <area id="area_case_12" aria-hidden="true" shape="rect" coords="0,0,40,24">
+        <area href="/x" id="area_case_12" aria-hidden="true" shape="rect" coords="0,0,40,24">
       </map>
       <span>No img[usemap] references this map; aria-hidden stays ineligible.</span>
     </div>
@@ -181,7 +181,7 @@
     <div class="row">
       <img alt="" usemap="#m_role" src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%2366aaff'/%3E%3C/svg%3E">
       <map name="m_role">
-        <area id="area_case_14" role="presentation" shape="rect" coords="0,0,40,24">
+        <area href="/x" id="area_case_14" role="presentation" shape="rect" coords="0,0,40,24">
       </map>
       <span>Role does not exclude; focusability is key.</span>
     </div>
@@ -192,20 +192,20 @@
     <div class="row">
       <img alt="" usemap="#m_ad" src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%2366aaff'/%3E%3C/svg%3E">
       <map name="m_ad">
-        <area id="area_case_15" aria-disabled="true" shape="rect" coords="0,0,40,24">
+        <area href="/x" id="area_case_15" aria-disabled="true" shape="rect" coords="0,0,40,24">
       </map>
       <span>aria-disabled should not exclude.</span>
     </div>
   </div>
 
   <div class="case" id="case_16">
-    <div class="case-title">16 — FAIL: href present (still requires alt mechanism), missing alt</div>
+    <div class="case-title">16 — NOT APPLICABLE: used map &lt;area&gt; without href is not a hyperlink</div>
     <div class="row">
       <img alt="" usemap="#m_href" src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%2366aaff'/%3E%3C/svg%3E">
       <map name="m_href">
-        <area id="area_case_16" href="/next" shape="rect" coords="0,0,40,24">
+        <area id="area_case_16" shape="rect" coords="0,0,40,24">
       </map>
-      <span>Href does not replace alt attribute requirement.</span>
+      <span>Without href, this &lt;area&gt; is not a hyperlink at all, regardless of alt.</span>
     </div>
   </div>
 
@@ -213,7 +213,7 @@
     <div class="case-title">17 — NOT APPLICABLE: unused map with tab index</div>
     <div class="row">
       <map name="m_unused_tab">
-        <area id="area_case_17" tabindex="0" shape="rect" coords="0,0,40,24">
+        <area href="/x" id="area_case_17" tabindex="0" shape="rect" coords="0,0,40,24">
       </map>
       <span>tabindex does not make it focusable => not applicable.</span>
     </div>
@@ -224,7 +224,7 @@
     <div class="row">
       <img hidden alt="" usemap="#m_img_hidden" src="data:image/svg+xml,...">
       <map name="m_img_hidden">
-        <area id="area_case_18" shape="rect" coords="0,0,40,24">
+        <area href="/x" id="area_case_18" shape="rect" coords="0,0,40,24">
       </map>
       <span>Image is ineligible => area not applicable.</span>
     </div>
@@ -235,20 +235,20 @@
     <div class="row">
       <img style="display:none" alt="" usemap="#m_img_dn" src="data:image/svg+xml,...">
       <map name="m_img_dn">
-        <area id="area_case_19" shape="rect" coords="0,0,40,24">
+        <area href="/x" id="area_case_19" shape="rect" coords="0,0,40,24">
       </map>
       <span>Image is ineligible => area not applicable.</span>
     </div>
   </div>
 
   <div class="case" id="case_20">
-    <div class="case-title">20 — NOT APPLICABLE: used map but referencing img is aria-hidden</div>
+    <div class="case-title">20 — FAIL: used map, referencing img is aria-hidden but still rendered (missing alt)</div>
     <div class="row">
       <img aria-hidden="true" alt="" usemap="#m_img_ah" src="data:image/svg+xml,...">
       <map name="m_img_ah">
-        <area id="area_case_20" shape="rect" coords="0,0,40,24">
+        <area href="/x" id="area_case_20" shape="rect" coords="0,0,40,24">
       </map>
-      <span>Image is aria-hidden and not focusable => image ineligible => area not applicable.</span>
+      <span>&lt;area&gt; is not a DOM descendant of &lt;img&gt;, only linked by usemap; aria-hidden on the img has nothing to propagate along, and the img is still rendered.</span>
     </div>
   </div>
 
@@ -259,7 +259,7 @@
     <div class="row">
       <img alt="" usemap="#m_aria_label" src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%2345c46a'/%3E%3C/svg%3E">
       <map name="m_aria_label">
-        <area id="area_case_21" aria-label="Region one" shape="rect" coords="0,0,40,24">
+        <area href="/x" id="area_case_21" aria-label="Region one" shape="rect" coords="0,0,40,24">
       </map>
       <span>ARIA naming (aria-label) satisfies the mechanism without alt.</span>
     </div>
@@ -270,7 +270,7 @@
     <div class="row">
       <img alt="" usemap="#m_aria_lb" src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%2345c46a'/%3E%3C/svg%3E">
       <map name="m_aria_lb">
-        <area id="area_case_22" aria-labelledby="area_case_22_label" shape="rect" coords="0,0,40,24">
+        <area href="/x" id="area_case_22" aria-labelledby="area_case_22_label" shape="rect" coords="0,0,40,24">
       </map>
       <span id="area_case_22_label">Region two label</span>
     </div>
@@ -281,7 +281,7 @@
     <div class="row">
       <img alt="" usemap="#m_aria_bad" src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%2345c46a'/%3E%3C/svg%3E">
       <map name="m_aria_bad">
-        <area id="area_case_23" aria-labelledby="area_case_23_does_not_exist" shape="rect" coords="0,0,40,24">
+        <area href="/x" id="area_case_23" aria-labelledby="area_case_23_does_not_exist" shape="rect" coords="0,0,40,24">
       </map>
       <span>Dangling IDREF does not resolve to a name; alt is also missing.</span>
     </div>

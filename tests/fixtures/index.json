@@ -1,7 +1,7 @@
 {
   "summary": {
-    "total": 133,
-    "withFixture": 131,
+    "total": 132,
+    "withFixture": 130,
     "withoutFixture": 2
   },
   "rows": [
@@ -23,27 +23,8 @@
       }
     },
     {
-      "ruleId": "area-alt-decorative",
-      "title": "<area> with alt=\"\" must be decorative (manual review)",
-      "type": "manual",
-      "wcagSc": [
-        "1.1.1"
-      ],
-      "ruleFile": "src/checks/manual/area-alt-decorative-manual.js",
-      "testFile": "tests/engine-checks/manual/area-alt-decorative.test.js",
-      "hasFixture": true,
-      "fixtureFile": "tests/fixtures/area-alt-decorative-manual-all-scenarios.html",
-      "totalCases": 0,
-      "caseCounts": {
-        "PASS": 0,
-        "FAIL": 0,
-        "CANTTELL": 0,
-        "OTHER": 0
-      }
-    },
-    {
       "ruleId": "area-alt-present",
-      "title": "<area> must have an alt attribute",
+      "title": "<area> must have an accessible name",
       "type": "automatic",
       "wcagSc": [
         "1.1.1"
@@ -54,10 +35,10 @@
       "fixtureFile": "tests/fixtures/area-alt-present-all-scenarios.html",
       "totalCases": 23,
       "caseCounts": {
-        "PASS": 5,
-        "FAIL": 8,
+        "PASS": 4,
+        "FAIL": 11,
         "CANTTELL": 0,
-        "OTHER": 10
+        "OTHER": 8
       }
     },
     {
@@ -564,8 +545,8 @@
       "fixtureFile": "tests/fixtures/combobox-name-present-all-scenarios.html",
       "totalCases": 24,
       "caseCounts": {
-        "PASS": 7,
-        "FAIL": 5,
+        "PASS": 5,
+        "FAIL": 7,
         "CANTTELL": 0,
         "OTHER": 12
       }
@@ -584,10 +565,10 @@
       "fixtureFile": "tests/fixtures/contrast-all-scenarios.html",
       "totalCases": 36,
       "caseCounts": {
-        "PASS": 1,
-        "FAIL": 4,
+        "PASS": 3,
+        "FAIL": 5,
         "CANTTELL": 0,
-        "OTHER": 31
+        "OTHER": 28
       }
     },
     {
@@ -603,10 +584,10 @@
       "fixtureFile": "tests/fixtures/contrast-all-scenarios.html",
       "totalCases": 36,
       "caseCounts": {
-        "PASS": 1,
-        "FAIL": 4,
+        "PASS": 3,
+        "FAIL": 5,
         "CANTTELL": 0,
-        "OTHER": 31
+        "OTHER": 28
       }
     },
     {
@@ -622,10 +603,10 @@
       "fixtureFile": "tests/fixtures/contrast-all-scenarios.html",
       "totalCases": 36,
       "caseCounts": {
-        "PASS": 1,
-        "FAIL": 4,
+        "PASS": 3,
+        "FAIL": 5,
         "CANTTELL": 0,
-        "OTHER": 31
+        "OTHER": 28
       }
     },
     {
@@ -1534,8 +1515,8 @@
       "fixtureFile": "tests/fixtures/listbox-name-present-all-scenarios.html",
       "totalCases": 23,
       "caseCounts": {
-        "PASS": 7,
-        "FAIL": 5,
+        "PASS": 5,
+        "FAIL": 7,
         "CANTTELL": 0,
         "OTHER": 11
       }
@@ -2056,8 +2037,8 @@
       "fixtureFile": "tests/fixtures/searchbox-name-present-all-scenarios.html",
       "totalCases": 23,
       "caseCounts": {
-        "PASS": 7,
-        "FAIL": 5,
+        "PASS": 5,
+        "FAIL": 7,
         "CANTTELL": 0,
         "OTHER": 11
       }
@@ -2130,8 +2111,8 @@
       "fixtureFile": "tests/fixtures/spinbutton-name-present-all-scenarios.html",
       "totalCases": 23,
       "caseCounts": {
-        "PASS": 7,
-        "FAIL": 5,
+        "PASS": 5,
+        "FAIL": 7,
         "CANTTELL": 0,
         "OTHER": 11
       }
@@ -2373,8 +2354,8 @@
       "fixtureFile": "tests/fixtures/textbox-name-present-all-scenarios.html",
       "totalCases": 23,
       "caseCounts": {
-        "PASS": 7,
-        "FAIL": 5,
+        "PASS": 5,
+        "FAIL": 7,
         "CANTTELL": 0,
         "OTHER": 11
       }

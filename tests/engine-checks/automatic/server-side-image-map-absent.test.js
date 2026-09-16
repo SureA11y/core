@@ -16,10 +16,10 @@ function hasOccurrenceForId(rule, id) {
   );
 }
 
-test(`${RULE_ID}: notApplicable when no img[ismap] is present`, () => {
+test(`${RULE_ID}: pass when no img[ismap] is present`, () => {
   const html = `<!doctype html><html><body><img src="a.png" alt="A regular image"></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: fail when img has ismap`, () => {

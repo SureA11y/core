@@ -46,65 +46,9 @@ const CHECK_DEFS = [
     "mappings": null
   },
   {
-    "ruleId": "area-alt-decorative",
-    "title": "<area> with alt=\"\" must be decorative (manual review)",
-    "description": "Flags <area> elements with empty alt for human review that they are decorative/non-informative.",
-    "i18n": {
-      "titleKey": "area_altDecorative_title",
-      "descriptionKey": "area_altDecorative_description"
-    },
-    "helpUrl": "",
-    "tags": [
-      "wcag2a",
-      "wcag111",
-      "nontext",
-      "images",
-      "imagemap",
-      "manual",
-      "atomic",
-      "a11ycore"
-    ],
-    "wcagSc": [
-      "1.1.1"
-    ],
-    "normativeMappings": [
-      {
-        "standard": "WCAG",
-        "version": "2.2",
-        "requirement": "1.1.1",
-        "title": "Non-text Content",
-        "conformanceLevel": "A"
-      }
-    ],
-    "defaultSeverity": "minor",
-    "defaultConfidence": "medium",
-    "type": "manual",
-    "coverage": {
-      "facetsBySc": {
-        "1.1.1": [
-          "text-alternative-quality"
-        ]
-      }
-    },
-    "data": null,
-    "ruleInterfaceVersion": "1.0.0",
-    "ruleVersion": "0.0.0",
-    "normative": true,
-    "atomic": true,
-    "deprecated": false,
-    "deprecation": null,
-    "category": "perceivable",
-    "standard": null,
-    "applicability": "",
-    "expectation": "",
-    "references": [],
-    "requirements": null,
-    "mappings": null
-  },
-  {
     "ruleId": "area-alt-present",
-    "title": "<area> must have an alt attribute",
-    "description": "Checks that <area> elements provide an alt attribute to support a text alternative mechanism.",
+    "title": "<area> must have an accessible name",
+    "description": "Checks that <area> elements have a non-empty accessible name via alt, aria-label/aria-labelledby, or title.",
     "i18n": {
       "titleKey": "area_altPresent_title",
       "descriptionKey": "area_altPresent_description"
@@ -7067,7 +7011,6 @@ const COMPOSITE_RULES = [
       "area-alt-present",
       "img-alt-decorative",
       "img-alt-quality",
-      "area-alt-decorative",
       "area-alt-quality",
       "canvas-text-alternative-quality",
       "canvas-text-alternative-present",
@@ -7624,7 +7567,6 @@ const COMPOSITE_RULES = [
 // Node/runtime rule implementations (normalized)
 const RULE_IMPLS = {
   "accesskeys": { run: require("./checks/manual/accesskeys-manual.js").runInPage, applicability: require("./checks/manual/accesskeys-manual.js").applicability || null },
-  "area-alt-decorative": { run: require("./checks/manual/area-alt-decorative-manual.js").runInPage, applicability: require("./checks/manual/area-alt-decorative-manual.js").applicability || null },
   "area-alt-present": { run: require("./checks/automatic/area-alt-present.js").runInPage, applicability: require("./checks/automatic/area-alt-present.js").applicability || null },
   "area-alt-quality": { run: require("./checks/manual/area-alt-quality-manual.js").runInPage, applicability: require("./checks/manual/area-alt-quality-manual.js").applicability || null },
   "aria-allowed-attr": { run: require("./checks/automatic/aria-allowed-attr.js").runInPage, applicability: require("./checks/automatic/aria-allowed-attr.js").applicability || null },
@@ -7771,10 +7713,12 @@ const I18N = {
     "img_altPresent_description": "Prüft, ob <img>-Elemente ein alt-Attribut bereitstellen, um einen Mechanismus für eine Textalternative zu unterstützen.",
     "img_altPresent_summary_fail": "Fehlendes alt-Attribut auf <img>.",
     "img_altPresent_hint_fail": "Fügen Sie ein alt-Attribut hinzu (verwenden Sie alt=\"\" nur für dekorative Bilder).",
-    "area_altPresent_title": "<area> muss ein alt-Attribut haben",
-    "area_altPresent_description": "Prüft, ob <area>-Elemente ein alt-Attribut bereitstellen, um einen Mechanismus für eine Textalternative zu unterstützen.",
+    "area_altPresent_title": "<area> muss einen zugänglichen Namen haben",
+    "area_altPresent_description": "Prüft, ob <area>-Elemente über alt, aria-label/aria-labelledby oder title einen nicht leeren zugänglichen Namen haben.",
     "area_altPresent_summary_fail": "Fehlendes alt-Attribut auf <area>.",
-    "area_altPresent_hint_fail": "Fügen Sie ein alt-Attribut hinzu (verwenden Sie alt=\"\" nur für dekorative Bereiche).",
+    "area_altPresent_hint_fail": "Fügen Sie ein alt-Attribut hinzu, das das Linkziel beschreibt (ein <area> kann nicht dekorativ sein).",
+    "area_altPresent_summary_fail_empty": "Ein leeres alt-Attribut lässt den <area>-Link ohne zugänglichen Namen.",
+    "area_altPresent_hint_fail_empty": "Beschreiben Sie das Linkziel in alt, oder fügen Sie aria-label/aria-labelledby hinzu (ein <area> kann nicht dekorativ sein, sobald seine Map verwendet wird).",
     "inputImage_altPresent_title": "<input type=\"image\"> muss ein alt-Attribut haben",
     "inputImage_altPresent_description": "Prüft, ob <input type=\"image\">-Elemente ein alt-Attribut bereitstellen, um einen Mechanismus für eine Textalternative zu unterstützen.",
     "inputImage_altPresent_summary_fail": "Fehlendes alt-Attribut auf <input type=\"image\">.",
@@ -7815,10 +7759,6 @@ const I18N = {
     "area_altQuality_description": "Markiert <area>-Elemente mit nicht leerem Alternativtext zur manuellen Überprüfung der Angemessenheit.",
     "area_altQuality_summary_cantTell": "Überprüfen Sie den Alternativtext von <area> auf Genauigkeit und Angemessenheit.",
     "area_altQuality_hint_cantTell": "Stellen Sie sicher, dass der Alternativtext das Ziel/die Aktion des Bereichs der Image-Map im Kontext identifiziert.",
-    "area_altDecorative_title": "<area> mit alt=\"\" muss dekorativ sein (manuelle Überprüfung)",
-    "area_altDecorative_description": "Markiert <area>-Elemente mit leerem alt zur manuellen Überprüfung, ob sie dekorativ/nicht informativ sind.",
-    "area_altDecorative_summary_cantTell": "Überprüfen Sie, ob <area> dekorativ ist (alt=\"\").",
-    "area_altDecorative_hint_cantTell": "Bestätigen Sie, dass der Bereich keine Information oder Funktion vermittelt. Falls er interaktiv oder bedeutsam ist, stellen Sie einen aussagekräftigen Alternativtext bereit.",
     "inputImage_altQuality_title": "<input type=\"image\">-Alternativtext muss angemessen sein (manuelle Überprüfung)",
     "inputImage_altQuality_description": "Markiert <input type=\"image\">-Elemente mit nicht leerem Alternativtext zur manuellen Überprüfung der Angemessenheit.",
     "inputImage_altQuality_summary_cantTell": "Überprüfen Sie den Alternativtext von <input type=\"image\"> auf Genauigkeit und Angemessenheit.",
@@ -8465,10 +8405,12 @@ const I18N = {
     "img_altPresent_description": "Checks that <img> elements provide an alt attribute to support a text alternative mechanism.",
     "img_altPresent_summary_fail": "Missing alt attribute on <img>.",
     "img_altPresent_hint_fail": "Add an alt attribute (use alt=\"\" only for decorative images).",
-    "area_altPresent_title": "<area> must have an alt attribute",
-    "area_altPresent_description": "Checks that <area> elements provide an alt attribute to support a text alternative mechanism.",
+    "area_altPresent_title": "<area> must have an accessible name",
+    "area_altPresent_description": "Checks that <area> elements have a non-empty accessible name via alt, aria-label/aria-labelledby, or title.",
     "area_altPresent_summary_fail": "Missing alt attribute on <area>.",
-    "area_altPresent_hint_fail": "Add an alt attribute (use alt=\"\" only for decorative areas).",
+    "area_altPresent_hint_fail": "Add an alt attribute describing the link destination (an <area> cannot be decorative).",
+    "area_altPresent_summary_fail_empty": "Empty alt attribute leaves <area> link with no accessible name.",
+    "area_altPresent_hint_fail_empty": "Describe the link destination in alt, or add aria-label/aria-labelledby (an <area> cannot be decorative once its map is used).",
     "inputImage_altPresent_title": "<input type=\"image\"> must have an alt attribute",
     "inputImage_altPresent_description": "Checks that <input type=\"image\"> elements provide an alt attribute to support a text alternative mechanism.",
     "inputImage_altPresent_summary_fail": "Missing alt attribute on <input type=\"image\">.",
@@ -8509,10 +8451,6 @@ const I18N = {
     "area_altQuality_description": "Flags <area> elements with non-empty alt text for human review of appropriateness.",
     "area_altQuality_summary_cantTell": "Review alt text on <area> for accuracy and appropriateness.",
     "area_altQuality_hint_cantTell": "Ensure the alt text identifies the destination/action of the image map area in context.",
-    "area_altDecorative_title": "<area> with alt=\"\" must be decorative (manual review)",
-    "area_altDecorative_description": "Flags <area> elements with empty alt for human review that they are decorative/non-informative.",
-    "area_altDecorative_summary_cantTell": "Review whether <area> is decorative (alt=\"\").",
-    "area_altDecorative_hint_cantTell": "Confirm the area does not convey information or function. If it is interactive or meaningful, provide meaningful alt text.",
     "inputImage_altQuality_title": "<input type=\"image\"> alt text must be appropriate (manual review)",
     "inputImage_altQuality_description": "Flags <input type=\"image\"> elements with non-empty alt text for human review of appropriateness.",
     "inputImage_altQuality_summary_cantTell": "Review alt text on <input type=\"image\"> for accuracy and appropriateness.",
@@ -9100,7 +9038,7 @@ const I18N = {
     "identicalLinksSamePurpose_hint_cantTell": "Ensure links with the same text serve the same purpose, or make the link text distinct enough to describe each destination.",
     "ariaBrailleEquivalent_title": "aria-braillelabel/aria-brailleroledescription must have a non-braille equivalent",
     "ariaBrailleEquivalent_description": "Checks that elements using aria-braillelabel also have a regular accessible name, and elements using aria-brailleroledescription also have aria-roledescription.",
-    "ariaBrailleEquivalent_summary_fail": "This element has {{attr}} but no {{requires}}, its non-braille equivalent.",
+    "ariaBrailleEquivalent_summary_fail": "This element has {{attr}} but not {{requires}}, its non-braille equivalent.",
     "ariaBrailleEquivalent_hint_fail": "{{attr}} is a Braille-specific supplement, not a replacement, so also provide {{requires}}.",
     "ariaConditionalAttr_title": "aria-errormessage requires aria-invalid to be set to a non-false value",
     "ariaConditionalAttr_description": "Checks that elements with aria-errormessage also have aria-invalid set to \"true\", \"grammar\", or \"spelling\"; otherwise the error message is dropped from the accessibility tree.",
@@ -9159,10 +9097,12 @@ const I18N = {
     "img_altPresent_description": "Comprueba que los elementos <img> incluyan un atributo alt para ofrecer un mecanismo de alternativa textual.",
     "img_altPresent_summary_fail": "Falta el atributo alt en <img>.",
     "img_altPresent_hint_fail": "Agregar un atributo alt (usar alt=\"\" solo para imágenes decorativas).",
-    "area_altPresent_title": "<area> debe tener un atributo alt",
-    "area_altPresent_description": "Comprueba que los elementos <area> incluyan un atributo alt para ofrecer un mecanismo de alternativa textual.",
+    "area_altPresent_title": "<area> debe tener un nombre accesible",
+    "area_altPresent_description": "Comprueba que los elementos <area> tengan un nombre accesible no vacío mediante alt, aria-label/aria-labelledby o title.",
     "area_altPresent_summary_fail": "Falta el atributo alt en <area>.",
-    "area_altPresent_hint_fail": "Agregar un atributo alt (usar alt=\"\" solo para áreas decorativas).",
+    "area_altPresent_hint_fail": "Agregar un atributo alt que describa el destino del enlace (un <area> no puede ser decorativa).",
+    "area_altPresent_summary_fail_empty": "Un atributo alt vacío deja el enlace <area> sin nombre accesible.",
+    "area_altPresent_hint_fail_empty": "Describir el destino del enlace en alt, o agregar aria-label/aria-labelledby (un <area> no puede ser decorativa una vez que su mapa está en uso).",
     "inputImage_altPresent_title": "<input type=\"image\"> debe tener un atributo alt",
     "inputImage_altPresent_description": "Comprueba que los elementos <input type=\"image\"> incluyan un atributo alt para ofrecer un mecanismo de alternativa textual.",
     "inputImage_altPresent_summary_fail": "Falta el atributo alt en <input type=\"image\">.",
@@ -9203,10 +9143,6 @@ const I18N = {
     "area_altQuality_description": "Señala elementos <area> con texto alt no vacío para su revisión manual en cuanto a idoneidad.",
     "area_altQuality_summary_cantTell": "Revisar el texto alt de <area> en cuanto a exactitud e idoneidad.",
     "area_altQuality_hint_cantTell": "Asegurarse de que el texto alt identifique el destino o la acción del área del mapa de imagen en su contexto.",
-    "area_altDecorative_title": "<area> con alt=\"\" debe ser decorativa (revisión manual)",
-    "area_altDecorative_description": "Señala elementos <area> con alt vacío para su revisión manual de que son decorativos o no informativos.",
-    "area_altDecorative_summary_cantTell": "Revisar si <area> es decorativa (alt=\"\").",
-    "area_altDecorative_hint_cantTell": "Confirmar que el área no transmite información ni función. Si es interactiva o significativa, proporcionar un texto alt significativo.",
     "inputImage_altQuality_title": "El texto alt de <input type=\"image\"> debe ser apropiado (revisión manual)",
     "inputImage_altQuality_description": "Señala elementos <input type=\"image\"> con texto alt no vacío para su revisión manual en cuanto a idoneidad.",
     "inputImage_altQuality_summary_cantTell": "Revisar el texto alt de <input type=\"image\"> en cuanto a exactitud e idoneidad.",
@@ -9853,10 +9789,12 @@ const I18N = {
     "img_altPresent_description": "Vérifie que les éléments <img> fournissent un attribut alt afin de proposer un mécanisme d’alternative textuelle.",
     "img_altPresent_summary_fail": "Attribut alt manquant sur <img>.",
     "img_altPresent_hint_fail": "Ajoutez un attribut alt (utilisez alt=\"\" uniquement pour les images décoratives).",
-    "area_altPresent_title": "<area> doit avoir un attribut alt",
-    "area_altPresent_description": "Vérifie que les éléments <area> fournissent un attribut alt afin de proposer un mécanisme d’alternative textuelle.",
+    "area_altPresent_title": "<area> doit avoir un nom accessible",
+    "area_altPresent_description": "Vérifie que les éléments <area> ont un nom accessible non vide via alt, aria-label/aria-labelledby ou title.",
     "area_altPresent_summary_fail": "Attribut alt manquant sur <area>.",
-    "area_altPresent_hint_fail": "Ajoutez un attribut alt (utilisez alt=\"\" uniquement pour les zones décoratives).",
+    "area_altPresent_hint_fail": "Ajoutez un attribut alt décrivant la destination du lien (une <area> ne peut pas être décorative).",
+    "area_altPresent_summary_fail_empty": "Un attribut alt vide laisse le lien <area> sans nom accessible.",
+    "area_altPresent_hint_fail_empty": "Décrivez la destination du lien dans alt, ou ajoutez aria-label/aria-labelledby (une <area> ne peut pas être décorative une fois sa carte utilisée).",
     "inputImage_altPresent_title": "<input type=\"image\"> doit avoir un attribut alt",
     "inputImage_altPresent_description": "Vérifie que les éléments <input type=\"image\"> fournissent un attribut alt afin de proposer un mécanisme d’alternative textuelle.",
     "inputImage_altPresent_summary_fail": "Attribut alt manquant sur <input type=\"image\">.",
@@ -9897,10 +9835,6 @@ const I18N = {
     "area_altQuality_description": "Signale les éléments <area> dont l’attribut alt n’est pas vide afin de vérifier manuellement sa pertinence.",
     "area_altQuality_summary_cantTell": "Vérifiez le texte alt de <area> (exactitude et pertinence).",
     "area_altQuality_hint_cantTell": "Assurez-vous que le texte alt identifie la destination/l’action de la zone dans son contexte.",
-    "area_altDecorative_title": "<area> avec alt=\"\" : décoratif à confirmer (revue manuelle)",
-    "area_altDecorative_description": "Signale les éléments <area> dont l’attribut alt est vide afin de confirmer qu’ils sont décoratifs ou non informatifs.",
-    "area_altDecorative_summary_cantTell": "Vérifiez si <area> est décoratif (alt=\"\").",
-    "area_altDecorative_hint_cantTell": "Confirmez que la zone n’a pas de fonction ni d’information. Sinon, fournissez un texte alt pertinent.",
     "inputImage_altQuality_title": "<input type=\"image\"> : texte alt à vérifier (revue manuelle)",
     "inputImage_altQuality_description": "Signale les éléments <input type=\"image\"> dont l’attribut alt n’est pas vide afin de vérifier manuellement sa pertinence.",
     "inputImage_altQuality_summary_cantTell": "Vérifiez le texte alt de <input type=\"image\"> (exactitude et pertinence).",
@@ -12476,6 +12410,14 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
   // -------- Effective foreground/background memoization --------
 
+  // Populated by resolveGroupOpacityColors (defined near
+  // getComputabilityBlocker, below) for the narrow ancestor-opacity case
+  // it can safely resolve. Checked first by both functions below so a
+  // rule computing fg/bg right after a clean computability check gets the
+  // correctly group-composited colors without needing to know that case
+  // was ever in play.
+  const __groupOpacityOverrideCache = new WeakMap();
+
   const __localEffectiveForegroundCache = new WeakMap();
   const __effectiveForegroundCache =
     __getSharedWeakMapCache('__effectiveForegroundCache') || __localEffectiveForegroundCache;
@@ -12483,6 +12425,19 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   function computeEffectiveForeground(el) {
     try {
       if (el && __effectiveForegroundCache.has(el)) return __effectiveForegroundCache.get(el);
+    } catch (_e) {}
+
+    try {
+      const override = el && __groupOpacityOverrideCache.get(el);
+      if (override) {
+        const out = {
+          rgba: { r: override.fg.r, g: override.fg.g, b: override.fg.b, a: 1 },
+          alpha: 1,
+          opacityProduct: 1
+        };
+        __effectiveForegroundCache.set(el, out);
+        return out;
+      }
     } catch (_e) {}
 
     const cs = __contrastComputedStyle(el);
@@ -12526,6 +12481,19 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   }
 
   function computeEffectiveBackground(el, opts2) {
+    try {
+      const override = el && __groupOpacityOverrideCache.get(el);
+      if (override) {
+        return {
+          ok: true,
+          rgba: { r: override.bg.r, g: override.bg.g, b: override.bg.b, a: 1 },
+          alpha: 1,
+          stack: [],
+          reasonCode: null
+        };
+      }
+    } catch (_e) {}
+
     const __bgKey = __bgCacheKey(opts2);
     const __collectStack = !!(opts2 && opts2.collectStack);
 
@@ -12689,6 +12657,110 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
   }
 
+  // -------- Group-opacity contrast resolution (narrow, safe case) --------
+
+  // getComputabilityBlocker's default policy treats any ANCESTOR (not el
+  // itself) with fractional opacity as an unconditional blocker, because
+  // naively combining the existing per-element opacity product (folded
+  // into the foreground via computeOpacityProduct, which walks ALL
+  // ancestors) with the existing ancestor-opacity-aware background walk
+  // (computeEffectiveBackground, which ALSO folds ancestor opacity into
+  // its own compositing) double-counts the ancestor's opacity: a
+  // foreground already darkened by the full ancestor-inclusive opacity
+  // product, composited against a background that separately already
+  // absorbed that same opacity, applies the ancestor's dimming twice and
+  // lands on a lighter (wrong) color than real compositing produces
+  // whenever the local and external colors actually differ. Verified by
+  // hand against a real rendered screenshot.
+  //
+  // This resolves both colors in a single walk instead, tracking a
+  // background accumulator (as computeEffectiveBackground already does)
+  // and a parallel foreground accumulator that receives el's own text
+  // color as its innermost layer at el's own level, then applying every
+  // ancestor's own background-color and opacity to BOTH accumulators in
+  // lockstep. Nothing is combined after the fact, so there's nothing to
+  // double-count, and it handles any number of nested opacity ancestors
+  // -- each with its own background-color or not -- uniformly. It only
+  // bails (returns null, leaving the existing ANCESTOR_OPACITY cantTell
+  // in place) for a blend-mode/filter/background-image anywhere in the
+  // chain, a missing declared text color, or a background that never
+  // reaches full opacity even after the whole chain is walked.
+  function resolveGroupOpacityColors(el) {
+    try {
+      if (el && __groupOpacityOverrideCache.has(el)) return __groupOpacityOverrideCache.get(el);
+    } catch (_e) {}
+
+    function __cacheAndReturn(res) {
+      try {
+        if (el) __groupOpacityOverrideCache.set(el, res);
+      } catch (_e) {}
+      return res;
+    }
+
+    try {
+      if (!el || el.nodeType !== 1) return __cacheAndReturn(null);
+
+      const elCs = __contrastComputedStyle(el);
+      const elColor = parseCssColorToRgba(elCs && elCs.color);
+      if (!elColor) return __cacheAndReturn(null);
+
+      let bgAcc = { r: 0, g: 0, b: 0, a: 0 };
+      let fgAcc = { r: 0, g: 0, b: 0, a: 0 };
+      let cur = el;
+      let guard = 0;
+
+      while (cur && guard++ < 200) {
+        if (cur.nodeType !== 1) {
+          cur = composedParent(cur);
+          continue;
+        }
+        const cs = __contrastComputedStyle(cur);
+
+        if (
+          __hasBlendModeEl(cur, cs) ||
+          __hasFilterEl(cur, cs) ||
+          __hasBackgroundImageOrGradientEl(cur, cs)
+        ) {
+          return __cacheAndReturn(null);
+        }
+
+        const bg = parseCssColorToRgba(cs && cs.backgroundColor);
+        if (bg) {
+          const layer = { r: bg.r, g: bg.g, b: bg.b, a: clamp01(bg.a) };
+          bgAcc = compositeRgba(bgAcc, layer);
+          fgAcc = compositeRgba(fgAcc, layer);
+        }
+
+        if (cur === el) {
+          // el's own text color is the innermost foreground layer,
+          // painted over whatever el's own background (if any) already
+          // contributed to fgAcc above.
+          fgAcc = compositeRgba(
+            { r: elColor.r, g: elColor.g, b: elColor.b, a: clamp01(elColor.a) },
+            fgAcc
+          );
+        }
+
+        const op = clamp01(Number.parseFloat(cs && cs.opacity != null ? cs.opacity : '1'));
+        if (op < 1) {
+          bgAcc = { r: bgAcc.r, g: bgAcc.g, b: bgAcc.b, a: clamp01(bgAcc.a * op) };
+          fgAcc = { r: fgAcc.r, g: fgAcc.g, b: fgAcc.b, a: clamp01(fgAcc.a * op) };
+        }
+
+        cur = composedParent(cur);
+      }
+
+      if (bgAcc.a < 1 || fgAcc.a < 1) return __cacheAndReturn(null);
+
+      return __cacheAndReturn({
+        fg: { r: fgAcc.r, g: fgAcc.g, b: fgAcc.b },
+        bg: { r: bgAcc.r, g: bgAcc.g, b: bgAcc.b }
+      });
+    } catch (_e) {
+      return __cacheAndReturn(null);
+    }
+  }
+
   // -------- Computability blocker (memoized per element, per run) --------
 
   const __localComputabilityBlockerCache = new WeakMap();
@@ -12833,23 +12905,34 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
       // An ANCESTOR (not el itself) with fractional opacity is treated
       // as a computability blocker rather than being folded into a
-      // confident ratio. Group opacity uniformly scales an ancestor's
-      // *entire* rendered subtree (its own background AND everything
-      // already accumulated from descendants, including el's text)
-      // when compositing against what's behind it. Computing that
-      // precisely for the foreground would require re-deriving the
-      // text's rendered color the same way the background is folded
-      // (rather than compositing a separately opacity-scaled
-      // foreground against the fully-folded background, which
-      // double-counts the ancestor's opacity). Rather than risk a
-      // confidently wrong pass/fail from that mismatch, defer to
-      // manual review. (el's own opacity, if any, does not trigger
-      // this: it is already handled correctly by the existing
-      // per-element opacity product used for the foreground.)
+      // confident ratio, UNLESS resolveGroupOpacityColors can resolve it
+      // safely (see its own header comment): el's local background is
+      // opaque before the opacity ancestor, that ancestor paints nothing
+      // of its own, and the backdrop beyond it resolves cleanly. That
+      // covers the common case -- a semi-transparent wrapper with no
+      // background of its own -- without risking the double-counted,
+      // confidently-wrong ratio a naive combination of the existing
+      // per-element foreground and ancestor-aware background would
+      // produce for the general case. (el's own opacity, if any, does not
+      // trigger this at all: it is already handled correctly by the
+      // existing per-element opacity product used for the foreground.)
       if (cur !== el) {
         const ancestorOpacity = clamp01(
           Number.parseFloat(cs && cs.opacity != null ? cs.opacity : '1')
         );
+        if (ancestorOpacity < 1 && resolveGroupOpacityColors(el)) {
+          const out = {
+            ok: true,
+            reasonCode: null,
+            blockerSelector: '',
+            blockerProperty: '',
+            blockerValue: ''
+          };
+          try {
+            if (el) __computabilityBlockerCache.set(el, out);
+          } catch (_e) {}
+          return out;
+        }
         if (ancestorOpacity < 1) {
           const out = {
             ok: false,
@@ -14634,25 +14717,23 @@ const createDomHelpers = (function createDomHelpers(opts) {
   }
 
   function hasBlockingInert(node) {
-    // Default behavior: inert anywhere in ancestorsIncludingSelf blocks.
     if (!isElement(node)) return false;
 
     const tag = (node.tagName || '').toLowerCase();
     const isArea = tag === 'area';
-
-    let mapEl = null;
-    if (isArea) mapEl = getClosestMap(node);
+    const mapEl = isArea ? getClosestMap(node) : null;
 
     const chain = ancestorsIncludingSelf(node);
 
     for (const a of chain) {
       if (!isElement(a)) continue;
 
-      // Exception: for <area>, inert on itself or on its <map> does NOT block
-      if (isArea) {
-        if (a === node) continue; // ignore <area inert>
-        if (mapEl && a === mapEl) continue; // ignore <map inert>
-      }
+      // <area>/<map> generate no box, so a real browser's image-map
+      // hit-testing sits outside the pipeline inert operates on. Verified
+      // against Chromium and Firefox: inert on the area or its map does
+      // not remove it from the tab order. Only inert on a genuine ancestor
+      // of the <img>+<map> pairing does.
+      if (isArea && (a === node || a === mapEl)) continue;
 
       if (a.hasAttribute && a.hasAttribute('inert')) return true;
     }
@@ -14965,24 +15046,30 @@ const createDomHelpers = (function createDomHelpers(opts) {
       if (href && href.trim()) return true;
     }
     if (tag === 'area') {
-      // Engine policy: treat <area> as focusable when it's part of a *used* image map.
-      const map = getClosestMap(el);
-      if (map) {
-        const rawName = (
-          map.getAttribute &&
-          (map.getAttribute('name') || map.getAttribute('id') || '')
-        ).trim();
-        if (rawName && document && document.querySelector) {
-          const esc = __cssEscapeSafe;
-          const n = esc(rawName);
+      // Engine policy: treat <area href> as focusable when it's part of a
+      // *used* image map. Without href an <area> is not a hyperlink at all
+      // per the HTML spec, so it falls through to the generic tabindex
+      // check below, same as any other non-interactive element.
+      const href = el.getAttribute && el.getAttribute('href');
+      if (href && href.trim()) {
+        const map = getClosestMap(el);
+        if (map) {
+          const rawName = (
+            map.getAttribute &&
+            (map.getAttribute('name') || map.getAttribute('id') || '')
+          ).trim();
+          if (rawName && document && document.querySelector) {
+            const esc = __cssEscapeSafe;
+            const n = esc(rawName);
 
-          // Be practical: accept both "#name" and "name", and ignore case.
-          const sels = [`img[usemap="#${n}" i]`, `img[usemap="${n}" i]`];
+            // Be practical: accept both "#name" and "name", and ignore case.
+            const sels = [`img[usemap="#${n}" i]`, `img[usemap="${n}" i]`];
 
-          for (const sel of sels) {
-            try {
-              if (document.querySelector(sel)) return true;
-            } catch {}
+            for (const sel of sels) {
+              try {
+                if (document.querySelector(sel)) return true;
+              } catch {}
+            }
           }
         }
       }
@@ -15762,6 +15849,23 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // bounded `closest('label')` walk answers the same question without it.
   function getAssociatedLabelElements(el) {
     const out = [];
+    // A <label> -- wrapping or via `for` -- only ever associates with a
+    // labelable element (LABELABLE_SELECTOR, same spec category). The
+    // wrapping branch below already enforces this by construction
+    // (`firstControl === el`, found via LABELABLE_SELECTOR); the `for`
+    // branch doesn't derive it the same way, so it's checked directly here
+    // instead. Verified against real Chromium and Firefox: a
+    // `<label for="x">`/wrapping `<label>` around a non-labelable element
+    // (e.g. a `<div role="combobox">`) produces no accessible name in
+    // either browser's accessibility tree.
+    let isLabelable;
+    try {
+      isLabelable = !!(el && el.matches && el.matches(LABELABLE_SELECTOR));
+    } catch {
+      isLabelable = false;
+    }
+    if (!isLabelable) return out;
+
     const id = trim(getAttr(el, 'id'));
     if (id) {
       const forLabels = __getLabelElementsForId(id);
@@ -15896,7 +16000,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
     const mode =
       opts && opts.visibilityMode === 'styleAndGeometry' ? 'styleAndGeometry' : 'styleOnly';
     const disableGeometry = !!(opts && opts.disableGeometry === true);
-    return mode + '|' + (disableGeometry ? 'dg1' : 'dg0');
+    const ignoreOpacity = !!(opts && opts.ignoreOpacity === true);
+    return mode + '|' + (disableGeometry ? 'dg1' : 'dg0') + '|' + (ignoreOpacity ? 'io1' : 'io0');
   }
 
   function __getNameOptsKey(opts) {
@@ -15976,6 +16081,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
     }
 
     const chain = ancestorsIncludingSelf(node);
+    const __tag0 = (node.tagName || '').toLowerCase();
+    const __isAreaNode = __tag0 === 'area';
+    const __ownMapEl = __isAreaNode ? getClosestMap(node) : null;
 
     // 1) HTML/DOM hiding
     for (const a of chain) {
@@ -16045,6 +16153,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
         if (hiddenVal === 'until-found') struct = null;
       }
 
+      // Same non-rendered-element reasoning as hasBlockingInert: a plain
+      // `hidden` on the area or its map doesn't remove it from the tab
+      // order either (verified alongside inert, Chromium and Firefox).
+      if (struct === 'hiddenAttr' && __isAreaNode && (a === node || a === __ownMapEl)) {
+        struct = null;
+      }
+
       if (struct) return __cacheAndReturn({ eligible: false, reasons: [struct] });
     }
     if (inClosedDetailsContent(node))
@@ -16083,6 +16198,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
         const tn = (a.tagName || '').toLowerCase();
         if (tn === 'area') continue;
       }
+
+      // Same reasoning extends to its <map>: a used map's hotspot ignores
+      // display:none on the <map> itself in a real browser (verified
+      // alongside inert and hidden, Chromium and Firefox).
+      if (__isAreaNode && __ownMapEl && a === __ownMapEl) continue;
 
       // Cache ancestor CSS blockers (display) per scope.
       let cssBlock = null;
@@ -20320,65 +20440,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "mappings": null
   },
   {
-    "ruleId": "area-alt-decorative",
-    "title": "<area> with alt=\"\" must be decorative (manual review)",
-    "description": "Flags <area> elements with empty alt for human review that they are decorative/non-informative.",
-    "i18n": {
-      "titleKey": "area_altDecorative_title",
-      "descriptionKey": "area_altDecorative_description"
-    },
-    "helpUrl": "",
-    "tags": [
-      "wcag2a",
-      "wcag111",
-      "nontext",
-      "images",
-      "imagemap",
-      "manual",
-      "atomic",
-      "a11ycore"
-    ],
-    "wcagSc": [
-      "1.1.1"
-    ],
-    "normativeMappings": [
-      {
-        "standard": "WCAG",
-        "version": "2.2",
-        "requirement": "1.1.1",
-        "title": "Non-text Content",
-        "conformanceLevel": "A"
-      }
-    ],
-    "defaultSeverity": "minor",
-    "defaultConfidence": "medium",
-    "type": "manual",
-    "coverage": {
-      "facetsBySc": {
-        "1.1.1": [
-          "text-alternative-quality"
-        ]
-      }
-    },
-    "data": null,
-    "ruleInterfaceVersion": "1.0.0",
-    "ruleVersion": "0.0.0",
-    "normative": true,
-    "atomic": true,
-    "deprecated": false,
-    "deprecation": null,
-    "category": "perceivable",
-    "standard": null,
-    "applicability": "",
-    "expectation": "",
-    "references": [],
-    "requirements": null,
-    "mappings": null
-  },
-  {
     "ruleId": "area-alt-present",
-    "title": "<area> must have an alt attribute",
-    "description": "Checks that <area> elements provide an alt attribute to support a text alternative mechanism.",
+    "title": "<area> must have an accessible name",
+    "description": "Checks that <area> elements have a non-empty accessible name via alt, aria-label/aria-labelledby, or title.",
     "i18n": {
       "titleKey": "area_altPresent_title",
       "descriptionKey": "area_altPresent_description"
@@ -27341,7 +27405,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "area-alt-present",
       "img-alt-decorative",
       "img-alt-quality",
-      "area-alt-decorative",
       "area-alt-quality",
       "canvas-text-alternative-quality",
       "canvas-text-alternative-present",
@@ -27948,204 +28011,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     occurrences
   };
 }), applicability: null },
-    "area-alt-decorative": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-  const safeRoot = root || document;
-
-  const queryAllSmart =
-    helpers && typeof helpers.queryAllSmart === 'function' ? helpers.queryAllSmart : null;
-  const queryAll =
-    helpers && typeof helpers.queryAll === 'function'
-      ? helpers.queryAll
-      : (sel) => {
-          try {
-            return safeRoot && safeRoot.querySelectorAll
-              ? Array.from(safeRoot.querySelectorAll(sel))
-              : [];
-          } catch {
-            return [];
-          }
-        };
-
-  const __accEligCache = new WeakMap();
-  function accEligibleCached(node) {
-    if (!isAccTreeEligible) return { eligible: true, reasons: [] };
-    if (!node || typeof node !== 'object') return { eligible: true, reasons: [] };
-    const cached = __accEligCache.get(node);
-    if (cached) return cached;
-    let res;
-    try {
-      res = isAccTreeEligible(node, ctx);
-    } catch {
-      res = { eligible: true, reasons: [] };
-    }
-    res = res && typeof res === 'object' ? res : { eligible: !!res, reasons: [] };
-    __accEligCache.set(node, res);
-    return res;
-  }
-
-  const getEligibilityInfo =
-    helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
-
-  const isAccTreeEligible =
-    helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
-
-  // --- image-map semantics (rule-local; match automatic <area> applicability) ---
-  function normUsemap(val) {
-    try {
-      const t = String(val || '').trim();
-      if (!t) return '';
-      return t[0] === '#' ? t.slice(1).trim().toLowerCase() : t.toLowerCase();
-    } catch {
-      return '';
-    }
-  }
-
-  function getMapName(mapEl) {
-    try {
-      if (!mapEl || !mapEl.getAttribute) return '';
-      const n = String(mapEl.getAttribute('name') || mapEl.getAttribute('id') || '').trim();
-      return n ? n.toLowerCase() : '';
-    } catch {
-      return '';
-    }
-  }
-
-  const getFocusableInfo =
-    helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
-
-  function isRolePresentationExcluded(el) {
-    const role = (() => {
-      try {
-        return String(el.getAttribute('role') || '')
-          .trim()
-          .toLowerCase();
-      } catch {
-        return '';
-      }
-    })();
-    if (role !== 'presentation' && role !== 'none') return false;
-
-    // Exclude only when NOT focusable (mirrors img-alt-present policy)
-    let focusable;
-    if (getFocusableInfo) {
-      const fi = (() => {
-        try {
-          return getFocusableInfo(el, ctx);
-        } catch {
-          return null;
-        }
-      })();
-      focusable = !!(fi && fi.focusable);
-    } else {
-      const tabindex = el.getAttribute('tabindex');
-      focusable =
-        tabindex != null &&
-        String(tabindex).trim() !== '' &&
-        !Number.isNaN(Number(String(tabindex).trim()));
-    }
-    return !focusable;
-  }
-
-  const els = (() => {
-    try {
-      return Array.from((queryAllSmart ? queryAllSmart('area') : queryAll('area')) || []);
-    } catch {
-      return queryAll('area');
-    }
-  })();
-
-  const __usemapIndex = new Map(); // mapName -> img (first in document order)
-  try {
-    const imgs = Array.from(document.querySelectorAll('img[usemap]'));
-    for (const img of imgs) {
-      const u = normUsemap(img.getAttribute('usemap'));
-      if (!u) continue;
-      if (!__usemapIndex.has(u)) __usemapIndex.set(u, img); // keep first match only
-    }
-  } catch {}
-
-  if (!els.length) {
-    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
-  }
-
-  const occurrences = [];
-  let applicableCount = 0;
-
-  for (const el of els) {
-    if (!el || !el.getAttribute) continue;
-
-    // Must belong to a *used* image map (referenced by an <img usemap>). If unused, not applicable.
-    let img;
-    try {
-      const map = el.closest && el.closest('map');
-      const mapName = map ? getMapName(map) : '';
-      img = mapName ? __usemapIndex.get(mapName) || null : null;
-    } catch {
-      img = null;
-    }
-    if (!img) continue;
-
-    // The referencing <img> must be eligible in the accessibility tree.
-    if (isAccTreeEligible) {
-      const imgElig = accEligibleCached(img);
-      if (imgElig && imgElig.eligible === false) continue;
-    }
-
-    if (isAccTreeEligible) {
-      const elig = (() => {
-        try {
-          return isAccTreeEligible(el, ctx);
-        } catch {
-          return { eligible: true, reasons: [] };
-        }
-      })();
-      if (elig && elig.eligible === false) continue;
-    }
-
-    if (isRolePresentationExcluded(el)) continue;
-
-    // Rule-specific applicability (only elements that already have a text alternative mechanism)
-    let alt;
-    try {
-      alt = el.getAttribute('alt');
-    } catch {
-      alt = null;
-    }
-    if (alt === null) continue;
-    if (String(alt).trim() !== '') continue; // only alt=""
-
-    applicableCount += 1;
-
-    const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
-
-    const baseOccurrence = {
-      summary: 'Review whether <area> is decorative (alt="").',
-      hint: 'Confirm the area does not convey information or function. If it is interactive or meaningful, provide meaningful alt text.',
-      i18n: {
-        summaryKey: 'area_altDecorative_summary_cantTell',
-        hintKey: 'area_altDecorative_hint_cantTell',
-        params: { element: (el.tagName || '').toLowerCase() }
-      },
-      data: {
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
-        details: null
-      }
-    };
-
-    if (helpers && typeof helpers.reportOccurrence === 'function') {
-      occurrences.push(helpers.reportOccurrence(el, baseOccurrence));
-    } else {
-      occurrences.push({ selector: '', html: '', ...baseOccurrence });
-    }
-  }
-
-  if (applicableCount === 0) {
-    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
-  }
-
-  return { ruleId: rule.ruleId, outcome: 'cantTell', severity: 'minor', occurrences };
-}), applicability: null },
     "area-alt-present": { run: (function runInPage(ctx) {
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
@@ -28170,6 +28035,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const isAccTreeEligible =
     helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+
+  const isDomVisibleEligible =
+    helpers && typeof helpers.isDomVisibleEligible === 'function'
+      ? helpers.isDomVisibleEligible
+      : null;
 
   const getAriaNameInfo =
     helpers && typeof helpers.getAriaNameInfo === 'function' ? helpers.getAriaNameInfo : null;
@@ -28251,17 +28121,32 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const img = getReferencingImgForArea(el);
     if (!img) continue;
 
-    // 1) The referencing <img> must itself be eligible in the acc tree.
-    // This is the "visibility of map/area doesn't matter; the image does" policy.
-    if (isAccTreeEligible) {
-      const imgElig = (() => {
+    // 0b) Without href an <area> is not a hyperlink at all per the HTML
+    // spec -- just a shape with no associated action -- so it has nothing
+    // for this rule to name.
+    const hrefRaw = el.getAttribute('href');
+    if (!hrefRaw || !hrefRaw.trim()) continue;
+
+    // 1) The referencing <img> must actually be rendered: a used map's
+    // hotspots depend on the img's box, not its accessibility-tree
+    // exposure. <area> is not a DOM descendant of <img> -- only linked by
+    // the usemap IDREF -- so aria-hidden on the img has nothing to
+    // propagate along (verified against Chromium and Firefox: the area
+    // stays reachable regardless). hidden/display:none/visibility on the
+    // img itself still excludes it, since that removes the box the
+    // hotspot geometry depends on.
+    if (isDomVisibleEligible) {
+      const imgVis = (() => {
         try {
-          return isAccTreeEligible(img, ctx);
+          return isDomVisibleEligible(img, ctx, {
+            visibilityMode: 'styleOnly',
+            disableGeometry: true
+          });
         } catch {
           return { eligible: true, reasons: [] };
         }
       })();
-      if (imgElig && imgElig.eligible === false) continue;
+      if (imgVis && imgVis.eligible === false) continue;
     }
 
     // 2) The <area> itself must be eligible (aria-hidden/inert exceptions handled by helper).
@@ -28279,8 +28164,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // From here: applicable
     applicableCount += 1;
 
-    const hasAlt = el.getAttribute('alt') !== null;
-    if (hasAlt) continue;
+    let altRaw;
+    try {
+      altRaw = el.getAttribute('alt');
+    } catch {
+      altRaw = null;
+    }
+    const hasAltAttr = altRaw !== null;
+    const altGivesName = hasAltAttr && String(altRaw).trim() !== '';
+    if (altGivesName) continue;
+
+    // alt="" is not decorative on an <area>: a used map's area is always a
+    // link, so it needs a name from elsewhere or it fails.
 
     // aria-label / aria-labelledby is also a valid, standards-recognized
     // text-alternative mechanism for <area> (HTML-AAM accessible name
@@ -28296,8 +28191,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
 
     // A non-empty title attribute is HTML-AAM's own next fallback naming
-    // source once alt is entirely absent. Same gap img-alt-present handles
-    // for <img title="..."> with no alt.
+    // source once alt gives no name (missing or empty). Same gap
+    // img-alt-present handles for <img title="..."> with no alt.
     const titleRaw = (() => {
       try {
         return el.getAttribute('title');
@@ -28309,21 +28204,36 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
-    const baseOccurrence = {
-      // Leave selector/html empty so the engine can fill them from __node.
-      selector: '',
-      html: '',
-      summary: 'Missing alt attribute on &lt;area&gt;.',
-      hint: 'Add an alt attribute (use alt="" only for decorative areas).',
-      i18n: {
-        summaryKey: 'area_altPresent_summary_fail',
-        hintKey: 'area_altPresent_hint_fail',
-        params: { element: 'area' }
-      },
-      data: {
-        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
-      }
-    };
+    const baseOccurrence = hasAltAttr
+      ? {
+          // Leave selector/html empty so the engine can fill them from __node.
+          selector: '',
+          html: '',
+          summary: 'Empty alt attribute leaves &lt;area&gt; link with no accessible name.',
+          hint: 'Describe the link destination in alt, or add aria-label/aria-labelledby (an <area> cannot be decorative once its map is used).',
+          i18n: {
+            summaryKey: 'area_altPresent_summary_fail_empty',
+            hintKey: 'area_altPresent_hint_fail_empty',
+            params: { element: 'area' }
+          },
+          data: {
+            visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+          }
+        }
+      : {
+          selector: '',
+          html: '',
+          summary: 'Missing alt attribute on &lt;area&gt;.',
+          hint: 'Add an alt attribute describing the link destination (an <area> cannot be decorative).',
+          i18n: {
+            summaryKey: 'area_altPresent_summary_fail',
+            hintKey: 'area_altPresent_hint_fail',
+            params: { element: 'area' }
+          },
+          data: {
+            visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+          }
+        };
 
     if (helpers && typeof helpers.reportOccurrence === 'function') {
       occurrences.push(helpers.reportOccurrence(el, baseOccurrence));
@@ -28373,6 +28283,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const isAccTreeEligible =
     helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
 
+  const isDomVisibleEligible =
+    helpers && typeof helpers.isDomVisibleEligible === 'function'
+      ? helpers.isDomVisibleEligible
+      : null;
+
   const __accEligCache = new WeakMap();
   function accEligibleCached(node) {
     if (!isAccTreeEligible) return { eligible: true, reasons: [] };
@@ -28387,6 +28302,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
     r = r && typeof r === 'object' ? r : { eligible: !!r, reasons: [] };
     __accEligCache.set(node, r);
+    return r;
+  }
+
+  const __domVisCache = new WeakMap();
+  function domVisibleCached(node) {
+    if (!isDomVisibleEligible) return { eligible: true, reasons: [] };
+    if (!node || typeof node !== 'object') return { eligible: true, reasons: [] };
+    const c = __domVisCache.get(node);
+    if (c) return c;
+    let r;
+    try {
+      r = isDomVisibleEligible(node, ctx, { visibilityMode: 'styleOnly', disableGeometry: true });
+    } catch {
+      r = { eligible: true, reasons: [] };
+    }
+    r = r && typeof r === 'object' ? r : { eligible: !!r, reasons: [] };
+    __domVisCache.set(node, r);
     return r;
   }
 
@@ -28485,10 +28417,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
     if (!img) continue;
 
-    // The referencing <img> must be eligible in the accessibility tree.
-    if (isAccTreeEligible) {
-      const imgElig = accEligibleCached(img);
-      if (imgElig && imgElig.eligible === false) continue;
+    // Without href an <area> is not a hyperlink at all per the HTML spec,
+    // so there is nothing here for this rule to review.
+    const hrefRaw = el.getAttribute('href');
+    if (!hrefRaw || !hrefRaw.trim()) continue;
+
+    // The referencing <img> must actually be rendered. <area> is not a DOM
+    // descendant of <img>, so aria-hidden on the img has nothing to
+    // propagate along; hidden/display:none/visibility on the img still
+    // excludes it, since that removes the box the hotspot depends on.
+    if (isDomVisibleEligible) {
+      const imgVis = domVisibleCached(img);
+      if (imgVis && imgVis.eligible === false) continue;
     }
 
     if (isAccTreeEligible) {
@@ -29571,7 +29511,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     for (const m of missing) {
       occurrences.push(
         helpers.reportOccurrence(el, {
-          summary: `This element has ${m.attr} but no ${m.requires}, its non-braille equivalent.`,
+          summary: `This element has ${m.attr} but not ${m.requires}, its non-braille equivalent.`,
           hint: `${m.attr} is a Braille-specific supplement, not a replacement, so also provide ${m.requires}.`,
           i18n: {
             summaryKey: 'ariaBrailleEquivalent_summary_fail',
@@ -34014,21 +33954,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
-  function buildLabelForMap(doc) {
-    const map = new Map(); // id -> label element (first)
-    try {
-      const labels = doc && doc.getElementsByTagName ? doc.getElementsByTagName('label') : [];
-      for (let i = 0; i < labels.length; i += 1) {
-        const lab = labels[i];
-        if (!lab || !lab.getAttribute) continue;
-        const f = normalizeWs(lab.getAttribute('for'));
-        if (!f) continue;
-        if (!map.has(f)) map.set(f, lab);
-      }
-    } catch {}
-    return map;
-  }
-
   function getConservativeSubtreeText(document, container) {
     // "Name from content", recurses into descendants and uses each one's
     // own accessible name (img alt, aria-label/aria-labelledby, title) when
@@ -34116,42 +34041,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
 
-  // Precompute label[for] map for combobox elements that are labelable
-  // native form controls (e.g. <input role="combobox">).
-  const labelForMap = buildLabelForMap(document);
-
+  // Delegates to the shared, spec-guarded lookup (dom-helpers.js's
+  // getAssociatedLabelElements): a <label> -- wrapping or via `for` --
+  // only ever associates with a genuinely labelable element, so this
+  // correctly returns nothing for role-only widgets a <label> merely sits
+  // next to, and the real thing for a labelable element like
+  // <input role="combobox">.
   function getNativeLabelText(el) {
+    if (!helpers || typeof helpers.getAssociatedLabelElements !== 'function') return '';
+    let labels;
     try {
-      if ('labels' in el && el.labels && el.labels.length) {
-        const parts = [];
-        const max = Math.min(4, el.labels.length);
-        for (let i = 0; i < max; i += 1) {
-          const lab = el.labels[i];
-          const t = lab ? getLabelText(lab) : '';
-          if (t) parts.push(t);
-        }
-        const joined = normalizeWs(parts.join(' '));
-        if (joined) return joined;
-      }
-    } catch {}
-    try {
-      if (el.closest) {
-        const wrap = el.closest('label');
-        if (wrap) {
-          const t = getLabelText(wrap);
-          if (t) return t;
-        }
-      }
-    } catch {}
-    try {
-      const idAttr = getAttr(el, 'id');
-      if (idAttr && labelForMap.has(idAttr)) {
-        const lab = labelForMap.get(idAttr);
-        const t = lab ? getLabelText(lab) : '';
-        if (t) return t;
-      }
-    } catch {}
-    return '';
+      labels = helpers.getAssociatedLabelElements(el) || [];
+    } catch {
+      labels = [];
+    }
+    const parts = [];
+    const max = Math.min(4, labels.length);
+    for (let i = 0; i < max; i += 1) {
+      const t = getLabelText(labels[i]);
+      if (t) parts.push(t);
+    }
+    return normalizeWs(parts.join(' '));
   }
 
   function evaluate(el, controlType) {
@@ -36746,12 +36656,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     : helpers.queryAll('blink, marquee');
 
   const occurrences = [];
-  let applicableCount = 0;
 
   for (const el of nodes) {
     if (!el || !el.tagName) continue;
-
-    applicableCount += 1;
 
     const tag = el.tagName.toLowerCase();
 
@@ -36771,18 +36678,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     );
   }
 
-  if (applicableCount === 0) {
-    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  // Matching the selector is the whole violation (see @expectation above), so
+  // every match becomes an occurrence, and "neither element is present" is
+  // itself the passing case -- there is no separate notApplicable case.
+  if (!occurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'serious',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'fail',
+    severity: rule.defaultSeverity || 'serious',
+    occurrences
+  };
 }), applicability: null },
     "dialog-name-present": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
@@ -44426,21 +44333,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
-  function buildLabelForMap(doc) {
-    const map = new Map(); // id -> label element (first)
-    try {
-      const labels = doc && doc.getElementsByTagName ? doc.getElementsByTagName('label') : [];
-      for (let i = 0; i < labels.length; i += 1) {
-        const lab = labels[i];
-        if (!lab || !lab.getAttribute) continue;
-        const f = normalizeWs(lab.getAttribute('for'));
-        if (!f) continue;
-        if (!map.has(f)) map.set(f, lab);
-      }
-    } catch {}
-    return map;
-  }
-
   const occurrences = [];
   let applicableCount = 0;
 
@@ -44449,42 +44341,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
 
-  // Precompute label[for] map for listbox elements that are labelable
-  // native form controls (e.g. <select multiple role="listbox">).
-  const labelForMap = buildLabelForMap(document);
-
+  // Delegates to the shared, spec-guarded lookup (dom-helpers.js's
+  // getAssociatedLabelElements): a <label> -- wrapping or via `for` --
+  // only ever associates with a genuinely labelable element, so this
+  // correctly returns nothing for role-only widgets a <label> merely sits
+  // next to, and the real thing for a labelable element like
+  // <select multiple role="listbox">.
   function getNativeLabelText(el) {
+    if (!helpers || typeof helpers.getAssociatedLabelElements !== 'function') return '';
+    let labels;
     try {
-      if ('labels' in el && el.labels && el.labels.length) {
-        const parts = [];
-        const max = Math.min(4, el.labels.length);
-        for (let i = 0; i < max; i += 1) {
-          const lab = el.labels[i];
-          const t = lab ? getLabelText(lab) : '';
-          if (t) parts.push(t);
-        }
-        const joined = normalizeWs(parts.join(' '));
-        if (joined) return joined;
-      }
-    } catch {}
-    try {
-      if (el.closest) {
-        const wrap = el.closest('label');
-        if (wrap) {
-          const t = getLabelText(wrap);
-          if (t) return t;
-        }
-      }
-    } catch {}
-    try {
-      const idAttr = getAttr(el, 'id');
-      if (idAttr && labelForMap.has(idAttr)) {
-        const lab = labelForMap.get(idAttr);
-        const t = lab ? getLabelText(lab) : '';
-        if (t) return t;
-      }
-    } catch {}
-    return '';
+      labels = helpers.getAssociatedLabelElements(el) || [];
+    } catch {
+      labels = [];
+    }
+    const parts = [];
+    const max = Math.min(4, labels.length);
+    for (let i = 0; i < max; i += 1) {
+      const t = getLabelText(labels[i]);
+      if (t) parts.push(t);
+    }
+    return normalizeWs(parts.join(' '));
   }
 
   function hasName(el) {
@@ -48572,21 +48449,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
-  function buildLabelForMap(doc) {
-    const map = new Map(); // id -> label element (first)
-    try {
-      const labels = doc && doc.getElementsByTagName ? doc.getElementsByTagName('label') : [];
-      for (let i = 0; i < labels.length; i += 1) {
-        const lab = labels[i];
-        if (!lab || !lab.getAttribute) continue;
-        const f = normalizeWs(lab.getAttribute('for'));
-        if (!f) continue;
-        if (!map.has(f)) map.set(f, lab);
-      }
-    } catch {}
-    return map;
-  }
-
   const occurrences = [];
   let applicableCount = 0;
 
@@ -48595,42 +48457,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
 
-  // Precompute label[for] map for searchbox elements that are labelable
-  // native form controls (e.g. <input role="searchbox">).
-  const labelForMap = buildLabelForMap(document);
-
+  // Delegates to the shared, spec-guarded lookup (dom-helpers.js's
+  // getAssociatedLabelElements): a <label> -- wrapping or via `for` --
+  // only ever associates with a genuinely labelable element, so this
+  // correctly returns nothing for role-only widgets a <label> merely sits
+  // next to, and the real thing for a labelable element like
+  // <input role="searchbox">.
   function getNativeLabelText(el) {
+    if (!helpers || typeof helpers.getAssociatedLabelElements !== 'function') return '';
+    let labels;
     try {
-      if ('labels' in el && el.labels && el.labels.length) {
-        const parts = [];
-        const max = Math.min(4, el.labels.length);
-        for (let i = 0; i < max; i += 1) {
-          const lab = el.labels[i];
-          const t = lab ? getLabelText(lab) : '';
-          if (t) parts.push(t);
-        }
-        const joined = normalizeWs(parts.join(' '));
-        if (joined) return joined;
-      }
-    } catch {}
-    try {
-      if (el.closest) {
-        const wrap = el.closest('label');
-        if (wrap) {
-          const t = getLabelText(wrap);
-          if (t) return t;
-        }
-      }
-    } catch {}
-    try {
-      const idAttr = getAttr(el, 'id');
-      if (idAttr && labelForMap.has(idAttr)) {
-        const lab = labelForMap.get(idAttr);
-        const t = lab ? getLabelText(lab) : '';
-        if (t) return t;
-      }
-    } catch {}
-    return '';
+      labels = helpers.getAssociatedLabelElements(el) || [];
+    } catch {
+      labels = [];
+    }
+    const parts = [];
+    const max = Math.min(4, labels.length);
+    for (let i = 0; i < max; i += 1) {
+      const t = getLabelText(labels[i]);
+      if (t) parts.push(t);
+    }
+    return normalizeWs(parts.join(' '));
   }
 
   function hasName(el) {
@@ -48713,12 +48560,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     : helpers.queryAll('img[ismap]');
 
   const occurrences = [];
-  let applicableCount = 0;
 
   for (const el of nodes) {
     if (!el) continue;
-
-    applicableCount += 1;
 
     occurrences.push(
       helpers.reportOccurrence(el, {
@@ -48737,18 +48581,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     );
   }
 
-  if (applicableCount === 0) {
-    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  // Matching the selector is the whole violation (see @expectation above), so
+  // every match becomes an occurrence, and "no image uses ismap" is itself
+  // the passing case -- there is no separate notApplicable case.
+  if (!occurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'serious',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'fail',
+    severity: rule.defaultSeverity || 'serious',
+    occurrences
+  };
 }), applicability: null },
     "skip-link": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
@@ -48959,21 +48803,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
-  function buildLabelForMap(doc) {
-    const map = new Map(); // id -> label element (first)
-    try {
-      const labels = doc && doc.getElementsByTagName ? doc.getElementsByTagName('label') : [];
-      for (let i = 0; i < labels.length; i += 1) {
-        const lab = labels[i];
-        if (!lab || !lab.getAttribute) continue;
-        const f = normalizeWs(lab.getAttribute('for'));
-        if (!f) continue;
-        if (!map.has(f)) map.set(f, lab);
-      }
-    } catch {}
-    return map;
-  }
-
   function getConservativeSubtreeText(document, container) {
     // "Name from content", recurses into descendants and uses each one's
     // own accessible name (img alt, aria-label/aria-labelledby, title) when
@@ -49063,41 +48892,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
 
-  // Precompute label[for] map for native range inputs.
-  const labelForMap = buildLabelForMap(document);
-
+  // Delegates to the shared, spec-guarded lookup (dom-helpers.js's
+  // getAssociatedLabelElements): a <label> -- wrapping or via `for` --
+  // only ever associates with a genuinely labelable element, so this
+  // correctly returns nothing for role-only widgets a <label> merely sits
+  // next to, and the real thing for a labelable element like
+  // <input type="range">.
   function getNativeLabelText(el) {
+    if (!helpers || typeof helpers.getAssociatedLabelElements !== 'function') return '';
+    let labels;
     try {
-      if ('labels' in el && el.labels && el.labels.length) {
-        const parts = [];
-        const max = Math.min(4, el.labels.length);
-        for (let i = 0; i < max; i += 1) {
-          const lab = el.labels[i];
-          const t = lab ? getLabelText(lab) : '';
-          if (t) parts.push(t);
-        }
-        const joined = normalizeWs(parts.join(' '));
-        if (joined) return joined;
-      }
-    } catch {}
-    try {
-      if (el.closest) {
-        const wrap = el.closest('label');
-        if (wrap) {
-          const t = getLabelText(wrap);
-          if (t) return t;
-        }
-      }
-    } catch {}
-    try {
-      const idAttr = getAttr(el, 'id');
-      if (idAttr && labelForMap.has(idAttr)) {
-        const lab = labelForMap.get(idAttr);
-        const t = lab ? getLabelText(lab) : '';
-        if (t) return t;
-      }
-    } catch {}
-    return '';
+      labels = helpers.getAssociatedLabelElements(el) || [];
+    } catch {
+      labels = [];
+    }
+    const parts = [];
+    const max = Math.min(4, labels.length);
+    for (let i = 0; i < max; i += 1) {
+      const t = getLabelText(labels[i]);
+      if (t) parts.push(t);
+    }
+    return normalizeWs(parts.join(' '));
   }
 
   function evaluate(el, kind) {
@@ -49280,21 +49095,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
-  function buildLabelForMap(doc) {
-    const map = new Map(); // id -> label element (first)
-    try {
-      const labels = doc && doc.getElementsByTagName ? doc.getElementsByTagName('label') : [];
-      for (let i = 0; i < labels.length; i += 1) {
-        const lab = labels[i];
-        if (!lab || !lab.getAttribute) continue;
-        const f = normalizeWs(lab.getAttribute('for'));
-        if (!f) continue;
-        if (!map.has(f)) map.set(f, lab);
-      }
-    } catch {}
-    return map;
-  }
-
   const occurrences = [];
   let applicableCount = 0;
 
@@ -49303,42 +49103,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
 
-  // Precompute label[for] map for spinbutton elements that are labelable
-  // native form controls (e.g. <input role="spinbutton">).
-  const labelForMap = buildLabelForMap(document);
-
+  // Delegates to the shared, spec-guarded lookup (dom-helpers.js's
+  // getAssociatedLabelElements): a <label> -- wrapping or via `for` --
+  // only ever associates with a genuinely labelable element, so this
+  // correctly returns nothing for role-only widgets a <label> merely sits
+  // next to, and the real thing for a labelable element like
+  // <input role="spinbutton">.
   function getNativeLabelText(el) {
+    if (!helpers || typeof helpers.getAssociatedLabelElements !== 'function') return '';
+    let labels;
     try {
-      if ('labels' in el && el.labels && el.labels.length) {
-        const parts = [];
-        const max = Math.min(4, el.labels.length);
-        for (let i = 0; i < max; i += 1) {
-          const lab = el.labels[i];
-          const t = lab ? getLabelText(lab) : '';
-          if (t) parts.push(t);
-        }
-        const joined = normalizeWs(parts.join(' '));
-        if (joined) return joined;
-      }
-    } catch {}
-    try {
-      if (el.closest) {
-        const wrap = el.closest('label');
-        if (wrap) {
-          const t = getLabelText(wrap);
-          if (t) return t;
-        }
-      }
-    } catch {}
-    try {
-      const idAttr = getAttr(el, 'id');
-      if (idAttr && labelForMap.has(idAttr)) {
-        const lab = labelForMap.get(idAttr);
-        const t = lab ? getLabelText(lab) : '';
-        if (t) return t;
-      }
-    } catch {}
-    return '';
+      labels = helpers.getAssociatedLabelElements(el) || [];
+    } catch {
+      labels = [];
+    }
+    const parts = [];
+    const max = Math.min(4, labels.length);
+    for (let i = 0; i < max; i += 1) {
+      const t = getLabelText(labels[i]);
+      if (t) parts.push(t);
+    }
+    return normalizeWs(parts.join(' '));
   }
 
   function hasName(el) {
@@ -51767,21 +51552,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
-  function buildLabelForMap(doc) {
-    const map = new Map(); // id -> label element (first)
-    try {
-      const labels = doc && doc.getElementsByTagName ? doc.getElementsByTagName('label') : [];
-      for (let i = 0; i < labels.length; i += 1) {
-        const lab = labels[i];
-        if (!lab || !lab.getAttribute) continue;
-        const f = normalizeWs(lab.getAttribute('for'));
-        if (!f) continue;
-        if (!map.has(f)) map.set(f, lab);
-      }
-    } catch {}
-    return map;
-  }
-
   const occurrences = [];
   let applicableCount = 0;
 
@@ -51790,42 +51560,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
 
-  // Precompute label[for] map for textbox elements that are labelable
-  // native form controls (e.g. <input role="textbox">).
-  const labelForMap = buildLabelForMap(document);
-
+  // Delegates to the shared, spec-guarded lookup (dom-helpers.js's
+  // getAssociatedLabelElements): a <label> -- wrapping or via `for` --
+  // only ever associates with a genuinely labelable element, so this
+  // correctly returns nothing for role-only widgets a <label> merely sits
+  // next to, and the real thing for a labelable element like
+  // <input role="textbox">.
   function getNativeLabelText(el) {
+    if (!helpers || typeof helpers.getAssociatedLabelElements !== 'function') return '';
+    let labels;
     try {
-      if ('labels' in el && el.labels && el.labels.length) {
-        const parts = [];
-        const max = Math.min(4, el.labels.length);
-        for (let i = 0; i < max; i += 1) {
-          const lab = el.labels[i];
-          const t = lab ? getLabelText(lab) : '';
-          if (t) parts.push(t);
-        }
-        const joined = normalizeWs(parts.join(' '));
-        if (joined) return joined;
-      }
-    } catch {}
-    try {
-      if (el.closest) {
-        const wrap = el.closest('label');
-        if (wrap) {
-          const t = getLabelText(wrap);
-          if (t) return t;
-        }
-      }
-    } catch {}
-    try {
-      const idAttr = getAttr(el, 'id');
-      if (idAttr && labelForMap.has(idAttr)) {
-        const lab = labelForMap.get(idAttr);
-        const t = lab ? getLabelText(lab) : '';
-        if (t) return t;
-      }
-    } catch {}
-    return '';
+      labels = helpers.getAssociatedLabelElements(el) || [];
+    } catch {
+      labels = [];
+    }
+    const parts = [];
+    const max = Math.min(4, labels.length);
+    for (let i = 0; i < max; i += 1) {
+      const t = getLabelText(labels[i]);
+      if (t) parts.push(t);
+    }
+    return normalizeWs(parts.join(' '));
   }
 
   function hasName(el) {
@@ -52590,10 +52345,12 @@ const I18N = {
     "img_altPresent_description": "Prüft, ob <img>-Elemente ein alt-Attribut bereitstellen, um einen Mechanismus für eine Textalternative zu unterstützen.",
     "img_altPresent_summary_fail": "Fehlendes alt-Attribut auf <img>.",
     "img_altPresent_hint_fail": "Fügen Sie ein alt-Attribut hinzu (verwenden Sie alt=\"\" nur für dekorative Bilder).",
-    "area_altPresent_title": "<area> muss ein alt-Attribut haben",
-    "area_altPresent_description": "Prüft, ob <area>-Elemente ein alt-Attribut bereitstellen, um einen Mechanismus für eine Textalternative zu unterstützen.",
+    "area_altPresent_title": "<area> muss einen zugänglichen Namen haben",
+    "area_altPresent_description": "Prüft, ob <area>-Elemente über alt, aria-label/aria-labelledby oder title einen nicht leeren zugänglichen Namen haben.",
     "area_altPresent_summary_fail": "Fehlendes alt-Attribut auf <area>.",
-    "area_altPresent_hint_fail": "Fügen Sie ein alt-Attribut hinzu (verwenden Sie alt=\"\" nur für dekorative Bereiche).",
+    "area_altPresent_hint_fail": "Fügen Sie ein alt-Attribut hinzu, das das Linkziel beschreibt (ein <area> kann nicht dekorativ sein).",
+    "area_altPresent_summary_fail_empty": "Ein leeres alt-Attribut lässt den <area>-Link ohne zugänglichen Namen.",
+    "area_altPresent_hint_fail_empty": "Beschreiben Sie das Linkziel in alt, oder fügen Sie aria-label/aria-labelledby hinzu (ein <area> kann nicht dekorativ sein, sobald seine Map verwendet wird).",
     "inputImage_altPresent_title": "<input type=\"image\"> muss ein alt-Attribut haben",
     "inputImage_altPresent_description": "Prüft, ob <input type=\"image\">-Elemente ein alt-Attribut bereitstellen, um einen Mechanismus für eine Textalternative zu unterstützen.",
     "inputImage_altPresent_summary_fail": "Fehlendes alt-Attribut auf <input type=\"image\">.",
@@ -52634,10 +52391,6 @@ const I18N = {
     "area_altQuality_description": "Markiert <area>-Elemente mit nicht leerem Alternativtext zur manuellen Überprüfung der Angemessenheit.",
     "area_altQuality_summary_cantTell": "Überprüfen Sie den Alternativtext von <area> auf Genauigkeit und Angemessenheit.",
     "area_altQuality_hint_cantTell": "Stellen Sie sicher, dass der Alternativtext das Ziel/die Aktion des Bereichs der Image-Map im Kontext identifiziert.",
-    "area_altDecorative_title": "<area> mit alt=\"\" muss dekorativ sein (manuelle Überprüfung)",
-    "area_altDecorative_description": "Markiert <area>-Elemente mit leerem alt zur manuellen Überprüfung, ob sie dekorativ/nicht informativ sind.",
-    "area_altDecorative_summary_cantTell": "Überprüfen Sie, ob <area> dekorativ ist (alt=\"\").",
-    "area_altDecorative_hint_cantTell": "Bestätigen Sie, dass der Bereich keine Information oder Funktion vermittelt. Falls er interaktiv oder bedeutsam ist, stellen Sie einen aussagekräftigen Alternativtext bereit.",
     "inputImage_altQuality_title": "<input type=\"image\">-Alternativtext muss angemessen sein (manuelle Überprüfung)",
     "inputImage_altQuality_description": "Markiert <input type=\"image\">-Elemente mit nicht leerem Alternativtext zur manuellen Überprüfung der Angemessenheit.",
     "inputImage_altQuality_summary_cantTell": "Überprüfen Sie den Alternativtext von <input type=\"image\"> auf Genauigkeit und Angemessenheit.",
@@ -53284,10 +53037,12 @@ const I18N = {
     "img_altPresent_description": "Checks that <img> elements provide an alt attribute to support a text alternative mechanism.",
     "img_altPresent_summary_fail": "Missing alt attribute on <img>.",
     "img_altPresent_hint_fail": "Add an alt attribute (use alt=\"\" only for decorative images).",
-    "area_altPresent_title": "<area> must have an alt attribute",
-    "area_altPresent_description": "Checks that <area> elements provide an alt attribute to support a text alternative mechanism.",
+    "area_altPresent_title": "<area> must have an accessible name",
+    "area_altPresent_description": "Checks that <area> elements have a non-empty accessible name via alt, aria-label/aria-labelledby, or title.",
     "area_altPresent_summary_fail": "Missing alt attribute on <area>.",
-    "area_altPresent_hint_fail": "Add an alt attribute (use alt=\"\" only for decorative areas).",
+    "area_altPresent_hint_fail": "Add an alt attribute describing the link destination (an <area> cannot be decorative).",
+    "area_altPresent_summary_fail_empty": "Empty alt attribute leaves <area> link with no accessible name.",
+    "area_altPresent_hint_fail_empty": "Describe the link destination in alt, or add aria-label/aria-labelledby (an <area> cannot be decorative once its map is used).",
     "inputImage_altPresent_title": "<input type=\"image\"> must have an alt attribute",
     "inputImage_altPresent_description": "Checks that <input type=\"image\"> elements provide an alt attribute to support a text alternative mechanism.",
     "inputImage_altPresent_summary_fail": "Missing alt attribute on <input type=\"image\">.",
@@ -53328,10 +53083,6 @@ const I18N = {
     "area_altQuality_description": "Flags <area> elements with non-empty alt text for human review of appropriateness.",
     "area_altQuality_summary_cantTell": "Review alt text on <area> for accuracy and appropriateness.",
     "area_altQuality_hint_cantTell": "Ensure the alt text identifies the destination/action of the image map area in context.",
-    "area_altDecorative_title": "<area> with alt=\"\" must be decorative (manual review)",
-    "area_altDecorative_description": "Flags <area> elements with empty alt for human review that they are decorative/non-informative.",
-    "area_altDecorative_summary_cantTell": "Review whether <area> is decorative (alt=\"\").",
-    "area_altDecorative_hint_cantTell": "Confirm the area does not convey information or function. If it is interactive or meaningful, provide meaningful alt text.",
     "inputImage_altQuality_title": "<input type=\"image\"> alt text must be appropriate (manual review)",
     "inputImage_altQuality_description": "Flags <input type=\"image\"> elements with non-empty alt text for human review of appropriateness.",
     "inputImage_altQuality_summary_cantTell": "Review alt text on <input type=\"image\"> for accuracy and appropriateness.",
@@ -53919,7 +53670,7 @@ const I18N = {
     "identicalLinksSamePurpose_hint_cantTell": "Ensure links with the same text serve the same purpose, or make the link text distinct enough to describe each destination.",
     "ariaBrailleEquivalent_title": "aria-braillelabel/aria-brailleroledescription must have a non-braille equivalent",
     "ariaBrailleEquivalent_description": "Checks that elements using aria-braillelabel also have a regular accessible name, and elements using aria-brailleroledescription also have aria-roledescription.",
-    "ariaBrailleEquivalent_summary_fail": "This element has {{attr}} but no {{requires}}, its non-braille equivalent.",
+    "ariaBrailleEquivalent_summary_fail": "This element has {{attr}} but not {{requires}}, its non-braille equivalent.",
     "ariaBrailleEquivalent_hint_fail": "{{attr}} is a Braille-specific supplement, not a replacement, so also provide {{requires}}.",
     "ariaConditionalAttr_title": "aria-errormessage requires aria-invalid to be set to a non-false value",
     "ariaConditionalAttr_description": "Checks that elements with aria-errormessage also have aria-invalid set to \"true\", \"grammar\", or \"spelling\"; otherwise the error message is dropped from the accessibility tree.",
@@ -53978,10 +53729,12 @@ const I18N = {
     "img_altPresent_description": "Comprueba que los elementos <img> incluyan un atributo alt para ofrecer un mecanismo de alternativa textual.",
     "img_altPresent_summary_fail": "Falta el atributo alt en <img>.",
     "img_altPresent_hint_fail": "Agregar un atributo alt (usar alt=\"\" solo para imágenes decorativas).",
-    "area_altPresent_title": "<area> debe tener un atributo alt",
-    "area_altPresent_description": "Comprueba que los elementos <area> incluyan un atributo alt para ofrecer un mecanismo de alternativa textual.",
+    "area_altPresent_title": "<area> debe tener un nombre accesible",
+    "area_altPresent_description": "Comprueba que los elementos <area> tengan un nombre accesible no vacío mediante alt, aria-label/aria-labelledby o title.",
     "area_altPresent_summary_fail": "Falta el atributo alt en <area>.",
-    "area_altPresent_hint_fail": "Agregar un atributo alt (usar alt=\"\" solo para áreas decorativas).",
+    "area_altPresent_hint_fail": "Agregar un atributo alt que describa el destino del enlace (un <area> no puede ser decorativa).",
+    "area_altPresent_summary_fail_empty": "Un atributo alt vacío deja el enlace <area> sin nombre accesible.",
+    "area_altPresent_hint_fail_empty": "Describir el destino del enlace en alt, o agregar aria-label/aria-labelledby (un <area> no puede ser decorativa una vez que su mapa está en uso).",
     "inputImage_altPresent_title": "<input type=\"image\"> debe tener un atributo alt",
     "inputImage_altPresent_description": "Comprueba que los elementos <input type=\"image\"> incluyan un atributo alt para ofrecer un mecanismo de alternativa textual.",
     "inputImage_altPresent_summary_fail": "Falta el atributo alt en <input type=\"image\">.",
@@ -54022,10 +53775,6 @@ const I18N = {
     "area_altQuality_description": "Señala elementos <area> con texto alt no vacío para su revisión manual en cuanto a idoneidad.",
     "area_altQuality_summary_cantTell": "Revisar el texto alt de <area> en cuanto a exactitud e idoneidad.",
     "area_altQuality_hint_cantTell": "Asegurarse de que el texto alt identifique el destino o la acción del área del mapa de imagen en su contexto.",
-    "area_altDecorative_title": "<area> con alt=\"\" debe ser decorativa (revisión manual)",
-    "area_altDecorative_description": "Señala elementos <area> con alt vacío para su revisión manual de que son decorativos o no informativos.",
-    "area_altDecorative_summary_cantTell": "Revisar si <area> es decorativa (alt=\"\").",
-    "area_altDecorative_hint_cantTell": "Confirmar que el área no transmite información ni función. Si es interactiva o significativa, proporcionar un texto alt significativo.",
     "inputImage_altQuality_title": "El texto alt de <input type=\"image\"> debe ser apropiado (revisión manual)",
     "inputImage_altQuality_description": "Señala elementos <input type=\"image\"> con texto alt no vacío para su revisión manual en cuanto a idoneidad.",
     "inputImage_altQuality_summary_cantTell": "Revisar el texto alt de <input type=\"image\"> en cuanto a exactitud e idoneidad.",
@@ -54672,10 +54421,12 @@ const I18N = {
     "img_altPresent_description": "Vérifie que les éléments <img> fournissent un attribut alt afin de proposer un mécanisme d’alternative textuelle.",
     "img_altPresent_summary_fail": "Attribut alt manquant sur <img>.",
     "img_altPresent_hint_fail": "Ajoutez un attribut alt (utilisez alt=\"\" uniquement pour les images décoratives).",
-    "area_altPresent_title": "<area> doit avoir un attribut alt",
-    "area_altPresent_description": "Vérifie que les éléments <area> fournissent un attribut alt afin de proposer un mécanisme d’alternative textuelle.",
+    "area_altPresent_title": "<area> doit avoir un nom accessible",
+    "area_altPresent_description": "Vérifie que les éléments <area> ont un nom accessible non vide via alt, aria-label/aria-labelledby ou title.",
     "area_altPresent_summary_fail": "Attribut alt manquant sur <area>.",
-    "area_altPresent_hint_fail": "Ajoutez un attribut alt (utilisez alt=\"\" uniquement pour les zones décoratives).",
+    "area_altPresent_hint_fail": "Ajoutez un attribut alt décrivant la destination du lien (une <area> ne peut pas être décorative).",
+    "area_altPresent_summary_fail_empty": "Un attribut alt vide laisse le lien <area> sans nom accessible.",
+    "area_altPresent_hint_fail_empty": "Décrivez la destination du lien dans alt, ou ajoutez aria-label/aria-labelledby (une <area> ne peut pas être décorative une fois sa carte utilisée).",
     "inputImage_altPresent_title": "<input type=\"image\"> doit avoir un attribut alt",
     "inputImage_altPresent_description": "Vérifie que les éléments <input type=\"image\"> fournissent un attribut alt afin de proposer un mécanisme d’alternative textuelle.",
     "inputImage_altPresent_summary_fail": "Attribut alt manquant sur <input type=\"image\">.",
@@ -54716,10 +54467,6 @@ const I18N = {
     "area_altQuality_description": "Signale les éléments <area> dont l’attribut alt n’est pas vide afin de vérifier manuellement sa pertinence.",
     "area_altQuality_summary_cantTell": "Vérifiez le texte alt de <area> (exactitude et pertinence).",
     "area_altQuality_hint_cantTell": "Assurez-vous que le texte alt identifie la destination/l’action de la zone dans son contexte.",
-    "area_altDecorative_title": "<area> avec alt=\"\" : décoratif à confirmer (revue manuelle)",
-    "area_altDecorative_description": "Signale les éléments <area> dont l’attribut alt est vide afin de confirmer qu’ils sont décoratifs ou non informatifs.",
-    "area_altDecorative_summary_cantTell": "Vérifiez si <area> est décoratif (alt=\"\").",
-    "area_altDecorative_hint_cantTell": "Confirmez que la zone n’a pas de fonction ni d’information. Sinon, fournissez un texte alt pertinent.",
     "inputImage_altQuality_title": "<input type=\"image\"> : texte alt à vérifier (revue manuelle)",
     "inputImage_altQuality_description": "Signale les éléments <input type=\"image\"> dont l’attribut alt n’est pas vide afin de vérifier manuellement sa pertinence.",
     "inputImage_altQuality_summary_cantTell": "Vérifiez le texte alt de <input type=\"image\"> (exactitude et pertinence).",
@@ -57295,6 +57042,14 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
   // -------- Effective foreground/background memoization --------
 
+  // Populated by resolveGroupOpacityColors (defined near
+  // getComputabilityBlocker, below) for the narrow ancestor-opacity case
+  // it can safely resolve. Checked first by both functions below so a
+  // rule computing fg/bg right after a clean computability check gets the
+  // correctly group-composited colors without needing to know that case
+  // was ever in play.
+  const __groupOpacityOverrideCache = new WeakMap();
+
   const __localEffectiveForegroundCache = new WeakMap();
   const __effectiveForegroundCache =
     __getSharedWeakMapCache('__effectiveForegroundCache') || __localEffectiveForegroundCache;
@@ -57302,6 +57057,19 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   function computeEffectiveForeground(el) {
     try {
       if (el && __effectiveForegroundCache.has(el)) return __effectiveForegroundCache.get(el);
+    } catch (_e) {}
+
+    try {
+      const override = el && __groupOpacityOverrideCache.get(el);
+      if (override) {
+        const out = {
+          rgba: { r: override.fg.r, g: override.fg.g, b: override.fg.b, a: 1 },
+          alpha: 1,
+          opacityProduct: 1
+        };
+        __effectiveForegroundCache.set(el, out);
+        return out;
+      }
     } catch (_e) {}
 
     const cs = __contrastComputedStyle(el);
@@ -57345,6 +57113,19 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   }
 
   function computeEffectiveBackground(el, opts2) {
+    try {
+      const override = el && __groupOpacityOverrideCache.get(el);
+      if (override) {
+        return {
+          ok: true,
+          rgba: { r: override.bg.r, g: override.bg.g, b: override.bg.b, a: 1 },
+          alpha: 1,
+          stack: [],
+          reasonCode: null
+        };
+      }
+    } catch (_e) {}
+
     const __bgKey = __bgCacheKey(opts2);
     const __collectStack = !!(opts2 && opts2.collectStack);
 
@@ -57508,6 +57289,110 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
   }
 
+  // -------- Group-opacity contrast resolution (narrow, safe case) --------
+
+  // getComputabilityBlocker's default policy treats any ANCESTOR (not el
+  // itself) with fractional opacity as an unconditional blocker, because
+  // naively combining the existing per-element opacity product (folded
+  // into the foreground via computeOpacityProduct, which walks ALL
+  // ancestors) with the existing ancestor-opacity-aware background walk
+  // (computeEffectiveBackground, which ALSO folds ancestor opacity into
+  // its own compositing) double-counts the ancestor's opacity: a
+  // foreground already darkened by the full ancestor-inclusive opacity
+  // product, composited against a background that separately already
+  // absorbed that same opacity, applies the ancestor's dimming twice and
+  // lands on a lighter (wrong) color than real compositing produces
+  // whenever the local and external colors actually differ. Verified by
+  // hand against a real rendered screenshot.
+  //
+  // This resolves both colors in a single walk instead, tracking a
+  // background accumulator (as computeEffectiveBackground already does)
+  // and a parallel foreground accumulator that receives el's own text
+  // color as its innermost layer at el's own level, then applying every
+  // ancestor's own background-color and opacity to BOTH accumulators in
+  // lockstep. Nothing is combined after the fact, so there's nothing to
+  // double-count, and it handles any number of nested opacity ancestors
+  // -- each with its own background-color or not -- uniformly. It only
+  // bails (returns null, leaving the existing ANCESTOR_OPACITY cantTell
+  // in place) for a blend-mode/filter/background-image anywhere in the
+  // chain, a missing declared text color, or a background that never
+  // reaches full opacity even after the whole chain is walked.
+  function resolveGroupOpacityColors(el) {
+    try {
+      if (el && __groupOpacityOverrideCache.has(el)) return __groupOpacityOverrideCache.get(el);
+    } catch (_e) {}
+
+    function __cacheAndReturn(res) {
+      try {
+        if (el) __groupOpacityOverrideCache.set(el, res);
+      } catch (_e) {}
+      return res;
+    }
+
+    try {
+      if (!el || el.nodeType !== 1) return __cacheAndReturn(null);
+
+      const elCs = __contrastComputedStyle(el);
+      const elColor = parseCssColorToRgba(elCs && elCs.color);
+      if (!elColor) return __cacheAndReturn(null);
+
+      let bgAcc = { r: 0, g: 0, b: 0, a: 0 };
+      let fgAcc = { r: 0, g: 0, b: 0, a: 0 };
+      let cur = el;
+      let guard = 0;
+
+      while (cur && guard++ < 200) {
+        if (cur.nodeType !== 1) {
+          cur = composedParent(cur);
+          continue;
+        }
+        const cs = __contrastComputedStyle(cur);
+
+        if (
+          __hasBlendModeEl(cur, cs) ||
+          __hasFilterEl(cur, cs) ||
+          __hasBackgroundImageOrGradientEl(cur, cs)
+        ) {
+          return __cacheAndReturn(null);
+        }
+
+        const bg = parseCssColorToRgba(cs && cs.backgroundColor);
+        if (bg) {
+          const layer = { r: bg.r, g: bg.g, b: bg.b, a: clamp01(bg.a) };
+          bgAcc = compositeRgba(bgAcc, layer);
+          fgAcc = compositeRgba(fgAcc, layer);
+        }
+
+        if (cur === el) {
+          // el's own text color is the innermost foreground layer,
+          // painted over whatever el's own background (if any) already
+          // contributed to fgAcc above.
+          fgAcc = compositeRgba(
+            { r: elColor.r, g: elColor.g, b: elColor.b, a: clamp01(elColor.a) },
+            fgAcc
+          );
+        }
+
+        const op = clamp01(Number.parseFloat(cs && cs.opacity != null ? cs.opacity : '1'));
+        if (op < 1) {
+          bgAcc = { r: bgAcc.r, g: bgAcc.g, b: bgAcc.b, a: clamp01(bgAcc.a * op) };
+          fgAcc = { r: fgAcc.r, g: fgAcc.g, b: fgAcc.b, a: clamp01(fgAcc.a * op) };
+        }
+
+        cur = composedParent(cur);
+      }
+
+      if (bgAcc.a < 1 || fgAcc.a < 1) return __cacheAndReturn(null);
+
+      return __cacheAndReturn({
+        fg: { r: fgAcc.r, g: fgAcc.g, b: fgAcc.b },
+        bg: { r: bgAcc.r, g: bgAcc.g, b: bgAcc.b }
+      });
+    } catch (_e) {
+      return __cacheAndReturn(null);
+    }
+  }
+
   // -------- Computability blocker (memoized per element, per run) --------
 
   const __localComputabilityBlockerCache = new WeakMap();
@@ -57652,23 +57537,34 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
       // An ANCESTOR (not el itself) with fractional opacity is treated
       // as a computability blocker rather than being folded into a
-      // confident ratio. Group opacity uniformly scales an ancestor's
-      // *entire* rendered subtree (its own background AND everything
-      // already accumulated from descendants, including el's text)
-      // when compositing against what's behind it. Computing that
-      // precisely for the foreground would require re-deriving the
-      // text's rendered color the same way the background is folded
-      // (rather than compositing a separately opacity-scaled
-      // foreground against the fully-folded background, which
-      // double-counts the ancestor's opacity). Rather than risk a
-      // confidently wrong pass/fail from that mismatch, defer to
-      // manual review. (el's own opacity, if any, does not trigger
-      // this: it is already handled correctly by the existing
-      // per-element opacity product used for the foreground.)
+      // confident ratio, UNLESS resolveGroupOpacityColors can resolve it
+      // safely (see its own header comment): el's local background is
+      // opaque before the opacity ancestor, that ancestor paints nothing
+      // of its own, and the backdrop beyond it resolves cleanly. That
+      // covers the common case -- a semi-transparent wrapper with no
+      // background of its own -- without risking the double-counted,
+      // confidently-wrong ratio a naive combination of the existing
+      // per-element foreground and ancestor-aware background would
+      // produce for the general case. (el's own opacity, if any, does not
+      // trigger this at all: it is already handled correctly by the
+      // existing per-element opacity product used for the foreground.)
       if (cur !== el) {
         const ancestorOpacity = clamp01(
           Number.parseFloat(cs && cs.opacity != null ? cs.opacity : '1')
         );
+        if (ancestorOpacity < 1 && resolveGroupOpacityColors(el)) {
+          const out = {
+            ok: true,
+            reasonCode: null,
+            blockerSelector: '',
+            blockerProperty: '',
+            blockerValue: ''
+          };
+          try {
+            if (el) __computabilityBlockerCache.set(el, out);
+          } catch (_e) {}
+          return out;
+        }
         if (ancestorOpacity < 1) {
           const out = {
             ok: false,
@@ -59453,25 +59349,23 @@ const createDomHelpers = (function createDomHelpers(opts) {
   }
 
   function hasBlockingInert(node) {
-    // Default behavior: inert anywhere in ancestorsIncludingSelf blocks.
     if (!isElement(node)) return false;
 
     const tag = (node.tagName || '').toLowerCase();
     const isArea = tag === 'area';
-
-    let mapEl = null;
-    if (isArea) mapEl = getClosestMap(node);
+    const mapEl = isArea ? getClosestMap(node) : null;
 
     const chain = ancestorsIncludingSelf(node);
 
     for (const a of chain) {
       if (!isElement(a)) continue;
 
-      // Exception: for <area>, inert on itself or on its <map> does NOT block
-      if (isArea) {
-        if (a === node) continue; // ignore <area inert>
-        if (mapEl && a === mapEl) continue; // ignore <map inert>
-      }
+      // <area>/<map> generate no box, so a real browser's image-map
+      // hit-testing sits outside the pipeline inert operates on. Verified
+      // against Chromium and Firefox: inert on the area or its map does
+      // not remove it from the tab order. Only inert on a genuine ancestor
+      // of the <img>+<map> pairing does.
+      if (isArea && (a === node || a === mapEl)) continue;
 
       if (a.hasAttribute && a.hasAttribute('inert')) return true;
     }
@@ -59784,24 +59678,30 @@ const createDomHelpers = (function createDomHelpers(opts) {
       if (href && href.trim()) return true;
     }
     if (tag === 'area') {
-      // Engine policy: treat <area> as focusable when it's part of a *used* image map.
-      const map = getClosestMap(el);
-      if (map) {
-        const rawName = (
-          map.getAttribute &&
-          (map.getAttribute('name') || map.getAttribute('id') || '')
-        ).trim();
-        if (rawName && document && document.querySelector) {
-          const esc = __cssEscapeSafe;
-          const n = esc(rawName);
+      // Engine policy: treat <area href> as focusable when it's part of a
+      // *used* image map. Without href an <area> is not a hyperlink at all
+      // per the HTML spec, so it falls through to the generic tabindex
+      // check below, same as any other non-interactive element.
+      const href = el.getAttribute && el.getAttribute('href');
+      if (href && href.trim()) {
+        const map = getClosestMap(el);
+        if (map) {
+          const rawName = (
+            map.getAttribute &&
+            (map.getAttribute('name') || map.getAttribute('id') || '')
+          ).trim();
+          if (rawName && document && document.querySelector) {
+            const esc = __cssEscapeSafe;
+            const n = esc(rawName);
 
-          // Be practical: accept both "#name" and "name", and ignore case.
-          const sels = [`img[usemap="#${n}" i]`, `img[usemap="${n}" i]`];
+            // Be practical: accept both "#name" and "name", and ignore case.
+            const sels = [`img[usemap="#${n}" i]`, `img[usemap="${n}" i]`];
 
-          for (const sel of sels) {
-            try {
-              if (document.querySelector(sel)) return true;
-            } catch {}
+            for (const sel of sels) {
+              try {
+                if (document.querySelector(sel)) return true;
+              } catch {}
+            }
           }
         }
       }
@@ -60581,6 +60481,23 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // bounded `closest('label')` walk answers the same question without it.
   function getAssociatedLabelElements(el) {
     const out = [];
+    // A <label> -- wrapping or via `for` -- only ever associates with a
+    // labelable element (LABELABLE_SELECTOR, same spec category). The
+    // wrapping branch below already enforces this by construction
+    // (`firstControl === el`, found via LABELABLE_SELECTOR); the `for`
+    // branch doesn't derive it the same way, so it's checked directly here
+    // instead. Verified against real Chromium and Firefox: a
+    // `<label for="x">`/wrapping `<label>` around a non-labelable element
+    // (e.g. a `<div role="combobox">`) produces no accessible name in
+    // either browser's accessibility tree.
+    let isLabelable;
+    try {
+      isLabelable = !!(el && el.matches && el.matches(LABELABLE_SELECTOR));
+    } catch {
+      isLabelable = false;
+    }
+    if (!isLabelable) return out;
+
     const id = trim(getAttr(el, 'id'));
     if (id) {
       const forLabels = __getLabelElementsForId(id);
@@ -60715,7 +60632,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
     const mode =
       opts && opts.visibilityMode === 'styleAndGeometry' ? 'styleAndGeometry' : 'styleOnly';
     const disableGeometry = !!(opts && opts.disableGeometry === true);
-    return mode + '|' + (disableGeometry ? 'dg1' : 'dg0');
+    const ignoreOpacity = !!(opts && opts.ignoreOpacity === true);
+    return mode + '|' + (disableGeometry ? 'dg1' : 'dg0') + '|' + (ignoreOpacity ? 'io1' : 'io0');
   }
 
   function __getNameOptsKey(opts) {
@@ -60795,6 +60713,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
     }
 
     const chain = ancestorsIncludingSelf(node);
+    const __tag0 = (node.tagName || '').toLowerCase();
+    const __isAreaNode = __tag0 === 'area';
+    const __ownMapEl = __isAreaNode ? getClosestMap(node) : null;
 
     // 1) HTML/DOM hiding
     for (const a of chain) {
@@ -60864,6 +60785,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
         if (hiddenVal === 'until-found') struct = null;
       }
 
+      // Same non-rendered-element reasoning as hasBlockingInert: a plain
+      // `hidden` on the area or its map doesn't remove it from the tab
+      // order either (verified alongside inert, Chromium and Firefox).
+      if (struct === 'hiddenAttr' && __isAreaNode && (a === node || a === __ownMapEl)) {
+        struct = null;
+      }
+
       if (struct) return __cacheAndReturn({ eligible: false, reasons: [struct] });
     }
     if (inClosedDetailsContent(node))
@@ -60902,6 +60830,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
         const tn = (a.tagName || '').toLowerCase();
         if (tn === 'area') continue;
       }
+
+      // Same reasoning extends to its <map>: a used map's hotspot ignores
+      // display:none on the <map> itself in a real browser (verified
+      // alongside inert and hidden, Chromium and Firefox).
+      if (__isAreaNode && __ownMapEl && a === __ownMapEl) continue;
 
       // Cache ancestor CSS blockers (display) per scope.
       let cssBlock = null;

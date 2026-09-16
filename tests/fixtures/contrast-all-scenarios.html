@@ -23,11 +23,14 @@
     .visibilityHidden { visibility: hidden; }
     .visibilityCollapse { visibility: collapse; }
 
-    /* "Not visually visible" but SHOULD STILL BE ELIGIBLE under your deterministic policy
-       -- opacity:0 and offscreen positioning can each be a single-property
-       authoring mistake on text meant to be visible, so contrast rules still
-       evaluate them. */
+    /* opacity:0 renders no pixels under any circumstance, so contrast has
+       nothing to evaluate -- excluded, same as display:none/visibility:hidden
+       above. */
     .opacityZero { opacity: 0; }
+
+    /* "Not visually visible" but SHOULD STILL BE ELIGIBLE under your deterministic policy
+       -- off-screen positioning can be a single-property authoring mistake on
+       text meant to be visible, so contrast rules still evaluate it. */
     .offscreen { position: absolute; left: -9999px; top: 0; }
 
     /* sr-only clip technique: EXCLUDED from contrast rules. Unlike opacity/
@@ -107,8 +110,8 @@
 <!-- 4) Large text threshold (AA large = 3.0; AAA large = 4.5) -->
 <!-- Same foreground as (3) but large by size -->
 <!-- ========================================================= -->
-<section class="case bgWhite" id="case-large-text-threshold" data-outcome-contrast-computable="PASS">
-  <p class="case-title">04 — UNSTATED: large text by size (24px) uses the large-text threshold</p>
+<section class="case bgWhite" id="case-large-text-threshold" data-outcome-contrast-computable="PASS" data-outcome-contrast-minimum="FAIL" data-outcome-contrast-enhanced="FAIL">
+  <p class="case-title">04 — MIXED: large text by size (24px) uses the large-text threshold, ~2.85:1 fails both AA (3.0) and AAA (4.5) large-text thresholds</p>
   <p class="text largeText" id="large_text_light_gray_on_white" style="color:#999999;">
     Large text: same color as AA-fail normal text.
   </p>
@@ -117,8 +120,8 @@
 <!-- ========================================================= -->
 <!-- 5) Large text by bold threshold (18.6667px + weight>=700) -->
 <!-- ========================================================= -->
-<section class="case bgWhite" id="case-bold-large-threshold" data-outcome-contrast-computable="PASS">
-  <p class="case-title">05 — UNSTATED: large text by bold threshold (18.6667px + 700)</p>
+<section class="case bgWhite" id="case-bold-large-threshold" data-outcome-contrast-computable="PASS" data-outcome-contrast-minimum="FAIL" data-outcome-contrast-enhanced="FAIL">
+  <p class="case-title">05 — MIXED: large text by bold threshold (18.6667px + 700), same ~2.85:1 ratio as case 04</p>
   <p class="text boldLargeText" id="bold_large_text_light_gray_on_white" style="color:#999999;">
     Bold large text: large-text thresholds should apply.
   </p>
@@ -128,8 +131,8 @@
 <!-- 6) Foreground alpha compositing (text color rgba) -->
 <!-- fg rgba black@0.5 over white should become mid-gray -->
 <!-- ========================================================= -->
-<section class="case bgWhite" id="case-foreground-alpha" data-outcome-contrast-computable="PASS">
-  <p class="case-title">06 — UNSTATED: foreground alpha rgba(0,0,0,0.5) on white</p>
+<section class="case bgWhite" id="case-foreground-alpha" data-outcome-contrast-computable="PASS" data-outcome-contrast-minimum="FAIL" data-outcome-contrast-enhanced="FAIL">
+  <p class="case-title">06 — MIXED: foreground alpha rgba(0,0,0,0.5) on white composites to ~3.98:1, fails both AA and AAA</p>
   <p class="text normalText" id="fg_alpha_black_50_on_white" style="color: rgba(0,0,0,0.5);">
     Foreground alpha compositing should be applied.
   </p>
@@ -140,8 +143,8 @@
 <!-- Background is semi-transparent white over body white (still white-ish) -->
 <!-- Useful to confirm computeEffectiveBackground + alpha reporting -->
 <!-- ========================================================= -->
-<section class="case bgAlpha50" id="case-background-alpha" data-outcome-contrast-computable="PASS">
-  <p class="case-title">07 — UNSTATED: background alpha rgba(255,255,255,0.5)</p>
+<section class="case bgAlpha50" id="case-background-alpha" data-outcome-contrast-computable="PASS" data-outcome-contrast-minimum="PASS" data-outcome-contrast-enhanced="PASS">
+  <p class="case-title">07 — PASS: background alpha rgba(255,255,255,0.5) over white composites to white, black text is ~21:1</p>
   <p class="text normalText" id="bg_alpha_white_50_black_text" style="color:#000000;">
     Background alpha layering case.
   </p>
@@ -150,9 +153,9 @@
 <!-- ========================================================= -->
 <!-- 8) Background alpha over a non-white parent -->
 <!-- ========================================================= -->
-<section class="case bgGray" id="case-background-alpha-over-gray" data-outcome-contrast-computable="PASS">
+<section class="case bgGray" id="case-background-alpha-over-gray" data-outcome-contrast-computable="PASS" data-outcome-contrast-minimum="PASS" data-outcome-contrast-enhanced="PASS">
   <div class="pad bgAlpha80OnGray">
-    <p class="case-title">08 — UNSTATED: background alpha 0.8 over a gray parent</p>
+    <p class="case-title">08 — PASS: background alpha 0.8 over a gray parent composites to ~rgb(252,252,252), black text is ~20:1</p>
     <p class="text normalText" id="bg_alpha_80_over_gray_black_text" style="color:#000000;">
       Background compositing up the chain.
     </p>
@@ -211,18 +214,35 @@
 </section>
 
 <!-- ========================================================= -->
-<!-- 13b) Computability blocker: ANCESTOR opacity < 1 -->
+<!-- 13b) NOT a blocker: ancestor opacity < 1 over a flat, resolvable backdrop -->
 <!-- An ancestor (not the text element itself) has fractional opacity.
-     Group opacity uniformly scales the ancestor's whole rendered subtree,
-     so the ratio can't be confidently computed by compositing a
-     separately-scaled foreground against a fully-folded background =>
-     cantTell (reasonCode ANCESTOR_OPACITY). -->
+     Group opacity composites the ancestor's whole rendered subtree as one
+     layer, then scales it, then blends against whatever is behind it --
+     resolvable in a single walk when that whole chain stays flat and
+     opaque, same as this engine already does for the background alone. -->
 <!-- ========================================================= -->
-<section class="case bgWhite" id="case-blocker-ancestor-opacity" data-outcome-contrast-computable="CANTTELL">
-  <p class="case-title">14 — NEUTRAL: blocker: ancestor opacity &lt; 1 (group opacity), contrast is not computable</p>
+<section class="case bgWhite" id="case-blocker-ancestor-opacity" data-outcome-contrast-computable="PASS" data-outcome-contrast-minimum="FAIL" data-outcome-contrast-enhanced="FAIL">
+  <p class="case-title">14 — FAIL: ancestor opacity &lt; 1 (group opacity) over a flat backdrop is computable, and the resulting ratio fails</p>
   <div style="opacity:0.5; background-color:#ffffff;">
     <p class="text normalText" id="blocker_ancestor_opacity" style="color:#000000; background-color:#ffffff; opacity:1;">
-      NOT COMPUTABLE: ancestor has opacity:0.5 (group opacity).
+      COMPUTABLE: black at 50% group opacity over white resolves to a flat gray, ~4:1, below the AA threshold.
+    </p>
+  </div>
+</section>
+
+<!-- ========================================================= -->
+<!-- 13b-2) Computability blocker: ancestor opacity < 1, backdrop unresolvable -->
+<!-- Same ancestor-opacity shape as 13b, but the opacity ancestor's own
+     content is opaque flat white ONLY because of a gradient sitting
+     further out, beyond the opacity ancestor -- the gradient itself
+     remains a blocker no compositing walk can resolve, so this stays
+     cantTell (reasonCode ANCESTOR_OPACITY). -->
+<!-- ========================================================= -->
+<section class="case" id="case-blocker-ancestor-opacity-unresolvable" data-outcome-contrast-computable="CANTTELL" data-outcome-contrast-minimum="NEUTRAL" data-outcome-contrast-enhanced="NEUTRAL" style="background-image:linear-gradient(red, blue);">
+  <p class="case-title">14b — NEUTRAL: ancestor opacity &lt; 1 with a gradient further out stays not computable</p>
+  <div style="opacity:0.5;">
+    <p class="text normalText" id="blocker_ancestor_opacity_unresolvable" style="color:#000000;">
+      NOT COMPUTABLE: ancestor has opacity:0.5, and a gradient sits further out behind it.
     </p>
   </div>
 </section>
@@ -236,8 +256,8 @@
      entry intentionally demonstrates "computable but low ratio", not
      "not computable"). -->
 <!-- ========================================================= -->
-<section class="case bgWhite" id="case-own-opacity-still-computable" data-outcome-contrast-computable="PASS">
-  <p class="case-title">15 — UNSTATED: not a blocker: the element&rsquo;s own opacity &lt; 1 stays computable</p>
+<section class="case bgWhite" id="case-own-opacity-still-computable" data-outcome-contrast-computable="PASS" data-outcome-contrast-minimum="FAIL" data-outcome-contrast-enhanced="FAIL">
+  <p class="case-title">15 — MIXED: not a blocker: the element&rsquo;s own opacity &lt; 1 stays computable, and the ~3.98:1 result fails AA and AAA</p>
   <p class="text normalText" id="own_opacity_still_computable" style="color:#000000; background-color:#ffffff; opacity:0.5;">
     Computable: only the text element's own opacity is fractional (no ancestor blocker).
   </p>
@@ -343,20 +363,20 @@
 </section>
 
 <!-- ========================================================= -->
-<!-- 22) Not visually visible but eligible: opacity:0 -->
+<!-- 22) Not visible: opacity:0 (excluded, same as display:none/visibility:hidden) -->
 <!-- ========================================================= -->
 <section class="case bgWhite" id="case-opacity-zero">
-  <p class="case-title">24 — UNSTATED: opacity:0 text is still eligible</p>
-  <p class="text normalText opacityZero" id="eligible_opacity_zero_fail" style="color:#999999;">
-    Eligible even if invisible (opacity:0). Should be evaluated.
+  <p class="case-title">24 — NEUTRAL: opacity:0 renders no pixels, so contrast does not apply</p>
+  <p class="text normalText opacityZero" id="excluded_opacity_zero_fail" style="color:#999999;">
+    Should be excluded (opacity:0).
   </p>
 </section>
 
 <!-- ========================================================= -->
 <!-- 23) Not visually visible but eligible: offscreen -->
 <!-- ========================================================= -->
-<section class="case bgWhite" id="case-offscreen">
-  <p class="case-title">25 — UNSTATED: offscreen positioned text is still eligible</p>
+<section class="case bgWhite" id="case-offscreen" data-outcome-contrast-computable="PASS" data-outcome-contrast-minimum="FAIL" data-outcome-contrast-enhanced="FAIL">
+  <p class="case-title">25 — MIXED: offscreen positioned text is still eligible, same ~2.85:1 gray-on-white as case 03 fails AA and AAA</p>
   <p class="text normalText offscreen" id="eligible_offscreen_fail" style="color:#999999;">
     Eligible offscreen. Should be evaluated.
   </p>
@@ -375,8 +395,8 @@
 <!-- ========================================================= -->
 <!-- 25) Zero-size text (policy decision; currently eligible) -->
 <!-- ========================================================= -->
-<section class="case bgWhite" id="case-zero-size">
-  <p class="case-title">27 — UNSTATED: zero-size text is still eligible</p>
+<section class="case bgWhite" id="case-zero-size" data-outcome-contrast-computable="PASS" data-outcome-contrast-minimum="FAIL" data-outcome-contrast-enhanced="FAIL">
+  <p class="case-title">27 — MIXED: zero-size text is still eligible, same ~2.85:1 gray-on-white as case 03 fails AA and AAA</p>
   <p class="text normalText zeroSize" id="eligible_zero_size_text" style="color:#999999;">
     Zero-size text.
   </p>
@@ -445,13 +465,13 @@
      `value` attribute, not a DOM text node (void element, can't have
      text-node children) — must still be evaluated. -->
 <!-- ========================================================= -->
-<section class="case bgWhite" id="case-value-input-submit">
-  <p class="case-title">33 — UNSTATED: &lt;input type="submit"&gt; is evaluated through its value attribute</p>
+<section class="case bgWhite" id="case-value-input-submit" data-outcome-contrast-computable="PASS" data-outcome-contrast-minimum="FAIL" data-outcome-contrast-enhanced="FAIL">
+  <p class="case-title">33 — MIXED: &lt;input type="submit"&gt; is evaluated through its value attribute, same ~2.85:1 gray-on-white fails AA and AAA</p>
   <input type="submit" id="eligible_submit_input_fail" style="color:#999999; background:#ffffff;" value="Eligible: submit input, should be evaluated.">
 </section>
 
-<section class="case bgWhite" id="case-value-input-button">
-  <p class="case-title">34 — UNSTATED: &lt;input type="button"&gt; is evaluated through its value attribute</p>
+<section class="case bgWhite" id="case-value-input-button" data-outcome-contrast-computable="PASS" data-outcome-contrast-minimum="FAIL" data-outcome-contrast-enhanced="FAIL">
+  <p class="case-title">34 — MIXED: &lt;input type="button"&gt; is evaluated through its value attribute, same ~2.85:1 gray-on-white fails AA and AAA</p>
   <input type="button" id="eligible_button_input_fail" style="color:#999999; background:#ffffff;" value="Eligible: button input, should be evaluated.">
 </section>
 

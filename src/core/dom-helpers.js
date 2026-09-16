@@ -488,25 +488,23 @@ function createDomHelpers(opts) {
   }
 
   function hasBlockingInert(node) {
-    // Default behavior: inert anywhere in ancestorsIncludingSelf blocks.
     if (!isElement(node)) return false;
 
     const tag = (node.tagName || '').toLowerCase();
     const isArea = tag === 'area';
-
-    let mapEl = null;
-    if (isArea) mapEl = getClosestMap(node);
+    const mapEl = isArea ? getClosestMap(node) : null;
 
     const chain = ancestorsIncludingSelf(node);
 
     for (const a of chain) {
       if (!isElement(a)) continue;
 
-      // Exception: for <area>, inert on itself or on its <map> does NOT block
-      if (isArea) {
-        if (a === node) continue; // ignore <area inert>
-        if (mapEl && a === mapEl) continue; // ignore <map inert>
-      }
+      // <area>/<map> generate no box, so a real browser's image-map
+      // hit-testing sits outside the pipeline inert operates on. Verified
+      // against Chromium and Firefox: inert on the area or its map does
+      // not remove it from the tab order. Only inert on a genuine ancestor
+      // of the <img>+<map> pairing does.
+      if (isArea && (a === node || a === mapEl)) continue;
 
       if (a.hasAttribute && a.hasAttribute('inert')) return true;
     }
@@ -819,24 +817,30 @@ function createDomHelpers(opts) {
       if (href && href.trim()) return true;
     }
     if (tag === 'area') {
-      // Engine policy: treat <area> as focusable when it's part of a *used* image map.
-      const map = getClosestMap(el);
-      if (map) {
-        const rawName = (
-          map.getAttribute &&
-          (map.getAttribute('name') || map.getAttribute('id') || '')
-        ).trim();
-        if (rawName && document && document.querySelector) {
-          const esc = __cssEscapeSafe;
-          const n = esc(rawName);
+      // Engine policy: treat <area href> as focusable when it's part of a
+      // *used* image map. Without href an <area> is not a hyperlink at all
+      // per the HTML spec, so it falls through to the generic tabindex
+      // check below, same as any other non-interactive element.
+      const href = el.getAttribute && el.getAttribute('href');
+      if (href && href.trim()) {
+        const map = getClosestMap(el);
+        if (map) {
+          const rawName = (
+            map.getAttribute &&
+            (map.getAttribute('name') || map.getAttribute('id') || '')
+          ).trim();
+          if (rawName && document && document.querySelector) {
+            const esc = __cssEscapeSafe;
+            const n = esc(rawName);
 
-          // Be practical: accept both "#name" and "name", and ignore case.
-          const sels = [`img[usemap="#${n}" i]`, `img[usemap="${n}" i]`];
+            // Be practical: accept both "#name" and "name", and ignore case.
+            const sels = [`img[usemap="#${n}" i]`, `img[usemap="${n}" i]`];
 
-          for (const sel of sels) {
-            try {
-              if (document.querySelector(sel)) return true;
-            } catch {}
+            for (const sel of sels) {
+              try {
+                if (document.querySelector(sel)) return true;
+              } catch {}
+            }
           }
         }
       }
@@ -1616,6 +1620,23 @@ function createDomHelpers(opts) {
   // bounded `closest('label')` walk answers the same question without it.
   function getAssociatedLabelElements(el) {
     const out = [];
+    // A <label> -- wrapping or via `for` -- only ever associates with a
+    // labelable element (LABELABLE_SELECTOR, same spec category). The
+    // wrapping branch below already enforces this by construction
+    // (`firstControl === el`, found via LABELABLE_SELECTOR); the `for`
+    // branch doesn't derive it the same way, so it's checked directly here
+    // instead. Verified against real Chromium and Firefox: a
+    // `<label for="x">`/wrapping `<label>` around a non-labelable element
+    // (e.g. a `<div role="combobox">`) produces no accessible name in
+    // either browser's accessibility tree.
+    let isLabelable;
+    try {
+      isLabelable = !!(el && el.matches && el.matches(LABELABLE_SELECTOR));
+    } catch {
+      isLabelable = false;
+    }
+    if (!isLabelable) return out;
+
     const id = trim(getAttr(el, 'id'));
     if (id) {
       const forLabels = __getLabelElementsForId(id);
@@ -1750,7 +1771,8 @@ function createDomHelpers(opts) {
     const mode =
       opts && opts.visibilityMode === 'styleAndGeometry' ? 'styleAndGeometry' : 'styleOnly';
     const disableGeometry = !!(opts && opts.disableGeometry === true);
-    return mode + '|' + (disableGeometry ? 'dg1' : 'dg0');
+    const ignoreOpacity = !!(opts && opts.ignoreOpacity === true);
+    return mode + '|' + (disableGeometry ? 'dg1' : 'dg0') + '|' + (ignoreOpacity ? 'io1' : 'io0');
   }
 
   function __getNameOptsKey(opts) {
@@ -1830,6 +1852,9 @@ function createDomHelpers(opts) {
     }
 
     const chain = ancestorsIncludingSelf(node);
+    const __tag0 = (node.tagName || '').toLowerCase();
+    const __isAreaNode = __tag0 === 'area';
+    const __ownMapEl = __isAreaNode ? getClosestMap(node) : null;
 
     // 1) HTML/DOM hiding
     for (const a of chain) {
@@ -1899,6 +1924,13 @@ function createDomHelpers(opts) {
         if (hiddenVal === 'until-found') struct = null;
       }
 
+      // Same non-rendered-element reasoning as hasBlockingInert: a plain
+      // `hidden` on the area or its map doesn't remove it from the tab
+      // order either (verified alongside inert, Chromium and Firefox).
+      if (struct === 'hiddenAttr' && __isAreaNode && (a === node || a === __ownMapEl)) {
+        struct = null;
+      }
+
       if (struct) return __cacheAndReturn({ eligible: false, reasons: [struct] });
     }
     if (inClosedDetailsContent(node))
@@ -1937,6 +1969,11 @@ function createDomHelpers(opts) {
         const tn = (a.tagName || '').toLowerCase();
         if (tn === 'area') continue;
       }
+
+      // Same reasoning extends to its <map>: a used map's hotspot ignores
+      // display:none on the <map> itself in a real browser (verified
+      // alongside inert and hidden, Chromium and Firefox).
+      if (__isAreaNode && __ownMapEl && a === __ownMapEl) continue;
 
       // Cache ancestor CSS blockers (display) per scope.
       let cssBlock = null;

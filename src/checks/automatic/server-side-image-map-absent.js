@@ -9,14 +9,17 @@
  * @standard WCAG 2.2
  * @sc 2.1.1
  * @applicability
- *   Applies to <img> elements that carry an ismap attribute.
+ *   Applies to any scan scope; whether it contains an <img> carrying an
+ *   ismap attribute is always an answerable question.
  * @expectation
- *   The image does not use ismap at all. Server-side image maps depend on
- *   the browser sending click coordinates to the server, which has no
- *   keyboard-operable equivalent, there is no way to determine or expose
- *   individual clickable regions to assistive technology or keyboard
- *   users. Client-side image maps (<map>/<area>, each with real href/alt)
- *   are the accessible alternative and are not flagged by this rule.
+ *   No image uses ismap. Server-side image maps depend on the browser
+ *   sending click coordinates to the server, which has no keyboard-operable
+ *   equivalent, there is no way to determine or expose individual clickable
+ *   regions to assistive technology or keyboard users. Client-side image
+ *   maps (<map>/<area>, each with real href/alt) are the accessible
+ *   alternative and are not flagged by this rule. Presence of ismap is
+ *   itself the violation, and absence is itself a pass -- there is no
+ *   third, not-applicable case.
  * @implementation-notes
  * - Presence of ismap is itself the violation (there is no automatable way
  *   to verify a "usable alternative" exists elsewhere on the page).
@@ -59,12 +62,9 @@ function runInPage(ctx) {
     : helpers.queryAll('img[ismap]');
 
   const occurrences = [];
-  let applicableCount = 0;
 
   for (const el of nodes) {
     if (!el) continue;
-
-    applicableCount += 1;
 
     occurrences.push(
       helpers.reportOccurrence(el, {
@@ -83,18 +83,18 @@ function runInPage(ctx) {
     );
   }
 
-  if (applicableCount === 0) {
-    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  // Matching the selector is the whole violation (see @expectation above), so
+  // every match becomes an occurrence, and "no image uses ismap" is itself
+  // the passing case -- there is no separate notApplicable case.
+  if (!occurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'serious',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'fail',
+    severity: rule.defaultSeverity || 'serious',
+    occurrences
+  };
 }
 
 module.exports = { id, meta, runInPage };

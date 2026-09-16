@@ -106,9 +106,43 @@ test('isAccTreeEligible: [inert] on an ancestor blocks descendants', () => {
   assert.deepEqual(r.reasons, ['inert']);
 });
 
-test('isAccTreeEligible: inert on an <area> itself, or on its <map>, does not block the area (documented exception)', () => {
+// <area>/<map> generate no box, so a real browser's image-map hit-testing
+// sits outside the pipeline hidden/display:none/inert operate on --
+// verified against Chromium and Firefox: none of the three remove the area
+// from the tab order when applied to the area or its map directly. Only
+// the same mechanisms on a genuine ancestor of the <img>+<map> pairing do
+// (see the "inert wrapper" rule-level tests in area-alt-present.test.js).
+
+test('isAccTreeEligible: inert on an <area> itself does not block it (non-rendered element)', () => {
   const { helpers, document } = helpersFor(
-    '<map name="m" inert><area id="a" inert shape="rect" coords="0,0,10,10" href="/x"></map>' +
+    '<map name="m"><area id="a" inert shape="rect" coords="0,0,10,10" href="/x"></map>' +
+      '<img usemap="#m" src="i.png">'
+  );
+  const r = helpers.isAccTreeEligible(byId(document, 'a'));
+  assert.equal(r.eligible, true);
+});
+
+test("isAccTreeEligible: inert on an <area>'s <map> does not block the area either", () => {
+  const { helpers, document } = helpersFor(
+    '<map name="m" inert><area id="a" shape="rect" coords="0,0,10,10" href="/x"></map>' +
+      '<img usemap="#m" src="i.png">'
+  );
+  const r = helpers.isAccTreeEligible(byId(document, 'a'));
+  assert.equal(r.eligible, true);
+});
+
+test('isAccTreeEligible: hidden attribute on an <area> itself does not block it', () => {
+  const { helpers, document } = helpersFor(
+    '<map name="m"><area id="a" hidden shape="rect" coords="0,0,10,10" href="/x"></map>' +
+      '<img usemap="#m" src="i.png">'
+  );
+  const r = helpers.isAccTreeEligible(byId(document, 'a'));
+  assert.equal(r.eligible, true);
+});
+
+test("isAccTreeEligible: display:none on an <area>'s <map> does not block the area", () => {
+  const { helpers, document } = helpersFor(
+    '<map name="m" style="display:none"><area id="a" shape="rect" coords="0,0,10,10" href="/x"></map>' +
       '<img usemap="#m" src="i.png">'
   );
   const r = helpers.isAccTreeEligible(byId(document, 'a'));
