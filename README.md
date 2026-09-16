@@ -9,8 +9,11 @@
 > **Accessibility testing that tells you what it can't tell you.**
 
 surea11y is an accessibility engine for teams that need to know what automated
-testing *can't* establish. It reports findings, non-findings, and — unusually —
-explicit uncertainty, so results are auditable rather than reassuring.
+testing *can't* establish. It implements the W3C's open [Accessibility
+Conformance Testing (ACT) Rules Format](https://www.w3.org/TR/act-rules-format/),
+verified against ACT's own published test corpus rather than judged only
+against itself. It reports findings, non-findings, and — unusually — explicit
+uncertainty, so results are auditable rather than reassuring.
 
 *Sure* means certainty about what is known, and honesty about what isn't.
 
@@ -21,6 +24,45 @@ automated testing and CI/CD pipelines.
 Unlike browser extensions or cloud-based services, surea11y is a library-first
 project. You install it, run it where your code runs, and receive structured
 results that can be consumed by people, scripts or reporting tools.
+
+## Contents
+
+- [Goals](#goals)
+- [What automated testing can and cannot do](#what-automated-testing-can-and-cannot-do)
+- [What this engine does not detect](#what-this-engine-does-not-detect)
+- [Choosing the right execution model](#choosing-the-right-execution-model)
+- [Which package do I need?](#which-package-do-i-need)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Understanding the Results](#understanding-the-results)
+- [Documentation](#documentation)
+- [Philosophy](#philosophy)
+- [Project Structure](#project-structure)
+- [Building the Project](#building-the-project)
+- [Contributing](#contributing)
+- [Security](#security)
+- [Versioning & stability](#versioning--stability)
+- [Maintainer](#maintainer)
+- [License](#license)
+
+## Goals
+
+1. **Say only what can be established, and say it plainly when it can't.**
+   `fail` is reserved for objective, normative violations; `cantTell` exists
+   so an ambiguous case is reported as ambiguous rather than silently
+   dropped or guessed at. A shorter report is not a goal in itself.
+
+2. **Verify against an open standard, not just internal tests.** Every rule
+   with a W3C ACT Rules counterpart runs against ACT's own published test
+   corpus — 798 examples across 58 rules — and the results are public. See
+   [Checked against the ACT corpus](#checked-against-the-act-corpus) below.
+
+3. **Make the engine and its rules approachable to build on.** Custom rules,
+   policies, and framework bindings are first-class extension points, and
+   every rule ships with its WCAG mapping, applicability, and expectation
+   documented. Worked examples for every rule
+   ([`docs/RULE_EXAMPLES.md`](./docs/RULE_EXAMPLES.md)) and a browsable rules
+   site are both in progress — **this goal is not yet where it needs to be**.
 
 ## What automated testing can and cannot do
 
