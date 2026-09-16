@@ -18,7 +18,7 @@
 
   <p class="note">
     Each target &lt;img&gt; has a stable <code>id</code> of the form <code>ssim_case_NN</code>.
-    Presence of ismap is itself the violation — there is no partial-pass case.
+    Presence of ismap is itself the violation; absence is a pass, not a separate not-applicable case.
   </p>
 
   <h2>A. Invalid</h2>
@@ -28,7 +28,7 @@
     <a href="/map"><img id="ssim_case_01" src="map.png" ismap alt="Site map"></a>
   </div>
 
-  <h2>B. Valid / not applicable (skipped, not counted)</h2>
+  <h2>B. Valid (not flagged; the whole page is checked as one pass/fail, see the rule's own tests for that)</h2>
 
   <div class="case" id="case_02">
     <div class="case-title">02 — NEUTRAL: ordinary image, no ismap attribute</div>

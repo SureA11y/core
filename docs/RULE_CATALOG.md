@@ -671,9 +671,9 @@ automatic · WCAG 2.2.2 (A) · confidence high · default severity serious
 
 Checks that deprecated, non-standard HTML elements whose blinking/scrolling content cannot be paused, stopped, or hidden by the user (&lt;blink&gt;, &lt;marquee&gt;) are not present.
 
-**Applies to.** Applies to any &lt;blink&gt; or &lt;marquee&gt; element present in scope. These are obsolete, non-standard HTML elements whose defining behavior (blinking or auto-scrolling text) has no built-in user mechanism to pause, stop, or hide it.
+**Applies to.** Applies to any scan scope; whether it contains a &lt;blink&gt; or &lt;marquee&gt; element is always an answerable question. These are obsolete, non-standard HTML elements whose defining behavior (blinking or auto-scrolling text) has no built-in user mechanism to pause, stop, or hide it.
 
-**Expectation.** Neither element is present. Since their movement can never be paused, stopped, or hidden by the user, presence is itself the violation. This rule has no partial-pass case (it reports only when the element is found).
+**Expectation.** Neither element is present. Since their movement can never be paused, stopped, or hidden by the user, presence is itself the violation, and absence is itself a pass -- there is no third, not-applicable case.
 
 ### `dialog-name-present`
 
@@ -1611,9 +1611,9 @@ automatic · WCAG 2.1.1 (A) · confidence high · default severity serious
 
 Checks that &lt;img&gt; elements do not carry the ismap attribute (server-side image maps have no keyboard-operable equivalent).
 
-**Applies to.** Applies to &lt;img&gt; elements that carry an ismap attribute.
+**Applies to.** Applies to any scan scope; whether it contains an &lt;img&gt; carrying an ismap attribute is always an answerable question.
 
-**Expectation.** The image does not use ismap at all. Server-side image maps depend on the browser sending click coordinates to the server, which has no keyboard-operable equivalent, there is no way to determine or expose individual clickable regions to assistive technology or keyboard users. Client-side image maps (&lt;map&gt;/&lt;area&gt;, each with real href/alt) are the accessible alternative and are not flagged by this rule.
+**Expectation.** No image uses ismap. Server-side image maps depend on the browser sending click coordinates to the server, which has no keyboard-operable equivalent, there is no way to determine or expose individual clickable regions to assistive technology or keyboard users. Client-side image maps (&lt;map&gt;/&lt;area&gt;, each with real href/alt) are the accessible alternative and are not flagged by this rule. Presence of ismap is itself the violation, and absence is itself a pass -- there is no third, not-applicable case.
 
 ### `skip-link`
 

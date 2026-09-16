@@ -16,10 +16,10 @@ function hasOccurrenceForId(rule, id) {
   );
 }
 
-test(`${RULE_ID}: notApplicable when neither <blink> nor <marquee> is present`, () => {
+test(`${RULE_ID}: pass when neither <blink> nor <marquee> is present`, () => {
   const html = `<!doctype html><html><body><p id="a">plain text</p></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: fail when <blink> is present`, () => {

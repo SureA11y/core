@@ -36678,10 +36678,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // Matching the selector is the whole violation (see @expectation above), so
-  // every match becomes an occurrence -- notApplicable/fail are the only two
-  // outcomes this rule can reach.
+  // every match becomes an occurrence, and "neither element is present" is
+  // itself the passing case -- there is no separate notApplicable case.
   if (!occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
   return {
     ruleId: rule.ruleId,
@@ -48643,10 +48643,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // Matching the selector is the whole violation (see @expectation above), so
-  // every match becomes an occurrence -- notApplicable/fail are the only two
-  // outcomes this rule can reach.
+  // every match becomes an occurrence, and "no image uses ismap" is itself
+  // the passing case -- there is no separate notApplicable case.
   if (!occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
   return {
     ruleId: rule.ruleId,
