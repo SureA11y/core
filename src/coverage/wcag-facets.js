@@ -1048,11 +1048,6 @@ const FACETS = {
                 "automation": "full"
             },
             {
-                "id": "iframe-title-unique",
-                "label": "No two <iframe>/<frame> elements share the same title attribute value",
-                "automation": "full"
-            },
-            {
                 "id": "identical-iframes-same-purpose",
                 "label": "<iframe>/<frame> elements sharing an accessible name embed the same resource",
                 "automation": "partial"

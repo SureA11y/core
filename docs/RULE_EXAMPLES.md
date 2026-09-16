@@ -951,18 +951,14 @@ No `title`, `aria-label`, or `aria-labelledby`.
 
 ## iframe-title-unique
 
-**Passed**
-```html
-<iframe title="Chat widget" src="content.html"></iframe>
-```
-No other frame on the page shares this title.
+*Deprecated since 1.8.0 in favour of [`identical-iframes-same-purpose`](#identical-iframes-same-purpose): this rule reports `notApplicable` on every page, so it has no passing or failing example of its own.*
 
-**Failed**
+**Not applicable**
 ```html
 <iframe title="Video player" src="a.html"></iframe>
 <iframe title="Video player" src="b.html"></iframe>
 ```
-Two frames on the same page share the identical title despite embedding different content.
+Formerly a `fail` for the shared title. WCAG 4.1.2 does not require frame names to be unique; `identical-iframes-same-purpose` now raises this pair as `cantTell`, since the two frames share a name but embed different resources.
 
 ## image-redundant-alt
 

@@ -102,3 +102,19 @@ test(`${RULE_ID}: <object> is out of scope`, () => {
   );
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
+
+// Sets are judged independently: a clean set elsewhere on the page neither
+// rescues nor contaminates the one whose resources differ. Moved here from
+// iframe-title-unique when that rule was deprecated in favour of this one.
+test(`${RULE_ID}: only the set whose resources differ is reported`, () => {
+  const result = run(
+    '<iframe id="a" title="Widget" src="/one.html"></iframe><iframe id="b" title="Widget" src="/two.html"></iframe>' +
+      '<iframe id="c" title="Unique" src="/three.html"></iframe>' +
+      '<iframe id="d" title="Same" src="/four.html"></iframe><iframe id="e" title="Same" src="/four.html"></iframe>'
+  );
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
+  const flagged = (rule.occurrences || [])
+    .map((o) => (o.html.match(/\bid="([a-e])"/) || [])[1])
+    .sort();
+  assert.deepStrictEqual(flagged, ['a', 'b']);
+});

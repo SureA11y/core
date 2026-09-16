@@ -6,6 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const { runa11yCoreOnHtml } = require('./helpers/runa11yCoreOnHtml');
+const { emitsNothing } = require('./helpers/emitsNothing');
 
 // An occurrence that reaches the engine without its element makes the engine
 // re-find one with document.querySelector, so a rule reporting many of them
@@ -34,7 +35,9 @@ function ruleFiles() {
 }
 
 test('the number of rules bypassing reportOccurrence only shrinks', () => {
-  const files = ruleFiles();
+  // A rule that can never report an occurrence neither uses the helper nor
+  // bypasses it (iframe-title-unique, deprecated and reduced to notApplicable).
+  const files = ruleFiles().filter((f) => !emitsNothing(f));
   const handBuilt = files.filter((f) => !fs.readFileSync(f, 'utf8').includes('reportOccurrence'));
 
   assert.ok(files.length > 100, 'sanity: the rule files were found');
