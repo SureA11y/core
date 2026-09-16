@@ -9,15 +9,15 @@
  * @standard WCAG 2.2
  * @sc 2.2.2
  * @applicability
- *   Applies to any <blink> or <marquee> element present in scope. These are
- *   obsolete, non-standard HTML elements whose defining behavior (blinking
- *   or auto-scrolling text) has no built-in user mechanism to pause, stop,
- *   or hide it.
+ *   Applies to any scan scope; whether it contains a <blink> or <marquee>
+ *   element is always an answerable question. These are obsolete,
+ *   non-standard HTML elements whose defining behavior (blinking or
+ *   auto-scrolling text) has no built-in user mechanism to pause, stop, or
+ *   hide it.
  * @expectation
  *   Neither element is present. Since their movement can never be paused,
- *   stopped, or hidden by the user, presence is itself the violation. This
- *   rule has no partial-pass case (it reports only when the element is
- *   found).
+ *   stopped, or hidden by the user, presence is itself the violation, and
+ *   absence is itself a pass -- there is no third, not-applicable case.
  * @implementation-notes
  * - Not rule-gated on isAccTreeEligible: presence in markup is itself the
  *   violation, independent of visibility (moving/blinking content inside a
@@ -87,10 +87,10 @@ function runInPage(ctx) {
   }
 
   // Matching the selector is the whole violation (see @expectation above), so
-  // every match becomes an occurrence -- notApplicable/fail are the only two
-  // outcomes this rule can reach.
+  // every match becomes an occurrence, and "neither element is present" is
+  // itself the passing case -- there is no separate notApplicable case.
   if (!occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
   return {
     ruleId: rule.ruleId,
