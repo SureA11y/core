@@ -28,3 +28,4 @@ jobs:
       - run: npm run fixtures:check
       - run: npm run fixtures:markers:check
       - run: npm run docs:rule-catalog:check
+      - run: npm run rule-examples:coverage:check
