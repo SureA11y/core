@@ -11,7 +11,7 @@ Total rules: **132**. With fixture: **130**. Without fixture: **2**.
 | Rule ID | Type | Title | Rule file | Test file |
 |---|---|---|---|---|
 | identical-iframes-same-purpose | automatic | Frames with the same name embed the same resource | src/checks/automatic/identical-iframes-same-purpose.js | tests/engine-checks/automatic/identical-iframes-same-purpose.test.js |
-| iframe-title-unique | automatic | Frame titles must be unique (deprecated) | src/checks/automatic/iframe-title-unique.js | tests/engine-checks/automatic/iframe-title-unique.test.js |
+| iframe-title-unique | automatic | Frame title uniqueness (deprecated) | src/checks/automatic/iframe-title-unique.js | tests/engine-checks/automatic/iframe-title-unique.test.js |
 
 ## Rules WITH a fixture (130)
 

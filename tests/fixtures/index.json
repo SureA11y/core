@@ -1094,7 +1094,7 @@
     },
     {
       "ruleId": "iframe-title-unique",
-      "title": "Frame titles must be unique (deprecated)",
+      "title": "Frame title uniqueness (deprecated)",
       "type": "automatic",
       "wcagSc": [
         "4.1.2"

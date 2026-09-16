@@ -6,6 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const { runa11yCoreOnHtml } = require('./helpers/runa11yCoreOnHtml');
+const { emitsNothing } = require('./helpers/emitsNothing');
 
 // An occurrence that reaches the engine without its element makes the engine
 // re-find one with document.querySelector, so a rule reporting many of them
@@ -33,20 +34,10 @@ function ruleFiles() {
     .sort();
 }
 
-// A deprecated rule reduced to notApplicable reports no occurrences at all, so
-// it neither uses the helper nor bypasses it (iframe-title-unique, see
-// docs/API_STABILITY.md).
-function isDeprecated(file) {
-  try {
-    const mod = require(file);
-    return !!(mod && mod.meta && mod.meta.deprecated);
-  } catch {
-    return false;
-  }
-}
-
 test('the number of rules bypassing reportOccurrence only shrinks', () => {
-  const files = ruleFiles().filter((f) => !isDeprecated(f));
+  // A rule that can never report an occurrence neither uses the helper nor
+  // bypasses it (iframe-title-unique, deprecated and reduced to notApplicable).
+  const files = ruleFiles().filter((f) => !emitsNothing(f));
   const handBuilt = files.filter((f) => !fs.readFileSync(f, 'utf8').includes('reportOccurrence'));
 
   assert.ok(files.length > 100, 'sanity: the rule files were found');

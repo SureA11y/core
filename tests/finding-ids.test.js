@@ -27,9 +27,25 @@ function regenerate() {
   }
 }
 
+// A deprecated rule reduced to emitting nothing (iframe-title-unique) produces
+// no codes in a fresh generation, but the inventory records what was shipped,
+// not what is still produced, and a code's promise ends only when the rule file
+// is removed (docs/API_STABILITY.md). Such a rule keeps its committed codes.
+// A deprecated rule that still emits anything gets no exemption: its codes are
+// held to the same rule as every other rule's.
+function withRetiredCodes(fresh) {
+  const reasonCodes = { ...fresh.reasonCodes };
+  for (const r of getChecksCatalog()) {
+    if (r.deprecated && !reasonCodes[r.ruleId] && committed.reasonCodes[r.ruleId]) {
+      reasonCodes[r.ruleId] = committed.reasonCodes[r.ruleId];
+    }
+  }
+  return { ...fresh, reasonCodes };
+}
+
 test('the committed inventory matches a fresh generation', () => {
   assert.deepStrictEqual(
-    regenerate(),
+    withRetiredCodes(regenerate()),
     committed,
     'scripts/data/finding-ids.json is stale -- run npm run finding-ids'
   );
@@ -62,7 +78,7 @@ test('a rule id disappears only through a deprecation entry', () => {
 });
 
 test('a shipped reason code is never dropped from a rule', () => {
-  const fresh = regenerate().reasonCodes;
+  const fresh = withRetiredCodes(regenerate()).reasonCodes;
   const lost = [];
 
   for (const [ruleId, codes] of Object.entries(committed.reasonCodes)) {

@@ -68,5 +68,5 @@ test(`${RULE_ID}: i18n default is English`, () => {
     minOccurrences: 0,
     maxOccurrences: 0
   });
-  assert.strictEqual(rule.title, 'Frame titles must be unique (deprecated)');
+  assert.strictEqual(rule.title, 'Frame title uniqueness (deprecated)');
 });

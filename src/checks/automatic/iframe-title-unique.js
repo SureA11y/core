@@ -30,7 +30,9 @@
  *   does not define. docs/DESIGN_CHALLENGES.md records the decision.
  * - IFRAME_TITLE_DUPLICATE is no longer emitted. It stays in
  *   scripts/data/finding-ids.json until the rule is removed, since the
- *   inventory records what was shipped, not what is still produced.
+ *   inventory records what was shipped, not what is still produced;
+ *   tests/finding-ids.test.js exempts a deprecated rule that emits nothing
+ *   from matching a fresh generation.
  * - The facet this rule covered under SC 4.1.2 is retired; the coverage
  *   entry points at the successor's facet, so the catalog still shows where
  *   the question is answered.
@@ -39,7 +41,7 @@
 const id = 'iframe-title-unique';
 
 const meta = {
-  title: 'Frame titles must be unique (deprecated)',
+  title: 'Frame title uniqueness (deprecated)',
   description:
     'Deprecated since 1.8.0 and always notApplicable: whether frames sharing a name embed the same resource is checked by identical-iframes-same-purpose.',
   i18n: {

@@ -2054,7 +2054,7 @@
       ],
       "wcagScInformative": [],
       "type": "automatic",
-      "title": "Frame titles must be unique (deprecated)",
+      "title": "Frame title uniqueness (deprecated)",
       "tags": [
         "wcag2a",
         "wcag412",

@@ -9,6 +9,7 @@ const { execFileSync } = require('node:child_process');
 
 const { getChecksCatalog } = require('../src/index.js');
 const { collect } = require('../scripts/lib/rule-review-data');
+const { emitsNothing } = require('./helpers/emitsNothing');
 
 const ROOT = path.join(__dirname, '..');
 const GENERATOR = path.join(ROOT, 'scripts', 'generate-rule-review.js');
@@ -59,15 +60,10 @@ test('every rule states what it applies to and what it expects', () => {
 });
 
 test('every rule can emit at least one message', () => {
-  // A deprecated rule reduced to notApplicable has nothing to say and no keys
-  // to say it with (iframe-title-unique, see docs/API_STABILITY.md).
-  const deprecated = new Set(
-    getChecksCatalog()
-      .filter((r) => r.deprecated)
-      .map((r) => r.ruleId)
-  );
   for (const rule of rules) {
-    if (deprecated.has(rule.id)) continue;
+    // A rule that can never report an occurrence has nothing to say and no keys
+    // to say it with (iframe-title-unique, deprecated and reduced to notApplicable).
+    if (emitsNothing(path.join(ROOT, rule.ruleFile))) continue;
     const total = ['fail', 'cantTell', 'pass', 'notApplicable'].reduce(
       (n, o) => n + rule.messages[o].length,
       0
