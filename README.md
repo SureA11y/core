@@ -8,12 +8,15 @@
 
 > **Accessibility testing that tells you what it can't tell you.**
 
-surea11y is an accessibility engine for teams that need to know what automated
-testing *can't* establish. It implements the W3C's open [Accessibility
-Conformance Testing (ACT) Rules Format](https://www.w3.org/TR/act-rules-format/),
-verified against ACT's own published test corpus rather than judged only
-against itself. It reports findings, non-findings, and — unusually — explicit
-uncertainty, so results are auditable rather than reassuring.
+surea11y is a WCAG accessibility testing engine you run in your own test
+suite, CI pipeline, or from the command line.
+
+What sets it apart is what it does with the cases automated testing can't
+settle. It implements the W3C's open [Accessibility Conformance Testing (ACT)
+Rules Format](https://www.w3.org/TR/act-rules-format/), verified against
+ACT's own published test corpus rather than judged only against itself, and
+it reports findings, non-findings, and — unusually — explicit uncertainty, so
+results are auditable rather than reassuring.
 
 *Sure* means certainty about what is known, and honesty about what isn't.
 
