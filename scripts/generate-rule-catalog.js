@@ -280,9 +280,7 @@ ${rows.map(reference).join('\n\n')}
   if (args.check) {
     const current = fs.existsSync(outPath) ? fs.readFileSync(outPath, 'utf8') : null;
     if (current !== md) {
-      console.error(
-        `[generate-rule-catalog] ${outPath} is stale. Run: npm run docs:rule-catalog`
-      );
+      console.error(`[generate-rule-catalog] ${outPath} is stale. Run: npm run docs:rule-catalog`);
       process.exit(1);
     }
     console.log('[generate-rule-catalog] catalog is up to date.');
