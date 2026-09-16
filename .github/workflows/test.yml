@@ -26,3 +26,5 @@ jobs:
       - run: npm run validate:rules
       - run: npm run coverage:check
       - run: npm run fixtures:check
+      - run: npm run fixtures:markers:check
+      - run: npm run docs:rule-catalog:check

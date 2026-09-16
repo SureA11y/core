@@ -94,6 +94,7 @@
     "fixtures:markers": "npm run build && node scripts/generate-fixture-markers.js",
     "fixtures:markers:check": "npm run build && node scripts/generate-fixture-markers.js --check",
     "docs:rule-catalog": "npm run build && node scripts/generate-rule-catalog.js",
+    "docs:rule-catalog:check": "npm run build && node scripts/generate-rule-catalog.js --check",
     "docs:rule-review": "npm run build && node scripts/generate-rule-review.js",
     "validate:automatic-rules": "npm run build && node scripts/validate-all-rules.js src/checks/automatic",
     "validate:manual-rules": "npm run build && node scripts/validate-all-rules.js src/checks/manual",
