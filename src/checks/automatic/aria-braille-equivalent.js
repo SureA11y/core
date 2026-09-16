@@ -129,7 +129,7 @@ function runInPage(ctx) {
     for (const m of missing) {
       occurrences.push(
         helpers.reportOccurrence(el, {
-          summary: `This element has ${m.attr} but no ${m.requires}, its non-braille equivalent.`,
+          summary: `This element has ${m.attr} but not ${m.requires}, its non-braille equivalent.`,
           hint: `${m.attr} is a Braille-specific supplement, not a replacement, so also provide ${m.requires}.`,
           i18n: {
             summaryKey: 'ariaBrailleEquivalent_summary_fail',
