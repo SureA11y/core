@@ -83,6 +83,41 @@ test('dom-helpers eligibility caches: isDomVisibleEligible memoizes per mode key
   assert.ok(!r4.reasons.includes('mutated'), 'cache should return a fresh copy of reasons');
 });
 
+test('dom-helpers eligibility caches: ignoreOpacity is part of the mode key, not shared across it', () => {
+  const dom = new JSDOM(`<!doctype html><html><body>
+    <span id="a" style="opacity:0">Hi</span>
+  </body></html>`);
+
+  const { window } = dom;
+  const { document } = window;
+
+  const helpers = createDomHelpers({ window, document, root: document });
+  const a = document.getElementById('a');
+  assert.ok(a);
+
+  // A caller that opts into ignoring opacity (e.g. queryAllSmart's inert
+  // check) must not leave a cached "eligible" verdict that a later caller
+  // for the same element, same visibilityMode/disableGeometry, but without
+  // ignoreOpacity, then reads back.
+  const withIgnore = helpers.isDomVisibleEligible(a, null, {
+    visibilityMode: 'styleOnly',
+    disableGeometry: true,
+    ignoreOpacity: true
+  });
+  assert.strictEqual(withIgnore.eligible, true);
+
+  const withoutIgnore = helpers.isDomVisibleEligible(a, null, {
+    visibilityMode: 'styleOnly',
+    disableGeometry: true
+  });
+  assert.strictEqual(
+    withoutIgnore.eligible,
+    false,
+    'opacity:0 excludes this caller, which did not ask to ignore it'
+  );
+  assert.ok(withoutIgnore.reasons.includes('opacityZero'));
+});
+
 test('dom-helpers eligibility caches: ancestor blocker finals short-circuit repeated ancestor scans (dom)', () => {
   const dom = new JSDOM(`<!doctype html><html><body>
     <div id="p"><span id="a">A</span><span id="b">B</span></div>
