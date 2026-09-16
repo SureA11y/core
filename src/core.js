@@ -36655,12 +36655,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     : helpers.queryAll('blink, marquee');
 
   const occurrences = [];
-  let applicableCount = 0;
 
   for (const el of nodes) {
     if (!el || !el.tagName) continue;
-
-    applicableCount += 1;
 
     const tag = el.tagName.toLowerCase();
 
@@ -36680,18 +36677,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     );
   }
 
-  if (applicableCount === 0) {
+  // Matching the selector is the whole violation (see @expectation above), so
+  // every match becomes an occurrence -- notApplicable/fail are the only two
+  // outcomes this rule can reach.
+  if (!occurrences.length) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'serious',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'fail',
+    severity: rule.defaultSeverity || 'serious',
+    occurrences
+  };
 }), applicability: null },
     "dialog-name-present": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
@@ -48624,12 +48621,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     : helpers.queryAll('img[ismap]');
 
   const occurrences = [];
-  let applicableCount = 0;
 
   for (const el of nodes) {
     if (!el) continue;
-
-    applicableCount += 1;
 
     occurrences.push(
       helpers.reportOccurrence(el, {
@@ -48648,18 +48642,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     );
   }
 
-  if (applicableCount === 0) {
+  // Matching the selector is the whole violation (see @expectation above), so
+  // every match becomes an occurrence -- notApplicable/fail are the only two
+  // outcomes this rule can reach.
+  if (!occurrences.length) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'serious',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'fail',
+    severity: rule.defaultSeverity || 'serious',
+    occurrences
+  };
 }), applicability: null },
     "skip-link": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
