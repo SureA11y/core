@@ -565,10 +565,10 @@
       "fixtureFile": "tests/fixtures/contrast-all-scenarios.html",
       "totalCases": 36,
       "caseCounts": {
-        "PASS": 1,
+        "PASS": 3,
         "FAIL": 5,
         "CANTTELL": 0,
-        "OTHER": 30
+        "OTHER": 28
       }
     },
     {
@@ -584,10 +584,10 @@
       "fixtureFile": "tests/fixtures/contrast-all-scenarios.html",
       "totalCases": 36,
       "caseCounts": {
-        "PASS": 1,
+        "PASS": 3,
         "FAIL": 5,
         "CANTTELL": 0,
-        "OTHER": 30
+        "OTHER": 28
       }
     },
     {
@@ -603,10 +603,10 @@
       "fixtureFile": "tests/fixtures/contrast-all-scenarios.html",
       "totalCases": 36,
       "caseCounts": {
-        "PASS": 1,
+        "PASS": 3,
         "FAIL": 5,
         "CANTTELL": 0,
-        "OTHER": 30
+        "OTHER": 28
       }
     },
     {

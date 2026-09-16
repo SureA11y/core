@@ -45,9 +45,9 @@ Total rules: **132**. With fixture: **131**. Without fixture: **1**.
 | canvas-text-alternative-present | automatic | `tests/fixtures/canvas-text-alternative-present-all-scenarios.html` | 25 | 9 | 7 | 0 | 9 |
 | canvas-text-alternative-quality | manual | `tests/fixtures/canvas-text-alternative-quality-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
 | combobox-name-present | automatic | `tests/fixtures/combobox-name-present-all-scenarios.html` | 24 | 5 | 7 | 0 | 12 |
-| contrast-computable | automatic | `tests/fixtures/contrast-all-scenarios.html` | 36 | 1 | 5 | 0 | 30 |
-| contrast-enhanced | automatic | `tests/fixtures/contrast-all-scenarios.html` | 36 | 1 | 5 | 0 | 30 |
-| contrast-minimum | automatic | `tests/fixtures/contrast-all-scenarios.html` | 36 | 1 | 5 | 0 | 30 |
+| contrast-computable | automatic | `tests/fixtures/contrast-all-scenarios.html` | 36 | 3 | 5 | 0 | 28 |
+| contrast-enhanced | automatic | `tests/fixtures/contrast-all-scenarios.html` | 36 | 3 | 5 | 0 | 28 |
+| contrast-minimum | automatic | `tests/fixtures/contrast-all-scenarios.html` | 36 | 3 | 5 | 0 | 28 |
 | css-focus-indicator-suppressed | manual | `tests/fixtures/css-focus-indicator-suppressed-all-scenarios.html` | 12 | 4 | 0 | 5 | 3 |
 | css-hidden-focus | manual | `tests/fixtures/css-hidden-focus-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
 | css-orientation-lock | automatic | `tests/fixtures/css-orientation-lock-all-scenarios.html` | 1 | 0 | 1 | 0 | 0 |
