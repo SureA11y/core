@@ -638,7 +638,7 @@
   "identicalLinksSamePurpose_hint_cantTell": "Ensure links with the same text serve the same purpose, or make the link text distinct enough to describe each destination.",
   "ariaBrailleEquivalent_title": "aria-braillelabel/aria-brailleroledescription must have a non-braille equivalent",
   "ariaBrailleEquivalent_description": "Checks that elements using aria-braillelabel also have a regular accessible name, and elements using aria-brailleroledescription also have aria-roledescription.",
-  "ariaBrailleEquivalent_summary_fail": "This element has {{attr}} but no {{requires}}, its non-braille equivalent.",
+  "ariaBrailleEquivalent_summary_fail": "This element has {{attr}} but not {{requires}}, its non-braille equivalent.",
   "ariaBrailleEquivalent_hint_fail": "{{attr}} is a Braille-specific supplement, not a replacement, so also provide {{requires}}.",
   "ariaConditionalAttr_title": "aria-errormessage requires aria-invalid to be set to a non-false value",
   "ariaConditionalAttr_description": "Checks that elements with aria-errormessage also have aria-invalid set to \"true\", \"grammar\", or \"spelling\"; otherwise the error message is dropped from the accessibility tree.",
