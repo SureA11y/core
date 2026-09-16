@@ -1771,7 +1771,8 @@ function createDomHelpers(opts) {
     const mode =
       opts && opts.visibilityMode === 'styleAndGeometry' ? 'styleAndGeometry' : 'styleOnly';
     const disableGeometry = !!(opts && opts.disableGeometry === true);
-    return mode + '|' + (disableGeometry ? 'dg1' : 'dg0');
+    const ignoreOpacity = !!(opts && opts.ignoreOpacity === true);
+    return mode + '|' + (disableGeometry ? 'dg1' : 'dg0') + '|' + (ignoreOpacity ? 'io1' : 'io0');
   }
 
   function __getNameOptsKey(opts) {
