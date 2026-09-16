@@ -14,6 +14,7 @@
  * Usage:
  *   npm run build && node scripts/generate-rule-catalog.js
  *   node scripts/generate-rule-catalog.js --out docs/RULE_CATALOG.md
+ *   node scripts/generate-rule-catalog.js --check   (fails if the file is stale, writes nothing)
  */
 
 const fs = require('fs');
@@ -275,6 +276,18 @@ Every atomic rule, alphabetically. "Applies to" is the rule's precondition (when
 
 ${rows.map(reference).join('\n\n')}
 `;
+
+  if (args.check) {
+    const current = fs.existsSync(outPath) ? fs.readFileSync(outPath, 'utf8') : null;
+    if (current !== md) {
+      console.error(
+        `[generate-rule-catalog] ${outPath} is stale. Run: npm run docs:rule-catalog`
+      );
+      process.exit(1);
+    }
+    console.log('[generate-rule-catalog] catalog is up to date.');
+    return;
+  }
 
   fs.writeFileSync(outPath, md);
   console.log(
