@@ -6,6 +6,8 @@
 [![node](https://img.shields.io/node/v/@surea11y/core?style=flat-square&label=node&labelColor=101413&color=3A4441)](package.json)
 [![license](https://img.shields.io/badge/license-MPL--2.0-3A4441?style=flat-square&labelColor=101413)](LICENSE)
 
+[Website](https://surea11y.dev/) · [Documentation](https://surea11y.dev/getting-started/) · [Rules](https://surea11y.dev/rules/)
+
 > **Accessibility testing that tells you what it can't tell you.**
 
 surea11y is a WCAG accessibility testing engine you run in your own test
@@ -63,9 +65,9 @@ results that can be consumed by people, scripts or reporting tools.
 3. **Make the engine and its rules approachable to build on.** Custom rules,
    policies, and framework bindings are first-class extension points, and
    every rule ships with its WCAG mapping, applicability, and expectation
-   documented. Worked examples for every rule
-   ([`docs/RULE_EXAMPLES.md`](./docs/RULE_EXAMPLES.md)) and a browsable rules
-   site are both in progress — **this goal is not yet where it needs to be**.
+   documented. Worked examples are available in
+   [`docs/RULE_EXAMPLES.md`](./docs/RULE_EXAMPLES.md), and the complete rule
+   catalog can be browsed at [surea11y.dev/rules](https://surea11y.dev/rules/).
 
 ## What automated testing can and cannot do
 
@@ -464,8 +466,12 @@ For a complete field-by-field reference, see `docs/OUTPUT_SCHEMA.md`.
 
 ## Documentation
 
+The complete documentation is available at **[surea11y.dev](https://surea11y.dev/)**.
+
 The project documentation is organized by topic so you can start quickly
 and progressively explore more advanced features.
+
+The source repository also contains the following technical and contributor documentation:
 
 | Document | Description |
 |---|---|
