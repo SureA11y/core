@@ -10,31 +10,36 @@
 
 > **Accessibility testing that tells you what it can't tell you.**
 
-surea11y is a WCAG accessibility testing engine you run in your own test
-suite, CI pipeline, or from the command line.
+`@surea11y/core` is the WCAG accessibility testing engine behind the surea11y
+family of packages. It runs in Node.js against a DOM you supply (such as
+jsdom) or inside a real browser page, and returns deterministic,
+standards-traceable results. The integrations for Playwright, Cypress,
+Puppeteer, Selenium, WebdriverIO, Jest/Vitest and the command line are
+separate packages built on this engine: see
+[Which package do I need?](#which-package-do-i-need).
 
 What sets it apart is what it does with the cases automated testing can't
 settle. It implements the W3C's open [Accessibility Conformance Testing (ACT)
 Rules Format](https://www.w3.org/TR/act-rules-format/), verified against
 ACT's own published test corpus rather than judged only against itself, and
-it reports findings, non-findings, and — unusually — explicit uncertainty, so
+it reports findings, non-findings, and (unusually) explicit uncertainty, so
 results are auditable rather than reassuring.
 
 *Sure* means certainty about what is known, and honesty about what isn't.
 
-It runs against either static HTML or fully rendered browser pages, producing
-deterministic, standards-traceable results suitable for local development,
-automated testing and CI/CD pipelines.
+132 accessibility rules · 58 validated against the ACT corpus (798 reference
+cases) · zero runtime dependencies
 
-Unlike browser extensions or cloud-based services, surea11y is a library-first
-project. You install it, run it where your code runs, and receive structured
-results that can be consumed by people, scripts or reporting tools.
+Unlike browser extensions or cloud-based services, the engine is a library.
+You install it, run it where your code runs, and receive structured results
+that can be consumed by people, scripts or reporting tools.
 
 ## Contents
 
 - [Goals](#goals)
 - [What automated testing can and cannot do](#what-automated-testing-can-and-cannot-do)
 - [What this engine does not detect](#what-this-engine-does-not-detect)
+- [Key principles](#key-principles)
 - [Choosing the right execution model](#choosing-the-right-execution-model)
 - [Which package do I need?](#which-package-do-i-need)
 - [Installation](#installation)
@@ -71,12 +76,9 @@ results that can be consumed by people, scripts or reporting tools.
 
 ## What automated testing can and cannot do
 
-Automated tools are commonly reckoned to catch somewhere around a third of WCAG
-issues. The remainder require human judgement. That ceiling is a property of
-static analysis itself, not a gap in any particular tool.
-
-surea11y's answer is to be explicit about which side of that line every result
-falls on. Each rule makes a single deterministic decision:
+Many WCAG requirements cannot be determined through automated testing alone and
+require human judgement. surea11y's answer is to make that boundary explicit.
+Each rule makes a single deterministic decision:
 
 - **`fail`** — a violation provable from the DOM. Reserved for objective,
   normative cases.
@@ -112,16 +114,29 @@ scheduled job republishes it weekly and on release.
 
 ## What this engine does not detect
 
-Keyboard traps, reflow and clipping at 400% zoom, anything that only exists
-after a click or an async load, and judgement calls such as whether a heading is
-meaningful — these lie outside what a static DOM scan can establish. Each is a
-reasoned decision rather than an oversight.
+Some things lie outside what a scan of the DOM can establish. For example,
+the engine will not:
 
-[`docs/LIMITATIONS.md`](./docs/LIMITATIONS.md) lists them in full with the
-reasoning for each. A `pass` from this engine — or from any automated tool — is
-never a substitute for the manual review WCAG itself requires.
+- confirm that alt text is *meaningful*, only that it is present
+  (an alt attribute of `"image123.png"` passes the objective check);
+- judge whether a color contrast choice is aesthetically appropriate,
+  only whether it meets the applicable contrast ratio;
+- determine whether an error message actually *explains* the problem,
+  since that depends on validation logic a static scan can't see;
+- detect a keyboard trap, or reflow and clipping at 400% zoom, since both
+  require simulating real user interaction over time;
+- see anything that only exists after a click or an async load.
 
-### Key principles
+Where a case comes down to judgement, such as whether a heading is
+meaningful, the engine reports `cantTell` rather than guessing. Each of these
+boundaries is a reasoned decision rather than an oversight:
+[Known limitations](https://surea11y.dev/help/known-limitations/) lists them
+in full with the reasoning for each (also in
+[`docs/LIMITATIONS.md`](./docs/LIMITATIONS.md)). A `pass` from this engine, or
+from any automated tool, is never a substitute for the manual review WCAG
+itself requires.
+
+## Key principles
 
 - **Deterministic execution.** The same input always produces the same
   output.
@@ -137,21 +152,22 @@ never a substitute for the manual review WCAG itself requires.
   by rule IDs, tags or WCAG version.
 - **Localized reporting.** Human-readable messages can be translated
   without affecting machine-readable data. Ships with `en`, `fr`, `de`,
-  and `es` today — see [`docs/I18N.md`](./docs/I18N.md) to use one or
+  and `es` today. See [`docs/I18N.md`](./docs/I18N.md) to use one or
   contribute another.
 
 ---
 
 ## Choosing the right execution model
 
-surea11y supports two complementary execution models. Choosing the
+The engine supports two complementary execution models. Choosing the
 correct one is essential because it determines which parts of the page
 the engine can inspect.
 
 ### Static HTML
 
-The CLI (`scan file.html` or `scan https://example.com`) and
-`runDomRulesInPage()` analyse HTML without executing page JavaScript.
+`runDomRulesInPage()` analyses HTML without executing page JavaScript,
+and so does the separate [`@surea11y/cli`](#cli) package, which wraps it
+for the terminal.
 
 This approach is ideal for:
 
@@ -202,7 +218,9 @@ matches how you test — each pulls in `@surea11y/core` for you.
 | Scan static HTML from a **terminal or CI pipeline** | [`@surea11y/cli`](https://github.com/SureA11y/cli#readme) |
 | Run the engine against **a DOM I already have** | `@surea11y/core` (this package) |
 
-The rest of this README covers `@surea11y/core` itself.
+[Getting Started](https://surea11y.dev/getting-started/) on surea11y.dev
+covers installation and usage for each of these. The rest of this README
+covers `@surea11y/core` itself.
 
 ---
 
@@ -460,18 +478,25 @@ The complete schema also includes confidence, severity, WCAG
 traceability, composite rule results and other metadata intended for
 reporting and automation.
 
-For a complete field-by-field reference, see `docs/OUTPUT_SCHEMA.md`.
+For a complete field-by-field reference, see
+[Output schema](https://surea11y.dev/results-reports/output-schema/)
+(`docs/OUTPUT_SCHEMA.md` in the repository).
 
 ---
 
 ## Documentation
 
-The complete documentation is available at **[surea11y.dev](https://surea11y.dev/)**.
+Full documentation is available at **[surea11y.dev](https://surea11y.dev/)**:
+[getting started](https://surea11y.dev/getting-started/) for each integration,
+the [rule catalog](https://surea11y.dev/rules/),
+[configuration](https://surea11y.dev/configuration/),
+[results and reports](https://surea11y.dev/results-reports/),
+[WCAG conformance](https://surea11y.dev/conformance/), and
+[help](https://surea11y.dev/help/).
 
-The project documentation is organized by topic so you can start quickly
-and progressively explore more advanced features.
-
-The source repository also contains the following technical and contributor documentation:
+The repository also contains the following technical and contributor
+documentation, useful as direct references when building on the engine or
+contributing to it:
 
 | Document | Description |
 |---|---|
@@ -517,27 +542,11 @@ need human judgement, knowledge of context, or usability evaluation. A
 single score or a pass/fail verdict flattens that difference; surea11y
 reports it.
 
-This is why `cantTell` and `notApplicable` exist as outcomes, and it
-shapes every rule in the engine.
-
-### What surea11y won't catch
-
-Being explicit about the boundaries of automation is part of the same
-philosophy. For example, surea11y will not:
-
-- confirm that alt text is *meaningful*, only that it is present
-  (an alt attribute of `"image123.png"` passes the objective check);
-- judge whether a color contrast choice is aesthetically appropriate,
-  only whether it meets the applicable contrast ratio;
-- determine whether an error message actually *explains* the problem,
-  since that depends on validation logic a static scan can't see;
-- detect a keyboard focus trap or content clipped at 400% zoom, since
-  both require simulating real user interaction over time, not just
-  reading the DOM at one instant.
-
-These are the cases where the engine reports `cantTell`, and where a
-human reviewer's judgement remains necessary. See
-`docs/LIMITATIONS.md` for the complete list of structural limitations.
+This is why `cantTell` and `notApplicable` exist as outcomes (see
+[What automated testing can and cannot do](#what-automated-testing-can-and-cannot-do)),
+and why the engine is explicit about
+[what it does not detect](#what-this-engine-does-not-detect). It shapes
+every rule in the engine.
 
 ---
 
