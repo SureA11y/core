@@ -739,16 +739,53 @@ function normalizeRunOnly(runOnly) {
 }
 
 /**
+ * Named conformance targets for engineOptions.profile, each the version-origin
+ * tag set a caller would otherwise have to spell out (level tags do not nest,
+ * see docs/WCAG_CONFORMANCE.md). The WCAG target version then follows from the
+ * tags the usual way, so a profile needs no version of its own.
+ *
+ * - wcag22-aa: WCAG 2.2 Level A and AA.
+ * - en301549-v4.1.1: EN 301 549 V4.1.1 chapter 9 restates WCAG 2.2 A and AA.
+ * - en301549-v3.2.1: EN 301 549 V3.2.1 chapter 9 restates WCAG 2.1 A and AA.
+ * - section508: the Revised 508 Standards incorporate WCAG 2.0 A and AA.
+ *
+ * A profile only selects which rules run. It is not a claim that passing them
+ * satisfies the standard it is named after.
+ */
+const CONFORMANCE_PROFILES = {
+  'wcag22-aa': ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22a', 'wcag22aa'],
+  'en301549-v4.1.1': ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22a', 'wcag22aa'],
+  'en301549-v3.2.1': ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'],
+  'section508': ['wcag2a', 'wcag2aa']
+};
+
+function normalizeProfileName(v) {
+  return typeof v === 'string' ? v.trim().toLowerCase() : '';
+}
+
+/**
  * Resolve effective selection from engineOptions (preferred) or runOnly (legacy).
  *
  * Precedence:
  * - If runOnly is provided and non-empty => use it (legacy behavior, plus extended fields)
  * - Else => derive from engineOptions.rules/tags/includeMode (comma-separated strings)
+ * - engineOptions.profile supplies the include tags only when neither of the
+ *   above includes anything; excludes still apply on top of it.
+ *
+ * When a profile was requested, the result carries either "profile" (the one
+ * applied) or "profileNotApplied" ('unknown' | 'overridden') so the runner
+ * can report which.
  */
 function resolveEffectiveRunOnly(engineOptions, runOnly) {
-  if (hasAnyRunOnlyKeys(runOnly)) return normalizeRunOnly(runOnly);
-
   const eo = (engineOptions && typeof engineOptions === 'object') ? engineOptions : {};
+  const requestedProfile = normalizeProfileName(eo.profile);
+
+  if (hasAnyRunOnlyKeys(runOnly)) {
+    const fromRunOnly = normalizeRunOnly(runOnly);
+    if (requestedProfile) fromRunOnly.profileNotApplied = 'overridden';
+    return fromRunOnly;
+  }
+
   const mode = normalizeIncludeMode(eo.includeMode);
 
   const rules = (eo.rules && typeof eo.rules === 'object') ? eo.rules : null;
@@ -764,7 +801,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   const includeTestIds = parseCommaList(tests && tests.include, { lower: false });
   const excludeTestIds = parseCommaList(tests && tests.exclude, { lower: false });
 
-  return {
+  const out = {
     includeMode: mode,
     tags: includeTags,
     excludeTags,
@@ -774,6 +811,21 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     excludeTestIds
   };
 
+  if (requestedProfile) {
+    const profileTags = Object.prototype.hasOwnProperty.call(CONFORMANCE_PROFILES, requestedProfile)
+      ? CONFORMANCE_PROFILES[requestedProfile]
+      : null;
+    if (!profileTags) {
+      out.profileNotApplied = 'unknown';
+    } else if (includeTags.length || includeRuleIds.length || includeTestIds.length) {
+      out.profileNotApplied = 'overridden';
+    } else {
+      out.tags = profileTags.slice();
+      out.profile = requestedProfile;
+    }
+  }
+
+  return out;
 }
 
 function ruleIdMatches(candidate, ruleId, engineTag) {

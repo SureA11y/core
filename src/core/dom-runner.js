@@ -690,6 +690,26 @@ function runCore(
     inferWcagVersionFromRunOnly(runOnly) ||
     DEFAULT_WCAG_VERSION;
 
+  // engineOptions.profile is resolved with the rest of the selection, before
+  // runCore (resolveEffectiveRunOnly in scripts/build-core.js). A profile that
+  // did not take effect is not an error, matching how other option values
+  // fall back, but a caller who asked for a conformance target and silently
+  // got a full run would read the result wrongly, so say so.
+  const appliedProfile = runOnly && typeof runOnly.profile === 'string' ? runOnly.profile : null;
+  const profileNotApplied = runOnly && runOnly.profileNotApplied;
+  if (profileNotApplied) {
+    try {
+      console.warn(
+        '[surea11y] engineOptions.profile "' +
+          String(engineOptionsResolved.profile) +
+          '" was not applied: ' +
+          (profileNotApplied === 'unknown'
+            ? 'no such profile.'
+            : 'runOnly, or an include in engineOptions.rules/tags/tests, selects the rules instead.')
+      );
+    } catch {}
+  }
+
   function scopeOutcomeToWcagVersion(def, result) {
     if (targetWcagVersion !== '2.2') return result;
     if (!result || typeof result !== 'object' || result.outcome !== 'fail') return result;
@@ -909,7 +929,8 @@ function runCore(
       tag: ENGINE_TAG,
       schemaVersion: SCHEMA_VERSION,
       locale: resolveLocale(engineOptionsResolved),
-      wcagVersion: targetWcagVersion
+      wcagVersion: targetWcagVersion,
+      ...(appliedProfile ? { profile: appliedProfile } : {})
     },
     url,
     title,

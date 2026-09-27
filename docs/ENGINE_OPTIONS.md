@@ -91,6 +91,27 @@ If you would rather not see the rule at all under 2.2, exclude it outright — t
 
 `duplicate-id` is the only rule carrying that tag today. Left in, it still reports something real — a duplicate id breaks `<label for>`, fragment links and `getElementById` whatever the standard says — it just is not a 2.2 conformance failure.
 
+### Conformance profiles
+
+`engineOptions.profile` names a conformance target instead of spelling out its tag set:
+
+| Profile | Runs the rules tagged | WCAG target | Why |
+|---|---|---|---|
+| `wcag22-aa` | `wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa`, `wcag22a`, `wcag22aa` | 2.2 | WCAG 2.2 Level A and AA |
+| `en301549-v4.1.1` | same as `wcag22-aa` | 2.2 | EN 301 549 V4.1.1 chapter 9 restates WCAG 2.2 A and AA |
+| `en301549-v3.2.1` | `wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa` | 2.1 | EN 301 549 V3.2.1 chapter 9 restates WCAG 2.1 A and AA, including 4.1.1 Parsing |
+| `section508` | `wcag2a`, `wcag2aa` | 2.0 | The Revised 508 Standards incorporate WCAG 2.0 A and AA |
+
+```js
+runDomRulesInPage(url, null, { profile: 'en301549-v3.2.1' }, null);
+```
+
+The WCAG target follows from the tags the same way it does for a hand-written set (see [Filtering by WCAG version](#filtering-by-wcag-version-21-vs-22)), so under `en301549-v3.2.1` a duplicate id can still `fail`, and under `en301549-v4.1.1` it cannot. Names are matched case-insensitively. A run that used a profile reports it back as `engine.profile`.
+
+Precedence: a `runOnly` filter, or an `include` in `engineOptions.rules`/`.tags`/`.tests`, selects the rules instead of the profile. Excludes (`tags.exclude`, `rules.exclude`, `tests.exclude`) still apply on top of it, and an explicit `engineOptions.wcagVersion` still wins over the version the profile implies. A profile that does not take effect — an unknown name, or one overridden as above — is not an error: the run proceeds as if none was given, logs a `console.warn` saying why, and carries no `engine.profile`.
+
+A profile only chooses which rules run. It says nothing about whether passing them meets the standard it is named after: most Success Criteria need human judgement no automated rule covers (see [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md#what-this-engine-cannot-tell-you)).
+
 ### Via `engineOptions` (no `runOnly`)
 
 Same filtering, expressed as comma-separated strings (or arrays) nested in `engineOptions`:
@@ -111,6 +132,7 @@ runDomRulesInPage(url, null, {
 const engineOptions = {
   locale: 'en',                    // default 'en'; de-DE falls back to de, then to en per string
   wcagVersion: '2.2',              // default '2.2' — the conformance target, see "Filtering by WCAG version" above
+  profile: 'en301549-v4.1.1',      // optional — a named conformance target, see "Conformance profiles" above
   messages: { de: { /* key: text */ } },  // optional caller-supplied dictionaries; win over built-in ones
   includeHiddenElements: false,    // default false — set true to evaluate hidden/collapsed subtrees too
   includeShadowDom: true,          // default true — opt OUT with `false` to skip open shadow roots
@@ -157,6 +179,7 @@ const engineOptions = {
 |---|---|
 | `locale` | Any string. A code with a subtag falls back to its base language first, so `de-DE` uses `de`; failing that, English. Individual strings then fall back the same way (chosen locale → `en` → the rule's literal English text), so a partly-translated locale never produces missing text. All of that is silent in the strings themselves, so the result reports what actually happened in `engine.locale` — check it if you need to know whether you got the language you asked for. See [`I18N.md`](./I18N.md). |
 | `wcagVersion` | `'2.0'`, `'2.1'` or `'2.2'` — which version of WCAG the run is conformance-testing against. Defaults to whatever your version-origin tags imply, and to `'2.2'` when they imply nothing. The only thing it currently changes is SC 4.1.1 Parsing, removed in 2.2: under a 2.2 target a rule tagged `wcag22-removed` still runs and still reports its occurrences, but cannot `fail` — see ["Filtering by WCAG version"](#filtering-by-wcag-version-21-vs-22) above. Any other value is ignored and the default applies. |
+| `profile` | Optional named conformance target: `'wcag22-aa'`, `'en301549-v4.1.1'`, `'en301549-v3.2.1'` or `'section508'`. Selects rules by the matching tag set when nothing else includes any, and the WCAG target follows from those tags. Reported back as `engine.profile` when it took effect; otherwise ignored with a console warning. See ["Conformance profiles"](#conformance-profiles) above. |
 | `messages` | Optional `{ [locale]: { key: text } }`. Checked before the engine's own tables, so it can override individual strings or supply a language the build does not carry. Keys you omit fall back normally, so a partial override is fine. This is how the standalone browser bundle receives a locale side file, and it is the only way to get a dictionary into a page context, since the in-page runner is serialized and cannot read files. See [`I18N.md`](./I18N.md). |
 | `includeHiddenElements` | Default `false`: helper queries exclude elements hidden by structural/CSS mechanisms such as `display:none`, `[hidden]`, closed `<details>`, and hidden rendering-only host elements (with descendants excluded too). Set `true` to include those hidden/collapsed subtrees in evaluation (legacy/static-markup behavior). |
 | `includeShadowDom` | Default `true`: rules using `helpers.queryAllSmart` traverse into open shadow roots. Set `false` to scan only the light DOM. Closed shadow roots are never reachable either way (no DOM API exposes them). |

@@ -19,7 +19,8 @@ This is the exact shape of the object returned by `runDomRulesInPage(...)` / `ru
     tag: string,
     schemaVersion: string,
     locale: { requested: string, resolved: string, reason: string },
-    wcagVersion: "2.0" | "2.1" | "2.2"
+    wcagVersion: "2.0" | "2.1" | "2.2",
+    profile?: "wcag22-aa" | "en301549-v4.1.1" | "en301549-v3.2.1" | "section508"
   },
   url: string | null,
   title: string | null,
@@ -39,6 +40,7 @@ This is the exact shape of the object returned by `runDomRulesInPage(...)` / `ru
 | `engine.locale` | Which dictionary the run actually used. `requested` is your `engineOptions.locale` after trimming (`"en"` if you passed nothing or a non-string); `resolved` is the locale whose dictionary was used; `reason` explains the pairing. Because locale fallback is graceful and per-string, asking for a language the build does not carry produces English text rather than an error — this field is how you find that out without reading the strings. Reported once per result: a run uses one dictionary throughout. |
 | `engine.locale.reason` | `"ok"` — you got the dictionary you asked for, and it carries every key. `"primary-subtag"` — your code had a subtag with no dictionary of its own, so its base language was used: `"de-DE"` resolves to `"de"`. `"dictionary-not-loaded"` — the project ships that language, but this build does not carry it and none was supplied (the standalone browser bundle, without its locale side file). `"unknown-locale"` — the project has no such translation at all. `"partial-dictionary"` — the dictionary was used but is missing keys English has, so those strings fell back to English. Treat the set as open; later releases can add to it. |
 | `engine.wcagVersion` | Which version of WCAG this run was conformance-tested against: your `engineOptions.wcagVersion`, or what your version-origin tags implied, or the default `"2.2"`. It affects one thing today — a rule mapped only to SC 4.1.1 Parsing cannot `fail` under a 2.2 target (see `checksResults[i].wcagVersionScope` below). Reported once per result: a run has one target throughout. |
+| `engine.profile` | Present only when an `engineOptions.profile` selected this run's rules, and names the profile, lowercased. Absent when none was asked for, and also when one was asked for but did not apply (unknown name, or a `runOnly` or `engineOptions` include chose the rules instead), so its presence is how you confirm a run really targeted that profile. See [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#conformance-profiles). |
 | `url` | The `pageUrl` argument you passed in, or `document.location.href` if you passed `null`/omitted it, or `null` if neither is available. |
 | `title` | `document.title` at scan time, or `null`. |
 | `timestamp` | **Not auto-generated.** Only set if you pass `engineOptions.timestamp` as a non-empty string — the engine has no built-in clock (deterministic-by-design). If you want a scan timestamp in the result, supply it yourself. |
