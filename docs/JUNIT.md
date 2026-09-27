@@ -1,0 +1,72 @@
+# JUnit report
+
+`@surea11y/core/junit` renders a scan result as JUnit XML, the test report format CI dashboards read natively: GitLab's merge request test widget, Azure DevOps' Tests tab, Jenkins and CircleCI.
+
+```js
+const { renderJunitReport } = require('@surea11y/core/junit');
+const { runDomRulesInPage } = require('@surea11y/core');
+
+const result = runDomRulesInPage(url, null, { profile: 'wcag22-aa' }, null);
+require('fs').writeFileSync('surea11y.junit.xml', renderJunitReport(result));
+```
+
+`renderJunitReport(result, options)` is a pure function: it returns the XML as a string and never touches the filesystem. It works just as well on a result saved as JSON earlier, such as the output of `surea11y scan <target> --json` from [`@surea11y/cli`](https://github.com/SureA11y/cli#readme) — see [`CI_INTEGRATIONS.md`](./CI_INTEGRATIONS.md#junit-test-reports).
+
+## Shape
+
+One `<testsuite>` per WCAG Success Criterion, one `<testcase>` per rule mapped to it:
+
+```xml
+<testsuites name="surea11y" tests="14" failures="2" errors="0" skipped="4" time="0">
+  <testsuite name="WCAG 1.1.1 Non-text content: text alternatives" tests="1" failures="1" errors="0" skipped="0" time="0">
+    <properties>
+      <property name="wcagCriterion" value="1.1.1"/>
+      <property name="wcagLevel" value="A"/>
+      <property name="en301549" value="9.1.1.1"/>
+      <property name="criterionOutcome" value="fail"/>
+      <property name="engine" value="a11ycore"/>
+      <property name="schemaVersion" value="1.0.0"/>
+      <property name="wcagVersion" value="2.2"/>
+      <property name="profile" value="wcag22-aa"/>
+      <property name="locale" value="en"/>
+      <property name="url" value="https://example.test/"/>
+    </properties>
+    <testcase classname="wcag-1.1.1" name="img-alt-present" time="0">
+      <failure type="fail" message="1 failing occurrence: Missing alt attribute on &lt;img&gt;.">- Missing alt attribute on &lt;img&gt;. Add an alt attribute (use alt=&quot;&quot; only for decorative images).
+  selector: html &gt; body &gt; main &gt; img
+  html: &lt;img src=&quot;a.png&quot;&gt;</failure>
+    </testcase>
+  </testsuite>
+</testsuites>
+```
+
+- **Suites follow the criterion**, because that is what people track, and **testcases follow the rule** rather than the occurrence, so a defect repeated forty times on a page is one failing test whose body lists all forty, and test counts stay stable between runs.
+- Suites come from each rule's own WCAG mappings, not from the composites, so every rule that ran is reported even when composites were excluded. The composite, when it ran, supplies the suite's title and the `criterionOutcome` property. A rule mapped to two criteria appears in both suites. A rule mapped to no criterion goes into a final `Other checks` suite with `classname="other"`.
+- Suites are ordered by criterion, numerically (1.4.3 before 1.4.10), and testcases by rule id.
+- `en301549` properties name the EN 301 549 clause that restates the criterion, where there is one (see [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md#en-301-549)).
+
+## Outcomes
+
+| Rule outcome | JUnit | Why |
+|---|---|---|
+| `fail` | `<failure type="fail">`, one line per failing occurrence (message, hint, selector, markup) | The deterministic, gating case. |
+| `cantTell` | `<skipped>` saying how many occurrences need manual review | JUnit has no "could not tell". Skipped surfaces it without turning a build red, the same line SARIF draws with `warning`. |
+| `pass` | a bare `<testcase>` | |
+| `notApplicable` | left out | A page has hundreds; none says anything. `includeNotApplicable: true` adds them as `<skipped message="Not applicable">`. |
+
+A `fail` rule that also has `cantTell` occurrences reports the failures in `<failure>` and the undecided ones in `<system-out>`, where dashboards show test output. A skipped `cantTell` rule does the same.
+
+## Options
+
+| Option | Default | Effect |
+|---|---|---|
+| `cantTellAs` | `'skipped'` | `'failure'` reports `cantTell` rules as `<failure type="cantTell">`, for a pipeline that must not pass while anything is undecided. |
+| `includeNotApplicable` | `false` | Include `notApplicable` rules as skipped tests. |
+| `baselineEntries` | none | Entries from [`BASELINE.md`](./BASELINE.md)'s `buildBaselineEntries()`. Fail occurrences recorded there are dropped, exactly as in SARIF. A rule whose every failure is already known is `<skipped message="N known failures recorded in the baseline">`, not passing: it did not pass. |
+| `name` | `'surea11y'` | The `name` of the root `<testsuites>`, for telling several pages' reports apart in one dashboard. |
+
+## Determinism
+
+The engine has no clock, and this report does not invent one: every `time` is `"0"`, and a `timestamp` attribute appears on each suite only when the result carries one (`engineOptions.timestamp`). The same scan always renders byte-identical XML, so a report can be committed or diffed.
+
+Text is escaped for XML, and characters XML 1.0 forbids even when escaped (most control characters, lone surrogates) are dropped, since markup captured from a page can contain them.

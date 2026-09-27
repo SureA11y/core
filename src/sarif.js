@@ -60,11 +60,28 @@ function buildRemainingBaselineMap(baselineEntries) {
   return remaining;
 }
 
-function wcagTags(check) {
+// `normativeMappings` also carries other standards (EN 301 549 clauses) and
+// WCAG's own non-normative documents (`type: 'Understanding'`), each with a
+// `requirement` of its own. Only a WCAG Success Criterion earns a `wcag-` tag;
+// an entry naming no standard is treated as WCAG, the engine's default.
+function isWcagCriterion(m) {
+  return !!(m && m.requirement && (m.standard == null || m.standard === 'WCAG') && !m.type);
+}
+
+// EN 301 549 numbers a clause the same way in every version that has it, so
+// the tag carries the clause alone and two versions collapse into one tag.
+function isEn301549Clause(m) {
+  return !!(m && m.requirement && m.standard === 'EN 301 549');
+}
+
+function ruleTags(check) {
   const mappings = (check.meta && check.meta.normativeMappings) || [];
   const tags = new Set(['accessibility', check.type === 'automatic' ? 'automatic' : 'manual']);
   for (const m of mappings) {
-    if (m && m.requirement) tags.add(`wcag-${m.requirement}`);
+    if (isWcagCriterion(m)) tags.add(`wcag-${m.requirement}`);
+  }
+  for (const m of mappings) {
+    if (isEn301549Clause(m)) tags.add(`en301549-${m.requirement}`);
   }
   return Array.from(tags);
 }
@@ -79,7 +96,7 @@ function buildRule(check) {
     // worst-case, rule-level default is "warning"; automatic rules can
     // reach "error" -- see docs/OUTPUT_SCHEMA.md's outcome/type table.
     defaultConfiguration: { level: check.type === 'automatic' ? 'error' : 'warning' },
-    properties: { tags: wcagTags(check) }
+    properties: { tags: ruleTags(check) }
   };
 }
 
@@ -122,6 +139,16 @@ function getOccurrenceOutcome(check, occurrence) {
         : null);
   if (occurrenceOutcome) return occurrenceOutcome;
   return check && (check.outcome === 'fail' || check.outcome === 'cantTell') ? check.outcome : null;
+}
+
+// The conformance target a run used, so a dashboard can tell a WCAG 2.1 run
+// from a 2.2 one. Absent on results from engines that predate the fields.
+function runProperties(result) {
+  const engine = (result && result.engine) || {};
+  const props = {};
+  if (engine.wcagVersion) props.wcagVersion = engine.wcagVersion;
+  if (engine.profile) props.profile = engine.profile;
+  return Object.keys(props).length ? props : null;
 }
 
 function renderSarifReport(result, options = {}) {
@@ -197,6 +224,7 @@ function renderSarifReport(result, options = {}) {
         // fail first: matches docs/REPORT.md's own "violations before advisory
         // findings" ordering.
         results: [...failResults, ...cantTellResults],
+        ...(runProperties(result) ? { properties: runProperties(result) } : {}),
         ...(notices.length
           ? { invocations: [{ executionSuccessful: true, toolExecutionNotices: notices }] }
           : {})

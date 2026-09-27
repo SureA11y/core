@@ -84,6 +84,23 @@ function getCardOutcome(ruleResult) {
   return hasCantTell ? 'cantTell' : ruleResult.outcome;
 }
 
+// Same test as src/sarif.js: other standards (EN 301 549) and WCAG's
+// non-normative documents (`type: 'Understanding'`) share `requirement`
+// with a Success Criterion, and chipping them as "WCAG" mislabels or repeats it.
+function isWcagCriterion(m) {
+  return !!(m && m.requirement && (m.standard == null || m.standard === 'WCAG') && !m.type);
+}
+
+// What the scan was tested against. A result from an engine older than the
+// WCAG-version target carries neither field and gets no chips.
+function renderTargetChips(engine) {
+  if (!engine) return '';
+  const chips = [];
+  if (engine.wcagVersion) chips.push(`<div><b>WCAG ${esc(engine.wcagVersion)}</b>target</div>`);
+  if (engine.profile) chips.push(`<div><b>${esc(engine.profile)}</b>profile</div>`);
+  return chips.join('\n  ');
+}
+
 // Locale fallback is per-string and silent in the text itself, so a report
 // generated in a locale the engine does not carry reads as a normal English
 // one. A result from an older engine has no engine.locale and gets no chip.
@@ -190,9 +207,20 @@ function renderWcagRollup(rulesResults) {
           const checksIds = (rule.data && rule.data.details && rule.data.details.checksIds) || [];
           const chip = `<span class="chip" style="background:${info.bg};color:${info.color}">${esc(info.label)}</span>`;
           const scLabel = mapping ? `WCAG ${esc(mapping.requirement)}` : 'WCAG (unmapped)';
+          // Clause numbers match across EN 301 549 versions, so one label each.
+          const enClauses = Array.from(
+            new Set(
+              ((rule.meta && rule.meta.normativeMappings) || [])
+                .filter((m) => m && m.standard === 'EN 301 549' && m.requirement)
+                .map((m) => m.requirement)
+            )
+          );
+          const enLabel = enClauses.length
+            ? `<br><span class="note">EN 301 549 ${enClauses.map(esc).join(', ')}</span>`
+            : '';
           const metricsLabel = `${metrics.passCount || 0} pass / ${metrics.failCount || 0} fail / ${metrics.cantTellCount || 0} needs review / ${metrics.notApplicableCount || 0} n/a`;
           return `<tr>
-            <td class="sc-cell">${scLabel}</td>
+            <td class="sc-cell">${scLabel}${enLabel}</td>
             <td>${esc(rule.title || rule.ruleId)}</td>
             <td>${chip}</td>
             <td class="note">${esc(metricsLabel)}</td>
@@ -262,6 +290,7 @@ function renderCards(checksResults) {
         r.occurrences.find((occ) => getOccurrenceOutcome(r, occ) === cardOutcome) ||
         r.occurrences[0];
       const wcagChips = ((r.meta && r.meta.normativeMappings) || [])
+        .filter(isWcagCriterion)
         .map(
           (m) =>
             `<span class="chip" style="background:${STATUS.neutral.bg};color:${STATUS.neutral.color}">WCAG ${esc(m.requirement)}</span>`
@@ -424,6 +453,7 @@ function renderHtmlReport(result, options = {}) {
   <div><b>${rows.length}</b>total occurrences</div>
   <div><b>${esc((result && result.engine && result.engine.tag) || '?')}</b>engine</div>
   <div><b>${esc((result && result.engine && result.engine.schemaVersion) || '?')}</b>schema version</div>
+  ${renderTargetChips(result && result.engine)}
   ${renderLocaleChip(result && result.engine)}
 </div>
 

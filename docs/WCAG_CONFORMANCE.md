@@ -37,6 +37,8 @@ carries one level tag per Success Criterion it maps to, and nothing more: a rule
 mapped only to an AA criterion is tagged `wcag2aa` and *not* `wcag2a`. Asking for
 `{ tags: ['wcag2aa'] }` on its own therefore runs the 10 rules mapped to a 2.0 AA
 criterion, not the ~100 that make up an A + AA target. List every level you mean.
+`engineOptions.profile` (`wcag22-aa`, `en301549-v4.1.1`, `en301549-v3.2.1`, `section508`) does
+this for you; see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#conformance-profiles).
 
 The same applies across WCAG versions — a criterion introduced in 2.1 or 2.2 carries
 only its own origin tag — so a full conformance target is a union of tag sets. See
@@ -60,6 +62,28 @@ you need the exact precedence.
 
 Omit `tags` entirely (the default) and every rule at every level runs, with no composite
 suppression.
+
+## EN 301 549
+
+Chapter 9 of EN 301 549 restates the WCAG Level A and AA Success Criteria as clauses numbered `9.` plus the criterion's own number: WCAG 1.4.3 is clause 9.1.4.3. Every atomic and composite result carries, after its WCAG entries in `meta.normativeMappings`, the clause for each of its criteria, once per version of the standard that includes that criterion:
+
+| Version | Built on | Differs from the other in |
+|---|---|---|
+| V3.2.1 (2021-03) | WCAG 2.1 A and AA, 50 criteria | Includes 9.4.1.1 Parsing |
+| V4.1.1 (2026-09) | WCAG 2.2 A and AA, 55 criteria | Adds 2.4.11, 2.5.7, 2.5.8, 3.2.6, 3.3.7, 3.3.8; 9.4.1.1 is void |
+
+AAA criteria have no clause in either version. The table lives in `src/coverage/en301549-map.js`, taken from the ETSI text; rules never declare these entries themselves, the build derives them from each rule's WCAG mapping. A rule added through `engineOptions.customRules` keeps exactly the mappings it declares. Composite entries returned by `getRulesCatalog()` carry the same entries as `meta.en301549`, so the clauses a criterion maps to can be read without running a scan.
+
+The table is public as `@surea11y/core/en301549`, for tools that need the reverse view, such as which criteria a version requires that a scan did not cover:
+
+```js
+const { EN301549_CLAUSES, en301549ClausesForSc } = require('@surea11y/core/en301549');
+
+Object.keys(EN301549_CLAUSES['V3.2.1']);  // the 50 WCAG 2.1 A and AA criteria V3.2.1 restates
+en301549ClausesForSc('2.5.8');            // [{ version: 'V4.1.1', clause: '9.2.5.8', title: 'Target size (minimum)' }]
+```
+
+This is a correspondence between two published documents, not a conformance claim: a clause on a result says which EN 301 549 requirement that WCAG criterion is, nothing more. Which version a given law requires is outside the engine.
 
 ## What this engine cannot tell you
 

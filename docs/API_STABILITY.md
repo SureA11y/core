@@ -6,7 +6,7 @@
 
 Removing, renaming, or changing the type/meaning of any of these is a **major** version bump:
 
-- Top-level result: `engine.tag`, `engine.schemaVersion`, `engine.locale` (the field and its `requested`/`resolved`/`reason` keys — the set of `reason` *values* is open and may gain entries in a minor), `engine.wcagVersion`, `url`, `checksResults` (an array), `rulesResults` (an array), `overriddenBuiltinIds` (an array, empty when no `customRules` entry shadowed a built-in id — part of the extension contract, see below).
+- Top-level result: `engine.tag`, `engine.schemaVersion`, `engine.locale` (the field and its `requested`/`resolved`/`reason` keys — the set of `reason` *values* is open and may gain entries in a minor), `engine.wcagVersion`, `engine.profile` (when present; the set of profile names may grow in a minor), `url`, `checksResults` (an array), `rulesResults` (an array), `overriddenBuiltinIds` (an array, empty when no `customRules` entry shadowed a built-in id — part of the extension contract, see below).
 - Each `checksResults[i]` / `rulesResults[i]` entry: `ruleId`, `outcome`, `outcomeNormalized`, `severity`, `confidence`, `type`, `title`, `description`, `meta` (including `meta.normativeMappings`, `meta.deprecated`/`.deprecation` — see below), `engineOptions`, `schemaVersion`.
 - Each occurrence (`occurrences[i]`): `selector`, `html`, `summary`, `hint`, `i18n`, `structuralPath`.
 - The rule **catalog** (`getChecksCatalog()`/`getRulesCatalog()`, a separate surface from a scan result — see `RULE_AUTHORING.md`): `ruleId`, `title`, `description`, `tags`, `wcagSc`, `normativeMappings`, `defaultSeverity`, `defaultConfidence`, `type`, `deprecated`/`.deprecation`. Note `tags` lives here, not on a per-scan `checksResults[i].meta` — the two surfaces intentionally carry different subsets of a rule's metadata.
@@ -23,7 +23,9 @@ Since 1.4.0 the package declares an explicit `exports` map. These are the only i
 | `@surea11y/core/baseline` | `src/baseline.js` | `buildBaselineEntries()`, `matchBaseline()` |
 | `@surea11y/core/report` | `src/report.js` | `renderHtmlReport()` |
 | `@surea11y/core/sarif` | `src/sarif.js` | `renderSarifReport()` |
+| `@surea11y/core/junit` | `src/junit.js` | `renderJunitReport()` |
 | `@surea11y/core/earl` | `src/earl.js` | `renderEarlReport()` |
+| `@surea11y/core/en301549` | `src/en301549.js` | `EN301549_VERSIONS`, `EN301549_CLAUSES`, `en301549ClausesForSc()` |
 | `@surea11y/core/browser` | `surea11y.browser.js` | the standalone browser bundle, for bundlers that resolve it as a module |
 
 Anything **not** in that table — `src/core/*`, `src/checks/*`, `src/i18n/*`, `src/policy/*`, and the generated `src/core.js` itself — is internal. Before 1.4.0 there was no `exports` map, so those paths were technically reachable via deep `require()`; they were never documented as public and are no longer resolvable. The `<script src="node_modules/@surea11y/core/surea11y.browser.js">` form documented in the README is a filesystem path, not module resolution, and is unaffected.

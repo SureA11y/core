@@ -98,6 +98,49 @@ pipelines:
 
 The step fails the pipeline on the CLI's exit code exactly like any other `script` entry; `a11y-report.html` (see [`REPORT.md`](./REPORT.md)) is attached as a downloadable build artifact so a reviewer can open it without re-running the scan locally.
 
+## JUnit test reports
+
+GitLab, Azure DevOps, Jenkins and CircleCI show JUnit XML in their own test views: each WCAG criterion becomes a suite and each rule a test (see [`JUNIT.md`](./JUNIT.md)). Save the scan as JSON, render it with `@surea11y/core/junit`, and keep the CLI's exit code for gating. The render step needs `@surea11y/core` in the project's own `devDependencies`.
+
+### GitLab CI
+
+```yaml
+a11y:
+  image: node:20
+  script:
+    - npm ci
+    - npm run build
+    - npx @surea11y/cli scan ./dist/index.html --json > a11y-scan.json || scan_exit=$?
+    - node -e "const fs = require('fs'); const { renderJunitReport } = require('@surea11y/core/junit'); fs.writeFileSync('a11y.junit.xml', renderJunitReport(JSON.parse(fs.readFileSync('a11y-scan.json', 'utf8'))))"
+    - exit ${scan_exit:-0}
+  artifacts:
+    when: always
+    reports:
+      junit: a11y.junit.xml
+```
+
+`when: always` uploads the report even when the scan's exit code fails the job, which is exactly when the merge request widget is worth reading.
+
+### Azure DevOps
+
+```yaml
+steps:
+  - script: |
+      npm ci
+      npm run build
+      npx @surea11y/cli scan ./dist/index.html --json > a11y-scan.json || scan_exit=$?
+      node -e "const fs = require('fs'); const { renderJunitReport } = require('@surea11y/core/junit'); fs.writeFileSync('a11y.junit.xml', renderJunitReport(JSON.parse(fs.readFileSync('a11y-scan.json', 'utf8'))))"
+      exit ${scan_exit:-0}
+    displayName: Accessibility scan
+  - task: PublishTestResults@2
+    condition: succeededOrFailed()
+    inputs:
+      testResultsFormat: JUnit
+      testResultsFiles: a11y.junit.xml
+```
+
+`cantTell` rules arrive as skipped tests, never failures. To gate on them too, pass `{ cantTellAs: 'failure' }` as the second argument to `renderJunitReport`; note that it changes the report, not the CLI's exit code.
+
 ## Free-tier/private-repo minute limits
 
 If your pipeline provider's free tier is minute-limited (Bitbucket Pipelines' free tier is 50 build-minutes/month on private workspaces, for example), a `jsdom`-based scan of static/server-rendered HTML (what the CLI does) is far cheaper than driving a real browser — see [the CLI docs](https://github.com/SureA11y/cli/blob/main/docs/CLI.md#what-it-can-and-cant-scan) for what that trades away (no client-rendered content, no real CSS layout).

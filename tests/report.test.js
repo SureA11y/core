@@ -254,6 +254,30 @@ function makeComposite(overrides = {}) {
   };
 }
 
+test('renderHtmlReport: the WCAG rollup names the EN 301 549 clause once per clause', () => {
+  const result = makeScanResult([]);
+  result.rulesResults = [
+    makeComposite({
+      meta: {
+        normativeMappings: [
+          { standard: 'WCAG', requirement: '1.1.1', level: 'A' },
+          { standard: 'EN 301 549', version: 'V3.2.1', requirement: '9.1.1.1' },
+          { standard: 'EN 301 549', version: 'V4.1.1', requirement: '9.1.1.1' }
+        ]
+      }
+    })
+  ];
+  const report = renderHtmlReport(result);
+
+  assert.strictEqual(report.match(/EN 301 549 9\.1\.1\.1/g).length, 1);
+});
+
+test('renderHtmlReport: a rollup row with no EN 301 549 clause gets no EN label', () => {
+  const result = makeScanResult([]);
+  result.rulesResults = [makeComposite({})];
+  assert.doesNotMatch(renderHtmlReport(result), /EN 301 549/);
+});
+
 test('renderHtmlReport: the WCAG rollup groups composites under their conformance level', () => {
   const result = makeScanResult([]);
   result.rulesResults = [
@@ -399,6 +423,22 @@ test('renderHtmlReport: a rule with no normative mappings renders no WCAG chips'
   }
 });
 
+test('renderHtmlReport: only WCAG Success Criteria are chipped as WCAG', () => {
+  const check = makeCheckResult({
+    meta: {
+      normativeMappings: [
+        { standard: 'WCAG', version: '2.2', requirement: '2.1.1', conformanceLevel: 'A' },
+        { standard: 'WCAG', version: '2.2', type: 'Understanding', requirement: '2.1.1' },
+        { standard: 'EN 301 549', version: 'V3.2.1', requirement: '9.2.1.1' }
+      ]
+    }
+  });
+  const report = renderHtmlReport(makeScanResult([check]));
+
+  assert.strictEqual(report.match(/>WCAG 2\.1\.1</g).length, 1);
+  assert.doesNotMatch(report, /WCAG 9\.2\.1\.1/);
+});
+
 test('renderHtmlReport: past the card cap, the rest are pointed at the technical data', () => {
   const checks = Array.from({ length: 30 }, (_, i) =>
     makeCheckResult({
@@ -471,4 +511,18 @@ test('renderHtmlReport: an occurrence carrying `outcome` instead of `occurrenceO
   const report = renderHtmlReport(makeScanResult([check]));
 
   assert.match(report, /\u00d7 2 \(1 fail \/ 1 needs review\)/);
+});
+
+test('renderHtmlReport: the meta bar shows the WCAG target and profile when the result has them', () => {
+  const result = makeScanResult([]);
+  result.engine = { ...result.engine, wcagVersion: '2.1', profile: 'en301549-v3.2.1' };
+  const report = renderHtmlReport(result);
+  assert.match(report, /<b>WCAG 2\.1<\/b>target/);
+  assert.match(report, /<b>en301549-v3\.2\.1<\/b>profile/);
+});
+
+test('renderHtmlReport: a result without a target or profile gets no chips for them', () => {
+  const report = renderHtmlReport(makeScanResult([]));
+  assert.doesNotMatch(report, /<\/b>target</);
+  assert.doesNotMatch(report, /<\/b>profile</);
 });

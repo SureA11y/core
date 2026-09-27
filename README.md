@@ -415,6 +415,26 @@ embedded frame to also load the engine and opt in, which doesn't fit a
 single dropped-in `<script>` tag; reach for the npm package directly if
 you need that.
 
+### Conformance targets and EN 301 549
+
+To test against a named target instead of a hand-picked tag list, pass a
+profile:
+
+```js
+runDomRulesInPage(url, null, { profile: 'en301549-v3.2.1' }, null);
+```
+
+`wcag22-aa`, `en301549-v4.1.1`, `en301549-v3.2.1` and `section508` each run
+the WCAG Level A and AA rules of the version they build on, and the result
+records the one used in `engine.profile`. A profile only chooses which rules
+run; it does not certify conformance.
+
+Every WCAG criterion in a result is also mapped to the EN 301 549 clause that
+restates it (1.4.3 to 9.1.4.3, for example), for both V3.2.1 and V4.1.1, and
+the SARIF, JUnit and HTML reports carry those clauses. See
+[`docs/ENGINE_OPTIONS.md`](./docs/ENGINE_OPTIONS.md#conformance-profiles) and
+[`docs/WCAG_CONFORMANCE.md`](./docs/WCAG_CONFORMANCE.md#en-301-549).
+
 ---
 
 ## Understanding the Results
@@ -505,6 +525,7 @@ contributing to it:
 | `docs/BASELINE.md` | CI baseline/allowlist: gate builds only on new violations. |
 | `docs/REPORT.md` | Self-contained HTML report: browsable summary, WCAG rollup, filterable occurrence table. |
 | `docs/SARIF.md` | SARIF 2.1.0 report for GitHub Code Scanning and other SARIF dashboards. |
+| `docs/JUNIT.md` | JUnit XML report for the test dashboards of GitLab, Azure DevOps, Jenkins and CircleCI. |
 | `docs/EARL.md` | EARL 1.0 report in JSON-LD: the W3C interchange format, and the ACT implementation-report format. |
 | `docs/CI_INTEGRATIONS.md` | GitHub Actions and Bitbucket Pipelines templates wrapping the CLI. |
 | `docs/ENGINE_OPTIONS.md` | Configuration, filtering, policies and localization. |
@@ -565,7 +586,9 @@ src/
   baseline.js              # Baseline entry point (@surea11y/core/baseline)
   report.js                # HTML report entry point (@surea11y/core/report)
   sarif.js                 # SARIF entry point (@surea11y/core/sarif)
+  junit.js                 # JUnit XML entry point (@surea11y/core/junit)
   earl.js                  # EARL entry point (@surea11y/core/earl)
+  en301549.js              # EN 301 549 clause table (@surea11y/core/en301549)
 
   checks/
     automatic/             # Deterministic automated rules
