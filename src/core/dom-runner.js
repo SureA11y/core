@@ -705,7 +705,7 @@ function runCore(
           '" was not applied: ' +
           (profileNotApplied === 'unknown'
             ? 'no such profile.'
-            : 'runOnly, or an include in engineOptions.rules/tags/tests, selects the rules instead.')
+            : 'an include in runOnly or engineOptions (rules, tags or tests) selects the rules instead.')
       );
     } catch {}
   }

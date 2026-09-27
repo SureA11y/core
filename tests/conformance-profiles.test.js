@@ -111,7 +111,7 @@ test('an explicit include in engineOptions overrides the profile, with a warning
   assert.ok(warnings.some((w) => w.includes('"wcag22-aa"') && w.includes('selects the rules')));
 });
 
-test('a runOnly filter overrides the profile, with a warning', () => {
+test('a runOnly include overrides the profile, with a warning', () => {
   const { value, warnings } = captureWarnings(() =>
     runa11yCoreOnHtml(HTML, {
       engineOptions: { profile: 'section508' },
@@ -121,6 +121,40 @@ test('a runOnly filter overrides the profile, with a warning', () => {
   assert.equal('profile' in value.engine, false);
   assert.deepEqual(ids(value.checksResults), ['img-alt-present']);
   assert.ok(warnings.some((w) => w.includes('"section508"')));
+});
+
+test('a runOnly that only excludes narrows the profile instead of replacing it', () => {
+  // What a binding sends for .options({ profile }).disableTags('best-practice').
+  const { value, warnings } = captureWarnings(() =>
+    runa11yCoreOnHtml(HTML, {
+      engineOptions: { profile: 'section508' },
+      runOnly: { excludeTags: ['wcag111'] }
+    })
+  );
+  assert.equal(value.engine.profile, 'section508');
+  assert.equal(value.engine.wcagVersion, '2.0');
+  assert.deepEqual(
+    ids(value.checksResults),
+    ids(core.getChecksForRunOnly({ tags: PROFILES.section508.tags, excludeTags: ['wcag111'] }))
+  );
+  assert.ok(!ids(value.checksResults).includes('img-alt-present'));
+  assert.deepEqual(warnings, []);
+});
+
+test('a runOnly that only excludes rule ids also keeps the profile', () => {
+  const selected = core.getChecksForRunOnly(
+    { excludeRuleIds: ['img-alt-present'] },
+    { profile: 'wcag22-aa' }
+  );
+  assert.deepEqual(
+    ids(selected),
+    ids(
+      core.getChecksForRunOnly({
+        tags: PROFILES['wcag22-aa'].tags,
+        excludeRuleIds: ['img-alt-present']
+      })
+    )
+  );
 });
 
 test('excludes still apply on top of a profile', () => {

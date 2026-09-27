@@ -763,14 +763,38 @@ function normalizeProfileName(v) {
   return typeof v === 'string' ? v.trim().toLowerCase() : '';
 }
 
+// A profile supplies the include tags of a selection that includes nothing
+// of its own. Excludes are left alone, whichever route they came by, so a
+// runOnly that only excludes (a binding's disableTags(), say) narrows the
+// profile rather than replacing it.
+function applyProfile(selection, requestedProfile) {
+  if (!requestedProfile) return selection;
+  const profileTags = Object.prototype.hasOwnProperty.call(CONFORMANCE_PROFILES, requestedProfile)
+    ? CONFORMANCE_PROFILES[requestedProfile]
+    : null;
+  if (!profileTags) {
+    selection.profileNotApplied = 'unknown';
+  } else if (
+    selection.tags.length ||
+    selection.includeRuleIds.length ||
+    selection.includeTestIds.length
+  ) {
+    selection.profileNotApplied = 'overridden';
+  } else {
+    selection.tags = profileTags.slice();
+    selection.profile = requestedProfile;
+  }
+  return selection;
+}
+
 /**
  * Resolve effective selection from engineOptions (preferred) or runOnly (legacy).
  *
  * Precedence:
  * - If runOnly is provided and non-empty => use it (legacy behavior, plus extended fields)
  * - Else => derive from engineOptions.rules/tags/includeMode (comma-separated strings)
- * - engineOptions.profile supplies the include tags only when neither of the
- *   above includes anything; excludes still apply on top of it.
+ * - engineOptions.profile supplies the include tags only when the winning
+ *   selection includes nothing; its excludes still apply on top of it.
  *
  * When a profile was requested, the result carries either "profile" (the one
  * applied) or "profileNotApplied" ('unknown' | 'overridden') so the runner
@@ -780,11 +804,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   const eo = (engineOptions && typeof engineOptions === 'object') ? engineOptions : {};
   const requestedProfile = normalizeProfileName(eo.profile);
 
-  if (hasAnyRunOnlyKeys(runOnly)) {
-    const fromRunOnly = normalizeRunOnly(runOnly);
-    if (requestedProfile) fromRunOnly.profileNotApplied = 'overridden';
-    return fromRunOnly;
-  }
+  if (hasAnyRunOnlyKeys(runOnly)) return applyProfile(normalizeRunOnly(runOnly), requestedProfile);
 
   const mode = normalizeIncludeMode(eo.includeMode);
 
@@ -811,21 +831,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     excludeTestIds
   };
 
-  if (requestedProfile) {
-    const profileTags = Object.prototype.hasOwnProperty.call(CONFORMANCE_PROFILES, requestedProfile)
-      ? CONFORMANCE_PROFILES[requestedProfile]
-      : null;
-    if (!profileTags) {
-      out.profileNotApplied = 'unknown';
-    } else if (includeTags.length || includeRuleIds.length || includeTestIds.length) {
-      out.profileNotApplied = 'overridden';
-    } else {
-      out.tags = profileTags.slice();
-      out.profile = requestedProfile;
-    }
-  }
-
-  return out;
+  return applyProfile(out, requestedProfile);
 }
 
 function ruleIdMatches(candidate, ruleId, engineTag) {
