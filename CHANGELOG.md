@@ -4,6 +4,9 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ## [Unreleased]
 
+### Added
+- `src/coverage/en301549-map.js` records which EN 301 549 chapter 9 clause restates each WCAG Success Criterion, for both V3.2.1 (2021-03, built on WCAG 2.1) and V4.1.1 (2026-09, built on WCAG 2.2). The table is keyed by version because the two restate different criteria: V4.1.1 adds 2.4.11, 2.5.7, 2.5.8, 3.2.6, 3.3.7 and 3.3.8 and leaves 9.4.1.1 Parsing void. Titles are each version's own wording, so V4.1.1's "Subtitles" stays distinct from V3.2.1's "Captions". Rows were taken from the ETSI text, and `tests/coverage/en301549-map.test.js` holds each version to exactly the Level A and AA criteria of its WCAG version in the engine's own registry: 50 for V3.2.1, 55 for V4.1.1. Nothing reads the table yet, so scan results are unchanged; attaching the clauses to composite results is the next step.
+
 ### Changed
 - `area-alt-present` fails an `<area>` with `alt=""` and no other accessible name, instead of treating an empty `alt` as satisfying the check. An `<area>` in a used image map is always a link — it has no visual content of its own the way an `<img>` does — so `alt=""` never carried `<img alt="">`'s decorative meaning; it just left the link's name empty. `aria-label`/`aria-labelledby` and a non-empty `title` still count as valid naming mechanisms, as they did before. The empty-`alt` case gets its own message (`area_altPresent_summary_fail_empty`/`_hint_fail_empty`), distinct from the missing-`alt` one, in `en`/`fr`/`de`/`es`.
 
