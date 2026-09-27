@@ -302,6 +302,46 @@ test('renderSarifReport: a malformed normative mapping is skipped, the valid one
   assert.deepStrictEqual(rule.properties.tags, ['accessibility', 'automatic', 'wcag-4.1.2']);
 });
 
+test('renderSarifReport: only WCAG Success Criteria become wcag- tags', () => {
+  // The shape manual-review carries: a criterion, its Understanding document,
+  // and the matching EN 301 549 clause, all with a `requirement` of their own.
+  const result = makeScanResult([
+    makeCheckResult({
+      meta: {
+        normativeMappings: [
+          { standard: 'WCAG', version: '2.2', requirement: '2.1.1', conformanceLevel: 'A' },
+          { standard: 'WCAG', version: '2.2', type: 'Understanding', requirement: '2.1.1' },
+          { standard: 'EN 301 549', version: 'V3.2.1', requirement: '9.2.1.1' }
+        ]
+      }
+    })
+  ]);
+
+  const rule = parse(renderSarifReport(result, {})).runs[0].tool.driver.rules[0];
+  assert.deepStrictEqual(rule.properties.tags, ['accessibility', 'automatic', 'wcag-2.1.1']);
+});
+
+test('renderSarifReport: manual-review is tagged with its WCAG criteria only', () => {
+  const manualReview = require('../src/checks/manual-review.js');
+  const result = makeScanResult([
+    makeCheckResult({
+      ruleId: 'manual-review',
+      type: 'manual',
+      outcome: 'cantTell',
+      meta: manualReview.meta
+    })
+  ]);
+
+  const rule = parse(renderSarifReport(result, {})).runs[0].tool.driver.rules[0];
+  assert.deepStrictEqual(rule.properties.tags, [
+    'accessibility',
+    'manual',
+    'wcag-2.1.1',
+    'wcag-2.4.3',
+    'wcag-2.4.7'
+  ]);
+});
+
 test('renderSarifReport: a manual rule is tagged manual', () => {
   const result = makeScanResult([makeCheckResult({ type: 'manual', outcome: 'cantTell' })]);
   const rule = parse(renderSarifReport(result, {})).runs[0].tool.driver.rules[0];

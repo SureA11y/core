@@ -60,11 +60,19 @@ function buildRemainingBaselineMap(baselineEntries) {
   return remaining;
 }
 
+// `normativeMappings` also carries other standards (EN 301 549 clauses) and
+// WCAG's own non-normative documents (`type: 'Understanding'`), each with a
+// `requirement` of its own. Only a WCAG Success Criterion earns a `wcag-` tag;
+// an entry naming no standard is treated as WCAG, the engine's default.
+function isWcagCriterion(m) {
+  return !!(m && m.requirement && (m.standard == null || m.standard === 'WCAG') && !m.type);
+}
+
 function wcagTags(check) {
   const mappings = (check.meta && check.meta.normativeMappings) || [];
   const tags = new Set(['accessibility', check.type === 'automatic' ? 'automatic' : 'manual']);
   for (const m of mappings) {
-    if (m && m.requirement) tags.add(`wcag-${m.requirement}`);
+    if (isWcagCriterion(m)) tags.add(`wcag-${m.requirement}`);
   }
   return Array.from(tags);
 }

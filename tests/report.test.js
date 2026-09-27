@@ -399,6 +399,22 @@ test('renderHtmlReport: a rule with no normative mappings renders no WCAG chips'
   }
 });
 
+test('renderHtmlReport: only WCAG Success Criteria are chipped as WCAG', () => {
+  const check = makeCheckResult({
+    meta: {
+      normativeMappings: [
+        { standard: 'WCAG', version: '2.2', requirement: '2.1.1', conformanceLevel: 'A' },
+        { standard: 'WCAG', version: '2.2', type: 'Understanding', requirement: '2.1.1' },
+        { standard: 'EN 301 549', version: 'V3.2.1', requirement: '9.2.1.1' }
+      ]
+    }
+  });
+  const report = renderHtmlReport(makeScanResult([check]));
+
+  assert.strictEqual(report.match(/>WCAG 2\.1\.1</g).length, 1);
+  assert.doesNotMatch(report, /WCAG 9\.2\.1\.1/);
+});
+
 test('renderHtmlReport: past the card cap, the rest are pointed at the technical data', () => {
   const checks = Array.from({ length: 30 }, (_, i) =>
     makeCheckResult({

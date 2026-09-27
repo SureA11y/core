@@ -84,6 +84,13 @@ function getCardOutcome(ruleResult) {
   return hasCantTell ? 'cantTell' : ruleResult.outcome;
 }
 
+// Same test as src/sarif.js: other standards (EN 301 549) and WCAG's
+// non-normative documents (`type: 'Understanding'`) share `requirement`
+// with a Success Criterion, and chipping them as "WCAG" mislabels or repeats it.
+function isWcagCriterion(m) {
+  return !!(m && m.requirement && (m.standard == null || m.standard === 'WCAG') && !m.type);
+}
+
 // Locale fallback is per-string and silent in the text itself, so a report
 // generated in a locale the engine does not carry reads as a normal English
 // one. A result from an older engine has no engine.locale and gets no chip.
@@ -262,6 +269,7 @@ function renderCards(checksResults) {
         r.occurrences.find((occ) => getOccurrenceOutcome(r, occ) === cardOutcome) ||
         r.occurrences[0];
       const wcagChips = ((r.meta && r.meta.normativeMappings) || [])
+        .filter(isWcagCriterion)
         .map(
           (m) =>
             `<span class="chip" style="background:${STATUS.neutral.bg};color:${STATUS.neutral.color}">WCAG ${esc(m.requirement)}</span>`
